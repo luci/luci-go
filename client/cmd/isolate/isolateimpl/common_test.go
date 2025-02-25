@@ -52,7 +52,7 @@ func TestElideNestedPaths(t *testing.T) {
 			"b/c/a",
 			"ab/cd/",
 		}
-		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/", "b/a", "b/c/", "foo"}))
+		assert.Loosely(t, doElision(deps), should.Match([]string{"ab/", "b/a", "b/c/", "foo"}))
 	})
 
 	ftt.Run(`All files`, t, func(t *ftt.Test) {
@@ -62,7 +62,7 @@ func TestElideNestedPaths(t *testing.T) {
 			"foo",
 			"ab/bar",
 		}
-		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/bar", "ab/cd/foo", "ab/foo", "foo"}))
+		assert.Loosely(t, doElision(deps), should.Match([]string{"ab/bar", "ab/cd/foo", "ab/foo", "foo"}))
 	})
 
 	ftt.Run(`Cousin paths`, t, func(t *ftt.Test) {
@@ -72,7 +72,7 @@ func TestElideNestedPaths(t *testing.T) {
 			"ab/ef/",
 			"ab/bar",
 		}
-		assert.Loosely(t, doElision(deps), should.Resemble([]string{"ab/bar", "ab/cd/", "ab/ef/", "ab/foo"}))
+		assert.Loosely(t, doElision(deps), should.Match([]string{"ab/bar", "ab/cd/", "ab/ef/", "ab/foo"}))
 	})
 
 	ftt.Run(`Interesting dirs`, t, func(t *ftt.Test) {
@@ -87,7 +87,7 @@ func TestElideNestedPaths(t *testing.T) {
 		// Make sure:
 		// 1. "a/b/" elides "a/b/c/", but not "a/bc/"
 		// 2. "a/bc/" elides "a/bc/d/", but not "a/bcd/"
-		assert.Loosely(t, doElision(deps), should.Resemble([]string{"a/b/", "a/bc/", "a/bcd/", "a/c/"}))
+		assert.Loosely(t, doElision(deps), should.Match([]string{"a/b/", "a/bc/", "a/bcd/", "a/c/"}))
 	})
 
 	ftt.Run(`Interesting files`, t, func(t *ftt.Test) {
@@ -98,7 +98,7 @@ func TestElideNestedPaths(t *testing.T) {
 			"a/c",
 		}
 		// Make sure "a/b" elides neither "a/bc" nor "a/bcd"
-		assert.Loosely(t, doElision(deps), should.Resemble([]string{"a/b", "a/bc", "a/bcd", "a/c"}))
+		assert.Loosely(t, doElision(deps), should.Match([]string{"a/b", "a/bc", "a/bcd", "a/c"}))
 	})
 }
 
@@ -174,10 +174,10 @@ func TestUploadToCAS(t *testing.T) {
 			}}
 			blob, ok := cas.Get(dgs[0])
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol1Dir)))
+			assert.Loosely(t, blob, should.Match(mustMarshal(t, isol1Dir)))
 			blob, ok = cas.Get(dgs[1])
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol2Dir)))
+			assert.Loosely(t, blob, should.Match(mustMarshal(t, isol2Dir)))
 
 			assert.Loosely(t, cas.BlobWrites(fooDg), should.Equal(1))
 			assert.Loosely(t, cas.BlobWrites(barDg), should.Equal(1))
@@ -217,7 +217,7 @@ func TestUploadToCAS(t *testing.T) {
 			}}
 			blob, ok := cas.Get(dgs[0])
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, blob, should.Resemble(mustMarshal(t, isol1Dir)))
+			assert.Loosely(t, blob, should.Match(mustMarshal(t, isol1Dir)))
 
 			assert.Loosely(t, cas.BlobWrites(fooDg), should.BeZero)
 			assert.Loosely(t, cas.BlobWrites(barDg), should.BeZero)
@@ -258,7 +258,7 @@ func TestUploadToCAS(t *testing.T) {
 
 			gotDir := &repb.Directory{}
 			assert.Loosely(t, proto.Unmarshal(blob, gotDir), should.BeNil)
-			assert.Loosely(t, gotDir, should.Resemble(isol1Dir))
+			assert.Loosely(t, gotDir, should.Match(isol1Dir))
 
 			assert.Loosely(t, cas.BlobWrites(fooDg), should.BeZero)
 			assert.Loosely(t, cas.BlobWrites(barDg), should.Equal(1))

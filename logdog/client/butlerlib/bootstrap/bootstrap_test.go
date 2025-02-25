@@ -46,7 +46,7 @@ func TestBootstrap(t *testing.T) {
 
 				assert.Loosely(t, bs.Client, should.NotBeNil)
 				bs.Client = nil
-				assert.Loosely(t, bs, should.Resemble(&Bootstrap{}))
+				assert.Loosely(t, bs, should.Match(&Bootstrap{}))
 			})
 
 			t.Run(`And the remaining environment parameters`, func(t *ftt.Test) {
@@ -64,7 +64,7 @@ func TestBootstrap(t *testing.T) {
 					assert.Loosely(t, bs.Client, should.NotBeNil)
 					bs.Client = nil
 
-					assert.Loosely(t, bs, should.Resemble(&Bootstrap{
+					assert.Loosely(t, bs, should.Match(&Bootstrap{
 						CoordinatorHost: "example.appspot.com",
 						Project:         "test-project",
 						Prefix:          "butler/prefix",

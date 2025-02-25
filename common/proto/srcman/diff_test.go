@@ -45,7 +45,7 @@ func TestDiff(t *testing.T) {
 			t.Run(`equal`, func(t *ftt.Test) {
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_EQUAL))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {GitCheckout: &ManifestDiff_GitCheckout{
 						RepoUrl: "https://example.com",
 					}},
@@ -61,7 +61,7 @@ func TestDiff(t *testing.T) {
 				}
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {GitCheckout: &ManifestDiff_GitCheckout{
 						RepoUrl: "https://example.com",
 					}},
@@ -78,7 +78,7 @@ func TestDiff(t *testing.T) {
 				}
 				delete(b.Directories, "foo")
 				d := a.Diff(b)
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {Overall: ManifestDiff_REMOVED},
 					"bar": {Overall: ManifestDiff_ADDED},
 				}))
@@ -92,7 +92,7 @@ func TestDiff(t *testing.T) {
 					},
 				}
 				d := a.Diff(b)
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -105,7 +105,7 @@ func TestDiff(t *testing.T) {
 			t.Run(`diffable change`, func(t *ftt.Test) {
 				b.Directories["foo"].GitCheckout.Revision = "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc"
 				d := a.Diff(b)
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -125,7 +125,7 @@ func TestDiff(t *testing.T) {
 				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 
 				d := a.Diff(b)
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -142,7 +142,7 @@ func TestDiff(t *testing.T) {
 				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 
 				d := a.Diff(b)
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -176,7 +176,7 @@ func TestDiff(t *testing.T) {
 			t.Run(`equal`, func(t *ftt.Test) {
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_EQUAL))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						CipdPackage: map[string]ManifestDiff_Stat{
 							"some/pattern/resolved": ManifestDiff_EQUAL,
@@ -189,7 +189,7 @@ func TestDiff(t *testing.T) {
 				b.Directories["foo"].CipdServerHost = "nope@nope.example.com/nope.nope"
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall:        ManifestDiff_MODIFIED,
 						CipdServerHost: ManifestDiff_MODIFIED,
@@ -203,7 +203,7 @@ func TestDiff(t *testing.T) {
 				}
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						CipdPackage: map[string]ManifestDiff_Stat{
@@ -220,7 +220,7 @@ func TestDiff(t *testing.T) {
 				}
 				d := a.Diff(b)
 				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
-				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Match(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						CipdPackage: map[string]ManifestDiff_Stat{

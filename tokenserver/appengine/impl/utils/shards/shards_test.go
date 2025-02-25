@@ -48,7 +48,7 @@ func TestShards(t *testing.T) {
 		// Serialize and deserialize first shard, should be left unchanged.
 		shard, err := ParseShard(set[0].Serialize())
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, shard, should.Resemble(set[0]))
+		assert.Loosely(t, shard, should.Match(set[0]))
 	})
 
 	ftt.Run("Empty shards serialization", t, func(t *ftt.Test) {

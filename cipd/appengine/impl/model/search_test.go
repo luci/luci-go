@@ -88,7 +88,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs))
+				assert.Loosely(t, ids(out), should.Match(expectedIIDs))
 			})
 
 			t.Run("With pagination", func(t *ftt.Test) {
@@ -97,14 +97,14 @@ func TestSearchInstances(t *testing.T) {
 				}, 6, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.NotBeNil)
-				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs[:6]))
+				assert.Loosely(t, ids(out), should.Match(expectedIIDs[:6]))
 
 				out, cur, err = SearchInstances(ctx, "pkg", []*api.Tag{
 					{Key: "k", Value: "v0"},
 				}, 6, cur)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble(expectedIIDs[6:10]))
+				assert.Loosely(t, ids(out), should.Match(expectedIIDs[6:10]))
 			})
 
 			t.Run("Handle missing instances", func(t *ftt.Test) {
@@ -118,7 +118,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble(append(append([]string(nil),
+				assert.Loosely(t, ids(out), should.Match(append(append([]string(nil),
 					expectedIIDs[:4]...),
 					expectedIIDs[5:]...)))
 			})
@@ -158,7 +158,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble([]string{
+				assert.Loosely(t, ids(out), should.Match([]string{
 					iid(8), iid(6), iid(4), iid(2), iid(0),
 				}))
 			})
@@ -170,7 +170,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 3, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.NotBeNil)
-				assert.Loosely(t, ids(out), should.Resemble([]string{
+				assert.Loosely(t, ids(out), should.Match([]string{
 					iid(8), iid(6), iid(4),
 				}))
 
@@ -180,7 +180,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 3, cur)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble([]string{
+				assert.Loosely(t, ids(out), should.Match([]string{
 					iid(2), iid(0),
 				}))
 			})
@@ -193,7 +193,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble([]string{
+				assert.Loosely(t, ids(out), should.Match([]string{
 					iid(6), iid(0),
 				}))
 			})
@@ -206,7 +206,7 @@ func TestSearchInstances(t *testing.T) {
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.BeNil)
-				assert.Loosely(t, ids(out), should.Resemble([]string{
+				assert.Loosely(t, ids(out), should.Match([]string{
 					iid(6), iid(0),
 				}))
 			})

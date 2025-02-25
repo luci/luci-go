@@ -100,43 +100,43 @@ func TestRegisterStream(t *testing.T) {
 
 					resp, err := svr.RegisterStream(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-					assert.Loosely(t, resp, should.Resemble(expResp))
+					assert.Loosely(t, resp, should.Match(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
 					assert.Loosely(t, tls.Get(c), should.BeNil)
 
 					// Registers the log stream.
-					assert.Loosely(t, tls.Stream.Created, should.Resemble(created))
-					assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamExpiry)))
+					assert.Loosely(t, tls.Stream.Created, should.Match(created))
+					assert.Loosely(t, tls.Stream.ExpireAt, should.Match(created.Add(coordinator.LogStreamExpiry)))
 
 					// Registers the log stream state.
-					assert.Loosely(t, tls.State.Created, should.Resemble(created))
-					assert.Loosely(t, tls.State.Updated, should.Resemble(created))
-					assert.Loosely(t, tls.State.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamStateExpiry)))
-					assert.Loosely(t, tls.State.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.State.Created, should.Match(created))
+					assert.Loosely(t, tls.State.Updated, should.Match(created))
+					assert.Loosely(t, tls.State.ExpireAt, should.Match(created.Add(coordinator.LogStreamStateExpiry)))
+					assert.Loosely(t, tls.State.Secret, should.Match(req.Secret))
 					assert.Loosely(t, tls.State.TerminalIndex, should.Equal(-1))
 					assert.Loosely(t, tls.State.Terminated(), should.BeFalse)
 					// Pessimistic archival is scheduled.
 					assert.Loosely(t, tls.State.ArchivalState(), should.Equal(coordinator.ArchiveTasked))
 
 					// Should also register the log stream Prefix.
-					assert.Loosely(t, tls.Prefix.Created, should.Resemble(created))
-					assert.Loosely(t, tls.Prefix.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.Prefix.Created, should.Match(created))
+					assert.Loosely(t, tls.Prefix.Secret, should.Match(req.Secret))
 
 					t.Run(`Can register the stream again (idempotent).`, func(t *ftt.Test) {
 						env.Clock.Set(created.Add(10 * time.Minute))
 
 						resp, err := svr.RegisterStream(c, &req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-						assert.Loosely(t, resp, should.Resemble(expResp))
+						assert.Loosely(t, resp, should.Match(expResp))
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
 							assert.Loosely(t, ds.Get(c, tls.Stream, tls.State), should.BeNil)
 						})
-						assert.Loosely(t, tls.State.Created, should.Resemble(created))
-						assert.Loosely(t, tls.State.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamStateExpiry)))
-						assert.Loosely(t, tls.Stream.Created, should.Resemble(created))
-						assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamExpiry)))
+						assert.Loosely(t, tls.State.Created, should.Match(created))
+						assert.Loosely(t, tls.State.ExpireAt, should.Match(created.Add(coordinator.LogStreamStateExpiry)))
+						assert.Loosely(t, tls.Stream.Created, should.Match(created))
+						assert.Loosely(t, tls.Stream.ExpireAt, should.Match(created.Add(coordinator.LogStreamExpiry)))
 
 						t.Run(`Skips archival completely after 3 weeks`, func(t *ftt.Test) {
 							// Three weeks and an hour later
@@ -175,29 +175,29 @@ func TestRegisterStream(t *testing.T) {
 
 					resp, err := svr.RegisterStream(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-					assert.Loosely(t, resp, should.Resemble(expResp))
+					assert.Loosely(t, resp, should.Match(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
 					assert.Loosely(t, tls.Get(c), should.BeNil)
 
 					// Registers the log stream.
-					assert.Loosely(t, tls.Stream.Created, should.Resemble(streamCreated))
-					assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(streamCreated.Add(coordinator.LogStreamExpiry)))
+					assert.Loosely(t, tls.Stream.Created, should.Match(streamCreated))
+					assert.Loosely(t, tls.Stream.ExpireAt, should.Match(streamCreated.Add(coordinator.LogStreamExpiry)))
 
 					// Registers the log stream state.
-					assert.Loosely(t, tls.State.Created, should.Resemble(streamCreated))
-					assert.Loosely(t, tls.State.ExpireAt, should.Resemble(streamCreated.Add(coordinator.LogStreamStateExpiry)))
+					assert.Loosely(t, tls.State.Created, should.Match(streamCreated))
+					assert.Loosely(t, tls.State.ExpireAt, should.Match(streamCreated.Add(coordinator.LogStreamStateExpiry)))
 					// Tasking for archival should happen after creation.
 					assert.Loosely(t, tls.State.Updated.Before(streamCreated), should.BeFalse)
-					assert.Loosely(t, tls.State.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.State.Secret, should.Match(req.Secret))
 					assert.Loosely(t, tls.State.TerminalIndex, should.Equal(1337))
-					assert.Loosely(t, tls.State.TerminatedTime, should.Resemble(streamCreated))
+					assert.Loosely(t, tls.State.TerminatedTime, should.Match(streamCreated))
 					assert.Loosely(t, tls.State.Terminated(), should.BeTrue)
 					assert.Loosely(t, tls.State.ArchivalState(), should.Equal(coordinator.ArchiveTasked))
 
 					// Should also register the log stream Prefix.
-					assert.Loosely(t, tls.Prefix.Created, should.Resemble(prefixCreated))
-					assert.Loosely(t, tls.Prefix.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.Prefix.Created, should.Match(prefixCreated))
+					assert.Loosely(t, tls.Prefix.Secret, should.Match(req.Secret))
 
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)

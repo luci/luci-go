@@ -86,7 +86,7 @@ func TestRunTask(t *testing.T) {
 			res, err := srv.RunTask(ctx, req)
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
+			assert.Loosely(t, res, should.Match(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -104,7 +104,7 @@ func TestRunTask(t *testing.T) {
 			data := &TaskNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, data, should.Resemble(&TaskNotification{
+			assert.Loosely(t, data, should.Match(&TaskNotification{
 				BuildID:         "123",
 				StartBuildToken: "token",
 			}))
@@ -116,7 +116,7 @@ func TestRunTask(t *testing.T) {
 			res, err := srv.RunTask(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
+			assert.Loosely(t, res, should.Match(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -152,7 +152,7 @@ func TestRunTask(t *testing.T) {
 
 			res, err := srv.RunTask(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
+			assert.Loosely(t, res, should.Match(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",
@@ -178,7 +178,7 @@ func TestRunTask(t *testing.T) {
 			res, err := srv.RunTask(ctx, req)
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.RunTaskResponse{
+			assert.Loosely(t, res, should.Match(&pb.RunTaskResponse{
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Id:     "123_request_id",

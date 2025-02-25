@@ -90,7 +90,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 			}
 			cancelProcess()
 			assert.Loosely(t, <-done, should.BeNil)
-			assert.Loosely(t, received, should.Resemble(sent))
+			assert.Loosely(t, received, should.Match(sent))
 		})
 
 		t.Run("With error", func(t *ftt.Test) {

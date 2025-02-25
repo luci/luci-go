@@ -65,7 +65,7 @@ func TestAlgorithm(t *testing.T) {
 			id2 := a.Cluster(cfg, &clustering.Failure{
 				Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x12345678"},
 			})
-			assert.Loosely(t, id2, should.Resemble(id1))
+			assert.Loosely(t, id2, should.Match(id1))
 		})
 		t.Run(`Different ID for different clusters`, func(t *ftt.Test) {
 			id1 := a.Cluster(cfg, &clustering.Failure{

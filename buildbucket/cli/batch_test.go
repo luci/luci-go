@@ -66,7 +66,7 @@ func TestSendBatchReq(t *testing.T) {
 			mockBBClient.EXPECT().Batch(ctx, req).Return(expectedRes, nil)
 			res, err := sendBatchReq(ctx, req, mockBBClient)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("sub-requests transient errors", func(t *ftt.Test) {
@@ -153,7 +153,7 @@ func TestSendBatchReq(t *testing.T) {
 			}, nil)
 			res, err := sendBatchReq(ctx, req, mockBBClient)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 	})
 	ftt.Run("updateRequest", t, func(t *ftt.Test) {

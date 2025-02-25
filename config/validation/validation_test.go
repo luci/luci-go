@@ -61,7 +61,7 @@ func TestValidation(t *testing.T) {
 
 		elts, ok := elementTag.In(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
-		assert.Loosely(t, elts, should.Resemble([]string{"ctx 123"}))
+		assert.Loosely(t, elts, should.Match([]string{"ctx 123"}))
 
 		severity, ok := SeverityTag.In(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
@@ -72,7 +72,7 @@ func TestValidation(t *testing.T) {
 		warns := err.(*Error).WithSeverity(Warning)
 		assert.Loosely(t, warns, should.BeNil)
 
-		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Resemble([]*configpb.ValidationResult_Message{
+		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Match([]*configpb.ValidationResult_Message{
 			{
 				Path:     "file.cfg",
 				Severity: configpb.ValidationResult_ERROR,
@@ -103,7 +103,7 @@ func TestValidation(t *testing.T) {
 		warns := err.(*Error).WithSeverity(Warning)
 		assert.Loosely(t, warns.(errors.MultiError), should.HaveLength(1))
 
-		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Resemble([]*configpb.ValidationResult_Message{
+		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Match([]*configpb.ValidationResult_Message{
 			{
 				Path:     "unspecified file",
 				Severity: configpb.ValidationResult_WARNING,
@@ -142,7 +142,7 @@ func TestValidation(t *testing.T) {
 		for _, e := range err.(*Error).Errors {
 			errs = append(errs, e.Error())
 		}
-		assert.Loosely(t, errs, should.Resemble([]string{
+		assert.Loosely(t, errs, should.Match([]string{
 			`in <unspecified file>: top 1`,
 			`in <unspecified file>: top 2`,
 			`in "file_1.cfg": f1`,

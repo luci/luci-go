@@ -44,7 +44,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:3])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:3])}))
 	})
 
 	ftt.Run("Pass to fail transition 2", t, func(t *ftt.Test) {
@@ -55,7 +55,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:2])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:2])}))
 	})
 
 	ftt.Run("Pass to flake transition", t, func(t *ftt.Test) {
@@ -66,7 +66,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:2])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:2])}))
 	})
 
 	ftt.Run("Pass to fail to pass transition", t, func(t *ftt.Test) {
@@ -77,7 +77,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:5]), sum(total[:12])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:5]), sum(total[:12])}))
 	})
 
 	ftt.Run("Pass to flake transition", t, func(t *ftt.Test) {
@@ -88,7 +88,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:6])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:6])}))
 	})
 
 	ftt.Run("Flake to fail transition", t, func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictRefs(positions, total, hasUnexpected)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:6])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:6])}))
 	})
 
 	ftt.Run("Pass consistently", t, func(t *ftt.Test) {
@@ -145,7 +145,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:4])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:4])}))
 	})
 
 	ftt.Run("(Fail, Fail after retry) consistently", t, func(t *ftt.Test) {
@@ -172,7 +172,7 @@ func TestBayesianAnalysis(t *testing.T) {
 		)
 		vs := inputbuffer.VerdictsWithRetriesRefs(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changePoints := a.identifyChangePoints(vs)
-		assert.Loosely(t, changePoints, should.Resemble([]int{sum(total[:3])}))
+		assert.Loosely(t, changePoints, should.Match([]int{sum(total[:3])}))
 	})
 }
 

@@ -100,7 +100,7 @@ func TestTestVariantsServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				expectedResult := testresults.QueryFailureRateSampleResponse()
-				assert.Loosely(t, response, should.Resemble(expectedResult))
+				assert.Loosely(t, response, should.Match(expectedResult))
 			})
 			t.Run("Query by VariantHash", func(t *ftt.Test) {
 				project, asAtTime, tvs := testresults.QueryFailureRateSampleRequest()
@@ -122,7 +122,7 @@ func TestTestVariantsServer(t *testing.T) {
 					tv.VariantHash = pbutil.VariantHash(tv.Variant)
 					tv.Variant = nil
 				}
-				assert.Loosely(t, response, should.Resemble(expectedResult))
+				assert.Loosely(t, response, should.Match(expectedResult))
 			})
 			t.Run("No list test results permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
@@ -204,7 +204,7 @@ func TestTestVariantsServer(t *testing.T) {
 					TestVariants: stability.QueryStabilitySampleResponse(),
 					Criteria:     opts.Criteria,
 				}
-				assert.Loosely(t, rsp, should.Resemble(expectedResult))
+				assert.Loosely(t, rsp, should.Match(expectedResult))
 			})
 			t.Run("Query by VariantHash", func(t *ftt.Test) {
 				for _, tv := range request.TestVariants {
@@ -223,7 +223,7 @@ func TestTestVariantsServer(t *testing.T) {
 					TestVariants: expectedAnalysis,
 					Criteria:     opts.Criteria,
 				}
-				assert.Loosely(t, rsp, should.Resemble(expectedResult))
+				assert.Loosely(t, rsp, should.Match(expectedResult))
 			})
 			t.Run("No test stability configuration", func(t *ftt.Test) {
 				// Remove test stability configuration.

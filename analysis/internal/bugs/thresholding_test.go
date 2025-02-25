@@ -88,26 +88,26 @@ func TestThresholding(t *testing.T) {
 			t.Run("Empty threshold", func(t *ftt.Test) {
 				thresh := []*configpb.ImpactMetricThreshold{}
 				result := InflateThreshold(thresh, 15)
-				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{}))
+				assert.Loosely(t, result, should.Match([]*configpb.ImpactMetricThreshold{}))
 			})
 			t.Run("One day threshold", func(t *ftt.Test) {
 				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
 				result := InflateThreshold(thresh, 15)
-				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
+				assert.Loosely(t, result, should.Match([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(115)}},
 				}))
 			})
 			t.Run("Three day threshold", func(t *ftt.Test) {
 				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(100)})
 				result := InflateThreshold(thresh, 15)
-				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
+				assert.Loosely(t, result, should.Match([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(115)}},
 				}))
 			})
 			t.Run("Seven day threshold", func(t *ftt.Test) {
 				thresh := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(100)})
 				result := InflateThreshold(thresh, 15)
-				assert.Loosely(t, result, should.Resemble([]*configpb.ImpactMetricThreshold{
+				assert.Loosely(t, result, should.Match([]*configpb.ImpactMetricThreshold{
 					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(115)}},
 				}))
 			})

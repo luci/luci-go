@@ -107,13 +107,13 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			b := &model.Build{ID: b1.ID}
 			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
 			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
-			assert.Loosely(t, b.Proto, should.Resemble(b1.Proto))
+			assert.Loosely(t, b.Proto, should.Match(b1.Proto))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
 
 			b = &model.Build{ID: b2.ID}
 			bs = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
 			assert.Loosely(t, datastore.Get(ctx, b, bs), should.BeNil)
-			assert.Loosely(t, b.Proto, should.Resemble(b2.Proto))
+			assert.Loosely(t, b.Proto, should.Match(b2.Proto))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_STARTED))
 		})
 
@@ -125,11 +125,11 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 
 			b := &model.Build{ID: b1.ID}
 			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
-			assert.Loosely(t, b.Proto, should.Resemble(b1.Proto))
+			assert.Loosely(t, b.Proto, should.Match(b1.Proto))
 
 			b = &model.Build{ID: b2.ID}
 			assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
-			assert.Loosely(t, b.Proto, should.Resemble(b2.Proto))
+			assert.Loosely(t, b.Proto, should.Match(b2.Proto))
 		})
 
 		t.Run("works w/ a large number of expired builds", func(t *ftt.Test) {
@@ -262,13 +262,13 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				sortIDs(popPendingIDs)
 
 				assert.Loosely(t, bqIDs, should.HaveLength(2))
-				assert.Loosely(t, bqIDs, should.Resemble(expected))
+				assert.Loosely(t, bqIDs, should.Match(expected))
 				assert.Loosely(t, rdbIDs, should.HaveLength(2))
-				assert.Loosely(t, rdbIDs, should.Resemble(expected))
+				assert.Loosely(t, rdbIDs, should.Match(expected))
 				assert.Loosely(t, notifyGoIDs, should.HaveLength(2))
-				assert.Loosely(t, notifyGoIDs, should.Resemble(expected))
+				assert.Loosely(t, notifyGoIDs, should.Match(expected))
 				assert.Loosely(t, popPendingIDs, should.HaveLength(2))
-				assert.Loosely(t, popPendingIDs, should.Resemble(expected))
+				assert.Loosely(t, popPendingIDs, should.Match(expected))
 			})
 		})
 	})

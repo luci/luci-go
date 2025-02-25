@@ -50,7 +50,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev:   123,
 		}
 
-		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.ProjectToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Match(&bqpb.ProjectToken{
 			Fingerprint:    "8b7df143d91c716ecfa5fc1730022f6b",
 			ServiceAccount: "foo@bar.com",
 			LuciProject:    "someproject",

@@ -147,7 +147,7 @@ func TestBasicDatastore(t *testing.T) {
 
 			ret := TestStruct{ID: orig.ID}
 			assert.Loosely(t, ds.Get(ctx, &ret), should.BeNil)
-			assert.Loosely(t, ret, should.Resemble(orig))
+			assert.Loosely(t, ret, should.Match(orig))
 
 			// make sure single- and multi- properties are preserved.
 			pmap := ds.PropertyMap{
@@ -164,7 +164,7 @@ func TestBasicDatastore(t *testing.T) {
 			t.Run("Can query", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct")
 				ds.Run(ctx, q, func(ts *TestStruct) {
-					assert.Loosely(t, *ts, should.Resemble(orig))
+					assert.Loosely(t, *ts, should.Match(orig))
 				})
 				count, err := ds.Count(ctx, q)
 				assert.Loosely(t, err, should.BeNil)
@@ -174,7 +174,7 @@ func TestBasicDatastore(t *testing.T) {
 			t.Run("Can query for bytes", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct").Eq("ValueBS", []byte("allo"))
 				ds.Run(ctx, q, func(ts *TestStruct) {
-					assert.Loosely(t, *ts, should.Resemble(orig))
+					assert.Loosely(t, *ts, should.Match(orig))
 				})
 				count, err := ds.Count(ctx, q)
 				assert.Loosely(t, err, should.BeNil)
@@ -185,7 +185,7 @@ func TestBasicDatastore(t *testing.T) {
 				q := ds.NewQuery("TestStruct").Project("ValueS")
 				rslts := []ds.PropertyMap{}
 				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
-				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
+				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueS": mp("hello"),
@@ -199,7 +199,7 @@ func TestBasicDatastore(t *testing.T) {
 				q = ds.NewQuery("TestStruct").Project("ValueBS")
 				rslts = []ds.PropertyMap{}
 				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
-				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
+				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":    mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueBS": mp("allo"),
@@ -225,7 +225,7 @@ func TestBasicDatastore(t *testing.T) {
 				q = ds.NewQuery("TestStruct").Lte("ValueI", 7).Project("ValueS").Distinct(true)
 				rslts = []ds.PropertyMap{}
 				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
-				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
+				assert.Loosely(t, rslts, should.Match([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueI": mp(1),
@@ -269,7 +269,7 @@ func TestBasicDatastore(t *testing.T) {
 			rslt.SetMeta("key", ds.KeyForObj(ctx, pm))
 			assert.Loosely(t, ds.Get(ctx, &rslt), should.BeNil)
 
-			assert.Loosely(t, pm.Slice("Time")[0].Value(), should.Resemble(rslt.Slice("Time")[0].Value()))
+			assert.Loosely(t, pm.Slice("Time")[0].Value(), should.Match(rslt.Slice("Time")[0].Value()))
 
 			q := ds.NewQuery("Something").Project("Time")
 			all := []ds.PropertyMap{}
@@ -280,17 +280,17 @@ func TestBasicDatastore(t *testing.T) {
 
 			tval, err := prop.Project(ds.PTTime)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tval, should.Resemble(time.Time{}.UTC()))
+			assert.Loosely(t, tval, should.Match(time.Time{}.UTC()))
 
 			tval, err = all[1].Slice("Time")[0].Project(ds.PTTime)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tval, should.Resemble(pm.Slice("Time")[0].Value()))
+			assert.Loosely(t, tval, should.Match(pm.Slice("Time")[0].Value()))
 
 			ent := ds.PropertyMap{
 				"$key": mpNI(ds.MakeKey(ctx, "Something", "value")),
 			}
 			assert.Loosely(t, ds.Get(ctx, &ent), should.BeNil)
-			assert.Loosely(t, ent["Time"], should.Resemble(pm["Time"]))
+			assert.Loosely(t, ent["Time"], should.Match(pm["Time"]))
 		})
 
 		t.Run(`Can Get empty []byte slice as nil`, func(t *ftt.Test) {
@@ -309,7 +309,7 @@ func TestBasicDatastore(t *testing.T) {
 
 			assert.Loosely(t, ds.Put(ctx, put), should.BeNil)
 			assert.Loosely(t, ds.Get(ctx, get), should.BeNil)
-			assert.Loosely(t, get, should.Resemble(exp))
+			assert.Loosely(t, get, should.Match(exp))
 		})
 
 		t.Run("memcache: Set (nil) is the same as Set ([]byte{})", func(t *ftt.Test) {
@@ -317,7 +317,7 @@ func TestBasicDatastore(t *testing.T) {
 
 			bob, err := mc.GetKey(ctx, "bob")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bob.Value(), should.Resemble([]byte{}))
+			assert.Loosely(t, bob.Value(), should.Match([]byte{}))
 		})
 	})
 }

@@ -84,7 +84,7 @@ func TestArchiveDownload(t *testing.T) {
 			t.Helper()
 			downloaded, err := testfs.Collect(dr.dir)
 			assert.Loosely(t, err, should.BeNil, truth.LineContext())
-			assert.Loosely(t, downloaded, should.Resemble(layout), truth.LineContext())
+			assert.Loosely(t, downloaded, should.Match(layout), truth.LineContext())
 		}
 
 		t.Run("use cache", func(t *ftt.Test) {
@@ -111,11 +111,11 @@ func TestArchiveDownload(t *testing.T) {
 				return hex.EncodeToString(h[:])
 			}
 
-			assert.Loosely(t, keys, should.Resemble([]string{
+			assert.Loosely(t, keys, should.Match([]string{
 				sha256hex("bc"),
 				sha256hex("a"),
 			}))
-			assert.Loosely(t, values, should.Resemble([]string{"bc", "a"}))
+			assert.Loosely(t, values, should.Match([]string{"bc", "a"}))
 
 			diskcache, err := cache.New(dr.cachePolicies, dr.cacheDir, crypto.SHA256)
 			assert.Loosely(t, err, should.BeNil)

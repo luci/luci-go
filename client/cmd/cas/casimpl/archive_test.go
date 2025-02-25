@@ -63,7 +63,7 @@ func TestLoadPathsJSON(t *testing.T) {
 		res, err := loadPathsJSON(pathsJSON)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, res, should.Resemble(scatterGather{
+		assert.Loosely(t, res, should.Match(scatterGather{
 			"foo.txt": dir,
 			"bar.txt": dir,
 		}))

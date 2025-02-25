@@ -130,9 +130,9 @@ func TestCollision(t *testing.T) {
 				i := 0
 				memStoreCollide(left, right, func(key, left, right []byte) {
 					e := tc.expect[i]
-					assert.Loosely(t, key, should.Resemble(e.key))
-					assert.Loosely(t, left, should.Resemble(e.left))
-					assert.Loosely(t, right, should.Resemble(e.right))
+					assert.Loosely(t, key, should.Match(e.key))
+					assert.Loosely(t, left, should.Match(e.left))
+					assert.Loosely(t, right, should.Match(e.right))
 					i++
 				})
 				assert.Loosely(t, i, should.Equal(len(tc.expect)))

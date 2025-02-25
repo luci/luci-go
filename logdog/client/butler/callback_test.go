@@ -92,7 +92,7 @@ func TestButlerCallbacks(t *testing.T) {
 			b.Activate()
 			assert.Loosely(t, b.Wait(), should.BeNil)
 
-			assert.Loosely(t, streamLines, should.Resemble([]string{
+			assert.Loosely(t, streamLines, should.Match([]string{
 				"Hello!\n", "This\n", "is\n", "a\n", "test.", "<EOF>",
 			}))
 		})
@@ -104,7 +104,7 @@ func TestButlerCallbacks(t *testing.T) {
 			b.Activate()
 			assert.Loosely(t, b.Wait(), should.BeNil)
 
-			assert.Loosely(t, streamLines, should.Resemble([]string{"<EOF>"}))
+			assert.Loosely(t, streamLines, should.Match([]string{"<EOF>"}))
 		})
 	})
 }

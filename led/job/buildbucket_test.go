@@ -50,7 +50,7 @@ func TestWriteProperties(t *testing.T) {
 		jd.GetBuildbucket().WriteProperties(map[string]any{
 			"hello": "world",
 		})
-		assert.Loosely(t, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), should.Resemble(&structpb.Struct{
+		assert.Loosely(t, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"hello": {Kind: &structpb.Value_StringValue{StringValue: "world"}},
 			},
@@ -71,7 +71,7 @@ func TestUpdateBuildFromBbagentArgs(t *testing.T) {
 		}
 		bb.UpdateBuildFromBbagentArgs()
 
-		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Resemble(
+		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Match(
 			&bbpb.BuildInfra_Buildbucket{
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -96,7 +96,7 @@ func TestUpdatePayloadPath(t *testing.T) {
 		bb.UpdatePayloadPath("new_path")
 
 		assert.Loosely(t, bb.GetBbagentArgs().GetPayloadPath(), should.Equal("new_path"))
-		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Resemble(
+		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Match(
 			&bbpb.BuildInfra_Buildbucket{
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -148,7 +148,7 @@ func TestUpdateLedProperties(t *testing.T) {
 				"$recipe_engine/led": &newProps,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newProps, should.Resemble(ledProperties{
+			assert.Loosely(t, newProps, should.Match(ledProperties{
 				RbeCasInput: &swarmingpb.CASReference{
 					CasInstance: "projects/project/instances/instance",
 					Digest: &swarmingpb.Digest{
@@ -189,7 +189,7 @@ func TestUpdateLedProperties(t *testing.T) {
 				"$recipe_engine/led": &newProps,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newProps, should.Resemble(ledProperties{
+			assert.Loosely(t, newProps, should.Match(ledProperties{
 				CIPDInput: &cipdInput{
 					Package: "package",
 					Version: "version",

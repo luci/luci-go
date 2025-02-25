@@ -165,17 +165,17 @@ func TestActuationBeginOp(t *testing.T) {
 
 			// Returned decisions are correct.
 			assert.Loosely(t, decisions, should.HaveLength(2))
-			assert.Loosely(t, decisions["apps/app1"], should.Resemble(&modelpb.ActuationDecision{
+			assert.Loosely(t, decisions["apps/app1"], should.Match(&modelpb.ActuationDecision{
 				Decision: modelpb.ActuationDecision_SKIP_DISABLED,
 			}))
-			assert.Loosely(t, decisions["apps/app2"], should.Resemble(&modelpb.ActuationDecision{
+			assert.Loosely(t, decisions["apps/app2"], should.Match(&modelpb.ActuationDecision{
 				Decision: modelpb.ActuationDecision_ACTUATE_STALE,
 			}))
 
 			// Stored Actuation entity is correct.
 			storedActuation := &Actuation{ID: "actuation-id"}
 			assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-			assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+			assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 				Id:         "actuation-id",
 				State:      modelpb.Actuation_EXECUTING,
 				Deployment: mockedDeployment,
@@ -184,7 +184,7 @@ func TestActuationBeginOp(t *testing.T) {
 				Created:    timestamppb.New(now),
 				Expiry:     timestamppb.New(now.Add(3 * time.Minute)),
 			}))
-			assert.Loosely(t, storedActuation.Decisions, should.Resemble(&modelpb.ActuationDecisions{
+			assert.Loosely(t, storedActuation.Decisions, should.Match(&modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app1": {Decision: modelpb.ActuationDecision_SKIP_DISABLED},
 					"apps/app2": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
@@ -197,7 +197,7 @@ func TestActuationBeginOp(t *testing.T) {
 			// Stored Asset entities are correct.
 			assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
+			assert.Loosely(t, assets["apps/app1"].Asset, should.Match(&modelpb.Asset{
 				Id:            "apps/app1",
 				LastActuation: storedActuation.Actuation,
 				LastDecision:  decisions["apps/app1"],
@@ -221,7 +221,7 @@ func TestActuationBeginOp(t *testing.T) {
 			}))
 			assert.Loosely(t, assets["apps/app1"].ConsecutiveFailures, should.BeZero) // was reset
 
-			assert.Loosely(t, assets["apps/app2"].Asset, should.Resemble(&modelpb.Asset{
+			assert.Loosely(t, assets["apps/app2"].Asset, should.Match(&modelpb.Asset{
 				Id:                   "apps/app2",
 				LastActuation:        storedActuation.Actuation,
 				LastDecision:         decisions["apps/app2"],
@@ -249,7 +249,7 @@ func TestActuationBeginOp(t *testing.T) {
 
 			// Made correct history records.
 			assert.Loosely(t, assets["apps/app1"].LastHistoryID, should.Equal(1))
-			assert.Loosely(t, assets["apps/app1"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
+			assert.Loosely(t, assets["apps/app1"].HistoryEntry, should.Match(&modelpb.AssetHistory{
 				AssetId:                  "apps/app1",
 				HistoryId:                1,
 				Decision:                 decisions["apps/app1"],
@@ -261,10 +261,10 @@ func TestActuationBeginOp(t *testing.T) {
 			}))
 			rec := AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
 			assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
-			assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
+			assert.Loosely(t, rec.Entry, should.Match(assets["apps/app1"].HistoryEntry))
 
 			assert.Loosely(t, assets["apps/app2"].LastHistoryID, should.BeZero)
-			assert.Loosely(t, assets["apps/app2"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
+			assert.Loosely(t, assets["apps/app2"].HistoryEntry, should.Match(&modelpb.AssetHistory{
 				AssetId:                  "apps/app2",
 				HistoryId:                1,
 				Decision:                 decisions["apps/app2"],
@@ -307,7 +307,7 @@ func TestActuationBeginOp(t *testing.T) {
 			// Stored Actuation entity is correct.
 			storedActuation := &Actuation{ID: "actuation-id"}
 			assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-			assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+			assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 				Id:         "actuation-id",
 				State:      modelpb.Actuation_SUCCEEDED,
 				Deployment: mockedDeployment,
@@ -316,7 +316,7 @@ func TestActuationBeginOp(t *testing.T) {
 				Created:    timestamppb.New(now),
 				Finished:   timestamppb.New(now),
 			}))
-			assert.Loosely(t, storedActuation.Decisions, should.Resemble(&modelpb.ActuationDecisions{
+			assert.Loosely(t, storedActuation.Decisions, should.Match(&modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app1": {Decision: modelpb.ActuationDecision_SKIP_DISABLED},
 				},
@@ -371,7 +371,7 @@ func TestActuationBeginOp(t *testing.T) {
 			// Stored Actuation entity is correct.
 			storedActuation := &Actuation{ID: "actuation-id"}
 			assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-			assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+			assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 				Id:         "actuation-id",
 				State:      modelpb.Actuation_SUCCEEDED,
 				Deployment: mockedDeployment,
@@ -380,7 +380,7 @@ func TestActuationBeginOp(t *testing.T) {
 				Created:    timestamppb.New(now),
 				Finished:   timestamppb.New(now),
 			}))
-			assert.Loosely(t, storedActuation.Decisions, should.Resemble(&modelpb.ActuationDecisions{
+			assert.Loosely(t, storedActuation.Decisions, should.Match(&modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app1": {Decision: modelpb.ActuationDecision_SKIP_UPTODATE},
 				},
@@ -392,7 +392,7 @@ func TestActuationBeginOp(t *testing.T) {
 			// Stored Asset entity is correct.
 			assets, err := fetchAssets(ctx, []string{"apps/app1"}, true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
+			assert.Loosely(t, assets["apps/app1"].Asset, should.Match(&modelpb.Asset{
 				Id:            "apps/app1",
 				LastActuation: storedActuation.Actuation,
 				LastDecision:  storedActuation.Decisions.Decisions["apps/app1"],
@@ -456,7 +456,7 @@ func TestActuationBeginOp(t *testing.T) {
 			// Stored Actuation entity is correct.
 			storedActuation := &Actuation{ID: "actuation-id"}
 			assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-			assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+			assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 				Id:         "actuation-id",
 				State:      modelpb.Actuation_FAILED,
 				Deployment: mockedDeployment,
@@ -472,7 +472,7 @@ func TestActuationBeginOp(t *testing.T) {
 						"code = FailedPrecondition desc = reported broken",
 				},
 			}))
-			assert.Loosely(t, storedActuation.Decisions, should.Resemble(&modelpb.ActuationDecisions{
+			assert.Loosely(t, storedActuation.Decisions, should.Match(&modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app1": {
 						Decision: modelpb.ActuationDecision_SKIP_BROKEN,
@@ -496,7 +496,7 @@ func TestActuationBeginOp(t *testing.T) {
 			assert.Loosely(t, assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, should.Equal(111))
 			rec := AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
 			assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
-			assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
+			assert.Loosely(t, rec.Entry, should.Match(assets["apps/app1"].HistoryEntry))
 		})
 	})
 }

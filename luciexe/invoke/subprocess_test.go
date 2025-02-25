@@ -120,7 +120,7 @@ func TestSubprocess(t *testing.T) {
 			assert.Loosely(t, sp.Step, should.BeNil)
 			build, err := sp.Wait()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{}))
+			assert.Loosely(t, build, should.Match(&bbpb.Build{}))
 		})
 
 		t.Run(`exiterr`, func(t *ftt.Test) {
@@ -130,7 +130,7 @@ func TestSubprocess(t *testing.T) {
 			assert.Loosely(t, sp.Step, should.BeNil)
 			build, err := sp.Wait()
 			assert.Loosely(t, err, should.ErrLike("exit status 97"))
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{}))
+			assert.Loosely(t, build, should.Match(&bbpb.Build{}))
 		})
 
 		t.Run(`collect`, func(t *ftt.Test) {
@@ -166,7 +166,7 @@ func TestSubprocess(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			build, err := sp.Wait()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				Id:              11,
 				Status:          bbpb.Status_STARTED,
 				SummaryMarkdown: "hi",
@@ -233,7 +233,7 @@ func TestSubprocess(t *testing.T) {
 				bld, err := sp.Wait()
 				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process is interrupted"))
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
-				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))
+				assert.Loosely(t, bld, should.Match(&bbpb.Build{}))
 			})
 
 			t.Run(`timeout`, func(t *ftt.Test) {
@@ -242,7 +242,7 @@ func TestSubprocess(t *testing.T) {
 				bld, err := sp.Wait()
 				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process timed out"))
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
-				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{
+				assert.Loosely(t, bld, should.Match(&bbpb.Build{
 					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
 				}))
 			})
@@ -254,7 +254,7 @@ func TestSubprocess(t *testing.T) {
 				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process's context is cancelled"))
 				// The exit code for killed process varies on different platform.
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.NotEqual(unexpectedErrorExitCode))
-				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))
+				assert.Loosely(t, bld, should.Match(&bbpb.Build{}))
 			})
 		})
 	})

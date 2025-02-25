@@ -108,7 +108,7 @@ func TestHTTP(t *testing.T) {
 			data := fakeData([]logResp{
 				{err: errors.New(msg)},
 			})
-			assert.Loosely(t, serve(c, data, resp).Error(), should.Resemble(msg))
+			assert.Loosely(t, serve(c, data, resp).Error(), should.Match(msg))
 			body := resp.Body.String()
 			body = strings.Replace(body, "\n", "", -1)
 			body = strings.Replace(body, "\t", "", -1)

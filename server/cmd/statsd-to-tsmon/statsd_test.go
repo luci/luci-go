@@ -71,9 +71,9 @@ func TestParseStatsdMetric(t *testing.T) {
 		m := &StatsdMetric{}
 		read, err := ParseStatsdMetric(buf, m)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buf[read:], should.Resemble([]byte("stuff")))
+		assert.Loosely(t, buf[read:], should.Match([]byte("stuff")))
 
-		assert.Loosely(t, m, should.Resemble(&StatsdMetric{
+		assert.Loosely(t, m, should.Match(&StatsdMetric{
 			Name:  [][]byte{{'a'}},
 			Type:  StatsdMetricGauge,
 			Value: []byte("123"),
@@ -85,9 +85,9 @@ func TestParseStatsdMetric(t *testing.T) {
 		m := &StatsdMetric{}
 		read, err := ParseStatsdMetric(buf, m)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buf[read:], should.Resemble([]byte("stuff")))
+		assert.Loosely(t, buf[read:], should.Match([]byte("stuff")))
 
-		assert.Loosely(t, m, should.Resemble(&StatsdMetric{
+		assert.Loosely(t, m, should.Match(&StatsdMetric{
 			Name:  [][]byte{{'a'}},
 			Type:  StatsdMetricGauge,
 			Value: []byte("123"),
@@ -99,7 +99,7 @@ func TestParseStatsdMetric(t *testing.T) {
 		m := &StatsdMetric{}
 		read, err := ParseStatsdMetric(buf, m)
 		assert.Loosely(t, err, should.Equal(ErrMalformedStatsdLine))
-		assert.Loosely(t, buf[read:], should.Resemble([]byte("stuff")))
+		assert.Loosely(t, buf[read:], should.Match([]byte("stuff")))
 	})
 
 	ftt.Run("ErrMalformedStatsdLine on empty line", t, func(t *ftt.Test) {
@@ -107,14 +107,14 @@ func TestParseStatsdMetric(t *testing.T) {
 		m := &StatsdMetric{}
 		read, err := ParseStatsdMetric(buf, m)
 		assert.Loosely(t, err, should.Equal(ErrMalformedStatsdLine))
-		assert.Loosely(t, buf[read:], should.Resemble([]byte("stuff")))
+		assert.Loosely(t, buf[read:], should.Match([]byte("stuff")))
 	})
 
 	ftt.Run("ErrMalformedStatsdLine on empty name component", t, func(t *ftt.Test) {
 		call := func(pat string) error {
 			buf := []byte(pat + "\nother stuff")
 			read, err := ParseStatsdMetric(buf, &StatsdMetric{})
-			assert.Loosely(t, buf[read:], should.Resemble([]byte("other stuff")))
+			assert.Loosely(t, buf[read:], should.Match([]byte("other stuff")))
 			return err
 		}
 
@@ -130,6 +130,6 @@ func TestParseStatsdMetric(t *testing.T) {
 		m := &StatsdMetric{}
 		read, err := ParseStatsdMetric(buf, m)
 		assert.Loosely(t, err, should.Equal(ErrUnsupportedType))
-		assert.Loosely(t, buf[read:], should.Resemble([]byte("stuff")))
+		assert.Loosely(t, buf[read:], should.Match([]byte("stuff")))
 	})
 }

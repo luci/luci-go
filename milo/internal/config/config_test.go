@@ -51,7 +51,7 @@ func TestConfig(t *testing.T) {
 				rSettings, err := UpdateServiceConfig(c)
 				assert.Loosely(t, err, should.BeNil)
 				settings := GetSettings(c)
-				assert.Loosely(t, rSettings, should.Resemble(settings))
+				assert.Loosely(t, rSettings, should.Match(settings))
 				assert.Loosely(t, settings.Buildbucket.Name, should.Equal("dev"))
 				assert.Loosely(t, settings.Buildbucket.Host, should.Equal("cr-buildbucket-dev.appspot.com"))
 			})

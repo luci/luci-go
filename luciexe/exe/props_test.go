@@ -42,7 +42,7 @@ func TestProperties(t *testing.T) {
 			"strings": expectedStrings,
 			"null":    Null,
 		}), should.BeNil)
-		assert.Loosely(t, props, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, props, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"struct": {Kind: &structpb.Value_StructValue{StructValue: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -81,11 +81,11 @@ func TestProperties(t *testing.T) {
 			"strings":      &readStrings,
 			"null":         &readNil,
 		}), should.BeNil)
-		assert.Loosely(t, readStruct, should.Resemble(expectedStruct))
-		assert.Loosely(t, extraStruct, should.Resemble(&testStruct{}))
-		assert.Loosely(t, readStrings, should.Resemble(expectedStrings))
+		assert.Loosely(t, readStruct, should.Match(expectedStruct))
+		assert.Loosely(t, extraStruct, should.Match(&testStruct{}))
+		assert.Loosely(t, readStrings, should.Match(expectedStrings))
 		assert.Loosely(t, readNil, should.BeNil)
-		assert.Loosely(t, readProto, should.Resemble(expectedProto))
+		assert.Loosely(t, readProto, should.Match(expectedProto))
 
 		// now, delete some keys
 		assert.Loosely(t, WriteProperties(props, map[string]any{
@@ -93,7 +93,7 @@ func TestProperties(t *testing.T) {
 			"proto":          nil,
 			"does_not_exist": nil,
 		}), should.BeNil)
-		assert.Loosely(t, props, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, props, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"strings": {Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{
 					Values: []*structpb.Value{

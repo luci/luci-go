@@ -35,7 +35,7 @@ func TestConfig(t *testing.T) {
 		SetTestSettingsCfg(ctx, settingsCfg)
 		cfg, err := GetSettingsCfg(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfg, should.Resemble(settingsCfg))
+		assert.Loosely(t, cfg, should.Match(settingsCfg))
 	})
 
 	ftt.Run("validate settings.cfg", t, func(t *ftt.Test) {

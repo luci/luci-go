@@ -193,7 +193,7 @@ func TestClusters(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.ClusterResponse{
+				assert.Loosely(t, response, should.Match(&pb.ClusterResponse{
 					ClusteredTestResults: []*pb.ClusterResponse_ClusteredTestResult{
 						{
 							RequestTag: "my tag 1",
@@ -407,7 +407,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("Rule without clustered failures", func(t *ftt.Test) {
 					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{}
@@ -423,7 +423,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("Suggested cluster with example failure matching cluster definition", func(t *ftt.Test) {
 					// Suggested cluster for which there are clustered failures, and
@@ -469,7 +469,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 
 					t.Run("No test result list permission", func(t *ftt.Test) {
 						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
@@ -481,7 +481,7 @@ func TestClusters(t *testing.T) {
 						expectedResponse.Title = ""
 						expectedResponse.EquivalentFailureAssociationRule = ""
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, response, should.Match(expectedResponse))
 					})
 				})
 				t.Run("Suggested cluster with example failure not matching cluster definition", func(t *ftt.Test) {
@@ -530,7 +530,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("Suggested cluster without clustered failures", func(t *ftt.Test) {
 					// Suggested cluster for which no impact data exists.
@@ -551,7 +551,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("With project not configured", func(t *ftt.Test) {
 					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
@@ -561,7 +561,7 @@ func TestClusters(t *testing.T) {
 					response, err := server.Get(ctx, request)
 
 					// Verify
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
@@ -831,7 +831,7 @@ func TestClusters(t *testing.T) {
 				t.Run("With filters and order by", func(t *ftt.Test) {
 					response, err := server.QueryClusterSummaries(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("Without filters or order", func(t *ftt.Test) {
 					request.FailureFilter = ""
@@ -839,7 +839,7 @@ func TestClusters(t *testing.T) {
 
 					response, err := server.QueryClusterSummaries(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("With full view", func(t *ftt.Test) {
 					request.View = pb.ClusterSummaryView_FULL
@@ -920,7 +920,7 @@ func TestClusters(t *testing.T) {
 
 					response, err := server.QueryClusterSummaries(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedFullResponse))
+					assert.Loosely(t, response, should.Match(expectedFullResponse))
 				})
 				t.Run("Without rule definition get permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
@@ -933,7 +933,7 @@ func TestClusters(t *testing.T) {
 
 					response, err := server.QueryClusterSummaries(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("Without metrics", func(t *ftt.Test) {
 					request.Metrics = []string{}
@@ -945,7 +945,7 @@ func TestClusters(t *testing.T) {
 
 					response, err := server.QueryClusterSummaries(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 			})
 			t.Run("Invalid request", func(t *ftt.Test) {
@@ -1094,7 +1094,7 @@ func TestClusters(t *testing.T) {
 
 				// Verify.
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.ReclusteringProgress{
+				assert.Loosely(t, response, should.Match(&pb.ReclusteringProgress{
 					Name:             "projects/testproject/reclusteringProgress",
 					ProgressPerMille: 500,
 					Last: &pb.ClusteringVersion{
@@ -1297,7 +1297,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify.
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("With metric filter", func(t *ftt.Test) {
 					request.MetricFilter = "projects/testproject/metrics/human-cls-failed-presubmit"
@@ -1311,7 +1311,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify.
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 
 				})
 			})
@@ -1474,7 +1474,7 @@ func TestClusters(t *testing.T) {
 
 				// Verify.
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, response, should.Match(expectedResponse))
 			})
 			t.Run("With an invalid request", func(t *ftt.Test) {
 				t.Run("Invalid parent", func(t *ftt.Test) {
@@ -1649,7 +1649,7 @@ func TestClusters(t *testing.T) {
 
 				// Verify.
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, response, should.Match(expectedResponse))
 			})
 			t.Run("With an invalid request", func(t *ftt.Test) {
 				t.Run("Invalid parent", func(t *ftt.Test) {

@@ -100,7 +100,7 @@ func TestTriage(t *testing.T) {
 			proto.Merge(&backup, pm.pb)
 			res, err := Triage(ctx, c, pm)
 			// Regardless of result, PM's state must be not be modified.
-			assert.Loosely(t, pm.pb, should.Resemble(&backup))
+			assert.Loosely(t, pm.pb, should.Match(&backup))
 			return res, err
 		}
 		mustTriage := func(c *prjpb.Component) itriager.Result {
@@ -145,7 +145,7 @@ func TestTriage(t *testing.T) {
 				// skip
 			default:
 				assert.Loosely(t, trs.GetCqVoteTrigger(), should.NotBeNil)
-				assert.Loosely(t, trs.GetCqVoteTrigger().GetMode(), should.Resemble(string(mode)))
+				assert.Loosely(t, trs.GetCqVoteTrigger().GetMode(), should.Match(string(mode)))
 			}
 			cl := &changelist.CL{
 				ID:         common.CLID(clid),
@@ -192,7 +192,7 @@ func TestTriage(t *testing.T) {
 				TriageRequired: true,
 			}
 			res := mustTriage(oldC)
-			assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+			assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 			assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 		})
@@ -212,7 +212,7 @@ func TestTriage(t *testing.T) {
 				t.Run("no deps have CQ+2", func(t *ftt.Test) {
 					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
 					res = mustTriage(oldC)
-					assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
+					assert.Loosely(t, res.CLsToTriggerDeps, should.Match([]*prjpb.TriggeringCLDeps{
 						{
 							OriginClid:      cl33,
 							DepClids:        []int64{cl31, cl32},
@@ -271,7 +271,7 @@ func TestTriage(t *testing.T) {
 				// a single TriggeringCLDeps{} should be created for CL34 to
 				// trigger CL32.
 				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
-				assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
+				assert.Loosely(t, res.CLsToTriggerDeps, should.Match([]*prjpb.TriggeringCLDeps{
 					{
 						OriginClid:      cl34,
 						DepClids:        []int64{cl32},
@@ -372,7 +372,7 @@ func TestTriage(t *testing.T) {
 			t.Run("singular group -- no delay", func(t *ftt.Test) {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
@@ -386,7 +386,7 @@ func TestTriage(t *testing.T) {
 					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: dryRun(ct.Clock.Now())},
 				}}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate[0].Mode, should.Equal(run.NewPatchsetRun))
@@ -408,7 +408,7 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.HaveLength(0))
 			})
@@ -426,7 +426,7 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate[0].Mode, should.Equal(run.DryRun))
@@ -437,14 +437,14 @@ func TestTriage(t *testing.T) {
 				res := mustTriage(oldC)
 				c := markTriaged(oldC)
 				c.DecisionTime = timestamppb.New(ct.Clock.Now().Add(stabilizationDelay))
-				assert.Loosely(t, res.NewValue, should.Resemble(c))
+				assert.Loosely(t, res.NewValue, should.Match(c))
 				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 				ct.Clock.Add(stabilizationDelay * 2)
 				res = mustTriage(oldC)
 				c.DecisionTime = nil
-				assert.Loosely(t, res.NewValue, should.Resemble(c))
+				assert.Loosely(t, res.NewValue, should.Match(c))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
@@ -465,7 +465,7 @@ func TestTriage(t *testing.T) {
 					},
 				}}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
@@ -473,7 +473,7 @@ func TestTriage(t *testing.T) {
 				// many groups is an error itself
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{singIdx, combIdx, anotherIdx}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.HaveLength(1))
 				assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 			})
@@ -491,7 +491,7 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), should.BeNil)
 					res := mustTriage(oldC)
 					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
-					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(5*time.Second).UTC()))
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(ct.Clock.Now().Add(5*time.Second).UTC()))
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				})
@@ -507,7 +507,7 @@ func TestTriage(t *testing.T) {
 					ct.Clock.Add(5 * time.Second)
 					res := mustTriage(oldC)
 					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
-					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(r.EndTime.Add(time.Minute).UTC()))
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(r.EndTime.Add(time.Minute).UTC()))
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				})
@@ -521,7 +521,7 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, res.CLsToPurge, should.HaveLength(2))
 					for _, p := range res.CLsToPurge {
 						assert.Loosely(t, p.GetPurgeReasons(), should.HaveLength(1))
-						assert.Loosely(t, p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), should.Resemble(expectedRunID))
+						assert.Loosely(t, p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), should.Match(expectedRunID))
 					}
 				})
 			})
@@ -533,17 +533,17 @@ func TestTriage(t *testing.T) {
 				pm.pb.Pcls = []*prjpb.PCL{pcl}
 				oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 				res := mustTriage(oldC)
-				assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+				assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				assert.Loosely(t, res.RunsToCreate, should.HaveLength(2))
 				rc := res.RunsToCreate[0]
 				assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
-				assert.Loosely(t, rc.Mode, should.Resemble(run.DryRun))
+				assert.Loosely(t, rc.Mode, should.Match(run.DryRun))
 				assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 				rc = res.RunsToCreate[1]
 				assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
-				assert.Loosely(t, rc.Mode, should.Resemble(run.NewPatchsetRun))
+				assert.Loosely(t, rc.Mode, should.Match(run.NewPatchsetRun))
 				assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 				assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 			})
@@ -555,12 +555,12 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 					rc := res.RunsToCreate[0]
 					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("newPatchsetRun"))
-					assert.Loosely(t, rc.Mode, should.Resemble(run.NewPatchsetRun))
+					assert.Loosely(t, rc.Mode, should.Match(run.NewPatchsetRun))
 					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
@@ -572,7 +572,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePrunsWithMode(run.NewPatchsetRun, "run-id", 33)}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
@@ -594,12 +594,12 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 					rc := res.RunsToCreate[0]
 					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("singular"))
-					assert.Loosely(t, rc.Mode, should.Resemble(run.DryRun))
+					assert.Loosely(t, rc.Mode, should.Match(run.DryRun))
 					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
@@ -609,7 +609,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePruns("run-id", 33)}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 				})
@@ -630,14 +630,14 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.HaveLength(2))
 					sortRunsToCreateByFirstCL(&res)
 					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(32))
-					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Resemble(run.FullRun))
+					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Match(run.FullRun))
 					assert.Loosely(t, res.RunsToCreate[1].InputCLs[0].ID, should.Equal(33))
-					assert.Loosely(t, res.RunsToCreate[1].Mode, should.Resemble(run.DryRun))
+					assert.Loosely(t, res.RunsToCreate[1].Mode, should.Match(run.DryRun))
 				})
 
 				t.Run("OK with existing Runs but on different CLs", func(t *ftt.Test) {
@@ -651,11 +651,11 @@ func TestTriage(t *testing.T) {
 						TriageRequired: true,
 					}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.HaveLength(1))
 					assert.Loosely(t, res.RunsToCreate[0].InputCLs[0].ID, should.Equal(32))
-					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Resemble(run.DryRun))
+					assert.Loosely(t, res.RunsToCreate[0].Mode, should.Match(run.DryRun))
 				})
 
 				t.Run("Waits for unresolved dep without an error", func(t *ftt.Test) {
@@ -664,7 +664,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue, should.Resemble(markTriaged(oldC)))
+					assert.Loosely(t, res.NewValue, should.Match(markTriaged(oldC)))
 					// TODO(crbug/1211576): this waiting can last forever. Component needs
 					// to record how long it has been waiting and abort with clear message
 					// to the user.
@@ -685,7 +685,7 @@ func TestTriage(t *testing.T) {
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
-					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(ct.Clock.Now().Add(stabilizationDelay).UTC()))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
@@ -697,7 +697,7 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 					rc := res.RunsToCreate[0]
 					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("combinable"))
-					assert.Loosely(t, rc.Mode, should.Resemble(run.FullRun))
+					assert.Loosely(t, rc.Mode, should.Match(run.FullRun))
 					trig := pcl33.GetTriggers().GetCqVoteTrigger()
 					assert.Loosely(t, rc.CreateTime, should.Match(trig.GetTime().AsTime()))
 					assert.Loosely(t, rc.InputCLs, should.HaveLength(3))
@@ -709,7 +709,7 @@ func TestTriage(t *testing.T) {
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
 					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
-					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(ct.Clock.Now().Add(stabilizationDelay).UTC()))
 					assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
@@ -721,7 +721,7 @@ func TestTriage(t *testing.T) {
 					assert.Loosely(t, res.NewValue.GetDecisionTime(), should.BeNil)
 					rc := res.RunsToCreate[0]
 					assert.Loosely(t, rc.ConfigGroupID.Name(), should.Match("combinable"))
-					assert.Loosely(t, rc.Mode, should.Resemble(run.FullRun))
+					assert.Loosely(t, rc.Mode, should.Match(run.FullRun))
 					assert.Loosely(t, rc.InputCLs, should.HaveLength(1))
 					assert.Loosely(t, rc.InputCLs[0].ID, should.Equal(33))
 				})
@@ -732,7 +732,7 @@ func TestTriage(t *testing.T) {
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
-					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Resemble(ct.Clock.Now().Add(stabilizationDelay).UTC()))
+					assert.Loosely(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(ct.Clock.Now().Add(stabilizationDelay).UTC()))
 					assert.Loosely(t, res.RunsToCreate, should.BeEmpty)
 
 					ct.Clock.Add(stabilizationDelay)

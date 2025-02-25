@@ -346,7 +346,7 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, b, should.Resemble(expected))
+				assert.Loosely(t, b, should.Match(expected))
 			})
 
 			t.Run("builder", func(t *ftt.Test) {
@@ -475,7 +475,7 @@ func TestSynthesizeBuild(t *testing.T) {
 				b, err := srv.SynthesizeBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, b, should.Resemble(expected))
+				assert.Loosely(t, b, should.Match(expected))
 			})
 
 			t.Run("set experiments", func(t *ftt.Test) {
@@ -615,7 +615,7 @@ func TestSynthesizeBuild(t *testing.T) {
 				b, err := srv.SynthesizeBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, b, should.Resemble(expected))
+				assert.Loosely(t, b, should.Match(expected))
 			})
 
 		})

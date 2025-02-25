@@ -118,7 +118,7 @@ func TestOptionsGeneral(t *testing.T) {
 				envKeys.Add(k)
 				return nil
 			})
-			assert.Loosely(t, envKeys, should.Resemble(expected))
+			assert.Loosely(t, envKeys, should.Match(expected))
 		})
 	})
 }
@@ -151,7 +151,7 @@ func TestOptionsNamespace(t *testing.T) {
 			lo, _, err := o.rationalize(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace), should.Match("u"))
-			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
+			assert.Loosely(t, lo.step, should.Match(&bbpb.Step{
 				Name:      "u",
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -171,7 +171,7 @@ func TestOptionsNamespace(t *testing.T) {
 			lo, _, err := o.rationalize(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace), should.Match("u/bar/sub"))
-			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
+			assert.Loosely(t, lo.step, should.Match(&bbpb.Step{
 				Name:      "sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -192,7 +192,7 @@ func TestOptionsNamespace(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace),
 				should.Match("u/step/s___cool__/sub"))
-			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
+			assert.Loosely(t, lo.step, should.Match(&bbpb.Step{
 				Name:      "step|!!cool!!|sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -313,7 +313,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 
 				build, err := luciexe.ReadBuildFile(lo.collectPath)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, build, should.Resemble(expected))
+				assert.Loosely(t, build, should.Match(expected))
 			}
 
 			t.Run(`collect but no specific file`, func(t *ftt.Test) {
@@ -384,7 +384,7 @@ func TestOptionsEnv(t *testing.T) {
 				actual.Add(key)
 			}
 
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 	})
 }

@@ -206,7 +206,7 @@ func TestDatastoreModel(t *testing.T) {
 			reruns := []*TestSingleRerun{}
 			assert.Loosely(t, datastore.GetAll(c, q, &reruns), should.BeNil)
 			assert.Loosely(t, len(reruns), should.Equal(1))
-			assert.Loosely(t, reruns[0], should.Resemble(singleRerun))
+			assert.Loosely(t, reruns[0], should.Match(singleRerun))
 		})
 	})
 }
@@ -230,9 +230,9 @@ func TestTestFailureBundle(t *testing.T) {
 			tf2,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, bundle.Primary(), should.Resemble(tf2))
+		assert.Loosely(t, bundle.Primary(), should.Match(tf2))
 		assert.Loosely(t, len(bundle.Others()), should.Equal(1))
-		assert.Loosely(t, bundle.Others()[0], should.Resemble(tf1))
+		assert.Loosely(t, bundle.Others()[0], should.Match(tf1))
 		assert.Loosely(t, len(bundle.All()), should.Equal(2))
 
 		tf3 := &TestFailure{

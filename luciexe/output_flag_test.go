@@ -36,33 +36,33 @@ func TestOutputFlag(t *testing.T) {
 			t.Run(`empty`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse(nil), should.BeNil)
 				assert.Loosely(t, of.Path, should.BeEmpty)
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
 
 			t.Run(`missing`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{"other", "stuff"}), should.BeNil)
 				assert.Loosely(t, of.Path, should.BeEmpty)
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
 
 			t.Run(`equal`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{OutputCLIArg + "=out.textpb", "a", "b"}), should.BeNil)
 				assert.Loosely(t, of.Path, should.Match("out.textpb"))
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecText{}))
-				assert.Loosely(t, fs.Args(), should.Resemble([]string{"a", "b"}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecText{}))
+				assert.Loosely(t, fs.Args(), should.Match([]string{"a", "b"}))
 			})
 
 			t.Run(`two val`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{OutputCLIArg, "out.json", "a", "b"}), should.BeNil)
 				assert.Loosely(t, of.Path, should.Match("out.json"))
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecJSON{}))
-				assert.Loosely(t, fs.Args(), should.Resemble([]string{"a", "b"}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecJSON{}))
+				assert.Loosely(t, fs.Args(), should.Match([]string{"a", "b"}))
 			})
 
 			t.Run(`explicit noop`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{OutputCLIArg + "="}), should.BeNil)
 				assert.Loosely(t, of.Path, should.BeEmpty)
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
 
 		})
@@ -71,13 +71,13 @@ func TestOutputFlag(t *testing.T) {
 			t.Run(`incomplete`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{OutputCLIArg}), should.ErrLike("flag needs an argument"))
 				assert.Loosely(t, of.Path, should.BeEmpty)
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
 
 			t.Run(`bad extension`, func(t *ftt.Test) {
 				assert.Loosely(t, fs.Parse([]string{OutputCLIArg, "nope", "arg"}), should.ErrLike("bad extension"))
 				assert.Loosely(t, of.Path, should.BeEmpty)
-				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
+				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
 		})
 	})

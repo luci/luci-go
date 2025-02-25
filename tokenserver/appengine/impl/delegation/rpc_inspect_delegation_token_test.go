@@ -64,7 +64,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Match(&admin.InspectDelegationTokenResponse{
 			Valid:      true,
 			Signed:     true,
 			NonExpired: true,
@@ -81,7 +81,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			Token: "@@@@@@@@@@@@@",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Match(&admin.InspectDelegationTokenResponse{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
 		}))
 	})
@@ -107,7 +107,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Match(&admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "bad signature - crypto/rsa: verification error",
 			Signed:           false,
@@ -130,7 +130,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Match(&admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "expired",
 			Signed:           true,

@@ -135,7 +135,7 @@ func TestListTestExonerations(t *testing.T) {
 			resp, err := srv.ListTestExonerations(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.NotBeNil)
-			assert.Loosely(t, resp.TestExonerations, should.Resemble(all))
+			assert.Loosely(t, resp.TestExonerations, should.Match(all))
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
@@ -147,7 +147,7 @@ func TestListTestExonerations(t *testing.T) {
 			res, err := srv.ListTestExonerations(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
-			assert.Loosely(t, res.TestExonerations, should.Resemble(all[:1]))
+			assert.Loosely(t, res.TestExonerations, should.Match(all[:1]))
 			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
 			t.Run(`Next one`, func(t *ftt.Test) {
@@ -155,7 +155,7 @@ func TestListTestExonerations(t *testing.T) {
 				res, err = srv.ListTestExonerations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.NotBeNil)
-				assert.Loosely(t, res.TestExonerations, should.Resemble(all[1:2]))
+				assert.Loosely(t, res.TestExonerations, should.Match(all[1:2]))
 				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 			})
 			t.Run(`Next all`, func(t *ftt.Test) {
@@ -164,7 +164,7 @@ func TestListTestExonerations(t *testing.T) {
 				res, err = srv.ListTestExonerations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.NotBeNil)
-				assert.Loosely(t, res.TestExonerations, should.Resemble(all[1:]))
+				assert.Loosely(t, res.TestExonerations, should.Match(all[1:]))
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})

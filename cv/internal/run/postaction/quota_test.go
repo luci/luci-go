@@ -111,8 +111,8 @@ func TestCreditQuotaOp(t *testing.T) {
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", r.ID)))
-			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
-			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{r.ID}))
+			assert.Loosely(t, qm.creditQuotaCalledWith, should.Match(common.RunIDs{executor.Run.ID}))
+			assert.Loosely(t, rm.notifyStarted, should.Match(common.RunIDs{r.ID}))
 		})
 		t.Run("do not notify if quota is not specified", func(t *ftt.Test) {
 			r := &run.Run{
@@ -128,7 +128,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("run quota limit is not specified for user %q", r.BilledTo.Email())))
-			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
+			assert.Loosely(t, qm.creditQuotaCalledWith, should.Match(common.RunIDs{executor.Run.ID}))
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
 		t.Run("do not notify pending run from different project", func(t *ftt.Test) {
@@ -225,7 +225,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", earliestRun.ID)))
-			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{earliestRun.ID}))
+			assert.Loosely(t, rm.notifyStarted, should.Match(common.RunIDs{earliestRun.ID}))
 		})
 	})
 }

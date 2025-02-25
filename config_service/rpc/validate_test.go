@@ -208,7 +208,7 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, datastore.Delete(ctx, &model.ConfigSet{ID: cs}), should.BeNil)
 			res, err := c.ValidateConfigs(ctx, validateRequest)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+			assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
 				Messages: []*cfgcommonpb.ValidationResult_Message{
 					{
 						Path:     ".",
@@ -234,15 +234,15 @@ func TestValidate(t *testing.T) {
 			mv.validateResult = vr
 			res, err := c.ValidateConfigs(ctx, validateRequest)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(vr))
+			assert.Loosely(t, res, should.Match(vr))
 			expectedValidationFiles := []validation.File{
 				validationFile{
 					path:   filePath,
 					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
 				},
 			}
-			assert.Loosely(t, mv.recordedExamineFiles, should.Resemble(expectedValidationFiles))
-			assert.Loosely(t, mv.recordedValidateFiles, should.Resemble(expectedValidationFiles))
+			assert.Loosely(t, mv.recordedExamineFiles, should.Match(expectedValidationFiles))
+			assert.Loosely(t, mv.recordedValidateFiles, should.Match(expectedValidationFiles))
 		})
 		t.Run("Validate error", func(t *ftt.Test) {
 			mv.examineResult = &validation.ExamineResult{} //passed
@@ -279,7 +279,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, st.Message(), should.Equal("invalid validate config request. See status detail for fix instruction."))
 				assert.Loosely(t, st.Details(), should.HaveLength(1))
-				assert.Loosely(t, st.Details()[0], should.Resemble(&configpb.BadValidationRequestFixInfo{
+				assert.Loosely(t, st.Details()[0], should.Match(&configpb.BadValidationRequestFixInfo{
 					UploadFiles: []*configpb.BadValidationRequestFixInfo_UploadFile{
 						{
 							Path:          vf.GetPath(),
@@ -288,7 +288,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}))
-				assert.Loosely(t, mv.recordedExamineFiles, should.Resemble([]validation.File{vf}))
+				assert.Loosely(t, mv.recordedExamineFiles, should.Match([]validation.File{vf}))
 			})
 			t.Run("Unvalidatable file", func(t *ftt.Test) {
 				vf := validationFile{
@@ -307,10 +307,10 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, st.Message(), should.Equal("invalid validate config request. See status detail for fix instruction."))
 				assert.Loosely(t, st.Details(), should.HaveLength(1))
-				assert.Loosely(t, st.Details()[0], should.Resemble(&configpb.BadValidationRequestFixInfo{
+				assert.Loosely(t, st.Details()[0], should.Match(&configpb.BadValidationRequestFixInfo{
 					UnvalidatableFiles: []string{vf.GetPath()},
 				}))
-				assert.Loosely(t, mv.recordedExamineFiles, should.Resemble([]validation.File{vf}))
+				assert.Loosely(t, mv.recordedExamineFiles, should.Match([]validation.File{vf}))
 			})
 		})
 	})

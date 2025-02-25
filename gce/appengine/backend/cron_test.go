@@ -255,7 +255,7 @@ func TestCron(t *testing.T) {
 		t.Run("payloadFactory", func(t *ftt.Test) {
 			f := payloadFactory(&tasks.CountVMs{})
 			p := f("id")
-			assert.Loosely(t, p, should.Resemble(&tasks.CountVMs{
+			assert.Loosely(t, p, should.Match(&tasks.CountVMs{
 				Id: "id",
 			}))
 		})
@@ -391,7 +391,7 @@ func TestCron(t *testing.T) {
 				})
 				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
 				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
-				assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.Resemble(&tasks.ManageBot{
+				assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.Match(&tasks.ManageBot{
 					Id: "id",
 				}))
 			})

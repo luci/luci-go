@@ -138,7 +138,7 @@ func TestQueryArtifacts(t *testing.T) {
 			req.Predicate.ArtifactIdRegexp = "a+"
 
 			actual := mustFetchNames(t, req)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/aa",
 				"invocations/inv2/tests/t%20t/results/r/artifacts/aaa",
@@ -153,7 +153,7 @@ func TestQueryArtifacts(t *testing.T) {
 				insert.Artifact("inv2", "tr/t t/r", "b", nil),
 			)
 			actual := mustFetchNames(t, req)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
 				"invocations/inv2/artifacts/b",
@@ -168,7 +168,7 @@ func TestQueryArtifacts(t *testing.T) {
 				insert.Artifact("inv2", "tr/t t/r", "b", nil),
 			)
 			actual := mustFetchNames(t, req)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv2/artifacts/b",
 				"invocations/inv2/tests/t%20t/results/r/artifacts/b",
 			}))
@@ -183,7 +183,7 @@ func TestQueryArtifacts(t *testing.T) {
 			)
 			req.Invocations = []string{"invocations/inv1"}
 			actual := mustFetchNames(t, req)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
 			}))

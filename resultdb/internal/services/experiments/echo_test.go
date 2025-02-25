@@ -98,7 +98,7 @@ func TestEcho(t *testing.T) {
 		t.Run("Valid requests", func(t *ftt.Test) {
 			rsp, err := server.Echo(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.EchoResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.EchoResponse{
 				Message: "hello",
 			}))
 		})

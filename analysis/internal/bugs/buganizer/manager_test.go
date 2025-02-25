@@ -138,7 +138,7 @@ func TestBugManager(t *testing.T) {
 
 				t.Run("Base case", func(t *ftt.Test) {
 					response := bm.Create(ctx, createRequest)
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -147,7 +147,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
+					assert.Loosely(t, issueData.Issue, should.Match(expectedIssue))
 				})
 
 				t.Run("Policy with comment template", func(t *ftt.Test) {
@@ -157,7 +157,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 
 					response := bm.Create(ctx, createRequest)
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -166,7 +166,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
+					assert.Loosely(t, issueData.Issue, should.Match(expectedIssue))
 					// Expect no comment for policy-a's activation, just the initial issue description.
 					assert.Loosely(t, len(issueData.Comments), should.Equal(2))
 					assert.Loosely(t, issueData.Comments[1].Comment, should.Equal("RuleURL:https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id,BugID:1\n\n"+
@@ -179,7 +179,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 
 					response := bm.Create(ctx, createRequest)
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -188,7 +188,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
+					assert.Loosely(t, issueData.Issue, should.Match(expectedIssue))
 					// Expect no comment for policy-a's activation, just the initial issue description.
 					assert.Loosely(t, len(issueData.Comments), should.Equal(1))
 				})
@@ -206,7 +206,7 @@ func TestBugManager(t *testing.T) {
 					response := bm.Create(ctx, createRequest)
 
 					// Verify
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -217,7 +217,7 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 
 					issueData := fakeStore.Issues[1]
-					assert.Loosely(t, issueData.Issue, should.Resemble(expectedIssue))
+					assert.Loosely(t, issueData.Issue, should.Match(expectedIssue))
 					assert.Loosely(t, len(issueData.Comments), should.Equal(4))
 					// Policy notifications should be in order of priority.
 					assert.Loosely(t, issueData.Comments[1].Comment, should.HavePrefix("Policy ID: policy-b"))
@@ -244,7 +244,7 @@ func TestBugManager(t *testing.T) {
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
 				response := bm.Create(ctx, createRequest)
-				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
@@ -253,7 +253,7 @@ func TestBugManager(t *testing.T) {
 				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
 				issue := fakeStore.Issues[1]
 
-				assert.Loosely(t, issue.Issue, should.Resemble(expectedIssue))
+				assert.Loosely(t, issue.Issue, should.Match(expectedIssue))
 				assert.Loosely(t, len(issue.Comments), should.Equal(2))
 				assert.Loosely(t, issue.Comments[0].Comment, should.ContainSubstring("https://luci-analysis-test.appspot.com/p/chromeos/rules/new-rule-id"))
 				assert.Loosely(t, issue.Comments[1].Comment, should.HavePrefix("Policy ID: policy-a"))
@@ -262,7 +262,7 @@ func TestBugManager(t *testing.T) {
 			t.Run("With provided component id", func(t *ftt.Test) {
 				createRequest.BuganizerComponent = 7890
 				response := bm.Create(ctx, createRequest)
-				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
@@ -277,7 +277,7 @@ func TestBugManager(t *testing.T) {
 				createRequest.BuganizerComponent = ComponentWithNoAccess
 				// TODO: Mock permission call to fail.
 				response := bm.Create(ctx, createRequest)
-				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
@@ -298,7 +298,7 @@ func TestBugManager(t *testing.T) {
 				// TODO: Mock permission call to fail.
 				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
 				response := bm.Create(ctx, createRequest)
-				assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 					ID: "1",
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 						"policy-a": {},
@@ -323,7 +323,7 @@ func TestBugManager(t *testing.T) {
 				t.Run("With internal component", func(t *ftt.Test) {
 					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_INTERNAL
 					response := bm.Create(ctx, createRequest)
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -337,7 +337,7 @@ func TestBugManager(t *testing.T) {
 				t.Run("With public component", func(t *ftt.Test) {
 					fakeClient.ComponentAccessLevel = issuetracker.AccessLimit_EXTERNAL_PUBLIC
 					response := bm.Create(ctx, createRequest)
-					assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+					assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 						ID: "1",
 						PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 							"policy-a": {},
@@ -356,7 +356,7 @@ func TestBugManager(t *testing.T) {
 				"policy-c": {}, // P1
 			}
 			response := bm.Create(ctx, c)
-			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
@@ -416,8 +416,8 @@ func TestBugManager(t *testing.T) {
 				if err != nil {
 					return errors.Annotate(err, "update bugs").Err()
 				}
-				assert.That(t, response, should.Resemble(expectedResponse), truth.LineContext())
-				assert.That(t, fakeStore.Issues[1].Issue, should.Resemble(originalIssue), truth.LineContext())
+				assert.That(t, response, should.Match(expectedResponse), truth.LineContext())
+				assert.That(t, fakeStore.Issues[1].Issue, should.Match(originalIssue), truth.LineContext())
 				return nil
 			}
 
@@ -442,7 +442,7 @@ func TestBugManager(t *testing.T) {
 				}
 				response, err := bm.Update(ctx, bugsToUpdate)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, response, should.Match(expectedResponse))
 			})
 
 			t.Run("If active policies unchanged and no rule notification pending, does nothing", func(t *ftt.Test) {
@@ -463,7 +463,7 @@ func TestBugManager(t *testing.T) {
 
 				// RuleAssociationNotified is set.
 				expectedResponse[0].RuleAssociationNotified = true
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, response, should.Match(expectedResponse))
 
 				// Expect a comment on the bug notifying us about the association.
 				assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
@@ -497,7 +497,7 @@ func TestBugManager(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 
 					// Bug priority should NOT be increased to P0, because IsManagingBug is false.
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.NotEqual(issuetracker.Issue_P0))
@@ -508,7 +508,7 @@ func TestBugManager(t *testing.T) {
 						"Policy ID: policy-b"))
 
 					// Expect policy B's hotlist to be added to the bug.
-					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.HotlistIds, should.Resemble([]int64{1001, 1002, 1003}))
+					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.HotlistIds, should.Match([]int64{1001, 1002, 1003}))
 
 					// Verify repeated update has no effect.
 					bugsToUpdate[0].BugManagementState.PolicyState["policy-b"].ActivationNotified = true
@@ -521,7 +521,7 @@ func TestBugManager(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P4))
 					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+1))
 					assert.Loosely(t, fakeStore.Issues[1].Comments[originalCommentCount].Comment, should.ContainSubstring(
@@ -550,7 +550,7 @@ func TestBugManager(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 					assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(originalCommentCount+2))
 					// Expect the policy B activation comment to appear, followed by the priority update comment.
@@ -612,7 +612,7 @@ func TestBugManager(t *testing.T) {
 						bugsToUpdate[0].IsManagingBugPriorityLastUpdated = clock.Now(ctx).Add(time.Minute * 15)
 
 						response, err := bm.Update(ctx, bugsToUpdate)
-						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, response, should.Match(expectedResponse))
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P4))
 						assert.Loosely(t, fakeStore.Issues[1].Comments, should.HaveLength(initialComments+1))
@@ -651,7 +651,7 @@ func TestBugManager(t *testing.T) {
 					response, err := bm.Update(ctx, bugsToUpdate)
 
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Verifier.EmailAddress, should.Equal("email@test.com"))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Assignee.EmailAddress, should.Equal("email@test.com"))
@@ -663,7 +663,7 @@ func TestBugManager(t *testing.T) {
 						response, err := bm.Update(ctx, bugsToUpdate)
 
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response, should.Resemble(expectedResponse))
+						assert.Loosely(t, response, should.Match(expectedResponse))
 						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
 						assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Assignee, should.BeNil)
 					})
@@ -676,7 +676,7 @@ func TestBugManager(t *testing.T) {
 
 					response, err := bm.Update(ctx, bugsToUpdate)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 					assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_VERIFIED))
 
 					expectedComment := "Because the following problem(s) have stopped:\n" +
@@ -705,8 +705,8 @@ func TestBugManager(t *testing.T) {
 						tc.Add(time.Minute * 2)
 						response, err := bm.Update(ctx, bugsToUpdate)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response, should.Resemble(expectedResponse))
-						assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(timestamppb.New(now)))
+						assert.Loosely(t, response, should.Match(expectedResponse))
+						assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Match(timestamppb.New(now)))
 					})
 
 					t.Run("If policies re-activate, bug is re-opened with correct priority", func(t *ftt.Test) {
@@ -725,7 +725,7 @@ func TestBugManager(t *testing.T) {
 							// Issue should return to "Assigned" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
 							assert.Loosely(t, err, should.BeNil)
-							assert.Loosely(t, response, should.Resemble(expectedResponse))
+							assert.Loosely(t, response, should.Match(expectedResponse))
 							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_ASSIGNED))
 							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 
@@ -748,7 +748,7 @@ func TestBugManager(t *testing.T) {
 							// Issue should return to "Untriaged" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
 							assert.Loosely(t, err, should.BeNil)
-							assert.Loosely(t, response, should.Resemble(expectedResponse))
+							assert.Loosely(t, response, should.Match(expectedResponse))
 							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Status, should.Equal(issuetracker.Issue_NEW))
 							assert.Loosely(t, fakeStore.Issues[1].Issue.IssueState.Priority, should.Equal(issuetracker.Issue_P0))
 
@@ -784,8 +784,8 @@ func TestBugManager(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
-				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(timestamppb.New(clock.Now(ctx))))
+				assert.Loosely(t, response, should.Match(expectedResponse))
+				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Match(timestamppb.New(clock.Now(ctx))))
 			})
 			t.Run("Rule not managing a bug archived after 30 days of the bug being in any closed state", func(t *ftt.Test) {
 				bugsToUpdate[0].IsManagingBug = false
@@ -807,8 +807,8 @@ func TestBugManager(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
-				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Resemble(originalTime))
+				assert.Loosely(t, response, should.Match(expectedResponse))
+				assert.Loosely(t, fakeStore.Issues[1].Issue.ModifiedTime, should.Match(originalTime))
 			})
 			t.Run("Rule managing a bug not archived after 30 days of the bug being in fixed state", func(t *ftt.Test) {
 				// If LUCI Analysis is mangaging the bug state, the fixed state
@@ -838,7 +838,7 @@ func TestBugManager(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(expectedResponse))
+				assert.Loosely(t, response, should.Match(expectedResponse))
 			})
 			t.Run("If issue does not exist, does nothing", func(t *ftt.Test) {
 				fakeStore.Issues = nil
@@ -852,7 +852,7 @@ func TestBugManager(t *testing.T) {
 			c := newCreateRequest()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
-			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},
@@ -867,7 +867,7 @@ func TestBugManager(t *testing.T) {
 
 				result, err := bm.GetMergedInto(ctx, bugID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, result, should.Resemble(&bugs.BugID{
+				assert.Loosely(t, result, should.Match(&bugs.BugID{
 					System: bugs.BuganizerSystem,
 					ID:     "2",
 				}))
@@ -887,7 +887,7 @@ func TestBugManager(t *testing.T) {
 			c := newCreateRequest()
 			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
 			response := bm.Create(ctx, c)
-			assert.Loosely(t, response, should.Resemble(bugs.BugCreateResponse{
+			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 				ID: "1",
 				PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
 					"policy-a": {},

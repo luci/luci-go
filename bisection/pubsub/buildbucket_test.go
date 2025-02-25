@@ -83,7 +83,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 				Bbid: 8000,
 			}
 			expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
-			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
 		})
 
 		t.Run("Unsupported project", func(t *ftt.Test) {

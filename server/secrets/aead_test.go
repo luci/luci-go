@@ -164,7 +164,7 @@ func TestMergedKeyset(t *testing.T) {
 		assert.Loosely(t, merged, should.NotBeNil)
 
 		assert.Loosely(t, mergedInfo.PrimaryKeyId, should.Equal(info3.PrimaryKeyId))
-		assert.Loosely(t, mergedInfo.KeyInfo, should.Resemble([]*tinkpb.KeysetInfo_KeyInfo{
+		assert.Loosely(t, mergedInfo.KeyInfo, should.Match([]*tinkpb.KeysetInfo_KeyInfo{
 			info1.KeyInfo[0],
 			info1.KeyInfo[1],
 			info2.KeyInfo[0],

@@ -228,7 +228,7 @@ func TestGetSnapshot(t *testing.T) {
 		snap, err := srv.GetSnapshot(ctx, 123)
 		assert.Loosely(c, err, should.BeNil)
 
-		assert.Loosely(c, snap, should.Resemble(&Snapshot{
+		assert.Loosely(c, snap, should.Match(&Snapshot{
 			AuthDB:         &protocol.AuthDB{},
 			AuthServiceURL: ts.URL,
 			Rev:            123,
@@ -247,7 +247,7 @@ func TestDeflateInflate(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		inflated, err := InflateAuthDB(blob)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, inflated, should.Resemble(initial))
+		assert.Loosely(t, inflated, should.Match(initial))
 	})
 }
 

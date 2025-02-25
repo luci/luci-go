@@ -102,7 +102,7 @@ func TestIngest(t *testing.T) {
 				assert.Loosely(t, actual.LastUpdated, should.NotBeZero)
 				copyExp.LastUpdated = actual.LastUpdated
 
-				assert.Loosely(t, actual, should.Resemble(copyExp))
+				assert.Loosely(t, actual, should.Match(copyExp))
 			}
 		}
 

@@ -34,7 +34,7 @@ func TestFlags(t *testing.T) {
 		}
 
 		t.Run(`Converts to LogStreamDescriptor.`, func(t *ftt.Test) {
-			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Match(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				ContentType: "foo/bar",
 				StreamType:  logpb.StreamType_TEXT,
@@ -50,7 +50,7 @@ func TestFlagsJSON(t *testing.T) {
 			jdesc := `{"name": "my/stream", "contentType": "foo/bar", "type": "text"}`
 			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Match(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				ContentType: "foo/bar",
 				StreamType:  logpb.StreamType_TEXT,
@@ -66,7 +66,7 @@ func TestFlagsJSON(t *testing.T) {
 			jdesc := `{"name": "my/stream", "type": "binary"}`
 			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Match(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				StreamType:  logpb.StreamType_BINARY,
 				ContentType: string(types.ContentTypeBinary),
@@ -77,7 +77,7 @@ func TestFlagsJSON(t *testing.T) {
 			jdesc := `{"name": "my/stream", "type": "datagram"}`
 			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Match(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				StreamType:  logpb.StreamType_DATAGRAM,
 				ContentType: string(types.ContentTypeLogdogDatagram),

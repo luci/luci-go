@@ -59,11 +59,11 @@ func TestSpan(t *testing.T) {
 				results, err := Read(span.Single(ctx), ingestionIDs)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(results), should.Equal(5))
-				assert.Loosely(t, results[0], should.Resemble(entriesToCreate[2]))
-				assert.Loosely(t, results[1], should.Resemble(entriesToCreate[3]))
+				assert.Loosely(t, results[0], should.Match(entriesToCreate[2]))
+				assert.Loosely(t, results[1], should.Match(entriesToCreate[3]))
 				assert.Loosely(t, results[2], should.BeNil)
-				assert.Loosely(t, results[3], should.Resemble(entriesToCreate[1]))
-				assert.Loosely(t, results[4], should.Resemble(entriesToCreate[0]))
+				assert.Loosely(t, results[3], should.Match(entriesToCreate[1]))
+				assert.Loosely(t, results[4], should.Match(entriesToCreate[0]))
 			})
 		})
 		t.Run(`InsertOrUpdate`, func(t *ftt.Test) {
@@ -90,7 +90,7 @@ func TestSpan(t *testing.T) {
 					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(result), should.Equal(1))
-					assert.Loosely(t, result[0], should.Resemble(e))
+					assert.Loosely(t, result[0], should.Match(e))
 				})
 				t.Run(`Update`, func(t *ftt.Test) {
 					// Update the existing entry.
@@ -103,7 +103,7 @@ func TestSpan(t *testing.T) {
 					result, err := Read(span.Single(ctx), []IngestionID{e.IngestionID})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(result), should.Equal(1))
-					assert.Loosely(t, result[0], should.Resemble(e))
+					assert.Loosely(t, result[0], should.Match(e))
 				})
 			})
 			t.Run(`With invalid Ingestion ID`, func(t *ftt.Test) {
@@ -239,7 +239,7 @@ func TestSpan(t *testing.T) {
 
 				results, err := ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{}))
 			})
 			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
@@ -287,7 +287,7 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
 				}))
 			})
@@ -299,7 +299,7 @@ func TestSpan(t *testing.T) {
 
 				results, err := ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{}))
 			})
 			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
@@ -347,7 +347,7 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
 				}))
 			})
@@ -359,7 +359,7 @@ func TestSpan(t *testing.T) {
 
 				results, err := ReadBuildToInvocationJoinStatistics(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{}))
 			})
 			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
@@ -407,7 +407,7 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
 				}))
 			})
@@ -419,7 +419,7 @@ func TestSpan(t *testing.T) {
 
 				results, err := ReadInvocationToBuildJoinStatistics(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{}))
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{}))
 			})
 			t.Run(`Data`, func(t *ftt.Test) {
 				reference := time.Now().Add(-1 * time.Minute)
@@ -468,7 +468,7 @@ func TestSpan(t *testing.T) {
 				// Expect no entry to be returned for Project beta
 				// as all data is older than 36 hours.
 
-				assert.Loosely(t, results, should.Resemble(map[string]JoinStatistics{
+				assert.Loosely(t, results, should.Match(map[string]JoinStatistics{
 					"alpha": expectedAlpha,
 				}))
 			})

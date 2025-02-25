@@ -28,7 +28,7 @@ func TestBinaryTools(t *testing.T) {
 	ftt.Run("Test Join", t, func(t *ftt.Test) {
 		t.Run("returns bytes with nil separator", func(t *ftt.Test) {
 			join := ConcatBytes([]byte("hello"), []byte("world"))
-			assert.Loosely(t, join, should.Resemble([]byte("helloworld")))
+			assert.Loosely(t, join, should.Match([]byte("helloworld")))
 		})
 	})
 
@@ -51,7 +51,7 @@ func TestBinaryTools(t *testing.T) {
 
 		t.Run("returns byte slice with each byte inverted", func(t *ftt.Test) {
 			inv := InvertBytes([]byte("foo"))
-			assert.Loosely(t, inv, should.Resemble([]byte{153, 144, 144}))
+			assert.Loosely(t, inv, should.Match([]byte{153, 144, 144}))
 		})
 	})
 
@@ -70,13 +70,13 @@ func TestBinaryTools(t *testing.T) {
 
 		t.Run("handles overflow", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes([]byte{0xFF, 0xFF})
-			assert.Loosely(t, incr, should.Resemble([]byte{0, 0}))
+			assert.Loosely(t, incr, should.Match([]byte{0, 0}))
 			assert.Loosely(t, overflow, should.BeTrue)
 		})
 
 		t.Run("increments with overflow false when there is no overflow", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes([]byte{0xCA, 0xFF, 0xFF})
-			assert.Loosely(t, incr, should.Resemble([]byte{0xCB, 0, 0}))
+			assert.Loosely(t, incr, should.Match([]byte{0xCB, 0, 0}))
 			assert.Loosely(t, overflow, should.BeFalse)
 		})
 	})

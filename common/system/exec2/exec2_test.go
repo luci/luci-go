@@ -85,7 +85,7 @@ func TestExec(t *testing.T) {
 			n, err := rc.Read(buf)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(len(expected)))
-			assert.Loosely(t, buf, should.Resemble(expected))
+			assert.Loosely(t, buf, should.Match(expected))
 
 			assert.Loosely(t, rc.Close(), should.BeNil)
 

@@ -162,7 +162,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
 				summary, err = exe.Do(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
 				}))
@@ -173,7 +173,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-3", 1))))
 				summary, err = exe.Do(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
 					"label-3": 1,
@@ -185,7 +185,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-1", -1))))
 				summary, err = exe.Do(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
 				}))
@@ -196,11 +196,11 @@ func TestExecutePostActionOp(t *testing.T) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1), gf.CI(gChange2)))
 				summary, err = exe.Do(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
 				}))
-				assert.Loosely(t, listLabels(gChange2), should.Resemble(map[string]int32{
+				assert.Loosely(t, listLabels(gChange2), should.Match(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
 				}))
@@ -294,7 +294,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			exe := newExecutor(ctx, run)
 			_, err := exe.Do(ctx)
 			assert.Loosely(t, err, should.ErrLike("FailedPrecondition"))
-			assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{}))
+			assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{}))
 
 			t.Run("skip the post action, if the CL abandoned", func(t *ftt.Test) {
 				// mark the CL as abandoned.
@@ -308,7 +308,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				_, err := exe.Do(ctx)
 				assert.NoErr(t, err)
 				// No vote should have been performed. (It can't be, anyways)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{}))
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{}))
 			})
 
 			t.Run("skip the post action, if the CL submitted", func(t *ftt.Test) {
@@ -323,7 +323,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				_, err := exe.Do(ctx)
 				assert.NoErr(t, err)
 				// No vote should have been performed. (It can't be, anyways)
-				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{}))
+				assert.Loosely(t, listLabels(gChange1), should.Match(map[string]int32{}))
 			})
 		})
 	})

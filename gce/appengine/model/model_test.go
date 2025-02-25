@@ -106,7 +106,7 @@ func TestProject(t *testing.T) {
 		err = datastore.Get(c, p)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, p.Config, should.Resemble(&projects.Config{
+		assert.Loosely(t, p.Config, should.Match(&projects.Config{
 			Metric: []string{
 				"metric-1",
 				"metric-2",
@@ -166,7 +166,7 @@ func TestVM(t *testing.T) {
 				},
 			}
 			v.IndexAttributes()
-			assert.Loosely(t, v.AttributesIndexed, should.Resemble([]string{"disk.image:image-1", "disk.image:image-2"}))
+			assert.Loosely(t, v.AttributesIndexed, should.Match([]string{"disk.image:image-1", "disk.image:image-2"}))
 		})
 	})
 
@@ -187,11 +187,11 @@ func TestVM(t *testing.T) {
 				},
 			}
 			c := v.getConfidentialInstanceConfig()
-			assert.Loosely(t, c, should.Resemble(&compute.ConfidentialInstanceConfig{
+			assert.Loosely(t, c, should.Match(&compute.ConfidentialInstanceConfig{
 				EnableConfidentialCompute: true,
 			}))
 			s := v.getScheduling()
-			assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
+			assert.Loosely(t, s, should.Match(&compute.Scheduling{
 				NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 				OnHostMaintenance: "TERMINATE",
 			}))
@@ -658,7 +658,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
+				assert.Loosely(t, s, should.Match(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
 				}))
@@ -670,7 +670,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
+				assert.Loosely(t, s, should.Match(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
 				}))
@@ -683,7 +683,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
+				assert.Loosely(t, s, should.Match(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
 				}))
@@ -821,7 +821,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Match(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: false,
 					EnableSecureBoot:          false,
 					EnableVtpm:                true,
@@ -834,7 +834,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Match(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: true,
 					EnableSecureBoot:          true,
 					EnableVtpm:                true,
@@ -847,7 +847,7 @@ func TestVM(t *testing.T) {
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Match(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: true,
 					EnableSecureBoot:          false,
 					EnableVtpm:                false,

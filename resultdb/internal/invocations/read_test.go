@@ -153,7 +153,7 @@ func TestRead(t *testing.T) {
 		// Fetch back the top-level Invocation.
 		inv, err := Read(ctx, "including")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, inv, should.Resemble(&pb.Invocation{
+		assert.Loosely(t, inv, should.Match(&pb.Invocation{
 			Name:                "invocations/including",
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(start),
@@ -225,7 +225,7 @@ func TestQueryRealms(t *testing.T) {
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, realms, should.Resemble(map[ID]string{
+			assert.Loosely(t, realms, should.Match(map[ID]string{
 				"inv0": "0",
 				"inv1": "1",
 				"inv2": "2",
@@ -238,7 +238,7 @@ func TestQueryRealms(t *testing.T) {
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, realms, should.Resemble(map[ID]string{
+			assert.Loosely(t, realms, should.Match(map[ID]string{
 				"inv0": "0",
 			}))
 		})
@@ -258,7 +258,7 @@ func TestReadRealms(t *testing.T) {
 
 			realms, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, realms, should.Resemble(map[ID]string{
+			assert.Loosely(t, realms, should.Match(map[ID]string{
 				"inv0": "0",
 				"inv1": "1",
 				"inv2": "2",

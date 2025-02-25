@@ -66,7 +66,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 		}
 		slices.Sort(expectedTryjobIDs)
 		slices.Sort(actualTryjobIDs)
-		assert.Loosely(t, actualTryjobIDs, should.Resemble(expectedTryjobIDs))
+		assert.Loosely(t, actualTryjobIDs, should.Match(expectedTryjobIDs))
 	})
 }
 func TestWipeoutTryjobs(t *testing.T) {

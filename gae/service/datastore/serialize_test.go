@@ -128,7 +128,7 @@ func TestPropertyMapSerialization(t *testing.T) {
 					data := SerializeKC.ToBytes(tc.props)
 					dec, err := Deserialize.PropertyMap(mkBuf(data))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, dec, should.Resemble(tc.props))
+					assert.Loosely(t, dec, should.Match(tc.props))
 				})
 			}
 		})
@@ -457,27 +457,27 @@ func TestSerializationReadMisc(t *testing.T) {
 			data := Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err := Deserialize.IndexDefinition(mkBuf(data))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
+			assert.Loosely(t, newID.Flip(), should.Match(id.Normalize()))
 
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "prop"})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
+			assert.Loosely(t, newID.Flip(), should.Match(id.Normalize()))
 
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "other", Descending: true})
 			id.Ancestor = true
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
+			assert.Loosely(t, newID.Flip(), should.Match(id.Normalize()))
 
 			// invalid
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "", Descending: true})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
+			assert.Loosely(t, newID.Flip(), should.Match(id.Normalize()))
 
 			t.Run("too many", func(t *ftt.Test) {
 				id := IndexDefinition{Kind: "wat"}
@@ -540,7 +540,7 @@ func TestIndexedProperties(t *testing.T) {
 			assert.Loosely(t, len(sip), should.Equal(8))
 			sip.Sort()
 
-			assert.Loosely(t, sip, should.Resemble(IndexedProperties{
+			assert.Loosely(t, sip, should.Match(IndexedProperties{
 				"wat": {
 					Serialize.ToBytes(mp(100)),
 					Serialize.ToBytes(mp("hat")),
@@ -586,7 +586,7 @@ func TestIndexedProperties(t *testing.T) {
 			assert.Loosely(t, len(sip), should.Equal(4))
 			sip.Sort()
 
-			assert.Loosely(t, sip, should.Resemble(IndexedProperties{
+			assert.Loosely(t, sip, should.Match(IndexedProperties{
 				"wat": {
 					Serialize.ToBytes(mp(100)),
 					Serialize.ToBytes(mp("hat")),

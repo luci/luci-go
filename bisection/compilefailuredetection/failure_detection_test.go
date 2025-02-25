@@ -435,7 +435,7 @@ func TestFailureDetection(t *testing.T) {
 			err := datastore.Get(c, failedBuild)
 			assert.Loosely(t, err, should.BeNil)
 			// Check that the build information matches
-			assert.Loosely(t, failedBuild, should.Resemble(&model.LuciFailedBuild{
+			assert.Loosely(t, failedBuild, should.Match(&model.LuciFailedBuild{
 				Id: 8003,
 				LuciBuild: model.LuciBuild{
 					BuildId:     8003,
@@ -536,7 +536,7 @@ func TestUpdateSucceededBuild(t *testing.T) {
 			AnalysisId: cfa.Id,
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
-		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
+		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
 	})
 }
 

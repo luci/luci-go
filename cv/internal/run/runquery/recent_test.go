@@ -70,7 +70,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 			keys, runs, pt := execQueryInTest(ctx, t, qb)
 			checkOrder(t, runs)
 			// Check that loading Runs returns the same values in the same order.
-			assert.Loosely(t, idsOf(runs), should.Resemble(idsOfKeys(keys)), truth.LineContext())
+			assert.Loosely(t, idsOf(runs), should.Match(idsOfKeys(keys)), truth.LineContext())
 			assertCorrectPageToken(t, qb, keys, pt)
 			return idsOfKeys(keys), pt
 		}
@@ -126,12 +126,12 @@ func TestRecentQueryBuilder(t *testing.T) {
 				makeRun(1, 60, 12),
 			)
 			t.Run("without paging", func(t *ftt.Test) {
-				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Resemble(expIDs))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Match(expIDs))
 			})
 			t.Run("with paging", func(t *ftt.Test) {
 				page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 3})
-				assert.Loosely(t, page, should.Resemble(expIDs[:3]))
-				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 3}.PageToken(next)), should.Resemble(expIDs[3:6]))
+				assert.Loosely(t, page, should.Match(expIDs[:3]))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 3}.PageToken(next)), should.Match(expIDs[3:6]))
 			})
 			t.Run("without read access to project", func(t *ftt.Test) {
 				runs, pageToken, err := RecentQueryBuilder{
@@ -160,12 +160,12 @@ func TestRecentQueryBuilder(t *testing.T) {
 				makeRun(1, 60, 12),
 			)
 			t.Run("without paging", func(t *ftt.Test) {
-				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Resemble(expIDs))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 128}), should.Match(expIDs))
 			})
 			t.Run("with paging", func(t *ftt.Test) {
 				page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 2})
-				assert.Loosely(t, page, should.Resemble(expIDs[:2]))
-				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 4}.PageToken(next)), should.Resemble(expIDs[2:6]))
+				assert.Loosely(t, page, should.Match(expIDs[:2]))
+				assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 4}.PageToken(next)), should.Match(expIDs[2:6]))
 			})
 			t.Run("without read access to one project", func(t *ftt.Test) {
 				prj1 := expIDs[0].LUCIProject()
@@ -182,9 +182,9 @@ func TestRecentQueryBuilder(t *testing.T) {
 				assert.Loosely(t, pageToken, should.BeNil)
 				checkOrder(t, runs)
 				for _, r := range runs {
-					assert.Loosely(t, r.ID.LUCIProject(), should.Resemble(prj2))
+					assert.Loosely(t, r.ID.LUCIProject(), should.Match(prj2))
 				}
-				assert.Loosely(t, idsOf(runs), should.Resemble(expIDs[2:5]))
+				assert.Loosely(t, idsOf(runs), should.Match(expIDs[2:5]))
 			})
 			t.Run("without read access to any project", func(t *ftt.Test) {
 				prj1 := expIDs[0].LUCIProject()
@@ -225,8 +225,8 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 			t.Log("with paging")
 			page, next := getAllWithPageToken(t, RecentQueryBuilder{Limit: 13})
-			assert.Loosely(t, page, should.Resemble(all[:13]))
-			assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 7}.PageToken(next)), should.Resemble(all[13:20]))
+			assert.Loosely(t, page, should.Match(all[:13]))
+			assert.Loosely(t, getAll(t, RecentQueryBuilder{Limit: 7}.PageToken(next)), should.Match(all[13:20]))
 		})
 	})
 }

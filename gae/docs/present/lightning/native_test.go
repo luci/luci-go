@@ -48,7 +48,7 @@ func TestNative(t *testing.T) {
 
 		ms := make([]*Model, 2)
 		assert.Loosely(t, datastore.GetMulti(ctx, keys, ms), should.BeNil) // HL
-		assert.Loosely(t, ms, should.Resemble([]*Model{{10, 20}, {20, 30}}))
+		assert.Loosely(t, ms, should.Match([]*Model{{10, 20}, {20, 30}}))
 	})
 }
 

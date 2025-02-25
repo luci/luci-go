@@ -60,7 +60,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&minter.MintMachineTokenResponse{
+		assert.Loosely(t, resp, should.Match(&minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			TokenResponse: &minter.MachineTokenResponse{
 				ServiceVersion: "unit-tests/mocked-ver",
@@ -73,7 +73,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, loggedInfo.TokenBody, should.Resemble(&tokenserver.MachineTokenBody{
+		assert.Loosely(t, loggedInfo.TokenBody, should.Match(&tokenserver.MachineTokenBody{
 			MachineFqdn: "luci-token-server-test-1.fake.domain",
 			IssuedBy:    "signer@testing.host",
 			IssuedAt:    1422936306,
@@ -81,10 +81,10 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			CaId:        123,
 			CertSn:      big.NewInt(4096).Bytes(),
 		}))
-		assert.Loosely(t, loggedInfo.Request, should.Resemble(testingRawRequest(ctx)))
-		assert.Loosely(t, loggedInfo.Response, should.Resemble(resp.TokenResponse))
+		assert.Loosely(t, loggedInfo.Request, should.Match(testingRawRequest(ctx)))
+		assert.Loosely(t, loggedInfo.Response, should.Match(resp.TokenResponse))
 		assert.Loosely(t, loggedInfo.CA, should.Equal(&testingCA))
-		assert.Loosely(t, loggedInfo.PeerIP, should.Resemble(net.ParseIP("127.10.10.10")))
+		assert.Loosely(t, loggedInfo.PeerIP, should.Match(net.ParseIP("127.10.10.10")))
 		assert.Loosely(t, loggedInfo.RequestID, should.Equal(testingRequestID.String()))
 	})
 
@@ -114,7 +114,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		// generates MintMachineTokenResponse with non-zero error code.
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&minter.MintMachineTokenResponse{
+		assert.Loosely(t, resp, should.Match(&minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
 			ErrorMessage:   `the domain "fake.domain" is not listed in the config`,

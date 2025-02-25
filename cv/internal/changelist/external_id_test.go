@@ -30,7 +30,7 @@ func TestExternalID(t *testing.T) {
 		t.Run("GobID", func(t *ftt.Test) {
 			eid, err := GobID("x-review.example.com", 12)
 			assert.NoErr(t, err)
-			assert.Loosely(t, eid, should.Resemble(ExternalID("gerrit/x-review.example.com/12")))
+			assert.Loosely(t, eid, should.Match(ExternalID("gerrit/x-review.example.com/12")))
 
 			host, change, err := eid.ParseGobID()
 			assert.NoErr(t, err)

@@ -57,7 +57,7 @@ func TestRegister(t *testing.T) {
 
 			// Reregistering doesn't clear the flags.
 			RegisterPermission("luci.dev.testing2")
-			assert.Loosely(t, RegisteredPermissions(), should.Resemble(map[Permission]PermissionFlags{
+			assert.Loosely(t, RegisteredPermissions(), should.Match(map[Permission]PermissionFlags{
 				p1: 0,
 				p2: UsedInQueryRealms,
 			}))

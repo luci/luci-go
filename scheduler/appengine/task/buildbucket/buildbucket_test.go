@@ -265,13 +265,13 @@ func TestFullFlow(t *testing.T) {
 
 		// Launch.
 		assert.Loosely(ctx, mgr.LaunchTask(c, ctl), should.BeNil)
-		assert.Loosely(ctx, ctl.TaskState, should.Resemble(task.State{
+		assert.Loosely(ctx, ctl.TaskState, should.Match(task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 			ViewURL:  srv.URL() + "/build/9025781602559305888",
 		}))
 
-		assert.Loosely(ctx, <-scheduleRequest, should.Resemble(&bbpb.ScheduleBuildRequest{
+		assert.Loosely(ctx, <-scheduleRequest, should.Match(&bbpb.ScheduleBuildRequest{
 			RequestId: "1",
 			Builder: &bbpb.BuilderID{
 				Project: "some-project",
@@ -317,7 +317,7 @@ func TestFullFlow(t *testing.T) {
 		}))
 
 		// Added the timer.
-		assert.Loosely(ctx, ctl.Timers, should.Resemble([]tasktest.TimerSpec{
+		assert.Loosely(ctx, ctl.Timers, should.Match([]tasktest.TimerSpec{
 			{
 				Delay: 224 * time.Second, // random
 				Name:  statusCheckTimerName,
@@ -327,7 +327,7 @@ func TestFullFlow(t *testing.T) {
 
 		// The timer is called. Checks the state, reschedules itself.
 		assert.Loosely(ctx, mgr.HandleTimer(c, ctl, statusCheckTimerName, nil), should.BeNil)
-		assert.Loosely(ctx, ctl.Timers, should.Resemble([]tasktest.TimerSpec{
+		assert.Loosely(ctx, ctl.Timers, should.Match([]tasktest.TimerSpec{
 			{
 				Delay: 157 * time.Second, // random
 				Name:  statusCheckTimerName,
@@ -415,7 +415,7 @@ func TestTriggeredFlow(t *testing.T) {
 
 			// Launch with triggers,
 			assert.Loosely(ctx, mgr.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(ctx, ctl.TaskState, should.Resemble(task.State{
+			assert.Loosely(ctx, ctl.TaskState, should.Match(task.State{
 				Status:   task.StatusRunning,
 				TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 				ViewURL:  srv.URL() + "/build/9025781602559305888",
@@ -451,7 +451,7 @@ func TestTriggeredFlow(t *testing.T) {
 			})
 
 			// Used the last trigger to get the commit.
-			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Match(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
@@ -459,13 +459,13 @@ func TestTriggeredFlow(t *testing.T) {
 			}))
 
 			// Properties are sanitized.
-			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Match([]string{
 				"$recipe_engine/scheduler",
 				"extra_prop",
 			}))
 
 			// Tags are sanitized too.
-			assert.Loosely(ctx, req.Tags, should.Resemble([]*bbpb.StringPair{
+			assert.Loosely(ctx, req.Tags, should.Match([]*bbpb.StringPair{
 				{Key: "scheduler_invocation_id", Value: "1"},
 				{Key: "scheduler_job_id", Value: "some-project/some-job"},
 				{Key: "user_agent", Value: "app"},
@@ -500,7 +500,7 @@ func TestTriggeredFlow(t *testing.T) {
 			})
 
 			// Reconstructed gitiles commit from properties.
-			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Match(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
@@ -508,13 +508,13 @@ func TestTriggeredFlow(t *testing.T) {
 			}))
 
 			// Properties are sanitized.
-			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Match([]string{
 				"$recipe_engine/scheduler",
 				"extra_prop",
 			}))
 
 			// Tags are sanitized too.
-			assert.Loosely(ctx, req.Tags, should.Resemble([]*bbpb.StringPair{
+			assert.Loosely(ctx, req.Tags, should.Match([]*bbpb.StringPair{
 				{Key: "scheduler_invocation_id", Value: "1"},
 				{Key: "scheduler_job_id", Value: "some-project/some-job"},
 				{Key: "user_agent", Value: "app"},
@@ -541,7 +541,7 @@ func TestTriggeredFlow(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Match(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
@@ -569,7 +569,7 @@ func TestTriggeredFlow(t *testing.T) {
 				},
 			})
 			assert.Loosely(ctx, req.GitilesCommit, should.BeNil)
-			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Match([]string{
 				"$recipe_engine/scheduler",
 			}))
 			assert.Loosely(ctx, countTags(req.Tags, "buildset"), should.BeZero)
@@ -595,13 +595,13 @@ func TestTriggeredFlow(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Match(&bbpb.GitilesCommit{
 				Host:    "tag.googlesource.com",
 				Project: "repo-tag",
 				Id:      "bbbb",
 				Ref:     "refs/heads/main-tag",
 			}))
-			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Match([]string{
 				"$recipe_engine/scheduler",
 			}))
 			assert.Loosely(ctx, countTags(req.Tags, "buildset"), should.BeZero)

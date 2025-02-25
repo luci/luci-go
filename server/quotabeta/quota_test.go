@@ -106,7 +106,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
@@ -122,7 +122,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
@@ -138,7 +138,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
@@ -154,7 +154,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
@@ -185,7 +185,7 @@ func TestQuota(t *testing.T) {
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
@@ -228,7 +228,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -263,7 +263,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -274,7 +274,7 @@ func TestQuota(t *testing.T) {
 					// Ensure update succeeds without modifying the database again.
 					ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(30*time.Minute))
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -293,7 +293,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -304,7 +304,7 @@ func TestQuota(t *testing.T) {
 					// Ensure update modifies the database after the deduplication deadline.
 					ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(2*time.Hour))
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -323,7 +323,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("insufficient quota"))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 					}))
 					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal("0"))
@@ -333,7 +333,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -361,7 +361,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				}))
 				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("5"))
@@ -377,7 +377,7 @@ func TestQuota(t *testing.T) {
 				}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				}))
 				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("3"))
@@ -391,7 +391,7 @@ func TestQuota(t *testing.T) {
 				opts := &Options{}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				}))
 				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("1"))
@@ -405,7 +405,7 @@ func TestQuota(t *testing.T) {
 				opts := &Options{}
 
 				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				}))
 				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -424,7 +424,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("not found"))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -439,7 +439,7 @@ func TestQuota(t *testing.T) {
 					opts := &Options{}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("user unspecified"))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -456,7 +456,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					}))
@@ -476,7 +476,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -495,7 +495,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.ErrLike("last updated in the future"))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -510,7 +510,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("4"))
@@ -523,7 +523,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("5"))
@@ -536,7 +536,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("4"))
@@ -549,7 +549,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("3"))
@@ -562,7 +562,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -575,7 +575,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("0"))
@@ -588,7 +588,7 @@ func TestQuota(t *testing.T) {
 					}
 
 					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.Equal(ErrInsufficientQuota))
-					assert.Loosely(t, s.Keys(), should.Resemble([]string{
+					assert.Loosely(t, s.Keys(), should.Match([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					}))
 					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -607,7 +607,7 @@ func TestQuota(t *testing.T) {
 						}
 
 						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("last updated in the future"))
-						assert.Loosely(t, s.Keys(), should.Resemble([]string{
+						assert.Loosely(t, s.Keys(), should.Match([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						}))
 						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
@@ -624,7 +624,7 @@ func TestQuota(t *testing.T) {
 						}
 
 						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
-						assert.Loosely(t, s.Keys(), should.Resemble([]string{
+						assert.Loosely(t, s.Keys(), should.Match([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 							"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 						}))
@@ -644,7 +644,7 @@ func TestQuota(t *testing.T) {
 						}
 
 						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
-						assert.Loosely(t, s.Keys(), should.Resemble([]string{
+						assert.Loosely(t, s.Keys(), should.Match([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						}))
 						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))

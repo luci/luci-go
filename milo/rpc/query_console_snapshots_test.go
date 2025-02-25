@@ -262,7 +262,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				PageSize: 2,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
+			assert.Loosely(t, res.Snapshots, should.Match([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -378,7 +378,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
+			assert.Loosely(t, res.Snapshots, should.Match([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -430,7 +430,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
+			assert.Loosely(t, res.Snapshots, should.Match([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",
@@ -564,7 +564,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Snapshots, should.Resemble([]*milopb.ConsoleSnapshot{
+			assert.Loosely(t, res.Snapshots, should.Match([]*milopb.ConsoleSnapshot{
 				{
 					Console: &projectconfigpb.Console{
 						Realm: "allowed-project:@root",

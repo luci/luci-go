@@ -58,7 +58,7 @@ func TestCompiledConfig(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedCfg := generateProjectConfig(uniqifier)
-			assert.Loosely(t, cfg.Config, should.Resemble(expectedCfg))
+			assert.Loosely(t, cfg.Config, should.Match(expectedCfg))
 			assert.That(t, cfg.LastUpdated, should.Match(expectedCfg.LastUpdated.AsTime()))
 			assert.Loosely(t, len(cfg.TestNameRules), should.Equal(1))
 
@@ -73,7 +73,7 @@ func TestCompiledConfig(t *testing.T) {
 		verifyNotExists := func(minimumVersion time.Time) {
 			cfg, err := Project(ctx, "myproject", minimumVersion)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg.Config, should.Resemble(&configpb.ProjectConfig{LastUpdated: timestamppb.New(config.StartingEpoch)}))
+			assert.Loosely(t, cfg.Config, should.Match(&configpb.ProjectConfig{LastUpdated: timestamppb.New(config.StartingEpoch)}))
 		}
 		t.Run(`Does not exist`, func(t *ftt.Test) {
 			verifyNotExists(config.StartingEpoch)

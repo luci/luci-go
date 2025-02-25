@@ -52,7 +52,7 @@ func TestWriteFrame(t *testing.T) {
 			count, err := WriteFrame(tw, []byte{})
 			assert.Loosely(t, count, should.Equal(1))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble([]byte{0x00}))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match([]byte{0x00}))
 		})
 
 		t.Run(`WriteFrame will successfully encode a 129-byte frame.`, func(t *ftt.Test) {
@@ -61,7 +61,7 @@ func TestWriteFrame(t *testing.T) {
 			count, err := WriteFrame(tw, data)
 			assert.Loosely(t, count, should.Equal(131))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(append([]byte{0x81, 0x01}, data...)))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match(append([]byte{0x81, 0x01}, data...)))
 		})
 
 		t.Run(`Will return an error when failing to write the size header.`, func(t *ftt.Test) {
@@ -125,14 +125,14 @@ func TestWriter(t *testing.T) {
 				assert.Loosely(t, w.Flush(), should.BeNil)
 			}
 
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(expected))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match(expected))
 		})
 
 		t.Run(`Will write empty frames if Flush()ed.`, func(t *ftt.Test) {
 			assert.Loosely(t, w.Flush(), should.BeNil)
 			assert.Loosely(t, w.Flush(), should.BeNil)
 			assert.Loosely(t, w.Flush(), should.BeNil)
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble([]byte{0x00, 0x00, 0x00}))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match([]byte{0x00, 0x00, 0x00}))
 		})
 
 		t.Run(`Will fail to Flush() if the Write fails.`, func(t *ftt.Test) {

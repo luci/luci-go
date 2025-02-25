@@ -255,7 +255,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
 				"KILLED-7s",
@@ -275,7 +275,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_COMPLETED,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"COMPLETED-8s",
 				"COMPLETED-6s",
 				"COMPLETED-4s",
@@ -292,7 +292,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
@@ -310,7 +310,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
@@ -332,7 +332,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
 				"KILLED-7s",
@@ -355,7 +355,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
@@ -374,7 +374,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, payloads(resp), should.Resemble([]string{
+			assert.Loosely(t, payloads(resp), should.Match([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
 				"KILLED-5s",
@@ -425,11 +425,11 @@ func TestListBotTasks(t *testing.T) {
 		var names []string
 		for _, task := range resp.Items {
 			names = append(names, task.Name)
-			assert.Loosely(t, task.CreatedTs, should.Resemble(timestamppb.New(TestTime)))
-			assert.Loosely(t, task.Tags, should.Resemble([]string{"a:b", "c:d"}))
+			assert.Loosely(t, task.CreatedTs, should.Match(timestamppb.New(TestTime)))
+			assert.Loosely(t, task.Tags, should.Match([]string{"a:b", "c:d"}))
 			assert.Loosely(t, task.User, should.Equal("request-user"))
 		}
-		assert.Loosely(t, names, should.Resemble([]string{
+		assert.Loosely(t, names, should.Match([]string{
 			"KILLED-9s",
 			"COMPLETED-8s",
 			"KILLED-7s",

@@ -60,7 +60,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 			})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Results, should.Resemble(map[string]bool{
+			assert.Loosely(t, res.Results, should.Match(map[string]bool{
 				bbperms.BuildsAdd.Name():    true,
 				bbperms.BuildsList.Name():   true,
 				bbperms.BuildsCancel.Name(): false,

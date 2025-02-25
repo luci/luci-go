@@ -81,7 +81,7 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 			t.Run("All + sorted", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 5)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
+				assert.Loosely(t, res, should.Match([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
 					mkReminder(254, epoch.Add(time.Second), ""),
 					mkReminder(255, epoch.Add(time.Hour), ""),
@@ -91,7 +91,7 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 			t.Run("Limit", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "g", 2)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
+				assert.Loosely(t, res, should.Match([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
 					mkReminder(254, epoch.Add(time.Second), ""),
 				}))
@@ -100,7 +100,7 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 			t.Run("Obey partition", func(t *ftt.Test) {
 				res, err := db.FetchRemindersMeta(ctx, "00", "ee", 5)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{
+				assert.Loosely(t, res, should.Match([]*reminder.Reminder{
 					mkReminder(100, epoch.Add(time.Minute), ""),
 				}))
 			})
@@ -121,9 +121,9 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 			t.Run("All", func(t *ftt.Test) {
 				res, err := db.FetchReminderRawPayloads(ctx, meta)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(all))
+				assert.Loosely(t, res, should.Match(all))
 				t.Run("Re-use objects", func(t *ftt.Test) {
-					assert.Loosely(t, meta, should.Resemble(all))
+					assert.Loosely(t, meta, should.Match(all))
 				})
 			})
 
@@ -132,10 +132,10 @@ func RunDBAcceptance(ctx context.Context, db db.DB, t *testing.T) {
 				assert.Loosely(t, db.DeleteReminder(ctx, second), should.BeNil)
 				res, err := db.FetchReminderRawPayloads(ctx, meta)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble([]*reminder.Reminder{all[0], all[2]}))
+				assert.Loosely(t, res, should.Match([]*reminder.Reminder{all[0], all[2]}))
 				t.Run("Re-use objects", func(t *ftt.Test) {
-					assert.Loosely(t, meta[0], should.Resemble(all[0]))
-					assert.Loosely(t, meta[2], should.Resemble(all[2]))
+					assert.Loosely(t, meta[0], should.Match(all[0]))
+					assert.Loosely(t, meta[2], should.Match(all[2]))
 				})
 			})
 		})

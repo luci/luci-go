@@ -120,7 +120,7 @@ func TestReadInvocation(t *testing.T) {
 				FinalizeTime:      pbutil.MustTimestampProto(ct.Add(3 * time.Hour)),
 				Realm:             insert.TestRealm,
 			}
-			assert.Loosely(t, inv, should.Resemble(expected))
+			assert.Loosely(t, inv, should.Match(expected))
 
 			t.Run(`with included invocations`, func(t *ftt.Test) {
 				testutil.MustApply(ctx, t,
@@ -131,7 +131,7 @@ func TestReadInvocation(t *testing.T) {
 				)
 
 				inv := readInv()
-				assert.Loosely(t, inv.IncludedInvocations, should.Resemble([]string{"invocations/included0", "invocations/included1"}))
+				assert.Loosely(t, inv.IncludedInvocations, should.Match([]string{"invocations/included0", "invocations/included1"}))
 			})
 		})
 	})

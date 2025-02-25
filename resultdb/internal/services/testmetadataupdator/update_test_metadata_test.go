@@ -156,14 +156,14 @@ func TestUpdateTestMetadata(t *testing.T) {
 			// Validate.
 			// ShouldResemble does not work on struct with nested proto buffer.
 			// So we compare each proto field separately.
-			assert.Loosely(t, row.TestMetadata, should.Resemble(expected.TestMetadata))
-			assert.Loosely(t, row.SourceRef, should.Resemble(expected.SourceRef))
+			assert.Loosely(t, row.TestMetadata, should.Match(expected.TestMetadata))
+			assert.Loosely(t, row.SourceRef, should.Match(expected.SourceRef))
 			row.TestMetadata = nil
 			row.SourceRef = nil
 			expected.TestMetadata = nil
 			expected.SourceRef = nil
 			expected.LastUpdated = time.Time{} // Remove lastupdated.
-			assert.Loosely(t, row, should.Resemble(&expected))
+			assert.Loosely(t, row, should.Match(&expected))
 		}
 		t.Run(`Save test metadata for new test`, func(t *ftt.Test) {
 			invID := "inv1"

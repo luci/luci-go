@@ -55,7 +55,7 @@ func TestCanRetryAll(t *testing.T) {
 				t.Helper()
 				ok := executor.canRetryAll(ctx, execState, []int{0})
 				assert.Loosely(t, ok, should.BeFalse)
-				assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+				assert.Loosely(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 					{
 						Time: timestamppb.New(clock.Now(ctx).UTC()),
 						Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -111,7 +111,7 @@ func TestCanRetryAll(t *testing.T) {
 					ok := executor.canRetryAll(ctx, execState, []int{0})
 					assert.Loosely(t, ok, should.BeFalse)
 					assert.Loosely(t, execState.GetExecutions()[0].GetUsedQuota(), should.Equal(3))
-					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -142,7 +142,7 @@ func TestCanRetryAll(t *testing.T) {
 					assert.Loosely(t, ok, should.BeFalse)
 					assert.Loosely(t, execState.GetExecutions()[0].GetUsedQuota(), should.Equal(2))
 					assert.Loosely(t, execState.GetExecutions()[1].GetUsedQuota(), should.Equal(2))
-					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
@@ -190,7 +190,7 @@ func TestCanRetryAll(t *testing.T) {
 					execState.GetExecutions()[0].Attempts[0].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
 					ok := executor.canRetryAll(ctx, execState, []int{0})
 					assert.Loosely(t, ok, should.BeFalse)
-					assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+					assert.Loosely(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
 							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{

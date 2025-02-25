@@ -74,7 +74,7 @@ func TestSchedule(t *testing.T) {
 
 		Schedule(ctx, task)
 
-		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Match(expected))
 	})
 }
 
@@ -179,7 +179,7 @@ func TestOrchestrator(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
-			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
+			assert.Loosely(t, testIngestor.gotInputs, should.Match(expectedInputs))
 
 			// Expect continuation task.
 			verifyContinuationTask(t, skdr, expectedContinuationTask)
@@ -195,7 +195,7 @@ func TestOrchestrator(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
-			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
+			assert.Loosely(t, testIngestor.gotInputs, should.Match(expectedInputs))
 
 			// Expect continuation task.
 			verifyContinuationTask(t, skdr, expectedContinuationTask)
@@ -213,7 +213,7 @@ func TestOrchestrator(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
-			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
+			assert.Loosely(t, testIngestor.gotInputs, should.Match(expectedInputs))
 
 			// Expect no further continuation task.
 			verifyContinuationTask(t, skdr, nil)
@@ -228,7 +228,7 @@ func TestOrchestrator(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
-			assert.Loosely(t, testIngestor.gotInputs, should.Resemble(expectedInputs))
+			assert.Loosely(t, testIngestor.gotInputs, should.Match(expectedInputs))
 
 			// Expect no continuation task.
 			verifyContinuationTask(t, skdr, nil)
@@ -274,7 +274,7 @@ func verifyContinuationTask(t testing.TB, skdr *tqtesting.Scheduler, expectedCon
 	count := 0
 	for _, pl := range skdr.Tasks().Payloads() {
 		if pl, ok := pl.(*taskspb.IngestTestResults); ok {
-			assert.Loosely(t, pl, should.Resemble(expectedContinuation), truth.LineContext())
+			assert.Loosely(t, pl, should.Match(expectedContinuation), truth.LineContext())
 			count++
 		}
 	}

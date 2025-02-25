@@ -721,7 +721,7 @@ func TestNormalizeScopes(t *testing.T) {
 	t.Parallel()
 
 	checkExactSameSlice := func(a, b []string) {
-		assert.Loosely(t, a, should.Resemble(b))
+		assert.Loosely(t, a, should.Match(b))
 		assert.Loosely(t, &a[0], should.Equal(&b[0]))
 	}
 
@@ -737,9 +737,9 @@ func TestNormalizeScopes(t *testing.T) {
 		checkExactSameSlice(slice, normalizeScopes(slice))
 
 		// Removes dups and sorts.
-		assert.Loosely(t, normalizeScopes([]string{"b", "a"}), should.Resemble([]string{"a", "b"}))
-		assert.Loosely(t, normalizeScopes([]string{"a", "a"}), should.Resemble([]string{"a"}))
-		assert.Loosely(t, normalizeScopes([]string{"a", "b", "a"}), should.Resemble([]string{"a", "b"}))
+		assert.Loosely(t, normalizeScopes([]string{"b", "a"}), should.Match([]string{"a", "b"}))
+		assert.Loosely(t, normalizeScopes([]string{"a", "a"}), should.Match([]string{"a"}))
+		assert.Loosely(t, normalizeScopes([]string{"a", "b", "a"}), should.Match([]string{"a", "b"}))
 	})
 }
 

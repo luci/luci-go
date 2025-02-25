@@ -43,7 +43,7 @@ func TestInputOK(t *testing.T) {
 			t.Run(tc.name, func(t *ftt.Test) {
 				ret, err := Parse(tc.input)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, ret, should.Resemble(tc.expect))
+				assert.Loosely(t, ret, should.Match(tc.expect))
 			})
 		}
 	})

@@ -140,7 +140,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		t.Run("valid request", func(t *ftt.Test) {
 			rsp, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.QueryTestVariantArtifactGroupsResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.QueryTestVariantArtifactGroupsResponse{
 				Groups: []*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup{{
 					TestId:      "test1",
 					VariantHash: "variant1",
@@ -383,7 +383,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher("match"))
 			assert.Loosely(t, snippet, should.Equal("beforematchafter"))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 6, EndIndex: 11,
 			}}))
 		})
@@ -398,7 +398,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
 			assert.Loosely(t, snippet, should.Equal(strings.Repeat("a", maxMatchWithContextLength-3)+"..."))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 0, EndIndex: maxMatchWithContextLength,
 			}}))
 		})
@@ -412,7 +412,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
 			assert.Loosely(t, snippet, should.Equal(atf.Match))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 0, EndIndex: int32(len(snippet)),
 			}}))
 
@@ -427,7 +427,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
 			assert.Loosely(t, snippet, should.Equal(fmt.Sprintf("...e%sa...", atf.Match)))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 4, EndIndex: int32(len(snippet) - 4),
 			}}))
 		})
@@ -445,7 +445,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			// A string of 6 bytes have been returned, when 7 bytes are allowed for each end.
 			// Because it doesn't cut from the middle of a chinese character.
 			assert.Loosely(t, snippet, should.Equal(fmt.Sprintf("...前%s之...", atf.Match)))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 6, EndIndex: int32(len(snippet) - 6),
 			}}))
 		})
@@ -463,7 +463,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 
 			snippet, matches := constructSnippetAndMatches(atf, search)
 			assert.Loosely(t, snippet, should.Equal("beforeaaaa"))
-			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{
+			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{
 				{StartIndex: 6, EndIndex: 7},
 				{StartIndex: 7, EndIndex: 8},
 				{StartIndex: 8, EndIndex: 9},
@@ -489,7 +489,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			for i := 5119; i < 5119+1+5116; i++ {
 				expectedMatches = append(expectedMatches, &pb.ArtifactMatchingContent_Match{StartIndex: int32(i), EndIndex: int32(i + 1)})
 			}
-			assert.Loosely(t, matches, should.Resemble(expectedMatches))
+			assert.Loosely(t, matches, should.Match(expectedMatches))
 		})
 
 	})

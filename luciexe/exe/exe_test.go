@@ -98,7 +98,7 @@ func TestExe(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, exitCode, should.BeZero)
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status: bbpb.Status_SUCCESS,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
@@ -112,7 +112,7 @@ func TestExe(t *testing.T) {
 					return errors.New("bad stuff")
 				})
 				assert.Loosely(t, exitCode, should.Equal(1))
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Final error: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -128,7 +128,7 @@ func TestExe(t *testing.T) {
 					return errors.New("bad stuff", InfraErrorTag)
 				})
 				assert.Loosely(t, exitCode, should.Equal(1))
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final infra error: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -144,7 +144,7 @@ func TestExe(t *testing.T) {
 					panic(errors.New("bad stuff"))
 				})
 				assert.Loosely(t, exitCode, should.Equal(2))
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final panic: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -162,7 +162,7 @@ func TestExe(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, exitCode, should.BeZero)
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "status set inside",
 					Output: &bbpb.Build_Output{
@@ -183,13 +183,13 @@ func TestExe(t *testing.T) {
 			assert.Loosely(t, exitCode, should.Equal(1))
 			builds := getBuilds(false)
 			assert.Loosely(t, len(builds), should.Equal(2))
-			assert.Loosely(t, builds[0], should.Resemble(&bbpb.Build{
+			assert.Loosely(t, builds[0], should.Match(&bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
 			}))
-			assert.Loosely(t, builds[len(builds)-1], should.Resemble(&bbpb.Build{
+			assert.Loosely(t, builds[len(builds)-1], should.Match(&bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
@@ -209,13 +209,13 @@ func TestExe(t *testing.T) {
 			assert.Loosely(t, exitCode, should.Equal(1))
 			builds := getBuilds(true)
 			assert.Loosely(t, len(builds), should.Equal(2))
-			assert.Loosely(t, builds[0], should.Resemble(&bbpb.Build{
+			assert.Loosely(t, builds[0], should.Match(&bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
 			}))
-			assert.Loosely(t, builds[len(builds)-1], should.Resemble(&bbpb.Build{
+			assert.Loosely(t, builds[len(builds)-1], should.Match(&bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
@@ -246,7 +246,7 @@ func TestExe(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, exitCode, should.BeZero)
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -275,7 +275,7 @@ func TestExe(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, exitCode, should.BeZero)
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -298,7 +298,7 @@ func TestExe(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, exitCode, should.BeZero)
-				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuild(), should.Match(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -320,7 +320,7 @@ func TestExe(t *testing.T) {
 					args = append(args, ArgsDelim)
 					args = append(args, expectedUserArgs...)
 					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-						assert.Loosely(t, userArgs, should.Resemble(expectedUserArgs))
+						assert.Loosely(t, userArgs, should.Match(expectedUserArgs))
 						return nil
 					})
 					assert.Loosely(t, exitcode, should.BeZero)
@@ -332,7 +332,7 @@ func TestExe(t *testing.T) {
 					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)
 					args = append(args, expectedUserArgs...)
 					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-						assert.Loosely(t, userArgs, should.Resemble(expectedUserArgs))
+						assert.Loosely(t, userArgs, should.Match(expectedUserArgs))
 						return nil
 					})
 					assert.Loosely(t, exitcode, should.BeZero)

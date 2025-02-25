@@ -70,7 +70,7 @@ func TestNewestFirst(t *testing.T) {
 				// Add exactly one trigger.
 				addTriggers(noDelay, 1)
 				assert.Loosely(t, s.Invocations, should.HaveLength(1))
-				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-001"}))
+				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{"t-001"}))
 				assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-001"))
 				assert.Loosely(t, s.PendingTriggers, should.HaveLength(0))
 				assert.Loosely(t, s.DiscardedTriggers, should.HaveLength(0))
@@ -84,7 +84,7 @@ func TestNewestFirst(t *testing.T) {
 				addTriggers(noDelay, N)
 				for i := N - 1; i >= 0; i-- {
 					assert.Loosely(t, s.Invocations, should.HaveLength(N-i))
-					assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Resemble([]string{fmt.Sprintf("t-%03d", i+1)}))
+					assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{fmt.Sprintf("t-%03d", i+1)}))
 					assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal(fmt.Sprintf("data-%03d", i+1)))
 					assert.Loosely(t, s.PendingTriggers, should.HaveLength(i))
 					assert.Loosely(t, s.DiscardedTriggers, should.HaveLength(0))
@@ -105,7 +105,7 @@ func TestNewestFirst(t *testing.T) {
 				addTriggers(noDelay, N+extra)
 
 				assert.Loosely(t, s.Invocations, should.HaveLength(1))
-				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-004"}))
+				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{"t-004"}))
 				assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-004"))
 				assert.Loosely(t, s.PendingTriggers, should.HaveLength(1+extra))
 				assert.Loosely(t, s.DiscardedTriggers, should.HaveLength(0))
@@ -114,7 +114,7 @@ func TestNewestFirst(t *testing.T) {
 				addTriggers(invocationDuration, 0)
 
 				assert.Loosely(t, s.Invocations, should.HaveLength(2))
-				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-003"}))
+				assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{"t-003"}))
 				assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-003"))
 				assert.Loosely(t, s.PendingTriggers, should.HaveLength(extra))
 				assert.Loosely(t, s.DiscardedTriggers, should.HaveLength(0))
@@ -137,7 +137,7 @@ func TestNewestFirst(t *testing.T) {
 				addTriggers(noDelay, 1+extra)
 				for i := 0; i < N; i++ {
 					assert.Loosely(t, s.Invocations, should.HaveLength(i+1))
-					assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Resemble([]string{fmt.Sprintf("t-%03d", i+1+extra)}))
+					assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{fmt.Sprintf("t-%03d", i+1+extra)}))
 					assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal(fmt.Sprintf("data-%03d", i+1+extra)))
 					assert.Loosely(t, s.PendingTriggers, should.HaveLength(1))
 					assert.Loosely(t, s.DiscardedTriggers, should.HaveLength(0))

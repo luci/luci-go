@@ -35,7 +35,7 @@ func TestLoadPackageDef(t *testing.T) {
 		body := strings.NewReader(`{"package": "package/name"}`)
 		def, err := LoadPackageDef(body, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, def, should.Resemble(PackageDef{
+		assert.Loosely(t, def, should.Match(PackageDef{
 			Package: "package/name",
 			Root:    ".",
 		}))
@@ -73,7 +73,7 @@ func TestLoadPackageDef(t *testing.T) {
 			"var2": "value2",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, def, should.Resemble(PackageDef{
+		assert.Loosely(t, def, should.Match(PackageDef{
 			Package:     "package/value1",
 			Root:        "../..",
 			InstallMode: "copy",
@@ -270,7 +270,7 @@ func TestFindFiles(t *testing.T) {
 				}
 
 				if runtime.GOOS == "windows" {
-					assert.Loosely(t, names, should.Resemble([]string{
+					assert.Loosely(t, names, should.Match([]string{
 						"ENV/abc.py",
 						"ENV/abc.pyo",
 						"ENV/dir/def.py",
@@ -279,7 +279,7 @@ func TestFindFiles(t *testing.T) {
 						"infra/xyz.py",
 					}))
 				} else {
-					assert.Loosely(t, names, should.Resemble([]string{
+					assert.Loosely(t, names, should.Match([]string{
 						"ENV/abc.py",
 						"ENV/abc.pyo",
 						"ENV/abs_in_root",

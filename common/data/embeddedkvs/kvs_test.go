@@ -57,8 +57,8 @@ func TestCache(t *testing.T) {
 		sort.Strings(keys)
 		sort.Strings(values)
 
-		assert.Loosely(t, keys, should.Resemble([]string{"key1", "key2"}))
-		assert.Loosely(t, values, should.Resemble([]string{"value1", "value2"}))
+		assert.Loosely(t, keys, should.Match([]string{"key1", "key2"}))
+		assert.Loosely(t, values, should.Match([]string{"value1", "value2"}))
 
 		keys = nil
 		values = nil
@@ -68,8 +68,8 @@ func TestCache(t *testing.T) {
 			return nil
 		})
 
-		assert.Loosely(t, keys, should.Resemble([]string{"key1", "key2", "key3"}))
-		assert.Loosely(t, values, should.Resemble([]string{"value1", "value2", "value3"}))
+		assert.Loosely(t, keys, should.Match([]string{"key1", "key2", "key3"}))
+		assert.Loosely(t, values, should.Match([]string{"value1", "value2", "value3"}))
 
 		assert.Loosely(t, k.Close(), should.BeNil)
 	})

@@ -137,7 +137,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
 		})
 		t.Run("with legacy test results data", func(t *ftt.Test) {
 			// This test case can be deleted from March 2023. This should be
@@ -158,20 +158,20 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
 		})
 		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 5
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts[:5]))
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[:5]))
 
 			opts.PageToken = nextPageToken
 			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedTestVerdicts[5:]))
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[5:]))
 		})
 
 		t.Run("with partition_time_range", func(t *ftt.Test) {
@@ -184,7 +184,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -224,7 +224,7 @@ func TestReadTestHistory(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 					{
 						TestId:            "test_id",
 						VariantHash:       pbutil.VariantHash(testVariant2),
@@ -263,7 +263,7 @@ func TestReadTestHistory(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 					{
 						TestId:            "test_id",
 						VariantHash:       pbutil.VariantHash(testVariant3),
@@ -286,7 +286,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -316,7 +316,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -342,7 +342,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant4),
@@ -385,7 +385,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err = ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -426,7 +426,7 @@ func TestReadTestHistory(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.TestVerdict{
+			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
 				{
 					TestId:            "test_id",
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -552,20 +552,20 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedGroups))
+			assert.Loosely(t, verdicts, should.Match(expectedGroups))
 		})
 		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 4
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedGroups[:4]))
+			assert.Loosely(t, verdicts, should.Match(expectedGroups[:4]))
 
 			opts.PageToken = nextPageToken
 			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedGroups[4:]))
+			assert.Loosely(t, verdicts, should.Match(expectedGroups[4:]))
 		})
 		t.Run("with legacy test results data", func(t *ftt.Test) {
 			// This test case can be deleted from March 2023. This should be
@@ -580,7 +580,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble(expectedGroups))
+			assert.Loosely(t, verdicts, should.Match(expectedGroups))
 		})
 
 		t.Run("with partition_time_range", func(t *ftt.Test) {
@@ -594,7 +594,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:              pbutil.VariantHash(testVariant1),
@@ -620,7 +620,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:              pbutil.VariantHash(testVariant1),
@@ -653,7 +653,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
@@ -684,7 +684,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant3),
@@ -704,7 +704,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -729,7 +729,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
@@ -762,7 +762,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant4),
@@ -793,7 +793,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -821,7 +821,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, verdicts, should.Resemble([]*pb.QueryTestHistoryStatsResponse_Group{
+			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant1),
@@ -896,7 +896,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var1),
 					Variant:     var1,
@@ -915,7 +915,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err = ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
@@ -928,7 +928,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var1),
 					Variant:     var1,
@@ -949,7 +949,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var3),
 					Variant:     var3,
@@ -974,7 +974,7 @@ func TestReadVariants(t *testing.T) {
 				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+				assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 					{
 						VariantHash: pbutil.VariantHash(var3),
 						Variant:     var3,
@@ -998,7 +998,7 @@ func TestReadVariants(t *testing.T) {
 				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
-				assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+				assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 					{
 						VariantHash: pbutil.VariantHash(var3),
 						Variant:     var3,
@@ -1019,7 +1019,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
@@ -1039,7 +1039,7 @@ func TestReadVariants(t *testing.T) {
 			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, variants, should.Resemble([]*pb.QueryVariantsResponse_VariantInfo{
+			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
 				{
 					VariantHash: pbutil.VariantHash(var2),
 					Variant:     var2,
@@ -1088,7 +1088,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "id1", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"test-id10",
 				"test-id11",
 			}))
@@ -1097,7 +1097,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err = QueryTests(span.Single(ctx), "project", "id1", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"test-id12",
 			}))
 		})
@@ -1107,7 +1107,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "test-id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"test-id00",
 				"test-id01",
 				"test-id10",
@@ -1122,7 +1122,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "test-id", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"test-id02",
 				"test-id12",
 				"test-id22",
@@ -1134,7 +1134,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "special%_characters", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"special%_characters",
 			}))
 		})
@@ -1151,7 +1151,7 @@ func TestQueryTests(t *testing.T) {
 			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "CaSeSeNsItIvE", opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
-			assert.Loosely(t, testIDs, should.Resemble([]string{
+			assert.Loosely(t, testIDs, should.Match([]string{
 				"caseSensitive",
 			}))
 		})

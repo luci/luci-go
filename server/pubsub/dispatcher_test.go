@@ -134,7 +134,7 @@ func TestDispatcher(t *testing.T) {
 			t.Run("Handler IDs", func(t *ftt.Test) {
 				d.RegisterHandler("h1", func(ctx context.Context, message Message) error { return nil })
 				d.RegisterHandler("h2", func(ctx context.Context, message Message) error { return nil })
-				assert.Loosely(t, d.handlerIDs(), should.Resemble([]string{"h1", "h2"}))
+				assert.Loosely(t, d.handlerIDs(), should.Match([]string{"h1", "h2"}))
 			})
 
 			t.Run("Works", func(t *ftt.Test) {
@@ -149,7 +149,7 @@ func TestDispatcher(t *testing.T) {
 					assert.Loosely(t, call("/pubsub/ok?param1=1&param2=2", validBody), should.Equal(200))
 					assert.Loosely(t, called, should.BeTrue)
 
-					assert.Loosely(t, message, should.Resemble(Message{
+					assert.Loosely(t, message, should.Match(Message{
 						Data:         []byte("Hello Cloud Pub/Sub! Here is my message!"),
 						Subscription: "projects/myproject/subscriptions/mysubscription",
 						MessageID:    "2070443601311540",
@@ -167,7 +167,7 @@ func TestDispatcher(t *testing.T) {
 					payload := []byte("Hello Cloud Pub/Sub! Here is my message!")
 					assert.Loosely(t, call("/pubsub/ok", validBodyMinimal(payload)), should.Equal(200))
 					assert.Loosely(t, called, should.BeTrue)
-					assert.Loosely(t, message, should.Resemble(Message{
+					assert.Loosely(t, message, should.Match(Message{
 						Data:         payload,
 						Subscription: "projects/myproject/subscriptions/mysubscription",
 						MessageID:    "2070443601311540",
@@ -188,7 +188,7 @@ func TestDispatcher(t *testing.T) {
 						return nil
 					}))
 					assert.Loosely(t, call("/pubsub/json", validBodyMinimal(payload)), should.Equal(200))
-					assert.Loosely(t, called, should.Resemble(original))
+					assert.Loosely(t, called, should.Match(original))
 				})
 				t.Run("WirePB handler", func(t *ftt.Test) {
 					original := timestamppb.New(time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC))
@@ -200,7 +200,7 @@ func TestDispatcher(t *testing.T) {
 						return nil
 					}))
 					assert.Loosely(t, call("/pubsub/wire", validBodyMinimal(payload)), should.Equal(200))
-					assert.Loosely(t, called, should.Resemble(original))
+					assert.Loosely(t, called, should.Match(original))
 				})
 			})
 

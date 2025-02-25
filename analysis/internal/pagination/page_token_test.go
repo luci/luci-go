@@ -30,7 +30,7 @@ func TestPageToken(t *testing.T) {
 
 		pos, err := ParseToken("CgJ2MQoCdjI=")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pos, should.Resemble([]string{"v1", "v2"}))
+		assert.Loosely(t, pos, should.Match([]string{"v1", "v2"}))
 
 		t.Run(`For fresh token`, func(t *ftt.Test) {
 			assert.Loosely(t, Token(), should.BeBlank)

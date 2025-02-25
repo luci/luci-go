@@ -58,7 +58,7 @@ func testStorageCache(t *testing.T, compress bool) {
 			for _, it := range items {
 				v, ok := cache.Get(c, it.k)
 				assert.Loosely(t, ok, should.BeTrue)
-				assert.Loosely(t, v, should.Resemble(it.v))
+				assert.Loosely(t, v, should.Match(it.v))
 			}
 		})
 
@@ -71,12 +71,12 @@ func testStorageCache(t *testing.T, compress bool) {
 			cache.Put(c, items[0].k, items[0].v, time.Minute)
 			v, ok := cache.Get(c, items[0].k)
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, v, should.Resemble(items[0].v))
+			assert.Loosely(t, v, should.Match(items[0].v))
 
 			cache.Put(c, items[0].k, []byte("ohai"), time.Minute)
 			v, ok = cache.Get(c, items[0].k)
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, v, should.Resemble([]byte("ohai")))
+			assert.Loosely(t, v, should.Match([]byte("ohai")))
 		})
 
 		t.Run(`Applies expiration (or lack thereof).`, func(t *ftt.Test) {
@@ -85,11 +85,11 @@ func testStorageCache(t *testing.T, compress bool) {
 
 			v, has := cache.Get(c, items[0].k)
 			assert.Loosely(t, has, should.BeTrue)
-			assert.Loosely(t, v, should.Resemble(items[0].v))
+			assert.Loosely(t, v, should.Match(items[0].v))
 
 			v, has = cache.Get(c, items[1].k)
 			assert.Loosely(t, has, should.BeTrue)
-			assert.Loosely(t, v, should.Resemble(items[1].v))
+			assert.Loosely(t, v, should.Match(items[1].v))
 
 			tc.Add(time.Minute + 1) // Expires items[0].
 
@@ -98,7 +98,7 @@ func testStorageCache(t *testing.T, compress bool) {
 
 			v, has = cache.Get(c, items[1].k)
 			assert.Loosely(t, has, should.BeTrue)
-			assert.Loosely(t, v, should.Resemble(items[1].v))
+			assert.Loosely(t, v, should.Match(items[1].v))
 		})
 	})
 }

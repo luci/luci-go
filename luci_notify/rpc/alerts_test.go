@@ -101,7 +101,7 @@ func TestAlerts(t *testing.T) {
 				response, err := server.BatchGetAlerts(ctx, request)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.BatchGetAlertsResponse{
+				assert.Loosely(t, response, should.Match(&pb.BatchGetAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/1",
@@ -129,7 +129,7 @@ func TestAlerts(t *testing.T) {
 				response, err := server.BatchGetAlerts(ctx, request)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.BatchGetAlertsResponse{
+				assert.Loosely(t, response, should.Match(&pb.BatchGetAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/non-existing",
@@ -211,7 +211,7 @@ func TestAlerts(t *testing.T) {
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.BatchUpdateAlertsResponse{
+				assert.Loosely(t, response, should.Match(&pb.BatchUpdateAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/1",
@@ -227,7 +227,7 @@ func TestAlerts(t *testing.T) {
 				// Check it was actually written to the DB.
 				s, err := alerts.ReadBatch(span.Single(ctx), []string{"1"})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, s, should.Resemble([]*alerts.Alert{{
+				assert.Loosely(t, s, should.Match([]*alerts.Alert{{
 					AlertKey:     "1",
 					Bug:          1,
 					SilenceUntil: 2,

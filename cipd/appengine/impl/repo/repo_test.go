@@ -109,25 +109,25 @@ func TestMetadataFetching(t *testing.T) {
 		t.Run("GetPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGet("a/b/c/d", "user:top-owner@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(leafMeta))
+			assert.Loosely(t, resp, should.Match(leafMeta))
 		})
 
 		t.Run("GetPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGet("a/b/c/d", "user:prefixes-viewer@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(leafMeta))
+			assert.Loosely(t, resp, should.Match(leafMeta))
 		})
 
 		t.Run("GetInheritedPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
+			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetInheritedPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
+			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetPrefixMetadata bad prefix", func(t *ftt.Test) {
@@ -151,7 +151,7 @@ func TestMetadataFetching(t *testing.T) {
 		t.Run("GetInheritedPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble([]*api.PrefixMetadata{rootMeta, topMeta}))
+			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta}))
 		})
 
 		t.Run("GetPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
@@ -243,7 +243,7 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			}
-			assert.Loosely(t, meta, should.Resemble(expected))
+			assert.Loosely(t, meta, should.Match(expected))
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
@@ -251,7 +251,7 @@ func TestMetadataUpdating(t *testing.T) {
 			updated.Acls = nil
 			meta, err = callUpdate("user:top-owner@example.com", updated)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, meta, should.Resemble(&api.PrefixMetadata{
+			assert.Loosely(t, meta, should.Match(&api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  timestamppb.New(testutil.TestTime.Add(time.Hour)),
@@ -262,7 +262,7 @@ func TestMetadataUpdating(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 			ev, err := model.QueryEvents(ctx, model.NewEventsQuery())
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ev, should.Resemble([]*api.Event{
+			assert.Loosely(t, ev, should.Match([]*api.Event{
 				{
 					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
@@ -403,7 +403,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
@@ -414,13 +414,13 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{}))
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{}))
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
@@ -490,7 +490,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
@@ -501,13 +501,13 @@ func TestGetRolesInPrefix(t *testing.T) {
 		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{}))
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{}))
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RolesInPrefixResponse{
+			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
 				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
 					{Role: api.Role_READER},
 					{Role: api.Role_WRITER},
@@ -621,11 +621,11 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", true, true, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
 					"2/a/b/c", "3", "4", "5/a/b", "6", "6/a/b", "7/a",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{
 					"1", "1/a", "1/a/b", "1/d", "2", "2/a", "2/a/b", "5", "5/a",
 					"6", "6/a", "7",
 				}))
@@ -634,10 +634,10 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", true, false, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/b", "2/a/b/c", "3", "6/a/b",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{
 					"1", "1/a", "1/a/b", "2", "2/a", "2/a/b", "6", "6/a",
 				}))
 			})
@@ -645,33 +645,33 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root non-recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", false, true, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{"1", "3", "4", "6"}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "2", "5", "6", "7"}))
+				assert.Loosely(t, resp.Packages, should.Match([]string{"1", "3", "4", "6"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "2", "5", "6", "7"}))
 			})
 
 			t.Run("Root non-recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", false, false, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{"1", "3"}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "2", "6"}))
+				assert.Loosely(t, resp.Packages, should.Match([]string{"1", "3"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "2", "6"}))
 			})
 
 			t.Run("Non-root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("1", true, true, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b", "1/d"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1/a", "1/a/b", "1/d"}))
 			})
 
 			t.Run("Non-root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("1", true, false, "user:admin@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/b",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1/a", "1/a/b"}))
 			})
 		})
 
@@ -679,10 +679,10 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", true, true, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "6", "6/a/b", "7/a",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{
 					"1", "1/a", "1/a/b", "6", "6/a", "7",
 				}))
 			})
@@ -690,10 +690,10 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", true, false, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "6/a/b",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{
 					"1", "1/a", "1/a/b", "6", "6/a",
 				}))
 			})
@@ -701,33 +701,33 @@ func TestListPrefix(t *testing.T) {
 			t.Run("Root non-recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("", false, true, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{"6"}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "6", "7"}))
+				assert.Loosely(t, resp.Packages, should.Match([]string{"6"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "6", "7"}))
 			})
 
 			t.Run("Root non-recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("", false, false, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string(nil)))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1", "6"}))
+				assert.Loosely(t, resp.Packages, should.Match([]string(nil)))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "6"}))
 			})
 
 			t.Run("Non-root recursive (including hidden)", func(t *ftt.Test) {
 				resp, err := call("1", true, true, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1/a", "1/a/b"}))
 			})
 
 			t.Run("Non-root recursive (visible only)", func(t *ftt.Test) {
 				resp, err := call("1", true, false, "user:reader@example.com")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.Packages, should.Resemble([]string{
+				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c",
 				}))
-				assert.Loosely(t, resp.Prefixes, should.Resemble([]string{"1/a", "1/a/b"}))
+				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1/a", "1/a/b"}))
 			})
 		})
 
@@ -941,7 +941,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			// Mock "successfully started upload op".
 			cas.BeginUploadImpl = func(_ context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				assert.Loosely(t, req, should.Resemble(&api.BeginUploadRequest{
+				assert.Loosely(t, req, should.Match(&api.BeginUploadRequest{
 					Object: &api.ObjectRef{
 						HashAlgo:  api.HashAlgo_SHA1,
 						HexDigest: digest,
@@ -953,7 +953,7 @@ func TestRegisterInstance(t *testing.T) {
 			// The instance is not uploaded yet => asks to upload.
 			resp, err := impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_NOT_UPLOADED,
 				UploadOp: &uploadOp,
 			}))
@@ -972,7 +972,7 @@ func TestRegisterInstance(t *testing.T) {
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
 				Status:   api.RegistrationStatus_REGISTERED,
 				Instance: fullInstProto,
 			}))
@@ -980,10 +980,10 @@ func TestRegisterInstance(t *testing.T) {
 			// Launched post-processors.
 			ent := (&model.Instance{}).FromProto(ctx, inst)
 			assert.Loosely(t, datastore.Get(ctx, ent), should.BeNil)
-			assert.Loosely(t, ent.ProcessorsPending, should.Resemble([]string{"proc_id_1"}))
+			assert.Loosely(t, ent.ProcessorsPending, should.Match([]string{"proc_id_1"}))
 			tqt := sched.Tasks()
 			assert.Loosely(t, tqt, should.HaveLength(1))
-			assert.Loosely(t, tqt[0].Payload, should.Resemble(&tasks.RunProcessors{
+			assert.Loosely(t, tqt[0].Payload, should.Match(&tasks.RunProcessors{
 				Instance: fullInstProto,
 			}))
 		})
@@ -997,7 +997,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			resp, err := impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.RegisterInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
 				Status: api.RegistrationStatus_ALREADY_REGISTERED,
 				Instance: &api.Instance{
 					Package:      inst.Package,
@@ -1111,7 +1111,7 @@ func TestProcessors(t *testing.T) {
 			assert.Loosely(t, impl.updateProcessors(ctx, inst, map[string]processing.Result{
 				"some-another": {Err: fmt.Errorf("fail")},
 			}), should.BeNil)
-			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Resemble([]string{"a", "b"}))
+			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Match([]string{"a", "b"}))
 		})
 
 		t.Run("Updates processors successfully", func(t *ftt.Test) {
@@ -1124,9 +1124,9 @@ func TestProcessors(t *testing.T) {
 
 			// Updated the Instance entity.
 			inst := fetchInstance()
-			assert.Loosely(t, inst.ProcessorsPending, should.Resemble([]string{"pending"}))
-			assert.Loosely(t, inst.ProcessorsSuccess, should.Resemble([]string{"ok"}))
-			assert.Loosely(t, inst.ProcessorsFailure, should.Resemble([]string{"fail"}))
+			assert.Loosely(t, inst.ProcessorsPending, should.Match([]string{"pending"}))
+			assert.Loosely(t, inst.ProcessorsSuccess, should.Match([]string{"ok"}))
+			assert.Loosely(t, inst.ProcessorsFailure, should.Match([]string{"fail"}))
 
 			// Created ProcessingResult entities.
 			assert.Loosely(t, fetchProcSuccess("ok"), should.Equal("OK"))
@@ -1143,7 +1143,7 @@ func TestProcessors(t *testing.T) {
 		t.Run("runProcessorsTask happy path", func(t *ftt.Test) {
 			// Setup two pending processors that read 'file2'.
 			runCB := func(i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
-				assert.Loosely(t, i.Proto(), should.Resemble(inst))
+				assert.Loosely(t, i.Proto(), should.Match(inst))
 
 				rd, _, err := r.Open("file2")
 				assert.Loosely(t, err, should.BeNil)
@@ -1161,7 +1161,7 @@ func TestProcessors(t *testing.T) {
 
 			// Setup the package.
 			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
-				assert.Loosely(t, inst.Instance, should.Resemble(ref))
+				assert.Loosely(t, inst.Instance, should.Match(ref))
 				return testutil.NewMockGSReader(testZip), nil
 			}
 
@@ -1172,7 +1172,7 @@ func TestProcessors(t *testing.T) {
 			// Both succeeded.
 			inst := fetchInstance()
 			assert.Loosely(t, inst.ProcessorsPending, should.HaveLength(0))
-			assert.Loosely(t, inst.ProcessorsSuccess, should.Resemble([]string{"proc1", "proc2"}))
+			assert.Loosely(t, inst.ProcessorsSuccess, should.Match([]string{"proc1", "proc2"}))
 
 			// And have the result.
 			assert.Loosely(t, fetchProcSuccess("proc1"), should.Equal("OK"))
@@ -1232,7 +1232,7 @@ func TestProcessors(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("failed transiently"))
 
 			// bad-proc is still pending.
-			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Resemble([]string{"bad-proc"}))
+			assert.Loosely(t, fetchInstance().ProcessorsPending, should.Match([]string{"bad-proc"}))
 			// good-proc is done.
 			assert.Loosely(t, fetchProcSuccess("good-proc"), should.Equal("OK"))
 		})
@@ -1372,7 +1372,7 @@ func TestListInstances(t *testing.T) {
 				Package: "a/empty",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{}))
+			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{}))
 		})
 
 		t.Run("Full listing (no pagination)", func(t *ftt.Test) {
@@ -1380,7 +1380,7 @@ func TestListInstances(t *testing.T) {
 				Package: "a/b",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{
+			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{
 				Instances: []*api.Instance{inst(3), inst(2), inst(1), inst(0)},
 			}))
 		})
@@ -1392,7 +1392,7 @@ func TestListInstances(t *testing.T) {
 				PageSize: 3,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Instances, should.Resemble([]*api.Instance{
+			assert.Loosely(t, res.Instances, should.Match([]*api.Instance{
 				inst(3), inst(2), inst(1),
 			}))
 			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
@@ -1404,7 +1404,7 @@ func TestListInstances(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&api.ListInstancesResponse{
+			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{
 				Instances: []*api.Instance{inst(0)},
 			}))
 		})
@@ -1544,7 +1544,7 @@ func TestSearchInstances(t *testing.T) {
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs))
+			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs))
 			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
 		})
 
@@ -1555,7 +1555,7 @@ func TestSearchInstances(t *testing.T) {
 				PageSize: 6,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs[:6]))
+			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs[:6]))
 			assert.Loosely(t, out.NextPageToken, should.NotEqual(""))
 
 			out, err = impl.SearchInstances(ctx, &api.SearchInstancesRequest{
@@ -1565,7 +1565,7 @@ func TestSearchInstances(t *testing.T) {
 				PageToken: out.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ids(out.Instances), should.Resemble(expectedIIDs[6:]))
+			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs[6:]))
 			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
 		})
 	})
@@ -1621,7 +1621,7 @@ func TestRefs(t *testing.T) {
 			// Can be listed now.
 			refs, err := impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, refs.Refs, should.Resemble([]*api.Ref{
+			assert.Loosely(t, refs.Refs, should.Match([]*api.Ref{
 				{
 					Name:    "latest",
 					Package: "a/b/c",
@@ -2473,7 +2473,7 @@ func TestResolveVersion(t *testing.T) {
 				Version: "latest",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inst, should.Resemble(inst2.Proto()))
+			assert.Loosely(t, inst, should.Match(inst2.Proto()))
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
@@ -2592,7 +2592,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Instance: inst.Proto().Instance,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&api.ObjectURL{
+				assert.Loosely(t, resp, should.Match(&api.ObjectURL{
 					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
 				}))
 			})
@@ -2740,7 +2740,7 @@ func TestDescribeInstance(t *testing.T) {
 				Instance: inst.Proto().Instance,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.DescribeInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&api.DescribeInstanceResponse{
 				Instance: inst.Proto(),
 			}))
 		})
@@ -2784,7 +2784,7 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeMetadata:   true,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.DescribeInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&api.DescribeInstanceResponse{
 				Instance: inst.Proto(),
 				Tags: []*api.Tag{
 					{
@@ -2993,7 +2993,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Version: "latest",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
+				assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
 					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-1", "file1"),
 						expectedFile("a/pkg/var-2", "file2"),
@@ -3009,7 +3009,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Version:  "latest",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
+				assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
 					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-3", "file3"),
 						expectedFile("a/pkg/var-1", "file1"),
@@ -3027,7 +3027,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Version: "latest",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&api.DescribeBootstrapBundleResponse{
+			assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
 				Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
 					expectedFile("a/pkg/var-1", "file1"),
 					expectedError("a/pkg/var-2", codes.FailedPrecondition, `"a/pkg/var-2" is not a bootstrap package`),
@@ -3314,7 +3314,7 @@ func TestClientBootstrap(t *testing.T) {
 			t.Run("Happy path", func(t *ftt.Test) {
 				resp, err := call(goodPkg, goodDigest)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&api.DescribeClientResponse{
+				assert.Loosely(t, resp, should.Match(&api.DescribeClientResponse{
 					Instance: &api.Instance{
 						Package: goodPkg,
 						Instance: &api.ObjectRef{

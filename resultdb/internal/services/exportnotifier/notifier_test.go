@@ -69,7 +69,7 @@ func TestPropagate(t *testing.T) {
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a")))
 			assert.Loosely(t, notifications, should.BeEmpty)
 
 			roots, err := exportroots.ReadAllForTesting(span.Single(ctx))
@@ -97,23 +97,23 @@ func TestPropagate(t *testing.T) {
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
 			assert.Loosely(t, sentMessages(sched), should.BeEmpty)
 			assert.Loosely(t, notifications, should.BeEmpty)
 
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, got, should.Resemble(expectedRoots))
+			assert.Loosely(t, got, should.Match(expectedRoots))
 
 			t.Run(`Repeated propagation stops early`, func(t *ftt.Test) {
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+				assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a")))
 				assert.Loosely(t, notifications, should.BeEmpty)
 
 				got, err := exportroots.ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble(expectedRoots))
+				assert.Loosely(t, got, should.Match(expectedRoots))
 			})
 			t.Run(`Setting sources as final, inherited sources are propagated and notifications are sent`, func(t *ftt.Test) {
 				_, err := span.Apply(ctx, []*spanner.Mutation{
@@ -129,8 +129,8 @@ func TestPropagate(t *testing.T) {
 
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
-				assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
+				assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+				assert.Loosely(t, notifications, should.Match([]*pb.InvocationReadyForExportNotification{
 					{
 						ResultdbHost:        testHostname,
 						RootInvocation:      "invocations/inv-root-a",
@@ -162,17 +162,17 @@ func TestPropagate(t *testing.T) {
 					exportroots.NewBuilder(1).WithInvocation("inv-a2").WithRootInvocation("inv-root-a").WithInheritedSources(sources).WithoutNotified().Build(),
 					exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 				}
-				assert.Loosely(t, got, should.Resemble(expectedRoots))
+				assert.Loosely(t, got, should.Match(expectedRoots))
 
 				t.Run(`Repeated propagation does nothing`, func(t *ftt.Test) {
 					visited, notifications, err := propagateRecursive(ctx, sched, task)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+					assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a")))
 					assert.Loosely(t, notifications, should.BeEmpty)
 
 					got, err := exportroots.ReadAllForTesting(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble(expectedRoots))
+					assert.Loosely(t, got, should.Match(expectedRoots))
 				})
 				t.Run(`Repeated propagation of notified invocation does nothing`, func(t *ftt.Test) {
 					task := &taskspb.RunExportNotifications{
@@ -181,12 +181,12 @@ func TestPropagate(t *testing.T) {
 
 					visited, notifications, err := propagateRecursive(ctx, sched, task)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-a")))
+					assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-a")))
 					assert.Loosely(t, notifications, should.BeEmpty)
 
 					got, err := exportroots.ReadAllForTesting(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble(expectedRoots))
+					assert.Loosely(t, got, should.Match(expectedRoots))
 				})
 			})
 		})
@@ -214,8 +214,8 @@ func TestPropagate(t *testing.T) {
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
-			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+			assert.Loosely(t, notifications, should.Match([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-a",
@@ -247,7 +247,7 @@ func TestPropagate(t *testing.T) {
 				exportroots.NewBuilder(1).WithInvocation("inv-a2").WithRootInvocation("inv-root-a").WithInheritedSources(sources).WithoutNotified().Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
-			assert.Loosely(t, got, should.Resemble(expectedRoots))
+			assert.Loosely(t, got, should.Match(expectedRoots))
 		})
 		t.Run(`Graph cycles do not result in an infinite propagation loop`, func(t *ftt.Test) {
 			_, err := span.Apply(ctx, testutil.CombineMutations(
@@ -274,7 +274,7 @@ func TestPropagate(t *testing.T) {
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-c", "inv-c1", "inv-c2")))
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-c", "inv-c1", "inv-c2")))
 			assert.Loosely(t, notifications, should.BeEmpty)
 
 			expectedRoots := []exportroots.ExportRoot{
@@ -284,12 +284,12 @@ func TestPropagate(t *testing.T) {
 			}
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, got, should.Resemble(expectedRoots))
+			assert.Loosely(t, got, should.Match(expectedRoots))
 
 			t.Run(`Repeated propagation stops early`, func(t *ftt.Test) {
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-c")))
+				assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-c")))
 				assert.Loosely(t, notifications, should.BeEmpty)
 			})
 		})
@@ -323,8 +323,8 @@ func TestPropagate(t *testing.T) {
 			// Expect propagation to inv-d1, inv-d1a but not to inv-d2.
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-d", "inv-d1", "inv-d1a")))
-			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-d", "inv-d1", "inv-d1a")))
+			assert.Loosely(t, notifications, should.Match([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-d",
@@ -363,7 +363,7 @@ func TestPropagate(t *testing.T) {
 				exportroots.NewBuilder(1).WithInvocation("inv-d1a").WithRootInvocation("inv-root-d").WithInheritedSources(sources).WithNotified(got[1].NotifiedTime).Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-d").WithRootInvocation("inv-root-d").WithInheritedSources(nil).WithNotified(got[2].NotifiedTime).Build(),
 			}
-			assert.Loosely(t, got, should.Resemble(expectedRoots))
+			assert.Loosely(t, got, should.Match(expectedRoots))
 		})
 		t.Run(`Invocation with explicit sources`, func(t *ftt.Test) {
 			_, err := span.Apply(ctx, testutil.CombineMutations(
@@ -392,8 +392,8 @@ func TestPropagate(t *testing.T) {
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-e", "inv-e")))
-			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, visited, should.Match(invocations.NewIDSet("inv-root-e", "inv-e")))
+			assert.Loosely(t, notifications, should.Match([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-e",
@@ -413,7 +413,7 @@ func TestPropagate(t *testing.T) {
 				exportroots.NewBuilder(1).WithInvocation("inv-e").WithRootInvocation("inv-root-e").WithoutInheritedSources().WithNotified(got[0].NotifiedTime).Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-e").WithRootInvocation("inv-root-e").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
-			assert.Loosely(t, got, should.Resemble(expectedRoots))
+			assert.Loosely(t, got, should.Match(expectedRoots))
 		})
 	})
 }

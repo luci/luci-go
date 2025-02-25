@@ -100,7 +100,7 @@ func TestSpy(t *testing.T) {
 					build.UpdateTime = nil
 					build.EndTime = nil
 
-					assert.Loosely(c, build, should.Resemble(&bbpb.Build{
+					assert.Loosely(c, build, should.Match(&bbpb.Build{
 						SummaryMarkdown: "we did it",
 						Status:          bbpb.Status_SUCCESS,
 						Output: &bbpb.Build_Output{

@@ -34,14 +34,14 @@ func TestStore(t *testing.T) {
 		// Autogenerate one.
 		s1, err := store.RandomSecret(ctx, "key1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s1, should.Resemble(secrets.Secret{
+		assert.Loosely(t, s1, should.Match(secrets.Secret{
 			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		}))
 
 		// Getting same one back.
 		s2, err := store.RandomSecret(ctx, "key1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s2, should.Resemble(secrets.Secret{
+		assert.Loosely(t, s2, should.Match(secrets.Secret{
 			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		}))
 	})
@@ -55,7 +55,7 @@ func TestStore(t *testing.T) {
 
 		s, err := store.StoredSecret(ctx, "key1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.Resemble(secrets.Secret{Active: []byte("blah")}))
+		assert.Loosely(t, s, should.Match(secrets.Secret{Active: []byte("blah")}))
 
 		_, err = store.StoredSecret(ctx, "key2")
 		assert.Loosely(t, err, should.Equal(secrets.ErrNoSuchSecret))

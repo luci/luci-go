@@ -53,7 +53,7 @@ func TestPairs(t *testing.T) {
 
 	ftt.Run("Map", t, func(t *ftt.Test) {
 		t.Run("Format", func(t *ftt.Test) {
-			assert.Loosely(t, m.Format(), should.Resemble([]string{
+			assert.Loosely(t, m.Format(), should.Match([]string{
 				"a:2",
 				"b:1",
 			}))
@@ -75,7 +75,7 @@ func TestPairs(t *testing.T) {
 		t.Run("Set", func(t *ftt.Test) {
 			m2 := m.Copy()
 			m2.Set("c", "3")
-			assert.Loosely(t, m2, should.Resemble(Map{
+			assert.Loosely(t, m2, should.Match(Map{
 				"b": []string{"1"},
 				"a": []string{"2"},
 				"c": []string{"3"},
@@ -83,7 +83,7 @@ func TestPairs(t *testing.T) {
 		})
 		t.Run("Del", func(t *ftt.Test) {
 			m.Del("a")
-			assert.Loosely(t, m, should.Resemble(Map{
+			assert.Loosely(t, m, should.Match(Map{
 				"b": []string{"1"},
 			}))
 		})

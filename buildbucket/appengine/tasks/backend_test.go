@@ -125,14 +125,14 @@ func helpTestCipdCall(t testing.TB, ctx context.Context, infra *pb.BuildInfra, e
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
 	assert.Loosely(t, ok, should.BeTrue, truth.LineContext())
-	assert.Loosely(t, detail, should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
+	assert.Loosely(t, detail, should.Match(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 		Sha256:    "this_is_a_sha_256_I_swear",
 		SizeBytes: 100,
 		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
 	}), truth.LineContext())
 	detail, ok = m["infra/tools/luci/bbagent/mac-amd64"]
 	assert.Loosely(t, ok, should.BeTrue, truth.LineContext())
-	assert.Loosely(t, detail, should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
+	assert.Loosely(t, detail, should.Match(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 		Sha256:    "this_is_a_sha_256_I_swear",
 		SizeBytes: 100,
 		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
@@ -373,7 +373,7 @@ func TestCreateBackendTask(t *testing.T) {
 			}
 			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id", settingsCfg)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, req.BackendConfig, should.Resemble(&structpb.Struct{
+			assert.Loosely(c, req.BackendConfig, should.Match(&structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"priority": {
 						Kind: &structpb.Value_NumberValue{NumberValue: 32},
@@ -399,7 +399,7 @@ func TestCreateBackendTask(t *testing.T) {
 			}))
 			assert.Loosely(c, req.BuildbucketHost, should.Equal("some unique host name"))
 			assert.Loosely(c, req.BuildId, should.Equal("1"))
-			assert.Loosely(c, req.Caches, should.Resemble([]*pb.CacheEntry{
+			assert.Loosely(c, req.Caches, should.Match([]*pb.CacheEntry{
 				{
 					Name: "cache_name",
 					Path: "cache_value",
@@ -413,32 +413,32 @@ func TestCreateBackendTask(t *testing.T) {
 					Path: "cipd_cache",
 				},
 			}))
-			assert.Loosely(c, req.ExecutionTimeout, should.Resemble(&durationpb.Duration{Seconds: 500}))
-			assert.Loosely(c, req.GracePeriod, should.Resemble(&durationpb.Duration{Seconds: 230}))
-			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
+			assert.Loosely(c, req.ExecutionTimeout, should.Match(&durationpb.Duration{Seconds: 500}))
+			assert.Loosely(c, req.GracePeriod, should.Match(&durationpb.Duration{Seconds: 230}))
+			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], should.Match(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 				Sha256:    "this_is_a_sha_256_I_swear",
 				SizeBytes: 100,
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
 			}))
-			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/mac-amd64"], should.Resemble(&pb.RunTaskRequest_AgentExecutable_AgentSource{
+			assert.Loosely(c, req.Agent.Source["infra/tools/luci/bbagent/mac-amd64"], should.Match(&pb.RunTaskRequest_AgentExecutable_AgentSource{
 				Sha256:    "this_is_a_sha_256_I_swear",
 				SizeBytes: 100,
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
 			}))
-			assert.Loosely(c, req.AgentArgs, should.Resemble([]string{
+			assert.Loosely(c, req.AgentArgs, should.Match([]string{
 				"-build-id", "1",
 				"-host", "some unique host name",
 				"-cache-base", "cache",
 				"-context-file", "${BUILDBUCKET_AGENT_CONTEXT_FILE}",
 			}))
-			assert.Loosely(c, req.Dimensions, should.Resemble([]*pb.RequestedDimension{
+			assert.Loosely(c, req.Dimensions, should.Match([]*pb.RequestedDimension{
 				{
 					Key:   "dim_key_1",
 					Value: "dim_val_1",
 				},
 			}))
 			assert.Loosely(c, req.StartDeadline.Seconds, should.Equal(1677511893))
-			assert.Loosely(c, req.Experiments, should.Resemble([]string{
+			assert.Loosely(c, req.Experiments, should.Match([]string{
 				"cow_eggs_experiment",
 				"are_cow_eggs_real_experiment",
 			}))
@@ -621,7 +621,7 @@ func TestCreateBackendTask(t *testing.T) {
 			assert.Loosely(c, shardID >= 0, should.BeTrue)
 			assert.Loosely(c, shardID < 5, should.BeTrue)
 			assert.Loosely(c, parts[3], should.Equal(fmt.Sprint(updateTime.Round(time.Minute).Add(eb.BackendSyncInterval).Unix())))
-			assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
+			assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Match(&pb.Task{
 				Id: &pb.TaskID{
 					Id:     "abc123",
 					Target: "swarming://chromium-swarm",
@@ -711,7 +711,7 @@ func TestCreateBackendTask(t *testing.T) {
 				assert.Loosely(c, datastore.Get(ctx, eb, expectedBuildInfra), should.BeNil)
 				updateTime := eb.Proto.UpdateTime.AsTime()
 				assert.Loosely(c, updateTime, should.Match(now))
-				assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
+				assert.Loosely(c, expectedBuildInfra.Proto.Backend.Task, should.Match(&pb.Task{
 					Id: &pb.TaskID{
 						Id:     "abc123",
 						Target: "lite://foo-lite",

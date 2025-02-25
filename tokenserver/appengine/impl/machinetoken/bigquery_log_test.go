@@ -60,7 +60,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			RequestID: "gae-request-id",
 		}
 
-		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.MachineToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Match(&bqpb.MachineToken{
 			CaCommonName:       "Fake CA: fake.ca",
 			CaConfigRev:        "cfg-updated-rev",
 			CertSerialNumber:   "4096",

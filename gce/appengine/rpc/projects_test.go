@@ -167,7 +167,7 @@ func TestProjects(t *testing.T) {
 				}
 				cfg, err := srv.Ensure(c, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(&projects.Config{
+				assert.Loosely(t, cfg, should.Match(&projects.Config{
 					Project: "project",
 					Region: []string{
 						"region1",

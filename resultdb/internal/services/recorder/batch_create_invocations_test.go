@@ -149,7 +149,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			// Update tokens are regenerated the second time, but they are both valid.
 			res2.UpdateTokens = res.UpdateTokens
 			// Otherwise, the responses must be identical.
-			assert.Loosely(t, res2, should.Resemble(res))
+			assert.Loosely(t, res2, should.Match(res))
 		})
 		t.Run(`inclusion of non-existent invocation`, func(t *ftt.Test) {
 			req := &pb.BatchCreateInvocationsRequest{
@@ -336,8 +336,8 @@ func TestBatchCreateInvocations(t *testing.T) {
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[1].CreateTime,
 			})
-			assert.Loosely(t, resp.Invocations[0], should.Resemble(expected))
-			assert.Loosely(t, resp.Invocations[1], should.Resemble(expected2))
+			assert.Loosely(t, resp.Invocations[0], should.Match(expected))
+			assert.Loosely(t, resp.Invocations[1], should.Match(expected2))
 			assert.Loosely(t, resp.UpdateTokens, should.HaveLength(2))
 
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -345,11 +345,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 			inv, err := invocations.Read(ctx, "u-batch-inv")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(expected))
+			assert.Loosely(t, inv, should.Match(expected))
 
 			inv2, err := invocations.Read(ctx, "u-batch-inv2")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv2, should.Resemble(expected2))
+			assert.Loosely(t, inv2, should.Match(expected2))
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time

@@ -272,7 +272,7 @@ func TestQueryTestVariants(t *testing.T) {
 			page := mustFetch(q)
 			tvs := page.TestVariants
 			tvStrings := tvStrings(tvs)
-			assert.Loosely(t, tvStrings, should.Resemble([]string{
+			assert.Loosely(t, tvStrings, should.Match([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -284,7 +284,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			}))
 
-			assert.Loosely(t, tvs[0].Results, should.Resemble([]*pb.TestResultBundle{
+			assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
 				{
 					Result: &pb.TestResult{
 						Name:        "invocations/inv1/tests/T4/results/0",
@@ -311,31 +311,31 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				},
 			}))
-			assert.Loosely(t, tvs[0].TestMetadata, should.Resemble(tmd))
+			assert.Loosely(t, tvs[0].TestMetadata, should.Match(tmd))
 			assert.Loosely(t, tvs[0].SourcesId, should.Equal(graph.HashSources(sources).String()))
 
 			sort.Slice(tvs[7].Exonerations, func(i, j int) bool {
 				return tvs[7].Exonerations[i].ExplanationHtml < tvs[7].Exonerations[j].ExplanationHtml
 			})
 			assert.Loosely(t, len(tvs[7].Exonerations), should.Equal(3))
-			assert.Loosely(t, tvs[7].Exonerations[0], should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, tvs[7].Exonerations[0], should.Match(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
 
-			assert.Loosely(t, tvs[7].Exonerations[1], should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, tvs[7].Exonerations[1], should.Match(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/1",
 				ExplanationHtml: "explanation 1",
 				Reason:          pb.ExonerationReason_NOT_CRITICAL,
 			}))
-			assert.Loosely(t, tvs[7].Exonerations[2], should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, tvs[7].Exonerations[2], should.Match(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/2",
 				ExplanationHtml: "explanation 2",
 				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 			}))
 			assert.Loosely(t, len(tvs[8].Exonerations), should.Equal(1))
-			assert.Loosely(t, tvs[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, tvs[8].Exonerations[0], should.Match(&pb.TestExoneration{
 				Name:            "invocations/inv2/tests/T2/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
@@ -343,14 +343,14 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, len(tvs[2].Results), should.Equal(10))
 
 			assert.Loosely(t, page.DistinctSources, should.HaveLength(1))
-			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Resemble(sources))
+			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Match(sources))
 		})
 
 		t.Run(`Expected works`, func(t *ftt.Test) {
 			q.PageToken = pagination.Token("EXPECTED", "", "")
 			page := mustFetch(q)
 			tvs := page.TestVariants
-			assert.Loosely(t, tvStrings(tvs), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(tvs), should.Match([]string{
 				"50/T3/e3b0c44298fc1c14/",
 				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
@@ -365,7 +365,7 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, tvs[3].SourcesId, should.BeEmpty)                                    // Sources from inv0.
 
 			assert.Loosely(t, page.DistinctSources, should.HaveLength(1))
-			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Resemble(sources))
+			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Match(sources))
 		})
 
 		t.Run(`Field mask works`, func(t *ftt.Test) {
@@ -378,7 +378,7 @@ func TestQueryTestVariants(t *testing.T) {
 						assert.Loosely(t, tv.TestId, should.NotBeEmpty)
 						assert.Loosely(t, tv.VariantHash, should.NotBeEmpty)
 						assert.Loosely(t, tv.Status, should.NotBeZero)
-						assert.Loosely(t, tv, should.Resemble(&pb.TestVariant{
+						assert.Loosely(t, tv, should.Match(&pb.TestVariant{
 							TestId:      tv.TestId,
 							VariantHash: tv.VariantHash,
 							Status:      tv.Status,
@@ -467,7 +467,7 @@ func TestQueryTestVariants(t *testing.T) {
 								assert.Loosely(t, result.Result.FailureReason, should.NotBeNil)
 								assert.Loosely(t, result.Result.Properties, should.NotBeNil)
 							}
-							assert.Loosely(t, result, should.Resemble(&pb.TestResultBundle{
+							assert.Loosely(t, result, should.Match(&pb.TestResultBundle{
 								Result: &pb.TestResult{
 									Name:          result.Result.Name,
 									ResultId:      result.Result.ResultId,
@@ -489,14 +489,14 @@ func TestQueryTestVariants(t *testing.T) {
 							if tv.TestId != "T2" {
 								assert.Loosely(t, exoneration.Reason, should.NotBeZero)
 							}
-							assert.Loosely(t, exoneration, should.Resemble(&pb.TestExoneration{
+							assert.Loosely(t, exoneration, should.Match(&pb.TestExoneration{
 								Name:            exoneration.Name,
 								ExplanationHtml: exoneration.ExplanationHtml,
 								Reason:          exoneration.Reason,
 							}))
 						}
 
-						assert.Loosely(t, tv, should.Resemble(&pb.TestVariant{
+						assert.Loosely(t, tv, should.Match(&pb.TestVariant{
 							TestId:       tv.TestId,
 							VariantHash:  tv.VariantHash,
 							Status:       tv.Status,
@@ -535,7 +535,7 @@ func TestQueryTestVariants(t *testing.T) {
 			page := func(token string, expectedTVLen int32, expectedTVStrings []string) string {
 				q.PageToken = token
 				page := mustFetch(q)
-				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble(expectedTVStrings))
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Match(expectedTVStrings))
 				return page.NextPageToken
 			}
 
@@ -596,7 +596,7 @@ func TestQueryTestVariants(t *testing.T) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED}
 				page := mustFetch(q)
 				tvStrings := tvStrings(page.TestVariants)
-				assert.Loosely(t, tvStrings, should.Resemble([]string{
+				assert.Loosely(t, tvStrings, should.Match([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -607,7 +607,7 @@ func TestQueryTestVariants(t *testing.T) {
 			t.Run(`only expected`, func(t *ftt.Test) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_EXPECTED}
 				page := mustFetch(q)
-				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
 					"50/T3/e3b0c44298fc1c14/",
 					"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
@@ -620,7 +620,7 @@ func TestQueryTestVariants(t *testing.T) {
 			t.Run(`any unexpected or exonerated`, func(t *ftt.Test) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED_MASK}
 				page := mustFetch(q)
-				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -654,7 +654,7 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			// All test variants should be returned.
-			assert.Loosely(t, tvStrings(allTVs), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(allTVs), should.Match([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -683,7 +683,7 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			// All test variants should be returned.
-			assert.Loosely(t, tvStrings(allTVs), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(allTVs), should.Match([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -706,7 +706,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 			t.Run(`with only limited access`, func(t *ftt.Test) {
 				page := mustFetch(q)
-				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -736,7 +736,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 				// Check test results and exonerations for data that should
 				// still be available after masking to limited data.
-				assert.Loosely(t, page.TestVariants[0].Results, should.Resemble([]*pb.TestResultBundle{
+				assert.Loosely(t, page.TestVariants[0].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:      "invocations/inv1/tests/T4/results/0",
@@ -758,7 +758,7 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				}))
 				assert.Loosely(t, len(page.TestVariants[8].Exonerations), should.Equal(1))
-				assert.Loosely(t, page.TestVariants[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
+				assert.Loosely(t, page.TestVariants[8].Exonerations[0], should.Match(&pb.TestExoneration{
 					Name:            "invocations/inv2/tests/T2/exonerations/0",
 					ExplanationHtml: "explanation 0",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
@@ -786,7 +786,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 				page := mustFetch(q)
 				tvs := page.TestVariants
-				assert.Loosely(t, tvStrings(tvs), should.Resemble([]string{
+				assert.Loosely(t, tvStrings(tvs), should.Match([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -809,9 +809,9 @@ func TestQueryTestVariants(t *testing.T) {
 				// as the user has access to unrestricted test results in inv1's realm.
 				// Thus, the test variant should also be unmasked.
 				assert.Loosely(t, tvs[0].IsMasked, should.BeFalse)
-				assert.Loosely(t, tvs[0].TestMetadata, should.Resemble(tmd))
+				assert.Loosely(t, tvs[0].TestMetadata, should.Match(tmd))
 				assert.Loosely(t, tvs[0].Variant, should.NotBeNil)
-				assert.Loosely(t, tvs[0].Results, should.Resemble([]*pb.TestResultBundle{
+				assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:        "invocations/inv1/tests/T4/results/0",
@@ -853,7 +853,7 @@ func TestQueryTestVariants(t *testing.T) {
 				// unmasked test result due to the different invocations' realms.
 				// Thus, the test variant should be unmasked.
 				assert.Loosely(t, tvs[8].IsMasked, should.BeFalse)
-				assert.Loosely(t, tvs[8].Results, should.Resemble([]*pb.TestResultBundle{
+				assert.Loosely(t, tvs[8].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:     "invocations/inv0/tests/T2/results/0",
@@ -882,7 +882,7 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				}))
 				assert.Loosely(t, len(tvs[8].Exonerations), should.Equal(1))
-				assert.Loosely(t, tvs[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
+				assert.Loosely(t, tvs[8].Exonerations[0], should.Match(&pb.TestExoneration{
 					Name:            "invocations/inv2/tests/T2/exonerations/0",
 					ExplanationHtml: "explanation 0",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,

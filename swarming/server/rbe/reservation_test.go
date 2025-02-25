@@ -117,7 +117,7 @@ func TestReservationServer(t *testing.T) {
 				},
 			})
 
-			assert.Loosely(t, rbe.reservation, should.Resemble(&remoteworkers.Reservation{
+			assert.Loosely(t, rbe.reservation, should.Match(&remoteworkers.Reservation{
 				Name:    fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				State:   remoteworkers.ReservationState_RESERVATION_PENDING,
 				Payload: expectedPayload,
@@ -171,7 +171,7 @@ func TestReservationServer(t *testing.T) {
 			t.Run("expected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
 				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					assert.Loosely(t, req, should.Resemble(&internalspb.ExpireSliceRequest{
+					assert.Loosely(t, req, should.Match(&internalspb.ExpireSliceRequest{
 						TaskId:         enqueueTask.Payload.TaskId,
 						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
 						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
@@ -187,7 +187,7 @@ func TestReservationServer(t *testing.T) {
 			t.Run("unexpected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.PermissionDenied, "boom")
 				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					assert.Loosely(t, req, should.Resemble(&internalspb.ExpireSliceRequest{
+					assert.Loosely(t, req, should.Match(&internalspb.ExpireSliceRequest{
 						TaskId:         enqueueTask.Payload.TaskId,
 						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
 						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
@@ -218,7 +218,7 @@ func TestReservationServer(t *testing.T) {
 				ReservationId: rbeReservation,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, rbe.lastCancel, should.Resemble(&remoteworkers.CancelReservationRequest{
+			assert.Loosely(t, rbe.lastCancel, should.Match(&remoteworkers.CancelReservationRequest{
 				Name:   fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				Intent: remoteworkers.CancelReservationIntent_ANY,
 			}))

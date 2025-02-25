@@ -97,7 +97,7 @@ func TestReader(t *testing.T) {
 
 			f, err := r.ReadFrameAll()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, f, should.Resemble(data))
+			assert.Loosely(t, f, should.Match(data))
 		})
 
 		t.Run(`Can successfully read two frames.`, func(t *ftt.Test) {
@@ -113,7 +113,7 @@ func TestReader(t *testing.T) {
 
 			d, err := io.ReadAll(fr)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(data[0]))
+			assert.Loosely(t, d, should.Match(data[0]))
 
 			c, fr, err = r.ReadFrame()
 			assert.Loosely(t, err, should.BeNil)
@@ -121,7 +121,7 @@ func TestReader(t *testing.T) {
 
 			d, err = io.ReadAll(fr)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(data[1]))
+			assert.Loosely(t, d, should.Match(data[1]))
 		})
 
 		t.Run(`When reading a frame, will return EOF if the frame is exceeded.`, func(t *ftt.Test) {
@@ -176,7 +176,7 @@ func TestReader(t *testing.T) {
 				if len(expected) == 0 {
 					expected = nil
 				}
-				assert.Loosely(t, f, should.Resemble(expected))
+				assert.Loosely(t, f, should.Match(expected))
 			}
 
 			_, err := r.ReadFrameAll()
@@ -199,7 +199,7 @@ func TestReader(t *testing.T) {
 
 			f, err := r.ReadFrameAll()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, f, should.Resemble(data))
+			assert.Loosely(t, f, should.Match(data))
 			assert.Loosely(t, tr.readBytes, should.Equal(1))
 		})
 
@@ -248,7 +248,7 @@ func TestSplit(t *testing.T) {
 				// Confirm that Split works.
 				sp, err := Split(buf.Bytes())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, btos(sp...), should.Resemble(v))
+				assert.Loosely(t, btos(sp...), should.Match(v))
 			})
 		}
 
@@ -259,7 +259,7 @@ func TestSplit(t *testing.T) {
 
 		t.Run(`Will fail to split if there aren't enough bytes.`, func(t *ftt.Test) {
 			sp, err := Split([]byte{0x01, 0xAA, 0x02}) // 1-byte {0xAA}, 2-bytes ... EOF!
-			assert.Loosely(t, sp, should.Resemble([][]byte{{0xAA}}))
+			assert.Loosely(t, sp, should.Match([][]byte{{0xAA}}))
 			assert.Loosely(t, err, should.Equal(ErrFrameTooLarge))
 		})
 	})

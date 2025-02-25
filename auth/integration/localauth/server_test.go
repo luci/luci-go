@@ -99,10 +99,10 @@ func TestProtocol(t *testing.T) {
 		assert.Loosely(c, err, should.BeNil)
 		defer s.Stop(ctx)
 
-		assert.Loosely(c, p.Accounts[0], should.Resemble(&lucictx.LocalAuthAccount{
+		assert.Loosely(c, p.Accounts[0], should.Match(&lucictx.LocalAuthAccount{
 			Id: "acc_id", Email: "some@example.com",
 		}))
-		assert.Loosely(c, p.Accounts[1], should.Resemble(&lucictx.LocalAuthAccount{
+		assert.Loosely(c, p.Accounts[1], should.Match(&lucictx.LocalAuthAccount{
 			Id: "another_id", Email: "another@example.com",
 		}))
 		assert.Loosely(c, p.DefaultAccountId, should.Equal("acc_id"))
@@ -129,7 +129,7 @@ func TestProtocol(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
 			assert.Loosely(c, call(goodOAuthRequest()), should.Equal(`HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`))
-			assert.Loosely(c, <-requests, should.Resemble([]string{"A", "B"}))
+			assert.Loosely(c, <-requests, should.Match([]string{"A", "B"}))
 
 			// application/json is also the default.
 			req := goodOAuthRequest()
@@ -139,7 +139,7 @@ func TestProtocol(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
 			assert.Loosely(c, call(req), should.Equal(`HTTP 200 (json): {"access_token":"tok2","expiry":1454474106}`))
-			assert.Loosely(c, <-requests, should.Resemble([]string{"A", "B"}))
+			assert.Loosely(c, <-requests, should.Match([]string{"A", "B"}))
 		})
 
 		c.Run("ID tokens happy path", func(c *ftt.Test) {
@@ -148,7 +148,7 @@ func TestProtocol(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
 			assert.Loosely(c, call(goodIDTokRequest()), should.Equal(`HTTP 200 (json): {"id_token":"tok1","expiry":1454474106}`))
-			assert.Loosely(c, <-requests, should.Resemble([]string{"audience:A"}))
+			assert.Loosely(c, <-requests, should.Match([]string{"audience:A"}))
 
 			// application/json is also the default.
 			req := goodIDTokRequest()
@@ -158,7 +158,7 @@ func TestProtocol(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
 			assert.Loosely(c, call(req), should.Equal(`HTTP 200 (json): {"id_token":"tok2","expiry":1454474106}`))
-			assert.Loosely(c, <-requests, should.Resemble([]string{"audience:A"}))
+			assert.Loosely(c, <-requests, should.Match([]string{"audience:A"}))
 		})
 
 		c.Run("Panic in token generator", func(c *ftt.Test) {

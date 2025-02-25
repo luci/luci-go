@@ -55,7 +55,7 @@ func testCache(t testing.TB, c *Cache) HexDigests {
 	tooLargeContent := bytes.Repeat([]byte("A"), 1025)
 	tooLargeDigest := HashBytes(h, tooLargeContent)
 
-	assert.Loosely(t, c.Keys(), should.Resemble(HexDigests{}), truth.LineContext())
+	assert.Loosely(t, c.Keys(), should.Match(HexDigests{}), truth.LineContext())
 
 	assert.Loosely(t, c.Touch(fakeDigest), should.BeFalse, truth.LineContext())
 	assert.Loosely(t, c.Touch(badDigest), should.BeFalse, truth.LineContext())
@@ -77,9 +77,9 @@ func testCache(t testing.TB, c *Cache) HexDigests {
 	assert.Loosely(t, c.Add(ctx, largeDigest, bytes.NewBuffer(largeContent)), should.BeNil, truth.LineContext(), truth.LineContext())
 	assert.Loosely(t, c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), should.BeNil, truth.LineContext())
 	assert.Loosely(t, c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), should.BeNil, truth.LineContext())
-	assert.Loosely(t, c.Keys(), should.Resemble(HexDigests{emptyDigest, largeDigest}), truth.LineContext())
+	assert.Loosely(t, c.Keys(), should.Match(HexDigests{emptyDigest, largeDigest}), truth.LineContext())
 	c.Evict(emptyDigest)
-	assert.Loosely(t, c.Keys(), should.Resemble(HexDigests{largeDigest}), truth.LineContext())
+	assert.Loosely(t, c.Keys(), should.Match(HexDigests{largeDigest}), truth.LineContext())
 	assert.Loosely(t, c.Add(ctx, emptyDigest, bytes.NewBuffer(emptyContent)), should.BeNil, truth.LineContext())
 
 	assert.Loosely(t, c.Add(ctx, file1Digest, bytes.NewBuffer(file1Content)), should.BeNil, truth.LineContext())
@@ -94,10 +94,10 @@ func testCache(t testing.TB, c *Cache) HexDigests {
 	actual, err := io.ReadAll(r)
 	assert.Loosely(t, r.Close(), should.BeNil, truth.LineContext())
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, actual, should.Resemble(file2Content), truth.LineContext())
+	assert.Loosely(t, actual, should.Match(file2Content), truth.LineContext())
 
 	expected = HexDigests{file2Digest, emptyDigest}
-	assert.Loosely(t, c.Keys(), should.Resemble(expected), truth.LineContext())
+	assert.Loosely(t, c.Keys(), should.Match(expected), truth.LineContext())
 
 	dest := filepath.Join(td, "foo")
 	assert.Loosely(t, c.Hardlink(fakeDigest, dest, os.FileMode(0600)), should.NotBeNil, truth.LineContext())
@@ -107,14 +107,14 @@ func testCache(t testing.TB, c *Cache) HexDigests {
 	_ = c.Hardlink(file2Digest, dest, os.FileMode(0600))
 	actual, err = os.ReadFile(dest)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, actual, should.Resemble(file2Content), truth.LineContext())
+	assert.Loosely(t, actual, should.Match(file2Content), truth.LineContext())
 
 	dest = filepath.Join(td, "hardlink")
 	assert.Loosely(t, c.AddWithHardlink(ctx, hardlinkDigest, bytes.NewBuffer(hardlinkContent), dest, os.ModePerm),
 		should.BeNil, truth.LineContext())
 	actual, err = os.ReadFile(dest)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, actual, should.Resemble(hardlinkContent), truth.LineContext())
+	assert.Loosely(t, actual, should.Match(hardlinkContent), truth.LineContext())
 
 	// |emptyDigest| is evicted.
 	expected = HexDigests{hardlinkDigest, file2Digest}
@@ -136,7 +136,7 @@ func TestNew(t *testing.T) {
 
 		c, err = New(pol, td, h)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, c.Keys(), should.Resemble(expected))
+		assert.Loosely(t, c.Keys(), should.Match(expected))
 		assert.Loosely(t, c.Close(), should.BeNil)
 
 		curdir, err := os.Getwd()

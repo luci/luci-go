@@ -43,7 +43,7 @@ func TestSizeToString(t *testing.T) {
 			{1048576, "1.00MiB"},
 		}
 		for _, line := range data {
-			assert.Loosely(t, SizeToString(line.in), should.Resemble(line.expected))
+			assert.Loosely(t, SizeToString(line.in), should.Match(line.expected))
 		}
 	})
 }

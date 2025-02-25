@@ -34,7 +34,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 			},
 		}, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
+		assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Match(ensure.PackageSlice{
 			{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 			{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
 		}))
@@ -49,7 +49,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 				},
 			}, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Match(ensure.PackageSlice{
 				{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 			}))
 		})
@@ -73,7 +73,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 				},
 			}, []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Match(ensure.PackageSlice{
 				{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 				{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
 			}))
@@ -86,7 +86,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 				},
 			}, []*vpython.PEP425Tag{{Platform: "manylinux1_aarch64"}})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Match(ensure.PackageSlice{
 				{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
 			}))
 		})

@@ -76,7 +76,7 @@ func TestChainReader(t *testing.T) {
 			count, err := cr.Read(data)
 			assert.Loosely(t, count, should.Equal(3))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, data, should.Resemble([]byte{0x00, 0x01, 0x02}))
+			assert.Loosely(t, data, should.Match([]byte{0x00, 0x01, 0x02}))
 
 			assert.Loosely(t, cr.Remaining(), should.BeZero)
 		})
@@ -86,7 +86,7 @@ func TestChainReader(t *testing.T) {
 			count, err := cr.Read(data)
 			assert.Loosely(t, count, should.Equal(2))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, data, should.Resemble([]byte{0x00, 0x01}))
+			assert.Loosely(t, data, should.Match([]byte{0x00, 0x01}))
 
 			assert.Loosely(t, cr.Remaining(), should.Equal(1))
 		})
@@ -129,7 +129,7 @@ func TestChainReader(t *testing.T) {
 			count, err := cr.Read(data)
 			assert.Loosely(t, count, should.Equal(1024))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, data, should.Resemble(bytes.Repeat([]byte{0x55}, 1024)))
+			assert.Loosely(t, data, should.Match(bytes.Repeat([]byte{0x55}, 1024)))
 		})
 	})
 
@@ -142,7 +142,7 @@ func TestChainReader(t *testing.T) {
 			count, err := cr.Read(data)
 			assert.Loosely(t, count, should.Equal(2))
 			assert.Loosely(t, err, should.Equal(e))
-			assert.Loosely(t, data[:2], should.Resemble([]byte{0x00, 0x01}))
+			assert.Loosely(t, data[:2], should.Match([]byte{0x00, 0x01}))
 		})
 	})
 }

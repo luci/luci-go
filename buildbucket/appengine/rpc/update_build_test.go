@@ -777,7 +777,7 @@ func TestUpdateBuild(t *testing.T) {
 			assert.Loosely(t, updateBuild(ctx, req), should.BeNil)
 			b, err := common.GetBuild(ctx, req.Build.Id)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b.Proto.UpdateTime, should.Resemble(timestamppb.New(t0)))
+			assert.Loosely(t, b.Proto.UpdateTime, should.Match(timestamppb.New(t0)))
 			assert.Loosely(t, b.Proto.Status, should.Equal(pb.Status_STARTED))
 
 			tclock.Add(time.Second)
@@ -785,7 +785,7 @@ func TestUpdateBuild(t *testing.T) {
 			assert.Loosely(t, updateBuild(ctx, req), should.BeNil)
 			b, err = common.GetBuild(ctx, req.Build.Id)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b.Proto.UpdateTime, should.Resemble(timestamppb.New(t0.Add(time.Second))))
+			assert.Loosely(t, b.Proto.UpdateTime, should.Match(timestamppb.New(t0.Add(time.Second))))
 		})
 
 		t.Run("build.view_url", func(t *ftt.Test) {
@@ -810,7 +810,7 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				m, err := structpb.NewStruct(map[string]any{"key": "value"})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b.Proto.Output.Properties, should.Resemble(m))
+				assert.Loosely(t, b.Proto.Output.Properties, should.Match(m))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
@@ -840,7 +840,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.UpdateMask.Paths[0] = "build.output"
 				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				assert.Loosely(t, b.Proto.Output.Properties, should.Resemble(largeProps))
+				assert.Loosely(t, b.Proto.Output.Properties, should.Match(largeProps))
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, count, should.Equal(1))
@@ -866,7 +866,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.UpdateMask.Paths[0] = "build.steps"
 				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				assert.Loosely(t, b.Proto.Steps[0], should.Resemble(step))
+				assert.Loosely(t, b.Proto.Steps[0], should.Match(step))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
@@ -921,7 +921,7 @@ func TestUpdateBuild(t *testing.T) {
 						StartTime: step.StartTime,
 						EndTime:   timestamppb.New(t0),
 					}
-					assert.Loosely(t, b.Proto.Steps[0], should.Resemble(expected))
+					assert.Loosely(t, b.Proto.Steps[0], should.Match(expected))
 				})
 			})
 		})
@@ -936,8 +936,8 @@ func TestUpdateBuild(t *testing.T) {
 
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
-				assert.Loosely(t, b.Tags, should.Resemble(expected))
-				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"chrome/infra/custom/builds/count"}))
+				assert.Loosely(t, b.Tags, should.Match(expected))
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Match([]string{"chrome/infra/custom/builds/count"}))
 
 				// change the value and update it again
 				tag.Value = "enabled"
@@ -946,8 +946,8 @@ func TestUpdateBuild(t *testing.T) {
 				// both tags should exist
 				b = getBuildWithDetails(ctx, req.Build.Id)
 				expected = append(expected, strpair.Format("resultdb", "enabled"))
-				assert.Loosely(t, b.Tags, should.Resemble(expected))
-				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"chrome/infra/custom/builds/count"}))
+				assert.Loosely(t, b.Tags, should.Match(expected))
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Match([]string{"chrome/infra/custom/builds/count"}))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
@@ -986,7 +986,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.UpdateMask.Paths[0] = "build.infra.buildbucket.agent.output"
 				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.Resemble(agentOutput))
+				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.Match(agentOutput))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
@@ -1327,7 +1327,7 @@ func TestUpdateBuild(t *testing.T) {
 				}
 				b, err := srv.UpdateBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b, should.Resemble(&pb.Build{
+				assert.Loosely(t, b, should.Match(&pb.Build{
 					Status: pb.Status_SUCCESS,
 				}))
 			})
@@ -1488,7 +1488,7 @@ func TestUpdateBuild(t *testing.T) {
 					build, err := srv.UpdateBuild(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
-					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Match(t0))
 					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 10 has terminated"))
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
@@ -1538,7 +1538,7 @@ func TestUpdateBuild(t *testing.T) {
 					build, err := srv.UpdateBuild(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
-					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Match(t0))
 					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 3000000 is missing"))
 					assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
@@ -1628,7 +1628,7 @@ func TestUpdateBuild(t *testing.T) {
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0.Add(-time.Minute)))
+					assert.Loosely(t, build.CancelTime.AsTime(), should.Match(t0.Add(-time.Minute)))
 					assert.Loosely(t, build.SummaryMarkdown, should.Equal("new summary"))
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})

@@ -46,7 +46,7 @@ func TestRulesCache(t *testing.T) {
 			// Tests the content of the cache is as expected.
 			ruleset, err := rc.Ruleset(ctx, "myproject", minimumPredicatesVerison)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ruleset.Version, should.Resemble(expectedVersion))
+			assert.Loosely(t, ruleset.Version, should.Match(expectedVersion))
 
 			activeRules := 0
 			for _, e := range expectedRules {
@@ -63,7 +63,7 @@ func TestRulesCache(t *testing.T) {
 			for _, e := range sortedExpectedRules {
 				if e.IsActive {
 					a := ruleset.ActiveRulesSorted[actualRuleIndex]
-					assert.Loosely(t, a.Rule, should.Resemble(*e))
+					assert.Loosely(t, a.Rule, should.Match(*e))
 					// Technically (*lang.Expr).String() may not get us
 					// back the original rule if RuleDefinition didn't use
 					// normalised formatting. But for this test, we use
@@ -74,7 +74,7 @@ func TestRulesCache(t *testing.T) {
 
 					a2, ok := ruleset.ActiveRulesByID[a.Rule.RuleID]
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, a2.Rule, should.Resemble(*e))
+					assert.Loosely(t, a2.Rule, should.Match(*e))
 				}
 			}
 			assert.Loosely(t, len(ruleset.ActiveRulesWithPredicateUpdatedSince(rules.StartingEpoch)), should.Equal(activeRules))

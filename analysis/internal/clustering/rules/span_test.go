@@ -53,7 +53,7 @@ func TestSpan(t *testing.T) {
 
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rule, should.Resemble(expectedRule))
+				assert.Loosely(t, rule, should.Match(expectedRule))
 			})
 			t.Run(`With null IsManagingBugPriorityLastUpdated`, func(t *ftt.Test) {
 				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdateTime(time.Time{}).Build()
@@ -70,7 +70,7 @@ func TestSpan(t *testing.T) {
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, rule.IsManagingBugPriorityLastUpdateTime.IsZero(), should.BeTrue)
-				assert.Loosely(t, rule, should.Resemble(expectedRule))
+				assert.Loosely(t, rule, should.Match(expectedRule))
 			})
 		})
 		t.Run(`ReadActive`, func(t *ftt.Test) {
@@ -80,7 +80,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
+				assert.Loosely(t, rules, should.Match([]*Entry{}))
 			})
 			t.Run(`Multiple`, func(t *ftt.Test) {
 				rulesToCreate := []*Entry{
@@ -94,7 +94,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{
+				assert.Loosely(t, rules, should.Match([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 				}))
@@ -124,7 +124,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadByBug(span.Single(ctx), bugID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble(expectedRules))
+				assert.Loosely(t, rules, should.Match(expectedRules))
 			})
 		})
 		t.Run(`ReadDelta`, func(t *ftt.Test) {
@@ -138,7 +138,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
+				assert.Loosely(t, rules, should.Match([]*Entry{}))
 			})
 			t.Run(`Multiple`, func(t *ftt.Test) {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
@@ -153,7 +153,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{
+				assert.Loosely(t, rules, should.Match([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 					rulesToCreate[2],
@@ -161,14 +161,14 @@ func TestSpan(t *testing.T) {
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{
+				assert.Loosely(t, rules, should.Match([]*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
 				}))
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference.Add(time.Minute))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
+				assert.Loosely(t, rules, should.Match([]*Entry{}))
 			})
 		})
 
@@ -183,7 +183,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
+				assert.Loosely(t, rules, should.Match([]*Entry{}))
 			})
 			t.Run(`Multiple`, func(t *ftt.Test) {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
@@ -206,7 +206,7 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				assert.Loosely(t, rules, should.Resemble(expected))
+				assert.Loosely(t, rules, should.Match(expected))
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference)
 				assert.Loosely(t, err, should.BeNil)
@@ -217,11 +217,11 @@ func TestSpan(t *testing.T) {
 				}
 				sortByID(expected)
 				sortByID(rules)
-				assert.Loosely(t, rules, should.Resemble(expected))
+				assert.Loosely(t, rules, should.Match(expected))
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference.Add(time.Minute))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rules, should.Resemble([]*Entry{}))
+				assert.Loosely(t, rules, should.Match([]*Entry{}))
 			})
 		})
 
@@ -247,7 +247,7 @@ func TestSpan(t *testing.T) {
 			}
 			rules, err := ReadMany(span.Single(ctx), testProject, ids)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rules, should.Resemble([]*Entry{
+			assert.Loosely(t, rules, should.Match([]*Entry{
 				rulesToCreate[0],
 				nil,
 				rulesToCreate[2],
@@ -265,7 +265,7 @@ func TestSpan(t *testing.T) {
 
 				timestamp, err := ReadVersion(span.Single(ctx), testProject)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, timestamp, should.Resemble(StartingVersion))
+				assert.Loosely(t, timestamp, should.Match(StartingVersion))
 			})
 			t.Run(`Multiple`, func(t *ftt.Test) {
 				// Spanner commit timestamps are in microsecond
@@ -297,7 +297,7 @@ func TestSpan(t *testing.T) {
 
 				version, err := ReadVersion(span.Single(ctx), testProject)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, version, should.Resemble(Version{
+				assert.Loosely(t, version, should.Match(Version{
 					Predicates: reference.Add(-1 * time.Second),
 					Total:      reference,
 				}))
@@ -310,7 +310,7 @@ func TestSpan(t *testing.T) {
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, result, should.Resemble(map[string]int64{}))
+				assert.Loosely(t, result, should.Match(map[string]int64{}))
 			})
 			t.Run(`Multiple`, func(t *ftt.Test) {
 				rulesToCreate := []*Entry{
@@ -328,7 +328,7 @@ func TestSpan(t *testing.T) {
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, result, should.Resemble(map[string]int64{
+				assert.Loosely(t, result, should.Match(map[string]int64{
 					"project-a": 2,
 					"project-b": 0,
 					"project-c": 1,
@@ -361,7 +361,7 @@ func TestSpan(t *testing.T) {
 					assert.Loosely(t, len(rules), should.Equal(1))
 
 					readRule := rules[0]
-					assert.Loosely(t, *readRule, should.Resemble(expectedRule))
+					assert.Loosely(t, *readRule, should.Match(expectedRule))
 				}
 
 				t.Run(`With Source Cluster`, func(t *ftt.Test) {
@@ -465,7 +465,7 @@ func TestSpan(t *testing.T) {
 				defer cancel()
 				rule, err := Read(txn, expectedRule.Project, expectedRule.RuleID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rule, should.Resemble(expectedRule))
+				assert.Loosely(t, rule, should.Match(expectedRule))
 			}
 			testUpdate := func(bc *Entry, options UpdateOptions, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

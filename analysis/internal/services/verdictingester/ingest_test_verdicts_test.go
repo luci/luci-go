@@ -89,7 +89,7 @@ func TestSchedule(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Match(expected))
 	})
 }
 
@@ -331,7 +331,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(tvbs), should.Equal(1))
 				branch.IsNew = false
-				assert.Loosely(t, tvbs[0], should.Resemble(branch))
+				assert.Loosely(t, tvbs[0], should.Match(branch))
 			})
 			t.Run(`First task`, func(t *ftt.Test) {
 				setupGetInvocationMock()
@@ -562,7 +562,7 @@ func verifyTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime 
 	// Truncated to nearest hour.
 	hour := time.Unix(partitionTime.Unix()/3600*3600, 0)
 
-	assert.Loosely(t, tvbs[0], should.Resemble(&testvariantbranch.Entry{
+	assert.Loosely(t, tvbs[0], should.Match(&testvariantbranch.Entry{
 		Project:     "project",
 		TestID:      "ninja://test_consistent_failure",
 		VariantHash: "hash",
@@ -801,7 +801,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 		return nil
 	})
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, actualTRs, should.Resemble(expectedTRs), truth.LineContext())
+	assert.Loosely(t, actualTRs, should.Match(expectedTRs), truth.LineContext())
 
 	// Validate TestVariantRealms table is populated.
 	tvrs := make([]*testresults.TestVariantRealm, 0)
@@ -896,7 +896,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 		expectedTVR := expectedRealms[i]
 		assert.Loosely(t, tvr.LastIngestionTime, should.NotBeZero, truth.LineContext())
 		expectedTVR.LastIngestionTime = tvr.LastIngestionTime
-		assert.Loosely(t, tvr, should.Resemble(expectedTVR), truth.LineContext())
+		assert.Loosely(t, tvr, should.Match(expectedTVR), truth.LineContext())
 	}
 
 	// Validate TestRealms table is populated.
@@ -987,7 +987,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 		expectedTR := expectedTestRealms[i]
 		assert.Loosely(t, tr.LastIngestionTime, should.NotBeZero, truth.LineContext())
 		expectedTR.LastIngestionTime = tr.LastIngestionTime
-		assert.Loosely(t, tr, should.Resemble(expectedTR), truth.LineContext())
+		assert.Loosely(t, tr, should.Match(expectedTR), truth.LineContext())
 	}
 }
 
@@ -1011,14 +1011,14 @@ func verifyClustering(t testing.TB, chunkStore *chunkstore.FakeClient, clustered
 		"ninja://test_new_flake":          2,
 		"ninja://test_has_unexpected":     1,
 	}
-	assert.Loosely(t, actualClusteredFailures, should.Resemble(expectedClusteredFailures), truth.LineContext())
+	assert.Loosely(t, actualClusteredFailures, should.Match(expectedClusteredFailures), truth.LineContext())
 
 	for _, cf := range clusteredFailures.Insertions {
-		assert.Loosely(t, cf.BuildGardenerRotations, should.Resemble([]string{"rotation1", "rotation2"}), truth.LineContext())
+		assert.Loosely(t, cf.BuildGardenerRotations, should.Match([]string{"rotation1", "rotation2"}), truth.LineContext())
 
 		// Verify test variant branch stats were correctly populated.
 		if cf.TestId == "ninja://test_consistent_failure" {
-			assert.Loosely(t, cf.TestVariantBranch, should.Resemble(&bqpb.ClusteredFailureRow_TestVariantBranch{
+			assert.Loosely(t, cf.TestVariantBranch, should.Match(&bqpb.ClusteredFailureRow_TestVariantBranch{
 				UnexpectedVerdicts_24H: 124,
 				FlakyVerdicts_24H:      456,
 				TotalVerdicts_24H:      2000,
@@ -1485,7 +1485,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 	}
 	assert.Loosely(t, actualRows, should.HaveLength(len(expectedRows)), truth.LineContext())
 	for i, row := range actualRows {
-		assert.Loosely(t, row, should.Resemble(expectedRows[i]), truth.LineContext())
+		assert.Loosely(t, row, should.Match(expectedRows[i]), truth.LineContext())
 	}
 }
 
@@ -1494,7 +1494,7 @@ func verifyContinuationTask(t testing.TB, skdr *tqtesting.Scheduler, expectedCon
 	count := 0
 	for _, pl := range skdr.Tasks().Payloads() {
 		if pl, ok := pl.(*taskspb.IngestTestVerdicts); ok {
-			assert.Loosely(t, pl, should.Resemble(expectedContinuation), truth.LineContext())
+			assert.Loosely(t, pl, should.Match(expectedContinuation), truth.LineContext())
 			count++
 		}
 	}
@@ -1521,7 +1521,7 @@ func verifyCheckpoints(ctx context.Context, t testing.TB, expected []checkpoints
 	checkpoints.SortKeys(gotKeys)
 	checkpoints.SortKeys(wantKeys)
 
-	assert.Loosely(t, gotKeys, should.Resemble(wantKeys), truth.LineContext())
+	assert.Loosely(t, gotKeys, should.Match(wantKeys), truth.LineContext())
 }
 
 func removeCheckpointForProcess(cs []checkpoints.Checkpoint, processID string) []checkpoints.Checkpoint {

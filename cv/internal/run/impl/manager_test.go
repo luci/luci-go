@@ -277,7 +277,7 @@ func TestRunManager(t *testing.T) {
 				ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
 				assert.Loosely(t, et.sendFn(ctx), should.BeNil)
 				runtest.AssertInEventbox(t, ctx, runID, et.event)
-				assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{runID}))
+				assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{runID}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 				assert.Loosely(t, fh.invocations[0], should.Equal(et.invokedHandlerMethod))
 				assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
@@ -307,7 +307,7 @@ func TestRunManager(t *testing.T) {
 			}
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			expectInvokedMethods = append(expectInvokedMethods, "TryResumeSubmission") // always invoked
-			assert.Loosely(t, fh.invocations, should.Resemble(expectInvokedMethods))
+			assert.Loosely(t, fh.invocations, should.Match(expectInvokedMethods))
 			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 		})
 
@@ -367,7 +367,7 @@ func TestRunManager(t *testing.T) {
 			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 			entries, err := run.LoadRunLogEntries(ctx, runID)
 			assert.NoErr(t, err)
-			assert.Loosely(t, entries, should.Resemble(fh.startAddsLogEntries))
+			assert.Loosely(t, entries, should.Match(fh.startAddsLogEntries))
 		})
 
 		t.Run("Can run PostProcessFn", func(t *ftt.Test) {
@@ -428,7 +428,7 @@ func TestRunManager(t *testing.T) {
 
 		t.Run("Recursive", func(t *ftt.Test) {
 			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
-			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{runID}))
+			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{runID}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			for i := 0; i < 10; i++ {
 				now := clock.Now(ctx)
@@ -468,8 +468,8 @@ func TestRunManager(t *testing.T) {
 			})
 			assert.Loosely(t, runtest.Tasks(ct.TQ.Tasks()), should.HaveLength(1))
 			task := runtest.Tasks(ct.TQ.Tasks())[0]
-			assert.Loosely(t, task.ETA, should.Resemble(clock.Now(ctx).UTC().Add(30*time.Second)))
-			assert.Loosely(t, task.Payload, should.Resemble(&eventpb.ManageRunTask{RunId: string(runID)}))
+			assert.Loosely(t, task.ETA, should.Match(clock.Now(ctx).UTC().Add(30*time.Second)))
+			assert.Loosely(t, task.Payload, should.Match(&eventpb.ManageRunTask{RunId: string(runID)}))
 		})
 
 		t.Run("Run is missing", func(t *ftt.Test) {

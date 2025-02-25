@@ -301,7 +301,7 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
 			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_TEST_SKIPPED))
-			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
+			assert.Loosely(t, rerun.TestResults, should.Match(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -366,7 +366,7 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
 			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_PASSED))
-			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
+			assert.Loosely(t, rerun.TestResults, should.Match(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -445,7 +445,7 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, rerun.ReportTime, should.Match(time.Unix(10000, 0).UTC()))
 			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
-			assert.Loosely(t, rerun.TestResults, should.Resemble(model.RerunTestResults{
+			assert.Loosely(t, rerun.TestResults, should.Match(model.RerunTestResults{
 				IsFinalized: true,
 				Results: []model.RerunSingleTestResult{
 					{
@@ -686,7 +686,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		assert.Loosely(t, datastore.GetAll(ctx, q, &suspects), should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(1))
 		// Check the field individually because ShouldResembleProto does not work here.
-		assert.Loosely(t, &suspects[0].GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, &suspects[0].GitilesCommit, should.Match(&bbpb.GitilesCommit{
 			Id:      "commit0",
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
@@ -711,7 +711,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		// Culprit verification task scheduled.
 		assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
-		assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureCulpritVerificationTask{
+		assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureCulpritVerificationTask{
 			AnalysisId: tfa.ID,
 		}))
 	})
@@ -804,7 +804,7 @@ func TestScheduleNewRerun(t *testing.T) {
 		reruns := []*model.TestSingleRerun{}
 		assert.Loosely(t, datastore.GetAll(ctx, q, &reruns), should.BeNil)
 		assert.Loosely(t, len(reruns), should.Equal(1))
-		assert.Loosely(t, reruns[0], should.Resemble(&model.TestSingleRerun{
+		assert.Loosely(t, reruns[0], should.Match(&model.TestSingleRerun{
 			ID:                    reruns[0].ID,
 			Type:                  model.RerunBuildType_NthSection,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),

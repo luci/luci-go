@@ -45,7 +45,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
+			assert.Loosely(t, reply, should.Match(&admin.InspectMachineTokenResponse{
 				Valid:        true,
 				Signed:       true,
 				NonExpired:   true,
@@ -71,7 +71,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok[:len(tok)-16] + strings.Repeat("0", 16),
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
+			assert.Loosely(t, reply, should.Match(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "bad signature - crypto/rsa: verification error",
 				Signed:           false,
@@ -99,7 +99,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
+			assert.Loosely(t, reply, should.Match(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired",
 				Signed:           true,
@@ -137,7 +137,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Token:     tok,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
+			assert.Loosely(t, reply, should.Match(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired", // "expired" 'beats' revocation
 				Signed:           true,

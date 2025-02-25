@@ -42,7 +42,7 @@ func TestParse(t *testing.T) {
 			}
 			ret, ok := Parse(cmi)
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, ret, should.Resemble(BotData{
+			assert.Loosely(t, ret, should.Match(BotData{
 				Action:      Start,
 				TriggeredAt: time.Date(2013, 03, 23, 21, 36, 52, 332000000, time.UTC),
 				Revision:    "abcd",

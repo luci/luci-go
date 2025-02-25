@@ -75,7 +75,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
 			// The finalize start time should be the same as after the first call.
-			assert.Loosely(t, inv.FinalizeStartTime, should.Resemble(finalizeStartTime))
+			assert.Loosely(t, inv.FinalizeStartTime, should.Match(finalizeStartTime))
 			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
 
@@ -91,10 +91,10 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err = invocations.Read(span.Single(ctx), "inv")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
-			assert.Loosely(t, inv.FinalizeStartTime, should.Resemble(finalizeTime))
+			assert.Loosely(t, inv.FinalizeStartTime, should.Match(finalizeTime))
 
 			// Enqueued the finalization task.
-			assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&taskspb.RunExportNotifications{InvocationId: "inv"},
 				&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
 			}))

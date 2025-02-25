@@ -58,7 +58,7 @@ func TestRemoveInstructionsContent(t *testing.T) {
 				},
 			}
 			result := RemoveInstructionsContent(instructions)
-			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
+			assert.Loosely(t, result, should.Match(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",
@@ -137,7 +137,7 @@ func TestFilterInstructionType(t *testing.T) {
 				},
 			}
 			result := FilterInstructionType(instructions, pb.InstructionType_TEST_RESULT_INSTRUCTION)
-			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
+			assert.Loosely(t, result, should.Match(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "test",
@@ -208,7 +208,7 @@ func TestInstructionsName(t *testing.T) {
 				},
 			}
 			result := InstructionsWithNames(instructions, "inv")
-			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
+			assert.Loosely(t, result, should.Match(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",
@@ -283,7 +283,7 @@ func TestRemoveInstructionsName(t *testing.T) {
 				},
 			}
 			result := RemoveInstructionsName(instructions)
-			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
+			assert.Loosely(t, result, should.Match(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",

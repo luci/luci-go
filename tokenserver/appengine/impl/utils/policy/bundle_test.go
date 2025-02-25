@@ -55,7 +55,7 @@ func TestConfigBundle(t *testing.T) {
 		assert.Loosely(t, unknown, should.BeNil)
 		assert.Loosely(t, b2, should.HaveLength(len(b1)))
 		for k := range b2 {
-			assert.Loosely(t, b2[k], should.Resemble(b1[k]))
+			assert.Loosely(t, b2[k], should.Match(b1[k]))
 		}
 	})
 
@@ -68,7 +68,7 @@ func TestConfigBundle(t *testing.T) {
 
 		b, unknown, err := deserializeBundle(out.Bytes())
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, unknown, should.Resemble(items))
+		assert.Loosely(t, unknown, should.Match(items))
 		assert.Loosely(t, len(b), should.BeZero)
 	})
 

@@ -49,18 +49,18 @@ func TestGlobalCache(t *testing.T) {
 		// Cache hit.
 		val, err = cache.Get(ctx, "key_permanent")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, val, should.Resemble([]byte("1")))
+		assert.Loosely(t, val, should.Match([]byte("1")))
 
 		val, err = cache.Get(ctx, "key_temp")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, val, should.Resemble([]byte("2")))
+		assert.Loosely(t, val, should.Match([]byte("2")))
 
 		// Expire one item.
 		clock.Get(ctx).(testclock.TestClock).Add(2 * time.Minute)
 
 		val, err = cache.Get(ctx, "key_permanent")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, val, should.Resemble([]byte("1")))
+		assert.Loosely(t, val, should.Match([]byte("1")))
 
 		// Expired!
 		val, err = cache.Get(ctx, "key_temp")

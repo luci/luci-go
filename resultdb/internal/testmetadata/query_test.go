@@ -63,7 +63,7 @@ func TestQueryTestMetadata(t *testing.T) {
 
 			actual, token := mustFetch(q)
 			assert.Loosely(t, token, should.BeEmpty)
-			assert.Loosely(t, actual, should.Resemble(toTestMetadataDetails([]*TestMetadataRow{expectedRow1, expectedRow2})))
+			assert.Loosely(t, actual, should.Match(toTestMetadataDetails([]*TestMetadataRow{expectedRow1, expectedRow2})))
 		})
 
 		t.Run(`Paging`, func(t *ftt.Test) {
@@ -85,7 +85,7 @@ func TestQueryTestMetadata(t *testing.T) {
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
 				actual, token := mustFetch(q2)
-				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, actual, should.Match(expected))
 				return token
 			}
 

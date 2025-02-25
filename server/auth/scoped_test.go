@@ -78,11 +78,11 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.Resemble(&Token{
+			assert.Loosely(t, tok, should.Match(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxScopedTokenTTL).Truncate(time.Second),
 			}))
-			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintProjectTokenRequest{
+			assert.Loosely(t, mockedClient.request, should.Match(minter.MintProjectTokenRequest{
 				LuciProject:         "infra",
 				OauthScope:          defaultOAuthScopes,
 				MinValidityDuration: 900,

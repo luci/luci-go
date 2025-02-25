@@ -207,7 +207,7 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
 				assert.Loosely(c, err, should.BeNil)
 				assert.Loosely(c, res.Message, should.Equal("Hello John"))
-				assert.Loosely(c, hd["x-lower-case-header"], should.Resemble([]string{"CamelCaseValueStays"}))
+				assert.Loosely(c, hd["x-lower-case-header"], should.Match([]string{"CamelCaseValueStays"}))
 
 				shouldHaveMessagesLike(c, log, expectedCallLogEntry(client))
 			})
@@ -257,8 +257,8 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, receivedHeader["Key"], should.Resemble([]string{"value 1", "value 2"}))
-				assert.Loosely(t, receivedHeader["Data-Bin"], should.Resemble([]string{"AAECAw=="}))
+				assert.Loosely(t, receivedHeader["Key"], should.Match([]string{"value 1", "value 2"}))
+				assert.Loosely(t, receivedHeader["Data-Bin"], should.Match([]string{"AAECAw=="}))
 			})
 
 			t.Run("Works with compression", func(t *ftt.Test) {
@@ -278,7 +278,7 @@ func TestClient(t *testing.T) {
 					var actualReq testpb.HelloRequest
 					err = proto.Unmarshal(reqBody, &actualReq)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, &actualReq, should.Resemble(req))
+					assert.Loosely(t, &actualReq, should.Match(req))
 
 					// Write response.
 					resBytes, err := proto.Marshal(&testpb.HelloReply{Message: "compressed response"})
@@ -364,7 +364,7 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
-				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
+				assert.Loosely(t, ProtocolErrorDetails(err), should.Match(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
 						ResponseTooBig: &prpcpb.ResponseTooBig{
 							ResponseSize:  12,
@@ -382,7 +382,7 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
-				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
+				assert.Loosely(t, ProtocolErrorDetails(err), should.Match(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
 						ResponseTooBig: &prpcpb.ResponseTooBig{
 							ResponseSize:  999999999999,

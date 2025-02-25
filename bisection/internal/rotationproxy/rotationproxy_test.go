@@ -32,7 +32,7 @@ func TestGetOnCallEmails(t *testing.T) {
 	ftt.Run("Chromium arborists are returned", t, func(t *ftt.Test) {
 		emails, err := GetOnCallEmails(ctx, "chromium/src")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, emails, should.Resemble([]string{"jdoe@example.com", "esmith@example.com"}))
+		assert.Loosely(t, emails, should.Match([]string{"jdoe@example.com", "esmith@example.com"}))
 	})
 
 	ftt.Run("unknown project", t, func(t *ftt.Test) {

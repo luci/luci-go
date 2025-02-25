@@ -75,7 +75,7 @@ func TestFakeDB(t *testing.T) {
 		t.Run("Membership checks work", func(t *ftt.Test) {
 			out, err := db.CheckMembership(ctx, "user:abc@def.com", []string{"group-a", "group-b", "group-c", "group-d"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble([]string{"group-a", "group-b", "group-c"}))
+			assert.Loosely(t, out, should.Match([]string{"group-a", "group-b", "group-c"}))
 
 			resp, err := db.IsMember(ctx, "user:abc@def.com", nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -175,11 +175,11 @@ func TestFakeDB(t *testing.T) {
 			res, err := db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "", nil)
 			assert.Loosely(t, err, should.BeNil)
 			sort.Strings(res)
-			assert.Loosely(t, res, should.Resemble([]string{"another:realm", "proj:realm"}))
+			assert.Loosely(t, res, should.Match([]string{"another:realm", "proj:realm"}))
 
 			res, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "proj", nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble([]string{"proj:realm"}))
+			assert.Loosely(t, res, should.Match([]string{"proj:realm"}))
 
 			res, err = db.QueryRealms(ctx, "user:zzz@def.com", testPerm1, "", nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -191,7 +191,7 @@ func TestFakeDB(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			sort.Strings(res)
-			assert.Loosely(t, res, should.Resemble([]string{"another:realm", "proj:cond", "proj:realm"}))
+			assert.Loosely(t, res, should.Match([]string{"another:realm", "proj:cond", "proj:realm"}))
 
 			// Unflagged permission.
 			_, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm2, "", nil)
@@ -201,7 +201,7 @@ func TestFakeDB(t *testing.T) {
 		t.Run("FilterKnownGroups works", func(t *ftt.Test) {
 			known, err := db.FilterKnownGroups(ctx, []string{"missing", "group-b", "group-a", "group-c", "group-d", "group-a", "missing"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, known, should.Resemble([]string{
+			assert.Loosely(t, known, should.Match([]string{
 				"group-b", "group-a", "group-c", "group-d", "group-a",
 			}))
 		})

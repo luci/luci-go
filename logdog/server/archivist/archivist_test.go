@@ -442,7 +442,7 @@ func TestHandleArchive(t *testing.T) {
 
 				assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
 
-				assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+				assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 					Project:       project,
 					Id:            task.Id,
 					LogEntryCount: 4,
@@ -492,7 +492,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("test error"))
 					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
 
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
@@ -503,7 +503,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
@@ -514,7 +514,7 @@ func TestHandleArchive(t *testing.T) {
 					archiveErr = errors.New("")
 
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archival error",
@@ -531,7 +531,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
 					assert.Loosely(t, hasStreams(true, true, false), should.BeTrue)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -550,7 +550,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 
 					assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 4,
@@ -569,7 +569,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
 					assert.Loosely(t, hasStreams(true, true, false), should.BeTrue)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -588,7 +588,7 @@ func TestHandleArchive(t *testing.T) {
 					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 
 					assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
-					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Match(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 3,
@@ -772,7 +772,7 @@ func TestHandleArchive(t *testing.T) {
 					task.Realm = "project:bucket"
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 					assert.Loosely(t, clc, should.NotBeNil)
-					assert.Loosely(t, findCommonLabels(opts), should.Resemble(cl.CommonLabels(
+					assert.Loosely(t, findCommonLabels(opts), should.Match(cl.CommonLabels(
 						map[string]string{"realm": "project:bucket"})))
 				})
 
@@ -780,7 +780,7 @@ func TestHandleArchive(t *testing.T) {
 					task.Realm = ""
 					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 					assert.Loosely(t, clc, should.NotBeNil)
-					assert.Loosely(t, findCommonLabels(opts), should.Resemble(cl.CommonLabels(
+					assert.Loosely(t, findCommonLabels(opts), should.Match(cl.CommonLabels(
 						map[string]string{})))
 				})
 			})
@@ -843,7 +843,7 @@ func TestHandleArchive(t *testing.T) {
 			t.Run("With BufferedByteLimit", func(t *ftt.Test) {
 				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 				assert.Loosely(t, logID, should.Equal("luci-logs"))
-				assert.Loosely(t, opts[2], should.Resemble(cl.BufferedByteLimit(CLBufferLimit*1024*1024)))
+				assert.Loosely(t, opts[2], should.Match(cl.BufferedByteLimit(CLBufferLimit*1024*1024)))
 			})
 
 			t.Run("With MonitoredResource and labels", func(t *ftt.Test) {
@@ -852,10 +852,10 @@ func TestHandleArchive(t *testing.T) {
 				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
 				assert.Loosely(t, logID, should.Equal("luci-logs"))
-				assert.Loosely(t, opts[0], should.Resemble(cl.CommonLabels(
+				assert.Loosely(t, opts[0], should.Match(cl.CommonLabels(
 					map[string]string{"key1": "val1", "realm": "foo:bar"},
 				)))
-				assert.Loosely(t, opts[1], should.Resemble(cl.CommonResource(&mrpb.MonitoredResource{
+				assert.Loosely(t, opts[1], should.Match(cl.CommonResource(&mrpb.MonitoredResource{
 					Type: "generic_task",
 					Labels: map[string]string{
 						"project_id": project,

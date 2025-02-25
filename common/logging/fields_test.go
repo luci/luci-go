@@ -118,7 +118,7 @@ func TestFields(t *testing.T) {
 				"foo": "bar",
 				"baz": "qux",
 			}
-			assert.Loosely(t, fm.Copy(other), should.Resemble(Fields{"foo": "bar", "baz": "qux"}))
+			assert.Loosely(t, fm.Copy(other), should.Match(Fields{"foo": "bar", "baz": "qux"}))
 		})
 
 		t.Run(`Returns the populated Fields when Copied with a populated Fields.`, func(t *ftt.Test) {
@@ -164,7 +164,7 @@ func TestContextFields(t *testing.T) {
 				"foo": "bar",
 				"baz": "qux",
 			})
-			assert.Loosely(t, GetFields(c), should.Resemble(Fields{
+			assert.Loosely(t, GetFields(c), should.Match(Fields{
 				"foo": "bar",
 				"baz": "qux",
 			}))

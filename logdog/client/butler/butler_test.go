@@ -401,7 +401,7 @@ func TestButler(t *testing.T) {
 					}
 
 					assert.Loosely(t, b.AddStream(newTestStream(), desc), should.BeNil)
-					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Resemble(&logpb.LogStreamDescriptor{
+					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Match(&logpb.LogStreamDescriptor{
 						Name:        "stdout",
 						ContentType: "test/data",
 						Timestamp:   desc.Timestamp,
@@ -414,7 +414,7 @@ func TestButler(t *testing.T) {
 
 				t.Run(`Will apply global tags if the stream has none (nil).`, func(t *ftt.Test) {
 					assert.Loosely(t, b.AddStream(newTestStream(), desc), should.BeNil)
-					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Resemble(&logpb.LogStreamDescriptor{
+					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Match(&logpb.LogStreamDescriptor{
 						Name:        "stdout",
 						ContentType: "test/data",
 						Timestamp:   desc.Timestamp,
@@ -676,7 +676,7 @@ func TestButler(t *testing.T) {
 			t.Run(`can cancel the wait and see leftovers`, func(t *ftt.Test) {
 				cctx, cancel := context.WithCancel(c)
 				cancel()
-				assert.Loosely(t, b.DrainNamespace(cctx, "ns"), should.Resemble([]types.StreamName{
+				assert.Loosely(t, b.DrainNamespace(cctx, "ns"), should.Match([]types.StreamName{
 					"ns/deep/s",
 					"ns/s",
 				}))

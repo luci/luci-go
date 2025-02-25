@@ -64,67 +64,67 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 		t.Run("Project with some Runs", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond"}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4, bond2}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9, bond4, bond2}))
 		})
 
 		t.Run("Obeys limit and returns correct page token", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", Limit: 2}
 			runs1, pageToken1, err := qb.LoadRuns(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, idsOf(runs1), should.Resemble(common.RunIDs{bond9, bond4}))
+			assert.Loosely(t, idsOf(runs1), should.Match(common.RunIDs{bond9, bond4}))
 			assert.Loosely(t, pageToken1, should.NotBeNil)
 
 			qb = qb.PageToken(pageToken1)
-			assert.Loosely(t, qb.MinExcl, should.Resemble(bond4))
+			assert.Loosely(t, qb.MinExcl, should.Match(bond4))
 			runs2, pageToken2, err := qb.LoadRuns(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, idsOf(runs2), should.Resemble(common.RunIDs{bond2}))
+			assert.Loosely(t, idsOf(runs2), should.Match(common.RunIDs{bond2}))
 			assert.Loosely(t, pageToken2, should.BeNil)
 		})
 
 		t.Run("Filters by Status", func(t *ftt.Test) {
 			t.Run("Simple", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "xero", Status: run.Status_RUNNING}
-				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{xero7, xero6}))
+				assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{xero7, xero6}))
 
 				qb = ProjectQueryBuilder{Project: "xero", Status: run.Status_SUCCEEDED}
-				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{xero5}))
+				assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{xero5}))
 			})
 			t.Run("Status_ENDED_MASK", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Project: "bond", Status: run.Status_ENDED_MASK}
-				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, bond2}))
+				assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, bond2}))
 
 				t.Run("Obeys limit", func(t *ftt.Test) {
 					qb.Limit = 1
-					assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
+					assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4}))
 				})
 			})
 		})
 
 		t.Run("Min", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", MinExcl: bond9}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, bond2}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, bond2}))
 
 			t.Run("same as Before", func(t *ftt.Test) {
 				qb2 := ProjectQueryBuilder{}.Before(bond9)
-				assert.Loosely(t, qb, should.Resemble(qb2))
+				assert.Loosely(t, qb, should.Match(qb2))
 			})
 		})
 
 		t.Run("Max", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", MaxExcl: bond2}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9, bond4}))
 
 			t.Run("same as After", func(t *ftt.Test) {
 				qb2 := ProjectQueryBuilder{}.After(bond2)
-				assert.Loosely(t, qb, should.Resemble(qb2))
+				assert.Loosely(t, qb, should.Match(qb2))
 			})
 		})
 
 		t.Run("After .. Before", func(t *ftt.Test) {
 			t.Run("Some", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{}.After(bond2).Before(bond9)
-				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
+				assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4}))
 			})
 
 			t.Run("Empty", func(t *ftt.Test) {
@@ -140,7 +140,7 @@ func TestProjectQueryBuilder(t *testing.T) {
 
 			t.Run("With status", func(t *ftt.Test) {
 				qb := ProjectQueryBuilder{Status: run.Status_FAILED}.After(bond2).Before(bond9)
-				assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
+				assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4}))
 				qb = ProjectQueryBuilder{Status: run.Status_SUCCEEDED}.After(bond2).Before(bond9)
 				assert.Loosely(t, getAll(t, qb), should.HaveLength(0))
 			})

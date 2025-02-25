@@ -204,7 +204,7 @@ func TestStructEnum(t *testing.T) {
 					t.Run(fmt.Sprintf(`Sets "value" to %s when set to [%s].`, tc.S.Name, tc.V), func(t *ftt.Test) {
 						err := fs.Parse([]string{"-test", tc.V})
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, value, should.Resemble(tc.S))
+						assert.Loosely(t, value, should.Match(tc.S))
 					})
 				}
 
@@ -232,7 +232,7 @@ func TestStructEnum(t *testing.T) {
 						t.Run(`And unmarshals to its Value.`, func(t *ftt.Test) {
 							err := json.Unmarshal(data, &s)
 							assert.Loosely(t, err, should.BeNil)
-							assert.Loosely(t, s.Value, should.Resemble(tc.S))
+							assert.Loosely(t, s.Value, should.Match(tc.S))
 						})
 					})
 				}
@@ -240,7 +240,7 @@ func TestStructEnum(t *testing.T) {
 				t.Run(`Unmarshals {"value":"bar"} to "testStructBar".`, func(t *ftt.Test) {
 					err := json.Unmarshal([]byte(`{"value":"bar"}`), &s)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, s.Value, should.Resemble(testStructBar))
+					assert.Loosely(t, s.Value, should.Match(testStructBar))
 				})
 
 				t.Run(`Fails to Unmarshal invalid JSON.`, func(t *ftt.Test) {

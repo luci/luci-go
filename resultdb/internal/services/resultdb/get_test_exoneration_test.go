@@ -100,7 +100,7 @@ func TestGetTestExoneration(t *testing.T) {
 		t.Run("Valid", func(t *ftt.Test) {
 			tr, err := srv.GetTestExoneration(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tr, should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, tr, should.Match(&pb.TestExoneration{
 				Name:            "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
 				ExonerationId:   "id",
 				TestId:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",

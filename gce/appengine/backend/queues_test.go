@@ -231,7 +231,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
-					assert.Loosely(t, &v.Attributes, should.Resemble(&config.VM{
+					assert.Loosely(t, &v.Attributes, should.Match(&config.VM{
 						Disk: []*config.Disk{
 							{
 								Type: "zone/type",
@@ -501,7 +501,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
-					assert.Loosely(t, cfg.Config.Duts, should.Resemble(map[string]*emptypb.Empty{
+					assert.Loosely(t, cfg.Config.Duts, should.Match(map[string]*emptypb.Empty{
 						"dut1": {},
 						"dut2": {},
 						"dut3": {},

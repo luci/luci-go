@@ -150,7 +150,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				invocations = append(invocations, payload.InvocationId)
 			}
 			sort.Strings(invocations)
-			assert.Loosely(t, invocations, should.Resemble([]string{"finalizing1", "finalizing2"}))
+			assert.Loosely(t, invocations, should.Match([]string{"finalizing1", "finalizing2"}))
 		})
 
 		t.Run(`Enqueues a finalization notification and update test metadata tasks`, func(t *ftt.Test) {
@@ -167,17 +167,17 @@ func TestFinalizeInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(4))
-			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(&taskspb.ExportInvocationToBQ{
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.ExportInvocationToBQ{
 				InvocationId: "x",
 			}))
-			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(&taskspb.ExportArtifacts{
+			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Match(&taskspb.ExportArtifacts{
 				InvocationId: "x",
 			}))
-			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(&taskspb.UpdateTestMetadata{
+			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Match(&taskspb.UpdateTestMetadata{
 				InvocationId: "x",
 			}))
 			// Enqueued pub/sub notification.
-			assert.Loosely(t, sched.Tasks().Payloads()[3], should.Resemble(&taskspb.NotifyInvocationFinalized{
+			assert.Loosely(t, sched.Tasks().Payloads()[3], should.Match(&taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
 					Invocation:   "invocations/x",
 					Realm:        "myproject:myrealm",
@@ -210,11 +210,11 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x", opts)
 			assert.Loosely(t, err, should.BeNil)
 			// Enqueued TQ tasks.
-			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(
 				&taskspb.ExportInvocationToBQ{
 					InvocationId: "x",
 				}))
-			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(
+			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Match(
 				&taskspb.ExportInvocationArtifactsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{
@@ -224,7 +224,7 @@ func TestFinalizeInvocation(t *testing.T) {
 						ResultType: &pb.BigQueryExport_TextArtifacts_{},
 					},
 				}))
-			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(
+			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Match(
 				&taskspb.ExportInvocationTestResultsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{
@@ -246,7 +246,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x", opts)
 			assert.Loosely(t, err, should.BeNil)
 			// there should be two tasks ahead, test metadata and notify finalized.
-			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(
 				&taskspb.MarkInvocationSubmitted{
 					InvocationId: "x",
 				}))

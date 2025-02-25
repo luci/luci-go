@@ -88,12 +88,12 @@ func TestTestTimer(t *testing.T) {
 				assert.Loosely(t, timer.Reset(1*time.Second), should.BeFalse)
 				clk.Add(1 * time.Second)
 
-				assert.Loosely(t, <-timer.GetC(), should.Resemble(clock.TimerResult{Time: now.Add(1 * time.Second)}))
+				assert.Loosely(t, <-timer.GetC(), should.Match(clock.TimerResult{Time: now.Add(1 * time.Second)}))
 			})
 
 			t.Run(`Should signal immediately if the timer is in the past.`, func(t *ftt.Test) {
 				assert.Loosely(t, timer.Reset(-1*time.Second), should.BeFalse)
-				assert.Loosely(t, <-timer.GetC(), should.Resemble(clock.TimerResult{Time: now}))
+				assert.Loosely(t, <-timer.GetC(), should.Match(clock.TimerResult{Time: now}))
 			})
 
 			t.Run(`Will trigger immediately if the Context is canceled when reset.`, func(t *ftt.Test) {
@@ -126,7 +126,7 @@ func TestTestTimer(t *testing.T) {
 				timerC := timer.GetC()
 				timer.Reset(time.Second)
 				clk.Add(time.Second)
-				assert.Loosely(t, <-timerC, should.Resemble(clock.TimerResult{Time: now.Add(1 * time.Second)}))
+				assert.Loosely(t, <-timerC, should.Match(clock.TimerResult{Time: now.Add(1 * time.Second)}))
 			})
 
 			t.Run(`Will not signal the timer channel if stopped.`, func(t *ftt.Test) {
@@ -149,7 +149,7 @@ func TestTestTimer(t *testing.T) {
 				timer.Reset(2 * time.Second)
 				clk.Add(time.Second)
 				clk.Add(time.Second)
-				assert.Loosely(t, (<-timer.GetC()).Time, should.Resemble(clk.Now()))
+				assert.Loosely(t, (<-timer.GetC()).Time, should.Match(clk.Now()))
 			})
 
 			t.Run(`Can set and retrieve timer tags.`, func(t *ftt.Test) {
@@ -248,14 +248,14 @@ func TestTimerTags(t *testing.T) {
 		c := clock.Tag(clock.Tag(context.Background(), "A"), "B")
 
 		t.Run(`Has tags, {"A", "B"}`, func(t *ftt.Test) {
-			assert.Loosely(t, clock.Tags(c), should.Resemble([]string{"A", "B"}))
+			assert.Loosely(t, clock.Tags(c), should.Match([]string{"A", "B"}))
 		})
 
 		t.Run(`Will be retained by a testclock.Timer.`, func(t *ftt.Test) {
 			tc := New(TestTimeUTC)
 			timer := tc.NewTimer(c)
 
-			assert.Loosely(t, GetTags(timer), should.Resemble([]string{"A", "B"}))
+			assert.Loosely(t, GetTags(timer), should.Match([]string{"A", "B"}))
 
 			t.Run(`The timer tests positive for tags {"A", "B"}`, func(t *ftt.Test) {
 				assert.Loosely(t, HasTags(timer, "A", "B"), should.BeTrue)

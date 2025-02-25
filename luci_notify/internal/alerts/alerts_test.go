@@ -82,7 +82,7 @@ func TestStatusTable(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		fetched, err := ReadBatch(span.Single(ctx), []string{alert.AlertKey})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, fetched, should.Resemble([]*Alert{alert}))
+		assert.Loosely(t, fetched, should.Match([]*Alert{alert}))
 	})
 	ftt.Run("Put deletes when all info is zero", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
@@ -110,7 +110,7 @@ func TestStatusTable(t *testing.T) {
 			fetched, err := ReadBatch(span.Single(ctx), []string{alert.AlertKey})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, fetched, should.Resemble([]*Alert{alert}))
+			assert.Loosely(t, fetched, should.Match([]*Alert{alert}))
 		})
 
 		t.Run("NotPresent returns empty fields", func(t *ftt.Test) {
@@ -120,7 +120,7 @@ func TestStatusTable(t *testing.T) {
 			fetched, err := ReadBatch(span.Single(ctx), []string{"not-present"})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, fetched, should.Resemble([]*Alert{{
+			assert.Loosely(t, fetched, should.Match([]*Alert{{
 				AlertKey:     "not-present",
 				Bug:          0,
 				GerritCL:     0,
@@ -138,8 +138,8 @@ func TestStatusTable(t *testing.T) {
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, err2, should.BeNil)
-			assert.Loosely(t, forwards, should.Resemble([]*Alert{alert1, alert2}))
-			assert.Loosely(t, backwards, should.Resemble([]*Alert{alert2, alert1}))
+			assert.Loosely(t, forwards, should.Match([]*Alert{alert1, alert2}))
+			assert.Loosely(t, backwards, should.Match([]*Alert{alert2, alert1}))
 		})
 	})
 }

@@ -136,7 +136,7 @@ func TestMembership(t *testing.T) {
 			t.Run("listActiveAccountEmails returns all non-pending linked email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
 				assert.NoErr(t, err)
-				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1, linkedEmail2}))
+				assert.Loosely(t, emails, should.Match([]string{linkedEmail1, linkedEmail2}))
 			})
 
 			t.Run("IsMember looks up cache on second hit", func(t *ftt.Test) {
@@ -186,7 +186,7 @@ func TestMembership(t *testing.T) {
 			t.Run("listActiveAccountEmails skips pending email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
 				assert.NoErr(t, err)
-				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1}))
+				assert.Loosely(t, emails, should.Match([]string{linkedEmail1}))
 			})
 		})
 	})

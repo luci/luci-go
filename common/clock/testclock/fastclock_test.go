@@ -163,7 +163,7 @@ func TestFastClock(t *testing.T) {
 				<-sleepingC
 				fc.Set(epoch.Add(1 * time.Second))
 				fc.Set(epoch.Add(2 * time.Second))
-				assert.Loosely(t, <-awakeC, should.Resemble(epoch.Add(2*time.Second)))
+				assert.Loosely(t, <-awakeC, should.Match(epoch.Add(2*time.Second)))
 			})
 		})
 	})

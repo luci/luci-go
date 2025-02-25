@@ -77,7 +77,7 @@ func TestDispatcher(t *testing.T) {
 			handler := func(ctx context.Context, payload proto.Message) error {
 				hdr, err := RequestHeaders(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, hdr, should.Resemble(&taskqueue.RequestHeaders{}))
+				assert.Loosely(t, hdr, should.Match(&taskqueue.RequestHeaders{}))
 				calls = append(calls, payload)
 				return nil
 			}
@@ -102,7 +102,7 @@ func TestDispatcher(t *testing.T) {
 			expectedName := "prefix-afc6f8271b8598ee04e359916e6c584a9bc3c520a11dd5244e3399346ac0d3a7"
 			expectedBody := []byte(`{"type":"google.protobuf.Duration","body":"123s"}`)
 			tasks := taskqueue.GetTestable(ctx).GetScheduledTasks()
-			assert.Loosely(t, tasks, should.Resemble(taskqueue.QueueData{
+			assert.Loosely(t, tasks, should.Match(taskqueue.QueueData{
 				"default": map[string]*taskqueue.Task{
 					expectedName: {
 						Path:    expectedPath,
@@ -129,8 +129,8 @@ func TestDispatcher(t *testing.T) {
 
 			t.Run("Executed", func(t *ftt.Test) {
 				// Execute the task.
-				assert.Loosely(t, runTasks(ctx), should.Resemble([]int{200}))
-				assert.Loosely(t, calls, should.Resemble([]proto.Message{
+				assert.Loosely(t, runTasks(ctx), should.Match([]int{200}))
+				assert.Loosely(t, calls, should.Match([]proto.Message{
 					&durationpb.Duration{Seconds: 123},
 				}))
 			})
@@ -288,7 +288,7 @@ func TestDispatcher(t *testing.T) {
 
 			t.Run("empty queue name", func(t *ftt.Test) {
 				d.RegisterTask(&durationpb.Duration{}, handler, "", nil)
-				assert.Loosely(t, d.GetQueues(), should.Resemble([]string{"default"}))
+				assert.Loosely(t, d.GetQueues(), should.Match([]string{"default"}))
 			})
 
 			t.Run("multiple queue names", func(t *ftt.Test) {
@@ -296,7 +296,7 @@ func TestDispatcher(t *testing.T) {
 				d.RegisterTask(&emptypb.Empty{}, handler, "another", nil)
 				queues := d.GetQueues()
 				sort.Strings(queues)
-				assert.Loosely(t, queues, should.Resemble([]string{"another", "default"}))
+				assert.Loosely(t, queues, should.Match([]string{"another", "default"}))
 			})
 
 			t.Run("duplicated queue names", func(t *ftt.Test) {
@@ -304,7 +304,7 @@ func TestDispatcher(t *testing.T) {
 				d.RegisterTask(&emptypb.Empty{}, handler, "default", nil)
 				queues := d.GetQueues()
 				sort.Strings(queues)
-				assert.Loosely(t, queues, should.Resemble([]string{"default"}))
+				assert.Loosely(t, queues, should.Match([]string{"default"}))
 			})
 		})
 	})

@@ -132,7 +132,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			// is the fallback config group.
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				should.Resemble(
+				should.Match(
 					map[string][]string{
 						"chromium": {"group_main"},
 					}))
@@ -142,7 +142,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			// refs/heads/something matches other group, but not main group.
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/something"),
-				should.Resemble(
+				should.Match(
 					map[string][]string{
 						"chromium": {"group_other"},
 					}))
@@ -167,7 +167,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		t.Run("LookupProjects with the matched repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr/src")
 			assert.NoErr(t, err)
-			assert.Loosely(t, prjs, should.Resemble([]string{"chromium"}))
+			assert.Loosely(t, prjs, should.Match([]string{"chromium"}))
 		})
 
 		t.Run("LookupProjects with an unmated repo", func(t *ftt.Test) {
@@ -229,7 +229,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			assert.Loosely(t, update("chromium"), should.BeNil)
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				should.Resemble(
+				should.Match(
 					map[string][]string{"chromium": {"group_main", "group_other"}}))
 		})
 	})
@@ -270,11 +270,11 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-				should.Resemble(
+				should.Match(
 					map[string][]string{"chromium": {"group_main"}}))
 			assert.Loosely(t,
 				lookup(t, ctx, "cr2-review.gs.com", "cr2/src", "refs/heads/main"),
-				should.Resemble(
+				should.Match(
 					map[string][]string{"chromium": {"group_main"}}))
 		})
 
@@ -310,7 +310,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		assert.Loosely(t, update("foo"), should.BeNil)
 		assert.Loosely(t,
 			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-			should.Resemble(
+			should.Match(
 				map[string][]string{
 					"chromium": {"group_main"},
 					"foo":      {"group_foo"},
@@ -324,7 +324,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		assert.Loosely(t, Update(ctx, &meta, nil), should.BeNil)
 		assert.Loosely(t,
 			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
-			should.Resemble(
+			should.Match(
 				map[string][]string{
 					"chromium": {"group_main"},
 				}))
@@ -465,9 +465,9 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			var mps []*mapPart
 			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps), should.BeNil)
 			for _, mp := range mps {
-				// assert.That(t, mp.ConfigHash, should.Resemble(meta.Hash()))
+				// assert.That(t, mp.ConfigHash, should.Match(meta.Hash()))
 				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)
-				assert.Loosely(t, hostAndRepo[0], should.Resemble(gHost))
+				assert.Loosely(t, hostAndRepo[0], should.Match(gHost))
 				// assert.That(t, expectedRepos.Del(hostAndRepo[1]), should.BeTrue)
 			}
 			// assert.Loosely(t, expectedRepos, should.BeEmpty)

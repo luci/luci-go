@@ -92,8 +92,8 @@ func TestUpdateService(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, service), should.ErrLike(datastore.ErrNoSuchEntity))
 			assert.Loosely(t, Update(ctx), should.BeNil)
 			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-			assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
-			assert.Loosely(t, service.Metadata, should.Resemble(serviceMetadata))
+			assert.Loosely(t, service.Info, should.Match(serviceInfo))
+			assert.Loosely(t, service.Metadata, should.Match(serviceMetadata))
 			assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 		})
 
@@ -114,8 +114,8 @@ func TestUpdateService(t *testing.T) {
 					Name: serviceName,
 				}
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(updatedInfo))
-				assert.Loosely(t, service.Metadata, should.Resemble(serviceMetadata))
+				assert.Loosely(t, service.Info, should.Match(updatedInfo))
+				assert.Loosely(t, service.Metadata, should.Match(serviceMetadata))
 				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
 			t.Run("Metadata changed", func(t *ftt.Test) {
@@ -131,8 +131,8 @@ func TestUpdateService(t *testing.T) {
 					Name: serviceName,
 				}
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
-				assert.Loosely(t, service.Metadata, should.Resemble(updated))
+				assert.Loosely(t, service.Info, should.Match(serviceInfo))
+				assert.Loosely(t, service.Metadata, should.Match(updated))
 				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
 		})
@@ -178,7 +178,7 @@ func TestUpdateService(t *testing.T) {
 				Name: serviceName,
 			}
 			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-			assert.Loosely(t, service.Info, should.Resemble(&cfgcommonpb.Service{
+			assert.Loosely(t, service.Info, should.Match(&cfgcommonpb.Service{
 				Id: serviceName,
 			}))
 			assert.Loosely(t, service.Metadata, should.BeNil)
@@ -199,7 +199,7 @@ func TestUpdateService(t *testing.T) {
 					Name: serviceName,
 				}
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(&cfgcommonpb.Service{
+				assert.Loosely(t, service.Info, should.Match(&cfgcommonpb.Service{
 					Id:     serviceName,
 					Owners: []string{"owner@example.com"},
 				}))
@@ -226,8 +226,8 @@ func TestUpdateService(t *testing.T) {
 			}
 			assert.Loosely(t, Update(ctx), should.BeNil)
 			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-			assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
-			assert.Loosely(t, service.Metadata, should.Resemble(&cfgcommonpb.ServiceMetadata{
+			assert.Loosely(t, service.Info, should.Match(serviceInfo))
+			assert.Loosely(t, service.Metadata, should.Match(&cfgcommonpb.ServiceMetadata{
 				ConfigPatterns: []*cfgcommonpb.ConfigPattern{
 					{
 						ConfigSet: "exact:services/" + testutil.AppID,
@@ -303,8 +303,8 @@ func TestUpdateService(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, service), should.ErrLike(datastore.ErrNoSuchEntity))
 				assert.Loosely(t, Update(ctx), should.BeNil)
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
-				assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+				assert.Loosely(t, service.Info, should.Match(serviceInfo))
+				assert.Loosely(t, service.LegacyMetadata, should.Match(legacyMetadata))
 				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
 
@@ -325,8 +325,8 @@ func TestUpdateService(t *testing.T) {
 						Name: serviceName,
 					}
 					assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-					assert.Loosely(t, service.Info, should.Resemble(updatedInfo))
-					assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+					assert.Loosely(t, service.Info, should.Match(updatedInfo))
+					assert.Loosely(t, service.LegacyMetadata, should.Match(legacyMetadata))
 					assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 				})
 				t.Run("Legacy metadata changed", func(t *ftt.Test) {
@@ -337,8 +337,8 @@ func TestUpdateService(t *testing.T) {
 						Name: serviceName,
 					}
 					assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-					assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
-					assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+					assert.Loosely(t, service.Info, should.Match(serviceInfo))
+					assert.Loosely(t, service.LegacyMetadata, should.Match(legacyMetadata))
 					assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 				})
 			})
@@ -373,7 +373,7 @@ func TestUpdateService(t *testing.T) {
 					Name: serviceName,
 				}
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+				assert.Loosely(t, service.Info, should.Match(serviceInfo))
 				assert.Loosely(t, service.Metadata, should.BeNil)
 				assert.Loosely(t, service.LegacyMetadata, should.NotBeNil)
 
@@ -392,7 +392,7 @@ func TestUpdateService(t *testing.T) {
 					Name: serviceName,
 				}
 				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
-				assert.Loosely(t, service.Info, should.Resemble(newInfo))
+				assert.Loosely(t, service.Info, should.Match(newInfo))
 				assert.Loosely(t, service.Metadata, should.NotBeNil)
 				assert.Loosely(t, service.LegacyMetadata, should.BeNil)
 			})

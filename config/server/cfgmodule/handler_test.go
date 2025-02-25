@@ -101,7 +101,7 @@ func TestConsumerServer(t *testing.T) {
 			rules.Add("configSet", "path", nil)
 			res, err := srv.GetMetadata(ctx, &emptypb.Empty{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&config.ServiceMetadata{
+			assert.Loosely(t, res, should.Match(&config.ServiceMetadata{
 				ConfigPatterns: []*config.ConfigPattern{
 					{
 						ConfigSet: "exact:configSet",
@@ -221,7 +221,7 @@ func TestConsumerServer(t *testing.T) {
 						t.Helper()
 						res, err := srv.ValidateConfigs(ctx, req)
 						assert.Loosely(t, err, should.BeNil, truth.LineContext())
-						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+						assert.Loosely(t, res, should.Match(&config.ValidationResult{
 							Messages: []*config.ValidationResult_Message{
 								{
 									Path:     path,
@@ -250,7 +250,7 @@ func TestConsumerServer(t *testing.T) {
 						t.Helper()
 						res, err := srv.ValidateConfigs(ctx, req)
 						assert.Loosely(t, err, should.BeNil, truth.LineContext())
-						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+						assert.Loosely(t, res, should.Match(&config.ValidationResult{
 							Messages: []*config.ValidationResult_Message{
 								{
 									Path:     path,
@@ -279,7 +279,7 @@ func TestConsumerServer(t *testing.T) {
 						t.Helper()
 						res, err := srv.ValidateConfigs(ctx, req)
 						assert.Loosely(t, err, should.BeNil, truth.LineContext())
-						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+						assert.Loosely(t, res, should.Match(&config.ValidationResult{
 							Messages: []*config.ValidationResult_Message{
 								{
 									Path:     path,
@@ -359,7 +359,7 @@ func TestConsumerServer(t *testing.T) {
 
 				res, err := srv.ValidateConfigs(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+				assert.Loosely(t, res, should.Match(&config.ValidationResult{
 					Messages: []*config.ValidationResult_Message{
 						{
 							Path:     "foo.cfg",

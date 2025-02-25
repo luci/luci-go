@@ -40,7 +40,7 @@ func TestPolicyConfigID(t *testing.T) {
 
 			newID, err := ParsePolicyConfigID(key)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID, should.Resemble(id))
+			assert.Loosely(t, newID, should.Match(id))
 		})
 
 		t.Run(`manually versioned`, func(t *ftt.Test) {
@@ -54,7 +54,7 @@ func TestPolicyConfigID(t *testing.T) {
 
 			newID, err := ParsePolicyConfigID(key)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, newID, should.Resemble(id))
+			assert.Loosely(t, newID, should.Match(id))
 		})
 	})
 }
@@ -73,7 +73,7 @@ func TestPolicyKey(t *testing.T) {
 
 		newKey, err := ParsePolicyKey(keyStr)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, newKey, should.Resemble(key))
+		assert.Loosely(t, newKey, should.Match(key))
 	})
 }
 
@@ -95,13 +95,13 @@ func TestPolicyID(t *testing.T) {
 			},
 		}
 		ref := PolicyRef(id)
-		assert.Loosely(t, ref, should.Resemble(&quotapb.PolicyRef{
+		assert.Loosely(t, ref, should.Match(&quotapb.PolicyRef{
 			Config: `"a~p~app~proj:@project~1~deadbeef`,
 			Key:    `ns~name~resource`,
 		}))
 
 		newID, err := ParsePolicyRef(ref)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, newID, should.Resemble(id))
+		assert.Loosely(t, newID, should.Match(id))
 	})
 }

@@ -109,7 +109,7 @@ func TestParseGitilesURL(t *testing.T) {
 					assert.Loosely(t, commit, should.BeNil)
 					assert.Loosely(t, err, should.ErrLike(tc.err))
 				} else {
-					assert.Loosely(t, commit, should.Resemble(tc.commit))
+					assert.Loosely(t, commit, should.Match(tc.commit))
 					assert.Loosely(t, err, should.BeNil)
 				}
 			})

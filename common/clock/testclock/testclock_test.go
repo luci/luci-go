@@ -33,12 +33,12 @@ func TestTestClock(t *testing.T) {
 		ctx, clk := UseTime(context.Background(), now)
 
 		t.Run(`Returns the current time.`, func(t *ftt.Test) {
-			assert.Loosely(t, clk.Now(), should.Resemble(now))
+			assert.Loosely(t, clk.Now(), should.Match(now))
 		})
 
 		t.Run(`When sleeping with a time of zero, immediately awakens.`, func(t *ftt.Test) {
 			clk.Sleep(ctx, 0)
-			assert.Loosely(t, clk.Now(), should.Resemble(now))
+			assert.Loosely(t, clk.Now(), should.Match(now))
 		})
 
 		t.Run(`Will panic if going backwards in time.`, func(t *ftt.Test) {
@@ -60,7 +60,7 @@ func TestTestClock(t *testing.T) {
 			<-sleepingC
 			clk.Set(now.Add(1 * time.Second))
 			clk.Set(now.Add(2 * time.Second))
-			assert.Loosely(t, <-awakeC, should.Resemble(now.Add(2*time.Second)))
+			assert.Loosely(t, <-awakeC, should.Match(now.Add(2*time.Second)))
 		})
 
 		t.Run(`Awakens after a period of time.`, func(t *ftt.Test) {
@@ -68,7 +68,7 @@ func TestTestClock(t *testing.T) {
 
 			clk.Set(now.Add(1 * time.Second))
 			clk.Set(now.Add(2 * time.Second))
-			assert.Loosely(t, <-afterC, should.Resemble(clock.TimerResult{now.Add(2 * time.Second), nil}))
+			assert.Loosely(t, <-afterC, should.Match(clock.TimerResult{now.Add(2 * time.Second), nil}))
 		})
 
 		t.Run(`When sleeping, awakens if canceled.`, func(t *ftt.Test) {

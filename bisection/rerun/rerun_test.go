@@ -112,7 +112,7 @@ func TestRerun(t *testing.T) {
 
 			props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps, extraDimens)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, props, should.Resemble(&structpb.Struct{
+			assert.Loosely(t, props, should.Match(&structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"builder_group":  structpb.NewStringValue("buildergroup1"),
 					"target_builder": structpb.NewStructValue(targetBuilder),
@@ -126,7 +126,7 @@ func TestRerun(t *testing.T) {
 					"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
 				},
 			}))
-			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
+			assert.Loosely(t, dimens, should.Match([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "ubuntu",
@@ -147,7 +147,7 @@ func TestRerun(t *testing.T) {
 
 			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
+			assert.Loosely(t, dimens, should.Match([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "ubuntu",
@@ -172,7 +172,7 @@ func TestRerun(t *testing.T) {
 
 			_, dimens, err := getRerunPropertiesAndDimensions(c, 1234, nil, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, dimens, should.Resemble([]*bbpb.RequestedDimension{
+			assert.Loosely(t, dimens, should.Match([]*bbpb.RequestedDimension{
 				{
 					Key:   "os",
 					Value: "parent os",
@@ -287,7 +287,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			rerunBuildModel, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, suspect, nil, 100)
 			datastore.GetTestable(c).CatchupIndexes()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rerunBuildModel, should.Resemble(&model.CompileRerunBuild{
+			assert.Loosely(t, rerunBuildModel, should.Match(&model.CompileRerunBuild{
 				Id: 123,
 				LuciBuild: model.LuciBuild{
 					BuildId: 123,
@@ -312,10 +312,10 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			err = datastore.GetAll(c, q, &singleReruns)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
-			assert.Loosely(t, singleReruns[0].Suspect, should.Resemble(datastore.KeyForObj(c, suspect)))
-			assert.Loosely(t, singleReruns[0].Analysis, should.Resemble(datastore.KeyForObj(c, analysis)))
+			assert.Loosely(t, singleReruns[0].Suspect, should.Match(datastore.KeyForObj(c, suspect)))
+			assert.Loosely(t, singleReruns[0].Analysis, should.Match(datastore.KeyForObj(c, analysis)))
 			assert.Loosely(t, singleReruns[0].Type, should.Equal(model.RerunBuildType_CulpritVerification))
-			assert.Loosely(t, singleReruns[0].Dimensions, should.Resemble(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
+			assert.Loosely(t, singleReruns[0].Dimensions, should.Match(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
 		})
 
 		t.Run("Nth Section", func(t *ftt.Test) {
@@ -323,7 +323,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			rerunBuildModel1, err := CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa, 100)
 			datastore.GetTestable(c).CatchupIndexes()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rerunBuildModel1, should.Resemble(&model.CompileRerunBuild{
+			assert.Loosely(t, rerunBuildModel1, should.Match(&model.CompileRerunBuild{
 				Id: 124,
 				LuciBuild: model.LuciBuild{
 					BuildId: 124,
@@ -348,10 +348,10 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			err = datastore.GetAll(c, q, &singleReruns)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
-			assert.Loosely(t, singleReruns[0].NthSectionAnalysis, should.Resemble(datastore.KeyForObj(c, nsa)))
-			assert.Loosely(t, singleReruns[0].Analysis, should.Resemble(datastore.KeyForObj(c, analysis)))
+			assert.Loosely(t, singleReruns[0].NthSectionAnalysis, should.Match(datastore.KeyForObj(c, nsa)))
+			assert.Loosely(t, singleReruns[0].Analysis, should.Match(datastore.KeyForObj(c, analysis)))
 			assert.Loosely(t, singleReruns[0].Type, should.Equal(model.RerunBuildType_NthSection))
-			assert.Loosely(t, singleReruns[0].Dimensions, should.Resemble(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
+			assert.Loosely(t, singleReruns[0].Dimensions, should.Match(util.ToDimensionsPB(res.Infra.Swarming.TaskDimensions)))
 		})
 	})
 }

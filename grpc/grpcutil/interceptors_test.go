@@ -102,7 +102,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			resp, err := callChain(ChainUnaryServerInterceptors(nil, nil), successHandler)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Equal(testResponse))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> successHandler",
 				"<- successHandler",
 			}))
@@ -112,7 +112,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			resp, err := callChain(ChainUnaryServerInterceptors(doNothing), successHandler)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Equal(testResponse))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
@@ -124,7 +124,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			resp, err := callChain(ChainUnaryServerInterceptors(nil, doNothing, nil, nil), successHandler)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Equal(testResponse))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
@@ -143,7 +143,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			resp, err := callChain(chain, successHandler)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Equal(testResponse))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> populateContext",
 				"-> modifyReq",
 				"-> doNothing",
@@ -166,7 +166,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			)
 			_, err := callChain(chain, errorHandler)
 			assert.Loosely(t, err, should.Equal(testError))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> checkErr",
 				"-> errorHandler",
@@ -187,7 +187,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			)
 			_, err := callChain(chain, successHandler)
 			assert.Loosely(t, err, should.Equal(testError))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> abortChain",
 				"<- abortChain",
@@ -277,7 +277,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 		t.Run("Noop chain", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(nil, nil), successHandler)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> successHandler",
 				"<- successHandler",
 			}))
@@ -286,7 +286,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 		t.Run("One link chain", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(doNothing), successHandler)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
@@ -297,7 +297,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 		t.Run("Nils are OK", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(nil, doNothing, nil, nil), successHandler)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
@@ -315,7 +315,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 			)
 			err := callChain(chain, successHandler)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> populateContext",
 				"-> modifySrv",
 				"-> doNothing",
@@ -338,7 +338,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 			)
 			err := callChain(chain, errorHandler)
 			assert.Loosely(t, err, should.Equal(testError))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> checkErr",
 				"-> errorHandler",
@@ -359,7 +359,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 			)
 			err := callChain(chain, successHandler)
 			assert.Loosely(t, err, should.Equal(testError))
-			assert.Loosely(t, calls, should.Resemble([]string{
+			assert.Loosely(t, calls, should.Match([]string{
 				"-> doNothing",
 				"-> abortChain",
 				"<- abortChain",

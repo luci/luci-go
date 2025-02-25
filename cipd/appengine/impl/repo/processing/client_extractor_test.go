@@ -142,16 +142,16 @@ func TestClientExtractor(t *testing.T) {
 			assert.Loosely(t, r.ClientBinary.Size, should.Equal(len(originalBody)))
 			assert.Loosely(t, r.ClientBinary.HashAlgo, should.Equal("SHA256"))
 			assert.Loosely(t, r.ClientBinary.HashDigest, should.Equal(expectedDigests["SHA256"]))
-			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Resemble(expectedDigests))
+			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Match(expectedDigests))
 
 			assert.Loosely(t, extracted.String(), should.Equal(originalBody))
-			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: expectedDigests["SHA256"],
 			}))
 
 			// Was written by 64 Kb chunks, NOT 32 Kb (as used by zip.Reader).
-			assert.Loosely(t, uploader.calls, should.Resemble([]int{64 * 1024, 6 * 1024}))
+			assert.Loosely(t, uploader.calls, should.Match([]int{64 * 1024, 6 * 1024}))
 		})
 
 		// TODO(vadimsh): Delete this test once SHA1 uploads are forbidden.
@@ -165,9 +165,9 @@ func TestClientExtractor(t *testing.T) {
 			assert.Loosely(t, r.ClientBinary.Size, should.Equal(len(originalBody)))
 			assert.Loosely(t, r.ClientBinary.HashAlgo, should.Equal("SHA1"))
 			assert.Loosely(t, r.ClientBinary.HashDigest, should.Equal(expectedDigests["SHA1"]))
-			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Resemble(expectedDigests))
+			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Match(expectedDigests))
 
-			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: expectedDigests["SHA1"],
 			}))
@@ -261,16 +261,16 @@ func TestGetResult(t *testing.T) {
 				Instance: instRef,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble(&res))
+			assert.Loosely(t, out, should.Match(&res))
 
 			ref, err := out.ToObjectRef()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ref, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, ref, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: res.ClientBinary.HashDigest,
 			}))
 
-			assert.Loosely(t, out.ObjectRefAliases(), should.Resemble([]*api.ObjectRef{
+			assert.Loosely(t, out.ObjectRefAliases(), should.Match([]*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: phonyHexDigest(api.HashAlgo_SHA1, "c")},
 				{HashAlgo: api.HashAlgo_SHA256, HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "b")},
 			}))
@@ -283,12 +283,12 @@ func TestGetResult(t *testing.T) {
 
 			ref, err := res.ToObjectRef()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ref, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, ref, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
 				HexDigest: res.ClientBinary.HashDigest,
 			}))
 
-			assert.Loosely(t, res.ObjectRefAliases(), should.Resemble([]*api.ObjectRef{
+			assert.Loosely(t, res.ObjectRefAliases(), should.Match([]*api.ObjectRef{
 				{HashAlgo: api.HashAlgo_SHA1, HexDigest: res.ClientBinary.HashDigest},
 			}))
 		})

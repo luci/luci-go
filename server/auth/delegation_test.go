@@ -79,11 +79,11 @@ func TestMintDelegationToken(t *testing.T) {
 				rpcClient:  mockedClient,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.Resemble(&Token{
+			assert.Loosely(t, tok, should.Match(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			}))
-			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintDelegationTokenRequest{
+			assert.Loosely(t, mockedClient.request, should.Match(minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
 				ValidityDuration:  10800,
 				Audience:          []string{"REQUESTOR"},
@@ -128,11 +128,11 @@ func TestMintDelegationToken(t *testing.T) {
 				rpcClient:  mockedClient,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.Resemble(&Token{
+			assert.Loosely(t, tok, should.Match(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			}))
-			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintDelegationTokenRequest{
+			assert.Loosely(t, mockedClient.request, should.Match(minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
 				ValidityDuration:  10800,
 				Audience:          []string{"REQUESTOR"},

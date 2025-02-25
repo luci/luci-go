@@ -40,7 +40,7 @@ Footer: Cool
 MD_TWO=2222
 Footer: Awesome
 `)
-			assert.Loosely(t, actual, should.Resemble(strpair.ParseMap([]string{
+			assert.Loosely(t, actual, should.Match(strpair.ParseMap([]string{
 				"MD_ONE:1111",
 				"MD_TWO:2222",
 			})))
@@ -50,7 +50,7 @@ Footer: Awesome
 MD_FOO=bar
 MD_FOO=baz
 `)
-			assert.Loosely(t, actual["MD_FOO"], should.Resemble([]string{
+			assert.Loosely(t, actual["MD_FOO"], should.Match([]string{
 				"baz",
 				"bar",
 				"foo",

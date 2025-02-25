@@ -44,7 +44,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			assert.Loosely(t, len(ibSegments), should.Equal(1))
-			assert.Loosely(t, ibSegments[0], should.Resemble(&Segment{
+			assert.Loosely(t, ibSegments[0], should.Match(&Segment{
 				StartIndex:                     0,
 				EndIndex:                       8, // runs
 				HasStartChangepoint:            false,
@@ -85,7 +85,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			sib := ib.Segmentize(merged, cps)
 			ibSegments := sib.Segments
 			assert.Loosely(t, len(ibSegments), should.Equal(4))
-			assert.Loosely(t, ibSegments[0], should.Resemble(&Segment{
+			assert.Loosely(t, ibSegments[0], should.Match(&Segment{
 				StartIndex:          0,
 				EndIndex:            2,
 				HasStartChangepoint: false,
@@ -95,7 +95,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndHour:             time.Unix(3*3600, 0),
 			}))
 
-			assert.Loosely(t, ibSegments[1], should.Resemble(&Segment{
+			assert.Loosely(t, ibSegments[1], should.Match(&Segment{
 				StartIndex:                     3,
 				EndIndex:                       8,
 				HasStartChangepoint:            true,
@@ -107,7 +107,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix(6*3600, 0),
 			}))
 
-			assert.Loosely(t, ibSegments[2], should.Resemble(&Segment{
+			assert.Loosely(t, ibSegments[2], should.Match(&Segment{
 				StartIndex:                     9,
 				EndIndex:                       14,
 				HasStartChangepoint:            true,
@@ -119,7 +119,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix(9*3600, 0),
 			}))
 
-			assert.Loosely(t, ibSegments[3], should.Resemble(&Segment{
+			assert.Loosely(t, ibSegments[3], should.Match(&Segment{
 				StartIndex:                     15,
 				EndIndex:                       17,
 				HasStartChangepoint:            true,
@@ -154,7 +154,7 @@ func TestEvictSegments(t *testing.T) {
 		assert.Loosely(t, len(evicted), should.BeZero)
 		assert.Loosely(t, len(remaining), should.Equal(1))
 		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
-		assert.Loosely(t, remaining[0], should.Resemble(segments[0]))
+		assert.Loosely(t, remaining[0], should.Match(segments[0]))
 	})
 
 	ftt.Run("Evict finalizing segment", t, func(t *ftt.Test) {
@@ -190,7 +190,7 @@ func TestEvictSegments(t *testing.T) {
 		assert.Loosely(t, len(remaining), should.Equal(2))
 		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
 
-		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Match(EvictedSegment{
 			State:                          cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:            false,
 			StartHour:                      time.Unix(1*3600, 0),
@@ -199,7 +199,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                           copyAndUnflattenRuns(simpleVerdicts(100, 1, []int{50})),
 		}))
 
-		assert.Loosely(t, remaining[0], should.Resemble(&Segment{
+		assert.Loosely(t, remaining[0], should.Match(&Segment{
 			StartIndex:                     0,
 			EndIndex:                       1949,
 			StartPosition:                  101,
@@ -209,7 +209,7 @@ func TestEvictSegments(t *testing.T) {
 			MostRecentUnexpectedResultHour: time.Unix(1901*3600, 0),
 		}))
 
-		assert.Loosely(t, remaining[1], should.Resemble(&Segment{
+		assert.Loosely(t, remaining[1], should.Match(&Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -273,7 +273,7 @@ func TestEvictSegments(t *testing.T) {
 		assert.Loosely(t, len(remaining), should.Equal(2))
 		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
 
-		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Match(EvictedSegment{
 			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           time.Unix(1*3600, 0),
@@ -283,7 +283,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                copyAndUnflattenRuns(simpleVerdicts(40, 1, []int{})),
 		}))
 
-		assert.Loosely(t, evicted[1], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[1], should.Match(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZED,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(41*3600, 0),
@@ -294,7 +294,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                      copyAndUnflattenRuns(simpleVerdicts(40, 41, []int{})),
 		}))
 
-		assert.Loosely(t, evicted[2], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[2], should.Match(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(81*3600, 0),
@@ -303,7 +303,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                      copyAndUnflattenRuns(simpleVerdicts(20, 81, []int{})),
 		}))
 
-		assert.Loosely(t, remaining[0], should.Resemble(&Segment{
+		assert.Loosely(t, remaining[0], should.Match(&Segment{
 			StartIndex:    0,
 			StartPosition: 101,
 			StartHour:     time.Unix(101*3600, 0),
@@ -312,7 +312,7 @@ func TestEvictSegments(t *testing.T) {
 			EndHour:       time.Unix(2050*3600, 0),
 		}))
 
-		assert.Loosely(t, remaining[1], should.Resemble(&Segment{
+		assert.Loosely(t, remaining[1], should.Match(&Segment{
 			StartIndex:          1950,
 			EndIndex:            1999,
 			HasStartChangepoint: true,
@@ -382,7 +382,7 @@ func TestEvictSegments(t *testing.T) {
 			return ri.Hour.Before(rj.Hour)
 		})
 
-		assert.Loosely(t, evicted[0], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[0], should.Match(EvictedSegment{
 			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           time.Unix(1*3600, 0),
@@ -392,7 +392,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                copyAndUnflattenRuns(expectedRuns),
 		}))
 
-		assert.Loosely(t, evicted[1], should.Resemble(EvictedSegment{
+		assert.Loosely(t, evicted[1], should.Match(EvictedSegment{
 			State:                     cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:       true,
 			StartHour:                 time.Unix(40*3600, 0),
@@ -401,7 +401,7 @@ func TestEvictSegments(t *testing.T) {
 			Runs:                      []*Run{},
 		}))
 
-		assert.Loosely(t, remaining[0], should.Resemble(segments[1]))
+		assert.Loosely(t, remaining[0], should.Match(segments[1]))
 	})
 }
 

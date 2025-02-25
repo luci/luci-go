@@ -69,7 +69,7 @@ func TestCommon(t *testing.T) {
 
 		loaded := &cfgcommonpb.ProjectsCfg{}
 		assert.Loosely(t, LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg", loaded), should.BeNil)
-		assert.Loosely(t, loaded, should.Resemble(projectsCfg))
+		assert.Loosely(t, loaded, should.Match(projectsCfg))
 
 		assert.Loosely(t, LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "service.cfg", loaded), should.ErrLike("can not find file entity \"service.cfg\" from datastore for config set"))
 
@@ -107,11 +107,11 @@ func TestCommon(t *testing.T) {
 			"Another-Custom-Header": "Another-Value",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, urls, should.Resemble([]string{"signed-url-1", "signed-url-2"}))
+		assert.Loosely(t, urls, should.Match([]string{"signed-url-1", "signed-url-2"}))
 		assert.Loosely(t, recordedOpts.GoogleAccessID, should.Equal(testutil.ServiceAccount))
 		assert.Loosely(t, recordedOpts.Scheme, should.Equal(storage.SigningSchemeV4))
 		assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodGet))
 		assert.Loosely(t, recordedOpts.Expires, should.Match(clock.Now(ctx).Add(signedURLExpireDur)))
-		assert.Loosely(t, recordedOpts.Headers, should.Resemble([]string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"}))
+		assert.Loosely(t, recordedOpts.Headers, should.Match([]string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"}))
 	})
 }

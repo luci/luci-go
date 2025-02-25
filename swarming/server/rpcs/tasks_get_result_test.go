@@ -209,7 +209,7 @@ func TestGetResult(t *testing.T) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: true}
 			resp, err := srv.GetResult(ctx, req)
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
+			assert.Loosely(t, resp, should.Match(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},
@@ -264,7 +264,7 @@ func TestGetResult(t *testing.T) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: false}
 			resp, err := srv.GetResult(ctx, req)
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
+			assert.Loosely(t, resp, should.Match(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
 					{Key: "os", Value: []string{"linux"}},

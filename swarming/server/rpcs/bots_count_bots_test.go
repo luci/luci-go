@@ -120,7 +120,7 @@ func TestCountBots(t *testing.T) {
 		}
 
 		// No filters.
-		assert.Loosely(t, count(), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count(), should.Match(&apipb.BotsCount{
 			Count:       24,
 			Quarantined: 3,
 			Maintenance: 3,
@@ -129,7 +129,7 @@ func TestCountBots(t *testing.T) {
 		}))
 
 		// Simple filter.
-		assert.Loosely(t, count("idx:1"), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count("idx:1"), should.Match(&apipb.BotsCount{
 			Count:       8,
 			Quarantined: 1,
 			Maintenance: 1,
@@ -138,12 +138,12 @@ func TestCountBots(t *testing.T) {
 		}))
 
 		// AND filter.
-		assert.Loosely(t, count("idx:1", "pool:visible-pool2"), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count("idx:1", "pool:visible-pool2"), should.Match(&apipb.BotsCount{
 			Count: 1,
 		}))
 
 		// OR filter.
-		assert.Loosely(t, count("idx:0|1"), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count("idx:0|1"), should.Match(&apipb.BotsCount{
 			Count:       16,
 			Quarantined: 2,
 			Maintenance: 2,
@@ -152,7 +152,7 @@ func TestCountBots(t *testing.T) {
 		}))
 
 		// OR filter with intersecting results. This covers all bots, twice.
-		assert.Loosely(t, count("idx:0|1|2", "dup:0|1|2"), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count("idx:0|1|2", "dup:0|1|2"), should.Match(&apipb.BotsCount{
 			Count:       24,
 			Quarantined: 3,
 			Maintenance: 3,
@@ -161,7 +161,7 @@ func TestCountBots(t *testing.T) {
 		}))
 
 		// OR filter with no results.
-		assert.Loosely(t, count("idx:4|5|6", "pool:visible-pool1"), should.Resemble(&apipb.BotsCount{
+		assert.Loosely(t, count("idx:4|5|6", "pool:visible-pool1"), should.Match(&apipb.BotsCount{
 			Count:       0,
 			Quarantined: 0,
 			Maintenance: 0,

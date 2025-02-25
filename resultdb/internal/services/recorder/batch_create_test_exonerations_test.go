@@ -217,12 +217,12 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 					VariantHash:   pbutil.VariantHash(expected.Variant),
 				})
 
-				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, actual, should.Match(expected))
 
 				// Now check the database.
 				row, err := exonerations.Read(span.Single(ctx), actual.Name)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, row.Variant, should.Resemble(expected.Variant))
+				assert.Loosely(t, row.Variant, should.Match(expected.Variant))
 				assert.Loosely(t, row.ExplanationHtml, should.Equal(expected.ExplanationHtml))
 				assert.Loosely(t, row.Reason, should.Equal(expected.Reason))
 			}
@@ -231,7 +231,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				// Test idempotency.
 				res2, err := recorder.BatchCreateTestExonerations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res2, should.Resemble(res))
+				assert.Loosely(t, res2, should.Match(res))
 			}
 		}
 

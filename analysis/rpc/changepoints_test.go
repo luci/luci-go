@@ -166,7 +166,7 @@ func TestChangepointsServer(t *testing.T) {
 					stats.UnexpectedVerdictRateCurrent.Buckets.CountLess_5Percent = 2
 					stats.UnexpectedVerdictRateChange.CountIncreased_50To_100Percent = 2
 					changepointGroupSummary.Statistics = stats
-					assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{
+					assert.Loosely(t, res, should.Match(&pb.QueryChangepointGroupSummariesResponseLegacy{
 						GroupSummaries: []*pb.ChangepointGroupSummary{changepointGroupSummary},
 					}))
 				})
@@ -192,7 +192,7 @@ func TestChangepointsServer(t *testing.T) {
 						changepointGroupSummary.CanonicalChangepoint.TestId = "test2"
 						changepointGroupSummary.CanonicalChangepoint.NominalStartPosition = 2
 						changepointGroupSummary.CanonicalChangepoint.StartPositionUpperBound_99Th = 3
-						assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{
+						assert.Loosely(t, res, should.Match(&pb.QueryChangepointGroupSummariesResponseLegacy{
 							GroupSummaries: []*pb.ChangepointGroupSummary{changepointGroupSummary},
 						}))
 					})
@@ -208,7 +208,7 @@ func TestChangepointsServer(t *testing.T) {
 
 						res, err := server.QueryChangepointGroupSummaries(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponseLegacy{}))
+						assert.Loosely(t, res, should.Match(&pb.QueryChangepointGroupSummariesResponseLegacy{}))
 					})
 				})
 			})
@@ -292,7 +292,7 @@ func TestChangepointsServer(t *testing.T) {
 
 				res, err := server.QueryGroupSummaries(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointGroupSummariesResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryChangepointGroupSummariesResponse{
 					GroupSummaries: []*pb.ChangepointGroupSummary{
 						{
 							CanonicalChangepoint: &pb.Changepoint{
@@ -420,7 +420,7 @@ func TestChangepointsServer(t *testing.T) {
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.QueryChangepointsInGroupResponse{
+					assert.Loosely(t, res, should.Match(&pb.QueryChangepointsInGroupResponse{
 						Changepoints: []*pb.Changepoint{{
 							Project:     "chromium",
 							TestId:      "test1",

@@ -47,6 +47,6 @@ func TestToPublicTriggers(t *testing.T) {
 			},
 		}
 		actual := ToPublicTrigger(input)
-		assert.Loosely(c, actual, should.Resemble(expected))
+		assert.Loosely(c, actual, should.Match(expected))
 	})
 }

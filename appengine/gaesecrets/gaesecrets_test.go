@@ -39,12 +39,12 @@ func TestWorks(t *testing.T) {
 		// Returns same one.
 		s2, err := secrets.RandomSecret(c, "key1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s2, should.Resemble(s1))
+		assert.Loosely(t, s2, should.Match(s1))
 
 		// Can also be fetched as stored.
 		s3, err := secrets.StoredSecret(c, "key1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s3, should.Resemble(s1))
+		assert.Loosely(t, s3, should.Match(s1))
 
 		// Missing stored secrets are not auto-generated though.
 		_, err = secrets.StoredSecret(c, "key2")

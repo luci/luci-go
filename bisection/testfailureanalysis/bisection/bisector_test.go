@@ -344,7 +344,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, len(nthSectionAnalyses), should.Equal(1))
 		nsa := nthSectionAnalyses[0]
 
-		assert.Loosely(t, nsa, should.Resemble(&model.TestNthSectionAnalysis{
+		assert.Loosely(t, nsa, should.Match(&model.TestNthSectionAnalysis{
 			ID:                nsa.ID,
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			StartTime:         nsa.StartTime,
@@ -384,7 +384,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(reruns), should.Equal(2))
 
-		assert.Loosely(t, reruns[0], should.Resemble(&model.TestSingleRerun{
+		assert.Loosely(t, reruns[0], should.Match(&model.TestSingleRerun{
 			ID:                    8765,
 			Type:                  model.RerunBuildType_NthSection,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
@@ -424,7 +424,7 @@ func TestRunBisector(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, reruns[1], should.Resemble(&model.TestSingleRerun{
+		assert.Loosely(t, reruns[1], should.Match(&model.TestSingleRerun{
 			ID:                    8766,
 			Type:                  model.RerunBuildType_NthSection,
 			AnalysisKey:           datastore.KeyForObj(ctx, tfa),
@@ -526,7 +526,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, len(nthSectionAnalyses), should.Equal(1))
 		nsa := nthSectionAnalyses[0]
 
-		assert.Loosely(t, nsa, should.Resemble(&model.TestNthSectionAnalysis{
+		assert.Loosely(t, nsa, should.Match(&model.TestNthSectionAnalysis{
 			ID:                nsa.ID,
 			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
 			StartTime:         nsa.StartTime,
@@ -555,7 +555,7 @@ func TestRunBisector(t *testing.T) {
 		}))
 
 		// Verify suspect.
-		assert.Loosely(t, suspect, should.Resemble(&model.Suspect{
+		assert.Loosely(t, suspect, should.Match(&model.Suspect{
 			Id:             suspect.Id,
 			Type:           model.SuspectType_NthSection,
 			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
@@ -582,7 +582,7 @@ func TestRunBisector(t *testing.T) {
 		// Check that a task was created.
 		assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
-		assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureCulpritVerificationTask{
+		assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureCulpritVerificationTask{
 			AnalysisId: tfa.ID,
 		}))
 	})
@@ -665,11 +665,11 @@ func TestCreateSnapshot(t *testing.T) {
 
 		snapshot, err := CreateSnapshot(c, nsa)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, snapshot.BlameList, should.Resemble(blamelist))
+		assert.Loosely(t, snapshot.BlameList, should.Match(blamelist))
 		assert.Loosely(t, snapshot.NumInProgress, should.Equal(2))
 		assert.Loosely(t, snapshot.NumInfraFailed, should.Equal(1))
 		assert.Loosely(t, snapshot.NumTestSkipped, should.Equal(1))
-		assert.Loosely(t, snapshot.Runs, should.Resemble([]*nthsectionsnapshot.Run{
+		assert.Loosely(t, snapshot.Runs, should.Match([]*nthsectionsnapshot.Run{
 			{
 				Index:  0,
 				Commit: "commit0",

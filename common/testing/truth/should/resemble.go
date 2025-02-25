@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/typed"
 )
 
-// should.Resemble needs to keep a cache of type -> []cmp.Option for
+// should.Match needs to keep a cache of type -> []cmp.Option for
 // AllowUnexporteds. This is faster in packages which do many tests over the
 // same types.
 //
@@ -159,7 +159,7 @@ func extractAllowUnexportedFromLocked(typ reflect.Type) []cmp.Option {
 // It is recommended that you use should.Equal when comparing primitive types.
 func Resemble[T any](expected T) comparison.Func[T] {
 	return matchImpl(
-		"should.Resemble", expected, extractAllowUnexportedFrom(reflect.TypeOf(expected)))
+		"should.Match", expected, extractAllowUnexportedFrom(reflect.TypeOf(expected)))
 }
 
 // NotResemble returns a comparison.Func which checks if the actual value

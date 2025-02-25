@@ -42,7 +42,7 @@ func TestSettingsURLToHostTranslation(t *testing.T) {
 			t.Run(`Will load the setting as a host.`, func(t *ftt.Test) {
 				s, err := FetchCachedSettings(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, s, should.Resemble(Settings{
+				assert.Loosely(t, s, should.Match(Settings{
 					ConfigServiceHost: "example.com",
 				}))
 			})
@@ -57,7 +57,7 @@ func TestSettingsURLToHostTranslation(t *testing.T) {
 			t.Run(`Will load the setting as a host.`, func(t *ftt.Test) {
 				s, err := FetchCachedSettings(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, s, should.Resemble(Settings{
+				assert.Loosely(t, s, should.Match(Settings{
 					ConfigServiceHost: "example.com",
 				}))
 			})

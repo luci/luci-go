@@ -57,7 +57,7 @@ func TestState(t *testing.T) {
 			step, _ := StartStep(ctx, "some step")
 			defer func() { step.End(nil) }()
 
-			assert.Loosely(t, st.buildPb.Steps, should.Resemble([]*bbpb.Step{
+			assert.Loosely(t, st.buildPb.Steps, should.Match([]*bbpb.Step{
 				{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
 			}))
 
@@ -65,7 +65,7 @@ func TestState(t *testing.T) {
 				child, _ := step.StartStep(ctx, "child step")
 				defer func() { child.End(nil) }()
 
-				assert.Loosely(t, st.buildPb.Steps, should.Resemble([]*bbpb.Step{
+				assert.Loosely(t, st.buildPb.Steps, should.Match([]*bbpb.Step{
 					{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
 					{Name: "some step|child step", StartTime: nowpb, Status: bbpb.Status_STARTED},
 				}))
@@ -129,7 +129,7 @@ func TestStateLogging(t *testing.T) {
 		assert.Loosely(t, st, should.NotBeNil)
 
 		t.Run(`existing logs are reserved`, func(t *ftt.Test) {
-			assert.Loosely(t, st.logNames.pool, should.Resemble(map[string]int{
+			assert.Loosely(t, st.logNames.pool, should.Match(map[string]int{
 				"something": 1,
 				"other":     1,
 			}))
@@ -138,7 +138,7 @@ func TestStateLogging(t *testing.T) {
 		t.Run(`can open logs`, func(t *ftt.Test) {
 			log := st.Log("some log")
 			fmt.Fprintln(log, "here's some stuff")
-			assert.Loosely(t, st.buildPb, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, st.buildPb, should.Match(&bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
 				Input:     &bbpb.Build_Input{},
@@ -164,7 +164,7 @@ func TestStateLogging(t *testing.T) {
 			log := st.LogDatagram("some log")
 			log.WriteDatagram([]byte("here's some stuff"))
 
-			assert.Loosely(t, st.buildPb, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, st.buildPb, should.Match(&bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
 				Input:     &bbpb.Build_Input{},
@@ -239,7 +239,7 @@ func TestStateSend(t *testing.T) {
 
 		t.Run(`adding a step sends`, func(t *ftt.Test) {
 			step, _ := StartStep(ctx, "something")
-			assert.Loosely(t, lastBuildVers.waitFor(2), should.Resemble(&bbpb.Build{
+			assert.Loosely(t, lastBuildVers.waitFor(2), should.Match(&bbpb.Build{
 				Status:    bbpb.Status_STARTED,
 				StartTime: ts,
 				Input:     &bbpb.Build_Input{},
@@ -257,7 +257,7 @@ func TestStateSend(t *testing.T) {
 
 			t.Run(`closing a step sends`, func(t *ftt.Test) {
 				step.End(nil)
-				assert.Loosely(t, lastBuildVers.waitFor(3), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuildVers.waitFor(3), should.Match(&bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -277,7 +277,7 @@ func TestStateSend(t *testing.T) {
 
 			t.Run(`manipulating a step sends`, func(t *ftt.Test) {
 				step.SetSummaryMarkdown("hey")
-				assert.Loosely(t, lastBuildVers.waitFor(3), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, lastBuildVers.waitFor(3), should.Match(&bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -299,7 +299,7 @@ func TestStateSend(t *testing.T) {
 		t.Run(`ending build sends`, func(t *ftt.Test) {
 			st.End(nil)
 			st = nil
-			assert.Loosely(t, lastBuildVers.waitFor(1), should.Resemble(&bbpb.Build{
+			assert.Loosely(t, lastBuildVers.waitFor(1), should.Match(&bbpb.Build{
 				Status:    bbpb.Status_SUCCESS,
 				StartTime: ts,
 				EndTime:   ts,
@@ -334,15 +334,15 @@ func TestStateView(t *testing.T) {
 		t.Run(`SetCritical`, func(t *ftt.Test) {
 			st.SetCritical(bbpb.Trinary_YES)
 
-			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_YES))
+			assert.Loosely(t, st.buildPb.Critical, should.Match(bbpb.Trinary_YES))
 
 			st.SetCritical(bbpb.Trinary_NO)
 
-			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_NO))
+			assert.Loosely(t, st.buildPb.Critical, should.Match(bbpb.Trinary_NO))
 
 			st.SetCritical(bbpb.Trinary_UNSET)
 
-			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_UNSET))
+			assert.Loosely(t, st.buildPb.Critical, should.Match(bbpb.Trinary_UNSET))
 		})
 
 		t.Run(`SetGitilesCommit`, func(t *ftt.Test) {
@@ -350,7 +350,7 @@ func TestStateView(t *testing.T) {
 				Host: "a host",
 			})
 
-			assert.Loosely(t, st.buildPb.Output.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
+			assert.Loosely(t, st.buildPb.Output.GitilesCommit, should.Match(&bbpb.GitilesCommit{
 				Host: "a host",
 			}))
 

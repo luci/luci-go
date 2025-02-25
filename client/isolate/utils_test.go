@@ -35,17 +35,17 @@ func TestUniqueMergeSortedStrings(t *testing.T) {
 			}
 			return out
 		}
-		assert.Loosely(t, uniqueMergeSortedStrings(SS("acde"), SS("abe")), should.Resemble(SS("abcde")))
-		assert.Loosely(t, uniqueMergeSortedStrings(SS("abc"), SS("")), should.Resemble(SS("abc")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("acde"), SS("abe")), should.Match(SS("abcde")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("abc"), SS("")), should.Match(SS("abc")))
 		assert.Loosely(t, uniqueMergeSortedStrings(
 			[]string{"bar", "foo", "test"},
 			[]string{"foo", "toss", "xyz"}),
-			should.Resemble([]string{"bar", "foo", "test", "toss", "xyz"}))
+			should.Match([]string{"bar", "foo", "test", "toss", "xyz"}))
 
 		// Test degenerate cases (empty and single-element lists)
-		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("")), should.Resemble(SS("")))
-		assert.Loosely(t, uniqueMergeSortedStrings(SS("x"), SS("")), should.Resemble(SS("x")))
-		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("x")), should.Resemble(SS("x")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("")), should.Match(SS("")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS("x"), SS("")), should.Match(SS("x")))
+		assert.Loosely(t, uniqueMergeSortedStrings(SS(""), SS("x")), should.Match(SS("x")))
 	})
 }
 

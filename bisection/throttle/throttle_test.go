@@ -100,7 +100,7 @@ func TestCronHandler(t *testing.T) {
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			// Chromium
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
-			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureDetectionTask{
 				Project:           "chromium",
 				DimensionExcludes: []*pb.Dimension{},
 			}))
@@ -126,7 +126,7 @@ func TestCronHandler(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(2))
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureDetectionTask)
-			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureDetectionTask{
 				Project:           "chrome",
 				DimensionExcludes: []*pb.Dimension{},
 			}))
@@ -167,7 +167,7 @@ func TestCronHandler(t *testing.T) {
 			resultsTask := skdr.Tasks().Payloads()[1].(*tpb.TestFailureDetectionTask)
 			expectedDimensionExcludes := []*pb.Dimension{{Key: "os", Value: "test_os1"}, {Key: "os", Value: "compile_os1"}}
 			util.SortDimension(expectedDimensionExcludes)
-			assert.Loosely(t, resultsTask, should.Resemble(&tpb.TestFailureDetectionTask{
+			assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureDetectionTask{
 				Project:           "chromium",
 				DimensionExcludes: expectedDimensionExcludes,
 			}))

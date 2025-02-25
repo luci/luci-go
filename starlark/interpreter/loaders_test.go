@@ -56,7 +56,7 @@ func TestLoaders(t *testing.T) {
 
 			logs, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, logs, should.Resemble([]string{
+			assert.Loosely(t, logs, should.Match([]string{
 				"[@custom//a/b/c/2.star:1] Hi",
 			}))
 		})
@@ -83,7 +83,7 @@ func TestLoaders(t *testing.T) {
 
 			logs, err := runScriptWithLoader(`load("@custom//1.star", "sym")`, loader)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, logs, should.Resemble([]string{
+			assert.Loosely(t, logs, should.Match([]string{
 				"[@custom//a/b/c/2.star:1] Hi",
 			}))
 		})

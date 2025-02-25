@@ -67,14 +67,14 @@ func TestDeleteOldBuilds(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, b), should.BeNil)
 				count, err := datastore.Count(ctx, datastore.NewQuery(""))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, count, should.Resemble(int64(2)))
+				assert.Loosely(t, count, should.Match(int64(2)))
 			})
 			t.Run("younger than BuildStorageDuration", func(t *ftt.Test) {
 				setID(b, now.Add(-model.BuildStorageDuration+time.Minute))
 				assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
 				count, err := datastore.Count(ctx, datastore.NewQuery(""))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, count, should.Resemble(int64(2)))
+				assert.Loosely(t, count, should.Match(int64(2)))
 			})
 		})
 
@@ -84,7 +84,7 @@ func TestDeleteOldBuilds(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, b), should.Equal(datastore.ErrNoSuchEntity))
 			count, err := datastore.Count(ctx, datastore.NewQuery(""))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, count, should.Resemble(int64(0)))
+			assert.Loosely(t, count, should.Match(int64(0)))
 		})
 
 		t.Run("removes many builds", func(t *ftt.Test) {
@@ -97,7 +97,7 @@ func TestDeleteOldBuilds(t *testing.T) {
 			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
 			count, err := datastore.Count(ctx, datastore.NewQuery(""))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, count, should.Resemble(int64(0)))
+			assert.Loosely(t, count, should.Match(int64(0)))
 			assert.Loosely(t, datastore.Get(ctx, bs), should.ErrLike(
 				"datastore: no such entity (and 233 other errors)"))
 		})

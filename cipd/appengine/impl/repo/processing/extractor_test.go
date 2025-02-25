@@ -88,7 +88,7 @@ func TestExtractor(t *testing.T) {
 
 			// Check the return value.
 			assert.Loosely(t, res.Path, should.Equal("test/file"))
-			assert.Loosely(t, res.Ref, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, res.Ref, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: hexDigest(api.HashAlgo_SHA256, testFileBody),
 			}))
@@ -100,13 +100,13 @@ func TestExtractor(t *testing.T) {
 
 			// Check it actually uploaded the correct thing.
 			assert.Loosely(t, extracted.String(), should.Equal(testFileBody))
-			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: hexDigest(api.HashAlgo_SHA256, testFileBody),
 			}))
 
 			// Check it was written in 64 Kb chunks, NOT 32 Kb as used by zip.Reader.
-			assert.Loosely(t, uploader.calls, should.Resemble([]int{64 * 1024, 6 * 1024}))
+			assert.Loosely(t, uploader.calls, should.Match([]int{64 * 1024, 6 * 1024}))
 		})
 
 		t.Run("No such file in the package", func(t *ftt.Test) {

@@ -76,7 +76,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				// Add exactly one trigger; log(2,1) == 0.
 				addTriggers(noDelay, 1)
 				assert.Loosely(c, s.Invocations, should.HaveLength(1))
-				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-001"}))
+				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Match([]string{"t-001"}))
 				assert.Loosely(c, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-001"))
 				assert.Loosely(c, s.PendingTriggers, should.HaveLength(0))
 				assert.Loosely(c, s.DiscardedTriggers, should.HaveLength(0))
@@ -86,7 +86,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				addTriggers(noDelay, 3)
 				assert.Loosely(c, s.Invocations, should.HaveLength(1))
 				// log(2,3) = 1.584
-				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-001"}))
+				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Match([]string{"t-001"}))
 				assert.Loosely(c, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-001"))
 				assert.Loosely(c, s.PendingTriggers, should.HaveLength(2))
 				assert.Loosely(c, s.DiscardedTriggers, should.HaveLength(0))
@@ -106,7 +106,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				// Add 5 triggers.
 				addTriggers(noDelay, 5)
 				assert.Loosely(c, s.Invocations, should.HaveLength(1))
-				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-001", "t-002"}))
+				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Match([]string{"t-001", "t-002"}))
 				assert.Loosely(c, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal("data-002"))
 				assert.Loosely(c, s.PendingTriggers, should.HaveLength(3))
 
@@ -118,7 +118,7 @@ func TestLogarithmicBatching(t *testing.T) {
 				// Invocation is finsihed now, we have 11 = (3 old + 4*2 new triggers).
 				assert.Loosely(c, s.Invocations, should.HaveLength(2)) // new invocation created.
 				// log(2,11) = 3.459
-				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Resemble([]string{"t-003", "t-004", "t-005"}))
+				assert.Loosely(c, s.Last().Request.TriggerIDs(), should.Match([]string{"t-003", "t-004", "t-005"}))
 				assert.Loosely(c, s.DiscardedTriggers, should.HaveLength(0))
 			})
 		})

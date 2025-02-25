@@ -33,7 +33,7 @@ func TestExistsResult(t *testing.T) {
 
 			assert.Loosely(t, er.All(), should.BeTrue)
 			assert.Loosely(t, er.Any(), should.BeFalse)
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{}))
 		})
 
 		t.Run(`With single-tier elements`, func(t *ftt.Test) {
@@ -41,21 +41,21 @@ func TestExistsResult(t *testing.T) {
 
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeFalse)
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{false, false, false, false}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{false, false, false, false}))
 
 			er.set(0, 0)
 			er.set(2, 0)
 
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeTrue)
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{true, false, true, false}))
-			assert.Loosely(t, er.List(0), should.Resemble(BoolList{true}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{true, false, true, false}))
+			assert.Loosely(t, er.List(0), should.Match(BoolList{true}))
 			assert.Loosely(t, er.Get(0, 0), should.BeTrue)
-			assert.Loosely(t, er.List(1), should.Resemble(BoolList{false}))
+			assert.Loosely(t, er.List(1), should.Match(BoolList{false}))
 			assert.Loosely(t, er.Get(1, 0), should.BeFalse)
-			assert.Loosely(t, er.List(2), should.Resemble(BoolList{true}))
+			assert.Loosely(t, er.List(2), should.Match(BoolList{true}))
 			assert.Loosely(t, er.Get(2, 0), should.BeTrue)
-			assert.Loosely(t, er.List(3), should.Resemble(BoolList{false}))
+			assert.Loosely(t, er.List(3), should.Match(BoolList{false}))
 			assert.Loosely(t, er.Get(3, 0), should.BeFalse)
 		})
 
@@ -64,7 +64,7 @@ func TestExistsResult(t *testing.T) {
 
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeFalse)
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{false, false, false, false}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{false, false, false, false}))
 
 			// Set everything except (2, 1).
 			er.set(0, 0)
@@ -76,13 +76,13 @@ func TestExistsResult(t *testing.T) {
 			er.updateSlices()
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeTrue)
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{true, true, false, true}))
-			assert.Loosely(t, er.List(0), should.Resemble(BoolList{true}))
-			assert.Loosely(t, er.List(1), should.Resemble(BoolList(nil)))
-			assert.Loosely(t, er.List(2), should.Resemble(BoolList{true, false, true}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{true, true, false, true}))
+			assert.Loosely(t, er.List(0), should.Match(BoolList{true}))
+			assert.Loosely(t, er.List(1), should.Match(BoolList(nil)))
+			assert.Loosely(t, er.List(2), should.Match(BoolList{true, false, true}))
 			assert.Loosely(t, er.Get(2, 0), should.BeTrue)
 			assert.Loosely(t, er.Get(2, 1), should.BeFalse)
-			assert.Loosely(t, er.List(3), should.Resemble(BoolList{true, true}))
+			assert.Loosely(t, er.List(3), should.Match(BoolList{true, true}))
 
 			// Set the missing boolean.
 			er.set(2, 1)
@@ -94,19 +94,19 @@ func TestExistsResult(t *testing.T) {
 			er.init(1, 0, 0, 1)
 
 			er.updateSlices()
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{false, true, true, false}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{false, true, true, false}))
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeFalse)
 
 			er.set(0, 0)
 			er.updateSlices()
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{true, true, true, false}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{true, true, true, false}))
 			assert.Loosely(t, er.All(), should.BeFalse)
 			assert.Loosely(t, er.Any(), should.BeTrue)
 
 			er.set(3, 0)
 			er.updateSlices()
-			assert.Loosely(t, er.List(), should.Resemble(BoolList{true, true, true, true}))
+			assert.Loosely(t, er.List(), should.Match(BoolList{true, true, true, true}))
 			assert.Loosely(t, er.All(), should.BeTrue)
 			assert.Loosely(t, er.Any(), should.BeTrue)
 		})

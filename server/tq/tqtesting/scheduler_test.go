@@ -116,7 +116,7 @@ func TestScheduler(t *testing.T) {
 
 			run(3)
 
-			assert.Loosely(t, orderByPayload(exec.tasks), should.Resemble([]string{"1", "3", "4"}))
+			assert.Loosely(t, orderByPayload(exec.tasks), should.Match([]string{"1", "3", "4"}))
 		})
 
 		t.Run("Task chain", func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestScheduler(t *testing.T) {
 			}
 			enqueue(".", "", time.Time{}, "")
 			run(3)
-			assert.Loosely(t, orderByPayload(exec.tasks), should.Resemble([]string{".", "..", "..."}))
+			assert.Loosely(t, orderByPayload(exec.tasks), should.Match([]string{".", "..", "..."}))
 		})
 
 		t.Run("Tasks with ETA", func(t *ftt.Test) {
@@ -138,7 +138,7 @@ func TestScheduler(t *testing.T) {
 				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
-			assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
+			assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
 		})
 
 		t.Run("Retries", func(t *ftt.Test) {
@@ -195,9 +195,9 @@ func TestScheduler(t *testing.T) {
 				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
-			assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
+			assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
 
-			assert.Loosely(t, payloads(captured), should.Resemble([]string{"A 1", "B 1", "A 2", "B 2"}))
+			assert.Loosely(t, payloads(captured), should.Match([]string{"A 1", "B 1", "A 2", "B 2"}))
 			assert.Loosely(t, captured[0].Executing, should.BeTrue)
 			assert.Loosely(t, captured[1].Executing, should.BeFalse)
 		})
@@ -237,11 +237,11 @@ func TestScheduler(t *testing.T) {
 				enqueue("2", "", epoch.Add(6*time.Second), "classB")
 				enqueue("3", "", epoch.Add(9*time.Second), "classB")
 				sched.Run(ctx, StopAfterTask("classB"))
-				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2"}))
+				assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1", "2"}))
 
 				t.Run("Doesn't take into account previously executed tasks", func(t *ftt.Test) {
 					sched.Run(ctx, StopAfterTask("classB"))
-					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2", "3"}))
+					assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1", "2", "3"}))
 				})
 			})
 
@@ -257,7 +257,7 @@ func TestScheduler(t *testing.T) {
 				}
 				enqueue("1", "", time.Time{}, "classA")
 				sched.Run(ctx, StopAfterTask("classB"))
-				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2"}))
+				assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1", "2"}))
 			})
 
 			t.Run("Stops eventually if ran in parallel", func(t *ftt.Test) {
@@ -297,12 +297,12 @@ func TestScheduler(t *testing.T) {
 				enqueue("3", "", epoch.Add(6*time.Second), "classA")
 				enqueue("4", "", epoch.Add(8*time.Second), "classB")
 				sched.Run(ctx, StopBeforeTask("classB"))
-				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1"}))
+				assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1"}))
 
 				t.Run("Even if it doesn't run anything", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"))
 					// The payloasd must be exactly same.
-					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1"}))
+					assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1"}))
 				})
 			})
 
@@ -323,12 +323,12 @@ func TestScheduler(t *testing.T) {
 
 				t.Run("Stops before 3a and 3b if run serially", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"))
-					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2->a", "2->b"}))
+					assert.Loosely(t, payloads(exec.tasks), should.Match([]string{"1", "2->a", "2->b"}))
 				})
 				t.Run("Stops before 3b, but 3a may be executed, if run in parallel", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"), ParallelExecute())
 					ps := orderByPayload(exec.tasks)
-					assert.Loosely(t, ps[:3], should.Resemble([]string{"1", "2->a", "2->b"}))
+					assert.Loosely(t, ps[:3], should.Match([]string{"1", "2->a", "2->b"}))
 					assert.Loosely(t, ps[3:], should.NotContain("3b"))
 				})
 			})
@@ -364,7 +364,7 @@ func TestTaskList(t *testing.T) {
 		}
 
 		t.Run("Payloads", func(t *ftt.Test) {
-			assert.Loosely(t, tl.Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, tl.Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 1},
 				&durationpb.Duration{Seconds: 2},
@@ -377,7 +377,7 @@ func TestTaskList(t *testing.T) {
 		})
 
 		t.Run("Executing/Pending", func(t *ftt.Test) {
-			assert.Loosely(t, tl.Executing().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, tl.Executing().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 2},
 				&durationpb.Duration{Seconds: 4},
@@ -386,14 +386,14 @@ func TestTaskList(t *testing.T) {
 				&durationpb.Duration{Seconds: 7},
 			}))
 
-			assert.Loosely(t, tl.Pending().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, tl.Pending().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 1},
 				&durationpb.Duration{Seconds: 3},
 			}))
 		})
 
 		t.Run("SortByETA", func(t *ftt.Test) {
-			assert.Loosely(t, tl.SortByETA().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, tl.SortByETA().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 2},
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 5},

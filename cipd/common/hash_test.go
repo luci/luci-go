@@ -41,7 +41,7 @@ func TestNewHash(t *testing.T) {
 		algo, err := NewHash(api.HashAlgo_SHA1)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, algo, should.NotBeNil)
-		assert.Loosely(t, ObjectRefFromHash(algo), should.Resemble(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefFromHash(algo), should.Match(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "da39a3ee5e6b4b0d3255bfef95601890afd80709",
 		}))
@@ -51,7 +51,7 @@ func TestNewHash(t *testing.T) {
 		algo, err := NewHash(api.HashAlgo_SHA256)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, algo, should.NotBeNil)
-		assert.Loosely(t, ObjectRefFromHash(algo), should.Resemble(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefFromHash(algo), should.Match(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 		}))

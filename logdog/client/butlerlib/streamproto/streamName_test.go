@@ -49,7 +49,7 @@ func TestStreamName(t *testing.T) {
 				sn = "test/stream/name"
 				d, err := json.Marshal(&sn)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, string(d), should.Resemble(`"test/stream/name"`))
+				assert.Loosely(t, string(d), should.Match(`"test/stream/name"`))
 
 				t.Run(`And successfully unmarshal.`, func(t *ftt.Test) {
 					sn = ""

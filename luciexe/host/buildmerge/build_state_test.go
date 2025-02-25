@@ -70,7 +70,7 @@ func cleanupProtoError(t testing.TB, builds ...*bbpb.Build) {
 func assertStateEqual(t testing.TB, actual, expected *buildState) {
 	t.Helper()
 	cleanupProtoError(t, actual.build, expected.build)
-	assert.Loosely(t, actual.build, should.Resemble(expected.build), truth.LineContext())
+	assert.Loosely(t, actual.build, should.Match(expected.build), truth.LineContext())
 	assert.Loosely(t, actual.closed, should.Equal(expected.closed), truth.LineContext())
 	assert.Loosely(t, actual.final, should.Equal(expected.final), truth.LineContext())
 	assert.Loosely(t, actual.invalid, should.Equal(expected.invalid), truth.LineContext())
@@ -240,7 +240,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				assert.Loosely(t, bs.getLatestBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, bs.getLatestBuild(), should.Match(&bbpb.Build{
 					SummaryMarkdown: "some stuff",
 					Steps: []*bbpb.Step{
 						{Name: "Parent"},
@@ -433,7 +433,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				assert.Loosely(t, bs.getLatestBuild(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, bs.getLatestBuild(), should.Match(&bbpb.Build{
 					Steps: []*bbpb.Step{
 						{
 							Name: "hi",

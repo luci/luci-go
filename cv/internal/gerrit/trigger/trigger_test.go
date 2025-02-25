@@ -121,7 +121,7 @@ func TestFindCQTrigger(t *testing.T) {
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+			assert.Loosely(t, trig, should.Match(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -135,7 +135,7 @@ func TestFindCQTrigger(t *testing.T) {
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+			assert.Loosely(t, trig, should.Match(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -156,7 +156,7 @@ func TestFindCQTrigger(t *testing.T) {
 				},
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+			assert.Loosely(t, trig, should.Match(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -171,7 +171,7 @@ func TestFindCQTrigger(t *testing.T) {
 				assert.NoErr(t, err)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+				assert.Loosely(t, trig, should.Match(&run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
 					GerritAccountId: user2.GetAccountId(),
@@ -203,7 +203,7 @@ func TestFindCQTrigger(t *testing.T) {
 				},
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+			assert.Loosely(t, trig, should.Match(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user2.GetAccountId(),
@@ -222,7 +222,7 @@ func TestFindCQTrigger(t *testing.T) {
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
 			trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-			assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+			assert.Loosely(t, trig, should.Match(&run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -256,7 +256,7 @@ func TestFindCQTrigger(t *testing.T) {
 			}}
 			t.Run("Simplest possible custom run", func(t *ftt.Test) {
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
-				assert.Loosely(t, trig, should.Resemble(&run.Trigger{
+				assert.Loosely(t, trig, should.Match(&run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            customRunMode,
 					ModeDefinition:  cg.AdditionalModes[0],
@@ -386,7 +386,7 @@ func TestFindNewPatchsetRunTrigger(t *testing.T) {
 			t.Run("Current patchset not ended", func(t *ftt.Test) {
 				assert.Loosely(t,
 					findNewPatchsetRunTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cle.TriggerNewPatchsetRunAfterPS}),
-					should.Resemble(
+					should.Match(
 						&run.Trigger{
 							Mode:            string(run.NewPatchsetRun),
 							Time:            timestamppb.New(ts2),

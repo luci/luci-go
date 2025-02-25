@@ -47,7 +47,7 @@ func TestBigTable(t *testing.T) {
 			t.Run(`Can extract log data.`, func(t *ftt.Test) {
 				d, err := getLogRowData(fakeRow)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, d, should.Resemble([]byte("here is my data")))
+				assert.Loosely(t, d, should.Match([]byte("here is my data")))
 			})
 
 			t.Run(`Will fail to extract if the column is missing.`, func(t *ftt.Test) {

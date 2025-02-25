@@ -50,7 +50,7 @@ func TestNewRequestGET(t *testing.T) {
 			serverCalls++
 			content, err := io.ReadAll(r.Body)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, content, should.Resemble([]byte{}))
+			assert.Loosely(c, content, should.Match([]byte{}))
 			if serverCalls == 1 {
 				w.WriteHeader(500)
 			} else {

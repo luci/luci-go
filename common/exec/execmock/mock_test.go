@@ -98,7 +98,7 @@ func TestContext(t *testing.T) {
 
 			misses := ResetState(ctx)
 			assert.Loosely(t, misses, should.HaveLength(1))
-			assert.Loosely(t, misses[0].Args, should.Resemble([]string{"echo", "hello"}))
+			assert.Loosely(t, misses[0].Args, should.Match([]string{"echo", "hello"}))
 		})
 
 		t.Run(`single`, func(t *ftt.Test) {
@@ -109,7 +109,7 @@ func TestContext(t *testing.T) {
 
 			usages := uses.Snapshot()
 			assert.Loosely(t, usages, should.HaveLength(1))
-			assert.Loosely(t, usages[0].Args, should.Resemble([]string{"echo", "hello"}))
+			assert.Loosely(t, usages[0].Args, should.Match([]string{"echo", "hello"}))
 			assert.Loosely(t, usages[0].GetPID(), should.NotEqual(0))
 		})
 
@@ -119,13 +119,13 @@ func TestContext(t *testing.T) {
 
 			out, err := exec.Command(ctx, "echo", "hello").CombinedOutput()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble([]byte("mocky mock")))
+			assert.Loosely(t, out, should.Match([]byte("mocky mock")))
 
 			assert.Loosely(t, generalUsage.Snapshot(), should.BeEmpty)
 
 			usages := specificUsage.Snapshot()
 			assert.Loosely(t, usages, should.HaveLength(1))
-			assert.Loosely(t, usages[0].Args, should.Resemble([]string{"echo", "hello"}))
+			assert.Loosely(t, usages[0].Args, should.Match([]string{"echo", "hello"}))
 			assert.Loosely(t, usages[0].GetPID(), should.NotEqual(0))
 		})
 
@@ -136,12 +136,12 @@ func TestContext(t *testing.T) {
 			// fully consumes specificUsage
 			out, err := exec.Command(ctx, "echo", "hello").CombinedOutput()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble([]byte("mocky mock")))
+			assert.Loosely(t, out, should.Match([]byte("mocky mock")))
 
 			// falls into generalUsage mock
 			out, err = exec.Command(ctx, "echo", "hello").CombinedOutput()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble([]byte("")))
+			assert.Loosely(t, out, should.Match([]byte("")))
 
 			assert.Loosely(t, generalUsage.Snapshot(), should.HaveLength(1))
 			assert.Loosely(t, specificUsage.Snapshot(), should.HaveLength(1))

@@ -36,7 +36,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
 		dpb := serializeDistribution(d)
 
-		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Match(&pb.MetricsData_Distribution{
 			Count: proto.Int64(0),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
 				LinearBuckets: &pb.MetricsData_Distribution_LinearOptions{
@@ -57,7 +57,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d.Add(1048576)
 
 		dpb := serializeDistribution(d)
-		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Match(&pb.MetricsData_Distribution{
 			Count: proto.Int64(5),
 			Mean:  proto.Float64(210228),
 			BucketOptions: &pb.MetricsData_Distribution_ExponentialBuckets{
@@ -80,7 +80,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d.Add(20)
 
 		dpb := serializeDistribution(d)
-		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Match(&pb.MetricsData_Distribution{
 			Count: proto.Int64(4),
 			Mean:  proto.Float64(5.75),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
@@ -130,7 +130,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -169,7 +169,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/foo"),
@@ -207,7 +207,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     float64(42),
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -241,7 +241,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     float64(42),
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -275,7 +275,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     "hello",
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -309,7 +309,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     true,
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -348,7 +348,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: []*pb.MetricsCollection_RootLabels{
 				target.RootLabel("proxy_environment", "pa"),
 				target.RootLabel("acquisition_name", "mon-chrome-infra"),
@@ -396,7 +396,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     d,
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -457,7 +457,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     d,
 			},
 		}}, now)
-		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Match([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),

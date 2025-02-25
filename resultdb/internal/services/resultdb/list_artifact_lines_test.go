@@ -77,7 +77,7 @@ func TestListArtifactLines(t *testing.T) {
 		if timestamp != "" {
 			ts, err := time.Parse(time.RFC3339Nano, timestamp)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, line.Timestamp, should.Resemble(timestamppb.New(ts)))
+			assert.Loosely(t, line.Timestamp, should.Match(timestamppb.New(ts)))
 		}
 		assert.Loosely(t, line.Severity, should.Equal(severity))
 	}

@@ -99,8 +99,8 @@ func TestBuildRulesQuery(t *testing.T) {
 
 		assert.Loosely(t, q.Requestor, should.Equal(identity.Identity("user:requestor@example.com")))
 		assert.Loosely(t, q.Delegator, should.Equal(identity.Identity("user:delegated@example.com")))
-		assert.Loosely(t, q.Audience.ToStrings(), should.Resemble([]string{"group:A", "group:B", "user:c@example.com"}))
-		assert.Loosely(t, q.Services.ToStrings(), should.Resemble([]string{"*"}))
+		assert.Loosely(t, q.Audience.ToStrings(), should.Match([]string{"group:A", "group:B", "user:c@example.com"}))
+		assert.Loosely(t, q.Services.ToStrings(), should.Match([]string{"*"}))
 	})
 
 	ftt.Run("REQUESTOR usage works", t, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestBuildRulesQuery(t *testing.T) {
 
 		assert.Loosely(t, q.Requestor, should.Equal(identity.Identity("user:requestor@example.com")))
 		assert.Loosely(t, q.Delegator, should.Equal(identity.Identity("user:requestor@example.com")))
-		assert.Loosely(t, q.Audience.ToStrings(), should.Resemble([]string{"group:A", "group:B", "user:requestor@example.com"}))
+		assert.Loosely(t, q.Audience.ToStrings(), should.Match([]string{"group:A", "group:B", "user:requestor@example.com"}))
 	})
 
 	ftt.Run("bad 'delegated_identity'", t, func(t *ftt.Test) {
@@ -191,7 +191,7 @@ func TestBuildRulesQuery(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, q, should.NotBeNil)
 
-		assert.Loosely(t, q.Services.ToStrings(), should.Resemble([]string{
+		assert.Loosely(t, q.Services.ToStrings(), should.Match([]string{
 			"service:A",
 			"service:B",
 			"service:C",
@@ -258,10 +258,10 @@ func TestMintDelegationToken(t *testing.T) {
 			assert.Loosely(t, resp.ServiceVersion, should.Equal("unit-tests/mocked-ver"))
 
 			// LogToken called.
-			assert.Loosely(t, loggedInfo.Request, should.Resemble(req))
-			assert.Loosely(t, loggedInfo.Response, should.Resemble(resp))
+			assert.Loosely(t, loggedInfo.Request, should.Match(req))
+			assert.Loosely(t, loggedInfo.Response, should.Match(resp))
 			assert.Loosely(t, loggedInfo.ConfigRev, should.Equal(cfg.ConfigRevision()))
-			assert.Loosely(t, loggedInfo.Rule, should.Resemble(&admin.DelegationRule{
+			assert.Loosely(t, loggedInfo.Rule, should.Match(&admin.DelegationRule{
 				Name:                 "requstor for itself",
 				Requestor:            []string{"user:requestor@example.com"},
 				AllowedToImpersonate: []string{"REQUESTOR"},
@@ -269,7 +269,7 @@ func TestMintDelegationToken(t *testing.T) {
 				TargetService:        []string{"*"},
 				MaxValidityDuration:  3600,
 			}))
-			assert.Loosely(t, loggedInfo.PeerIP, should.Resemble(net.ParseIP("127.10.10.10")))
+			assert.Loosely(t, loggedInfo.PeerIP, should.Match(net.ParseIP("127.10.10.10")))
 			assert.Loosely(t, loggedInfo.RequestID, should.Equal(testingRequestID.String()))
 			assert.Loosely(t, loggedInfo.AuthDBRev, should.Equal(1234))
 		})

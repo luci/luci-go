@@ -31,7 +31,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeFalse)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "",
@@ -43,7 +43,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeFalse)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
@@ -55,7 +55,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/tags/10.0.1")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/tags/10.0.1",
@@ -67,7 +67,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/x/y")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/x",
@@ -79,7 +79,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/branch-heads/x")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/branch-heads/x",
@@ -91,7 +91,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/main")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/heads/main",
@@ -103,7 +103,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/refs/x")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/x",
@@ -115,7 +115,7 @@ func TestParseCommit(t *testing.T) {
 			actual, confirm, err := parseCommit("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, confirm, should.BeTrue)
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium-foo.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Ref:     "refs/x",

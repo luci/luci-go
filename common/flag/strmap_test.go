@@ -29,15 +29,15 @@ func TestStringMap(t *testing.T) {
 
 		t.Run(`Set`, func(t *ftt.Test) {
 			assert.Loosely(t, f.Set("a:1"), should.BeNil)
-			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1"}))
+			assert.Loosely(t, m, should.Match(map[string]string{"a": "1"}))
 
 			assert.Loosely(t, f.Set("b:2"), should.BeNil)
-			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1", "b": "2"}))
+			assert.Loosely(t, m, should.Match(map[string]string{"a": "1", "b": "2"}))
 
 			assert.Loosely(t, f.Set("b:3"), should.ErrLike(`key "b" is already specified`))
 
 			assert.Loosely(t, f.Set("c:something:with:colon"), should.BeNil)
-			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1", "b": "2", "c": "something:with:colon"}))
+			assert.Loosely(t, m, should.Match(map[string]string{"a": "1", "b": "2", "c": "something:with:colon"}))
 		})
 
 		t.Run(`String`, func(t *ftt.Test) {

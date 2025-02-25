@@ -47,7 +47,7 @@ func TestMail(t *testing.T) {
 				}), should.BeNil)
 
 				t.Run("and it shows up in sent messages", func(t *ftt.Test) {
-					assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Resemble([]*mail.TestMessage{
+					assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Match([]*mail.TestMessage{
 						{Message: mail.Message{
 							Sender:  "admin@example.com",
 							To:      []string{"Valued Customer <customer@example.com>"},
@@ -80,7 +80,7 @@ func TestMail(t *testing.T) {
 					Body:    "I forgot",
 				}), should.BeNil)
 
-				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Resemble([]*mail.TestMessage{
+				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Match([]*mail.TestMessage{
 					{Message: mail.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},
@@ -102,7 +102,7 @@ func TestMail(t *testing.T) {
 					Body:    "I forgot",
 				}), should.BeNil)
 
-				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Resemble([]*mail.TestMessage{
+				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Match([]*mail.TestMessage{
 					{Message: mail.Message{
 						Sender: "hello@example.com",
 						To: []string{
@@ -126,7 +126,7 @@ func TestMail(t *testing.T) {
 					},
 				}), should.BeNil)
 
-				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Resemble([]*mail.TestMessage{
+				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Match([]*mail.TestMessage{
 					{
 						Message: mail.Message{
 							Sender:  "admin@example.com",
@@ -153,7 +153,7 @@ func TestMail(t *testing.T) {
 					},
 				}), should.BeNil)
 
-				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Resemble([]*mail.TestMessage{
+				assert.Loosely(t, mail.GetTestable(c).SentMessages(), should.Match([]*mail.TestMessage{
 					{Message: mail.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},

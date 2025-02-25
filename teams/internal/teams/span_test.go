@@ -59,7 +59,7 @@ func TestStatusTable(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		fetched, err := Read(span.Single(ctx), team.ID)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, fetched, should.Resemble(team))
+		assert.Loosely(t, fetched, should.Match(team))
 	})
 
 	ftt.Run("Read", t, func(t *ftt.Test) {
@@ -71,7 +71,7 @@ func TestStatusTable(t *testing.T) {
 			fetched, err := Read(span.Single(ctx), team.ID)
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, fetched, should.Resemble(team))
+			assert.Loosely(t, fetched, should.Match(team))
 		})
 
 		t.Run("Not exists", func(t *ftt.Test) {

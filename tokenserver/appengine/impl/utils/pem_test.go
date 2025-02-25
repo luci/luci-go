@@ -27,7 +27,7 @@ func TestPem(t *testing.T) {
 		data := []byte("blah-blah")
 		back, err := ParsePEM(DumpPEM(data, "DATA"), "DATA")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, back, should.Resemble(data))
+		assert.Loosely(t, back, should.Match(data))
 	})
 
 	ftt.Run("ParsePEM wrong header", t, func(t *ftt.Test) {

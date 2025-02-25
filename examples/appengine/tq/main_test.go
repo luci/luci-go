@@ -68,7 +68,7 @@ func TestQueue(t *testing.T) {
 		assert.Loosely(t, EnqueueCountDown(ctx, 5), should.BeNil)
 
 		// Examine currently enqueue tasks.
-		assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+		assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 			&taskspb.CountDownTask{Number: 5},
 		}))
 
@@ -82,7 +82,7 @@ func TestQueue(t *testing.T) {
 		datastore.Run(ctx, datastore.NewQuery("ExampleEntity"), func(e *ExampleEntity) {
 			numbers[e.ID] = e.LastUpdate.Sub(epoch)
 		})
-		assert.Loosely(t, numbers, should.Resemble(map[int64]time.Duration{
+		assert.Loosely(t, numbers, should.Match(map[int64]time.Duration{
 			5: 100 * time.Millisecond,
 			4: 200 * time.Millisecond,
 			3: 300 * time.Millisecond,
@@ -91,7 +91,7 @@ func TestQueue(t *testing.T) {
 		}))
 
 		// Can also examine all executed tasks.
-		assert.Loosely(t, succeeded.Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+		assert.Loosely(t, succeeded.Payloads(), should.Match([]protoreflect.ProtoMessage{
 			&taskspb.CountDownTask{Number: 5},
 			&taskspb.CountDownTask{Number: 4},
 			&taskspb.CountDownTask{Number: 3},

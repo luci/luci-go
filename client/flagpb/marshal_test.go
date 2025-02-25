@@ -43,7 +43,7 @@ func TestMarshal(t *testing.T) {
 			t.Run(strings.Join(flags, " "), func(t *ftt.Test) {
 				actualFlags, err := MarshalUntyped(m)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actualFlags, should.Resemble(flags))
+				assert.Loosely(t, actualFlags, should.Match(flags))
 			})
 		}
 

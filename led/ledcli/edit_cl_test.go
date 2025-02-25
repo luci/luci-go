@@ -137,7 +137,7 @@ func TestParseCLURL(t *testing.T) {
 					assert.Loosely(t, cl, should.BeNil)
 				} else {
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cl, should.Resemble(tc.cl))
+					assert.Loosely(t, cl, should.Match(tc.cl))
 				}
 			})
 		}

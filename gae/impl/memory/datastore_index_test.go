@@ -194,7 +194,7 @@ func TestIndexRowGen(t *testing.T) {
 							assert.Loosely(t, len(actual), should.Equal(len(tc.expected[i])))
 							sort.Sort(actual)
 							for j, act := range actual {
-								assert.Loosely(t, act, should.Resemble(tc.expected[i][j]))
+								assert.Loosely(t, act, should.Match(tc.expected[i][j]))
 							}
 						} else {
 							assert.Loosely(t, ok, should.BeFalse)
@@ -218,7 +218,7 @@ func TestIndexRowGen(t *testing.T) {
 				s := indexEntries(fakeKey, sip, defaultIndexes("knd", nil))
 				assert.Loosely(t, countItems(s.Snapshot().GetCollection("idx")), should.Equal(1))
 				itm := s.GetCollection("idx").MinItem()
-				assert.Loosely(t, itm.key, should.Resemble(cat(indx("knd").PrepForIdxTable())))
+				assert.Loosely(t, itm.key, should.Match(cat(indx("knd").PrepForIdxTable())))
 				assert.Loosely(t, countItems(s.Snapshot().GetCollection("idx:ns:"+string(itm.key))), should.Equal(1))
 			})
 
@@ -265,7 +265,7 @@ func TestIndexEntries(t *testing.T) {
 					assert.Loosely(t, countItems(coll), should.Equal(len(tc.collections[colName])))
 
 					coll.ForEachItem(func(k, _ []byte) bool {
-						assert.Loosely(t, k, should.Resemble(vals[i]))
+						assert.Loosely(t, k, should.Match(vals[i]))
 						i++
 						return true
 					})
@@ -382,7 +382,7 @@ func TestUpdateIndexes(t *testing.T) {
 					assert.Loosely(t, coll, should.NotBeNil)
 					i := 0
 					coll.ForEachItem(func(k, _ []byte) bool {
-						assert.Loosely(t, data[i], should.Resemble(k))
+						assert.Loosely(t, data[i], should.Match(k))
 						i++
 						return true
 					})

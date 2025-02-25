@@ -41,7 +41,7 @@ func TestRequestDedupKey(t *testing.T) {
 
 		entry, err := ParseRequestDedupKey(key)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, entry.Ident, should.Resemble(string(user)))
-		assert.Loosely(t, entry.RequestId, should.Resemble(requestID))
+		assert.Loosely(t, entry.Ident, should.Match(string(user)))
+		assert.Loosely(t, entry.RequestId, should.Match(requestID))
 	})
 }

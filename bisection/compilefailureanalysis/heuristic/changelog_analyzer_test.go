@@ -78,7 +78,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{IsNonBlamable: true}))
+			assert.Loosely(t, justification, should.Match(&model.SuspectJustification{IsNonBlamable: true}))
 		})
 
 		t.Run("Changelog did not touch any file", func(t *ftt.Test) {
@@ -92,7 +92,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{}))
+			assert.Loosely(t, justification, should.Match(&model.SuspectJustification{}))
 		})
 
 		t.Run("Changelog touched relevant files", func(t *ftt.Test) {
@@ -125,7 +125,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, justification, should.Resemble(&model.SuspectJustification{
+			assert.Loosely(t, justification, should.Match(&model.SuspectJustification{
 				Items: []*model.SuspectJustificationItem{
 					{
 						Score:    10,
@@ -202,7 +202,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 
 			analysisResult, err := AnalyzeChangeLogs(c, signal, cls)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, analysisResult, should.Resemble(&model.HeuristicAnalysisResult{
+			assert.Loosely(t, analysisResult, should.Match(&model.HeuristicAnalysisResult{
 				Items: []*model.HeuristicAnalysisResultItem{
 					{
 						Commit:      "wxyz",

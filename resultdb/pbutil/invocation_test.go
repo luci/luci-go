@@ -63,7 +63,7 @@ func TestInvocationUtils(t *testing.T) {
 
 		NormalizeInvocation(inv)
 
-		assert.Loosely(t, inv.Tags, should.Resemble(StringPairs(
+		assert.Loosely(t, inv.Tags, should.Match(StringPairs(
 			"k1", "v1",
 			"k2", "v20",
 			"k2", "v21",
@@ -113,7 +113,7 @@ func TestInvocationUtils(t *testing.T) {
 
 		NormalizeInvocation(inv)
 
-		assert.Loosely(t, inv.SourceSpec.Sources.Changelists, should.Resemble([]*pb.GerritChange{
+		assert.Loosely(t, inv.SourceSpec.Sources.Changelists, should.Match([]*pb.GerritChange{
 			{
 				Host:     "a-review.googlesource.com",
 				Project:  "aaa",

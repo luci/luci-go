@@ -94,8 +94,8 @@ func TestDatastoreQueryIterator(t *testing.T) {
 					},
 					"field2": MkProperty("aa1"),
 				}
-				assert.Loosely(t, key, should.Resemble(key))
-				assert.Loosely(t, data, should.Resemble(expectedPM))
+				assert.Loosely(t, key, should.Match(key))
+				assert.Loosely(t, data, should.Match(expectedPM))
 			})
 
 			// end of results
@@ -130,7 +130,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			assert.Loosely(t, itemOrder, should.BeEmpty)
 			key, data := qi.CurrentItem()
 			assert.Loosely(t, key, should.BeNil)
-			assert.Loosely(t, data, should.Resemble(PropertyMap{}))
+			assert.Loosely(t, data, should.Match(PropertyMap{}))
 		})
 	})
 }
@@ -157,8 +157,8 @@ func TestStartQueryIterator(t *testing.T) {
 			done, err := qi.Next()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, done, should.BeFalse)
-			assert.Loosely(t, qi.currentQueryResult.key, should.Resemble(MakeKey(ctx, "Kind", 1)))
-			assert.Loosely(t, qi.currentQueryResult.data, should.Resemble(
+			assert.Loosely(t, qi.currentQueryResult.key, should.Match(MakeKey(ctx, "Kind", 1)))
+			assert.Loosely(t, qi.currentQueryResult.data, should.Match(
 				PropertyMap{
 					"Value": MkProperty(0),
 				}))
@@ -166,8 +166,8 @@ func TestStartQueryIterator(t *testing.T) {
 			done, err = qi.Next()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, done, should.BeFalse)
-			assert.Loosely(t, qi.currentQueryResult.key, should.Resemble(MakeKey(ctx, "Kind", 2)))
-			assert.Loosely(t, qi.currentQueryResult.data, should.Resemble(
+			assert.Loosely(t, qi.currentQueryResult.key, should.Match(MakeKey(ctx, "Kind", 2)))
+			assert.Loosely(t, qi.currentQueryResult.data, should.Match(
 				PropertyMap{
 					"Value": MkProperty(1),
 				}))
@@ -193,7 +193,7 @@ func TestStartQueryIterator(t *testing.T) {
 			// 2) qi.Next() retrieves at most one rawQueryResult and then returns a Stop signal.
 			done, err := qi.Next()
 			if !done {
-				assert.Loosely(t, qi.currentQueryResult, should.Resemble(&rawQueryResult{
+				assert.Loosely(t, qi.currentQueryResult, should.Match(&rawQueryResult{
 					key: MakeKey(ctx, "Kind", 1),
 					data: PropertyMap{
 						"Value": MkProperty(0),

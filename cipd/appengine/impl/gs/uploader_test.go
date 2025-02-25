@@ -64,7 +64,7 @@ func TestUploader(t *testing.T) {
 			if len(body) == 0 {
 				body = nil
 			}
-			assert.Loosely(c, body, should.Resemble(next.Body))
+			assert.Loosely(c, body, should.Match(next.Body))
 
 			if next.Err != nil {
 				return nil, next.Err
@@ -187,7 +187,7 @@ func TestUploader(t *testing.T) {
 				Range:        "bytes=0-1",
 			})
 			n, err = upl.Write([]byte{3, 4})
-			assert.Loosely(c, err, should.Resemble(&RestartUploadError{Offset: 2}))
+			assert.Loosely(c, err, should.Match(&RestartUploadError{Offset: 2}))
 			assert.Loosely(c, n, should.BeZero)
 		})
 	})

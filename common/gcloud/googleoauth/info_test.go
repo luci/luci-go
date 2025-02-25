@@ -52,7 +52,7 @@ func TestGetTokenInfo(t *testing.T) {
 			Endpoint:    ts.URL,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, info, should.Resemble(&TokenInfo{
+		assert.Loosely(t, info, should.Match(&TokenInfo{
 			Aud:           "blah",
 			ExpiresIn:     12345,
 			EmailVerified: true,

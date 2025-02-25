@@ -96,7 +96,7 @@ func TestRunReadChecker(t *testing.T) {
 
 					st1, _ := appstatus.Get(err1)
 					st2, _ := appstatus.Get(err2)
-					assert.Loosely(t, st1.Message(), should.Resemble(st2.Message()))
+					assert.Loosely(t, st1.Message(), should.Match(st2.Message()))
 					assert.Loosely(t, st1.Details(), should.BeEmpty)
 					assert.Loosely(t, st2.Details(), should.BeEmpty)
 				})

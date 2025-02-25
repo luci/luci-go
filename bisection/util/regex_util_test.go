@@ -28,7 +28,7 @@ func TestRegexUtil(t *testing.T) {
 		pattern := regexp.MustCompile(`(?P<g1>test1)(test2)(?P<g2>test3)`)
 		matches, err := MatchedNamedGroup(pattern, `test1test2test3`)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, matches, should.Resemble(map[string]string{
+		assert.Loosely(t, matches, should.Match(map[string]string{
 			"g1": "test1",
 			"g2": "test3",
 		}))

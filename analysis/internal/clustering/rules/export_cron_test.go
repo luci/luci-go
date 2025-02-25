@@ -62,7 +62,7 @@ func TestExportRules(t *testing.T) {
 			err := exportRules(testutil.IntegrationTestContext(t), mockClient, exportTime)
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, mockClient.Insertions, should.Resemble([]*bqpb.FailureAssociationRulesHistoryRow{}))
+			assert.Loosely(t, mockClient.Insertions, should.Match([]*bqpb.FailureAssociationRulesHistoryRow{}))
 		})
 
 		t.Run(`empty BigQuery table`, func(t *ftt.Test) {
@@ -84,7 +84,7 @@ func TestExportRules(t *testing.T) {
 			}
 			sortF(expected)
 			sortF(mockClient.Insertions)
-			assert.Loosely(t, mockClient.Insertions, should.Resemble(expected))
+			assert.Loosely(t, mockClient.Insertions, should.Match(expected))
 		})
 
 		t.Run(`incremental export`, func(t *ftt.Test) {
@@ -107,7 +107,7 @@ func TestExportRules(t *testing.T) {
 			}
 			sortF(expected)
 			sortF(mockClient.Insertions)
-			assert.Loosely(t, mockClient.Insertions, should.Resemble(expected))
+			assert.Loosely(t, mockClient.Insertions, should.Match(expected))
 		})
 	})
 	// The behaviour of this method is assumed in the tests above.
@@ -174,6 +174,6 @@ func TestExportRules(t *testing.T) {
 			LastUpdateTime:          timestamppb.New(time.Date(2005, 1, 1, 1, 1, 1, 1, time.UTC)),
 			ExportedTime:            timestamppb.New(exportTime),
 		}
-		assert.Loosely(t, toFailureAssociationRulesHistoryRow(r, exportTime), should.Resemble(expected))
+		assert.Loosely(t, toFailureAssociationRulesHistoryRow(r, exportTime), should.Match(expected))
 	})
 }

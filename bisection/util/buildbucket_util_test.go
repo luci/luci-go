@@ -47,7 +47,7 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Match(&bbpb.GitilesCommit{
 			Host:     "chromium.googlesource.com",
 			Project:  "chromium/src",
 			Id:       "refs/heads/gfiTest",
@@ -77,7 +77,7 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Match(&bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
@@ -97,7 +97,7 @@ func TestGetGitilesCommitForBuild(t *testing.T) {
 			},
 		}
 		commit := GetGitilesCommitForBuild(build)
-		assert.Loosely(t, commit, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, commit, should.Match(&bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
 			Id:      "refs/heads/gfiTest",
@@ -110,7 +110,7 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 	ftt.Run("No sheriff rotation", t, func(t *ftt.Test) {
 		build := &bbpb.Build{}
 		rotations := GetSheriffRotationsForBuild(build)
-		assert.Loosely(t, rotations, should.Resemble([]string{}))
+		assert.Loosely(t, rotations, should.Match([]string{}))
 	})
 
 	ftt.Run("Has sheriff rotation", t, func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 			},
 		}
 		rotations := GetSheriffRotationsForBuild(build)
-		assert.Loosely(t, rotations, should.Resemble([]string{"chromium"}))
+		assert.Loosely(t, rotations, should.Match([]string{"chromium"}))
 	})
 
 }
@@ -149,7 +149,7 @@ func TestGetTaskDimensions(t *testing.T) {
 			},
 		}
 		got := GetTaskDimensions(build)
-		assert.Loosely(t, got, should.Resemble(dims))
+		assert.Loosely(t, got, should.Match(dims))
 	})
 
 	ftt.Run("from build on backend", t, func(t *ftt.Test) {
@@ -161,7 +161,7 @@ func TestGetTaskDimensions(t *testing.T) {
 			},
 		}
 		got := GetTaskDimensions(build)
-		assert.Loosely(t, got, should.Resemble(dims))
+		assert.Loosely(t, got, should.Match(dims))
 	})
 
 }

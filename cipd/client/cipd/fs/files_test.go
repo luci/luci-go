@@ -58,7 +58,7 @@ func TestScanFileSystem(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			buf, err := io.ReadAll(r)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, buf, should.Resemble([]byte("12345")))
+			assert.Loosely(t, buf, should.Match([]byte("12345")))
 		})
 
 		t.Run("Enumerating subdirectories", func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestScanFileSystem(t *testing.T) {
 				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
-			assert.Loosely(t, names, should.Resemble([]string{
+			assert.Loosely(t, names, should.Match([]string{
 				"1/2/a",
 				"1/a",
 				"1/b",
@@ -107,7 +107,7 @@ func TestScanFileSystem(t *testing.T) {
 				names[i] = f.Name()
 			}
 			// Order matters. Slashes matters.
-			assert.Loosely(t, names, should.Resemble([]string{
+			assert.Loosely(t, names, should.Match([]string{
 				"1/2/a",
 				"1/a",
 				"1/b",
@@ -141,7 +141,7 @@ func TestScanFileSystem(t *testing.T) {
 			assert.Loosely(t, files[1].Name(), should.Equal("c/a"))
 
 			// "1/*" subdir should have been skipped completely.
-			assert.Loosely(t, excluderCalls, should.Resemble([]string{
+			assert.Loosely(t, excluderCalls, should.Match([]string{
 				"1", "a", "b", "c", filepath.FromSlash("c/a"),
 			}))
 		})
@@ -380,7 +380,7 @@ func checkBunchOfFiles(t testing.TB, destDir, tempDir string) {
 	}
 
 	if runtime.GOOS == "windows" {
-		assert.Loosely(t, names, should.Resemble([]string{
+		assert.Loosely(t, names, should.Match([]string{
 			"a",
 			"dir/c",
 			"dir/dir/d",
@@ -391,7 +391,7 @@ func checkBunchOfFiles(t testing.TB, destDir, tempDir string) {
 			"wr",
 		}))
 	} else {
-		assert.Loosely(t, names, should.Resemble([]string{
+		assert.Loosely(t, names, should.Match([]string{
 			"a",
 			"abs_symlink",
 			"dir/c",
@@ -411,7 +411,7 @@ func checkBunchOfFiles(t testing.TB, destDir, tempDir string) {
 	assert.Loosely(t, err, should.BeNil)
 	data, err := io.ReadAll(r)
 	assert.Loosely(t, err, should.BeNil)
-	assert.Loosely(t, data, should.Resemble([]byte("a data")))
+	assert.Loosely(t, data, should.Match([]byte("a data")))
 
 	// File mode and symlinks are valid.
 	if runtime.GOOS != "windows" {

@@ -31,7 +31,7 @@ func TestParseGetBuildRequest(t *testing.T) {
 		t.Run("build ID", func(t *ftt.Test) {
 			req, err := ParseGetBuildRequest("1234567890")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, req, should.Resemble(&pb.GetBuildRequest{Id: 1234567890}))
+			assert.Loosely(t, req, should.Match(&pb.GetBuildRequest{Id: 1234567890}))
 		})
 
 		t.Run("build number", func(t *ftt.Test) {

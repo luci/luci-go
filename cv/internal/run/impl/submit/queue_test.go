@@ -157,7 +157,7 @@ func TestQueue(t *testing.T) {
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
 				}))
-				assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{ct.Clock.Now()}))
+				assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
 				for _, r := range []common.RunID{run1, run3} {
 					assert.Loosely(t, notifier.notifyETAs(ctx, r), should.BeEmpty)
 				}
@@ -215,7 +215,7 @@ func TestQueue(t *testing.T) {
 
 				t.Run("Records submitted timestamp", func(t *ftt.Test) {
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{now.Add(-1 * time.Second)}))
+					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{now.Add(-1 * time.Second)}))
 				})
 
 				t.Run("Cleanup old history", func(t *ftt.Test) {
@@ -225,7 +225,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{
+					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-1 * time.Minute),
 						now.Add(-1 * time.Second),
 					}))
@@ -235,7 +235,7 @@ func TestQueue(t *testing.T) {
 					q.History = []time.Time{now.Add(-100 * time.Millisecond)}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-200*time.Millisecond))
-					assert.Loosely(t, mustLoadQueue().History, should.Resemble([]time.Time{
+					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-200 * time.Millisecond),
 						now.Add(-100 * time.Millisecond),
 					}))
@@ -245,7 +245,7 @@ func TestQueue(t *testing.T) {
 					q.History = []time.Time{now.Add(-2 * time.Minute)}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{ct.Clock.Now()}))
+					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
 				})
 
 				t.Run("Notify the next Run with later ETA if quota has been exhausted", func(t *ftt.Test) {
@@ -256,7 +256,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Resemble([]time.Time{now.Add(30 * time.Second)}))
+					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{now.Add(30 * time.Second)}))
 				})
 			})
 
@@ -286,7 +286,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeTrue)
-					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.Resemble([]time.Time{now.Add(15 * time.Second)}))
+					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.Match([]time.Time{now.Add(15 * time.Second)}))
 				})
 			})
 		})

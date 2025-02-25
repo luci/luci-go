@@ -30,7 +30,7 @@ import (
 func TestStringPairs(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`Works`, t, func(t *ftt.Test) {
-		assert.Loosely(t, StringPairs("k1", "v1", "k2", "v2"), should.Resemble([]*pb.StringPair{
+		assert.Loosely(t, StringPairs("k1", "v1", "k2", "v2"), should.Match([]*pb.StringPair{
 			{Key: "k1", Value: "v1"},
 			{Key: "k2", Value: "v2"},
 		}))
@@ -44,29 +44,29 @@ func TestStringPairs(t *testing.T) {
 		t.Run(`when provided key:val string`, func(t *ftt.Test) {
 			pair, err := StringPairFromString("key/k:v")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "v"}))
+			assert.Loosely(t, pair, should.Match(&pb.StringPair{Key: "key/k", Value: "v"}))
 		})
 
 		t.Run(`when provided multiline value string`, func(t *ftt.Test) {
 			pair, err := StringPairFromString("key/k:multiline\nstring\nvalue")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "multiline\nstring\nvalue"}))
+			assert.Loosely(t, pair, should.Match(&pb.StringPair{Key: "key/k", Value: "multiline\nstring\nvalue"}))
 		})
 	})
 	ftt.Run(`StringPairFromStringUnvalidated`, t, func(t *ftt.Test) {
 		t.Run(`valid key:val string`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("key/k:v")
-			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "v"}))
+			assert.Loosely(t, pair, should.Match(&pb.StringPair{Key: "key/k", Value: "v"}))
 		})
 
 		t.Run(`invalid string with no colon`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("key/k")
-			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: ""}))
+			assert.Loosely(t, pair, should.Match(&pb.StringPair{Key: "key/k", Value: ""}))
 		})
 
 		t.Run(`invalid chars in key`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("##key/k:v")
-			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "##key/k", Value: "v"}))
+			assert.Loosely(t, pair, should.Match(&pb.StringPair{Key: "##key/k", Value: "v"}))
 		})
 	})
 }
@@ -114,7 +114,7 @@ func TestFromStrpairMap(t *testing.T) {
 		m.Add("k2", "v1")
 		m.Add("k2", "v2")
 
-		assert.Loosely(t, FromStrpairMap(m), should.Resemble(StringPairs(
+		assert.Loosely(t, FromStrpairMap(m), should.Match(StringPairs(
 			"k1", "v1",
 			"k2", "v1",
 			"k2", "v2",

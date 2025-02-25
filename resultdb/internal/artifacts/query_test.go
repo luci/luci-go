@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t t/r", "a", nil),
 			)
 			actual := mustFetchNames(q)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
 			}))
@@ -96,7 +96,7 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv2", "", "a", nil),
 			)
 			actual := mustFetchNames(q)
-			assert.Loosely(t, actual, should.Resemble([]string{"invocations/inv1/artifacts/a"}))
+			assert.Loosely(t, actual, should.Match([]string{"invocations/inv1/artifacts/a"}))
 		})
 
 		t.Run(`Test ID regexp`, func(t *ftt.Test) {
@@ -109,7 +109,7 @@ func TestQuery(t *testing.T) {
 			)
 			q.TestResultPredicate.TestIdRegexp = "t1."
 			actual := mustFetchNames(q)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t10/results/r/artifacts/a",
 				"invocations/inv1/tests/t11/results/r/artifacts/a",
@@ -126,7 +126,7 @@ func TestQuery(t *testing.T) {
 
 			t.Run(`Unspecified`, func(t *ftt.Test) {
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
@@ -139,7 +139,7 @@ func TestQuery(t *testing.T) {
 					IncludedInvocations: true,
 				}
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
 				}))
@@ -147,7 +147,7 @@ func TestQuery(t *testing.T) {
 				t.Run(`Test result predicate is ignored`, func(t *ftt.Test) {
 					q.TestResultPredicate.TestIdRegexp = "t."
 					actual := mustFetchNames(q)
-					assert.Loosely(t, actual, should.Resemble([]string{
+					assert.Loosely(t, actual, should.Match([]string{
 						"invocations/inv1/artifacts/a0",
 						"invocations/inv1/artifacts/a1",
 					}))
@@ -159,7 +159,7 @@ func TestQuery(t *testing.T) {
 					TestResults: true,
 				}
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a1",
 				}))
@@ -171,7 +171,7 @@ func TestQuery(t *testing.T) {
 					TestResults:         true,
 				}
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
@@ -197,7 +197,7 @@ func TestQuery(t *testing.T) {
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 			actual := mustFetchNames(q)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/a",
 				"invocations/inv1/tests/t1/results/1/artifacts/a",
@@ -229,7 +229,7 @@ func TestQuery(t *testing.T) {
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
 			actual := mustFetchNames(q)
-			assert.Loosely(t, actual, should.Resemble([]string{
+			assert.Loosely(t, actual, should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t2/results/0/artifacts/a",
 			}))
@@ -255,7 +255,7 @@ func TestQuery(t *testing.T) {
 			q.TestResultPredicate.Variant = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{Equals: v2},
 			}
-			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+			assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/b",
@@ -289,7 +289,7 @@ func TestQuery(t *testing.T) {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
 				}
-				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+				assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 					"invocations/inv1/artifacts/a",
 					"invocations/inv1/tests/t0/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/a",
@@ -308,7 +308,7 @@ func TestQuery(t *testing.T) {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: v00},
 				}
-				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+				assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 					"invocations/inv1/artifacts/a",
 					"invocations/inv1/tests/t0/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/a",
@@ -342,7 +342,7 @@ func TestQuery(t *testing.T) {
 				for i, a := range arts {
 					actualArtifactIDs[i] = a.ArtifactId
 				}
-				assert.Loosely(t, actualArtifactIDs, should.Resemble(expectedArtifactIDs))
+				assert.Loosely(t, actualArtifactIDs, should.Match(expectedArtifactIDs))
 				return token
 			}
 
@@ -383,7 +383,7 @@ func TestQuery(t *testing.T) {
 				q.ContentTypeRegexp = "text/.+"
 
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 				}))
@@ -408,7 +408,7 @@ func TestQuery(t *testing.T) {
 				q.ArtifactIDRegexp = "a0"
 
 				actual := mustFetchNames(q)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 				}))

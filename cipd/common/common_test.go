@@ -109,21 +109,21 @@ func TestParseInstanceTag(t *testing.T) {
 	ftt.Run("ParseInstanceTag works", t, func(t *ftt.Test) {
 		pTag, err := ParseInstanceTag("good:tag")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&api.Tag{
 			Key:   "good",
 			Value: "tag",
 		}))
 
 		pTag, err = ParseInstanceTag("good:tag:blah")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&api.Tag{
 			Key:   "good",
 			Value: "tag:blah",
 		}))
 
 		pTag, err = ParseInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Resemble(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&api.Tag{
 			Key:   "good_tag",
 			Value: "A a0$()*+,-./:;<=>@\\_{}~",
 		}))
@@ -271,7 +271,7 @@ func TestNormalizePrefixMetadata(t *testing.T) {
 			},
 		}
 		assert.Loosely(t, NormalizePrefixMetadata(m), should.BeNil)
-		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{
+		assert.Loosely(t, m, should.Match(&api.PrefixMetadata{
 			Prefix: "abc",
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:z"}},
@@ -334,7 +334,7 @@ func TestPinSliceAndMap(t *testing.T) {
 
 		t.Run("can convert to a map", func(t *ftt.Test) {
 			pm := ps.ToMap()
-			assert.Loosely(t, pm, should.Resemble(PinMap{
+			assert.Loosely(t, pm, should.Match(PinMap{
 				"pkg":  "vers",
 				"pkg2": "vers",
 			}))
@@ -342,7 +342,7 @@ func TestPinSliceAndMap(t *testing.T) {
 			pm["new/pkg"] = "some:tag"
 
 			t.Run("and back to a slice", func(t *ftt.Test) {
-				assert.Loosely(t, pm.ToSlice(), should.Resemble(PinSlice{
+				assert.Loosely(t, pm.ToSlice(), should.Match(PinSlice{
 					{"new/pkg", "some:tag"},
 					{"pkg", "vers"},
 					{"pkg2", "vers"},
@@ -387,7 +387,7 @@ func TestPinSliceAndMap(t *testing.T) {
 
 		t.Run("can convert to ByMap", func(t *ftt.Test) {
 			pmm := pmr.ToMap()
-			assert.Loosely(t, pmm, should.Resemble(PinMapBySubdir{
+			assert.Loosely(t, pmm, should.Match(PinMapBySubdir{
 				"": PinMap{
 					"pkg":  id('0'),
 					"pkg2": id('1'),
@@ -398,7 +398,7 @@ func TestPinSliceAndMap(t *testing.T) {
 			}))
 
 			t.Run("and back", func(t *ftt.Test) {
-				assert.Loosely(t, pmm.ToSlice(), should.Resemble(PinSliceBySubdir{
+				assert.Loosely(t, pmm.ToSlice(), should.Match(PinSliceBySubdir{
 					"": PinSlice{
 						{"pkg", id('0')},
 						{"pkg2", id('1')},

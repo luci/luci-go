@@ -112,7 +112,7 @@ func TestConfigureMigration(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.GetBot(ctx, &apipb.BotRequest{})
 			assert.NoErr(t, err)
-			assert.Loosely(t, seen(), should.Resemble([]string{"py:GetBot"}))
+			assert.Loosely(t, seen(), should.Match([]string{"py:GetBot"}))
 		}
 	})
 
@@ -121,7 +121,7 @@ func TestConfigureMigration(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.DeleteBot(ctx, &apipb.BotRequest{})
 			assert.NoErr(t, err)
-			assert.Loosely(t, seen(), should.Resemble([]string{"go:DeleteBot"}))
+			assert.Loosely(t, seen(), should.Match([]string{"go:DeleteBot"}))
 		}
 	})
 
@@ -131,14 +131,14 @@ func TestConfigureMigration(t *testing.T) {
 			&apipb.BotRequest{},
 		)
 		assert.NoErr(t, err)
-		assert.Loosely(t, seen(), should.Resemble([]string{"go:GetBot"}))
+		assert.Loosely(t, seen(), should.Match([]string{"go:GetBot"}))
 
 		_, err = botsClient.DeleteBot(
 			metadata.NewOutgoingContext(ctx, metadata.Pairs("x-route-to", "py")),
 			&apipb.BotRequest{},
 		)
 		assert.NoErr(t, err)
-		assert.Loosely(t, seen(), should.Resemble([]string{"py:DeleteBot"}))
+		assert.Loosely(t, seen(), should.Match([]string{"py:DeleteBot"}))
 	})
 
 	ftt.Run("X-Routed-From-Go disables proxying to break the loop", t, func(t *ftt.Test) {
@@ -147,7 +147,7 @@ func TestConfigureMigration(t *testing.T) {
 			&apipb.BotRequest{},
 		)
 		assert.NoErr(t, err)
-		assert.Loosely(t, seen(), should.Resemble([]string{"go:GetBot"}))
+		assert.Loosely(t, seen(), should.Match([]string{"go:GetBot"}))
 	})
 
 	ftt.Run("RouteToGoPercent == 20 => some requests are sent to Go, some to Python", t, func(t *ftt.Test) {
@@ -155,7 +155,7 @@ func TestConfigureMigration(t *testing.T) {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{})
 			assert.NoErr(t, err)
 		}
-		assert.Loosely(t, seen(), should.Resemble([]string{
+		assert.Loosely(t, seen(), should.Match([]string{
 			"py:ListBots",
 			"py:ListBots",
 			"go:ListBots",
@@ -177,7 +177,7 @@ func TestConfigureMigration(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: cur})
 			assert.NoErr(t, err)
-			assert.Loosely(t, seen(), should.Resemble([]string{"go:ListBots"}))
+			assert.Loosely(t, seen(), should.Match([]string{"go:ListBots"}))
 		}
 	})
 
@@ -186,7 +186,7 @@ func TestConfigureMigration(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: "i-am-not-a-go-cursor"})
 			assert.NoErr(t, err)
-			assert.Loosely(t, seen(), should.Resemble([]string{"py:ListBots"}))
+			assert.Loosely(t, seen(), should.Match([]string{"py:ListBots"}))
 		}
 	})
 }

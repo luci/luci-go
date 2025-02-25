@@ -49,7 +49,7 @@ func TestSpanner(t *testing.T) {
 				txn := span.Single(ctx)
 				actual, err := Read(txn, e.Project, e.ChunkID)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actual, should.Resemble(e))
+				assert.Loosely(t, actual, should.Match(e))
 			})
 			t.Run(`Invalid`, func(t *ftt.Test) {
 				t.Run(`Project missing`, func(t *ftt.Test) {
@@ -145,7 +145,7 @@ func TestSpanner(t *testing.T) {
 					// Assert the update was applied.
 					actual, err := Read(span.Single(ctx), expected.Project, expected.ChunkID)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, actual, should.Resemble(expected))
+					assert.Loosely(t, actual, should.Match(expected))
 				}
 				t.Run(`Full update`, func(t *ftt.Test) {
 					// Prepare an update.
@@ -286,13 +286,13 @@ func TestSpanner(t *testing.T) {
 			// Reads first page.
 			rows, err := ReadNextN(span.Single(ctx), testProject, readOpts, 4)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rows, should.Resemble(expectedEntries[0:4]))
+			assert.Loosely(t, rows, should.Match(expectedEntries[0:4]))
 
 			// Read second page.
 			readOpts.StartChunkID = rows[3].ChunkID
 			rows, err = ReadNextN(span.Single(ctx), testProject, readOpts, 4)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rows, should.Resemble(expectedEntries[4:]))
+			assert.Loosely(t, rows, should.Match(expectedEntries[4:]))
 
 			// Read empty last page.
 			readOpts.StartChunkID = rows[2].ChunkID

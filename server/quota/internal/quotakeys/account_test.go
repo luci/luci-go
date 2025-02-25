@@ -41,6 +41,6 @@ func TestAccountKey(t *testing.T) {
 
 		newID, err := ParseAccountKey(key)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, newID, should.Resemble(id))
+		assert.Loosely(t, newID, should.Match(id))
 	})
 }

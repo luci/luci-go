@@ -106,7 +106,7 @@ func TestExamine(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.Passed(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ExamineResult{
+			assert.Loosely(t, res, should.Match(&ExamineResult{
 				MissingFiles: []struct {
 					File      File
 					SignedURL string
@@ -121,7 +121,7 @@ func TestExamine(t *testing.T) {
 				},
 			}))
 			assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodPut))
-			assert.Loosely(t, recordedOpts.Headers, should.Resemble([]string{"Content-Encoding:gzip", "x-goog-content-length-range:0,209715200"}))
+			assert.Loosely(t, recordedOpts.Headers, should.Match([]string{"Content-Encoding:gzip", "x-goog-content-length-range:0,209715200"}))
 		})
 
 		t.Run("Unvalidatable file", func(t *ftt.Test) {
@@ -134,7 +134,7 @@ func TestExamine(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.Passed(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ExamineResult{
+			assert.Loosely(t, res, should.Match(&ExamineResult{
 				UnvalidatableFiles: []File{
 					testFile{
 						path:   filePath,

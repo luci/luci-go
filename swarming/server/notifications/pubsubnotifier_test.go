@@ -101,7 +101,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			data := &PubSubNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
 			assert.NoErr(t, err)
-			assert.Loosely(t, data, should.Resemble(&PubSubNotification{
+			assert.Loosely(t, data, should.Match(&PubSubNotification{
 				TaskID:   "task_id_0",
 				Userdata: "user_data",
 			}))
@@ -217,7 +217,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			sentBBUpdate := &bbpb.BuildTaskUpdate{}
 			err = proto.Unmarshal(publishedMsg.Data, sentBBUpdate)
 			assert.NoErr(t, err)
-			assert.Loosely(t, sentBBUpdate, should.Resemble(&bbpb.BuildTaskUpdate{
+			assert.Loosely(t, sentBBUpdate, should.Match(&bbpb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &bbpb.Task{
 					Status: bbpb.Status_STARTED,
@@ -254,7 +254,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			updatedBuildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, reqKey)}
 			assert.NoErr(t, datastore.Get(ctx, updatedBuildTask))
 			assert.Loosely(t, updatedBuildTask.LatestTaskStatus, should.Equal(apipb.TaskState_RUNNING))
-			assert.Loosely(t, updatedBuildTask.BotDimensions, should.Resemble(resultSummary.BotDimensions))
+			assert.Loosely(t, updatedBuildTask.BotDimensions, should.Match(resultSummary.BotDimensions))
 		})
 	})
 }

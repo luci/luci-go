@@ -118,7 +118,7 @@ func TestGetChange(t *testing.T) {
 
 			changeInfo, err := client.GetChange(ctx, testGerritProject, "abcdefgh")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, changeInfo, should.Resemble(expectedChange))
+			assert.Loosely(t, changeInfo, should.Match(expectedChange))
 		})
 	})
 }
@@ -163,7 +163,7 @@ func TestRefetchChange(t *testing.T) {
 
 			latestChange, err := client.RefetchChange(ctx, change)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, latestChange, should.Resemble(res))
+			assert.Loosely(t, latestChange, should.Match(res))
 		})
 	})
 }
@@ -223,7 +223,7 @@ func TestGetReverts(t *testing.T) {
 			}
 			reverts, err := client.GetReverts(ctx, changeInfo)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reverts, should.Resemble(res.Changes))
+			assert.Loosely(t, reverts, should.Match(res.Changes))
 		})
 	})
 }
@@ -384,7 +384,7 @@ func TestCreateRevert(t *testing.T) {
 		}
 		revertInfo, err := client.CreateRevert(ctx, changeInfo, "LUCI Bisection created this revert automatically")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, revertInfo, should.Resemble(expectedRevert))
+		assert.Loosely(t, revertInfo, should.Match(expectedRevert))
 	})
 }
 
@@ -485,7 +485,7 @@ func TestSendForReview(t *testing.T) {
 		reviewResult, err := client.SendForReview(ctx, changeInfo,
 			"This change has been identified as a possible culprit.", reviewerEmails, ccEmails)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reviewResult, should.Resemble(expectedResult))
+		assert.Loosely(t, reviewResult, should.Match(expectedResult))
 	})
 }
 
@@ -599,7 +599,7 @@ func TestCommitRevert(t *testing.T) {
 				"This change has been confirmed as the culprit and has been auto-reverted.",
 				ccEmails)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reviewResult, should.Resemble(expectedResult))
+			assert.Loosely(t, reviewResult, should.Match(expectedResult))
 		})
 
 	})

@@ -218,7 +218,7 @@ func TestPurgeCL(t *testing.T) {
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 					// CL in Gerrit shouldn't be changed.
 					ciAfter2 := ct.GFake.GetChange(gHost, change).Info
-					assert.Loosely(t, ciAfter2, should.Resemble(ciAfter))
+					assert.Loosely(t, ciAfter2, should.Match(ciAfter))
 					// But PM must be notified.
 					assertPMNotified(t, task.PurgingCl)
 					assert.Loosely(t, pmDispatcher.LatestETAof(lProject), should.HappenBefore(ct.Clock.Now().Add(2*time.Second)))

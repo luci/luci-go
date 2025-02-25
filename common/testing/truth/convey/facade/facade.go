@@ -131,7 +131,7 @@ func ShouldAlmostEqualTime(expected time.Time) comparison.Func[time.Time] {
 //
 // This function should only be used to port an ornery test to the glorious
 // new FTT world.
-var DangerousShouldResemble = should.Resemble[any]
+var DangerousShouldResemble = should.Match[any]
 
 var (
 	ShouldAlmostEqual      = should.AlmostEqual[float64]

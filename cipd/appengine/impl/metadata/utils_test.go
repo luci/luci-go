@@ -45,7 +45,7 @@ func TestGetACLs(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, GetACLs(m), should.Resemble(map[api.Role]stringset.Set{
+		assert.Loosely(t, GetACLs(m), should.Match(map[api.Role]stringset.Set{
 			api.Role_READER: {"c": struct{}{}},
 			api.Role_WRITER: {"a": struct{}{}, "b": struct{}{}},
 		}))

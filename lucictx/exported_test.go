@@ -103,7 +103,7 @@ func TestNullExported(t *testing.T) {
 			Env: append([]string(nil), someEnv...),
 		}
 		n.SetInCmd(&cmd)
-		assert.Loosely(t, cmd.Env, should.Resemble(someEnv))
+		assert.Loosely(t, cmd.Env, should.Match(someEnv))
 	})
 
 	ftt.Run("SetInCmd, with LUCI_CONTEXT", t, func(t *ftt.Test) {
@@ -111,18 +111,18 @@ func TestNullExported(t *testing.T) {
 			Env: append([]string{"LUCI_CONTEXT=abc"}, someEnv...),
 		}
 		n.SetInCmd(&cmd)
-		assert.Loosely(t, cmd.Env, should.Resemble(someEnv)) // no LUCI_CONTEXT anymore
+		assert.Loosely(t, cmd.Env, should.Match(someEnv)) // no LUCI_CONTEXT anymore
 	})
 
 	ftt.Run("SetInEnviron, no LUCI_CONTEXT", t, func(t *ftt.Test) {
 		env := environ.New(someEnv)
 		n.SetInEnviron(env)
-		assert.Loosely(t, env.Sorted(), should.Resemble(someEnv))
+		assert.Loosely(t, env.Sorted(), should.Match(someEnv))
 	})
 
 	ftt.Run("SetInEnviron, with LUCI_CONTEXT", t, func(t *ftt.Test) {
 		env := environ.New(append([]string{"LUCI_CONTEXT=abc"}, someEnv...))
 		n.SetInEnviron(env)
-		assert.Loosely(t, env.Sorted(), should.Resemble(someEnv)) // no LUCI_CONTEXT anymore
+		assert.Loosely(t, env.Sorted(), should.Match(someEnv)) // no LUCI_CONTEXT anymore
 	})
 }

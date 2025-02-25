@@ -60,7 +60,7 @@ func TestError(t *testing.T) {
 		assert.Loosely(t, ToDetails(errors.New("blah", Auth)), should.BeNil)
 
 		d := Details{Package: "a", Version: "b"}
-		assert.Loosely(t, ToDetails(errors.New("blah", Auth.WithDetails(d))), should.Resemble(&d))
+		assert.Loosely(t, ToDetails(errors.New("blah", Auth.WithDetails(d))), should.Match(&d))
 
 		var err error
 		AttachDetails(&err, d)
@@ -69,11 +69,11 @@ func TestError(t *testing.T) {
 		err = errors.New("blah", Auth)
 		AttachDetails(&err, d)
 		assert.Loosely(t, ToCode(err), should.Equal(Auth))
-		assert.Loosely(t, ToDetails(err), should.Resemble(&d))
+		assert.Loosely(t, ToDetails(err), should.Match(&d))
 
 		err = errors.New("blah", Auth.WithDetails(Details{Package: "zzz"}))
 		AttachDetails(&err, d)
 		assert.Loosely(t, ToCode(err), should.Equal(Auth))
-		assert.Loosely(t, ToDetails(err), should.Resemble(&d))
+		assert.Loosely(t, ToDetails(err), should.Match(&d))
 	})
 }

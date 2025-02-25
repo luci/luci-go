@@ -127,7 +127,7 @@ func TestBatch(t *testing.T) {
 			}
 			res, err := srv.Batch(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.BatchResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.BatchResponse{}))
 
 			req = &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{{}},
@@ -158,7 +158,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("getBuildStatus req", func(t *ftt.Test) {
@@ -196,7 +196,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("getBuild req", func(t *ftt.Test) {
@@ -224,7 +224,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("searchBuilds req", func(t *ftt.Test) {
@@ -263,7 +263,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("get and search reqs", func(t *ftt.Test) {
@@ -315,7 +315,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("schedule req", func(t *ftt.Test) {
@@ -338,7 +338,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("schedule batch", func(t *ftt.Test) {
@@ -453,7 +453,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("schedule batch with global error", func(t *ftt.Test) {
@@ -515,7 +515,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("cancel req", func(t *ftt.Test) {
@@ -562,7 +562,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedRes))
+			assert.Loosely(t, res, should.Match(expectedRes))
 		})
 
 		t.Run("get, schedule, search, cancel and get_build_status in req", func(t *ftt.Test) {
@@ -632,7 +632,7 @@ func TestBatch(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRes, should.Resemble(expectedRes))
+			assert.Loosely(t, actualRes, should.Match(expectedRes))
 		})
 
 		t.Run("exceed max read reqs amount", func(t *ftt.Test) {

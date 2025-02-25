@@ -117,8 +117,8 @@ func TestStore(t *testing.T) {
 
 					assert.Loosely(t, coll, shouldHaveKeys(keys...))
 					for i, k := range keys {
-						assert.Loosely(t, iterAll(coll.Iterator(k)), should.Resemble(keys[i:]))
-						assert.Loosely(t, iterAll(coll.Iterator(k+"1")), should.Resemble(keys[i+1:]))
+						assert.Loosely(t, iterAll(coll.Iterator(k)), should.Match(keys[i:]))
+						assert.Loosely(t, iterAll(coll.Iterator(k+"1")), should.Match(keys[i+1:]))
 					}
 				}
 				checkKeys(coll, "a", "b", "w", "x")
@@ -173,19 +173,19 @@ func TestStore(t *testing.T) {
 			for _, v := range []string{"foo", "bar", "baz"} {
 				st.CreateCollection(v, stringCompare)
 			}
-			assert.Loosely(t, st.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
+			assert.Loosely(t, st.GetCollectionNames(), should.Match([]string{"bar", "baz", "foo", "test"}))
 			snap := st.Snapshot()
-			assert.Loosely(t, snap.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
+			assert.Loosely(t, snap.GetCollectionNames(), should.Match([]string{"bar", "baz", "foo", "test"}))
 
 			t.Run(`When new Collections are added, names remain sorted.`, func(t *ftt.Test) {
 				for _, v := range []string{"app", "cat", "bas", "qux"} {
 					st.CreateCollection(v, stringCompare)
 				}
-				assert.Loosely(t, st.GetCollectionNames(), should.Resemble(
+				assert.Loosely(t, st.GetCollectionNames(), should.Match(
 					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"}))
-				assert.Loosely(t, st.Snapshot().GetCollectionNames(), should.Resemble(
+				assert.Loosely(t, st.Snapshot().GetCollectionNames(), should.Match(
 					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"}))
-				assert.Loosely(t, snap.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
+				assert.Loosely(t, snap.GetCollectionNames(), should.Match([]string{"bar", "baz", "foo", "test"}))
 			})
 		})
 	})

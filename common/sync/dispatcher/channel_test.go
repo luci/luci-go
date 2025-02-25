@@ -143,7 +143,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			ch.C <- "test."
 			ch.CloseAndDrain(ctx)
 
-			assert.Loosely(cvctx, sentBatches, should.Resemble([]string{
+			assert.Loosely(cvctx, sentBatches, should.Match([]string{
 				"Hello", "World!",
 				"This", "is", "a", "test.",
 			}))
@@ -160,7 +160,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			ch.C <- "test."
 			ch.CloseAndDrain(ctx)
 
-			assert.Loosely(cvctx, sentBatches, should.Resemble([]string{
+			assert.Loosely(cvctx, sentBatches, should.Match([]string{
 				"Hello", "World!",
 				"is", "a", "test.", "This",
 			}))
@@ -251,7 +251,7 @@ func TestQPSLimit(t *testing.T) {
 		ch.CloseAndDrain(ctx)
 		end := time.Now()
 
-		assert.Loosely(t, sentBatches, should.Resemble(expected))
+		assert.Loosely(t, sentBatches, should.Match(expected))
 
 		// 20 batches, minus a batch because the QPSLimiter starts with full tokens.
 		minThreshold := 19 * 10 * time.Millisecond
@@ -342,8 +342,8 @@ func TestExplicitDrops(t *testing.T) {
 		}
 		ch.CloseAndDrain(ctx)
 
-		assert.Loosely(t, sentBatches, should.Resemble([]int{1, 3, 5, 7, 9, 11, 13, 15, 17, 19}))
-		assert.Loosely(t, droppedBatches, should.Resemble([]int{0, 2, 4, 6, 8, 10, 12, 14, 16, 18}))
+		assert.Loosely(t, sentBatches, should.Match([]int{1, 3, 5, 7, 9, 11, 13, 15, 17, 19}))
+		assert.Loosely(t, droppedBatches, should.Match([]int{0, 2, 4, 6, 8, 10, 12, 14, 16, 18}))
 	})
 }
 

@@ -50,7 +50,7 @@ func TestResultDB(t *testing.T) {
 
 			invProto, err := rc.GetInvocation(mc.Ctx, inv)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invProto, should.Resemble(res))
+			assert.Loosely(t, invProto, should.Match(res))
 		})
 	})
 }

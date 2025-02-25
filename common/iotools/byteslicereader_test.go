@@ -54,7 +54,7 @@ func TestByteSliceReader(t *testing.T) {
 			count, err := bsd.Read(buf)
 			assert.Loosely(t, count, should.Equal(4))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, buf, should.Resemble(data))
+			assert.Loosely(t, buf, should.Match(data))
 		})
 
 		t.Run(`When read into an oversized buf, returns io.EOF and setting the slice to nil.`, func(t *ftt.Test) {
@@ -62,7 +62,7 @@ func TestByteSliceReader(t *testing.T) {
 			count, err := bsd.Read(buf)
 			assert.Loosely(t, count, should.Equal(4))
 			assert.Loosely(t, err, should.Equal(io.EOF))
-			assert.Loosely(t, buf[:count], should.Resemble(data))
+			assert.Loosely(t, buf[:count], should.Match(data))
 			assert.Loosely(t, []byte(bsd), should.BeNil)
 		})
 
@@ -72,13 +72,13 @@ func TestByteSliceReader(t *testing.T) {
 			count, err := bsd.Read(buf)
 			assert.Loosely(t, count, should.Equal(3))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, buf, should.Resemble(data[:3]))
-			assert.Loosely(t, []byte(bsd), should.Resemble(data[3:]))
+			assert.Loosely(t, buf, should.Match(data[:3]))
+			assert.Loosely(t, []byte(bsd), should.Match(data[3:]))
 
 			count, err = bsd.Read(buf)
 			assert.Loosely(t, count, should.Equal(1))
 			assert.Loosely(t, err, should.Equal(io.EOF))
-			assert.Loosely(t, buf[:count], should.Resemble(data[3:]))
+			assert.Loosely(t, buf[:count], should.Match(data[3:]))
 			assert.Loosely(t, []byte(bsd), should.BeNil)
 		})
 	})

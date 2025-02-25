@@ -206,12 +206,12 @@ func TestQuery(t *testing.T) {
 
 			result, err := query(ctx, q)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(QueryResult{}))
+			assert.Loosely(t, result, should.Match(QueryResult{}))
 		})
 		t.Run(`query all in one page`, func(t *ftt.Test) {
 			result, err := query(ctx, q)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(QueryResult{
+			assert.Loosely(t, result, should.Match(QueryResult{
 				RunTestVerdicts: expectedTestVerdicts,
 			}))
 		})
@@ -224,7 +224,7 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, tvs, should.Match(expectedTestVerdicts))
 		})
 		t.Run(`response limit bytes works`, func(t *ftt.Test) {
 			q.ResponseLimitBytes = 1
@@ -240,7 +240,7 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, tvs, should.Match(expectedTestVerdicts))
 		})
 		t.Run(`result limit works`, func(t *ftt.Test) {
 			q.ResultLimit = 1
@@ -251,7 +251,7 @@ func TestQuery(t *testing.T) {
 
 			result, err := query(ctx, q)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(QueryResult{
+			assert.Loosely(t, result, should.Match(QueryResult{
 				RunTestVerdicts: expectedTestVerdicts,
 			}))
 		})
@@ -274,7 +274,7 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, tvs, should.Match(expectedTestVerdicts))
 		})
 		t.Run(`low result and page limit works #2`, func(t *ftt.Test) {
 			q.ResultLimit = 2
@@ -291,7 +291,7 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
+			assert.Loosely(t, tvs, should.Match(expectedTestVerdicts))
 		})
 	})
 }

@@ -59,7 +59,7 @@ func TestFake(t *testing.T) {
 			t.Run("Projects", func(t *ftt.Test) {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.GetProjects(), should.Resemble([]string{"foo"}))
+				assert.Loosely(t, resp.GetProjects(), should.Match([]string{"foo"}))
 			})
 
 			t.Run("Revs", func(t *ftt.Test) {
@@ -80,7 +80,7 @@ func TestFake(t *testing.T) {
 			t.Run("Projects", func(t *ftt.Test) {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp.GetProjects(), should.Resemble([]string{"foo"}))
+				assert.Loosely(t, resp.GetProjects(), should.Match([]string{"foo"}))
 			})
 
 			t.Run("Revs", func(t *ftt.Test) {
@@ -90,7 +90,7 @@ func TestFake(t *testing.T) {
 				// Repository not found
 				out, err := fake.Refs(ctx, in)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, out.GetRevisions(), should.Resemble(refs))
+				assert.Loosely(t, out.GetRevisions(), should.Match(refs))
 			})
 		})
 
@@ -159,7 +159,7 @@ func TestFake(t *testing.T) {
 			}
 			out, err := fake.Refs(ctx, in)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out.GetRevisions(), should.Resemble(refs))
+			assert.Loosely(t, out.GetRevisions(), should.Match(refs))
 		})
 
 		t.Run("Log pagination main", func(t *ftt.Test) {

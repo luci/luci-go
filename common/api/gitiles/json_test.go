@@ -42,7 +42,7 @@ func TestTimestamp(t *testing.T) {
 		err = json.Unmarshal(bytes, &tAfter)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, tBefore, should.Resemble(tAfter))
+		assert.Loosely(t, tBefore, should.Match(tAfter))
 	})
 }
 
@@ -59,7 +59,7 @@ func TestUser(t *testing.T) {
 		t.Run(`basic`, func(t *ftt.Test) {
 			uPB, err := u.Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, uPB, should.Resemble(&git.Commit_User{
+			assert.Loosely(t, uPB, should.Match(&git.Commit_User{
 				Name:  "Some name",
 				Email: "some.name@example.com",
 				Time: &timestamppb.Timestamp{
@@ -72,7 +72,7 @@ func TestUser(t *testing.T) {
 			u.Time = ts{}
 			uPB, err := u.Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, uPB, should.Resemble(&git.Commit_User{
+			assert.Loosely(t, uPB, should.Match(&git.Commit_User{
 				Name:  "Some name",
 				Email: "some.name@example.com",
 			}))
@@ -99,7 +99,7 @@ func TestCommit(t *testing.T) {
 		t.Run(`basic`, func(t *ftt.Test) {
 			cPB, err := c.Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cPB, should.Resemble(&git.Commit{
+			assert.Loosely(t, cPB, should.Match(&git.Commit{
 				Id:   strings.Repeat("deadbeef", 5),
 				Tree: strings.Repeat("ac1df00d", 5),
 				Parents: []string{

@@ -100,7 +100,7 @@ func TestLog(t *testing.T) {
 
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 100})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(res.Log))
+			assert.Loosely(t, commits, should.Match(res.Log))
 
 			// Now that we have something in cache, call Log with cached commits.
 			// gitiles.Log was already called maximum number of times, which is 1,
@@ -123,7 +123,7 @@ func TestLog(t *testing.T) {
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 101})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(fakeCommits[1:102]))
+				assert.Loosely(t, commits, should.Match(fakeCommits[1:102]))
 			})
 
 			t.Run("with exactly the proceeding commit not in cache", func(t *ftt.Test) {
@@ -138,31 +138,31 @@ func TestLog(t *testing.T) {
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil).Times(0)
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[51].Id, &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(fakeCommits[51:101]))
+				assert.Loosely(t, commits, should.Match(fakeCommits[51:101]))
 			})
 
 			t.Run("with ref in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(res.Log[:50]))
+				assert.Loosely(t, commits, should.Match(res.Log[:50]))
 			})
 
 			t.Run("with top commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[1].Id, &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(res.Log[:50]))
+				assert.Loosely(t, commits, should.Match(res.Log[:50]))
 			})
 
 			t.Run("with ancestor commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(res.Log[1:51]))
+				assert.Loosely(t, commits, should.Match(res.Log[1:51]))
 			})
 
 			t.Run("with second ancestor commit in cache", func(t *ftt.Test) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[3].Id, &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(res.Log[2:52]))
+				assert.Loosely(t, commits, should.Match(res.Log[2:52]))
 			})
 
 			t.Run("min is honored", func(t *ftt.Test) {
@@ -179,7 +179,7 @@ func TestLog(t *testing.T) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 100})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, commits, should.HaveLength(100))
-				assert.Loosely(t, commits, should.Resemble(res2.Log))
+				assert.Loosely(t, commits, should.Match(res2.Log))
 			})
 
 			t.Run("request of item not in cache", func(t *ftt.Test) {
@@ -195,7 +195,7 @@ func TestLog(t *testing.T) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[101].Id, &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, commits, should.HaveLength(50))
-				assert.Loosely(t, commits, should.Resemble(res2.Log[:50]))
+				assert.Loosely(t, commits, should.Match(res2.Log[:50]))
 			})
 
 			t.Run("do not update cache entries that have more info", func(t *ftt.Test) {
@@ -221,7 +221,7 @@ func TestLog(t *testing.T) {
 				gitilesMock.EXPECT().Log(gomock.Any(), proto.MatcherEqual(req2)).Return(res2, nil)
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 50})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, commits, should.Resemble(res2.Log[:50]))
+				assert.Loosely(t, commits, should.Match(res2.Log[:50]))
 			})
 		})
 		t.Run("paging", func(t *ftt.Test) {
@@ -246,7 +246,7 @@ func TestLog(t *testing.T) {
 
 			commits, err := impl.Log(cAllowed, host, "project", "refs/heads/main", &LogOptions{Limit: 150})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(fakeCommits[:150]))
+			assert.Loosely(t, commits, should.Match(fakeCommits[:150]))
 		})
 	})
 }

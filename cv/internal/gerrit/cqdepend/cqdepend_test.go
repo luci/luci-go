@@ -28,26 +28,26 @@ func TestParser(t *testing.T) {
 	ftt.Run("Parse works", t, func(t *ftt.Test) {
 		t.Run("Basic", func(t *ftt.Test) {
 			assert.Loosely(t, Parse("Nothing\n\ninteresting."), should.BeNil)
-			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 456,123"), should.Resemble([]Dep{
+			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 456,123"), should.Match([]Dep{
 				{Subdomain: "", Change: 123},
 				{Subdomain: "", Change: 456},
 			}))
 		})
 		t.Run("Case and space incensitive", func(t *ftt.Test) {
-			assert.Loosely(t, Parse("Title.\n\nCQ-dePend: Any-case:456 , Zx:23 "), should.Resemble([]Dep{
+			assert.Loosely(t, Parse("Title.\n\nCQ-dePend: Any-case:456 , Zx:23 "), should.Match([]Dep{
 				{Subdomain: "any-case", Change: 456},
 				{Subdomain: "zx", Change: 23},
 			}))
 		})
 		t.Run("Dedup and multiline", func(t *ftt.Test) {
-			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 456,123\nCq-Depend: 123,y:456"), should.Resemble([]Dep{
+			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 456,123\nCq-Depend: 123,y:456"), should.Match([]Dep{
 				{Subdomain: "", Change: 123},
 				{Subdomain: "", Change: 456},
 				{Subdomain: "y", Change: 456},
 			}))
 		})
 		t.Run("Ignores errors", func(t *ftt.Test) {
-			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 2, x;3\nCq-Depend: y-review:4,z:5"), should.Resemble([]Dep{
+			assert.Loosely(t, Parse("Title.\n\nCq-Depend: 2, x;3\nCq-Depend: y-review:4,z:5"), should.Match([]Dep{
 				{Subdomain: "", Change: 2},
 				{Subdomain: "z", Change: 5},
 			}))
@@ -65,11 +65,11 @@ func TestParseSingleDep(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			d, err := parseSingleDep(" x:123 ")
 			assert.NoErr(t, err)
-			assert.Loosely(t, d, should.Resemble(Dep{Change: 123, Subdomain: "x"}))
+			assert.Loosely(t, d, should.Match(Dep{Change: 123, Subdomain: "x"}))
 
 			d, err = parseSingleDep("123")
 			assert.NoErr(t, err)
-			assert.Loosely(t, d, should.Resemble(Dep{Change: 123, Subdomain: ""}))
+			assert.Loosely(t, d, should.Match(Dep{Change: 123, Subdomain: ""}))
 		})
 		t.Run("Invalid format", func(t *ftt.Test) {
 			_, err := parseSingleDep("weird/value:here")

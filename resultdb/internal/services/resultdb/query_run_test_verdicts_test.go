@@ -203,7 +203,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				Invocation: "invocations/a",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(&pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, result, should.Match(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts,
 			}))
 		})
@@ -213,7 +213,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				PageSize:   1,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, response, should.Match(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[:1],
 				NextPageToken:   "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			}))
@@ -224,7 +224,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				PageToken:  "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, response, should.Match(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[1:2],
 				NextPageToken:   "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			}))
@@ -235,7 +235,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				PageToken:  "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, response, should.Match(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[2:],
 				NextPageToken:   "",
 			}))

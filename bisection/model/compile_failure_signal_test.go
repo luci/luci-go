@@ -27,17 +27,17 @@ func TestAddLine(t *testing.T) {
 	ftt.Run("Add line or file path", t, func(t *ftt.Test) {
 		signal := &CompileFailureSignal{}
 		signal.AddLine("a/b", 12)
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12}}))
 		signal.AddLine("a/b", 14)
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12, 14}}))
 		signal.AddLine("c/d", 8)
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
 		signal.AddLine("a/b", 14)
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12, 14}, "c/d": {8}}))
 		signal.AddFilePath("x/y")
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
 		signal.AddFilePath("x/y")
-		assert.Loosely(t, signal.Files, should.Resemble(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
+		assert.Loosely(t, signal.Files, should.Match(map[string][]int{"a/b": {12, 14}, "c/d": {8}, "x/y": {}}))
 	})
 }
 
@@ -61,7 +61,7 @@ func TestCalculateDependencyMap(t *testing.T) {
 			},
 		}
 		signal.CalculateDependencyMap(context.Background())
-		assert.Loosely(t, signal.DependencyMap, should.Resemble(map[string][]string{
+		assert.Loosely(t, signal.DependencyMap, should.Match(map[string][]string{
 			"a": {"x/y/a.h", "y/z/a.cc"},
 			"b": {"xx/yy/b.h"},
 			"c": {"zz/y/c.yy"},

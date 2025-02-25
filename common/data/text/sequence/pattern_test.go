@@ -37,13 +37,13 @@ func TestAutoPattern(t *testing.T) {
 			t.Run(`with a literal`, func(t *ftt.Test) {
 				pat, err := sequence.NewPattern("hello")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pat, should.Resemble(sequence.Pattern{sequence.LiteralMatcher("hello")}))
+				assert.Loosely(t, pat, should.Match(sequence.Pattern{sequence.LiteralMatcher("hello")}))
 			})
 
 			t.Run(`with a reserved literal`, func(t *ftt.Test) {
 				pat, err := sequence.NewPattern("=^", "==")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pat, should.Resemble(sequence.Pattern{
+				assert.Loosely(t, pat, should.Match(sequence.Pattern{
 					sequence.LiteralMatcher("^"),
 					sequence.LiteralMatcher("="),
 				}))
@@ -61,13 +61,13 @@ func TestAutoPattern(t *testing.T) {
 			t.Run(`with string ellipsis`, func(t *ftt.Test) {
 				pat, err := sequence.NewPattern("...")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pat, should.Resemble(sequence.Pattern{sequence.Ellipsis}))
+				assert.Loosely(t, pat, should.Match(sequence.Pattern{sequence.Ellipsis}))
 			})
 
 			t.Run(`with string edges`, func(t *ftt.Test) {
 				pat, err := sequence.NewPattern("^", "$")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pat, should.Resemble(sequence.Pattern{sequence.Edge, sequence.Edge}))
+				assert.Loosely(t, pat, should.Match(sequence.Pattern{sequence.Edge, sequence.Edge}))
 			})
 		})
 

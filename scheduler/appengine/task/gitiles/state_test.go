@@ -51,20 +51,20 @@ func TestLoadSave(t *testing.T) {
 		}
 
 		t.Run("load first time ever", func(t *ftt.Test) {
-			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{}))
+			assert.Loosely(t, loadNoError(repo), should.Match(map[string]string{}))
 			assert.Loosely(t, loadNoError(repo), should.NotBeNil)
 		})
 
 		t.Run("save/load/save/load", func(t *ftt.Test) {
 			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
-			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/heads/master": "beefcafe"}))
+			assert.Loosely(t, loadNoError(repo), should.Match(map[string]string{"refs/heads/master": "beefcafe"}))
 			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/tails/master": "efacfeeb"}), should.BeNil)
-			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/tails/master": "efacfeeb"}))
+			assert.Loosely(t, loadNoError(repo), should.Match(map[string]string{"refs/tails/master": "efacfeeb"}))
 		})
 
 		t.Run("save/change repo name/load", func(t *ftt.Test) {
 			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
-			assert.Loosely(t, loadNoError("https://some-other.googlesource.com/repo"), should.Resemble(map[string]string{}))
+			assert.Loosely(t, loadNoError("https://some-other.googlesource.com/repo"), should.Match(map[string]string{}))
 		})
 
 		t.Run("save/load with deeply nested refs", func(t *ftt.Test) {
@@ -78,7 +78,7 @@ func TestLoadSave(t *testing.T) {
 				"refs/heads/infra/configs/not": "66",
 			}
 			assert.Loosely(t, saveState(c, jobID, cfg, nested), should.BeNil)
-			assert.Loosely(t, loadNoError(repo), should.Resemble(nested))
+			assert.Loosely(t, loadNoError(repo), should.Match(nested))
 		})
 	})
 }

@@ -36,7 +36,7 @@ func TestSearchSorting(t *testing.T) {
 				},
 			}
 			c.Sort()
-			assert.Loosely(t, c, should.Resemble(CIService{
+			assert.Loosely(t, c, should.Match(CIService{
 				BuilderGroups: []BuilderGroup{
 					{Name: "a"},
 					{Name: "b"},
@@ -57,7 +57,7 @@ func TestSearchSorting(t *testing.T) {
 				link("ubuntu-16.04"),
 			}}
 			b.Sort()
-			assert.Loosely(t, b, should.Resemble(BuilderGroup{Builders: []Link{
+			assert.Loosely(t, b, should.Match(BuilderGroup{Builders: []Link{
 				link("mac"),
 				link("Ubuntu-14.04"),
 				link("ubuntu-16.04"),

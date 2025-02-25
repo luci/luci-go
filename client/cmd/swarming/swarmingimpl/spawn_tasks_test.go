@@ -95,7 +95,7 @@ func TestProcessTasksStream(t *testing.T) {
 		result, err := processTasksStream(ctx, r, testSpawnEnv, serverURL)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, result, should.HaveLength(1))
-		assert.Loosely(t, result[0], should.Resemble(&swarmingv2.NewTaskRequest{
+		assert.Loosely(t, result[0], should.Match(&swarmingv2.NewTaskRequest{
 			Name:         "foo",
 			User:         "test",
 			ParentTaskId: "293109284abc",
@@ -181,7 +181,7 @@ func TestCreateNewTasks(t *testing.T) {
 		results, err := createNewTasks(ctx, goodService, []*swarmingv2.NewTaskRequest{req})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, results, should.HaveLength(1))
-		assert.Loosely(t, results[0].Request, should.Resemble(expectReq))
+		assert.Loosely(t, results[0].Request, should.Match(expectReq))
 	})
 
 	ftt.Run(`Test many success`, t, func(t *ftt.Test) {
@@ -193,7 +193,7 @@ func TestCreateNewTasks(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, results, should.HaveLength(12))
 		for i := 0; i < 12; i++ {
-			assert.Loosely(t, results[i].Request, should.Resemble(expectReq))
+			assert.Loosely(t, results[i].Request, should.Match(expectReq))
 		}
 	})
 }

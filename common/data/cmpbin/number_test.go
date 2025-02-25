@@ -80,7 +80,7 @@ func TestWrite(t *testing.T) {
 					n, err := WriteInt(buf, c.val)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, n, should.Equal(len(c.expect)))
-					assert.Loosely(t, buf.Bytes(), should.Resemble(c.expect))
+					assert.Loosely(t, buf.Bytes(), should.Match(c.expect))
 				})
 
 				if c.val >= 0 {
@@ -89,7 +89,7 @@ func TestWrite(t *testing.T) {
 						n, err := WriteUint(buf, uint64(c.val))
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, n, should.Equal(len(c.expect)))
-						assert.Loosely(t, buf.Bytes(), should.Resemble(c.expect))
+						assert.Loosely(t, buf.Bytes(), should.Match(c.expect))
 					})
 				}
 			})

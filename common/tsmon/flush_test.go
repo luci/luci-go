@@ -61,7 +61,7 @@ func TestFlush(t *testing.T) {
 
 			assert.Loosely(t, len(m.Cells), should.Equal(1))
 			assert.Loosely(t, len(m.Cells[0]), should.Equal(1))
-			assert.Loosely(t, m.Cells[0][0], should.Resemble(types.Cell{
+			assert.Loosely(t, m.Cells[0][0], should.Match(types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},

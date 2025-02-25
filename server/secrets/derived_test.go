@@ -39,7 +39,7 @@ func TestDerivedStore(t *testing.T) {
 		store := NewDerivedStore(root)
 
 		s1, _ := store.RandomSecret(ctx, "secret_1")
-		assert.Loosely(t, s1, should.Resemble(Secret{
+		assert.Loosely(t, s1, should.Match(Secret{
 			Active: derive([]byte("1"), "secret_1"),
 			Passive: [][]byte{
 				derive([]byte("2"), "secret_1"),
@@ -49,12 +49,12 @@ func TestDerivedStore(t *testing.T) {
 
 		// Test cache hit.
 		s2, _ := store.RandomSecret(ctx, "secret_1")
-		assert.Loosely(t, s2, should.Resemble(s1))
+		assert.Loosely(t, s2, should.Match(s1))
 
 		// Test noop root key change.
 		store.SetRoot(root)
 		s2, _ = store.RandomSecret(ctx, "secret_1")
-		assert.Loosely(t, s2, should.Resemble(s1))
+		assert.Loosely(t, s2, should.Match(s1))
 
 		// Test actual root key change.
 		store.SetRoot(Secret{Active: []byte("zzz")})

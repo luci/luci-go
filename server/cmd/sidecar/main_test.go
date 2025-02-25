@@ -118,7 +118,7 @@ func TestAuthServer(t *testing.T) {
 			mockAuthUser(&auth.User{Identity: identity.AnonymousIdentity})
 			res, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Anonymous_{
@@ -137,7 +137,7 @@ func TestAuthServer(t *testing.T) {
 			})
 			res, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "user:someone@example.com",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_User_{
@@ -158,7 +158,7 @@ func TestAuthServer(t *testing.T) {
 				Value: "something",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "project:something",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Project_{
@@ -174,7 +174,7 @@ func TestAuthServer(t *testing.T) {
 			mockAuthUser(&auth.User{Identity: "bot:what"})
 			res, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -190,7 +190,7 @@ func TestAuthServer(t *testing.T) {
 			mockAuthError(fmt.Errorf("boom"))
 			res, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -206,7 +206,7 @@ func TestAuthServer(t *testing.T) {
 			mockAuthError(status.Errorf(codes.PermissionDenied, "boom"))
 			res, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -235,7 +235,7 @@ func TestAuthServer(t *testing.T) {
 				Groups:   []string{"user-group", "something-else"},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
+			assert.Loosely(t, res, should.Match(&sidecar.AuthenticateResponse{
 				Identity:   "user:someone@example.com",
 				ServerInfo: expectedInfo,
 				Groups:     []string{"user-group"},

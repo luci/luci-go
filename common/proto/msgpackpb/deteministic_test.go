@@ -63,7 +63,7 @@ func TestMsgpackPBDeterministicEncod(t *testing.T) {
 			})
 			enc, err := msgpackpbDeterministicEncode(val)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, enc, should.Resemble(msgpack.RawMessage{
+			assert.Loosely(t, enc, should.Match(msgpack.RawMessage{
 				152,                         // 7 element array
 				10,                          //  10
 				165, 72, 101, 108, 108, 111, // "Hello"

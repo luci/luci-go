@@ -42,7 +42,7 @@ func TestPagination(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			decrypted, err := URLSafeDecrypt(ctx, encrypted, []byte("additional data"))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, decrypted, should.Resemble([]byte("sensitive data")))
+			assert.Loosely(t, decrypted, should.Match([]byte("sensitive data")))
 		})
 
 		t.Run("Should not be able to recover plaintext with the different additional data", func(t *ftt.Test) {

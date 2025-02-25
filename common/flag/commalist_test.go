@@ -43,14 +43,14 @@ func TestCommaList(t *testing.T) {
 			err := fs.Parse([]string{"-list", "foo"})
 			t.Run("The parsed slice should contain the item", func(t *ftt.Test) {
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, s, should.Resemble([]string{"foo"}))
+				assert.Loosely(t, s, should.Match([]string{"foo"}))
 			})
 		})
 		t.Run("When parsing multiple items", func(t *ftt.Test) {
 			err := fs.Parse([]string{"-list", "foo,bar,spam"})
 			t.Run("The parsed slice should contain the items", func(t *ftt.Test) {
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, s, should.Resemble([]string{"foo", "bar", "spam"}))
+				assert.Loosely(t, s, should.Match([]string{"foo", "bar", "spam"}))
 			})
 		})
 	})

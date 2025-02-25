@@ -85,12 +85,12 @@ func TestRefSet(t *testing.T) {
 
 				refTips, missing, err := wr.Resolve(ctx, mockClient, "project")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, refTips, should.Resemble(map[string]string{
+				assert.Loosely(t, refTips, should.Match(map[string]string{
 					"refs/heads/master":      "01234567",
 					"refs/branch-heads/1.9":  "cafedead",
 					"refs/branch-heads/1.10": "deadcafe",
 				}))
-				assert.Loosely(t, missing, should.Resemble([]string{`refs/missing/exact`, `regexp:refs/missing/many.+`}))
+				assert.Loosely(t, missing, should.Match([]string{`refs/missing/exact`, `regexp:refs/missing/many.+`}))
 			})
 
 			t.Run("failed RPCs", func(t *ftt.Test) {

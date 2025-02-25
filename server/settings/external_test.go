@@ -55,7 +55,7 @@ func TestExternalStorage(t *testing.T) {
 
 		b, _, err = s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
+		assert.Loosely(t, b.Values, should.Match(map[string]*json.RawMessage{
 			"k1": {34, 97, 34}, // "a"
 			"k2": {34, 98, 34}, // "b"
 			"k3": {34, 99, 34}, // "c"
@@ -72,7 +72,7 @@ func TestExternalStorage(t *testing.T) {
 
 		b, _, err = s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
+		assert.Loosely(t, b.Values, should.Match(map[string]*json.RawMessage{
 			"k1": {34, 100, 34}, // "d"
 			"k3": {34, 99, 34},  // "c"
 		}))
@@ -81,7 +81,7 @@ func TestExternalStorage(t *testing.T) {
 		assert.Loosely(t, s.Load(ctx, strings.NewReader("???")), should.NotBeNil)
 		b, _, err = s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
+		assert.Loosely(t, b.Values, should.Match(map[string]*json.RawMessage{
 			"k1": {34, 100, 34}, // "d"
 			"k3": {34, 99, 34},  // "c"
 		}))

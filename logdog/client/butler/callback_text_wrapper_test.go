@@ -69,7 +69,7 @@ func TestTextReassembler(t *testing.T) {
 		t.Run(`With nil`, func(t *ftt.Test) {
 			values, seq := []string{}, []uint64{}
 			mkWrappedTextCb(&values, &seq)(nil)
-			assert.Loosely(t, values, should.Resemble([]string{}))
+			assert.Loosely(t, values, should.Match([]string{}))
 		})
 
 		t.Run(`With only complete lines`, func(t *ftt.Test) {
@@ -78,11 +78,11 @@ func TestTextReassembler(t *testing.T) {
 				{"hi", "\n"},
 				{"there", "\n"},
 			}, 0))
-			assert.Loosely(t, values, should.Resemble([]string{
+			assert.Loosely(t, values, should.Match([]string{
 				"hi!\n",
 				"there!\n",
 			}))
-			assert.Loosely(t, seq, should.Resemble([]uint64{0}))
+			assert.Loosely(t, seq, should.Match([]uint64{0}))
 		})
 
 		t.Run(`With partial lines`, func(t *ftt.Test) {
@@ -93,8 +93,8 @@ func TestTextReassembler(t *testing.T) {
 				cbWrapped(mkTextLogEntry([]line{
 					{"h", ""},
 				}, 0))
-				assert.Loosely(t, values, should.Resemble([]string{}))
-				assert.Loosely(t, seq, should.Resemble([]uint64{}))
+				assert.Loosely(t, values, should.Match([]string{}))
+				assert.Loosely(t, seq, should.Match([]uint64{}))
 			})
 
 			t.Run(`At the end of a LogEntry`, func(t *ftt.Test) {
@@ -103,32 +103,32 @@ func TestTextReassembler(t *testing.T) {
 					{"there", "\n"},
 					{"ho", ""},
 				}, 0))
-				assert.Loosely(t, values, should.Resemble([]string{
+				assert.Loosely(t, values, should.Match([]string{
 					"hi!\n",
 					"there!\n",
 				}))
-				assert.Loosely(t, seq, should.Resemble([]uint64{0}))
+				assert.Loosely(t, seq, should.Match([]uint64{0}))
 
 				t.Run(`And correctly completes with the next LogEntry`, func(t *ftt.Test) {
 					cbWrapped(mkTextLogEntry([]line{
 						{"w are you", "\n"},
 					}, 2))
-					assert.Loosely(t, values, should.Resemble([]string{
+					assert.Loosely(t, values, should.Match([]string{
 						"hi!\n",
 						"there!\n",
 						"how are you!\n",
 					}))
-					assert.Loosely(t, seq, should.Resemble([]uint64{0, 2}))
+					assert.Loosely(t, seq, should.Match([]uint64{0, 2}))
 				})
 
 				t.Run(`Flushes when called with niil`, func(t *ftt.Test) {
 					cbWrapped(nil)
-					assert.Loosely(t, values, should.Resemble([]string{
+					assert.Loosely(t, values, should.Match([]string{
 						"hi!\n",
 						"there!\n",
 						"ho!",
 					}))
-					assert.Loosely(t, seq, should.Resemble([]uint64{0, 2}))
+					assert.Loosely(t, seq, should.Match([]uint64{0, 2}))
 				})
 			})
 		})

@@ -137,7 +137,7 @@ func TestAnalyzeFailure(t *testing.T) {
 
 	err = datastore.Get(c, cf)
 	assert.Loosely(t, err, should.BeNil)
-	assert.Loosely(t, cf.OutputTargets, should.Resemble([]string{"obj/net/net_unittests__library/ssl_server_socket_unittest.o"}))
+	assert.Loosely(t, cf.OutputTargets, should.Match([]string{"obj/net/net_unittests__library/ssl_server_socket_unittest.o"}))
 
 	// Make sure that the analysis is created
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", datastore.KeyForObj(c, cf))
@@ -206,14 +206,14 @@ func TestFindRegressionRange(t *testing.T) {
 		rr, e := findRegressionRange(c, 8001, 8000)
 		assert.Loosely(t, e, should.BeNil)
 
-		assert.Loosely(t, rr.FirstFailed, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, rr.FirstFailed, should.Match(&bbpb.GitilesCommit{
 			Host:    "host1",
 			Project: "proj1",
 			Id:      "id1",
 			Ref:     "ref1",
 		}))
 
-		assert.Loosely(t, rr.LastPassed, should.Resemble(&bbpb.GitilesCommit{
+		assert.Loosely(t, rr.LastPassed, should.Match(&bbpb.GitilesCommit{
 			Host:    "host2",
 			Project: "proj2",
 			Id:      "id2",

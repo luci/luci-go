@@ -78,7 +78,7 @@ func TestAdminServer(t *testing.T) {
 
 			rsp, err := server.BackfillTestResults(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.BackfillTestResultsResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.BackfillTestResultsResponse{
 				DaysScheduled: 30, // 30 days in June.
 			}))
 
@@ -93,7 +93,7 @@ func TestAdminServer(t *testing.T) {
 				return dates[i].Before(dates[j])
 			})
 			for i, d := range dates {
-				assert.Loosely(t, d, should.Resemble(request.StartDay.AsTime().Add(time.Duration(i)*24*time.Hour)))
+				assert.Loosely(t, d, should.Match(request.StartDay.AsTime().Add(time.Duration(i)*24*time.Hour)))
 			}
 		})
 	})

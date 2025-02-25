@@ -50,7 +50,7 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b")))
+			assert.Loosely(t, invs, should.Match(invocations.NewIDSet("a", "b")))
 		})
 
 		t.Run(`Includes indirectly inherited a->b->c`, func(t *ftt.Test) {
@@ -62,7 +62,7 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b", "c")))
+			assert.Loosely(t, invs, should.Match(invocations.NewIDSet("a", "b", "c")))
 		})
 
 		t.Run(`Cycle with one node: a->b<->b`, func(t *ftt.Test) {
@@ -73,7 +73,7 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b")))
+			assert.Loosely(t, invs, should.Match(invocations.NewIDSet("a", "b")))
 		})
 
 		t.Run(`Cycle with two: a->b<->c`, func(t *ftt.Test) {
@@ -85,7 +85,7 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b", "c")))
+			assert.Loosely(t, invs, should.Match(invocations.NewIDSet("a", "b", "c")))
 		})
 	})
 }
@@ -105,7 +105,7 @@ func TestFindRoot(t *testing.T) {
 
 			inv, err := FindRoots(ctx, "b")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("b")))
+			assert.Loosely(t, inv, should.Match(invocations.NewIDSet("b")))
 		})
 
 		t.Run(`invocation has no parent a*-> b`, func(t *ftt.Test) {
@@ -115,7 +115,7 @@ func TestFindRoot(t *testing.T) {
 
 			inv, err := FindRoots(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a")))
+			assert.Loosely(t, inv, should.Match(invocations.NewIDSet("a")))
 		})
 
 		t.Run(`traverse to root with no parent a->b->c->d*->e`, func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestFindRoot(t *testing.T) {
 
 			inv, err := FindRoots(ctx, "d")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a")))
+			assert.Loosely(t, inv, should.Match(invocations.NewIDSet("a")))
 		})
 
 		t.Run(`cycle a->b*<->[c, d (r)]`, func(t *ftt.Test) {
@@ -141,7 +141,7 @@ func TestFindRoot(t *testing.T) {
 
 			inv, err := FindRoots(ctx, "b")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a", "d")))
+			assert.Loosely(t, inv, should.Match(invocations.NewIDSet("a", "d")))
 		})
 
 		t.Run(`multiple root [x->a, y->b(r)]-> c*<- d <-e (r)`, func(t *ftt.Test) {
@@ -157,7 +157,7 @@ func TestFindRoot(t *testing.T) {
 
 			inv, err := FindRoots(ctx, "c")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("x", "b", "e")))
+			assert.Loosely(t, inv, should.Match(invocations.NewIDSet("x", "b", "e")))
 		})
 	})
 }

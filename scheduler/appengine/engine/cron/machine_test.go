@@ -46,7 +46,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 1,
@@ -66,7 +66,7 @@ func TestMachine(t *testing.T) {
 		tm.Now = parseTime("01:00").Add(-1 * time.Minute)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 2,
@@ -91,7 +91,7 @@ func TestMachine(t *testing.T) {
 		// The correct tick comes. Invocation is started and new tick is scheduled.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			StartInvocationAction{Generation: 4},
 			TickLaterAction{
 				When:      parseTime("02:00"),
@@ -126,7 +126,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("00:30"),
 				TickNonce: 1,
@@ -146,7 +146,7 @@ func TestMachine(t *testing.T) {
 		tm.Now = parseTime("00:31")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			StartInvocationAction{Generation: 3},
 		}))
 
@@ -158,7 +158,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("01:10"), // 40min + 30min
 				TickNonce: 2,
@@ -207,7 +207,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 1,
@@ -223,7 +223,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("00:30"),
 				TickNonce: 2,
@@ -244,7 +244,7 @@ func TestMachine(t *testing.T) {
 		tm.Now = parseTime("00:30")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			StartInvocationAction{Generation: 4},
 		}))
 
@@ -267,7 +267,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 3,
@@ -281,7 +281,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("01:45"),
 				TickNonce: 4,
@@ -298,7 +298,7 @@ func TestMachine(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, tm.Actions, should.BeNil)
-		assert.Loosely(t, tm.State.LastTick, should.Resemble(TickLaterAction{
+		assert.Loosely(t, tm.State.LastTick, should.Match(TickLaterAction{
 			When:      schedule.DistantFuture,
 			TickNonce: 5,
 		}))
@@ -311,7 +311,7 @@ func TestMachine(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
+		assert.Loosely(t, tm.Actions, should.Match([]Action{
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 6,

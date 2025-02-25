@@ -32,6 +32,6 @@ func TestSettings(t *testing.T) {
 
 		cfg, err := FetchOpenIDSettings(c)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfg, should.Resemble(&Settings{}))
+		assert.Loosely(t, cfg, should.Match(&Settings{}))
 	})
 }

@@ -50,7 +50,7 @@ func TestParseRemoteIP(t *testing.T) {
 				t.Run(fmt.Sprintf(`Successfully parses %q into %q.`, tc.v, tc.exp), func(t *ftt.Test) {
 					ip, err := parseRemoteIP(tc.v)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, ip, should.Resemble(net.ParseIP(tc.exp)))
+					assert.Loosely(t, ip, should.Match(net.ParseIP(tc.exp)))
 				})
 			} else {
 				t.Run(fmt.Sprintf(`Fails to parse %q with %q.`, tc.v, tc.err), func(t *ftt.Test) {

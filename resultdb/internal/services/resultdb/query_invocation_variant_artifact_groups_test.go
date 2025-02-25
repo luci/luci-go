@@ -131,7 +131,7 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 		t.Run("valid request", func(t *ftt.Test) {
 			rsp, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.QueryInvocationVariantArtifactGroupsResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.QueryInvocationVariantArtifactGroupsResponse{
 				Groups: []*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup{{
 					ArtifactId:       "artifact1",
 					VariantUnionHash: "variant1",

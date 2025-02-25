@@ -41,7 +41,7 @@ func TestOptions(t *testing.T) {
 				// w/ BaseBuild
 				opts.BaseBuild = &bbpb.Build{Builder: builder}
 				assert.Loosely(t, opts.initialize(), should.BeNil)
-				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
+				assert.Loosely(t, opts.logdogTags, should.Match(streamproto.TagMap{
 					"buildbucket.builder":     "builder-a",
 					"buildbucket.bucket":      "bucket-b",
 					"buildbucket.project":     "proj-c",
@@ -51,7 +51,7 @@ func TestOptions(t *testing.T) {
 				// w/o BaseBuild
 				opts.BaseBuild = nil
 				assert.Loosely(t, opts.initialize(), should.BeNil)
-				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
+				assert.Loosely(t, opts.logdogTags, should.Match(streamproto.TagMap{
 					viewer.LogDogViewerURLTag: "https://example.org",
 				}))
 			})
@@ -65,7 +65,7 @@ func TestOptions(t *testing.T) {
 				// w/o ViewerURL
 				opts.ViewerURL = ""
 				assert.Loosely(t, opts.initialize(), should.BeNil)
-				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
+				assert.Loosely(t, opts.logdogTags, should.Match(streamproto.TagMap{
 					"buildbucket.builder": "builder-a",
 					"buildbucket.bucket":  "bucket-b",
 					"buildbucket.project": "proj-c",

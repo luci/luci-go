@@ -81,7 +81,7 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 
 		user, err := call(mintVMToken(tok))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, user, should.Resemble(&auth.User{
+		assert.Loosely(t, user, should.Match(&auth.User{
 			Identity: "bot:instance-id@gce.project-id.example.com",
 			Extra: &GoogleComputeTokenInfo{
 				Audience:       "https://" + fakeHost,

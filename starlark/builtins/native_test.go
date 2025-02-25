@@ -42,7 +42,7 @@ func TestToGoNative(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 		result, err := ToGoNative(out["val"])
 		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
-		assert.Loosely(t, result, should.Resemble(expected), truth.LineContext())
+		assert.Loosely(t, result, should.Match(expected), truth.LineContext())
 	}
 
 	mustFail := func(code string, expectErr string) {

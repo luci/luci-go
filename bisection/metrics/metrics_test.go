@@ -51,7 +51,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 
 		m, err := retrieveRunningAnalyses(c)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, m, should.Resemble(map[string]int{
+		assert.Loosely(t, m, should.Match(map[string]int{
 			"chromium": 2,
 			"chromeos": 1,
 		}))
@@ -85,7 +85,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 
 		m, err := retrieveRunningAnalyses(c)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, m, should.Resemble(map[string]int{
+		assert.Loosely(t, m, should.Match(map[string]int{
 			"chromium": 2,
 			"chromeos": 1,
 		}))

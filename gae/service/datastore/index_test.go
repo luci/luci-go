@@ -107,7 +107,7 @@ func TestIndexDefinition(t *testing.T) {
 					// unmarshal
 					var ids []*IndexDefinition
 					yaml.Unmarshal([]byte(strings.Join(tc.yaml, "\n")), &ids)
-					assert.Loosely(t, ids[0], should.Resemble(tc.id))
+					assert.Loosely(t, ids[0], should.Match(tc.id))
 				}
 			})
 		}

@@ -155,9 +155,9 @@ func TestCredentialsClient(t *testing.T) {
 			"abc@example.com", []string{"a", "b"}, []string{"deleg"}, 30*time.Minute)
 		assert.Loosely(c, err, should.BeNil)
 		assert.Loosely(c, token.AccessToken, should.Equal("token1"))
-		assert.Loosely(c, token.Expiry, should.Resemble(expireTime))
+		assert.Loosely(c, token.Expiry, should.Match(expireTime))
 
-		assert.Loosely(c, body, should.Resemble(map[string]any{
+		assert.Loosely(c, body, should.Match(map[string]any{
 			"delegates": []any{"deleg"},
 			"scope":     []any{"a", "b"},
 			"lifetime":  "30m0s",
@@ -201,7 +201,7 @@ func TestCredentialsClient(t *testing.T) {
 		assert.Loosely(c, err, should.BeNil)
 		assert.Loosely(c, token, should.Equal("fake_id_token"))
 
-		assert.Loosely(c, body, should.Resemble(map[string]any{
+		assert.Loosely(c, body, should.Match(map[string]any{
 			"delegates":    []any{"deleg"},
 			"audience":     "aud",
 			"includeEmail": true,

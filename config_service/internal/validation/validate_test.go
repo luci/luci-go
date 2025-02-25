@@ -141,7 +141,7 @@ func TestValidate(t *testing.T) {
 			t.Run("No service to validate", func(t *ftt.Test) {
 				res, err := v.Validate(ctx, cs, []File{testFile{path: filePath}})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
+				assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{}))
 			})
 			t.Run("Validate", func(t *ftt.Test) {
 				const singedURL = "https://example.com/signed"
@@ -188,7 +188,7 @@ func TestValidate(t *testing.T) {
 						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+					assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
 								Path:     filePath,
@@ -240,7 +240,7 @@ func TestValidate(t *testing.T) {
 					}
 					res, err := v.Validate(ctx, cs, []File{tf})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+					assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
 								Path:     filePath,
@@ -379,7 +379,7 @@ func TestValidate(t *testing.T) {
 
 			res, err := v.Validate(ctx, config.MustProjectSet("my-project"), []File{fileA, fileB, fileC, fileD})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+			assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
 				Messages: []*cfgcommonpb.ValidationResult_Message{
 					{
 						Path:     fileA.path,
@@ -479,7 +479,7 @@ func TestValidateLegacy(t *testing.T) {
 				}
 				res, err := v.Validate(ctx, cs, []File{tf})
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
-				assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+				assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
 					Messages: []*cfgcommonpb.ValidationResult_Message{
 						{
 							Path:     filePath,
@@ -518,7 +518,7 @@ func TestValidateLegacy(t *testing.T) {
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
+			assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{}))
 		})
 
 		t.Run("Empty response", func(t *ftt.Test) {
@@ -529,7 +529,7 @@ func TestValidateLegacy(t *testing.T) {
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
+			assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{}))
 		})
 
 		t.Run("Compress large payload", func(t *ftt.Test) {
@@ -570,7 +570,7 @@ func TestValidateLegacy(t *testing.T) {
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
+			assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{}))
 		})
 
 		t.Run("Error on unrecognized severity", func(t *ftt.Test) {

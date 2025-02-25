@@ -226,7 +226,7 @@ func TestCustomMetricPreview(t *testing.T) {
 						Error: "failed to evaluate the build with predicates: failed to generate CEL expression: expect bool, got string",
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expected))
+				assert.Loosely(t, rsp, should.Match(expected))
 			})
 
 			t.Run("build not pass predicate", func(t *ftt.Test) {
@@ -247,7 +247,7 @@ func TestCustomMetricPreview(t *testing.T) {
 						Error: "the build doesn't pass the predicates evaluation, it will not be reported by the custom metric",
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expected))
+				assert.Loosely(t, rsp, should.Match(expected))
 			})
 
 			t.Run("invalid field", func(t *ftt.Test) {
@@ -272,7 +272,7 @@ func TestCustomMetricPreview(t *testing.T) {
 						Error: "failed to evaluate the build with extra_fields: failed to generate CEL expression: expect string, got bool",
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expected))
+				assert.Loosely(t, rsp, should.Match(expected))
 			})
 
 			t.Run("ok", func(t *ftt.Test) {
@@ -301,7 +301,7 @@ func TestCustomMetricPreview(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expected))
+				assert.Loosely(t, rsp, should.Match(expected))
 			})
 		})
 	})

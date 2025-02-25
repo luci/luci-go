@@ -71,58 +71,58 @@ func TestSpan(t *testing.T) {
 				t.Run(`Exists`, func(t *ftt.Test) {
 					run, err := Read(span.Single(ctx), testProject, runs[2].AttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[2]))
+					assert.Loosely(t, run, should.Match(runs[2]))
 				})
 			})
 			t.Run(`ReadLastUpTo`, func(t *ftt.Test) {
 				t.Run(`Not Exists`, func(t *ftt.Test) {
 					run, err := ReadLastUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(expectedFake))
+					assert.Loosely(t, run, should.Match(expectedFake))
 				})
 				t.Run(`Latest`, func(t *ftt.Test) {
 					run, err := ReadLastUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[1]))
+					assert.Loosely(t, run, should.Match(runs[1]))
 				})
 				t.Run(`Stale`, func(t *ftt.Test) {
 					run, err := ReadLastUpTo(span.Single(ctx), testProject, reference.Add(-10*time.Minute))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[2]))
+					assert.Loosely(t, run, should.Match(runs[2]))
 				})
 			})
 			t.Run(`ReadLastWithProgressUpTo`, func(t *ftt.Test) {
 				t.Run(`Not Exists`, func(t *ftt.Test) {
 					run, err := ReadLastWithProgressUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(expectedFake))
+					assert.Loosely(t, run, should.Match(expectedFake))
 				})
 				t.Run(`Exists`, func(t *ftt.Test) {
 					run, err := ReadLastWithProgressUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[3]))
+					assert.Loosely(t, run, should.Match(runs[3]))
 				})
 				t.Run(`Stale`, func(t *ftt.Test) {
 					run, err := ReadLastWithProgressUpTo(span.Single(ctx), testProject, reference.Add(-30*time.Minute))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[4]))
+					assert.Loosely(t, run, should.Match(runs[4]))
 				})
 			})
 			t.Run(`ReadLastCompleteUpTo`, func(t *ftt.Test) {
 				t.Run(`Not Exists`, func(t *ftt.Test) {
 					run, err := ReadLastCompleteUpTo(span.Single(ctx), "emptyproject", MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(expectedFake))
+					assert.Loosely(t, run, should.Match(expectedFake))
 				})
 				t.Run(`Exists`, func(t *ftt.Test) {
 					run, err := ReadLastCompleteUpTo(span.Single(ctx), testProject, MaxAttemptTimestamp)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[5]))
+					assert.Loosely(t, run, should.Match(runs[5]))
 				})
 				t.Run(`Stale`, func(t *ftt.Test) {
 					run, err := ReadLastCompleteUpTo(span.Single(ctx), testProject, reference.Add(-50*time.Minute))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(runs[6]))
+					assert.Loosely(t, run, should.Match(runs[6]))
 				})
 			})
 		})
@@ -267,7 +267,7 @@ func TestSpan(t *testing.T) {
 					progress, err := ReadReclusteringProgress(ctx, testProject)
 					assert.Loosely(t, err, should.BeNil)
 
-					assert.Loosely(t, progress, should.Resemble(expectedProgress))
+					assert.Loosely(t, progress, should.Match(expectedProgress))
 				})
 				t.Run(`No shard progress`, func(t *ftt.Test) {
 					// Not all shards have reported progress.
@@ -281,7 +281,7 @@ func TestSpan(t *testing.T) {
 					progress, err := ReadReclusteringProgress(ctx, testProject)
 					assert.Loosely(t, err, should.BeNil)
 
-					assert.Loosely(t, progress, should.Resemble(expectedProgress))
+					assert.Loosely(t, progress, should.Match(expectedProgress))
 				})
 				t.Run(`Partial progress`, func(t *ftt.Test) {
 					// All shards have reported partial progress.
@@ -295,7 +295,7 @@ func TestSpan(t *testing.T) {
 					expectedProgress.ProgressPerMille = 150
 					progress, err := ReadReclusteringProgress(ctx, testProject)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, progress, should.Resemble(expectedProgress))
+					assert.Loosely(t, progress, should.Match(expectedProgress))
 				})
 				t.Run(`Complete progress`, func(t *ftt.Test) {
 					// All shards have reported progress as being complete.
@@ -314,7 +314,7 @@ func TestSpan(t *testing.T) {
 					}
 					progress, err := ReadReclusteringProgress(ctx, testProject)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, progress, should.Resemble(expectedProgress))
+					assert.Loosely(t, progress, should.Match(expectedProgress))
 				})
 			})
 		})
@@ -362,7 +362,7 @@ func TestSpan(t *testing.T) {
 					run, err := Read(txn, expectedRun.Project, expectedRun.AttemptTimestamp)
 
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, run, should.Resemble(expectedRun))
+					assert.Loosely(t, run, should.Match(expectedRun))
 				}
 
 				err := testCreate(r)

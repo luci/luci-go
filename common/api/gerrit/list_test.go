@@ -50,8 +50,8 @@ func TestSimpleDeduper(t *testing.T) {
 			ci(2, epoch.Add(time.Minute)),
 			ci(1, epoch.Add(time.Second)),
 		}
-		assert.Loosely(t, l.appendSorted(nil, a), should.Resemble(a))
-		assert.Loosely(t, l.mergeSorted(a, a), should.Resemble(a))
+		assert.Loosely(t, l.appendSorted(nil, a), should.Match(a))
+		assert.Loosely(t, l.mergeSorted(a, a), should.Match(a))
 
 		b := []*gerritpb.ChangeInfo{
 			ci(3, epoch.Add(time.Minute+time.Second)),
@@ -60,7 +60,7 @@ func TestSimpleDeduper(t *testing.T) {
 			ci(5, epoch.Add(time.Second)),
 		}
 		c := l.mergeSorted(a, b)
-		assert.Loosely(t, c, should.Resemble([]*gerritpb.ChangeInfo{
+		assert.Loosely(t, c, should.Match([]*gerritpb.ChangeInfo{
 			ci(3, epoch.Add(time.Minute+time.Second)),
 			ci(1, epoch.Add(time.Minute)),
 			ci(2, epoch.Add(time.Minute)),
@@ -73,7 +73,7 @@ func TestSimpleDeduper(t *testing.T) {
 			ci(5, epoch.Add(time.Second)),
 			ci(6, epoch.Add(time.Second)),
 			ci(7, epoch.Add(time.Millisecond)),
-		}), should.Resemble([]*gerritpb.ChangeInfo{
+		}), should.Match([]*gerritpb.ChangeInfo{
 			ci(3, epoch.Add(time.Minute+time.Second)),
 			ci(1, epoch.Add(time.Minute)),
 			ci(2, epoch.Add(time.Minute)),
@@ -123,8 +123,8 @@ func TestPagingListChanges(t *testing.T) {
 			fake.reset(makeResp(noMore, makeCI(1, time.Second), makeCI(2, 2*time.Second), makeCI(3, 3*time.Second)))
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(makeResp(more, makeCI(1, time.Second))))
-			assert.Loosely(t, fake.calls, should.Resemble([]*gerritpb.ListChangesRequest{
+			assert.Loosely(t, resp, should.Match(makeResp(more, makeCI(1, time.Second))))
+			assert.Loosely(t, fake.calls, should.Match([]*gerritpb.ListChangesRequest{
 				{Query: "status:new", Limit: 100},
 			}))
 		})
@@ -139,8 +139,8 @@ func TestPagingListChanges(t *testing.T) {
 
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(makeResp(noMore, makeCI(1, time.Second))))
-			assert.Loosely(t, fake.calls, should.Resemble([]*gerritpb.ListChangesRequest{
+			assert.Loosely(t, resp, should.Match(makeResp(noMore, makeCI(1, time.Second))))
+			assert.Loosely(t, fake.calls, should.Match([]*gerritpb.ListChangesRequest{
 				{
 					Query:   "status:new",
 					Options: []gerritpb.QueryOption{gerritpb.QueryOption_LABELS},
@@ -154,7 +154,7 @@ func TestPagingListChanges(t *testing.T) {
 			fake.reset(makeResp(noMore))
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(makeResp(noMore)))
+			assert.Loosely(t, resp, should.Match(makeResp(noMore)))
 		})
 
 		t.Run("Doesn't trust MoreChanges=false", func(t *ftt.Test) {
@@ -171,7 +171,7 @@ func TestPagingListChanges(t *testing.T) {
 			)
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(makeResp(noMore,
+			assert.Loosely(t, resp, should.Match(makeResp(noMore,
 				makeCI(1, 1*time.Second),
 				makeCI(2, 2*time.Second),
 				makeCI(3, 3*time.Second),
@@ -179,7 +179,7 @@ func TestPagingListChanges(t *testing.T) {
 			// Early fail if initial setup changes, which would also break fake.calls
 			// assertion below, which should speed up the debugging time.
 			assert.Loosely(t, FormatTime(now), should.Equal(`"2020-02-03 10:30:00.000000000"`))
-			assert.Loosely(t, fake.calls, should.Resemble([]*gerritpb.ListChangesRequest{
+			assert.Loosely(t, fake.calls, should.Match([]*gerritpb.ListChangesRequest{
 				{
 					Query: "status:new",
 					Limit: 2,
@@ -207,14 +207,14 @@ func TestPagingListChanges(t *testing.T) {
 			)
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(makeResp(more,
+			assert.Loosely(t, resp, should.Match(makeResp(more,
 				makeCI(4, 4*time.Millisecond),
 				makeCI(1, 1*time.Second),
 				makeCI(2, 2*time.Second),
 				makeCI(3, 3*time.Second),
 			)))
 			assert.Loosely(t, FormatTime(now), should.Equal(`"2020-02-03 10:30:00.000000000"`))
-			assert.Loosely(t, fake.calls, should.Resemble([]*gerritpb.ListChangesRequest{
+			assert.Loosely(t, fake.calls, should.Match([]*gerritpb.ListChangesRequest{
 				{
 					Query: "status:new",
 					Limit: 3,
@@ -239,7 +239,7 @@ func TestPagingListChanges(t *testing.T) {
 			)
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.ErrLike("boooo"))
-			assert.Loosely(t, resp, should.Resemble(makeResp(more,
+			assert.Loosely(t, resp, should.Match(makeResp(more,
 				makeCI(1, 1*time.Second),
 				makeCI(2, 2*time.Second),
 				makeCI(3, 3*time.Second),
@@ -266,7 +266,7 @@ func TestPagingListChanges(t *testing.T) {
 			)
 			resp, err := pager.pagingListChanges(ctx)
 			assert.Loosely(t, err, should.ErrLike(`PagingListChanges stuck on query:"status:new before:\"2020-02-03 10:29:51.000000000\""`))
-			assert.Loosely(t, resp, should.Resemble(makeResp(more,
+			assert.Loosely(t, resp, should.Match(makeResp(more,
 				makeCI(1, 1*time.Second),
 				makeCI(2, 9*time.Second),
 				makeCI(3, 9*time.Second),
@@ -305,7 +305,7 @@ func (f *fakeListChanges) reset(results ...any) {
 
 func (f *fakeListChanges) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
 	logging.Debugf(ctx, "faking ListChanges(%s)", in)
-	assert.Loosely(f.t, opts, should.Resemble(f.expectGrpcOpts))
+	assert.Loosely(f.t, opts, should.Match(f.expectGrpcOpts))
 	f.calls = append(f.calls, in)
 	if len(f.results) == 0 {
 		// Unexpected call. List all of them.

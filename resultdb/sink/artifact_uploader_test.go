@@ -206,12 +206,12 @@ func TestArtifactUploader(t *testing.T) {
 				sent := <-batchReqCh
 
 				assert.Loosely(t, sent.Requests[0].Artifact.ContentType, should.Equal(contentType))
-				assert.Loosely(t, sent.Requests[0].Artifact.Contents, should.Resemble([]byte(content)))
+				assert.Loosely(t, sent.Requests[0].Artifact.Contents, should.Match([]byte(content)))
 				assert.Loosely(t, sent.Requests[0].Artifact.SizeBytes, should.Equal(len(content)))
 				assert.Loosely(t, sent.Requests[0].Artifact.GcsUri, should.BeEmpty)
 
 				assert.Loosely(t, sent.Requests[1].Artifact.ContentType, should.Equal(contentType))
-				assert.Loosely(t, sent.Requests[1].Artifact.Contents, should.Resemble([]byte(content)))
+				assert.Loosely(t, sent.Requests[1].Artifact.Contents, should.Match([]byte(content)))
 				assert.Loosely(t, sent.Requests[1].Artifact.SizeBytes, should.Equal(len(content)))
 				assert.Loosely(t, sent.Requests[1].Artifact.GcsUri, should.BeEmpty)
 

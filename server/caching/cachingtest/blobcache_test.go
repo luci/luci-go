@@ -40,7 +40,7 @@ func TestWorks(t *testing.T) {
 		assert.Loosely(t, b.Set(c, "key", []byte("blah"), 0), should.BeNil)
 
 		res, err = b.Get(c, "key")
-		assert.Loosely(t, res, should.Resemble([]byte("blah")))
+		assert.Loosely(t, res, should.Match([]byte("blah")))
 		assert.Loosely(t, err, should.BeNil)
 	})
 

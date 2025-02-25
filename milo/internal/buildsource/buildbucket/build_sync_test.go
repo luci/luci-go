@@ -146,7 +146,7 @@ func TestPubSub(t *testing.T) {
 				}))
 				assert.Loosely(t, buildAct.Created, should.Match(RefTime.Add(2*time.Hour)))
 				assert.Loosely(t, buildAct.Experimental, should.BeTrue)
-				assert.Loosely(t, buildAct.BlamelistPins, should.Resemble([]string{
+				assert.Loosely(t, buildAct.BlamelistPins, should.Match([]string{
 					"commit/gitiles/chromium.googlesource.com/angle/angle/+/8930f18245df678abc944376372c77ba5e2a658b",
 					"commit/gitiles/chromium.googlesource.com/chromium/src/+/07033c702f81a75dfc2d83888ba3f8b354d0e920",
 				}))

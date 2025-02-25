@@ -58,7 +58,7 @@ func TestProjectConfig(t *testing.T) {
 
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(cfg.Keys()), should.Equal(1))
-		assert.Loosely(t, cfg.Project("a"), should.Resemble(projectA))
+		assert.Loosely(t, cfg.Project("a"), should.Match(projectA))
 	})
 
 	doTest := func(system configpb.BugSystem) func(t *ftt.Test) {
@@ -90,8 +90,8 @@ func TestProjectConfig(t *testing.T) {
 				projects, err := Projects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(2))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(projectA, creationTime)))
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(projectB, creationTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, creationTime)))
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(projectB, creationTime)))
 
 				tc.Add(1 * time.Second)
 
@@ -121,16 +121,16 @@ func TestProjectConfig(t *testing.T) {
 				projects, err = fetchProjects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(newProjectA, updateTime))) // Retained.
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(newProjectB, updateTime)))
-				assert.Loosely(t, projects.Project("c"), should.Resemble(withLastUpdated(projectC, updateTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
+				assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
 				// Get still uses in-memory cached copy.
 				projects, err = Projects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(2))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(projectA, creationTime))) // Retained.
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(projectB, creationTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, creationTime))) // Retained.
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(projectB, creationTime)))
 
 				// Noop update again.
 				err = updateProjects(ctx)
@@ -141,14 +141,14 @@ func TestProjectConfig(t *testing.T) {
 				projects, err = fetchProjects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(newProjectA, updateTime))) // Retained.
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(newProjectB, updateTime)))
-				assert.Loosely(t, projects.Project("c"), should.Resemble(withLastUpdated(projectC, updateTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
+				assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
 				t.Run("Expedited cache eviction", func(t *ftt.Test) {
 					projectB, err = ProjectWithMinimumVersion(ctx, "b", updateTime)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, projectB, should.Resemble(withLastUpdated(newProjectB, updateTime)))
+					assert.Loosely(t, projectB, should.Match(withLastUpdated(newProjectB, updateTime)))
 				})
 				t.Run("Natural cache eviction", func(t *ftt.Test) {
 					// Time passes, in-memory cached copy expires.
@@ -158,9 +158,9 @@ func TestProjectConfig(t *testing.T) {
 					projects, err = Projects(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-					assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(newProjectA, updateTime))) // Retained.
-					assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(newProjectB, updateTime)))
-					assert.Loosely(t, projects.Project("c"), should.Resemble(withLastUpdated(projectC, updateTime)))
+					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime))) // Retained.
+					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
+					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
 					// Time passes, in-memory cached copy expires.
 					tc.Add(2 * time.Minute)
@@ -169,9 +169,9 @@ func TestProjectConfig(t *testing.T) {
 					projects, err = Projects(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-					assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(newProjectA, updateTime)))
-					assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(newProjectB, updateTime)))
-					assert.Loosely(t, projects.Project("c"), should.Resemble(withLastUpdated(projectC, updateTime)))
+					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime)))
+					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
+					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 				})
 
 				t.Run("Add config for previously deleted project", func(t *ftt.Test) {
@@ -188,9 +188,9 @@ func TestProjectConfig(t *testing.T) {
 					projects, err = fetchProjects(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(projects.Keys()), should.Equal(3))
-					assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(projectA, newUpdateTime)))
-					assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(newProjectB, updateTime)))
-					assert.Loosely(t, projects.Project("c"), should.Resemble(withLastUpdated(projectC, updateTime)))
+					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, newUpdateTime)))
+					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
+					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
 
 				})
 			})
@@ -208,7 +208,7 @@ func TestProjectConfig(t *testing.T) {
 				projects, err := Projects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(1))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(projectA, creationTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, creationTime)))
 			})
 
 			t.Run("Update retains existing config if new config is invalid", func(t *ftt.Test) {
@@ -222,8 +222,8 @@ func TestProjectConfig(t *testing.T) {
 				projects, err := Projects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(2))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(projectA, creationTime)))
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(projectB, creationTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, creationTime)))
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(projectB, creationTime)))
 
 				tc.Add(1 * time.Second)
 
@@ -248,8 +248,8 @@ func TestProjectConfig(t *testing.T) {
 				projects, err = Projects(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(projects.Keys()), should.Equal(2))
-				assert.Loosely(t, projects.Project("a"), should.Resemble(withLastUpdated(newProjectA, updateTime)))
-				assert.Loosely(t, projects.Project("b"), should.Resemble(withLastUpdated(projectB, creationTime)))
+				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime)))
+				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(projectB, creationTime)))
 			})
 
 		}
@@ -283,13 +283,13 @@ func TestProject(t *testing.T) {
 			t.Run("success", func(t *ftt.Test) {
 				pj, err := Project(ctx, "chromium")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pj, should.Resemble(pjChromium))
+				assert.Loosely(t, pj, should.Match(pjChromium))
 			})
 
 			t.Run("not found", func(t *ftt.Test) {
 				pj, err := Project(ctx, "random")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pj, should.Resemble(&configpb.ProjectConfig{LastUpdated: timestamppb.New(StartingEpoch)}))
+				assert.Loosely(t, pj, should.Match(&configpb.ProjectConfig{LastUpdated: timestamppb.New(StartingEpoch)}))
 			})
 		}
 	}

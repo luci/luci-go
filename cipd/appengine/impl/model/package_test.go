@@ -63,25 +63,25 @@ func TestListPackages(t *testing.T) {
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		t.Run("Root listing, including hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("", true), should.Resemble([]string{
+			assert.Loosely(t, list("", true), should.Match([]string{
 				"a", "c/a/b", "c/a/d", "c/a/h", "ca", "d", "d/a", "h1", "h2/a", "h2/b",
 			}))
 		})
 
 		t.Run("Root listing, skipping hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("", false), should.Resemble([]string{
+			assert.Loosely(t, list("", false), should.Match([]string{
 				"a", "c/a/b", "c/a/d", "ca", "d", "d/a",
 			}))
 		})
 
 		t.Run("Subprefix listing, including hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("c", true), should.Resemble([]string{
+			assert.Loosely(t, list("c", true), should.Match([]string{
 				"c/a/b", "c/a/d", "c/a/h",
 			}))
 		})
 
 		t.Run("Subprefix listing, skipping hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("c", false), should.Resemble([]string{
+			assert.Loosely(t, list("c", false), should.Match([]string{
 				"c/a/b", "c/a/d",
 			}))
 		})
@@ -124,24 +124,24 @@ func TestCheckPackages(t *testing.T) {
 		})
 
 		t.Run("One visible package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"a"}, true), should.Resemble([]string{"a"}))
+			assert.Loosely(t, check([]string{"a"}, true), should.Match([]string{"a"}))
 		})
 
 		t.Run("One hidden package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"b"}, true), should.Resemble([]string{"b"}))
-			assert.Loosely(t, check([]string{"b"}, false), should.Resemble([]string{}))
+			assert.Loosely(t, check([]string{"b"}, true), should.Match([]string{"b"}))
+			assert.Loosely(t, check([]string{"b"}, false), should.Match([]string{}))
 		})
 
 		t.Run("One missing package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"zzz"}, true), should.Resemble([]string{}))
+			assert.Loosely(t, check([]string{"zzz"}, true), should.Match([]string{}))
 		})
 
 		t.Run("Skips missing", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"zzz", "a", "c", "b"}, true), should.Resemble([]string{"a", "c", "b"}))
+			assert.Loosely(t, check([]string{"zzz", "a", "c", "b"}, true), should.Match([]string{"a", "c", "b"}))
 		})
 
 		t.Run("Skips hidden", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"a", "b", "c"}, false), should.Resemble([]string{"a", "c"}))
+			assert.Loosely(t, check([]string{"a", "b", "c"}, false), should.Match([]string{"a", "c"}))
 		})
 
 		t.Run("CheckPackageExists also works", func(t *ftt.Test) {
@@ -190,7 +190,7 @@ func TestSetPackageHidden(t *testing.T) {
 		assert.Loosely(t, show("a"), should.BeNil)
 		assert.Loosely(t, isHidden("a"), should.BeFalse)
 
-		assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+		assert.Loosely(t, GetEvents(ctx), should.Match([]*api.Event{
 			{
 				Kind:    api.EventKind_PACKAGE_UNHIDDEN,
 				Package: "a",

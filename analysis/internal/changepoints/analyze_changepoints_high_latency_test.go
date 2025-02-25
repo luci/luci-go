@@ -380,7 +380,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Check invocations.
 		invs := fetchInvocations(ctx, t)
-		assert.Loosely(t, invs, should.Resemble([]Invocation{
+		assert.Loosely(t, invs, should.Match([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
@@ -398,7 +398,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(tvbs), should.Equal(2))
 
-		assert.Loosely(t, tvbs[0], should.Resemble(&testvariantbranch.Entry{
+		assert.Loosely(t, tvbs[0], should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -437,7 +437,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, tvbs[1], should.Resemble(&testvariantbranch.Entry{
+		assert.Loosely(t, tvbs[1], should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
@@ -496,7 +496,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		sort.Slice(client.Insertions, func(i, j int) bool {
 			return client.Insertions[i].TestId < client.Insertions[j].TestId
 		})
-		assert.Loosely(t, client.Insertions[0], should.Resemble(&bqpb.TestVariantBranchRow{
+		assert.Loosely(t, client.Insertions[0], should.Match(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_1",
 			VariantHash: "hash_1",
@@ -526,7 +526,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				},
 			},
 		}))
-		assert.Loosely(t, client.Insertions[1], should.Resemble(&bqpb.TestVariantBranchRow{
+		assert.Loosely(t, client.Insertions[1], should.Match(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_2",
 			VariantHash: "hash_2",
@@ -646,7 +646,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Check invocations.
 		invs := fetchInvocations(ctx, t)
-		assert.Loosely(t, invs, should.Resemble([]Invocation{
+		assert.Loosely(t, invs, should.Match([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
@@ -691,7 +691,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 
-		assert.Loosely(t, tvb, should.Resemble(&testvariantbranch.Entry{
+		assert.Loosely(t, tvb, should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -841,7 +841,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Check invocations.
 		invs := fetchInvocations(ctx, t)
-		assert.Loosely(t, invs, should.Resemble([]Invocation{
+		assert.Loosely(t, invs, should.Match([]Invocation{
 			{
 				Project:              "chromium",
 				InvocationID:         "abc",
@@ -855,7 +855,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		assert.Loosely(t, len(tvbs), should.Equal(1))
 		tvb = tvbs[0]
 
-		assert.Loosely(t, tvb, should.Resemble(&testvariantbranch.Entry{
+		assert.Loosely(t, tvb, should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",

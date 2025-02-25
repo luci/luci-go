@@ -179,7 +179,7 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-			assert.Loosely(t, resp, should.Resemble(svc.R))
+			assert.Loosely(t, resp, should.Match(svc.R))
 		})
 
 		t.Run(`Respects response size limits`, func(t *ftt.Test) {
@@ -213,7 +213,7 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: hex.EncodeToString(msg)})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-			assert.Loosely(t, resp, should.Resemble(svc.R))
+			assert.Loosely(t, resp, should.Match(svc.R))
 		})
 
 		t.Run(`Can receive a giant message with compression`, func(t *ftt.Test) {
@@ -225,7 +225,7 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "hi"})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-			assert.Loosely(t, resp, should.Resemble(svc.R))
+			assert.Loosely(t, resp, should.Match(svc.R))
 		})
 
 		t.Run(`Rejects mega giant uncompressed request`, func(t *ftt.Test) {
@@ -255,7 +255,7 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 
 			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			details := status.Convert(err).Details()
-			assert.Loosely(t, details, should.Resemble([]any{detail}))
+			assert.Loosely(t, details, should.Match([]any{detail}))
 		})
 
 		t.Run(`Can handle non-trivial metadata`, func(t *ftt.Test) {
@@ -271,9 +271,9 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 			ctx = metadata.NewOutgoingContext(ctx, md)
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-			assert.Loosely(t, resp, should.Resemble(svc.R))
+			assert.Loosely(t, resp, should.Match(svc.R))
 
-			assert.Loosely(t, svc.getIncomingMD(), should.Resemble(metadata.MD{
+			assert.Loosely(t, svc.getIncomingMD(), should.Match(metadata.MD{
 				":authority":   {ts.Host},
 				"binary-bin":   {string([]byte{0, 1, 2, 3})},
 				"cookie":       {"cookie_1=value_1; cookie_2=value_2"},
@@ -282,7 +282,7 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 				"user-agent":   {prpc.DefaultUserAgent},
 			}))
 
-			assert.Loosely(t, respMD, should.Resemble(metadata.MD{
+			assert.Loosely(t, respMD, should.Match(metadata.MD{
 				"binary-bin":   {string([]byte{0, 1, 2, 3})},
 				"multival-key": {"val 1", "val 2"},
 			}))
@@ -515,5 +515,5 @@ func TestMaxLimits(t *testing.T) {
 	svc.R = &testpb.HelloReply{Message: "sup"}
 	resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 	assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-	assert.Loosely(t, resp, should.Resemble(svc.R))
+	assert.Loosely(t, resp, should.Match(svc.R))
 }

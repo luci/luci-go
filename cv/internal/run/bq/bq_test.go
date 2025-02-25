@@ -219,7 +219,7 @@ func TestMakeAttempt(t *testing.T) {
 		t.Run("All fields", func(t *ftt.Test) {
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
 			assert.NoErr(t, err)
-			assert.Loosely(t, a, should.Resemble(&cvbqpb.Attempt{
+			assert.Loosely(t, a, should.Match(&cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
 				LuciProject:          lProject,
 				RunId:                string(runID),
@@ -353,7 +353,7 @@ func TestMakeAttempt(t *testing.T) {
 				clSubmitted, clFailedToSubmit, clPendingToSubmit,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
+			assert.Loosely(t, a.GetGerritChanges(), should.Match([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,
 					Project:                    gRepo,
@@ -489,7 +489,7 @@ func TestMakeAttempt(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, anotherCL, r), should.BeNil)
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl, anotherCL})
 			assert.NoErr(t, err)
-			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
+			assert.Loosely(t, a.GetGerritChanges(), should.Match([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,
 					Project:                    gRepo,

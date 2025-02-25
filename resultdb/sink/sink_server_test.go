@@ -101,7 +101,7 @@ func TestReportTestResults(t *testing.T) {
 			closeSinkServer(ctx, sink)
 			assert.Loosely(t, sentTRReq, should.NotBeNil)
 			assert.Loosely(t, sentTRReq.Requests, should.HaveLength(1))
-			assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Resemble(expectedTR))
+			assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Match(expectedTR))
 		}
 
 		t.Run("works", func(t *ftt.Test) {
@@ -465,11 +465,11 @@ func TestReportTestResults(t *testing.T) {
 					closeSinkServer(ctx, sink)
 					assert.Loosely(t, sentTRReq, should.NotBeNil)
 					assert.Loosely(t, sentTRReq.Requests, should.HaveLength(1))
-					assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Resemble(expectedTR))
+					assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Match(expectedTR))
 
 					assert.Loosely(t, sentArtReq, should.NotBeNil)
 					assert.Loosely(t, sentArtReq.Requests, should.HaveLength(1))
-					assert.Loosely(t, sentArtReq.Requests[0].Artifact, should.Resemble(&pb.Artifact{
+					assert.Loosely(t, sentArtReq.Requests[0].Artifact, should.Match(&pb.Artifact{
 						ArtifactId:  "art1",
 						ContentType: "text/plain",
 						Contents:    []byte("a sample artifact"),
@@ -494,7 +494,7 @@ func TestReportTestResults(t *testing.T) {
 				closeSinkServer(ctx, sink)
 				assert.Loosely(t, sentExoReq, should.NotBeNil)
 				assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
-				assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Resemble(&pb.TestExoneration{
+				assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Match(&pb.TestExoneration{
 					TestId:          tr.TestId,
 					ExplanationHtml: "Unexpected passes are exonerated",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,

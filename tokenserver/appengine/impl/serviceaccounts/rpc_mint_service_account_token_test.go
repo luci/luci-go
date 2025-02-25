@@ -148,13 +148,13 @@ func TestMintServiceAccountToken(t *testing.T) {
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, resp, should.Match(&minter.MintServiceAccountTokenResponse{
 				Token:          "access-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			}))
 
-			assert.Loosely(t, lastAccessTokenCall, should.Resemble(auth.MintAccessTokenParams{
+			assert.Loosely(t, lastAccessTokenCall, should.Match(auth.MintAccessTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Scopes:         []string{"scope-a", "scope-z"},
 				MinTTL:         5 * time.Minute,
@@ -164,8 +164,8 @@ func TestMintServiceAccountToken(t *testing.T) {
 			// Compare field-by-field instead.
 			assert.Loosely(t, loggedTok.Request, should.Equal(req))
 			assert.Loosely(t, loggedTok.Response, should.Equal(resp))
-			assert.Loosely(t, loggedTok.RequestedAt, should.Resemble(clock.Now(ctx)))
-			assert.Loosely(t, loggedTok.OAuthScopes, should.Resemble([]string{"scope-a", "scope-z"}))
+			assert.Loosely(t, loggedTok.RequestedAt, should.Match(clock.Now(ctx)))
+			assert.Loosely(t, loggedTok.OAuthScopes, should.Match([]string{"scope-a", "scope-z"}))
 			assert.Loosely(t, loggedTok.RequestIdentity, should.Equal(testCaller))
 			assert.Loosely(t, loggedTok.PeerIdentity, should.Equal(testPeer))
 			assert.Loosely(t, loggedTok.ConfigRev, should.Equal("fake-revision"))
@@ -184,13 +184,13 @@ func TestMintServiceAccountToken(t *testing.T) {
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, resp, should.Match(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			}))
 
-			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Match(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				MinTTL:         5 * time.Minute,
@@ -207,13 +207,13 @@ func TestMintServiceAccountToken(t *testing.T) {
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, resp, should.Match(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			}))
 
-			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Match(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				Delegates:      []string{"scoped@example.com"},
@@ -231,13 +231,13 @@ func TestMintServiceAccountToken(t *testing.T) {
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, resp, should.Match(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
 			}))
 
-			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Match(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				MinTTL:         5 * time.Minute,

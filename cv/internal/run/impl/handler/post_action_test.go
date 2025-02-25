@@ -92,7 +92,7 @@ func TestOnCompletedPostAction(t *testing.T) {
 			opResult.GetExecutePostAction().Summary = "this is a summary"
 			res, err = h.OnLongOpCompleted(ctx, rs, opResult)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
 				Label:   "PostAction[label-vote]",
 				Message: "this is a summary",
 			}))
@@ -106,7 +106,7 @@ func TestOnCompletedPostAction(t *testing.T) {
 				t.Helper()
 				res, err = h.OnLongOpCompleted(ctx, rs, opResult)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
-				assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
+				assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
 					Label:   "PostAction[label-vote]",
 					Message: expected,
 				}), truth.LineContext())

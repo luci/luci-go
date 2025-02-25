@@ -63,7 +63,7 @@ func TestSerializeDescriptor(t *testing.T) {
 	for i, d := range data {
 		ftt.Run(fmt.Sprintf("%d. SerializeDescriptor(%v)", i, d.fields), t, func(t *ftt.Test) {
 			got := SerializeDescriptor(d.fields)
-			assert.Loosely(t, got, should.Resemble(d.want))
+			assert.Loosely(t, got, should.Match(d.want))
 		})
 	}
 }
@@ -109,7 +109,7 @@ func TestSerialize(t *testing.T) {
 	for i, d := range data {
 		ftt.Run(fmt.Sprintf("%d. Serialize(%v, %v)", i, d.fields, d.values), t, func(t *ftt.Test) {
 			got := Serialize(d.fields, d.values)
-			assert.Loosely(t, got, should.Resemble(d.want))
+			assert.Loosely(t, got, should.Match(d.want))
 		})
 	}
 }

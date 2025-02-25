@@ -52,11 +52,11 @@ func TestSignToken(t *testing.T) {
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, back, should.Resemble(original))
+		assert.Loosely(t, back, should.Match(original))
 
 		envelope.Pkcs1Sha256Sig = nil
 		envelope.SerializedSubtoken = nil
-		assert.Loosely(t, envelope, should.Resemble(&messages.DelegationToken{
+		assert.Loosely(t, envelope, should.Match(&messages.DelegationToken{
 			SignerId:     "user:service@example.com",
 			SigningKeyId: signer.KeyNameForTest(),
 		}))
@@ -76,7 +76,7 @@ func TestSignToken(t *testing.T) {
 		msgPart := signer.blobs[0][len(contextString)+1:]
 		msg := &messages.Subtoken{}
 		assert.Loosely(t, proto.Unmarshal(msgPart, msg), should.BeNil)
-		assert.Loosely(t, msg, should.Resemble(original))
+		assert.Loosely(t, msg, should.Match(original))
 	})
 }
 

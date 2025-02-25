@@ -86,7 +86,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Match(expectedExports))
 			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
@@ -113,7 +113,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			err = ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Match(expectedExports))
 			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoint), should.BeNil)
 
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(2))
@@ -182,7 +182,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			expectedExports[0].Segments[0].StartPosition = 1
 			expectedExports[0].Segments[0].EndPosition = 1
 
-			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Resemble(expectedExports))
+			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Match(expectedExports))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "ingested"), should.Equal(1))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_out_of_order"), should.Equal(1))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_only_skips"), should.Equal(1))

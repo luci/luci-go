@@ -97,7 +97,7 @@ func TestEncodeAndDecode(t *testing.T) {
 		err := hs.DecodeInto(&decodedHistory, encoded)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(decodedHistory.Runs), should.Equal(6))
-		assert.Loosely(t, decodedHistory, should.Resemble(history))
+		assert.Loosely(t, decodedHistory, should.Match(history))
 	})
 
 	ftt.Run(`Encode and decode long history should not have error`, t, func(t *ftt.Test) {
@@ -123,7 +123,7 @@ func TestEncodeAndDecode(t *testing.T) {
 		err := hs.DecodeInto(&decodedHistory, encoded)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(decodedHistory.Runs), should.Equal(2000))
-		assert.Loosely(t, decodedHistory, should.Resemble(history))
+		assert.Loosely(t, decodedHistory, should.Match(history))
 	})
 	ftt.Run(`Decode legacy data format v2`, t, func(t *ftt.Test) {
 		t.Run(`Short history`, func(t *ftt.Test) {
@@ -182,7 +182,7 @@ func TestEncodeAndDecode(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, decodedHistory.Runs, should.Resemble(expectedRuns))
+			assert.Loosely(t, decodedHistory.Runs, should.Match(expectedRuns))
 		})
 		t.Run(`Long history`, func(t *ftt.Test) {
 			var expectedRuns []Run
@@ -210,7 +210,7 @@ func TestEncodeAndDecode(t *testing.T) {
 			hs := &HistorySerializer{}
 			err = hs.DecodeInto(&decodedHistory, b)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, decodedHistory.Runs, should.Resemble(expectedRuns))
+			assert.Loosely(t, decodedHistory.Runs, should.Match(expectedRuns))
 		})
 	})
 }
@@ -238,7 +238,7 @@ func TestInputBuffer(t *testing.T) {
 		ib.CompactIfRequired()
 		assert.Loosely(t, ib.IsColdBufferDirty, should.BeFalse)
 		assert.Loosely(t, len(ib.HotBuffer.Runs), should.Equal(9))
-		assert.Loosely(t, ib.HotBuffer.Runs, should.Resemble([]Run{
+		assert.Loosely(t, ib.HotBuffer.Runs, should.Match([]Run{
 			createTestRun(1, 1),
 			createTestRun(1, 4),
 			createTestRun(2, 2),
@@ -259,7 +259,7 @@ func TestInputBuffer(t *testing.T) {
 		assert.Loosely(t, ib.IsColdBufferDirty, should.BeTrue)
 		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
 		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(10))
-		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Match([]Run{
 			createTestRun(1, 1),
 			createTestRun(1, 4),
 			createTestRun(2, 2),
@@ -335,7 +335,7 @@ func TestInputBuffer(t *testing.T) {
 		ib.CompactIfRequired()
 		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
 		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(10))
-		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Match([]Run{
 			createTestRun(1, 1),
 			createTestRun(2, 1),
 			createTestRun(3, 1),
@@ -377,7 +377,7 @@ func TestInputBuffer(t *testing.T) {
 		ib.CompactIfRequired()
 		assert.Loosely(t, len(ib.HotBuffer.Runs), should.BeZero)
 		assert.Loosely(t, len(ib.ColdBuffer.Runs), should.Equal(7))
-		assert.Loosely(t, ib.ColdBuffer.Runs, should.Resemble([]Run{
+		assert.Loosely(t, ib.ColdBuffer.Runs, should.Match([]Run{
 			createTestRun(2, 1),
 			createTestRun(4, 1),
 			createTestRun(6, 1),
@@ -403,7 +403,7 @@ func TestInputBuffer(t *testing.T) {
 
 		t.Run(`Start of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(0)
-			assert.Loosely(t, buffer, should.Resemble(History{
+			assert.Loosely(t, buffer, should.Match(History{
 				Runs: []Run{
 					createTestRun(2, 1),
 					createTestRun(4, 1),
@@ -418,7 +418,7 @@ func TestInputBuffer(t *testing.T) {
 		})
 		t.Run(`Middle of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(2)
-			assert.Loosely(t, buffer, should.Resemble(History{
+			assert.Loosely(t, buffer, should.Match(History{
 				Runs: []Run{
 					createTestRun(6, 1),
 					createTestRun(8, 1),
@@ -432,7 +432,7 @@ func TestInputBuffer(t *testing.T) {
 		})
 		t.Run(`End of slice`, func(t *ftt.Test) {
 			buffer.EvictBefore(5)
-			assert.Loosely(t, buffer, should.Resemble(History{
+			assert.Loosely(t, buffer, should.Match(History{
 				Runs: []Run{},
 			}))
 
@@ -445,7 +445,7 @@ func TestInputBuffer(t *testing.T) {
 				Runs: []Run{},
 			}
 			buffer.EvictBefore(0)
-			assert.Loosely(t, buffer, should.Resemble(History{
+			assert.Loosely(t, buffer, should.Match(History{
 				Runs: []Run{},
 			}))
 		})
@@ -472,7 +472,7 @@ func TestInputBuffer(t *testing.T) {
 
 		ib.Clear()
 
-		assert.Loosely(t, ib, should.Resemble(&Buffer{
+		assert.Loosely(t, ib, should.Match(&Buffer{
 			HotBufferCapacity: 5,
 			HotBuffer: History{
 				Runs: []Run{},

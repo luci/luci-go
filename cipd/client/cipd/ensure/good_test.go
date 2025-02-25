@@ -260,7 +260,7 @@ func TestGoodEnsureFiles(t *testing.T) {
 
 				switch expect := tc.expect.(type) {
 				case *File:
-					assert.Loosely(t, f, should.Resemble(expect))
+					assert.Loosely(t, f, should.Match(expect))
 				case *ResolvedFile:
 					rf, err := f.Resolve(testResolver, template.Expander{
 						"os":       "test_os",
@@ -268,7 +268,7 @@ func TestGoodEnsureFiles(t *testing.T) {
 						"platform": "test_os-test_arch",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rf, should.Resemble(expect))
+					assert.Loosely(t, rf, should.Match(expect))
 				default:
 					panic("unexpected type")
 				}

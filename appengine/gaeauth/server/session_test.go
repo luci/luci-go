@@ -47,7 +47,7 @@ func TestWorks(t *testing.T) {
 
 		session, err := s.GetSession(c, sid)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, session, should.Resemble(&deprecated.Session{
+		assert.Loosely(t, session, should.Match(&deprecated.Session{
 			SessionID: "ns/uid/1",
 			UserID:    "uid",
 			User:      u,

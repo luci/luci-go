@@ -161,7 +161,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, ti, should.Resemble([]*apiv0pb.TryjobInvocation{
+			assert.Loosely(t, ti, should.Match([]*apiv0pb.TryjobInvocation{
 				{
 					BuilderConfig: cg.GetVerifiers().GetTryjob().GetBuilders()[0],
 					Status:        apiv0pb.TryjobStatus_SUCCEEDED,

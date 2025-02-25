@@ -28,10 +28,10 @@ func TestLUCIExe(t *testing.T) {
 		t.Run(`can set and clear in ctx`, func(t *ftt.Test) {
 			ctx := context.Background()
 			ctx = SetLUCIExe(ctx, &LUCIExe{CacheDir: "hello"})
-			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble(&LUCIExe{CacheDir: "hello"}))
+			assert.Loosely(t, GetLUCIExe(ctx), should.Match(&LUCIExe{CacheDir: "hello"}))
 
 			ctx = SetLUCIExe(ctx, nil)
-			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
+			assert.Loosely(t, GetLUCIExe(ctx), should.Match((*LUCIExe)(nil)))
 		})
 	})
 }

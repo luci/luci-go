@@ -195,7 +195,7 @@ func TestListBuilders(t *testing.T) {
 				PageSize: 3,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",
@@ -229,7 +229,7 @@ func TestListBuilders(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -250,7 +250,7 @@ func TestListBuilders(t *testing.T) {
 				PageSize: 2,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -277,7 +277,7 @@ func TestListBuilders(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -303,7 +303,7 @@ func TestListBuilders(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",
@@ -324,7 +324,7 @@ func TestListBuilders(t *testing.T) {
 				PageSize: 2,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "this_project",
@@ -351,7 +351,7 @@ func TestListBuilders(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builders, should.Resemble([]*buildbucketpb.BuilderItem{
+			assert.Loosely(t, res.Builders, should.Match([]*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
 						Project: "other_project",

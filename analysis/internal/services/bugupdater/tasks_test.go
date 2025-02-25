@@ -41,7 +41,7 @@ func TestSchedule(t *testing.T) {
 		}
 		expected := proto.Clone(task).(*taskspb.UpdateBugs)
 		assert.Loosely(t, Schedule(ctx, task), should.BeNil)
-		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Resemble(expected))
+		assert.Loosely(t, skdr.Tasks().Payloads()[0], should.Match(expected))
 	})
 }
 

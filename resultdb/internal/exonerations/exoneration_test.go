@@ -53,7 +53,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t%20t/exonerations/id"
 			ex, err := Read(span.Single(ctx), name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ex, should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, ex, should.Match(&pb.TestExoneration{
 				Name:            name,
 				ExonerationId:   "id",
 				TestId:          "t t",
@@ -81,7 +81,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t%20t/exonerations/id"
 			ex, err := Read(span.Single(ctx), name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ex, should.Resemble(&pb.TestExoneration{
+			assert.Loosely(t, ex, should.Match(&pb.TestExoneration{
 				Name:            name,
 				ExonerationId:   "id",
 				TestId:          "t t",

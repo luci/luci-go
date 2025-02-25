@@ -45,7 +45,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetConfig works", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&config.Config{
+			assert.Loosely(t, cfg, should.Match(&config.Config{
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
@@ -60,7 +60,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetConfig metaOnly works", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&config.Config{
+			assert.Loosely(t, cfg, should.Match(&config.Config{
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
@@ -74,7 +74,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetConfigs", func(t *ftt.Test) {
 			out, err := impl.GetConfigs(ctx, "projects/proj2", nil, false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble(map[string]config.Config{
+			assert.Loosely(t, out, should.Match(map[string]config.Config{
 				"another/file": {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
@@ -101,7 +101,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("ListFiles", func(t *ftt.Test) {
 			templates, err := impl.ListFiles(ctx, "projects/proj2")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, templates, should.Resemble([]string{
+			assert.Loosely(t, templates, should.Match([]string{
 				"another/file",
 				"file",
 			}))
@@ -135,7 +135,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetProjectConfigs works", func(t *ftt.Test) {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
+			assert.Loosely(t, cfgs, should.Match([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
@@ -162,7 +162,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetProjectConfigs metaOnly works", func(t *ftt.Test) {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
+			assert.Loosely(t, cfgs, should.Match([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
@@ -193,7 +193,7 @@ func TestMemoryImpl(t *testing.T) {
 		t.Run("GetProjects works", func(t *ftt.Test) {
 			proj, err := impl.GetProjects(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, proj, should.Resemble([]config.Project{
+			assert.Loosely(t, proj, should.Match([]config.Project{
 				{
 					ID:       "proj1",
 					Name:     "Proj1",

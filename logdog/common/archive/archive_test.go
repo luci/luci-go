@@ -234,7 +234,7 @@ func TestArchive(t *testing.T) {
 			assert.Loosely(t, Archive(m), should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB)
-			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
@@ -247,7 +247,7 @@ func TestArchive(t *testing.T) {
 			assert.Loosely(t, Archive(m), should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 6)
-			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
@@ -261,7 +261,7 @@ func TestArchive(t *testing.T) {
 				assert.Loosely(t, Archive(m), should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 3)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 6,
 					LastStreamIndex: 3,
@@ -278,7 +278,7 @@ func TestArchive(t *testing.T) {
 				assert.Loosely(t, Archive(m), should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
@@ -295,7 +295,7 @@ func TestArchive(t *testing.T) {
 				assert.Loosely(t, Archive(m), should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
@@ -313,7 +313,7 @@ func TestArchive(t *testing.T) {
 			assert.Loosely(t, Archive(m), should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 2, 3, 4)
-			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 8,
 				LastStreamIndex: 4,
@@ -362,7 +362,7 @@ func TestArchive(t *testing.T) {
 				assert.Loosely(t, Archive(m), should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 3, 5)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
@@ -376,7 +376,7 @@ func TestArchive(t *testing.T) {
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 4, 5)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
@@ -394,7 +394,7 @@ func TestArchive(t *testing.T) {
 				assert.Loosely(t, Archive(m), should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 5)
-				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,

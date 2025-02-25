@@ -328,8 +328,8 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
 					assert.Loosely(t, resp.Streams, should.HaveLength(1))
-					assert.Loosely(t, resp.Streams[0].State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
-					assert.Loosely(t, resp.Streams[0].Desc, should.Resemble(tls.Desc))
+					assert.Loosely(t, resp.Streams[0].State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.Streams[0].Desc, should.Match(tls.Desc))
 					assert.Loosely(t, resp.Streams[0].DescProto, should.BeNil)
 				})
 
@@ -353,8 +353,8 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
 					assert.Loosely(t, resp.Streams, should.HaveLength(1))
-					assert.Loosely(t, resp.Streams[0].State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
-					assert.Loosely(t, resp.Streams[0].Desc, should.Resemble(tls.Desc))
+					assert.Loosely(t, resp.Streams[0].State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.Streams[0].Desc, should.Match(tls.Desc))
 				})
 			})
 		})
@@ -387,7 +387,7 @@ func TestQuery(t *testing.T) {
 
 				sort.Strings(seen)
 				sort.Strings(streamPaths)
-				assert.Loosely(t, seen, should.Resemble(streamPaths))
+				assert.Loosely(t, seen, should.Match(streamPaths))
 			})
 		})
 

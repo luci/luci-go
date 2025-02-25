@@ -72,7 +72,7 @@ func TestFinder(t *testing.T) {
 						finder, err := NewFinder(ctx)
 						assert.Loosely(t, err, should.BeNil)
 						services := finder.FindInterestedServices(ctx, configSet, "foo.cfg")
-						assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+						assert.Loosely(t, convertToServiceNames(services), should.Match([]string{serviceName}))
 						assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "boo.cfg"), should.BeEmpty)
 					})
 				}
@@ -93,7 +93,7 @@ func TestFinder(t *testing.T) {
 					finder, err := NewFinder(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
-					assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+					assert.Loosely(t, convertToServiceNames(services), should.Match([]string{serviceName}))
 					assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "bucket-foo1.cfg"), should.BeEmpty)
 				})
 
@@ -111,7 +111,7 @@ func TestFinder(t *testing.T) {
 					finder, err := NewFinder(ctx)
 					assert.Loosely(t, err, should.BeNil)
 					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
-					assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+					assert.Loosely(t, convertToServiceNames(services), should.Match([]string{serviceName}))
 					assert.Loosely(t, finder.FindInterestedServices(ctx, "abc"+configSet, "bucket-foo.cfg"), should.BeEmpty)
 					assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg.gz"), should.BeEmpty)
 				})
@@ -213,11 +213,11 @@ func TestFinder(t *testing.T) {
 
 			finder, err := NewFinder(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "bucket-abc.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-shadow"}))
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "buildbucket.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-shadow"}))
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "commit-queue.cfg")), should.Resemble([]string{"luci-change-verifier"}))
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "swarming.cfg")), should.Resemble([]string{"swarming"}))
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("foo"), "buildbucket.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "bucket-abc.cfg")), should.Match([]string{"buildbucket", "buildbucket-shadow"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "buildbucket.cfg")), should.Match([]string{"buildbucket", "buildbucket-shadow"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "commit-queue.cfg")), should.Match([]string{"luci-change-verifier"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "swarming.cfg")), should.Match([]string{"swarming"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("foo"), "buildbucket.cfg")), should.Match([]string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"}))
 		})
 
 		t.Run("Refresh", func(t *ftt.Test) {
@@ -241,7 +241,7 @@ func TestFinder(t *testing.T) {
 			go func() {
 				finder.RefreshPeriodically(cctx)
 			}()
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), should.Resemble([]string{"foo"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), should.Match([]string{"foo"}))
 			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), should.BeEmpty)
 			srv.Metadata.ConfigPatterns[0].Path = "new.cfg"
 			assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
@@ -257,7 +257,7 @@ func TestFinder(t *testing.T) {
 				}
 			}
 			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), should.BeEmpty)
-			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), should.Resemble([]string{"foo"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), should.Match([]string{"foo"}))
 		})
 	})
 }

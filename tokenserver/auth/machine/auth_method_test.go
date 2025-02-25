@@ -94,7 +94,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 				Lifetime:    3600,
 			}, nil))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, user, should.Resemble(&auth.User{
+			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: "bot:some-machine.location",
 				Extra: &MachineTokenInfo{
 					FQDN:   "some-machine.location",

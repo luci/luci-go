@@ -30,7 +30,7 @@ func TestFromStrings(t *testing.T) {
 	ftt.Run("Empty", t, func(t *ftt.Test) {
 		s, err := FromStrings(nil, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.Resemble(&Set{}))
+		assert.Loosely(t, s, should.Match(&Set{}))
 		assert.Loosely(t, s.IsEmpty(), should.BeTrue)
 		assert.Loosely(t, s.ToStrings(), should.BeEmpty)
 	})
@@ -38,9 +38,9 @@ func TestFromStrings(t *testing.T) {
 	ftt.Run("Universal", t, func(t *ftt.Test) {
 		s, err := FromStrings([]string{"*", "user:abc@example.com"}, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.Resemble(&Set{All: true}))
+		assert.Loosely(t, s, should.Match(&Set{All: true}))
 		assert.Loosely(t, s.IsEmpty(), should.BeFalse)
-		assert.Loosely(t, s.ToStrings(), should.Resemble([]string{"*"}))
+		assert.Loosely(t, s.ToStrings(), should.Match([]string{"*"}))
 	})
 
 	ftt.Run("Normal", t, func(t *ftt.Test) {
@@ -54,7 +54,7 @@ func TestFromStrings(t *testing.T) {
 			"group:abc",
 		}, func(s string) bool { return s == "skipped" })
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.Resemble(&Set{
+		assert.Loosely(t, s, should.Match(&Set{
 			IDs: identSet{
 				"user:abc@example.com": struct{}{},
 				"user:def@example.com": struct{}{},
@@ -65,7 +65,7 @@ func TestFromStrings(t *testing.T) {
 			},
 		}))
 		assert.Loosely(t, s.IsEmpty(), should.BeFalse)
-		assert.Loosely(t, s.ToStrings(), should.Resemble([]string{
+		assert.Loosely(t, s.ToStrings(), should.Match([]string{
 			"group:abc",
 			"group:def",
 			"user:abc@example.com",
@@ -219,36 +219,36 @@ func TestUnion(t *testing.T) {
 	}, nil)
 
 	ftt.Run("empty", t, func(t *ftt.Test) {
-		assert.Loosely(t, Union(), should.Resemble(empty))
-		assert.Loosely(t, Union(empty, nil), should.Resemble(empty))
+		assert.Loosely(t, Union(), should.Match(empty))
+		assert.Loosely(t, Union(empty, nil), should.Match(empty))
 	})
 
 	ftt.Run("one", t, func(t *ftt.Test) {
-		assert.Loosely(t, Union(some), should.Resemble(some))
-		assert.Loosely(t, Union(some, empty), should.Resemble(some))
+		assert.Loosely(t, Union(some), should.Match(some))
+		assert.Loosely(t, Union(some, empty), should.Match(some))
 	})
 
 	ftt.Run("many", t, func(t *ftt.Test) {
-		assert.Loosely(t, Union(some1, some2, some3, empty), should.Resemble(some))
+		assert.Loosely(t, Union(some1, some2, some3, empty), should.Match(some))
 	})
 
 	ftt.Run("all", t, func(t *ftt.Test) {
-		assert.Loosely(t, Union(all), should.Resemble(all))
-		assert.Loosely(t, Union(all, empty), should.Resemble(all))
-		assert.Loosely(t, Union(all, some1), should.Resemble(all))
+		assert.Loosely(t, Union(all), should.Match(all))
+		assert.Loosely(t, Union(all, empty), should.Match(all))
+		assert.Loosely(t, Union(all, some1), should.Match(all))
 	})
 }
 
 func TestExtend(t *testing.T) {
 	ftt.Run("Empty", t, func(t *ftt.Test) {
-		assert.Loosely(t, Extend(nil, "user:abc@example.com"), should.Resemble(&Set{
+		assert.Loosely(t, Extend(nil, "user:abc@example.com"), should.Match(&Set{
 			IDs: identSet{"user:abc@example.com": struct{}{}},
 		}))
 	})
 
 	ftt.Run("All", t, func(t *ftt.Test) {
 		all := &Set{All: true}
-		assert.Loosely(t, Extend(all, "user:abc@example.com"), should.Resemble(all))
+		assert.Loosely(t, Extend(all, "user:abc@example.com"), should.Match(all))
 	})
 
 	ftt.Run("Already there", t, func(t *ftt.Test) {
@@ -256,7 +256,7 @@ func TestExtend(t *testing.T) {
 			"user:abc@example.com",
 			"group:abc",
 		}, nil)
-		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Resemble(set))
+		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Match(set))
 	})
 
 	ftt.Run("Extends", t, func(t *ftt.Test) {
@@ -264,7 +264,7 @@ func TestExtend(t *testing.T) {
 			"user:def@example.com",
 			"group:abc",
 		}, nil)
-		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Resemble(&Set{
+		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Match(&Set{
 			IDs: identSet{
 				"user:abc@example.com": struct{}{},
 				"user:def@example.com": struct{}{},

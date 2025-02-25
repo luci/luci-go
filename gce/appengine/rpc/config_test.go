@@ -65,7 +65,7 @@ func TestConfig(t *testing.T) {
 					Id: "id",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
+				assert.Loosely(t, cfg, should.Match(&emptypb.Empty{}))
 				err = datastore.Get(c, &model.Config{
 					ID: "id",
 				})
@@ -121,7 +121,7 @@ func TestConfig(t *testing.T) {
 						},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(&config.Config{
+					assert.Loosely(t, cfg, should.Match(&config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -185,7 +185,7 @@ func TestConfig(t *testing.T) {
 						},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(&config.Config{
+					assert.Loosely(t, cfg, should.Match(&config.Config{
 						Amount: &config.Amount{
 							Max: 100,
 							Min: 50,
@@ -253,7 +253,7 @@ func TestConfig(t *testing.T) {
 						},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(&config.Config{
+					assert.Loosely(t, cfg, should.Match(&config.Config{
 						Amount: &config.Amount{
 							Max: 100,
 							Min: 50,
@@ -347,7 +347,7 @@ func TestConfig(t *testing.T) {
 						Id: "id",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(&config.Config{
+					assert.Loosely(t, cfg, should.Match(&config.Config{
 						Prefix: "prefix",
 						Owner: []string{
 							"owners",
@@ -709,7 +709,7 @@ func TestConfig(t *testing.T) {
 							})
 							assert.Loosely(t, err, should.BeNil)
 							assert.Loosely(t, cfg.CurrentAmount, should.Equal(2))
-							assert.Loosely(t, cfg.Duts, should.Resemble(map[string]*emptypb.Empty{
+							assert.Loosely(t, cfg.Duts, should.Match(map[string]*emptypb.Empty{
 								"hello": {},
 								"world": {},
 							}))
@@ -719,7 +719,7 @@ func TestConfig(t *testing.T) {
 							err = datastore.Get(c, mdl)
 							assert.Loosely(t, err, should.BeNil)
 							assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(2))
-							assert.Loosely(t, mdl.Config.Duts, should.Resemble(map[string]*emptypb.Empty{
+							assert.Loosely(t, mdl.Config.Duts, should.Match(map[string]*emptypb.Empty{
 								"hello": {},
 								"world": {},
 							}))

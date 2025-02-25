@@ -65,7 +65,7 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 			},
 		}
 		for _, line := range data {
-			assert.Loosely(t, convertPyToGoArchiveCMDArgs(line.input), should.Resemble(line.expected))
+			assert.Loosely(t, convertPyToGoArchiveCMDArgs(line.input), should.Match(line.expected))
 		}
 	})
 }
@@ -88,13 +88,13 @@ func TestArchiveCMDParsing(t *testing.T) {
 		root := absToOS("e:", "/tmp/bar")
 		opts, err := parseArchiveCMD(args, root)
 		base := filepath.Dir(root)
-		assert.Loosely(t, opts.Isolate, should.Resemble(filepath.Join(base, "boz", "bar.isolate")))
+		assert.Loosely(t, opts.Isolate, should.Match(filepath.Join(base, "boz", "bar.isolate")))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, stringmapflag.Value{"OS": "linux"}, should.Resemble(opts.ConfigVariables))
+		assert.Loosely(t, stringmapflag.Value{"OS": "linux"}, should.Match(opts.ConfigVariables))
 		if runtime.GOOS == "windows" {
-			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."}, should.Resemble(opts.PathVariables))
+			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."}, should.Match(opts.PathVariables))
 		} else {
-			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, should.Resemble(opts.PathVariables))
+			assert.Loosely(t, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, should.Match(opts.PathVariables))
 		}
 	})
 }
@@ -109,7 +109,7 @@ func TestArchiveAbsolutePaths(t *testing.T) {
 		}
 		opts, err := parseArchiveCMD(args, absToOS("x:", "/var/lib"))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, opts.Isolate, should.Resemble(root+"foo.isolate"))
+		assert.Loosely(t, opts.Isolate, should.Match(root+"foo.isolate"))
 	})
 }
 

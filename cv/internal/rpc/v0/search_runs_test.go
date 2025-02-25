@@ -162,7 +162,7 @@ func TestSearchRuns(t *testing.T) {
 			assert.NoErr(t, err)
 
 			// Most recent Run comes first.
-			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2, r1)))
+			assert.Loosely(t, respIDs(resp.Runs), should.Match(runIDs(r2, r1)))
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
@@ -178,7 +178,7 @@ func TestSearchRuns(t *testing.T) {
 				PageSize:  1,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2)))
+			assert.Loosely(t, respIDs(resp.Runs), should.Match(runIDs(r2)))
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
 			// Second request, second page.
@@ -188,7 +188,7 @@ func TestSearchRuns(t *testing.T) {
 				PageToken: resp.NextPageToken,
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
+			assert.Loosely(t, respIDs(resp.Runs), should.Match(runIDs(r1)))
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
 			// Third request, no more results.
@@ -214,7 +214,7 @@ func TestSearchRuns(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
+			assert.Loosely(t, respIDs(resp.Runs), should.Match(runIDs(r1)))
 		})
 
 		t.Run("with CL predicate that includes patchset", func(t *ftt.Test) {
@@ -278,7 +278,7 @@ func TestSearchRuns(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
+			assert.Loosely(t, respIDs(resp.Runs), should.Match(runIDs(r1)))
 		})
 
 		t.Run("query with multiple CLs returns nothing if no single CL contains all CLs", func(t *ftt.Test) {

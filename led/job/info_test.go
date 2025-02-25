@@ -64,7 +64,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 			}
 			current, err := jd.Info().CurrentIsolated()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
+			assert.Loosely(t, current, should.Match(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 		})
 
 		t.Run(`Swarming`, func(t *ftt.Test) {
@@ -82,7 +82,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
+					assert.Loosely(t, current, should.Match(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 				})
 
 				t.Run(`slice+CasUserPayload (match)`, func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
+					assert.Loosely(t, current, should.Match(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 				})
 
 				t.Run(`slice+CasUserPayload (mismatch)`, func(t *ftt.Test) {

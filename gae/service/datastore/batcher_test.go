@@ -130,7 +130,7 @@ func TestQueryBatch(t *testing.T) {
 					t.Run(`Can retrieve all of the items.`, func(t *ftt.Test) {
 						got, err := getAllBatch(c, batchSize, q)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, got, should.Resemble(all))
+						assert.Loosely(t, got, should.Match(all))
 
 						// One call for every sub-query, plus one to hit Stop.
 						runCalls := (int32(len(all)) / batchSize) + 1
@@ -143,7 +143,7 @@ func TestQueryBatch(t *testing.T) {
 
 						got, err := getAllBatch(c, batchSize, q)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, got, should.Resemble(all[:limit]))
+						assert.Loosely(t, got, should.Match(all[:limit]))
 
 						assert.Loosely(t, cf.run, should.Equal(expectedBatchRunCalls(batchSize, limit)))
 					})

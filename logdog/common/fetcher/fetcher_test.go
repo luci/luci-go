@@ -214,7 +214,7 @@ func TestFetcher(t *testing.T) {
 
 				logs, err := loadLogs(f, 0)
 				assert.Loosely(t, err, should.Equal(io.EOF))
-				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1, 2, 3, 4, 5}))
+				assert.Loosely(t, logs, should.Match([]types.MessageIndex{0, 1, 2, 3, 4, 5}))
 			})
 
 			t.Run(`Will immediately bail out if RequireCompleteStream is set`, func(t *ftt.Test) {
@@ -239,7 +239,7 @@ func TestFetcher(t *testing.T) {
 
 				logs, err := loadLogs(f, 2)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1}))
+				assert.Loosely(t, logs, should.Match([]types.MessageIndex{0, 1}))
 
 				cancelFunc()
 				_, err = loadLogs(f, 0)
@@ -266,11 +266,11 @@ func TestFetcher(t *testing.T) {
 
 				logs, err := loadLogs(f, 1)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0}))
+				assert.Loosely(t, logs, should.Match([]types.MessageIndex{0}))
 
 				logs, err = loadLogs(f, 0)
 				assert.Loosely(t, err, should.Equal(io.EOF))
-				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{1, 2}))
+				assert.Loosely(t, logs, should.Match([]types.MessageIndex{1, 2}))
 				assert.Loosely(t, delayed, should.BeTrue)
 			})
 
@@ -322,9 +322,9 @@ func TestFetcher(t *testing.T) {
 			// first log was kicked, there is a deficit of one log.
 			logs, err := loadLogs(f, 0)
 			assert.Loosely(t, err, should.Equal(io.EOF))
-			assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1, 2, 3, 4, 5, 6}))
+			assert.Loosely(t, logs, should.Match([]types.MessageIndex{0, 1, 2, 3, 4, 5, 6}))
 
-			assert.Loosely(t, ts.getHistory(), should.Resemble([]int{6, 1}))
+			assert.Loosely(t, ts.getHistory(), should.Match([]int{6, 1}))
 		})
 
 		t.Run(`With an index of 1 and a maximum count of 1, fetches exactly 1 log.`, func(t *ftt.Test) {
@@ -340,9 +340,9 @@ func TestFetcher(t *testing.T) {
 			// First fetch will ask for exactly one log.
 			logs, err := loadLogs(f, 0)
 			assert.Loosely(t, err, should.Equal(io.EOF))
-			assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{1}))
+			assert.Loosely(t, logs, should.Match([]types.MessageIndex{1}))
 
-			assert.Loosely(t, ts.getHistory(), should.Resemble([]int{1}))
+			assert.Loosely(t, ts.getHistory(), should.Match([]int{1}))
 		})
 	})
 }

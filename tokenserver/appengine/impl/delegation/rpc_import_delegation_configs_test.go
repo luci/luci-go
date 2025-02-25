@@ -57,7 +57,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 
 		resp, err := rpc.ImportDelegationConfigs(ctx, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&admin.ImportedConfigs{
+		assert.Loosely(t, resp, should.Match(&admin.ImportedConfigs{
 			Revision: "669865709d488bd6fbcec4fd87d6d1070253f42f",
 		}))
 
@@ -108,7 +108,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 		// Import it.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&admin.ImportedConfigs{
+		assert.Loosely(t, resp, should.Match(&admin.ImportedConfigs{
 			Revision: "7826cf5f5d3922ff363a2df0c363df088a81f261",
 		}))
 

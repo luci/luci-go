@@ -76,7 +76,7 @@ func TestResolve(t *testing.T) {
 
 			res, err := r.Resolve(ctx, file, exp)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
+			assert.Loosely(t, res.PackagesBySubdir, should.Match(common.PinSliceBySubdir{
 				"1": common.PinSlice{
 					{"pkg1/zzz", iid1},
 				},
@@ -90,7 +90,7 @@ func TestResolve(t *testing.T) {
 			assert.Loosely(t, mc.describeCalls, should.Equal(2)) // refs resolve into 1 iid + pkg2 iid
 
 			sort.Strings(visited)
-			assert.Loosely(t, visited, should.Resemble([]string{
+			assert.Loosely(t, visited, should.Match([]string{
 				"pkg1/zzz@ref1 => " + iid1,
 				"pkg1/zzz@ref2 => " + iid1,
 				fmt.Sprintf("pkg2@%s => %s", iid2, iid2),
@@ -102,7 +102,7 @@ func TestResolve(t *testing.T) {
 
 			res, err := r.Resolve(ctx, file, exp)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
+			assert.Loosely(t, res.PackagesBySubdir, should.Match(common.PinSliceBySubdir{
 				"1": common.PinSlice{
 					{"pkg1/zzz", iid1},
 				},
@@ -189,13 +189,13 @@ func TestResolveAllPlatforms(t *testing.T) {
 		res, err := r.ResolveAllPlatforms(ctx, file)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, res, should.HaveLength(2))
-		assert.Loosely(t, res[template.Platform{"linux", "amd64"}].PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
+		assert.Loosely(t, res[template.Platform{"linux", "amd64"}].PackagesBySubdir, should.Match(common.PinSliceBySubdir{
 			"": common.PinSlice{
 				{"pkg1/linux-amd64", iid2},
 				{"pkg2/linux-amd64", iid4},
 			},
 		}))
-		assert.Loosely(t, res[template.Platform{"windows", "amd64"}].PackagesBySubdir, should.Resemble(common.PinSliceBySubdir{
+		assert.Loosely(t, res[template.Platform{"windows", "amd64"}].PackagesBySubdir, should.Match(common.PinSliceBySubdir{
 			"": common.PinSlice{
 				{"pkg1/windows-amd64", iid1},
 				{"pkg2/windows-amd64", iid3},
@@ -215,7 +215,7 @@ func TestResolveAllPlatforms(t *testing.T) {
 		for _, err := range err.(errors.MultiError) {
 			lines = append(lines, err.Error())
 		}
-		assert.Loosely(t, lines, should.Resemble([]string{
+		assert.Loosely(t, lines, should.Match([]string{
 			`when resolving windows-amd64: failed to resolve pkg1/windows-amd64@latest (line 3): no version "latest"`,
 			`when resolving windows-amd64: failed to resolve pkg2/windows-amd64@latest (line 4): no version "latest"`,
 			`when resolving linux-amd64: failed to resolve pkg1/linux-amd64@latest (line 3): no version "latest"`,

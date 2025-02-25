@@ -34,7 +34,7 @@ func TestReadManifest(t *testing.T) {
 
 	ftt.Run("ReadManifest can read valid manifest", t, func(t *ftt.Test) {
 		manifest, err := ReadManifest(strings.NewReader(goodManifest))
-		assert.Loosely(t, manifest, should.Resemble(Manifest{
+		assert.Loosely(t, manifest, should.Match(Manifest{
 			FormatVersion: "1",
 			PackageName:   "package/name",
 		}))
@@ -43,7 +43,7 @@ func TestReadManifest(t *testing.T) {
 
 	ftt.Run("ReadManifest rejects invalid manifest", t, func(t *ftt.Test) {
 		manifest, err := ReadManifest(strings.NewReader("I'm not a manifest"))
-		assert.Loosely(t, manifest, should.Resemble(Manifest{}))
+		assert.Loosely(t, manifest, should.Match(Manifest{}))
 		assert.Loosely(t, err, should.NotBeNil)
 	})
 

@@ -78,7 +78,7 @@ func TestConfigService(t *testing.T) {
 			t.Run("found", func(t *ftt.Test) {
 				p, err := c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -88,7 +88,7 @@ func TestConfigService(t *testing.T) {
 			t.Run("immutable", func(t *ftt.Test) {
 				p, err := c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -98,7 +98,7 @@ func TestConfigService(t *testing.T) {
 
 				p, err = c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -171,7 +171,7 @@ func TestConfigService(t *testing.T) {
 
 				p, err := c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 1,
@@ -200,20 +200,20 @@ func TestConfigService(t *testing.T) {
 
 				p, err := c.Get(ctx, "policy1")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:      "policy1",
 					Resources: 1,
 				}))
 
 				p, err = c.Get(ctx, "policy2")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name: "policy2",
 				}))
 
 				p, err = c.Get(ctx, "policy3")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "policy3",
 					Replenishment: 1,
 				}))
@@ -230,7 +230,7 @@ func TestConfigService(t *testing.T) {
 
 				p, err := c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -251,7 +251,7 @@ func TestConfigService(t *testing.T) {
 
 				p, err = c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 1,
@@ -272,7 +272,7 @@ func TestConfigService(t *testing.T) {
 
 				p, err = c.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 2,

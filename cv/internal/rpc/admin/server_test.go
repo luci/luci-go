@@ -208,7 +208,7 @@ func TestGetPoller(t *testing.T) {
 			}), should.BeNil)
 			resp, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.GetUpdateTime().AsTime(), should.Resemble(now))
+			assert.Loosely(t, resp.GetUpdateTime().AsTime(), should.Match(now))
 		})
 	})
 }
@@ -303,13 +303,13 @@ func TestSearchRuns(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), should.BeNil)
 				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				assert.NoErr(t, err)
-				assert.Loosely(t, idsOf(resp), should.Resemble([]string{laterID, earlierID}))
+				assert.Loosely(t, idsOf(resp), should.Match([]string{laterID, earlierID}))
 
 				t.Run("with page size exactly 2", func(t *ftt.Test) {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 2}
 					resp1, err := a.SearchRuns(ctx, req)
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp1), should.Resemble([]string{laterID, earlierID}))
+					assert.Loosely(t, idsOf(resp1), should.Match([]string{laterID, earlierID}))
 
 					req.PageToken = resp1.GetNextPageToken()
 					resp2, err := a.SearchRuns(ctx, req)
@@ -321,12 +321,12 @@ func TestSearchRuns(t *testing.T) {
 					req := &adminpb.SearchRunsRequest{Project: lProject, PageSize: 1}
 					resp1, err := a.SearchRuns(ctx, req)
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp1), should.Resemble([]string{laterID}))
+					assert.Loosely(t, idsOf(resp1), should.Match([]string{laterID}))
 
 					req.PageToken = resp1.GetNextPageToken()
 					resp2, err := a.SearchRuns(ctx, req)
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp2), should.Resemble([]string{earlierID}))
+					assert.Loosely(t, idsOf(resp2), should.Match([]string{earlierID}))
 
 					req.PageToken = resp2.GetNextPageToken()
 					resp3, err := a.SearchRuns(ctx, req)
@@ -364,7 +364,7 @@ func TestSearchRuns(t *testing.T) {
 						Status:  run.Status_CANCELLED,
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
+					assert.Loosely(t, idsOf(resp), should.Match([]string{earlierID}))
 				})
 
 				t.Run("ended", func(t *ftt.Test) {
@@ -373,7 +373,7 @@ func TestSearchRuns(t *testing.T) {
 						Status:  run.Status_ENDED_MASK,
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
+					assert.Loosely(t, idsOf(resp), should.Match([]string{earlierID}))
 				})
 
 				t.Run("with CL", func(t *ftt.Test) {
@@ -381,7 +381,7 @@ func TestSearchRuns(t *testing.T) {
 						Cl: &adminpb.GetCLRequest{ExternalId: string(cl2.ExternalID)},
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
+					assert.Loosely(t, idsOf(resp), should.Match([]string{earlierID}))
 				})
 
 				t.Run("with CL and run status", func(t *ftt.Test) {
@@ -390,7 +390,7 @@ func TestSearchRuns(t *testing.T) {
 						Status: run.Status_ENDED_MASK,
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, idsOf(resp), should.Resemble([]string{earlierID}))
+					assert.Loosely(t, idsOf(resp), should.Match([]string{earlierID}))
 				})
 
 				t.Run("with CL + paging", func(t *ftt.Test) {
@@ -399,7 +399,7 @@ func TestSearchRuns(t *testing.T) {
 						PageSize: 1,
 					}
 					total := fetchAll(ctx, req)
-					assert.Loosely(t, idsOf(total), should.Resemble([]string{laterID, earlierID}))
+					assert.Loosely(t, idsOf(total), should.Match([]string{laterID, earlierID}))
 				})
 
 				t.Run("with CL across projects and paging", func(t *ftt.Test) {
@@ -418,7 +418,7 @@ func TestSearchRuns(t *testing.T) {
 						PageSize: 2,
 					}
 					total := fetchAll(ctx, req)
-					assert.Loosely(t, idsOf(total), should.Resemble([]string{diffProjectID, laterID, earlierID}))
+					assert.Loosely(t, idsOf(total), should.Match([]string{diffProjectID, laterID, earlierID}))
 				})
 
 				t.Run("with CL and project and paging", func(t *ftt.Test) {
@@ -438,7 +438,7 @@ func TestSearchRuns(t *testing.T) {
 						PageSize: 1,
 					}
 					total := fetchAll(ctx, req)
-					assert.Loosely(t, idsOf(total), should.Resemble([]string{laterID, earlierID}))
+					assert.Loosely(t, idsOf(total), should.Match([]string{laterID, earlierID}))
 				})
 			})
 
@@ -491,12 +491,12 @@ func TestSearchRuns(t *testing.T) {
 						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
 						assert.NoErr(t, err)
 						assertOrdered(resp)
-						assert.Loosely(t, idsOf(resp), should.Resemble(expIDs))
+						assert.Loosely(t, idsOf(resp), should.Match(expIDs))
 					})
 					t.Run("with paging", func(t *ftt.Test) {
 						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 2})
 						assertOrdered(total)
-						assert.Loosely(t, idsOf(total), should.Resemble(expIDs))
+						assert.Loosely(t, idsOf(total), should.Match(expIDs))
 					})
 				})
 
@@ -514,12 +514,12 @@ func TestSearchRuns(t *testing.T) {
 						resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{PageSize: 128})
 						assert.NoErr(t, err)
 						assertOrdered(resp)
-						assert.Loosely(t, idsOf(resp), should.Resemble(expIDs))
+						assert.Loosely(t, idsOf(resp), should.Match(expIDs))
 					})
 					t.Run("with paging", func(t *ftt.Test) {
 						total := fetchAll(ctx, &adminpb.SearchRunsRequest{PageSize: 1})
 						assertOrdered(total)
-						assert.Loosely(t, idsOf(total), should.Resemble(expIDs))
+						assert.Loosely(t, idsOf(total), should.Match(expIDs))
 					})
 				})
 
@@ -586,7 +586,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 			t.Run("All", func(t *ftt.Test) {
 				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
 				assert.NoErr(t, err)
-				assert.Loosely(t, resp.GetEvents(), should.Resemble(map[string]int64{"*prjpb.Event_Poke": 2, "*prjpb.Event_NewConfig": 1}))
+				assert.Loosely(t, resp.GetEvents(), should.Match(map[string]int64{"*prjpb.Event_Poke": 2, "*prjpb.Event_NewConfig": 1}))
 			})
 
 			t.Run("Limited", func(t *ftt.Test) {
@@ -646,14 +646,14 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 			resp, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.GetClVersions(), should.Resemble(map[int64]int64{1: 4}))
+			assert.Loosely(t, resp.GetClVersions(), should.Match(map[int64]int64{1: 4}))
 			scheduledIDs := stringset.New(1)
 			for _, p := range ct.TQ.Tasks().Payloads() {
 				if tsk, ok := p.(*changelist.UpdateCLTask); ok {
 					scheduledIDs.Add(tsk.GetExternalId())
 				}
 			}
-			assert.Loosely(t, scheduledIDs.ToSortedSlice(), should.Resemble([]string{string(cl.ExternalID)}))
+			assert.Loosely(t, scheduledIDs.ToSortedSlice(), should.Match([]string{string(cl.ExternalID)}))
 		})
 	})
 }
@@ -773,14 +773,14 @@ func TestScheduleTask(t *testing.T) {
 				t.Run("Non-Transactional", func(t *ftt.Test) {
 					_, err := a.ScheduleTask(ctx, req)
 					assert.NoErr(t, err)
-					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{
+					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{
 						req.GetManageProject(),
 					}))
 				})
 				t.Run("Transactional", func(t *ftt.Test) {
 					_, err := a.ScheduleTask(ctx, reqTrans)
 					assert.NoErr(t, err)
-					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{
+					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{
 						reqTrans.GetKickManageProject(),
 					}))
 				})

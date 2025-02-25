@@ -44,7 +44,7 @@ func TestSaveTestResults(t *testing.T) {
 
 		results, err := ReadAllForTesting(span.Single(ctx))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, results, should.Resemble([]*TestResult{result}))
+		assert.Loosely(t, results, should.Match([]*TestResult{result}))
 	})
 }
 
@@ -209,7 +209,7 @@ func TestReadSourceVerdicts(t *testing.T) {
 
 			svs, err := ReadSourceVerdicts(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, svs, should.Resemble([]SourceVerdict{
+			assert.Loosely(t, svs, should.Match([]SourceVerdict{
 				{
 					Position: 2000,
 					Verdicts: []SourceVerdictTestVerdict{

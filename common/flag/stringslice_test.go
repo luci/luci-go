@@ -28,7 +28,7 @@ func TestStringSliceFlag(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var flag stringSliceFlag
 		assert.Loosely(t, flag.Set("abc"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]string{"abc"}))
+		assert.Loosely(t, flag.Get(), should.Match([]string{"abc"}))
 		assert.Loosely(t, flag.String(), should.Equal("abc"))
 	})
 
@@ -37,7 +37,7 @@ func TestStringSliceFlag(t *testing.T) {
 		assert.Loosely(t, flag.Set("abc"), should.BeNil)
 		assert.Loosely(t, flag.Set("def"), should.BeNil)
 		assert.Loosely(t, flag.Set("ghi"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]string{"abc", "def", "ghi"}))
+		assert.Loosely(t, flag.Get(), should.Match([]string{"abc", "def", "ghi"}))
 		assert.Loosely(t, flag.String(), should.Equal("abc, def, ghi"))
 	})
 }
@@ -48,7 +48,7 @@ func TestStringSlice(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var s []string
 		assert.Loosely(t, StringSlice(&s).Set("abc"), should.BeNil)
-		assert.Loosely(t, s, should.Resemble([]string{"abc"}))
+		assert.Loosely(t, s, should.Match([]string{"abc"}))
 	})
 
 	ftt.Run("many", t, func(t *ftt.Test) {
@@ -56,6 +56,6 @@ func TestStringSlice(t *testing.T) {
 		assert.Loosely(t, StringSlice(&s).Set("abc"), should.BeNil)
 		assert.Loosely(t, StringSlice(&s).Set("def"), should.BeNil)
 		assert.Loosely(t, StringSlice(&s).Set("ghi"), should.BeNil)
-		assert.Loosely(t, s, should.Resemble([]string{"abc", "def", "ghi"}))
+		assert.Loosely(t, s, should.Match([]string{"abc", "def", "ghi"}))
 	})
 }

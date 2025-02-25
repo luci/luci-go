@@ -58,12 +58,12 @@ func TestCmd(t *testing.T) {
 			cmd := exec.Command(ctx, prog, args...)
 			data, err := cmd.Output()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bytes.TrimSpace(data), should.Resemble([]byte("hello there")))
+			assert.Loosely(t, bytes.TrimSpace(data), should.Match([]byte("hello there")))
 
 			cmd = exec.Command(ctx, prog, args...)
 			data, err = cmd.CombinedOutput()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bytes.TrimSpace(data), should.Resemble([]byte("hello there")))
+			assert.Loosely(t, bytes.TrimSpace(data), should.Match([]byte("hello there")))
 		})
 		t.Run(`works with mocking`, func(t *ftt.Test) {
 			execmock.Simple.
@@ -137,7 +137,7 @@ func TestCmd(t *testing.T) {
 
 			misses := execmock.ResetState(ctx)
 			assert.Loosely(t, misses, should.HaveLength(1))
-			assert.Loosely(t, misses[0].Args, should.Resemble(fullArgs))
+			assert.Loosely(t, misses[0].Args, should.Match(fullArgs))
 		})
 
 		t.Run(`can simulate a startup error`, func(t *ftt.Test) {

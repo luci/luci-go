@@ -131,7 +131,7 @@ func TestNotification(t *testing.T) {
 			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
 			assert.Loosely(t, tasks, should.HaveLength(1))
-			assert.Loosely(t, tasks[0].Payload, should.Resemble(&taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks[0].Payload, should.Match(&taskdefs.NotifyPubSubGo{
 				BuildId: 123,
 			}))
 		})
@@ -145,7 +145,7 @@ func TestNotification(t *testing.T) {
 			assert.Loosely(t, txErr, should.BeNil)
 			tasks := sch.Tasks()
 			assert.Loosely(t, tasks, should.HaveLength(1))
-			assert.Loosely(t, tasks[0].Payload, should.Resemble(&taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks[0].Payload, should.Match(&taskdefs.NotifyPubSubGo{
 				BuildId: 123,
 			}))
 		})
@@ -251,7 +251,7 @@ func TestNotification(t *testing.T) {
 				assert.Loosely(t, tasks, should.HaveLength(1))
 				assert.Loosely(t, tasks[0].Message.Attributes["project"], should.Equal("project"))
 				assert.Loosely(t, tasks[0].Message.Attributes["is_completed"], should.Equal("true"))
-				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Resemble(&pb.Build{
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Match(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -271,7 +271,7 @@ func TestNotification(t *testing.T) {
 				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildLarge, should.Match(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -339,7 +339,7 @@ func TestNotification(t *testing.T) {
 
 				tasks := sch.Tasks()
 				assert.Loosely(t, tasks, should.HaveLength(1))
-				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Resemble(&pb.Build{
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Match(&pb.Build{
 					Id: 456,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -359,7 +359,7 @@ func TestNotification(t *testing.T) {
 				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildLarge, should.Match(&pb.Build{
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
 				}))
@@ -457,7 +457,7 @@ func TestNotification(t *testing.T) {
 				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildMsg.Build, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildMsg.Build, should.Match(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -476,7 +476,7 @@ func TestNotification(t *testing.T) {
 				assert.Loosely(t, buildMsg.BuildLargeFields, should.NotBeNil)
 				buildLarge, err := zlibUncompressBuild(buildMsg.BuildLargeFields)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildLarge, should.Match(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -533,7 +533,7 @@ func TestNotification(t *testing.T) {
 				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildMsg.Build, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildMsg.Build, should.Match(&pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -553,7 +553,7 @@ func TestNotification(t *testing.T) {
 				assert.Loosely(t, buildMsg.Compression, should.Equal(pb.Compression_ZSTD))
 				buildLarge, err := zstdUncompressBuild(buildMsg.BuildLargeFields)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{
+				assert.Loosely(t, buildLarge, should.Match(&pb.Build{
 					Steps: []*pb.Step{
 						{
 							Name:            "step",
@@ -650,8 +650,8 @@ func TestNotification(t *testing.T) {
 
 			buildLarge, err := zlibUncompressBuild(psCallbackMsg.BuildPubsub.BuildLargeFields)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, buildLarge, should.Resemble(&pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}}))
-			assert.Loosely(t, psCallbackMsg.BuildPubsub.Build, should.Resemble(&pb.Build{
+			assert.Loosely(t, buildLarge, should.Match(&pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}}))
+			assert.Loosely(t, psCallbackMsg.BuildPubsub.Build, should.Match(&pb.Build{
 				Id: 999,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -662,7 +662,7 @@ func TestNotification(t *testing.T) {
 				Output: &pb.Build_Output{},
 			}))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, psCallbackMsg.UserData, should.Resemble([]byte("userdata")))
+			assert.Loosely(t, psCallbackMsg.UserData, should.Match([]byte("userdata")))
 		})
 	})
 }

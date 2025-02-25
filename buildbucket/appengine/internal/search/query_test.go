@@ -104,7 +104,7 @@ func TestNewSearchQuery(t *testing.T) {
 				Builder: "test",
 			}
 
-			assert.Loosely(t, query, should.Resemble(&Query{
+			assert.Loosely(t, query, should.Match(&Query{
 				Builder:   expectedBuilder,
 				Tags:      expectedTags,
 				Status:    pb.Status_ENDED_MASK,
@@ -124,7 +124,7 @@ func TestNewSearchQuery(t *testing.T) {
 		})
 
 		t.Run("empty req", func(t *ftt.Test) {
-			assert.Loosely(t, NewQuery(&pb.SearchBuildsRequest{}), should.Resemble(&Query{PageSize: 100}))
+			assert.Loosely(t, NewQuery(&pb.SearchBuildsRequest{}), should.Match(&Query{PageSize: 100}))
 		})
 
 		t.Run("empty predict", func(t *ftt.Test) {
@@ -134,7 +134,7 @@ func TestNewSearchQuery(t *testing.T) {
 			}
 			query := NewQuery(req)
 
-			assert.Loosely(t, query, should.Resemble(&Query{
+			assert.Loosely(t, query, should.Match(&Query{
 				PageSize:  2,
 				PageToken: "aa",
 			}))
@@ -264,7 +264,7 @@ func TestMainFetchFlow(t *testing.T) {
 				query.Tags = strpair.ParseMap([]string{"buildset:1"})
 				actualRsp, err := query.Fetch(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
+				assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{}))
 			})
 
 			t.Run("Fetch via Build flow", func(t *ftt.Test) {
@@ -297,7 +297,7 @@ func TestMainFetchFlow(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
+				assert.Loosely(t, rsp, should.Match(expectedRsp))
 			})
 
 			t.Run("Fallback to fetchOnBuild flow", func(t *ftt.Test) {
@@ -324,7 +324,7 @@ func TestMainFetchFlow(t *testing.T) {
 				query.Tags = strpair.ParseMap([]string{"buildset:1"})
 				actualRsp, err := query.Fetch(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{
+				assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{
 					Builds: []*pb.Build{
 						{
 							Id: 1,
@@ -434,7 +434,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by tag", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -467,7 +467,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by status", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -496,7 +496,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by build range", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -528,7 +528,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by create time", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
@@ -568,7 +568,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by created_by", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
@@ -608,7 +608,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by ENDED_MASK", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
@@ -664,7 +664,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by canary", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -705,7 +705,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found only experimental", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -761,7 +761,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found non experimental", func(t *ftt.Test) {
 			req := &pb.SearchBuildsRequest{
@@ -838,7 +838,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("found by ancestors", func(t *ftt.Test) {
 			bIDs := func(rsp *pb.SearchBuildsResponse) []int {
@@ -905,7 +905,7 @@ func TestFetchOnBuild(t *testing.T) {
 				query := NewQuery(req)
 				actualRsp, err := query.fetchOnBuild(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, bIDs(actualRsp), should.Resemble([]int{2, 3, 4}))
+				assert.Loosely(t, bIDs(actualRsp), should.Match([]int{2, 3, 4}))
 			})
 			t.Run("by parent_id", func(t *ftt.Test) {
 				req := &pb.SearchBuildsRequest{
@@ -916,7 +916,7 @@ func TestFetchOnBuild(t *testing.T) {
 				query := NewQuery(req)
 				actualRsp, err := query.fetchOnBuild(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, bIDs(actualRsp), should.Resemble([]int{2, 3}))
+				assert.Loosely(t, bIDs(actualRsp), should.Match([]int{2, 3}))
 			})
 		})
 		t.Run("empty request", func(t *ftt.Test) {
@@ -953,7 +953,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("pagination", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
@@ -1022,7 +1022,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp.Builds, should.Resemble(expectedBuilds))
+			assert.Loosely(t, actualRsp.Builds, should.Match(expectedBuilds))
 			assert.Loosely(t, actualRsp.NextPageToken, should.Equal("id>200"))
 
 			// fetch the following page (response should have a build with the ID - 400).
@@ -1041,7 +1041,7 @@ func TestFetchOnBuild(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp.Builds, should.Resemble(expectedBuilds))
+			assert.Loosely(t, actualRsp.Builds, should.Match(expectedBuilds))
 			assert.Loosely(t, actualRsp.NextPageToken, should.BeEmpty)
 		})
 		t.Run("found by start build id and pagination", func(t *ftt.Test) {
@@ -1058,7 +1058,7 @@ func TestFetchOnBuild(t *testing.T) {
 			expectedRsp := &pb.SearchBuildsResponse{}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 	})
 }
@@ -1072,7 +1072,7 @@ func TestIndexedTags(t *testing.T) {
 			"buildset": []string{"b1"},
 		}
 		result := IndexedTags(tags)
-		assert.Loosely(t, result, should.Resemble([]string{"buildset:b1"}))
+		assert.Loosely(t, result, should.Match([]string{"buildset:b1"}))
 	})
 
 	ftt.Run("duplicate tags", t, func(t *ftt.Test) {
@@ -1081,13 +1081,13 @@ func TestIndexedTags(t *testing.T) {
 			"build_address": []string{"address"},
 		}
 		result := IndexedTags(tags)
-		assert.Loosely(t, result, should.Resemble([]string{"build_address:address", "buildset:b1"}))
+		assert.Loosely(t, result, should.Match([]string{"build_address:address", "buildset:b1"}))
 	})
 
 	ftt.Run("empty tags", t, func(t *ftt.Test) {
 		tags := strpair.Map{}
 		result := IndexedTags(tags)
-		assert.Loosely(t, result, should.Resemble([]string{}))
+		assert.Loosely(t, result, should.Match([]string{}))
 	})
 }
 
@@ -1142,7 +1142,7 @@ func TestUpdateTagIndex(t *testing.T) {
 
 		idx, err = model.SearchTagIndex(ctx, "buildset", "b1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, idx, should.Resemble([]*model.TagIndexEntry{
+		assert.Loosely(t, idx, should.Match([]*model.TagIndexEntry{
 			{
 				BuildID:     int64(1),
 				BucketID:    "project/bucket",
@@ -1157,7 +1157,7 @@ func TestUpdateTagIndex(t *testing.T) {
 
 		idx, err = model.SearchTagIndex(ctx, "build_address", "address")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, idx, should.Resemble([]*model.TagIndexEntry{
+		assert.Loosely(t, idx, should.Match([]*model.TagIndexEntry{
 			{
 				BuildID:     int64(2),
 				BucketID:    "project/bucket",
@@ -1304,7 +1304,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 
 		t.Run("filter by status", func(t *ftt.Test) {
@@ -1328,7 +1328,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("filter by ENDED_MASK", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, &model.Build{
@@ -1390,14 +1390,14 @@ func TestFetchOnTagIndex(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("filter by an indexed tag and a normal tag", func(t *ftt.Test) {
 			req.Predicate.Tags = append(req.Predicate.Tags, &pb.StringPair{Key: "k1", Value: "v1"})
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
+			assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{}))
 		})
 		t.Run("filter by build range", func(t *ftt.Test) {
 			req.Predicate.Build = &pb.BuildRange{
@@ -1424,21 +1424,21 @@ func TestFetchOnTagIndex(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("filter by created_by", func(t *ftt.Test) {
 			req.Predicate.CreatedBy = "project:infra"
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
+			assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{}))
 		})
 		t.Run("filter by canary", func(t *ftt.Test) {
 			req.Predicate.Canary = pb.Trinary_YES
 			query := NewQuery(req)
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
+			assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{}))
 		})
 		t.Run("filter by IncludeExperimental", func(t *ftt.Test) {
 			req.Predicate.IncludeExperimental = true
@@ -1487,7 +1487,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("pagination", func(t *ftt.Test) {
 			req.PageSize = 1
@@ -1512,7 +1512,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, actualRsp, should.Match(expectedRsp))
 		})
 		t.Run("No permission on requested buckets", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -1522,7 +1522,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 			actualRsp, err := query.fetchOnTagIndex(ctx)
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRsp, should.Resemble(&pb.SearchBuildsResponse{}))
+			assert.Loosely(t, actualRsp, should.Match(&pb.SearchBuildsResponse{}))
 		})
 	})
 }
@@ -1539,7 +1539,7 @@ func TestMinHeap(t *testing.T) {
 		for h.Len() > 0 {
 			res = append(res, heap.Pop(h).(*model.TagIndexEntry).BuildID)
 		}
-		assert.Loosely(t, res, should.Resemble([]int64{1, 2, 3, 5}))
+		assert.Loosely(t, res, should.Match([]int64{1, 2, 3, 5}))
 	})
 
 }

@@ -142,6 +142,6 @@ func TestFileClone(t *testing.T) {
 			map[string]PackageSlice{"key": {{"PackageTemplate", "UnresolvedVersion", 0}}},
 			[]template.Platform{{"os", "arch"}},
 		}
-		assert.Loosely(t, f.Clone(), should.Resemble(f))
+		assert.Loosely(t, f.Clone(), should.Match(f))
 	})
 }

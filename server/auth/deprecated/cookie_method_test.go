@@ -86,7 +86,7 @@ func TestFullFlow(t *testing.T) {
 
 			case "/token":
 				assert.Loosely(c, r.ParseForm(), should.BeNil)
-				assert.Loosely(c, r.Form, should.Resemble(url.Values{
+				assert.Loosely(c, r.Form, should.Match(url.Values{
 					"redirect_uri":  {"http://fake/redirect"},
 					"client_id":     {"client_id"},
 					"client_secret": {"client_secret"},
@@ -138,7 +138,7 @@ func TestFullFlow(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, parsed.Host, should.Equal(ts.URL[len("http://"):]))
 			assert.Loosely(c, parsed.Path, should.Equal("/authorization"))
-			assert.Loosely(c, parsed.Query(), should.Resemble(url.Values{
+			assert.Loosely(c, parsed.Query(), should.Match(url.Values{
 				"client_id":     {"client_id"},
 				"redirect_uri":  {"http://fake/redirect"},
 				"response_type": {"code"},
@@ -179,7 +179,7 @@ func TestFullFlow(t *testing.T) {
 			req.Header.Add("Cookie", expectedCookie)
 			user, session, err := method.Authenticate(ctx, auth.RequestMetadataForHTTP(req))
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, user, should.Resemble(&auth.User{
+			assert.Loosely(c, user, should.Match(&auth.User{
 				Identity: "user:user@example.com",
 				Email:    "user@example.com",
 				Name:     "Some Dude",

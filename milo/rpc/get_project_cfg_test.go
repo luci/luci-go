@@ -83,7 +83,7 @@ func TestGetProjectCfg(t *testing.T) {
 			cfg, err := srv.GetProjectCfg(c, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.GetLogoUrl(), should.Equal("https://logo.com"))
-			assert.Loosely(t, cfg.MetadataConfig, should.Resemble(mc))
+			assert.Loosely(t, cfg.MetadataConfig, should.Match(mc))
 		})
 
 		t.Run(`reject invalid request`, func(t *ftt.Test) {

@@ -85,7 +85,7 @@ func TestAnnotation(t *testing.T) {
 			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
 
-			assert.Loosely(t, lines, should.Resemble([]string{
+			assert.Loosely(t, lines, should.Match([]string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
@@ -119,7 +119,7 @@ func TestAnnotation(t *testing.T) {
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			}
-			assert.Loosely(t, lines, should.Resemble(expectedLines))
+			assert.Loosely(t, lines, should.Match(expectedLines))
 
 			t.Run("via Log", func(t *ftt.Test) {
 				ctx := memlogger.Use(context.Background())
@@ -129,16 +129,16 @@ func TestAnnotation(t *testing.T) {
 				assert.Loosely(t, msgs, should.HaveLength(1))
 				lines := strings.Split(msgs[0].Msg+"\n\n"+msgs[0].StackTrace.Textual, "\n")
 				FixForTest(lines)
-				assert.Loosely(t, lines, should.Resemble(expectedLines))
+				assert.Loosely(t, lines, should.Match(expectedLines))
 			})
 		})
 
 		t.Run(`can render external errors with Unwrap and no inner error`, func(t *ftt.Test) {
-			assert.Loosely(t, RenderStack(emptyWrapper("hi")), should.Resemble([]string{"hi"}))
+			assert.Loosely(t, RenderStack(emptyWrapper("hi")), should.Match([]string{"hi"}))
 		})
 
 		t.Run(`can render external errors with Unwrap`, func(t *ftt.Test) {
-			assert.Loosely(t, RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Resemble([]string{"outer: inner"}))
+			assert.Loosely(t, RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Match([]string{"outer: inner"}))
 		})
 
 		t.Run(`can render external errors using Unwrap when Annotated`, func(t *ftt.Test) {
@@ -161,7 +161,7 @@ func TestAnnotation(t *testing.T) {
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			}
-			assert.Loosely(t, lines, should.Resemble(expectedLines))
+			assert.Loosely(t, lines, should.Match(expectedLines))
 		})
 	})
 }

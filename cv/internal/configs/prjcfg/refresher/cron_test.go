@@ -57,12 +57,12 @@ func TestConfigRefreshCron(t *testing.T) {
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
 			}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
-			assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
+			assert.Loosely(t, pm.updates, should.Match([]string{"chromium"}))
+			assert.Loosely(t, qm.writes, should.Match([]string{"chromium"}))
 		})
 
 		t.Run("for an existing project", func(t *ftt.Test) {
@@ -74,12 +74,12 @@ func TestConfigRefreshCron(t *testing.T) {
 				Enabled: true,
 			}), should.BeNil)
 			assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
-			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
 			}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-			assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
-			assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
+			assert.Loosely(t, pm.updates, should.Match([]string{"chromium"}))
+			assert.Loosely(t, qm.writes, should.Match([]string{"chromium"}))
 			pm.updates = nil
 			qm.writes = nil
 
@@ -93,12 +93,12 @@ func TestConfigRefreshCron(t *testing.T) {
 					assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 					assert.Loosely(t, pm.updates, should.BeEmpty)
-					assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
+					assert.Loosely(t, qm.writes, should.Match([]string{"chromium"}))
 					if len(pm.pokes) > 0 {
 						break
 					}
 				}
-				assert.Loosely(t, pm.pokes, should.Resemble([]string{"chromium"}))
+				assert.Loosely(t, pm.pokes, should.Match([]string{"chromium"}))
 			})
 		})
 
@@ -113,12 +113,12 @@ func TestConfigRefreshCron(t *testing.T) {
 				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
-				assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
+				assert.Loosely(t, pm.updates, should.Match([]string{"chromium"}))
+				assert.Loosely(t, qm.writes, should.Match([]string{"chromium"}))
 			})
 			t.Run("that doesn't exist in LUCI Config", func(t *ftt.Test) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))
@@ -128,12 +128,12 @@ func TestConfigRefreshCron(t *testing.T) {
 				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
-				assert.Loosely(t, pm.updates, should.Resemble([]string{"chromium"}))
-				assert.Loosely(t, qm.writes, should.Resemble([]string{"chromium"}))
+				assert.Loosely(t, pm.updates, should.Match([]string{"chromium"}))
+				assert.Loosely(t, qm.writes, should.Match([]string{"chromium"}))
 			})
 			t.Run("Skip already disabled Project", func(t *ftt.Test) {
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{}))

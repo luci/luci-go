@@ -93,7 +93,7 @@ func TestEntryBuffer(t *testing.T) {
 			for _, e := range ces {
 				actual = append(actual, e.Payload.(string))
 			}
-			assert.Loosely(t, actual, should.Resemble(payloads))
+			assert.Loosely(t, actual, should.Match(payloads))
 		}
 
 		t.Run("Sets the entry timestamp based on the stream timestamp", func(t *ftt.Test) {
@@ -116,7 +116,7 @@ func TestEntryBuffer(t *testing.T) {
 				genEntry("line-456\n"),
 			)
 			for _, e := range ces {
-				assert.Loosely(t, e.Trace, should.Resemble(eb.streamID))
+				assert.Loosely(t, e.Trace, should.Match(eb.streamID))
 			}
 		})
 
@@ -126,7 +126,7 @@ func TestEntryBuffer(t *testing.T) {
 				genEntry("line-4\n"),
 			)
 			for i, e := range ces {
-				assert.Loosely(t, e.InsertID, should.Resemble(fmt.Sprintf("%s/%d", eb.streamID, i)))
+				assert.Loosely(t, e.InsertID, should.Match(fmt.Sprintf("%s/%d", eb.streamID, i)))
 			}
 		})
 

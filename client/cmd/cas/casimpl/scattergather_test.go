@@ -39,7 +39,7 @@ func TestScatterGatherAdd(t *testing.T) {
 		assert.Loosely(t, sc.Add(wd1, rp2), should.BeNil)
 		assert.Loosely(t, sc.Add(wd2, rp3unclean), should.BeNil)
 
-		assert.Loosely(t, sc, should.Resemble(scatterGather{
+		assert.Loosely(t, sc, should.Match(scatterGather{
 			rp1: wd1,
 			rp2: wd1,
 			rp3: wd2,

@@ -37,20 +37,20 @@ func TestMirrorIterator(t *testing.T) {
 		t.Run("No mirrors", func(t *ftt.Test) {
 			it := newMirrorIterator(ctx)
 			assert.Loosely(t, it.Empty(), should.BeFalse)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match(baseHost))
 			assert.Loosely(t, it.Empty(), should.BeTrue)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match(baseHost))
 			assert.Loosely(t, it.Empty(), should.BeTrue)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match(baseHost))
 		})
 		t.Run("One mirrors", func(t *ftt.Test) {
 			it := newMirrorIterator(ctx, "m1-")
 			assert.Loosely(t, it.Empty(), should.BeFalse)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match(baseHost))
 			assert.Loosely(t, it.Empty(), should.BeFalse)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble("m1-"+baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match("m1-"+baseHost))
 			assert.Loosely(t, it.Empty(), should.BeTrue)
-			assert.Loosely(t, it.next()(baseHost), should.Resemble(baseHost))
+			assert.Loosely(t, it.next()(baseHost), should.Match(baseHost))
 		})
 		t.Run("Shuffles mirrors", func(t *ftt.Test) {
 			prefixes := make([]string, 10)
@@ -77,9 +77,9 @@ func TestMirrorIterator(t *testing.T) {
 			assert.Loosely(t, act1, should.NotResemble(act2))
 
 			sort.Strings(act1)
-			assert.Loosely(t, act1, should.Resemble(expectedHosts))
+			assert.Loosely(t, act1, should.Match(expectedHosts))
 			sort.Strings(act2)
-			assert.Loosely(t, act2, should.Resemble(expectedHosts))
+			assert.Loosely(t, act2, should.Match(expectedHosts))
 		})
 		t.Run("RetryIfStale works", func(t *ftt.Test) {
 			it := &MirrorIterator{"", "m1", "m2"}

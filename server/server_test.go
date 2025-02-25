@@ -149,7 +149,7 @@ func TestServer(t *testing.T) {
 
 			// Stderr log captures details about the request.
 			const traceID = "projects/cloud-project-id/traces/680b4e7c8b763a1b1d49d4955c848621"
-			assert.Loosely(t, srv.stderr.Last(1), should.Resemble([]sdlogger.LogEntry{
+			assert.Loosely(t, srv.stderr.Last(1), should.Match([]sdlogger.LogEntry{
 				{
 					Severity:  sdlogger.WarningSeverity,
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
@@ -167,7 +167,7 @@ func TestServer(t *testing.T) {
 				},
 			}))
 			// Stdout log captures individual log lines.
-			assert.Loosely(t, srv.stdout.Last(2), should.Resemble([]sdlogger.LogEntry{
+			assert.Loosely(t, srv.stdout.Last(2), should.Match([]sdlogger.LogEntry{
 				{
 					Severity:  sdlogger.InfoSeverity,
 					Message:   "Info log",
@@ -256,13 +256,13 @@ func TestServer(t *testing.T) {
 
 			srv.ServeInBackground()
 
-			assert.Loosely(t, warmups, should.Resemble([]string{"a", "b"}))
+			assert.Loosely(t, warmups, should.Match([]string{"a", "b"}))
 			assert.Loosely(t, cleanups, should.BeNil)
 
 			srv.StopBackgroundServing()
 
-			assert.Loosely(t, warmups, should.Resemble([]string{"a", "b"}))
-			assert.Loosely(t, cleanups, should.Resemble([]string{"b", "a"}))
+			assert.Loosely(t, warmups, should.Match([]string{"a", "b"}))
+			assert.Loosely(t, cleanups, should.Match([]string{"b", "a"}))
 		})
 
 		t.Run("RunInBackground", func(t *ftt.Test) {
@@ -338,10 +338,10 @@ func TestServer(t *testing.T) {
 			assert.Loosely(t, call("A B"), should.Equal("fake_token_1")) // reused the cached token
 
 			// 0-th token is generated during startup in initAuth() to test creds.
-			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_0"), should.Resemble(auth.CloudOAuthScopes))
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_0"), should.Match(auth.CloudOAuthScopes))
 			// Tokens generated via calls above.
-			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_1"), should.Resemble([]string{"A", "B"}))
-			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_2"), should.Resemble([]string{"B", "C"}))
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_1"), should.Match([]string{"A", "B"}))
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_2"), should.Match([]string{"B", "C"}))
 		})
 
 		t.Run("Auth state", func(t *ftt.Test) {
@@ -418,7 +418,7 @@ func TestServer(t *testing.T) {
 
 			info := signing.ServiceInfo{}
 			assert.Loosely(t, json.Unmarshal([]byte(resp), &info), should.BeNil)
-			assert.Loosely(t, info, should.Resemble(signing.ServiceInfo{
+			assert.Loosely(t, info, should.Match(signing.ServiceInfo{
 				AppID:              testCloudProjectID,
 				AppRuntime:         "go",
 				AppRuntimeVersion:  runtime.Version(),
@@ -843,13 +843,13 @@ func TestResolveDependencies(t *testing.T) {
 			mod(c),
 		)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"c", "b", "a"}))
+		assert.Loosely(t, names, should.Match([]string{"c", "b", "a"}))
 	})
 
 	ftt.Run("Preserves original order if no deps", t, func(t *ftt.Test) {
 		names, err := resolve(mod(a), mod(b), mod(c))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"a", "b", "c"}))
+		assert.Loosely(t, names, should.Match([]string{"a", "b", "c"}))
 	})
 
 	ftt.Run("Two disjoint trees", t, func(t *ftt.Test) {
@@ -858,7 +858,7 @@ func TestResolveDependencies(t *testing.T) {
 			mod(c, module.RequiredDependency(d)), mod(d),
 		)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"b", "a", "d", "c"}))
+		assert.Loosely(t, names, should.Match([]string{"b", "a", "d", "c"}))
 	})
 
 	ftt.Run("Dup dependency is fine", t, func(t *ftt.Test) {
@@ -868,7 +868,7 @@ func TestResolveDependencies(t *testing.T) {
 			mod(c),
 		)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"c", "a", "b"}))
+		assert.Loosely(t, names, should.Match([]string{"c", "a", "b"}))
 	})
 
 	ftt.Run("Cycle", t, func(t *ftt.Test) {
@@ -878,7 +878,7 @@ func TestResolveDependencies(t *testing.T) {
 			mod(c, module.RequiredDependency(a)),
 		)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"c", "b", "a"}))
+		assert.Loosely(t, names, should.Match([]string{"c", "b", "a"}))
 	})
 
 	ftt.Run("Skips optional missing deps", t, func(t *ftt.Test) {
@@ -887,7 +887,7 @@ func TestResolveDependencies(t *testing.T) {
 			mod(b, module.OptionalDependency(c)),
 		)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, names, should.Resemble([]string{"b", "a"}))
+		assert.Loosely(t, names, should.Match([]string{"b", "a"}))
 	})
 
 	ftt.Run("Detects dups", t, func(t *ftt.Test) {

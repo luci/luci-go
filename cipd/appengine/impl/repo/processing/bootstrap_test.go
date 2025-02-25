@@ -73,7 +73,7 @@ func TestBootstrapPackageExtractor(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.Err, should.BeNil)
 
-			assert.Loosely(t, res.Result.(BootstrapExtractorResult), should.Resemble(BootstrapExtractorResult{
+			assert.Loosely(t, res.Result.(BootstrapExtractorResult), should.Match(BootstrapExtractorResult{
 				File:       "some_binary.exe",
 				HashAlgo:   "SHA256",
 				HashDigest: testBodyDigest,
@@ -81,7 +81,7 @@ func TestBootstrapPackageExtractor(t *testing.T) {
 			}))
 
 			assert.Loosely(t, extracted.String(), should.Equal(testBody))
-			assert.Loosely(t, publishedRef, should.Resemble(&api.ObjectRef{
+			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: testBodyDigest,
 			}))

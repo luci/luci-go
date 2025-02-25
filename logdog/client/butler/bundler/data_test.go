@@ -59,7 +59,7 @@ func TestData(t *testing.T) {
 
 				copy(d.Bytes(), data[:])
 				assert.Loosely(t, d.Bind(len(data), now), should.Equal(d))
-				assert.Loosely(t, d.Bytes(), should.Resemble(data[:]))
+				assert.Loosely(t, d.Bytes(), should.Match(data[:]))
 				assert.Loosely(t, d.Len(), should.Equal(len(data)))
 				assert.Loosely(t, d.Timestamp().Equal(now), should.BeTrue)
 			})

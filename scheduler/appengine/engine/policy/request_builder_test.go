@@ -36,7 +36,7 @@ func TestRequestBuilder(t *testing.T) {
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Cron{},
 		})
-		assert.Loosely(t, r.Request, should.Resemble(task.Request{}))
+		assert.Loosely(t, r.Request, should.Match(task.Request{}))
 	})
 
 	ftt.Run("FromWebUITrigger", t, func(t *ftt.Test) {
@@ -44,7 +44,7 @@ func TestRequestBuilder(t *testing.T) {
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Webui{},
 		})
-		assert.Loosely(t, r.Request, should.Resemble(task.Request{}))
+		assert.Loosely(t, r.Request, should.Match(task.Request{}))
 	})
 
 	ftt.Run("FromNoopTrigger", t, func(t *ftt.Test) {
@@ -52,7 +52,7 @@ func TestRequestBuilder(t *testing.T) {
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{Data: "abc"}},
 		})
-		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"noop_trigger_data": {
 					Kind: &structpb.Value_StringValue{StringValue: "abc"},
@@ -71,7 +71,7 @@ func TestRequestBuilder(t *testing.T) {
 				Revision: "aaaaaaaa",
 			}},
 		})
-		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"revision": {
 					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
@@ -84,7 +84,7 @@ func TestRequestBuilder(t *testing.T) {
 				},
 			},
 		}))
-		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{
+		assert.Loosely(t, r.Request.Tags, should.Match([]string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
 		}))
@@ -108,7 +108,7 @@ func TestRequestBuilder(t *testing.T) {
 				},
 			}},
 		})
-		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"revision": {
 					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
@@ -124,7 +124,7 @@ func TestRequestBuilder(t *testing.T) {
 				},
 			},
 		}))
-		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{
+		assert.Loosely(t, r.Request.Tags, should.Match([]string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
 			"tag1:val1",
@@ -141,7 +141,7 @@ func TestRequestBuilder(t *testing.T) {
 				Revision: "aaaaaaaa",
 			}},
 		})
-		assert.Loosely(t, r.Request, should.Resemble(task.Request{
+		assert.Loosely(t, r.Request, should.Match(task.Request{
 			DebugLog: "Bad repo URL \"https://zzz.example.com/repo\" in the trigger " +
 				"- only .googlesource.com repos are supported\n",
 		}))
@@ -155,20 +155,20 @@ func TestRequestBuilder(t *testing.T) {
 				Tags:       []string{"c:d"},
 			}},
 		})
-		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"a": {
 					Kind: &structpb.Value_StringValue{StringValue: "b"},
 				},
 			},
 		}))
-		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{"c:d"}))
+		assert.Loosely(t, r.Request.Tags, should.Match([]string{"c:d"}))
 	})
 
 	ftt.Run("From unknown", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{})
-		assert.Loosely(t, r.Request, should.Resemble(task.Request{
+		assert.Loosely(t, r.Request, should.Match(task.Request{
 			DebugLog: "Unrecognized trigger payload of type <nil>, ignoring\n",
 		}))
 	})

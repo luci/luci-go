@@ -163,12 +163,12 @@ func TestBatchCreateTestResults(t *testing.T) {
 				expected := proto.Clone(r.TestResult).(*pb.TestResult)
 				expected.Name = fmt.Sprintf("invocations/u-build-1/tests/%s/results/result-id-%d", expected.TestId, i)
 				expected.VariantHash = pbutil.VariantHash(expected.Variant)
-				assert.Loosely(t, response.TestResults[i], should.Resemble(expected))
+				assert.Loosely(t, response.TestResults[i], should.Match(expected))
 
 				// double-check it with the database
 				row, err := testresults.Read(span.Single(ctx), expected.Name)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, row, should.Resemble(expected))
+				assert.Loosely(t, row, should.Match(expected))
 
 				var invCommonTestIDPrefix string
 				var invVars []string
@@ -180,7 +180,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 					})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, invCommonTestIDPrefix, should.Equal(expectedCommonPrefix))
-				assert.Loosely(t, invVars, should.Resemble([]string{
+				assert.Loosely(t, invVars, should.Match([]string{
 					"a/b:1",
 					"c:2",
 				}))

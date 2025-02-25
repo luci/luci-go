@@ -514,8 +514,8 @@ func TestReachCache(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 			actual, err := cache.Read(ctx)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, actual, should.Resemble(invs))
-			assert.Loosely(c, conn.received, should.Resemble([][]any{
+			assert.Loosely(c, actual, should.Match(invs))
+			assert.Loosely(c, conn.received, should.Match([][]any{
 				{"GET", "reach4:inv"},
 			}))
 		})
@@ -530,13 +530,13 @@ func TestReachCache(t *testing.T) {
 			err := cache.Write(ctx, invs)
 			assert.Loosely(c, err, should.BeNil)
 
-			assert.Loosely(c, conn.received, should.Resemble([][]any{
+			assert.Loosely(c, conn.received, should.Match([][]any{
 				{"SET", "reach4:inv", conn.received[0][2]},
 				{"EXPIRE", "reach4:inv", 2592000},
 			}))
 			actual, err := unmarshalReachableInvocations(conn.received[0][2].([]byte))
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, actual, should.Resemble(invs))
+			assert.Loosely(c, actual, should.Match(invs))
 		})
 	})
 }

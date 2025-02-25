@@ -257,7 +257,7 @@ func TestUpdate(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
-						assert.Loosely(t, b.CustomBuilderConsecutiveFailuresMetrics, should.Resemble([]string{"chrome/infra/custom/builds/failure_count_2"}))
+						assert.Loosely(t, b.CustomBuilderConsecutiveFailuresMetrics, should.Match([]string{"chrome/infra/custom/builds/failure_count_2"}))
 					})
 					t.Run("output status not ended when task status success with SucceedBuildIfTaskSucceeded true", func(t *ftt.Test) {
 						b.Proto.Output.Status = pb.Status_STARTED
@@ -380,7 +380,7 @@ func TestUpdate(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
-						assert.Loosely(t, updatedStatusDetails, should.Resemble(&pb.StatusDetails{
+						assert.Loosely(t, updatedStatusDetails, should.Match(&pb.StatusDetails{
 							Timeout: &pb.StatusDetails_Timeout{},
 						}))
 					})

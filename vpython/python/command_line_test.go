@@ -222,16 +222,16 @@ func TestParseCommandLine(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				builtArgs := cmd.BuildArgs()
-				assert.Loosely(t, cmd, should.Resemble(&tc.cmd))
-				assert.Loosely(t, builtArgs, should.Resemble(tc.build))
+				assert.Loosely(t, cmd, should.Match(&tc.cmd))
+				assert.Loosely(t, builtArgs, should.Match(tc.build))
 
 				// Round-trip!
 				roundTripBuiltArgs := cmd.BuildArgs()
 				cmd, err = ParseCommandLine(builtArgs)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cmd, should.Resemble(&tc.cmd))
-				assert.Loosely(t, roundTripBuiltArgs, should.Resemble(tc.build))
-				assert.Loosely(t, roundTripBuiltArgs, should.Resemble(builtArgs))
+				assert.Loosely(t, cmd, should.Match(&tc.cmd))
+				assert.Loosely(t, roundTripBuiltArgs, should.Match(tc.build))
+				assert.Loosely(t, roundTripBuiltArgs, should.Match(builtArgs))
 			})
 		}
 
@@ -298,7 +298,7 @@ func TestCommandLine(t *testing.T) {
 					Flags: tc.flags,
 				}
 				tc.actionFn(&cl)
-				assert.Loosely(t, cl.Flags, should.Resemble(tc.expected))
+				assert.Loosely(t, cl.Flags, should.Match(tc.expected))
 			})
 		}
 
@@ -311,7 +311,7 @@ func TestCommandLine(t *testing.T) {
 			}
 
 			clone := cmd.Clone()
-			assert.Loosely(t, clone, should.Resemble(&cmd))
+			assert.Loosely(t, clone, should.Match(&cmd))
 
 			clone.Flags = append(clone.Flags[:0], f("B"), f("d"), f("E"), f("H"))
 			clone.Args = append(clone.Args[:0], "bar", "baz")
@@ -331,7 +331,7 @@ func TestCommandLine(t *testing.T) {
 			cl.AddSingleFlag("B")
 			cl.AddSingleFlag("E")
 
-			assert.Loosely(t, cl.BuildArgs(), should.Resemble([]string{"-B", "-E", "--", "foo", "bar"}))
+			assert.Loosely(t, cl.BuildArgs(), should.Match([]string{"-B", "-E", "--", "foo", "bar"}))
 		})
 
 		t.Run(`Setting FlagSeparator with a flag target includes the flag in the proper section.`, func(t *ftt.Test) {
@@ -340,7 +340,7 @@ func TestCommandLine(t *testing.T) {
 				FlagSeparator: true,
 				Args:          []string{"foo", "bar"},
 			}
-			assert.Loosely(t, cl.BuildArgs(), should.Resemble([]string{"-m", "<module>", "--", "foo", "bar"}))
+			assert.Loosely(t, cl.BuildArgs(), should.Match([]string{"-m", "<module>", "--", "foo", "bar"}))
 		})
 	})
 }

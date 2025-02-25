@@ -61,7 +61,7 @@ func TestTasksOutput(t *testing.T) {
 
 	service := &swarmingtest.Client{
 		ListTasksMock: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
-			assert.Loosely(t, s, should.Resemble([]string{"t:1", "t:2"}))
+			assert.Loosely(t, s, should.Match([]string{"t:1", "t:2"}))
 			assert.Loosely(t, swarmingv2.StateQuery_QUERY_PENDING, should.Equal(sq))
 			return []*swarmingv2.TaskResultResponse{
 				{TaskId: "task1"},

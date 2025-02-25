@@ -63,7 +63,7 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 		// PM must be notified immediately on CLs already saved.
 		ids := pm.projects[lProject]
 		sort.Sort(ids)
-		assert.Loosely(t, ids, should.Resemble(knownIDs))
+		assert.Loosely(t, ids, should.Match(knownIDs))
 
 		// CL Updater must have scheduled tasks.
 		etas := clUpdater.peekETAs()

@@ -222,7 +222,7 @@ func TestGetConfig(t *testing.T) {
 					Path:      "file",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.Config{
+				assert.Loosely(t, res, should.Match(&pb.Config{
 					ConfigSet: "services/myservice",
 					Path:      "file",
 					Content: &pb.Config_RawContent{
@@ -240,7 +240,7 @@ func TestGetConfig(t *testing.T) {
 					ContentSha256: contextShaStr,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.Config{
+				assert.Loosely(t, res, should.Match(&pb.Config{
 					ConfigSet: "services/myservice",
 					Path:      "file",
 					Content: &pb.Config_RawContent{
@@ -261,7 +261,7 @@ func TestGetConfig(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.Config{
+				assert.Loosely(t, res, should.Match(&pb.Config{
 					ConfigSet:     "services/myservice",
 					Path:          "file",
 					ContentSha256: contextShaStr,
@@ -277,7 +277,7 @@ func TestGetConfig(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.Config{
+				assert.Loosely(t, res, should.Match(&pb.Config{
 					Content: &pb.Config_RawContent{
 						RawContent: fileBytes,
 					},
@@ -293,7 +293,7 @@ func TestGetConfig(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.Config{
+				assert.Loosely(t, res, should.Match(&pb.Config{
 					Content: &pb.Config_RawContent{
 						RawContent: fileBytes,
 					},
@@ -334,7 +334,7 @@ func TestGetConfig(t *testing.T) {
 						Path:      "large",
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.Config{
+					assert.Loosely(t, res, should.Match(&pb.Config{
 						ConfigSet:     "services/myservice",
 						Path:          "large",
 						ContentSha256: "largesha256",
@@ -383,7 +383,7 @@ func TestGetConfig(t *testing.T) {
 						},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.Config{
+					assert.Loosely(t, res, should.Match(&pb.Config{
 						ConfigSet: "projects/foo",
 						Path:      "foo.cfg",
 						Content: &pb.Config_SignedUrl{

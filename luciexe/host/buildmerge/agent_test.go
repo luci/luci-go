@@ -88,7 +88,7 @@ func TestAgent(t *testing.T) {
 
 			base.Output.Logs[0].Url = "url://u/stdout"
 
-			assert.Loosely(t, build, should.Resemble(base))
+			assert.Loosely(t, build, should.Match(base))
 		})
 
 		t.Run(`bad stream type`, func(t *ftt.Test) {
@@ -107,7 +107,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			assert.Loosely(t, ok, should.BeTrue)
 
-			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Match(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -129,7 +129,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			assert.Loosely(t, ok, should.BeTrue)
 
-			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Match(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -151,7 +151,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			assert.Loosely(t, ok, should.BeTrue)
 
-			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Match(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -192,7 +192,7 @@ func TestAgent(t *testing.T) {
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			assert.Loosely(t, mergedBuild, should.Resemble(expect))
+			assert.Loosely(t, mergedBuild, should.Match(expect))
 
 			merger.Close()
 			<-merger.MergedBuildC // final build
@@ -217,7 +217,7 @@ func TestAgent(t *testing.T) {
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+			assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 			// order of updates doesn't matter, so we'll update the sub build first
 			subTrack.handleNewData(mkDgram(t, &bbpb.Build{
@@ -226,7 +226,7 @@ func TestAgent(t *testing.T) {
 				},
 			}))
 			// the root stream doesn't have the merge step yet, so it doesn't show up.
-			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+			assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 			// Ok, now add the merge step
 			rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
@@ -246,7 +246,7 @@ func TestAgent(t *testing.T) {
 			})
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Merge|SubStep"})
 			expect.UpdateTime = now
-			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+			assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 			t.Run(`and shut down`, func(t *ftt.Test) {
 				merger.Close()
@@ -265,7 +265,7 @@ func TestAgent(t *testing.T) {
 						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 					}
 				}
-				assert.Loosely(t, getFinal(), should.Resemble(expect))
+				assert.Loosely(t, getFinal(), should.Match(expect))
 			})
 
 			t.Run(`can handle recursive merge steps`, func(t *ftt.Test) {
@@ -299,7 +299,7 @@ func TestAgent(t *testing.T) {
 						Name: "Merge|SuperDeep|Hi!",
 					},
 				)
-				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+				assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 				t.Run(`and shut down`, func(t *ftt.Test) {
 					merger.Close()
@@ -320,7 +320,7 @@ func TestAgent(t *testing.T) {
 							step.SummaryMarkdown = "step was never finalized; did the build crash?"
 						}
 					}
-					assert.Loosely(t, getFinal(), should.Resemble(expect))
+					assert.Loosely(t, getFinal(), should.Match(expect))
 				})
 			})
 
@@ -379,7 +379,7 @@ func TestAgent(t *testing.T) {
 							SummaryMarkdown: "bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
 						},
 					)
-					assert.Loosely(t, getFinal(), should.Resemble(expect))
+					assert.Loosely(t, getFinal(), should.Match(expect))
 				})
 			})
 		})
@@ -417,7 +417,7 @@ func TestAgent(t *testing.T) {
 						SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is not registered",
 					},
 				}
-				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+				assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 				t.Run(`Append existing SummaryMarkdown`, func(t *ftt.Test) {
 					rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
@@ -443,7 +443,7 @@ func TestAgent(t *testing.T) {
 							SummaryMarkdown: "existing summary\n\nbuild.proto stream: \"url://u/sub/build.proto\" is not registered",
 						},
 					}
-					assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+					assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 				})
 
 				t.Run(`then registered but stream is empty`, func(t *ftt.Test) {
@@ -462,7 +462,7 @@ func TestAgent(t *testing.T) {
 					}
 					// send something random to kick off a merge.
 					merger.onNewStream(mkDesc("u/unknown/build.proto"))(mkDgram(t, &bbpb.Build{}))
-					assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+					assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 
 					t.Run(`finally merge properly when sub-build stream is present`, func(t *ftt.Test) {
 						subTrack.handleNewData(mkDgram(t, &bbpb.Build{
@@ -484,7 +484,7 @@ func TestAgent(t *testing.T) {
 							},
 							{Name: "Merge|SubStep"},
 						}
-						assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+						assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 					})
 
 				})
@@ -564,7 +564,7 @@ func TestAgent(t *testing.T) {
 				expect.Output.Properties.Fields["new"] = structpb.NewStringValue("prop")
 				expect.Output.Properties.Fields["something"] = structpb.NewStringValue("overwrite")
 				expect.Steps[0].SummaryMarkdown = ""
-				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
+				assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 			})
 
 		})

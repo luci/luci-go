@@ -137,7 +137,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			ds.GetTestable(ctx).CatchupIndexes()
 
 			// Appears.
-			assert.Loosely(t, listCAs(), should.Resemble([]string{"Puppet CA: fake.ca"}))
+			assert.Loosely(t, listCAs(), should.Match([]string{"Puppet CA: fake.ca"}))
 
 			// Replace it with another-fake.ca.
 			out, err := callImport(`
@@ -162,7 +162,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			assert.Loosely(t, resp.AddedRev, should.Equal(rev))
 
 			// Listing shows only active CAs.
-			assert.Loosely(t, listCAs(), should.Resemble([]string{"Puppet CA: another-fake.ca"}))
+			assert.Loosely(t, listCAs(), should.Match([]string{"Puppet CA: another-fake.ca"}))
 		})
 
 		t.Run("rejects duplicates", func(t *ftt.Test) {

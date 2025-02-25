@@ -60,7 +60,7 @@ func TestPrintAndDone(t *testing.T) {
 				actualArgs.Add(arg)
 				return &pb.Build{SummaryMarkdown: arg}, nil
 			})
-			assert.Loosely(c, actualArgs, should.Resemble(stringset.NewFromSlice("1", "2")))
+			assert.Loosely(c, actualArgs, should.Match(stringset.NewFromSlice("1", "2")))
 		})
 
 		c.Run("one build", func(c *ftt.Test) {
@@ -70,7 +70,7 @@ func TestPrintAndDone(t *testing.T) {
 			})
 			assert.Loosely(c, res[0].arg, should.Equal("1"))
 			assert.Loosely(c, res[0].err, should.BeNil)
-			assert.Loosely(c, res[0].build, should.Resemble(build))
+			assert.Loosely(c, res[0].build, should.Match(build))
 		})
 
 		c.Run("two builds", func(c *ftt.Test) {
@@ -86,7 +86,7 @@ func TestPrintAndDone(t *testing.T) {
 
 			assert.Loosely(c, res[0].arg, should.Equal("1"))
 			assert.Loosely(c, res[0].err, should.BeNil)
-			assert.Loosely(c, res[0].build, should.Resemble(build))
+			assert.Loosely(c, res[0].build, should.Match(build))
 
 			assert.Loosely(c, res[1].arg, should.Equal("2"))
 			assert.Loosely(c, res[1].err, should.ErrLike("bad"))

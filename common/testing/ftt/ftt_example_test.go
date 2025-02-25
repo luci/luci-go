@@ -106,5 +106,5 @@ func TestFtt(t *testing.T) {
 		"BONUS:TestFtt/root2/bonus_suite",
 	}
 
-	assert.That(t, order, should.Resemble(expect))
+	assert.That(t, order, should.Match(expect))
 }

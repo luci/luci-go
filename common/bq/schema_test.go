@@ -66,7 +66,7 @@ func TestAddMissingFields(t *testing.T) {
 			},
 		}
 		AddMissingFields(&to, from)
-		assert.Loosely(t, to, should.Resemble(bigquery.Schema{
+		assert.Loosely(t, to, should.Match(bigquery.Schema{
 			{
 				Name: "e",
 				Type: bigquery.IntegerFieldType,

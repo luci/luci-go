@@ -139,7 +139,7 @@ func TestLimitedClient(t *testing.T) {
 
 			d, err := io.ReadAll(r)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(data))
+			assert.Loosely(t, d, should.Match(data))
 		})
 
 		for _, limit := range []int{-1, 1, 2, 5, len(data) - 1, len(data), len(data) + 1} {
@@ -153,7 +153,7 @@ func TestLimitedClient(t *testing.T) {
 
 					d, err := io.ReadAll(r)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, d, should.Resemble(data))
+					assert.Loosely(t, d, should.Match(data))
 				})
 
 				t.Run(`Can read a partial stream.`, func(t *ftt.Test) {
@@ -163,7 +163,7 @@ func TestLimitedClient(t *testing.T) {
 
 					d, err := io.ReadAll(r)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, d, should.Resemble(data[3:9]))
+					assert.Loosely(t, d, should.Match(data[3:9]))
 				})
 
 				t.Run(`Can read an offset stream with a limit.`, func(t *ftt.Test) {
@@ -173,7 +173,7 @@ func TestLimitedClient(t *testing.T) {
 
 					d, err := io.ReadAll(r)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, d, should.Resemble(data[3:9]))
+					assert.Loosely(t, d, should.Match(data[3:9]))
 				})
 			})
 		}
@@ -188,7 +188,7 @@ func TestLimitedClient(t *testing.T) {
 
 				d, err := io.ReadAll(r)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, d, should.Resemble(data))
+				assert.Loosely(t, d, should.Match(data))
 				assert.Loosely(t, trc.totalReaders, should.Equal(6)) // One for each, plus real EOF.
 			})
 
@@ -199,7 +199,7 @@ func TestLimitedClient(t *testing.T) {
 
 				d, err := io.ReadAll(r)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, d, should.Resemble(data[3:9]))
+				assert.Loosely(t, d, should.Match(data[3:9]))
 				assert.Loosely(t, trc.totalReaders, should.Equal(3))
 			})
 
@@ -210,7 +210,7 @@ func TestLimitedClient(t *testing.T) {
 
 				d, err := io.ReadAll(r)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, d, should.Resemble(data[3:8]))
+				assert.Loosely(t, d, should.Match(data[3:8]))
 				assert.Loosely(t, trc.totalReaders, should.Equal(3))
 			})
 

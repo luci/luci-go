@@ -140,7 +140,7 @@ func TestQuery(t *testing.T) {
 					Query: "4efbec9a685b238fced35b81b7f3444dc60150b1",
 				})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cls, should.Resemble([]*Change{}))
+			assert.Loosely(t, cls, should.Match([]*Change{}))
 			assert.Loosely(t, more, should.BeFalse)
 		})
 	})
@@ -408,10 +408,10 @@ func TestCreateChange(t *testing.T) {
 			}
 			change, err := client.CreateChange(ctx, &ci)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, change.Project, should.Resemble(ci.Project))
-			assert.Loosely(c, change.Branch, should.Resemble(ci.Branch))
-			assert.Loosely(c, change.Subject, should.Resemble(ci.Subject))
-			assert.Loosely(c, change.Topic, should.Resemble(ci.Topic))
+			assert.Loosely(c, change.Project, should.Match(ci.Project))
+			assert.Loosely(c, change.Branch, should.Match(ci.Branch))
+			assert.Loosely(c, change.Subject, should.Match(ci.Subject))
+			assert.Loosely(c, change.Topic, should.Match(ci.Topic))
 			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 
@@ -847,7 +847,7 @@ func TestDirectSetReview(t *testing.T) {
 			ri := ReviewInput{Labels: map[string]int{"Code-Review": 1}}
 			result, err := client.SetReview(ctx, "629279", "current", &ri)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, result.Labels, should.Resemble(ri.Labels))
+			assert.Loosely(c, result.Labels, should.Match(ri.Labels))
 		})
 
 		c.Run("Set reviewers", func(c *ftt.Test) {

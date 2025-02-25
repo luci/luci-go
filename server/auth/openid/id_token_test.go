@@ -66,13 +66,13 @@ func TestVerifyIDToken(t *testing.T) {
 		original := newToken()
 		parsed, err := verifyToken(signToken(original))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, parsed, should.Resemble(original))
+		assert.Loosely(t, parsed, should.Match(original))
 
 		// Alternative issuer form.
 		original.Iss = strings.TrimPrefix(issuer, "https://")
 		parsed, err = verifyToken(signToken(original))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, parsed, should.Resemble(original))
+		assert.Loosely(t, parsed, should.Match(original))
 	})
 
 	ftt.Run("Bad JWT", t, func(t *ftt.Test) {

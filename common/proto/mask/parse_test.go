@@ -144,5 +144,5 @@ func (res parseResult) andExpectPath(t testing.TB, segments ...string) {
 	for i, seg := range segments {
 		expectedPath[i] = seg
 	}
-	assert.Loosely(t, res.p, should.Resemble(expectedPath), truth.LineContext())
+	assert.Loosely(t, res.p, should.Match(expectedPath), truth.LineContext())
 }

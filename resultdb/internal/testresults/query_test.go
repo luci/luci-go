@@ -99,7 +99,7 @@ func TestQueryTestResults(t *testing.T) {
 			)...)
 
 			actual, _ := mustFetch(q)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run(`Expectancy filter`, func(t *ftt.Test) {
@@ -123,7 +123,7 @@ func TestQueryTestResults(t *testing.T) {
 				)...)
 
 				t.Run(`Works`, func(t *ftt.Test) {
-					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+					assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 						"invocations/inv0/tests/T1/results/0",
 						"invocations/inv0/tests/T1/results/1",
 						"invocations/inv0/tests/T2/results/0",
@@ -135,7 +135,7 @@ func TestQueryTestResults(t *testing.T) {
 
 				t.Run(`TestID filter`, func(t *ftt.Test) {
 					q.Predicate.TestIdRegexp = ".*T4"
-					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+					assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 						"invocations/inv1/tests/T4/results/0",
 					}))
 				})
@@ -146,14 +146,14 @@ func TestQueryTestResults(t *testing.T) {
 							Equals: pbutil.Variant("a", "b"),
 						},
 					}
-					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+					assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 						"invocations/inv1/tests/T4/results/0",
 					}))
 				})
 
 				t.Run(`ExcludeExonerated`, func(t *ftt.Test) {
 					q.Predicate.ExcludeExonerated = true
-					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+					assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 						"invocations/inv0/tests/T2/results/0",
 						"invocations/inv1/tests/T2/results/0",
 						"invocations/inv1/tests/T4/results/0",
@@ -176,7 +176,7 @@ func TestQueryTestResults(t *testing.T) {
 				)...)
 
 				t.Run(`Works`, func(t *ftt.Test) {
-					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+					assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 						"invocations/inv0/tests/F0/results/0",
 						"invocations/inv1/tests/F1/results/0",
 						"invocations/inv1/tests/F1/results/1",
@@ -206,7 +206,7 @@ func TestQueryTestResults(t *testing.T) {
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
 			q.Predicate.TestIdRegexp = "1-.+"
 
-			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+			assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv0/tests/1-2/results/0",
@@ -239,7 +239,7 @@ func TestQueryTestResults(t *testing.T) {
 				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
 			}
 
-			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+			assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv1/tests/1-1/results/0",
@@ -269,7 +269,7 @@ func TestQueryTestResults(t *testing.T) {
 					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
 				}
 
-				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+				assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
@@ -283,7 +283,7 @@ func TestQueryTestResults(t *testing.T) {
 					Predicate: &pb.VariantPredicate_Contains{Contains: v1},
 				}
 
-				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
+				assert.Loosely(t, mustFetchNames(q), should.Match([]string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
@@ -307,7 +307,7 @@ func TestQueryTestResults(t *testing.T) {
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
 				actual, token := mustFetch(q2)
-				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, actual, should.Match(expected))
 				return token
 			}
 
@@ -374,7 +374,7 @@ func TestQueryTestResults(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run(`Failure reason`, func(t *ftt.Test) {
@@ -391,7 +391,7 @@ func TestQueryTestResults(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run(`Properties`, func(t *ftt.Test) {
@@ -403,7 +403,7 @@ func TestQueryTestResults(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run(`Skip reason`, func(t *ftt.Test) {
@@ -413,7 +413,7 @@ func TestQueryTestResults(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run(`Variant in the mask`, func(t *ftt.Test) {
@@ -684,7 +684,7 @@ func TestToLimitedData(t *testing.T) {
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, testResult, should.Resemble(expected))
+			assert.Loosely(t, testResult, should.Match(expected))
 		})
 
 		t.Run(`truncates primary error message`, func(t *ftt.Test) {
@@ -767,7 +767,7 @@ func TestToLimitedData(t *testing.T) {
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, testResult, should.Resemble(expected))
+			assert.Loosely(t, testResult, should.Match(expected))
 		})
 		t.Run(`mask preserves skip reason`, func(t *ftt.Test) {
 			testResult := &pb.TestResult{
@@ -796,7 +796,7 @@ func TestToLimitedData(t *testing.T) {
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, testResult, should.Resemble(expected))
+			assert.Loosely(t, testResult, should.Match(expected))
 		})
 	})
 }

@@ -104,7 +104,7 @@ func TestScheduleExportTasks(t *testing.T) {
 			sort.Slice(payloads, func(i, j int) bool {
 				return payloads[i].Start.AsTime().Before(payloads[j].Start.AsTime())
 			})
-			assert.Loosely(t, payloads, should.Resemble(expected))
+			assert.Loosely(t, payloads, should.Match(expected))
 			err = datastore.Get(ctx, &schedule)
 			assert.NoErr(t, err)
 			assert.Loosely(t, schedule.NextExport, should.Match(start.Add(4*exportDuration)))

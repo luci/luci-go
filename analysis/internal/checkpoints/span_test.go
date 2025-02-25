@@ -83,7 +83,7 @@ func TestCheckpoints(t *testing.T) {
 			checkpoints, err := ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, checkpoints, should.HaveLength(1))
-			assert.Loosely(t, checkpoints[0].Key, should.Resemble(key))
+			assert.Loosely(t, checkpoints[0].Key, should.Match(key))
 			assert.Loosely(t, checkpoints[0].CreationTime, should.NotBeZero)
 			assert.That(t, checkpoints[0].ExpiryTime, should.Match(now.Add(time.Hour)))
 		})

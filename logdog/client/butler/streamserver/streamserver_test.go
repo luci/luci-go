@@ -175,7 +175,7 @@ func TestListenerStreamServer(t *testing.T) {
 
 				// Consume all of the data in the stream.
 				recvData, _ := io.ReadAll(stream)
-				assert.Loosely(t, recvData, should.Resemble(content))
+				assert.Loosely(t, recvData, should.Match(content))
 			})
 
 			t.Run(`Will exit Next if closed.`, func(t *ftt.Test) {
@@ -257,7 +257,7 @@ func testClientServer(t testing.TB, svr *StreamServer, client *streamclient.Clie
 
 	stamp, err := ptypes.TimestampProto(testclock.TestTimeLocal)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, desc, should.Resemble(&logpb.LogStreamDescriptor{
+	assert.Loosely(t, desc, should.Match(&logpb.LogStreamDescriptor{
 		Name:        "foo/bar",
 		ContentType: "text/plain; charset=utf-8",
 		Timestamp:   stamp,
@@ -266,7 +266,7 @@ func testClientServer(t testing.TB, svr *StreamServer, client *streamclient.Clie
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(rc)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, buf.Bytes(), should.Resemble(data), truth.LineContext())
+	assert.Loosely(t, buf.Bytes(), should.Match(data), truth.LineContext())
 
 	assert.Loosely(t, <-clientDoneC, should.BeNil, truth.LineContext())
 }

@@ -67,7 +67,7 @@ func TestAdapt(t *testing.T) {
 	assert.Loosely(t, exampleMyTypeFromProdCode, Adapt(shouldMatchMyType)(myType{intVal: 100}))
 
 	// check for failures
-	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})("smarfle"), should.Resemble(&failure.Summary{
+	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})("smarfle"), should.Match(&failure.Summary{
 		Comparison: &failure.Comparison{
 			Name: "adapt.Convey(go.chromium.org/luci/common/testing/truth/convey.shouldMatchMyType)",
 		},
@@ -75,7 +75,7 @@ func TestAdapt(t *testing.T) {
 			{Name: "Because", Value: []string{"actual must be myType, got string"}},
 		},
 	}))
-	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})(myType{strVal: "100"}), should.Resemble(&failure.Summary{
+	assert.That(t, Adapt(shouldMatchMyType)(myType{intVal: 100})(myType{strVal: "100"}), should.Match(&failure.Summary{
 		Comparison: &failure.Comparison{
 			Name: "adapt.Convey(go.chromium.org/luci/common/testing/truth/convey.shouldMatchMyType)",
 		},

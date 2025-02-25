@@ -34,6 +34,6 @@ func TestServiceConfig(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		cfgFromGet, err := GetServiceConfig(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(cfg))
+		assert.Loosely(t, cfgFromGet, should.Match(cfg))
 	})
 }

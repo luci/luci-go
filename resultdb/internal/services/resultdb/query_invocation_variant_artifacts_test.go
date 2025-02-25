@@ -106,7 +106,7 @@ func TestQueryInvocationVariantArtifacts(t *testing.T) {
 		t.Run("Valid request", func(t *ftt.Test) {
 			rsp, err := srv.QueryInvocationVariantArtifacts(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.QueryInvocationVariantArtifactsResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.QueryInvocationVariantArtifactsResponse{
 				Artifacts: []*pb.ArtifactMatchingContent{{
 					Name:          "invocations/12345678901234567890/artifacts/artifact_id",
 					PartitionTime: timestamppb.New(time.Date(2024, 8, 6, 5, 58, 57, 490076000, time.UTC)),

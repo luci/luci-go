@@ -144,7 +144,7 @@ func TestCheckLiveness(t *testing.T) {
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			mSteps, err := steps.ToProto(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, mSteps, should.Resemble([]*pb.Step{
+			assert.Loosely(t, mSteps, should.Match([]*pb.Step{
 				{
 					Name:    "step1",
 					Status:  pb.Status_CANCELED,
@@ -181,7 +181,7 @@ func TestCheckLiveness(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			// continuation task
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Match(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 10,
 			}))
@@ -199,7 +199,7 @@ func TestCheckLiveness(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			// continuation task
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Match(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 10,
 			}))
@@ -217,7 +217,7 @@ func TestCheckLiveness(t *testing.T) {
 			err := CheckLiveness(ctx, 1, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.CheckBuildLiveness{
+			assert.Loosely(t, sch.Tasks().Payloads()[0], should.Match(&taskdefs.CheckBuildLiveness{
 				BuildId:          1,
 				HeartbeatTimeout: 0,
 			}))

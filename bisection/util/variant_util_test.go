@@ -29,7 +29,7 @@ func TestVariantUtil(t *testing.T) {
 		t.Run("no error", func(t *ftt.Test) {
 			variant, err := VariantPB(`{"builder": "testbuilder"}`)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, variant, should.Resemble(&pb.Variant{
+			assert.Loosely(t, variant, should.Match(&pb.Variant{
 				Def: map[string]string{"builder": "testbuilder"},
 			}))
 		})

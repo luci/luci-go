@@ -86,7 +86,7 @@ func TestView(t *testing.T) {
 						amt, err := br.Read(buf)
 						assert.Loosely(t, amt, should.Equal(len(aggregate)))
 						assert.Loosely(t, err, should.Equal(io.EOF))
-						assert.Loosely(t, buf[:amt], should.Resemble(aggregate))
+						assert.Loosely(t, buf[:amt], should.Match(aggregate))
 
 						t.Run(`Subsequent Read() will return io.EOF.`, func(t *ftt.Test) {
 							amt, err := br.Read(buf)
@@ -167,7 +167,7 @@ func TestView(t *testing.T) {
 					buf := bytes.Buffer{}
 					_, err := buf.ReadFrom(br.CloneLimit(7))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, buf.Bytes(), should.Resemble([]byte{0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00}))
+					assert.Loosely(t, buf.Bytes(), should.Match([]byte{0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00}))
 				})
 
 				for _, s := range []struct {

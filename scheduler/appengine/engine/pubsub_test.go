@@ -113,7 +113,7 @@ func TestConfigureTopic(t *testing.T) {
 				received := make(map[string]any)
 				assert.Loosely(ctx, json.Unmarshal([]byte(call.Request), &expected), should.BeNil)
 				assert.Loosely(ctx, json.Unmarshal([]byte(blob), &received), should.BeNil)
-				assert.Loosely(ctx, received, should.Resemble(expected))
+				assert.Loosely(ctx, received, should.Match(expected))
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(call.Code)

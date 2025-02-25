@@ -148,7 +148,7 @@ func TestDeadline(t *testing.T) {
 			// SoftDeadline is always GracePeriod earlier than the hard (context)
 			// deadline.
 			expect.SetSoftDeadline(t0.Add(70 * time.Second))
-			assert.Loosely(t, got, should.Resemble(expect))
+			assert.Loosely(t, got, should.Match(expect))
 			shutdown()
 			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(25 * time.Second)
@@ -172,7 +172,7 @@ func TestDeadline(t *testing.T) {
 			// SoftDeadline is always GracePeriod earlier than the hard (context)
 			// deadline.
 			expect.SetSoftDeadline(t0.Add(65 * time.Second))
-			assert.Loosely(t, got, should.Resemble(expect))
+			assert.Loosely(t, got, should.Match(expect))
 			shutdown()
 			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(30 * time.Second)

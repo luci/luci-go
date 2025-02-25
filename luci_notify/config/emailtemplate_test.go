@@ -50,7 +50,7 @@ func TestEmailTemplate(t *testing.T) {
 		templates, err := fetchAllEmailTemplates(c, cfgService, "x")
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, templates, should.Resemble(map[string]*EmailTemplate{
+		assert.Loosely(t, templates, should.Match(map[string]*EmailTemplate{
 			"a": {
 				Name:                "a",
 				SubjectTextTemplate: "aSubject",

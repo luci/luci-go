@@ -128,18 +128,18 @@ func TestDSCache(t *testing.T) {
 
 			o = object{ID: 1}
 			assert.Loosely(t, ds.Get(underCtx, &o), should.BeNil)
-			assert.Loosely(t, o, should.Resemble(expected))
+			assert.Loosely(t, o, should.Match(expected))
 
 			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 			assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 
 			o = object{ID: 1}
 			assert.Loosely(t, ds.Get(c, &o), should.BeNil)
-			assert.Loosely(t, o, should.Resemble(expected))
+			assert.Loosely(t, o, should.Match(expected))
 
 			itm, err = mc.GetKey(c, itm.Key())
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, itm.Value(), should.Resemble(encoded))
+			assert.Loosely(t, itm.Value(), should.Match(encoded))
 
 			t.Run("now we don't need the datastore!", func(t *ftt.Test) {
 				o := object{ID: 1}
@@ -150,10 +150,10 @@ func TestDSCache(t *testing.T) {
 
 				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, itm.Value(), should.Resemble(encoded))
+				assert.Loosely(t, itm.Value(), should.Match(encoded))
 
 				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
-				assert.Loosely(t, o, should.Resemble(expected))
+				assert.Loosely(t, o, should.Match(expected))
 			})
 
 			t.Run("deleting it properly records that fact, however", func(t *ftt.Test) {
@@ -166,7 +166,7 @@ func TestDSCache(t *testing.T) {
 
 				itm, err = mc.GetKey(c, itm.Key())
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, itm.Value(), should.Resemble([]byte{}))
+				assert.Loosely(t, itm.Value(), should.Match([]byte{}))
 
 				// this one hits memcache
 				assert.Loosely(t, ds.Get(c, &o), should.Equal(ds.ErrNoSuchEntity))
@@ -202,7 +202,7 @@ func TestDSCache(t *testing.T) {
 				o = object{ID: 2}
 				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
 				assert.Loosely(t, o.Value, should.Equal(`¯\_(ツ)_/¯`))
-				assert.Loosely(t, o.BigData, should.Resemble(data))
+				assert.Loosely(t, o.BigData, should.Match(data))
 			})
 
 			t.Run("skips unknown compression algo", func(t *ftt.Test) {
@@ -216,7 +216,7 @@ func TestDSCache(t *testing.T) {
 				o = object{ID: 2}
 				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
 				assert.Loosely(t, o.Value, should.Equal(`¯\_(ツ)_/¯`))
-				assert.Loosely(t, o.BigData, should.Resemble(data))
+				assert.Loosely(t, o.BigData, should.Match(data))
 			})
 		})
 
@@ -350,7 +350,7 @@ func TestDSCache(t *testing.T) {
 				itm, err := mc.GetKey(c, itm.Key())
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagUnknown))
-				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
+				assert.Loosely(t, itm.Value(), should.Match(sekret))
 			})
 
 			t.Run("memcache contains bogus value (corrupt entry)", func(t *ftt.Test) {
@@ -370,7 +370,7 @@ func TestDSCache(t *testing.T) {
 				itm, err := mc.GetKey(c, itm.Key())
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasData))
-				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
+				assert.Loosely(t, itm.Value(), should.Match(sekret))
 			})
 
 			t.Run("other entity has the lock", func(t *ftt.Test) {
@@ -390,7 +390,7 @@ func TestDSCache(t *testing.T) {
 				itm, err := mc.GetKey(c, itm.Key())
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasLock))
-				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
+				assert.Loosely(t, itm.Value(), should.Match(sekret))
 			})
 
 			t.Run("massive entities can't be cached", func(t *ftt.Test) {
@@ -411,7 +411,7 @@ func TestDSCache(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Is locked until the next put, forcing all access to the datastore.
-				assert.Loosely(t, itm.Value(), should.Resemble([]byte{}))
+				assert.Loosely(t, itm.Value(), should.Match([]byte{}))
 				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasLock))
 
 				o.BigData = []byte("hi :)")

@@ -193,7 +193,7 @@ func TestGetBuildStatus(t *testing.T) {
 					Id: int64(bID),
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b, should.Resemble(&pb.Build{
+				assert.Loosely(t, b, should.Match(&pb.Build{
 					Id:     int64(bID),
 					Status: pb.Status_SCHEDULED,
 				}))
@@ -218,7 +218,7 @@ func TestGetBuildStatus(t *testing.T) {
 					Id: int64(bID),
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b, should.Resemble(&pb.Build{
+				assert.Loosely(t, b, should.Match(&pb.Build{
 					Id:     int64(bID),
 					Status: pb.Status_STARTED,
 				}))
@@ -240,7 +240,7 @@ func TestGetBuildStatus(t *testing.T) {
 					BuildNumber: 3,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b, should.Resemble(&pb.Build{
+				assert.Loosely(t, b, should.Match(&pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
@@ -285,7 +285,7 @@ func TestGetBuildStatus(t *testing.T) {
 					BuildNumber: 3,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b, should.Resemble(&pb.Build{
+				assert.Loosely(t, b, should.Match(&pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",

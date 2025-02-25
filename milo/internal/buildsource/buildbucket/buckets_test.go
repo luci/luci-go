@@ -73,7 +73,7 @@ func TestFilterVisibleBuilders(t *testing.T) {
 
 		visibleBuilders, err := FilterVisibleBuilders(ctx, builders, "")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, visibleBuilders, should.Resemble([]*buildbucketpb.BuilderID{
+		assert.Loosely(t, visibleBuilders, should.Match([]*buildbucketpb.BuilderID{
 			{
 				Project: "proj1",
 				Bucket:  "bucket1",
@@ -93,7 +93,7 @@ func TestFilterVisibleBuilders(t *testing.T) {
 
 		visibleBuildersInProj2, err := FilterVisibleBuilders(ctx, builders, "proj2")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, visibleBuildersInProj2, should.Resemble([]*buildbucketpb.BuilderID{
+		assert.Loosely(t, visibleBuildersInProj2, should.Match([]*buildbucketpb.BuilderID{
 			{
 				Project: "proj2",
 				Bucket:  "bucket1",

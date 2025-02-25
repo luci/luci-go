@@ -59,7 +59,7 @@ func TestParse(t *testing.T) {
   Empty:
 `)
 
-		assert.Loosely(t, out.Description, should.Resemble(strings.Join([]string{
+		assert.Loosely(t, out.Description, should.Match(strings.Join([]string{
 			"An ACL entry: assigns given role (or roles) to given individuals or groups.",
 			"",
 			"Specifying an empty ACL entry is allowed. It is ignored everywhere. Useful for",
@@ -68,7 +68,7 @@ func TestParse(t *testing.T) {
 			"    luci.project(...)",
 		}, "\n")))
 
-		assert.Loosely(t, out.Fields, should.Resemble([]FieldsBlock{
+		assert.Loosely(t, out.Fields, should.Match([]FieldsBlock{
 			{
 				Title: "Args",
 				Fields: []Field{
@@ -81,7 +81,7 @@ func TestParse(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, out.Remarks, should.Resemble([]RemarkBlock{
+		assert.Loosely(t, out.Remarks, should.Match([]RemarkBlock{
 			{"Returns", "acl.entry struct, consider it opaque.\nMultiline."},
 			{"Note", "blah-blah."},
 			{"Empty", ""},
@@ -97,7 +97,7 @@ func TestNormalizedLines(t *testing.T) {
 	})
 
 	ftt.Run("One line and some space", t, func(t *ftt.Test) {
-		assert.Loosely(t, normalizedLines("  \n\n  Blah   \n\t\t\n  \n"), should.Resemble([]string{"Blah"}))
+		assert.Loosely(t, normalizedLines("  \n\n  Blah   \n\t\t\n  \n"), should.Match([]string{"Blah"}))
 	})
 
 	ftt.Run("Deindents", t, func(t *ftt.Test) {
@@ -109,7 +109,7 @@ func TestNormalizedLines(t *testing.T) {
 			Deeper indentation.
 
 		Third paragraph.
-		`), should.Resemble(
+		`), should.Match(
 			[]string{
 				"First paragraph,",
 				"perhaps multiline.",
@@ -129,7 +129,7 @@ func TestDeindent(t *testing.T) {
 	ftt.Run("Space only", t, func(t *ftt.Test) {
 		assert.Loosely(t,
 			deindent([]string{"  ", " \t\t  \t", ""}),
-			should.Resemble(
+			should.Match(
 				[]string{"", "", ""},
 			))
 	})
@@ -137,7 +137,7 @@ func TestDeindent(t *testing.T) {
 	ftt.Run("Nothing to deindent", t, func(t *ftt.Test) {
 		assert.Loosely(t,
 			deindent([]string{"  ", "a  ", "b", "  "}),
-			should.Resemble(
+			should.Match(
 				[]string{"", "a  ", "b", ""},
 			))
 	})
@@ -145,7 +145,7 @@ func TestDeindent(t *testing.T) {
 	ftt.Run("Deindention works", t, func(t *ftt.Test) {
 		assert.Loosely(t,
 			deindent([]string{"   ", "", "  a", "  b", "    c"}),
-			should.Resemble(
+			should.Match(
 				[]string{"", "", "a", "b", "  c"},
 			))
 	})
@@ -153,7 +153,7 @@ func TestDeindent(t *testing.T) {
 	ftt.Run("Works with tabs too", t, func(t *ftt.Test) {
 		assert.Loosely(t,
 			deindent([]string{"\t\t", "", "\ta", "\tb", "\t\tc"}),
-			should.Resemble(
+			should.Match(
 				[]string{"", "", "a", "b", "\tc"},
 			))
 	})

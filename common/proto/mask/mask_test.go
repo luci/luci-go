@@ -41,14 +41,14 @@ func TestNormalizePath(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Return empty paths when given empty paths", t, func(t *ftt.Test) {
-		assert.Loosely(t, normalizePaths([]path{}), should.Resemble([]path{}))
+		assert.Loosely(t, normalizePaths([]path{}), should.Match([]path{}))
 	})
 	ftt.Run("Remove all deduplicate paths", t, func(t *ftt.Test) {
 		assert.Loosely(t, normalizePaths([]path{
 			{"a", "b"},
 			{"a", "b"},
 			{"a", "b"},
-		}), should.Resemble([]path{
+		}), should.Match([]path{
 			{"a", "b"},
 		}))
 	})
@@ -58,7 +58,7 @@ func TestNormalizePath(t *testing.T) {
 			{"b", "c", "d"},
 			{"b", "c"},
 			{"a"},
-		}), should.Resemble([]path{
+		}), should.Match([]path{
 			{"a"},
 			{"b", "c"},
 			{"b", "z"},
@@ -201,22 +201,22 @@ func TestTrim(t *testing.T) {
 		t.Run("trim scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
+			assert.Loosely(t, msg, should.Match(&testMsg{}))
 		})
 		t.Run("keep scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"num"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
+			assert.Loosely(t, msg, should.Match(&testMsg{Num: 1}))
 		})
 		t.Run("trim repeated scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
+			assert.Loosely(t, msg, should.Match(&testMsg{}))
 		})
 		t.Run("keep repeated scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"nums"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{Nums: []int32{1, 2}}))
+			assert.Loosely(t, msg, should.Match(&testMsg{Nums: []int32{1, 2}}))
 		})
 		t.Run("trim submessage", func(t *ftt.Test) {
 			msg := &testMsg{
@@ -225,7 +225,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
+			assert.Loosely(t, msg, should.Match(&testMsg{}))
 		})
 		t.Run("keep submessage entirely", func(t *ftt.Test) {
 			msg := &testMsg{
@@ -235,7 +235,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "abc",
@@ -250,7 +250,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg.str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				Msg: &testMsg{
 					Str: "abc",
 				},
@@ -264,7 +264,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
+			assert.Loosely(t, msg, should.Match(&testMsg{}))
 		})
 		t.Run("keep subfield of repeated message field entirely", func(t *ftt.Test) {
 			msg := &testMsg{
@@ -274,7 +274,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				Msgs: []*testMsg{
 					{Num: 1, Str: "abc"},
 					{Num: 2, Str: "bcd"},
@@ -289,7 +289,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs.*.str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				Msgs: []*testMsg{
 					{Str: "abc"},
 					{Str: "bcd"},
@@ -301,7 +301,7 @@ func TestTrim(t *testing.T) {
 				MapStrNum: map[string]int32{"a": 1},
 			}
 			testTrim([]string{"str"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
+			assert.Loosely(t, msg, should.Match(&testMsg{}))
 		})
 		t.Run("trim map (scalar value)", func(t *ftt.Test) {
 			msg := &testMsg{
@@ -311,7 +311,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_num.a"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				MapStrNum: map[string]int32{
 					"a": 1,
 				},
@@ -325,7 +325,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 				},
@@ -339,7 +339,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a.num"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 				},
@@ -353,7 +353,7 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.*.num"}, msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
@@ -369,7 +369,7 @@ func TestTrim(t *testing.T) {
 			}
 			testTrim([]string{"map_str_msg.*.num", "map_str_msg.a"}, msg)
 			// expect keep "a" entirely and "b" partially
-			assert.Loosely(t, msg, should.Resemble(&testMsg{
+			assert.Loosely(t, msg, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1, Str: "abc"},
 					"b": {Num: 2},
@@ -379,7 +379,7 @@ func TestTrim(t *testing.T) {
 		t.Run("No-op for empty mask trim", func(t *ftt.Test) {
 			m, msg := Mask{}, &testMsg{Num: 1}
 			m.Trim(msg)
-			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
+			assert.Loosely(t, msg, should.Match(&testMsg{Num: 1}))
 		})
 		t.Run("Error when trim nil message", func(t *ftt.Test) {
 			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())
@@ -469,13 +469,13 @@ func TestMerge(t *testing.T) {
 			src := &testMsg{Num: 1}
 			dest := &testMsg{Num: 2}
 			testMerge([]string{"num"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1}))
+			assert.Loosely(t, dest, should.Match(&testMsg{Num: 1}))
 		})
 		t.Run("repeated scalar field", func(t *ftt.Test) {
 			src := &testMsg{Nums: []int32{1, 2, 3}}
 			dest := &testMsg{Nums: []int32{4, 5}}
 			testMerge([]string{"nums"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{Nums: []int32{1, 2, 3}}))
+			assert.Loosely(t, dest, should.Match(&testMsg{Nums: []int32{1, 2, 3}}))
 		})
 		t.Run("repeated message field", func(t *ftt.Test) {
 			src := &testMsg{
@@ -490,7 +490,7 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msgs"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				Msgs: []*testMsg{
 					{Num: 1},
 					{Str: "abc"},
@@ -511,7 +511,7 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msg"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "abc",
@@ -532,7 +532,7 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msg.num"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "def",
@@ -550,7 +550,7 @@ func TestMerge(t *testing.T) {
 					},
 				}
 				testMerge([]string{"msg"}, src, dest)
-				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
+				assert.Loosely(t, dest, should.Match(&testMsg{}))
 			})
 			t.Run("last seg is field in message", func(t *ftt.Test) {
 				dest := &testMsg{
@@ -559,13 +559,13 @@ func TestMerge(t *testing.T) {
 					},
 				}
 				testMerge([]string{"msg.num"}, src, dest)
-				assert.Loosely(t, dest, should.Resemble(&testMsg{
+				assert.Loosely(t, dest, should.Match(&testMsg{
 					Msg: &testMsg{
 						Str: "def",
 					},
 				}))
 				testMerge([]string{"msg.str"}, src, dest)
-				assert.Loosely(t, dest, should.Resemble(&testMsg{
+				assert.Loosely(t, dest, should.Match(&testMsg{
 					Msg: &testMsg{},
 				}))
 			})
@@ -574,9 +574,9 @@ func TestMerge(t *testing.T) {
 					Msg: nil,
 				}
 				testMerge([]string{"msg"}, src, dest)
-				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
+				assert.Loosely(t, dest, should.Match(&testMsg{}))
 				testMerge([]string{"msg.str"}, src, dest)
-				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
+				assert.Loosely(t, dest, should.Match(&testMsg{}))
 			})
 		})
 		t.Run("map field ", func(t *ftt.Test) {
@@ -592,7 +592,7 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
@@ -610,7 +610,7 @@ func TestMerge(t *testing.T) {
 				MapStrMsg: nil,
 			}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
@@ -625,7 +625,7 @@ func TestMerge(t *testing.T) {
 			}
 			dest := &testMsg{}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{
+			assert.Loosely(t, dest, should.Match(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": nil,
 				},
@@ -636,13 +636,13 @@ func TestMerge(t *testing.T) {
 			dest := &testMsg{Num: 2}
 			m := &Mask{}
 			assert.Loosely(t, m.Merge(src, dest), should.BeNil)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 2}))
+			assert.Loosely(t, dest, should.Match(&testMsg{Num: 2}))
 		})
 		t.Run("multiple fields", func(t *ftt.Test) {
 			src := &testMsg{Num: 1, Strs: []string{"a", "b"}}
 			dest := &testMsg{Num: 2, Strs: []string{"c"}}
 			testMerge([]string{"num", "strs"}, src, dest)
-			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1, Strs: []string{"a", "b"}}))
+			assert.Loosely(t, dest, should.Match(&testMsg{Num: 1, Strs: []string{"a", "b"}}))
 		})
 		t.Run("Error when one of proto message is nil", func(t *ftt.Test) {
 			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())

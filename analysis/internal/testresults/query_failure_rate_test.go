@@ -53,7 +53,7 @@ func TestQueryFailureRate(t *testing.T) {
 		t.Run("Baseline", func(t *ftt.Test) {
 			result, err := QueryFailureRate(txn, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult))
 		})
 		t.Run("Project filter works correctly", func(t *ftt.Test) {
 			opts.Project = "none"
@@ -64,7 +64,7 @@ func TestQueryFailureRate(t *testing.T) {
 
 			result, err := QueryFailureRate(txn, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult))
 		})
 		t.Run("Realm filter works correctly", func(t *ftt.Test) {
 			// No data exists in this realm.
@@ -76,7 +76,7 @@ func TestQueryFailureRate(t *testing.T) {
 
 			result, err := QueryFailureRate(txn, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult))
 		})
 		t.Run("Works for tests without data", func(t *ftt.Test) {
 			notExistsVariant := pbutil.Variant("key1", "val1", "key2", "not_exists")
@@ -96,7 +96,7 @@ func TestQueryFailureRate(t *testing.T) {
 
 			result, err := QueryFailureRate(txn, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult))
 		})
 		t.Run("Batching works correctly", func(t *ftt.Test) {
 			// Ensure the order of test variants in the request and response
@@ -120,7 +120,7 @@ func TestQueryFailureRate(t *testing.T) {
 
 			result, err := QueryFailureRate(txn, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult))
 		})
 	})
 }

@@ -80,27 +80,27 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		t.Run("CL without Runs", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clZ}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs(nil)))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs(nil)))
 		})
 
 		t.Run("CL with some Runs", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clB}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, rust1}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, rust1}))
 		})
 
 		t.Run("CL with all Runs", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4, bond2, dart5, dart3, rust1, xero7}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9, bond4, bond2, dart5, dart3, rust1, xero7}))
 		})
 
 		t.Run("Two CLs, with some Runs", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clB, AdditionalCLIDs: common.MakeCLIDsSet(int64(clA))}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, rust1}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, rust1}))
 		})
 
 		t.Run("Two CLs with some Runs, other order", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA, AdditionalCLIDs: common.MakeCLIDsSet(int64(clB))}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, rust1}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, rust1}))
 		})
 
 		t.Run("Two CLs, with no Runs", func(t *ftt.Test) {
@@ -110,12 +110,12 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		t.Run("Filter by Project", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA, Project: "bond"}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4, bond2}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9, bond4, bond2}))
 		})
 
 		t.Run("Filtering by Project and Min with diff project", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA, Project: "dart", MinExcl: bond4}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{dart5, dart3}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{dart5, dart3}))
 
 			qb = CLQueryBuilder{CLID: clA, Project: "dart", MinExcl: rust1}
 			_, err := qb.BuildKeysOnly(ctx).Finalize()
@@ -124,7 +124,7 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		t.Run("Filtering by Project and Max with diff project", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA, Project: "dart", MaxExcl: xero7}
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{dart5, dart3}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{dart5, dart3}))
 
 			qb = CLQueryBuilder{CLID: clA, Project: "dart", MaxExcl: bond4}
 			_, err := qb.BuildKeysOnly(ctx).Finalize()
@@ -133,42 +133,42 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		t.Run("Before", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA}.BeforeInProject(bond9)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4, bond2}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4, bond2}))
 
 			qb = CLQueryBuilder{CLID: clA}.BeforeInProject(bond4)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond2}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond2}))
 
 			qb = CLQueryBuilder{CLID: clA}.BeforeInProject(bond2)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs(nil)))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs(nil)))
 		})
 
 		t.Run("After", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA}.AfterInProject(bond2)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9, bond4}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9, bond4}))
 
 			qb = CLQueryBuilder{CLID: clA}.AfterInProject(bond4)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond9}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond9}))
 
 			qb = CLQueryBuilder{CLID: clA}.AfterInProject(bond9)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs(nil)))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs(nil)))
 		})
 
 		t.Run("Obeys limit and returns correct page token", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA, Limit: 1}.AfterInProject(bond2)
 			runs1, pageToken1, err := qb.LoadRuns(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, idsOf(runs1), should.Resemble(common.RunIDs{bond9}))
+			assert.Loosely(t, idsOf(runs1), should.Match(common.RunIDs{bond9}))
 			assert.Loosely(t, pageToken1, should.NotBeNil)
 
 			qb = qb.PageToken(pageToken1)
-			assert.Loosely(t, qb.MinExcl, should.Resemble(bond9))
+			assert.Loosely(t, qb.MinExcl, should.Match(bond9))
 			runs2, pageToken2, err := qb.LoadRuns(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, idsOf(runs2), should.Resemble(common.RunIDs{bond4}))
+			assert.Loosely(t, idsOf(runs2), should.Match(common.RunIDs{bond4}))
 			assert.Loosely(t, pageToken2, should.NotBeNil)
 
 			qb = qb.PageToken(pageToken2)
-			assert.Loosely(t, qb.MinExcl, should.Resemble(bond4))
+			assert.Loosely(t, qb.MinExcl, should.Match(bond4))
 			runs3, pageToken3, err := qb.LoadRuns(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, runs3, should.BeEmpty)
@@ -177,7 +177,7 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		t.Run("After and Before", func(t *ftt.Test) {
 			qb := CLQueryBuilder{CLID: clA}.AfterInProject(bond2).BeforeInProject(bond9)
-			assert.Loosely(t, getAll(t, qb), should.Resemble(common.RunIDs{bond4}))
+			assert.Loosely(t, getAll(t, qb), should.Match(common.RunIDs{bond4}))
 		})
 
 		t.Run("Invalid usage panics", func(t *ftt.Test) {

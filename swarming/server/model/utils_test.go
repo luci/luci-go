@@ -69,37 +69,37 @@ func TestFromJSONProperty(t *testing.T) {
 	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(nil), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
+		assert.Loosely(t, v, should.Match(map[string]string(nil)))
 	})
 
 	ftt.Run("Empty", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(""), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
+		assert.Loosely(t, v, should.Match(map[string]string(nil)))
 	})
 
 	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty("null"), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
+		assert.Loosely(t, v, should.Match(map[string]string(nil)))
 	})
 
 	ftt.Run("Bytes", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty([]byte(`{"a":"b"}`)), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
+		assert.Loosely(t, v, should.Match(map[string]string{"a": "b"}))
 	})
 
 	ftt.Run("String", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(`{"a":"b"}`), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
+		assert.Loosely(t, v, should.Match(map[string]string{"a": "b"}))
 	})
 
 	ftt.Run("Compressed", t, func(t *ftt.Test) {
 		var v map[string]string
 		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v))
-		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
+		assert.Loosely(t, v, should.Match(map[string]string{"a": "b"}))
 	})
 }
 
@@ -164,7 +164,7 @@ func TestDimensionsFlatToPb(t *testing.T) {
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		for _, cs := range cases {
-			assert.Loosely(t, DimensionsFlatToPb(cs.flat), should.Resemble(cs.list))
+			assert.Loosely(t, DimensionsFlatToPb(cs.flat), should.Match(cs.list))
 		}
 	})
 }

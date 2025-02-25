@@ -91,17 +91,17 @@ func TestMailer(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			resp, err := srv.SendMail(ctx, testReq)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&mailer.SendMailResponse{
+			assert.Loosely(t, resp, should.Match(&mailer.SendMailResponse{
 				MessageId: expectedMessageID,
 			}))
 
 			assert.Loosely(t, mails, should.HaveLength(1))
-			assert.Loosely(t, mails[0], should.Resemble(expectedEmail))
+			assert.Loosely(t, mails[0], should.Match(expectedEmail))
 
 			t.Run("Deduplication", func(t *ftt.Test) {
 				resp, err := srv.SendMail(ctx, testReq)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&mailer.SendMailResponse{
+				assert.Loosely(t, resp, should.Match(&mailer.SendMailResponse{
 					MessageId: expectedMessageID,
 				}))
 				assert.Loosely(t, mails, should.HaveLength(1)) // no new calls

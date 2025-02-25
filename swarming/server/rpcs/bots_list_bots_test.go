@@ -134,7 +134,7 @@ func TestListBots(t *testing.T) {
 			// An unlimited query first.
 			resp, err := callAsAdmin(req)
 			assert.NoErr(t, err)
-			assert.Loosely(t, botIDs(resp.Items), should.Resemble(expected))
+			assert.Loosely(t, botIDs(resp.Items), should.Match(expected))
 
 			// A paginated one should return the same results.
 			var out []*apipb.BotInfo
@@ -151,7 +151,7 @@ func TestListBots(t *testing.T) {
 					break
 				}
 			}
-			assert.Loosely(t, botIDs(out), should.Resemble(expected))
+			assert.Loosely(t, botIDs(out), should.Match(expected))
 		}
 
 		t.Run("No filters", func(t *ftt.Test) {

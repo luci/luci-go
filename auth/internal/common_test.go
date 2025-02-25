@@ -196,7 +196,7 @@ func TestTokenHelpers(t *testing.T) {
 		assert.Loosely(t, firstFull, should.Equal(4*60-1))
 		// The in-between contains linearly increasing chance of early expiry, as
 		// can totally be seen from this assertion.
-		assert.Loosely(t, hist[firstNonZero:firstFull], should.Resemble([]int{
+		assert.Loosely(t, hist[firstNonZero:firstFull], should.Match([]int{
 			8, 6, 8, 23, 20, 27, 28, 29, 25, 36, 43, 41, 53, 49,
 			49, 57, 59, 62, 69, 69, 76, 72, 82, 73, 85, 83, 93, 93,
 		}))

@@ -108,7 +108,7 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 		certs, err := FetchCertificatesForServiceAccount(ctx, "robot@robots.gserviceaccount.com")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, certs.ServiceAccountName, should.Equal("robot@robots.gserviceaccount.com"))
-		assert.Loosely(t, certs.Certificates, should.Resemble([]Certificate{
+		assert.Loosely(t, certs.Certificates, should.Match([]Certificate{
 			{
 				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
@@ -136,7 +136,7 @@ func TestFetchGoogleOAuth2Certificates(t *testing.T) {
 
 		certs, err := FetchGoogleOAuth2Certificates(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, certs.Certificates, should.Resemble([]Certificate{
+		assert.Loosely(t, certs.Certificates, should.Match([]Certificate{
 			{
 				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",

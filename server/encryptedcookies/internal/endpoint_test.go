@@ -94,7 +94,7 @@ func TestTokenEndpoint(t *testing.T) {
 			})
 			priv, exp, err := call()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, priv, should.Resemble(&sessionpb.Private{
+			assert.Loosely(t, priv, should.Match(&sessionpb.Private{
 				AccessToken:  "access_token",
 				RefreshToken: "refresh_token",
 				IdToken:      "id_token",

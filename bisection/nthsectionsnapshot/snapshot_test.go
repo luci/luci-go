@@ -36,7 +36,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 3, 10)
-		assert.Loosely(t, alloc, should.Resemble([]int{3}))
+		assert.Loosely(t, alloc, should.Match([]int{3}))
 		assert.Loosely(t, chunkSize, should.Equal(2))
 	})
 
@@ -48,7 +48,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 0, 10)
-		assert.Loosely(t, alloc, should.Resemble([]int{0}))
+		assert.Loosely(t, alloc, should.Match([]int{0}))
 		assert.Loosely(t, chunkSize, should.Equal(10))
 	})
 
@@ -60,7 +60,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 1, 1)
-		assert.Loosely(t, alloc, should.Resemble([]int{1}))
+		assert.Loosely(t, alloc, should.Match([]int{1}))
 		assert.Loosely(t, chunkSize, should.Equal(5))
 	})
 
@@ -72,7 +72,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 100, 100)
-		assert.Loosely(t, alloc, should.Resemble([]int{100}))
+		assert.Loosely(t, alloc, should.Match([]int{100}))
 		assert.Loosely(t, chunkSize, should.BeZero)
 	})
 
@@ -88,7 +88,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 1, 1)
-		assert.Loosely(t, alloc, should.Resemble([]int{1, 0}))
+		assert.Loosely(t, alloc, should.Match([]int{1, 0}))
 		assert.Loosely(t, chunkSize, should.Equal(10))
 	})
 
@@ -104,7 +104,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 2, 2)
-		assert.Loosely(t, alloc, should.Resemble([]int{1, 1}))
+		assert.Loosely(t, alloc, should.Match([]int{1, 1}))
 		assert.Loosely(t, chunkSize, should.Equal(5))
 	})
 
@@ -120,7 +120,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 2, 2)
-		assert.Loosely(t, alloc, should.Resemble([]int{2, 0}))
+		assert.Loosely(t, alloc, should.Match([]int{2, 0}))
 		assert.Loosely(t, chunkSize, should.Equal(3))
 	})
 
@@ -136,7 +136,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 6, 6)
-		assert.Loosely(t, alloc, should.Resemble([]int{5, 1}))
+		assert.Loosely(t, alloc, should.Match([]int{5, 1}))
 		assert.Loosely(t, chunkSize, should.Equal(1))
 	})
 
@@ -156,7 +156,7 @@ func TestChunking(t *testing.T) {
 			},
 		}
 		alloc, chunkSize := chunking(chunks, 0, 4, 4)
-		assert.Loosely(t, alloc, should.Resemble([]int{2, 1, 1}))
+		assert.Loosely(t, alloc, should.Match([]int{2, 1, 1}))
 		assert.Loosely(t, chunkSize, should.Equal(3))
 	})
 }
@@ -337,7 +337,7 @@ func TestFindRegressionChunks(t *testing.T) {
 		}
 		chunks, err := snapshot.findRegressionChunks()
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, chunks, should.Resemble([]*NthSectionSnapshotChunk{
+		assert.Loosely(t, chunks, should.Match([]*NthSectionSnapshotChunk{
 			{
 				Begin: 27,
 				End:   34,
@@ -366,15 +366,15 @@ func TestBreakIntoSmallerChunks(t *testing.T) {
 			Begin: 10,
 			End:   19,
 		}
-		assert.Loosely(t, breakToSmallerChunks(chunk, 0), should.Resemble([]int{}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 1), should.Resemble([]int{15}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 2), should.Resemble([]int{13, 16}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 3), should.Resemble([]int{12, 15, 17}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 4), should.Resemble([]int{11, 13, 16, 18}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 5), should.Resemble([]int{11, 13, 15, 16, 18}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 6), should.Resemble([]int{11, 12, 14, 15, 17, 18}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 10), should.Resemble([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
-		assert.Loosely(t, breakToSmallerChunks(chunk, 100), should.Resemble([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 0), should.Match([]int{}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 1), should.Match([]int{15}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 2), should.Match([]int{13, 16}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 3), should.Match([]int{12, 15, 17}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 4), should.Match([]int{11, 13, 16, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 5), should.Match([]int{11, 13, 15, 16, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 6), should.Match([]int{11, 12, 14, 15, 17, 18}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 10), should.Match([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
+		assert.Loosely(t, breakToSmallerChunks(chunk, 100), should.Match([]int{10, 11, 12, 13, 14, 15, 16, 17, 18, 19}))
 	})
 }
 
@@ -394,7 +394,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, indices, should.Resemble([]int{2, 8}))
+		assert.Loosely(t, indices, should.Match([]int{2, 8}))
 	})
 
 	ftt.Run("FindNextIndicesToRun with a single commit should not return anything", t, func(t *ftt.Test) {
@@ -405,7 +405,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, indices, should.Resemble([]int{}))
+		assert.Loosely(t, indices, should.Match([]int{}))
 	})
 
 	ftt.Run("FindNextIndicesToRun already found culprit", t, func(t *ftt.Test) {
@@ -425,7 +425,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, indices, should.Resemble([]int{}))
+		assert.Loosely(t, indices, should.Match([]int{}))
 	})
 
 	ftt.Run("FindNextIndicesToRunAllRerunsAreRunning", t, func(t *ftt.Test) {
@@ -449,7 +449,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		}
 		indices, err := snapshot.FindNextIndicesToRun(2)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, indices, should.Resemble([]int{}))
+		assert.Loosely(t, indices, should.Match([]int{}))
 	})
 }
 
@@ -469,7 +469,7 @@ func TestFindNextCommitsToRun(t *testing.T) {
 		}
 		indices, err := snapshot.FindNextCommitsToRun(2)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, indices, should.Resemble([]string{"commit2", "commit8"}))
+		assert.Loosely(t, indices, should.Match([]string{"commit2", "commit8"}))
 	})
 }
 

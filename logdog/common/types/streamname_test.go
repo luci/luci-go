@@ -118,7 +118,7 @@ func TestStreamName(t *testing.T) {
 			{`/`, []StreamName{`/`, ``}},
 		} {
 			t.Run(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func(t *ftt.Test) {
-				assert.Loosely(t, StreamName(entry.t).Namespaces(), should.Resemble(entry.e))
+				assert.Loosely(t, StreamName(entry.t).Namespaces(), should.Match(entry.e))
 			})
 		}
 	})
@@ -206,7 +206,7 @@ func TestStreamName(t *testing.T) {
 			{StreamName("foo/bar/baz"), []string{"foo", "bar", "baz"}, 3},
 		} {
 			t.Run(fmt.Sprintf(`Stream Name "%s" has %d segments: %v`, entry.s, entry.n, entry.p), func(t *ftt.Test) {
-				assert.Loosely(t, entry.s.Segments(), should.Resemble(entry.p))
+				assert.Loosely(t, entry.s.Segments(), should.Match(entry.p))
 				assert.Loosely(t, len(entry.s.Segments()), should.Equal(entry.s.SegmentCount()))
 				assert.Loosely(t, len(entry.s.Segments()), should.Equal(entry.n))
 			})
@@ -300,7 +300,7 @@ func TestStreamPath(t *testing.T) {
 						break
 					}
 				}
-				assert.Loosely(t, parts, should.Resemble(tc.c))
+				assert.Loosely(t, parts, should.Match(tc.c))
 			})
 		}
 	})

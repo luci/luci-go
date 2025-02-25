@@ -32,10 +32,10 @@ func TestTimeLayoutFlag(t *testing.T) {
 			f := Date(&ts)
 
 			assert.Loosely(t, f.Set("2020-01-24"), should.BeNil)
-			assert.Loosely(t, ts, should.Resemble(time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC)))
+			assert.Loosely(t, ts, should.Match(time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC)))
 
 			assert.Loosely(t, f.String(), should.Equal("2020-01-24"))
-			assert.Loosely(t, f.Get(), should.Resemble(ts))
+			assert.Loosely(t, f.Get(), should.Match(ts))
 		})
 
 		t.Run(`zero value`, func(t *ftt.Test) {

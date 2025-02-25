@@ -81,7 +81,7 @@ func TestHandshakeProtocol(t *testing.T) {
 				t.Helper()
 				assert.Loosely(t, f.FromHandshake(buf), should.BeNil, truth.LineContext())
 
-				assert.Loosely(t, f, should.Resemble(&Flags{
+				assert.Loosely(t, f, should.Match(&Flags{
 					Name:        "test",
 					ContentType: "text/plain; charset=utf-8",
 					Timestamp:   clockflag.Time(timestamp),

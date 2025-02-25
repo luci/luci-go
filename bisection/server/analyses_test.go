@@ -324,7 +324,7 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, len(res.Analyses), should.Equal(1))
 
 		analysis := res.Analyses[0]
-		assert.Loosely(t, analysis.Builder, should.Resemble(&buildbucketpb.BuilderID{
+		assert.Loosely(t, analysis.Builder, should.Match(&buildbucketpb.BuilderID{
 			Project: "chromium/test",
 			Bucket:  "ci",
 			Builder: "android",
@@ -429,7 +429,7 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), should.BeTrue)
 		assert.Loosely(t, proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), should.BeTrue)
 		assert.Loosely(t, nthSectionResult.Status, should.Equal(pb.AnalysisStatus_FOUND))
-		assert.Loosely(t, nthSectionResult.Suspect, should.Resemble(&pb.NthSectionSuspect{
+		assert.Loosely(t, nthSectionResult.Suspect, should.Match(&pb.NthSectionSuspect{
 			GitilesCommit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -447,7 +447,7 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, nthSectionResult.RemainingNthSectionRange, should.Resemble(&pb.RegressionRange{
+		assert.Loosely(t, nthSectionResult.RemainingNthSectionRange, should.Match(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -464,7 +464,7 @@ func TestQueryAnalysis(t *testing.T) {
 
 		assert.Loosely(t, len(nthSectionResult.Reruns), should.Equal(3))
 
-		assert.Loosely(t, nthSectionResult.Reruns[0], should.Resemble(&pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[0], should.Match(&pb.SingleRerun{
 			Bbid:      8877665544332211,
 			StartTime: &timestamppb.Timestamp{Seconds: 101},
 			EndTime:   &timestamppb.Timestamp{Seconds: 102},
@@ -481,7 +481,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Type:  "Culprit Verification",
 		}))
 
-		assert.Loosely(t, nthSectionResult.Reruns[1], should.Resemble(&pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[1], should.Match(&pb.SingleRerun{
 			Bbid:      7766554433221100,
 			StartTime: &timestamppb.Timestamp{Seconds: 201},
 			EndTime:   &timestamppb.Timestamp{Seconds: 202},
@@ -498,7 +498,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Type:  "Culprit Verification",
 		}))
 
-		assert.Loosely(t, nthSectionResult.Reruns[2], should.Resemble(&pb.SingleRerun{
+		assert.Loosely(t, nthSectionResult.Reruns[2], should.Match(&pb.SingleRerun{
 			Bbid:      800999000,
 			StartTime: &timestamppb.Timestamp{Seconds: 301},
 			EndTime:   &timestamppb.Timestamp{Seconds: 302},
@@ -515,7 +515,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Type:  "NthSection",
 		}))
 
-		assert.Loosely(t, nthSectionResult.BlameList, should.Resemble(nsa.BlameList))
+		assert.Loosely(t, nthSectionResult.BlameList, should.Match(nsa.BlameList))
 	})
 
 	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {
@@ -766,7 +766,7 @@ func TestGetTestAnalyses(t *testing.T) {
 			}
 			res, err := server.GetTestAnalysis(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.TestAnalysis{
+			assert.Loosely(t, res, should.Match(&pb.TestAnalysis{
 				AnalysisId: 100,
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -981,7 +981,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 
 				resp, err := server.BatchGetTestAnalyses(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&pb.BatchGetTestAnalysesResponse{
+				assert.Loosely(t, resp, should.Match(&pb.BatchGetTestAnalysesResponse{
 					TestAnalyses: []*pb.TestAnalysis{nil, nil, nil, {
 						AnalysisId:  104,
 						Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
@@ -1022,7 +1022,7 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 			// Expect a response with an empty item for each requested test failure in this case.
 			rsp, err := server.BatchGetTestAnalyses(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp.TestAnalyses, should.Resemble([]*pb.TestAnalysis{nil}))
+			assert.Loosely(t, rsp.TestAnalyses, should.Match([]*pb.TestAnalysis{nil}))
 		})
 	})
 }

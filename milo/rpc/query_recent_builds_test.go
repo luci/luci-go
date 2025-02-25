@@ -115,7 +115,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 				PageSize: 2,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builds, should.Resemble([]*buildbucketpb.Build{
+			assert.Loosely(t, res.Builds, should.Match([]*buildbucketpb.Build{
 				{
 					Builder:    builder1,
 					Id:         998,
@@ -137,7 +137,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Builds, should.Resemble([]*buildbucketpb.Build{
+			assert.Loosely(t, res.Builds, should.Match([]*buildbucketpb.Build{
 				{
 					Builder:    builder1,
 					Number:     2,

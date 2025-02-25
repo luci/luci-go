@@ -126,7 +126,7 @@ func TestGetInstruction(t *testing.T) {
 				req := &pb.GetInstructionRequest{Name: "invocations/build-12345/instructions/my_instruction"}
 				instruction, err := srv.GetInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, instruction, should.Resemble(&pb.Instruction{
+				assert.Loosely(t, instruction, should.Match(&pb.Instruction{
 					Id:              "my_instruction",
 					Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
 					DescriptiveName: "My Instruction",

@@ -38,7 +38,7 @@ func NewShouldResemberMatcher(expected any) shouldResembleMatcher {
 
 // Matches implements gomock.Matcher
 func (e shouldResembleMatcher) Matches(actual any) bool {
-	return should.Resemble[any](actual)(e.expected) == nil
+	return should.Match[any](actual)(e.expected) == nil
 }
 
 // String implements gomock.Matcher

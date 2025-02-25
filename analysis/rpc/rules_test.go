@@ -169,7 +169,7 @@ func TestRules(t *testing.T) {
 
 					rule, err := srv.Get(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(ruleManaged, cfg, mask)))
 				})
 				t.Run("Without get rule definition permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
@@ -181,7 +181,7 @@ func TestRules(t *testing.T) {
 					rule, err := srv.Get(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
 					mask.IncludeDefinition = false
-					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(ruleManaged, cfg, mask)))
 				})
 				t.Run("Without get rule audit users permission", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
@@ -193,7 +193,7 @@ func TestRules(t *testing.T) {
 					rule, err := srv.Get(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
 					mask.IncludeAuditUsers = false
-					assert.Loosely(t, rule, should.Resemble(createRulePB(ruleManaged, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(ruleManaged, cfg, mask)))
 				})
 			})
 			t.Run("Rule does not exist", func(t *ftt.Test) {
@@ -262,7 +262,7 @@ func TestRules(t *testing.T) {
 					sort.Slice(response.Rules, func(i, j int) bool {
 						return response.Rules[i].RuleId < response.Rules[j].RuleId
 					})
-					assert.Loosely(t, response, should.Resemble(expected))
+					assert.Loosely(t, response, should.Match(expected))
 				}
 				mask := ruleMask{
 					IncludeDefinition: true,
@@ -297,7 +297,7 @@ func TestRules(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				expected := &pb.ListRulesResponse{}
-				assert.Loosely(t, response, should.Resemble(expected))
+				assert.Loosely(t, response, should.Match(expected))
 			})
 		})
 		t.Run("Update", func(t *ftt.Test) {
@@ -463,11 +463,11 @@ func TestRules(t *testing.T) {
 						expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
 						// Verify the rule was updated as expected.
-						assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+						assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 						// Verify the returned rule matches what was expected.
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-						assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+						assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 					})
 					t.Run("No audit users permission", func(t *ftt.Test) {
 						authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
@@ -489,11 +489,11 @@ func TestRules(t *testing.T) {
 						expectedRule.IsManagingBugPriorityLastUpdateTime = storedRule.LastUpdateTime
 						expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-						assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+						assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 						// Verify audit users are omitted from the result.
 						mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-						assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+						assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 					})
 				})
 				t.Run("Predicate not updated", func(t *ftt.Test) {
@@ -529,11 +529,11 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Managing bug priority updated", func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"is_managing_bug_priority"}
@@ -559,11 +559,11 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Re-use of bug managed by another project", func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"bug"}
@@ -601,11 +601,11 @@ func TestRules(t *testing.T) {
 					expectedRule.LastAuditableUpdateTime = storedRule.LastUpdateTime
 					expectedRule.LastAuditableUpdateUser = "someone@example.com"
 
-					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 					// Verify the returned rule matches what was expected.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
 			t.Run("Concurrent Modification", func(t *ftt.Test) {
@@ -794,11 +794,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
+					assert.Loosely(t, storedRule, should.Match(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Bug managed by another rule", func(t *ftt.Test) {
 					// Re-use the same bug as a rule in another project,
@@ -824,11 +824,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
+					assert.Loosely(t, storedRule, should.Match(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Buganizer", func(t *ftt.Test) {
 					request.Rule.Bug = &pb.AssociatedBug{
@@ -849,11 +849,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
+					assert.Loosely(t, storedRule, should.Match(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("No audit users permission", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
@@ -870,11 +870,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
+					assert.Loosely(t, storedRule, should.Match(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Without source cluster", func(t *ftt.Test) {
 					request.Rule.SourceCluster = &pb.ClusterId{}
@@ -893,11 +893,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRuleBuilder.Build()))
+					assert.Loosely(t, storedRule, should.Match(expectedRuleBuilder.Build()))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
 		})
@@ -1222,11 +1222,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 				t.Run("Without audit access", func(t *ftt.Test) {
 					authState.IdentityGroups = removeGroup(authState.IdentityGroups, auditUsersAccessGroup)
@@ -1268,11 +1268,11 @@ func TestRules(t *testing.T) {
 						Build()
 
 					// Verify the rule was correctly created in the database.
-					assert.Loosely(t, storedRule, should.Resemble(expectedRule))
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
 
 					// Verify the returned rule matches our expectations.
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
-					assert.Loosely(t, rule, should.Resemble(createRulePB(expectedRule, cfg, mask)))
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
 			})
 		})
@@ -1296,7 +1296,7 @@ func TestRules(t *testing.T) {
 
 				response, err := srv.LookupBug(ctx, request)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
+				assert.Loosely(t, response, should.Match(&pb.LookupBugResponse{
 					Rules: []string{},
 				}))
 			})
@@ -1308,7 +1308,7 @@ func TestRules(t *testing.T) {
 
 				response, err := srv.LookupBug(ctx, request)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
+				assert.Loosely(t, response, should.Match(&pb.LookupBugResponse{
 					Rules: []string{
 						fmt.Sprintf("projects/%s/rules/%s",
 							ruleManaged.Project, ruleManaged.RuleID),
@@ -1320,7 +1320,7 @@ func TestRules(t *testing.T) {
 
 					response, err := srv.LookupBug(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
+					assert.Loosely(t, response, should.Match(&pb.LookupBugResponse{
 						Rules: []string{},
 					}))
 				})
@@ -1333,7 +1333,7 @@ func TestRules(t *testing.T) {
 
 				response, err := srv.LookupBug(ctx, request)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
+				assert.Loosely(t, response, should.Match(&pb.LookupBugResponse{
 					Rules: []string{
 						// Rules are returned alphabetically by project.
 						fmt.Sprintf("projects/otherproject/rules/%s", ruleTwoProjectOther.RuleID),
@@ -1351,7 +1351,7 @@ func TestRules(t *testing.T) {
 
 					response, err := srv.LookupBug(ctx, request)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(&pb.LookupBugResponse{
+					assert.Loosely(t, response, should.Match(&pb.LookupBugResponse{
 						Rules: []string{
 							fmt.Sprintf("projects/testproject/rules/%s", ruleTwoProject.RuleID),
 						},
@@ -1412,7 +1412,7 @@ func TestRules(t *testing.T) {
 					t.Run("Baseline", func(t *ftt.Test) {
 						response, err := srv.PrepareDefaults(ctx, request)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
+						assert.Loosely(t, response.Rule, should.Match(&pb.Rule{
 							RuleDefinition: `test = "ninja://some_package/some_test" AND reason LIKE "Some error %."`,
 							IsActive:       true,
 						}))
@@ -1422,7 +1422,7 @@ func TestRules(t *testing.T) {
 
 						response, err := srv.PrepareDefaults(ctx, request)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
+						assert.Loosely(t, response.Rule, should.Match(&pb.Rule{
 							RuleDefinition: `test = "ninja://some_package/some_test"`,
 							IsActive:       true,
 						}))
@@ -1432,7 +1432,7 @@ func TestRules(t *testing.T) {
 
 						response, err := srv.PrepareDefaults(ctx, request)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, response.Rule, should.Resemble(&pb.Rule{
+						assert.Loosely(t, response.Rule, should.Match(&pb.Rule{
 							RuleDefinition: ``,
 							IsActive:       true,
 						}))
@@ -1491,20 +1491,20 @@ func TestRules(t *testing.T) {
 			IncludeAuditUsers: true,
 		}
 		t.Run("With all fields", func(t *ftt.Test) {
-			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Match(expectedRule))
 		})
 		t.Run("Without definition field", func(t *ftt.Test) {
 			mask.IncludeDefinition = false
 			expectedRule.RuleDefinition = ""
 			expectedRule.Etag = `W/"+u/1909-09-09T09:09:09.000000001Z"`
-			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Match(expectedRule))
 		})
 		t.Run("Without audit users", func(t *ftt.Test) {
 			mask.IncludeAuditUsers = false
 			expectedRule.CreateUser = ""
 			expectedRule.LastAuditableUpdateUser = ""
 			expectedRule.Etag = `W/"+d/1909-09-09T09:09:09.000000001Z"`
-			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Resemble(expectedRule))
+			assert.Loosely(t, createRulePB(rule, cfg, mask), should.Match(expectedRule))
 		})
 	})
 	ftt.Run("isETagValid", t, func(t *ftt.Test) {

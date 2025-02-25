@@ -44,7 +44,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			// Verify exactly one ingestion has been created.
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestVerdicts)
-			assert.Loosely(t, resultsTask, should.Resemble(expectedTask))
+			assert.Loosely(t, resultsTask, should.Match(expectedTask))
 		}
 		t.Run(`does not have buildbucket build`, func(t *ftt.Test) {
 			invocationCreateTime := time.Date(2024, time.December, 11, 10, 9, 8, 7, time.UTC)

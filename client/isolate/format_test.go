@@ -40,7 +40,7 @@ func TestConditionJson(t *testing.T) {
 		pc := condition{}
 		err = json.Unmarshal(jsonData, &pc)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pc, should.Resemble(c))
+		assert.Loosely(t, pc, should.Match(c))
 	})
 }
 
@@ -65,8 +65,8 @@ func TestVariableValueOrder(t *testing.T) {
 			{1, S("a"), S("b")},
 		}
 		for _, e := range expectations {
-			assert.Loosely(t, e.res, should.Resemble(e.l.compare(e.r)))
-			assert.Loosely(t, -e.res, should.Resemble(e.r.compare(e.l)))
+			assert.Loosely(t, e.res, should.Match(e.l.compare(e.r)))
+			assert.Loosely(t, -e.res, should.Match(e.r.compare(e.l)))
 		}
 	})
 }
@@ -141,7 +141,7 @@ func TestConditionEvaluate(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(errUnbound))
 			} else {
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, e.exp == T, should.Resemble(isTrue))
+				assert.Loosely(t, e.exp == T, should.Match(isTrue))
 			}
 		}
 	})
@@ -178,7 +178,7 @@ func TestMatchConfigs(t *testing.T) {
 			c, err := processCondition(condition{Condition: e.cond}, variablesValuesSet{})
 			assert.Loosely(t, err, should.BeNil)
 			out := c.matchConfigs(makeConfigVariableIndex(e.conf), e.all)
-			assert.Loosely(t, vvToStr2D(vvSort(out)), should.Resemble(vvToStr2D(vvSort(e.out))))
+			assert.Loosely(t, vvToStr2D(vvSort(out)), should.Match(vvToStr2D(vvSort(e.out))))
 		}
 	})
 }
@@ -198,7 +198,7 @@ func TestCartesianProductOfValues(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			vvSort(expected)
 			vvSort(res)
-			assert.Loosely(t, vvToStr2D(res), should.Resemble(vvToStr2D(expected)))
+			assert.Loosely(t, vvToStr2D(res), should.Match(vvToStr2D(expected)))
 		}
 		keys := func(vs ...string) []string { return vs }
 
@@ -261,8 +261,8 @@ func TestPythonToGoString(t *testing.T) {
 		for _, e := range expectations {
 			goChunk, left, err := pythonToGoString([]rune(e.in))
 			t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s` err: %s", e.in, e.out, goChunk, e.left, string(left), err)
-			assert.Loosely(t, string(left), should.Resemble(e.left))
-			assert.Loosely(t, goChunk, should.Resemble(e.out))
+			assert.Loosely(t, string(left), should.Match(e.left))
+			assert.Loosely(t, goChunk, should.Match(e.out))
 			assert.Loosely(t, err, should.BeNil)
 		}
 	})
@@ -295,8 +295,8 @@ func TestPythonToGoNonString(t *testing.T) {
 		for _, e := range expectations {
 			goChunk, left := pythonToGoNonString([]rune(e.in))
 			t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s`", e.in, e.out, goChunk, e.left, string(left))
-			assert.Loosely(t, string(left), should.Resemble(e.left))
-			assert.Loosely(t, goChunk, should.Resemble(e.out))
+			assert.Loosely(t, string(left), should.Match(e.left))
+			assert.Loosely(t, goChunk, should.Match(e.out))
 		}
 	})
 }
@@ -349,14 +349,14 @@ func TestProcessIsolate(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, p.conditions[0].condition, should.Match(`(OS=="linux" and bit==64) or OS=="win"`))
 		assert.Loosely(t, p.conditions[0].variables.Files, should.HaveLength(2))
-		assert.Loosely(t, p.includes, should.Resemble([]string{"inc/included.isolate"}))
+		assert.Loosely(t, p.includes, should.Match([]string{"inc/included.isolate"}))
 
 		vars, ok := getSortedVarValues(p.varsValsSet, "OS")
 		assert.Loosely(t, ok, should.BeTrue)
-		assert.Loosely(t, vvToStr(vars), should.Resemble(vvToStr(makeVVs("linux", "mac", "win"))))
+		assert.Loosely(t, vvToStr(vars), should.Match(vvToStr(makeVVs("linux", "mac", "win"))))
 		vars, ok = getSortedVarValues(p.varsValsSet, "bit")
 		assert.Loosely(t, ok, should.BeTrue)
-		assert.Loosely(t, vvToStr(vars), should.Resemble(vvToStr(makeVVs("32", "64"))))
+		assert.Loosely(t, vvToStr(vars), should.Match(vvToStr(makeVVs("32", "64"))))
 	})
 }
 
@@ -369,7 +369,7 @@ func TestLoadIsolateAsConfig(t *testing.T) {
 		}
 		isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, isolate.ConfigVariables, should.Resemble([]string{"OS", "bit"}))
+		assert.Loosely(t, isolate.ConfigVariables, should.Match([]string{"OS", "bit"}))
 	})
 }
 
@@ -406,15 +406,15 @@ func TestLoadIsolateForConfig(t *testing.T) {
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		deps, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, dir, should.Resemble(root))
-		assert.Loosely(t, deps, should.Resemble([]string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")}))
+		assert.Loosely(t, dir, should.Match(root))
+		assert.Loosely(t, deps, should.Match([]string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")}))
 
 		// Case win64, matches only first condition.
 		vars = map[string]string{"bit": "64", "OS": "win"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, dir, should.Resemble(root))
-		assert.Loosely(t, deps, should.Resemble([]string{
+		assert.Loosely(t, dir, should.Match(root))
+		assert.Loosely(t, deps, should.Match([]string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 		}))
@@ -423,15 +423,15 @@ func TestLoadIsolateForConfig(t *testing.T) {
 		vars = map[string]string{"bit": "64", "OS": "mac"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, dir, should.Resemble(root))
+		assert.Loosely(t, dir, should.Match(root))
 		assert.Loosely(t, deps, should.BeEmpty)
 
 		// Case win32, both first and second condition match.
 		vars = map[string]string{"bit": "32", "OS": "win"}
 		deps, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, dir, should.Resemble(root))
-		assert.Loosely(t, deps, should.Resemble([]string{
+		assert.Loosely(t, dir, should.Match(root))
+		assert.Loosely(t, deps, should.Match([]string{
 			"64linuxOrWin",
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 		}))
@@ -461,8 +461,8 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 		vars := map[string]string{"bit": "64", "OS": "linux"}
 		deps, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, dir, should.Resemble(filepath.Join(tmpDir, "inc")))
-		assert.Loosely(t, deps, should.Resemble([]string{
+		assert.Loosely(t, dir, should.Match(filepath.Join(tmpDir, "inc")))
+		assert.Loosely(t, deps, should.Match([]string{
 			filepath.Join("..", "64linuxOrWin"),
 			filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
 			filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
@@ -485,9 +485,9 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 
 		out, err := left.union(right)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, out.IsolateDir, should.Resemble(left.IsolateDir))
-		assert.Loosely(t, left.IsolateDir, should.Resemble(absToOS("/tmp/bar")))
-		assert.Loosely(t, out.Files, should.Resemble([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
+		assert.Loosely(t, out.IsolateDir, should.Match(left.IsolateDir))
+		assert.Loosely(t, left.IsolateDir, should.Match(absToOS("/tmp/bar")))
+		assert.Loosely(t, out.Files, should.Match([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
 	})
 }
 
@@ -505,9 +505,9 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 
 		out, err := left.union(right)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, out.IsolateDir, should.Resemble(left.IsolateDir))
-		assert.Loosely(t, right.IsolateDir, should.Resemble(absToOS("/var/lib")))
-		assert.Loosely(t, out.Files, should.Resemble([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
+		assert.Loosely(t, out.IsolateDir, should.Match(left.IsolateDir))
+		assert.Loosely(t, right.IsolateDir, should.Match(absToOS("/var/lib")))
+		assert.Loosely(t, out.Files, should.Match([]string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}))
 	})
 }
 

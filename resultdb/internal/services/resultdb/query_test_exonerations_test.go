@@ -135,7 +135,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 
 			t.Run(`And with missing included invocation`, func(t *ftt.Test) {
 				testutil.MustApply(
@@ -151,7 +151,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				sort.Slice(actual, func(i, j int) bool {
 					return actual[i].Name < actual[j].Name
 				})
-				assert.Loosely(t, actual, should.Resemble(expected))
+				assert.Loosely(t, actual, should.Match(expected))
 			})
 		})
 
@@ -164,7 +164,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			sort.Slice(actual, func(i, j int) bool {
 				return actual[i].Name < actual[j].Name
 			})
-			assert.Loosely(t, actual, should.Resemble([]*pb.TestExoneration{
+			assert.Loosely(t, actual, should.Match([]*pb.TestExoneration{
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
 					TestId:          "C",

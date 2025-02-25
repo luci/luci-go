@@ -89,7 +89,7 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 			resp := make([]*pb.SetBuilderHealthResponse_Response, 3)
 			err := validateRequest(ctx, req, nil, resp)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble([]*pb.SetBuilderHealthResponse_Response{
+			assert.Loosely(t, resp, should.Match([]*pb.SetBuilderHealthResponse_Response{
 				nil, nil, nil,
 			}))
 		})
@@ -160,7 +160,7 @@ func TestValidateSetBuilderHealthRequest(t *testing.T) {
 			resp := make([]*pb.SetBuilderHealthResponse_Response, 1)
 			err := validateRequest(ctx, req, errs, resp)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble([]*pb.SetBuilderHealthResponse_Response{
+			assert.Loosely(t, resp, should.Match([]*pb.SetBuilderHealthResponse_Response{
 				{
 					Response: &pb.SetBuilderHealthResponse_Response_Error{
 						Error: &status.Status{
@@ -227,7 +227,7 @@ func TestSetBuilderHealth(t *testing.T) {
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
+			assert.Loosely(t, resp, should.Match(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
@@ -328,7 +328,7 @@ func TestSetBuilderHealth(t *testing.T) {
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
+			assert.Loosely(t, resp, should.Match(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
@@ -461,19 +461,19 @@ func TestSetBuilderHealth(t *testing.T) {
 			assert.Loosely(t, expectedBuilder1.Metadata.Health.HealthScore, should.Equal(9))
 			assert.Loosely(t, expectedBuilder1.Metadata.Health.Reporter, should.Equal("someone@example.com"))
 			assert.Loosely(t, expectedBuilder1.Metadata.Health.ReportedTime, should.NotBeNil)
-			assert.Loosely(t, expectedBuilder1.Metadata.Health.DataLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.DataLinks, should.Match(map[string]string{
 				"user": "data-link-for-amd-cq-from-req",
 			}))
-			assert.Loosely(t, expectedBuilder1.Metadata.Health.DocLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder1.Metadata.Health.DocLinks, should.Match(map[string]string{
 				"user": "doc-link-for-amd-cq-from-req",
 			}))
 			assert.Loosely(t, expectedBuilder2.Metadata.Health.HealthScore, should.Equal(8))
 			assert.Loosely(t, expectedBuilder2.Metadata.Health.Reporter, should.Equal("someone@example.com"))
 			assert.Loosely(t, expectedBuilder2.Metadata.Health.ReportedTime, should.NotBeNil)
-			assert.Loosely(t, expectedBuilder2.Metadata.Health.DataLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.DataLinks, should.Match(map[string]string{
 				"user": "data-link-for-amd-cq-2",
 			}))
-			assert.Loosely(t, expectedBuilder2.Metadata.Health.DocLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder2.Metadata.Health.DocLinks, should.Match(map[string]string{
 				"user": "doc-link-for-amd-cq-2",
 			}))
 			assert.Loosely(t, expectedBuilder3.Metadata.Health.HealthScore, should.Equal(2))
@@ -520,7 +520,7 @@ func TestSetBuilderHealth(t *testing.T) {
 			}
 			resp, err := srv.SetBuilderHealth(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&pb.SetBuilderHealthResponse{
+			assert.Loosely(t, resp, should.Match(&pb.SetBuilderHealthResponse{
 				Responses: []*pb.SetBuilderHealthResponse_Response{
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Result{
@@ -630,11 +630,11 @@ func TestSetBuilderHealth(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			expectedBuilder := &model.Builder{ID: "amd-cq", Parent: bktKey}
 			assert.Loosely(t, datastore.Get(ctx, expectedBuilder), should.BeNil)
-			assert.Loosely(t, expectedBuilder.Metadata.Health.DataLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder.Metadata.Health.DataLinks, should.Match(map[string]string{
 				"google.com":   "go/somelink",
 				"chromium.org": "some_public_link.com",
 			}))
-			assert.Loosely(t, expectedBuilder.Metadata.Health.DocLinks, should.Resemble(map[string]string{
+			assert.Loosely(t, expectedBuilder.Metadata.Health.DocLinks, should.Match(map[string]string{
 				"google.com":   "go/some_doc_link",
 				"chromium.org": "some_public_doc_link.com",
 			}))

@@ -89,9 +89,9 @@ func TestAssetsRPC(t *testing.T) {
 				Limit:   4,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp.Asset, should.Resemble(asset))
-			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
-			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
+			assert.Loosely(t, resp.Asset, should.Match(asset))
+			assert.Loosely(t, resp.Current, should.Match(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Match([]*modelpb.AssetHistory{
 				phonyHistory(9),
 				phonyHistory(8),
 				phonyHistory(7),
@@ -104,9 +104,9 @@ func TestAssetsRPC(t *testing.T) {
 				Limit:           4,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp.Asset, should.Resemble(asset))
-			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
-			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
+			assert.Loosely(t, resp.Asset, should.Match(asset))
+			assert.Loosely(t, resp.Current, should.Match(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Match([]*modelpb.AssetHistory{
 				phonyHistory(5),
 				phonyHistory(4),
 				phonyHistory(3),
@@ -119,9 +119,9 @@ func TestAssetsRPC(t *testing.T) {
 				Limit:           4,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp.Asset, should.Resemble(asset))
-			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
-			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
+			assert.Loosely(t, resp.Asset, should.Match(asset))
+			assert.Loosely(t, resp.Current, should.Match(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Match([]*modelpb.AssetHistory{
 				phonyHistory(1),
 			}))
 		})

@@ -88,7 +88,7 @@ func TestListTestResults(t *testing.T) {
 			res, err := srv.ListTestResults(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
-			assert.Loosely(t, res.TestResults, should.Resemble(trs[:1]))
+			assert.Loosely(t, res.TestResults, should.Match(trs[:1]))
 			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
 			t.Run(`With pagination`, func(t *ftt.Test) {
@@ -97,7 +97,7 @@ func TestListTestResults(t *testing.T) {
 				resp, err := srv.ListTestResults(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.NotBeNil)
-				assert.Loosely(t, resp.TestResults, should.Resemble(trs[1:]))
+				assert.Loosely(t, resp.TestResults, should.Match(trs[1:]))
 				assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 			})
 
@@ -106,7 +106,7 @@ func TestListTestResults(t *testing.T) {
 				res, err := srv.ListTestResults(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.NotBeNil)
-				assert.Loosely(t, res.TestResults, should.Resemble(trs))
+				assert.Loosely(t, res.TestResults, should.Match(trs))
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})

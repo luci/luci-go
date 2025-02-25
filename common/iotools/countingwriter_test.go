@@ -69,7 +69,7 @@ func TestCountingWriter(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, amount, should.Equal(10))
 
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(data))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match(data))
 			assert.Loosely(t, cw.Count, should.Equal(10))
 		})
 
@@ -84,7 +84,7 @@ func TestCountingWriter(t *testing.T) {
 				written.WriteByte(byte(i))
 			}
 
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(written.Bytes()))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match(written.Bytes()))
 			assert.Loosely(t, cw.Count, should.Equal(32))
 			assert.Loosely(t, tw.writeByteCalled, should.BeTrue)
 		})
@@ -96,7 +96,7 @@ func TestCountingWriter(t *testing.T) {
 			amount, err := cw.Write(data)
 			assert.Loosely(t, amount, should.Equal(len(data)))
 			assert.Loosely(t, err, should.Equal(tw.err))
-			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(data))
+			assert.Loosely(t, tw.buf.Bytes(), should.Match(data))
 			assert.Loosely(t, cw.Count, should.Equal(len(data)))
 		})
 
@@ -118,7 +118,7 @@ func TestCountingWriter(t *testing.T) {
 
 				err := cw.WriteByte(0x55)
 				assert.Loosely(t, err, should.Equal(tw.err))
-				assert.Loosely(t, tw.buf.Bytes(), should.Resemble([]byte{0x55}))
+				assert.Loosely(t, tw.buf.Bytes(), should.Match([]byte{0x55}))
 				assert.Loosely(t, cw.Count, should.Equal(1))
 				assert.Loosely(t, tw.writeByteCalled, should.BeFalse)
 			})

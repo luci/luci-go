@@ -31,7 +31,7 @@ func TestBuildSet(t *testing.T) {
 	ftt.Run("Gerrit", t, func(t *ftt.Test) {
 		t.Run("ParseBuildSet", func(t *ftt.Test) {
 			actual := ParseBuildSet("patch/gerrit/chromium-review.googlesource.com/678507/3")
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   678507,
 				Patchset: 3,
@@ -50,7 +50,7 @@ func TestBuildSet(t *testing.T) {
 	ftt.Run("Gitiles", t, func(t *ftt.Test) {
 		t.Run("ParseBuildSet", func(t *ftt.Test) {
 			actual := ParseBuildSet("commit/gitiles/chromium.googlesource.com/infra/luci/luci-go/+/b7a757f457487cd5cfe2dae83f65c5bc10e288b7")
-			assert.Loosely(t, actual, should.Resemble(&pb.GitilesCommit{
+			assert.Loosely(t, actual, should.Match(&pb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Id:      "b7a757f457487cd5cfe2dae83f65c5bc10e288b7",
@@ -90,7 +90,7 @@ func TestStringPairs(t *testing.T) {
 		m.Add("b", "1")
 
 		pairs := StringPairs(m)
-		assert.Loosely(t, pairs, should.Resemble([]*pb.StringPair{
+		assert.Loosely(t, pairs, should.Match([]*pb.StringPair{
 			{Key: "a", Value: "1"},
 			{Key: "a", Value: "2"},
 			{Key: "b", Value: "1"},
@@ -100,10 +100,10 @@ func TestStringPairs(t *testing.T) {
 	ftt.Run("StringPairMap", t, func(t *ftt.Test) {
 		expected := make(strpair.Map)
 		var stringPairs []*pb.StringPair
-		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
+		assert.Loosely(t, StringPairMap(stringPairs), should.Match(expected))
 
 		stringPairs = []*pb.StringPair{}
-		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
+		assert.Loosely(t, StringPairMap(stringPairs), should.Match(expected))
 
 		stringPairs = []*pb.StringPair{
 			{Key: "a", Value: "1"},
@@ -111,6 +111,6 @@ func TestStringPairs(t *testing.T) {
 			{Key: "b", Value: "1"},
 		}
 		expected = strpair.ParseMap([]string{"a:1", "a:2", "b:1"})
-		assert.Loosely(t, StringPairMap(stringPairs), should.Resemble(expected))
+		assert.Loosely(t, StringPairMap(stringPairs), should.Match(expected))
 	})
 }

@@ -207,7 +207,7 @@ func TestCancelBuild(t *testing.T) {
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						Id:     1,
 						Status: pb.Status_STARTED,
 					}))
@@ -231,7 +231,7 @@ func TestCancelBuild(t *testing.T) {
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -283,7 +283,7 @@ func TestCancelBuild(t *testing.T) {
 					}
 					rsp, err := srv.CancelBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",

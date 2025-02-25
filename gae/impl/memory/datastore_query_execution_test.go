@@ -398,7 +398,7 @@ var queryExecutionTests = []qExTest{
 				func(c context.Context, t *testing.T) {
 					q := nq("").Gt("__key__", key("Kind", 2))
 					err := ds.Run(c, q, func(pm ds.PropertyMap) error {
-						assert.Loosely(t, pm, should.Resemble(stage1Data[2]))
+						assert.Loosely(t, pm, should.Match(stage1Data[2]))
 						return ds.Stop
 					})
 					assert.Loosely(t, err, shouldBeSuccessful)
@@ -632,7 +632,7 @@ func TestQueryExecution(t *testing.T) {
 										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.keys)))
 										for i, r := range rslt {
-											assert.Loosely(t, r, should.Resemble(expect.keys[i]))
+											assert.Loosely(t, r, should.Match(expect.keys[i]))
 										}
 										return nil
 									}, nil)
@@ -651,7 +651,7 @@ func TestQueryExecution(t *testing.T) {
 										assert.Loosely(t, ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										assert.Loosely(t, len(rslt), should.Equal(len(expect.get)))
 										for i, r := range rslt {
-											assert.Loosely(t, r, should.Resemble(expect.get[i]))
+											assert.Loosely(t, r, should.Match(expect.get[i]))
 										}
 										return nil
 									}, nil)

@@ -140,7 +140,7 @@ func TestProjects(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("without monorail config", func(t *ftt.Test) {
 					projectCfg.BugManagement.Monorail = nil
@@ -152,7 +152,7 @@ func TestProjects(t *testing.T) {
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
 					expectedResponse.BugManagement.Monorail = nil
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 				t.Run("policy without activation threshold", func(t *ftt.Test) {
 					projectCfg.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
@@ -164,7 +164,7 @@ func TestProjects(t *testing.T) {
 					// Verify
 					assert.Loosely(t, err, should.BeNil)
 					expectedResponse.BugManagement.Policies[0].Metrics[0].ActivationThreshold = nil
-					assert.Loosely(t, response, should.Resemble(expectedResponse))
+					assert.Loosely(t, response, should.Match(expectedResponse))
 				})
 			})
 			t.Run("With project not configured", func(t *ftt.Test) {
@@ -176,7 +176,7 @@ func TestProjects(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, response, should.Resemble(&pb.ProjectConfig{
+				assert.Loosely(t, response, should.Match(&pb.ProjectConfig{
 					Name:          "projects/testproject/config",
 					BugManagement: &pb.BugManagement{},
 				}))
@@ -224,7 +224,7 @@ func TestProjects(t *testing.T) {
 				// Verify
 				assert.Loosely(t, err, should.BeNil)
 				expected := &pb.ListProjectsResponse{Projects: []*pb.Project{}}
-				assert.Loosely(t, projectsResponse, should.Resemble(expected))
+				assert.Loosely(t, projectsResponse, should.Match(expected))
 			})
 			t.Run("Valid request", func(t *ftt.Test) {
 				// Run
@@ -249,7 +249,7 @@ func TestProjects(t *testing.T) {
 						Project:     "chromium",
 					},
 				}}
-				assert.Loosely(t, projectsResponse, should.Resemble(expected))
+				assert.Loosely(t, projectsResponse, should.Match(expected))
 			})
 		})
 	})

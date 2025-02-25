@@ -90,7 +90,7 @@ func TestInsert(t *testing.T) {
 
 			decoded := []rawEntry{}
 			assert.Loosely(t, gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&decoded), should.BeNil)
-			assert.Loosely(t, decoded, should.Resemble([]rawEntry{
+			assert.Loosely(t, decoded, should.Match([]rawEntry{
 				{
 					InsertID: "abc",
 					// Note that outer bigquery.Value deserializes into bqapi.JsonValue,

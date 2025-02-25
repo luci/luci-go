@@ -74,7 +74,7 @@ func TestGetTestResult(t *testing.T) {
 			req := &pb.GetTestResultRequest{Name: name}
 			tr, err := srv.GetTestResult(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tr, should.Resemble(expected))
+			assert.Loosely(t, tr, should.Match(expected))
 		}
 
 		invID := invocations.ID("inv_0")

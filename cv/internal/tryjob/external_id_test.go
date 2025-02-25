@@ -32,7 +32,7 @@ func TestExternalID(t *testing.T) {
 		t.Run("BuildbucketID", func(t *ftt.Test) {
 			eid, err := BuildbucketID("cr-buildbucket.appspot.com", 12)
 			assert.NoErr(t, err)
-			assert.Loosely(t, eid, should.Resemble(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
+			assert.Loosely(t, eid, should.Match(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
 
 			host, build, err := eid.ParseBuildbucketID()
 			assert.NoErr(t, err)

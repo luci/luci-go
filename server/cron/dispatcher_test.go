@@ -71,7 +71,7 @@ func TestDispatcher(t *testing.T) {
 		t.Run("Handler IDs", func(t *ftt.Test) {
 			d.RegisterHandler("h1", func(ctx context.Context) error { return nil })
 			d.RegisterHandler("h2", func(ctx context.Context) error { return nil })
-			assert.Loosely(t, d.handlerIDs(), should.Resemble([]string{"h1", "h2"}))
+			assert.Loosely(t, d.handlerIDs(), should.Match([]string{"h1", "h2"}))
 		})
 
 		t.Run("Works", func(t *ftt.Test) {

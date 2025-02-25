@@ -97,7 +97,7 @@ func TestEnv(t *testing.T) {
 				})
 				env, err := jd.Info().Env()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, env, should.Resemble(map[string]string{
+				assert.Loosely(t, env, should.Match(map[string]string{
 					"KEY": "VALUE",
 				}))
 			},
@@ -120,7 +120,7 @@ func TestEnv(t *testing.T) {
 				})
 				env, err := jd.Info().Env()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, env, should.Resemble(map[string]string{
+				assert.Loosely(t, env, should.Match(map[string]string{
 					"KEY":   "VALUE",
 					"OTHER": "NEW_VAL",
 				}))
@@ -144,7 +144,7 @@ func TestEnv(t *testing.T) {
 				})
 				env, err := jd.Info().Env()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, env, should.Resemble(map[string]string{
+				assert.Loosely(t, env, should.Match(map[string]string{
 					"OTHER": "NEW_VAL",
 				}))
 			},
@@ -280,7 +280,7 @@ func TestPrefixPathEnv(t *testing.T) {
 				})
 				env, err := jd.Info().PrefixPathEnv()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, env, should.Resemble([]string{
+				assert.Loosely(t, env, should.Match([]string{
 					"some/path", "other/path",
 				}))
 			},
@@ -298,7 +298,7 @@ func TestPrefixPathEnv(t *testing.T) {
 				})
 				env, err := jd.Info().PrefixPathEnv()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, env, should.Resemble([]string{
+				assert.Loosely(t, env, should.Match([]string{
 					"some/path", "third",
 				}))
 			},
@@ -326,7 +326,7 @@ func TestTags(t *testing.T) {
 				MustEdit(t, jd, func(je Editor) {
 					je.Tags([]string{"other:value", "key:value"})
 				})
-				assert.Loosely(t, jd.Info().Tags(), should.Resemble([]string{
+				assert.Loosely(t, jd.Info().Tags(), should.Match([]string{
 					"key:value", "other:value",
 				}))
 			},
@@ -347,7 +347,7 @@ func TestExperimental(t *testing.T) {
 					je.Experimental(true)
 				})
 				assert.Loosely(t, jd.HighLevelInfo().Experimental(), should.BeTrue)
-				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{buildbucket.ExperimentNonProduction}))
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Match([]string{buildbucket.ExperimentNonProduction}))
 
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Experimental(false)
@@ -377,8 +377,8 @@ func TestExperiments(t *testing.T) {
 					})
 				})
 				er := jd.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.ExperimentReasons
-				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{"exp1", "exp2"}))
-				assert.Loosely(t, er, should.Resemble(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Match([]string{"exp1", "exp2"}))
+				assert.Loosely(t, er, should.Match(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
 					"exp1": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
 					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
 				}))
@@ -387,8 +387,8 @@ func TestExperiments(t *testing.T) {
 						"exp1": false,
 					})
 				})
-				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{"exp2"}))
-				assert.Loosely(t, er, should.Resemble(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Match([]string{"exp2"}))
+				assert.Loosely(t, er, should.Match(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
 					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
 				}))
 			},
@@ -426,7 +426,7 @@ func TestProperties(t *testing.T) {
 				})
 				props, err := jd.HighLevelInfo().Properties()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, props, should.Resemble(map[string]string{
+				assert.Loosely(t, props, should.Match(map[string]string{
 					"key":   `"value"`,
 					"other": `{"something":[1,2,"subvalue"]}`,
 				}))
@@ -446,7 +446,7 @@ func TestProperties(t *testing.T) {
 				})
 				props, err := jd.HighLevelInfo().Properties()
 				assert.Loosely(t, err, should.ErrLike(nil))
-				assert.Loosely(t, props, should.Resemble(map[string]string{
+				assert.Loosely(t, props, should.Match(map[string]string{
 					"json":    `{"thingy":"kerplop"}`,
 					"literal": `"{I am a banana}"`, // string now
 				}))
@@ -507,7 +507,7 @@ func TestGerritChange(t *testing.T) {
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("project"),
 				}))
 			},
@@ -520,7 +520,7 @@ func TestGerritChange(t *testing.T) {
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("project"),
 				}))
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
@@ -538,7 +538,7 @@ func TestGerritChange(t *testing.T) {
 					je.AddGerritChange(mkChange("project"))
 					je.AddGerritChange(mkChange("project"))
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("project"),
 				}))
 			},
@@ -555,7 +555,7 @@ func TestGerritChange(t *testing.T) {
 					mkChange("b"),
 					mkChange("c"),
 				}
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("b"),
 					mkChange("c"),
@@ -564,7 +564,7 @@ func TestGerritChange(t *testing.T) {
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("c"),
 				}))
@@ -580,7 +580,7 @@ func TestGerritChange(t *testing.T) {
 
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Match([]*bbpb.GerritChange{
 					mkChange("a"),
 				}))
 			},
@@ -610,7 +610,7 @@ func TestGitilesCommit(t *testing.T) {
 				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
 				})
-				assert.Loosely(t, jd.HighLevelInfo().GitilesCommit(), should.Resemble(&bbpb.GitilesCommit{
+				assert.Loosely(t, jd.HighLevelInfo().GitilesCommit(), should.Match(&bbpb.GitilesCommit{
 					Id: "deadbeef",
 				}))
 			},
@@ -650,7 +650,7 @@ func TestTaskPayload(t *testing.T) {
 				assert.Loosely(t, pkg, should.BeEmpty)
 				assert.Loosely(t, vers, should.BeEmpty)
 				assert.Loosely(t, hli.TaskPayloadPath(), should.BeEmpty)
-				assert.Loosely(t, hli.TaskPayloadCmd(), should.Resemble([]string{"luciexe"}))
+				assert.Loosely(t, hli.TaskPayloadCmd(), should.Match([]string{"luciexe"}))
 			},
 		},
 

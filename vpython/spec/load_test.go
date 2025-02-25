@@ -80,7 +80,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("foo/bar.vpython")))
 		})
 
@@ -115,7 +115,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("pants.py.vpython")))
 		})
 
@@ -156,7 +156,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("foo/bar/baz/__main__.py")))
 		})
 
@@ -178,7 +178,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("pants.py")))
 		})
 
@@ -204,7 +204,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("pants.py")))
 		})
 
@@ -258,7 +258,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 
@@ -274,7 +274,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("ohaithere.friend")))
 		})
 
@@ -302,7 +302,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 
@@ -316,7 +316,7 @@ func TestLoadForScript(t *testing.T) {
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, spec, should.Match(goodSpec))
 			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 

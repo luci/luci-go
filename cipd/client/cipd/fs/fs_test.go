@@ -242,7 +242,7 @@ func TestEnsureFile(t *testing.T) {
 		// Read and verify the content of the first file.
 		content, err := io.ReadAll(fd)
 		assert.Loosely(c, err, should.BeNil)
-		assert.Loosely(c, content, should.Resemble([]byte("huh")))
+		assert.Loosely(c, content, should.Match([]byte("huh")))
 
 		// Verify the content of the second ensured file.
 		assert.Loosely(c, fs.read("path"), should.Equal("blah"))

@@ -181,7 +181,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// Check the returned test variants are appropriately masked.
 			duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
-			assert.Loosely(t, res.TestVariants, should.Resemble([]*pb.TestVariant{
+			assert.Loosely(t, res.TestVariants, should.Match([]*pb.TestVariant{
 				{
 					TestId:      "T1002",
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
@@ -303,7 +303,7 @@ func TestQueryTestVariants(t *testing.T) {
 			}
 			assert.Loosely(t, res.Sources, should.HaveLength(len(expectedSources)))
 			for _, source := range expectedSources {
-				assert.Loosely(t, res.Sources[graph.HashSources(source).String()], should.Resemble(source))
+				assert.Loosely(t, res.Sources[graph.HashSources(source).String()], should.Match(source))
 			}
 		})
 
@@ -315,7 +315,7 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, page.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			assert.Loosely(t, len(page.TestVariants), should.Equal(3))
-			assert.Loosely(t, getTVStrings(page.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, getTVStrings(page.TestVariants), should.Match([]string{
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
 				"40/T1/e3b0c44298fc1c14",
@@ -328,7 +328,7 @@ func TestQueryTestVariants(t *testing.T) {
 			}
 
 			assert.Loosely(t, page.Sources, should.HaveLength(1))
-			assert.Loosely(t, page.Sources[expectedSourceHash], should.Resemble(expectedSources))
+			assert.Loosely(t, page.Sources[expectedSourceHash], should.Match(expectedSources))
 		})
 
 		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
@@ -339,7 +339,7 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, res.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			assert.Loosely(t, len(res.TestVariants), should.Equal(1))
-			assert.Loosely(t, getTVStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, getTVStrings(res.TestVariants), should.Match([]string{
 				"30/T1/c467ccce5a16dc72",
 			}))
 		})

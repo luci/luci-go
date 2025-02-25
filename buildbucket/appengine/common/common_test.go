@@ -46,7 +46,7 @@ func TestGetBuildEntities(t *testing.T) {
 			}), should.BeNil)
 			b, err := GetBuild(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, b.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",

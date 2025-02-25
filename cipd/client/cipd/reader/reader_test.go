@@ -110,7 +110,7 @@ func TestPackageReading(t *testing.T) {
 			CompressionLevel: 5,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pin, should.Resemble(Pin{
+		assert.Loosely(t, pin, should.Match(Pin{
 			PackageName: "testing",
 			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		}))
@@ -124,13 +124,13 @@ func TestPackageReading(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)
 
-		assert.Loosely(t, inst.Pin(), should.Resemble(pin))
+		assert.Loosely(t, inst.Pin(), should.Match(pin))
 		assert.Loosely(t, len(inst.Files()), should.Equal(1))
 
 		// CalculatePin also agrees with the value of the pin.
 		calcedPin, err := CalculatePin(ctx, pkg.NewBytesSource(out.Bytes()), api.HashAlgo_SHA256)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, calcedPin, should.Resemble(pin))
+		assert.Loosely(t, calcedPin, should.Match(pin))
 
 		// Contains single manifest file.
 		f := inst.Files()[0]
@@ -170,7 +170,7 @@ func TestPackageReading(t *testing.T) {
 		assert.Loosely(t, inst, should.NotBeNil)
 		defer inst.Close(ctx, false)
 
-		assert.Loosely(t, inst.Pin(), should.Resemble(Pin{
+		assert.Loosely(t, inst.Pin(), should.Match(Pin{
 			PackageName: "testing",
 			InstanceID:  "PPM180-5i-V1q5554ewKGO4jq4cWB-cOwTuyhoCv3joC",
 		}))
@@ -192,7 +192,7 @@ func TestPackageReading(t *testing.T) {
 		assert.Loosely(t, inst, should.NotBeNil)
 		defer inst.Close(ctx, false)
 
-		assert.Loosely(t, inst.Pin(), should.Resemble(Pin{
+		assert.Loosely(t, inst.Pin(), should.Match(Pin{
 			PackageName: "testing",
 			InstanceID:  "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		}))

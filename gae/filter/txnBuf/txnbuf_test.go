@@ -189,8 +189,8 @@ func TestTransactionBuffers(t *testing.T) {
 
 					assert.Loosely(t, vals[0].Value, should.BeNil)
 					assert.Loosely(t, vals[1].Value, should.BeNil)
-					assert.Loosely(t, vals[2].Value, should.Resemble([]int64{1, 2, 3, 4}))
-					assert.Loosely(t, vals[3].Value, should.Resemble(dataSingleRoot[3].Value))
+					assert.Loosely(t, vals[2].Value, should.Match([]int64{1, 2, 3, 4}))
+					assert.Loosely(t, vals[3].Value, should.Match(dataSingleRoot[3].Value))
 
 					// inner, failing, transaction
 					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
@@ -256,7 +256,7 @@ func TestTransactionBuffers(t *testing.T) {
 					for i := 1; i < 26; i++ {
 						f := &Foo{ID: int64(i)}
 						assert.Loosely(t, ds.Get(c, f), should.BeNil)
-						assert.Loosely(t, f, should.Resemble(dataMultiRoot[i-1]))
+						assert.Loosely(t, f, should.Match(dataMultiRoot[i-1]))
 					}
 
 					f := &Foo{ID: 7}
@@ -268,7 +268,7 @@ func TestTransactionBuffers(t *testing.T) {
 
 				f := &Foo{ID: 7}
 				assert.Loosely(t, ds.Get(c, f), should.BeNil)
-				assert.Loosely(t, f.Value, should.Resemble([]int64{9}))
+				assert.Loosely(t, f.Value, should.Match([]int64{9}))
 			})
 
 			t.Run("buffered errors never reach the datastore", func(t *ftt.Test) {
@@ -387,12 +387,12 @@ func TestQuerySupport(t *testing.T) {
 					vals2 := []*Foo{}
 					assert.Loosely(t, ds.GetAll(c, q, &vals2), should.BeNil)
 					assert.Loosely(t, len(vals2), should.Equal(16))
-					assert.Loosely(t, vals2[0], should.Resemble(f))
+					assert.Loosely(t, vals2[0], should.Match(f))
 
 					vals2 = []*Foo{}
 					assert.Loosely(t, ds.GetAll(c, q.Limit(2).Offset(1), &vals2), should.BeNil)
 					assert.Loosely(t, len(vals2), should.Equal(2))
-					assert.Loosely(t, vals2, should.Resemble(vals[:2]))
+					assert.Loosely(t, vals2, should.Match(vals[:2]))
 
 					return nil
 				}, nil), should.BeNil)
@@ -411,7 +411,7 @@ func TestQuerySupport(t *testing.T) {
 					vals := []*ds.Key{}
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 					assert.Loosely(t, len(vals), should.Equal(3))
-					assert.Loosely(t, vals[2], should.Resemble(ds.MakeKey(c, "Parent", 1, "Foo", 5)))
+					assert.Loosely(t, vals[2], should.Match(ds.MakeKey(c, "Parent", 1, "Foo", 5)))
 
 					// can remove keys
 					assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), should.BeNil)
@@ -479,7 +479,7 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Match(
 							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
@@ -510,7 +510,7 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Match(
 							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
@@ -540,7 +540,7 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Match(
 							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
@@ -594,7 +594,7 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
-						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Match(
 							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 					}
 
@@ -619,8 +619,8 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 					assert.Loosely(t, len(vals), should.Equal(2))
 
-					assert.Loosely(t, vals[0], should.Resemble(data[0]))
-					assert.Loosely(t, vals[1], should.Resemble(data[2]))
+					assert.Loosely(t, vals[0], should.Match(data[0]))
+					assert.Loosely(t, vals[1], should.Match(data[2]))
 
 					foo2 := &Foo{ID: 2, Parent: root, Value: []int64{2, 3}}
 					assert.Loosely(t, ds.Put(c, foo2), should.BeNil)
@@ -629,8 +629,8 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 					assert.Loosely(t, len(vals), should.Equal(2))
 
-					assert.Loosely(t, vals[0], should.Resemble(foo2))
-					assert.Loosely(t, vals[1], should.Resemble(data[2]))
+					assert.Loosely(t, vals[0], should.Match(foo2))
+					assert.Loosely(t, vals[1], should.Match(data[2]))
 
 					foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
 					assert.Loosely(t, ds.Put(c, foo1), should.BeNil)
@@ -639,9 +639,9 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 					assert.Loosely(t, len(vals), should.Equal(3))
 
-					assert.Loosely(t, vals[0], should.Resemble(foo1))
-					assert.Loosely(t, vals[1], should.Resemble(foo2))
-					assert.Loosely(t, vals[2], should.Resemble(data[2]))
+					assert.Loosely(t, vals[0], should.Match(foo1))
+					assert.Loosely(t, vals[1], should.Match(foo2))
+					assert.Loosely(t, vals[2], should.Match(data[2]))
 
 					return nil
 				}, nil), should.BeNil)
@@ -698,7 +698,7 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
-						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Match(
 							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 					}
 
@@ -734,8 +734,8 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 					assert.Loosely(t, len(vals), should.Equal(2))
 
-					assert.Loosely(t, vals[0], should.Resemble(data[0]))
-					assert.Loosely(t, vals[1], should.Resemble(foo1))
+					assert.Loosely(t, vals[0], should.Match(data[0]))
+					assert.Loosely(t, vals[1], should.Match(foo1))
 
 					return nil
 				}, nil), should.BeNil)
@@ -767,7 +767,7 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, len(vals), should.Equal(5))
 
 					kc := ds.GetKeyContext(c)
-					assert.Loosely(t, vals, should.Resemble([]*ds.Key{
+					assert.Loosely(t, vals, should.Match([]*ds.Key{
 						kc.MakeKey("Parent", 1, "Foo", 4),
 						kc.MakeKey("Parent", 1, "Foo", 3),
 						kc.MakeKey("Parent", 1, "Foo", 5),
@@ -791,33 +791,33 @@ func TestQuerySupport(t *testing.T) {
 
 					vals := []*Foo{}
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
-					assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], projectData[2]}))
+					assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], projectData[2]}))
 
 					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						vals := []*Foo{}
 						assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
-						assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], projectData[2]}))
+						assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], projectData[2]}))
 
 						assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 4)), should.BeNil)
 						assert.Loosely(t, ds.Put(c, foo7), should.BeNil)
 
 						vals = []*Foo{}
 						assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
-						assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
+						assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], foo7}))
 
 						return nil
 					}, nil), should.BeNil)
 
 					vals = []*Foo{}
 					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
-					assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
+					assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], foo7}))
 
 					return nil
 				}, nil), should.BeNil)
 
 				vals := []*Foo{}
 				assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
-				assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
+				assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], foo7}))
 
 			})
 

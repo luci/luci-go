@@ -105,7 +105,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			t.Run("and Get it back", func(t *ftt.Test) {
 				newFoo := &Foo{ID: 1}
 				assert.Loosely(t, ds.Get(c, newFoo), should.BeNil)
-				assert.Loosely(t, newFoo, should.Resemble(f))
+				assert.Loosely(t, newFoo, should.Match(f))
 
 				t.Run("but it's hidden from a different namespace", func(t *ftt.Test) {
 					c, err := infoS.Namespace(c, "whombat")
@@ -125,7 +125,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"$kind": propNI("Foo"),
 				}
 				assert.Loosely(t, ds.Get(c, pmap), should.BeNil)
-				assert.Loosely(t, pmap, should.Resemble(ds.PropertyMap{
+				assert.Loosely(t, pmap, should.Match(ds.PropertyMap{
 					"$id":   propNI(1),
 					"$kind": propNI("Foo"),
 					"Name":  prop(""),
@@ -203,7 +203,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					assert.Loosely(t, ds.Get(c, vals), should.BeNil)
 
 					for i, val := range vals {
-						assert.Loosely(t, val, should.Resemble(ds.PropertyMap{
+						assert.Loosely(t, val, should.Match(ds.PropertyMap{
 							"Val":  ds.MkProperty(10),
 							"Name": ds.MkProperty(""),
 							"$key": ds.MkPropertyNI(keys[i]),

@@ -42,7 +42,7 @@ func TestFlakyErrors(t *testing.T) {
 			DeadlineProbability:              0.05,
 			ConcurrentTransactionProbability: 0.1,
 		}
-		assert.Loosely(t, sample(Errors(params), "AllocateIDs"), should.Resemble(map[error]int{
+		assert.Loosely(t, sample(Errors(params), "AllocateIDs"), should.Match(map[error]int{
 			nil:                 950,
 			ErrFlakyRPCDeadline: 50,
 		}))
@@ -53,7 +53,7 @@ func TestFlakyErrors(t *testing.T) {
 			DeadlineProbability:              0.05,
 			ConcurrentTransactionProbability: 0.1,
 		}
-		assert.Loosely(t, sample(Errors(params), "CommitTransaction"), should.Resemble(map[error]int{
+		assert.Loosely(t, sample(Errors(params), "CommitTransaction"), should.Match(map[error]int{
 			nil:                                853,
 			datastore.ErrConcurrentTransaction: 95,
 			ErrFlakyRPCDeadline:                52,

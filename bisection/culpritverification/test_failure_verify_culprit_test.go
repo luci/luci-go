@@ -129,7 +129,7 @@ func TestProcessTestFailureTask(t *testing.T) {
 		Dimensions: &pb.Dimensions{},
 		Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 	}
-	assert.Loosely(t, suspectRerun, should.Resemble(expectedRerun))
+	assert.Loosely(t, suspectRerun, should.Match(expectedRerun))
 	parentRerun := &model.TestSingleRerun{
 		ID: suspect.ParentRerunBuild.IntID(),
 	}
@@ -138,5 +138,5 @@ func TestProcessTestFailureTask(t *testing.T) {
 	expectedRerun.ID = build2.Id
 	expectedRerun.LUCIBuild.BuildID = build2.Id
 	expectedRerun.LUCIBuild.GitilesCommit = build2.Input.GitilesCommit
-	assert.Loosely(t, parentRerun, should.Resemble(expectedRerun))
+	assert.Loosely(t, parentRerun, should.Match(expectedRerun))
 }

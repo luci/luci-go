@@ -53,20 +53,20 @@ func TestPropertiesFlag(t *testing.T) {
 
 			assert.Loosely(t, f.Set("@"+file.Name()), should.BeNil)
 
-			assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+			assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 				"in-file-1": "orig",
 				"in-file-2": "orig",
 			})))
 
 			t.Run("Override", func(t *ftt.Test) {
 				assert.Loosely(t, f.Set("in-file-2=override"), should.BeNil)
-				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+				assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
 				})))
 
 				assert.Loosely(t, f.Set("a=b"), should.BeNil)
-				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+				assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 					"in-file-1": "orig",
 					"in-file-2": "override",
 					"a":         "b",
@@ -76,13 +76,13 @@ func TestPropertiesFlag(t *testing.T) {
 
 		t.Run("Name=Value", func(t *ftt.Test) {
 			assert.Loosely(t, f.Set("foo=bar"), should.BeNil)
-			assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+			assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 				"foo": "bar",
 			})))
 
 			t.Run("JSON", func(t *ftt.Test) {
 				assert.Loosely(t, f.Set("array=[1]"), should.BeNil)
-				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+				assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
 				})))
@@ -90,7 +90,7 @@ func TestPropertiesFlag(t *testing.T) {
 
 			t.Run("Trims spaces", func(t *ftt.Test) {
 				assert.Loosely(t, f.Set("array = [1]"), should.BeNil)
-				assert.Loosely(t, props, should.Resemble(mustStruct(map[string]any{
+				assert.Loosely(t, props, should.Match(mustStruct(map[string]any{
 					"foo":   "bar",
 					"array": []any{1},
 				})))

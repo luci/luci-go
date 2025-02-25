@@ -123,10 +123,10 @@
 //	   // Checks that `someFunction` returns some value assignable to
 //	   // `*someStruct` which is populated in the same way.
 //	   //
-//	   // NOTE: should.Resemble correctly handles comparisons between protobufs
+//	   // NOTE: should.Match correctly handles comparisons between protobufs
 //	   // and types containing protobufs, by default, using the excellent
 //	   // `github.com/google/go-cmp/cmp` library under the hood for comparisons.
-//	   assert.That(t, someFunctionReturningStruct(), should.Resemble(&someStruct{
+//	   assert.That(t, someFunctionReturningStruct(), should.Match(&someStruct{
 //	     ...
 //	   }))
 //	}
@@ -154,7 +154,7 @@ var Verbose bool
 
 // Colorize indicates that the truth library should colorize its output (used
 // to highlight diffs produced by some comparison functions, such as
-// should.Resemble).
+// should.Match).
 //
 // By default this is true when Stdout is connected to a terminal.
 //

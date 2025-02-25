@@ -84,7 +84,7 @@ func TestParsing(t *testing.T) {
 		}
 
 		t.Run("Its option list should be: ['foo', 'bar'].", func(t *ftt.Test) {
-			assert.Loosely(t, of.OptionNames(), should.Resemble([]string{"foo", "bar"}))
+			assert.Loosely(t, of.OptionNames(), should.Match([]string{"foo", "bar"}))
 		})
 
 		t.Run(`When parsing 'foo,string-var="hello world"'`, func(t *ftt.Test) {
@@ -245,7 +245,7 @@ func TestHelpItemSlice(t *testing.T) {
 			for _, opt := range options {
 				names = append(names, opt.Name)
 			}
-			assert.Loosely(t, names, should.Resemble([]string{"c", "d", "a", "b"}))
+			assert.Loosely(t, names, should.Match([]string{"c", "d", "a", "b"}))
 		})
 	})
 }

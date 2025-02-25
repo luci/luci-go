@@ -84,14 +84,14 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 	ftt.Run("Checks task_ids are valid", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], "zzz", tasks["pending-0"]}, "swarming://target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.InvalidArgument, codes.OK}))
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{codes.OK, codes.InvalidArgument, codes.OK}))
 		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("bad task ID"))
 	})
 
 	ftt.Run("Checks target", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], "zzz", tasks["pending-0"]}, "wrong target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.InvalidArgument, codes.InvalidArgument, codes.InvalidArgument}))
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{codes.InvalidArgument, codes.InvalidArgument, codes.InvalidArgument}))
 		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("wrong buildbucket target"))
 	})
 
@@ -122,19 +122,19 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 		assert.Loosely(t, resp.Responses, should.HaveLength(4))
 
 		assert.Loosely(t, resp.Responses[0].GetTask(),
-			should.Resemble(
+			should.Match(
 				expectedTask("running-0", "RUNNING-0s", bbpb.Status_STARTED, ""),
 			))
 		assert.Loosely(t, resp.Responses[1].GetTask(),
-			should.Resemble(
+			should.Match(
 				expectedTask("success-0", "COMPLETED-0s", bbpb.Status_SUCCESS, ""),
 			))
 		assert.Loosely(t, resp.Responses[2].GetTask(),
-			should.Resemble(
+			should.Match(
 				expectedTask("failure-0", "COMPLETED-0s", bbpb.Status_FAILURE, "Task completed with failure."),
 			))
 		assert.Loosely(t, resp.Responses[3].GetTask(),
-			should.Resemble(
+			should.Match(
 				expectedTask("pending-0", "PENDING-0s", bbpb.Status_SCHEDULED, ""),
 			))
 	})
@@ -142,21 +142,21 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 	ftt.Run("Missing task", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["missing-0"], tasks["pending-0"]}, "swarming://target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
 		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("no such task"))
 	})
 
 	ftt.Run("Missing BuildTask", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["dedup-0"], tasks["pending-0"]}, "swarming://target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{codes.OK, codes.NotFound, codes.OK}))
 		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("not a Buildbucket task"))
 	})
 
 	ftt.Run("No permission", t, func(t *ftt.Test) {
 		resp, err := call([]string{tasks["running-0"], tasks["success-1"], tasks["pending-0"]}, "swarming://target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{codes.OK, codes.PermissionDenied, codes.OK}))
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{codes.OK, codes.PermissionDenied, codes.OK}))
 		assert.Loosely(t, resp.Responses[1].GetError().Message, should.ContainSubstring("doesn't have permission"))
 	})
 
@@ -173,7 +173,7 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 			tasks["expired-0"], // OK
 		}, "swarming://target")
 		assert.NoErr(t, err)
-		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
+		assert.Loosely(t, respCodes(resp), should.Match([]codes.Code{
 			codes.OK,
 			codes.InvalidArgument,
 			codes.OK,

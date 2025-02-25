@@ -43,11 +43,11 @@ func TestProcessingResult(t *testing.T) {
 
 		out := map[string]string{}
 		assert.Loosely(t, p.ReadResult(&out), should.BeNil)
-		assert.Loosely(t, out, should.Resemble(res))
+		assert.Loosely(t, out, should.Match(res))
 
 		st := &structpb.Struct{}
 		assert.Loosely(t, p.ReadResultIntoStruct(st), should.BeNil)
-		assert.Loosely(t, st, should.Resemble(&structpb.Struct{
+		assert.Loosely(t, st, should.Match(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"a": {Kind: &structpb.Value_StringValue{StringValue: "b"}},
 				"c": {Kind: &structpb.Value_StringValue{StringValue: "d"}},
@@ -59,7 +59,7 @@ func TestProcessingResult(t *testing.T) {
 		t.Run("Pending", func(t *ftt.Test) {
 			p, err := (&ProcessingResult{ProcID: "zzz"}).Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Resemble(&api.Processor{
+			assert.Loosely(t, p, should.Match(&api.Processor{
 				Id:    "zzz",
 				State: api.Processor_PENDING,
 			}))
@@ -75,7 +75,7 @@ func TestProcessingResult(t *testing.T) {
 
 			p, err := proc.Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Resemble(&api.Processor{
+			assert.Loosely(t, p, should.Match(&api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_SUCCEEDED,
 				FinishedTs: timestamppb.New(testutil.TestTime),
@@ -94,7 +94,7 @@ func TestProcessingResult(t *testing.T) {
 				Error:     "blah",
 			}).Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Resemble(&api.Processor{
+			assert.Loosely(t, p, should.Match(&api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_FAILED,
 				FinishedTs: timestamppb.New(testutil.TestTime),

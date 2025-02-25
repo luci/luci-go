@@ -35,7 +35,7 @@ func TestErrors(t *testing.T) {
 			}), should.BeNil)
 
 			status, details := ExtractStatus(err)
-			assert.Loosely(t, status, should.Resemble(bbpb.Status_SUCCESS))
+			assert.Loosely(t, status, should.Match(bbpb.Status_SUCCESS))
 			assert.Loosely(t, details, should.BeNil)
 		})
 
@@ -43,7 +43,7 @@ func TestErrors(t *testing.T) {
 			t.Run(`generic`, func(t *ftt.Test) {
 				err := errors.New("some error")
 				status, details := ExtractStatus(err)
-				assert.Loosely(t, status, should.Resemble(bbpb.Status_FAILURE))
+				assert.Loosely(t, status, should.Match(bbpb.Status_FAILURE))
 				assert.Loosely(t, details, should.BeNil)
 			})
 
@@ -54,20 +54,20 @@ func TestErrors(t *testing.T) {
 				})
 
 				status, details := ExtractStatus(err2)
-				assert.Loosely(t, status, should.Resemble(bbpb.Status_INFRA_FAILURE))
-				assert.Loosely(t, details, should.Resemble(&bbpb.StatusDetails{
+				assert.Loosely(t, status, should.Match(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, details, should.Match(&bbpb.StatusDetails{
 					ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
 				}))
 			})
 
 			t.Run(`context`, func(t *ftt.Test) {
 				status, details := ExtractStatus(context.Canceled)
-				assert.Loosely(t, status, should.Resemble(bbpb.Status_CANCELED))
+				assert.Loosely(t, status, should.Match(bbpb.Status_CANCELED))
 				assert.Loosely(t, details, should.BeNil)
 
 				status, details = ExtractStatus(context.DeadlineExceeded)
-				assert.Loosely(t, status, should.Resemble(bbpb.Status_INFRA_FAILURE))
-				assert.Loosely(t, details, should.Resemble(&bbpb.StatusDetails{
+				assert.Loosely(t, status, should.Match(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, details, should.Match(&bbpb.StatusDetails{
 					Timeout: &bbpb.StatusDetails_Timeout{},
 				}))
 			})

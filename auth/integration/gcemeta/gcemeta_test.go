@@ -101,7 +101,7 @@ func TestServer(t *testing.T) {
 
 				scopes, err := cl.ScopesWithContext(ctx, acc)
 				assert.Loosely(c, err, should.BeNil)
-				assert.Loosely(c, scopes, should.Resemble([]string{"scope1", "scope2"}))
+				assert.Loosely(c, scopes, should.Match([]string{"scope1", "scope2"}))
 			}
 		})
 
@@ -116,7 +116,7 @@ func TestServer(t *testing.T) {
 					panic("Bad token")
 				}
 				assert.Loosely(c, time.Until(tok.Expiry), should.BeGreaterThan(55*time.Minute))
-				assert.Loosely(c, gen.lastScopes, should.Resemble([]string{"scope1", "scope2"}))
+				assert.Loosely(c, gen.lastScopes, should.Match([]string{"scope1", "scope2"}))
 			})
 
 			c.Run("Custom scopes", func(c *ftt.Test) {
@@ -129,7 +129,7 @@ func TestServer(t *testing.T) {
 					panic("Bad token")
 				}
 				assert.Loosely(c, time.Until(tok.Expiry), should.BeGreaterThan(55*time.Minute))
-				assert.Loosely(c, gen.lastScopes, should.Resemble([]string{"custom1", "custom2"}))
+				assert.Loosely(c, gen.lastScopes, should.Match([]string{"custom1", "custom2"}))
 			})
 		})
 

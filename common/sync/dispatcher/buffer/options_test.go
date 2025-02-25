@@ -249,7 +249,7 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions.Retry = nil
 				expect.Retry = nil
 
-				assert.Loosely(t, myOptions, should.Resemble(expect))
+				assert.Loosely(t, myOptions, should.Match(expect))
 			})
 		}
 	})

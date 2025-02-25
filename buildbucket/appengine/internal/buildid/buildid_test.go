@@ -41,7 +41,7 @@ func TestNewBuildIDs(t *testing.T) {
 
 		t.Run("one", func(t *ftt.Test) {
 			ids := NewBuildIDs(ctx, ts, 1)
-			assert.Loosely(t, ids, should.Resemble([]int64{
+			assert.Loosely(t, ids, should.Match([]int64{
 				0x7DB4463C7FF2FFA1,
 			}))
 			assert.Loosely(t, ids[0]>>63, should.BeZero)
@@ -51,7 +51,7 @@ func TestNewBuildIDs(t *testing.T) {
 
 		t.Run("two", func(t *ftt.Test) {
 			ids := NewBuildIDs(ctx, ts, 2)
-			assert.Loosely(t, ids, should.Resemble([]int64{
+			assert.Loosely(t, ids, should.Match([]int64{
 				0x7DB4463C7FFA8F71,
 				0x7DB4463C7FFA8F61,
 			}))

@@ -66,7 +66,7 @@ func TestFixMalformedTags(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tags), should.BeNil)
 
 		// Make sure allTags actually works too.
-		assert.Loosely(t, allTags("a"), should.Resemble([]string{"good_a:tag", "bad_a:", "bad_a:fixable\n"}))
+		assert.Loosely(t, allTags("a"), should.Match([]string{"good_a:tag", "bad_a:", "bad_a:fixable\n"}))
 
 		jobID, err := RunMapper(ctx, admin, sched, &api.JobConfig{
 			Kind: api.MapperKind_FIND_MALFORMED_TAGS,
@@ -80,7 +80,7 @@ func TestFixMalformedTags(t *testing.T) {
 		for _, mTag := range marked {
 			badTags = append(badTags, mTag.Tag)
 		}
-		assert.Loosely(t, badTags, should.Resemble([]string{
+		assert.Loosely(t, badTags, should.Match([]string{
 			"bad_c:fixable\n",
 			"bad_b:",
 			"bad_a:fixable\n",
@@ -94,7 +94,7 @@ func TestFixMalformedTags(t *testing.T) {
 		sort.Slice(report, func(i, j int) bool {
 			return report[i].BrokenTag < report[j].BrokenTag
 		})
-		assert.Loosely(t, report, should.Resemble([]*api.TagFixReport_Tag{
+		assert.Loosely(t, report, should.Match([]*api.TagFixReport_Tag{
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:", FixedTag: ""},
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:fixable\n", FixedTag: "bad_a:fixable"},
 			{Pkg: "b", Instance: iid, BrokenTag: "bad_b:", FixedTag: ""},
@@ -102,8 +102,8 @@ func TestFixMalformedTags(t *testing.T) {
 		}))
 
 		// Verify the changes actually landed in the datastore.
-		assert.Loosely(t, allTags("a"), should.Resemble([]string{"bad_a:fixable", "good_a:tag"}))
-		assert.Loosely(t, allTags("b"), should.Resemble([]string{"good_b:tag"}))
-		assert.Loosely(t, allTags("c"), should.Resemble([]string{"bad_c:fixable"}))
+		assert.Loosely(t, allTags("a"), should.Match([]string{"bad_a:fixable", "good_a:tag"}))
+		assert.Loosely(t, allTags("b"), should.Match([]string{"good_b:tag"}))
+		assert.Loosely(t, allTags("c"), should.Match([]string{"bad_c:fixable"}))
 	})
 }

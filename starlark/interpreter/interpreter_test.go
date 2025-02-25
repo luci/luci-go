@@ -35,28 +35,28 @@ func TestMakeModuleKey(t *testing.T) {
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		k, err := MakeModuleKey(th, "//some/mod")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"cur_pkg", "some/mod"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "some/mod"}))
 
 		k, err = MakeModuleKey(th, "//some/mod/../blah")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"cur_pkg", "some/blah"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "some/blah"}))
 
 		k, err = MakeModuleKey(th, "some/mod")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"cur_pkg", "dir/some/mod"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "dir/some/mod"}))
 
 		k, err = MakeModuleKey(th, "./mod")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"cur_pkg", "dir/mod"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "dir/mod"}))
 
 		k, err = MakeModuleKey(th, "../mod")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"cur_pkg", "mod"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "mod"}))
 
 		// For absolute paths the thread is optional.
 		k, err = MakeModuleKey(nil, "@pkg//some/mod")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, k, should.Resemble(ModuleKey{"pkg", "some/mod"}))
+		assert.Loosely(t, k, should.Match(ModuleKey{"pkg", "some/mod"}))
 	})
 
 	ftt.Run("Fails", t, func(t *ftt.Test) {
@@ -98,7 +98,7 @@ func TestInterpreter(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, keys, should.HaveLength(0)) // main.star doesn't export anything itself
-		assert.Loosely(t, logs, should.Resemble([]string{"[//main.star:1] loaded_sym_val exported_sym_val"}))
+		assert.Loosely(t, logs, should.Match([]string{"[//main.star:1] loaded_sym_val exported_sym_val"}))
 	})
 
 	ftt.Run("User scripts can load each other and stdlib scripts", t, func(t *ftt.Test) {
@@ -118,7 +118,7 @@ func TestInterpreter(t *testing.T) {
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, keys, should.Resemble([]string{
+		assert.Loosely(t, keys, should.Match([]string{
 			"lib_sym",
 			"loaded_sym",
 			"main_sym",
@@ -174,7 +174,7 @@ func TestInterpreter(t *testing.T) {
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[@stdlib//builtins.star:1] 123",
 			"[//main.star:1] 123",
 		}))
@@ -217,7 +217,7 @@ func TestInterpreter(t *testing.T) {
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[//mod.star:2] Loading", // only once
 			"[//main.star:5] 1 2",
 		}))
@@ -274,7 +274,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[//execed.star:2] hi",
 			"[//main.star:3] 123",
 		}))
@@ -289,7 +289,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[//sub/2.star:1] hi",
 		}))
 	})
@@ -305,7 +305,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[@stdlib//exec2.star:1] hi",
 		}))
 	})
@@ -399,7 +399,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, hooks, should.Resemble([]string{
+		assert.Loosely(t, hooks, should.Match([]string{
 			"pre //main.star",
 			"pre @stdlib//exec1.star",
 			"pre @stdlib//exec2.star",
@@ -427,7 +427,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.NotBeNil)
-		assert.Loosely(t, hooks, should.Resemble([]string{
+		assert.Loosely(t, hooks, should.Match([]string{
 			"pre //main.star",
 			"pre @stdlib//exec1.star",
 			"pre @stdlib//exec2.star",
@@ -455,7 +455,7 @@ Error: invalid call of non-function (NoneType)`))
 			visited: &visited,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, visited, should.Resemble([]ModuleKey{
+		assert.Loosely(t, visited, should.Match([]ModuleKey{
 			{MainPkg, "main.star"},
 			{MainPkg, "a.star"},
 			{MainPkg, "b.star"},
@@ -486,7 +486,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[//main.star:2] blah 1",
 			"[//main.star:3] blah 2",
 			"[@stdlib//execed.star:1] blah 3",
@@ -516,7 +516,7 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, logs, should.Resemble([]string{
+		assert.Loosely(t, logs, should.Match([]string{
 			"[//main.star:2] blah 1",
 			"[//main.star:3] blah 2",
 			"[//inner/execed.star:2] blah 1",

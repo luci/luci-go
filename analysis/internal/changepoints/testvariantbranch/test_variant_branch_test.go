@@ -157,14 +157,14 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		// After decoding, cold buffer should be empty.
 		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
-		assert.Loosely(t, tvbs[0], should.Resemble(tvb1))
+		assert.Loosely(t, tvbs[0], should.Match(tvb1))
 
 		assert.Loosely(t, tvbs[1], should.BeNil)
 
 		tvb3.IsNew = false
 		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Runs: []inputbuffer.Run{}}
 
-		assert.Loosely(t, tvbs[2], should.Resemble(tvb3))
+		assert.Loosely(t, tvbs[2], should.Match(tvb3))
 	})
 
 	ftt.Run("Insert and update", t, func(t *ftt.Test) {
@@ -355,7 +355,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.IsFinalizingSegmentDirty = false
 		tvb.InputBuffer.IsColdBufferDirty = false
 
-		assert.Loosely(t, tvbs[0], should.Resemble(tvb))
+		assert.Loosely(t, tvbs[0], should.Match(tvb))
 	})
 }
 
@@ -388,7 +388,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		tvb.InsertToInputBuffer(runs[0])
 		assert.Loosely(t, len(tvb.InputBuffer.HotBuffer.Runs), should.Equal(1))
 
-		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs[0], should.Resemble(inputbuffer.Run{
+		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs[0], should.Match(inputbuffer.Run{
 			CommitPosition: 12,
 			Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 			Expected: inputbuffer.ResultCounts{
@@ -493,7 +493,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 
 		// Insertion reverses the order of runs as they are preferentially
 		// added to the end of of the buffer.
-		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.Resemble([]inputbuffer.Run{
+		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.Match([]inputbuffer.Run{
 			{
 				// run-4
 				CommitPosition: 12,
@@ -609,7 +609,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		tvb.UpdateOutputBuffer(evictedSegments)
 
 		assert.Loosely(t, tvb.FinalizingSegment, should.NotBeNil)
-		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(&cpb.Segment{
+		assert.Loosely(t, tvb.FinalizingSegment, should.Match(&cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:          true,
 			StartPosition:                11,
@@ -649,7 +649,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		assert.Loosely(t, tvb.IsFinalizingSegmentDirty, should.BeTrue)
 
 		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
-		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(&cpb.Segment{
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Match(&cpb.Segment{
 			State:               cpb.SegmentState_FINALIZED,
 			StartPosition:       1,
 			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
@@ -678,7 +678,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		})) // evictedSegments[0].Segment
 		assert.Loosely(t, tvb.IsFinalizedSegmentsDirty, should.BeTrue)
 
-		assert.Loosely(t, tvb.Statistics, should.Resemble(&cpb.Statistics{
+		assert.Loosely(t, tvb.Statistics, should.Match(&cpb.Statistics{
 			HourlyBuckets: []*cpb.Statistics_HourBucket{
 				// Confirm that buckets for hours 11 and (100000 - StatisticsRetentionDays*24)
 				// are not present due to retention policies.
@@ -813,7 +813,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
-		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expected))
+		assert.Loosely(t, tvb.FinalizingSegment, should.Match(expected))
 	})
 
 	ftt.Run("Combine finalizing segment with finalized segment", t, func(t *ftt.Test) {
@@ -953,7 +953,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
 		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
-		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(expectedFinalizedSegment))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Match(expectedFinalizedSegment))
 
 		expectedFinalizingSegment := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
@@ -981,7 +981,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			},
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(25*3600, 0)),
 		}
-		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expectedFinalizingSegment))
+		assert.Loosely(t, tvb.FinalizingSegment, should.Match(expectedFinalizingSegment))
 	})
 
 	ftt.Run("Combine finalizing segment with finalized segment, with a token finalizing segment in input buffer", t, func(t *ftt.Test) {
@@ -1095,7 +1095,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
 		assert.Loosely(t, len(tvb.FinalizedSegments.Segments), should.Equal(1))
-		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Resemble(expectedFinalized))
+		assert.Loosely(t, tvb.FinalizedSegments.Segments[0], should.Match(expectedFinalized))
 
 		expectedFinalizing := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
@@ -1109,7 +1109,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		}
 
 		assert.Loosely(t, tvb.FinalizingSegment, should.NotBeNil)
-		assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(expectedFinalizing))
+		assert.Loosely(t, tvb.FinalizingSegment, should.Match(expectedFinalizing))
 	})
 
 	ftt.Run("Should panic if no finalizing segment in evicted segments", t, func(t *ftt.Test) {
@@ -1284,7 +1284,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				UnexpectedResults: 1,
 			},
 		}
-		assert.Loosely(t, tvb.Statistics, should.Resemble(expected))
+		assert.Loosely(t, tvb.Statistics, should.Match(expected))
 		assert.Loosely(t, tvb.IsStatisticsDirty, should.BeTrue)
 	})
 

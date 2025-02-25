@@ -44,7 +44,7 @@ func TestExportStatus(t *testing.T) {
 		status.NewStatusBuilder().WithCreateTime(time.Unix(400, 0).UTC()).WithClosingBuilderName("projects/chromium-m100/buckets/ci/builders/Linux 123").WithGeneralStatus(v1.GeneralState_CLOSED).WithCreateUser("").CreateInDB(ctx)
 		err := export(ctx, client)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, client.Insertions, should.Resemble([]*bqpb.StatusRow{
+		assert.Loosely(t, client.Insertions, should.Match([]*bqpb.StatusRow{
 			{
 				TreeName:   "chromium",
 				Status:     "open",

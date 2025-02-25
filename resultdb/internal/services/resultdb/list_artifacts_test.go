@@ -132,7 +132,7 @@ func TestListArtifacts(t *testing.T) {
 			t.Run(`Reads only invocation artifacts`, func(t *ftt.Test) {
 				req.Parent = "invocations/inv1"
 				actual := mustFetchNames(req)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/artifacts/a",
 				}))
 			})
@@ -140,7 +140,7 @@ func TestListArtifacts(t *testing.T) {
 			t.Run(`Reads only test result artifacts`, func(t *ftt.Test) {
 				req.Parent = "invocations/inv1/tests/t%20t/results/r"
 				actual := mustFetchNames(req)
-				assert.Loosely(t, actual, should.Resemble([]string{
+				assert.Loosely(t, actual, should.Match([]string{
 					"invocations/inv1/tests/t%20t/results/r/artifacts/a",
 				}))
 			})

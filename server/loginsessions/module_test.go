@@ -142,7 +142,7 @@ func TestModule(t *testing.T) {
 		t.Run("CreateLoginSession + GetLoginSession", func(t *ftt.Test) {
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, session, should.Resemble(&loginsessionspb.LoginSession{
+			assert.Loosely(t, session, should.Match(&loginsessionspb.LoginSession{
 				Id:                      session.Id,
 				Password:                session.Password,
 				State:                   loginsessionspb.LoginSession_PENDING,
@@ -163,7 +163,7 @@ func TestModule(t *testing.T) {
 				LoginSessionPassword: pwd,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, got, should.Resemble(session))
+			assert.Loosely(t, got, should.Match(session))
 
 			// Later the confirmation code gets stale and a new one is generated.
 			tc.Set(now.Add(confirmationCodeExpiryRefresh + time.Second))
@@ -200,7 +200,7 @@ func TestModule(t *testing.T) {
 				LoginSessionPassword: pwd,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, exp, should.Resemble(&loginsessionspb.LoginSession{
+			assert.Loosely(t, exp, should.Match(&loginsessionspb.LoginSession{
 				Id:           session.Id,
 				State:        loginsessionspb.LoginSession_EXPIRED,
 				Created:      timestampFromNow(0),
@@ -216,7 +216,7 @@ func TestModule(t *testing.T) {
 				LoginSessionPassword: pwd,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, exp2, should.Resemble(exp))
+			assert.Loosely(t, exp2, should.Match(exp))
 		})
 
 		t.Run("CreateLoginSession validation", func(t *ftt.Test) {
@@ -303,7 +303,7 @@ func TestModule(t *testing.T) {
 			assert.Loosely(t, tmpl.Error, should.BeEmpty)
 			assert.Loosely(t, tmpl.Template, should.Equal("pages/start.html"))
 			assert.Loosely(t, tmpl.OAuthState, should.NotBeEmpty)
-			assert.Loosely(t, tmpl.OAuthRedirectParams, should.Resemble(map[string]string{
+			assert.Loosely(t, tmpl.OAuthRedirectParams, should.Match(map[string]string{
 				"access_type":           "offline",
 				"client_id":             sessionReq.OauthClientId,
 				"code_challenge":        sessionReq.OauthS256CodeChallenge,
@@ -340,7 +340,7 @@ func TestModule(t *testing.T) {
 				LoginSessionPassword: session.Password,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, session, should.Resemble(&loginsessionspb.LoginSession{
+			assert.Loosely(t, session, should.Match(&loginsessionspb.LoginSession{
 				Id:                     session.Id,
 				State:                  loginsessionspb.LoginSession_SUCCEEDED,
 				Created:                timestampFromNow(0),

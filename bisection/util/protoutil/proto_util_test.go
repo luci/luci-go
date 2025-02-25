@@ -388,7 +388,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, tfaProto, should.Resemble(&pb.TestAnalysis{
+			assert.Loosely(t, tfaProto, should.Match(&pb.TestAnalysis{
 				AnalysisId: 100,
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -502,7 +502,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, tfaProto, should.Resemble(&pb.TestAnalysis{
+			assert.Loosely(t, tfaProto, should.Match(&pb.TestAnalysis{
 				AnalysisId: 100,
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -559,7 +559,7 @@ func TestRegressionRange(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Resemble(&pb.RegressionRange{
+		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Match(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
@@ -591,7 +591,7 @@ func TestRegressionRange(t *testing.T) {
 
 		pbNsa, err = NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Resemble(&pb.RegressionRange{
+		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Match(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",

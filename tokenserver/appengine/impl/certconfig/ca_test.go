@@ -43,7 +43,7 @@ func TestListCAs(t *testing.T) {
 
 		cas, err = ListCAs(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cas, should.Resemble([]string{"def"}))
+		assert.Loosely(t, cas, should.Match([]string{"def"}))
 	})
 }
 
@@ -67,7 +67,7 @@ func TestCAUniqueIDToCNMapLoadStore(t *testing.T) {
 		// Not empty now.
 		mapping, err = LoadCAUniqueIDToCNMap(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, mapping, should.Resemble(toStore))
+		assert.Loosely(t, mapping, should.Match(toStore))
 	})
 }
 

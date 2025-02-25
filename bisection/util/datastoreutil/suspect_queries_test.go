@@ -290,7 +290,7 @@ func TestGetSuspect(t *testing.T) {
 
 			suspect, err := GetSuspect(ctx, 789, parentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, suspect, should.Resemble(s))
+			assert.Loosely(t, suspect, should.Match(s))
 		})
 	})
 }
@@ -368,8 +368,8 @@ func TestFetchTestFailuresForSuspect(t *testing.T) {
 		bundle, err := FetchTestFailuresForSuspect(ctx, suspect)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(bundle.All()), should.Equal(2))
-		assert.Loosely(t, bundle.Primary(), should.Resemble(tf1))
-		assert.Loosely(t, bundle.Others()[0], should.Resemble(tf2))
+		assert.Loosely(t, bundle.Primary(), should.Match(tf1))
+		assert.Loosely(t, bundle.Others()[0], should.Match(tf2))
 	})
 }
 
@@ -393,7 +393,7 @@ func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
 
 		res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res, should.Resemble(tfa))
+		assert.Loosely(t, res, should.Match(tfa))
 	})
 }
 

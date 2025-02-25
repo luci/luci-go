@@ -159,7 +159,7 @@ func TestQueryable(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, q.ConfigRevision(), should.Equal(rev1))
 		qf := q.(*queryableForm)
-		assert.Loosely(t, qf.bundle["config.cfg"], should.Resemble(&timestamppb.Timestamp{Seconds: 12345}))
+		assert.Loosely(t, qf.bundle["config.cfg"], should.Match(&timestamppb.Timestamp{Seconds: 12345}))
 
 		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(4))
 
@@ -197,6 +197,6 @@ func TestQueryable(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, q.ConfigRevision(), should.Equal(rev2))
 		qf = q.(*queryableForm)
-		assert.Loosely(t, qf.bundle["config.cfg"], should.Resemble(&timestamppb.Timestamp{Seconds: 6789}))
+		assert.Loosely(t, qf.bundle["config.cfg"], should.Match(&timestamppb.Timestamp{Seconds: 6789}))
 	})
 }

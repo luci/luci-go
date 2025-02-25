@@ -89,7 +89,7 @@ func TestProjectConfig(t *testing.T) {
 			)
 			result, err := CanReadProjects(ctx, []string{project1, project2, project3})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]bool{true, false, true}))
+			assert.Loosely(t, result, should.Match([]bool{true, false, true}))
 		})
 
 		t.Run("CanValidateProject", func(t *ftt.Test) {

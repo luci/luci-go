@@ -44,7 +44,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("Int", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewIntWithOptions("int", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewIntWithOptions("int", opt, "description", nil) },
 			should.Panic)
@@ -60,7 +60,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("Counter", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewCounterWithOptions("counter", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewCounterWithOptions("counter", opt, "description", nil) },
 			should.Panic)
@@ -77,7 +77,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("Float", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewFloatWithOptions("float", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewFloatWithOptions("float", opt, "description", nil) },
 			should.Panic)
@@ -94,7 +94,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("FloatCounter", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewFloatCounterWithOptions("float_counter", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewFloatCounterWithOptions("float_counter", opt, "description", nil) },
 			should.Panic)
@@ -111,7 +111,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("String", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewStringWithOptions("string", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() { NewStringWithOptions("string", opt, "description", nil) }, should.Panic)
 
 		assert.Loosely(t, m.Get(c), should.BeEmpty)
@@ -126,7 +126,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("Bool", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewBoolWithOptions("bool", opt, "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewBoolWithOptions("bool", opt, "description", nil) },
 			should.Panic)
@@ -143,7 +143,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("CumulativeDistribution", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewCumulativeDistributionWithOptions("cumul_dist", opt, "description", nil, distribution.FixedWidthBucketer(10, 20))
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() { NewCumulativeDistributionWithOptions("cumul_dist", opt, "description", nil, m.Bucketer()) }, should.Panic)
 
 		assert.Loosely(t, m.Bucketer().GrowthFactor(), should.BeZero)
@@ -168,7 +168,7 @@ func TestMetrics(t *testing.T) {
 	ftt.Run("NonCumulativeDistribution", t, func(t *ftt.Test) {
 		c := makeContext()
 		m := NewNonCumulativeDistributionWithOptions("noncumul_dist", opt, "description", nil, distribution.FixedWidthBucketer(10, 20))
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() {
 			NewNonCumulativeDistributionWithOptions("noncumul_dist", opt, "description", nil, m.Bucketer())
 		}, should.Panic)
@@ -207,7 +207,7 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("Int", t, func(t *ftt.Test) {
 		m := NewInt("int", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewIntWithOptions("int", opt, "description", nil) },
 			should.Panic)
@@ -215,7 +215,7 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("Counter", t, func(t *ftt.Test) {
 		m := NewCounter("counter", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewCounterWithOptions("counter", opt, "description", nil) },
 			should.Panic)
@@ -223,7 +223,7 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("Float", t, func(t *ftt.Test) {
 		m := NewFloat("float", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewFloatWithOptions("float", opt, "description", nil) },
 			should.Panic)
@@ -231,7 +231,7 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("FloatCounter", t, func(t *ftt.Test) {
 		m := NewFloatCounter("float_counter", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewFloatCounterWithOptions("float_counter", opt, "description", nil) },
 			should.Panic)
@@ -239,13 +239,13 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("String", t, func(t *ftt.Test) {
 		m := NewString("string", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() { NewStringWithOptions("string", opt, "description", nil) }, should.Panic)
 	})
 
 	ftt.Run("Bool", t, func(t *ftt.Test) {
 		m := NewBool("bool", "description", nil)
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t,
 			func() { NewBoolWithOptions("bool", opt, "description", nil) },
 			should.Panic)
@@ -253,14 +253,14 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 
 	ftt.Run("CumulativeDistribution", t, func(t *ftt.Test) {
 		m := NewCumulativeDistribution("cumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() { NewCumulativeDistributionWithOptions("cumul_dist", opt, "description", nil, m.Bucketer()) }, should.Panic)
 
 	})
 
 	ftt.Run("NonCumulativeDistribution", t, func(t *ftt.Test) {
 		m := NewNonCumulativeDistribution("noncumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
-		assert.Loosely(t, m.Info().TargetType, should.Resemble(tt))
+		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() {
 			NewNonCumulativeDistributionWithOptions("noncumul_dist", opt, "description", nil, m.Bucketer())
 		}, should.Panic)

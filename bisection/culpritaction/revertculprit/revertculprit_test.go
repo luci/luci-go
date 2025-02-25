@@ -140,7 +140,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -179,7 +179,7 @@ func TestRevertCulprit(t *testing.T) {
 				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -215,7 +215,7 @@ func TestRevertCulprit(t *testing.T) {
 				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -258,7 +258,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -335,7 +335,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -418,7 +418,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -508,7 +508,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:                "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:          false,
 				IsRevertCommitted:        false,
@@ -588,7 +588,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -665,7 +665,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -742,7 +742,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -838,7 +838,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -924,7 +924,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -1022,7 +1022,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1127,7 +1127,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1234,7 +1234,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1319,7 +1319,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1407,7 +1407,7 @@ func TestRevertCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1555,7 +1555,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1627,7 +1627,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
@@ -1713,7 +1713,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				suspect.Id, suspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
@@ -1826,7 +1826,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				suspect.Id, suspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
-			assert.Loosely(t, suspect.ActionDetails, should.Resemble(model.ActionDetails{
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         true,
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),

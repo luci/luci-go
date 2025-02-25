@@ -164,12 +164,12 @@ func TestCreateTestExoneration(t *testing.T) {
 				ExonerationId: res.ExonerationId,
 				VariantHash:   expectedVariantHash,
 			})
-			assert.Loosely(t, res, should.Resemble(expected))
+			assert.Loosely(t, res, should.Match(expected))
 
 			// Now check the database.
 			row, err := exonerations.Read(span.Single(ctx), res.Name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, row.Variant, should.Resemble(expected.Variant))
+			assert.Loosely(t, row.Variant, should.Match(expected.Variant))
 			assert.Loosely(t, row.ExplanationHtml, should.Equal(expected.ExplanationHtml))
 
 			// Check variant hash.
@@ -184,7 +184,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				// Test idempotency.
 				res2, err := recorder.CreateTestExoneration(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res2, should.Resemble(res))
+				assert.Loosely(t, res2, should.Match(res))
 			}
 		}
 

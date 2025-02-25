@@ -61,7 +61,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 			sw := bbJob.GetSwarming()
 			assert.Loosely(t, sw, should.NotBeNil)
-			assert.Loosely(t, sw.Task.Tags, should.Resemble([]string{
+			assert.Loosely(t, sw.Task.Tags, should.Match([]string{
 				"allow_milo:1",
 				"log_location:logdog://luci-logdog-dev.appspot.com/infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
 			}))
@@ -70,7 +70,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 			slice0 := sw.Task.TaskSlices[0]
 			assert.Loosely(t, slice0.ExpirationSecs, should.Equal(240))
-			assert.Loosely(t, slice0.Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+			assert.Loosely(t, slice0.Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 				{
 					Key:   "caches",
 					Value: "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
@@ -80,7 +80,7 @@ func TestFlattenToSwarming(t *testing.T) {
 				{Key: "pool", Value: "Chrome"},
 			}))
 
-			assert.Loosely(t, slice0.Properties.Command[:3], should.Resemble([]string{
+			assert.Loosely(t, slice0.Properties.Command[:3], should.Match([]string{
 				"bbagent${EXECUTABLE_SUFFIX}", "--output",
 				"${ISOLATED_OUTDIR}/build.proto.json",
 			}))
@@ -88,7 +88,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, bbArgs.PayloadPath, should.Match("kitchen-checkout"))
-			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Resemble([]string{"luciexe"}))
+			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Match([]string{"luciexe"}))
 
 			props := ledProperties{}
 			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
@@ -103,11 +103,11 @@ func TestFlattenToSwarming(t *testing.T) {
 					"HEAD",
 				},
 			}
-			assert.Loosely(t, props, should.Resemble(expectedProps))
+			assert.Loosely(t, props, should.Match(expectedProps))
 
 			// Added `kitchen-checkout` as the last CipdInputs entry.
 			assert.Loosely(t, slice0.Properties.CipdInput.Packages, should.HaveLength(17)) // see bbagent.job.json
-			assert.Loosely(t, slice0.Properties.CipdInput.Packages[16], should.Resemble(&swarmingpb.CipdPackage{
+			assert.Loosely(t, slice0.Properties.CipdInput.Packages[16], should.Match(&swarmingpb.CipdPackage{
 				Path:        "kitchen-checkout",
 				PackageName: expectedProps.CIPDInput.Package,
 				Version:     expectedProps.CIPDInput.Version,
@@ -115,7 +115,7 @@ func TestFlattenToSwarming(t *testing.T) {
 
 			slice1 := sw.Task.TaskSlices[1]
 			assert.Loosely(t, slice1.ExpirationSecs, should.Equal(21360))
-			assert.Loosely(t, slice1.Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+			assert.Loosely(t, slice1.Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 				{Key: "cpu", Value: "x86-64"},
 				{Key: "os", Value: "Ubuntu"},
 				{Key: "pool", Value: "Chrome"},
@@ -186,7 +186,7 @@ func TestFlattenToSwarming(t *testing.T) {
 				assert.Loosely(t, pkg.Version, should.NotEqual("HEAD"))
 			}
 
-			assert.Loosely(t, slice0.Properties.Command[:3], should.Resemble([]string{
+			assert.Loosely(t, slice0.Properties.Command[:3], should.Match([]string{
 				"bbagent${EXECUTABLE_SUFFIX}", "--output",
 				"${ISOLATED_OUTDIR}/build.proto.json",
 			}))
@@ -194,7 +194,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, bbArgs.PayloadPath, should.Match("some/path"))
-			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Resemble([]string{"luciexe"}))
+			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Match([]string{"luciexe"}))
 
 			props := ledProperties{}
 			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
@@ -211,7 +211,7 @@ func TestFlattenToSwarming(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, props, should.Resemble(expectedProps))
+			assert.Loosely(t, props, should.Match(expectedProps))
 		})
 		t.Run(`With experiments`, func(t *ftt.Test) {
 			MustHLEdit(t, bbJob, func(je HighLevelEditor) {

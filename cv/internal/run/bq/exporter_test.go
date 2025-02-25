@@ -95,7 +95,7 @@ func TestExportRunToBQ(t *testing.T) {
 				assert.Loosely(t, schedule(), should.BeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
-				assert.Loosely(t, rows, should.Resemble([]protoreflect.ProtoMessage{&cvbqpb.Attempt{
+				assert.Loosely(t, rows, should.Match([]protoreflect.ProtoMessage{&cvbqpb.Attempt{
 					Key:                  runID.AttemptKey(),
 					LuciProject:          runID.LUCIProject(),
 					RunId:                string(runID),
@@ -123,7 +123,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 				// The same rows must be sent to legacy CQ table.
 				cqRows := ct.BQFake.Rows(legacyProject, legacyDataset, legacyTable)
-				assert.Loosely(t, cqRows, should.Resemble(rows))
+				assert.Loosely(t, cqRows, should.Match(rows))
 				// And only these 2 rows have been sent.
 				assert.Loosely(t, ct.BQFake.TotalSent(), should.Equal(2))
 			})

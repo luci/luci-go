@@ -251,7 +251,7 @@ func TestGetCLRunInfo(t *testing.T) {
 
 			resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+			assert.Loosely(t, resp.DepChangeInfos, should.Match([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 				{
 					GerritChange: deps[0],
 					ChangeOwner:  owner,
@@ -271,7 +271,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 				assert.NoErr(t, err)
-				assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
+				assert.Loosely(t, resp.DepChangeInfos, should.Match([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 					{
 						GerritChange: deps[1],
 						ChangeOwner:  owner,

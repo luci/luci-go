@@ -75,7 +75,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("For valid ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test builder")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
@@ -85,7 +85,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("Allow '.' in builder ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test.builder")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test.builder",
@@ -95,7 +95,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("Allow '.' in bucket ID", func(t *ftt.Test) {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test.bucket/test builder")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test.bucket",
 				Builder: "test builder",
@@ -112,7 +112,7 @@ func TestTagGRPC(t *testing.T) {
 	ftt.Run("ParseBuilderID", t, func(t *ftt.Test) {
 		t.Run("For valid ID", func(t *ftt.Test) {
 			builderID, err := ParseBuilderID("test project/test bucket/test builder")
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
@@ -145,7 +145,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("For valid build ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test builder/123456")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test builder",
@@ -156,7 +156,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("Allow '.' in builder ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test.builder/123456")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test bucket",
 				Builder: "test.builder",
@@ -167,7 +167,7 @@ func TestTagGRPC(t *testing.T) {
 		t.Run("Allow '.' in bucket ID", func(t *ftt.Test) {
 			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test.bucket/test builder/123456")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, builderID, should.Resemble(&buildbucketpb.BuilderID{
+			assert.Loosely(t, builderID, should.Match(&buildbucketpb.BuilderID{
 				Project: "test project",
 				Bucket:  "test.bucket",
 				Builder: "test builder",

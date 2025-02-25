@@ -81,7 +81,7 @@ func TestGetJobsApi(t *testing.T) {
 			}
 			reply, err := ss.GetJobs(ctx, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
+			assert.Loosely(t, reply.GetJobs(), should.Match([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
@@ -113,7 +113,7 @@ func TestGetJobsApi(t *testing.T) {
 			}
 			reply, err := ss.GetJobs(ctx, &scheduler.JobsRequest{Project: "bar"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
+			assert.Loosely(t, reply.GetJobs(), should.Match([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
@@ -141,7 +141,7 @@ func TestGetJobsApi(t *testing.T) {
 			}
 			reply, err := ss.GetJobs(ctx, &scheduler.JobsRequest{Project: "bar"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
+			assert.Loosely(t, reply.GetJobs(), should.Match([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
@@ -189,7 +189,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		t.Run("Empty with huge pagesize", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
-				assert.Loosely(t, opts, should.Resemble(engine.ListInvocationsOpts{
+				assert.Loosely(t, opts, should.Match(engine.ListInvocationsOpts{
 					PageSize: 50,
 				}))
 				return nil, "", nil
@@ -208,7 +208,7 @@ func TestGetInvocationsApi(t *testing.T) {
 			finished := time.Unix(321321321, 0).UTC()
 			fakeEng.mockJob("proj/job")
 			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
-				assert.Loosely(t, opts, should.Resemble(engine.ListInvocationsOpts{
+				assert.Loosely(t, opts, should.Match(engine.ListInvocationsOpts{
 					PageSize: 5,
 					Cursor:   "cursor",
 				}))
@@ -226,7 +226,7 @@ func TestGetInvocationsApi(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, r.GetNextCursor(), should.Equal("next"))
-			assert.Loosely(t, r.GetInvocations(), should.Resemble([]*scheduler.Invocation{
+			assert.Loosely(t, r.GetInvocations(), should.Match([]*scheduler.Invocation{
 				{
 					InvocationRef: &scheduler.InvocationRef{
 						JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
@@ -281,7 +281,7 @@ func TestGetInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(&scheduler.Invocation{
+			assert.Loosely(t, inv, should.Match(&scheduler.Invocation{
 				InvocationRef: &scheduler.InvocationRef{
 					JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 					InvocationId: 12,
@@ -349,7 +349,7 @@ func TestJobActionsApi(t *testing.T) {
 			}
 			r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, r, should.Match(&emptypb.Empty{}))
 		})
 
 		t.Run("NotFound", func(t *ftt.Test) {
@@ -396,7 +396,7 @@ func TestAbortInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, r, should.Match(&emptypb.Empty{}))
 		})
 
 		t.Run("No job", func(t *ftt.Test) {

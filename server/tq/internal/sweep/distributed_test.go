@@ -134,8 +134,8 @@ func TestDistributed(t *testing.T) {
 				return enqueued[i].Partition < enqueued[j].Partition
 			})
 			assert.Loosely(t, enqueued, should.HaveLength(2))
-			assert.Loosely(t, enqueued[0], should.Resemble(sweepTask(32, 144, 1)))
-			assert.Loosely(t, enqueued[1], should.Resemble(sweepTask(144, 256, 1)))
+			assert.Loosely(t, enqueued[0], should.Match(sweepTask(32, 144, 1)))
+			assert.Loosely(t, enqueued[1], should.Match(sweepTask(144, 256, 1)))
 
 			assert.Loosely(t, sub.req, should.HaveLength(32))           // submitted up to the limit
 			assert.Loosely(t, db.AllReminders(), should.HaveLength(32)) // the rest are still there
@@ -186,7 +186,7 @@ func TestDistributed(t *testing.T) {
 				submitted = append(submitted, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(submitted)
-			assert.Loosely(t, submitted, should.Resemble([]string{
+			assert.Loosely(t, submitted, should.Match([]string{
 				"0000", "0001", "0002", "0003", "0004",
 				"0015",
 				"0020", "0021", "0022", "0023", "0024",

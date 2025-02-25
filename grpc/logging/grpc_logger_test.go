@@ -103,7 +103,7 @@ func TestGRPCLogger(t *testing.T) {
 						}...)
 					}
 
-					assert.Loosely(t, base.Messages(), should.Resemble(expected))
+					assert.Loosely(t, base.Messages(), should.Match(expected))
 
 					for i := 0; i < 3; i++ {
 						exp := i <= translateLevel(l)
@@ -119,7 +119,7 @@ func TestGRPCLogger(t *testing.T) {
 					grpclog.Fatalf("fatalf(%q, %q)", "foo", "bar")
 					grpclog.Fatalln("fatalln", "foo", "bar")
 
-					assert.Loosely(t, base.Messages(), should.Resemble([]memlogger.LogEntry{
+					assert.Loosely(t, base.Messages(), should.Match([]memlogger.LogEntry{
 						{Level: logging.Error, Msg: "fatal foo bar", CallDepth: 3},
 						{Level: logging.Error, Msg: `fatalf("foo", "bar")`, CallDepth: 3},
 						{Level: logging.Error, Msg: "fatalln foo bar", CallDepth: 3},

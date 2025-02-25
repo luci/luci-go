@@ -121,12 +121,12 @@ func TestServiceConfig(t *testing.T) {
 			services := []string{"service1", "service2"}
 			result, err := CanReadServices(ctx, services)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]bool{false, false}))
+			assert.Loosely(t, result, should.Match([]bool{false, false}))
 			// allow access
 			fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 			result, err = CanReadServices(ctx, services)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]bool{true, true}))
+			assert.Loosely(t, result, should.Match([]bool{true, true}))
 		})
 
 		t.Run("CanValidateService", func(t *ftt.Test) {

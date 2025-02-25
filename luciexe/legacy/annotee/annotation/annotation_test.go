@@ -322,7 +322,7 @@ func TestState(t *testing.T) {
 
 				// All log streams should be closed.
 				cb := st.Callbacks.(*testCallbacks)
-				assert.Loosely(t, cb.logsOpen, should.Resemble(map[types.StreamName]struct{}{}))
+				assert.Loosely(t, cb.logsOpen, should.Match(map[types.StreamName]struct{}{}))
 
 				// Iterate over each generated stream and assert that it matches its
 				// expectation. Do it deterministically so failures aren't frustrating
@@ -331,7 +331,7 @@ func TestState(t *testing.T) {
 					rootStep := st.RootStep()
 
 					exp := loadStepProto(t, testCase.name, rootStep)
-					assert.Loosely(t, rootStep.Proto(), should.Resemble(exp))
+					assert.Loosely(t, rootStep.Proto(), should.Match(exp))
 				})
 
 				// Iterate over each generated log and assert that it matches its
@@ -344,7 +344,7 @@ func TestState(t *testing.T) {
 				for _, logName := range logs {
 					log := cb.logs[types.StreamName(logName)]
 					exp := loadLogText(t, testCase.name, logName)
-					assert.Loosely(t, log, should.Resemble(exp))
+					assert.Loosely(t, log, should.Match(exp))
 				}
 			})
 		}

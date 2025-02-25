@@ -36,7 +36,7 @@ func TestLexer(t *testing.T) {
 		})
 
 		t.Run("Splitting should yield a zero-length token slice.", func(t *ftt.Test) {
-			assert.Loosely(t, l.split(), should.Resemble([]token{}))
+			assert.Loosely(t, l.split(), should.Match([]token{}))
 		})
 	})
 
@@ -68,7 +68,7 @@ func TestLexer(t *testing.T) {
 		l := lexer(`a:b:c`, ':')
 
 		t.Run("Split should yield three elements.", func(t *ftt.Test) {
-			assert.Loosely(t, l.split(), should.Resemble([]token{"a", "b", "c"}))
+			assert.Loosely(t, l.split(), should.Match([]token{"a", "b", "c"}))
 		})
 	})
 }

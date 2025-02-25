@@ -119,7 +119,7 @@ func TestMain(t *testing.T) {
 					return nil
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, getFinal(), should.Match(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
@@ -133,11 +133,11 @@ func TestMain(t *testing.T) {
 			t.Run(`user args`, func(t *ftt.Test) {
 				args = append(args, "--", "custom", "stuff")
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					assert.Loosely(t, args, should.Resemble([]string{"custom", "stuff"}))
+					assert.Loosely(t, args, should.Match([]string{"custom", "stuff"}))
 					return nil
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, getFinal(), should.Match(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
@@ -155,7 +155,7 @@ func TestMain(t *testing.T) {
 				})
 
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					assert.Loosely(t, topLevel.GetInput(ctx), should.Resemble(&testpb.TopLevel{
+					assert.Loosely(t, topLevel.GetInput(ctx), should.Match(&testpb.TopLevel{
 						Field:         "something",
 						JsonNameField: "blah",
 					}))
@@ -183,7 +183,7 @@ func TestMain(t *testing.T) {
 					return errors.New("bad stuff")
 				})
 				assert.Loosely(t, err, should.Equal(errNonSuccess))
-				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, getFinal(), should.Match(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_FAILURE,
@@ -201,7 +201,7 @@ func TestMain(t *testing.T) {
 					panic("BAD THINGS")
 				})
 				assert.Loosely(t, err, should.Equal(errNonSuccess))
-				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
+				assert.Loosely(t, getFinal(), should.Match(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_INFRA_FAILURE,

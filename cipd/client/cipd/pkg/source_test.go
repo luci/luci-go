@@ -38,17 +38,17 @@ func TestReadSeekerSource(t *testing.T) {
 			n, err := src.ReadAt(buf, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
-			assert.Loosely(t, buf, should.Resemble([]byte("12")))
+			assert.Loosely(t, buf, should.Match([]byte("12")))
 
 			n, err = src.ReadAt(buf, 2)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
-			assert.Loosely(t, buf, should.Resemble([]byte("34")))
+			assert.Loosely(t, buf, should.Match([]byte("34")))
 
 			n, err = src.ReadAt(buf, 4)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(1))
-			assert.Loosely(t, buf[:1], should.Resemble([]byte("5")))
+			assert.Loosely(t, buf[:1], should.Match([]byte("5")))
 
 			n, err = src.ReadAt(buf, 5)
 			assert.Loosely(t, err, should.Equal(io.EOF))
@@ -59,18 +59,18 @@ func TestReadSeekerSource(t *testing.T) {
 			n, err := src.ReadAt(buf, 4)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(1))
-			assert.Loosely(t, buf[:1], should.Resemble([]byte("5")))
+			assert.Loosely(t, buf[:1], should.Match([]byte("5")))
 
 			n, err = src.ReadAt(buf, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
-			assert.Loosely(t, buf, should.Resemble([]byte("12")))
+			assert.Loosely(t, buf, should.Match([]byte("12")))
 
 			// Again.
 			n, err = src.ReadAt(buf, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
-			assert.Loosely(t, buf, should.Resemble([]byte("12")))
+			assert.Loosely(t, buf, should.Match([]byte("12")))
 
 			n, err = src.ReadAt(buf, 5)
 			assert.Loosely(t, err, should.Equal(io.EOF))

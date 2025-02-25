@@ -170,7 +170,7 @@ func TestCreateBBagent(t *testing.T) {
 
 		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
 		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
-		assert.Loosely(t, jd.GetBuildbucket().BbagentArgs, should.Resemble(&bbpb.BBAgentArgs{
+		assert.Loosely(t, jd.GetBuildbucket().BbagentArgs, should.Match(&bbpb.BBAgentArgs{
 			PayloadPath:            bld.Infra.Bbagent.PayloadPath,
 			CacheDir:               bld.Infra.Bbagent.CacheDir,
 			KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,

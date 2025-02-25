@@ -39,7 +39,7 @@ func TestHelpers(t *testing.T) {
 		}))
 		p, err := ProjectsWithConfig(ctx, "f.cfg")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, p, should.Resemble([]string{"a", "c"}))
+		assert.Loosely(t, p, should.Match([]string{"a", "c"}))
 	})
 
 	ftt.Run("Get works", t, func(t *ftt.Test) {
@@ -55,7 +55,7 @@ func TestHelpers(t *testing.T) {
 			dst := []byte(nil)
 			meta := config.Meta{}
 			assert.Loosely(t, Get(ctx, "projects/a", "cfg.text", Bytes(&dst), &meta), should.BeNil)
-			assert.Loosely(t, dst, should.Resemble([]byte("blah")))
+			assert.Loosely(t, dst, should.Match([]byte("blah")))
 			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
@@ -71,7 +71,7 @@ func TestHelpers(t *testing.T) {
 			dst := configPB.ProjectCfg{}
 			meta := config.Meta{}
 			assert.Loosely(t, Get(ctx, "projects/a", "cfg.textpb", ProtoText(&dst), &meta), should.BeNil)
-			assert.Loosely(t, &dst, should.Resemble(&configPB.ProjectCfg{Name: "blah"}))
+			assert.Loosely(t, &dst, should.Match(&configPB.ProjectCfg{Name: "blah"}))
 			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
@@ -79,7 +79,7 @@ func TestHelpers(t *testing.T) {
 			dst := configPB.ProjectCfg{}
 			meta := config.Meta{}
 			assert.Loosely(t, Get(ctx, "projects/a", "cfg.jsonpb", ProtoJSON(&dst), &meta), should.BeNil)
-			assert.Loosely(t, &dst, should.Resemble(&configPB.ProjectCfg{Name: "blah"}))
+			assert.Loosely(t, &dst, should.Match(&configPB.ProjectCfg{Name: "blah"}))
 			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 

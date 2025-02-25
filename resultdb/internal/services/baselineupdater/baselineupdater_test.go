@@ -205,7 +205,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			// zero out Timestamp
 			res.LastUpdated = time.Time{}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(exp))
+			assert.Loosely(t, res, should.Match(exp))
 		})
 
 		t.Run(`Mark skipped test should be skipped`, func(t *ftt.Test) {

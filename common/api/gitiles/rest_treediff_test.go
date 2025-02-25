@@ -174,7 +174,7 @@ func TestLogWithTreeDiff(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(res.Log), should.Equal(2))
-		assert.Loosely(t, res.Log[1].TreeDiff[0], should.Resemble(&git.Commit_TreeDiff{
+		assert.Loosely(t, res.Log[1].TreeDiff[0], should.Match(&git.Commit_TreeDiff{
 			Type:    git.Commit_TreeDiff_MODIFY,
 			OldId:   "5e99bfe849b1272c4f93998c1a4e474d50f71d07",
 			OldMode: 33188,

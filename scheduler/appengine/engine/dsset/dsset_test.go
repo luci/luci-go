@@ -76,7 +76,7 @@ func TestSet(t *testing.T) {
 		// The item is returned by the listing.
 		listing, err := set.List(c)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, listing.Items, should.Resemble([]Item{{ID: "abc"}}))
+		assert.Loosely(t, listing.Items, should.Match([]Item{{ID: "abc"}}))
 		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// Pop it!
@@ -84,7 +84,7 @@ func TestSet(t *testing.T) {
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
 			popped, tombs, err := pop(c, &set, listing, []string{"abc"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, popped, should.Resemble([]string{"abc"}))
+			assert.Loosely(t, popped, should.Match([]string{"abc"}))
 			assert.Loosely(t, len(tombs), should.Equal(1))
 			assert.Loosely(t, tombs[0].id, should.Equal("abc"))
 			assert.Loosely(t, len(tombs[0].storage), should.Equal(1))
@@ -180,7 +180,7 @@ func TestSet(t *testing.T) {
 		// Yep, it is there.
 		listing, err = set.List(c)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, listing.Items, should.Resemble([]Item{{ID: "abc"}}))
+		assert.Loosely(t, listing.Items, should.Match([]Item{{ID: "abc"}}))
 		assert.Loosely(t, listing.Garbage, should.BeNil)
 	})
 

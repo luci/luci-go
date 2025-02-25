@@ -123,7 +123,7 @@ func TestBlobs(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			body, err := io.ReadAll(w.Body)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, body, should.Resemble(b))
+			assert.Loosely(t, body, should.Match(b))
 		})
 	})
 }

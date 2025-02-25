@@ -181,7 +181,7 @@ func TestListTaskRequests(t *testing.T) {
 			for _, t := range resp.Items {
 				got = append(got, t.Name)
 			}
-			assert.Loosely(t, got, should.Resemble(expected))
+			assert.Loosely(t, got, should.Match(expected))
 
 			// With pagination.
 			cursor := ""
@@ -204,7 +204,7 @@ func TestListTaskRequests(t *testing.T) {
 					break
 				}
 			}
-			assert.Loosely(t, got, should.Resemble(expected))
+			assert.Loosely(t, got, should.Match(expected))
 		}
 
 		// A helper to generate expected results. See SetupTestTask.

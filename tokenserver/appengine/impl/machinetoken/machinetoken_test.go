@@ -168,7 +168,7 @@ func TestMint(t *testing.T) {
 			}
 			body, token, err := Mint(ctx, &params)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, body, should.Resemble(&tokenserver.MachineTokenBody{
+			assert.Loosely(t, body, should.Match(&tokenserver.MachineTokenBody{
 				MachineFqdn: "host.domain",
 				IssuedBy:    "token-server@example.com",
 				IssuedAt:    1422936306,

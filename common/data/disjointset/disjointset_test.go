@@ -71,7 +71,7 @@ func TestDisjointSet(t *testing.T) {
 		d.Merge(1, 3)
 		d.Merge(2, 5)
 
-		assert.Loosely(t, d.SortedSets(), should.Resemble([][]int{
+		assert.Loosely(t, d.SortedSets(), should.Match([][]int{
 			{0, 4, 6},
 			{1, 3},
 			{2, 5},

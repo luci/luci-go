@@ -267,7 +267,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
-					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
+					assert.Loosely(t, res.State.Submission, should.Match(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 					}))
@@ -289,7 +289,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
-					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
+					assert.Loosely(t, res.State.Submission, should.Match(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 						TreeErrorSince:    timestamppb.New(now),
@@ -348,7 +348,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
 			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.ConfigGroups[0]})
-			assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Resemble(&run.Trigger{
+			assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Match(&run.Trigger{
 				Time:            timestamppb.New(ct.Clock.Now().Add(-2 * time.Minute)),
 				Mode:            string(run.FullRun),
 				Email:           "user-100@example.com",
@@ -489,7 +489,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		assertNotify := func(req *gerritpb.SetReviewRequest, accts ...int64) {
 			assert.Loosely(t, req, should.NotBeNil)
 			assert.Loosely(t, req.GetNotify(), should.Equal(gerritpb.Notify_NOTIFY_NONE))
-			assert.Loosely(t, req.GetNotifyDetails(), should.Resemble(&gerritpb.NotifyDetails{
+			assert.Loosely(t, req.GetNotifyDetails(), should.Match(&gerritpb.NotifyDetails{
 				Recipients: []*gerritpb.NotifyDetails_Recipient{
 					{
 						RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
@@ -518,7 +518,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				rhs, _ := strconv.Atoi(actual[j].User)
 				return lhs < rhs
 			})
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		}
 
 		t.Run("Transient failure", func(t *ftt.Test) {
@@ -535,7 +535,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
-					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
+					assert.Loosely(t, res.State.Submission, should.Match(&run.Submission{
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 						TaskId:   "task-foo",
 					})) // unchanged
@@ -616,7 +616,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								AddToAttentionReason: submissionFailureAttentionReason,
 							}
 						}
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble(expectedRequests))
+						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match(expectedRequests))
 						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 					}
 					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rs.ID))
@@ -671,7 +671,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 						assert.Loosely(t, res.PostProcessFn, should.BeNil)
-						assert.Loosely(t, ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, should.Resemble(ci2)) // unchanged
+						assert.Loosely(t, ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, should.Match(ci2)) // unchanged
 						assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.NotEqual(rs.ID))
 					})
 				})
@@ -882,7 +882,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							AddToAttentionReason: submissionFailureAttentionReason,
 						}
 					}
-					assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Resemble(expectedRequests))
+					assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match(expectedRequests))
 					assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
 				}
 			}
@@ -1096,38 +1096,38 @@ func TestOnCLsSubmitted(t *testing.T) {
 		t.Run("Single", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3}))
 
 		})
 		t.Run("Duplicate", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3, 1}))
 		})
 		t.Run("Obey Submission order", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3, 1, 7, 5}))
 		})
 		t.Run("Merge to existing", func(t *ftt.Test) {
 			rs.Submission.SubmittedCls = []int64{3, 1}
 			// 1 should be deduped
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 7})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3, 1, 7}))
 		})
 		t.Run("Last cl arrives first", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{5})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{5}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 5}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3, 1, 5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{7})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
+			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Match([]int64{3, 1, 7, 5}))
 		})
 		t.Run("Error for unknown CLs", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})

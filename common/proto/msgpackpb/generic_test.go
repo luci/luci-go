@@ -181,13 +181,13 @@ func TestRoundtrip(t *testing.T) {
 				}
 
 				if tc.raw != nil {
-					assert.Loosely(t, []byte(raw), should.Resemble(tc.raw))
+					assert.Loosely(t, []byte(raw), should.Match(tc.raw))
 				}
 
 				msg := &TestMessage{}
 				assert.Loosely(t, Unmarshal(raw, msg, tc.options...), should.BeNil)
 
-				assert.Loosely(t, msg, should.Resemble(tc.input))
+				assert.Loosely(t, msg, should.Match(tc.input))
 			})
 		}
 	})
@@ -335,15 +335,15 @@ func TestDecode(t *testing.T) {
 
 					known := proto.Clone(msg).(*TestMessage)
 					known.ProtoReflect().SetUnknown(nil)
-					assert.Loosely(t, known, should.Resemble(tc.expect))
+					assert.Loosely(t, known, should.Match(tc.expect))
 
-					assert.Loosely(t, msg.ProtoReflect().GetUnknown(), should.Resemble(tc.expectUnknown))
+					assert.Loosely(t, msg.ProtoReflect().GetUnknown(), should.Match(tc.expectUnknown))
 
 					if tc.expectRaw != nil {
 						raw, err := Marshal(msg, Deterministic)
 						assert.Loosely(t, err, should.BeNil)
 
-						assert.Loosely(t, raw, should.Resemble(tc.expectRaw))
+						assert.Loosely(t, raw, should.Match(tc.expectRaw))
 
 						if len(msg.ProtoReflect().GetUnknown()) > 0 {
 							dec := msgpack.GetDecoder()
@@ -358,7 +358,7 @@ func TestDecode(t *testing.T) {
 
 							assert.Loosely(t, dec.DecodeValue(decoded), should.BeNil)
 
-							assert.Loosely(t, decoded.Interface(), should.Resemble(tc.expectDecoded))
+							assert.Loosely(t, decoded.Interface(), should.Match(tc.expectDecoded))
 						}
 					}
 				} else {

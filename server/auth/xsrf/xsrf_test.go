@@ -46,7 +46,7 @@ func TestXsrf(t *testing.T) {
 
 	ftt.Run("TokenField works", t, func(t *ftt.Test) {
 		c := makeContext()
-		assert.Loosely(t, TokenField(c), should.Resemble(
+		assert.Loosely(t, TokenField(c), should.Match(
 			template.HTML("<input type=\"hidden\" name=\"xsrf_token\" "+
 				"value=\"AXsiX2kiOiIxNDQyMjcwNTIwMDAwIn1ceiDv1yfNK9OHcdb209l3fM4p_gn-Uaembaa8gr3WXg\">")))
 	})

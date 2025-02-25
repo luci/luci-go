@@ -70,7 +70,7 @@ func shouldHaveLogStreams(expected ...string) comparison.Func[[]*LogStream] {
 			aList[i] = string(ls.Path)
 		}
 
-		ret := should.Resemble(expected)(aList)
+		ret := should.Match(expected)(aList)
 		if ret != nil {
 			ret.Comparison.Name = "shouldHaveLogStreams"
 		}
@@ -186,7 +186,7 @@ func TestClientQuery(t *testing.T) {
 
 				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
 				assert.Loosely(t, results, shouldHaveLogStreams("test/+/a"))
-				assert.Loosely(t, results[0], should.Resemble(&LogStream{
+				assert.Loosely(t, results[0], should.Match(&LogStream{
 					Path: "test/+/a",
 					Desc: logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
 					State: StreamState{
@@ -203,19 +203,19 @@ func TestClientQuery(t *testing.T) {
 				t.Run(`Text`, func(t *ftt.Test) {
 					q.StreamType = Text
 					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
-					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}))
+					assert.Loosely(t, svc.LR.StreamType, should.Match(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}))
 				})
 
 				t.Run(`Binary`, func(t *ftt.Test) {
 					q.StreamType = Binary
 					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
-					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}))
+					assert.Loosely(t, svc.LR.StreamType, should.Match(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}))
 				})
 
 				t.Run(`Datagram`, func(t *ftt.Test) {
 					q.StreamType = Datagram
 					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
-					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}))
+					assert.Loosely(t, svc.LR.StreamType, should.Match(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}))
 				})
 			})
 

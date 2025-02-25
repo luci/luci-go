@@ -36,7 +36,7 @@ func TestBinaryHeader(t *testing.T) {
 				"Another-Key": {"v3"},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble(metadata.MD{
+			assert.Loosely(t, md, should.Match(metadata.MD{
 				"key":         {"v1", "v2"},
 				"another-key": {"v3"},
 			}))
@@ -48,7 +48,7 @@ func TestBinaryHeader(t *testing.T) {
 				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble(metadata.MD{
+			assert.Loosely(t, md, should.Match(metadata.MD{
 				"key-bin": {string(data)},
 			}))
 		})
@@ -66,7 +66,7 @@ func TestBinaryHeader(t *testing.T) {
 				"X-Prpc-Zzz":   {"zzz"},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble(metadata.MD(nil)))
+			assert.Loosely(t, md, should.Match(metadata.MD(nil)))
 		})
 	})
 
@@ -78,7 +78,7 @@ func TestBinaryHeader(t *testing.T) {
 				"another-key": {"v3"},
 			}, h)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, h, should.Resemble(http.Header{
+			assert.Loosely(t, h, should.Match(http.Header{
 				"Key":         {"v1", "v2"},
 				"Another-Key": {"v3"},
 			}))
@@ -91,7 +91,7 @@ func TestBinaryHeader(t *testing.T) {
 				"key-bin": {string(data)},
 			}, h)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, h, should.Resemble(http.Header{
+			assert.Loosely(t, h, should.Match(http.Header{
 				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
 			}))
 		})

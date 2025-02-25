@@ -48,7 +48,7 @@ func TestConfig(t *testing.T) {
 				foo := &Project{ID: "foo"}
 				assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
 				assert.Loosely(t, foo.HasConfig, should.BeTrue)
-				assert.Loosely(t, foo.ACL, should.Resemble(ACL{
+				assert.Loosely(t, foo.ACL, should.Match(ACL{
 					Groups:     []string{"a", "b"},
 					Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
 				}))
@@ -56,19 +56,19 @@ func TestConfig(t *testing.T) {
 				bar := &Project{ID: "bar"}
 				assert.Loosely(t, datastore.Get(c, bar), should.BeNil)
 				assert.Loosely(t, bar.HasConfig, should.BeTrue)
-				assert.Loosely(t, bar.ACL, should.Resemble(ACL{}))
+				assert.Loosely(t, bar.ACL, should.Match(ACL{}))
 
 				baz := &Project{ID: "baz"}
 				assert.Loosely(t, datastore.Get(c, baz), should.BeNil)
 				assert.Loosely(t, baz.HasConfig, should.BeFalse)
-				assert.Loosely(t, baz.ACL, should.Resemble(ACL{
+				assert.Loosely(t, baz.ACL, should.Match(ACL{
 					Groups: []string{"a"},
 				}))
 
 				external := &Project{ID: "external"}
 				assert.Loosely(t, datastore.Get(c, external), should.BeNil)
 				assert.Loosely(t, external.HasConfig, should.BeTrue)
-				assert.Loosely(t, external.ACL, should.Resemble(ACL{
+				assert.Loosely(t, external.ACL, should.Match(ACL{
 					Identities: []identity.Identity{"user:a@example.com", "user:e@example.com"},
 				}))
 			})
@@ -101,7 +101,7 @@ func TestConfig(t *testing.T) {
 			t.Run("Check Console config updated with builder ID", func(t *ftt.Test) {
 				cs, err := GetConsole(c, "foo", "default_header")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cs.Def.Builders, should.Resemble([]*projectconfigpb.Builder{
+				assert.Loosely(t, cs.Def.Builders, should.Match([]*projectconfigpb.Builder{
 					{
 						Id: &buildbucketpb.BuilderID{
 							Project: "foo",
@@ -134,7 +134,7 @@ func TestConfig(t *testing.T) {
 				assert.Loosely(t, cs.Def.Name, should.Equal("foo default"))
 				assert.Loosely(t, cs.Def.ExternalProject, should.Equal("foo"))
 				assert.Loosely(t, cs.Def.ExternalId, should.Equal("default"))
-				assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.something/bar", "buildbucket/luci.foo.other/baz"}))
+				assert.Loosely(t, cs.Builders, should.Match([]string{"buildbucket/luci.foo.something/bar", "buildbucket/luci.foo.other/baz"}))
 			})
 
 			t.Run("Check user can see external consoles they have access to", func(t *ftt.Test) {
@@ -146,7 +146,7 @@ func TestConfig(t *testing.T) {
 				for _, c := range cs {
 					ids = append(ids, c.ID)
 				}
-				assert.Loosely(t, ids, should.Resemble([]string{"foo-default"}))
+				assert.Loosely(t, ids, should.Match([]string{"foo-default"}))
 			})
 
 			t.Run("Check user can't see external consoles they don't have access to", func(t *ftt.Test) {
@@ -169,14 +169,14 @@ func TestConfig(t *testing.T) {
 					foo := &Project{ID: "foo"}
 					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
 					assert.Loosely(t, foo.HasConfig, should.BeTrue)
-					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
+					assert.Loosely(t, foo.ACL, should.Match(ACL{
 						Identities: []identity.Identity{"user:a@example.com"},
 					}))
 
 					bar := &Project{ID: "bar"}
 					assert.Loosely(t, datastore.Get(c, bar), should.BeNil)
 					assert.Loosely(t, bar.HasConfig, should.BeFalse)
-					assert.Loosely(t, bar.ACL, should.Resemble(ACL{}))
+					assert.Loosely(t, bar.ACL, should.Match(ACL{}))
 
 					assert.Loosely(t, datastore.Get(c, &Project{ID: "baz"}), should.Equal(datastore.ErrNoSuchEntity))
 				})
@@ -198,13 +198,13 @@ func TestConfig(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, cs.ID, should.Equal("console.bar"))
 					assert.Loosely(t, cs.Ordinal, should.Equal(1))
-					assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.something/bar"}))
+					assert.Loosely(t, cs.Builders, should.Match([]string{"buildbucket/luci.foo.something/bar"}))
 
 					cs, err = GetConsole(c, "foo", "console.baz")
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, cs.ID, should.Equal("console.baz"))
 					assert.Loosely(t, cs.Ordinal, should.Equal(2))
-					assert.Loosely(t, cs.Builders, should.Resemble([]string{"buildbucket/luci.foo.other/baz"}))
+					assert.Loosely(t, cs.Builders, should.Match([]string{"buildbucket/luci.foo.other/baz"}))
 				})
 
 				t.Run("Check getting project builder groups in correct order", func(t *ftt.Test) {
@@ -216,7 +216,7 @@ func TestConfig(t *testing.T) {
 					for _, c := range cs {
 						ids = append(ids, c.ID)
 					}
-					assert.Loosely(t, ids, should.Resemble([]string{"default_header", "console.bar", "console.baz"}))
+					assert.Loosely(t, ids, should.Match([]string{"default_header", "console.bar", "console.baz"}))
 				})
 			})
 
@@ -228,7 +228,7 @@ func TestConfig(t *testing.T) {
 					foo := &Project{ID: "foo"}
 					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
 					assert.Loosely(t, foo.HasConfig, should.BeFalse)
-					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
+					assert.Loosely(t, foo.ACL, should.Match(ACL{
 						Groups:     []string{"a", "b"},
 						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
 					}))
@@ -249,7 +249,7 @@ func TestConfig(t *testing.T) {
 					foo := &Project{ID: "foo"}
 					assert.Loosely(t, datastore.Get(c, foo), should.BeNil)
 					assert.Loosely(t, foo.HasConfig, should.BeTrue)
-					assert.Loosely(t, foo.ACL, should.Resemble(ACL{
+					assert.Loosely(t, foo.ACL, should.Match(ACL{
 						Groups:     []string{"a", "b"},
 						Identities: []identity.Identity{"user:a@example.com", "user:b@example.com"},
 					}))

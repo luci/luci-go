@@ -191,7 +191,7 @@ func TestQueryConsoles(t *testing.T) {
 				PageSize: 2,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Consoles, should.Resemble([]*projectconfigpb.Console{
+			assert.Loosely(t, res.Consoles, should.Match([]*projectconfigpb.Console{
 				{
 					Id:    "con1",
 					Realm: "allowed-project:@root",
@@ -215,7 +215,7 @@ func TestQueryConsoles(t *testing.T) {
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Consoles, should.Resemble([]*projectconfigpb.Console{
+			assert.Loosely(t, res.Consoles, should.Match([]*projectconfigpb.Console{
 				{
 					Id:    "con4",
 					Realm: "other-allowed-project:@root",
@@ -233,7 +233,7 @@ func TestQueryConsoles(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Consoles, should.Resemble([]*projectconfigpb.Console{
+			assert.Loosely(t, res.Consoles, should.Match([]*projectconfigpb.Console{
 				{
 					Id:    "con1",
 					Realm: "allowed-project:@root",
@@ -263,7 +263,7 @@ func TestQueryConsoles(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Consoles, should.Resemble([]*projectconfigpb.Console{
+			assert.Loosely(t, res.Consoles, should.Match([]*projectconfigpb.Console{
 				{
 					Id:    "con1",
 					Realm: "allowed-project:@root",
@@ -280,7 +280,7 @@ func TestQueryConsoles(t *testing.T) {
 
 			res, err := srv.QueryConsoles(ctx, &milopb.QueryConsolesRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Consoles, should.Resemble([]*projectconfigpb.Console{
+			assert.Loosely(t, res.Consoles, should.Match([]*projectconfigpb.Console{
 				{
 					Id:    "con1",
 					Realm: "allowed-project:@root",

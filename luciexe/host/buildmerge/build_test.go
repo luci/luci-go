@@ -38,7 +38,7 @@ func TestSetErrorOnBuild(t *testing.T) {
 				Output: &bbpb.Build_Output{},
 			}
 			setErrorOnBuild(build, errors.New("hi"))
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				SummaryMarkdown: "\n\nError in build protocol: hi",
 				Status:          bbpb.Status_INFRA_FAILURE,
 				Output: &bbpb.Build_Output{
@@ -59,7 +59,7 @@ func TestSetErrorOnBuild(t *testing.T) {
 			assert.Loosely(t, build.Output.SummaryMarkdown, should.Equal(build.SummaryMarkdown))
 			build.SummaryMarkdown = ""
 			build.Output.SummaryMarkdown = ""
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				Status: bbpb.Status_INFRA_FAILURE,
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_INFRA_FAILURE,
@@ -80,7 +80,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				Output: &bbpb.Build_Output{},
 			}
 			processFinalBuild(now, build)
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				SummaryMarkdown: ("\n\nError in build protocol: " +
 					"Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 				UpdateTime: now,
@@ -105,7 +105,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -130,7 +130,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, build, should.Match(&bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -169,7 +169,7 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			}
 			updateStepFromBuild(step, build)
-			assert.Loosely(t, step, should.Resemble(&bbpb.Step{
+			assert.Loosely(t, step, should.Match(&bbpb.Step{
 				SummaryMarkdown: "hi",
 				Status:          bbpb.Status_FAILURE,
 				EndTime:         now,
@@ -195,7 +195,7 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			}
 			updateStepFromBuild(step, build)
-			assert.Loosely(t, step, should.Resemble(&bbpb.Step{
+			assert.Loosely(t, step, should.Match(&bbpb.Step{
 				SummaryMarkdown: "hi step",
 				Status:          bbpb.Status_INFRA_FAILURE,
 				EndTime:         now,
@@ -238,7 +238,7 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			buildClone := proto.Clone(build).(*bbpb.Build)
 			buildClone.Steps = append(buildClone.Steps, &bbpb.Step{Name: "sup"})
 			updateBaseFromUserBuild(base, build)
-			assert.Loosely(t, base, should.Resemble(buildClone))
+			assert.Loosely(t, base, should.Match(buildClone))
 		})
 
 		t.Run(`nil build`, func(t *ftt.Test) {
@@ -248,7 +248,7 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			}
 			baseClone := proto.Clone(base).(*bbpb.Build)
 			updateBaseFromUserBuild(base, nil)
-			assert.Loosely(t, base, should.Resemble(baseClone))
+			assert.Loosely(t, base, should.Match(baseClone))
 		})
 
 		t.Run(`output is merged`, func(t *ftt.Test) {
@@ -266,7 +266,7 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, base, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, base, should.Match(&bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
 						{Name: "hello"},
@@ -286,7 +286,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 		t.Run(`empty parent`, func(t *ftt.Test) {
 			t.Run(`empty child`, func(t *ftt.Test) {
 				updateOutputProperties(base, sub, []string{""})
-				assert.Loosely(t, base, should.Resemble(&bbpb.Build{}))
+				assert.Loosely(t, base, should.Match(&bbpb.Build{}))
 			})
 
 			t.Run(`properties`, func(t *ftt.Test) {
@@ -298,7 +298,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				sub.Output = &bbpb.Build_Output{Properties: s}
 				updateOutputProperties(base, sub, []string{""})
 				m := base.Output.Properties.AsMap()
-				assert.Loosely(t, m, should.Resemble(map[string]any{
+				assert.Loosely(t, m, should.Match(map[string]any{
 					"hello": "world",
 					"this":  100.0, // because JSON semantics
 				}))
@@ -317,7 +317,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 
 			t.Run(`empty child`, func(t *ftt.Test) {
 				updateOutputProperties(base, sub, []string{""})
-				assert.Loosely(t, base, should.Resemble(&bbpb.Build{
+				assert.Loosely(t, base, should.Match(&bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: s,
 					},
@@ -339,7 +339,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 					"newkey": "yes",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, base, should.Resemble(&bbpb.Build{
+				assert.Loosely(t, base, should.Match(&bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: sNew,
 					},
@@ -375,7 +375,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 			})
 
 			updateOutputProperties(base, sub, []string{"a", "b", "c"})
-			assert.Loosely(t, base, should.Resemble(&bbpb.Build{
+			assert.Loosely(t, base, should.Match(&bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Properties: sNew,
 				},

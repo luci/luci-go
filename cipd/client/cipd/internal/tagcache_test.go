@@ -66,7 +66,7 @@ func TestTagCacheWorks(t *testing.T) {
 			tc := NewTagCache(fs, "service.example.com")
 			pin, err := tc.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(t, pin, should.Match(common.Pin{}))
 
 			file, err := tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			assert.Loosely(t, err, should.BeNil)
@@ -79,14 +79,14 @@ func TestTagCacheWorks(t *testing.T) {
 			}, "tag:1")
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{
+			assert.Loosely(t, pin, should.Match(common.Pin{
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("a", 40),
 			}))
 			tc.AddExtractedObjectRef(ctx, cannedPin, "filename", numberedObjRef(1))
 			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(1)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 
 			// Replace existing.
 			tc.AddTag(ctx, common.Pin{
@@ -95,14 +95,14 @@ func TestTagCacheWorks(t *testing.T) {
 			}, "tag:1")
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{
+			assert.Loosely(t, pin, should.Match(common.Pin{
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("b", 40),
 			}))
 			tc.AddExtractedObjectRef(ctx, cannedPin, "filename", numberedObjRef(2))
 			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(2)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(2)))
 
 			// Save.
 			assert.Loosely(t, tc.Save(ctx), should.BeNil)
@@ -111,13 +111,13 @@ func TestTagCacheWorks(t *testing.T) {
 			another := NewTagCache(fs, "service.example.com")
 			pin, err = another.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{
+			assert.Loosely(t, pin, should.Match(common.Pin{
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("b", 40),
 			}))
 			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(2)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(2)))
 		})
 
 		t.Run("many tags", func(t *ftt.Test) {
@@ -135,10 +135,10 @@ func TestTagCacheWorks(t *testing.T) {
 			// Oldest tag is still resolvable.
 			pin, err := tc.ResolveTag(ctx, "pkg", "tag:0")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(cannedPin))
+			assert.Loosely(t, pin, should.Match(cannedPin))
 			file, err := tc.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(0)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(0)))
 
 			// Add one more tag. Should evict the oldest one.
 			assert.Loosely(t, tc.AddTag(ctx, cannedPin, "one_more_tag:0"), should.BeNil)
@@ -148,7 +148,7 @@ func TestTagCacheWorks(t *testing.T) {
 			// Oldest tag is evicted.
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:0")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(t, pin, should.Match(common.Pin{}))
 			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, file, should.BeNil)
@@ -156,18 +156,18 @@ func TestTagCacheWorks(t *testing.T) {
 			// But next one is alive.
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(cannedPin))
+			assert.Loosely(t, pin, should.Match(cannedPin))
 			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(1)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 
 			// Most recent one is also alive.
 			pin, err = tc.ResolveTag(ctx, "pkg", "one_more_tag:0")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(cannedPin))
+			assert.Loosely(t, pin, should.Match(cannedPin))
 			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(tagCacheMaxExeSize), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(tagCacheMaxExeSize)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(tagCacheMaxExeSize)))
 		})
 
 		t.Run("parallel update", func(t *ftt.Test) {
@@ -187,16 +187,16 @@ func TestTagCacheWorks(t *testing.T) {
 			// Both tags are resolvable.
 			pin, err := tc3.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(cannedPin))
+			assert.Loosely(t, pin, should.Match(cannedPin))
 			file, err := tc3.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(0)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(0)))
 			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:2")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(cannedPin))
+			assert.Loosely(t, pin, should.Match(cannedPin))
 			file, err = tc3.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(1)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 		})
 
 		t.Run("multiple services", func(t *ftt.Test) {
@@ -219,24 +219,24 @@ func TestTagCacheWorks(t *testing.T) {
 			// Tags are resolvable. tc2.Save didn't overwrite tc1 data.
 			pin, err := tc1.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(numberedPin(0)))
+			assert.Loosely(t, pin, should.Match(numberedPin(0)))
 			pin, err = tc2.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(numberedPin(2)))
+			assert.Loosely(t, pin, should.Match(numberedPin(2)))
 
 			// File hashes are cached too.
 			file, err := tc1.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(10)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(10)))
 			file, err = tc2.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(numberedObjRef(20)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(20)))
 
 			// No "ghost" records for some different service.
 			tc3 := NewTagCache(fs, "service3.example.com")
 			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(t, pin, should.Match(common.Pin{}))
 			file, err = tc3.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, file, should.BeNil)

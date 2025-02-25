@@ -66,7 +66,7 @@ func TestBuffer(t *testing.T) {
 					size += int64(c.Len())
 					assert.Loosely(t, b.Len(), should.Equal(size))
 				}
-				assert.Loosely(t, b.Bytes(), should.Resemble(coalesced))
+				assert.Loosely(t, b.Bytes(), should.Match(coalesced))
 
 				t.Run(`Can consume chunk-at-a-time.`, func(t *ftt.Test) {
 					for i, c := range chunks {
@@ -89,7 +89,7 @@ func TestBuffer(t *testing.T) {
 				t.Run(`Can consume byte-at-a-time.`, func(t *ftt.Test) {
 					for i := int64(0); i < size; i++ {
 						assert.Loosely(t, b.Len(), should.Equal((size - i)))
-						assert.Loosely(t, b.Bytes(), should.Resemble(coalesced[i:]))
+						assert.Loosely(t, b.Bytes(), should.Match(coalesced[i:]))
 						b.Consume(1)
 					}
 					assert.Loosely(t, b.Len(), should.BeZero)
@@ -109,7 +109,7 @@ func TestBuffer(t *testing.T) {
 						}
 
 						assert.Loosely(t, b.Len(), should.Equal((size - i)))
-						assert.Loosely(t, b.Bytes(), should.Resemble(coalesced[i:]))
+						assert.Loosely(t, b.Bytes(), should.Match(coalesced[i:]))
 						b.Consume(2)
 					}
 					assert.Loosely(t, b.Len(), should.BeZero)

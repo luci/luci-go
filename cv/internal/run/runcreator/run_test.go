@@ -300,7 +300,7 @@ func TestRunBuilder(t *testing.T) {
 			// For realism and to prevent non-determinism in production,
 			// make CreateTime in the past.
 			ct.Clock.Add(time.Second)
-			assert.Loosely(t, rb.ExpectedRunID(), should.Resemble(common.RunID(expectedRunID)))
+			assert.Loosely(t, rb.ExpectedRunID(), should.Match(common.RunID(expectedRunID)))
 		})
 
 		t.Run("ExpectedRunID panics if CreateTime is not given", func(t *ftt.Test) {
@@ -334,7 +334,7 @@ func TestRunBuilder(t *testing.T) {
 
 			for i, cl := range rb.cls {
 				assert.Loosely(t, cl.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
-				assert.Loosely(t, cl.UpdateTime, should.Resemble(r.CreateTime))
+				assert.Loosely(t, cl.UpdateTime, should.Match(r.CreateTime))
 			}
 
 			// Run is properly saved
@@ -351,14 +351,14 @@ func TestRunBuilder(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
 					assert.Loosely(t, saved.ExternalID, should.Equal(rb.cls[i].ExternalID))
-					assert.Loosely(t, saved.Trigger, should.Resemble(rb.InputCLs[i].TriggerInfo))
-					assert.Loosely(t, saved.Detail, should.Resemble(rb.cls[i].Snapshot))
+					assert.Loosely(t, saved.Trigger, should.Match(rb.InputCLs[i].TriggerInfo))
+					assert.Loosely(t, saved.Detail, should.Match(rb.cls[i].Snapshot))
 				})
 				t.Run(fmt.Sprintf("CL %d-th is properly updated", i), func(t *ftt.Test) {
 					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
 					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
 					assert.Loosely(t, saved.IncompleteRuns.ContainsSorted(expectedRunID), should.BeTrue)
-					assert.Loosely(t, saved.UpdateTime, should.Resemble(expectedRun.UpdateTime))
+					assert.Loosely(t, saved.UpdateTime, should.Match(expectedRun.UpdateTime))
 					assert.Loosely(t, saved.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
 				})
 			}
@@ -367,7 +367,7 @@ func TestRunBuilder(t *testing.T) {
 			entries, err := run.LoadRunLogEntries(ctx, expectedRun.ID)
 			assert.NoErr(t, err)
 			assert.Loosely(t, entries, should.HaveLength(1))
-			assert.Loosely(t, entries[0].GetCreated().GetConfigGroupId(), should.Resemble(string(expectedRun.ConfigGroupID)))
+			assert.Loosely(t, entries[0].GetCreated().GetConfigGroupId(), should.Match(string(expectedRun.ConfigGroupID)))
 
 			// Created metric is sent.
 			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunCreated, lProject, "cq-group", string(run.DryRun)), should.Equal(1))
@@ -378,7 +378,7 @@ func TestRunBuilder(t *testing.T) {
 			}}})
 			runtest.AssertInEventbox(t, ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 			// RM must have an immediate task to start working on a new Run.
-			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Resemble(common.RunIDs{r.ID}))
+			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{r.ID}))
 		})
 
 		t.Run("Non standard run", func(t *ftt.Test) {
@@ -395,7 +395,7 @@ func TestRunBuilder(t *testing.T) {
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
 			assert.NoErr(t, err)
 			assert.Loosely(t, r.Mode, should.Equal(run.Mode("CUSTOM_RUN")))
-			assert.Loosely(t, r.ModeDefinition, should.Resemble(rb.ModeDefinition))
+			assert.Loosely(t, r.ModeDefinition, should.Match(rb.ModeDefinition))
 		})
 	})
 }

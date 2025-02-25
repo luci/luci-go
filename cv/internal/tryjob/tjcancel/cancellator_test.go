@@ -120,7 +120,7 @@ func TestTaskHandler(t *testing.T) {
 				assert.Loosely(t, tj21.EVersion, should.Equal(1))
 				assert.Loosely(t, tj21.Status, should.Equal(tryjob.Status_TRIGGERED))
 				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
-				assert.Loosely(t, ct.TQ.Tasks()[0].Payload, should.Resemble(task))
+				assert.Loosely(t, ct.TQ.Tasks()[0].Payload, should.Match(task))
 				assert.Loosely(t, ct.TQ.Tasks()[0].ETA, should.Match(ct.Clock.Now().Add(cancelLaterDuration)))
 			})
 			t.Run("tryjob not triggered by cv", func(t *ftt.Test) {

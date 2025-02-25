@@ -40,7 +40,7 @@ func TestPack(t *testing.T) {
 
 			unpackedArray, err := Unpack(data)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, array, should.Resemble(unpackedArray))
+			assert.Loosely(t, array, should.Match(unpackedArray))
 		})
 
 		t.Run(`1m 1000`, func(t *ftt.Test) {
@@ -55,7 +55,7 @@ func TestPack(t *testing.T) {
 
 			unpackedArray, err := Unpack(data)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, array, should.Resemble(unpackedArray))
+			assert.Loosely(t, array, should.Match(unpackedArray))
 		})
 
 		t.Run(`1m pseudo`, func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestPack(t *testing.T) {
 
 			unpackedArray, err := Unpack(data)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, array, should.Resemble(unpackedArray))
+			assert.Loosely(t, array, should.Match(unpackedArray))
 		})
 
 		t.Run(`empty`, func(t *ftt.Test) {

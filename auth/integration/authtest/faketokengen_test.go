@@ -69,8 +69,8 @@ func TestFakeTokenGenerator(t *testing.T) {
 					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix()))
 			}
 
-			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Resemble([]string{"A", "zzz"}))
-			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Resemble([]string{"B", "zzz"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Match([]string{"A", "zzz"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Match([]string{"B", "zzz"}))
 		})
 
 		t.Run("ID tokens", func(t *ftt.Test) {
@@ -95,8 +95,8 @@ func TestFakeTokenGenerator(t *testing.T) {
 					testclock.TestRecentTimeUTC.Add(DefaultFakeLifetime).Unix()))
 			}
 
-			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Resemble([]string{"audience:A"}))
-			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Resemble([]string{"audience:B"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_0"), should.Match([]string{"audience:A"}))
+			assert.Loosely(t, gen.TokenScopes("fake_token_1"), should.Match([]string{"audience:B"}))
 		})
 	})
 }

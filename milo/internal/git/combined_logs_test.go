@@ -117,7 +117,7 @@ func TestCombinedLogs(t *testing.T) {
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:5]))
+			assert.Loosely(t, commits, should.Match(fakeCommits[0:5]))
 		})
 
 		t.Run("multiple refs match and commits are merged correctly", func(t *ftt.Test) {
@@ -152,7 +152,7 @@ func TestCombinedLogs(t *testing.T) {
 					`regexp:refs/heads/\d+\.\d+\.\d+`,
 				}, 7)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
+			assert.Loosely(t, commits, should.Match([]*gitpb.Commit{
 				fakeCommits[0], fakeCommits[20], fakeCommits[1], fakeCommits[21],
 				fakeCommits[22], fakeCommits[2], fakeCommits[23],
 			}))
@@ -171,7 +171,7 @@ func TestCombinedLogs(t *testing.T) {
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:10]))
+			assert.Loosely(t, commits, should.Match(fakeCommits[0:10]))
 		})
 
 		t.Run("use result from cache when available", func(t *ftt.Test) {
@@ -187,14 +187,14 @@ func TestCombinedLogs(t *testing.T) {
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:20]))
+			assert.Loosely(t, commits, should.Match(fakeCommits[0:20]))
 
 			// This call should use logs from cache.
 			commits, err = impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble(fakeCommits[0:20]))
+			assert.Loosely(t, commits, should.Match(fakeCommits[0:20]))
 		})
 
 		t.Run("invalidate cache when ref moves", func(t *ftt.Test) {
@@ -218,14 +218,14 @@ func TestCombinedLogs(t *testing.T) {
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
+			assert.Loosely(t, commits, should.Match([]*gitpb.Commit{
 				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]}))
 
 			commits, err = impl.CombinedLogs(
 				cAllowed, host, "project", "refs/heads/main",
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, commits, should.Resemble([]*gitpb.Commit{
+			assert.Loosely(t, commits, should.Match([]*gitpb.Commit{
 				fakeCommits[0], fakeCommits[1], fakeCommits[10], fakeCommits[11],
 				fakeCommits[12]}))
 		})

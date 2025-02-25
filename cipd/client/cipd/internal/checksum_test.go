@@ -42,7 +42,7 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		assert.Loosely(c, err, should.BeNil)
 		out := messages.TagCache{}
 		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.BeNil)
-		assert.Loosely(c, &out, should.Resemble(&msg))
+		assert.Loosely(c, &out, should.Match(&msg))
 	})
 
 	ftt.Run("Rejects bad msg", t, func(c *ftt.Test) {

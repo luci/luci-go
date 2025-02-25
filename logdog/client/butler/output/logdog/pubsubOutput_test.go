@@ -159,7 +159,7 @@ func TestOutput(t *testing.T) {
 			h, b, err := deconstructMessage(msg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, h.Compression, should.Equal(logpb.ButlerMetadata_NONE))
-			assert.Loosely(t, b, should.Resemble(bundle))
+			assert.Loosely(t, b, should.Match(bundle))
 
 			t.Run(`And records stats.`, func(t *ftt.Test) {
 				st := o.Stats()

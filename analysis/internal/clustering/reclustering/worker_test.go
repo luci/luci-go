@@ -171,20 +171,20 @@ func TestReclustering(t *testing.T) {
 					// state based on row contents, not when the row was updated.
 					as.LastUpdated = time.Time{}
 				}
-				assert.Loosely(t, actualState, should.Resemble(expected.clusteringState))
+				assert.Loosely(t, actualState, should.Match(expected.clusteringState))
 
 				// BigQuery exports should correctly reflect the new
 				// test result-cluster inclusions.
 				exports := clusteredFailures.Insertions
 				sortBQExport(exports)
 				netExports := flattenBigQueryExports(append(initial.netBQExports, exports...))
-				assert.Loosely(t, netExports, should.Resemble(expected.netBQExports))
+				assert.Loosely(t, netExports, should.Match(expected.netBQExports))
 
 				// Run is reported as complete.
 				actualShards, err := shards.ReadAll(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, actualShards, should.HaveLength(1))
-				assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: true, Int64: 1000}))
+				assert.Loosely(t, actualShards[0].Progress, should.Match(spanner.NullInt64{Valid: true, Int64: 1000}))
 			}
 
 			t.Run("Already up-to-date", func(t *ftt.Test) {
@@ -261,7 +261,7 @@ func TestReclustering(t *testing.T) {
 			// Clustering state should be same as the initial state.
 			actualState, err := state.ReadAllForTesting(ctx, testProject)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualState, should.Resemble(s.clusteringState))
+			assert.Loosely(t, actualState, should.Match(s.clusteringState))
 
 			// No changes written to BigQuery.
 			assert.Loosely(t, clusteredFailures.Insertions, should.BeEmpty)
@@ -270,7 +270,7 @@ func TestReclustering(t *testing.T) {
 			actualShards, err := shards.ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualShards, should.HaveLength(1))
-			assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: false, Int64: 0}))
+			assert.Loosely(t, actualShards[0].Progress, should.Match(spanner.NullInt64{Valid: false, Int64: 0}))
 		})
 		t.Run(`Handles update/update races`, func(t *ftt.Test) {
 			finalState := newScenario().build(t)
@@ -338,7 +338,7 @@ func TestReclustering(t *testing.T) {
 			for _, as := range actualState {
 				as.LastUpdated = time.Time{}
 			}
-			assert.Loosely(t, actualState, should.Resemble(expected.clusteringState))
+			assert.Loosely(t, actualState, should.Match(expected.clusteringState))
 
 			// No changes written to BigQuery.
 			assert.Loosely(t, clusteredFailures.Insertions, should.BeEmpty)
@@ -347,7 +347,7 @@ func TestReclustering(t *testing.T) {
 			actualShards, err := shards.ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualShards, should.HaveLength(1))
-			assert.Loosely(t, actualShards[0].Progress, should.Resemble(spanner.NullInt64{Valid: true, Int64: 1000}))
+			assert.Loosely(t, actualShards[0].Progress, should.Match(spanner.NullInt64{Valid: true, Int64: 1000}))
 		})
 		t.Run(`Worker running out of date algorithms`, func(t *ftt.Test) {
 			task.AlgorithmsVersion = algorithms.AlgorithmsVersion + 1
@@ -367,7 +367,7 @@ func TestReclustering(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// Continuation should be scheduled, matching original task.
-			assert.Loosely(t, continuation, should.Resemble(task))
+			assert.Loosely(t, continuation, should.Match(task))
 		})
 	})
 }

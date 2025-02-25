@@ -84,7 +84,7 @@ func TestFullFlow(t *testing.T) {
 			t.Run(`valid`, func(t *ftt.Test) {
 				policyConfigID, err := integrationTestApp.LoadPoliciesAuto(ctx, "@internal:integrationTestApp", policy)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, policyConfigID, should.Resemble(&quotapb.PolicyConfigID{
+				assert.Loosely(t, policyConfigID, should.Match(&quotapb.PolicyConfigID{
 					AppId:         "ita",
 					Realm:         "@internal:integrationTestApp",
 					VersionScheme: 1,
@@ -92,7 +92,7 @@ func TestFullFlow(t *testing.T) {
 				}))
 
 				cfgKey := quotakeys.PolicyConfigID(policyConfigID)
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{cfgKey}))
+				assert.Loosely(t, s.Keys(), should.Match([]string{cfgKey}))
 				hkeys, err := s.HKeys(cfgKey)
 				assert.Loosely(t, err, should.BeNil)
 				polKey := &quotapb.PolicyKey{
@@ -101,7 +101,7 @@ func TestFullFlow(t *testing.T) {
 					ResourceType: "qps",
 				}
 				polKeyStr := quotakeys.PolicyKey(polKey)
-				assert.Loosely(t, hkeys, should.Resemble([]string{polKeyStr, "~loaded_time"}))
+				assert.Loosely(t, hkeys, should.Match([]string{polKeyStr, "~loaded_time"}))
 				assert.Loosely(t, s.HGet(cfgKey, polKeyStr), should.Equal(string([]byte{
 					147, 123, 205, 20, 36, 146, 1, 3,
 				})))
@@ -116,7 +116,7 @@ func TestFullFlow(t *testing.T) {
 						},
 					})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&quotapb.ApplyOpsResponse{
+					assert.Loosely(t, rsp, should.Match(&quotapb.ApplyOpsResponse{
 						Results: []*quotapb.OpResult{
 							{NewBalance: 128, AccountStatus: quotapb.OpResult_CREATED},
 						},
@@ -166,7 +166,7 @@ func TestFullFlow(t *testing.T) {
 
 			res, err := quota.GetAccounts(ctx, []*quotapb.AccountID{existingAccountID, nonExistingAccountID})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&quotapb.GetAccountsResponse{
+			assert.Loosely(t, res, should.Match(&quotapb.GetAccountsResponse{
 				Accounts: []*quotapb.GetAccountsResponse_AccountState{
 					{
 						Id: existingAccountID,

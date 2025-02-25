@@ -92,7 +92,7 @@ func TestServiceInfoHandler(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/info", nil)
 		r.ServeHTTP(w, req)
 		assert.Loosely(t, w.Code, should.Equal(200))
-		assert.Loosely(t, w.Body.String(), should.Resemble(
+		assert.Loosely(t, w.Body.String(), should.Match(
 			`{"app_id":"phony-app","app_runtime":"go",`+
 				`"app_runtime_version":"go1.5.1",`+
 				`"app_version":"1234-abcdef","service_account_name":`+
@@ -132,7 +132,7 @@ func TestClientIDHandler(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/client_id", nil)
 		r.ServeHTTP(w, req)
 		assert.Loosely(t, w.Code, should.Equal(200))
-		assert.Loosely(t, w.Body.String(), should.Resemble(`{"client_id":"fake-client-id"}`+"\n"))
+		assert.Loosely(t, w.Body.String(), should.Match(`{"client_id":"fake-client-id"}`+"\n"))
 
 		clientIDErr = errors.New("fail")
 

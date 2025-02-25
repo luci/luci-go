@@ -66,7 +66,7 @@ func TestMemory(t *testing.T) {
 			outStream := m.GetStream("", "ns/hello")
 			assert.Loosely(t, outStream, should.NotBeNil)
 
-			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.Tags(), should.Match(map[string]string{"neat": "thingy"}))
 			assert.Loosely(t, outStream.LastData(), should.Equal("hello world!\nthis is pretty cool.\n"))
 			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_TEXT))
 		})
@@ -86,7 +86,7 @@ func TestMemory(t *testing.T) {
 			outStream := m.GetStream("", "ns/hello")
 			assert.Loosely(t, outStream, should.NotBeNil)
 
-			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.Tags(), should.Match(map[string]string{"neat": "thingy"}))
 			assert.Loosely(t, outStream.LastData(), should.Equal("hello world!\nthis is pretty cool.\n"))
 			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_BINARY))
 		})
@@ -104,9 +104,9 @@ func TestMemory(t *testing.T) {
 			outStream := m.GetStream("", "ns/hello")
 			assert.Loosely(t, outStream, should.NotBeNil)
 
-			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.Tags(), should.Match(map[string]string{"neat": "thingy"}))
 			assert.Loosely(t, outStream.LastData(), should.Equal("this is pretty cool"))
-			assert.Loosely(t, outStream.AllData(), should.Resemble([]string{
+			assert.Loosely(t, outStream.AllData(), should.Match([]string{
 				"hello world",
 				"this is pretty cool",
 			}))

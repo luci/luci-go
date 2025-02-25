@@ -106,7 +106,7 @@ func TestListAccountEmails(t *testing.T) {
 			})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expectedResponse))
+			assert.Loosely(t, res, should.Match(expectedResponse))
 			assert.Loosely(t, actualRequest.RequestURI, should.ContainSubstring("/accounts/foo@google.com/emails"))
 		})
 
@@ -211,10 +211,10 @@ func TestListChanges(t *testing.T) {
 			t.Run("Response and request are as expected", func(t *ftt.Test) {
 				res, err := c.ListChanges(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(expectedResponse))
-				assert.Loosely(t, actualRequest.URL.Query()["q"], should.Resemble([]string{"label:Code-Review"}))
-				assert.Loosely(t, actualRequest.URL.Query()["S"], should.Resemble([]string{"0"}))
-				assert.Loosely(t, actualRequest.URL.Query()["n"], should.Resemble([]string{"1"}))
+				assert.Loosely(t, res, should.Match(expectedResponse))
+				assert.Loosely(t, actualRequest.URL.Query()["q"], should.Match([]string{"label:Code-Review"}))
+				assert.Loosely(t, actualRequest.URL.Query()["S"], should.Match([]string{"0"}))
+				assert.Loosely(t, actualRequest.URL.Query()["n"], should.Match([]string{"1"}))
 			})
 
 			t.Run("Options are included in the request", func(t *ftt.Test) {
@@ -223,7 +223,7 @@ func TestListChanges(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t,
 					actualRequest.URL.Query()["o"],
-					should.Resemble(
+					should.Match(
 						[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 					))
 			})
@@ -647,14 +647,14 @@ func TestGetChange(t *testing.T) {
 			t.Run("Basic", func(t *ftt.Test) {
 				res, err := c.GetChange(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, res, should.Match(expectedChange))
 			})
 
 			t.Run("With project", func(t *ftt.Test) {
 				req.Project = "infra/luci"
 				res, err := c.GetChange(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, res, should.Match(expectedChange))
 				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/infra%2Fluci~1"))
 			})
 
@@ -664,7 +664,7 @@ func TestGetChange(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t,
 					actualRequest.URL.Query()["o"],
-					should.Resemble(
+					should.Match(
 						[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 					))
 			})
@@ -675,7 +675,7 @@ func TestGetChange(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t,
 					actualRequest.URL.Query()["meta"],
-					should.Resemble(
+					should.Match(
 						[]string{"deadbeef"},
 					))
 			})
@@ -715,7 +715,7 @@ func TestRestCreateChange(t *testing.T) {
 		}
 		res, err := c.CreateChange(ctx, &req)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res, should.Resemble(&gerritpb.ChangeInfo{
+		assert.Loosely(t, res, should.Match(&gerritpb.ChangeInfo{
 			Number:      1,
 			Project:     "example/repo",
 			Ref:         "refs/heads/master",
@@ -730,7 +730,7 @@ func TestRestCreateChange(t *testing.T) {
 		var ci changeInput
 		err = json.Unmarshal(actualBody, &ci)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, ci, should.Resemble(changeInput{
+		assert.Loosely(t, ci, should.Match(changeInput{
 			Project:    "example/repo",
 			Branch:     "refs/heads/master",
 			Subject:    "example subject",
@@ -763,7 +763,7 @@ func TestSubmitRevision(t *testing.T) {
 		}
 		res, err := c.SubmitRevision(ctx, req)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
+		assert.Loosely(t, res, should.Match(&gerritpb.SubmitInfo{
 			Status: gerritpb.ChangeStatus_MERGED,
 		}))
 		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someProject~42/revisions/someRevision/submit"))
@@ -796,7 +796,7 @@ func TestRestChangeEditFileContent(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualURL.RawPath, should.Equal("/changes/some%2Fproject~42/edit/some%2Fpath%2Bfoo"))
 		assert.Loosely(t, actualURL.Path, should.Equal("/changes/some/project~42/edit/some/path+foo"))
-		assert.Loosely(t, actualBody, should.Resemble([]byte("changed file")))
+		assert.Loosely(t, actualBody, should.Match([]byte("changed file")))
 	})
 }
 
@@ -848,7 +848,7 @@ func TestAddReviewer(t *testing.T) {
 		if err != nil {
 			t.Logf("failed to decode req body: %v\n", err)
 		}
-		assert.Loosely(t, body, should.Resemble(addReviewerRequest{
+		assert.Loosely(t, body, should.Match(addReviewerRequest{
 			Reviewer:  "ccer@test.com",
 			State:     "CC",
 			Confirmed: true,
@@ -856,7 +856,7 @@ func TestAddReviewer(t *testing.T) {
 		}))
 
 		// assert the result was as expected
-		assert.Loosely(t, res, should.Resemble(&gerritpb.AddReviewerResult{
+		assert.Loosely(t, res, should.Match(&gerritpb.AddReviewerResult{
 			Input:     "ccer@test.com",
 			Reviewers: []*gerritpb.ReviewerInfo{},
 			Ccs: []*gerritpb.ReviewerInfo{
@@ -987,9 +987,9 @@ func TestSetReview(t *testing.T) {
 			],
 			"ignore_automatic_attention_set_rules": true
 		}`), &expectedBody), should.BeNil)
-		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
+		assert.Loosely(t, actualBody, should.Match(expectedBody))
 
-		assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
+		assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{
 			Labels: map[string]int32{
 				"Code-Review": -1,
 			},
@@ -1067,9 +1067,9 @@ func TestSetReview(t *testing.T) {
 				{"reviewer": "10003", "state": "CC"}
 			]
 		}`), &expectedBody), should.BeNil)
-		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
+		assert.Loosely(t, actualBody, should.Match(expectedBody))
 
-		assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
+		assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{
 			Reviewers: map[string]*gerritpb.AddReviewerResult{
 				"jdoe@example.com": {
 					Input: "jdoe@example.com",
@@ -1153,10 +1153,10 @@ func TestAddToAttentionSet(t *testing.T) {
 		if err != nil {
 			t.Logf("failed to encode expected body: %v\n", err)
 		}
-		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
+		assert.Loosely(t, actualBody, should.Match(expectedBody))
 
 		// assert the result was as expected
-		assert.Loosely(t, res, should.Resemble(&gerritpb.AccountInfo{
+		assert.Loosely(t, res, should.Match(&gerritpb.AccountInfo{
 			AccountId: 10001,
 			Name:      "FYI reviewer",
 			Email:     "fyi@test.com",
@@ -1257,7 +1257,7 @@ func TestRevertChange(t *testing.T) {
 			t.Run("Basic", func(t *ftt.Test) {
 				res, err := c.RevertChange(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, res, should.Match(expectedChange))
 				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/3964/revert"))
 			})
 
@@ -1265,7 +1265,7 @@ func TestRevertChange(t *testing.T) {
 				req.Project = "infra/luci"
 				res, err := c.RevertChange(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, res, should.Match(expectedChange))
 				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/infra%2Fluci~3964/revert"))
 			})
 		})
@@ -1307,7 +1307,7 @@ func TestGetMergeable(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/mergeable"))
-		assert.Loosely(t, mi, should.Resemble(&gerritpb.MergeableInfo{
+		assert.Loosely(t, mi, should.Match(&gerritpb.MergeableInfo{
 			SubmitType:    gerritpb.MergeableInfo_CHERRY_PICK,
 			Strategy:      gerritpb.MergeableStrategy_SIMPLE_TWO_WAY_IN_CORE,
 			Mergeable:     true,
@@ -1350,7 +1350,7 @@ func TestListFiles(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/files/"))
 		assert.Loosely(t, actualURL.Query().Get("parent"), should.Equal("999"))
-		assert.Loosely(t, mi, should.Resemble(&gerritpb.ListFilesResponse{
+		assert.Loosely(t, mi, should.Match(&gerritpb.ListFilesResponse{
 			Files: map[string]*gerritpb.FileInfo{
 				"gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java": {
 					LinesInserted: 123456,
@@ -1460,7 +1460,7 @@ func TestGetRelatedChanges(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualURL.EscapedPath(), should.Equal("/changes/playground%2Fgerrit-cq~1563638/revisions/2/related"))
-		assert.Loosely(t, rcs, should.Resemble(&gerritpb.GetRelatedChangesResponse{
+		assert.Loosely(t, rcs, should.Match(&gerritpb.GetRelatedChangesResponse{
 			Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 				{
 					Project: "playground/gerrit-cq",
@@ -1544,7 +1544,7 @@ func TestGetFileOwners(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualURL.Path, should.Equal("/projects/projectName/branches/main/code_owners/path/to/file"))
 			assert.Loosely(t, actualURL.Query().Get("o"), should.Equal("DETAILS"))
-			assert.Loosely(t, resp, should.Resemble(&gerritpb.ListOwnersResponse{
+			assert.Loosely(t, resp, should.Match(&gerritpb.ListOwnersResponse{
 				Owners: []*gerritpb.OwnerInfo{
 					{
 						Account: &gerritpb.AccountInfo{
@@ -1583,7 +1583,7 @@ func TestGetFileOwners(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualURL.Path, should.Equal("/projects/projectName/branches/main/code_owners/path/to/file"))
 			assert.Loosely(t, actualURL.Query().Get("o"), should.Equal("ALL_EMAILS"))
-			assert.Loosely(t, resp, should.Resemble(&gerritpb.ListOwnersResponse{
+			assert.Loosely(t, resp, should.Match(&gerritpb.ListOwnersResponse{
 				Owners: []*gerritpb.OwnerInfo{
 					{
 						Account: &gerritpb.AccountInfo{
@@ -1635,7 +1635,7 @@ func TestListProjects(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualURL.Path, should.Equal("/projects/"))
 			assert.Loosely(t, actualURL.Query().Get("b"), should.Equal("refs/heads/main"))
-			assert.Loosely(t, projects, should.Resemble(&gerritpb.ListProjectsResponse{
+			assert.Loosely(t, projects, should.Match(&gerritpb.ListProjectsResponse{
 				Projects: map[string]*gerritpb.ProjectInfo{
 					"android_apks": {
 						Name:  "android_apks",
@@ -1686,8 +1686,8 @@ func TestListProjects(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualURL.Path, should.Equal("/projects/"))
-			assert.Loosely(t, actualURL.Query()["b"], should.Resemble([]string{"refs/heads/main", "refs/heads/master"}))
-			assert.Loosely(t, projects, should.Resemble(&gerritpb.ListProjectsResponse{
+			assert.Loosely(t, actualURL.Query()["b"], should.Match([]string{"refs/heads/main", "refs/heads/master"}))
+			assert.Loosely(t, projects, should.Match(&gerritpb.ListProjectsResponse{
 				Projects: map[string]*gerritpb.ProjectInfo{
 					"android_apks": {
 						Name:  "android_apks",
@@ -1742,7 +1742,7 @@ func TestGetBranchInfo(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		assert.Loosely(t, actualURL.Path, should.Equal("/projects/infra/experimental/branches/refs/heads/main"))
-		assert.Loosely(t, bi, should.Resemble(&gerritpb.RefInfo{
+		assert.Loosely(t, bi, should.Match(&gerritpb.RefInfo{
 			Ref:      "refs/heads/main",
 			Revision: "10e5c33f63a843440cbe6c9c6cbc1bf513c598eb",
 		}))
@@ -1773,7 +1773,7 @@ func TestGetPureRevert(t *testing.T) {
 		res, err := c.GetPureRevert(ctx, req)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/pure_revert"))
-		assert.Loosely(t, res, should.Resemble(&gerritpb.PureRevertInfo{
+		assert.Loosely(t, res, should.Match(&gerritpb.PureRevertInfo{
 			IsPureRevert: false,
 		}))
 	})
@@ -2055,8 +2055,8 @@ func TestGetMetaDiff(t *testing.T) {
 			req.Meta = "booboo"
 			_, err := c.GetMetaDiff(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRequest.URL.Query()["old"], should.Resemble([]string{"mehmeh"}))
-			assert.Loosely(t, actualRequest.URL.Query()["meta"], should.Resemble([]string{"booboo"}))
+			assert.Loosely(t, actualRequest.URL.Query()["old"], should.Match([]string{"mehmeh"}))
+			assert.Loosely(t, actualRequest.URL.Query()["meta"], should.Match([]string{"booboo"}))
 		})
 	})
 

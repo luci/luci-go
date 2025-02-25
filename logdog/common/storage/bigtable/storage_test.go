@@ -110,7 +110,7 @@ func TestStorage(t *testing.T) {
 			t.Run(`Will split row data that overflows the table into multiple rows.`, func(t *ftt.Test) {
 				assert.Loosely(t, put("A", 0, "0", "1", "2", "3"), should.BeNil)
 
-				assert.Loosely(t, s.DataMap(), should.Resemble(map[string][]byte{
+				assert.Loosely(t, s.DataMap(), should.Match(map[string][]byte{
 					ekey("A", 1, 2): records("0", "1"),
 					ekey("A", 3, 2): records("2", "3"),
 				}))
@@ -131,7 +131,7 @@ func TestStorage(t *testing.T) {
 
 			t.Run(`Testing "Put"...`, func(t *ftt.Test) {
 				t.Run(`Loads the row data.`, func(t *ftt.Test) {
-					assert.Loosely(t, s.DataMap(), should.Resemble(map[string][]byte{
+					assert.Loosely(t, s.DataMap(), should.Match(map[string][]byte{
 						ekey("A", 2, 3):  records("0", "1", "2"),
 						ekey("A", 4, 2):  records("3", "4"),
 						ekey("B", 10, 1): records("10"),
@@ -146,31 +146,31 @@ func TestStorage(t *testing.T) {
 				t.Run(`Can fetch the full row, "A".`, func(t *ftt.Test) {
 					got, err := get("A", 0, 0, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"0", "1", "2", "3", "4"}))
+					assert.Loosely(t, got, should.Match([]string{"0", "1", "2", "3", "4"}))
 				})
 
 				t.Run(`Will fetch A{1, 2, 3, 4} with index=1.`, func(t *ftt.Test) {
 					got, err := get("A", 1, 0, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"1", "2", "3", "4"}))
+					assert.Loosely(t, got, should.Match([]string{"1", "2", "3", "4"}))
 				})
 
 				t.Run(`Will fetch A{1, 2} with index=1 and limit=2.`, func(t *ftt.Test) {
 					got, err := get("A", 1, 2, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"1", "2"}))
+					assert.Loosely(t, got, should.Match([]string{"1", "2"}))
 				})
 
 				t.Run(`Will fetch B{10, 12, 13} for B.`, func(t *ftt.Test) {
 					got, err := get("B", 0, 0, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"10", "12", "13"}))
+					assert.Loosely(t, got, should.Match([]string{"10", "12", "13"}))
 				})
 
 				t.Run(`Will fetch B{12, 13} when index=11.`, func(t *ftt.Test) {
 					got, err := get("B", 11, 0, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"12", "13"}))
+					assert.Loosely(t, got, should.Match([]string{"12", "13"}))
 				})
 
 				t.Run(`Will fetch {} for INVALID.`, func(t *ftt.Test) {
@@ -184,31 +184,31 @@ func TestStorage(t *testing.T) {
 				t.Run(`Can fetch the full row, "A".`, func(t *ftt.Test) {
 					got, err := get("A", 0, 0, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"0", "1", "2", "3", "4"}))
+					assert.Loosely(t, got, should.Match([]string{"0", "1", "2", "3", "4"}))
 				})
 
 				t.Run(`Will fetch A{1, 2, 3, 4} with index=1.`, func(t *ftt.Test) {
 					got, err := get("A", 1, 0, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"1", "2", "3", "4"}))
+					assert.Loosely(t, got, should.Match([]string{"1", "2", "3", "4"}))
 				})
 
 				t.Run(`Will fetch A{1, 2} with index=1 and limit=2.`, func(t *ftt.Test) {
 					got, err := get("A", 1, 2, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"1", "2"}))
+					assert.Loosely(t, got, should.Match([]string{"1", "2"}))
 				})
 
 				t.Run(`Will fetch B{10, 12, 13} for B.`, func(t *ftt.Test) {
 					got, err := get("B", 0, 0, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"10", "12", "13"}))
+					assert.Loosely(t, got, should.Match([]string{"10", "12", "13"}))
 				})
 
 				t.Run(`Will fetch B{12, 13} when index=11.`, func(t *ftt.Test) {
 					got, err := get("B", 11, 0, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got, should.Resemble([]string{"12", "13"}))
+					assert.Loosely(t, got, should.Match([]string{"12", "13"}))
 				})
 			})
 

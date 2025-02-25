@@ -65,7 +65,7 @@ func TestTaskQueue(t *testing.T) {
 						scheduled = task
 						break
 					}
-					assert.Loosely(t, scheduled, should.Resemble(&tq.Task{
+					assert.Loosely(t, scheduled, should.Match(&tq.Task{
 						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
@@ -82,7 +82,7 @@ func TestTaskQueue(t *testing.T) {
 
 					task := &tq.Task{}
 					assert.Loosely(t, tq.Add(c, "", task), should.BeNil)
-					assert.Loosely(t, task.Header, should.Resemble(http.Header{
+					assert.Loosely(t, task.Header, should.Match(http.Header{
 						"X-Appengine-Current-Namespace": {"coolNamespace"},
 					}))
 
@@ -209,7 +209,7 @@ func TestTaskQueue(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tqt.GetScheduledTasks()["default"]), should.BeZero)
 					assert.Loosely(t, len(tqt.GetTombstonedTasks()["default"]), should.Equal(1))
-					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][task.Name], should.Resemble(task))
+					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][task.Name], should.Match(task))
 				})
 
 				t.Run("cannot delete a task twice", func(t *ftt.Test) {
@@ -264,8 +264,8 @@ func TestTaskQueue(t *testing.T) {
 				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					tqt := tq.Raw(c).GetTestable()
 
-					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Resemble(task))
-					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
+					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Match(task))
+					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
 					assert.Loosely(t, tqt.GetTransactionTasks()["default"], should.BeNil)
 					return nil
 				}, nil), should.BeNil)
@@ -280,22 +280,22 @@ func TestTaskQueue(t *testing.T) {
 					assert.Loosely(t, tq.Add(c, "", t3), should.BeNil)
 					assert.Loosely(t, t3.Name, should.Equal("16045561405319332059"))
 
-					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Resemble(task))
-					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
-					assert.Loosely(t, tqt.GetTransactionTasks()["default"][0], should.Resemble(t3))
+					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Match(task))
+					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
+					assert.Loosely(t, tqt.GetTransactionTasks()["default"][0], should.Match(t3))
 					return nil
 				}, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				for _, tsk := range tqt.GetScheduledTasks()["default"] {
 					if tsk.Name == task.Name {
-						assert.Loosely(t, tsk, should.Resemble(task))
+						assert.Loosely(t, tsk, should.Match(task))
 					} else {
-						assert.Loosely(t, tsk, should.Resemble(t3))
+						assert.Loosely(t, tsk, should.Match(t3))
 					}
 				}
 
-				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
+				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
 				assert.Loosely(t, tqt.GetTransactionTasks()["default"], should.BeNil)
 			})
 
@@ -309,9 +309,9 @@ func TestTaskQueue(t *testing.T) {
 
 					assert.Loosely(t, tq.Add(c, "", t3), should.BeNil)
 
-					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Resemble(task))
-					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
-					assert.Loosely(t, tqt.GetTransactionTasks()["default"][0], should.Resemble(t3))
+					assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Match(task))
+					assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
+					assert.Loosely(t, tqt.GetTransactionTasks()["default"][0], should.Match(t3))
 
 					tqt.ResetTasks()
 
@@ -411,8 +411,8 @@ func TestTaskQueue(t *testing.T) {
 					return fmt.Errorf("nooooo")
 				}, nil), should.ErrLike("nooooo"))
 
-				assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Resemble(task))
-				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
+				assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Match(task))
+				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
 				assert.Loosely(t, tqt.GetTransactionTasks()["default"], should.BeNil)
 			})
 
@@ -426,8 +426,8 @@ func TestTaskQueue(t *testing.T) {
 					}, nil), should.BeNil)
 				}()
 
-				assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Resemble(task))
-				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Resemble(t2))
+				assert.Loosely(t, tqt.GetScheduledTasks()["default"][task.Name], should.Match(task))
+				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
 				assert.Loosely(t, tqt.GetTransactionTasks()["default"], should.BeNil)
 			})
 
@@ -451,7 +451,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks), should.Equal(1))
-					assert.Loosely(t, tasks[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks[0].Payload, should.Match([]byte("zzz")))
 
 					// "Disappears" from the queue while leased.
 					tc.Add(30 * time.Second)
@@ -481,7 +481,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks), should.Equal(1))
-					assert.Loosely(t, tasks[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks[0].Payload, should.Match([]byte("zzz")))
 
 					// Time passes, lease expires.
 					tc.Add(61 * time.Second)
@@ -490,7 +490,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks2, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks2), should.Equal(1))
-					assert.Loosely(t, tasks2[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks2[0].Payload, should.Match([]byte("zzz")))
 
 					// Previously leased task is no longer owned.
 					err = tq.ModifyLease(c, tasks[0], "pull", time.Minute)
@@ -509,7 +509,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks), should.Equal(1))
-					assert.Loosely(t, tasks[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks[0].Payload, should.Match([]byte("zzz")))
 
 					// Time passes, the lease expires.
 					tc.Add(61 * time.Second)
@@ -529,7 +529,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks), should.Equal(1))
-					assert.Loosely(t, tasks[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks[0].Payload, should.Match([]byte("zzz")))
 
 					// Time passes, the lease is updated.
 					tc.Add(59 * time.Second)
@@ -555,7 +555,7 @@ func TestTaskQueue(t *testing.T) {
 					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(tasks), should.Equal(1))
-					assert.Loosely(t, tasks[0].Payload, should.Resemble([]byte("zzz")))
+					assert.Loosely(t, tasks[0].Payload, should.Match([]byte("zzz")))
 
 					// Put back by using 0 sec lease.
 					err = tq.ModifyLease(c, tasks[0], "pull", 0)

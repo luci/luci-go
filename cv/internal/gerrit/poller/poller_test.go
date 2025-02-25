@@ -69,7 +69,7 @@ func TestSchedule(t *testing.T) {
 				assert.Loosely(t, p.schedule(ctx, "another-project", time.Time{}), should.BeNil)
 				ids := FilterProjects(ct.TQ.Tasks().SortByETA().Payloads())
 				sort.Strings(ids)
-				assert.Loosely(t, ids, should.Resemble([]string{"another-project", project}))
+				assert.Loosely(t, ids, should.Match([]string{"another-project", project}))
 			})
 		})
 
@@ -132,8 +132,8 @@ func TestObservesProjectLifetime(t *testing.T) {
 			s := mustLoadState()
 			assert.Loosely(t, s.QueryStates.GetStates(), should.HaveLength(1))
 			qs0 := s.QueryStates.GetStates()[0]
-			assert.Loosely(t, qs0.GetHost(), should.Resemble(gHost))
-			assert.Loosely(t, qs0.GetOrProjects(), should.Resemble([]string{gRepo}))
+			assert.Loosely(t, qs0.GetHost(), should.Match(gHost))
+			assert.Loosely(t, qs0.GetOrProjects(), should.Match([]string{gRepo}))
 
 			const gRepo2 = "infra/zzzzz"
 			prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, gRepo, gRepo2))
@@ -141,14 +141,14 @@ func TestObservesProjectLifetime(t *testing.T) {
 			s = mustLoadState()
 			assert.Loosely(t, s.QueryStates.GetStates(), should.HaveLength(1))
 			qs0 = s.QueryStates.GetStates()[0]
-			assert.Loosely(t, qs0.GetOrProjects(), should.Resemble([]string{gRepo, gRepo2}))
+			assert.Loosely(t, qs0.GetOrProjects(), should.Match([]string{gRepo, gRepo2}))
 
 			prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, gRepo2))
 			assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 			s = mustLoadState()
 			assert.Loosely(t, s.QueryStates.GetStates(), should.HaveLength(1))
 			qs0 = s.QueryStates.GetStates()[0]
-			assert.Loosely(t, qs0.GetOrProjects(), should.Resemble([]string{gRepo2}))
+			assert.Loosely(t, qs0.GetOrProjects(), should.Match([]string{gRepo2}))
 		})
 
 		t.Run("Once project is disabled, deletes state and task chain stops running", func(t *ftt.Test) {
@@ -219,14 +219,14 @@ func TestDiscoversCLs(t *testing.T) {
 
 			postFullQueryVerify := func() {
 				qs := mustLoadState().QueryStates.GetStates()[0]
-				assert.Loosely(t, qs.GetLastFullTime().AsTime(), should.Resemble(ct.Clock.Now().UTC()))
+				assert.Loosely(t, qs.GetLastFullTime().AsTime(), should.Match(ct.Clock.Now().UTC()))
 				assert.Loosely(t, qs.GetLastIncrTime(), should.BeNil)
-				assert.Loosely(t, qs.GetChanges(), should.Resemble([]int64{31, 32, 33, 34, 35}))
+				assert.Loosely(t, qs.GetChanges(), should.Match([]int64{31, 32, 33, 34, 35}))
 			}
 
 			t.Run("On project start, just creates CLUpdater tasks with forceNotify", func(t *ftt.Test) {
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Resemble([]int{31, 32, 33, 34, 35}))
+				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Match([]int{31, 32, 33, 34, 35}))
 				postFullQueryVerify()
 			})
 
@@ -245,9 +245,9 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 
 				// PM must be notified in "bulk".
-				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Resemble(sortedCLIDs(knownCLIDs...)))
+				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Match(sortedCLIDs(knownCLIDs...)))
 				// All CLs must have clUpdater tasks.
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Resemble([]int{31, 32, 33, 34, 35}))
+				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Match([]int{31, 32, 33, 34, 35}))
 				postFullQueryVerify()
 			})
 
@@ -272,9 +272,9 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 
 				// PM must be notified in "bulk" for all previously known CLs.
-				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Resemble(sortedCLIDs(knownCLIDs...)))
+				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Match(sortedCLIDs(knownCLIDs...)))
 				// All current and prior CLs must have clUpdater tasks.
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Resemble([]int{25, 26, 27, 31, 32, 33, 34, 35}))
+				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Match([]int{25, 26, 27, 31, 32, 33, 34, 35}))
 				postFullQueryVerify()
 			})
 
@@ -298,16 +298,16 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 
 				// PM must be notified about all prior CLs.
-				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Resemble(sortedCLIDs(knownCLIDs...)))
+				assert.Loosely(t, pm.popNotifiedCLs(lProject), should.Match(sortedCLIDs(knownCLIDs...)))
 				// All CLs must have clUpdater tasks.
 				// NOTE: the code isn't optimized for this use case, so there will be
 				// multiple tasks for changes 31..34. While this is unfortunte, it's
 				// rare enough that it doesn't really matter.
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Resemble([]int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35}))
+				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Match([]int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35}))
 				postFullQueryVerify()
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
-				assert.Loosely(t, qs.GetOrProjects(), should.Resemble([]string{gRepo}))
+				assert.Loosely(t, qs.GetOrProjects(), should.Match([]string{gRepo}))
 			})
 		})
 
@@ -330,11 +330,11 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, s), should.BeNil)
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Resemble([]int{34, 35, 36}))
+				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.Match([]int{34, 35, 36}))
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
-				assert.Loosely(t, qs.GetLastIncrTime().AsTime(), should.Resemble(ct.Clock.Now().UTC()))
-				assert.Loosely(t, qs.GetChanges(), should.Resemble([]int64{31, 32, 33, 34, 35, 36}))
+				assert.Loosely(t, qs.GetLastIncrTime().AsTime(), should.Match(ct.Clock.Now().UTC()))
+				assert.Loosely(t, qs.GetChanges(), should.Match([]int64{31, 32, 33, 34, 35, 36}))
 			})
 
 			t.Run("Even if CL is already known, schedules update tasks", func(t *ftt.Test) {
@@ -343,8 +343,8 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.Loosely(t, p.poll(ctx, lProject, ct.Clock.Now()), should.BeNil)
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
-				assert.Loosely(t, qs.GetLastIncrTime().AsTime(), should.Resemble(ct.Clock.Now().UTC()))
-				assert.Loosely(t, qs.GetChanges(), should.Resemble([]int64{31, 32, 33, 34, 35, 36}))
+				assert.Loosely(t, qs.GetLastIncrTime().AsTime(), should.Match(ct.Clock.Now().UTC()))
+				assert.Loosely(t, qs.GetChanges(), should.Match([]int64{31, 32, 33, 34, 35, 36}))
 			})
 
 		})

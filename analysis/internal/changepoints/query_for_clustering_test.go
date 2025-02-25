@@ -137,7 +137,7 @@ func TestQueryForClustering(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, result, should.HaveLength(1))
-			assert.Loosely(t, result[0], should.Resemble(expectedResult))
+			assert.Loosely(t, result[0], should.Match(expectedResult))
 		})
 		t.Run(`Query multiple test verdicts, some without sources`, func(t *ftt.Test) {
 			tvs = []*rdbpb.TestVariant{
@@ -161,7 +161,7 @@ func TestQueryForClustering(t *testing.T) {
 
 			assert.Loosely(t, result, should.HaveLength(3))
 			assert.Loosely(t, result[0], should.BeNil)
-			assert.Loosely(t, result[1], should.Resemble(expectedResult))
+			assert.Loosely(t, result[1], should.Match(expectedResult))
 			assert.Loosely(t, result[2], should.BeNil)
 		})
 		t.Run(`Query multiple test verdicts, some without stored analysis available`, func(t *ftt.Test) {
@@ -171,12 +171,12 @@ func TestQueryForClustering(t *testing.T) {
 			assert.Loosely(t, result, should.HaveLength(3))
 			for i, item := range result {
 				if i == 1 {
-					assert.Loosely(t, item, should.Resemble(expectedResult))
+					assert.Loosely(t, item, should.Match(expectedResult))
 				} else {
 					// If we had sources and therefore could lookup analysis,
 					// but found no previous verdicts ingested, zero counts
 					// should be returned.
-					assert.Loosely(t, item, should.Resemble(&clusteringpb.TestVariantBranch{}))
+					assert.Loosely(t, item, should.Match(&clusteringpb.TestVariantBranch{}))
 				}
 			}
 		})
@@ -188,9 +188,9 @@ func TestQueryForClustering(t *testing.T) {
 			assert.Loosely(t, result, should.HaveLength(10000))
 			for i, item := range result {
 				if i == 1 {
-					assert.Loosely(t, item, should.Resemble(expectedResult))
+					assert.Loosely(t, item, should.Match(expectedResult))
 				} else {
-					assert.Loosely(t, item, should.Resemble(&clusteringpb.TestVariantBranch{}))
+					assert.Loosely(t, item, should.Match(&clusteringpb.TestVariantBranch{}))
 				}
 			}
 		})

@@ -119,7 +119,7 @@ func TestTouch(t *testing.T) {
 
 			content, err := os.ReadFile(path)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, content, should.Resemble([]byte("sup")))
+			assert.Loosely(t, content, should.Match([]byte("sup")))
 		})
 	})
 }
@@ -312,7 +312,7 @@ func TestReadableCopy(t *testing.T) {
 
 		buf, err := os.ReadFile(out)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buf, should.Resemble(content))
+		assert.Loosely(t, buf, should.Match(content))
 
 		ostat, err := os.Stat(out)
 		assert.Loosely(t, err, should.BeNil)
@@ -338,7 +338,7 @@ func TestCopy(t *testing.T) {
 
 		buf, err := os.ReadFile(out)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buf, should.Resemble(content))
+		assert.Loosely(t, buf, should.Match(content))
 
 		ostat, err := os.Stat(out)
 		assert.Loosely(t, err, should.BeNil)
@@ -357,7 +357,7 @@ func TestHardlinkRecursively(t *testing.T) {
 	checkFile := func(path, content string) {
 		buf, err := os.ReadFile(path)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, string(buf), should.Resemble(content))
+		assert.Loosely(t, string(buf), should.Match(content))
 	}
 
 	ftt.Run("HardlinkRecursively", t, func(t *ftt.Test) {
@@ -411,7 +411,7 @@ func TestCreateDirectories(t *testing.T) {
 		}
 
 		assert.Loosely(t, filepath.Walk(dir, correctFiles), should.BeNil)
-		assert.Loosely(t, paths, should.Resemble([]string{dir}))
+		assert.Loosely(t, paths, should.Match([]string{dir}))
 
 		assert.Loosely(t, CreateDirectories(dir, []string{
 			filepath.Join("a", "b"),
@@ -422,7 +422,7 @@ func TestCreateDirectories(t *testing.T) {
 
 		paths = nil
 		assert.Loosely(t, filepath.Walk(dir, correctFiles), should.BeNil)
-		assert.Loosely(t, paths, should.Resemble([]string{
+		assert.Loosely(t, paths, should.Match([]string{
 			dir,
 			filepath.Join(dir, "a"),
 			filepath.Join(dir, "c"),
@@ -540,9 +540,9 @@ func TestGetCommonAncestor(t *testing.T) {
 					}, []string{".git"})
 					assert.Loosely(t, err, should.BeNil)
 					if fsCaseSensitive {
-						assert.Loosely(t, common, should.Resemble(tdir+sep))
+						assert.Loosely(t, common, should.Match(tdir+sep))
 					} else {
-						assert.Loosely(t, common, should.Resemble(filepath.Join(tdir, "a", "b")+sep))
+						assert.Loosely(t, common, should.Match(filepath.Join(tdir, "a", "b")+sep))
 					}
 				})
 
@@ -554,7 +554,7 @@ func TestGetCommonAncestor(t *testing.T) {
 						filepath.Join(tdir, "a", "b", "else"),
 					}, []string{".git"})
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, common, should.Resemble(filepath.VolumeName(tdir)+sep))
+					assert.Loosely(t, common, should.Match(filepath.VolumeName(tdir)+sep))
 				})
 			})
 
@@ -568,7 +568,7 @@ func TestGetCommonAncestor(t *testing.T) {
 					filepath.Join(tdir, "a", "longpath", "c", "d"),
 				}, []string{".git"})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, common, should.Resemble(tdir+sep))
+				assert.Loosely(t, common, should.Match(tdir+sep))
 			})
 
 			t.Run(`non exist`, func(t *ftt.Test) {
@@ -608,21 +608,21 @@ func TestGetCommonAncestor(t *testing.T) {
 		t.Run(`helpers`, func(t *ftt.Test) {
 			if runtime.GOOS == "windows" {
 				t.Run(`windows paths`, func(t *ftt.Test) {
-					assert.Loosely(t, findPathSeparators(`D:\something\`), should.Resemble([]int{2, 12}))
-					assert.Loosely(t, findPathSeparators(`D:\`), should.Resemble([]int{2}))
+					assert.Loosely(t, findPathSeparators(`D:\something\`), should.Match([]int{2, 12}))
+					assert.Loosely(t, findPathSeparators(`D:\`), should.Match([]int{2}))
 					assert.Loosely(t, findPathSeparators(`\\some\host\something\`),
-						should.Resemble([]int{11, 21}))
+						should.Match([]int{11, 21}))
 					assert.Loosely(t, findPathSeparators(`\\some\host\`),
-						should.Resemble([]int{11}))
+						should.Match([]int{11}))
 					assert.Loosely(t, findPathSeparators(`\\?\C:\Test\`),
-						should.Resemble([]int{6, 11}))
+						should.Match([]int{6, 11}))
 				})
 			} else {
 				t.Run(`*nix paths`, func(t *ftt.Test) {
 					assert.Loosely(t, findPathSeparators(`/something/`),
-						should.Resemble([]int{0, 10}))
+						should.Match([]int{0, 10}))
 					assert.Loosely(t, findPathSeparators(`/`),
-						should.Resemble([]int{0}))
+						should.Match([]int{0}))
 				})
 			}
 		})

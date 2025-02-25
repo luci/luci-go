@@ -67,7 +67,7 @@ func TestOutput(t *testing.T) {
 				},
 			}
 			changed, unchanged, err := out.Write(tmp, false)
-			assert.Loosely(t, changed, should.Resemble([]string{"a", "dir/a"}))
+			assert.Loosely(t, changed, should.Match([]string{"a", "dir/a"}))
 			assert.Loosely(t, unchanged, should.HaveLength(0))
 			assert.Loosely(t, err, should.BeNil)
 
@@ -76,8 +76,8 @@ func TestOutput(t *testing.T) {
 
 			out.Data["a"] = BlobDatum("333")
 			changed, unchanged, err = out.Write(tmp, false)
-			assert.Loosely(t, changed, should.Resemble([]string{"a"}))
-			assert.Loosely(t, unchanged, should.Resemble([]string{"dir/a"}))
+			assert.Loosely(t, changed, should.Match([]string{"a"}))
+			assert.Loosely(t, unchanged, should.Match([]string{"dir/a"}))
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, read("a"), should.Match("333"))
@@ -96,13 +96,13 @@ func TestOutput(t *testing.T) {
 			t.Run("No untracked", func(t *ftt.Test) {
 				out := generated()
 				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"**/*"}, "-"), should.BeNil)
-				assert.Loosely(t, out.Data, should.Resemble(generated().Data))
+				assert.Loosely(t, out.Data, should.Match(generated().Data))
 			})
 
 			t.Run("Untracked files are restored from disk", func(t *ftt.Test) {
 				out := generated()
 				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, tmp), should.BeNil)
-				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
+				assert.Loosely(t, out.Data, should.Match(map[string]Datum{
 					"a.cfg":        generated().Data["a.cfg"],
 					"subdir/b.cfg": BlobDatum(original["subdir/b.cfg"]),
 				}))
@@ -111,7 +111,7 @@ func TestOutput(t *testing.T) {
 			t.Run("Untracked files are discarded when dumping to stdout", func(t *ftt.Test) {
 				out := generated()
 				assert.Loosely(t, out.DiscardChangesToUntracked(ctx, []string{"!*/b.cfg"}, "-"), should.BeNil)
-				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
+				assert.Loosely(t, out.Data, should.Match(map[string]Datum{
 					"a.cfg": generated().Data["a.cfg"],
 				}))
 			})
@@ -140,7 +140,7 @@ func TestOutput(t *testing.T) {
 				write("m2", "new 2")
 
 				assert.Loosely(t, out.Read(tmp), should.BeNil)
-				assert.Loosely(t, out.Data, should.Resemble(map[string]Datum{
+				assert.Loosely(t, out.Data, should.Match(map[string]Datum{
 					"m1": BlobDatum("new 1"),
 					"m2": BlobDatum("new 2"),
 				}))
@@ -161,7 +161,7 @@ func TestOutput(t *testing.T) {
 				},
 			}
 			changed, unchanged, err := out.Write(tmp, false)
-			assert.Loosely(t, changed, should.Resemble([]string{"m1", "m2"}))
+			assert.Loosely(t, changed, should.Match([]string{"m1", "m2"}))
 			assert.Loosely(t, unchanged, should.HaveLength(0))
 			assert.Loosely(t, err, should.BeNil)
 
@@ -175,7 +175,7 @@ func TestOutput(t *testing.T) {
 				// If using semantic comparison, recognizes nothing has changed.
 				cmp, err := out.Compare(tmp, true)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
+				assert.Loosely(t, cmp, should.Match(map[string]CompareResult{
 					"m1": Identical,
 					"m2": SemanticallyEqual,
 				}))
@@ -183,7 +183,7 @@ func TestOutput(t *testing.T) {
 				// Byte-to-byte comparison recognizes the change.
 				cmp, err = out.Compare(tmp, false)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
+				assert.Loosely(t, cmp, should.Match(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
 				}))
@@ -193,15 +193,15 @@ func TestOutput(t *testing.T) {
 					changed, unchanged, err := out.Write(tmp, false)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, changed, should.HaveLength(0))
-					assert.Loosely(t, unchanged, should.Resemble([]string{"m1", "m2"}))
+					assert.Loosely(t, unchanged, should.Match([]string{"m1", "m2"}))
 				})
 
 				t.Run("Write, force=true", func(t *ftt.Test) {
 					// We ask to overwrite files even if they all are semantically same.
 					changed, unchanged, err := out.Write(tmp, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, changed, should.Resemble([]string{"m2"}))
-					assert.Loosely(t, unchanged, should.Resemble([]string{"m1"}))
+					assert.Loosely(t, changed, should.Match([]string{"m2"}))
+					assert.Loosely(t, unchanged, should.Match([]string{"m1"}))
 
 					// Overwrote it on disk.
 					assert.Loosely(t, read("m2"), should.Match("# Header\ni: 222\n"))
@@ -215,7 +215,7 @@ func TestOutput(t *testing.T) {
 				// Detected it.
 				cmp, err := out.Compare(tmp, true)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
+				assert.Loosely(t, cmp, should.Match(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
 				}))
@@ -223,8 +223,8 @@ func TestOutput(t *testing.T) {
 				// Writes it to disk, even when force=false.
 				changed, unchanged, err := out.Write(tmp, false)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, changed, should.Resemble([]string{"m2"}))
-				assert.Loosely(t, unchanged, should.Resemble([]string{"m1"}))
+				assert.Loosely(t, changed, should.Match([]string{"m2"}))
+				assert.Loosely(t, unchanged, should.Match([]string{"m1"}))
 			})
 
 			t.Run("Handles bad protos", func(t *ftt.Test) {
@@ -234,7 +234,7 @@ func TestOutput(t *testing.T) {
 				// Detected the file as changed.
 				cmp, err := out.Compare(tmp, true)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cmp, should.Resemble(map[string]CompareResult{
+				assert.Loosely(t, cmp, should.Match(map[string]CompareResult{
 					"m1": Identical,
 					"m2": Different,
 				}))
@@ -272,7 +272,7 @@ func TestOutput(t *testing.T) {
 
 		t.Run("Empty set", func(t *ftt.Test) {
 			out.Roots["set"] = "zzz"
-			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
+			assert.Loosely(t, configSets(), should.Match([]ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{},
@@ -282,7 +282,7 @@ func TestOutput(t *testing.T) {
 
 		t.Run("`.` root", func(t *ftt.Test) {
 			out.Roots["set"] = "."
-			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
+			assert.Loosely(t, configSets(), should.Match([]ConfigSet{
 				{
 					Name: "set",
 					Data: everything,
@@ -292,7 +292,7 @@ func TestOutput(t *testing.T) {
 
 		t.Run("Subdir root", func(t *ftt.Test) {
 			out.Roots["set"] = "dir1/."
-			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
+			assert.Loosely(t, configSets(), should.Match([]ConfigSet{
 				{
 					Name: "set",
 					Data: map[string][]byte{
@@ -308,7 +308,7 @@ func TestOutput(t *testing.T) {
 			out.Roots["set1"] = "dir1"
 			out.Roots["set2"] = "dir2"
 			out.Roots["set3"] = "dir1/sub" // intersecting sets are OK
-			assert.Loosely(t, configSets(), should.Resemble([]ConfigSet{
+			assert.Loosely(t, configSets(), should.Match([]ConfigSet{
 				{
 					Name: "set1",
 					Data: map[string][]byte{

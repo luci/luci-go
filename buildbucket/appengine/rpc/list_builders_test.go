@@ -188,7 +188,7 @@ func TestListBuilders(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
-				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
+				assert.Loosely(t, res.GetBuilders(), should.Match([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -214,7 +214,7 @@ func TestListBuilders(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
+				assert.Loosely(t, res.GetBuilders(), should.Match([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -233,7 +233,7 @@ func TestListBuilders(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
-				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
+				assert.Loosely(t, res.GetBuilders(), should.Match([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -258,7 +258,7 @@ func TestListBuilders(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
+				assert.Loosely(t, res.GetBuilders(), should.Match([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",
@@ -282,7 +282,7 @@ func TestListBuilders(t *testing.T) {
 				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.GetBuilders(), should.Resemble([]*pb.BuilderItem{
+				assert.Loosely(t, res.GetBuilders(), should.Match([]*pb.BuilderItem{
 					{
 						Id: &pb.BuilderID{
 							Project: "project",

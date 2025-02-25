@@ -58,7 +58,7 @@ func TestConfigSet(t *testing.T) {
 			t.Run("Success", func(t *ftt.Test) {
 				cfg, err := ReadConfigSet(tmp, "set name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(ConfigSet{
+				assert.Loosely(t, cfg, should.Match(ConfigSet{
 					Name: "set name",
 					Data: map[string][]byte{
 						"a.cfg":        []byte("a\n"),
@@ -66,7 +66,7 @@ func TestConfigSet(t *testing.T) {
 					},
 				}))
 
-				assert.Loosely(t, cfg.Files(), should.Resemble([]string{
+				assert.Loosely(t, cfg.Files(), should.Match([]string{
 					"a.cfg",
 					"subdir/b.cfg",
 				}))
@@ -99,12 +99,12 @@ func TestConfigSet(t *testing.T) {
 			},
 		}
 
-		assert.Loosely(t, cfgSet.Validate(ctx, &validator), should.Resemble(&ValidationResult{
+		assert.Loosely(t, cfgSet.Validate(ctx, &validator), should.Match(&ValidationResult{
 			ConfigSet: configSetName,
 			Messages:  []ValidationMessage{{errorMsg}},
 		}))
 
-		assert.Loosely(t, validator.cs, should.Resemble(cfgSet))
+		assert.Loosely(t, validator.cs, should.Match(cfgSet))
 	})
 
 	ftt.Run("RPC error", t, func(t *ftt.Test) {
@@ -118,7 +118,7 @@ func TestConfigSet(t *testing.T) {
 		}
 
 		res := cfg.Validate(ctx, &validator)
-		assert.Loosely(t, res, should.Resemble(&ValidationResult{
+		assert.Loosely(t, res, should.Match(&ValidationResult{
 			ConfigSet: "set",
 			Failed:    true,
 			RPCError:  "BOOM",
@@ -201,7 +201,7 @@ func TestRemoteValidator(t *testing.T) {
 			}, nil)
 			res, err := validator.Validate(ctx, cs)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, res, should.Resemble(validationMsgs))
+			assert.Loosely(c, res, should.Match(validationMsgs))
 		})
 		c.Run("unvalidatable files", func(c *ftt.Test) {
 			cs.Data["unvalidatable.cfg"] = []byte("some content")
@@ -236,7 +236,7 @@ func TestRemoteValidator(t *testing.T) {
 			}, nil)
 			res, err := validator.Validate(ctx, cs)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, res, should.Resemble(validationMsgs))
+			assert.Loosely(c, res, should.Match(validationMsgs))
 		})
 		c.Run("upload files", func(c *ftt.Test) {
 			c.Run("succeed", func(c *ftt.Test) {
@@ -278,7 +278,7 @@ func TestRemoteValidator(t *testing.T) {
 					}, nil)
 				res, err := validator.Validate(ctx, cs)
 				assert.Loosely(c, err, should.BeNil)
-				assert.Loosely(c, res, should.Resemble(validationMsgs))
+				assert.Loosely(c, res, should.Match(validationMsgs))
 			})
 
 			c.Run("no file unvalidatable", func(c *ftt.Test) {

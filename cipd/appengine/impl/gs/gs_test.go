@@ -83,7 +83,7 @@ func TestImpl(t *testing.T) {
 			q.Del("prettyPrint") // not really relevant to anything
 
 			assert.Loosely(c, r.Method+" "+r.URL.Path, should.Equal(next.Method+" "+next.Path))
-			assert.Loosely(c, q, should.Resemble(next.Query))
+			assert.Loosely(c, q, should.Match(next.Query))
 			assert.Loosely(c, r.Header.Get("Range"), should.Equal(next.Range))
 
 			var response []byte

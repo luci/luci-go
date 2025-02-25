@@ -77,7 +77,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		expectedExpireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, tok, should.Resemble(&Token{
+		assert.Loosely(t, tok, should.Match(&Token{
 			Token:  "token1",
 			Expiry: expectedExpireTime,
 		}))

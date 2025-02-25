@@ -28,7 +28,7 @@ func TestInt64SliceFlag(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var flag int64SliceFlag
 		assert.Loosely(t, flag.Set("1"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]int64{1}))
+		assert.Loosely(t, flag.Get(), should.Match([]int64{1}))
 		assert.Loosely(t, flag.String(), should.Equal("1"))
 	})
 
@@ -37,7 +37,7 @@ func TestInt64SliceFlag(t *testing.T) {
 		assert.Loosely(t, flag.Set("-1"), should.BeNil)
 		assert.Loosely(t, flag.Set("0"), should.BeNil)
 		assert.Loosely(t, flag.Set("1"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]int64{-1, 0, 1}))
+		assert.Loosely(t, flag.Get(), should.Match([]int64{-1, 0, 1}))
 		assert.Loosely(t, flag.String(), should.Equal("-1, 0, 1"))
 	})
 
@@ -55,7 +55,7 @@ func TestInt64SliceFlag(t *testing.T) {
 		assert.Loosely(t, flag.Set("-1"), should.BeNil)
 		assert.Loosely(t, flag.Set("0x00"), should.ErrLike("values must be 64-bit integers"))
 		assert.Loosely(t, flag.Set("1"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]int64{-1, 1}))
+		assert.Loosely(t, flag.Get(), should.Match([]int64{-1, 1}))
 		assert.Loosely(t, flag.String(), should.Equal("-1, 1"))
 	})
 }
@@ -66,7 +66,7 @@ func TestInt64Slice(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var i []int64
 		assert.Loosely(t, Int64Slice(&i).Set("1"), should.BeNil)
-		assert.Loosely(t, i, should.Resemble([]int64{1}))
+		assert.Loosely(t, i, should.Match([]int64{1}))
 	})
 
 	ftt.Run("many", t, func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestInt64Slice(t *testing.T) {
 		assert.Loosely(t, Int64Slice(&i).Set("-1"), should.BeNil)
 		assert.Loosely(t, Int64Slice(&i).Set("0"), should.BeNil)
 		assert.Loosely(t, Int64Slice(&i).Set("1"), should.BeNil)
-		assert.Loosely(t, i, should.Resemble([]int64{-1, 0, 1}))
+		assert.Loosely(t, i, should.Match([]int64{-1, 0, 1}))
 	})
 
 	ftt.Run("error", t, func(t *ftt.Test) {
@@ -88,6 +88,6 @@ func TestInt64Slice(t *testing.T) {
 		assert.Loosely(t, Int64Slice(&i).Set("-1"), should.BeNil)
 		assert.Loosely(t, Int64Slice(&i).Set("0x00"), should.ErrLike("values must be 64-bit integers"))
 		assert.Loosely(t, Int64Slice(&i).Set("1"), should.BeNil)
-		assert.Loosely(t, i, should.Resemble([]int64{-1, 1}))
+		assert.Loosely(t, i, should.Match([]int64{-1, 1}))
 	})
 }

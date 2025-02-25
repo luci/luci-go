@@ -53,7 +53,7 @@ func TestRoundtrip(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		assert.Loosely(t, insp.Signed, should.BeTrue)
-		assert.Loosely(t, insp.Body, should.Resemble(original))
+		assert.Loosely(t, insp.Body, should.Match(original))
 	})
 
 	ftt.Run("Sign/Inspect works (with context)", t, func(t *ftt.Test) {
@@ -67,7 +67,7 @@ func TestRoundtrip(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		assert.Loosely(t, insp.Signed, should.BeTrue)
-		assert.Loosely(t, insp.Body, should.Resemble(original))
+		assert.Loosely(t, insp.Body, should.Match(original))
 	})
 
 	ftt.Run("Sign/Inspect works (wrong context)", t, func(t *ftt.Test) {

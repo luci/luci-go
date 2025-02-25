@@ -115,15 +115,15 @@ func TestFetcher(t *testing.T) {
 		t.Run("Visits correct time range", func(t *ftt.Test) {
 			err := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			assert.NoErr(t, err)
-			assert.Loosely(t, collected, should.Resemble([]int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12}))
+			assert.Loosely(t, collected, should.Match([]int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12}))
 
 			// Respects queryBatchSize (== 3 entities).
-			assert.Loosely(t, convertCalls, should.Resemble([]int{3, 3, 3, 1}))
+			assert.Loosely(t, convertCalls, should.Match([]int{3, 3, 3, 1}))
 
 			// Respects flushThreshold (== 7 bytes). Each message is 2 bytes long. It
 			// takes 4 messages (== 8 bytes) to trigger the flush. The last flush
 			// sends the remaining 2 messages.
-			assert.Loosely(t, flushCalls, should.Resemble([]int{8, 8, 4}))
+			assert.Loosely(t, flushCalls, should.Match([]int{8, 8, 4}))
 		})
 
 		t.Run("Convert error", func(t *ftt.Test) {
@@ -152,7 +152,7 @@ func TestFetcher(t *testing.T) {
 			}
 			gotErr := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
 			assert.Loosely(t, gotErr, should.Equal(wantErr))
-			assert.Loosely(t, collected, should.Resemble([]int64{3, 4, 5, 6, 7, 8, 9, 10})) // doesn't have the last 2
+			assert.Loosely(t, collected, should.Match([]int64{3, 4, 5, 6, 7, 8, 9, 10})) // doesn't have the last 2
 		})
 	})
 }
@@ -234,7 +234,7 @@ func TestConvertTaskResults(t *testing.T) {
 			)
 			assert.NoErr(t, err)
 
-			assert.Loosely(t, out, should.Resemble([]*bqpb.TaskResult{
+			assert.Loosely(t, out, should.Match([]*bqpb.TaskResult{
 				{TaskId: "692b33d4feb00010", ServerVersions: []string{"req-1", "123"}},
 				{TaskId: "692b33d4feb00030", ServerVersions: []string{"req-3", "none"}},
 				{TaskId: "692b33d4feb00040", ServerVersions: []string{"req-4", "none"}},

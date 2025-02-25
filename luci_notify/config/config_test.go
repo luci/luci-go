@@ -119,7 +119,7 @@ func TestConfigIngestion(t *testing.T) {
 		// array and test the different parts individually.
 		assert.Loosely(t, builders, should.HaveLength(2))
 		b := builders[0]
-		assert.That(t, b.ProjectKey, should.Resemble(datastore.MakeKey(c, "Project", "chromium")))
+		assert.That(t, b.ProjectKey, should.Match(datastore.MakeKey(c, "Project", "chromium")))
 		assert.That(t, b.ID, should.Equal("ci/linux"))
 		assert.That(t, b.Repository, should.Equal("https://chromium.googlesource.com/chromium/src"))
 		assert.That(t, b.Notifications, should.Match(&notifypb.Notifications{
@@ -136,9 +136,9 @@ func TestConfigIngestion(t *testing.T) {
 		}))
 
 		b = builders[1]
-		assert.That(t, b.ProjectKey, should.Resemble(datastore.MakeKey(c, "Project", "v8")))
+		assert.That(t, b.ProjectKey, should.Match(datastore.MakeKey(c, "Project", "v8")))
 		assert.That(t, b.ID, should.Equal("ci/win"))
-		assert.That(t, b.Notifications, should.Resemble(&notifypb.Notifications{
+		assert.That(t, b.Notifications, should.Match(&notifypb.Notifications{
 			Notifications: []*notifypb.Notification{
 				{
 					OnNewStatus: []buildbucketpb.Status{
@@ -155,7 +155,7 @@ func TestConfigIngestion(t *testing.T) {
 
 		var emailTemplates []*EmailTemplate
 		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), should.BeNil)
-		assert.That(t, emailTemplates, should.Resemble([]*EmailTemplate{
+		assert.That(t, emailTemplates, should.Match([]*EmailTemplate{
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "chromium"),
 				Name:                "a",
@@ -192,10 +192,10 @@ func TestConfigIngestion(t *testing.T) {
 		// As above, can't use ShouldResemble or ShouldResembleProto directly.
 		assert.Loosely(t, treeClosers, should.HaveLength(1))
 		tc := treeClosers[0]
-		assert.That(t, tc.BuilderKey, should.Resemble(datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux")))
+		assert.That(t, tc.BuilderKey, should.Match(datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux")))
 		assert.That(t, tc.TreeName, should.Equal("chromium"))
 		assert.That(t, tc.Status, should.Equal(Open))
-		assert.That(t, &tc.TreeCloser, should.Resemble(&notifypb.TreeCloser{
+		assert.That(t, &tc.TreeCloser, should.Match(&notifypb.TreeCloser{
 			TreeStatusHost:          "chromium-status.appspot.com",
 			FailedStepRegexp:        "test",
 			FailedStepRegexpExclude: "experimental_test",
@@ -268,8 +268,8 @@ func TestConfigIngestion(t *testing.T) {
 			// Check the fields we care about explicitly, because generated proto structs may have
 			// size caches which are updated.
 			assert.That(t, newBuilders[0].Status, should.Equal(chromiumBuilder.Status))
-			assert.That(t, newBuilders[0].Revision, should.Resemble(chromiumBuilder.Revision))
-			assert.That(t, newBuilders[0].GitilesCommits, should.Resemble(chromiumBuilder.GitilesCommits))
+			assert.That(t, newBuilders[0].Revision, should.Match(chromiumBuilder.Revision))
+			assert.That(t, newBuilders[0].GitilesCommits, should.Match(chromiumBuilder.GitilesCommits))
 
 			var newTreeClosers []*TreeCloser
 			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), should.BeNil)

@@ -128,7 +128,7 @@ func TestFuncs(t *testing.T) {
 			assert.Loosely(t, ok, should.BeFalse)
 			assert.Loosely(t, project, should.BeEmpty)
 			assert.Loosely(t, r.Code, should.Equal(302))
-			assert.Loosely(t, r.Result().Header["Location"], should.Resemble([]string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"}))
+			assert.Loosely(t, r.Result().Header["Location"], should.Match([]string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"}))
 		})
 
 		t.Run("Install git project to context when the user has access to the project", func(t *ftt.Test) {

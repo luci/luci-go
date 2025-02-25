@@ -172,7 +172,7 @@ func TestCursor(t *testing.T) {
 			assert.NoErr(t, err)
 
 			// Resumed from the cursor correctly and finished fetching entities.
-			assert.Loosely(t, fetched, should.Resemble([]int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+			assert.Loosely(t, fetched, should.Match([]int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
 		})
 	})
 }

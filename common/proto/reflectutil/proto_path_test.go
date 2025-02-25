@@ -41,7 +41,7 @@ func TestPath(t *testing.T) {
 			assert.Loosely(t, pth.String(), should.Match(".single_inner.str"))
 
 			msg := &TestPathMessage{SingleInner: &TestPathMessage_Inner{Str: "sup"}}
-			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
+			assert.Loosely(t, pth.Retrieve(msg), should.Match(protoreflect.ValueOf("sup")))
 		})
 
 		t.Run(`supports string map fields`, func(t *ftt.Test) {
@@ -60,7 +60,7 @@ func TestPath(t *testing.T) {
 			msg := &TestPathMessage{MapInner: map[string]*TestPathMessage_Inner{
 				"neat": {Str: "sup"}},
 			}
-			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
+			assert.Loosely(t, pth.Retrieve(msg), should.Match(protoreflect.ValueOf("sup")))
 		})
 
 		t.Run(`supports integer map fields`, func(t *ftt.Test) {
@@ -79,7 +79,7 @@ func TestPath(t *testing.T) {
 			msg := &TestPathMessage{IntMapInner: map[int32]*TestPathMessage_Inner{
 				100: {Str: "sup"}},
 			}
-			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
+			assert.Loosely(t, pth.Retrieve(msg), should.Match(protoreflect.ValueOf("sup")))
 		})
 
 		t.Run(`supports repeated fields`, func(t *ftt.Test) {
@@ -100,7 +100,7 @@ func TestPath(t *testing.T) {
 				{Str: "nope"},
 				{Str: "sup"},
 			}}
-			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
+			assert.Loosely(t, pth.Retrieve(msg), should.Match(protoreflect.ValueOf("sup")))
 		})
 	})
 }

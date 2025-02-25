@@ -39,7 +39,7 @@ func TestTypeConversion(t *testing.T) {
 	test := func(goValue, spValue any) {
 		// ToSpanner
 		actualSPValue := ToSpanner(goValue)
-		assert.Loosely(t, actualSPValue, should.Resemble(spValue))
+		assert.Loosely(t, actualSPValue, should.Match(spValue))
 
 		// FromSpanner
 		row, err := spanner.NewRow([]string{"a"}, []any{actualSPValue})
@@ -47,7 +47,7 @@ func TestTypeConversion(t *testing.T) {
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, goPtr.Elem().Interface(), should.Resemble(goValue))
+		assert.Loosely(t, goPtr.Elem().Interface(), should.Match(goValue))
 	}
 
 	ftt.Run(`int64`, t, func(t *ftt.Test) {
@@ -136,7 +136,7 @@ func TestTypeConversion(t *testing.T) {
 			"b": varIntB,
 			"c": varStatus,
 		})
-		assert.Loosely(t, spValues, should.Resemble(map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)}))
+		assert.Loosely(t, spValues, should.Match(map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)}))
 	})
 
 	ftt.Run(`proto.Message`, t, func(t *ftt.Test) {
@@ -145,7 +145,7 @@ func TestTypeConversion(t *testing.T) {
 		}
 		expected, err := proto.Marshal(msg)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, ToSpanner(msg), should.Resemble(expected))
+		assert.Loosely(t, ToSpanner(msg), should.Match(expected))
 
 		row, err := spanner.NewRow([]string{"a"}, []any{expected})
 		assert.Loosely(t, err, should.BeNil)
@@ -154,7 +154,7 @@ func TestTypeConversion(t *testing.T) {
 			expectedPtr := &pb.FailureReason{}
 			err = b.FromSpanner(row, expectedPtr)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expectedPtr, should.Resemble(msg))
+			assert.Loosely(t, expectedPtr, should.Match(msg))
 		})
 
 		t.Run(`Passing nil pointer to fromSpanner`, func(t *ftt.Test) {

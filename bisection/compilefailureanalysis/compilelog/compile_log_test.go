@@ -84,7 +84,7 @@ func TestGetCompileLogs(t *testing.T) {
 		})
 		logs, err := GetCompileLogs(c, 12345)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, *logs, should.Resemble(model.CompileLogs{
+		assert.Loosely(t, *logs, should.Match(model.CompileLogs{
 			NinjaLog: &model.NinjaLog{
 				Failures: []*model.NinjaLogFailure{
 					{
@@ -110,7 +110,7 @@ func TestGetFailedTargets(t *testing.T) {
 
 	ftt.Run("No Ninja log", t, func(t *ftt.Test) {
 		compileLogs := &model.CompileLogs{}
-		assert.Loosely(t, GetFailedTargets(compileLogs), should.Resemble([]string{}))
+		assert.Loosely(t, GetFailedTargets(compileLogs), should.Match([]string{}))
 	})
 
 	ftt.Run("Have Ninja log", t, func(t *ftt.Test) {
@@ -126,6 +126,6 @@ func TestGetFailedTargets(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, GetFailedTargets(compileLogs), should.Resemble([]string{"node1", "node2", "node3", "node4"}))
+		assert.Loosely(t, GetFailedTargets(compileLogs), should.Match([]string{"node1", "node2", "node3", "node4"}))
 	})
 }

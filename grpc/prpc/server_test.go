@@ -106,7 +106,7 @@ func TestServer(t *testing.T) {
 
 		t.Run("Register Calc service", func(t *ftt.Test) {
 			testpb.RegisterCalcServer(&server, &calcService{})
-			assert.Loosely(t, server.ServiceNames(), should.Resemble([]string{
+			assert.Loosely(t, server.ServiceNames(), should.Match([]string{
 				"prpc.Calc",
 				"prpc.Greeter",
 			}))
@@ -135,20 +135,20 @@ func TestServer(t *testing.T) {
 				req.Header.Set("Accept", mtPRPCText)
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"application/prpc; encoding=text"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
 			})
 
 			t.Run("Header Metadata", func(t *ftt.Test) {
 				greeterSvc.headerMD = metadata.Pairs("a", "1", "b", "2", "date", "2112")
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"A":                      {"1"},
 					"B":                      {"2"},
 					"Content-Type":           {"application/prpc; encoding=binary"},
@@ -161,7 +161,7 @@ func TestServer(t *testing.T) {
 			t.Run("Status details", func(t *ftt.Test) {
 				greeterSvc.errDetails = &errdetails.DebugInfo{Detail: "x"}
 				r.ServeHTTP(res, req)
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":              {"text/plain; charset=utf-8"},
 					"Date":                      nil,
 					"X-Content-Type-Options":    {"nosniff"},
@@ -174,7 +174,7 @@ func TestServer(t *testing.T) {
 				req.Header.Set("Accept", "blah")
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusNotAcceptable))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -187,7 +187,7 @@ func TestServer(t *testing.T) {
 					req.Header.Set(HeaderMaxResponseSize, bad)
 					r.ServeHTTP(res, req)
 					assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-					assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+					assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 						"Content-Type":           {"text/plain; charset=utf-8"},
 						"Date":                   nil,
 						"X-Content-Type-Options": {"nosniff"},
@@ -200,7 +200,7 @@ func TestServer(t *testing.T) {
 				req.Header.Set("X-Bin", "zzz")
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -212,7 +212,7 @@ func TestServer(t *testing.T) {
 				hiMsg.WriteString("\nblah")
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -224,7 +224,7 @@ func TestServer(t *testing.T) {
 				hiMsg.Reset()
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -237,7 +237,7 @@ func TestServer(t *testing.T) {
 				req.URL.Path = "/prpc/xxx/SayHello"
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusNotImplemented))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -249,7 +249,7 @@ func TestServer(t *testing.T) {
 				req.URL.Path = "/prpc/Greeter/xxx"
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusNotImplemented))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -268,7 +268,7 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Access-Control-Allow-Origin":   {"http://example.com"},
 					"Access-Control-Expose-Headers": {"X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin"},
 					"Content-Type":                  {"application/prpc; encoding=binary"},
@@ -299,7 +299,7 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-						assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+						assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 							"Access-Control-Allow-Credentials": {"true"},
 							"Access-Control-Allow-Headers":     {"Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size"},
 							"Access-Control-Allow-Methods":     {"OPTIONS, POST"},
@@ -314,7 +314,7 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-						assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{}))
+						assert.Loosely(t, res.Result().Header, should.Match(http.Header{}))
 					})
 				})
 
@@ -324,7 +324,7 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-						assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+						assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 							"Access-Control-Allow-Credentials": {"true"},
 							"Access-Control-Allow-Origin":      {"http://example.com"},
 							"Access-Control-Expose-Headers":    {"X-Prpc-Grpc-Code, X-Prpc-Status-Details-Bin"},
@@ -341,7 +341,7 @@ func TestServer(t *testing.T) {
 
 						r.ServeHTTP(res, req)
 						assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-						assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+						assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 							"Content-Type":           {"application/prpc; encoding=binary"},
 							"Date":                   nil,
 							"X-Content-Type-Options": {"nosniff"},
@@ -358,7 +358,7 @@ func TestServer(t *testing.T) {
 
 					r.ServeHTTP(res, req)
 					assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-					assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+					assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 						"Access-Control-Allow-Credentials": {"true"},
 						"Access-Control-Allow-Headers":     {"Booboo, bobo, Origin, Content-Type, Accept, Authorization, X-Prpc-Grpc-Timeout, X-Prpc-Max-Response-Size"},
 						"Access-Control-Allow-Methods":     {"OPTIONS, POST"},
@@ -382,13 +382,13 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"application/prpc; encoding=text"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
 				assert.Loosely(t, called, should.BeTrue)
 			})
 
@@ -407,12 +407,12 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type": {"text/plain; charset=utf-8"},
 					"Overridden":   {"1"},
 				}))
 				assert.Loosely(t, res.Body.String(), should.Equal("Override"))
-				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeRequest(rawBody), should.Match(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: error", func(t *ftt.Test) {
@@ -427,7 +427,7 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -453,14 +453,14 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"application/prpc; encoding=text"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
-				assert.Loosely(t, rpcReq, should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, rpcReq, should.Match(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: peek, override", func(t *ftt.Test) {
@@ -485,13 +485,13 @@ func TestServer(t *testing.T) {
 
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type": {"text/plain; charset=utf-8"},
 					"Overridden":   {"1"},
 				}))
-				assert.Loosely(t, rpcReq, should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, rpcReq, should.Match(&testpb.HelloRequest{Name: "Lucy"}))
 				assert.Loosely(t, res.Body.String(), should.Equal("Override"))
-				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeRequest(rawBody), should.Match(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: malformed request, pass through", func(t *ftt.Test) {
@@ -508,7 +508,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, callbackErr, should.ErrLike("could not decode body"))
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -538,7 +538,7 @@ func TestServer(t *testing.T) {
 				assert.Loosely(t, string(rawBody), should.Equal("not a proto"))
 				assert.Loosely(t, rawBodyErr, should.BeNil)
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type": {"text/plain; charset=utf-8"},
 					"Overridden":   {"1"},
 				}))
@@ -562,7 +562,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, callbackErr, should.ErrLike("BOOM"))
 				assert.Loosely(t, res.Code, should.Equal(http.StatusBadRequest))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},
@@ -595,7 +595,7 @@ func TestServer(t *testing.T) {
 				assert.Loosely(t, string(rawBody), should.Equal(`name: "Zzz"`))
 				assert.Loosely(t, rawBodyErr, should.ErrLike("BOOM"))
 				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type": {"text/plain; charset=utf-8"},
 					"Overridden":   {"1"},
 				}))
@@ -616,7 +616,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, callbackErr, should.ErrLike("request body too large"))
 				assert.Loosely(t, res.Code, should.Equal(http.StatusServiceUnavailable))
-				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
+				assert.Loosely(t, res.Result().Header, should.Match(http.Header{
 					"Content-Type":           {"text/plain; charset=utf-8"},
 					"Date":                   nil,
 					"X-Content-Type-Options": {"nosniff"},

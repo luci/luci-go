@@ -31,7 +31,7 @@ func TestAccept(t *testing.T) {
 			t.Run("mediaType="+value, func(t *ftt.Test) {
 				actual, err := parseAccept(value)
 				assert.Loosely(t, err, should.ErrLike(expectedErr))
-				assert.Loosely(t, actual, should.Resemble(accept(expectedTypes)))
+				assert.Loosely(t, actual, should.Match(accept(expectedTypes)))
 			})
 		}
 		test("", nil)

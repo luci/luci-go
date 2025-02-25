@@ -83,12 +83,12 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		t.Run("With human CL author", func(t *ftt.Test) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 		})
 		t.Run("With automation CL author", func(t *ftt.Test) {
 			clsByHost["chromium-review.googlesource.com"][0].Owner.Email = "robot@chromium.gserviceaccount.com"
@@ -96,13 +96,13 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 		})
 		t.Run("With CL not existing", func(t *ftt.Test) {
 			clsByHost["chromium-review.googlesource.com"] = []*gerritpb.ChangeInfo{}
@@ -110,13 +110,13 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
-			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 			// Verify cache record was created.
 			cls, err := ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			expectedChangelists[0].OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
-			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 		})
 		t.Run("With cache record", func(t *ftt.Test) {
 			// Create a cache record that says the CL was created by automation.
@@ -126,12 +126,12 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists[0].OwnerKind = pb.ChangelistOwnerKind_AUTOMATION
-			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 			// Verify cache remains in tact.
 			cls, err := ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+			assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 		})
 		t.Run("With no changelists", func(t *ftt.Test) {
 			sources["sources-1"].Changelists = nil
@@ -139,7 +139,7 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 			assert.Loosely(t, err, should.BeNil)
 			expectedSources["sources-1"].Changelists = nil
-			assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+			assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 			// Verify no cache entries created.
 			cls, err := ReadAll(span.Single(ctx))
@@ -265,12 +265,12 @@ func TestPopulateOwnerKinds(t *testing.T) {
 			t.Run("Without cache entries", func(t *ftt.Test) {
 				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+				assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 				// Verify cache record was created.
 				cls, err := ReadAll(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+				assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 			})
 			t.Run("With cache entries", func(t *ftt.Test) {
 				assert.Loosely(t, SetGerritChangelistsForTesting(ctx, t, expectedChangelists), should.BeNil)
@@ -279,12 +279,12 @@ func TestPopulateOwnerKinds(t *testing.T) {
 
 				augmentedSources, err := PopulateOwnerKindsBatch(ctx, "testproject", sources)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, augmentedSources, should.Resemble(expectedSources))
+				assert.Loosely(t, augmentedSources, should.Match(expectedSources))
 
 				// Verify cache records remain in tact.
 				cls, err := ReadAll(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, removeCreationTimestamps(cls), should.Resemble(expectedChangelists))
+				assert.Loosely(t, removeCreationTimestamps(cls), should.Match(expectedChangelists))
 			})
 		})
 	})

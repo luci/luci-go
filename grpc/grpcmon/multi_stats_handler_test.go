@@ -125,7 +125,7 @@ func TestWithMultiStatsHandler(t *testing.T) {
 			for val := range ch {
 				values = append(values, val)
 			}
-			assert.Loosely(t, values, should.Resemble([]int{2, 1, 2}))
+			assert.Loosely(t, values, should.Match([]int{2, 1, 2}))
 		})
 
 	})

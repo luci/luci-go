@@ -52,7 +52,7 @@ func TestQuotaConfig(t *testing.T) {
 			t.Run("found", func(t *ftt.Test) {
 				p, err := m.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -62,7 +62,7 @@ func TestQuotaConfig(t *testing.T) {
 			t.Run("immutable", func(t *ftt.Test) {
 				p, err := m.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
@@ -72,7 +72,7 @@ func TestQuotaConfig(t *testing.T) {
 
 				p, err = m.Get(ctx, "name")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, p, should.Resemble(&pb.Policy{
+				assert.Loosely(t, p, should.Match(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,

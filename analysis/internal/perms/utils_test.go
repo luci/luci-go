@@ -95,13 +95,13 @@ func TestQueryRealms(t *testing.T) {
 			t.Run("check single permission", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil, rdbperms.PermListTestResults)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, realms, should.Resemble([]string{"project1:realm1", "project1:realm2"}))
+				assert.Loosely(t, realms, should.Match([]string{"project1:realm1", "project1:realm2"}))
 			})
 
 			t.Run("check multiple permissions", func(t *ftt.Test) {
 				realms, err := QueryRealms(ctx, "project1", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, realms, should.Resemble([]string{"project1:realm1"}))
+				assert.Loosely(t, realms, should.Match([]string{"project1:realm1"}))
 			})
 
 			t.Run("no matched realms", func(t *ftt.Test) {
@@ -135,13 +135,13 @@ func TestQueryRealms(t *testing.T) {
 				t.Run("check single permission", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestResults)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, realms, should.Resemble([]string{"realm1", "realm2"}))
+					assert.Loosely(t, realms, should.Match([]string{"realm1", "realm2"}))
 				})
 
 				t.Run("check multiple permissions", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
+					assert.Loosely(t, realms, should.Match([]string{"realm1"}))
 				})
 
 				t.Run("no matched realms", func(t *ftt.Test) {
@@ -157,13 +157,13 @@ func TestQueryRealms(t *testing.T) {
 				t.Run("check single permission", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestResults)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
+					assert.Loosely(t, realms, should.Match([]string{"realm1"}))
 				})
 
 				t.Run("check multiple permissions", func(t *ftt.Test) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestResults, rdbperms.PermGetArtifact)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, realms, should.Resemble([]string{"realm1"}))
+					assert.Loosely(t, realms, should.Match([]string{"realm1"}))
 				})
 
 				t.Run("no matched realms", func(t *ftt.Test) {

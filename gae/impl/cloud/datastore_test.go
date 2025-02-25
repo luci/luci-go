@@ -197,19 +197,19 @@ func TestBoundDatastore(t *testing.T) {
 			}
 
 			t.Run("gaeEntityToNative", func(t *ftt.Test) {
-				assert.Loosely(t, gaeEntityToNative(kc, pm), should.Resemble(ent))
+				assert.Loosely(t, gaeEntityToNative(kc, pm), should.Match(ent))
 			})
 
 			t.Run("nativeEntityToGAE", func(t *ftt.Test) {
-				assert.Loosely(t, nativeEntityToGAE(kc, ent), should.Resemble(pm))
+				assert.Loosely(t, nativeEntityToGAE(kc, ent), should.Match(pm))
 			})
 
 			t.Run("gaeEntityToNative, nativeEntityToGAE", func(t *ftt.Test) {
-				assert.Loosely(t, nativeEntityToGAE(kc, gaeEntityToNative(kc, pm)), should.Resemble(pm))
+				assert.Loosely(t, nativeEntityToGAE(kc, gaeEntityToNative(kc, pm)), should.Match(pm))
 			})
 
 			t.Run("nativeEntityToGAE, gaeEntityToNative", func(t *ftt.Test) {
-				assert.Loosely(t, gaeEntityToNative(kc, nativeEntityToGAE(kc, ent)), should.Resemble(ent))
+				assert.Loosely(t, gaeEntityToNative(kc, nativeEntityToGAE(kc, ent)), should.Match(ent))
 			})
 		})
 	})
@@ -351,7 +351,7 @@ func TestDatastore(t *testing.T) {
 
 				// put[1] will not be retrieved (delete)
 				put[1] = get[1]
-				assert.Loosely(t, get, should.Resemble(put))
+				assert.Loosely(t, get, should.Match(put))
 			})
 
 			t.Run(`Can put and get all supported entity fields.`, func(t *ftt.Test) {
@@ -395,7 +395,7 @@ func TestDatastore(t *testing.T) {
 					"$kind": mkpNI("FooType"),
 				}
 				assert.Loosely(t, ds.Get(c, get), should.BeNil)
-				assert.Loosely(t, get, should.Resemble(put))
+				assert.Loosely(t, get, should.Match(put))
 			})
 
 			t.Run(`Can Get empty []byte slice as nil`, func(t *ftt.Test) {
@@ -414,7 +414,7 @@ func TestDatastore(t *testing.T) {
 
 				assert.Loosely(t, ds.Put(c, put), should.BeNil)
 				assert.Loosely(t, ds.Get(c, get), should.BeNil)
-				assert.Loosely(t, get, should.Resemble(exp))
+				assert.Loosely(t, get, should.Match(exp))
 			})
 
 			t.Run(`With several entities installed`, func(t *ftt.Test) {
@@ -446,7 +446,7 @@ func TestDatastore(t *testing.T) {
 					q = q.Eq("FooBar", true)
 					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
+					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
 					}))
@@ -457,7 +457,7 @@ func TestDatastore(t *testing.T) {
 					q = q.Gt("__key__", ds.MakeKey(c, "Test", "baz"))
 					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
+					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
@@ -470,7 +470,7 @@ func TestDatastore(t *testing.T) {
 					q := ds.NewQuery("Test").Ancestor(ds.MakeKey(c, "Test", "baz"))
 					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
+					assert.Loosely(t, results, should.Match([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
@@ -485,7 +485,7 @@ func TestDatastore(t *testing.T) {
 					var results []*ds.Key
 					q := ds.NewQuery("AAA").In("Slice", "b", "c").KeysOnly(true)
 					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
-					assert.Loosely(t, results, should.Resemble([]*ds.Key{
+					assert.Loosely(t, results, should.Match([]*ds.Key{
 						ds.MakeKey(c, "AAA", "e1"),
 						ds.MakeKey(c, "AAA", "e2"),
 					}))
@@ -508,7 +508,7 @@ func TestDatastore(t *testing.T) {
 						return ds.Get(c, pmap)
 					}, nil)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, pmap, should.Resemble(ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux"), "ExtraField": mkp("Present!")}))
+					assert.Loosely(t, pmap, should.Match(ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux"), "ExtraField": mkp("Present!")}))
 				})
 
 				t.Run(`Can fail in a transaction with no effect.`, func(t *ftt.Test) {

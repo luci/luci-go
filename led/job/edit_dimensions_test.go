@@ -137,7 +137,7 @@ func TestMakeDimensionEditCommands(t *testing.T) {
 				dec, err := MakeDimensionEditCommands(tc.cmds)
 				if tc.err == "" {
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, dec, should.Resemble(tc.expect))
+					assert.Loosely(t, dec, should.Match(tc.expect))
 				} else {
 					assert.Loosely(t, err, should.ErrLike(tc.err))
 				}
@@ -166,7 +166,7 @@ func TestSetDimensions(t *testing.T) {
 			fn: func(t *ftt.Test, jd *Definition) {
 				baselineDims(t, jd)
 
-				assert.Loosely(t, mustGetDimensions(t, jd).String(), should.Resemble(ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd).String(), should.Match(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "A", Expiration: swSlice1Exp},
 						{Value: "AA", Expiration: swSlice1Exp},
@@ -178,7 +178,7 @@ func TestSetDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "A",
@@ -200,7 +200,7 @@ func TestSetDimensions(t *testing.T) {
 							Value: "Z",
 						},
 					}))
-					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "B",
@@ -214,7 +214,7 @@ func TestSetDimensions(t *testing.T) {
 							Value: "Z",
 						},
 					}))
-					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "C",
@@ -226,7 +226,7 @@ func TestSetDimensions(t *testing.T) {
 					}))
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					assert.Loosely(t, rdims, should.Resemble([]*bbpb.RequestedDimension{
+					assert.Loosely(t, rdims, should.Match([]*bbpb.RequestedDimension{
 						{Key: "key", Value: "A", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "key", Value: "AA", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "key", Value: "B", Expiration: durationpb.New(swSlice2Exp)},
@@ -251,7 +251,7 @@ func TestSetDimensions(t *testing.T) {
 					})
 				})
 
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "norp", Expiration: swSlice1Exp},
 					},
@@ -269,7 +269,7 @@ func TestSetDimensions(t *testing.T) {
 					je.SetDimensions(nil)
 				})
 
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{}))
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(ExpiringDimensions{}))
 			},
 		},
 
@@ -312,7 +312,7 @@ func TestEditDimensions(t *testing.T) {
 			name: "nil (empty)",
 			fn: func(t *ftt.Test, jd *Definition) {
 				editDims(t, jd) // no edit commands
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{}))
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(ExpiringDimensions{}))
 			},
 		},
 
@@ -321,11 +321,11 @@ func TestEditDimensions(t *testing.T) {
 			skipSWEmpty: true,
 			fn: func(t *ftt.Test, jd *Definition) {
 				base := baselineDims(t, jd)
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(base))
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(base))
 
 				editDims(t, jd) // no edit commands
 
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(base))
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(base))
 			},
 		},
 
@@ -341,7 +341,7 @@ func TestEditDimensions(t *testing.T) {
 					"reset=else",
 				)
 
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "value", Expiration: swSlice1Exp},
 						{Value: "other_value", Expiration: swSlice3Exp},
@@ -354,7 +354,7 @@ func TestEditDimensions(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -372,7 +372,7 @@ func TestEditDimensions(t *testing.T) {
 							Value: "everything",
 						},
 					}))
-					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -386,7 +386,7 @@ func TestEditDimensions(t *testing.T) {
 							Value: "everything",
 						},
 					}))
-					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Match([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -402,7 +402,7 @@ func TestEditDimensions(t *testing.T) {
 					}))
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					assert.Loosely(t, rdims, should.Resemble([]*bbpb.RequestedDimension{
+					assert.Loosely(t, rdims, should.Match([]*bbpb.RequestedDimension{
 						{Key: "key", Value: "other_value", Expiration: durationpb.New(swSlice3Exp)},
 						{Key: "key", Value: "value", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "reset", Value: "else"},
@@ -425,7 +425,7 @@ func TestEditDimensions(t *testing.T) {
 
 				editDims(t, jd, "key-=other_value")
 
-				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Match(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "value", Expiration: swSlice1Exp},
 					},

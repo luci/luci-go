@@ -180,14 +180,14 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		assert.Loosely(t, analysis.Status, should.Equal(pb.AnalysisStatus_FOUND))
 		assert.Loosely(t, analysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
 		assert.Loosely(t, len(analysis.VerifiedCulprits), should.Equal(1))
-		assert.Loosely(t, analysis.VerifiedCulprits[0], should.Resemble(datastore.KeyForObj(c, suspect)))
+		assert.Loosely(t, analysis.VerifiedCulprits[0], should.Match(datastore.KeyForObj(c, suspect)))
 
 		// Assert task
 		task := &tpb.CancelAnalysisTask{
 			AnalysisId: 1234,
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
-		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
+		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
 	})
 
 	ftt.Run("UpdateAnalysisProgress NthSection", t, func(t *ftt.Test) {
@@ -302,7 +302,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun), should.BeNil)
 			assert.Loosely(t, singleRerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
-			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.UpdateAnalysisProgressResponse{}))
 			// Check that another rerun is scheduled
 			rr := &model.CompileRerunBuild{
 				Id: 9999,
@@ -412,7 +412,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun1), should.BeNil)
 			assert.Loosely(t, singleRerun1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
-			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.UpdateAnalysisProgressResponse{}))
 
 			// Check that the nthsection analysis is updated with Suspect
 			datastore.GetTestable(c).CatchupIndexes()
@@ -425,7 +425,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				ParentAnalysis: nsa.Suspect.Parent(),
 			}
 			assert.Loosely(t, datastore.Get(c, nsaSuspect), should.BeNil)
-			assert.Loosely(t, nsaSuspect, should.Resemble(&model.Suspect{
+			assert.Loosely(t, nsaSuspect, should.Match(&model.Suspect{
 				Id:             nsaSuspect.Id,
 				Type:           model.SuspectType_NthSection,
 				ParentAnalysis: nsaSuspect.ParentAnalysis,
@@ -449,7 +449,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				ParentKey:  datastore.KeyForObj(c, nsa).Encode(),
 			}
 			expected := proto.Clone(task).(*tpb.CulpritVerificationTask)
-			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Resemble(expected))
+			assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
 		})
 
 		t.Run("Nthsection couldn't find suspect", func(t *ftt.Test) {
@@ -555,7 +555,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun3), should.BeNil)
 			assert.Loosely(t, singleRerun3.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_INFRA_FAILED))
-			assert.Loosely(t, res, should.Resemble(&pb.UpdateAnalysisProgressResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.UpdateAnalysisProgressResponse{}))
 
 			// Check that the nthsection analysis is updated with Suspect
 			datastore.GetTestable(c).CatchupIndexes()

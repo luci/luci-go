@@ -113,7 +113,7 @@ func TestTaskDef(t *testing.T) {
 			slices, err := computeTaskSlice(b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(slices), should.Equal(1))
-			assert.Loosely(t, slices[0].Properties.Caches, should.Resemble([]*apipb.CacheEntry{
+			assert.Loosely(t, slices[0].Properties.Caches, should.Match([]*apipb.CacheEntry{
 				{
 					Path: filepath.Join("cache", "builder"),
 					Name: "shared_builder_cache",
@@ -127,7 +127,7 @@ func TestTaskDef(t *testing.T) {
 					Name: "cipd_cache_hash",
 				},
 			}))
-			assert.Loosely(t, slices[0].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
+			assert.Loosely(t, slices[0].Properties.Dimensions, should.Match([]*apipb.StringPair{
 				{
 					Key:   "pool",
 					Value: "Chrome",
@@ -161,20 +161,20 @@ func TestTaskDef(t *testing.T) {
 			for _, tSlice := range slices {
 				assert.Loosely(t, tSlice.Properties.ExecutionTimeoutSecs, should.Equal(4800))
 				assert.Loosely(t, tSlice.Properties.GracePeriodSecs, should.Equal(240))
-				assert.Loosely(t, tSlice.Properties.Caches, should.Resemble([]*apipb.CacheEntry{
+				assert.Loosely(t, tSlice.Properties.Caches, should.Match([]*apipb.CacheEntry{
 					{Path: filepath.Join("cache", "builder"), Name: "shared_builder_cache"},
 					{Path: filepath.Join("cache", "second"), Name: "second_cache"},
 					{Path: filepath.Join("cache", "cipd_client"), Name: "cipd_client_hash"},
 					{Path: filepath.Join("cache", "cipd_cache"), Name: "cipd_cache_hash"},
 				}))
-				assert.Loosely(t, tSlice.Properties.Env, should.Resemble([]*apipb.StringPair{
+				assert.Loosely(t, tSlice.Properties.Env, should.Match([]*apipb.StringPair{
 					{Key: "BUILDBUCKET_EXPERIMENTAL", Value: "FALSE"},
 				}))
 			}
 
 			assert.Loosely(t, slices[0].ExpirationSecs, should.Equal(60))
 			// The dimensions are different. 'a' and 'caches' are injected.
-			assert.Loosely(t, slices[0].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
+			assert.Loosely(t, slices[0].Properties.Dimensions, should.Match([]*apipb.StringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
@@ -185,7 +185,7 @@ func TestTaskDef(t *testing.T) {
 			// 120 - 60
 			assert.Loosely(t, slices[1].ExpirationSecs, should.Equal(60))
 			// The dimensions are different. 'a' and 'caches' are injected.
-			assert.Loosely(t, slices[1].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
+			assert.Loosely(t, slices[1].Properties.Dimensions, should.Match([]*apipb.StringPair{
 				{Key: "a", Value: "1"},
 				{Key: "a", Value: "2"},
 				{Key: "caches", Value: "second_cache"},
@@ -195,7 +195,7 @@ func TestTaskDef(t *testing.T) {
 			// 360 - 120
 			assert.Loosely(t, slices[2].ExpirationSecs, should.Equal(240))
 			// 'a' expired, one 'caches' remains.
-			assert.Loosely(t, slices[2].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
+			assert.Loosely(t, slices[2].Properties.Dimensions, should.Match([]*apipb.StringPair{
 				{Key: "caches", Value: "second_cache"},
 				{Key: "pool", Value: "Chrome"},
 			}))
@@ -203,7 +203,7 @@ func TestTaskDef(t *testing.T) {
 			// 3600-360
 			assert.Loosely(t, slices[3].ExpirationSecs, should.Equal(3240))
 			// # The cold fallback; the last 'caches' expired.
-			assert.Loosely(t, slices[3].Properties.Dimensions, should.Resemble([]*apipb.StringPair{
+			assert.Loosely(t, slices[3].Properties.Dimensions, should.Match([]*apipb.StringPair{
 				{Key: "pool", Value: "Chrome"},
 			}))
 		})
@@ -223,7 +223,7 @@ func TestTaskDef(t *testing.T) {
 		t.Run("bbagent_getbuild experiment", func(t *ftt.Test) {
 			b.Experiments = []string{"+luci.buildbucket.bbagent_getbuild"}
 			bbagentCmd := computeCommand(b)
-			assert.Loosely(t, bbagentCmd, should.Resemble([]string{
+			assert.Loosely(t, bbagentCmd, should.Match([]string{
 				"bbagent${EXECUTABLE_SUFFIX}",
 				"-host",
 				"bbhost.com",
@@ -244,7 +244,7 @@ func TestTaskDef(t *testing.T) {
 				CacheDir:    "cache",
 				PayloadPath: "payload_path",
 			})
-			assert.Loosely(t, bbagentCmd, should.Resemble([]string{
+			assert.Loosely(t, bbagentCmd, should.Match([]string{
 				"bbagent${EXECUTABLE_SUFFIX}",
 				expectedEncoded,
 			}))
@@ -262,7 +262,7 @@ func TestTaskDef(t *testing.T) {
 		}
 		t.Run("empty swarming cache", func(t *ftt.Test) {
 			prefixes := computeEnvPrefixes(b)
-			assert.Loosely(t, prefixes, should.Resemble([]*apipb.StringListPair{}))
+			assert.Loosely(t, prefixes, should.Match([]*apipb.StringListPair{}))
 		})
 
 		t.Run("normal", func(t *ftt.Test) {
@@ -271,7 +271,7 @@ func TestTaskDef(t *testing.T) {
 				{Path: "abc", Name: "abc", EnvVar: "ABC"},
 			}
 			prefixes := computeEnvPrefixes(b)
-			assert.Loosely(t, prefixes, should.Resemble([]*apipb.StringListPair{
+			assert.Loosely(t, prefixes, should.Match([]*apipb.StringListPair{
 				{Key: "ABC", Value: []string{filepath.Join("cache", "abc")}},
 				{Key: "VPYTHON_VIRTUALENV_ROOT", Value: []string{filepath.Join("cache", "vpython")}},
 			}))
@@ -339,7 +339,7 @@ func TestTaskDef(t *testing.T) {
 			ServiceAccount:   "abc",
 			PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
 		}
-		assert.Loosely(t, req, should.Resemble(expected))
+		assert.Loosely(t, req, should.Match(expected))
 	})
 }
 
@@ -604,7 +604,7 @@ func TestSyncBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, bb), should.BeNil)
 				assert.Loosely(t, bb.Status, should.Equal(pb.Status_SCHEDULED))
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdefs.SyncSwarmingBuildTask{
+				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Match(&taskdefs.SyncSwarmingBuildTask{
 					BuildId:    123,
 					Generation: 2,
 				}))
@@ -638,7 +638,7 @@ func TestSyncBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, allSteps), should.BeNil)
 				mSteps, err := allSteps.ToProto(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, mSteps, should.Resemble([]*pb.Step{
+				assert.Loosely(t, mSteps, should.Match([]*pb.Step{
 					{
 						Name:   "step1",
 						Status: pb.Status_SUCCESS,
@@ -975,25 +975,25 @@ func TestSyncBuild(t *testing.T) {
 					assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
 					assert.Loosely(t, syncedBuild.Status, should.Equal(tCase.expected.status))
 					if tCase.expected.isResourceExhaustion {
-						assert.Loosely(t, syncedBuild.Proto.StatusDetails.ResourceExhaustion, should.Resemble(&pb.StatusDetails_ResourceExhaustion{}))
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.ResourceExhaustion, should.Match(&pb.StatusDetails_ResourceExhaustion{}))
 					} else {
 						assert.Loosely(t, syncedBuild.Proto.StatusDetails.GetResourceExhaustion(), should.BeNil)
 					}
 					if tCase.expected.isTimeOut {
-						assert.Loosely(t, syncedBuild.Proto.StatusDetails.Timeout, should.Resemble(&pb.StatusDetails_Timeout{}))
+						assert.Loosely(t, syncedBuild.Proto.StatusDetails.Timeout, should.Match(&pb.StatusDetails_Timeout{}))
 					} else {
 						assert.Loosely(t, syncedBuild.Proto.StatusDetails.GetTimeout(), should.BeNil)
 					}
 					if tCase.expected.startT != nil {
-						assert.Loosely(t, syncedBuild.Proto.StartTime, should.Resemble(tCase.expected.startT))
+						assert.Loosely(t, syncedBuild.Proto.StartTime, should.Match(tCase.expected.startT))
 					}
 					if tCase.expected.endT != nil {
-						assert.Loosely(t, syncedBuild.Proto.EndTime, should.Resemble(tCase.expected.endT))
+						assert.Loosely(t, syncedBuild.Proto.EndTime, should.Match(tCase.expected.endT))
 					}
 					if tCase.expected.botDimensions != nil {
 						syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
 						assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
-						assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble(tCase.expected.botDimensions))
+						assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Match(tCase.expected.botDimensions))
 					}
 					if protoutil.IsEnded(syncedBuild.Status) {
 						// FinalizeResultDB, ExportBigQuery, NotifyPubSubGoProxy, PopPendingBuilds and a continuation sync task.
@@ -1318,12 +1318,12 @@ func TestSubNotify(t *testing.T) {
 			syncedBuild := &model.Build{ID: 123}
 			assert.Loosely(t, datastore.Get(ctx, syncedBuild), should.BeNil)
 			assert.Loosely(t, syncedBuild.Status, should.Equal(pb.Status_SUCCESS))
-			assert.Loosely(t, syncedBuild.Proto.StartTime, should.Resemble(&timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000}))
-			assert.Loosely(t, syncedBuild.Proto.EndTime, should.Resemble(&timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000}))
+			assert.Loosely(t, syncedBuild.Proto.StartTime, should.Match(&timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000}))
+			assert.Loosely(t, syncedBuild.Proto.EndTime, should.Match(&timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000}))
 
 			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
 			assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
-			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble([]*pb.StringPair{
+			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Match([]*pb.StringPair{
 				{
 					Key:   "new_key",
 					Value: "new_val",
@@ -1336,7 +1336,7 @@ func TestSubNotify(t *testing.T) {
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			cached, err := cache.Get(ctx, "msg1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cached, should.Resemble([]byte{1}))
+			assert.Loosely(t, cached, should.Match([]byte{1}))
 
 			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
@@ -1373,7 +1373,7 @@ func TestSubNotify(t *testing.T) {
 
 			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
 			assert.Loosely(t, datastore.Get(ctx, syncedInfra), should.BeNil)
-			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble([]*pb.StringPair{{
+			assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Match([]*pb.StringPair{{
 				Key:   "new_key",
 				Value: "new_val",
 			}}))

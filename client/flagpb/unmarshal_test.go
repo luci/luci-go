@@ -59,25 +59,25 @@ func TestUnmarshal(t *testing.T) {
 		}
 
 		t.Run("empty", func(t *ftt.Test) {
-			assert.Loosely(t, unmarshalOK("M1"), should.Resemble(msg()))
+			assert.Loosely(t, unmarshalOK("M1"), should.Match(msg()))
 		})
 		t.Run("non-flag", func(t *ftt.Test) {
 			assert.Loosely(t, unmarshalErr("M1", "abc"), should.ErrLike(`abc: a flag was expected`))
 		})
 		t.Run("string", func(t *ftt.Test) {
 			t.Run("next arg", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-s", "x"), should.Resemble(msg("s", "x")))
+				assert.Loosely(t, unmarshalOK("M1", "-s", "x"), should.Match(msg("s", "x")))
 			})
 			t.Run("equals sign", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-s=x"), should.Resemble(msg("s", "x")))
+				assert.Loosely(t, unmarshalOK("M1", "-s=x"), should.Match(msg("s", "x")))
 			})
 		})
 		t.Run("int32", func(t *ftt.Test) {
 			t.Run("next arg", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-i", "1"), should.Resemble(msg("i", int32(1))))
+				assert.Loosely(t, unmarshalOK("M1", "-i", "1"), should.Match(msg("i", int32(1))))
 			})
 			t.Run("equals sign", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-i=1"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M1", "-i=1"), should.Match(msg(
 					"i", int32(1),
 				)))
 			})
@@ -88,38 +88,38 @@ func TestUnmarshal(t *testing.T) {
 		})
 		t.Run("enum", func(t *ftt.Test) {
 			t.Run("by name", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M2", "-e", "V0"), should.Resemble(msg("e", int32(0))))
+				assert.Loosely(t, unmarshalOK("M2", "-e", "V0"), should.Match(msg("e", int32(0))))
 			})
 			t.Run("error", func(t *ftt.Test) {
 				assert.Loosely(t, unmarshalErr("M2", "-e", "abc"), should.ErrLike(`invalid value "abc" for enum E`))
 			})
 			t.Run("by value", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M2", "-e", "0"), should.Resemble(msg("e", int32(0))))
+				assert.Loosely(t, unmarshalOK("M2", "-e", "0"), should.Match(msg("e", int32(0))))
 			})
 		})
 		t.Run("bool", func(t *ftt.Test) {
 			t.Run("without value", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-b"), should.Resemble(msg("b", true)))
+				assert.Loosely(t, unmarshalOK("M1", "-b"), should.Match(msg("b", true)))
 
-				assert.Loosely(t, unmarshalOK("M1", "-b", "-s", "x"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M1", "-b", "-s", "x"), should.Match(msg(
 					"b", true,
 					"s", "x",
 				)))
 			})
 			t.Run("without value, repeated", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-rb=false", "-rb"), should.Resemble(msg("rb", repeated(false, true))))
+				assert.Loosely(t, unmarshalOK("M1", "-rb=false", "-rb"), should.Match(msg("rb", repeated(false, true))))
 			})
 			t.Run("with value", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-b=true"), should.Resemble(msg("b", true)))
-				assert.Loosely(t, unmarshalOK("M1", "-b=false"), should.Resemble(msg("b", false)))
+				assert.Loosely(t, unmarshalOK("M1", "-b=true"), should.Match(msg("b", true)))
+				assert.Loosely(t, unmarshalOK("M1", "-b=false"), should.Match(msg("b", false)))
 			})
 		})
 		t.Run("bytes", func(t *ftt.Test) {
 			t.Run("next arg", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-bb", "6869"), should.Resemble(msg("bb", []byte("hi"))))
+				assert.Loosely(t, unmarshalOK("M1", "-bb", "6869"), should.Match(msg("bb", []byte("hi"))))
 			})
 			t.Run("equals sign", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-bb=6869"), should.Resemble(msg("bb", []byte("hi"))))
+				assert.Loosely(t, unmarshalOK("M1", "-bb=6869"), should.Match(msg("bb", []byte("hi"))))
 			})
 			t.Run("error", func(t *ftt.Test) {
 				assert.Loosely(t, unmarshalErr("M1", "-bb", "xx"), should.ErrLike("invalid byte: U+0078 'x'"))
@@ -128,7 +128,7 @@ func TestUnmarshal(t *testing.T) {
 
 		t.Run("many dashes", func(t *ftt.Test) {
 			t.Run("2", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "--s", "x"), should.Resemble(msg("s", "x")))
+				assert.Loosely(t, unmarshalOK("M1", "--s", "x"), should.Match(msg("s", "x")))
 			})
 			t.Run("3", func(t *ftt.Test) {
 				assert.Loosely(t, unmarshalErr("M1", "---s", "x"), should.ErrLike("---s: bad flag syntax"))
@@ -144,10 +144,10 @@ func TestUnmarshal(t *testing.T) {
 
 		t.Run("message", func(t *ftt.Test) {
 			t.Run("level 1", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x"), should.Match(msg(
 					"m1", msg("s", "x"),
 				)))
-				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x", "-m1.b"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M2", "-m1.s", "x", "-m1.b"), should.Match(msg(
 					"m1", msg(
 						"s", "x",
 						"b", true,
@@ -155,7 +155,7 @@ func TestUnmarshal(t *testing.T) {
 				)))
 			})
 			t.Run("level 2", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M3", "-m2.m1.s", "x"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M3", "-m2.m1.s", "x"), should.Match(msg(
 					"m2", msg(
 						"m1", msg("s", "x"),
 					),
@@ -175,7 +175,7 @@ func TestUnmarshal(t *testing.T) {
 		})
 
 		t.Run("string and int32", func(t *ftt.Test) {
-			assert.Loosely(t, unmarshalOK("M1", "-s", "x", "-i", "1"), should.Resemble(msg(
+			assert.Loosely(t, unmarshalOK("M1", "-s", "x", "-i", "1"), should.Match(msg(
 				"s", "x",
 				"i", int32(1),
 			)))
@@ -183,13 +183,13 @@ func TestUnmarshal(t *testing.T) {
 
 		t.Run("repeated", func(t *ftt.Test) {
 			t.Run("int32", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("M1", "-ri", "1", "-ri", "2"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("M1", "-ri", "1", "-ri", "2"), should.Match(msg(
 					"ri", repeated(int32(1), int32(2)),
 				)))
 			})
 			t.Run("submessage string", func(t *ftt.Test) {
 				t.Run("works", func(t *ftt.Test) {
-					assert.Loosely(t, unmarshalOK("M3", "-m1.s", "x", "-m1", "-m1.s", "y"), should.Resemble(msg(
+					assert.Loosely(t, unmarshalOK("M3", "-m1.s", "x", "-m1", "-m1.s", "y"), should.Match(msg(
 						"m1", repeated(
 							msg("s", "x"),
 							msg("s", "y"),
@@ -206,17 +206,17 @@ func TestUnmarshal(t *testing.T) {
 
 		t.Run("map", func(t *ftt.Test) {
 			t.Run("map<string, string>", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("MapContainer", "-ss.x", "a", "-ss.y", "b"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("MapContainer", "-ss.x", "a", "-ss.y", "b"), should.Match(msg(
 					"ss", msg("x", "a", "y", "b"),
 				)))
 			})
 			t.Run("map<int32, int32>", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("MapContainer", "-ii.1", "10", "-ii.2", "20"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("MapContainer", "-ii.1", "10", "-ii.2", "20"), should.Match(msg(
 					"ii", msg("1", int32(10), "2", int32(20)),
 				)))
 			})
 			t.Run("map<string, M1>", func(t *ftt.Test) {
-				assert.Loosely(t, unmarshalOK("MapContainer", "-sm1.x.s", "a", "-sm1.y.s", "b"), should.Resemble(msg(
+				assert.Loosely(t, unmarshalOK("MapContainer", "-sm1.x.s", "a", "-sm1.y.s", "b"), should.Match(msg(
 					"sm1", msg(
 						"x", msg("s", "a"),
 						"y", msg("s", "b"),

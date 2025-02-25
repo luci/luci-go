@@ -163,7 +163,7 @@ func TestActuationEndOp(t *testing.T) {
 				// Updated Actuation entity.
 				storedActuation := &Actuation{ID: "actuation-id"}
 				assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-				assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+				assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 					Id:         "actuation-id",
 					State:      modelpb.Actuation_SUCCEEDED,
 					Deployment: mockedDeployment,
@@ -177,7 +177,7 @@ func TestActuationEndOp(t *testing.T) {
 				assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
+				assert.Loosely(t, assets["apps/app1"].Asset, should.Match(&modelpb.Asset{
 					Id:                   "apps/app1",
 					LastActuation:        storedActuation.Actuation,
 					LastActuateActuation: storedActuation.Actuation,
@@ -209,7 +209,7 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				}))
 				assert.Loosely(t, assets["apps/app1"].LastHistoryID, should.Equal(124))
-				assert.Loosely(t, assets["apps/app1"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
+				assert.Loosely(t, assets["apps/app1"].HistoryEntry, should.Match(&modelpb.AssetHistory{
 					AssetId:   "apps/app1",
 					HistoryId: 124,
 					Actuation: storedActuation.Actuation,
@@ -228,10 +228,10 @@ func TestActuationEndOp(t *testing.T) {
 				// Created the history entity.
 				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
 				assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
-				assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
+				assert.Loosely(t, rec.Entry, should.Match(assets["apps/app1"].HistoryEntry))
 
 				// Wasn't touched.
-				assert.Loosely(t, assets["apps/app2"].Asset, should.Resemble(&modelpb.Asset{
+				assert.Loosely(t, assets["apps/app2"].Asset, should.Match(&modelpb.Asset{
 					Id: "apps/app2",
 					IntendedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
@@ -246,7 +246,7 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				}))
 				assert.Loosely(t, assets["apps/app2"].LastHistoryID, should.Equal(123))
-				assert.Loosely(t, assets["apps/app2"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
+				assert.Loosely(t, assets["apps/app2"].HistoryEntry, should.Match(&modelpb.AssetHistory{
 					AssetId:   "apps/app2",
 					HistoryId: 123,
 					Actuation: &modelpb.Actuation{
@@ -283,7 +283,7 @@ func TestActuationEndOp(t *testing.T) {
 				// Updated Actuation entity.
 				storedActuation := &Actuation{ID: "actuation-id"}
 				assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
-				assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
+				assert.Loosely(t, storedActuation.Actuation, should.Match(&modelpb.Actuation{
 					Id:    "actuation-id",
 					State: modelpb.Actuation_FAILED,
 					Status: &statuspb.Status{
@@ -301,7 +301,7 @@ func TestActuationEndOp(t *testing.T) {
 				assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
+				assert.Loosely(t, assets["apps/app1"].Asset, should.Match(&modelpb.Asset{
 					Id:                   "apps/app1",
 					LastActuation:        storedActuation.Actuation,
 					LastActuateActuation: storedActuation.Actuation,
@@ -333,10 +333,10 @@ func TestActuationEndOp(t *testing.T) {
 				assert.Loosely(t, assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, should.Equal(111))
 				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
 				assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
-				assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
+				assert.Loosely(t, rec.Entry, should.Match(assets["apps/app1"].HistoryEntry))
 
 				// Wasn't touched.
-				assert.Loosely(t, assets["apps/app2"].Asset, should.Resemble(&modelpb.Asset{
+				assert.Loosely(t, assets["apps/app2"].Asset, should.Match(&modelpb.Asset{
 					Id: "apps/app2",
 					IntendedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{

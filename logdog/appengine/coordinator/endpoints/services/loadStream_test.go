@@ -66,7 +66,7 @@ func TestLoadStream(t *testing.T) {
 			t.Run(`Will succeed.`, func(t *ftt.Test) {
 				resp, err := svr.LoadStream(c, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
+				assert.Loosely(t, resp, should.Match(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -89,7 +89,7 @@ func TestLoadStream(t *testing.T) {
 				env.Clock.Add(1 * time.Hour)
 				resp, err := svr.LoadStream(c, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
+				assert.Loosely(t, resp, should.Match(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -110,7 +110,7 @@ func TestLoadStream(t *testing.T) {
 
 				resp, err := svr.LoadStream(c, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
+				assert.Loosely(t, resp, should.Match(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,

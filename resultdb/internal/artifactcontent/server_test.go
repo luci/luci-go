@@ -65,14 +65,14 @@ func TestGenerateSignedURL(t *testing.T) {
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/artifacts/a?token="))
-			assert.Loosely(t, exp, should.Resemble(clock.Now(ctx).UTC().Add(time.Hour)))
+			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 
 		t.Run(`Escaped test id`, func(t *ftt.Test) {
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token="))
-			assert.Loosely(t, exp, should.Resemble(clock.Now(ctx).UTC().Add(time.Hour)))
+			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 	})
 }

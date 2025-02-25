@@ -52,7 +52,7 @@ func TestPackageReader(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, pkg.Files(), should.Resemble([]string{"file1", "file2"}))
+		assert.Loosely(t, pkg.Files(), should.Match([]string{"file1", "file2"}))
 
 		fr, actualSize, err := pkg.Open("file2")
 		assert.Loosely(t, err, should.BeNil)

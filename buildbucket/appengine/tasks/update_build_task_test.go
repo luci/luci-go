@@ -459,7 +459,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 			}
 			result := datastore.Get(ctx, resultInfraModel)
 			assert.Loosely(t, result, should.BeNil)
-			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
+			assert.Loosely(t, resultInfraModel.Proto, should.Match(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status: pb.Status_STARTED,
@@ -530,7 +530,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel, steps)
 			assert.Loosely(t, result, should.BeNil)
-			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
+			assert.Loosely(t, resultInfraModel.Proto, should.Match(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status: pb.Status_INFRA_FAILURE,
@@ -582,7 +582,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 			}
 			result := datastore.Get(ctx, resultInfraModel, bs, buildModel)
 			assert.Loosely(t, result, should.BeNil)
-			assert.Loosely(t, resultInfraModel.Proto, should.Resemble(&pb.BuildInfra{
+			assert.Loosely(t, resultInfraModel.Proto, should.Match(&pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Status:        pb.Status_INFRA_FAILURE,
@@ -600,7 +600,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
-			assert.Loosely(t, buildModel.Proto.StatusDetails, should.Resemble(statusDetails))
+			assert.Loosely(t, buildModel.Proto.StatusDetails, should.Match(statusDetails))
 		})
 		t.Run("start a task", func(t *ftt.Test) {
 			buildModel.Proto.Status = pb.Status_SCHEDULED
@@ -673,7 +673,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 
 			postInfra := &model.BuildInfra{Build: bk}
 			assert.Loosely(t, datastore.Get(ctx, postInfra), should.BeNil)
-			assert.Loosely(t, postInfra.Proto.Backend.Task, should.Resemble(&pb.Task{
+			assert.Loosely(t, postInfra.Proto.Backend.Task, should.Match(&pb.Task{
 				Status: pb.Status_STARTED,
 				Id: &pb.TaskID{
 					Id:     "1",

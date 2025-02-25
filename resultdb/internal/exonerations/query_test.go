@@ -51,7 +51,7 @@ func TestQueryTestExonerations(t *testing.T) {
 		sort.Slice(actual, func(i, j int) bool {
 			return actual[i].Name < actual[j].Name
 		})
-		assert.Loosely(t, actual, should.Resemble([]*pb.TestExoneration{
+		assert.Loosely(t, actual, should.Match([]*pb.TestExoneration{
 			{
 				Name:            "invocations/a/tests/A/exonerations/0",
 				TestId:          "A",
@@ -116,6 +116,6 @@ func TestToLimitedData(t *testing.T) {
 
 		err := ToLimitedData(ctx, testExoneration)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, testExoneration, should.Resemble(expected))
+		assert.Loosely(t, testExoneration, should.Match(expected))
 	})
 }

@@ -92,7 +92,7 @@ func TestRead(t *testing.T) {
 		const name = "invocations/inv/tests/t%20t/results/r"
 		tr, err := Read(span.Single(ctx), name)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tr, should.Resemble(&pb.TestResult{
+		assert.Loosely(t, tr, should.Match(&pb.TestResult{
 			Name:        name,
 			TestId:      "t t",
 			ResultId:    "r",

@@ -208,14 +208,14 @@ func TestInstallCipdPackages(t *testing.T) {
 				cwd, err := os.Getwd()
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, installCipdPackages(ctx, build, cwd, caseBase), should.BeNil)
-				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Resemble(&bbpb.ResolvedDataRef{
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Match(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 						},
 					},
 				}))
-				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Resemble(&bbpb.ResolvedDataRef{
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Match(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
@@ -241,14 +241,14 @@ func TestInstallCipdPackages(t *testing.T) {
 			cwd, err := os.Getwd()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, installCipdPackages(ctx, build, cwd, caseBase), should.BeNil)
-			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Resemble(&bbpb.ResolvedDataRef{
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Match(&bbpb.ResolvedDataRef{
 				DataType: &bbpb.ResolvedDataRef_Cipd{
 					Cipd: &bbpb.ResolvedDataRef_CIPD{
 						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 					},
 				},
 			}))
-			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Resemble(&bbpb.ResolvedDataRef{
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Match(&bbpb.ResolvedDataRef{
 				DataType: &bbpb.ResolvedDataRef_Cipd{
 					Cipd: &bbpb.ResolvedDataRef_CIPD{
 						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
@@ -270,7 +270,7 @@ func TestInstallCipdPackages(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, installCipdPackages(ctx, build, cwd, "cache"), should.BeNil)
 				assert.Loosely(t, build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], should.Equal(bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
-				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Resemble(&bbpb.ResolvedDataRef{
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Match(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},
@@ -298,7 +298,7 @@ func TestInstallCipdPackages(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, installCipdPackages(ctx, build, cwd, "cache"), should.BeNil)
 				assert.Loosely(t, build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], should.Equal(bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
-				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Resemble(&bbpb.ResolvedDataRef{
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Match(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},

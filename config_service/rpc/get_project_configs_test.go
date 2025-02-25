@@ -135,7 +135,7 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "config.cfg",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{}))
 		})
 
 		t.Run("no matched files", func(t *ftt.Test) {
@@ -143,7 +143,7 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "non_exist.cfg",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{}))
 		})
 
 		t.Run("found", func(t *ftt.Test) {
@@ -157,7 +157,7 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "config.cfg",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",
@@ -203,7 +203,7 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "foo.cfg",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/foo",
@@ -241,7 +241,7 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "config.cfg",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",
@@ -276,7 +276,7 @@ func TestGetProjectConfigs(t *testing.T) {
 			})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
+			assert.Loosely(t, res, should.Match(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",

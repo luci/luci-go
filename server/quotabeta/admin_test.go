@@ -110,14 +110,14 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Get(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
 				}))
 
 				// Ensure an entry for "quota" was not written to the database.
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
@@ -132,13 +132,13 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Get(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 3,
 				}))
 
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
@@ -154,14 +154,14 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Get(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 4,
 				}))
 
 				// Ensure replenishment was not written to the database.
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
@@ -221,13 +221,13 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Set(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
 				}))
 
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
@@ -244,13 +244,13 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Set(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 2,
 				}))
 
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
@@ -265,12 +265,12 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Set(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:   "quota/user@example.com",
 					DbName: "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))
 				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
@@ -285,14 +285,14 @@ func TestQuotaAdmin(t *testing.T) {
 
 				rsp, err := srv.Set(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
+				assert.Loosely(t, rsp, should.Match(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
 				}))
 
 				// Ensure resources were capped in the database.
-				assert.Loosely(t, s.Keys(), should.Resemble([]string{
+				assert.Loosely(t, s.Keys(), should.Match([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				}))

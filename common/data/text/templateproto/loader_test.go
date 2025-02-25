@@ -89,7 +89,7 @@ func TestLoadFromConfig(t *testing.T) {
 		t.Run("basic load", func(t *ftt.Test) {
 			file, err := LoadFile(templateContent)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Resemble(&File{Template: map[string]*File_Template{
+			assert.Loosely(t, file, should.Match(&File{Template: map[string]*File_Template{
 				"hardcode": {
 					Doc:  "it's hard-coded",
 					Body: `{"woot": ["sauce"]}`,

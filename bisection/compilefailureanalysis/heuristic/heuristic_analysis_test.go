@@ -67,7 +67,7 @@ func TestSaveResultsToDatastore(t *testing.T) {
 		err = datastore.GetAll(c, q, &suspects)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(1))
-		assert.Loosely(t, suspects[0], should.Resemble(&model.Suspect{
+		assert.Loosely(t, suspects[0], should.Match(&model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
 			Id:             suspects[0].Id,
 			ReviewUrl:      "this/is/review/url",

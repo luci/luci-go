@@ -114,7 +114,7 @@ func TestQueryTestMetadata(t *testing.T) {
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 				expected := toTestMetadataDetails(append(expectedT1Rows, expectedT2Rows...))
 				sortMetadata(expected)
-				assert.Loosely(t, res.TestMetadata, should.Resemble(expected))
+				assert.Loosely(t, res.TestMetadata, should.Match(expected))
 
 			})
 
@@ -122,7 +122,7 @@ func TestQueryTestMetadata(t *testing.T) {
 				res, err := srv.QueryTestMetadata(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestMetadata, should.Resemble(toTestMetadataDetails(expectedT1Rows)))
+				assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows)))
 			})
 
 			t.Run(`Try next page`, func(t *ftt.Test) {
@@ -130,7 +130,7 @@ func TestQueryTestMetadata(t *testing.T) {
 				res, err := srv.QueryTestMetadata(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestMetadata, should.Resemble(toTestMetadataDetails(expectedT1Rows[1:])))
+				assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows[1:])))
 
 			})
 		})

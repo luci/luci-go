@@ -44,7 +44,7 @@ func TestShallowCopy(t *testing.T) {
 				},
 			}
 			newMsg := ShallowCopy(msg).(*TestShallowCopyMessage)
-			assert.Loosely(t, newMsg, should.Resemble(msg))
+			assert.Loosely(t, newMsg, should.Match(msg))
 
 			msg.RepeatedField[0] = "meepmorp"
 			assert.Loosely(t, newMsg.RepeatedField[0], should.Equal("meepmorp"))
@@ -65,7 +65,7 @@ func TestShallowCopy(t *testing.T) {
 				},
 			}
 			newMsg := ShallowCopy(msg).(*TestShallowCopyMessage)
-			assert.Loosely(t, newMsg, should.Resemble(msg))
+			assert.Loosely(t, newMsg, should.Match(msg))
 
 			msg.InnerMsg.Field = "meepmorp"
 			assert.Loosely(t, newMsg.InnerMsg.Field, should.Equal("meepmorp"))

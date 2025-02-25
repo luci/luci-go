@@ -73,7 +73,7 @@ func TestProcessCommand(t *testing.T) {
 			executableSuffix = ".exe"
 		}
 
-		assert.Loosely(t, args, should.Resemble([]string{
+		assert.Loosely(t, args, should.Match([]string{
 			"program" + executableSuffix,
 			filepath.Join("out", "result.txt"),
 			filepath.Join("cfgdir", "config"),

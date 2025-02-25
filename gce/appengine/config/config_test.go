@@ -172,8 +172,8 @@ func TestFetch(t *testing.T) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 				cfg, err := fetch(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
-				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
+				assert.Loosely(t, cfg.Projects, should.Match(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Match(&gce.Configs{}))
 			})
 
 			t.Run("implicit", func(t *ftt.Test) {
@@ -182,8 +182,8 @@ func TestFetch(t *testing.T) {
 				}))
 				cfg, err := fetch(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
-				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
+				assert.Loosely(t, cfg.Projects, should.Match(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Match(&gce.Configs{}))
 			})
 
 			t.Run("explicit", func(t *ftt.Test) {
@@ -195,8 +195,8 @@ func TestFetch(t *testing.T) {
 				}))
 				cfg, err := fetch(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
-				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
+				assert.Loosely(t, cfg.Projects, should.Match(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Match(&gce.Configs{}))
 			})
 		})
 	})

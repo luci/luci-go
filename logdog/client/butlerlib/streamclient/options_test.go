@@ -64,7 +64,7 @@ func TestOptions(t *testing.T) {
 			))
 			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			assert.Loosely(t, testFlags.Tags, should.Resemble(streamproto.TagMap{
+			assert.Loosely(t, testFlags.Tags, should.Match(streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",
 			}))
@@ -83,7 +83,7 @@ func TestOptions(t *testing.T) {
 			}))
 			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			assert.Loosely(t, testFlags.Tags, should.Resemble(streamproto.TagMap{
+			assert.Loosely(t, testFlags.Tags, should.Match(streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",
 			}))

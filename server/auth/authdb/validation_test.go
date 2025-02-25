@@ -164,14 +164,14 @@ func TestFindGroupCycle(t *testing.T) {
 	ftt.Run("Self reference", t, func(t *ftt.Test) {
 		assert.Loosely(t, call(groupGraph{
 			"start": []string{"start"},
-		}), should.Resemble([]string{"start"}))
+		}), should.Match([]string{"start"}))
 	})
 
 	ftt.Run("Simple cycle", t, func(t *ftt.Test) {
 		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A"},
 			"A":     []string{"start"},
-		}), should.Resemble([]string{"start", "A"}))
+		}), should.Match([]string{"start", "A"}))
 	})
 
 	ftt.Run("Long cycle", t, func(t *ftt.Test) {
@@ -180,7 +180,7 @@ func TestFindGroupCycle(t *testing.T) {
 			"A":     []string{"B"},
 			"B":     []string{"C"},
 			"C":     []string{"start"},
-		}), should.Resemble([]string{"start", "A", "B", "C"}))
+		}), should.Match([]string{"start", "A", "B", "C"}))
 	})
 
 	ftt.Run("Diamond no cycles", t, func(t *ftt.Test) {
@@ -198,7 +198,7 @@ func TestFindGroupCycle(t *testing.T) {
 			"A1":    []string{"B"},
 			"A2":    []string{"B"},
 			"B":     []string{"start"},
-		}), should.Resemble([]string{"start", "A1", "B"}))
+		}), should.Match([]string{"start", "A1", "B"}))
 	})
 }
 

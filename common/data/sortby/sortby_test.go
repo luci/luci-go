@@ -78,7 +78,7 @@ func TestSortBy(t *testing.T) {
 
 		sort.Stable(s)
 
-		assert.Loosely(t, s, should.Resemble(CoolStructSlice{
+		assert.Loosely(t, s, should.Match(CoolStructSlice{
 			i(14, 761, 759),
 			i(132, 510, 149),
 			i(132, 510, 149, "dup"),

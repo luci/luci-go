@@ -47,14 +47,14 @@ func TestVersionsFile(t *testing.T) {
 
 		pin, err := v.ResolveVersion("pkg", "ver")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pin, should.Resemble(common.Pin{
+		assert.Loosely(t, pin, should.Match(common.Pin{
 			PackageName: "pkg",
 			InstanceID:  iid1,
 		}))
 
 		pin, err = v.ResolveVersion("other-pkg", iid1)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pin, should.Resemble(common.Pin{
+		assert.Loosely(t, pin, should.Match(common.Pin{
 			PackageName: "other-pkg",
 			InstanceID:  iid1,
 		}))
@@ -120,19 +120,19 @@ pkg2
 		t.Run("Parsing success", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(expectedSerialization))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Resemble(testVersion))
+			assert.Loosely(t, v, should.Match(testVersion))
 		})
 
 		t.Run("Parsing empty", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(""))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Resemble(VersionsFile{}))
+			assert.Loosely(t, v, should.Match(VersionsFile{}))
 		})
 
 		t.Run("Parsing one", func(t *ftt.Test) {
 			v, err := ParseVersionsFile(strings.NewReader(fmt.Sprintf("pkg\nver\n%s", iid1)))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Resemble(VersionsFile{
+			assert.Loosely(t, v, should.Match(VersionsFile{
 				{"pkg", "ver"}: iid1,
 			}))
 		})
@@ -141,7 +141,7 @@ pkg2
 			v, err := ParseVersionsFile(strings.NewReader(
 				fmt.Sprintf("pkg\nver1\n%s\n\n\npkg\nver2\n%s", iid1, iid2)))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Resemble(VersionsFile{
+			assert.Loosely(t, v, should.Match(VersionsFile{
 				{"pkg", "ver1"}: iid1,
 				{"pkg", "ver2"}: iid2,
 			}))

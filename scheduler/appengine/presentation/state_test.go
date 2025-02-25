@@ -47,7 +47,7 @@ func TestGetJobTraits(t *testing.T) {
 				Task: taskBlob,
 			})
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, traits, should.Resemble(task.Traits{}))
+			assert.Loosely(t, traits, should.Match(task.Traits{}))
 		})
 
 		t.Run("OK task", func(t *ftt.Test) {
@@ -59,7 +59,7 @@ func TestGetJobTraits(t *testing.T) {
 				Task: taskBlob,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, traits, should.Resemble(task.Traits{}))
+			assert.Loosely(t, traits, should.Match(task.Traits{}))
 		})
 	})
 }

@@ -946,8 +946,8 @@ func TestCreateBuild(t *testing.T) {
 				assert.Loosely(t, b, should.NotBeNil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
-				assert.Loosely(t, protoutil.StringPairMap(b.Tags).Format(), should.Resemble([]string{"parent_task_id:544239051"}))
-				assert.Loosely(t, b.AncestorIds, should.Resemble([]int64{97654321}))
+				assert.Loosely(t, protoutil.StringPairMap(b.Tags).Format(), should.Match([]string{"parent_task_id:544239051"}))
+				assert.Loosely(t, b.AncestorIds, should.Match([]int64{97654321}))
 			})
 		})
 

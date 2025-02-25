@@ -173,7 +173,7 @@ func TestVerifySuspect(t *testing.T) {
 			}
 			err = datastore.Get(c, rerun1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rerun1, should.Resemble(&model.CompileRerunBuild{
+			assert.Loosely(t, rerun1, should.Match(&model.CompileRerunBuild{
 				Id: 123,
 				LuciBuild: model.LuciBuild{
 					BuildId: 123,
@@ -197,7 +197,7 @@ func TestVerifySuspect(t *testing.T) {
 			}
 			err = datastore.Get(c, rerun2)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rerun2, should.Resemble(&model.CompileRerunBuild{
+			assert.Loosely(t, rerun2, should.Match(&model.CompileRerunBuild{
 				Id: 456,
 				LuciBuild: model.LuciBuild{
 					BuildId: 456,

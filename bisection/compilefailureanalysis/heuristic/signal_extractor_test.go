@@ -53,7 +53,7 @@ func TestExtractSignal(t *testing.T) {
 			}
 			signal, e := ExtractSignals(c, failureLog)
 			assert.Loosely(t, e, should.BeNil)
-			assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
+			assert.Loosely(t, signal, should.Match(&model.CompileFailureSignal{
 				Nodes: []string{"n1", "n2", "n3", "n4"},
 				Edges: []*model.CompileFailureEdge{
 					{
@@ -98,7 +98,7 @@ blabalError: blabla...`,
 				}
 				signal, e := ExtractSignals(c, failureLog)
 				assert.Loosely(t, e, should.BeNil)
-				assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
+				assert.Loosely(t, signal, should.Match(&model.CompileFailureSignal{
 					Nodes: []string{"n1", "n2"},
 					Edges: []*model.CompileFailureEdge{
 						{
@@ -139,7 +139,7 @@ D:\\x\\y.cc[line 456]
 				}
 				signal, e := ExtractSignals(c, failureLog)
 				assert.Loosely(t, e, should.BeNil)
-				assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
+				assert.Loosely(t, signal, should.Match(&model.CompileFailureSignal{
 					Nodes: []string{"obj/a/b/test.c.o"},
 					Edges: []*model.CompileFailureEdge{
 						{
@@ -189,7 +189,7 @@ blabla...
 			}
 			signal, e := ExtractSignals(c, failureLog)
 			assert.Loosely(t, e, should.BeNil)
-			assert.Loosely(t, signal, should.Resemble(&model.CompileFailureSignal{
+			assert.Loosely(t, signal, should.Match(&model.CompileFailureSignal{
 				Files: map[string][]int{
 					"a/b/c.cc":         {307},
 					"a/b/d.cc":         {123},

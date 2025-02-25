@@ -292,7 +292,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				expectedStatistics, err := anypb.New(tvb.Statistics)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, res, should.Resemble(&pb.TestVariantBranchRaw{
+				assert.Loosely(t, res, should.Match(&pb.TestVariantBranchRaw{
 					Name:              "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 					Project:           "myproject",
 					TestId:            "this//is/a/test",
@@ -491,7 +491,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.TestVariantBranches, should.HaveLength(2))
 				assert.Loosely(t, res.TestVariantBranches[0], should.BeNil)
-				assert.Loosely(t, res.TestVariantBranches[1], should.Resemble(&pb.TestVariantBranch{
+				assert.Loosely(t, res.TestVariantBranches[1], should.Match(&pb.TestVariantBranch{
 					Name:        "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 					Project:     "myproject",
 					TestId:      "this//is/a/test",
@@ -665,14 +665,14 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				res, err := server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
-				assert.Loosely(t, res.TestVariantBranch, should.Resemble([]*pb.TestVariantBranch{tvb1.buildProto(), tvb3.buildProto(), tvb4.buildProto()}))
+				assert.Loosely(t, res.TestVariantBranch, should.Match([]*pb.TestVariantBranch{tvb1.buildProto(), tvb3.buildProto(), tvb4.buildProto()}))
 
 				// Query next page.
 				req.PageToken = res.NextPageToken
 				res, err = server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestVariantBranch, should.Resemble([]*pb.TestVariantBranch{tvb2.buildProto()}))
+				assert.Loosely(t, res.TestVariantBranch, should.Match([]*pb.TestVariantBranch{tvb2.buildProto()}))
 			})
 		})
 
@@ -864,7 +864,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 				// Query commits 1100 to 990 (111 commits). Next page will start from 989.
 				nextPageToken := pagination.Token(fmt.Sprintf("%d", 989))
-				assert.Loosely(t, res, should.Resemble(&pb.QuerySourcePositionsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QuerySourcePositionsResponse{
 					SourcePositions: cwvs,
 					NextPageToken:   nextPageToken,
 				}))
@@ -959,14 +959,14 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				t.Run("no test verdicts", func(t *ftt.Test) {
 					res, err := server.QuerySourceVerdicts(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.QuerySourceVerdictsResponse{}))
+					assert.Loosely(t, res, should.Match(&pb.QuerySourceVerdictsResponse{}))
 				})
 				t.Run("end source position is zero", func(t *ftt.Test) {
 					req.StartSourcePosition = 1000
 					req.EndSourcePosition = 0
 					res, err := server.QuerySourceVerdicts(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.QuerySourceVerdictsResponse{}))
+					assert.Loosely(t, res, should.Match(&pb.QuerySourceVerdictsResponse{}))
 				})
 				t.Run("test verdicts", func(t *ftt.Test) {
 					refTime := testclock.TestRecentTimeLocal
@@ -1059,7 +1059,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 					res, err := server.QuerySourceVerdicts(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, res, should.Resemble(&pb.QuerySourceVerdictsResponse{
+					assert.Loosely(t, res, should.Match(&pb.QuerySourceVerdictsResponse{
 						SourceVerdicts: []*pb.QuerySourceVerdictsResponse_SourceVerdict{
 							{
 								Position: 2000,

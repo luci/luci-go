@@ -107,11 +107,11 @@ func TestCreateSnapshot(t *testing.T) {
 
 		snapshot, err := CreateSnapshot(c, nthSectionAnalysis)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, snapshot.BlameList, should.Resemble(blamelist))
+		assert.Loosely(t, snapshot.BlameList, should.Match(blamelist))
 
 		assert.Loosely(t, snapshot.NumInProgress, should.Equal(2))
 		assert.Loosely(t, snapshot.NumInfraFailed, should.Equal(1))
-		assert.Loosely(t, snapshot.Runs, should.Resemble([]*nthsectionsnapshot.Run{
+		assert.Loosely(t, snapshot.Runs, should.Match([]*nthsectionsnapshot.Run{
 			{
 				Index:  0,
 				Commit: "commit0",
@@ -277,7 +277,7 @@ func TestAnalyze(t *testing.T) {
 			assert.Loosely(t, len(nthsectionAnalyses), should.Equal(1))
 			nsa = nthsectionAnalyses[0]
 
-			assert.Loosely(t, nsa.BlameList, should.Resemble(&pb.BlameList{
+			assert.Loosely(t, nsa.BlameList, should.Match(&pb.BlameList{
 				Commits: []*pb.BlameListSingleCommit{
 					{
 						Commit:      "3426",
@@ -361,7 +361,7 @@ func TestAnalyze(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(suspects), should.Equal(1))
 			suspect := suspects[0]
-			assert.Loosely(t, suspect, should.Resemble(&model.Suspect{
+			assert.Loosely(t, suspect, should.Match(&model.Suspect{
 				Id:             suspect.Id,
 				Type:           model.SuspectType_NthSection,
 				ParentAnalysis: datastore.KeyForObj(c, nsa),
@@ -380,7 +380,7 @@ func TestAnalyze(t *testing.T) {
 			// Check that a task was created.
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))
 			resultsTask := skdr.Tasks().Payloads()[0].(*tpb.CulpritVerificationTask)
-			assert.Loosely(t, resultsTask, should.Resemble(&tpb.CulpritVerificationTask{
+			assert.Loosely(t, resultsTask, should.Match(&tpb.CulpritVerificationTask{
 				AnalysisId: cfa.Id,
 				SuspectId:  suspect.Id,
 				ParentKey:  nsa.Suspect.Parent().Encode(),

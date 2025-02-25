@@ -200,7 +200,7 @@ func TestFailureDetection(t *testing.T) {
 				FailedBuildID:    1,
 				SheriffRotations: []string{"chromium"},
 			}
-			assert.Loosely(t, analysis, should.Resemble(expected))
+			assert.Loosely(t, analysis, should.Match(expected))
 		}
 		t.Run("send the most recent test failure", func(t *ftt.Test) {
 			selectedGroup := fakeBuilderRegressionGroup("testID", "varianthash3", 200, 201, time.Unix(3600*24*100, 0))
@@ -293,7 +293,7 @@ func TestFailureDetection(t *testing.T) {
 			assert.Loosely(t, datastore.GetAll(ctx, q, &tfs), should.BeNil)
 			assert.Loosely(t, len(tfs), should.Equal(1))
 
-			assert.Loosely(t, analyses[0], should.Resemble(&model.TestFailureAnalysis{
+			assert.Loosely(t, analyses[0], should.Match(&model.TestFailureAnalysis{
 				ID:               analyses[0].ID,
 				Project:          "testProject",
 				CreateTime:       time.Unix(10000, 0).UTC(),
@@ -304,7 +304,7 @@ func TestFailureDetection(t *testing.T) {
 				SheriffRotations: []string{"chromium"},
 			}))
 
-			assert.Loosely(t, tfs[0], should.Resemble(&model.TestFailure{
+			assert.Loosely(t, tfs[0], should.Match(&model.TestFailure{
 				ID:          tfs[0].ID,
 				Project:     "testProject",
 				TestID:      insufficientDataTestID,

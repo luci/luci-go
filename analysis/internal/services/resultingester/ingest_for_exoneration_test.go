@@ -125,7 +125,7 @@ func TestIngestForExoneration(t *testing.T) {
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble(expectedResults))
+			assert.Loosely(t, results, should.Match(expectedResults))
 		})
 		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil

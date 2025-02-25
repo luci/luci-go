@@ -92,21 +92,21 @@ func TestCache(t *testing.T) {
 		t.Run("Without global cache", func(t *ftt.Test) {
 			item, err := testingCache.GetOrCreate(ctx, "item", getter)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 			assert.Loosely(t, calls, should.Equal(1))
 
 			tc.Add(59 * time.Minute)
 
 			item, err = testingCache.GetOrCreate(ctx, "item", getter)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 			assert.Loosely(t, calls, should.Equal(1)) // no new calls
 
 			tc.Add(2 * time.Minute) // cached item expires
 
 			item, err = testingCache.GetOrCreate(ctx, "item", getter)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 			assert.Loosely(t, calls, should.Equal(2)) // new call!
 		})
 
@@ -123,7 +123,7 @@ func TestCache(t *testing.T) {
 				// Create an item.
 				item, err := testingCache.GetOrCreate(ctx, "item", getter)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, item, should.Match(value))
 				assert.Loosely(t, calls, should.Equal(1))
 
 				// It is in the global cache now.
@@ -135,7 +135,7 @@ func TestCache(t *testing.T) {
 				// Grab the item again. Will be fetched from the global cache.
 				item, err = testingCache.GetOrCreate(ctx, "item", getter)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, item, should.Match(value))
 				assert.Loosely(t, calls, should.Equal(1)) // no new calls
 			})
 
@@ -145,7 +145,7 @@ func TestCache(t *testing.T) {
 				// Create an item.
 				item, err := testingCache.GetOrCreate(ctx, "item", getter)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, item, should.Match(value))
 				assert.Loosely(t, calls, should.Equal(1))
 
 				// Clear the local cache.
@@ -155,7 +155,7 @@ func TestCache(t *testing.T) {
 				// is broken.
 				item, err = testingCache.GetOrCreate(ctx, "item", getter)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, item, should.Match(value))
 				assert.Loosely(t, calls, should.Equal(2)) // new call!
 			})
 		})
@@ -165,7 +165,7 @@ func TestCache(t *testing.T) {
 				return value, 0, nil
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 
 			tc.Add(100 * time.Hour)
 
@@ -173,7 +173,7 @@ func TestCache(t *testing.T) {
 				return nil, 0, errors.New("must not be called")
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 		})
 
 		t.Run("WithMinTTL works", func(t *ftt.Test) {
@@ -181,7 +181,7 @@ func TestCache(t *testing.T) {
 				return value, time.Hour, nil
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 
 			tc.Add(50 * time.Minute)
 
@@ -190,14 +190,14 @@ func TestCache(t *testing.T) {
 				return nil, 0, errors.New("must not be called")
 			}, WithMinTTL(9*time.Minute))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 
 			// But 10 min is not and the item is refreshed.
 			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return anotherValue, time.Hour, nil
 			}, WithMinTTL(10*time.Minute))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(anotherValue))
+			assert.Loosely(t, item, should.Match(anotherValue))
 		})
 
 		t.Run("ErrCantSatisfyMinTTL", func(t *ftt.Test) {
@@ -217,7 +217,7 @@ func TestCache(t *testing.T) {
 				return value, time.Hour, nil
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, item, should.Match(value))
 
 			tc.Add(now)
 
@@ -283,7 +283,7 @@ func TestSerialization(t *testing.T) {
 			item, err := c.deserializeItem(blob)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, item.exp.Equal(now), should.BeTrue)
-			assert.Loosely(t, item.val, should.Resemble(originalItem.val))
+			assert.Loosely(t, item.val, should.Match(originalItem.val))
 		})
 
 		t.Run("Happy path without deadline", func(t *ftt.Test) {
@@ -295,7 +295,7 @@ func TestSerialization(t *testing.T) {
 			item, err := c.deserializeItem(blob)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, item.exp.IsZero(), should.BeTrue)
-			assert.Loosely(t, item.val, should.Resemble(originalItem.val))
+			assert.Loosely(t, item.val, should.Match(originalItem.val))
 		})
 
 		t.Run("Marshal error", func(t *ftt.Test) {

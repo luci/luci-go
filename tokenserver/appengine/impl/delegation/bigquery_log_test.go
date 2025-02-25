@@ -64,7 +64,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.DelegationToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Match(&bqpb.DelegationToken{
 			AuthDbRev:         123,
 			ConfigRev:         "config-rev",
 			ConfigRule:        "rule-name",

@@ -111,7 +111,7 @@ func TestSubmit(t *testing.T) {
 				bodies = append(bodies, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(bodies)
-			assert.Loosely(t, bodies, should.Resemble([]string{
+			assert.Loosely(t, bodies, should.Match([]string{
 				"more-0 body", "more-1 body", "more-2 body", "more-3 body", "more-4 body",
 			}))
 

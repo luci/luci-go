@@ -214,7 +214,7 @@ func TestMethod(t *testing.T) {
 			t.Run("Good cookie works", func(t *ftt.Test) {
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, user, should.Resemble(&auth.User{
+				assert.Loosely(t, user, should.Match(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
@@ -328,7 +328,7 @@ func TestMethod(t *testing.T) {
 					assert.Loosely(t, c.MaxAge, should.Equal(-1))
 					paths = append(paths, c.Path)
 				}
-				assert.Loosely(t, paths, should.Resemble([]string{internal.UnlimitedCookiePath, internal.LimitedCookiePath}))
+				assert.Loosely(t, paths, should.Match([]string{internal.UnlimitedCookiePath, internal.LimitedCookiePath}))
 
 				// It also no longer works.
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
@@ -353,7 +353,7 @@ func TestMethod(t *testing.T) {
 
 				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, user, should.Resemble(&auth.User{
+				assert.Loosely(t, user, should.Match(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
@@ -367,7 +367,7 @@ func TestMethod(t *testing.T) {
 
 				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, user, should.Resemble(&auth.User{
+				assert.Loosely(t, user, should.Match(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
@@ -416,7 +416,7 @@ func TestMethod(t *testing.T) {
 				// scope.
 				user, session, err = methodV3.Authenticate(ctx, phonyRequest(cookieV2))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, user, should.Resemble(&auth.User{
+				assert.Loosely(t, user, should.Match(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
@@ -441,7 +441,7 @@ func TestMethod(t *testing.T) {
 			assert.Loosely(t, deleted[0].Path, should.Equal(internal.UnlimitedCookiePath))
 
 			user, _, _ := method.Authenticate(ctx, phonyRequest(cookie))
-			assert.Loosely(t, user, should.Resemble(&auth.User{
+			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: identity.Identity("user:" + provider.UserEmail),
 				Email:    provider.UserEmail,
 				Name:     provider.UserName,
@@ -483,13 +483,13 @@ func TestMethod(t *testing.T) {
 			t.Run("No cookie", func(t *ftt.Test) {
 				code, state := callState(nil)
 				assert.Loosely(t, code, should.Equal(200))
-				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{Identity: "anonymous:anonymous"}))
+				assert.Loosely(t, state, should.Match(&auth.StateEndpointResponse{Identity: "anonymous:anonymous"}))
 			})
 
 			t.Run("Valid cookie", func(t *ftt.Test) {
 				code, state := callState(goodCookie)
 				assert.Loosely(t, code, should.Equal(200))
-				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{
+				assert.Loosely(t, state, should.Match(&auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",
@@ -511,7 +511,7 @@ func TestMethod(t *testing.T) {
 
 				code, state := callState(goodCookie)
 				assert.Loosely(t, code, should.Equal(200))
-				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{
+				assert.Loosely(t, state, should.Match(&auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",

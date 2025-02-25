@@ -105,7 +105,7 @@ func TestGetBuilder(t *testing.T) {
 
 			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+			assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder"},
 			}))
@@ -149,7 +149,7 @@ func TestGetBuilder(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+			assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder"},
 				Metadata: &pb.BuilderMetadata{
@@ -167,7 +167,7 @@ func TestGetBuilder(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+			assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 				Id:     bid,
 				Config: &pb.BuilderConfig{Name: "builder2"},
 			}))
@@ -203,7 +203,7 @@ func TestGetBuilder(t *testing.T) {
 			t.Run(`default mask`, func(t *ftt.Test) {
 				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+				assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
 				}))
@@ -217,7 +217,7 @@ func TestGetBuilder(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+				assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
 				}))
@@ -231,7 +231,7 @@ func TestGetBuilder(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+				assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 					Id: bid,
 					Metadata: &pb.BuilderMetadata{
 						Owner: "owner",
@@ -250,7 +250,7 @@ func TestGetBuilder(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+				assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 					Id:     bid,
 					Config: &pb.BuilderConfig{Name: "builder"},
 					Metadata: &pb.BuilderMetadata{
@@ -314,7 +314,7 @@ func TestGetBuilder(t *testing.T) {
 			}
 			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: shadowBID})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.BuilderItem{
+			assert.Loosely(t, res, should.Match(&pb.BuilderItem{
 				Id: shadowBID,
 				Config: &pb.BuilderConfig{
 					Name:           "builder",

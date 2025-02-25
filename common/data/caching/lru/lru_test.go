@@ -185,7 +185,7 @@ func TestCacheWithExpiry(t *testing.T) {
 
 			t.Run(`Mutateing "b" yields the remaining time.`, func(t *ftt.Test) {
 				v, ok := cache.Mutate(ctx, "b", func(it *Item[string]) *Item[string] {
-					assert.Loosely(t, it, should.Resemble(&Item[string]{"bv", 1 * time.Second}))
+					assert.Loosely(t, it, should.Match(&Item[string]{"bv", 1 * time.Second}))
 					return it
 				})
 				assert.Loosely(t, ok, should.BeTrue)

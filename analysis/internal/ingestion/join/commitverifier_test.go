@@ -127,7 +127,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 
 				t.Run(`Re-processing CV run should not result in further ingestion tasks`, func(t *ftt.Test) {
@@ -143,7 +143,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`New patchset run`, func(t *ftt.Test) {
@@ -153,7 +153,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`CV Run owned by Automation`, func(t *ftt.Test) {
@@ -163,7 +163,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`CV Run owned by Automation 2`, func(t *ftt.Test) {
@@ -173,7 +173,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`With non-buildbucket tryjob`, func(t *ftt.Test) {
@@ -185,7 +185,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`With re-used tryjob`, func(t *ftt.Test) {
@@ -196,7 +196,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds[1:]))))
 			})
 			t.Run(`With retried tryjob`, func(t *ftt.Test) {
@@ -212,7 +212,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`Failing Run`, func(t *ftt.Test) {
@@ -222,7 +222,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 			t.Run(`Cancelled Run`, func(t *ftt.Test) {
@@ -232,7 +232,7 @@ func TestHandleCVRun(t *testing.T) {
 				processed, tasks := processCVRun(run)
 				assert.Loosely(t, processed, should.BeTrue)
 				// assert ingestion task has been scheduled.
-				assert.Loosely(t, sortTasks(tasks), should.Resemble(
+				assert.Loosely(t, sortTasks(tasks), should.Match(
 					sortTasks(expectedTasks(expectedTaskTemplate, builds))))
 			})
 		})

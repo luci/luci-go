@@ -77,7 +77,7 @@ func TestBackFillTaskInfo(t *testing.T) {
 			input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
 
 			assert.Loosely(t, backFillTaskInfo(ctx, input), should.BeZero)
-			assert.Loosely(t, build.Infra.Swarming.BotDimensions, should.Resemble([]*bbpb.StringPair{
+			assert.Loosely(t, build.Infra.Swarming.BotDimensions, should.Match([]*bbpb.StringPair{
 				{
 					Key:   "cpu",
 					Value: "x86",
@@ -118,7 +118,7 @@ func TestBackFillTaskInfo(t *testing.T) {
 				assert.Loosely(t, backFillTaskInfo(ctx, input), should.BeZero)
 				actual, err := protoutil.BotDimensionsFromBackend(build)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actual, should.Resemble([]*bbpb.StringPair{
+				assert.Loosely(t, actual, should.Match([]*bbpb.StringPair{
 					{
 						Key:   "cpu",
 						Value: "x86",

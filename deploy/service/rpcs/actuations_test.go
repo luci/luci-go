@@ -82,7 +82,7 @@ func TestActuationsRPC(t *testing.T) {
 			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, beginResp, should.Resemble(&rpcpb.BeginActuationResponse{
+			assert.Loosely(t, beginResp, should.Match(&rpcpb.BeginActuationResponse{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
 				},
@@ -98,7 +98,7 @@ func TestActuationsRPC(t *testing.T) {
 			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, beginResp, should.Resemble(&rpcpb.BeginActuationResponse{
+			assert.Loosely(t, beginResp, should.Match(&rpcpb.BeginActuationResponse{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
 				},
@@ -189,7 +189,7 @@ func TestActuationsValidation(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			assets, err := validateBeginActuation(rpc)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, assets, should.Resemble([]string{"apps/app1", "apps/app2"}))
+			assert.Loosely(t, assets, should.Match([]string{"apps/app1", "apps/app2"}))
 		})
 
 		t.Run("No id", func(t *ftt.Test) {
@@ -233,7 +233,7 @@ func TestActuationsValidation(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			assets, err := validateEndActuation(rpc)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, assets, should.Resemble([]string{"apps/app1", "apps/app2"}))
+			assert.Loosely(t, assets, should.Match([]string{"apps/app1", "apps/app2"}))
 		})
 
 		t.Run("No id", func(t *ftt.Test) {

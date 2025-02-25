@@ -254,7 +254,7 @@ func TestTestHistoryServer(t *testing.T) {
 				}
 				res, err := server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -278,7 +278,7 @@ func TestTestHistoryServer(t *testing.T) {
 			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -324,7 +324,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageToken = res.NextPageToken
 				res, err = server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -351,7 +351,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.Predicate.IncludeBisectionResults = true
 				res, err := server.Query(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
 							TestId:        "test_id",
@@ -492,7 +492,7 @@ func TestTestHistoryServer(t *testing.T) {
 				}
 				res, err := server.QueryStats(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
@@ -511,7 +511,7 @@ func TestTestHistoryServer(t *testing.T) {
 			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryStats(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
@@ -536,7 +536,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryStats(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
@@ -557,7 +557,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageSize = 10
 				res, err := server.QueryStats(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestHistoryStatsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryStatsResponse{
 					Groups: []*pb.QueryTestHistoryStatsResponse_Group{
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
@@ -626,7 +626,7 @@ func TestTestHistoryServer(t *testing.T) {
 				}
 				res, err := server.QueryVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var3),
@@ -643,7 +643,7 @@ func TestTestHistoryServer(t *testing.T) {
 			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var1),
@@ -661,7 +661,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryVariantsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryVariantsResponse{
 					Variants: []*pb.QueryVariantsResponse_VariantInfo{
 						{
 							VariantHash: pbutil.VariantHash(var2),
@@ -704,7 +704,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.SubRealm = ""
 				res, err := server.QueryTests(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestsResponse{
 					TestIds: []string{"test_id", "test_id1", "test_id2", "test_id3"},
 				}))
 			})
@@ -712,7 +712,7 @@ func TestTestHistoryServer(t *testing.T) {
 			t.Run("e2e", func(t *ftt.Test) {
 				res, err := server.QueryTests(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestsResponse{
 					TestIds:       []string{"test_id", "test_id1"},
 					NextPageToken: res.NextPageToken,
 				}))
@@ -721,7 +721,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageToken = res.NextPageToken
 				res, err = server.QueryTests(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(&pb.QueryTestsResponse{
+				assert.Loosely(t, res, should.Match(&pb.QueryTestsResponse{
 					TestIds: []string{"test_id2"},
 				}))
 			})

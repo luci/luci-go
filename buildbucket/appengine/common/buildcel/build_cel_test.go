@@ -144,7 +144,7 @@ func TestBuildCEL(t *testing.T) {
 				"c": "",
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble(expected))
+			assert.Loosely(t, out, should.Match(expected))
 		})
 		t.Run("missing struct key", func(t *ftt.Test) {
 			smbc, err := NewStringMap(map[string]string{
@@ -190,7 +190,7 @@ func TestBuildCEL(t *testing.T) {
 			}
 			out, err := StringMapEval(b, fields)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, out, should.Resemble(expected))
+			assert.Loosely(t, out, should.Match(expected))
 		})
 	})
 
@@ -242,7 +242,7 @@ func TestBuildCEL(t *testing.T) {
 				}
 				res, err := bbc.Eval(b)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(map[string]string{"os": ""}))
+				assert.Loosely(t, res, should.Match(map[string]string{"os": ""}))
 			})
 			t.Run("found", func(t *ftt.Test) {
 				b := &pb.Build{
@@ -255,7 +255,7 @@ func TestBuildCEL(t *testing.T) {
 				}
 				res, err := bbc.Eval(b)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(map[string]string{"os": "Mac"}))
+				assert.Loosely(t, res, should.Match(map[string]string{"os": "Mac"}))
 			})
 		})
 	})
@@ -267,7 +267,7 @@ func TestBuildCEL(t *testing.T) {
 			b := &pb.Build{}
 			res, err := bbc.Eval(b)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(map[string]string{"experiments": "None"}))
+			assert.Loosely(t, res, should.Match(map[string]string{"experiments": "None"}))
 		})
 		t.Run("found", func(t *ftt.Test) {
 			b := &pb.Build{
@@ -280,7 +280,7 @@ func TestBuildCEL(t *testing.T) {
 			}
 			res, err := bbc.Eval(b)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"}))
+			assert.Loosely(t, res, should.Match(map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"}))
 		})
 	})
 
@@ -304,7 +304,7 @@ func TestBuildCEL(t *testing.T) {
 			}
 			res, err := StringMapEval(b, map[string]string{"status": `build.status.to_string()`})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(map[string]string{"status": "SUCCESS"}))
+			assert.Loosely(t, res, should.Match(map[string]string{"status": "SUCCESS"}))
 		})
 	})
 }

@@ -177,13 +177,13 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		expected.Env = expectedEnvMap.Sorted()
 
 		assert.Loosely(t, cmd.Path, should.Equal(expected.Path))
-		assert.Loosely(t, cmd.Args, should.Resemble(expected.Args))
-		assert.Loosely(t, cmd.Env, should.Resemble(expected.Env))
+		assert.Loosely(t, cmd.Args, should.Match(expected.Args))
+		assert.Loosely(t, cmd.Env, should.Match(expected.Env))
 		assert.Loosely(t, cmd.Dir, should.Equal(expected.Dir))
 
 		assert.Loosely(t, fetchedCASFiles, should.BeTrue)
 
-		assert.Loosely(t, cipdSlicesByPath, should.Resemble(map[string]ensure.PackageSlice{
+		assert.Loosely(t, cipdSlicesByPath, should.Match(map[string]ensure.PackageSlice{
 			"": {
 				ensure.PackageDef{
 					PackageTemplate:   "infra/tools/luci/logdog/butler/${platform}",

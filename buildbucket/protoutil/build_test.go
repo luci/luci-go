@@ -58,7 +58,7 @@ func TestSetStatus(t *testing.T) {
 
 		t.Run("STARTED", func(t *ftt.Test) {
 			SetStatus(now, build, pb.Status_STARTED)
-			assert.Loosely(t, build, should.Resemble(&pb.Build{
+			assert.Loosely(t, build, should.Match(&pb.Build{
 				Status:     pb.Status_STARTED,
 				StartTime:  timestamppb.New(now),
 				UpdateTime: timestamppb.New(now),
@@ -66,7 +66,7 @@ func TestSetStatus(t *testing.T) {
 
 			t.Run("no-op", func(t *ftt.Test) {
 				SetStatus(now.Add(time.Minute), build, pb.Status_STARTED)
-				assert.Loosely(t, build, should.Resemble(&pb.Build{
+				assert.Loosely(t, build, should.Match(&pb.Build{
 					Status:     pb.Status_STARTED,
 					StartTime:  timestamppb.New(now),
 					UpdateTime: timestamppb.New(now),
@@ -76,7 +76,7 @@ func TestSetStatus(t *testing.T) {
 
 		t.Run("CANCELED", func(t *ftt.Test) {
 			SetStatus(now, build, pb.Status_CANCELED)
-			assert.Loosely(t, build, should.Resemble(&pb.Build{
+			assert.Loosely(t, build, should.Match(&pb.Build{
 				Status:     pb.Status_CANCELED,
 				UpdateTime: timestamppb.New(now),
 				EndTime:    timestamppb.New(now),
@@ -206,7 +206,7 @@ func TestBotDimensions(t *testing.T) {
 		b.Infra.Swarming = &pb.BuildInfra_Swarming{
 			BotDimensions: botDims,
 		}
-		assert.Loosely(t, MustBotDimensions(b), should.Resemble(botDims))
+		assert.Loosely(t, MustBotDimensions(b), should.Match(botDims))
 	})
 
 	ftt.Run("build on backend", t, func(t *ftt.Test) {
@@ -245,7 +245,7 @@ func TestBotDimensions(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, MustBotDimensions(b), should.Resemble(botDims))
+		assert.Loosely(t, MustBotDimensions(b), should.Match(botDims))
 	})
 }
 
@@ -299,7 +299,7 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 		}
 		actual, err := AddBotDimensionsToTaskDetails(botDims, nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(expected))
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 	ftt.Run("with existing details", t, func(t *ftt.Test) {
 		botDims := []*pb.StringPair{
@@ -359,6 +359,6 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 		}
 		actual, err := AddBotDimensionsToTaskDetails(botDims, details)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(expected))
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 }

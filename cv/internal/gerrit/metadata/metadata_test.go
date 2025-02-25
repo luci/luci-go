@@ -31,7 +31,7 @@ func TestExtract(t *testing.T) {
 	ftt.Run("Extract works", t, func(t *ftt.Test) {
 
 		t.Run("Empty", func(t *ftt.Test) {
-			assert.Loosely(t, Extract(`Title.`), should.Resemble([]*changelist.StringPair{}))
+			assert.Loosely(t, Extract(`Title.`), should.Match([]*changelist.StringPair{}))
 		})
 
 		t.Run("Git-style", func(t *ftt.Test) {
@@ -40,7 +40,7 @@ Title.
 
 Footer: value
 No-rma-lIzes: but Only key.
-`)), should.Resemble([]*changelist.StringPair{
+`)), should.Match([]*changelist.StringPair{
 				{Key: "Footer", Value: "value"},
 				{Key: "No-Rma-Lizes", Value: "but Only key."},
 			}))
@@ -49,7 +49,7 @@ No-rma-lIzes: but Only key.
 		t.Run("TAGS=sTyLe", func(t *ftt.Test) {
 			assert.Loosely(t, Extract(strings.TrimSpace(`
 TAG=can BE anywhere
-`)), should.Resemble([]*changelist.StringPair{
+`)), should.Match([]*changelist.StringPair{
 				{Key: "TAG", Value: "can BE anywhere"},
 			}))
 		})
@@ -61,7 +61,7 @@ Tag=must have UPPEPCASE_KEY.
 Footers: must reside in the last paragraph, not above it.
 
 Footer-key must-have-not-spaces: but this one does.
-`)), should.Resemble([]*changelist.StringPair{}))
+`)), should.Match([]*changelist.StringPair{}))
 		})
 
 		t.Run("Sorts by keys only, keeps values ordered from last to first", func(t *ftt.Test) {
@@ -74,7 +74,7 @@ TAG=third
 Footer: D
 TAG=fourth
 Footer: B
-`)), should.Resemble([]*changelist.StringPair{
+`)), should.Match([]*changelist.StringPair{
 				{Key: "Footer", Value: "B"},
 				{Key: "Footer", Value: "D"},
 				{Key: "Footer", Value: "A"},

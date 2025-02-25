@@ -58,7 +58,7 @@ func TestExternal(t *testing.T) {
 				return now
 			}
 
-			assert.Loosely(t, Now(c), should.Resemble(now))
+			assert.Loosely(t, Now(c), should.Match(now))
 			assert.Loosely(t, used, should.BeTrue)
 		})
 

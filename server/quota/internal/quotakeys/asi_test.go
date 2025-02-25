@@ -47,10 +47,10 @@ func TestASI(t *testing.T) {
 			for _, tc := range tests {
 				tc := tc
 				t.Run(tc.name, func(t *ftt.Test) {
-					assert.Loosely(t, AssembleASI(tc.in...), should.Resemble(tc.out), truth.Explain("encode"))
+					assert.Loosely(t, AssembleASI(tc.in...), should.Match(tc.out), truth.Explain("encode"))
 					dec, err := DecodeASI(tc.out)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, dec, should.Resemble(tc.in), truth.Explain("decode"))
+					assert.Loosely(t, dec, should.Match(tc.in), truth.Explain("decode"))
 				})
 			}
 		})

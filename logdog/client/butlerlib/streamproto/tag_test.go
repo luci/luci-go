@@ -40,7 +40,7 @@ func TestTagMapFlag(t *testing.T) {
 			t.Run(`Can successfully parse multiple parameters.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-tag", "foo=FOO", "-tag", "bar=BAR", "-tag", "baz"})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tm, should.Resemble(TagMap{"foo": "FOO", "bar": "BAR", "baz": ""}))
+				assert.Loosely(t, tm, should.Match(TagMap{"foo": "FOO", "bar": "BAR", "baz": ""}))
 
 				t.Run(`Will build a correct string.`, func(t *ftt.Test) {
 					assert.Loosely(t, tm.String(), should.Equal(`bar=BAR,baz,foo=FOO`))
@@ -61,7 +61,7 @@ func TestTagMapFlag(t *testing.T) {
 						err := json.Unmarshal(d, &tm)
 						assert.Loosely(t, err, should.BeNil)
 
-						assert.Loosely(t, tm, should.Resemble(TagMap{
+						assert.Loosely(t, tm, should.Match(TagMap{
 							"foo": "bar",
 							"baz": "qux",
 						}))

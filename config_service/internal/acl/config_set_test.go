@@ -98,7 +98,7 @@ func TestConfigSet(t *testing.T) {
 			)
 			result, err := CanReadConfigSets(ctx, []config.Set{projectConfigSet, serviceConfigSet, config.MustServiceSet("another-service"), config.MustProjectSet("another-project")})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]bool{true, true, true, false}))
+			assert.Loosely(t, result, should.Match([]bool{true, true, true, false}))
 		})
 
 		t.Run("CanValidateConfigSet", func(t *ftt.Test) {

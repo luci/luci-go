@@ -35,14 +35,14 @@ func TestTags(t *testing.T) {
 			c = Tag(c, "A")
 
 			t.Run(`Should have tags {"A"}.`, func(t *ftt.Test) {
-				assert.Loosely(t, Tags(c), should.Resemble([]string{"A"}))
+				assert.Loosely(t, Tags(c), should.Match([]string{"A"}))
 			})
 
 			t.Run(`And another tag, "B"`, func(t *ftt.Test) {
 				c = Tag(c, "B")
 
 				t.Run(`Should have tags {"A", "B"}.`, func(t *ftt.Test) {
-					assert.Loosely(t, Tags(c), should.Resemble([]string{"A", "B"}))
+					assert.Loosely(t, Tags(c), should.Match([]string{"A", "B"}))
 				})
 			})
 		})

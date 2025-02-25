@@ -132,7 +132,7 @@ func TestRenderer(t *testing.T) {
 			t.Run(`Renders {0x00, 0x01, 0x02, 0x03}.`, func(t *ftt.Test) {
 				_, err := b.ReadFrom(r)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b.Bytes(), should.Resemble([]byte("00010203")))
+				assert.Loosely(t, b.Bytes(), should.Match([]byte("00010203")))
 			})
 
 			t.Run(`Renders raw {0x00, 0x01, 0x02, 0x03}.`, func(t *ftt.Test) {
@@ -140,7 +140,7 @@ func TestRenderer(t *testing.T) {
 
 				_, err := b.ReadFrom(r)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0x00, 0x01, 0x02, 0x03}))
+				assert.Loosely(t, b.Bytes(), should.Match([]byte{0x00, 0x01, 0x02, 0x03}))
 			})
 
 			t.Run(`Can read the raw stream byte-by-byte.`, func(t *ftt.Test) {
@@ -199,7 +199,7 @@ func TestRenderer(t *testing.T) {
 					_, err := b.ReadFrom(r)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, b.String(), should.Equal("Datagram #0 (4 bytes)\nrendered\n"))
-					assert.Loosely(t, bytes, should.Resemble([]byte{0x00, 0x01, 0x02, 0x03}))
+					assert.Loosely(t, bytes, should.Match([]byte{0x00, 0x01, 0x02, 0x03}))
 				})
 
 				t.Run(`Renders a full hex dump when the writer returns false.`, func(t *ftt.Test) {

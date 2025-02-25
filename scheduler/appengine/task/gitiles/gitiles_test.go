@@ -165,12 +165,12 @@ func TestTriggerBuild(t *testing.T) {
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00", "refs/weird": "123456"})
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master": "deadbeef00",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
 			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00"))
-			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Match(&api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/heads/master",
 				Revision: "deadbeef00",
@@ -192,13 +192,13 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/branch-heads/1.2": "deadbeef00",
 				"refs/branch-heads/1.1": "beefcafe00",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(3))
 			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/branch-heads/1.1@beefcafe01"))
-			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Match(&api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/branch-heads/1.1",
 				Revision: "beefcafe01",
@@ -215,7 +215,7 @@ func TestTriggerBuild(t *testing.T) {
 			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/beta": "deadbeef00"})
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/branch-heads/beta": "deadbeef00",
 			}))
 		})
@@ -237,7 +237,7 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("baadcafe00", "", 1, log("baadcafe00"))
 
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master":       "deadbeef00",
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			}))
@@ -269,7 +269,7 @@ func TestTriggerBuild(t *testing.T) {
 				"deadbeef03:nothing-matched-means-skipped")
 
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master": "deadbeef00",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
@@ -289,7 +289,7 @@ func TestTriggerBuild(t *testing.T) {
 				"deadbeef02:nope2",
 				"deadbeef03:nope3")
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master": "deadbeef00",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
@@ -307,7 +307,7 @@ func TestTriggerBuild(t *testing.T) {
 			assert.Loosely(t, ctl.Triggers, should.BeNil)
 			assert.Loosely(t, ctl.Log, should.NotContain("Saved 1 known refs"))
 			assert.Loosely(t, ctl.Log, should.Contain("No changes detected"))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master": "deadbeef",
 			}))
 		})
@@ -340,14 +340,14 @@ func TestTriggerBuild(t *testing.T) {
 
 			m.maxCommitsPerRefUpdate = 1
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				alreadyProcessedRef: "deadbeef",
 				newRef:              "abc123",
 				newlyMatchedRef:     "def456",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
 			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/tags/foobaz@abc123"))
-			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Match(&api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      newRef,
 				Revision: "abc123",
@@ -366,7 +366,7 @@ func TestTriggerBuild(t *testing.T) {
 
 			m.maxCommitsPerRefUpdate = 1
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				ref: "abc123",
 			}))
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
@@ -396,7 +396,7 @@ func TestTriggerBuild(t *testing.T) {
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master preserved.
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
@@ -406,7 +406,7 @@ func TestTriggerBuild(t *testing.T) {
 			// Second run, refs/branch-heads/{3,4} updated.
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
@@ -418,7 +418,7 @@ func TestTriggerBuild(t *testing.T) {
 			// Final run, refs/branch-heads/5 updated.
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
@@ -447,11 +447,11 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("cafee2", "", 1, log(), errors.New("flake"))
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/branch-heads/1": "cafee1",
 			}))
 			ctl.Triggers = nil
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/branch-heads/1": "cafee1",
 			}))
 
@@ -460,7 +460,7 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("cafee3", "", 1, log("cafee3"))
 			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
-			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+			assert.Loosely(t, loadNoError(), should.Match(strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
@@ -478,7 +478,7 @@ func TestTriggerBuild(t *testing.T) {
 				expectLog("1111", "001d", 50, log())
 				assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 				// Changes state
-				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				assert.Loosely(t, loadNoError(), should.Match(strmap{
 					"refs/heads/master": "1111",
 				}))
 				// .. but no triggers, since there are no new commits.
@@ -491,7 +491,7 @@ func TestTriggerBuild(t *testing.T) {
 				expectLog("1111", "", 1, log("1111"))
 				expectLog("001d", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
-				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				assert.Loosely(t, loadNoError(), should.Match(strmap{
 					"refs/heads/master": "1111",
 				}))
 				assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
@@ -502,7 +502,7 @@ func TestTriggerBuild(t *testing.T) {
 				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				assert.Loosely(t, transient.Tag.In(m.LaunchTask(c, ctl)), should.BeTrue)
-				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				assert.Loosely(t, loadNoError(), should.Match(strmap{
 					"refs/heads/master": "001d", // no change.
 				}))
 			})
@@ -512,7 +512,7 @@ func TestTriggerBuild(t *testing.T) {
 				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				assert.Loosely(t, m.LaunchTask(c, ctl), should.NotBeNil)
-				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				assert.Loosely(t, loadNoError(), should.Match(strmap{
 					"refs/heads/master": "001d",
 				}))
 			})

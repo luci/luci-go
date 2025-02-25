@@ -261,7 +261,7 @@ func TestCreate(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
 					assert.Loosely(t, v.Created, should.NotEqual(0))
-					assert.Loosely(t, v.NetworkInterfaces, should.Resemble([]model.NetworkInterface{
+					assert.Loosely(t, v.NetworkInterfaces, should.Match([]model.NetworkInterface{
 						{
 							InternalIP: "0.0.0.1",
 						},

@@ -139,7 +139,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 				}
 			}`)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble([]EmailNotify{
+			assert.Loosely(t, results, should.Match([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "",
@@ -159,7 +159,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 				}
 			}`)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble([]EmailNotify{
+			assert.Loosely(t, results, should.Match([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "test-template",
@@ -179,7 +179,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 				}
 			}`)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble([]EmailNotify{
+			assert.Loosely(t, results, should.Match([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "",
@@ -209,7 +209,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 				}
 			}`)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble([]EmailNotify{
+			assert.Loosely(t, results, should.Match([]EmailNotify{
 				{
 					Email:    "test2@email",
 					Template: "",
@@ -275,7 +275,7 @@ func TestHandleBuild(t *testing.T) {
 			}
 			sort.Strings(actualEmails)
 			sort.Strings(expectedEmails)
-			assert.Loosely(t, actualEmails, should.Resemble(expectedEmails))
+			assert.Loosely(t, actualEmails, should.Match(expectedEmails))
 		}
 
 		verifyBuilder := func(build *Build, revision string, checkout Checkout) {
@@ -286,10 +286,10 @@ func TestHandleBuild(t *testing.T) {
 				ID:         id,
 			}
 			assert.Loosely(t, datastore.Get(c, &builder), should.BeNil)
-			assert.Loosely(t, builder.Revision, should.Resemble(revision))
+			assert.Loosely(t, builder.Revision, should.Match(revision))
 			assert.Loosely(t, builder.Status, should.Equal(build.Status))
 			expectCommits := checkout.ToGitilesCommits()
-			assert.Loosely(t, builder.GitilesCommits, should.Resemble(expectCommits))
+			assert.Loosely(t, builder.GitilesCommits, should.Match(expectCommits))
 		}
 
 		propEmail := EmailNotify{
@@ -722,14 +722,14 @@ func TestExtractBuild(t *testing.T) {
 			b, err := extractBuild(ctx, pubsubMsg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
-			assert.Loosely(t, b.Builder, should.Resemble(originalBuild.Builder))
+			assert.Loosely(t, b.Builder, should.Match(originalBuild.Builder))
 			assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_SUCCESS))
-			assert.Loosely(t, b.Infra, should.Resemble(originalBuild.Infra))
-			assert.Loosely(t, b.Input, should.Resemble(originalBuild.Input))
-			assert.Loosely(t, b.Output, should.Resemble(originalBuild.Output))
-			assert.Loosely(t, b.Steps, should.Resemble(originalBuild.Steps))
+			assert.Loosely(t, b.Infra, should.Match(originalBuild.Infra))
+			assert.Loosely(t, b.Input, should.Match(originalBuild.Input))
+			assert.Loosely(t, b.Output, should.Match(originalBuild.Output))
+			assert.Loosely(t, b.Steps, should.Match(originalBuild.Steps))
 			assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
-			assert.Loosely(t, b.EmailNotify, should.Resemble([]EmailNotify{{Email: "abc@gmail.com"}}))
+			assert.Loosely(t, b.EmailNotify, should.Match([]EmailNotify{{Email: "abc@gmail.com"}}))
 		})
 
 		t.Run("success with no email_notify field", func(t *ftt.Test) {
@@ -773,12 +773,12 @@ func TestExtractBuild(t *testing.T) {
 			b, err := extractBuild(ctx, pubsubMsg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
-			assert.Loosely(t, b.Builder, should.Resemble(originalBuild.Builder))
+			assert.Loosely(t, b.Builder, should.Match(originalBuild.Builder))
 			assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_CANCELED))
-			assert.Loosely(t, b.Infra, should.Resemble(originalBuild.Infra))
-			assert.Loosely(t, b.Input, should.Resemble(originalBuild.Input))
-			assert.Loosely(t, b.Output, should.Resemble(originalBuild.Output))
-			assert.Loosely(t, b.Steps, should.Resemble(originalBuild.Steps))
+			assert.Loosely(t, b.Infra, should.Match(originalBuild.Infra))
+			assert.Loosely(t, b.Input, should.Match(originalBuild.Input))
+			assert.Loosely(t, b.Output, should.Match(originalBuild.Output))
+			assert.Loosely(t, b.Steps, should.Match(originalBuild.Steps))
 			assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
 			assert.Loosely(t, b.EmailNotify, should.BeNil)
 		})

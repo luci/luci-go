@@ -97,19 +97,19 @@ func TestCheckout(t *testing.T) {
 
 	ftt.Run(`Conversion with GitilesCommits Non-Empty`, t, func(t *ftt.Test) {
 		checkout := NewCheckout(gitilesCheckout)
-		assert.Loosely(t, checkout, should.Resemble(Checkout{
+		assert.Loosely(t, checkout, should.Match(Checkout{
 			protoutil.GitilesRepoURL(gitilesCheckout.Commits[0]): rev1,
 			protoutil.GitilesRepoURL(gitilesCheckout.Commits[1]): rev2,
 		}))
 		result := checkout.ToGitilesCommits()
-		assert.Loosely(t, result, should.Resemble(gitilesCheckout))
+		assert.Loosely(t, result, should.Match(gitilesCheckout))
 	})
 
 	ftt.Run(`Filter repositories from allowlist`, t, func(t *ftt.Test) {
 		checkout := NewCheckout(gitilesCheckout)
 		repoURL := protoutil.GitilesRepoURL(gitilesCheckout.Commits[0])
 		filteredCheckout := checkout.Filter(stringset.NewFromSlice([]string{repoURL}...))
-		assert.Loosely(t, filteredCheckout, should.Resemble(Checkout{repoURL: rev1}))
+		assert.Loosely(t, filteredCheckout, should.Match(Checkout{repoURL: rev1}))
 	})
 }
 
@@ -153,13 +153,13 @@ func TestLogs(t *testing.T) {
 		t.Run(`Both valid, full overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout1New, history)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits[:1]))
-			assert.Loosely(t, logs["https://chromium.googlesource.com/third_party/hello"], should.Resemble(testCommits[:1]))
+			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Match(testCommits[:1]))
+			assert.Loosely(t, logs["https://chromium.googlesource.com/third_party/hello"], should.Match(testCommits[:1]))
 		})
 		t.Run(`Both valid, partial overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout2, history)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits[:1]))
+			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Match(testCommits[:1]))
 		})
 		t.Run(`Both valid, no overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout3, history)
@@ -177,12 +177,12 @@ func TestLogs(t *testing.T) {
 		filteredLogs := testLogs.Filter(stringset.NewFromSlice([]string{
 			"https://chromium.googlesource.com/chromium/src",
 		}...))
-		assert.Loosely(t, filteredLogs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits))
+		assert.Loosely(t, filteredLogs["https://chromium.googlesource.com/chromium/src"], should.Match(testCommits))
 	})
 
 	ftt.Run(`Blamelist`, t, func(t *ftt.Test) {
 		blamelist := testLogs.Blamelist("default")
-		assert.Loosely(t, blamelist, should.Resemble([]EmailNotify{
+		assert.Loosely(t, blamelist, should.Match([]EmailNotify{
 			{
 				Email:    "example1@google.com",
 				Template: "default",

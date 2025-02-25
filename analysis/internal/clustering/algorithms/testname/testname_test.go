@@ -70,7 +70,7 @@ func TestAlgorithm(t *testing.T) {
 					TestID: "ninja://test_name_one/",
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "B"},
 				})
-				assert.Loosely(t, id2, should.Resemble(id1))
+				assert.Loosely(t, id2, should.Match(id1))
 			})
 			t.Run(`Matching rules`, func(t *ftt.Test) {
 				id1 := a.Cluster(cfg, &clustering.Failure{
@@ -81,7 +81,7 @@ func TestAlgorithm(t *testing.T) {
 					TestID: "ninja://:blink_web_tests/folder/test-name.html?param=2",
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "B"},
 				})
-				assert.Loosely(t, id2, should.Resemble(id1))
+				assert.Loosely(t, id2, should.Match(id1))
 			})
 		})
 		t.Run(`Different ID for different clusters`, func(t *ftt.Test) {

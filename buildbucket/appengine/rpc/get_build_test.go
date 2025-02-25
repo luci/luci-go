@@ -170,7 +170,7 @@ func TestGetBuild(t *testing.T) {
 					})
 					rsp, err := srv.GetBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -201,7 +201,7 @@ func TestGetBuild(t *testing.T) {
 					})
 					rsp, err := srv.GetBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
@@ -267,7 +267,7 @@ func TestGetBuild(t *testing.T) {
 					}
 					rsp, err := srv.GetBuild(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					assert.Loosely(t, rsp, should.Match(&pb.Build{
 						SummaryMarkdown: "summary\ncancelled",
 					}))
 				})
@@ -381,7 +381,7 @@ func TestGetBuild(t *testing.T) {
 				}
 				rsp, err := srv.GetBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+				assert.Loosely(t, rsp, should.Match(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -491,7 +491,7 @@ func TestGetBuild(t *testing.T) {
 				})
 				rsp, err := srv.GetBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+				assert.Loosely(t, rsp, should.Match(&pb.Build{
 					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",

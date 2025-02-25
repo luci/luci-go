@@ -144,7 +144,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 		// The distribution reflects that we do not know where
 		// in the range 101...200 the changepoint is.
 		expectedDistribution := &model.PositionDistribution{101, 101, 101, 101, 101, 101, 101, 101, 150, 200, 200, 200, 200, 200, 200, 200, 200}
-		assert.Loosely(t, d, should.Resemble(expectedDistribution))
+		assert.Loosely(t, d, should.Match(expectedDistribution))
 	})
 }
 

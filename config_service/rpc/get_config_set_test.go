@@ -145,7 +145,7 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "projects/project",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
+			assert.Loosely(t, res, should.Match(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -162,7 +162,7 @@ func TestGetConfigSet(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
+			assert.Loosely(t, res, should.Match(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -197,7 +197,7 @@ func TestGetConfigSet(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
+			assert.Loosely(t, res, should.Match(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -215,7 +215,7 @@ func TestGetConfigSet(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
+			assert.Loosely(t, res, should.Match(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -241,7 +241,7 @@ func TestGetConfigSet(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
+			assert.Loosely(t, res, should.Match(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id: "1",

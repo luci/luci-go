@@ -549,7 +549,7 @@ func TestCreateInvocation(t *testing.T) {
 			req.Invocation.Tags = pbutil.StringPairs("b", "2", "a", "1")
 			inv, err := recorder.CreateInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv.Tags, should.Resemble(pbutil.StringPairs("a", "1", "b", "2")))
+			assert.Loosely(t, inv.Tags, should.Match(pbutil.StringPairs("a", "1", "b", "2")))
 		})
 
 		t.Run(`no invocation in request`, func(t *ftt.Test) {
@@ -596,7 +596,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			res2, err := recorder.CreateInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res2, should.Resemble(res))
+			assert.Loosely(t, res2, should.Match(res))
 		})
 		t.Run(`included invocation`, func(t *ftt.Test) {
 			req = &pb.CreateInvocationRequest{
@@ -742,7 +742,7 @@ func TestCreateInvocation(t *testing.T) {
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				// For invocation finalizing.
 				&taskspb.RunExportNotifications{InvocationId: "u-inv"},
 				&taskspb.TryFinalizeInvocation{InvocationId: "u-inv"},
@@ -760,7 +760,7 @@ func TestCreateInvocation(t *testing.T) {
 				CreateTime:        inv.CreateTime,
 				FinalizeStartTime: inv.CreateTime,
 			})
-			assert.Loosely(t, inv, should.Resemble(expected))
+			assert.Loosely(t, inv, should.Match(expected))
 
 			assert.Loosely(t, headers.Get(pb.UpdateTokenMetadataKey), should.HaveLength(1))
 
@@ -769,7 +769,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			inv, err = invocations.Read(ctx, "u-inv")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(expected))
+			assert.Loosely(t, inv, should.Match(expected))
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time

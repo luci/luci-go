@@ -46,7 +46,7 @@ func testStore(ctx context.Context, t *ftt.Test, store SessionStore) {
 
 		session, err := store.Get(ctx, "session-0")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, session, should.Resemble(stored))
+		assert.Loosely(t, session, should.Match(stored))
 
 		session, err = store.Get(ctx, "another")
 		assert.Loosely(t, err, should.Equal(ErrNoSession))
@@ -61,23 +61,23 @@ func testStore(ctx context.Context, t *ftt.Test, store SessionStore) {
 		assert.Loosely(t, store.Create(ctx, stored), should.BeNil)
 
 		unchanged, err := store.Update(ctx, "session-0", func(session *statepb.LoginSession) {
-			assert.Loosely(t, session, should.Resemble(stored))
+			assert.Loosely(t, session, should.Match(stored))
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, unchanged, should.Resemble(stored))
+		assert.Loosely(t, unchanged, should.Match(stored))
 
 		updated, err := store.Update(ctx, "session-0", func(session *statepb.LoginSession) {
 			session.OauthS256CodeChallenge = "updated-string"
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, updated, should.Resemble(&statepb.LoginSession{
+		assert.Loosely(t, updated, should.Match(&statepb.LoginSession{
 			Id:                     "session-0",
 			OauthS256CodeChallenge: "updated-string",
 		}))
 
 		fetched, err := store.Get(ctx, "session-0")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, fetched, should.Resemble(updated))
+		assert.Loosely(t, fetched, should.Match(updated))
 	})
 
 	t.Run("Update missing", func(t *ftt.Test) {

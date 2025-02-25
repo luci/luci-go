@@ -63,7 +63,7 @@ func TestTaskResults(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			res, err := impl.TaskResults(ctx, taskIDs, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, getTaskIDs(res), should.Resemble(taskIDs))
+			assert.Loosely(t, getTaskIDs(res), should.Match(taskIDs))
 
 			// No overlaps between calls. Requested all tasks. Note that the order of
 			// calls is non-deterministic due to use of goroutines.

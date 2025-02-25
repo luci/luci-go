@@ -99,7 +99,7 @@ func TestGetBotDimensions(t *testing.T) {
 	ftt.Run("Concrete pool: visible pool", t, func(t *ftt.Test) {
 		out, err := call("visible-pool1")
 		assert.NoErr(t, err)
-		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, out, should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 			},
@@ -120,7 +120,7 @@ func TestGetBotDimensions(t *testing.T) {
 	ftt.Run("All pools: admin", t, func(t *ftt.Test) {
 		out, err := callAsAdmin("")
 		assert.NoErr(t, err)
-		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, out, should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 				{Key: "d2", Value: []string{"v"}},
@@ -134,7 +134,7 @@ func TestGetBotDimensions(t *testing.T) {
 	ftt.Run("All pools: non-admin", t, func(t *ftt.Test) {
 		out, err := call("")
 		assert.NoErr(t, err)
-		assert.Loosely(t, out, should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, out, should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v"}},
 				{Key: "d2", Value: []string{"v"}},

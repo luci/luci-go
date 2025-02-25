@@ -197,7 +197,7 @@ func TestTaskMarshaling(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		task, err := c.UnmarshalTask(ctx, blob, "some-project:some-realm")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, task, should.Resemble(&messages.UrlFetchTask{
+		assert.Loosely(t, task, should.Match(&messages.UrlFetchTask{
 			Url: "123",
 		}))
 
@@ -239,7 +239,7 @@ func TestConfigReading(t *testing.T) {
 		t.Run("GetAllProjects works", func(t *ftt.Test) {
 			projects, err := cat.GetAllProjects(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, projects, should.Resemble([]string{"broken", "project1", "project2"}))
+			assert.Loosely(t, projects, should.Match([]string{"broken", "project1", "project2"}))
 		})
 
 		t.Run("GetProjectJobs works", func(t *ftt.Test) {
@@ -247,7 +247,7 @@ func TestConfigReading(t *testing.T) {
 
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, defs, should.Resemble([]Definition{
+			assert.Loosely(t, defs, should.Match([]Definition{
 				{
 					JobID:            "project1/noop-job-1",
 					RealmID:          "project1:public",
@@ -296,7 +296,7 @@ func TestConfigReading(t *testing.T) {
 
 			defs, err := cat.GetProjectJobs(ctx, "project2")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, defs, should.Resemble([]Definition{
+			assert.Loosely(t, defs, should.Match([]Definition{
 				{
 					JobID:       "project2/noop-job-1",
 					RealmID:     "project2:@legacy",
@@ -339,7 +339,7 @@ func TestConfigReading(t *testing.T) {
 
 			task, err := cat.UnmarshalTask(ctx, defs[0].Task, defs[0].RealmID)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, task, should.Resemble(&messages.NoopTask{}))
+			assert.Loosely(t, task, should.Match(&messages.NoopTask{}))
 
 			task, err = cat.UnmarshalTask(ctx, []byte("blarg"), defs[0].RealmID)
 			assert.Loosely(t, err, should.NotBeNil)

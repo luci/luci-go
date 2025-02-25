@@ -54,7 +54,7 @@ func TestProjectConfig(t *testing.T) {
 
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(cfg), should.Equal(1))
-		assert.Loosely(t, cfg["a"], should.Resemble(projectA))
+		assert.Loosely(t, cfg["a"], should.Match(projectA))
 	})
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
@@ -84,8 +84,8 @@ func TestProjectConfig(t *testing.T) {
 			projects, err := Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["a"], should.Resemble(projectA))
-			assert.Loosely(t, projects["b"], should.Resemble(projectB))
+			assert.Loosely(t, projects["a"], should.Match(projectA))
+			assert.Loosely(t, projects["b"], should.Match(projectB))
 
 			// Noop update.
 			err = UpdateProjects(ctx)
@@ -111,15 +111,15 @@ func TestProjectConfig(t *testing.T) {
 			projects, err = fetchProjects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["b"], should.Resemble(newProjectB))
-			assert.Loosely(t, projects["c"], should.Resemble(projectC))
+			assert.Loosely(t, projects["b"], should.Match(newProjectB))
+			assert.Loosely(t, projects["c"], should.Match(projectC))
 
 			// Get still uses in-memory cached copy.
 			projects, err = Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["a"], should.Resemble(projectA))
-			assert.Loosely(t, projects["b"], should.Resemble(projectB))
+			assert.Loosely(t, projects["a"], should.Match(projectA))
+			assert.Loosely(t, projects["b"], should.Match(projectB))
 
 			// Time passes, in-memory cached copy expires.
 			tc.Add(2 * time.Minute)
@@ -128,8 +128,8 @@ func TestProjectConfig(t *testing.T) {
 			projects, err = Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["b"], should.Resemble(newProjectB))
-			assert.Loosely(t, projects["c"], should.Resemble(projectC))
+			assert.Loosely(t, projects["b"], should.Match(newProjectB))
+			assert.Loosely(t, projects["c"], should.Match(projectC))
 
 			// Time passes, in-memory cached copy expires.
 			tc.Add(2 * time.Minute)
@@ -138,8 +138,8 @@ func TestProjectConfig(t *testing.T) {
 			projects, err = Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["b"], should.Resemble(newProjectB))
-			assert.Loosely(t, projects["c"], should.Resemble(projectC))
+			assert.Loosely(t, projects["b"], should.Match(newProjectB))
+			assert.Loosely(t, projects["c"], should.Match(projectC))
 
 			// Update with milestone project should be ignored.
 			milestoneProject := CreatePlaceholderProjectConfig()
@@ -154,13 +154,13 @@ func TestProjectConfig(t *testing.T) {
 			projects, err = fetchProjects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["b"], should.Resemble(newProjectB))
-			assert.Loosely(t, projects["c"], should.Resemble(projectC))
+			assert.Loosely(t, projects["b"], should.Match(newProjectB))
+			assert.Loosely(t, projects["c"], should.Match(projectC))
 
 			// Check supported projects.
 			projectNames, err := SupportedProjects(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, projectNames, should.Resemble([]string{"b", "c"}))
+			assert.Loosely(t, projectNames, should.Match([]string{"b", "c"}))
 		})
 
 		t.Run("Validation works", func(t *ftt.Test) {
@@ -175,7 +175,7 @@ func TestProjectConfig(t *testing.T) {
 			projects, err := Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(1))
-			assert.Loosely(t, projects["a"], should.Resemble(projectA))
+			assert.Loosely(t, projects["a"], should.Match(projectA))
 		})
 
 		t.Run("Update retains existing config if new config is invalid", func(t *ftt.Test) {
@@ -188,8 +188,8 @@ func TestProjectConfig(t *testing.T) {
 			projects, err := Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["a"], should.Resemble(projectA))
-			assert.Loosely(t, projects["b"], should.Resemble(projectB))
+			assert.Loosely(t, projects["a"], should.Match(projectA))
+			assert.Loosely(t, projects["b"], should.Match(projectB))
 
 			// Attempt to update with an invalid config for project B.
 			newProjectA := CreatePlaceholderProjectConfig()
@@ -213,8 +213,8 @@ func TestProjectConfig(t *testing.T) {
 			projects, err = Projects(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(projects), should.Equal(2))
-			assert.Loosely(t, projects["a"], should.Resemble(newProjectA))
-			assert.Loosely(t, projects["b"], should.Resemble(projectB))
+			assert.Loosely(t, projects["a"], should.Match(newProjectA))
+			assert.Loosely(t, projects["b"], should.Match(projectB))
 		})
 	})
 }
@@ -234,7 +234,7 @@ func TestProject(t *testing.T) {
 		t.Run("success", func(t *ftt.Test) {
 			pj, err := Project(ctx, "chromium")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pj, should.Resemble(pjChromium))
+			assert.Loosely(t, pj, should.Match(pjChromium))
 		})
 
 		t.Run("not found", func(t *ftt.Test) {

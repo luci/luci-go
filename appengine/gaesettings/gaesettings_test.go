@@ -74,28 +74,28 @@ func TestWorks(t *testing.T) {
 		bundle, exp, err = s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, exp, should.Equal(time.Second))
-		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val3"`)))
+		assert.Loosely(t, *bundle.Values["key"], should.Match(json.RawMessage(`"val3"`)))
 
 		conTime, err = s.GetConsistencyTime(ctx)
-		assert.Loosely(t, conTime, should.Resemble(clock.Now(ctx).UTC().Add(time.Second)))
+		assert.Loosely(t, conTime, should.Match(clock.Now(ctx).UTC().Add(time.Second)))
 		assert.Loosely(t, err, should.BeNil)
 
 		// Check all log entities is there.
 		ds.GetTestable(ctx).CatchupIndexes()
 		entities := []settingsEntity{}
 		assert.Loosely(t, ds.GetAll(ctx, ds.NewQuery("gaesettings.SettingsLog"), &entities), should.BeNil)
-		assert.Loosely(t, len(entities), should.Resemble(2))
+		assert.Loosely(t, len(entities), should.Match(2))
 		asMap := map[string]settingsEntity{}
 		for _, e := range entities {
-			assert.Loosely(t, e.Kind, should.Resemble("gaesettings.SettingsLog"))
-			assert.Loosely(t, e.Parent.Kind(), should.Resemble("gaesettings.Settings"))
+			assert.Loosely(t, e.Kind, should.Match("gaesettings.SettingsLog"))
+			assert.Loosely(t, e.Parent.Kind(), should.Match("gaesettings.Settings"))
 			// Clear some fields to simplify assert below.
 			e.Kind = ""
 			e.Parent = nil
 			e.When = time.Time{}
 			asMap[e.ID] = e
 		}
-		assert.Loosely(t, asMap, should.Resemble(map[string]settingsEntity{
+		assert.Loosely(t, asMap, should.Match(map[string]settingsEntity{
 			"1": {
 				ID:      "1",
 				Version: 1,
@@ -131,12 +131,12 @@ func TestWorks(t *testing.T) {
 		// Works when using default namespace.
 		bundle, _, err := s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val1"`)))
+		assert.Loosely(t, *bundle.Values["key"], should.Match(json.RawMessage(`"val1"`)))
 
 		// Works when using non-default namespace too.
 		bundle, _, err = s.FetchAllSettings(namespaced)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val1"`)))
+		assert.Loosely(t, *bundle.Values["key"], should.Match(json.RawMessage(`"val1"`)))
 		assert.
 
 			// Update using non-default namespace.
@@ -145,7 +145,7 @@ func TestWorks(t *testing.T) {
 		// Works when using default namespace.
 		bundle, _, err = s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, *bundle.Values["key"], should.Resemble(json.RawMessage(`"val2"`)))
+		assert.Loosely(t, *bundle.Values["key"], should.Match(json.RawMessage(`"val2"`)))
 	})
 
 	ftt.Run("Ignores transactions", t, func(t *ftt.Test) {
@@ -159,13 +159,13 @@ func TestWorks(t *testing.T) {
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+		assert.Loosely(t, len(bundle.Values), should.Match(1))
 
 		// Works when fetching from inside of a transaction.
 		ds.RunInTransaction(ctx, func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+			assert.Loosely(t, len(bundle.Values), should.Match(1))
 			return nil
 		}, nil)
 	})
@@ -181,14 +181,14 @@ func TestWorks(t *testing.T) {
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+		assert.Loosely(t, len(bundle.Values), should.Match(1))
 
 		// Works when fetching from inside of a transaction.
 		namespaced := info.MustNamespace(ctx, "blah")
 		ds.RunInTransaction(namespaced, func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+			assert.Loosely(t, len(bundle.Values), should.Match(1))
 			return nil
 		}, nil)
 	})
@@ -204,13 +204,13 @@ func TestWorks(t *testing.T) {
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+		assert.Loosely(t, len(bundle.Values), should.Match(1))
 
 		// Works when fetching from inside of a transaction.
 		ds.RunInTransaction(txnBuf.FilterRDS(ctx), func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+			assert.Loosely(t, len(bundle.Values), should.Match(1))
 			return nil
 		}, nil)
 	})
@@ -226,14 +226,14 @@ func TestWorks(t *testing.T) {
 		// Works when fetching outside of a transaction.
 		bundle, _, err := s.FetchAllSettings(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+		assert.Loosely(t, len(bundle.Values), should.Match(1))
 
 		// Works when fetching from inside of a transaction.
 		namespaced := info.MustNamespace(ctx, "blah")
 		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(ctx context.Context) error {
 			bundle, _, err := s.FetchAllSettings(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(bundle.Values), should.Resemble(1))
+			assert.Loosely(t, len(bundle.Values), should.Match(1))
 			return nil
 		}, nil)
 	})

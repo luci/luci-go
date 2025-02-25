@@ -48,7 +48,7 @@ func TestVariantUtils(t *testing.T) {
 			"k1", "v1",
 			"key/k2", "v2",
 		)
-		assert.Loosely(t, VariantToStrings(v), should.Resemble([]string{
+		assert.Loosely(t, VariantToStrings(v), should.Match([]string{
 			"k1:v1", "key/k2:v2", "key/with/part/k3:v3",
 		}))
 	})
@@ -57,7 +57,7 @@ func TestVariantUtils(t *testing.T) {
 		t.Run(`for valid pairs`, func(t *ftt.Test) {
 			vr, err := VariantFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, vr, should.Resemble(Variant(
+			assert.Loosely(t, vr, should.Match(Variant(
 				"k1", "v1",
 				"key/k2", "v2",
 				"key/with/part/k3", "v3",
@@ -77,7 +77,7 @@ func TestVariantUtils(t *testing.T) {
 			"k3", "v3",
 			"k1", "v1",
 		)
-		assert.Loosely(t, SortedVariantKeys(vr), should.Resemble([]string{"k1", "k2", "k3"}))
+		assert.Loosely(t, SortedVariantKeys(vr), should.Match([]string{"k1", "k2", "k3"}))
 	})
 
 	ftt.Run(`VariantToStringPairs`, t, func(t *ftt.Test) {
@@ -87,7 +87,7 @@ func TestVariantUtils(t *testing.T) {
 			"k3", "v3",
 		}
 		vr := Variant(pairs...)
-		assert.Loosely(t, VariantToStringPairs(vr), should.Resemble(StringPairs(pairs...)))
+		assert.Loosely(t, VariantToStringPairs(vr), should.Match(StringPairs(pairs...)))
 	})
 
 	ftt.Run(`CombineVariant`, t, func(t *ftt.Test) {
@@ -105,7 +105,7 @@ func TestVariantUtils(t *testing.T) {
 			"k1", "v1",
 			"key/k2", "v2",
 		)
-		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Match(expectedVariant))
 	})
 
 	ftt.Run(`CombineVariant with nil variant`, t, func(t *ftt.Test) {
@@ -116,15 +116,15 @@ func TestVariantUtils(t *testing.T) {
 
 		// (nil, nil)
 		baseVariant, additionalVariant, expectedVariant = nil, nil, nil
-		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Match(expectedVariant))
 
 		// (variant, nil)
 		baseVariant, additionalVariant, expectedVariant = v1, nil, v1
-		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Match(expectedVariant))
 
 		// (nil, variant)
 		baseVariant, additionalVariant, expectedVariant = nil, v2, v2
-		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Match(expectedVariant))
 	})
 }
 

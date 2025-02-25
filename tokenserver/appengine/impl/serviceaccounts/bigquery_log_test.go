@@ -57,7 +57,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev:       111,
 		}
 
-		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.ServiceAccountToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Match(&bqpb.ServiceAccountToken{
 			Fingerprint:     "308eda9daf26b7446b284449a5895ab9",
 			Kind:            minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 			ServiceAccount:  "acc@example.com",

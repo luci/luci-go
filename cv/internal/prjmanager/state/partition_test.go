@@ -61,13 +61,13 @@ func TestRepartition(t *testing.T) {
 			actual := state.pclIndex
 			state.pclIndex = nil
 			state.ensurePCLIndex()
-			assert.Loosely(t, actual, should.Resemble(state.pclIndex), truth.LineContext())
+			assert.Loosely(t, actual, should.Match(state.pclIndex), truth.LineContext())
 		}
 
 		t.Run("nothing to do, except resetting RepartitionRequired", func(t *ftt.Test) {
 			t.Run("totally empty", func(t *ftt.Test) {
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{}))
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{}))
 				check(t)
 			})
 			t.Run("1 active CL in 1 component", func(t *ftt.Test) {
@@ -78,7 +78,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				pb.RepartitionRequired = false
-				assert.Loosely(t, state.PB, should.Resemble(pb))
+				assert.Loosely(t, state.PB, should.Match(pb))
 				check(t)
 			})
 			t.Run("1 active CL in 1 component needing triage with 1 Run", func(t *ftt.Test) {
@@ -93,7 +93,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				pb.RepartitionRequired = false
-				assert.Loosely(t, state.PB, should.Resemble(pb))
+				assert.Loosely(t, state.PB, should.Match(pb))
 				check(t)
 			})
 		})
@@ -109,7 +109,7 @@ func TestRepartition(t *testing.T) {
 				}
 
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
 						{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -133,7 +133,7 @@ func TestRepartition(t *testing.T) {
 					{Clids: []int64{2, 3}},
 				}
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls:       nil,
 					Components: nil,
 				}))
@@ -150,7 +150,7 @@ func TestRepartition(t *testing.T) {
 					Clids: []int64{1, 2},
 				}}
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
 					},
@@ -169,7 +169,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{{Clid: 1}},
 					Components: []*prjpb.Component{{
 						Clids:          []int64{1},
@@ -189,7 +189,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{
@@ -223,7 +223,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, TriageRequired: true},
@@ -246,7 +246,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
 					Components: []*prjpb.Component{
 						{Clids: []int64{1, 3}, TriageRequired: true},
@@ -268,7 +268,7 @@ func TestRepartition(t *testing.T) {
 				orig := backupPB(state)
 
 				state.repartition(cat)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
 					Components: []*prjpb.Component{
@@ -296,7 +296,7 @@ func TestRepartition(t *testing.T) {
 
 				state.repartition(cat)
 				sortByFirstCL(state.PB.Components)
-				assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+				assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
 					Components: []*prjpb.Component{
@@ -343,7 +343,7 @@ func TestRepartition(t *testing.T) {
 
 			state.repartition(cat)
 			sortByFirstCL(state.PB.Components)
-			assert.Loosely(t, state.PB, should.Resemble(&prjpb.PState{
+			assert.Loosely(t, state.PB, should.Match(&prjpb.PState{
 				Pcls: []*prjpb.PCL{
 					{Clid: 1},
 					{Clid: 2, Deps: []*changelist.Dep{{Clid: 1}}},
@@ -428,8 +428,8 @@ func TestPartitionSpecialCases(t *testing.T) {
 			}}
 
 			cat := s0.categorizeCLs(ctx)
-			assert.Loosely(t, cat.active, should.Resemble(common.CLIDsSet{10: {}, 12: {}}))
-			assert.Loosely(t, cat.deps, should.Resemble(common.CLIDsSet{11: {}}))
+			assert.Loosely(t, cat.active, should.Match(common.CLIDsSet{10: {}, 12: {}}))
+			assert.Loosely(t, cat.deps, should.Match(common.CLIDsSet{11: {}}))
 			assert.Loosely(t, cat.unused, should.BeEmpty)
 			assert.Loosely(t, cat.unloaded, should.BeEmpty)
 
@@ -437,12 +437,12 @@ func TestPartitionSpecialCases(t *testing.T) {
 			s1.repartition(cat)
 
 			// All PCLs are still used.
-			assert.Loosely(t, s1.PB.GetPcls(), should.Resemble(s0.PB.GetPcls()))
+			assert.Loosely(t, s1.PB.GetPcls(), should.Match(s0.PB.GetPcls()))
 			// But CreatedPruns must be moved into components.
 			assert.Loosely(t, s1.PB.GetCreatedPruns(), should.BeEmpty)
 			// Because CLs are related, there should be just 1 component remaining with
 			// both Runs.
-			assert.Loosely(t, s1.PB.GetComponents(), should.Resemble([]*prjpb.Component{
+			assert.Loosely(t, s1.PB.GetComponents(), should.Match([]*prjpb.Component{
 				{
 					Clids: []int64{10, 12},
 					Pruns: []*prjpb.PRun{

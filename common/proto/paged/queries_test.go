@@ -238,7 +238,7 @@ func TestQueries(t *testing.T) {
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
 						assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
-						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id"}))
+						assert.Loosely(t, rsp.Records, should.Match([]string{"id"}))
 						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 
@@ -248,14 +248,14 @@ func TestQueries(t *testing.T) {
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
 						assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
-						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id1", "id2"}))
+						assert.Loosely(t, rsp.Records, should.Match([]string{"id1", "id2"}))
 						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 						tok := rsp.NextPageToken
 						rsp.NextPageToken = ""
 						rsp.Records = make([]string, 0)
 						assert.Loosely(t, Query(c, 2, tok, rsp, q, f), should.BeNil)
-						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id3"}))
+						assert.Loosely(t, rsp.Records, should.Match([]string{"id3"}))
 						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 				})
@@ -270,7 +270,7 @@ func TestQueries(t *testing.T) {
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
 						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
-						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id"}))
+						assert.Loosely(t, rsp.Records, should.Match([]string{"id"}))
 					})
 
 					t.Run("many", func(t *ftt.Test) {
@@ -279,7 +279,7 @@ func TestQueries(t *testing.T) {
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
 						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
-						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id1", "id2", "id3"}))
+						assert.Loosely(t, rsp.Records, should.Match([]string{"id1", "id2", "id3"}))
 					})
 
 					t.Run("error", func(t *ftt.Test) {

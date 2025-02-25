@@ -186,15 +186,15 @@ func TestBucketsByPerm(t *testing.T) {
 
 		buckets1, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buckets1, should.Resemble([]string{"project/bucket1", "project/bucket2", "project2/bucket1"}))
+		assert.Loosely(t, buckets1, should.Match([]string{"project/bucket1", "project/bucket2", "project2/bucket1"}))
 
 		buckets2, err := BucketsByPerm(ctx, bbperms.BuildsCancel, "")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buckets2, should.Resemble([]string{"project/bucket2"}))
+		assert.Loosely(t, buckets2, should.Match([]string{"project/bucket2"}))
 
 		buckets3, err := BucketsByPerm(ctx, bbperms.BuildersList, "project2")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buckets3, should.Resemble([]string{"project2/bucket1"}))
+		assert.Loosely(t, buckets3, should.Match([]string{"project2/bucket1"}))
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:unknown@example.com"),

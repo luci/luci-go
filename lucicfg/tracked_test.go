@@ -52,13 +52,13 @@ func TestFindTrackedFiles(t *testing.T) {
 		t.Run("Works", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"*.cfg", "sub/*", "!**/*-dev.cfg"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, files, should.Resemble([]string{"a.cfg", "sub/a.cfg"}))
+			assert.Loosely(t, files, should.Match([]string{"a.cfg", "sub/a.cfg"}))
 		})
 
 		t.Run("No negative", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"**/*.cfg"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, files, should.Resemble([]string{
+			assert.Loosely(t, files, should.Match([]string{
 				"a-dev.cfg",
 				"a.cfg",
 				"sub/a-dev.cfg",
@@ -75,7 +75,7 @@ func TestFindTrackedFiles(t *testing.T) {
 		t.Run("Implied **/*", func(t *ftt.Test) {
 			files, err := FindTrackedFiles(tmp, []string{"!**/*-dev.cfg"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, files, should.Resemble([]string{
+			assert.Loosely(t, files, should.Match([]string{
 				"a.cfg",
 				"sub/a.cfg",
 			}))

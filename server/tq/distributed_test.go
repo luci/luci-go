@@ -54,6 +54,6 @@ func TestSweepRouting(t *testing.T) {
 
 		sched.Run(ctx, tqtesting.StopWhenDrained())
 		assert.Loosely(t, calls, should.HaveLength(1))
-		assert.Loosely(t, calls[0], should.Resemble(submitted))
+		assert.Loosely(t, calls[0], should.Match(submitted))
 	})
 }

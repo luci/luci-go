@@ -66,7 +66,7 @@ func TestChunkNode(t *testing.T) {
 		n := newChunkNode(c)
 
 		t.Run(`Should call Chunk methods.`, func(t *ftt.Test) {
-			assert.Loosely(t, n.Bytes(), should.Resemble([]byte{0, 1, 2}))
+			assert.Loosely(t, n.Bytes(), should.Match([]byte{0, 1, 2}))
 		})
 
 		t.Run(`When released, releases the wrapped Chunk.`, func(t *ftt.Test) {

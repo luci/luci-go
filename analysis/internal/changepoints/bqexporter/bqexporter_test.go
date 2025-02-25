@@ -211,7 +211,7 @@ func TestBQExporter(t *testing.T) {
 		assert.Loosely(t, len(rows), should.Equal(3))
 
 		// Asserts the rows.
-		assert.Loosely(t, rows[0], should.Resemble(&bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[0], should.Match(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_id_1",
 			VariantHash: "variant_hash_1",
@@ -235,7 +235,7 @@ func TestBQExporter(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, rows[1], should.Resemble(&bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[1], should.Match(&bqpb.TestVariantBranchRow{
 			Project:                    "chromium",
 			TestId:                     "test_id_2",
 			VariantHash:                "variant_hash_2",
@@ -312,7 +312,7 @@ func TestBQExporter(t *testing.T) {
 			},
 		}))
 
-		assert.Loosely(t, rows[2], should.Resemble(&bqpb.TestVariantBranchRow{
+		assert.Loosely(t, rows[2], should.Match(&bqpb.TestVariantBranchRow{
 			Project:     "chromium",
 			TestId:      "test_id_3",
 			VariantHash: "variant_hash_3",

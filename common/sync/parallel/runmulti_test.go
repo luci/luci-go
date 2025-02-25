@@ -87,7 +87,7 @@ func TestRunMulti(t *testing.T) {
 			expected[i] = i
 		}
 		sort.Ints(actual)
-		assert.Loosely(t, actual, should.Resemble(expected))
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 
 	ftt.Run(`A RunMulti operation will stop executing jobs if its Context is canceled.`, t, func(t *ftt.Test) {

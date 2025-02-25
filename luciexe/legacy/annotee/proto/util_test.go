@@ -69,6 +69,6 @@ func TestExtractProperties(t *testing.T) {
 
 		actual, err := ExtractProperties(root)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(expected))
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 }

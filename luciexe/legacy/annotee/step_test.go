@@ -353,7 +353,7 @@ func TestConvertBuildStep(t *testing.T) {
 					return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(prefix+"/+/"+logName))
 				},
 			)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 		t.Run("without LogDog URL constructed", func(t *ftt.Test) {
 			actual, err := ConvertBuildSteps(context.Background(), annotationStep.Substep, false, "", "")
@@ -362,7 +362,7 @@ func TestConvertBuildStep(t *testing.T) {
 				func(logName string) string { return logName },
 				func(logName string) string { return "" },
 			)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 	})
 }
@@ -464,7 +464,7 @@ func TestConvertRootStep(t *testing.T) {
 		var test = func() {
 			actual, err := ConvertRootStep(context.Background(), rootStep)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(expectedBuild))
+			assert.Loosely(t, actual, should.Match(expectedBuild))
 		}
 
 		test()

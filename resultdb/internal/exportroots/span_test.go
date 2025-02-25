@@ -56,7 +56,7 @@ func TestSpan(t *testing.T) {
 			t.Run(`Invocation with roots, no root restriction`, func(t *ftt.Test) {
 				got, err := ReadForInvocation(span.Single(ctx), "inv-a", RootRestriction{UseRestriction: false})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{
+				assert.Loosely(t, got, should.Match([]ExportRoot{
 					roots[0],
 					roots[2],
 				}))
@@ -64,7 +64,7 @@ func TestSpan(t *testing.T) {
 			t.Run(`Invocation with roots, root restriction`, func(t *ftt.Test) {
 				got, err := ReadForInvocation(span.Single(ctx), "inv-a", RootRestriction{UseRestriction: true, InvocationIDs: invocations.NewIDSet("root-a")})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{
+				assert.Loosely(t, got, should.Match([]ExportRoot{
 					roots[0],
 				}))
 			})
@@ -89,7 +89,7 @@ func TestSpan(t *testing.T) {
 			t.Run(`Nominated invocations and roots`, func(t *ftt.Test) {
 				got, err := ReadForInvocations(span.Single(ctx), invocations.NewIDSet("inv-a", "inv-b"), invocations.NewIDSet("root-a", "root-b"))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble(map[invocations.ID]map[invocations.ID]ExportRoot{
+				assert.Loosely(t, got, should.Match(map[invocations.ID]map[invocations.ID]ExportRoot{
 					"inv-a": {
 						"root-a": roots[0],
 						"root-b": roots[2],
@@ -103,7 +103,7 @@ func TestSpan(t *testing.T) {
 			t.Run(`Missing export roots`, func(t *ftt.Test) {
 				results, err := ReadForInvocations(span.Single(ctx), invocations.NewIDSet("inv-empty"), invocations.NewIDSet("root-1", "root-2"))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, results, should.Resemble(map[invocations.ID]map[invocations.ID]ExportRoot{}))
+				assert.Loosely(t, results, should.Match(map[invocations.ID]map[invocations.ID]ExportRoot{}))
 			})
 		})
 		t.Run(`Create`, func(t *ftt.Test) {
@@ -122,7 +122,7 @@ func TestSpan(t *testing.T) {
 
 				got, err := ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
+				assert.Loosely(t, got, should.Match([]ExportRoot{entry}))
 			})
 			t.Run(`With sources, non-nil`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
@@ -136,7 +136,7 @@ func TestSpan(t *testing.T) {
 
 				got, err := ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
+				assert.Loosely(t, got, should.Match([]ExportRoot{entry}))
 			})
 			t.Run(`With sources, nil`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
@@ -150,7 +150,7 @@ func TestSpan(t *testing.T) {
 
 				got, err := ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
+				assert.Loosely(t, got, should.Match([]ExportRoot{entry}))
 			})
 		})
 		t.Run(`SetInheritedSources`, func(t *ftt.Test) {
@@ -178,7 +178,7 @@ func TestSpan(t *testing.T) {
 
 				got, err := ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
+				assert.Loosely(t, got, should.Match([]ExportRoot{entry}))
 			})
 			t.Run(`Nil sources`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
@@ -192,7 +192,7 @@ func TestSpan(t *testing.T) {
 
 				got, err := ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
+				assert.Loosely(t, got, should.Match([]ExportRoot{entry}))
 			})
 		})
 		t.Run(`SetNotified`, func(t *ftt.Test) {
@@ -220,7 +220,7 @@ func TestSpan(t *testing.T) {
 
 			got, err := ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, got, should.Resemble([]ExportRoot{expected}))
+			assert.Loosely(t, got, should.Match([]ExportRoot{expected}))
 		})
 	})
 }

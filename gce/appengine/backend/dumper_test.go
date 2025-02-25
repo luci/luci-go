@@ -48,7 +48,7 @@ func TestDumper(t *testing.T) {
 		bq := &fakeBQDataset{result: make(map[string]any)}
 		t.Run("none", func(t *ftt.Test) {
 			assert.Loosely(t, uploadToBQ(c, bq), should.BeNil)
-			assert.Loosely(t, bq.result, should.Resemble(map[string]any{}))
+			assert.Loosely(t, bq.result, should.Match(map[string]any{}))
 		})
 		t.Run("one config", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(c, &model.Config{

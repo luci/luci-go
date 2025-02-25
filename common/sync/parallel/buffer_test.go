@@ -160,12 +160,12 @@ func TestBuffer(t *testing.T) {
 			}
 
 			t.Run(`Is FIFO by default.`, func(t *ftt.Test) {
-				assert.Loosely(t, account(b.Run(gen)), should.Resemble([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+				assert.Loosely(t, account(b.Run(gen)), should.Match([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
 			})
 
 			t.Run(`Will be LIFO if LIFO is set.`, func(t *ftt.Test) {
 				b.SetFIFO(false)
-				assert.Loosely(t, account(b.Run(gen)), should.Resemble([]int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}))
+				assert.Loosely(t, account(b.Run(gen)), should.Match([]int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}))
 			})
 		})
 

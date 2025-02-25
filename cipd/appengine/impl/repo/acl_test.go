@@ -101,14 +101,14 @@ func TestRoles(t *testing.T) {
 							haveRoles = append(haveRoles, r)
 						}
 					}
-					assert.Loosely(t, haveRoles, should.Resemble(tc.expectedRoles))
+					assert.Loosely(t, haveRoles, should.Match(tc.expectedRoles))
 				})
 
 				// Get the same set of roles through rolesInPrefix.
 				t.Run("rolesInPrefix", func(t *ftt.Test) {
 					haveRoles, err := rolesInPrefix(ctx, tc.user, metas)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, haveRoles, should.Resemble(tc.expectedRoles))
+					assert.Loosely(t, haveRoles, should.Match(tc.expectedRoles))
 				})
 			})
 		}

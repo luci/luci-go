@@ -79,7 +79,7 @@ func TestDeleteBots(t *testing.T) {
 				nil, service,
 			)
 			assert.Loosely(t, code, should.BeZero)
-			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123"}))
+			assert.Loosely(t, givenbotID, should.Match([]string{"testbot123"}))
 		})
 
 		t.Run(`Test deleting few bots`, func(t *ftt.Test) {
@@ -90,7 +90,7 @@ func TestDeleteBots(t *testing.T) {
 				nil, service,
 			)
 			assert.Loosely(t, code, should.BeZero)
-			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "testbot456"}))
+			assert.Loosely(t, givenbotID, should.Match([]string{"testbot123", "testbot456"}))
 		})
 
 		t.Run(`Test when a bot can't be deleted`, func(t *ftt.Test) {
@@ -102,7 +102,7 @@ func TestDeleteBots(t *testing.T) {
 			)
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, err, should.ErrLike("no such bot"))
-			assert.Loosely(t, givenbotID, should.Resemble([]string{failbotID}))
+			assert.Loosely(t, givenbotID, should.Match([]string{failbotID}))
 		})
 
 		t.Run(`stop deleting bots immediately when encounter a bot that can't be deleted`, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestDeleteBots(t *testing.T) {
 			)
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, err, should.ErrLike("no such bot"))
-			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "failingbotID"}))
+			assert.Loosely(t, givenbotID, should.Match([]string{"testbot123", "failingbotID"}))
 		})
 
 		t.Run(`Test when bot wasn't deleted`, func(t *ftt.Test) {
@@ -126,7 +126,7 @@ func TestDeleteBots(t *testing.T) {
 			)
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, err, should.ErrLike("not deleted"))
-			assert.Loosely(t, givenbotID, should.Resemble([]string{"testbot123", "cannotdeletebotID"}))
+			assert.Loosely(t, givenbotID, should.Match([]string{"testbot123", "cannotdeletebotID"}))
 		})
 	})
 }

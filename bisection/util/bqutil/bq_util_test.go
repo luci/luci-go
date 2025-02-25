@@ -381,7 +381,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			},
 		}
 
-		assert.Loosely(t, tfaProto, should.Resemble(&bqpb.TestAnalysisRow{
+		assert.Loosely(t, tfaProto, should.Match(&bqpb.TestAnalysisRow{
 			Project:    "chromium",
 			AnalysisId: 100,
 			Builder: &buildbucketpb.BuilderID{

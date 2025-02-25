@@ -161,13 +161,13 @@ func TestCreateTestResult(t *testing.T) {
 			expected.VariantHash = "c8643f74854d84b4"
 			res, err := recorder.CreateTestResult(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(expected))
+			assert.Loosely(t, res, should.Match(expected))
 
 			// double-check it with the database
 			expected.VariantHash = "c8643f74854d84b4"
 			row, err := testresults.Read(span.Single(ctx), res.Name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, row, should.Resemble(expected))
+			assert.Loosely(t, row, should.Match(expected))
 
 			var invCommonTestIdPrefix string
 			err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]any{"CommonTestIDPrefix": &invCommonTestIdPrefix})

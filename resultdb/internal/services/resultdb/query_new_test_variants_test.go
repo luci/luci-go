@@ -422,6 +422,6 @@ func TestE2E(t *testing.T) {
 			{TestId: "B", VariantHash: vh},
 			{TestId: "E", VariantHash: vh},
 		}
-		assert.Loosely(t, nt, should.Resemble(expected))
+		assert.Loosely(t, nt, should.Match(expected))
 	})
 }

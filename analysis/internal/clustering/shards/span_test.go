@@ -53,24 +53,24 @@ func TestSpan(t *testing.T) {
 
 					readShards, err := ReadAll(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readShards, should.Resemble([]ReclusteringShard{}))
+					assert.Loosely(t, readShards, should.Match([]ReclusteringShard{}))
 				})
 				t.Run(`Exists`, func(t *ftt.Test) {
 					readShards, err := ReadAll(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readShards, should.Resemble(shards))
+					assert.Loosely(t, readShards, should.Match(shards))
 				})
 			})
 			t.Run(`ReadAllProgresses`, func(t *ftt.Test) {
 				t.Run(`Not Exists`, func(t *ftt.Test) {
 					readProgresses, err := ReadAllProgresses(span.Single(ctx), reference.Add(1*time.Minute))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readProgresses, should.Resemble([]ReclusteringProgress{}))
+					assert.Loosely(t, readProgresses, should.Match([]ReclusteringProgress{}))
 				})
 				t.Run(`Exists`, func(t *ftt.Test) {
 					readProgresses, err := ReadAllProgresses(span.Single(ctx), reference)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readProgresses, should.Resemble([]ReclusteringProgress{
+					assert.Loosely(t, readProgresses, should.Match([]ReclusteringProgress{
 						{
 							Project:          "projecta",
 							AttemptTimestamp: reference,
@@ -92,7 +92,7 @@ func TestSpan(t *testing.T) {
 				t.Run(`Not Exists`, func(t *ftt.Test) {
 					readProgress, err := ReadProgress(span.Single(ctx), "projecta", reference.Add(1*time.Minute))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readProgress, should.Resemble(ReclusteringProgress{
+					assert.Loosely(t, readProgress, should.Match(ReclusteringProgress{
 						Project:          "projecta",
 						AttemptTimestamp: reference.Add(1 * time.Minute),
 						ShardCount:       0,
@@ -103,7 +103,7 @@ func TestSpan(t *testing.T) {
 				t.Run(`Exists`, func(t *ftt.Test) {
 					readProgress, err := ReadProgress(span.Single(ctx), "projecta", reference)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, readProgress, should.Resemble(ReclusteringProgress{
+					assert.Loosely(t, readProgress, should.Match(ReclusteringProgress{
 						Project:          "projecta",
 						AttemptTimestamp: reference,
 						ShardCount:       3,
@@ -161,7 +161,7 @@ func TestSpan(t *testing.T) {
 				// Create does not set the progress, so do not expect it to.
 				expectedShard := s
 				expectedShard.Progress = spanner.NullInt64{}
-				assert.Loosely(t, shards[0], should.Resemble(expectedShard))
+				assert.Loosely(t, shards[0], should.Match(expectedShard))
 			})
 			t.Run(`With invalid Shard Number`, func(t *ftt.Test) {
 				s.ShardNumber = 0
@@ -205,7 +205,7 @@ func TestSpan(t *testing.T) {
 
 			readShards, err := ReadAll(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, readShards, should.Resemble([]ReclusteringShard{}))
+			assert.Loosely(t, readShards, should.Match([]ReclusteringShard{}))
 		})
 	})
 }

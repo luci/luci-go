@@ -65,7 +65,7 @@ func TestEvents(t *testing.T) {
 
 			// Stored events have Who and When populated too. Ordered by newest to
 			// oldest, with events in a single batch separated by a fake nanosecond.
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Match([]*api.Event{
 				{
 					Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package: "x/y/z",
@@ -137,7 +137,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Role: api.Role_WRITER,
 				},
 			})
-			assert.Loosely(t, ev, should.Resemble(&api.Event{
+			assert.Loosely(t, ev, should.Match(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
@@ -169,7 +169,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Role: api.Role_WRITER,
 				},
 			}, nil)
-			assert.Loosely(t, ev, should.Resemble(&api.Event{
+			assert.Loosely(t, ev, should.Match(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
@@ -199,7 +199,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 					Principals: []string{"b", "d", "e"},
 				},
 			})
-			assert.Loosely(t, ev, should.Resemble(&api.Event{
+			assert.Loosely(t, ev, should.Match(&api.Event{
 				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),

@@ -89,13 +89,13 @@ func TestFSImpl(t *testing.T) {
 				t.Run("All content", func(t *ftt.Test) {
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(expect))
+					assert.Loosely(t, cfg, should.Match(expect))
 				})
 
 				t.Run("services", func(t *ftt.Test) {
 					cfg, err := client.GetConfig(ctx, "services/foosrv", "something.cfg", false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cfg, should.Resemble(&config.Config{
+					assert.Loosely(t, cfg, should.Match(&config.Config{
 						Meta: config.Meta{
 							ConfigSet:   "services/foosrv",
 							Path:        "something.cfg",
@@ -116,7 +116,7 @@ func TestFSImpl(t *testing.T) {
 					t.Run("make sure it doesn't poison the cache", func(t *ftt.Test) {
 						cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, cfg, should.Resemble(expect))
+						assert.Loosely(t, cfg, should.Match(expect))
 					})
 				})
 			})
@@ -124,7 +124,7 @@ func TestFSImpl(t *testing.T) {
 			t.Run("GetConfigs", func(t *ftt.Test) {
 				cfg, err := client.GetConfigs(ctx, "projects/foobar", nil, false)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(map[string]config.Config{
+				assert.Loosely(t, cfg, should.Match(map[string]config.Config{
 					"another/file.cfg": {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
@@ -151,7 +151,7 @@ func TestFSImpl(t *testing.T) {
 			t.Run("ListFiles", func(t *ftt.Test) {
 				cfg, err := client.ListFiles(ctx, "projects/foobar")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble([]string{
+				assert.Loosely(t, cfg, should.Match([]string{
 					"another/file.cfg",
 					"something/file.cfg",
 				}))
@@ -160,7 +160,7 @@ func TestFSImpl(t *testing.T) {
 			t.Run("GetProjectConfigs", func(t *ftt.Test) {
 				cfgs, err := client.GetProjectConfigs(ctx, "something/file.cfg", false)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfgs, should.Resemble([]config.Config{
+				assert.Loosely(t, cfgs, should.Match([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly",
@@ -187,7 +187,7 @@ func TestFSImpl(t *testing.T) {
 			t.Run("GetProjects", func(t *ftt.Test) {
 				projs, err := client.GetProjects(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, projs, should.Resemble([]config.Project{
+				assert.Loosely(t, projs, should.Match([]config.Project{
 					{
 						ID:       "doodly",
 						Name:     "doodly",
@@ -215,7 +215,7 @@ func TestFSImpl(t *testing.T) {
 
 			cfgs, err := client.GetProjectConfigs(ctx, "file.cfg", false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
+			assert.Loosely(t, cfgs, should.Match([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",
@@ -245,7 +245,7 @@ func TestFSImpl(t *testing.T) {
 
 			cfgs, err = client.GetProjectConfigs(ctx, "file.cfg", false)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
+			assert.Loosely(t, cfgs, should.Match([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",

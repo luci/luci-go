@@ -60,7 +60,7 @@ func TestVerifyJWT(t *testing.T) {
 		body := fakeBody{"body"}
 		verifiedBody, err := verifyJWT(prepareJWT("RS256", goodKeyID, body))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, verifiedBody, should.Resemble(body))
+		assert.Loosely(t, verifiedBody, should.Match(body))
 	})
 
 	ftt.Run("Malformed JWT", t, func(t *ftt.Test) {

@@ -45,7 +45,7 @@ func TestToFailureOnlyLineRanges(t *testing.T) {
 			ranges, err := ToFailureOnlyLineRanges("log.text", "text/log", contentBytes, passingHashes, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(ranges), should.Equal(3))
-			assert.Loosely(t, ranges, should.Resemble([]*pb.QueryArtifactFailureOnlyLinesResponse_LineRange{
+			assert.Loosely(t, ranges, should.Match([]*pb.QueryArtifactFailureOnlyLinesResponse_LineRange{
 				{Start: 1, End: 2},
 				{Start: 3, End: 4},
 				{Start: 5, End: 6},

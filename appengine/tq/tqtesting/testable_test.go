@@ -71,7 +71,7 @@ func TestTestable(t *testing.T) {
 				queue = append(queue, q)
 			}
 			sort.Strings(queue)
-			assert.Loosely(t, queue, should.Resemble([]string{"default", "q1", "q2"}))
+			assert.Loosely(t, queue, should.Match([]string{"default", "q1", "q2"}))
 		})
 
 		t.Run("GetScheduledTasks works", func(t *ftt.Test) {
@@ -101,10 +101,10 @@ func TestTestable(t *testing.T) {
 			assert.Loosely(t, len(tasks), should.Equal(4))
 
 			// Correct order. First to execute are in front.
-			assert.Loosely(t, tasks[0].Payload, should.Resemble(&durationpb.Duration{Seconds: 3}))
-			assert.Loosely(t, tasks[1].Payload, should.Resemble(&durationpb.Duration{Seconds: 4}))
-			assert.Loosely(t, tasks[2].Payload, should.Resemble(&durationpb.Duration{Seconds: 2}))
-			assert.Loosely(t, tasks[3].Payload, should.Resemble(&durationpb.Duration{Seconds: 1}))
+			assert.Loosely(t, tasks[0].Payload, should.Match(&durationpb.Duration{Seconds: 3}))
+			assert.Loosely(t, tasks[1].Payload, should.Match(&durationpb.Duration{Seconds: 4}))
+			assert.Loosely(t, tasks[2].Payload, should.Match(&durationpb.Duration{Seconds: 2}))
+			assert.Loosely(t, tasks[3].Payload, should.Match(&durationpb.Duration{Seconds: 1}))
 		})
 
 		t.Run("ExecuteTask works", func(t *ftt.Test) {
@@ -116,7 +116,7 @@ func TestTestable(t *testing.T) {
 			for _, task := range tst.GetScheduledTasks() {
 				tst.ExecuteTask(ctx, task, nil)
 			}
-			assert.Loosely(t, calls, should.Resemble([]proto.Message{
+			assert.Loosely(t, calls, should.Match([]proto.Message{
 				&emptypb.Empty{},
 				&durationpb.Duration{Seconds: 1},
 			}))
@@ -197,7 +197,7 @@ func TestRunSimulation(t *testing.T) {
 			assert.Loosely(t, len(pending), should.BeZero)
 
 			// Task executed in correct sequence and duplicated task is skipped.
-			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5, 6}))
+			assert.Loosely(t, toIndexes(executed), should.Match([]int64{1, 2, 3, 4, 5, 6}))
 			// The clock matches last task.
 			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(3*time.Second))
 		})
@@ -211,9 +211,9 @@ func TestRunSimulation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// The last task is still pending.
-			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{6}))
+			assert.Loosely(t, toIndexes(pending), should.Match([]int64{6}))
 			// Tasks executed in correct sequence and duplicated task is skipped.
-			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5}))
+			assert.Loosely(t, toIndexes(executed), should.Match([]int64{1, 2, 3, 4, 5}))
 			// The clock matches last executed task.
 			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
@@ -229,9 +229,9 @@ func TestRunSimulation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// The task we stopped before is still pending.
-			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{5}))
+			assert.Loosely(t, toIndexes(pending), should.Match([]int64{5}))
 			// Tasks executed in correct sequence.
-			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4}))
+			assert.Loosely(t, toIndexes(executed), should.Match([]int64{1, 2, 3, 4}))
 			// The clock matches last executed task.
 			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
@@ -247,9 +247,9 @@ func TestRunSimulation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// The next task is the one submitted by the task we stopped at.
-			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{6}))
+			assert.Loosely(t, toIndexes(pending), should.Match([]int64{6}))
 			// Tasks executed in correct sequence.
-			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3, 4, 5}))
+			assert.Loosely(t, toIndexes(executed), should.Match([]int64{1, 2, 3, 4, 5}))
 			// The clock matches last executed task.
 			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
@@ -262,9 +262,9 @@ func TestRunSimulation(t *testing.T) {
 			assert.Loosely(t, err.Error(), should.Equal("task failure"))
 
 			// Task 4 is still pending, since 3 is lexicographically earlier.
-			assert.Loosely(t, toIndexes(pending), should.Resemble([]int64{4}))
+			assert.Loosely(t, toIndexes(pending), should.Match([]int64{4}))
 			// Last one errored.
-			assert.Loosely(t, toIndexes(executed), should.Resemble([]int64{1, 2, 3}))
+			assert.Loosely(t, toIndexes(executed), should.Match([]int64{1, 2, 3}))
 			// The clock matches last executed task.
 			assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(2*time.Second))
 		})
@@ -296,7 +296,7 @@ func TestRunSimulation(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(executed), should.Equal(7)) // executed all tasks + 1 bad, see "happy path"
 				assert.Loosely(t, len(pending), should.BeZero)
-				assert.Loosely(t, unknown, should.Resemble([]*taskqueue.Task{&unknownTask}))
+				assert.Loosely(t, unknown, should.Match([]*taskqueue.Task{&unknownTask}))
 			})
 		})
 	})

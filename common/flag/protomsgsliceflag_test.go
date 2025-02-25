@@ -55,7 +55,7 @@ func TestProtoMessageSliceFlag(t *testing.T) {
 		err = flag.Set("{\"id\": 333333, \"status\": \"CANCELED\"}")
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, flag.Get(), should.Resemble(builds))
+		assert.Loosely(t, flag.Get(), should.Match(builds))
 		assert.Loosely(t, builds, should.HaveLength(3))
 		assert.Loosely(t, builds[0].Id, should.Equal(111111))
 		assert.Loosely(t, builds[0].Status, should.Equal(pb.Status_SUCCESS))

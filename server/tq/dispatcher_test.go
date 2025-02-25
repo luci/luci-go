@@ -97,7 +97,7 @@ func TestAddTask(t *testing.T) {
 			assert.Loosely(t, d.AddTask(ctx, task), should.BeNil)
 
 			assert.Loosely(t, submitter.reqs, should.HaveLength(1))
-			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Resemble(&taskspb.CreateTaskRequest{
+			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Match(&taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: expectedScheduleTime,
@@ -126,7 +126,7 @@ func TestAddTask(t *testing.T) {
 			expectedHeaders[ExpectedETAHeader] = "1442540000.000000"
 
 			assert.Loosely(t, submitter.reqs, should.HaveLength(1))
-			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Resemble(&taskspb.CreateTaskRequest{
+			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Match(&taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					MessageType: &taskspb.Task_HttpRequest{
@@ -154,7 +154,7 @@ func TestAddTask(t *testing.T) {
 			assert.Loosely(t, submitter.reqs, should.HaveLength(1))
 			expectedScheduleTime := timestamppb.New(now.Add(123 * time.Second))
 
-			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Resemble(&taskspb.CreateTaskRequest{
+			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Match(&taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: expectedScheduleTime,
@@ -309,7 +309,7 @@ func TestAddTask(t *testing.T) {
 
 			assert.Loosely(t, submitter.reqs, should.HaveLength(1))
 			st := timestamppb.New(now.Add(444 * time.Second))
-			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Resemble(&taskspb.CreateTaskRequest{
+			assert.Loosely(t, submitter.reqs[0].CreateTaskRequest, should.Match(&taskspb.CreateTaskRequest{
 				Parent: "projects/proj/locations/reg/queues/queue-1",
 				Task: &taskspb.Task{
 					ScheduleTime: st,
@@ -576,7 +576,7 @@ func TestTransactionalEnqueue(t *testing.T) {
 			// The task request inside the reminder's raw payload is correct.
 			remPayload, err := rem.DropPayload().Payload()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, req.CreateTaskRequest, should.Resemble(remPayload.CreateTaskRequest))
+			assert.Loosely(t, req.CreateTaskRequest, should.Match(remPayload.CreateTaskRequest))
 		})
 
 		t.Run("Fatal Submit error", func(t *ftt.Test) {
@@ -669,12 +669,12 @@ func TestTesting(t *testing.T) {
 
 		assert.Loosely(t, disp.AddTask(ctx, &Task{Payload: &durationpb.Duration{Seconds: 1}}), should.BeNil)
 		sched.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, etas, should.Resemble([]time.Duration{
+		assert.Loosely(t, etas, should.Match([]time.Duration{
 			0, 1 * time.Second, 2 * time.Second, 3 * time.Second,
 		}))
 
 		assert.Loosely(t, success, should.HaveLength(4))
-		assert.Loosely(t, success.Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+		assert.Loosely(t, success.Payloads(), should.Match([]protoreflect.ProtoMessage{
 			&durationpb.Duration{Seconds: 1},
 			&durationpb.Duration{Seconds: 2},
 			&durationpb.Duration{Seconds: 3},
@@ -716,8 +716,8 @@ func TestPubSubEnqueue(t *testing.T) {
 			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 
 			task := sched.Tasks()[0]
-			assert.Loosely(t, task.Payload, should.Resemble(&durationpb.Duration{Seconds: 1}))
-			assert.Loosely(t, task.Message, should.Resemble(&pubsubpb.PubsubMessage{
+			assert.Loosely(t, task.Payload, should.Match(&durationpb.Duration{Seconds: 1}))
+			assert.Loosely(t, task.Message, should.Match(&pubsubpb.PubsubMessage{
 				Data: []byte("1"),
 				Attributes: map[string]string{
 					"a":                     "b",
@@ -742,7 +742,7 @@ func TestPubSubEnqueue(t *testing.T) {
 
 			task := sched.Tasks()[0]
 			assert.Loosely(t, task.Payload, should.BeNil) // not available on non-happy path
-			assert.Loosely(t, task.Message, should.Resemble(&pubsubpb.PubsubMessage{
+			assert.Loosely(t, task.Message, should.Match(&pubsubpb.PubsubMessage{
 				Data: []byte("1"),
 				Attributes: map[string]string{
 					"a":                     "b",

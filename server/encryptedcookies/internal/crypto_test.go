@@ -57,7 +57,7 @@ func TestCrypto(t *testing.T) {
 
 			dec, err := DecryptStateB64(ae, enc)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, dec, should.Resemble(state))
+			assert.Loosely(t, dec, should.Match(state))
 
 			_, err = DecryptStateB64(ae, "aaaaaaaa"+enc[8:])
 			assert.Loosely(t, err, should.NotBeNil)
@@ -71,7 +71,7 @@ func TestCrypto(t *testing.T) {
 
 			dec, err := DecryptPrivate(ae, enc)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, dec, should.Resemble(priv))
+			assert.Loosely(t, dec, should.Match(priv))
 
 			for i := 0; i < 8; i++ {
 				enc[i] = 0

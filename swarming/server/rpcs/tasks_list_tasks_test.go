@@ -184,7 +184,7 @@ func TestListTasks(t *testing.T) {
 		})
 		assert.NoErr(t, err)
 		// Only tasks that ran on the bot have perf stats.
-		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string{
+		assert.Loosely(t, tasksWithPerf(resp.Items), should.Match([]string{
 			"clienterror-2",
 			"killed-2",
 			"timeout-2",
@@ -210,7 +210,7 @@ func TestListTasks(t *testing.T) {
 		})
 		assert.NoErr(t, err)
 		// All performance stats are omitted if IncludePerformanceStats is false.
-		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string(nil)))
+		assert.Loosely(t, tasksWithPerf(resp.Items), should.Match([]string(nil)))
 	})
 
 	ftt.Run("Filtering", t, func(t *ftt.Test) {
@@ -230,7 +230,7 @@ func TestListTasks(t *testing.T) {
 			for _, t := range resp.Items {
 				got = append(got, t.Name)
 			}
-			assert.Loosely(t, got, should.Resemble(expected))
+			assert.Loosely(t, got, should.Match(expected))
 
 			// With pagination.
 			cursor := ""
@@ -253,7 +253,7 @@ func TestListTasks(t *testing.T) {
 					break
 				}
 			}
-			assert.Loosely(t, got, should.Resemble(expected))
+			assert.Loosely(t, got, should.Match(expected))
 		}
 
 		// A helper to generate expected results. See SetupTestTask.

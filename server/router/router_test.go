@@ -86,7 +86,7 @@ func TestRouter(t *testing.T) {
 				r2 := r.Subrouter("bar")
 				assert.Loosely(t, r.hrouter, should.Equal(r2.hrouter))
 				assert.Loosely(t, r2.BasePath, should.Equal("/foo/bar"))
-				assert.Loosely(t, r.middleware, should.Resemble(r2.middleware))
+				assert.Loosely(t, r.middleware, should.Match(r2.middleware))
 			})
 		})
 
@@ -112,14 +112,14 @@ func TestRouter(t *testing.T) {
 
 			t.Run("Should execute handler when using nil middlewares", func(t *ftt.Test) {
 				run(ctx, nil, nil, handler)
-				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"handler"}))
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"handler"}))
 			})
 
 			t.Run("Should execute middlewares and handler in order", func(t *ftt.Test) {
 				m := NewMiddlewareChain(a, b, c)
 				n := NewMiddlewareChain(d)
 				run(ctx, m, n, handler)
-				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble(
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match(
 					[]string{"a:before", "b:before", "c", "handler", "d", "b:after", "a:after"},
 				))
 			})
@@ -127,25 +127,25 @@ func TestRouter(t *testing.T) {
 			t.Run("Should not execute upcoming middleware/handlers if next is not called", func(t *ftt.Test) {
 				mc := NewMiddlewareChain(a, stop, b)
 				run(ctx, mc, NewMiddlewareChain(), handler)
-				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "a:after"}))
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"a:before", "a:after"}))
 			})
 
 			t.Run("Should execute next middleware when it encounters nil middleware", func(t *ftt.Test) {
 				t.Run("At start of first chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(nil, a), NewMiddlewareChain(b), handler)
-					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
 				t.Run("At start of second chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(nil, b), handler)
-					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
 				t.Run("At end of first chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a, nil), NewMiddlewareChain(b), handler)
-					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
 				t.Run("At end of second chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(b, nil), handler)
-					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Match([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
 			})
 		})

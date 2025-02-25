@@ -151,7 +151,7 @@ func TestProperties(t *testing.T) {
 							},
 						},
 					}, NoIndex), should.BeNil)
-					assert.Loosely(t, pv.Value(), should.Resemble(PropertyMap{
+					assert.Loosely(t, pv.Value(), should.Match(PropertyMap{
 						"key": Property{
 							indexSetting: true,
 							propType:     PTString,
@@ -219,7 +219,7 @@ func TestProperties(t *testing.T) {
 
 				pv := Property{}
 				assert.Loosely(t, pv.SetValue(now, ShouldIndex), should.BeNil)
-				assert.Loosely(t, pv.Value(), should.Resemble(now))
+				assert.Loosely(t, pv.Value(), should.Match(now))
 				v, err := pv.Project(PTInt)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, v, should.BeZero)
@@ -233,7 +233,7 @@ func TestProperties(t *testing.T) {
 			t.Run("[]byte allows IndexSetting", func(t *ftt.Test) {
 				pv := Property{}
 				assert.Loosely(t, pv.SetValue([]byte("hello"), ShouldIndex), should.BeNil)
-				assert.Loosely(t, pv.Value(), should.Resemble([]byte("hello")))
+				assert.Loosely(t, pv.Value(), should.Match([]byte("hello")))
 				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
 				assert.Loosely(t, pv.Type().String(), should.Equal("PTBytes"))
 			})
@@ -258,10 +258,10 @@ func TestDSPropertyMapImpl(t *testing.T) {
 				pm := PropertyMap{}
 				err := pm.Load(PropertyMap{"hello": Property{}})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pm, should.Resemble(PropertyMap{"hello": Property{}}))
+				assert.Loosely(t, pm, should.Match(PropertyMap{"hello": Property{}}))
 
 				npm, _ := pm.Save(false)
-				assert.Loosely(t, npm, should.Resemble(pm))
+				assert.Loosely(t, npm, should.Match(pm))
 			})
 			t.Run("meta", func(t *ftt.Test) {
 				t.Run("working", func(t *ftt.Test) {
@@ -370,9 +370,9 @@ func TestByteSequences(t *testing.T) {
 						for i, c := range s {
 							assert.Loosely(t, bs.get(i), should.Equal(c))
 						}
-						assert.Loosely(t, bs.value(), should.Resemble(effectiveValue))
+						assert.Loosely(t, bs.value(), should.Match(effectiveValue))
 						assert.Loosely(t, bs.string(), should.Equal(s))
-						assert.Loosely(t, bs.bytes(), should.Resemble([]byte(s)))
+						assert.Loosely(t, bs.bytes(), should.Match([]byte(s)))
 					})
 
 					// Test comparison with other byteSequence types.

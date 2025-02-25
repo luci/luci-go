@@ -37,13 +37,13 @@ func TestConfig(t *testing.T) {
 		t.Run("nil", func(t *ftt.Test) {
 			cfg, err := srv.Delete(c, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, cfg, should.Match(&emptypb.Empty{}))
 		})
 
 		t.Run("empty", func(t *ftt.Test) {
 			cfg, err := srv.Delete(c, &config.DeleteRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, cfg, should.Match(&emptypb.Empty{}))
 		})
 
 		t.Run("ID", func(t *ftt.Test) {
@@ -51,7 +51,7 @@ func TestConfig(t *testing.T) {
 				Id: "id",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, cfg, should.Match(&emptypb.Empty{}))
 		})
 
 		t.Run("deleted", func(t *ftt.Test) {
@@ -60,7 +60,7 @@ func TestConfig(t *testing.T) {
 				Id: "id",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
+			assert.Loosely(t, cfg, should.Match(&emptypb.Empty{}))
 			_, ok := srv.cfg.Load("id")
 			assert.Loosely(t, ok, should.BeFalse)
 		})
@@ -73,7 +73,7 @@ func TestConfig(t *testing.T) {
 		t.Run("nil", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
+			assert.Loosely(t, cfg, should.Match((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("")
 			assert.Loosely(t, ok, should.BeTrue)
 		})
@@ -81,7 +81,7 @@ func TestConfig(t *testing.T) {
 		t.Run("empty", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, &config.EnsureRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
+			assert.Loosely(t, cfg, should.Match((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("")
 			assert.Loosely(t, ok, should.BeTrue)
 		})
@@ -91,7 +91,7 @@ func TestConfig(t *testing.T) {
 				Id: "id",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
+			assert.Loosely(t, cfg, should.Match((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("id")
 			assert.Loosely(t, ok, should.BeTrue)
 		})
@@ -104,7 +104,7 @@ func TestConfig(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&config.Config{
+			assert.Loosely(t, cfg, should.Match(&config.Config{
 				Prefix: "prefix",
 			}))
 			_, ok := srv.cfg.Load("id")
@@ -146,7 +146,7 @@ func TestConfig(t *testing.T) {
 				Id: "id",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cfg, should.Resemble(&config.Config{
+			assert.Loosely(t, cfg, should.Match(&config.Config{
 				Prefix: "prefix",
 			}))
 		})

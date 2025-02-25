@@ -105,12 +105,12 @@ func TestUpdaterSchedule(t *testing.T) {
 				task := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				assert.Loosely(t, k1, should.Resemble(k2))
+				assert.Loosely(t, k1, should.Match(k2))
 
 				t.Run("Internal ID doesn't affect dedup based on ExternalID", func(t *ftt.Test) {
 					task.Id = 123
 					k3 := makeTaskDeduplicationKey(ctx, task, 0)
-					assert.Loosely(t, k3, should.Resemble(k1))
+					assert.Loosely(t, k3, should.Match(k1))
 				})
 			})
 
@@ -119,7 +119,7 @@ func TestUpdaterSchedule(t *testing.T) {
 				k1 := makeTaskDeduplicationKey(ctx, task, time.Second)
 				ct.Clock.Add(time.Second)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				assert.Loosely(t, k1, should.Resemble(k2))
+				assert.Loosely(t, k1, should.Match(k2))
 			})
 
 			t.Run("Same CL at mostly same time is also de-duped", func(t *ftt.Test) {
@@ -129,7 +129,7 @@ func TestUpdaterSchedule(t *testing.T) {
 				// making new timestamp in the next epoch. If so, adjust the increment.
 				ct.Clock.Add(time.Second)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				assert.Loosely(t, k1, should.Resemble(k2))
+				assert.Loosely(t, k1, should.Match(k2))
 			})
 
 			t.Run("Same CL after sufficient time is no longer de-duped", func(t *ftt.Test) {
@@ -144,7 +144,7 @@ func TestUpdaterSchedule(t *testing.T) {
 				task.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
 				k1 := makeTaskDeduplicationKey(ctx, task, 0)
 				k2 := makeTaskDeduplicationKey(ctx, task, 0)
-				assert.Loosely(t, k1, should.Resemble(k2))
+				assert.Loosely(t, k1, should.Match(k2))
 			})
 
 			t.Run("Same CL with the different MetaRevId is not de-duped", func(t *ftt.Test) {
@@ -189,7 +189,7 @@ func TestUpdaterSchedule(t *testing.T) {
 			}
 			delay := time.Minute
 			assert.Loosely(t, u.ScheduleDelayed(ctx, task, delay), should.BeNil)
-			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task}))
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{task}))
 
 			t.Log("Dedup works")
 			ct.Clock.Add(delay)
@@ -201,12 +201,12 @@ func TestUpdaterSchedule(t *testing.T) {
 				return u.Schedule(ctx, task)
 			}, nil)
 			assert.NoErr(t, err)
-			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task, task}))
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{task, task}))
 
 			t.Log("Once out of dedup window, schedules a new task")
 			ct.Clock.Add(knownRefreshInterval)
 			assert.Loosely(t, u.Schedule(ctx, task), should.BeNil)
-			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task, task, task}))
+			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{task, task, task}))
 		})
 	})
 }
@@ -249,12 +249,12 @@ func TestUpdaterBatch(t *testing.T) {
 			t.Run("special case of just one task", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA}, UpdateCLTask_RUN_POKE)
 				assert.NoErr(t, err)
-				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads[:1]))
+				assert.Loosely(t, sortedTQPayloads(), should.Match(expectedPayloads[:1]))
 			})
 			t.Run("multiple", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
 				assert.NoErr(t, err)
-				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads))
+				assert.Loosely(t, sortedTQPayloads(), should.Match(expectedPayloads))
 			})
 		})
 
@@ -266,7 +266,7 @@ func TestUpdaterBatch(t *testing.T) {
 			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 			// Run just the batch task.
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchUpdateCLTaskClass))
-			assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads))
+			assert.Loosely(t, sortedTQPayloads(), should.Match(expectedPayloads))
 		})
 	})
 }
@@ -337,14 +337,14 @@ func TestUpdaterHappyPath(t *testing.T) {
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
 		assert.NoErr(t, err)
-		assert.Loosely(t, cl.Snapshot, should.Resemble(b.fetchResult.Snapshot))
-		assert.Loosely(t, cl.ApplicableConfig, should.Resemble(b.fetchResult.ApplicableConfig))
+		assert.Loosely(t, cl.Snapshot, should.Match(b.fetchResult.Snapshot))
+		assert.Loosely(t, cl.ApplicableConfig, should.Match(b.fetchResult.ApplicableConfig))
 		assert.Loosely(t, cl.UpdateTime, should.HappenWithin(time.Microsecond /*see DS.RoundTime()*/, ct.Clock.Now()))
 
 		// Since there are no Runs associated with the CL, the outstanding TQ task
 		// should ultimately notify the Project Manager.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl.EVersion},
 		}))
 
@@ -375,10 +375,10 @@ func TestUpdaterHappyPath(t *testing.T) {
 		// The CL entity should have a new patchset and PM/RM should be notified.
 		assert.Loosely(t, cl2.Snapshot.GetPatchset(), should.Equal(3))
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl2.EVersion},
 		}))
-		assert.Loosely(t, rm.byRun, should.Resemble(map[common.RunID]map[common.CLID]int64{
+		assert.Loosely(t, rm.byRun, should.Match(map[common.RunID]map[common.CLID]int64{
 			runID: {cl.ID: cl2.EVersion},
 		}))
 
@@ -400,10 +400,10 @@ func TestUpdaterHappyPath(t *testing.T) {
 		// The CL entity have been updated
 		assert.Loosely(t, cl3.EVersion, should.BeGreaterThan(cl2.EVersion))
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 			"luci-project": {cl.ID: cl3.EVersion},
 		}))
-		assert.Loosely(t, rm.byRun, should.Resemble(map[common.RunID]map[common.CLID]int64{
+		assert.Loosely(t, rm.byRun, should.Match(map[common.RunID]map[common.CLID]int64{
 			runID: {cl.ID: cl3.EVersion},
 		}))
 	})
@@ -565,16 +565,16 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		// Resulting CL entity should keep the Snapshot, rewrite ApplicableConfig,
 		// and merge Access.
 		cl2 := reloadCL(ctx, cl)
-		assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
-		assert.Loosely(t, cl2.ApplicableConfig, should.Resemble(b.fetchResult.ApplicableConfig))
-		assert.Loosely(t, cl2.Access, should.Resemble(&Access{ByProject: map[string]*Access_Project{
+		assert.Loosely(t, cl2.Snapshot, should.Match(cl.Snapshot))
+		assert.Loosely(t, cl2.ApplicableConfig, should.Match(b.fetchResult.ApplicableConfig))
+		assert.Loosely(t, cl2.Access, should.Match(&Access{ByProject: map[string]*Access_Project{
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
 			"luci-project":                         {NoAccessTime: timestamppb.New(ct.Clock.Now())},
 		}}))
 		// Notifications doesn't have to be sent to the project with invalid deps,
 		// as this update is irrelevant to the project.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 			"luci-project":                {cl.ID: cl2.EVersion},
 			"previously-existing-project": {cl.ID: cl2.EVersion},
 		}))
@@ -598,15 +598,15 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		err = u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
 		assert.NoErr(t, err)
 		cl3 := reloadCL(ctx, cl)
-		assert.Loosely(t, cl3.Snapshot, should.Resemble(b.fetchResult.Snapshot))                     // replaced
-		assert.Loosely(t, cl3.ApplicableConfig, should.Resemble(cl2.ApplicableConfig))               // same
-		assert.Loosely(t, cl3.Access, should.Resemble(&Access{ByProject: map[string]*Access_Project{ // updated
+		assert.Loosely(t, cl3.Snapshot, should.Match(b.fetchResult.Snapshot))                     // replaced
+		assert.Loosely(t, cl3.ApplicableConfig, should.Match(cl2.ApplicableConfig))               // same
+		assert.Loosely(t, cl3.Access, should.Match(&Access{ByProject: map[string]*Access_Project{ // updated
 			// No more "luci-project" entry.
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
 		}}))
 		// Notifications are still not sent to the project with invalid deps.
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
-		assert.Loosely(t, pm.byProject, should.Resemble(map[string]map[common.CLID]int64{
+		assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 			"luci-project":                {cl.ID: cl3.EVersion},
 			"previously-existing-project": {cl.ID: cl3.EVersion},
 		}))
@@ -765,8 +765,8 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
 				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 				cl2 := reloadCL(ctx, cl)
-				assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
-				assert.Loosely(t, cl2.ApplicableConfig, should.Resemble(b.lookupACfgResult))
+				assert.Loosely(t, cl2.Snapshot, should.Match(cl.Snapshot))
+				assert.Loosely(t, cl2.ApplicableConfig, should.Match(b.lookupACfgResult))
 			})
 
 			t.Run("meta_rev_id is the same", func(t *ftt.Test) {
@@ -922,13 +922,13 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
 			assert.NoErr(t, err)
-			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
+			assert.Loosely(t, deps, should.Match(sortDeps([]*Dep{
 				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDateDiffProject.ID), Kind: DepKind_SOFT},
 			})))
 			// Update for the `clUpToDate` is not necessary.
-			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(clBareBones, clUpToDateDiffProject)))
+			assert.Loosely(t, scheduledUpdates(), should.Match(eids(clBareBones, clUpToDateDiffProject)))
 		})
 
 		t.Run("only new CLs", func(t *ftt.Test) {
@@ -939,11 +939,11 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			assert.NoErr(t, err)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
-			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
+			assert.Loosely(t, deps, should.Match(sortDeps([]*Dep{
 				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
 				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
 			})))
-			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(cl1, cl2)))
+			assert.Loosely(t, scheduledUpdates(), should.Match(eids(cl1, cl2)))
 		})
 
 		t.Run("mix old and new CLs", func(t *ftt.Test) {
@@ -956,14 +956,14 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			assert.NoErr(t, err)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
-			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
+			assert.Loosely(t, deps, should.Match(sortDeps([]*Dep{
 				{Clid: int64(cl1.ID), Kind: DepKind_SOFT},
 				{Clid: int64(cl2.ID), Kind: DepKind_HARD},
 				{Clid: int64(clBareBones.ID), Kind: DepKind_HARD},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_SOFT},
 			})))
 			// Update for the `clUpToDate` is not necessary.
-			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(cl1, cl2, clBareBones)))
+			assert.Loosely(t, scheduledUpdates(), should.Match(eids(cl1, cl2, clBareBones)))
 		})
 
 		t.Run("high number of dependency CLs", func(t *ftt.Test) {
@@ -984,8 +984,8 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 					Kind: DepKind_HARD,
 				}
 			}
-			assert.Loosely(t, deps, should.Resemble(expectedDeps))
-			assert.Loosely(t, scheduledUpdates(), should.Resemble(eids(depCLs...)))
+			assert.Loosely(t, deps, should.Match(expectedDeps))
+			assert.Loosely(t, scheduledUpdates(), should.Match(eids(depCLs...)))
 		})
 	})
 }

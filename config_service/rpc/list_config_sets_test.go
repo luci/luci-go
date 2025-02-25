@@ -94,7 +94,7 @@ func TestListConfigSets(t *testing.T) {
 			})
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{}))
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{}))
 		})
 
 		t.Run("partial permission", func(t *ftt.Test) {
@@ -109,7 +109,7 @@ func TestListConfigSets(t *testing.T) {
 			})
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -125,7 +125,7 @@ func TestListConfigSets(t *testing.T) {
 		t.Run("req for project config sets", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_PROJECT})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -141,7 +141,7 @@ func TestListConfigSets(t *testing.T) {
 		t.Run("req for service config sets", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_SERVICE})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "services/luci-config-dev",
@@ -157,7 +157,7 @@ func TestListConfigSets(t *testing.T) {
 		t.Run("req for all domains", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -202,7 +202,7 @@ func TestListConfigSets(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -248,7 +248,7 @@ func TestListConfigSets(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
+			assert.Loosely(t, res, should.Match(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",

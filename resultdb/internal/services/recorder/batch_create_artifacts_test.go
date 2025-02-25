@@ -267,7 +267,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&pb.BatchCreateArtifactsResponse{
+			assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{
 				Artifacts: []*pb.Artifact{
 					{
 						Name:        "invocations/inv/artifacts/art1",
@@ -302,7 +302,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				},
 			}))
 			// verify the RBECAS reqs
-			assert.Loosely(t, casClient.req, should.Resemble(&repb.BatchUpdateBlobsRequest{
+			assert.Loosely(t, casClient.req, should.Match(&repb.BatchUpdateBlobsRequest{
 				InstanceName: "",
 				Requests: []*repb.BatchUpdateBlobsRequest_Request{
 					{
@@ -444,7 +444,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Resemble(&pb.BatchCreateArtifactsResponse{}))
+				assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{}))
 			})
 
 			t.Run("Different artifact exists", func(t *ftt.Test) {

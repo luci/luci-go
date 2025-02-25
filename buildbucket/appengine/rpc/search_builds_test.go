@@ -332,7 +332,7 @@ func TestSearchBuilds(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, rsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, rsp, should.Match(expectedRsp))
 		})
 
 		t.Run("search builds with field masks", func(t *ftt.Test) {
@@ -399,7 +399,7 @@ func TestSearchBuilds(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, rsp, should.Resemble(expectedRsp))
+			assert.Loosely(t, rsp, should.Match(expectedRsp))
 		})
 
 		t.Run("search builds with limited access", func(t *ftt.Test) {
@@ -504,7 +504,7 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
+				assert.Loosely(t, rsp, should.Match(expectedRsp))
 			})
 
 			t.Run("BuildsList only", func(t *ftt.Test) {
@@ -528,7 +528,7 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, rsp, should.Resemble(expectedRsp))
+				assert.Loosely(t, rsp, should.Match(expectedRsp))
 			})
 		})
 	})

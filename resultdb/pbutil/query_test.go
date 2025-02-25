@@ -62,7 +62,7 @@ func TestQuery(t *testing.T) {
 
 			actual, err := fetch(&pb.QueryTestResultsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 
 		t.Run("Two pages", func(t *ftt.Test) {
@@ -83,7 +83,7 @@ func TestQuery(t *testing.T) {
 
 			actual, err := fetch(&pb.QueryTestResultsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble([]*pb.TestResult{{Name: "a"}, {Name: "b"}, {Name: "c"}}))
+			assert.Loosely(t, actual, should.Match([]*pb.TestResult{{Name: "a"}, {Name: "b"}, {Name: "c"}}))
 		})
 	})
 }

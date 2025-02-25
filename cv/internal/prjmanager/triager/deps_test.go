@@ -66,7 +66,7 @@ func TestDepsTriage(t *testing.T) {
 
 			// Actual component doesn't matter in this test.
 			td := triageDeps(ctx, pcl, cgIdx, pmState{sup})
-			assert.Loosely(t, sup.pb, should.Resemble(&backup)) // must not be modified
+			assert.Loosely(t, sup.pb, should.Match(&backup)) // must not be modified
 			return td
 		}
 
@@ -286,7 +286,7 @@ func TestDepsTriage(t *testing.T) {
 				// The triage dep result should be OK(), but have
 				// the not-yet-voted deps in needToTrigger
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Resemble([]*changelist.Dep{
+				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 31, Kind: changelist.DepKind_HARD},
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
@@ -301,7 +301,7 @@ func TestDepsTriage(t *testing.T) {
 				td := do(pcl33, singIdx)
 
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Resemble([]*changelist.Dep{
+				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
 			})
@@ -318,7 +318,7 @@ func TestDepsTriage(t *testing.T) {
 				// the CQ vote with CQ+2.
 				td := do(pcl33, singIdx)
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Resemble([]*changelist.Dep{
+				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 31, Kind: changelist.DepKind_HARD},
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
@@ -410,21 +410,21 @@ func TestDepsTriage(t *testing.T) {
 			t.Run("some submitted", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
 				td.submitted = []*changelist.Dep{d3}
-				assert.Loosely(t, iterate(), should.Resemble([]*changelist.Dep{d1, d2}))
+				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d1, d2}))
 				td.submitted = []*changelist.Dep{d1}
-				assert.Loosely(t, iterate(), should.Resemble([]*changelist.Dep{d3, d2}))
+				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d2}))
 				td.submitted = []*changelist.Dep{d2}
-				assert.Loosely(t, iterate(), should.Resemble([]*changelist.Dep{d3, d1}))
+				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
 			})
 			t.Run("none submitted", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
-				assert.Loosely(t, iterate(), should.Resemble([]*changelist.Dep{d3, d1, d2}))
+				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1, d2}))
 			})
 			t.Run("notYetLoaded deps are iterated over, too", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
 				td.notYetLoaded = []*changelist.Dep{d3}
 				td.submitted = []*changelist.Dep{d2}
-				assert.Loosely(t, iterate(), should.Resemble([]*changelist.Dep{d3, d1}))
+				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
 			})
 			t.Run("panic on invalid usage", func(t *ftt.Test) {
 				t.Run("wrong PCL", func(t *ftt.Test) {

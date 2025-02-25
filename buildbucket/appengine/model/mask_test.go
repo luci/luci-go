@@ -167,7 +167,7 @@ func TestBuildMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
+			assert.Loosely(t, b, should.Match(afterDefaultMask))
 		})
 
 		t.Run("Legacy", func(t *ftt.Test) {
@@ -175,7 +175,7 @@ func TestBuildMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
+			assert.Loosely(t, b, should.Match(afterDefaultMask))
 		})
 
 		t.Run("BuildMask", func(t *ftt.Test) {
@@ -183,7 +183,7 @@ func TestBuildMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b, should.Resemble(afterDefaultMask))
+			assert.Loosely(t, b, should.Match(afterDefaultMask))
 		})
 	})
 
@@ -199,7 +199,7 @@ func TestBuildMask(t *testing.T) {
 
 		b, err := apply(m)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b, should.Resemble(&pb.Build{
+		assert.Loosely(t, b, should.Match(&pb.Build{
 			Builder: build.Builder,
 			Input: &pb.Build_Input{
 				Properties: build.Input.Properties,
@@ -226,7 +226,7 @@ func TestBuildMask(t *testing.T) {
 
 		b, err := apply(m)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b, should.Resemble(&pb.Build{
+		assert.Loosely(t, b, should.Match(&pb.Build{
 			Builder: build.Builder,
 			Steps: []*pb.Step{
 				{Name: "s1", Status: pb.Status_SUCCESS, SummaryMarkdown: "md1"},
@@ -265,7 +265,7 @@ func TestBuildMask(t *testing.T) {
 
 		b, err := apply(m)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b, should.Resemble(&pb.Build{
+		assert.Loosely(t, b, should.Match(&pb.Build{
 			Builder: build.Builder,
 			Input: &pb.Build_Input{
 				GerritChanges: build.Input.GerritChanges,
@@ -306,7 +306,7 @@ func TestBuildMask(t *testing.T) {
 		expected.Output = &pb.Build_Output{
 			Properties: asStructPb(testStruct{Str: "output"}),
 		}
-		assert.Loosely(t, b, should.Resemble(expected))
+		assert.Loosely(t, b, should.Match(expected))
 	})
 
 	ftt.Run("Step status with steps", t, func(t *ftt.Test) {
@@ -334,7 +334,7 @@ func TestBuildMask(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, b, should.Resemble(expected))
+		assert.Loosely(t, b, should.Match(expected))
 	})
 
 	ftt.Run("Step status no steps", t, func(t *ftt.Test) {
@@ -350,7 +350,7 @@ func TestBuildMask(t *testing.T) {
 
 		expected := proto.Clone(afterDefaultMask).(*pb.Build)
 		expected.Steps = nil
-		assert.Loosely(t, b, should.Resemble(expected))
+		assert.Loosely(t, b, should.Match(expected))
 	})
 
 	ftt.Run("Step status all fields", t, func(t *ftt.Test) {
@@ -373,7 +373,7 @@ func TestBuildMask(t *testing.T) {
 				SummaryMarkdown: "md3",
 			},
 		}
-		assert.Loosely(t, b, should.Resemble(expected))
+		assert.Loosely(t, b, should.Match(expected))
 	})
 
 	ftt.Run("Unknown mask paths", t, func(t *ftt.Test) {
@@ -423,7 +423,7 @@ func TestBuildMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			b, err := apply(m)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b, should.Resemble(&build))
+			assert.Loosely(t, b, should.Match(&build))
 		})
 	})
 
@@ -435,7 +435,7 @@ func TestBuildMask(t *testing.T) {
 			"can_outlive_parent",
 			"ancestor_ids",
 		}
-		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION), should.Resemble(expectedFields))
+		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION), should.Match(expectedFields))
 	})
 
 	ftt.Run("sanity check mask for get-limited permission", t, func(t *ftt.Test) {
@@ -457,7 +457,7 @@ func TestBuildMask(t *testing.T) {
 			"can_outlive_parent",
 			"ancestor_ids",
 		}
-		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION), should.Resemble(expectedFields))
+		assert.Loosely(t, BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION), should.Match(expectedFields))
 	})
 }
 

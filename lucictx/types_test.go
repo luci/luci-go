@@ -45,7 +45,7 @@ func TestPredefinedTypes(t *testing.T) {
 			data := getCurrent(c).sections["local_auth"]
 			var v any
 			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
-			assert.Loosely(t, v, should.Resemble(map[string]any{
+			assert.Loosely(t, v, should.Match(map[string]any{
 				"accounts": []any{map[string]any{
 					"email": "some@example.com",
 					"id":    "test",
@@ -55,7 +55,7 @@ func TestPredefinedTypes(t *testing.T) {
 				"rpc_port":           100.0,
 			}))
 
-			assert.Loosely(t, GetLocalAuth(c), should.Resemble(localAuth))
+			assert.Loosely(t, GetLocalAuth(c), should.Match(localAuth))
 		})
 
 		t.Run("swarming", func(t *ftt.Test) {
@@ -75,7 +75,7 @@ func TestPredefinedTypes(t *testing.T) {
 			data := getCurrent(c).sections["swarming"]
 			var v any
 			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
-			assert.Loosely(t, v, should.Resemble(map[string]any{
+			assert.Loosely(t, v, should.Match(map[string]any{
 				"secret_bytes": "Zm9v",
 				"task": map[string]any{
 					"server":         "https://backend.appspot.com",
@@ -83,7 +83,7 @@ func TestPredefinedTypes(t *testing.T) {
 					"bot_dimensions": []any{"k1:v1"},
 				},
 			}))
-			assert.Loosely(t, GetSwarming(c), should.Resemble(s))
+			assert.Loosely(t, GetSwarming(c), should.Match(s))
 		})
 
 		t.Run("resultdb", func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestPredefinedTypes(t *testing.T) {
 			data := getCurrent(c).sections["resultdb"]
 			var v any
 			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
-			assert.Loosely(t, v, should.Resemble(map[string]any{
+			assert.Loosely(t, v, should.Match(map[string]any{
 				"current_invocation": map[string]any{
 					"name":         "invocations/build:1",
 					"update_token": "foobarbazsecretoken",
@@ -107,7 +107,7 @@ func TestPredefinedTypes(t *testing.T) {
 				"hostname": "test.results.cr.dev",
 			}))
 
-			assert.Loosely(t, GetResultDB(c), should.Resemble(resultdb))
+			assert.Loosely(t, GetResultDB(c), should.Match(resultdb))
 		})
 
 		t.Run("realm", func(t *ftt.Test) {
@@ -119,7 +119,7 @@ func TestPredefinedTypes(t *testing.T) {
 			c = SetRealm(c, r)
 			data := getCurrent(c).sections["realm"]
 			assert.Loosely(t, string(*data), should.Equal(`{"name":"test:realm"}`))
-			assert.Loosely(t, GetRealm(c), should.Resemble(r))
+			assert.Loosely(t, GetRealm(c), should.Match(r))
 			proj, realm := CurrentRealm(c)
 			assert.Loosely(t, proj, should.Equal("test"))
 			assert.Loosely(t, realm, should.Equal("realm"))
@@ -136,11 +136,11 @@ func TestPredefinedTypes(t *testing.T) {
 			data := getCurrent(c).sections["buildbucket"]
 			var v any
 			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
-			assert.Loosely(t, v, should.Resemble(map[string]any{
+			assert.Loosely(t, v, should.Match(map[string]any{
 				"hostname":             "hostname",
 				"schedule_build_token": "a token",
 			}))
-			assert.Loosely(t, GetBuildbucket(c), should.Resemble(b))
+			assert.Loosely(t, GetBuildbucket(c), should.Match(b))
 		})
 	})
 }

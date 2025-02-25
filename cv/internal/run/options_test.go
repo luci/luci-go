@@ -50,7 +50,7 @@ func TestExtractOptions(t *testing.T) {
 				Change-Id: Ideadbeef
 				Bug: 1
 				Yes-Bug-Above: is a Git/Gerrit footer
-      `), should.Resemble(&Options{}))
+      `), should.Match(&Options{}))
 		})
 
 		t.Run("No-Tree-Checks", func(t *ftt.Test) {
@@ -58,14 +58,14 @@ func TestExtractOptions(t *testing.T) {
 				CL title.
 
 				No-Tree-Checks: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTreeChecks: true,
 			}))
 			assert.Loosely(t, extract(`
 				CL title.
 
 				NOTREECHECKS=true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTreeChecks: true,
 			}))
 		})
@@ -77,7 +77,7 @@ func TestExtractOptions(t *testing.T) {
 				NOPRESUBMIT=true
 
 				No-Try: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
 			}))
@@ -87,7 +87,7 @@ func TestExtractOptions(t *testing.T) {
 				NOTRY=true
 
 				No-Presubmit: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTryjobs:   true,
 				SkipPresubmit: true,
 			}))
@@ -98,7 +98,7 @@ func TestExtractOptions(t *testing.T) {
 				CL title.
 
 				Cq-Do-Not-Cancel-Tryjobs: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				AvoidCancellingTryjobs: true,
 			}))
 		})
@@ -108,7 +108,7 @@ func TestExtractOptions(t *testing.T) {
 				CL title.
 
 				No-Equivalent-Builders: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipEquivalentBuilders: true,
 			}))
 		})
@@ -119,7 +119,7 @@ func TestExtractOptions(t *testing.T) {
 
 				Cq-Include-Trybots: project/bucket:builder1,builder2;project2/bucket:builder3
 				CQ_INCLUDE_TRYBOTS=project/bucket:builder4
-			`), should.Resemble(
+			`), should.Match(
 				&Options{
 					IncludedTryjobs: []string{
 						"project/bucket:builder1,builder2;project2/bucket:builder3",
@@ -134,7 +134,7 @@ func TestExtractOptions(t *testing.T) {
 
 				Override-Tryjobs-For-Automation: project/bucket:builder1,builder2;project2/bucket:builder3
 				Override-Tryjobs-For-Automation: project/bucket:builder4
-			`), should.Resemble(
+			`), should.Match(
 				&Options{
 					OverriddenTryjobs: []string{
 						"project/bucket:builder4",
@@ -151,7 +151,7 @@ func TestExtractOptions(t *testing.T) {
 				Cq-Cl-Tag: foo:bar
 				Cq-Cl-Tag: foo:baz
 				CQ_CL_TAG=another_foo:another_bar
-			`), should.Resemble(
+			`), should.Match(
 				&Options{
 					CustomTryjobTags: []string{
 						"foo:baz",
@@ -166,7 +166,7 @@ func TestExtractOptions(t *testing.T) {
 
 				NOTRY=true
 				No-Try: false
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTryjobs: true,
 			}))
 			assert.Loosely(t, extract(`
@@ -174,7 +174,7 @@ func TestExtractOptions(t *testing.T) {
 
 				NOTRY=false
 				No-Try: true
-      `), should.Resemble(&Options{
+      `), should.Match(&Options{
 				SkipTryjobs: true,
 			}))
 		})
@@ -187,19 +187,19 @@ func TestMergeOptions(t *testing.T) {
 
 	ftt.Run("MergeOptions works", t, func(t *ftt.Test) {
 		o := &Options{}
-		assert.Loosely(t, MergeOptions(o, nil), should.Resemble(o))
+		assert.Loosely(t, MergeOptions(o, nil), should.Match(o))
 
 		a := &Options{
 			SkipTreeChecks:         true,
 			AvoidCancellingTryjobs: true,
 		}
-		assert.Loosely(t, MergeOptions(a, o), should.Resemble(a))
+		assert.Loosely(t, MergeOptions(a, o), should.Match(a))
 
 		b := &Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 		}
-		assert.Loosely(t, MergeOptions(a, b), should.Resemble(&Options{
+		assert.Loosely(t, MergeOptions(a, b), should.Match(&Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 			AvoidCancellingTryjobs: true,

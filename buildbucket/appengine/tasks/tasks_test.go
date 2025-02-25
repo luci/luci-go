@@ -112,7 +112,7 @@ func TestTasks(t *testing.T) {
 					return ExportBigQuery(ctx, 1)
 				}, nil), should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Resemble(&taskdef.ExportBigQueryGo{
+				assert.Loosely(t, sch.Tasks().Payloads()[0], should.Match(&taskdef.ExportBigQueryGo{
 					BuildId: 1,
 				}))
 			})

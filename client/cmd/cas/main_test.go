@@ -93,7 +93,7 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 			assert.Loosely(t, runCmd("download", downloadFlags...), should.BeZero)
 			layout, err := testfs.Collect(downloadDir)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, layout, should.Resemble(map[string]string{"foo": "hi"}))
+			assert.Loosely(t, layout, should.Match(map[string]string{"foo": "hi"}))
 		})
 	})
 }

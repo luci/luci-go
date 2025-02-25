@@ -153,7 +153,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: sha1hex,
 		}), should.Equal(sha1iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(sha1iid), should.Resemble(&api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(sha1iid), should.Match(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: sha1hex,
 		}))
@@ -168,7 +168,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: sha256hex,
 		}), should.Equal(sha256iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(sha256iid), should.Resemble(&api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(sha256iid), should.Match(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: sha256hex,
 		}))
@@ -183,7 +183,7 @@ func TestRefIIDConversion(t *testing.T) {
 			HexDigest: hex,
 		}), should.Equal(iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(iid), should.Resemble(&api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(iid), should.Match(&api.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
 		}))

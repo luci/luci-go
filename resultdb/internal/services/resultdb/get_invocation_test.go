@@ -93,7 +93,7 @@ func TestGetInvocation(t *testing.T) {
 			req := &pb.GetInvocationRequest{Name: "invocations/including"}
 			inv, err := srv.GetInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(&pb.Invocation{
+			assert.Loosely(t, inv, should.Match(&pb.Invocation{
 				Name:                "invocations/including",
 				State:               pb.Invocation_ACTIVE,
 				CreateTime:          pbutil.MustTimestampProto(ct),

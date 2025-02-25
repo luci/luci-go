@@ -70,7 +70,7 @@ func TestSpan(t *testing.T) {
 			t.Run("ReadAll", func(t *ftt.Test) {
 				cls, err := ReadAll(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cls, should.Resemble(clsToCreate))
+				assert.Loosely(t, cls, should.Match(clsToCreate))
 			})
 			t.Run("Read", func(t *ftt.Test) {
 				expectedCLs := make(map[Key]*GerritChangelist)
@@ -78,7 +78,7 @@ func TestSpan(t *testing.T) {
 				t.Run("Zero", func(t *ftt.Test) {
 					cls, err := Read(span.Single(ctx), keys)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cls, should.Resemble(expectedCLs))
+					assert.Loosely(t, cls, should.Match(expectedCLs))
 				})
 				t.Run("One", func(t *ftt.Test) {
 					k := Key{
@@ -97,7 +97,7 @@ func TestSpan(t *testing.T) {
 
 					cls, err := Read(span.Single(ctx), keys)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cls, should.Resemble(expectedCLs))
+					assert.Loosely(t, cls, should.Match(expectedCLs))
 				})
 				t.Run("Many", func(t *ftt.Test) {
 					for _, entry := range clsToCreate {
@@ -108,7 +108,7 @@ func TestSpan(t *testing.T) {
 
 					cls, err := Read(span.Single(ctx), keys)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, cls, should.Resemble(expectedCLs))
+					assert.Loosely(t, cls, should.Match(expectedCLs))
 				})
 			})
 		})
@@ -149,7 +149,7 @@ func TestSpan(t *testing.T) {
 				cls, err := Read(span.Single(ctx), keys)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cls, should.HaveLength(1))
-				assert.Loosely(t, cls[key], should.Resemble(&expectedCL))
+				assert.Loosely(t, cls[key], should.Match(&expectedCL))
 			})
 			t.Run("Owner kind unset", func(t *ftt.Test) {
 				// If we do not have permission to read the changelist, we still may
@@ -166,7 +166,7 @@ func TestSpan(t *testing.T) {
 				cls, err := Read(span.Single(ctx), keys)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cls, should.HaveLength(1))
-				assert.Loosely(t, cls[key], should.Resemble(&expectedCL))
+				assert.Loosely(t, cls[key], should.Match(&expectedCL))
 			})
 
 			t.Run("Invalid GerritChangelists are rejected", func(t *ftt.Test) {

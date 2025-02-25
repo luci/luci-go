@@ -55,11 +55,11 @@ func TestStreamAddr(t *testing.T) {
 			t.Run(fmt.Sprintf(`Success: %q`, tc.s), func(t *ftt.Test) {
 				addr, err := ParseURL(tc.s)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, addr, should.Resemble(&tc.exp))
+				assert.Loosely(t, addr, should.Match(&tc.exp))
 
 				u, err := url.Parse(tc.s)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, addr.URL(), should.Resemble(u))
+				assert.Loosely(t, addr.URL(), should.Match(u))
 			})
 		}
 
@@ -79,7 +79,7 @@ func TestStreamAddr(t *testing.T) {
 
 		t.Run(`good`, func(t *ftt.Test) {
 			assert.Loosely(t, fs.Parse([]string{"-addr", "logdog://host/project/a/+/b"}), should.BeNil)
-			assert.Loosely(t, a, should.Resemble(&StreamAddr{
+			assert.Loosely(t, a, should.Match(&StreamAddr{
 				"host",
 				"project",
 				"a/+/b",
@@ -101,7 +101,7 @@ func TestStreamAddr(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, string(data), should.Match(`{}`))
 				assert.Loosely(t, json.Unmarshal(data, a), should.BeNil)
-				assert.Loosely(t, a, should.Resemble(&StreamAddr{}))
+				assert.Loosely(t, a, should.Match(&StreamAddr{}))
 			})
 
 			t.Run(`full`, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestStreamAddr(t *testing.T) {
 
 				a2 := &StreamAddr{}
 				assert.Loosely(t, json.Unmarshal(data, a2), should.BeNil)
-				assert.Loosely(t, a2, should.Resemble(a))
+				assert.Loosely(t, a2, should.Match(a))
 			})
 		})
 

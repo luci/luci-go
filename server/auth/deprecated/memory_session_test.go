@@ -43,7 +43,7 @@ func TestSession(t *testing.T) {
 
 		ss, err = s.GetSession(ctx, "uid/1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, ss, should.Resemble(&Session{
+		assert.Loosely(t, ss, should.Match(&Session{
 			SessionID: "uid/1",
 			UserID:    "uid",
 			User:      auth.User{Name: "dude"},

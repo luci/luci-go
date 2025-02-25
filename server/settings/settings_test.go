@@ -54,12 +54,12 @@ func TestSettings(t *testing.T) {
 
 			// Non-caching version works.
 			assert.Loosely(t, settings.GetUncached(ctx, "key", &s), should.BeNil)
-			assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
+			assert.Loosely(t, s, should.Match(exampleSettings{"hi"}))
 
 			// Advance time to make old value expired.
 			tc.Add(2 * time.Second)
 			assert.Loosely(t, settings.Get(ctx, "key", &s), should.BeNil)
-			assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
+			assert.Loosely(t, s, should.Match(exampleSettings{"hi"}))
 
 			// Not a pointer.
 			assert.Loosely(t, settings.Get(ctx, "key", s), should.Equal(ErrBadType))
@@ -100,9 +100,9 @@ func TestContext(t *testing.T) {
 		assert.Loosely(t, SetIfChanged(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
 
 		assert.Loosely(t, Get(ctx, "key", &s), should.BeNil)
-		assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
+		assert.Loosely(t, s, should.Match(exampleSettings{"hi"}))
 
 		assert.Loosely(t, GetUncached(ctx, "key", &s), should.BeNil)
-		assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
+		assert.Loosely(t, s, should.Match(exampleSettings{"hi"}))
 	})
 }

@@ -418,22 +418,22 @@ func TestNotify(t *testing.T) {
 			assert.Loosely(t, tasks, should.HaveLength(4))
 
 			task := tasks["54-default-jane@example.com"]
-			assert.Loosely(t, task.Recipients, should.Resemble([]string{"jane@example.com"}))
+			assert.Loosely(t, task.Recipients, should.Match([]string{"jane@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
 			task = tasks["54-default-john@example.com"]
-			assert.Loosely(t, task.Recipients, should.Resemble([]string{"john@example.com"}))
+			assert.Loosely(t, task.Recipients, should.Match([]string{"john@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
 			task = tasks["54-non-default-don@example.com"]
-			assert.Loosely(t, task.Recipients, should.Resemble([]string{"don@example.com"}))
+			assert.Loosely(t, task.Recipients, should.Match([]string{"don@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed from non-default template"))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS from non-default template"))
 
 			task = tasks["54-with-steps-juan@example.com"]
-			assert.Loosely(t, task.Recipients, should.Resemble([]string{"juan@example.com"}))
+			assert.Loosely(t, task.Recipients, should.Match([]string{"juan@example.com"}))
 			assert.Loosely(t, task.Subject, should.Equal(`Subject "step name"`))
 			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Body &#34;step name&#34;"))
 		})
@@ -521,7 +521,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
+			assert.Loosely(t, emails, should.Match([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -576,7 +576,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
+			assert.Loosely(t, emails, should.Match([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -623,7 +623,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
+			assert.Loosely(t, emails, should.Match([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -674,7 +674,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
+			assert.Loosely(t, emails, should.Match([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -733,7 +733,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
+			assert.Loosely(t, emails, should.Match([]EmailNotify{
 				{
 					Email:         "sheriff1@google.com",
 					Template:      "sheriff_template",

@@ -52,7 +52,7 @@ func TestAddRules(t *testing.T) {
 
 		patterns, err := validation.Rules.ConfigPatterns(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, patterns, should.Resemble([]*validation.ConfigPattern{
+		assert.Loosely(t, patterns, should.Match([]*validation.ConfigPattern{
 			{
 				ConfigSet: pattern.MustParse("exact:services/" + testutil.AppID),
 				Path:      pattern.MustParse(common.ACLRegistryFilePath),

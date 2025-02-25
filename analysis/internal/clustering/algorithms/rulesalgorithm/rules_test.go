@@ -69,7 +69,7 @@ func TestAlgorithm(t *testing.T) {
 					a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
 						TestID: "ninja://test_name_one/",
 					})
-					assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
+					assert.Loosely(t, ids, should.Match(map[string]struct{}{
 						rule1.Rule.RuleID: {},
 					}))
 				})
@@ -87,7 +87,7 @@ func TestAlgorithm(t *testing.T) {
 						PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 					},
 				})
-				assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
+				assert.Loosely(t, ids, should.Match(map[string]struct{}{
 					rule2.Rule.RuleID: {},
 				}))
 			})
@@ -100,7 +100,7 @@ func TestAlgorithm(t *testing.T) {
 				})
 				expectedIDs := []string{rule1.Rule.RuleID, rule2.Rule.RuleID}
 				sort.Strings(expectedIDs)
-				assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
+				assert.Loosely(t, ids, should.Match(map[string]struct{}{
 					rule1.Rule.RuleID: {},
 					rule2.Rule.RuleID: {},
 				}))
@@ -146,7 +146,7 @@ func TestAlgorithm(t *testing.T) {
 		// Test incrementally clustering leads to the correct outcome,
 		// matching rule 3 and unmatching rule 2.
 		a.Cluster(secondRuleset, originalRulesVersion, ids, testFailure)
-		assert.Loosely(t, ids, should.Resemble(map[string]struct{}{
+		assert.Loosely(t, ids, should.Match(map[string]struct{}{
 			rule1.Rule.RuleID: {},
 			rule3.Rule.RuleID: {},
 		}))

@@ -191,7 +191,7 @@ func TestStatusTable(t *testing.T) {
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actual, should.HaveLength(2))
-			assert.Loosely(t, actual, should.Resemble([]*Status{newer, older}))
+			assert.Loosely(t, actual, should.Match([]*Status{newer, older}))
 			assert.Loosely(t, hasNextPage, should.BeFalse)
 		})
 
@@ -205,8 +205,8 @@ func TestStatusTable(t *testing.T) {
 
 			assert.Loosely(t, err1, should.BeNil)
 			assert.Loosely(t, err2, should.BeNil)
-			assert.Loosely(t, firstPage, should.Resemble([]*Status{newer}))
-			assert.Loosely(t, secondPage, should.Resemble([]*Status{older}))
+			assert.Loosely(t, firstPage, should.Match([]*Status{newer}))
+			assert.Loosely(t, secondPage, should.Match([]*Status{older}))
 			assert.Loosely(t, hasSecondPage, should.BeTrue)
 			assert.Loosely(t, hasThirdPage, should.BeFalse)
 		})
@@ -229,7 +229,7 @@ func TestStatusTable(t *testing.T) {
 
 			results, err := ListAfter(span.Single(ctx), time.Unix(350, 0))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Resemble([]*Status{mes4, mes2}))
+			assert.Loosely(t, results, should.Match([]*Status{mes4, mes2}))
 		})
 	})
 }

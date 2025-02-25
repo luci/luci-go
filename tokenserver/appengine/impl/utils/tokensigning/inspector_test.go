@@ -60,13 +60,13 @@ func TestInspectToken(t *testing.T) {
 		assert.Loosely(t, ins.NonExpired, should.BeTrue)
 		assert.Loosely(t, ins.InvalidityReason, should.BeEmpty)
 		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
-		assert.Loosely(t, ins.Body, should.Resemble(original))
+		assert.Loosely(t, ins.Body, should.Match(original))
 	})
 
 	ftt.Run("Not base64", t, func(t *ftt.Test) {
 		ins, err := inspector.InspectToken(ctx, "@@@@@@@@@@@@@")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, ins, should.Resemble(&Inspection{
+		assert.Loosely(t, ins, should.Match(&Inspection{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
 		}))
 	})
@@ -89,7 +89,7 @@ func TestInspectToken(t *testing.T) {
 		assert.Loosely(t, ins.NonExpired, should.BeTrue)
 		assert.Loosely(t, ins.InvalidityReason, should.Equal("bad signature - crypto/rsa: verification error"))
 		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
-		assert.Loosely(t, ins.Body, should.Resemble(original)) // recovered the token body nonetheless
+		assert.Loosely(t, ins.Body, should.Match(original)) // recovered the token body nonetheless
 	})
 
 	ftt.Run("Wrong SigningContext", t, func(t *ftt.Test) {
@@ -102,7 +102,7 @@ func TestInspectToken(t *testing.T) {
 		assert.Loosely(t, ins.NonExpired, should.BeTrue)
 		assert.Loosely(t, ins.InvalidityReason, should.Equal("bad signature - crypto/rsa: verification error"))
 		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
-		assert.Loosely(t, ins.Body, should.Resemble(original)) // recovered the token body nonetheless
+		assert.Loosely(t, ins.Body, should.Match(original)) // recovered the token body nonetheless
 	})
 
 	ftt.Run("Expired", t, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestInspectToken(t *testing.T) {
 		assert.Loosely(t, ins.NonExpired, should.BeFalse)
 		assert.Loosely(t, ins.InvalidityReason, should.Equal("expired"))
 		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
-		assert.Loosely(t, ins.Body, should.Resemble(original))
+		assert.Loosely(t, ins.Body, should.Match(original))
 	})
 }
 

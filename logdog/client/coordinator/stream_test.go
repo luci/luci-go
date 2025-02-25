@@ -144,10 +144,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")}))
+					assert.Loosely(t, l, should.Match([]*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")}))
 
 					// Validate the correct parameters were sent.
-					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Match(&logdog.GetRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
 					}))
@@ -163,7 +163,7 @@ func TestStreamGet(t *testing.T) {
 					assert.Loosely(t, l, should.BeNil)
 
 					// Validate the correct parameters were sent.
-					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Match(&logdog.GetRequest{
 						Project:       "myproj",
 						Path:          "test/+/a",
 						NonContiguous: true,
@@ -182,10 +182,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c, LimitCount(64), LimitBytes(32))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "ohai")}))
+					assert.Loosely(t, l, should.Match([]*logpb.LogEntry{genLog(1337, "ohai")}))
 
 					// Validate the HTTP request that we made.
-					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Match(&logdog.GetRequest{
 						Project:   "myproj",
 						Path:      "test/+/a",
 						LogCount:  64,
@@ -218,7 +218,7 @@ func TestStreamGet(t *testing.T) {
 					var ls LogStream
 					l, err := s.Get(c, WithState(&ls))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "kthxbye")}))
+					assert.Loosely(t, l, should.Match([]*logpb.LogEntry{genLog(1337, "kthxbye")}))
 					assert.That(t, &ls, should.Match(&LogStream{
 						Path: "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -296,7 +296,7 @@ func TestStreamGet(t *testing.T) {
 					}))
 
 					// Validate the HTTP request that we made.
-					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Match(&logdog.GetRequest{
 						Project:  "myproj",
 						Path:     "test/+/a",
 						LogCount: -1,
@@ -356,14 +356,14 @@ func TestStreamGet(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 
 					// Validate the HTTP request that we made.
-					assert.Loosely(t, svc.TR, should.Resemble(&logdog.TailRequest{
+					assert.Loosely(t, svc.TR, should.Match(&logdog.TailRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
 						State:   true,
 					}))
 
 					// Validate that the log and state were returned.
-					assert.Loosely(t, l, should.Resemble(genLog(1337, "kthxbye")))
+					assert.Loosely(t, l, should.Match(genLog(1337, "kthxbye")))
 					assert.That(t, &ls, should.Match(&LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
@@ -506,7 +506,7 @@ func TestStreamGet(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, le.StreamIndex, should.Equal[uint64](1343))
 						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("complete")))
+						assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("complete")))
 					})
 
 					t.Run(`Can assemble a set of one partial datagram.`, func(t *ftt.Test) {
@@ -523,7 +523,7 @@ func TestStreamGet(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, le.StreamIndex, should.Equal[uint64](1343))
 						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("complete")))
+						assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("complete")))
 					})
 
 					t.Run(`Can assemble a set of two partial datagrams.`, func(t *ftt.Test) {
@@ -533,7 +533,7 @@ func TestStreamGet(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, le.StreamIndex, should.Equal[uint64](1341))
 						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("quxohai")))
+						assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("quxohai")))
 					})
 
 					t.Run(`With a set of three partial datagrams.`, func(t *ftt.Test) {
@@ -545,7 +545,7 @@ func TestStreamGet(t *testing.T) {
 							assert.Loosely(t, err, should.BeNil)
 							assert.That(t, le.StreamIndex, should.Equal[uint64](1337))
 							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("foobarbazkthxbye")))
+							assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("foobarbazkthxbye")))
 
 							assert.That(t, &ls, should.Match(&LogStream{
 								Path: "test/+/a",
@@ -636,7 +636,7 @@ func TestStreamGet(t *testing.T) {
 							assert.Loosely(t, err, should.BeNil)
 							assert.That(t, le.StreamIndex, should.Equal[uint64](1337))
 							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("foobarbazkthxbye")))
+							assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("foobarbazkthxbye")))
 						})
 
 						t.Run(`If the previous datagram is not partial, will return it.`, func(t *ftt.Test) {
@@ -646,7 +646,7 @@ func TestStreamGet(t *testing.T) {
 							assert.Loosely(t, err, should.BeNil)
 							assert.That(t, le.StreamIndex, should.Equal[uint64](1340))
 							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
-							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("kthxbye")))
+							assert.Loosely(t, le.GetDatagram().Data, should.Match([]byte("kthxbye")))
 						})
 					})
 				})

@@ -40,7 +40,7 @@ func TestBytes(t *testing.T) {
 			r, n, err := ReadBytes(b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(exn))
-			assert.Loosely(t, r, should.Resemble(tc))
+			assert.Loosely(t, r, should.Match(tc))
 		})
 
 		t.Run("bad (truncated buffer)", func(t *ftt.Test) {
@@ -88,7 +88,7 @@ func TestStrings(t *testing.T) {
 			n, err := WriteString(b, "")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(1))
-			assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0}))
+			assert.Loosely(t, b.Bytes(), should.Match([]byte{0}))
 			r, n, err := ReadString(b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(1))
@@ -122,7 +122,7 @@ func TestStrings(t *testing.T) {
 			n, err := WriteString(b, "1")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
-			assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0b00110001, 0b10000000}))
+			assert.Loosely(t, b.Bytes(), should.Match([]byte{0b00110001, 0b10000000}))
 			r, n, err := ReadString(b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal(2))
@@ -134,7 +134,7 @@ func TestStrings(t *testing.T) {
 			n, err := WriteString(b, s)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, n, should.Equal((len(s)*8)/7+1))
-			assert.Loosely(t, b.Bytes()[:8], should.Resemble([]byte{
+			assert.Loosely(t, b.Bytes()[:8], should.Match([]byte{
 				0b01110101, 0b00110101, 0b00011011, 0b00101111, 0b00110011, 0b00000011,
 				0b10100101, 0b11100111,
 			}))
@@ -196,7 +196,7 @@ func TestStringSortability(t *testing.T) {
 		for i := range orig {
 			decoded, _, err := ReadString(bytes.NewBufferString(enc[i]))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, decoded, should.Resemble(orig[i]))
+			assert.Loosely(t, decoded, should.Match(orig[i]))
 		}
 	})
 }
@@ -269,7 +269,7 @@ func TestConcatenatedStringSortability(t *testing.T) {
 				}
 				decoded = append(decoded, dec)
 			}
-			assert.Loosely(t, decoded, should.Resemble(orig[i]))
+			assert.Loosely(t, decoded, should.Match(orig[i]))
 		}
 	})
 }

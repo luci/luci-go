@@ -87,7 +87,7 @@ func TestProtocol(t *testing.T) {
 			assert.Loosely(c, resp.StatusCode, should.Equal(200))
 			assert.Loosely(c, resp.Header.Get("Content-Type"), should.Equal("application/json"))
 			assert.Loosely(c, json.NewDecoder(resp.Body).Decode(&tok), should.BeNil)
-			assert.Loosely(c, tok, should.Resemble(map[string]any{
+			assert.Loosely(c, tok, should.Match(map[string]any{
 				"access_token": "tok1",
 				"expires_in":   1800.0,
 				"token_type":   "Bearer",

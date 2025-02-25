@@ -90,7 +90,7 @@ func TestCancelBuild(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, bld, inf, bs, bldr), should.BeNil)
 			bld, err := Cancel(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -131,7 +131,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := Cancel(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -176,7 +176,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := Cancel(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -238,7 +238,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := Cancel(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -294,7 +294,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := Cancel(ctx, 1)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -342,7 +342,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := StartCancel(ctx, 1, "summary")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -372,7 +372,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := StartCancel(ctx, 1, "summary")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -399,7 +399,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := StartCancel(ctx, 1, "summary")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -468,7 +468,7 @@ func TestCancelBuild(t *testing.T) {
 			}), should.BeNil)
 			bld, err := StartCancel(ctx, 1, "summary")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bld.Proto, should.Resemble(&pb.Build{
+			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -491,7 +491,7 @@ func TestCancelBuild(t *testing.T) {
 			}
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			sort.Ints(ids)
-			assert.Loosely(t, ids, should.Resemble([]int{1, 3, 4}))
+			assert.Loosely(t, ids, should.Match([]int{1, 3, 4}))
 		})
 	})
 }

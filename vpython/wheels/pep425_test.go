@@ -289,7 +289,7 @@ func TestPEP425TagSelector(t *testing.T) {
 				expander := make(template.Expander)
 				err := addPEP425CIPDTemplateForTag(expander, tag)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, map[string]string(expander), should.Resemble(tc.template))
+				assert.Loosely(t, map[string]string(expander), should.Match(tc.template))
 			})
 		}
 
@@ -307,7 +307,7 @@ func TestPEP425TagSelector(t *testing.T) {
 				{Python: "py27", Abi: "none", Platform: "any"},
 				{Python: "py27", Abi: "foo", Platform: "bar"},
 			})
-			assert.Loosely(t, tag, should.Resemble(&vpython.PEP425Tag{Python: "py27", Abi: "foo", Platform: "bar"}))
+			assert.Loosely(t, tag, should.Match(&vpython.PEP425Tag{Python: "py27", Abi: "foo", Platform: "bar"}))
 
 			expander := make(template.Expander)
 			err := addPEP425CIPDTemplateForTag(expander, tag)

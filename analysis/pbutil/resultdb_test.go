@@ -32,7 +32,7 @@ func TestResultDB(t *testing.T) {
 			PrimaryErrorMessage: "Some error message.",
 		}
 		fr := FailureReasonFromResultDB(rdbFailureReason)
-		assert.Loosely(t, fr, should.Resemble(&pb.FailureReason{
+		assert.Loosely(t, fr, should.Match(&pb.FailureReason{
 			PrimaryErrorMessage: "Some error message.",
 		}))
 	})
@@ -62,7 +62,7 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		tmd := TestMetadataFromResultDB(rdbTestMetadata)
-		assert.Loosely(t, tmd, should.Resemble(&pb.TestMetadata{
+		assert.Loosely(t, tmd, should.Match(&pb.TestMetadata{
 			Name: "name",
 			Location: &pb.TestLocation{
 				Repo:     "repo",
@@ -183,8 +183,8 @@ func TestResultDB(t *testing.T) {
 			},
 			IsDirty: true,
 		}
-		assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Resemble(analysisSources))
-		assert.Loosely(t, SourcesToResultDB(analysisSources), should.Resemble(rdbSources))
+		assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
+		assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
 	})
 	ftt.Run("SourceRef to resultdb", t, func(t *ftt.Test) {
 		sourceRef := &pb.SourceRef{
@@ -197,7 +197,7 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		sourceRef1 := SourceRefToResultDB(sourceRef)
-		assert.Loosely(t, sourceRef1, should.Resemble(&rdbpb.SourceRef{
+		assert.Loosely(t, sourceRef1, should.Match(&rdbpb.SourceRef{
 			System: &rdbpb.SourceRef_Gitiles{
 				Gitiles: &rdbpb.GitilesRef{
 					Host:    "host",
@@ -218,7 +218,7 @@ func TestResultDB(t *testing.T) {
 			},
 		}
 		ref := SourceRefFromSources(sources)
-		assert.Loosely(t, ref, should.Resemble(&pb.SourceRef{
+		assert.Loosely(t, ref, should.Match(&pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
 					Host:    "project.googlesource.com",

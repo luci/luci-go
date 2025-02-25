@@ -73,7 +73,7 @@ func TestRemoteCalls(t *testing.T) {
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", false)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(&config.Config{
+				assert.Loosely(t, cfg, should.Match(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -106,7 +106,7 @@ func TestRemoteCalls(t *testing.T) {
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", false)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(&config.Config{
+				assert.Loosely(t, cfg, should.Match(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -136,7 +136,7 @@ func TestRemoteCalls(t *testing.T) {
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, cfg, should.Resemble(&config.Config{
+				assert.Loosely(t, cfg, should.Match(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -190,7 +190,7 @@ func TestRemoteCalls(t *testing.T) {
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", true)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, configs, should.Resemble([]config.Config{
+				assert.Loosely(t, configs, should.Match([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
@@ -236,7 +236,7 @@ func TestRemoteCalls(t *testing.T) {
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, configs, should.Resemble([]config.Config{
+				assert.Loosely(t, configs, should.Match([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
@@ -354,7 +354,7 @@ func TestRemoteCalls(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				url2, err := url.Parse(res.ConfigSets[1].Url)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, projects, should.Resemble([]config.Project{
+				assert.Loosely(t, projects, should.Match([]config.Project{
 					{
 						ID:       "project1",
 						Name:     "project1",
@@ -399,7 +399,7 @@ func TestRemoteCalls(t *testing.T) {
 
 				files, err := impl.ListFiles(ctx, config.Set("projects/project"))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, files, should.Resemble([]string{"file1", "file2"}))
+				assert.Loosely(t, files, should.Match([]string{"file1", "file2"}))
 			})
 
 			t.Run("rpc err", func(t *ftt.Test) {
@@ -514,7 +514,7 @@ func TestRemoteCalls(t *testing.T) {
 					expectCall()
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, true)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, files, should.Resemble(expectedOutput(true)))
+					assert.Loosely(t, files, should.Match(expectedOutput(true)))
 				})
 
 				t.Run("small bodies", func(t *ftt.Test) {
@@ -532,7 +532,7 @@ func TestRemoteCalls(t *testing.T) {
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, files, should.Resemble(expectedOutput(false)))
+					assert.Loosely(t, files, should.Match(expectedOutput(false)))
 				})
 
 				t.Run("single fetch err", func(t *ftt.Test) {
@@ -586,7 +586,7 @@ func TestRemoteCalls(t *testing.T) {
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, files, should.Resemble(expectedOutput(false)))
+					assert.Loosely(t, files, should.Match(expectedOutput(false)))
 				})
 
 				t.Run("large body - err", func(t *ftt.Test) {

@@ -530,7 +530,7 @@ func TestUpdate(t *testing.T) {
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(rs), should.Equal(1))
-				assert.Loosely(t, rs[0].SourceCluster, should.Resemble(suggestedClusters[2].ClusterID))
+				assert.Loosely(t, rs[0].SourceCluster, should.Match(suggestedClusters[2].ClusterID))
 				assert.Loosely(t, rs[0].SourceCluster.IsFailureReasonCluster(), should.BeTrue)
 			})
 			t.Run("test name clusters can be filed if significantly more impact", func(t *ftt.Test) {
@@ -550,7 +550,7 @@ func TestUpdate(t *testing.T) {
 				rs, err := rules.ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(rs), should.Equal(1))
-				assert.Loosely(t, rs[0].SourceCluster, should.Resemble(suggestedClusters[1].ClusterID))
+				assert.Loosely(t, rs[0].SourceCluster, should.Match(suggestedClusters[1].ClusterID))
 				assert.Loosely(t, rs[0].SourceCluster.IsTestNameCluster(), should.BeTrue)
 			})
 		})
@@ -817,7 +817,7 @@ func TestUpdate(t *testing.T) {
 						}
 
 						issue := buganizerStore.Issues[2]
-						assert.Loosely(t, expectedRules[1].BugID, should.Resemble(bugs.BugID{System: bugs.BuganizerSystem, ID: "2"}))
+						assert.Loosely(t, expectedRules[1].BugID, should.Match(bugs.BugID{System: bugs.BuganizerSystem, ID: "2"}))
 						existingCommentCount := len(issue.Comments)
 
 						// Act

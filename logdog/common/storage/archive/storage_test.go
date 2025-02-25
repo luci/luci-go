@@ -286,17 +286,17 @@ func testArchiveStorage(t *testing.T, limit int64) {
 
 							t.Run(`Can Get [0..]`, func(t *ftt.Test) {
 								assert.Loosely(t, st.Get(c, storage.GetRequest{}, collect), should.BeNil)
-								assert.Loosely(t, entries, should.Resemble(gen.lines))
+								assert.Loosely(t, entries, should.Match(gen.lines))
 							})
 
 							t.Run(`Can Get [1..].`, func(t *ftt.Test) {
 								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 1}, collect), should.BeNil)
-								assert.Loosely(t, entries, should.Resemble(gen.lines[1:]))
+								assert.Loosely(t, entries, should.Match(gen.lines[1:]))
 							})
 
 							t.Run(`Can Get [1..2].`, func(t *ftt.Test) {
 								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 1, Limit: 2}, collect), should.BeNil)
-								assert.Loosely(t, entries, should.Resemble(gen.lines[1:3]))
+								assert.Loosely(t, entries, should.Match(gen.lines[1:3]))
 							})
 
 							t.Run(`Can Get [5..].`, func(t *ftt.Test) {
@@ -306,7 +306,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 
 							t.Run(`Can Get [4].`, func(t *ftt.Test) {
 								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 4, Limit: 1}, collect), should.BeNil)
-								assert.Loosely(t, entries, should.Resemble(gen.lines[4:]))
+								assert.Loosely(t, entries, should.Match(gen.lines[4:]))
 							})
 
 							t.Run(`Can tail.`, func(t *ftt.Test) {

@@ -55,7 +55,7 @@ func TestState(t *testing.T) {
 		decrypted, err := DecryptState(ctx, blob)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, decrypted, should.Resemble(original))
+		assert.Loosely(t, decrypted, should.Match(original))
 	})
 
 }

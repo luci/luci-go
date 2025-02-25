@@ -42,7 +42,7 @@ func TestBuildCodec(t *testing.T) {
 		t.Run(`noop`, func(t *ftt.Test) {
 			codec, err := BuildFileCodecForPath("")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, codec, should.Resemble(buildFileCodecNoop{}))
+			assert.Loosely(t, codec, should.Match(buildFileCodecNoop{}))
 			assert.Loosely(t, codec.IsNoop(), should.BeTrue)
 			assert.Loosely(t, codec.FileExtension(), should.BeBlank)
 			assert.Loosely(t, codec.Enc(nil, nil), should.BeNil)
@@ -52,7 +52,7 @@ func TestBuildCodec(t *testing.T) {
 		t.Run(`json`, func(t *ftt.Test) {
 			codec, err := BuildFileCodecForPath("blah.json")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, codec, should.Resemble(buildFileCodecJSON{}))
+			assert.Loosely(t, codec, should.Match(buildFileCodecJSON{}))
 			assert.Loosely(t, codec.IsNoop(), should.BeFalse)
 			assert.Loosely(t, codec.FileExtension(), should.Match(".json"))
 
@@ -63,13 +63,13 @@ func TestBuildCodec(t *testing.T) {
 
 			outBuild := &bbpb.Build{}
 			assert.Loosely(t, codec.Dec(outBuild, buf), should.BeNil)
-			assert.Loosely(t, outBuild, should.Resemble(b))
+			assert.Loosely(t, outBuild, should.Match(b))
 		})
 
 		t.Run(`textpb`, func(t *ftt.Test) {
 			codec, err := BuildFileCodecForPath("blah.textpb")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, codec, should.Resemble(buildFileCodecText{}))
+			assert.Loosely(t, codec, should.Match(buildFileCodecText{}))
 			assert.Loosely(t, codec.IsNoop(), should.BeFalse)
 			assert.Loosely(t, codec.FileExtension(), should.Match(".textpb"))
 
@@ -80,24 +80,24 @@ func TestBuildCodec(t *testing.T) {
 
 			outBuild := &bbpb.Build{}
 			assert.Loosely(t, codec.Dec(outBuild, buf), should.BeNil)
-			assert.Loosely(t, outBuild, should.Resemble(b))
+			assert.Loosely(t, outBuild, should.Match(b))
 		})
 
 		t.Run(`pb`, func(t *ftt.Test) {
 			codec, err := BuildFileCodecForPath("blah.pb")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, codec, should.Resemble(buildFileCodecBinary{}))
+			assert.Loosely(t, codec, should.Match(buildFileCodecBinary{}))
 			assert.Loosely(t, codec.IsNoop(), should.BeFalse)
 			assert.Loosely(t, codec.FileExtension(), should.Match(".pb"))
 
 			buf := &bytes.Buffer{}
 			assert.Loosely(t, codec.Enc(b, buf), should.BeNil)
-			assert.Loosely(t, buf.Bytes(), should.Resemble(
+			assert.Loosely(t, buf.Bytes(), should.Match(
 				[]byte{8, 100, 162, 1, 5, 115, 116, 117, 102, 102}))
 
 			outBuild := &bbpb.Build{}
 			assert.Loosely(t, codec.Dec(outBuild, buf), should.BeNil)
-			assert.Loosely(t, outBuild, should.Resemble(b))
+			assert.Loosely(t, outBuild, should.Match(b))
 		})
 	})
 }

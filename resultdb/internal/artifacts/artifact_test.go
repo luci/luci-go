@@ -95,7 +95,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t/results/r/artifacts/a"
 			a, err := Read(ctx, name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, a.Artifact, should.Resemble(&pb.Artifact{
+			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
 				Name:        name,
 				ArtifactId:  "a",
 				ContentType: "text/plain",
@@ -112,7 +112,7 @@ func TestRead(t *testing.T) {
 			const name = "invocations/inv/tests/t/results/r/artifacts/b"
 			a, err := Read(ctx, name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, a.Artifact, should.Resemble(&pb.Artifact{
+			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
 				Name:        name,
 				ArtifactId:  "b",
 				ContentType: "text/plain",

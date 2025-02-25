@@ -37,13 +37,13 @@ func TestSet(t *testing.T) {
 			assert.Loosely(t, s.Len(), should.Equal(2))
 			sl := s.ToSlice()
 			sort.Strings(sl)
-			assert.Loosely(t, sl, should.Resemble([]string{"hello", "world"}))
+			assert.Loosely(t, sl, should.Match([]string{"hello", "world"}))
 
 			t.Run("Can remove stuff", func(t *ftt.Test) {
 				assert.Loosely(t, s.Del("foo"), should.BeFalse)
 				assert.Loosely(t, s.Del("world"), should.BeTrue)
 				assert.Loosely(t, s.Del("world"), should.BeFalse)
-				assert.Loosely(t, s.ToSlice(), should.Resemble([]string{"hello"}))
+				assert.Loosely(t, s.ToSlice(), should.Match([]string{"hello"}))
 			})
 
 			t.Run("Can peek them", func(t *ftt.Test) {
@@ -71,7 +71,7 @@ func TestSet(t *testing.T) {
 
 				sort.Strings(newList)
 
-				assert.Loosely(t, newList, should.Resemble(sl))
+				assert.Loosely(t, newList, should.Match(sl))
 			})
 
 			t.Run("Can iterate", func(t *ftt.Test) {
@@ -93,7 +93,7 @@ func TestSet(t *testing.T) {
 
 			t.Run("Can dup them", func(t *ftt.Test) {
 				dup := s.Dup()
-				assert.Loosely(t, dup, should.Resemble(s))
+				assert.Loosely(t, dup, should.Match(s))
 				assert.Loosely(t, reflect.ValueOf(dup).Pointer(), should.NotEqual(reflect.ValueOf(s).Pointer()))
 				dup.Add("panwaffles") // the best of both!
 				assert.Loosely(t, dup, should.NotResemble(s))
@@ -109,7 +109,7 @@ func TestSet(t *testing.T) {
 		assert.Loosely(t, s.HasAll("hi", "bye"), should.BeFalse)
 		sl := s.ToSlice()
 		sort.Strings(sl)
-		assert.Loosely(t, sl, should.Resemble([]string{"hi", "person", "there"}))
+		assert.Loosely(t, sl, should.Match([]string{"hi", "person", "there"}))
 	})
 
 	ftt.Run("Can do set operations", t, func(t *ftt.Test) {
@@ -118,7 +118,7 @@ func TestSet(t *testing.T) {
 		t.Run("Union", func(t *ftt.Test) {
 			sl := s.Union(NewFromSlice("b", "k", "g")).ToSlice()
 			sort.Strings(sl)
-			assert.Loosely(t, sl, should.Resemble([]string{
+			assert.Loosely(t, sl, should.Match([]string{
 				"a", "b", "c", "d", "e", "f", "g", "k", "z"}))
 		})
 
@@ -138,13 +138,13 @@ func TestSet(t *testing.T) {
 			t.Run("some overlap", func(t *ftt.Test) {
 				sl := s.Intersect(NewFromSlice("c", "k", "z", "g")).ToSlice()
 				sort.Strings(sl)
-				assert.Loosely(t, sl, should.Resemble([]string{"c", "z"}))
+				assert.Loosely(t, sl, should.Match([]string{"c", "z"}))
 			})
 
 			t.Run("total overlap", func(t *ftt.Test) {
 				sl := s.Intersect(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
 				sort.Strings(sl)
-				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
+				assert.Loosely(t, sl, should.Match([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 		})
 
@@ -152,19 +152,19 @@ func TestSet(t *testing.T) {
 			t.Run("empty", func(t *ftt.Test) {
 				sl := s.Difference(New(0)).ToSlice()
 				sort.Strings(sl)
-				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
+				assert.Loosely(t, sl, should.Match([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 
 			t.Run("no overlap", func(t *ftt.Test) {
 				sl := s.Difference(NewFromSlice("beef")).ToSlice()
 				sort.Strings(sl)
-				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
+				assert.Loosely(t, sl, should.Match([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 
 			t.Run("some overlap", func(t *ftt.Test) {
 				sl := s.Difference(NewFromSlice("c", "k", "z", "g")).ToSlice()
 				sort.Strings(sl)
-				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "d", "e", "f"}))
+				assert.Loosely(t, sl, should.Match([]string{"a", "b", "d", "e", "f"}))
 			})
 
 			t.Run("total overlap", func(t *ftt.Test) {

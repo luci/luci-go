@@ -95,7 +95,7 @@ func TestServer(t *testing.T) {
 
 			assert.Loosely(t, intercepted, should.BeTrue)
 			assert.Loosely(t, exitcode, should.Equal(123))
-			assert.Loosely(t, capturedOutput, should.Resemble(TestStruct{[]string{"hello", "world"}}))
+			assert.Loosely(t, capturedOutput, should.Match(TestStruct{[]string{"hello", "world"}}))
 		})
 
 		t.Run(`*structs`, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestServer(t *testing.T) {
 
 			assert.Loosely(t, intercepted, should.BeTrue)
 			assert.Loosely(t, exitcode, should.Equal(123))
-			assert.Loosely(t, capturedOutput, should.Resemble(&TestStruct{[]string{"hello", "world"}}))
+			assert.Loosely(t, capturedOutput, should.Match(&TestStruct{[]string{"hello", "world"}}))
 		})
 
 		t.Run(`*nested structs`, func(t *ftt.Test) {
@@ -133,7 +133,7 @@ func TestServer(t *testing.T) {
 
 			assert.Loosely(t, intercepted, should.BeTrue)
 			assert.Loosely(t, exitcode, should.Equal(123))
-			assert.Loosely(t, capturedOutput, should.Resemble(&List{"stuff", &List{"hello", &List{"there", nil}}}))
+			assert.Loosely(t, capturedOutput, should.Match(&List{"stuff", &List{"hello", &List{"there", nil}}}))
 		})
 
 		t.Run(`panic function (error)`, func(t *ftt.Test) {

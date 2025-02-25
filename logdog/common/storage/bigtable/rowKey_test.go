@@ -58,7 +58,7 @@ func TestRowKey(t *testing.T) {
 			drk, err := decodeRowKey(enc)
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, drk.pathHash, should.Resemble(rk.pathHash))
+			assert.Loosely(t, drk.pathHash, should.Match(rk.pathHash))
 			assert.Loosely(t, drk.index, should.Equal(rk.index))
 			assert.Loosely(t, drk.count, should.Equal(rk.count))
 		})

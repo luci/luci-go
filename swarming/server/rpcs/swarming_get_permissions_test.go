@@ -134,7 +134,7 @@ func TestSwarmingServer(t *testing.T) {
 		}
 
 		t.Run("Admin", func(t *ftt.Test) {
-			assert.Loosely(t, call(adminID, "", allowedTaskID, nil), should.Resemble(&apipb.ClientPermissions{
+			assert.Loosely(t, call(adminID, "", allowedTaskID, nil), should.Match(&apipb.ClientPermissions{
 				DeleteBot:         true,
 				DeleteBots:        true,
 				TerminateBot:      true,
@@ -159,14 +159,14 @@ func TestSwarmingServer(t *testing.T) {
 		})
 
 		t.Run("Unknown", func(t *ftt.Test) {
-			assert.Loosely(t, call(unknownID, "", allowedTaskID, nil), should.Resemble(&apipb.ClientPermissions{
+			assert.Loosely(t, call(unknownID, "", allowedTaskID, nil), should.Match(&apipb.ClientPermissions{
 				// All empty.
 			}))
 		})
 
 		t.Run("Authorized pools", func(t *ftt.Test) {
 			assert.Loosely(t, call(authorizedID, "", "", []string{"pool:visible-pool-1"}),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						CancelTask:  true,
 						CancelTasks: true,
@@ -179,7 +179,7 @@ func TestSwarmingServer(t *testing.T) {
 
 		t.Run("Hidden pools", func(t *ftt.Test) {
 			assert.Loosely(t, call(authorizedID, "", "", []string{"pool:hidden-pool-1"}),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						ListBots:  expectedVisiblePools,
 						ListTasks: expectedVisiblePools,
@@ -189,7 +189,7 @@ func TestSwarmingServer(t *testing.T) {
 
 		t.Run("Accessing task", func(t *ftt.Test) {
 			assert.Loosely(t, call(authorizedID, "", allowedTaskID, nil),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						CancelTask: true,
 						ListBots:   expectedVisiblePools,
@@ -198,7 +198,7 @@ func TestSwarmingServer(t *testing.T) {
 				))
 
 			assert.Loosely(t, call(authorizedID, "", forbiddenTaskID, nil),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						ListBots:  expectedVisiblePools,
 						ListTasks: expectedVisiblePools,
@@ -213,7 +213,7 @@ func TestSwarmingServer(t *testing.T) {
 
 		t.Run("Accessing bot", func(t *ftt.Test) {
 			assert.Loosely(t, call(authorizedID, "visible-bot", "", nil),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						DeleteBot:    true,
 						TerminateBot: true,
@@ -223,7 +223,7 @@ func TestSwarmingServer(t *testing.T) {
 				))
 
 			assert.Loosely(t, call(authorizedID, "hidden-bot", "", nil),
-				should.Resemble(
+				should.Match(
 					&apipb.ClientPermissions{
 						ListBots:  expectedVisiblePools,
 						ListTasks: expectedVisiblePools,

@@ -37,7 +37,7 @@ func TestStepTags(t *testing.T) {
 		actualTags := step.stepPb.Tags
 
 		expectedTags := []*pb.StringPair(nil)
-		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
+		assert.Loosely(t, actualTags, should.Match(expectedTags))
 	})
 
 	ftt.Run(`Add step tags`, t, func(t *ftt.Test) {
@@ -53,7 +53,7 @@ func TestStepTags(t *testing.T) {
 			Key:   "build.testing.key",
 			Value: "value",
 		})
-		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
+		assert.Loosely(t, actualTags, should.Match(expectedTags))
 	})
 
 	ftt.Run(`Add step tag with existing key`, t, func(t *ftt.Test) {
@@ -89,7 +89,7 @@ func TestStepTags(t *testing.T) {
 			Key:   "build.testing.key",
 			Value: "g",
 		})
-		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
+		assert.Loosely(t, actualTags, should.Match(expectedTags))
 	})
 }
 

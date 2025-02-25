@@ -64,8 +64,8 @@ func TestReadTestMetadata(t *testing.T) {
 				expectedRow := *expected[i]
 				// ShouldResemble does not work on struct with nested proto buffer.
 				// So we compare each proto field separately.
-				assert.Loosely(t, row.TestMetadata, should.Resemble(expectedRow.TestMetadata))
-				assert.Loosely(t, row.SourceRef, should.Resemble(expectedRow.SourceRef))
+				assert.Loosely(t, row.TestMetadata, should.Match(expectedRow.TestMetadata))
+				assert.Loosely(t, row.SourceRef, should.Match(expectedRow.SourceRef))
 				cloneActual := *row
 				cloneActual.TestMetadata = nil
 				cloneActual.SourceRef = nil
@@ -73,7 +73,7 @@ func TestReadTestMetadata(t *testing.T) {
 				expectedRow.SourceRef = nil
 				cloneActual.LastUpdated = time.Time{}
 				expectedRow.LastUpdated = time.Time{}
-				assert.Loosely(t, cloneActual, should.Resemble(expectedRow))
+				assert.Loosely(t, cloneActual, should.Match(expectedRow))
 			}
 		}
 		t.Run(`Does not fetch test metadata from other test, source ref or realm`, func(t *ftt.Test) {

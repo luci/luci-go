@@ -149,7 +149,7 @@ func TestBQ(t *testing.T) {
 			assert.Loosely(t, len(rows), should.Equal(1))
 			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			assert.Loosely(t, p, should.Resemble(&pb.Build{
+			assert.Loosely(t, p, should.Match(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -217,7 +217,7 @@ func TestBQ(t *testing.T) {
 			assert.Loosely(t, len(rows), should.Equal(1))
 			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			assert.Loosely(t, p, should.Resemble(&pb.Build{
+			assert.Loosely(t, p, should.Match(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -292,7 +292,7 @@ func TestBQ(t *testing.T) {
 			assert.Loosely(t, len(rows), should.Equal(1))
 			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			assert.Loosely(t, p, should.Resemble(&pb.Build{
+			assert.Loosely(t, p, should.Match(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -336,7 +336,7 @@ func TestBQ(t *testing.T) {
 			assert.Loosely(t, len(rows), should.Equal(1))
 			assert.Loosely(t, rows[0].InsertID, should.Equal("123"))
 			p, _ := rows[0].Message.(*pb.Build)
-			assert.Loosely(t, p, should.Resemble(&pb.Build{
+			assert.Loosely(t, p, should.Match(&pb.Build{
 				Id: 123,
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -525,7 +525,7 @@ func TestTryBackfillSwarming(t *testing.T) {
 					},
 				}
 				assert.Loosely(t, tryBackfillSwarming(b), should.BeNil)
-				assert.Loosely(t, b.Infra.Swarming, should.Resemble(expected))
+				assert.Loosely(t, b.Infra.Swarming, should.Match(expected))
 			})
 		})
 	})
@@ -655,7 +655,7 @@ func TestTryBackfillBackend(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, tryBackfillBackend(b), should.BeNil)
-			assert.Loosely(t, b.Infra.Backend, should.Resemble(expected))
+			assert.Loosely(t, b.Infra.Backend, should.Match(expected))
 		})
 	})
 }

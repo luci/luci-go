@@ -229,8 +229,8 @@ func TestExportTestResults(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
-			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
-			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Match(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Match(expectedResults))
 			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoints...), should.BeNil)
 
 			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
@@ -257,8 +257,8 @@ func TestExportTestResults(t *testing.T) {
 				r.SourceRefHash = ""
 			}
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
-			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Resemble(expectedResults))
-			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Resemble(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Match(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Match(expectedResults))
 			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoints...), should.BeNil)
 		})
 	})

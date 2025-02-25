@@ -43,7 +43,7 @@ func TestUser(t *testing.T) {
 
 		t.Run("can login (normal)", func(t *ftt.Test) {
 			user.GetTestable(c).Login("hello@world.com", "", false)
-			assert.Loosely(t, user.Current(c), should.Resemble(&user.User{
+			assert.Loosely(t, user.Current(c), should.Match(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
@@ -65,7 +65,7 @@ func TestUser(t *testing.T) {
 
 		t.Run("can be admin", func(t *ftt.Test) {
 			user.GetTestable(c).Login("hello@world.com", "", true)
-			assert.Loosely(t, user.Current(c), should.Resemble(&user.User{
+			assert.Loosely(t, user.Current(c), should.Match(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
@@ -78,7 +78,7 @@ func TestUser(t *testing.T) {
 			user.GetTestable(c).Login("hello@world.com", "clientID", false)
 			usr, err := user.CurrentOAuth(c, "scope")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, usr, should.Resemble(&user.User{
+			assert.Loosely(t, usr, should.Match(&user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",

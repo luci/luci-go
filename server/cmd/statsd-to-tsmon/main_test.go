@@ -131,7 +131,7 @@ func TestEndToEnd(t *testing.T) {
 		assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(123.))
 
 		// Updated its own internal metric.
-		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Resemble(map[string]int64{
+		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Match(map[string]int64{
 			"OK": 5,
 		}))
 
@@ -152,7 +152,7 @@ func TestEndToEnd(t *testing.T) {
 		assert.Loosely(t, val, should.Equal(2))
 
 		// Updated its own internal metric.
-		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Resemble(map[string]int64{
+		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Match(map[string]int64{
 			"OK":          7,
 			"MALFORMED":   1,
 			"UNSUPPORTED": 1,

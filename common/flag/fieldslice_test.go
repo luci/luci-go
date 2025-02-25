@@ -30,7 +30,7 @@ func TestFieldSliceFlag(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var flag fieldSliceFlag
 		assert.Loosely(t, flag.Set("abc"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]googleapi.Field{"abc"}))
+		assert.Loosely(t, flag.Get(), should.Match([]googleapi.Field{"abc"}))
 		assert.Loosely(t, flag.String(), should.Equal("abc"))
 	})
 
@@ -39,7 +39,7 @@ func TestFieldSliceFlag(t *testing.T) {
 		assert.Loosely(t, flag.Set("abc"), should.BeNil)
 		assert.Loosely(t, flag.Set("def"), should.BeNil)
 		assert.Loosely(t, flag.Set("ghi"), should.BeNil)
-		assert.Loosely(t, flag.Get(), should.Resemble([]googleapi.Field{"abc", "def", "ghi"}))
+		assert.Loosely(t, flag.Get(), should.Match([]googleapi.Field{"abc", "def", "ghi"}))
 		assert.Loosely(t, flag.String(), should.Equal("abc, def, ghi"))
 	})
 }
@@ -50,7 +50,7 @@ func TestFieldSlice(t *testing.T) {
 	ftt.Run("one", t, func(t *ftt.Test) {
 		var f []googleapi.Field
 		assert.Loosely(t, FieldSlice(&f).Set("abc"), should.BeNil)
-		assert.Loosely(t, f, should.Resemble([]googleapi.Field{"abc"}))
+		assert.Loosely(t, f, should.Match([]googleapi.Field{"abc"}))
 	})
 
 	ftt.Run("many", t, func(t *ftt.Test) {
@@ -58,6 +58,6 @@ func TestFieldSlice(t *testing.T) {
 		assert.Loosely(t, FieldSlice(&f).Set("abc"), should.BeNil)
 		assert.Loosely(t, FieldSlice(&f).Set("def"), should.BeNil)
 		assert.Loosely(t, FieldSlice(&f).Set("ghi"), should.BeNil)
-		assert.Loosely(t, f, should.Resemble([]googleapi.Field{"abc", "def", "ghi"}))
+		assert.Loosely(t, f, should.Match([]googleapi.Field{"abc", "def", "ghi"}))
 	})
 }

@@ -30,7 +30,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -41,7 +41,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -52,7 +52,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7/buildbucket/cmd/bb/base_command.go")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Project:  "infra/luci/luci-go",
 				Change:   1541677,
@@ -63,7 +63,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chromium-review.googlesource.com/c/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/1541677/7")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   1541677,
 				Patchset: 7,
@@ -73,7 +73,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:    "chromium-review.googlesource.com",
 				Project: "infra/luci/luci-go",
 				Change:  1541677,
@@ -83,7 +83,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("crrev.com/c/123", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/c/123")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:   "chromium-review.googlesource.com",
 				Change: 123,
 			}))
@@ -92,7 +92,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("crrev.com/c/123/4", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/c/123/4")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   123,
 				Patchset: 4,
@@ -102,7 +102,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("crrev.com/i/123", func(t *ftt.Test) {
 			actual, err := parseCL("crrev.com/i/123")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:   "chrome-internal-review.googlesource.com",
 				Change: 123,
 			}))
@@ -111,7 +111,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://crrev.com/i/123", func(t *ftt.Test) {
 			actual, err := parseCL("https://crrev.com/i/123")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:   "chrome-internal-review.googlesource.com",
 				Change: 123,
 			}))
@@ -120,7 +120,7 @@ func TestParseCL(t *testing.T) {
 		t.Run("https://chrome-internal-review.googlesource.com/c/src/+/1/2", func(t *ftt.Test) {
 			actual, err := parseCL("https://chrome-internal-review.googlesource.com/c/src/+/1/2")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&pb.GerritChange{
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
 				Host:     "chrome-internal-review.googlesource.com",
 				Project:  "src",
 				Change:   1,

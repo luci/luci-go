@@ -167,7 +167,7 @@ func TestExportToBigQuery(t *testing.T) {
 				assert.Loosely(t, tr.Parent.Id, should.BeIn([]string{"a", "b"}...))
 				assert.Loosely(t, tr.Parent.Realm, should.Equal("testproject:testrealm"))
 				if tr.Parent.Id == "b" {
-					assert.Loosely(t, tr.Parent.Properties, should.Resemble(&structpb.Struct{
+					assert.Loosely(t, tr.Parent.Properties, should.Match(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key": structpb.NewStringValue("value"),
 						},
@@ -185,7 +185,7 @@ func TestExportToBigQuery(t *testing.T) {
 				assert.Loosely(t, tr.InsertTime, should.Match(timestamppb.New(testclock.TestTimeUTC)))
 
 				if tr.TestId == "E" {
-					assert.Loosely(t, tr.Properties, should.Resemble(&structpb.Struct{
+					assert.Loosely(t, tr.Properties, should.Match(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key_1": structpb.NewStringValue("value_1"),
 							"key_2": structpb.NewStructValue(&structpb.Struct{
@@ -197,7 +197,7 @@ func TestExportToBigQuery(t *testing.T) {
 					}))
 					assert.Loosely(t, tr.SkipReason, should.Equal(pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String()))
 				} else {
-					assert.Loosely(t, tr.Properties, should.Resemble(&structpb.Struct{
+					assert.Loosely(t, tr.Properties, should.Match(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key": structpb.NewStringValue("value"),
 						},
@@ -205,7 +205,7 @@ func TestExportToBigQuery(t *testing.T) {
 					assert.Loosely(t, tr.SkipReason, should.BeEmpty)
 				}
 
-				assert.Loosely(t, tr.Sources, should.Resemble(testutil.TestSources()))
+				assert.Loosely(t, tr.Sources, should.Match(testutil.TestSources()))
 			}
 		})
 
@@ -322,9 +322,9 @@ func TestExportToBigQuery(t *testing.T) {
 			assert.Loosely(t, row.Project, should.Equal("testproject"))
 			assert.Loosely(t, row.Realm, should.Equal("testrealm"))
 			assert.Loosely(t, row.Id, should.Equal("a"))
-			assert.Loosely(t, row.CreateTime, should.Resemble(timestamppb.New(commitTime)))
-			assert.Loosely(t, row.FinalizeTime, should.Resemble(timestamppb.New(commitTime)))
-			assert.Loosely(t, row.PartitionTime, should.Resemble(timestamppb.New(commitTime)))
+			assert.Loosely(t, row.CreateTime, should.Match(timestamppb.New(commitTime)))
+			assert.Loosely(t, row.FinalizeTime, should.Match(timestamppb.New(commitTime)))
+			assert.Loosely(t, row.PartitionTime, should.Match(timestamppb.New(commitTime)))
 
 			// Different implementations may use different spacing between
 			// json elements. Ignore this.
@@ -355,11 +355,11 @@ func TestSchedule(t *testing.T) {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "zero-bqx"}))
-		assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "one-bqx"}))
-		assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1}))
-		assert.Loosely(t, sched.Tasks().Payloads()[3], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "two-bqx"}))
-		assert.Loosely(t, sched.Tasks().Payloads()[4], should.Resemble(&taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2}))
-		assert.Loosely(t, sched.Tasks().Payloads()[5], should.Resemble(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1}))
+		assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.ExportInvocationToBQ{InvocationId: "zero-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[1], should.Match(&taskspb.ExportInvocationToBQ{InvocationId: "one-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[2], should.Match(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1}))
+		assert.Loosely(t, sched.Tasks().Payloads()[3], should.Match(&taskspb.ExportInvocationToBQ{InvocationId: "two-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[4], should.Match(&taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2}))
+		assert.Loosely(t, sched.Tasks().Payloads()[5], should.Match(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1}))
 	})
 }

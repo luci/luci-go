@@ -44,22 +44,22 @@ func TestReachableInvocations(t *testing.T) {
 
 		t.Run(`Batches`, func(t *ftt.Test) {
 			results := invs.batches(2)
-			assert.Loosely(t, results[0].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[0].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
 				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
 				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}},
 			}))
 			assert.Loosely(t, results[0].Sources, should.HaveLength(2))
-			assert.Loosely(t, results[0].Sources[HashSources(src1)], should.Resemble(src1))
-			assert.Loosely(t, results[0].Sources[HashSources(src2)], should.Resemble(src2))
+			assert.Loosely(t, results[0].Sources[HashSources(src1)], should.Match(src1))
+			assert.Loosely(t, results[0].Sources[HashSources(src2)], should.Match(src2))
 
-			assert.Loosely(t, results[1].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[1].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
 				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
 				"1": {HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}},
 			}))
 			assert.Loosely(t, results[1].Sources, should.HaveLength(1))
-			assert.Loosely(t, results[1].Sources[HashSources(src1)], should.Resemble(src1))
+			assert.Loosely(t, results[1].Sources[HashSources(src1)], should.Match(src1))
 
-			assert.Loosely(t, results[2].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[2].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
 				"2": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}},
 				"5": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}},
 			}))
@@ -72,26 +72,26 @@ func TestReachableInvocations(t *testing.T) {
 			result, err := unmarshalReachableInvocations(b)
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, result.Invocations, should.Resemble(invs.Invocations))
+			assert.Loosely(t, result.Invocations, should.Match(invs.Invocations))
 			assert.Loosely(t, result.Sources, should.HaveLength(len(invs.Sources)))
 			for key, value := range invs.Sources {
-				assert.Loosely(t, result.Sources[key], should.Resemble(value))
+				assert.Loosely(t, result.Sources[key], should.Match(value))
 			}
 		})
 		t.Run(`IDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.IDSet()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "1", "2", "3", "4", "5")))
+			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "1", "2", "3", "4", "5")))
 		})
 		t.Run(`WithTestResultsIDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.WithTestResultsIDSet()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "1", "2")))
+			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "1", "2")))
 		})
 		t.Run(`WithExonerationsIDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.WithExonerationsIDSet()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "2", "4")))
+			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "2", "4")))
 		})
 	})
 	ftt.Run(`Union`, t, func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestReachableInvocations(t *testing.T) {
 			},
 		}
 		a.Union(b)
-		assert.Loosely(t, a, should.Resemble(ReachableInvocations{
+		assert.Loosely(t, a, should.Match(ReachableInvocations{
 			Invocations: map[invocations.ID]ReachableInvocation{
 				"inv1": {
 					HasTestResults:        true,
@@ -243,7 +243,7 @@ func TestReachableInvocations(t *testing.T) {
 
 		instructionMap, err := invs.InstructionMap()
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, instructionMap, should.Resemble(map[invocations.ID]*pb.VerdictInstruction{
+		assert.Loosely(t, instructionMap, should.Match(map[invocations.ID]*pb.VerdictInstruction{
 			"inv1": {
 				Instruction: "invocations/inv0/instructions/instruction0",
 			},

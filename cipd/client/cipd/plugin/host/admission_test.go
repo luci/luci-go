@@ -226,7 +226,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
 			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
-			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -254,7 +254,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			plug := newPlugin("VISIT_METADATA_ONE")
 			defer plug.Close(ctx)
 			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
-			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -274,7 +274,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("the listing says boo"))
 
-			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,

@@ -214,9 +214,9 @@ func TestConcurrentRunsSingular(t *testing.T) {
 		sort.Ints(actualSubmitted)
 		sort.Ints(actualFailed)
 		sort.Ints(actualFinished)
-		assert.Loosely(t, actualSubmitted, should.Resemble(expectSubmitted))
-		assert.Loosely(t, actualFailed, should.Resemble(expectFailed))
-		assert.Loosely(t, actualFinished, should.Resemble(expectFinished))
+		assert.Loosely(t, actualSubmitted, should.Match(expectSubmitted))
+		assert.Loosely(t, actualFailed, should.Match(expectFailed))
+		assert.Loosely(t, actualFinished, should.Match(expectFinished))
 		assert.Loosely(t, actualWeird, should.BeEmpty)
 
 		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(len(actions)))

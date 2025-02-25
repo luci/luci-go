@@ -446,7 +446,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					t.Run(`Will successfully retrieve stream state.`, func(t *ftt.Test) {
 						resp, err := svr.Get(c, &req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+						assert.Loosely(t, resp.State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
 						assert.Loosely(t, len(resp.Logs), should.BeZero)
 					})
 
@@ -480,7 +480,7 @@ func testGetImpl(t *testing.T, archived bool) {
 							assert.Loosely(t, resp.SignedUrls, should.NotBeNil)
 							assert.Loosely(t, resp.SignedUrls.Stream, should.HaveSuffix("&signed=true"))
 							assert.Loosely(t, resp.SignedUrls.Index, should.HaveSuffix("&signed=true"))
-							assert.Loosely(t, resp.SignedUrls.Expiration.AsTime(), should.Resemble(clock.Now(c).Add(duration)))
+							assert.Loosely(t, resp.SignedUrls.Expiration.AsTime(), should.Match(clock.Now(c).Add(duration)))
 						})
 					} else {
 						t.Run(`Will succeed, but return no URL.`, func(t *ftt.Test) {
@@ -521,7 +521,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					resp, err := svr.Get(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
@@ -555,7 +555,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					assert.Loosely(t, resp.Logs[0], should.NotBeNil)
 
 					// Confirm that there is a descriptor protobuf.
-					assert.Loosely(t, resp.Desc, should.Resemble(tls.Desc))
+					assert.Loosely(t, resp.Desc, should.Match(tls.Desc))
 
 					// Confirm that the state was returned.
 					assert.Loosely(t, resp.State, should.NotBeNil)
@@ -575,7 +575,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0))
 
-					assert.Loosely(t, resp.Logs[0].GetText(), should.Resemble(&logpb.Text{
+					assert.Loosely(t, resp.Logs[0].GetText(), should.Match(&logpb.Text{
 						Lines: []*logpb.Text_Line{
 							{Value: []byte("log entry #0"), Delimiter: "\n"},
 							{Value: []byte("another line of text"), Delimiter: ""},
@@ -589,7 +589,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					resp, err := svr.Get(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(4))
-					assert.Loosely(t, resp.Logs[0].GetBinary(), should.Resemble(&logpb.Binary{
+					assert.Loosely(t, resp.Logs[0].GetBinary(), should.Match(&logpb.Binary{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 					}))
 				})
@@ -600,7 +600,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					resp, err := svr.Get(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(5))
-					assert.Loosely(t, resp.Logs[0].GetDatagram(), should.Resemble(&logpb.Datagram{
+					assert.Loosely(t, resp.Logs[0].GetDatagram(), should.Match(&logpb.Datagram{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 						Partial: &logpb.Datagram_Partial{
 							Index: 2,
@@ -629,11 +629,11 @@ func testGetImpl(t *testing.T, archived bool) {
 					resp, err := svr.Tail(c, &req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
-					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
 
 					// For non-archival: 1 miss and 1 put, for the tail row.
 					// For archival: 1 miss and 1 put, for the index.
-					assert.Loosely(t, env.StorageCache.Stats(), should.Resemble(ct.StorageCacheStats{Puts: 1, Misses: 1}))
+					assert.Loosely(t, env.StorageCache.Stats(), should.Match(ct.StorageCacheStats{Puts: 1, Misses: 1}))
 
 					t.Run(`Will retrieve the stream path again (caching).`, func(t *ftt.Test) {
 						env.StorageCache.Clear()
@@ -641,11 +641,11 @@ func testGetImpl(t *testing.T, archived bool) {
 						resp, err := svr.Tail(c, &req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
-						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+						assert.Loosely(t, resp.State, should.Match(buildLogStreamState(tls.Stream, tls.State)))
 
 						// For non-archival: 1 hit, for the tail row.
 						// For archival: 1 hit, for the index.
-						assert.Loosely(t, env.StorageCache.Stats(), should.Resemble(ct.StorageCacheStats{Hits: 1}))
+						assert.Loosely(t, env.StorageCache.Stats(), should.Match(ct.StorageCacheStats{Hits: 1}))
 					})
 				})
 			})

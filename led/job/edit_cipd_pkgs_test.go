@@ -56,7 +56,7 @@ func TestEditCIPDPkgs(t *testing.T) {
 				} else {
 					pkgs, err := jd.Info().CIPDPkgs()
 					assert.Loosely(t, err, should.ErrLike(nil))
-					assert.Loosely(t, pkgs, should.Resemble(CIPDPkgs{
+					assert.Loosely(t, pkgs, should.Match(CIPDPkgs{
 						"subdir:some/pkg":       "version",
 						"other_subdir:some/pkg": "different_version",
 						"some/other/pkg":        "latest",
@@ -90,7 +90,7 @@ func TestEditCIPDPkgs(t *testing.T) {
 				} else {
 					pkgs, err := jd.Info().CIPDPkgs()
 					assert.Loosely(t, err, should.ErrLike(nil))
-					assert.Loosely(t, pkgs, should.Resemble(CIPDPkgs{
+					assert.Loosely(t, pkgs, should.Match(CIPDPkgs{
 						"other_subdir:some/pkg": "different_version",
 					}))
 				}

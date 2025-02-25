@@ -68,7 +68,7 @@ func TestBotsDimensionsSets(t *testing.T) {
 			},
 		}, testTime)
 
-		assert.Loosely(t, bs.DimensionsGlobally(), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsGlobally(), should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2", "v3", "v4"}},
 				{Key: "d2", Value: []string{"c1", "c2", "c3", "c4"}},
@@ -78,17 +78,17 @@ func TestBotsDimensionsSets(t *testing.T) {
 			Ts: testTimeTS,
 		}))
 
-		assert.Loosely(t, bs.DimensionsInPools(nil), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools(nil), should.Match(&apipb.BotsDimensions{
 			Ts: testTimeTS,
 		}))
-		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown"}), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown"}), should.Match(&apipb.BotsDimensions{
 			Ts: testTimeTS,
 		}))
-		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown1", "unknown2"}), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"unknown1", "unknown2"}), should.Match(&apipb.BotsDimensions{
 			Ts: testTimeTS,
 		}))
 
-		assert.Loosely(t, bs.DimensionsInPools([]string{"p1"}), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"p1"}), should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2"}},
 				{Key: "d2", Value: []string{"c1", "c2"}},
@@ -96,7 +96,7 @@ func TestBotsDimensionsSets(t *testing.T) {
 			Ts: testTimeTS,
 		}))
 
-		assert.Loosely(t, bs.DimensionsInPools([]string{"p1", "p2", "unknown"}), should.Resemble(&apipb.BotsDimensions{
+		assert.Loosely(t, bs.DimensionsInPools([]string{"p1", "p2", "unknown"}), should.Match(&apipb.BotsDimensions{
 			BotsDimensions: []*apipb.StringListPair{
 				{Key: "d1", Value: []string{"v1", "v2", "v3"}},
 				{Key: "d2", Value: []string{"c1", "c2", "c3"}},

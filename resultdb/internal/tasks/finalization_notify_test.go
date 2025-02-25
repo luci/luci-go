@@ -58,7 +58,7 @@ func TestNotifyInvocationFinalized(t *testing.T) {
 
 			var msg pb.InvocationFinalizedNotification
 			assert.Loosely(t, protojson.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
-			assert.Loosely(t, &msg, should.Resemble(&pb.InvocationFinalizedNotification{
+			assert.Loosely(t, &msg, should.Match(&pb.InvocationFinalizedNotification{
 				Invocation: "invocations/x",
 				Realm:      "myproject:myrealm",
 			}))

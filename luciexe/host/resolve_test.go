@@ -43,7 +43,7 @@ func TestResolveExeCmd(t *testing.T) {
 		t.Run("default", func(t *ftt.Test) {
 			args, err := ResolveExeCmd(opts, "/default")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, args, should.Resemble([]string{"/default/luciexe"}))
+			assert.Loosely(t, args, should.Match([]string{"/default/luciexe"}))
 		})
 
 		t.Run("agent", func(t *ftt.Test) {
@@ -57,7 +57,7 @@ func TestResolveExeCmd(t *testing.T) {
 
 			args, err := ResolveExeCmd(opts, "/default")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, args, should.Resemble([]string{"/base/inputs/luciexe"}))
+			assert.Loosely(t, args, should.Match([]string{"/base/inputs/luciexe"}))
 		})
 
 		t.Run("wrapper", func(t *ftt.Test) {
@@ -67,7 +67,7 @@ func TestResolveExeCmd(t *testing.T) {
 
 			args, err := ResolveExeCmd(opts, "/default")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, args, should.Resemble([]string{wrapper, "--", "/default/luciexe"}))
+			assert.Loosely(t, args, should.Match([]string{wrapper, "--", "/default/luciexe"}))
 		})
 	})
 }

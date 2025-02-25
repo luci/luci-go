@@ -61,7 +61,7 @@ func TestFindGaps(t *testing.T) {
 				got = append(got, nextNum())
 			}
 
-			assert.Loosely(t, got, should.Resemble(test.wantFirst5Gaps))
+			assert.Loosely(t, got, should.Match(test.wantFirst5Gaps))
 		})
 	}
 }

@@ -58,14 +58,14 @@ func TestTokenClient(t *testing.T) {
 			TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(expectedResp))
+		assert.Loosely(t, resp, should.Match(expectedResp))
 
 		rpc := c.Client.(*fakeRPCClient).In
-		assert.Loosely(t, rpc.Signature, should.Resemble([]byte("fake signature")))
+		assert.Loosely(t, rpc.Signature, should.Match([]byte("fake signature")))
 
 		tokReq := &minter.MachineTokenRequest{}
 		assert.Loosely(t, proto.Unmarshal(rpc.SerializedTokenRequest, tokReq), should.BeNil)
-		assert.Loosely(t, tokReq, should.Resemble(&minter.MachineTokenRequest{
+		assert.Loosely(t, tokReq, should.Match(&minter.MachineTokenRequest{
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			IssuedAt:           timestamppb.New(clock.Now(ctx)),

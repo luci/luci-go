@@ -69,18 +69,18 @@ func TestAbsoluteSchedule(t *testing.T) {
 	ftt.Run("Next works", t, func(t *ftt.Test) {
 		sched, _ := Parse("*/15 * * * * * *", 0)
 		assert.Loosely(t, sched.IsAbsolute(), should.BeTrue)
-		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Resemble(epoch.Add(15*time.Second)))
-		assert.Loosely(t, sched.Next(epoch.Add(15*time.Second), epoch), should.Resemble(epoch.Add(30*time.Second)))
+		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Match(epoch.Add(15*time.Second)))
+		assert.Loosely(t, sched.Next(epoch.Add(15*time.Second), epoch), should.Match(epoch.Add(30*time.Second)))
 	})
 
 	ftt.Run("Each 3 hours time table", t, func(t *ftt.Test) {
-		assert.Loosely(t, timeTable("0 */3 * * * *", epoch, 4), should.Resemble([]time.Time{
+		assert.Loosely(t, timeTable("0 */3 * * * *", epoch, 4), should.Match([]time.Time{
 			closestMidnight,
 			closestMidnight.Add(3 * time.Hour),
 			closestMidnight.Add(6 * time.Hour),
 			closestMidnight.Add(9 * time.Hour),
 		}))
-		assert.Loosely(t, timeTable("0 1/3 * * * *", epoch, 4), should.Resemble([]time.Time{
+		assert.Loosely(t, timeTable("0 1/3 * * * *", epoch, 4), should.Match([]time.Time{
 			closestMidnight.Add(1 * time.Hour),
 			closestMidnight.Add(4 * time.Hour),
 			closestMidnight.Add(7 * time.Hour),
@@ -90,11 +90,11 @@ func TestAbsoluteSchedule(t *testing.T) {
 
 	ftt.Run("Trailing stars are optional", t, func(t *ftt.Test) {
 		// Exact same time tables.
-		assert.Loosely(t, timeTable("0 */3 * * *", epoch, 4), should.Resemble(timeTable("0 */3 * * * *", epoch, 4)))
+		assert.Loosely(t, timeTable("0 */3 * * *", epoch, 4), should.Match(timeTable("0 */3 * * * *", epoch, 4)))
 	})
 
 	ftt.Run("List of hours", t, func(t *ftt.Test) {
-		assert.Loosely(t, timeTable("0 2,10,18 * * *", epoch, 4), should.Resemble([]time.Time{
+		assert.Loosely(t, timeTable("0 2,10,18 * * *", epoch, 4), should.Match([]time.Time{
 			closestMidnight.Add(2 * time.Hour),
 			closestMidnight.Add(10 * time.Hour),
 			closestMidnight.Add(18 * time.Hour),
@@ -103,7 +103,7 @@ func TestAbsoluteSchedule(t *testing.T) {
 	})
 
 	ftt.Run("Once a day", t, func(t *ftt.Test) {
-		assert.Loosely(t, timeTable("0 7 * * *", epoch, 4), should.Resemble([]time.Time{
+		assert.Loosely(t, timeTable("0 7 * * *", epoch, 4), should.Match([]time.Time{
 			closestMidnight.Add(7 * time.Hour),
 			closestMidnight.Add(31 * time.Hour),
 			closestMidnight.Add(55 * time.Hour),
@@ -140,10 +140,10 @@ func TestRelativeSchedule(t *testing.T) {
 		assert.Loosely(t, sched.IsAbsolute(), should.BeFalse)
 
 		// First tick is pseudorandom.
-		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Resemble(epoch.Add(14*time.Second+177942239*time.Nanosecond)))
+		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Match(epoch.Add(14*time.Second+177942239*time.Nanosecond)))
 
 		// Next tick is 15s from prev one, or now if it's too late.
-		assert.Loosely(t, sched.Next(epoch.Add(16*time.Second), epoch.Add(15*time.Second)), should.Resemble(epoch.Add(30*time.Second)))
-		assert.Loosely(t, sched.Next(epoch.Add(31*time.Second), epoch.Add(15*time.Second)), should.Resemble(epoch.Add(31*time.Second)))
+		assert.Loosely(t, sched.Next(epoch.Add(16*time.Second), epoch.Add(15*time.Second)), should.Match(epoch.Add(30*time.Second)))
+		assert.Loosely(t, sched.Next(epoch.Add(31*time.Second), epoch.Add(15*time.Second)), should.Match(epoch.Add(31*time.Second)))
 	})
 }

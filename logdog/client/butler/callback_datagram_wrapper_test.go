@@ -59,33 +59,33 @@ func TestDatagramReassembler(t *testing.T) {
 		t.Run(`With nil`, func(t *ftt.Test) {
 			values, seq := [][]byte{}, []uint64{}
 			mkWrappedDatagramCb(&values, &seq)(nil)
-			assert.Loosely(t, values, should.Resemble([][]byte{}))
+			assert.Loosely(t, values, should.Match([][]byte{}))
 		})
 
 		t.Run(`With a complete datagram`, func(t *ftt.Test) {
 			values, seq := [][]byte{}, []uint64{}
 			cbWrapped := mkWrappedDatagramCb(&values, &seq)
 			cbWrapped(mkDatagramLogEntry([]byte{0xca, 0xfe}, false, true, 0, 2, 0))
-			assert.Loosely(t, values, should.Resemble([][]byte{
+			assert.Loosely(t, values, should.Match([][]byte{
 				{0xca, 0xfe, 0xbb},
 			}))
-			assert.Loosely(t, seq, should.Resemble([]uint64{0}))
+			assert.Loosely(t, seq, should.Match([]uint64{0}))
 
 			t.Run(`And doesn't call on an incomplete datagram`, func(t *ftt.Test) {
 				cbWrapped(mkDatagramLogEntry([]byte{0xd0}, true, false, 0, 1, 1))
 				cbWrapped(mkDatagramLogEntry([]byte{0x65, 0x10}, true, false, 1, 2, 1))
-				assert.Loosely(t, values, should.Resemble([][]byte{
+				assert.Loosely(t, values, should.Match([][]byte{
 					{0xca, 0xfe, 0xbb},
 				}))
-				assert.Loosely(t, seq, should.Resemble([]uint64{0}))
+				assert.Loosely(t, seq, should.Match([]uint64{0}))
 
 				t.Run(`Until a LogEntry completes it`, func(t *ftt.Test) {
 					cbWrapped(mkDatagramLogEntry([]byte{0xbb, 0x12}, true, true, 2, 2, 1))
-					assert.Loosely(t, values, should.Resemble([][]byte{
+					assert.Loosely(t, values, should.Match([][]byte{
 						{0xca, 0xfe, 0xbb},
 						{0xd0, 0x65, 0x10, 0xbb, 0x12, 0xbb},
 					}))
-					assert.Loosely(t, seq, should.Resemble([]uint64{0, 1}))
+					assert.Loosely(t, seq, should.Match([]uint64{0, 1}))
 				})
 			})
 		})

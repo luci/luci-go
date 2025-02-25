@@ -92,7 +92,7 @@ func TestAuthMethod(t *testing.T) {
 				AssertedChange: assertedChange,
 			}))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, user, should.Resemble(&auth.User{
+			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: "user:abc@example.com",
 				Email:    "abc@example.com",
 				Extra: &AssertedInfo{
@@ -113,7 +113,7 @@ func TestAuthMethod(t *testing.T) {
 				AssertedChange: assertedChange,
 			}))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, user, should.Resemble(&auth.User{
+			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: "user:xyz@example.com",
 				Email:    "xyz@example.com",
 				Extra: &AssertedInfo{

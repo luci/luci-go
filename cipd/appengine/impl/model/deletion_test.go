@@ -108,7 +108,7 @@ func TestDeletePackage(t *testing.T) {
 
 		// Have the event in the log as well.
 		events := GetEvents(ctx)
-		assert.Loosely(t, events[len(events)-1], should.Resemble(&api.Event{
+		assert.Loosely(t, events[len(events)-1], should.Match(&api.Event{
 			Kind:    api.EventKind_PACKAGE_DELETED,
 			Package: "pkg",
 			Who:     string(testutil.TestUser),

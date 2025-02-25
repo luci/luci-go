@@ -62,7 +62,7 @@ func TestDataTypes(t *testing.T) {
 
 		t.Run("Message is copyable", func(t *ftt.Test) {
 			m2 := m.Copy()
-			assert.Loosely(t, m2, should.Resemble(m))
+			assert.Loosely(t, m2, should.Match(m))
 
 			// make sure it's really a copy
 			m2.To[0] = "fake@faker.example.com"
@@ -75,7 +75,7 @@ func TestDataTypes(t *testing.T) {
 		t.Run("TestMessage is copyable", func(t *ftt.Test) {
 			tm := &TestMessage{*m, []string{"application/msword"}}
 			tm2 := tm.Copy()
-			assert.Loosely(t, tm, should.Resemble(tm2))
+			assert.Loosely(t, tm, should.Match(tm2))
 
 			tm2.MIMETypes[0] = "spam"
 			assert.Loosely(t, tm, should.NotResemble(tm2))
@@ -83,17 +83,17 @@ func TestDataTypes(t *testing.T) {
 
 		t.Run("Message can be cast to an SDK Message", func(t *ftt.Test) {
 			m2 := m.ToSDKMessage()
-			assert.Loosely(t, m2.Sender, should.Resemble(m.Sender))
-			assert.Loosely(t, m2.ReplyTo, should.Resemble(m.ReplyTo))
-			assert.Loosely(t, m2.To, should.Resemble(m.To))
-			assert.Loosely(t, m2.Cc, should.Resemble(m.Cc))
-			assert.Loosely(t, m2.Bcc, should.Resemble(m.Bcc))
-			assert.Loosely(t, m2.Subject, should.Resemble(m.Subject))
-			assert.Loosely(t, m2.Body, should.Resemble(m.Body))
-			assert.Loosely(t, m2.HTMLBody, should.Resemble(m.HTMLBody))
-			assert.Loosely(t, m2.Headers, should.Resemble(m.Headers))
+			assert.Loosely(t, m2.Sender, should.Match(m.Sender))
+			assert.Loosely(t, m2.ReplyTo, should.Match(m.ReplyTo))
+			assert.Loosely(t, m2.To, should.Match(m.To))
+			assert.Loosely(t, m2.Cc, should.Match(m.Cc))
+			assert.Loosely(t, m2.Bcc, should.Match(m.Bcc))
+			assert.Loosely(t, m2.Subject, should.Match(m.Subject))
+			assert.Loosely(t, m2.Body, should.Match(m.Body))
+			assert.Loosely(t, m2.HTMLBody, should.Match(m.HTMLBody))
+			assert.Loosely(t, m2.Headers, should.Match(m.Headers))
 
-			assert.Loosely(t, (Attachment)(m2.Attachments[0]), should.Resemble(m.Attachments[0]))
+			assert.Loosely(t, (Attachment)(m2.Attachments[0]), should.Match(m.Attachments[0]))
 		})
 	})
 }

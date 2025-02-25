@@ -45,7 +45,7 @@ func TestTargetPopulate(t *testing.T) {
 		t.Run("With DeviceTarget", func(t *ftt.Test) {
 			d := &pb.MetricsCollection{}
 			deviceTarget.PopulateProto(d)
-			assert.Loosely(t, d.RootLabels, should.Resemble([]*pb.MetricsCollection_RootLabels{
+			assert.Loosely(t, d.RootLabels, should.Match([]*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},
@@ -100,7 +100,7 @@ func TestTargetPopulate(t *testing.T) {
 		t.Run("With TaskTarget", func(t *ftt.Test) {
 			d := &pb.MetricsCollection{}
 			taskTarget.PopulateProto(d)
-			assert.Loosely(t, d.RootLabels, should.Resemble([]*pb.MetricsCollection_RootLabels{
+			assert.Loosely(t, d.RootLabels, should.Match([]*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},

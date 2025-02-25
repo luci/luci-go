@@ -79,7 +79,7 @@ func TestSearch(t *testing.T) {
 			client.simpleMock(&pb.SearchBuildsResponse{Builds: expectedBuilds}, nil)
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, actualBuilds, should.Resemble(expectedBuilds))
+			assert.Loosely(c, actualBuilds, should.Match(expectedBuilds))
 		})
 
 		c.Run("Two pages", func(c *ftt.Test) {
@@ -101,7 +101,7 @@ func TestSearch(t *testing.T) {
 
 			actualBuilds, err := search(&pb.SearchBuildsRequest{})
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, actualBuilds, should.Resemble([]*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}}))
+			assert.Loosely(c, actualBuilds, should.Match([]*pb.Build{{Id: 1}, {Id: 2}, {Id: 3}}))
 		})
 
 		c.Run("Response error", func(c *ftt.Test) {
@@ -119,7 +119,7 @@ func TestSearch(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, actualBuilds, should.BeEmpty)
 			assert.Loosely(c, client.reqs, should.HaveLength(1))
-			assert.Loosely(c, client.reqs[0].Fields, should.Resemble(&field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}}))
+			assert.Loosely(c, client.reqs[0].Fields, should.Match(&field_mask.FieldMask{Paths: []string{"builds.*.created_by", "builds.*.id", "next_page_token"}}))
 		})
 
 		c.Run("Interrupt", func(c *ftt.Test) {
@@ -136,7 +136,7 @@ func TestSearch(t *testing.T) {
 				errC <- Search(ctx, builds, client, &pb.SearchBuildsRequest{})
 			}()
 
-			assert.Loosely(c, <-builds, should.Resemble(&pb.Build{Id: 1}))
+			assert.Loosely(c, <-builds, should.Match(&pb.Build{Id: 1}))
 			cancel()
 			err := <-errC
 			assert.Loosely(c, err, should.NotBeNil)
@@ -205,7 +205,7 @@ func TestSearch(t *testing.T) {
 			}...)
 			assert.Loosely(c, err, should.BeNil)
 
-			assert.Loosely(c, builds, should.Resemble([]*pb.Build{
+			assert.Loosely(c, builds, should.Match([]*pb.Build{
 				{Id: 1},
 				{Id: 2},
 				{Id: 3},
@@ -243,7 +243,7 @@ func TestSearch(t *testing.T) {
 			}...)
 
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, builds, should.Resemble([]*pb.Build{
+			assert.Loosely(c, builds, should.Match([]*pb.Build{
 				{Id: 1},
 				{Id: 2},
 				{Id: 11},

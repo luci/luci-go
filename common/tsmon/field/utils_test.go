@@ -123,7 +123,7 @@ func TestCanonicalize(t *testing.T) {
 				assert.Loosely(t, ret, should.BeNil)
 				assert.Loosely(t, err, should.NotBeNil)
 			} else {
-				assert.Loosely(t, ret, should.Resemble(d.want))
+				assert.Loosely(t, ret, should.Match(d.want))
 				assert.Loosely(t, err, should.BeNil)
 			}
 		})

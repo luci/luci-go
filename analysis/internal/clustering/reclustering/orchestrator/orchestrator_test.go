@@ -75,8 +75,8 @@ func TestOrchestrator(t *testing.T) {
 
 			afterTasks := tasks(skdr)
 			afterRuns := readRuns(ctx, t, testProjects)
-			assert.Loosely(t, afterTasks, should.Resemble(beforeTasks), truth.LineContext())
-			assert.Loosely(t, afterRuns, should.Resemble(beforeRuns), truth.LineContext())
+			assert.Loosely(t, afterTasks, should.Match(beforeTasks), truth.LineContext())
+			assert.Loosely(t, afterRuns, should.Match(beforeRuns), truth.LineContext())
 		}
 
 		t.Run("Without Projects", func(t *ftt.Test) {
@@ -277,14 +277,14 @@ func TestOrchestrator(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				actualTasks := tasks(skdr)
-				assert.Loosely(t, actualTasks, should.Resemble(expectedTasks))
+				assert.Loosely(t, actualTasks, should.Match(expectedTasks))
 
 				actualRuns := readRuns(ctx, t, testProjects)
-				assert.Loosely(t, actualRuns, should.Resemble(expectedRuns))
+				assert.Loosely(t, actualRuns, should.Match(expectedRuns))
 
 				actualShards, err := shards.ReadAll(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actualShards, should.Resemble(expectedShards))
+				assert.Loosely(t, actualShards, should.Match(expectedShards))
 			})
 			t.Run("Schedules successfully with a previous run", func(t *ftt.Test) {
 				previousRunB := &runs.ReclusteringRun{
@@ -321,13 +321,13 @@ func TestOrchestrator(t *testing.T) {
 					// from previous runs were deleted.
 					actualShards, err := shards.ReadAll(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, actualShards, should.Resemble(expectedShards))
+					assert.Loosely(t, actualShards, should.Match(expectedShards))
 
 					actualTasks := tasks(skdr)
-					assert.Loosely(t, actualTasks, should.Resemble(expectedTasks))
+					assert.Loosely(t, actualTasks, should.Match(expectedTasks))
 
 					actualRuns := readRuns(ctx, t, testProjects)
-					assert.Loosely(t, actualRuns, should.Resemble(expectedRuns))
+					assert.Loosely(t, actualRuns, should.Match(expectedRuns))
 				}
 
 				t.Run("existing complete run", func(t *ftt.Test) {
@@ -357,7 +357,7 @@ func TestOrchestrator(t *testing.T) {
 
 					sds, err := shards.ReadAll(span.Single(ctx))
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, sds, should.Resemble(previousShards))
+					assert.Loosely(t, sds, should.Match(previousShards))
 
 					// Expect the same algorithms and rules version to be used as
 					// the previous run, to ensure forward progress (if new rules

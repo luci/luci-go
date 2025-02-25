@@ -34,16 +34,16 @@ func TestStrPairs(t *testing.T) {
 		t.Run("Set", func(t *ftt.Test) {
 			t.Run("Once", func(t *ftt.Test) {
 				assert.Loosely(t, v.Set("a:1"), should.BeNil)
-				assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1"}))
+				assert.Loosely(t, m.Format(), should.Match([]string{"a:1"}))
 
 				t.Run("Second time", func(t *ftt.Test) {
 					assert.Loosely(t, v.Set("b:1"), should.BeNil)
-					assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1", "b:1"}))
+					assert.Loosely(t, m.Format(), should.Match([]string{"a:1", "b:1"}))
 				})
 
 				t.Run("Same key", func(t *ftt.Test) {
 					assert.Loosely(t, v.Set("a:2"), should.BeNil)
-					assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1", "a:2"}))
+					assert.Loosely(t, m.Format(), should.Match([]string{"a:1", "a:2"}))
 				})
 			})
 			t.Run("No colon", func(t *ftt.Test) {
@@ -51,7 +51,7 @@ func TestStrPairs(t *testing.T) {
 			})
 			t.Run("Value has a colon", func(t *ftt.Test) {
 				assert.Loosely(t, v.Set("a:1:1"), should.BeNil)
-				assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1:1"}))
+				assert.Loosely(t, m.Format(), should.Match([]string{"a:1:1"}))
 			})
 		})
 

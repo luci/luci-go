@@ -112,7 +112,7 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 		t.Run("Valid request", func(t *ftt.Test) {
 			rsp, err := srv.QueryTestVariantArtifacts(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rsp, should.Resemble(&pb.QueryTestVariantArtifactsResponse{
+			assert.Loosely(t, rsp, should.Match(&pb.QueryTestVariantArtifactsResponse{
 				Artifacts: []*pb.ArtifactMatchingContent{{
 					Name:          "invocations/12345678901234567890/tests/test_id/results/1/artifacts/artifact_id",
 					PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC)),

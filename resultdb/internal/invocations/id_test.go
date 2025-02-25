@@ -45,14 +45,14 @@ func TestSpannerConversion(t *testing.T) {
 
 		t.Run(`IDSet`, func(t *ftt.Test) {
 			ids := NewIDSet("a", "b")
-			assert.Loosely(t, ids.ToSpanner(), should.Resemble([]string{"3e23e816:b", "ca978112:a"}))
+			assert.Loosely(t, ids.ToSpanner(), should.Match([]string{"3e23e816:b", "ca978112:a"}))
 
 			row, err := spanner.NewRow([]string{"a"}, []any{ids.ToSpanner()})
 			assert.Loosely(t, err, should.BeNil)
 			var actual IDSet
 			err = b.FromSpanner(row, &actual)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(ids))
+			assert.Loosely(t, actual, should.Match(ids))
 		})
 	})
 }

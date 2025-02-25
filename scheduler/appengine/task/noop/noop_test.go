@@ -53,10 +53,10 @@ func TestFullFlow(t *testing.T) {
 		}
 
 		assert.Loosely(t, mgr.LaunchTask(c, ctl), should.BeNil)
-		assert.Loosely(t, ctl.TaskState, should.Resemble(task.State{
+		assert.Loosely(t, ctl.TaskState, should.Match(task.State{
 			Status: task.StatusSucceeded,
 		}))
-		assert.Loosely(t, ctl.Triggers, should.Resemble([]*internal.Trigger{
+		assert.Loosely(t, ctl.Triggers, should.Match([]*internal.Trigger{
 			{Id: "noop:1:0", Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{}}},
 			{Id: "noop:1:1", Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{}}},
 		}))

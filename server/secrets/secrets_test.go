@@ -33,7 +33,7 @@ func TestSecret(t *testing.T) {
 				[]byte("s3"),
 			},
 		}
-		assert.Loosely(t, s.Blobs(), should.Resemble([][]byte{
+		assert.Loosely(t, s.Blobs(), should.Match([][]byte{
 			[]byte("s1"),
 			[]byte("s2"),
 			[]byte("s3"),

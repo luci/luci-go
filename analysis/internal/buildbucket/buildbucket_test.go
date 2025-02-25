@@ -70,6 +70,6 @@ func TestGetBuild(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		b, err := bc.GetBuild(mc.Ctx, req)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, b, should.Resemble(res))
+		assert.Loosely(t, b, should.Match(res))
 	})
 }

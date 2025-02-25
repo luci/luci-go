@@ -166,6 +166,6 @@ func TestProcessIsolateFile(t *testing.T) {
 
 		deps, _, err := ProcessIsolate(opts)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, deps, should.Resemble([]string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")}))
+		assert.Loosely(t, deps, should.Match([]string{dir1 + osPathSeparator, filepath.Join(dir2, "foo")}))
 	})
 }

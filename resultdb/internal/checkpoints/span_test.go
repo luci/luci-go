@@ -83,7 +83,7 @@ func TestCheckpoints(t *testing.T) {
 			checkpoints, err := ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, checkpoints, should.HaveLength(1))
-			assert.Loosely(t, checkpoints[0].Key, should.Resemble(key))
+			assert.Loosely(t, checkpoints[0].Key, should.Match(key))
 			assert.Loosely(t, checkpoints[0].CreationTime, should.NotBeZero)
 			assert.Loosely(t, checkpoints[0].ExpiryTime, should.Match(now.Add(time.Hour)))
 		})
@@ -110,7 +110,7 @@ func TestCheckpoints(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			uqs, err := ReadAllUniquifiers(span.Single(ctx), "project", "resource-id", "process-id")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, uqs, should.Resemble(map[string]bool{
+			assert.Loosely(t, uqs, should.Match(map[string]bool{
 				"uniqifier1": true,
 				"uniqifier2": true,
 			}))

@@ -126,7 +126,7 @@ func TestLaunch(t *testing.T) {
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
 			assert.NoErr(t, err)
 			assert.Loosely(t, build, should.NotBeNil)
-			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+			assert.Loosely(t, w.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
@@ -161,7 +161,7 @@ func TestLaunch(t *testing.T) {
 			assert.Loosely(t, tryjobs[0].ExternalID, should.BeEmpty)
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_UNTRIGGERED))
 			assert.Loosely(t, tryjobs[0].UntriggeredReason, should.Equal("received NotFound from buildbucket. message: builder testProj/BucketFoo/non-existent-builder not found"))
-			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
+			assert.Loosely(t, w.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
@@ -260,7 +260,7 @@ func TestLaunch(t *testing.T) {
 			assert.NoErr(t, err)
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
 			assert.NoErr(t, err)
-			assert.Loosely(t, build.Input.GetGerritChanges(), should.Resemble([]*bbpb.GerritChange{
+			assert.Loosely(t, build.Input.GetGerritChanges(), should.Match([]*bbpb.GerritChange{
 				// Dep CL is listed first even though in the worker it is after the
 				// dependent CL.
 				{Host: gHost, Project: gRepo, Change: depCL.Detail.GetGerrit().GetInfo().GetNumber(), Patchset: gPatchset},

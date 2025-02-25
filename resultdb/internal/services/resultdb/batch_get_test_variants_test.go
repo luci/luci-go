@@ -125,7 +125,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			assert.Loosely(t, tvStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
 				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
@@ -136,7 +136,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				assert.Loosely(t, tv.SourcesId, should.Equal(graph.HashSources(testutil.TestSources()).String()))
 			}
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
-			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Resemble(testutil.TestSources()))
+			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})
 
 		t.Run(`Valid request without included invocation`, func(t *ftt.Test) {
@@ -151,7 +151,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			assert.Loosely(t, tvStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
 				fmt.Sprintf("50/test1/%s", variantHash("e", "f")),
 				fmt.Sprintf("50/test3/%s", variantHash("c", "d")),
 			}))
@@ -182,7 +182,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			assert.Loosely(t, tvStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
 				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
@@ -193,7 +193,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				assert.Loosely(t, tv.SourcesId, should.Equal(graph.HashSources(testutil.TestSources()).String()))
 			}
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
-			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Resemble(testutil.TestSources()))
+			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})
 
 		t.Run(`Requesting > 500 variants fails`, func(t *ftt.Test) {
@@ -223,7 +223,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, tvStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			}))
 
@@ -232,7 +232,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				assert.Loosely(t, tv.SourcesId, should.Equal(graph.HashSources(testutil.TestSources()).String()))
 			}
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
-			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Resemble(testutil.TestSources()))
+			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})
 
 		t.Run(`Request doesn't return variants from other invocations`, func(t *ftt.Test) {
@@ -261,7 +261,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// Testing that we don't match test3, a:b, even though we've
 			// requested that test id and variant hash separately.
-			assert.Loosely(t, tvStrings(res.TestVariants), should.Resemble([]string{
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			}))
 
@@ -270,7 +270,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				assert.Loosely(t, tv.SourcesId, should.Equal(graph.HashSources(testutil.TestSources()).String()))
 			}
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
-			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Resemble(testutil.TestSources()))
+			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})
 	})
 }

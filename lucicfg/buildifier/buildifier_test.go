@@ -39,7 +39,7 @@ func TestNormalizeLintChecks(t *testing.T) {
 	ftt.Run("Default", t, func(t *ftt.Test) {
 		s, err := normalizeLintChecks(nil)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s.ToSortedSlice(), should.Resemble(defaultChecks().ToSortedSlice()))
+		assert.Loosely(t, s.ToSortedSlice(), should.Match(defaultChecks().ToSortedSlice()))
 	})
 
 	ftt.Run("Add some", t, func(t *ftt.Test) {
@@ -49,7 +49,7 @@ func TestNormalizeLintChecks(t *testing.T) {
 			"-some1",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, diff(s, defaultChecks()), should.Resemble([]string{"some2"}))
+		assert.Loosely(t, diff(s, defaultChecks()), should.Match([]string{"some2"}))
 	})
 
 	ftt.Run("Remove some", t, func(t *ftt.Test) {
@@ -57,6 +57,6 @@ func TestNormalizeLintChecks(t *testing.T) {
 			"-module-docstring",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, diff(defaultChecks(), s), should.Resemble([]string{"module-docstring"}))
+		assert.Loosely(t, diff(defaultChecks(), s), should.Match([]string{"module-docstring"}))
 	})
 }

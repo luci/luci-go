@@ -95,7 +95,7 @@ func TestBundler(t *testing.T) {
 			b.Log(ctx, &timestamppb.Timestamp{Seconds: 3})
 			b.Shutdown(ctx)
 
-			assert.Loosely(t, wrote, should.Resemble(map[string]int{
+			assert.Loosely(t, wrote, should.Match(map[string]int{
 				"projects/project/datasets/dataset/tables/durations/_default":  2,
 				"projects/project/datasets/dataset/tables/timestamps/_default": 3,
 			}))

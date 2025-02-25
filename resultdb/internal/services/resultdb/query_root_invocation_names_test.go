@@ -76,7 +76,7 @@ func TestQueryRootInvocationNames(t *testing.T) {
 
 			inv, err := srv.QueryRootInvocationNames(ctx, &pb.QueryRootInvocationNamesRequest{Name: "invocations/d"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv, should.Resemble(&pb.QueryRootInvocationNamesResponse{
+			assert.Loosely(t, inv, should.Match(&pb.QueryRootInvocationNamesResponse{
 				RootInvocationNames: []string{"invocations/a"},
 			}))
 		})

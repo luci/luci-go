@@ -35,7 +35,7 @@ func TestZip(t *testing.T) {
 		back, err := ZlibDecompress(blob)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, back, should.Resemble([]byte(data)))
+		assert.Loosely(t, back, should.Match([]byte(data)))
 	})
 
 	ftt.Run("ZlibDecompress garbage", t, func(t *ftt.Test) {

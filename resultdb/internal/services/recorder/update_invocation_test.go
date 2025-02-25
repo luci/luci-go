@@ -720,7 +720,7 @@ func TestUpdateInvocation(t *testing.T) {
 			t.Run("with permission", func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.BigqueryExports, should.Resemble([]*pb.BigQueryExport{
+				assert.Loosely(t, inv.BigqueryExports, should.Match([]*pb.BigQueryExport{
 					createTestBigQueryExportConfig(),
 				}))
 			})
@@ -871,7 +871,7 @@ func TestUpdateInvocation(t *testing.T) {
 				updateMask := &field_mask.FieldMask{Paths: []string{"extended_properties"}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(extendedPropertiesNew))
+				assert.Loosely(t, inv.ExtendedProperties, should.Match(extendedPropertiesNew))
 			})
 			t.Run("add keys to nil field", func(t *ftt.Test) {
 				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
@@ -885,7 +885,7 @@ func TestUpdateInvocation(t *testing.T) {
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(extendedPropertiesNew))
+				assert.Loosely(t, inv.ExtendedProperties, should.Match(extendedPropertiesNew))
 			})
 			t.Run("delete a key to nil field", func(t *ftt.Test) {
 				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
@@ -914,7 +914,7 @@ func TestUpdateInvocation(t *testing.T) {
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(map[string]*structpb.Struct{
+				assert.Loosely(t, inv.ExtendedProperties, should.Match(map[string]*structpb.Struct{
 					"to_be_kept":     structValueOrg,
 					"to_be_added":    structValueNew,
 					"to_be_replaced": structValueNew,
@@ -1061,13 +1061,13 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 			assert.Loosely(t, inv.Name, should.Equal(expected.Name))
 			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_ACTIVE))
-			assert.Loosely(t, inv.Deadline, should.Resemble(expected.Deadline))
-			assert.Loosely(t, inv.Properties, should.Resemble(expected.Properties))
-			assert.Loosely(t, inv.SourceSpec, should.Resemble(expected.SourceSpec))
+			assert.Loosely(t, inv.Deadline, should.Match(expected.Deadline))
+			assert.Loosely(t, inv.Properties, should.Match(expected.Properties))
+			assert.Loosely(t, inv.SourceSpec, should.Match(expected.SourceSpec))
 			assert.Loosely(t, inv.IsSourceSpecFinal, should.Equal(expected.IsSourceSpecFinal))
 			assert.Loosely(t, inv.BaselineId, should.Equal(expected.BaselineId))
 			assert.Loosely(t, inv.Realm, should.Equal(expected.Realm))
-			assert.Loosely(t, inv.Instructions, should.Resemble(expected.Instructions))
+			assert.Loosely(t, inv.Instructions, should.Match(expected.Instructions))
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -1103,7 +1103,7 @@ func TestUpdateInvocation(t *testing.T) {
 				actual.IsSourceSpecFinal = true
 			}
 			expected.Instructions = instructionutil.RemoveInstructionsName(instructions)
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.Loosely(t, actual, should.Match(expected))
 		})
 	})
 }

@@ -63,7 +63,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Schema:           tc,
 				TimePartitioning: &bigquery.TimePartitioning{},
 			}
-			assert.Loosely(t, got, should.Resemble(want))
+			assert.Loosely(t, got, should.Match(want))
 		}
 	})
 	ftt.Run("Schema", t, func(t *ftt.Test) {
@@ -91,7 +91,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, schema, should.Resemble(bigquery.Schema{
+		assert.Loosely(t, schema, should.Match(bigquery.Schema{
 			{
 				Name:        "build_id",
 				Description: "Universal build id.",

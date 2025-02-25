@@ -51,7 +51,7 @@ func TestDiscovery(t *testing.T) {
 		res, err := server.Describe(c, nil)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, res.Services, should.Resemble([]string{
+		assert.Loosely(t, res.Services, should.Match([]string{
 			"discovery.Discovery",
 			"testservices.Greeter",
 			"testservices.Calc",

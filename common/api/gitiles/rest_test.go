@@ -137,7 +137,7 @@ func TestRefs(t *testing.T) {
 			RefsPath: gitiles.AllRefs,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res.Revisions, should.Resemble(map[string]string{
+		assert.Loosely(t, res.Revisions, should.Match(map[string]string{
 			"HEAD":                     "refs/heads/master",
 			"refs/heads/master":        "deadbeef",
 			"refs/heads/infra/config":  "0000beef",
@@ -164,7 +164,7 @@ func TestRefs(t *testing.T) {
 			RefsPath: gitiles.Branches,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res.Revisions, should.Resemble(map[string]string{
+		assert.Loosely(t, res.Revisions, should.Match(map[string]string{
 			"refs/heads/master":       "deadbeef",
 			"refs/heads/infra/config": "0000beef",
 		}))
@@ -190,7 +190,7 @@ func TestGetProject(t *testing.T) {
 
 		res, err := c.GetProject(ctx, &gitiles.GetProjectRequest{Name: "bar"})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res, should.Resemble(&gitiles.Project{
+		assert.Loosely(t, res, should.Match(&gitiles.Project{
 			Name:     "bar",
 			CloneUrl: "https://foo.googlesource.com/bar",
 		}))
@@ -226,7 +226,7 @@ func TestProjects(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		// Sort project to make it deterministic
 		sort.Strings(res.Projects)
-		assert.Loosely(t, res.Projects, should.Resemble([]string{
+		assert.Loosely(t, res.Projects, should.Match([]string{
 			"All-Projects",
 			"bar",
 		}))
@@ -281,7 +281,7 @@ func TestList(t *testing.T) {
 			Path:       "path/to/dir",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res.Files, should.Resemble([]*git.File{
+		assert.Loosely(t, res.Files, should.Match([]*git.File{
 			{
 				Mode: 33188,
 				Id:   "7e5b457d492b50762386611fc7f1302f23b313cf",

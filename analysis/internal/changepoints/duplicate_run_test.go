@@ -42,7 +42,7 @@ func TestTryClaimInvocations(t *testing.T) {
 
 			claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{"inv-1", "inv-2", "inv-3", "inv-4"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, claimed, should.Resemble(map[string]bool{
+			assert.Loosely(t, claimed, should.Match(map[string]bool{
 				"inv-2": true,
 				"inv-4": true,
 			}))
@@ -50,7 +50,7 @@ func TestTryClaimInvocations(t *testing.T) {
 		t.Run(`Claims an empty list of invocations`, func(t *ftt.Test) {
 			claimed, err := tryClaimInvocations(span.Single(ctx), "chromium", "build-8000", []string{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, claimed, should.Resemble(map[string]bool{}))
+			assert.Loosely(t, claimed, should.Match(map[string]bool{}))
 		})
 	})
 }

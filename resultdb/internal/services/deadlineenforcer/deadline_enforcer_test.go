@@ -60,7 +60,7 @@ func TestExpiredInvocations(t *testing.T) {
 			assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
 		}
 
-		assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+		assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 			&taskspb.RunExportNotifications{InvocationId: "expired"},
 			&taskspb.TryFinalizeInvocation{InvocationId: "expired"},
 		}))

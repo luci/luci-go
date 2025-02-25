@@ -51,8 +51,8 @@ func TestFakeProtocol(t *testing.T) {
 				streamData := scFake.Data()["namespace/test"]
 				assert.Loosely(t, streamData, should.NotBeNil)
 				assert.Loosely(t, streamData.GetStreamData(), should.Equal("hi"))
-				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{}))
-				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
+				assert.Loosely(t, streamData.GetDatagrams(), should.Match([]string{}))
+				assert.Loosely(t, streamData.GetFlags(), should.Match(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
@@ -73,8 +73,8 @@ func TestFakeProtocol(t *testing.T) {
 				streamData := scFake.Data()["namespace/test"]
 				assert.Loosely(t, streamData, should.NotBeNil)
 				assert.Loosely(t, streamData.GetStreamData(), should.Equal("\x00\x01\x02\x03"))
-				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{}))
-				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
+				assert.Loosely(t, streamData.GetDatagrams(), should.Match([]string{}))
+				assert.Loosely(t, streamData.GetFlags(), should.Match(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "application/octet-stream",
 					Type:        streamproto.StreamType(logpb.StreamType_BINARY),
@@ -94,8 +94,8 @@ func TestFakeProtocol(t *testing.T) {
 				streamData := scFake.Data()["namespace/test"]
 				assert.Loosely(t, streamData, should.NotBeNil)
 				assert.Loosely(t, streamData.GetStreamData(), should.BeEmpty)
-				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{"hi", "there"}))
-				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
+				assert.Loosely(t, streamData.GetDatagrams(), should.Match([]string{"hi", "there"}))
+				assert.Loosely(t, streamData.GetFlags(), should.Match(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "application/x-logdog-datagram",
 					Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),

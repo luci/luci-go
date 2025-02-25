@@ -45,7 +45,7 @@ func TestGAE(t *testing.T) {
 			&Model{"or another", 20, 30}), should.BeNil) // HL
 		ms := []*Model{{ID: "one thing"}, {ID: "or another"}}
 		assert.Loosely(t, datastore.Get(ctx, ms), should.BeNil) // HL
-		assert.Loosely(t, ms, should.Resemble([]*Model{{"one thing", 10, 20}, {"or another", 20, 30}}))
+		assert.Loosely(t, ms, should.Match([]*Model{{"one thing", 10, 20}, {"or another", 20, 30}}))
 	})
 }
 

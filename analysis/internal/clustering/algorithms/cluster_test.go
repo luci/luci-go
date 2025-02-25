@@ -47,7 +47,7 @@ func TestCluster(t *testing.T) {
 
 			assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 			assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-			assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+			assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 			assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 		})
 		t.Run(`Incrementally`, func(t *ftt.Test) {
@@ -58,7 +58,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 
@@ -69,7 +69,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from older rule-based clustering`, func(t *ftt.Test) {
@@ -79,7 +79,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from later clustering algorithms`, func(t *ftt.Test) {
@@ -89,7 +89,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from older rules version`, func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from newer rules version`, func(t *ftt.Test) {
@@ -109,7 +109,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from older config version`, func(t *ftt.Test) {
@@ -119,7 +119,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 			t.Run(`Incrementally from newer config version`, func(t *ftt.Test) {
@@ -129,7 +129,7 @@ func TestCluster(t *testing.T) {
 
 				assert.Loosely(t, results.AlgorithmsVersion, should.Equal(s.expected.AlgorithmsVersion))
 				assert.That(t, results.RulesVersion, should.Match(s.expected.RulesVersion))
-				assert.Loosely(t, results.Algorithms, should.Resemble(s.expected.Algorithms))
+				assert.Loosely(t, results.Algorithms, should.Match(s.expected.Algorithms))
 				assert.Loosely(t, diffClusters(results.Clusters, s.expected.Clusters), should.BeZero)
 			})
 		})

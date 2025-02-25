@@ -64,7 +64,7 @@ func TestFetchServiceInfo(t *testing.T) {
 
 			info1, err := FetchServiceInfo(ctx, testURL)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, info1, should.Resemble(expected))
+			assert.Loosely(t, info1, should.Match(expected))
 			assert.Loosely(t, calls, should.Equal(1))
 
 			// The in-process cache works.
@@ -78,7 +78,7 @@ func TestFetchServiceInfo(t *testing.T) {
 			info3, err := FetchServiceInfo(ctx, testURL)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, info3, should.NotEqual(info1))    // a new deserialized object
-			assert.Loosely(t, info3, should.Resemble(expected)) // still has the correct value
+			assert.Loosely(t, info3, should.Match(expected)) // still has the correct value
 			assert.Loosely(t, calls, should.Equal(1))           // no new calls
 		})
 

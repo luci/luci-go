@@ -163,8 +163,8 @@ func TestStream(t *testing.T) {
 
 			s.closeStream()
 			assert.Loosely(t, s.readChunk(), should.BeFalse)
-			assert.Loosely(t, bs.appended, should.Resemble([]byte("foobar")))
-			assert.Loosely(t, bs.ts, should.Resemble([]time.Time{testclock.TestTimeUTC, testclock.TestTimeUTC.Add(time.Second)}))
+			assert.Loosely(t, bs.appended, should.Match([]byte("foobar")))
+			assert.Loosely(t, bs.ts, should.Match([]time.Time{testclock.TestTimeUTC, testclock.TestTimeUTC.Add(time.Second)}))
 			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
 		})
 
@@ -184,7 +184,7 @@ func TestStream(t *testing.T) {
 			assert.Loosely(t, s.readChunk(), should.BeFalse)
 
 			s.closeStream()
-			assert.Loosely(t, bs.appended, should.Resemble([]byte("foo")))
+			assert.Loosely(t, bs.appended, should.Match([]byte("foo")))
 			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
 		})
 

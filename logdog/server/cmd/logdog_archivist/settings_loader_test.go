@@ -66,7 +66,7 @@ func TestGetSettingsLoader(t *testing.T) {
 					prefix_range: 2,
 					byte_range: 1,
 				},`)
-			assert.Loosely(t, getSettings(ctx, buf.String()), should.Resemble(&archivist.Settings{
+			assert.Loosely(t, getSettings(ctx, buf.String()), should.Match(&archivist.Settings{
 				GSBase:           gs.Path("gs://a"),
 				IndexStreamRange: 3,
 				IndexPrefixRange: 2,
@@ -80,7 +80,7 @@ func TestGetSettingsLoader(t *testing.T) {
 					destination: "foo",
 				},
 			`)
-			assert.Loosely(t, getSettings(ctx, buf.String()), should.Resemble(&archivist.Settings{
+			assert.Loosely(t, getSettings(ctx, buf.String()), should.Match(&archivist.Settings{
 				GSBase:                gs.Path("gs://a"),
 				CloudLoggingProjectID: "foo",
 			}))

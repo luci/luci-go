@@ -200,11 +200,11 @@ func TestPoolLevel(t *testing.T) {
 		})
 
 		t.Run("Privileged", func(t *ftt.Test) {
-			assert.Loosely(t, poolsWithListBots(privilegedID), should.Resemble(allPools))
+			assert.Loosely(t, poolsWithListBots(privilegedID), should.Match(allPools))
 		})
 
 		t.Run("Authorized", func(t *ftt.Test) {
-			assert.Loosely(t, poolsWithListBots(authorizedID), should.Resemble([]string{
+			assert.Loosely(t, poolsWithListBots(authorizedID), should.Match([]string{
 				"visible-pool-1",
 				"visible-pool-2",
 			}))
@@ -237,11 +237,11 @@ func TestPoolLevel(t *testing.T) {
 		})
 
 		t.Run("Privileged", func(t *ftt.Test) {
-			assert.Loosely(t, poolsWithListBots(privilegedID), should.Resemble(allPools))
+			assert.Loosely(t, poolsWithListBots(privilegedID), should.Match(allPools))
 		})
 
 		t.Run("Authorized", func(t *ftt.Test) {
-			assert.Loosely(t, poolsWithListBots(authorizedID), should.Resemble([]string{
+			assert.Loosely(t, poolsWithListBots(authorizedID), should.Match([]string{
 				"visible-pool-1",
 				"visible-pool-2",
 			}))
@@ -547,7 +547,7 @@ func assertSame(t testing.TB, got, want []realms.Permission) {
 		}
 		return s.ToSortedSlice()
 	}
-	assert.Loosely(t, asSet(got), should.Resemble(asSet(want)), truth.LineContext())
+	assert.Loosely(t, asSet(got), should.Match(asSet(want)), truth.LineContext())
 }
 
 // mockedConfig prepares a queryable config.

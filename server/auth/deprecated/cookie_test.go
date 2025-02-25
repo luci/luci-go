@@ -39,7 +39,7 @@ func TestCookie(t *testing.T) {
 		t.Run("Encode and decode works", func(t *ftt.Test) {
 			cookie, err := makeSessionCookie(c, "sid", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cookie, should.Resemble(&http.Cookie{
+			assert.Loosely(t, cookie, should.Match(&http.Cookie{
 				Name: "oid_session",
 				Value: "AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwic2lkIjoic2lkIn1NXPzKTFXWhzt" +
 					"tmqW2uODV4f1Nvt1zLxAnWTtjqkhGEQ",

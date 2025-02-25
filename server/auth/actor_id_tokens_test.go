@@ -75,7 +75,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			Audience:       "aud",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.Resemble(token1))
+		assert.Loosely(t, tok, should.Match(token1))
 
 		// Cached now.
 		assert.Loosely(t, actorIDTokenCache.lc.CachedLocally(ctx), should.Equal(1))
@@ -87,7 +87,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			Audience:       "aud",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.Resemble(token1)) // old one
+		assert.Loosely(t, tok, should.Match(token1)) // old one
 
 		// Unless it expires sooner than requested TTL.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
@@ -97,7 +97,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			MinTTL:         30 * time.Minute,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.Resemble(token2))
+		assert.Loosely(t, tok, should.Match(token2))
 
 		// Using delegates results in a different cache key.
 		returnedToken = token3
@@ -108,7 +108,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			MinTTL:         30 * time.Minute,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.Resemble(token3)) // new one
+		assert.Loosely(t, tok, should.Match(token3)) // new one
 		assert.Loosely(t, lastRequest, should.Equal(
 			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"audience":"aud","includeEmail":true}`))
 	})

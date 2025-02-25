@@ -129,7 +129,7 @@ func TestValidate(t *testing.T) {
 		// Good state.
 		embedded, err := kind.Validate(ctx, token, []byte("state"))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, embedded, should.Resemble(map[string]string{
+		assert.Loosely(t, embedded, should.Match(map[string]string{
 			"key1": "value1",
 			"key2": "value2",
 		}))
@@ -193,7 +193,7 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			extracted, err := kind.Validate(ctx, token, nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, extracted, should.Resemble(data))
+			assert.Loosely(t, extracted, should.Match(data))
 		}
 	})
 }

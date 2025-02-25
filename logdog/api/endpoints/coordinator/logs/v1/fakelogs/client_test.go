@@ -70,7 +70,7 @@ func TestFakeLogs(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&logs.QueryResponse{
+				assert.Loosely(t, rsp, should.Match(&logs.QueryResponse{
 					Project: Project,
 					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
@@ -82,7 +82,7 @@ func TestFakeLogs(t *testing.T) {
 					Path: "some/prefix/+/other/**",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp, should.Resemble(&logs.QueryResponse{
+				assert.Loosely(t, rsp, should.Match(&logs.QueryResponse{
 					Project: Project,
 					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
@@ -140,7 +140,7 @@ func TestFakeLogs(t *testing.T) {
 			}).Reader())
 			assert.Loosely(t, err, should.ErrLike(nil))
 
-			assert.Loosely(t, data, should.Resemble([]byte("I am a bananathis is\ntwo lines")))
+			assert.Loosely(t, data, should.Match([]byte("I am a bananathis is\ntwo lines")))
 		})
 
 	})

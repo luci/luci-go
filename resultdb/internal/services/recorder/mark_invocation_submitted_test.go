@@ -146,7 +146,7 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
+			assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&taskspb.MarkInvocationSubmitted{InvocationId: "inv"},
 			}))
 		})

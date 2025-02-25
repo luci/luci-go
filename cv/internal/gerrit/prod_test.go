@@ -106,7 +106,7 @@ func TestMakeClient(t *testing.T) {
 				_, err = c.ListChanges(limitedCtx, &gerritpb.ListChangesRequest{})
 				assert.NoErr(t, err)
 				assert.Loosely(t, requests, should.HaveLength(1))
-				assert.Loosely(t, requests[0].Header["Authorization"], should.Resemble([]string{"Bearer tok-1"}))
+				assert.Loosely(t, requests[0].Header["Authorization"], should.Match([]string{"Bearer tok-1"}))
 
 				// Ensure client can be used even if context of its creation expires.
 				limitedCancel()
@@ -116,7 +116,7 @@ func TestMakeClient(t *testing.T) {
 				_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{})
 				assert.NoErr(t, err)
 				assert.Loosely(t, requests, should.HaveLength(2))
-				assert.Loosely(t, requests[1].Header["Authorization"], should.Resemble([]string{"Bearer tok-2"}))
+				assert.Loosely(t, requests[1].Header["Authorization"], should.Match([]string{"Bearer tok-2"}))
 			})
 		})
 	})

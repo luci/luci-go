@@ -127,7 +127,7 @@ func TestAnalyzer(t *testing.T) {
 				}
 
 				segments := a.Run(tvb)
-				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, segments, should.Match(expectedSegments))
 			})
 			t.Run("with eviction", func(t *ftt.Test) {
 				tvb.InputBuffer.ColdBufferCapacity = 2
@@ -138,9 +138,9 @@ func TestAnalyzer(t *testing.T) {
 				}
 
 				segments := a.Run(tvb)
-				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, segments, should.Match(expectedSegments))
 
-				assert.Loosely(t, tvb.InputBuffer, should.Resemble(&inputbuffer.Buffer{
+				assert.Loosely(t, tvb.InputBuffer, should.Match(&inputbuffer.Buffer{
 					HotBufferCapacity: 1,
 					HotBuffer: inputbuffer.History{
 						Runs: []inputbuffer.Run{},
@@ -166,7 +166,7 @@ func TestAnalyzer(t *testing.T) {
 					},
 					IsColdBufferDirty: true,
 				}))
-				assert.Loosely(t, tvb.FinalizingSegment, should.Resemble(&cpb.Segment{
+				assert.Loosely(t, tvb.FinalizingSegment, should.Match(&cpb.Segment{
 					State:         cpb.SegmentState_FINALIZING,
 					StartPosition: 1,
 					StartHour:     timestamppb.New(time.Unix(1000*3600, 0)),
@@ -374,7 +374,7 @@ func TestAnalyzer(t *testing.T) {
 				row.InputBuffer.ColdBufferCapacity = 100
 
 				segments := a.Run(row)
-				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, segments, should.Match(expectedSegments))
 				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeFalse)
 			})
 			t.Run("with eviction forced by space pressure", func(t *ftt.Test) {
@@ -382,7 +382,7 @@ func TestAnalyzer(t *testing.T) {
 				row.InputBuffer.HotBufferCapacity = 5
 
 				segments := a.Run(row)
-				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, segments, should.Match(expectedSegments))
 				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeTrue)
 
 				assert.Loosely(t, row.InputBuffer.HotBuffer.Runs, should.HaveLength(0))
@@ -391,7 +391,7 @@ func TestAnalyzer(t *testing.T) {
 				assert.Loosely(t, row.FinalizedSegments.Segments[2].StartPosition, should.Equal(21))
 				assert.Loosely(t, row.FinalizedSegments.Segments[2].EndPosition, should.Equal(33))
 				assert.Loosely(t, row.FinalizingSegment.StartPosition, should.Equal(34))
-				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Resemble(&cpb.Counts{
+				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Match(&cpb.Counts{
 					TotalResults:          20,
 					ExpectedPassedResults: 20,
 					TotalRuns:             20,
@@ -405,7 +405,7 @@ func TestAnalyzer(t *testing.T) {
 			})
 			t.Run("with eviction due to changepoint", func(t *ftt.Test) {
 				segments := a.Run(row)
-				assert.Loosely(t, segments, should.Resemble(expectedSegments))
+				assert.Loosely(t, segments, should.Match(expectedSegments))
 				assert.Loosely(t, row.InputBuffer.IsColdBufferDirty, should.BeTrue)
 
 				assert.Loosely(t, row.InputBuffer.HotBuffer.Runs, should.HaveLength(0))
@@ -414,7 +414,7 @@ func TestAnalyzer(t *testing.T) {
 				assert.Loosely(t, row.FinalizedSegments.Segments[2].StartPosition, should.Equal(21))
 				assert.Loosely(t, row.FinalizedSegments.Segments[2].EndPosition, should.Equal(33))
 				assert.Loosely(t, row.FinalizingSegment.StartPosition, should.Equal(34))
-				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Resemble(&cpb.Counts{}))
+				assert.Loosely(t, row.FinalizingSegment.FinalizedCounts, should.Match(&cpb.Counts{}))
 			})
 		})
 		t.Run("legacy test variant branch which has more runs than capacity", func(t *ftt.Test) {
@@ -486,7 +486,7 @@ func TestAnalyzer(t *testing.T) {
 				},
 			}
 			segments := a.Run(row)
-			assert.Loosely(t, segments, should.Resemble(expectedSegments))
+			assert.Loosely(t, segments, should.Match(expectedSegments))
 		})
 	})
 }
