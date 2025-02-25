@@ -147,4 +147,162 @@ func TestServiceConfigValidator(t *testing.T) {
 			assert.Loosely(t, validate(cfg), should.NotBeNil)
 		})
 	})
+
+	ftt.Run("schemes", t, func(t *ftt.Test) {
+		cfg := CreatePlaceHolderServiceConfig()
+		cfg.Schemes = []*configpb.Scheme{
+			{
+				Id:                "junit",
+				HumanReadableName: "JUnit",
+				Coarse: &configpb.Scheme_Level{
+					HumanReadableName: "Package",
+				},
+				Fine: &configpb.Scheme_Level{
+					HumanReadableName: "Class",
+				},
+				Case: &configpb.Scheme_Level{
+					HumanReadableName: "Method",
+				},
+			},
+		}
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, validate(cfg), should.BeNil)
+		})
+		scheme := cfg.Schemes[0]
+		path := "schemes / [0]"
+		t.Run("Id", func(t *ftt.Test) {
+			path := path + " / id"
+			t.Run("Empty", func(t *ftt.Test) {
+				scheme.Id = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				scheme.Id = "some_thing"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): does not match pattern "^[a-z][a-z0-9]{0,19}$"`))
+			})
+			t.Run("Reserved", func(t *ftt.Test) {
+				scheme.Id = "legacy"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): "legacy" is a reserved built-in scheme and cannot be configured`))
+			})
+			t.Run("Duplicate IDs", func(t *ftt.Test) {
+				// Create another scheme with the same ID.
+				cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
+					Id:                "junit",
+					HumanReadableName: "JUnit",
+					Coarse: &configpb.Scheme_Level{
+						HumanReadableName: "Package",
+					},
+					Fine: &configpb.Scheme_Level{
+						HumanReadableName: "Class",
+					},
+					Case: &configpb.Scheme_Level{
+						HumanReadableName: "Method",
+					},
+				})
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(schemes / [1] / id): scheme with ID "junit" appears in collection more than once`))
+			})
+		})
+		t.Run("Human Readable Name", func(t *ftt.Test) {
+			path := path + " / human_readable_name"
+			t.Run("Empty", func(t *ftt.Test) {
+				scheme.HumanReadableName = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				scheme.HumanReadableName = "\n"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): does not match pattern "^[[:print:]]{1,100}$"`))
+			})
+		})
+		t.Run("Coarse", func(t *ftt.Test) {
+			scheme.Coarse = &configpb.Scheme_Level{
+				HumanReadableName: "Package",
+				ValidationRegexp:  "[a-z.0-9]+",
+			}
+			path := path + " / coarse"
+
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Unset", func(t *ftt.Test) {
+				// The coarse level may be unset, this means it should not be used for tests using that scheme.
+				scheme.Coarse = nil
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Human Readable Name", func(t *ftt.Test) {
+				path := path + " / human_readable_name"
+				t.Run("Empty", func(t *ftt.Test) {
+					scheme.Coarse.HumanReadableName = ""
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+				})
+				t.Run("Invalid", func(t *ftt.Test) {
+					scheme.Coarse.HumanReadableName = "\n"
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): does not match pattern "^[[:print:]]{1,100}$"`))
+				})
+			})
+			t.Run("Validation Regexp", func(t *ftt.Test) {
+				t.Run("Empty", func(t *ftt.Test) {
+					// Empty validation regexp is valid, it means no additional validation should be applied.
+					scheme.Coarse.ValidationRegexp = ""
+					assert.Loosely(t, validate(cfg), should.BeNil)
+				})
+				t.Run("Invalid", func(t *ftt.Test) {
+					scheme.Coarse.ValidationRegexp = "["
+					assert.Loosely(t, validate(cfg), should.ErrLike(`could not compile pattern: error parsing regexp: missing closing ]: `))
+				})
+			})
+		})
+		t.Run("Fine", func(t *ftt.Test) {
+			scheme.Fine = &configpb.Scheme_Level{
+				HumanReadableName: "Class",
+				ValidationRegexp:  "[a-zA-Z_0-9]+",
+			}
+			path := path + " / fine"
+
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Unset", func(t *ftt.Test) {
+				t.Run("With coarse unset", func(t *ftt.Test) {
+					scheme.Coarse = nil
+					scheme.Fine = nil
+					assert.Loosely(t, validate(cfg), should.BeNil)
+				})
+				t.Run("With coarse set", func(t *ftt.Test) {
+					scheme.Coarse = &configpb.Scheme_Level{
+						HumanReadableName: "Package",
+					}
+					scheme.Fine = nil
+					assert.Loosely(t, validate(cfg), should.ErrLike(`invalid combination of levels, got coarse set and fine unset; if only one level is to be used, configure the fine level instead of the coarse level`))
+				})
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				// Do not need to test all invalid cases, uses a common validation
+				// routine as the coarse level, and that level is tested above.
+				scheme.Fine.HumanReadableName = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / human_readable_name): unspecified`))
+			})
+		})
+		t.Run("Case", func(t *ftt.Test) {
+			scheme.Case = &configpb.Scheme_Level{
+				HumanReadableName: "Method",
+				ValidationRegexp:  "[a-zA-Z_0-9]+",
+			}
+			path := path + " / case"
+
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Unset", func(t *ftt.Test) {
+				// It is an error to not configure the test case level.
+				scheme.Case = nil
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				// Do not need to test all invalid cases, uses a common validation
+				// routine as the coarse level, and that level is tested above.
+				scheme.Case.HumanReadableName = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / human_readable_name): unspecified`))
+			})
+		})
+	})
 }

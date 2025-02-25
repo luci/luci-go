@@ -22,12 +22,19 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
 var GCSBucketRE = regexp.MustCompile(`^[a-z0-9_\.\-]{3,222}$`)
+var SchemeIDRE = regexp.MustCompile(`^[a-z][a-z0-9]{0,19}$`)
+var HumanReadableRE = regexp.MustCompile(`^[[:print:]]{1,100}$`)
+
+const (
+	unspecifiedMessage = "unspecified"
+)
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp) {
 	ctx.Enter(name)
@@ -112,6 +119,7 @@ func validateServiceConfig(ctx *validation.Context, cfg *configpb.Config) {
 		return
 	}
 	validateBQArtifactExportConfig(ctx, cfg.BqArtifactExportConfig)
+	validateSchemes(ctx, cfg.Schemes)
 }
 
 func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArtifactExportConfig) {
@@ -119,5 +127,86 @@ func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArt
 	defer ctx.Exit()
 	if cfg.ExportPercent < 0 || cfg.ExportPercent > 100 {
 		ctx.Errorf("export percent must be between 0 and 100")
+	}
+}
+
+func validateSchemes(ctx *validation.Context, schemes []*configpb.Scheme) {
+	ctx.Enter("schemes")
+	defer ctx.Exit()
+
+	seenIDs := map[string]struct{}{}
+	for i, scheme := range schemes {
+		validateScheme(ctx, fmt.Sprintf("[%v]", i), scheme, seenIDs)
+	}
+}
+
+func validateScheme(ctx *validation.Context, name string, cfg *configpb.Scheme, seenIDs map[string]struct{}) {
+	ctx.Enter(name)
+	defer ctx.Exit()
+
+	validateSchemeID(ctx, cfg.Id, seenIDs)
+	validateHumanReadableName(ctx, cfg.HumanReadableName)
+
+	if cfg.Coarse != nil && cfg.Fine == nil {
+		ctx.Errorf("invalid combination of levels, got coarse set and fine unset; if only one level is to be used, configure the fine level instead of the coarse level")
+	}
+	if cfg.Coarse != nil {
+		validateSchemeLevel(ctx, "coarse", cfg.Coarse)
+	}
+	if cfg.Fine != nil {
+		validateSchemeLevel(ctx, "fine", cfg.Fine)
+	}
+	validateSchemeLevel(ctx, "case", cfg.Case)
+}
+
+func validateSchemeID(ctx *validation.Context, id string, seenIDs map[string]struct{}) {
+	ctx.Enter("id")
+	defer ctx.Exit()
+
+	if id == "legacy" {
+		ctx.Errorf(`"legacy" is a reserved built-in scheme and cannot be configured`)
+	}
+	if err := validate.SpecifiedWithRe(SchemeIDRE, id); err != nil {
+		ctx.Error(err)
+	}
+	if _, ok := seenIDs[id]; ok {
+		ctx.Errorf("scheme with ID %q appears in collection more than once", id)
+	}
+	seenIDs[id] = struct{}{}
+}
+
+func validateHumanReadableName(ctx *validation.Context, value string) {
+	ctx.Enter("human_readable_name")
+	defer ctx.Exit()
+
+	if err := validate.SpecifiedWithRe(HumanReadableRE, value); err != nil {
+		ctx.Error(err)
+	}
+}
+
+func validateSchemeLevel(ctx *validation.Context, name string, level *configpb.Scheme_Level) {
+	ctx.Enter(name)
+	defer ctx.Exit()
+
+	if level == nil {
+		ctx.Errorf(unspecifiedMessage)
+		return
+	}
+
+	validateHumanReadableName(ctx, level.HumanReadableName)
+	validateValidationRegexp(ctx, level.ValidationRegexp)
+}
+
+func validateValidationRegexp(ctx *validation.Context, p string) {
+	ctx.Enter("validation_regexp")
+	defer ctx.Exit()
+
+	if p == "" {
+		// Empty pattern means that no additional validation should be applied.
+		return
+	}
+	_, err := regexp.Compile(p)
+	if err != nil {
+		ctx.Errorf("could not compile pattern: %s", err)
 	}
 }
