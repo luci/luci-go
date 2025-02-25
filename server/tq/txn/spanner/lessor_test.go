@@ -84,7 +84,7 @@ func TestLeasing(t *testing.T) {
 				err = lessor.WithLease(ctx, sectionB, partition.FromInts(13, 33), time.Minute, i.clbk)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, i.deadline(), should.Match(clock.Now(ctx).Add(time.Minute)))
-				assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{partition.FromInts(13, 33)}))
+				assert.Loosely(t, i.parts(), should.Match(partition.SortedPartitions{partition.FromInts(13, 33)}))
 			})
 
 			t.Run("WithLease obeys context deadline", func(t *ftt.Test) {
@@ -101,13 +101,13 @@ func TestLeasing(t *testing.T) {
 			all, err := loadAll(span.Single(ctx), sectionA)
 			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
-			assert.Loosely(t, sortLeases(active...), should.Resemble(sortLeases(l1, l2, l3)))
+			assert.Loosely(t, sortLeases(active...), should.Match(sortLeases(l1, l2, l3)))
 			assert.Loosely(t, len(expired), should.BeZero)
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{
+			assert.Loosely(t, i.parts(), should.Match(partition.SortedPartitions{
 				partition.FromInts(15, 20),
 				partition.FromInts(25, 30),
 			}))
@@ -126,13 +126,13 @@ func TestLeasing(t *testing.T) {
 			all, err := loadAll(span.Single(ctx), sectionA)
 			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
-			assert.Loosely(t, sortLeases(active...), should.Resemble(sortLeases(l2, l3)))
-			assert.Loosely(t, sortLeases(expired...), should.Resemble(sortLeases(l1)))
+			assert.Loosely(t, sortLeases(active...), should.Match(sortLeases(l2, l3)))
+			assert.Loosely(t, sortLeases(expired...), should.Match(sortLeases(l1)))
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{
+			assert.Loosely(t, i.parts(), should.Match(partition.SortedPartitions{
 				partition.FromInts(13, 20),
 				partition.FromInts(25, 30),
 			}))
@@ -144,12 +144,12 @@ func TestLeasing(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
 			assert.Loosely(t, len(active), should.BeZero)
-			assert.Loosely(t, sortLeases(expired...), should.Resemble(sortLeases(l1, l2, l3)))
+			assert.Loosely(t, sortLeases(expired...), should.Match(sortLeases(l1, l2, l3)))
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{partition.FromInts(13, 33)}))
+			assert.Loosely(t, i.parts(), should.Match(partition.SortedPartitions{partition.FromInts(13, 33)}))
 		})
 	})
 }

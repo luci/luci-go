@@ -29,6 +29,7 @@
 package registry
 
 import (
+	"math/big"
 	"reflect"
 	"slices"
 	"sync"
@@ -57,6 +58,16 @@ var comparableInterfaces = map[reflect.Type]bool{
 // globalOptionsRegistry is the registry of global options that will get passed to
 // typed.Diff and other similar things that eventually call cmp.Diff.
 var globalOptionsRegistry = []cmp.Option{
+	// Compare big integers.
+	//
+	// In this situation copying a big integer by taking it by value is fine.
+	// It contains a boolean and a slice as of 2025, so this copy will produce
+	// a big.Int that shares some-but-not-all state with its argument, but we
+	// are immediately comparing them and returning a bool, so the incorrect
+	// shallow copy is harmless.
+	cmp.Comparer(func(a big.Int, b big.Int) bool {
+		return a.Cmp(&b) == 0
+	}),
 	protocmp.Transform(),
 	// This incantation ensures that all protoreflect descriptor instances will be
 	// compared with `==`, rather than being recursed into.

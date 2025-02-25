@@ -19,11 +19,14 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/testing/registry"
 )
 
 func TestMain(m *testing.M) {
+	registry.RegisterCmpOption(cmp.AllowUnexported(lease{}))
 	spantest.SpannerTestMain(m, "init_db.sql")
 }
 
