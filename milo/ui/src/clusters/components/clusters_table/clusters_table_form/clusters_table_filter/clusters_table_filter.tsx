@@ -155,11 +155,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
             // not break the filter.
             .map((text) => ({
               text: JSON.stringify(text),
-              display: (
-                <td>
-                  <HighlightedText text={text} highlight={unquoted} />
-                </td>
-              ),
+              display: <HighlightedText text={text} highlight={unquoted} />,
             }))
             .filter(({ text }) => text !== partial)
         );
@@ -185,11 +181,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
               .filter((text) => text.includes(lowerPartial))
               .map((text) => ({
                 text,
-                display: (
-                  <td>
-                    <HighlightedText text={text} highlight={partial} />
-                  </td>
-                ),
+                display: <HighlightedText text={text} highlight={partial} />,
               }));
           },
         },
@@ -204,11 +196,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
               .filter((text) => text.includes(searchTerm) && text !== partial)
               .map((text) => ({
                 text,
-                display: (
-                  <td>
-                    <HighlightedText text={text} highlight={searchTerm} />
-                  </td>
-                ),
+                display: <HighlightedText text={text} highlight={searchTerm} />,
               }));
           },
         },
@@ -220,12 +208,44 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
               .filter((text) => text.includes(searchTerm) && text !== partial)
               .map((text) => ({
                 text,
-                display: (
-                  <td>
-                    <HighlightedText text={text} highlight={searchTerm} />
-                  </td>
-                ),
+                display: <HighlightedText text={text} highlight={searchTerm} />,
               }));
+          },
+        },
+        tags: {
+          dynamicFields: {
+            getKeys: () => [
+              {
+                text: '[tag-key]',
+                unselectable: true,
+                explanation: 'Any tag key (e.g. tags.team_email)',
+              },
+            ],
+            getValues: () => [
+              {
+                text: '[tag-value]',
+                unselectable: true,
+                explanation: 'Any tag value (e.g. tags.team_email:device-dev)',
+              },
+            ],
+          },
+        },
+        variant: {
+          dynamicFields: {
+            getKeys: () => [
+              {
+                text: '[variant-key]',
+                unselectable: true,
+                explanation: 'Any variant key (e.g. variant.os)',
+              },
+            ],
+            getValues: () => [
+              {
+                text: '[variant-value]',
+                unselectable: true,
+                explanation: 'Any variant value (e.g. variant.os:ubuntu)',
+              },
+            ],
           },
         },
       },

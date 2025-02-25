@@ -64,12 +64,17 @@ export interface DynamicFieldsSchema {
  */
 export interface ValueDef {
   readonly text: string;
+  readonly unselectable?: boolean;
   /**
    * HTML (React) representation of the value.
    *
-   * Defaults to `<td>{text}</td>`.
+   * Defaults to `text`.
    */
   readonly display?: ReactNode;
+  /**
+   * Explanation attached to this value.
+   */
+  readonly explanation?: ReactNode;
 }
 
 /**
@@ -101,9 +106,13 @@ export interface Suggestion {
   /**
    * HTML (React) representation of the suggestion.
    *
-   * Defaults to `<td>{text}</td>`.
+   * Defaults to `text`.
    */
   readonly display?: ReactNode;
+  /**
+   * Explanation attached to this suggestion.
+   */
+  readonly explanation?: ReactNode;
   /**
    * Apply the suggestion to the input.
    *

@@ -238,11 +238,9 @@ function useSuggestionsAsync(
         value: {
           text: 'Loading...',
           display: (
-            <td>
-              <b>
-                Loading <CircularProgress size="1em" />
-              </b>
-            </td>
+            <b>
+              Loading <CircularProgress size="1em" />
+            </b>
           ),
           // Doesn't matter. This option is not selectable.
           apply: () => ['', 0] as const,
@@ -255,9 +253,11 @@ function useSuggestionsAsync(
   return (
     data?.map((valueDef) => ({
       id: valueDef.text,
+      unselectable: valueDef.unselectable,
       value: {
         text: valueDef.text,
         display: valueDef.display,
+        explanation: valueDef.explanation,
         apply: () => {
           const prefixEnd = ctx.valueToken.startPos;
           const suffixStart =
@@ -299,11 +299,7 @@ function suggestField(
           id: name,
           value: {
             text: name,
-            display: (
-              <td>
-                <HighlightedText text={name} highlight={suffix} />
-              </td>
-            ),
+            display: <HighlightedText text={name} highlight={suffix} />,
             apply: () => [
               input.slice(0, prefixEnd) + name + input.slice(suffixStart),
               prefixEnd + name.length,
@@ -316,9 +312,11 @@ function suggestField(
       ?.getKeys?.(suffix)
       .map<OptionDef<Suggestion>>((valueDef) => ({
         id: valueDef.text,
+        unselectable: valueDef.unselectable,
         value: {
           text: valueDef.text,
           display: valueDef.display,
+          explanation: valueDef.explanation,
           apply: () => [
             input.slice(0, prefixEnd) +
               valueDef.text +
@@ -348,9 +346,11 @@ function suggestValue(
         ?.getValues?.(valueToken.text)
         .map<OptionDef<Suggestion>>((valueDef) => ({
           id: valueDef.text,
+          unselectable: valueDef.unselectable,
           value: {
             text: valueDef.text,
             display: valueDef.display,
+            explanation: valueDef.explanation,
             apply: () => {
               return [
                 input.slice(0, prefixEnd) +
@@ -370,9 +370,11 @@ function suggestValue(
       ?.getValues?.(suffix, valueToken.text)
       .map<OptionDef<Suggestion>>((valueDef) => ({
         id: valueDef.text,
+        unselectable: valueDef.unselectable,
         value: {
           text: valueDef.text,
           display: valueDef.display,
+          explanation: valueDef.explanation,
           apply: () => [
             input.slice(0, prefixEnd) +
               valueDef.text +
