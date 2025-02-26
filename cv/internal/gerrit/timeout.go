@@ -64,25 +64,25 @@ func (t timeLimitedClient) ListChanges(ctx context.Context, in *gerritpb.ListCha
 }
 
 func (t timeLimitedClient) GetChange(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
-	ctx, cancel := clock.WithTimeout(ctx, 20*time.Second)
+	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
 	return t.actual.GetChange(ctx, in, opts...)
 }
 
 func (t timeLimitedClient) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRelatedChangesRequest, opts ...grpc.CallOption) (*gerritpb.GetRelatedChangesResponse, error) {
-	ctx, cancel := clock.WithTimeout(ctx, 20*time.Second)
+	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
 	return t.actual.GetRelatedChanges(ctx, in, opts...)
 }
 
 func (t timeLimitedClient) ListFiles(ctx context.Context, in *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
-	ctx, cancel := clock.WithTimeout(ctx, 20*time.Second)
+	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
 	defer cancel()
 	return t.actual.ListFiles(ctx, in, opts...)
 }
 
 func (t timeLimitedClient) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
-	ctx, cancel := clock.WithTimeout(ctx, 1*time.Minute)
+	ctx, cancel := clock.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	return t.actual.SetReview(ctx, in, opts...)
 }
@@ -103,7 +103,7 @@ func (t timeLimitedClient) SubmitRevision(ctx context.Context, in *gerritpb.Subm
 		// (a.k.a. "Submit including parents" in Gerrit),
 		// this may need to be revisited.
 		var cancel context.CancelFunc
-		ctx, cancel = clock.WithTimeout(ctx, 2*time.Minute)
+		ctx, cancel = clock.WithTimeout(ctx, 10*time.Minute)
 		defer cancel()
 	}
 
