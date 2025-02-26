@@ -37,10 +37,10 @@ import {
   useEffect,
   useCallback,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+
+import { GroupLink } from './group_link';
 
 import './groups.css';
 
@@ -96,7 +96,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const [items, setItems] = useState<Item[]>(asItems(initialValues));
     const [removeDialogVisible, setRemoveDialogVisible] = useState<boolean>();
     const [expanded, setExpanded] = useState<boolean>(true);
-    const navigate = useNavigate();
 
     let placeHolderText: string;
     switch (name) {
@@ -255,10 +254,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       validateItems();
     }, [newItems, validateItems]);
 
-    const navigateToGroup = (name: string) => {
-      navigate(getURLPathFromAuthGroup(name));
-    };
-
     return (
       <TableContainer data-testid="groups-form-list">
         <Table sx={{ width: '100%' }} data-testid="mouse-enter-table">
@@ -325,14 +320,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                           }}
                         />
                         {name === 'Subgroups' ? (
-                          <Button
-                            onClick={() => navigateToGroup(item.value)}
-                            className="subgroup-button"
-                          >
-                            <Typography variant="body2">
-                              {item.value}
-                            </Typography>
-                          </Button>
+                          <GroupLink name={item.value} />
                         ) : (
                           <Typography variant="body2">{item.value}</Typography>
                         )}

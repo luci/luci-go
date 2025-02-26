@@ -34,6 +34,10 @@ import {
   AuthGroup,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
+import { GroupLink } from './group_link';
+
+import './groups.css';
+
 // For each long path in the list, kick out the middle and replace it with ''.
 const shortenInclusionPaths = (paths: string[]) => {
   const out: string[] = [];
@@ -214,13 +218,13 @@ export function GroupLookup({ name }: GroupLookupProps) {
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ pt: 0 }}>
+              <TableCell sx={{ pt: 0, pb: '16px' }}>
                 {directIncluders.length > 0 ? (
                   <ul>
                     {directIncluders.map((group) => {
                       return (
                         <li key={group.name}>
-                          <Typography variant="body2">{group.name}</Typography>
+                          <GroupLink name={group.name} />
                         </li>
                       );
                     })}
@@ -247,7 +251,7 @@ export function GroupLookup({ name }: GroupLookupProps) {
                     {indirectIncluders.map((group) => {
                       return (
                         <li key={group.name}>
-                          <Typography variant="body2">{group.name}</Typography>
+                          <GroupLink name={group.name} />
                         </li>
                       );
                     })}

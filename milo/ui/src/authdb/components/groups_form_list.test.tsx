@@ -172,7 +172,7 @@ describe('<GroupsFormList editable globs/>', () => {
       <FakeContextProvider>
         <GroupsFormList
           name="Globs"
-          initialValues={mockGroup.members as string[]}
+          initialValues={mockGroup.globs as string[]}
           submitValues={() => {}}
         />
       </FakeContextProvider>,
@@ -205,7 +205,7 @@ describe('<GroupsFormList editable subgroups/>', () => {
       <FakeContextProvider>
         <GroupsFormList
           name="Subgroups"
-          initialValues={mockGroup.members as string[]}
+          initialValues={mockGroup.nested as string[]}
           submitValues={() => {}}
         />
       </FakeContextProvider>,
@@ -228,5 +228,16 @@ describe('<GroupsFormList editable subgroups/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Subgroups: Subgroup')).toBeInTheDocument();
+  });
+
+  test('subgroups link correctly', async () => {
+    const groups = mockGroup.nested;
+    groups.forEach((group) => {
+      expect(screen.getByText(group)).toBeInTheDocument();
+      expect(screen.getByTestId(`${group}-link`)).toHaveAttribute(
+        'href',
+        `/ui/auth/groups/${group}`,
+      );
+    });
   });
 });

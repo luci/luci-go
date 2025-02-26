@@ -67,10 +67,31 @@ describe('<GroupLookup />', () => {
       </FakeContextProvider>,
     );
     await screen.findByTestId('lookup-table');
+    const groups = ['nestedGroup', 'nestedGroup2', 'owningGroup'];
+    groups.forEach((group) => {
+      expect(screen.getByText(group)).toBeInTheDocument();
+    });
+  });
 
-    expect(screen.getByText('nestedGroup')).toBeInTheDocument();
-    expect(screen.getByText('nestedGroup2')).toBeInTheDocument();
-    expect(screen.getByText('owningGroup')).toBeInTheDocument();
+  test('groups have correct links', async () => {
+    const mockSubgraph = createMockSubgraph('requestedGroup');
+    mockFetchGetSubgraph(mockSubgraph);
+
+    render(
+      <FakeContextProvider>
+        <GroupLookup name="requestedGroup" />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('lookup-table');
+
+    const groups = ['nestedGroup', 'nestedGroup2', 'owningGroup'];
+    groups.forEach((group) => {
+      expect(screen.getByText(group)).toBeInTheDocument();
+      expect(screen.getByTestId(`${group}-link`)).toHaveAttribute(
+        'href',
+        `/ui/auth/groups/${group}`,
+      );
+    });
   });
 
   test('if appropriate message is displayed for an error', async () => {
