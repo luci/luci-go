@@ -36,7 +36,7 @@ describe('can switch between new and old version', () => {
     },
   ].forEach(({ title, path }) => {
     it(title, () => {
-      cy.visit(path, { timeout: SW_RELATED_TIMEOUT_MS });
+      cy.visit(path);
 
       // Switch to the old version.
       cy.get('[aria-label="Open menu"]').click();
@@ -51,7 +51,7 @@ describe('can switch between new and old version', () => {
       }).should('be.visible');
 
       // Version selection is persisted through reloads.
-      cy.reload({ timeout: SW_RELATED_TIMEOUT_MS });
+      cy.reload();
       cy.get('[aria-label="Old UI Version Banner"]').should('be.visible');
 
       // Switch back to the new version.
