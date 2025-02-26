@@ -85,11 +85,6 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return err
 	case execState == nil:
 		execState = initExecutionState()
-	case execState.GetStatus() == tryjob.ExecutionState_SUCCEEDED:
-		fallthrough
-	case execState.GetStatus() == tryjob.ExecutionState_FAILED:
-		logging.Warningf(ctx, "Tryjob Executor was invoked after execution has ended")
-		return nil
 	}
 
 	execState, plan, err := e.prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
@@ -178,9 +173,21 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
 	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
+	case hasTryjobsUpdated && hasExecutionStateEnded(execState):
+		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
+		// execution has ended. Only updating the tryjob information in the
+		// execution state.
+		execState, err := e.updateTryjobs(ctx, tryjobsUpdated, execState)
+		if err != nil {
+			return nil, nil, err
+		}
+		return execState, nil, nil
 	case hasTryjobsUpdated:
 		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
 		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState, r)
+	case reqmtChanged && hasExecutionStateEnded(execState):
+		logging.Infof(ctx, "Received requirement changes but the Executor has ended")
+		return execState, nil, nil
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob Executor is executing a Requirement that is either later than or equal to the requested Requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return execState, nil, nil
@@ -195,6 +202,33 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 	default:
 		panic(fmt.Errorf("the Executor was called without any update on either Tryjobs or Requirement"))
 	}
+}
+
+// updateTryjobs updates the relevant tryjob in the execution state.
+func (e *Executor) updateTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, error) {
+	updatedTryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
+	if err != nil {
+		return nil, err
+	}
+	var endedTryjobLogs []*tryjob.ExecutionLogEntry_TryjobSnapshot
+
+	for i, exec := range execState.GetExecutions() {
+		updated := updateAttempts(exec, updatedTryjobByID)
+		if updated {
+			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(execState.GetRequirement().GetDefinitions()[i], tryjob.LatestAttempt(exec)))
+		}
+	}
+	if len(endedTryjobLogs) > 0 {
+		e.log(&tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+				TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+					Tryjobs: endedTryjobLogs,
+				},
+			},
+		})
+	}
+	return execState, nil
 }
 
 // handleUpdatedTryjobs updates the ExecutionState given the latest Tryjobs
@@ -362,6 +396,16 @@ func updateAttempts(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[comm
 	}
 	return latestAttemptUpdated
 
+}
+
+// hasExecutionStateEnded returns whether the status of ExecutionState is final.
+func hasExecutionStateEnded(execState *tryjob.ExecutionState) bool {
+	switch execState.GetStatus() {
+	case tryjob.ExecutionState_FAILED, tryjob.ExecutionState_SUCCEEDED:
+		return true
+	default:
+		return false
+	}
 }
 
 // hasAttemptEnded whether the Attempt is in a final state.

@@ -17,7 +17,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,7 +28,6 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -47,24 +45,14 @@ const (
 
 // OnTryjobsUpdated implements Handler interface.
 func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*Result, error) {
-	switch status := rs.Status; {
-	case run.IsEnded(status):
-		fallthrough
-	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
-		logging.Debugf(ctx, "Ignoring Tryjobs event because Run is in status %s", status)
-		return &Result{State: rs}, nil
-	case status != run.Status_RUNNING:
-		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
-	case hasExecuteTryjobLongOp(rs):
+	if hasExecuteTryjobLongOp(rs) {
 		// Process this event after the current tryjob executor finishes running.
 		return &Result{State: rs, PreserveEvents: true}, nil
-	default:
-		tryjobs.Dedupe()
-		slices.Sort(tryjobs)
-		rs = rs.ShallowCopy()
-		enqueueTryjobsUpdatedTask(ctx, rs, tryjobs)
-		return &Result{State: rs}, nil
 	}
+	tryjobs.Dedupe()
+	rs = rs.ShallowCopy()
+	enqueueTryjobsUpdatedTask(ctx, rs, tryjobs)
+	return &Result{State: rs}, nil
 }
 
 func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunState, _ *run.OngoingLongOps_Op, opCompleted *eventpb.LongOpCompleted) (*Result, error) {
@@ -72,7 +60,10 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
 	if rs.Status != run.Status_RUNNING {
-		logging.Warningf(ctx, "long operation to execute Tryjobs has completed but Run is %s.", rs.Status)
+		// just simply update the execution state to the latest.
+		if err := loadAndUpdateExecutionState(ctx, rs); err != nil {
+			return nil, err
+		}
 		return &Result{State: rs}, nil
 	}
 	var runStatus run.Status
@@ -85,36 +76,26 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		// to read from datastore).
 		runStatus = run.Status_FAILED
 	case eventpb.LongOpCompleted_SUCCEEDED:
-		switch es, _, err := tryjob.LoadExecutionState(ctx, rs.ID); {
-		case err != nil:
+		if err := loadAndUpdateExecutionState(ctx, rs); err != nil {
 			return nil, err
-		case es == nil:
-			panic(fmt.Errorf("impossible; Execute Tryjobs task succeeded but ExecutionState was missing"))
+		}
+		switch executionStatus := rs.Tryjobs.GetState().GetStatus(); {
+		case executionStatus == tryjob.ExecutionState_SUCCEEDED && run.ShouldSubmit(&rs.Run):
+			rs.Status = run.Status_WAITING_FOR_SUBMISSION
+			return impl.OnReadyForSubmission(ctx, rs)
+		case executionStatus == tryjob.ExecutionState_SUCCEEDED:
+			runStatus = run.Status_SUCCEEDED
+		case executionStatus == tryjob.ExecutionState_FAILED:
+			runStatus = run.Status_FAILED
+		case executionStatus == tryjob.ExecutionState_RUNNING:
+			// Tryjobs are still running. No change to run status.
+		case executionStatus == tryjob.ExecutionState_STATUS_UNSPECIFIED:
+			return nil, errors.New("execution status is not specified")
 		default:
-			if rs.Tryjobs == nil {
-				rs.Tryjobs = &run.Tryjobs{}
-			} else {
-				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
-			}
-			rs.Tryjobs.State = es // Copy the execution state to Run entity
-			switch executionStatus := es.GetStatus(); {
-			case executionStatus == tryjob.ExecutionState_SUCCEEDED && run.ShouldSubmit(&rs.Run):
-				rs.Status = run.Status_WAITING_FOR_SUBMISSION
-				return impl.OnReadyForSubmission(ctx, rs)
-			case executionStatus == tryjob.ExecutionState_SUCCEEDED:
-				runStatus = run.Status_SUCCEEDED
-			case executionStatus == tryjob.ExecutionState_FAILED:
-				runStatus = run.Status_FAILED
-			case executionStatus == tryjob.ExecutionState_RUNNING:
-				// Tryjobs are still running. No change to run status.
-			case executionStatus == tryjob.ExecutionState_STATUS_UNSPECIFIED:
-				panic(fmt.Errorf("execution status is not specified"))
-			default:
-				panic(fmt.Errorf("unknown tryjob execution status %s", executionStatus))
-			}
+			return nil, fmt.Errorf("unknown tryjob execution status %s", executionStatus)
 		}
 	default:
-		panic(fmt.Errorf("unknown LongOpCompleted status: %s", opCompleted.GetStatus()))
+		return nil, fmt.Errorf("unknown LongOpCompleted status: %s", opCompleted.GetStatus())
 	}
 
 	if run.IsEnded(runStatus) {
@@ -211,6 +192,23 @@ func enqueueRequirementChangedTask(ctx context.Context, rs *state.RunState) {
 			},
 		},
 	})
+}
+
+func loadAndUpdateExecutionState(ctx context.Context, rs *state.RunState) error {
+	es, _, err := tryjob.LoadExecutionState(ctx, rs.ID)
+	switch {
+	case err != nil:
+		return err
+	case es == nil:
+		return errors.New("execute Tryjobs task succeeded but ExecutionState was missing") // impossible
+	}
+	if rs.Tryjobs == nil {
+		rs.Tryjobs = &run.Tryjobs{}
+	} else {
+		rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
+	}
+	rs.Tryjobs.State = es // Copy the execution state to Run entity
+	return nil
 }
 
 // composeTryjobsResultFailureReason make a human-readable string explaining

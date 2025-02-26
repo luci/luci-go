@@ -70,10 +70,10 @@ func TestOnTryjobsUpdated(t *testing.T) {
 			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
-			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.That(t, res.PreserveEvents, should.BeFalse)
 			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
-				assert.Loosely(t, op, should.Match(&run.OngoingLongOps_Op{
+				assert.That(t, op, should.Match(&run.OngoingLongOps_Op{
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(maxTryjobExecutorDuration)),
 					Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
 						ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
@@ -91,24 +91,6 @@ func TestOnTryjobsUpdated(t *testing.T) {
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 		})
-
-		statuses := []run.Status{
-			run.Status_SUCCEEDED,
-			run.Status_FAILED,
-			run.Status_CANCELLED,
-			run.Status_WAITING_FOR_SUBMISSION,
-			run.Status_SUBMITTING,
-		}
-		for _, status := range statuses {
-			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
-				rs.Status = status
-				res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
-				assert.NoErr(t, err)
-				assert.Loosely(t, res.State, should.Equal(rs))
-				assert.Loosely(t, res.SideEffectFn, should.BeNil)
-				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
-			})
-		}
 	})
 }
 
@@ -514,6 +496,28 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					}
 				})
 			})
+		})
+
+		t.Run("unconditionally update when run is not running", func(t *ftt.Test) {
+			rs.Mode = run.DryRun
+			rs.Status = run.Status_FAILED
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+					Status: tryjob.ExecutionState_SUCCEEDED,
+				}, 0, nil)
+			}, nil)
+			assert.NoErr(t, err)
+			res, err := h.OnLongOpCompleted(ctx, rs, result)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
+			assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+				State: &tryjob.ExecutionState{
+					Status: tryjob.ExecutionState_SUCCEEDED,
+				},
+			}))
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.BeEmpty)
+			assert.Loosely(t, res.SideEffectFn, should.BeNil)
+			assert.That(t, res.PreserveEvents, should.BeFalse)
 		})
 	})
 }
