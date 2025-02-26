@@ -428,3 +428,30 @@ func (f Filter) ValidateComplexity() error {
 	}
 	return nil
 }
+
+// MatchesBot returns true if given bot dimensions match the filter.
+//
+// Bot dimensions are given as a list of "k:v" pairs.
+func (f Filter) MatchesBot(dims []string) bool {
+	type kv struct{ k, v string }
+
+	dimSet := make(map[kv]struct{}, len(dims))
+	for _, d := range dims {
+		k, v, _ := strings.Cut(d, ":")
+		dimSet[kv{k, v}] = struct{}{}
+	}
+
+	for _, kf := range f.filters {
+		anyMatch := false
+		for _, v := range kf.values {
+			if _, has := dimSet[kv{kf.key, v}]; has {
+				anyMatch = true
+				break
+			}
+		}
+		if !anyMatch {
+			return false
+		}
+	}
+	return true
+}

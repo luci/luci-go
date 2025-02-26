@@ -262,4 +262,31 @@ func TestFilter(t *testing.T) {
 			assert.That(t, f.ValidateComplexity(), should.ErrLike("too many combinations of dimensions 9 (max is 8), reduce usage of \"|\""))
 		})
 	})
+
+	ftt.Run("MatchesBot", t, func(t *ftt.Test) {
+		f, err := NewFilterFromTaskDimensions(TaskDimensions{
+			"k1": {"v1", "v2|v3"},
+			"k2": {"v4"},
+		})
+		assert.NoErr(t, err)
+
+		cases := []struct {
+			dims    []string
+			outcome bool
+		}{
+			// Matches.
+			{[]string{"k1:v1", "k1:v2", "k2:v4"}, true},
+			{[]string{"k1:v1", "k1:v3", "k2:v4"}, true},
+			{[]string{"k1:v1", "k1:v2", "k2:v4", "k2:extra"}, true},
+			// Doesn't match.
+			{[]string{}, false},
+			{[]string{"k1:v1"}, false},
+			{[]string{"k1:v1", "k1:v2"}, false},
+			{[]string{"k1:v1", "k2:v4"}, false},
+			{[]string{"k1:v1", "k1:v2", "k2:unknown"}, false},
+		}
+		for _, c := range cases {
+			assert.That(t, f.MatchesBot(c.dims), should.Equal(c.outcome))
+		}
+	})
 }
