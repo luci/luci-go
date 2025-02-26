@@ -757,7 +757,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run("dimensions", func(t *ftt.Test) {
 					t.Run("too_many_dimensions", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
-						for i := 0; i < maxDimensionKeyCount+1; i++ {
+						for i := 0; i < model.MaxDimensionChecks+1; i++ {
 							req.TaskSlices[0].Properties.Dimensions = append(
 								req.TaskSlices[0].Properties.Dimensions, &apipb.StringPair{
 									Key:   fmt.Sprintf("key%d", i),
@@ -765,7 +765,7 @@ func TestValidateNewTask(t *testing.T) {
 								})
 						}
 						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("can have up to 32 keys"))
+						assert.That(t, err, should.ErrLike("too many dimension constraints 514 (max is 512)"))
 					})
 					t.Run("invalid_key", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
@@ -831,18 +831,6 @@ func TestValidateNewTask(t *testing.T) {
 						_, err := validateNewTask(ctx, req)
 						assert.That(t, err, should.ErrLike("id cannot be specified more than once"))
 					})
-					t.Run("too_many_dimension_values", func(t *ftt.Test) {
-						req := simpliestValidRequest("pool")
-						for i := 0; i < maxDimensionValueCount+1; i++ {
-							req.TaskSlices[0].Properties.Dimensions = append(
-								req.TaskSlices[0].Properties.Dimensions, &apipb.StringPair{
-									Key:   "key",
-									Value: "value",
-								})
-						}
-						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("can have up to 16 values for key"))
-					})
 					t.Run("repeated_values", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
@@ -856,7 +844,7 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						}
 						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("repeated values"))
+						assert.That(t, err, should.ErrLike("has duplicate constraints"))
 					})
 					t.Run("invalid_value", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
@@ -893,7 +881,7 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						}
 						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("or dimensions should not be more than 8"))
+						assert.That(t, err, should.ErrLike("too many combinations of dimensions 9 (max is 8)"))
 					})
 				})
 			})

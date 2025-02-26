@@ -16,7 +16,8 @@ package model
 
 import (
 	"fmt"
-	"sort"
+	"iter"
+	"slices"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -24,6 +25,50 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/validate"
+)
+
+const (
+	// MaxDimensionChecks is how many elementary dimension predicates are allowed
+	// in total across all keys in task dimensions.
+	//
+	// This is a measure of size of the datastore index required for indexing
+	// tasks with these dimensions.
+	MaxDimensionChecks = 512
+
+	// MaxCombinatorialAlternatives is how many terms are allowed in the
+	// disjunctive normal form of the dimensions constraint predicate.
+	//
+	// E.g. predicate `(k1 in [v1, v2]) && (k2 in [v3, v4])` has 4 terms in
+	// its DNF:
+	//	(k1 == v1 && k2 == v3) ||
+	//	(k1 == v1 && k2 == v4) ||
+	//	(k1 == v2 && k2 == v3) ||
+	//	(k1 == v2 && k2 == v4)
+	//
+	// This is a measure of complexity of the datastore query necessary to fetch
+	// all tasks matching a particular filter.
+	MaxCombinatorialAlternatives = 8
+)
+
+// FilterValidation defines how strictly to validated a filter.
+type FilterValidation int
+
+const (
+	// ValidateAsTags indicates to use relaxed validation rules.
+	//
+	// Used for filters on arbitrary task tags.
+	ValidateAsTags FilterValidation = 0
+
+	// ValidateAsDimensions indicates to use more strict validation rules.
+	//
+	// Used for filters representing task dimensions.
+	ValidateAsDimensions FilterValidation = 1
+
+	// ValidateMinimally indicates to use almost no validation.
+	//
+	// Useful if it's known the filter was validated already.
+	ValidateMinimally FilterValidation = 2
 )
 
 // SplitMode is a parameter for SplitForQuery and Apply methods.
@@ -81,47 +126,124 @@ type perKeyFilter struct {
 
 // NewFilter parses a list of `("key", "val1|val2|val2")` pairs.
 //
-// Empty filter is possible (if `tags` are empty).
-func NewFilter(tags []*apipb.StringPair) (Filter, error) {
-	filter := Filter{
-		filters: make([]perKeyFilter, 0, len(tags)),
+// Empty filter is possible (if `tags` are empty). If `allowDups` is true, will
+// silently deduplicate redundant values. Otherwise their presence will result
+// in an error.
+func NewFilter(pairs []*apipb.StringPair, validation FilterValidation, allowDups bool) (Filter, error) {
+	filter := Filter{filters: make([]perKeyFilter, 0, len(pairs))}
+	err := initFilter(&filter, validation, allowDups, slices.Values(pairs))
+	if err != nil {
+		return filter, err
+	}
+	return filter, nil
+}
+
+// NewFilterFromTags is a variant of NewFilter that takes "k:v" pairs as input
+// and parses them as task tags.
+func NewFilterFromTags(tags []string) (Filter, error) {
+	filter := Filter{filters: make([]perKeyFilter, 0, len(tags))}
+	err := initFilter(&filter, ValidateAsTags, true, func(yield func(*apipb.StringPair) bool) {
+		for _, tag := range tags {
+			parts := strings.SplitN(tag, ":", 2)
+			if !yield(&apipb.StringPair{Key: parts[0], Value: parts[1]}) {
+				return
+			}
+		}
+	})
+	if err != nil {
+		return filter, err
+	}
+	return filter, nil
+}
+
+// NewFilterFromTaskDimensions is a variant of NewFilter that parses given task
+// dimensions.
+func NewFilterFromTaskDimensions(dims TaskDimensions) (Filter, error) {
+	filter := Filter{filters: make([]perKeyFilter, 0, len(dims))}
+	err := initFilter(&filter, ValidateAsDimensions, false, func(yield func(*apipb.StringPair) bool) {
+		for key, vals := range dims {
+			for _, val := range vals {
+				if !yield(&apipb.StringPair{Key: key, Value: val}) {
+					return
+				}
+			}
+		}
+	})
+	if err != nil {
+		return filter, err
+	}
+	return filter, nil
+}
+
+// initFilter is actual implementation of NewFilter.
+func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pairs iter.Seq[*apipb.StringPair]) error {
+	var validateKey func(key string) error
+	var validateVal func(val string) error
+	switch validation {
+	case ValidateAsTags:
+		validateKey = func(key string) error {
+			if key == "" {
+				return errors.Reason("cannot be empty").Err()
+			}
+			if strings.TrimSpace(key) != key {
+				return errors.Reason("should have no leading or trailing spaces").Err()
+			}
+			return nil
+		}
+		validateVal = validateKey // the same rules
+
+	case ValidateAsDimensions:
+		validateKey = validate.DimensionKey
+		validateVal = validate.DimensionValue
+
+	case ValidateMinimally:
+		validateKey = func(key string) error { return nil }
+		validateVal = func(val string) error { return nil }
+
+	default:
+		panic("unknown FilterValidation mode")
 	}
 
-	for _, tag := range tags {
-		if strings.TrimSpace(tag.Key) != tag.Key || tag.Key == "" {
-			return filter, errors.Reason("bad key %q", tag.Key).Err()
+	for pair := range pairs {
+		if err := validateKey(pair.Key); err != nil {
+			return errors.Annotate(err, "bad key %q", pair.Key).Err()
 		}
 
-		vals := strings.Split(tag.Value, "|")
+		vals := strings.Split(pair.Value, "|")
 		deduped := stringset.New(len(vals))
 		for _, val := range vals {
-			if strings.TrimSpace(val) != val || val == "" {
-				return filter, errors.Reason("bad value for key %q: %q", tag.Key, tag.Value).Err()
+			if err := validateVal(val); err != nil {
+				return errors.Annotate(err, "key %q: value %q", pair.Key, val).Err()
 			}
 			deduped.Add(val)
 		}
 
+		if len(deduped) != len(vals) && !allowDups {
+			return errors.Reason("key %q has repeated values", pair.Key).Err()
+		}
+
 		filter.filters = append(filter.filters, perKeyFilter{
-			key:    tag.Key,
+			key:    pair.Key,
 			values: deduped.ToSortedSlice(),
 		})
 	}
 
-	sort.SliceStable(filter.filters, func(i, j int) bool {
-		return filter.filters[i].key < filter.filters[j].key
+	slices.SortFunc(filter.filters, func(a, b perKeyFilter) int {
+		if n := strings.Compare(a.key, b.key); n != 0 {
+			return n
+		}
+		return slices.Compare(a.values, b.values)
 	})
 
-	return filter, nil
-}
-
-// NewFilterFromKV is a variant of NewFilter that takes "k:v" pairs as input.
-func NewFilterFromKV(tags []string) (Filter, error) {
-	pairs := make([]*apipb.StringPair, len(tags))
-	for i, tag := range tags {
-		parts := strings.SplitN(tag, ":", 2)
-		pairs[i] = &apipb.StringPair{Key: parts[0], Value: parts[1]}
+	dedupped := slices.CompactFunc(filter.filters, func(a, b perKeyFilter) bool {
+		return a.key == b.key && slices.Equal(a.values, b.values)
+	})
+	if len(dedupped) != len(filter.filters) && !allowDups {
+		return errors.Reason("has duplicate constraints").Err()
 	}
-	return NewFilter(pairs)
+	filter.filters = dedupped
+
+	return nil
 }
 
 // Pools is a list of all pools mentioned in the filter (if any).
@@ -138,6 +260,44 @@ func (f Filter) Pools() []string {
 // IsEmpty is true if this filter doesn't filter anything.
 func (f Filter) IsEmpty() bool {
 	return len(f.filters) == 0
+}
+
+// NarrowToKey returns a subset of the filter that applies to the given key.
+func (f Filter) NarrowToKey(key string) Filter {
+	var out []perKeyFilter
+	for _, f := range f.filters {
+		if f.key == key {
+			out = append(out, f)
+		}
+	}
+	return Filter{filters: out}
+}
+
+// Pairs enumerates all "k:v" pairs used by the filter.
+//
+// May have duplicates if the same pair appears in two different predicates.
+//
+// Note this looses some information: two different filters `("k:v1|v2")` and
+// `("k:v1", "k:v2")` will result in the same list of pairs.
+func (f Filter) Pairs() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for _, f := range f.filters {
+			for _, v := range f.values {
+				if !yield(f.key + ":" + v) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// PairCount is how many "k:v" pairs are present in the filter.
+func (f Filter) PairCount() int {
+	count := 0
+	for _, f := range f.filters {
+		count += len(f.values)
+	}
+	return count
 }
 
 // SplitForQuery splits this filter into several simpler filters that can be
@@ -246,4 +406,25 @@ func (f Filter) Apply(q *datastore.Query, field string, mode SplitMode) []*datas
 		out = append(out, simpleQ)
 	}
 	return out
+}
+
+// ValidateComplexity returns an error if this filter is too complex to be used
+// as task dimensions.
+//
+// This is a precaution against submitting tasks that end up creating a lot of
+// datastore indexes or put a strain on the RBE scheduler.
+func (f Filter) ValidateComplexity() error {
+	total := 0
+	combinatorialAlternatives := 1
+	for _, kf := range f.filters {
+		total += len(kf.values)
+		combinatorialAlternatives *= len(kf.values)
+	}
+	if total > MaxDimensionChecks {
+		return errors.Reason("too many dimension constraints %d (max is %d)", total, MaxDimensionChecks).Err()
+	}
+	if combinatorialAlternatives > MaxCombinatorialAlternatives {
+		return errors.Reason("too many combinations of dimensions %d (max is %d), reduce usage of \"|\"", combinatorialAlternatives, MaxCombinatorialAlternatives).Err()
+	}
+	return nil
 }

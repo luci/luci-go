@@ -41,7 +41,7 @@ func TestBotInfoQuery(t *testing.T) {
 			{Key: "k1", Value: "v1|v2"},
 			{Key: "k2", Value: "v1|v2"},
 			{Key: "k3", Value: "v1"},
-		})
+		}, ValidateAsTags, false)
 		assert.NoErr(t, err)
 
 		qs := FilterBotsByDimensions(q, SplitOptimally, dims)

@@ -1075,7 +1075,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			{Key: "os", Value: "ubuntu1|ubuntu2"},
 			{Key: "board", Value: "board1|board2"},
 		}
-		filter, err := NewFilter(tags)
+		filter, err := NewFilter(tags, ValidateAsTags, false)
 		assert.NoErr(t, err)
 
 		queries := FilterTasksByTags(TaskResultSummaryQuery(), SplitOptimally, filter)

@@ -47,7 +47,7 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 		}
 	}
 
-	dims, err := model.NewFilter(req.Dimensions)
+	dims, err := model.NewFilter(req.Dimensions, model.ValidateAsDimensions, true)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid dimensions: %s", err)
 	}

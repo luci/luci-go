@@ -19,13 +19,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(Filter{}))
+	registry.RegisterCmpOption(cmp.AllowUnexported(perKeyFilter{}))
+}
 
 func TestFilter(t *testing.T) {
 	t.Parallel()
@@ -36,9 +44,9 @@ func TestFilter(t *testing.T) {
 			{Key: "x", Value: "y"},
 			{Key: "pool", Value: "P1"},
 			{Key: "pool", Value: "P1|P2|P3"},
-		})
+		}, ValidateAsTags, false)
 		assert.NoErr(t, err)
-		assert.Loosely(t, f, should.Resemble(Filter{
+		assert.That(t, f, should.Match(Filter{
 			filters: []perKeyFilter{
 				{key: "pool", values: []string{"P1"}},
 				{key: "pool", values: []string{"P1", "P2", "P3"}},
@@ -46,31 +54,105 @@ func TestFilter(t *testing.T) {
 				{key: "x", values: []string{"y"}},
 			},
 		}))
-		assert.Loosely(t, f.Pools(), should.Resemble([]string{"P1", "P2", "P3"}))
+		assert.That(t, f.Pools(), should.Match([]string{"P1", "P2", "P3"}))
 	})
 
-	ftt.Run("Errors", t, func(t *ftt.Test) {
+	ftt.Run("NewFilterFromTags", t, func(t *ftt.Test) {
+		f, err := NewFilterFromTags([]string{
+			"k1:v1",
+			"k1:v1|v1", // skipped
+			"k1:v2|v1",
+			"k2:v1",
+		})
+		assert.NoErr(t, err)
+		assert.That(t, f, should.Match(Filter{
+			filters: []perKeyFilter{
+				{key: "k1", values: []string{"v1"}},
+				{key: "k1", values: []string{"v1", "v2"}},
+				{key: "k2", values: []string{"v1"}},
+			},
+		}))
+	})
+
+	ftt.Run("NewFilterFromTaskDimensions", t, func(t *ftt.Test) {
+		f, err := NewFilterFromTaskDimensions(TaskDimensions{
+			"k1": {"v1", "v2|v1"},
+			"k2": {"v1"},
+		})
+		assert.NoErr(t, err)
+		assert.That(t, f, should.Match(Filter{
+			filters: []perKeyFilter{
+				{key: "k1", values: []string{"v1"}},
+				{key: "k1", values: []string{"v1", "v2"}},
+				{key: "k2", values: []string{"v1"}},
+			},
+		}))
+	})
+
+	ftt.Run("ValidateAsTags errors", t, func(t *ftt.Test) {
 		call := func(k, v string) error {
 			_, err := NewFilter([]*apipb.StringPair{
 				{Key: k, Value: v},
-			})
+			}, ValidateAsTags, false)
 			return err
 		}
-		assert.Loosely(t, call("", "val"), should.ErrLike("bad key"))
-		assert.Loosely(t, call("  key", "val"), should.ErrLike("bad key"))
-		assert.Loosely(t, call("key", ""), should.ErrLike("bad value"))
-		assert.Loosely(t, call("key", "  val"), should.ErrLike("bad value"))
+		assert.That(t, call("", "val"), should.ErrLike("bad key"))
+		assert.That(t, call("  key", "val"), should.ErrLike("bad key"))
+		assert.That(t, call("key", ""), should.ErrLike("cannot be empty"))
+		assert.That(t, call("key", "  val"), should.ErrLike("should have no leading or trailing spaces"))
+	})
+
+	ftt.Run("ValidateAsDimensions errors", t, func(t *ftt.Test) {
+		call := func(k, v string) error {
+			_, err := NewFilter([]*apipb.StringPair{
+				{Key: k, Value: v},
+			}, ValidateAsDimensions, false)
+			return err
+		}
+		assert.That(t, call(strings.Repeat("k", 100), "val"), should.ErrLike("bad key"))
+		assert.That(t, call("key", strings.Repeat("v", 300)), should.ErrLike("should be no longer"))
+	})
+
+	ftt.Run("Duplicate value in a predicate", t, func(t *ftt.Test) {
+		pairs := []*apipb.StringPair{
+			{Key: "key", Value: "v3|v1|v2|v1|v2"},
+		}
+
+		// With allowDups.
+		f, err := NewFilter(pairs, ValidateAsDimensions, true)
+		assert.NoErr(t, err)
+		assert.That(t, f.filters[0].values, should.Match([]string{"v1", "v2", "v3"}))
+
+		// Without allowDups.
+		_, err = NewFilter(pairs, ValidateAsDimensions, false)
+		assert.That(t, err, should.ErrLike("key \"key\" has repeated values"))
+	})
+
+	ftt.Run("Duplicate predicates", t, func(t *ftt.Test) {
+		pairs := []*apipb.StringPair{
+			{Key: "key", Value: "v2|v1"},
+			{Key: "key", Value: "v1|v2"},
+		}
+
+		// With allowDups.
+		f, err := NewFilter(pairs, ValidateAsDimensions, true)
+		assert.NoErr(t, err)
+		assert.That(t, len(f.filters), should.Equal(1))
+
+		// Without allowDups.
+		_, err = NewFilter(pairs, ValidateAsDimensions, false)
+		assert.That(t, err, should.ErrLike("has duplicate constraints"))
 	})
 
 	ftt.Run("Empty", t, func(t *ftt.Test) {
-		f, err := NewFilter(nil)
+		f, err := NewFilter(nil, ValidateAsTags, false)
 		assert.NoErr(t, err)
-		assert.Loosely(t, f.IsEmpty(), should.BeTrue)
+		assert.That(t, f.IsEmpty(), should.BeTrue)
 	})
 
 	ftt.Run("SplitForQuery", t, func(t *ftt.Test) {
 		split := func(q string, mode SplitMode) []string {
-			in, err := NewFilterFromKV(strings.Split(q, " "))
+			in, err := NewFilterFromTags(strings.Split(q, " "))
 			assert.NoErr(t, err)
 
 			parts := in.SplitForQuery(mode)
@@ -87,37 +169,37 @@ func TestFilter(t *testing.T) {
 		}
 
 		t.Run("Empty", func(t *ftt.Test) {
-			f, err := NewFilter(nil)
+			f, err := NewFilter(nil, ValidateAsTags, false)
 			assert.NoErr(t, err)
 			for _, mode := range []SplitMode{SplitCompletely, SplitOptimally} {
 				out := f.SplitForQuery(mode)
-				assert.Loosely(t, out, should.HaveLength(1))
-				assert.Loosely(t, out[0].IsEmpty(), should.BeTrue)
+				assert.That(t, len(out), should.Equal(1))
+				assert.That(t, out[0].IsEmpty(), should.BeTrue)
 
 				q := datastore.NewQuery("Something")
 				split := f.Apply(q, "doesntmatter", mode)
-				assert.Loosely(t, split, should.HaveLength(1))
-				assert.Loosely(t, split[0] == q, should.BeTrue) // the exact same original query
+				assert.That(t, len(split), should.Equal(1))
+				assert.That(t, split[0] == q, should.BeTrue) // the exact same original query
 			}
 		})
 
 		t.Run("SplitCompletely", func(t *ftt.Test) {
 			// Already simple query.
-			assert.Loosely(t, split("k1:v1 k2:v2", SplitCompletely), should.Resemble([]string{"k1:v1 k2:v2"}))
+			assert.That(t, split("k1:v1 k2:v2", SplitCompletely), should.Match([]string{"k1:v1 k2:v2"}))
 			// One disjunction.
-			assert.Loosely(t, split("k1:v1|v2 k2:v3", SplitCompletely), should.Resemble([]string{
+			assert.That(t, split("k1:v1|v2 k2:v3", SplitCompletely), should.Match([]string{
 				"k1:v1 k2:v3",
 				"k1:v2 k2:v3",
 			}))
 			// Two disjunctions.
-			assert.Loosely(t, split("k1:v1|v2 k2:v3 k3:v4|v5", SplitCompletely), should.Resemble([]string{
+			assert.That(t, split("k1:v1|v2 k2:v3 k3:v4|v5", SplitCompletely), should.Match([]string{
 				"k1:v1 k2:v3 k3:v4",
 				"k1:v1 k2:v3 k3:v5",
 				"k1:v2 k2:v3 k3:v4",
 				"k1:v2 k2:v3 k3:v5",
 			}))
 			// Repeated keys are OK, but may result in redundant filters.
-			assert.Loosely(t, split("k1:v1|v2 k1:v2|v3 k1:v4", SplitCompletely), should.Resemble([]string{
+			assert.That(t, split("k1:v1|v2 k1:v2|v3 k1:v4", SplitCompletely), should.Match([]string{
 				"k1:v1 k1:v2 k1:v4",
 				"k1:v1 k1:v3 k1:v4",
 				"k1:v2 k1:v2 k1:v4",
@@ -127,15 +209,15 @@ func TestFilter(t *testing.T) {
 
 		t.Run("SplitOptimally", func(t *ftt.Test) {
 			// Already simple enough query.
-			assert.Loosely(t, split("k1:v1 k2:v2", SplitOptimally), should.Resemble([]string{"k1:v1 k2:v2"}))
-			assert.Loosely(t, split("k1:v1|v2 k2:v3", SplitOptimally), should.Resemble([]string{"k1:v1|v2 k2:v3"}))
+			assert.That(t, split("k1:v1 k2:v2", SplitOptimally), should.Match([]string{"k1:v1 k2:v2"}))
+			assert.That(t, split("k1:v1|v2 k2:v3", SplitOptimally), should.Match([]string{"k1:v1|v2 k2:v3"}))
 			// Splits on the smallest term.
-			assert.Loosely(t, split("k1:v1|v2|v3 k2:v1|v2 k3:v3", SplitOptimally), should.Resemble([]string{
+			assert.That(t, split("k1:v1|v2|v3 k2:v1|v2 k3:v3", SplitOptimally), should.Match([]string{
 				"k1:v1|v2|v3 k2:v1 k3:v3",
 				"k1:v1|v2|v3 k2:v2 k3:v3",
 			}))
 			// Leaves at most one disjunction (the largest one).
-			assert.Loosely(t, split("k1:v1|v2|v3 k2:v1|v2|v3|v4 k3:v1|v2 k4:v1", SplitOptimally), should.Resemble([]string{
+			assert.That(t, split("k1:v1|v2|v3 k2:v1|v2|v3|v4 k3:v1|v2 k4:v1", SplitOptimally), should.Match([]string{
 				"k1:v1 k2:v1|v2|v3|v4 k3:v1 k4:v1",
 				"k1:v2 k2:v1|v2|v3|v4 k3:v1 k4:v1",
 				"k1:v3 k2:v1|v2|v3|v4 k3:v1 k4:v1",
@@ -143,6 +225,41 @@ func TestFilter(t *testing.T) {
 				"k1:v2 k2:v1|v2|v3|v4 k3:v2 k4:v1",
 				"k1:v3 k2:v1|v2|v3|v4 k3:v2 k4:v1",
 			}))
+		})
+	})
+
+	ftt.Run("ValidateComplexity", t, func(t *ftt.Test) {
+		t.Run("MaxDimensionChecks", func(t *ftt.Test) {
+			var pairs []*apipb.StringPair
+			for i := range MaxDimensionChecks / 16 {
+				var vals []string
+				for j := range 16 {
+					vals = append(vals, fmt.Sprintf("v%d", j))
+				}
+				pairs = append(pairs, &apipb.StringPair{
+					Key:   fmt.Sprintf("k%d", i),
+					Value: strings.Join(vals, "|"),
+				})
+			}
+			pairs = append(pairs, &apipb.StringPair{
+				Key:   "two-more",
+				Value: "v1|v2",
+			})
+
+			f, err := NewFilter(pairs, ValidateAsDimensions, false)
+			assert.NoErr(t, err)
+
+			assert.That(t, f.ValidateComplexity(), should.ErrLike("too many dimension constraints 514 (max is 512)"))
+		})
+
+		t.Run("MaxCombinatorialAlternatives", func(t *ftt.Test) {
+			f, err := NewFilter([]*apipb.StringPair{
+				{Key: "k1", Value: "v1|v2|v3"},
+				{Key: "k2", Value: "v1|v2|v3"},
+			}, ValidateAsDimensions, false)
+			assert.NoErr(t, err)
+
+			assert.That(t, f.ValidateComplexity(), should.ErrLike("too many combinations of dimensions 9 (max is 8), reduce usage of \"|\""))
 		})
 	})
 }

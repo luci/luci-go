@@ -278,7 +278,7 @@ func StartTaskListingRequest(ctx context.Context, req *TaskListingRequest) ([]*d
 		}
 	}
 
-	filter, err := model.NewFilterFromKV(req.Tags)
+	filter, err := model.NewFilterFromTags(req.Tags)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid tags: %s", err)
 	}

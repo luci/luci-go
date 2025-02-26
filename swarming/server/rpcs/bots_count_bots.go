@@ -34,7 +34,7 @@ import (
 
 // CountBots implements the corresponding RPC method.
 func (srv *BotsServer) CountBots(ctx context.Context, req *apipb.BotsCountRequest) (*apipb.BotsCount, error) {
-	dims, err := model.NewFilter(req.Dimensions)
+	dims, err := model.NewFilter(req.Dimensions, model.ValidateAsDimensions, true)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid dimensions: %s", err)
 	}

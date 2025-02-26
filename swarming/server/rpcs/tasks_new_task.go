@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -66,10 +65,6 @@ const (
 	maxCmdArgs              = 128
 	maxOutputCount          = 4096
 	maxOutputPathLength     = 512
-	maxDimensionKeyCount    = 32
-	maxDimensionValueCount  = 16
-	orDimSep                = "|"
-	maxOrDimCount           = 8
 
 	defaultBotPingToleranceSecs = 1200
 )
@@ -501,69 +496,30 @@ func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 }
 
 func validateDimensions(dims []*apipb.StringPair) (string, error) {
-	dimMap := model.StringPairsToMap(dims)
-	if len(dimMap) > maxDimensionKeyCount {
-		return "", errors.Reason("can have up to %d keys", maxDimensionKeyCount).Err()
+	filter, err := model.NewFilter(dims, model.ValidateAsDimensions, false)
+	if err != nil {
+		return "", err
+	}
+	if err := filter.ValidateComplexity(); err != nil {
+		return "", err
 	}
 
-	singleValue := func(values []string) bool {
-		return len(values) == 1 && !strings.Contains(values[0], orDimSep)
-	}
-
-	var pool string
-	orDimNum := 1
-	for key, values := range dimMap {
-		if err := validate.DimensionKey(key); err != nil {
-			return "", errors.Annotate(err, "key %q", key).Err()
-		}
-
-		if key == "pool" {
-			if !singleValue(values) {
-				return "", errors.New("pool cannot be specified more than once")
-			}
-			pool = values[0]
-		}
-
-		if key == "id" {
-			if !singleValue(values) {
-				return "", errors.New("id cannot be specified more than once")
-			}
-		}
-
-		if len(values) > maxDimensionValueCount {
-			return "", errors.Reason("can have up to %d values for key %q", maxDimensionValueCount, key).Err()
-		}
-
-		valueSet := stringset.NewFromSlice(values...)
-		if len(valueSet) != len(values) {
-			return "", errors.Reason("key %q has repeated values", key).Err()
-		}
-
-		for _, value := range values {
-			if err := validate.DimensionValue(value); err != nil {
-				return "", errors.Annotate(err, "value %q for key %q", value, key).Err()
-			}
-
-			orValues := strings.Split(value, orDimSep)
-			orDimNum *= len(orValues)
-			if orDimNum > maxOrDimCount {
-				return "", errors.Reason(
-					"%q possible dimension subset for or dimensions should not be more than %d",
-					value, maxOrDimCount).Err()
-			}
-			for _, ov := range orValues {
-				if err := validate.DimensionValue(ov); err != nil {
-					return "", errors.Annotate(err, "value %q for key %q", value, key).Err()
-				}
-			}
+	// "id" is optional. But if given, it should have exactly one constraint.
+	if id := filter.NarrowToKey("id"); !id.IsEmpty() {
+		if id.PairCount() > 1 {
+			return "", errors.New("id cannot be specified more than once")
 		}
 	}
 
-	if pool == "" {
+	// "pool" is required and should have exactly one constraint.
+	pool := filter.NarrowToKey("pool")
+	if pool.IsEmpty() {
 		return "", errors.New("pool is required")
 	}
-
-	return pool, nil
+	if pool.PairCount() > 1 {
+		return "", errors.New("pool cannot be specified more than once")
+	}
+	return pool.Pools()[0], nil
 }
 
 // setTaskRealm updates req in place if it doesn't have Realm using pool's default task realm.
@@ -822,12 +778,13 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 	// Dimensions
 	var tags []string
 	if len(p.Dimensions) > 0 {
-		props.Dimensions = make(model.TaskDimensions, len(p.Dimensions))
-		for _, d := range p.Dimensions {
-			props.Dimensions[d.Key] = append(props.Dimensions[d.Key], d.Value)
-			for _, v := range strings.Split(d.Value, orDimSep) {
-				tags = append(tags, fmt.Sprintf("%s:%s", d.Key, v))
-			}
+		props.Dimensions = model.StringPairsToTaskDimensions(p.Dimensions)
+		filter, err := model.NewFilterFromTaskDimensions(props.Dimensions)
+		if err != nil {
+			panic("impossible, dimensions were validated already")
+		}
+		for kv := range filter.Pairs() {
+			tags = append(tags, kv)
 		}
 	}
 

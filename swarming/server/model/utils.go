@@ -132,10 +132,6 @@ func (*LegacyProperty) ToProperty() (datastore.Property, error) {
 }
 
 // SortStringPairs sorts string pairs.
-// This was stolen from go.chromium.org/luci/buildbucket/protoutil/tag.go
-// and should probably be moved to go.chromium.org/luci/common, but that would
-// require a larger refactor, hence the following:
-// TODO (crbug.com/1508908): remove this once refactored.
 func SortStringPairs(pairs []*apipb.StringPair) {
 	sort.Slice(pairs, func(i, j int) bool {
 		switch {
@@ -149,12 +145,11 @@ func SortStringPairs(pairs []*apipb.StringPair) {
 	})
 }
 
-// StringPairsToMap converts a []*apipb.StringPair to map[string][]string.
-// This function should also be moved to go.chromium.org/luci/common as part of
-// the refactor.
-// TODO (crbug.com/1508908): remove this once refactored.
-func StringPairsToMap(pairs []*apipb.StringPair) map[string][]string {
-	m := make(map[string][]string, len(pairs))
+// StringPairsToTaskDimensions converts a []*apipb.StringPair to TaskDimensions.
+//
+// Doesn't do any validation or normalization at all.
+func StringPairsToTaskDimensions(pairs []*apipb.StringPair) TaskDimensions {
+	m := make(TaskDimensions, len(pairs))
 	for _, p := range pairs {
 		m[p.Key] = append(m[p.Key], p.Value)
 	}
