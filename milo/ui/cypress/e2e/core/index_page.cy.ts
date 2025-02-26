@@ -16,15 +16,21 @@
 
 describe('visit index page', () => {
   it('index page loads', () => {
+    cy.wait(2);
     cy.visit('/');
 
+    cy.wait(2);
     cy.contains('Welcome to LUCI');
   });
 
   it('can navigate to project page', () => {
+    cy.wait(2);
     cy.visit('/');
+
+    cy.wait(2);
     cy.contains('chromium').click();
 
+    cy.wait(2);
     cy.contains('Chromium Main Console');
   });
 });

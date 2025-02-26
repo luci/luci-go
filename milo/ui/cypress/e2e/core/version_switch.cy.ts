@@ -22,6 +22,7 @@ const SW_RELATED_TIMEOUT_MS = 100_000;
 
 describe('can switch between new and old version', () => {
   beforeEach(() => {
+    cy.wait(2);
     cy.clearAllCookies();
   });
 
@@ -36,8 +37,10 @@ describe('can switch between new and old version', () => {
     },
   ].forEach(({ title, path }) => {
     it(title, () => {
+      cy.wait(2);
       cy.visit(path);
 
+      cy.wait(2);
       // Switch to the old version.
       cy.get('[aria-label="Open menu"]').click();
       cy.contains('Switch to old UI')
@@ -46,15 +49,18 @@ describe('can switch between new and old version', () => {
         // not.
         .click({ force: true });
       // Check whether we are on the old version.
+      cy.wait(2);
       cy.get('[aria-label="Old UI Version Banner"]', {
         timeout: SW_RELATED_TIMEOUT_MS,
       }).should('be.visible');
 
       // Version selection is persisted through reloads.
       cy.reload();
+      cy.wait(2);
       cy.get('[aria-label="Old UI Version Banner"]').should('be.visible');
 
       // Switch back to the new version.
+      cy.wait(2);
       cy.get('[aria-label="Open menu"]').click();
       cy.contains('Switch to new UI')
         .parents('[role="menuitem"]')
@@ -66,6 +72,7 @@ describe('can switch between new and old version', () => {
       }).should('not.exist');
 
       // URL is persisted.
+      cy.wait(2);
       cy.location('pathname').should('equal', path);
     });
   });
