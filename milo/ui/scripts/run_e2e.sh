@@ -26,4 +26,4 @@ cd ../
 vite preview & pid_preview_server=($!)
 trap "kill $pid_preview_server" INT TERM EXIT
 
-cypress run
+cypress run --no-runner-ui
