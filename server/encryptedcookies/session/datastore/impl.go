@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -99,8 +100,12 @@ func (s *Store) UpdateSession(ctx context.Context, id session.ID, cb func(*sessi
 		default:
 			mutable = ent.Session
 		}
+		original := proto.Clone(mutable)
 		if cbErr = cb(mutable); cbErr != nil {
 			return cbErr
+		}
+		if proto.Equal(mutable, original) {
+			return nil
 		}
 		var lastRefresh time.Time
 		if mutable.LastRefresh != nil {
@@ -110,7 +115,7 @@ func (s *Store) UpdateSession(ctx context.Context, id session.ID, cb func(*sessi
 		}
 		exp := lastRefresh.Add(InactiveSessionExpiration)
 		return datastore.Put(ctx, makeEntity(id, mutable, exp))
-	}, nil)
+	}, &datastore.TransactionOptions{Attempts: 5})
 	if err == cbErr {
 		return cbErr // can also be nil on success
 	}

@@ -773,10 +773,39 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	// the storage.
 	var refreshedSession *sessionpb.Session
 	err = m.Sessions.UpdateSession(ctx, cookie.SessionId, func(s *sessionpb.Session) error {
-		bumpGeneration(ctx, s, session.Generation)
 		if s.State != sessionpb.State_STATE_OPEN {
 			return errSessionClosed
 		}
+		if s.Generation != session.Generation {
+			logging.Warningf(ctx,
+				"The session was concurrently updated by another handler (gen %d != gen %d).",
+				s.Generation, session.Generation)
+		}
+
+		// If the session was already refreshed, just pick up updated values from it
+		// without modifying it. This matters when there are multiple concurrent
+		// requests that all trigger session refresh. We want only one write to the
+		// session store to avoid colliding transactions.
+		//
+		// TODO: use some kind of a lock to make sure there's only one process that
+		// calls the OAuth backend. Right now if there are concurrent session
+		// refreshes, all of them hit the OAuth backend to get new tokens, but only
+		// one actually updates the session. Instead we can coordinate between them
+		// to hit the OAuth backend only once.
+		if !s.LastRefresh.AsTime().Equal(session.LastRefresh.AsTime()) {
+			// Note: overriding `stillGood` is safe in case the transaction callback
+			// is retried, since the callback will never see the session go back in
+			// time (i.e. s.LastRefresh somehow reverting back to be equal
+			// session.LastRefresh). It means if we overrode `stillGood` and `tokens`
+			// on one txn attempt, we'll keep overriding it on all subsequent
+			// attempts.
+			refreshedSession = s
+			stillGood = true // because s.State is sessionpb.State_STATE_OPEN
+			tokens = nil     // use tokens from `refreshedSession` instead
+			return nil
+		}
+
+		s.Generation++
 		s.LastRefresh = timestamppb.New(clock.Now(ctx))
 		if stillGood {
 			s.NextRefresh = timestamppb.New(exp)
@@ -809,6 +838,14 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	}
 
 	if stillGood {
+		if tokens == nil {
+			// This can happen if we picked up a session update done elsewhere. We
+			// need tokens produced there as well.
+			tokens, _, err = internal.UnsealPrivate(cookie, refreshedSession)
+			if err != nil {
+				return nil, nil, errors.Annotate(err, "failed to unseal the session").Err()
+			}
+		}
 		return refreshedSession, tokens, nil
 	}
 	return nil, nil, nil
@@ -847,10 +884,15 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 
 	// Mark the session as closed in the storage.
 	err = m.Sessions.UpdateSession(ctx, sid, func(s *sessionpb.Session) error {
-		bumpGeneration(ctx, s, session.Generation)
 		if s.State != sessionpb.State_STATE_OPEN {
 			return errSessionClosed
 		}
+		if s.Generation != session.Generation {
+			logging.Warningf(ctx,
+				"The session was concurrently updated by another handler (gen %d != gen %d). Closing it anyway.",
+				s.Generation, session.Generation)
+		}
+		s.Generation++
 		s.State = sessionpb.State_STATE_CLOSED
 		s.NextRefresh = nil
 		s.Closed = timestamppb.New(clock.Now(ctx))
@@ -866,21 +908,6 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 	}
 
 	return nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// bumpGeneration bumps Generation counter in the session.
-//
-// It is used to detect race conditions between session update transactions.
-// They should presumably be harmless, but some logging won't hurt.
-func bumpGeneration(ctx context.Context, s *sessionpb.Session, expected int32) {
-	if s.Generation != expected {
-		logging.Warningf(ctx,
-			"The session was already updated by another handler (gen %d != gen %d). Overwriting...",
-			s.Generation, expected)
-	}
-	s.Generation++
 }
 
 ////////////////////////////////////////////////////////////////////////////////
