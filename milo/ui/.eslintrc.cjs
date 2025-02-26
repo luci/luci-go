@@ -237,7 +237,7 @@ module.exports = {
       },
     },
     {
-      files: ['cypress/**/*.cy.ts', 'cypress/**/*.cy.tsx'],
+      files: ['cypress/**/*.ts', 'cypress/**/*.tsx'],
       rules: {
         // Allow the use of `/// <reference types="cypress" />`, which resolves
         // cypress/jest type conflicts. See

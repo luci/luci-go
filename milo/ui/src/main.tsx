@@ -31,7 +31,13 @@ import { initUiSW } from '@/sw/init_sw';
  */
 declare const ENABLE_UI_SW: boolean;
 
-if (navigator.serviceWorker && ENABLE_UI_SW) {
+if (
+  navigator.serviceWorker &&
+  ENABLE_UI_SW &&
+  // Allow cypress to disable service worker via a global variable.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  !(window as any).DISABLE_UI_SW_FOR_CYPRESS
+) {
   initUiSW({ isDevEnv: import.meta.env.DEV });
 }
 

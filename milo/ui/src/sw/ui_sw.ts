@@ -20,7 +20,6 @@ import 'virtual:override-milo-host';
 
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { NetworkOnly } from 'workbox-strategies';
 
 import { Prefetcher } from '@/common/sw_utils/prefetch';
 
@@ -128,12 +127,5 @@ self.addEventListener('fetch', async (e) => {
         allowlist: [new RegExp(DEFINED_ROUTES_REGEXP, 'i')],
       },
     ),
-  );
-
-  // Do not intercept cypress related routes.
-  // Otherwise, the cypress test may not work.
-  registerRoute(
-    (request) => request.url.pathname.startsWith('/__cypress/'),
-    new NetworkOnly(),
   );
 }

@@ -11,3 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+/// <reference types="cypress" />
+
+beforeEach(() => {
+  cy.on('window:before:load', (win) => {
+    // Workbox service worker can cause cypress `.visit` to timeout
+    // occasionally even though the page itself loads just fine. The exact
+    // reason is unknown. See b/399191804 for various attempts to fix this.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (win as any).DISABLE_UI_SW_FOR_CYPRESS = true;
+  });
+});
