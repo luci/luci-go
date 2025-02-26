@@ -23,7 +23,6 @@ const SW_RELATED_TIMEOUT_MS = 100_000;
 describe('can switch between new and old version', () => {
   beforeEach(() => {
     cy.wait(2);
-    cy.clearAllCookies();
   });
 
   [
