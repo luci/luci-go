@@ -5,6 +5,16 @@ cron:
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
 
+- description: Export the latest authorization data to BigQuery.
+  target: backend
+  url: /internal/cron/bq-export
+  # Run daily at 13:00 UTC.
+  schedule: every day 13:00
+  retry_parameters:
+    job_retry_limit: 5
+    min_backoff_seconds: 60
+    max_doublings: 4
+
 - description: Fetch and apply latest service configs from luci-config.
   target: backend
   url: /internal/cron/update-config

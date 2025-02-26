@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/module"
 
 	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/bqexport"
 	"go.chromium.org/luci/auth_service/impl/model"
 
 	// Ensure registration of validation rules.
@@ -41,6 +42,7 @@ func main() {
 			model.RegisterReplicationHandler()
 
 			// Register cron task handlers.
+			cron.RegisterHandler("bq-export", bqexport.CronHandler)
 			cron.RegisterHandler("refresh-replicated-authdb",
 				model.ReplicatedAuthDBRefresher)
 			cron.RegisterHandler("revoke-stale-authorization",
