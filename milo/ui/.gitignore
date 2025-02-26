@@ -2,4 +2,6 @@
 /dist
 /**/*.local
 /**/*.local.*
+/cypress/screenshots
+/cypress/videos
 coverage
