@@ -1,0 +1,40 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service.bq;
+
+option go_package = "go.chromium.org/luci/auth_service/api/bqpb";
+
+import "google/protobuf/timestamp.proto";
+
+// RealmRow represents a realm binding which has been exported to BigQuery.
+message RealmRow {
+  // Name of the realm. For example: 'chromium:try'.
+  string name = 1;
+  // ID of the binding in the realm.
+  int64 binding_id = 2;
+  // The permissions in the realm binding.
+  repeated string permissions = 3;
+  // The principals specified in the binding. They are the ones that have been
+  // granted the permissions specified in the binding.
+  repeated string principals = 4;
+  // Attribute conditions for the binding, if any.
+  repeated string conditions = 5;
+  // The revision of the AuthDBSnapshot from which the realm was exported.
+  int64 authdb_rev = 6;
+  // The timestamp when the BQ export was initialized.
+  google.protobuf.Timestamp exported_at = 7;
+}

@@ -1,0 +1,46 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service.bq;
+
+option go_package = "go.chromium.org/luci/auth_service/api/bqpb";
+
+import "google/protobuf/timestamp.proto";
+
+// GroupRow represents an AuthGroup which has been exported to BigQuery.
+message GroupRow {
+  // Name of the group, e.g. 'testers'.
+  string name = 1;
+  // Description of the group, e.g. 'Users who can access LUCI Auth Service'.
+  string description = 2;
+  // Owning group. Members of the owning group can administer this group.
+  // e.g. 'testers-admins'.
+  string owners = 3;
+  // Non-glob identities that are explicitly in the group, either directly or
+  // indirectly from nested subgroups, e.g. 'user:bot@serviceaccount.com'.
+  repeated string members = 4;
+  // Glob identities that are in the group, either directly or indirectly from
+  // nested groups, e.g. 'user:*@example.com'.
+  repeated string globs = 5;
+  // Groups that are nested in this group, either directly or indirectly. Any
+  // member of a subgroup is considered a member of this group.
+  // e.g. 'external-testers'.
+  repeated string subgroups = 6;
+  // The revision of the AuthDBSnapshot from which the group was exported.
+  int64 authdb_rev = 7;
+  // The timestamp when the BQ export was initialized.
+  google.protobuf.Timestamp exported_at = 8;
+}
