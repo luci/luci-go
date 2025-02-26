@@ -79,14 +79,21 @@ func GetServiceConfig(ctx context.Context) (*configpb.Config, error) {
 	return cfg.(*configpb.Config), nil
 }
 
-// SetServiceConfig installs the service into the context ctx.
+// SetServiceConfigForTesting installs the service configuration into the context ctx.
 // This is only used for the purpose of testing.
-func SetServiceConfig(ctx context.Context, cfg *configpb.Config) error {
+func SetServiceConfigForTesting(ctx context.Context, cfg *configpb.Config) error {
+	return SetServiceConfigWithMetaForTesting(ctx, cfg, &config.Meta{})
+}
+
+// SetServiceConfigWithMetaForTesting installs the service configuration into the
+// context ctx, with the given metadata.
+// This is only used for the purpose of testing.
+func SetServiceConfigWithMetaForTesting(ctx context.Context, cfg *configpb.Config, meta *config.Meta) error {
 	testable := datastore.GetTestable(ctx)
 	if testable == nil {
 		return errors.New("SetServiceConfig should only be used with testable datastore implementations")
 	}
-	err := cachedServiceCfg.Set(ctx, cfg, &config.Meta{})
+	err := cachedServiceCfg.Set(ctx, cfg, meta)
 	if err != nil {
 		return err
 	}

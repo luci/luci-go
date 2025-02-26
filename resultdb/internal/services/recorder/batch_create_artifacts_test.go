@@ -163,7 +163,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			Identity: "user:test@test.com",
 		})
 
-		err = config.SetServiceConfig(ctx, &configpb.Config{
+		err = config.SetServiceConfigForTesting(ctx, &configpb.Config{
 			BqArtifactExportConfig: &configpb.BqArtifactExportConfig{
 				Enabled:       true,
 				ExportPercent: 100,

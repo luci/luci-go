@@ -30,7 +30,7 @@ func TestServiceConfig(t *testing.T) {
 
 	ftt.Run("Set and get config", t, func(t *ftt.Test) {
 		cfg := CreatePlaceHolderServiceConfig()
-		err := SetServiceConfig(ctx, cfg)
+		err := SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
 		cfgFromGet, err := GetServiceConfig(ctx)
 		assert.Loosely(t, err, should.BeNil)

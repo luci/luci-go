@@ -538,7 +538,7 @@ func TestExportArtifacts(t *testing.T) {
 		}
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		err := config.SetServiceConfig(ctx, &configpb.Config{
+		err := config.SetServiceConfigForTesting(ctx, &configpb.Config{
 			BqArtifactExporterServiceConfig: &configpb.BqArtifactExportConfig{
 				Enabled: false,
 			},
@@ -547,7 +547,7 @@ func TestExportArtifacts(t *testing.T) {
 		err = ae.exportArtifacts(ctx, "inv1")
 		assert.Loosely(t, err, should.BeNil)
 
-		err = config.SetServiceConfig(ctx, &configpb.Config{
+		err = config.SetServiceConfigForTesting(ctx, &configpb.Config{
 			BqArtifactExporterServiceConfig: &configpb.BqArtifactExportConfig{
 				Enabled:       true,
 				ExportPercent: 100,

@@ -197,15 +197,15 @@ func validateSchemeLevel(ctx *validation.Context, name string, level *configpb.S
 	validateValidationRegexp(ctx, level.ValidationRegexp)
 }
 
-func validateValidationRegexp(ctx *validation.Context, p string) {
+func validateValidationRegexp(ctx *validation.Context, pattern string) {
 	ctx.Enter("validation_regexp")
 	defer ctx.Exit()
 
-	if p == "" {
+	if pattern == "" {
 		// Empty pattern means that no additional validation should be applied.
 		return
 	}
-	_, err := regexp.Compile(p)
+	_, err := regexp.Compile(`^` + pattern + `$`)
 	if err != nil {
 		ctx.Errorf("could not compile pattern: %s", err)
 	}
