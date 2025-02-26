@@ -172,6 +172,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGroup0,
+				Owners:   "owners-" + testGroup0,
 				Members:  stringset.NewFromSlice(testUser0),
 				Globs:    stringset.NewFromSlice(testGlob),
 				Nested:   stringset.New(0),
@@ -184,6 +185,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGroup1,
+				Owners:   "owners-" + testGroup1,
 				Members:  stringset.NewFromSlice(testUser0, testUser1),
 				Globs:    stringset.NewFromSlice(testGlob),
 				Nested:   stringset.NewFromSlice(testGroup0),
@@ -196,6 +198,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGroup2,
+				Owners:   "owners-" + testGroup2,
 				Members:  stringset.NewFromSlice(testUser0, testUser1),
 				Globs:    stringset.NewFromSlice(testGlob),
 				Nested:   stringset.NewFromSlice(testGroup0, testGroup1),
@@ -208,6 +211,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGoogleGroupA,
+				Owners:   "owners-" + testGoogleGroupA,
 				Members:  stringset.New(0),
 				Globs:    stringset.New(0),
 				Nested:   stringset.New(0),
@@ -220,6 +224,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGoogleGroupA,
+				Owners:   "owners-" + testGoogleGroupA,
 				Members:  stringset.NewFromSlice(testUser0, testUser1),
 				Globs:    stringset.New(0),
 				Nested:   stringset.New(0),
@@ -236,6 +241,7 @@ func TestGetExpandedGroup(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
 				Name:     testGoogleGroupA,
+				Owners:   "owners-" + testGoogleGroupA,
 				Members:  stringset.NewFromSlice(testUser0, testUser1),
 				Globs:    stringset.New(0),
 				Nested:   stringset.New(0),

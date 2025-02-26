@@ -18,15 +18,16 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
-func TestGroupsServer(t *testing.T) {
+func TestBQGroups(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("expandGroups works", t, func(t *ftt.Test) {
@@ -72,60 +73,65 @@ func TestGroupsServer(t *testing.T) {
 			},
 		}
 
-		expected := []*rpcpb.AuthGroup{
+		expected := []*graph.ExpandedGroup{
 			{
 				Name: "group-a",
-				Members: []string{
+				Members: stringset.NewFromSlice(
 					"user:a1@example.com",
 					"user:a2@example.com",
 					"user:a3@example.com",
 					"user:d@test.com",
-				},
-				Globs: []string{
+				),
+				Globs: stringset.NewFromSlice(
 					"user:d*@example.com",
-				},
-				Nested: []string{
+				),
+				Nested: stringset.NewFromSlice(
 					"group-d",
-				},
+				),
+				Redacted: stringset.New(0),
 			},
 			{
 				Name: "group-b",
-				Members: []string{
+				Members: stringset.NewFromSlice(
 					"user:b@example.com",
 					"user:c1@example.com",
 					"user:c2@example.com",
 					"user:d@test.com",
-				},
-				Globs: []string{
+				),
+				Globs: stringset.NewFromSlice(
 					"user:d*@example.com",
-				},
-				Nested: []string{
+				),
+				Nested: stringset.NewFromSlice(
 					"group-c",
 					"group-d",
-				},
+				),
+				Redacted: stringset.New(0),
 			},
 			{
 				Name: "group-c",
-				Members: []string{
+				Members: stringset.NewFromSlice(
 					"user:c1@example.com",
 					"user:c2@example.com",
 					"user:d@test.com",
-				},
-				Globs: []string{
+				),
+				Globs: stringset.NewFromSlice(
 					"user:d*@example.com",
-				},
-				Nested: []string{
+				),
+				Nested: stringset.NewFromSlice(
 					"group-d",
-				},
+				),
+				Redacted: stringset.New(0),
 			},
 			{
 				Name: "group-d",
-				Members: []string{
+				Members: stringset.NewFromSlice(
 					"user:d@test.com",
-				},
-				Globs: []string{
+				),
+				Globs: stringset.NewFromSlice(
 					"user:d*@example.com",
-				},
+				),
+				Nested:   stringset.New(0),
+				Redacted: stringset.New(0),
 			},
 		}
 

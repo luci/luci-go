@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
@@ -30,13 +29,13 @@ import (
 // expandGroups returns the expanded version of all groups in the given AuthDB.
 // All members, globs and nested subgroups included in a group (either directly
 // or indirectly) are specified for each group.
-func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*rpcpb.AuthGroup, error) {
+func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*graph.ExpandedGroup, error) {
 	sizeHint := len(authDB.Groups)
 
 	if sizeHint == 0 {
 		// Log a warning because it is very unlikely the AuthDB has no groups.
 		logging.Warningf(ctx, "no groups in AuthDB")
-		return []*rpcpb.AuthGroup{}, nil
+		return []*graph.ExpandedGroup{}, nil
 	}
 
 	groups := make([]model.GraphableGroup, sizeHint)
@@ -59,9 +58,9 @@ func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*rpcpb.AuthGr
 		names.Add(expanded.Name)
 	}
 
-	result := make([]*rpcpb.AuthGroup, sizeHint)
+	result := make([]*graph.ExpandedGroup, sizeHint)
 	for i, name := range names.ToSortedSlice() {
-		result[i] = cache.Groups[name].ToProto()
+		result[i] = cache.Groups[name]
 	}
 
 	return result, nil

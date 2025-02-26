@@ -116,11 +116,13 @@ func NewGraph(groups []model.GraphableGroup) *Graph {
 // ExpandedGroup can represent a fully expanded AuthGroup, with all
 // memberships listed from both direct and indirect inclusions.
 type ExpandedGroup struct {
-	Name     string
-	Members  stringset.Set
-	Redacted stringset.Set
-	Globs    stringset.Set
-	Nested   stringset.Set
+	Name        string
+	Description string
+	Owners      string
+	Members     stringset.Set
+	Redacted    stringset.Set
+	Globs       stringset.Set
+	Nested      stringset.Set
 }
 
 // Absorb updates this ExpandedGroup's memberships to include the memberships
@@ -140,6 +142,8 @@ func (e *ExpandedGroup) ToProto() *rpcpb.AuthGroup {
 
 	return &rpcpb.AuthGroup{
 		Name:        e.Name,
+		Description: e.Description,
+		Owners:      e.Owners,
 		Members:     e.Members.ToSortedSlice(),
 		Globs:       e.Globs.ToSortedSlice(),
 		Nested:      e.Nested.ToSortedSlice(),
@@ -168,11 +172,13 @@ func (g *Graph) doExpansion(
 	// be included regardless of the filter.
 	nested := node.group.GetNested()
 	result := &ExpandedGroup{
-		Name:     name,
-		Members:  stringset.New(0),
-		Redacted: stringset.New(0),
-		Globs:    stringset.NewFromSlice(node.group.GetGlobs()...),
-		Nested:   stringset.NewFromSlice(nested...),
+		Name:        name,
+		Description: node.group.GetDescription(),
+		Owners:      node.group.GetOwners(),
+		Members:     stringset.New(0),
+		Redacted:    stringset.New(0),
+		Globs:       stringset.NewFromSlice(node.group.GetGlobs()...),
+		Nested:      stringset.NewFromSlice(nested...),
 	}
 
 	// Add direct members depending on the filter.

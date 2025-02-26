@@ -1002,8 +1002,10 @@ func TestGroupsServer(t *testing.T) {
 				expandedGroup, err := srv.GetExpandedGroup(ctx, request)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
-					Name:  soloGroup,
-					Globs: []string{testGlob1},
+					Name:        soloGroup,
+					Description: "This is a solo group",
+					Owners:      model.AdminGroup,
+					Globs:       []string{testGlob1},
 				}))
 			})
 
@@ -1013,6 +1015,7 @@ func TestGroupsServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
 					Name:    owningGroup,
+					Owners:  model.AdminGroup,
 					Members: []string{testUser0, testUser1, testUser2},
 					Globs:   []string{testGlob0, testGlob1},
 					Nested:  []string{nestedGroup},
@@ -1025,6 +1028,7 @@ func TestGroupsServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, expandedGroup, should.Match(&rpcpb.AuthGroup{
 					Name:    nestedGroup,
+					Owners:  owningGroup,
 					Members: []string{testUser2},
 					Globs:   []string{testGlob0, testGlob1},
 				}))
