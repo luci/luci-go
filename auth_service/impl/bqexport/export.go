@@ -77,6 +77,11 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 		groupRows[i] = toGroupRow(group, authDBRev, ts)
 	}
 
+	realmRows, err := parseRealms(ctx, authDB, authDBRev, ts)
+	if err != nil {
+		return errors.Annotate(err, "failed to make realm rows for export").Err()
+	}
+
 	client, err := NewClient(ctx)
 	if err != nil {
 		return err
@@ -95,10 +100,8 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 			authDBRev, ts.String()).Err()
 	}
 
-	// TODO: b/396007633: get all realms and insert them.
-	// Call InsertRealms now just to ensure the realms table exists and has an
-	// up-to-date schema.
-	if err := client.InsertRealms(ctx, []*bqpb.RealmRow{}); err != nil {
+	// Insert all realms.
+	if err := client.InsertRealms(ctx, realmRows); err != nil {
 		return errors.Annotate(err,
 			"failed to insert all realms for AuthDB rev %d at %s",
 			authDBRev, ts.String()).Err()
