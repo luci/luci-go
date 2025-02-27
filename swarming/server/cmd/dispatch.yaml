@@ -44,3 +44,7 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/id_token"
     service: default-go
+
+  # Serve global config validation using Go.
+  - url: "*/prpc/config.Consumer/*"
+    service: default-go
