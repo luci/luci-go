@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/impl/model"
@@ -62,16 +63,15 @@ func Run(ctx context.Context) error {
 		return errors.Annotate(err, "failed to parse AuthDB from latest snapshot").Err()
 	}
 
+	return doExport(ctx, authDB, latest.AuthDBRev, start)
+}
+
+func doExport(ctx context.Context, authDB *protocol.AuthDB,
+	authDBRev int64, ts *timestamppb.Timestamp) (reterr error) {
 	groups, err := expandGroups(ctx, authDB)
 	if err != nil {
 		return errors.Annotate(err, "failed to expand all groups").Err()
 	}
-
-	return doExport(ctx, latest.AuthDBRev, start, groups)
-}
-
-func doExport(ctx context.Context, authDBRev int64, ts *timestamppb.Timestamp,
-	groups []*graph.ExpandedGroup) (reterr error) {
 	groupRows := make([]*bqpb.GroupRow, len(groups))
 	for i, group := range groups {
 		groupRows[i] = toGroupRow(group, authDBRev, ts)
@@ -93,6 +93,20 @@ func doExport(ctx context.Context, authDBRev int64, ts *timestamppb.Timestamp,
 		return errors.Annotate(err,
 			"failed to insert all groups for AuthDB rev %d at %s",
 			authDBRev, ts.String()).Err()
+	}
+
+	// TODO: b/396007633: get all realms and insert them.
+	// Call InsertRealms now just to ensure the realms table exists and has an
+	// up-to-date schema.
+	if err := client.InsertRealms(ctx, []*bqpb.RealmRow{}); err != nil {
+		return errors.Annotate(err,
+			"failed to insert all realms for AuthDB rev %d at %s",
+			authDBRev, ts.String()).Err()
+	}
+
+	// Ensure the views for the latest data, to propagate schema changes.
+	if err := client.EnsureLatestViews(ctx); err != nil {
+		return err
 	}
 
 	return nil
