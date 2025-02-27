@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 )
 
 func CronHandler(ctx context.Context) error {
@@ -52,6 +53,16 @@ func CronHandler(ctx context.Context) error {
 
 // Run exports the authorization data from the latest AuthDB snapshot to BQ.
 func Run(ctx context.Context) error {
+	// Ensure BQ export has been enabled before continuing.
+	cfg, err := settingscfg.Get(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error getting settings.cfg").Err()
+	}
+	if !cfg.EnableBqExport {
+		logging.Infof(ctx, "BQ export is disabled")
+		return nil
+	}
+
 	start := timestamppb.New(clock.Now(ctx))
 	latest, err := model.GetAuthDBSnapshotLatest(ctx)
 	if err != nil {

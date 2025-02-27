@@ -20,10 +20,7 @@ import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/
 
 option go_package = "go.chromium.org/luci/auth_service/api/configspb";
 
-// NOTE: This file is replicated in luci-py here: https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto
-// Be sure to use the respective import_luci_go.sh when making changes here to reflect those changes in luci-py.
-
-// Auth service configuration that applies specifically to the service, not to
+// Auth Service configuration that applies specifically to the service, not to
 // any linked services.
 //
 // Provided via 'settings.cfg' config file.
@@ -52,6 +49,9 @@ message SettingsCfg {
   // When changing or removing auth_db_gs_path, files at the old location are
   // not automatically cleaned up.
   string auth_db_gs_path = 2;
+
+  // Whether exporting to BQ is enabled.
+  bool enable_bq_export = 3;
 }
 
 // Configuration of groups imported from external sources.
