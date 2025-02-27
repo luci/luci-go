@@ -36,36 +36,44 @@ func TestRead(t *testing.T) {
 
 		invID := invocations.ID("inv")
 
-		t.Run("Full", func(t *ftt.Test) {
+		t.Run("Valid", func(t *ftt.Test) {
 			// Insert a TestExoneration.
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":    invID,
-					"TestId":          "t t",
+					"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 					"ExonerationId":   "id",
 					"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-					"VariantHash":     "deadbeef",
+					"VariantHash":     "68d82cb978092fc7",
 					"ExplanationHTML": spanutil.Compressed("broken"),
 					"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				}))
 
-			const name = "invocations/inv/tests/t%20t/exonerations/id"
+			const name = "invocations/inv/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/exonerations/id"
 			ex, err := Read(span.Single(ctx), name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ex, should.Match(&pb.TestExoneration{
-				Name:            name,
-				ExonerationId:   "id",
-				TestId:          "t t",
+				Name:          name,
+				ExonerationId: "id",
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//infra/junit_tests",
+					ModuleScheme:      "junit",
+					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+					ModuleVariantHash: "68d82cb978092fc7",
+					CoarseName:        "org.chromium.go.luci",
+					FineName:          "ValidationTests",
+					CaseName:          "FooBar",
+				},
+				TestId:          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
 				ExplanationHtml: "broken",
-				VariantHash:     "deadbeef",
+				VariantHash:     "68d82cb978092fc7",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
 		})
-		t.Run("Minimal", func(t *ftt.Test) {
-			// Insert a TestExoneration without reason. This was only possible
-			// prior to May 2022. This test case can be deleted from November 2023.
+		t.Run("Legacy Test ID", func(t *ftt.Test) {
+			// Insert a TestExoneration with a legacy Test ID.
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]any{
@@ -73,7 +81,7 @@ func TestRead(t *testing.T) {
 					"TestId":        "t t",
 					"ExonerationId": "id",
 					"Variant":       pbutil.Variant("k1", "v1", "k2", "v2"),
-					"VariantHash":   "deadbeef",
+					"VariantHash":   "68d82cb978092fc7",
 					"Reason":        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 					// Leave ExplanationHTML as null.
 				}))
@@ -82,12 +90,19 @@ func TestRead(t *testing.T) {
 			ex, err := Read(span.Single(ctx), name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ex, should.Match(&pb.TestExoneration{
-				Name:            name,
-				ExonerationId:   "id",
-				TestId:          "t t",
+				Name:          name,
+				ExonerationId: "id",
+				TestId:        "t t",
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "legacy",
+					ModuleScheme:      "legacy",
+					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+					ModuleVariantHash: "68d82cb978092fc7",
+					CaseName:          "t t",
+				},
 				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
 				ExplanationHtml: "",
-				VariantHash:     "deadbeef",
+				VariantHash:     "68d82cb978092fc7",
 				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 			}))
 		})

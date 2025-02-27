@@ -70,10 +70,16 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()
+		return nil, errors.Annotate(err, "fetch %q", ret.Name).Err()
 
 	default:
-		ret.ExplanationHtml = string(explanationHTML)
-		return ret, nil
 	}
+
+	ret.ExplanationHtml = string(explanationHTML)
+	ret.TestVariantIdentifier, err = pbutil.ParseTestVariantIdentifier(ret.TestId, ret.Variant)
+	if err != nil {
+		return nil, errors.Annotate(err, "parse test variant identifier").Err()
+	}
+	pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantIdentifier)
+	return ret, nil
 }

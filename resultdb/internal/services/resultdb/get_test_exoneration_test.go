@@ -68,15 +68,15 @@ func TestGetTestExoneration(t *testing.T) {
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
 			spanutil.InsertMap("TestExonerations", map[string]any{
 				"InvocationId":    invID,
-				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+				"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 				"ExonerationId":   "id",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
+				"VariantHash":     "68d82cb978092fc7",
 				"ExplanationHTML": spanutil.Compressed("broken"),
 				"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
 
-		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}
+		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/exonerations/id"}
 
 		t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 			req := &pb.GetTestExonerationRequest{Name: "invocations/inv_notexists/tests/test/exonerations/id"}
@@ -101,11 +101,20 @@ func TestGetTestExoneration(t *testing.T) {
 			tr, err := srv.GetTestExoneration(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tr, should.Match(&pb.TestExoneration{
-				Name:            "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
-				ExonerationId:   "id",
-				TestId:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+				Name:          "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/exonerations/id",
+				ExonerationId: "id",
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//infra/junit_tests",
+					ModuleScheme:      "junit",
+					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+					ModuleVariantHash: "68d82cb978092fc7",
+					CoarseName:        "org.chromium.go.luci",
+					FineName:          "ValidationTests",
+					CaseName:          "FooBar",
+				},
+				TestId:          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
-				VariantHash:     "deadbeef",
+				VariantHash:     "68d82cb978092fc7",
 				ExplanationHtml: "broken",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
