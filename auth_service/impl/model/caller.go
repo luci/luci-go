@@ -42,7 +42,7 @@ func CanCallerViewMembers(ctx context.Context, group GraphableGroup) (bool, erro
 
 	// Currently, the Members filter is only necessary for external Google
 	// groups.
-	if !strings.HasPrefix(name, "google/") {
+	if !strings.HasPrefix(name, "google/") || strings.HasSuffix(name, "@twosync.google.com") {
 		return true, nil
 	}
 

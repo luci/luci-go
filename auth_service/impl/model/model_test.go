@@ -2159,6 +2159,21 @@ func TestProtoConversion(t *testing.T) {
 		assert.Loosely(t, group.CallerCanViewMembers, should.Equal(false))
 		assert.Loosely(t, group.NumRedacted, should.Equal(2))
 	})
+
+	ftt.Run("AuthGroup ToProto doesn't redact twosync emails", t, func(t *ftt.Test) {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"owners-foo"},
+		})
+		g := testAuthGroup(ctx, "google/testgroup@twosync.google.com")
+		// Ignore the versioned entity mixin since this doesn't survive the proto conversion round trip.
+		g.AuthVersionedEntityMixin = AuthVersionedEntityMixin{}
+
+		group, err := g.ToProto(ctx, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, group.CallerCanViewMembers, should.BeTrue)
+		assert.Loosely(t, group.NumRedacted, should.Equal(0))
+	})
 }
 
 func TestRealmsToProto(t *testing.T) {
