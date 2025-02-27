@@ -242,10 +242,8 @@ func (srv *BotAPIServer) mintTaskToken(ctx context.Context, body *TokenRequest, 
 	}
 
 	// Look up the service account associated with the task.
-	//
-	// TODO: Cache this, this is static. Will save ~100 QPS to datastore.
-	taskReq := &model.TaskRequest{Key: taskReqKey}
-	switch err := datastore.Get(ctx, taskReq); {
+	taskReq, err := model.FetchTaskRequest(ctx, taskReqKey)
+	switch {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return "", nil, status.Errorf(codes.InvalidArgument, `"task_id" %q: no such task`, body.TaskID)
 	case err != nil:

@@ -349,8 +349,7 @@ func FetchTaskRequest(ctx context.Context, taskID string) (*model.TaskRequest, e
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "task_id %s: %s", taskID, err)
 	}
-	req := &model.TaskRequest{Key: key}
-	switch err = datastore.Get(ctx, req); {
+	switch req, err := model.FetchTaskRequest(ctx, key); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such task")
 	case err != nil:
