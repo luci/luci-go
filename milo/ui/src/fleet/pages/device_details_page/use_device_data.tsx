@@ -14,10 +14,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import {
-  useDevices,
-  useListDevicesQueryKey,
-} from '@/fleet/components/device_table/use_devices';
+import { useDevices, useListDevicesQueryKey } from '@/fleet/hooks/use_devices';
 import {
   Device,
   ListDevicesRequest,

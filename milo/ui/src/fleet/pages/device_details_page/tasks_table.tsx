@@ -15,7 +15,7 @@
 import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 
-import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
+import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import {
   TASK_ONGOING_STATES,
   TASK_EXCEPTIONAL_STATES,

@@ -10,9 +10,9 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { Pagination } from '@/fleet/components/data_table/pagination';
-import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
+import { Pagination } from '@/fleet/components/device_table/pagination';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';

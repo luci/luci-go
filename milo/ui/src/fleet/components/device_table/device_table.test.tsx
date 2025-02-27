@@ -13,18 +13,12 @@
 // limitations under the License.
 
 import {
-  GridColDef,
-  GridColumnVisibilityModel,
-  GridSortModel,
-} from '@mui/x-data-grid';
-import {
   act,
   cleanup,
   fireEvent,
   render,
   screen,
 } from '@testing-library/react';
-import { useState } from 'react';
 
 import {
   getPageSize,
@@ -33,38 +27,124 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import {
+  Device,
+  DeviceState,
+  DeviceType,
+} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { DataTable } from './data_table';
+import { DeviceTable } from './device_table';
 
-const COLUMNS: GridColDef[] = Object.entries({
-  id: 'id',
-  first_name: 'First Name',
-  last_name: 'Last Name',
-}).map(([id, displayName]) => ({
-  field: id,
-  headerName: displayName,
-  editable: false,
-  minWidth: 70,
-  maxWidth: 700,
-}));
+const COLUMNS: string[] = ['id', 'dut_id', 'state', 'type'];
 
-const DEFAULT_COLUMNS: string[] = ['id', 'first_name'];
+const DEFAULT_COLUMNS: string[] = ['id', 'dut_id', 'state'];
 
-const MOCK_ROWS: { [key: string]: string }[] = [
-  { id: '1', first_name: 'Alice', last_name: 'Smith' },
-  { id: '2', first_name: 'Bob', last_name: 'Johnson' },
-  { id: '3', first_name: 'Charlie', last_name: 'Williams' },
-  { id: '4', first_name: 'David', last_name: 'Brown' },
-  { id: '5', first_name: 'Emily', last_name: 'Jones' },
-  { id: '6', first_name: 'Frank', last_name: 'Miller' },
-  { id: '7', first_name: 'Grace', last_name: 'Davis' },
-  { id: '8', first_name: 'Henry', last_name: 'Garcia' },
-  { id: '9', first_name: 'Isabella', last_name: 'Rodriguez' },
-  { id: '10', first_name: 'Jack', last_name: 'Wilson' },
-  { id: '11', first_name: 'Katie', last_name: 'Martinez' },
-  { id: '12', first_name: 'Liam', last_name: 'Anderson' },
-  { id: '13', first_name: 'Mia', last_name: 'Taylor' },
+const MOCK_DEVICES: Device[] = [
+  {
+    id: '1',
+    dutId: 'dut-1',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '2',
+    dutId: 'dut-2',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '3',
+    dutId: 'dut-3',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '4',
+    dutId: 'dut-4',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '5',
+    dutId: 'dut-5',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '6',
+    dutId: 'dut-6',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '7',
+    dutId: 'dut-7',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '8',
+    dutId: 'dut-8',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '9',
+    dutId: 'dut-9',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '10',
+    dutId: 'dut-10',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '11',
+    dutId: 'dut-11',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '12',
+    dutId: 'dut-12',
+    type: DeviceType.DEVICE_TYPE_VIRTUAL,
+    state: DeviceState.DEVICE_STATE_LEASED,
+    address: undefined,
+    deviceSpec: undefined,
+  },
+  {
+    id: '13',
+    dutId: 'dut-13',
+    type: DeviceType.DEVICE_TYPE_PHYSICAL,
+    state: DeviceState.DEVICE_STATE_AVAILABLE,
+    address: undefined,
+    deviceSpec: undefined,
+  },
 ];
 
 function TestComponent({
@@ -77,35 +157,31 @@ function TestComponent({
     defaultPageSize: 5,
   });
 
-  const totalRowCount = MOCK_ROWS.length;
+  const totalRowCount = MOCK_DEVICES.length;
 
   const [searchParams] = useSyncedSearchParams();
   const pageToken = getPageToken(pagerCtx, searchParams);
   const pageSize = getPageSize(pagerCtx, searchParams);
-  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   // Consider pageToken is simply page's first element index in MOCK_ROWS
   const currentIndex = Number(pageToken);
-  const currentRows = MOCK_ROWS.slice(currentIndex, currentIndex + pageSize);
-  const currentRowCount = getPrevFullRowCount(pagerCtx) + currentRows.length;
+  const currentDevices = MOCK_DEVICES.slice(
+    currentIndex,
+    currentIndex + pageSize,
+  );
+  const currentRowCount = getPrevFullRowCount(pagerCtx) + currentDevices.length;
   const nextPageToken =
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
-    <DataTable
-      defaultColumnVisibilityModel={COLUMNS.reduce(
-        (visibilityModel, column) => ({
-          ...visibilityModel,
-          [column.field]: DEFAULT_COLUMNS.includes(column.field),
-        }),
-        {} as GridColumnVisibilityModel,
-      )}
+    <DeviceTable
+      devices={currentDevices}
       columns={COLUMNS}
-      rows={currentRows}
       nextPageToken={nextPageToken}
-      isLoading={false}
       pagerCtx={pagerCtx}
-      sortModel={sortModel}
-      onSortModelChange={setSortModel}
+      isError={false}
+      error={undefined}
+      isLoading={false}
+      isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
     />
   );
@@ -118,21 +194,6 @@ const getTableVisibleColumns = () => {
     .getAllByRole('columnheader')
     .map((element) => element.getAttribute('data-field'))
     .filter((column) => column !== null);
-};
-
-const enableOrDisableColumn = async (column: string) => {
-  const columnsButton = screen.getByText('Columns');
-  await act(async () => fireEvent.click(columnsButton));
-  const columnOption = screen.getByRole('menuitem', {
-    name: column,
-  });
-  await act(async () => fireEvent.click(columnOption));
-  await act(async () =>
-    fireEvent.keyDown(document.activeElement!, {
-      key: 'Escape',
-      code: 'Escape',
-    }),
-  );
 };
 
 const getNthRow = (index: number) => {
@@ -174,7 +235,7 @@ const changePageSize = async (size: number) => {
   await act(async () => fireEvent.click(newSizeOption));
 };
 
-describe('<DataTable />', () => {
+describe('<DeviceTable />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -201,7 +262,7 @@ describe('<DataTable />', () => {
   it('should start with columns specified in the url', async () => {
     render(
       <FakeContextProvider
-        routerOptions={{ initialEntries: ['?c=id&c=last_name'] }}
+        routerOptions={{ initialEntries: ['?c=id&c=dut_id'] }}
       >
         <TestComponent />
       </FakeContextProvider>,
@@ -210,30 +271,7 @@ describe('<DataTable />', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(getTableVisibleColumns()).toEqual(
-      expect.arrayContaining(['id', 'last_name']),
-    );
-  });
-
-  // TODO(vaghinak): This test doesn't work, don't have idea why.
-  // The actual functionality works though in the browser.
-  // Should be revisited in the future.
-  // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('should reflect columns visibility changes properly', async () => {
-    render(
-      <FakeContextProvider>
-        <TestComponent />
-      </FakeContextProvider>,
-    );
-    await act(() => jest.runAllTimersAsync());
-
-    expect(getTableVisibleColumns()).toEqual(
-      expect.arrayContaining(DEFAULT_COLUMNS),
-    );
-
-    await enableOrDisableColumn('Last Name');
-
-    expect(getTableVisibleColumns()).toEqual(
-      expect.arrayContaining(['id', 'first_name', 'last_name']),
+      expect.arrayContaining(['id', 'dut_id']),
     );
   });
 

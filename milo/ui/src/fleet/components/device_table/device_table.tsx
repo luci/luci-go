@@ -14,32 +14,42 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
-import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
-import { useQuery } from '@tanstack/react-query';
+import {
+  GridColumnVisibilityModel,
+  GridRowModel,
+  GridRowSelectionModel,
+  GridSortModel,
+} from '@mui/x-data-grid';
 import _ from 'lodash';
 import { useMemo, useState } from 'react';
+import * as React from 'react';
 
 import {
   getPageSize,
-  getPageToken,
   PagerContext,
   emptyPageTokenUpdater,
+  getCurrentPageIndex,
 } from '@/common/components/params_pager';
+import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  Device,
-  ListDevicesRequest,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DataTable } from '../data_table';
-import { getFilterValue } from '../multi_select_filter/search_param_utils/search_param_utils';
-
+import { ColumnMenu } from './column_menu';
 import { BASE_DIMENSIONS, getColumns } from './columns';
-import { useOrderByParam } from './order_by';
-import { useDevices } from './use_devices';
+import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
+import { Pagination } from './pagination';
+import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
+
+const UNKNOWN_ROW_COUNT = -1;
+
+// Used to get around TypeScript issues with custom toolbars.
+// See: https://mui.com/x/react-data-grid/components/?srsltid=AfmBOoqlDTexbfxLLrstTWIEaJ97nrqXGVqhaMHF3Q2yIujjoMRTtTvF#custom-slot-props-with-typescript
+declare module '@mui/x-data-grid' {
+  interface ToolbarPropsOverrides extends FleetToolbarProps {}
+}
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {
@@ -51,6 +61,14 @@ function getErrorMessage(error: unknown): string {
   }
   return 'Unknown error';
 }
+
+const computeSelectedRows = (
+  gridSelection: GridRowSelectionModel,
+  rows: GridRowModel[],
+): GridRowModel[] => {
+  const selectedSet = new Set(gridSelection);
+  return rows.filter((r) => selectedSet.has(r.id));
+};
 
 function getRow(device: Device): Record<string, string> {
   const row: Record<string, string> = Object.fromEntries(
@@ -90,78 +108,127 @@ const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
 };
 
 interface DeviceTableProps {
+  devices: readonly Device[];
+  columns: string[];
+  nextPageToken: string;
   pagerCtx: PagerContext;
-  totalRowCount: number | undefined;
+  isError: boolean;
+  error: unknown;
+  isLoading: boolean;
+  isLoadingColumns: boolean;
+  totalRowCount?: number;
 }
 
-export function DeviceTable({ pagerCtx, totalRowCount }: DeviceTableProps) {
+export function DeviceTable({
+  devices,
+  columns,
+  nextPageToken,
+  pagerCtx,
+  isError,
+  error,
+  isLoading,
+  isLoadingColumns,
+  totalRowCount,
+}: DeviceTableProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
-  const [orderByParam, setOrderByParam] = useOrderByParam();
+  const [, setOrderByParam] = useOrderByParam();
 
-  const updateSortModel = (newSortModel: GridSortModel) => {
+  // See: https://mui.com/x/react-data-grid/row-selection/#controlled-row-selection
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>([]);
+
+  const onSortModelChange = (newSortModel: GridSortModel) => {
     // Update order by param and clear pagination token when the sort model changes.
     setSortModel(newSortModel);
     setOrderByParam(getOrderByFromSortModel(newSortModel));
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
-  const client = useFleetConsoleClient();
-  const request = ListDevicesRequest.fromPartial({
-    pageSize: getPageSize(pagerCtx, searchParams),
-    pageToken: getPageToken(pagerCtx, searchParams),
-    orderBy: orderByParam,
-    filter: getFilterValue(searchParams),
-  });
+  const rows = devices.map(getRow);
 
-  const devicesQuery = useDevices(request);
-  const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
-
-  const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-
-  const columns = useMemo(
+  const columnDefs = useMemo(
     () =>
       getColumns(
-        dimensionsQuery.data
-          ? // We need to avoid duplicates
-            // E.g. `dut_id` is in both base dimensions and labels
-            _.uniq(
-              Object.keys(dimensionsQuery.data.baseDimensions).concat(
-                Object.keys(dimensionsQuery.data.labels),
-              ),
-            )
-          : // Instead of waiting, we can show the
+        isLoadingColumns
+          ? // Instead of waiting, we can show the
             // visible columns until the data is loaded
-            getVisibleColumnIds(searchParams),
+            getVisibleColumnIds(searchParams)
+          : // We need to avoid duplicates
+            // E.g. `dut_id` is in both base dimensions and labels
+            columns,
       ),
-    [dimensionsQuery.data, searchParams],
+    [isLoadingColumns, columns, searchParams],
   );
+
+  const defaultColumnVisibilityModel = columnDefs.reduce(
+    (visibilityModel, column) => ({
+      ...visibilityModel,
+      [column.field]: DEFAULT_DEVICE_COLUMNS.includes(column.field),
+    }),
+    {} as GridColumnVisibilityModel,
+  );
+
+  const onColumnVisibilityModelChange = (
+    newColumnVisibilityModel: GridColumnVisibilityModel,
+  ) => {
+    setSearchParams(
+      visibleColumnsUpdater(
+        newColumnVisibilityModel,
+        defaultColumnVisibilityModel,
+      ),
+    );
+  };
 
   return (
     <>
-      {devicesQuery.isError || dimensionsQuery.isError ? (
+      {isError ? (
         <Alert severity="error">
-          Something went wrong:{' '}
-          {getErrorMessage(devicesQuery.error || dimensionsQuery.error)}
+          Something went wrong: {getErrorMessage(error)}
         </Alert>
       ) : (
-        <DataTable
-          nextPageToken={nextPageToken}
-          isLoading={devicesQuery.isLoading}
-          pagerCtx={pagerCtx}
-          columns={columns}
+        <StyledGrid
+          slots={{
+            pagination: Pagination,
+            columnMenu: ColumnMenu,
+            toolbar: FleetToolbar,
+          }}
+          slotProps={{
+            pagination: {
+              pagerCtx: pagerCtx,
+              nextPageToken: nextPageToken,
+              totalRowCount: totalRowCount,
+            },
+            toolbar: {
+              selectedRows: computeSelectedRows(rowSelectionModel, rows),
+              isLoadingColumns: isLoadingColumns,
+            },
+          }}
+          disableRowSelectionOnClick
+          checkboxSelection
+          onRowSelectionModelChange={(newRowSelectionModel) => {
+            setRowSelectionModel(newRowSelectionModel);
+          }}
+          rowSelectionModel={rowSelectionModel}
           sortModel={sortModel}
-          onSortModelChange={updateSortModel}
-          rows={devices.map(getRow)}
-          defaultColumnVisibilityModel={columns.reduce(
-            (visibilityModel, column) => ({
-              ...visibilityModel,
-              [column.field]: DEFAULT_DEVICE_COLUMNS.includes(column.field),
-            }),
-            {} as GridColumnVisibilityModel,
+          onSortModelChange={onSortModelChange}
+          rowCount={UNKNOWN_ROW_COUNT}
+          sortingMode="server"
+          paginationMode="server"
+          pageSizeOptions={pagerCtx.options.pageSizeOptions}
+          paginationModel={{
+            page: getCurrentPageIndex(pagerCtx),
+            pageSize: getPageSize(pagerCtx, searchParams),
+          }}
+          columnVisibilityModel={getVisibleColumns(
+            searchParams,
+            defaultColumnVisibilityModel,
+            columnDefs,
           )}
-          totalRowCount={totalRowCount}
-          isLoadingColumns={dimensionsQuery.isLoading}
+          onColumnVisibilityModelChange={onColumnVisibilityModelChange}
+          rows={rows}
+          columns={columnDefs}
+          loading={isLoading}
         />
       )}
     </>

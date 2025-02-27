@@ -111,9 +111,9 @@ export const BASE_DIMENSIONS: Dimension[] = [
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
   },
-] as const;
+];
 
-export const DIMENSIONS: Dimension[] = [
+const DIMENSIONS: Dimension[] = [
   {
     id: 'dut_state',
     getValue: (device: Device) =>
@@ -132,7 +132,7 @@ export const DIMENSIONS: Dimension[] = [
       device.deviceSpec?.labels['bluetooth_state']?.values[0] || '',
     renderCell: getCellWithLinkToSwarmingDocs,
   },
-] as const;
+];
 
 export const getColumns = (columnIds: string[]): GridColDef[] => {
   // order columns as in BASE_DIMENSIONS and put labels at the end

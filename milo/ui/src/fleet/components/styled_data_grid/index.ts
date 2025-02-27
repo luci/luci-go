@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { DataTable } from './data_table';
+export { StyledGrid } from './styled_data_grid';

@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { useQuery } from '@tanstack/react-query';
+import _ from 'lodash';
 import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
+  getPageSize,
+  getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
@@ -26,14 +29,20 @@ import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
   filtersUpdater,
   getFilters,
+  getFilterValue,
   stringifyFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
+import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  CountDevicesRequest,
+  ListDevicesRequest,
+} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 
@@ -42,6 +51,7 @@ const DEFAULT_PAGE_SIZE = 25;
 
 export const DeviceListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [orderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
@@ -70,6 +80,23 @@ export const DeviceListPage = () => {
       }),
     ),
   );
+  const request = ListDevicesRequest.fromPartial({
+    pageSize: getPageSize(pagerCtx, searchParams),
+    pageToken: getPageToken(pagerCtx, searchParams),
+    orderBy: orderByParam,
+    filter: getFilterValue(searchParams),
+  });
+
+  const devicesQuery = useDevices(request);
+
+  const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+  const columns = dimensionsQuery.data
+    ? _.uniq(
+        Object.keys(dimensionsQuery.data.baseDimensions).concat(
+          Object.keys(dimensionsQuery.data.labels),
+        ),
+      )
+    : [];
 
   return (
     <div
@@ -107,7 +134,14 @@ export const DeviceListPage = () => {
         }}
       >
         <DeviceTable
+          devices={devices}
+          columns={columns}
+          nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
+          isError={devicesQuery.isError || dimensionsQuery.isError}
+          error={devicesQuery.error || dimensionsQuery.error}
+          isLoading={devicesQuery.isLoading}
+          isLoadingColumns={dimensionsQuery.isLoading}
           totalRowCount={countQuery?.data?.total}
         />
       </div>

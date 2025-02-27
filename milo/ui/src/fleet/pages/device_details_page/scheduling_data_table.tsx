@@ -14,7 +14,7 @@
 
 import { GridColDef } from '@mui/x-data-grid';
 
-import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
+import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 interface SchedulingDataProps {
