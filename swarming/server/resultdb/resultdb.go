@@ -105,9 +105,9 @@ type RecorderClient struct {
 // a grpc error if something is wrong.
 func (recorder *RecorderClient) CreateInvocation(ctx context.Context, taskID, realm string, deadline time.Time) (invName string, updateToken string, err error) {
 	req := &rdbpb.CreateInvocationRequest{
-		InvocationId: recorder.invocationID(taskID),
+		InvocationId: InvocationID(recorder.swarmingProject, taskID),
 		Invocation: &rdbpb.Invocation{
-			ProducerResource: fmt.Sprintf("//%s/tasks/%s", recorder.swarmingHost(), taskID),
+			ProducerResource: fmt.Sprintf("//%s/tasks/%s", swarmingHost(recorder.swarmingProject), taskID),
 			Realm:            realm,
 			Deadline:         timestamppb.New(deadline),
 		},
@@ -128,23 +128,23 @@ func (recorder *RecorderClient) CreateInvocation(ctx context.Context, taskID, re
 // FinalizeInvocation finalized the ResultDB invocation for the task.
 func (recorder *RecorderClient) FinalizeInvocation(ctx context.Context, taskID string, updateToken string) error {
 	req := &rdbpb.FinalizeInvocationRequest{
-		Name: recorder.invocationName(taskID),
+		Name: InvocationName(recorder.swarmingProject, taskID),
 	}
 	ctx = metadata.AppendToOutgoingContext(ctx, rdbpb.UpdateTokenMetadataKey, updateToken)
 	_, err := recorder.client.FinalizeInvocation(ctx, req)
 	return err
 }
 
-// invocationName returns the task's ResultDB invocation name.
-func (recorder *RecorderClient) invocationName(taskID string) string {
-	return fmt.Sprintf("invocations/%s", recorder.invocationID(taskID))
+// InvocationName returns the task's ResultDB invocation name.
+func InvocationName(swarmingProject, taskID string) string {
+	return fmt.Sprintf("invocations/%s", InvocationID(swarmingProject, taskID))
 }
 
-// invocationID returns the task's ResultDB invocation ID.
-func (recorder *RecorderClient) invocationID(taskID string) string {
-	return fmt.Sprintf("task-%s-%s", recorder.swarmingHost(), taskID)
+// InvocationID returns the task's ResultDB invocation ID.
+func InvocationID(swarmingProject, taskID string) string {
+	return fmt.Sprintf("task-%s-%s", swarmingHost(swarmingProject), taskID)
 }
 
-func (recorder *RecorderClient) swarmingHost() string {
-	return fmt.Sprintf("%s.appspot.com", recorder.swarmingProject)
+func swarmingHost(swarmingProject string) string {
+	return fmt.Sprintf("%s.appspot.com", swarmingProject)
 }
