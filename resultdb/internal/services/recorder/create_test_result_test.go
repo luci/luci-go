@@ -15,7 +15,6 @@
 package recorder
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -29,9 +28,12 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -42,8 +44,7 @@ import (
 )
 
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
-func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.CreateTestResultRequest {
-	trName := fmt.Sprintf("invocations/%s/tests/%s/results/result-id-0", invName, testID)
+func validCreateTestResultRequest(now time.Time, invName string, testVariantID *pb.TestVariantIdentifier) *pb.CreateTestResultRequest {
 	properties, err := structpb.NewStruct(map[string]any{
 		"key_1": "value_1",
 		"key_2": map[string]any{
@@ -60,7 +61,56 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 		RequestId:  "request-id-123",
 
 		TestResult: &pb.TestResult{
-			Name:     trName,
+			TestVariantIdentifier: testVariantID,
+			ResultId:              "result-id-0",
+			Expected:              true,
+			Status:                pb.TestStatus_PASS,
+			TestMetadata: &pb.TestMetadata{
+				Name: "original_name",
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "//a_test.go",
+					Line:     54,
+				},
+				BugComponent: &pb.BugComponent{
+					System: &pb.BugComponent_Monorail{
+						Monorail: &pb.MonorailComponent{
+							Project: "chromium",
+							Value:   "Component>Value",
+						},
+					},
+				},
+			},
+			FailureReason: &pb.FailureReason{
+				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+					{Message: "got 2, want 1"},
+				},
+				TruncatedErrorsCount: 0,
+			},
+			Properties: properties,
+		},
+	}
+}
+
+func legacyCreateTestResultRequest(now time.Time, invName, testID string) *pb.CreateTestResultRequest {
+	properties, err := structpb.NewStruct(map[string]any{
+		"key_1": "value_1",
+		"key_2": map[string]any{
+			"child_key": 1,
+		},
+	})
+	if err != nil {
+		// Should never fail.
+		panic(err)
+	}
+
+	return &pb.CreateTestResultRequest{
+		Invocation: invName,
+		RequestId:  "request-id-123",
+
+		TestResult: &pb.TestResult{
 			TestId:   testID,
 			ResultId: "result-id-0",
 			Expected: true,
@@ -103,45 +153,72 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 
 	now := testclock.TestRecentTimeUTC
 	ftt.Run("ValidateCreateTestResultRequest", t, func(t *ftt.Test) {
-		req := validCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
+		tvID := &pb.TestVariantIdentifier{
+			ModuleName:   "//infra/junit_tests",
+			ModuleScheme: "junit",
+			ModuleVariant: pbutil.Variant(
+				"key", "value",
+			),
+			CoarseName: "org.chromium.go.luci",
+			FineName:   "ValidationTests",
+			CaseName:   "FooBar",
+		}
+		req := validCreateTestResultRequest(now, "invocations/u-build-1", tvID)
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
 
 		t.Run("suceeeds", func(t *ftt.Test) {
-			assert.Loosely(t, validateCreateTestResultRequest(req, now), should.BeNil)
+			assert.Loosely(t, validateCreateTestResultRequest(req, cfg, now), should.BeNil)
 
 			t.Run("with empty request_id", func(t *ftt.Test) {
 				req.RequestId = ""
-				assert.Loosely(t, validateCreateTestResultRequest(req, now), should.BeNil)
+				assert.Loosely(t, validateCreateTestResultRequest(req, cfg, now), should.BeNil)
 			})
 		})
 
-		t.Run("fails with ", func(t *ftt.Test) {
+		t.Run("fails with", func(t *ftt.Test) {
 			t.Run(`empty invocation`, func(t *ftt.Test) {
 				req.Invocation = ""
-				err := validateCreateTestResultRequest(req, now)
+				err := validateCreateTestResultRequest(req, cfg, now)
 				assert.Loosely(t, err, should.ErrLike("invocation: unspecified"))
 			})
 			t.Run(`invalid invocation`, func(t *ftt.Test) {
 				req.Invocation = " invalid "
-				err := validateCreateTestResultRequest(req, now)
+				err := validateCreateTestResultRequest(req, cfg, now)
 				assert.Loosely(t, err, should.ErrLike("invocation: does not match"))
 			})
 
 			t.Run(`empty test_result`, func(t *ftt.Test) {
 				req.TestResult = nil
-				err := validateCreateTestResultRequest(req, now)
+				err := validateCreateTestResultRequest(req, cfg, now)
 				assert.Loosely(t, err, should.ErrLike("test_result: unspecified"))
 			})
 			t.Run(`invalid test_result`, func(t *ftt.Test) {
-				req.TestResult.TestId = ""
-				err := validateCreateTestResultRequest(req, now)
-				assert.Loosely(t, err, should.ErrLike("test_result: test_id: unspecified"))
+				req.TestResult.TestVariantIdentifier = nil
+				err := validateCreateTestResultRequest(req, cfg, now)
+				assert.Loosely(t, err, should.ErrLike("test_result: test_variant_identifier: unspecified"))
 			})
 
 			t.Run("invalid request_id", func(t *ftt.Test) {
 				// non-ascii character
 				req.RequestId = string(rune(244))
-				err := validateCreateTestResultRequest(req, now)
+				err := validateCreateTestResultRequest(req, cfg, now)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
+			})
+		})
+
+		t.Run(`legacy uploaders`, func(t *ftt.Test) {
+			req := legacyCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
+			t.Run("suceeeds", func(t *ftt.Test) {
+				assert.Loosely(t, validateCreateTestResultRequest(req, cfg, now), should.BeNil)
+			})
+
+			t.Run("fails with", func(t *ftt.Test) {
+				t.Run(`invalid test_id`, func(t *ftt.Test) {
+					req.TestResult.TestId = "\x00"
+					err := validateCreateTestResultRequest(req, cfg, now)
+					assert.Loosely(t, err, should.ErrLike("test_result: test_id: non-printable rune '\\x00' at byte index 0"))
+				})
 			})
 		})
 	})
@@ -150,21 +227,40 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 func TestCreateTestResult(t *testing.T) {
 	ftt.Run(`CreateTestResult`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		recorder := newTestRecorderServer()
+
+		tvID := &pb.TestVariantIdentifier{
+			ModuleName:   "//infra/junit_tests",
+			ModuleScheme: "junit",
+			ModuleVariant: pbutil.Variant(
+				"key", "value",
+			),
+			CoarseName: "org.chromium.go.luci",
+			FineName:   "ValidationTests",
+			CaseName:   "FooBar",
+		}
+
 		req := validCreateTestResultRequest(
-			clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id",
+			clock.Now(ctx).UTC(), "invocations/u-build-1", tvID,
 		)
 
-		createTestResult := func(req *pb.CreateTestResultRequest, expectedCommonPrefix string) {
-			expected := proto.Clone(req.TestResult).(*pb.TestResult)
-			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
-			expected.VariantHash = "c8643f74854d84b4"
+		createTestResult := func(req *pb.CreateTestResultRequest, expected *pb.TestResult, expectedCommonPrefix string) {
+			expectedWireTR := proto.Clone(expected).(*pb.TestResult)
+			if req.TestResult.TestVariantIdentifier == nil {
+				// For legacy create requests, expect the response to omit the TestVariantIdentifier.
+				expectedWireTR.TestVariantIdentifier = nil
+			}
+
 			res, err := recorder.CreateTestResult(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Match(expected))
+			assert.Loosely(t, res, should.Match(expectedWireTR))
 
 			// double-check it with the database
-			expected.VariantHash = "c8643f74854d84b4"
 			row, err := testresults.Read(span.Single(ctx), res.Name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, row, should.Match(expected))
@@ -183,8 +279,15 @@ func TestCreateTestResult(t *testing.T) {
 		testutil.MustApply(ctx, t, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
 
 		t.Run("succeeds", func(t *ftt.Test) {
+			expected := proto.Clone(req.TestResult).(*pb.TestResult)
+			expected.Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0"
+			expected.TestVariantIdentifier.ModuleVariantHash = "5d8482c3056d8635"
+			expected.TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
+			expected.Variant = pbutil.Variant("key", "value")
+			expected.VariantHash = "5d8482c3056d8635"
+
 			t.Run("with a request ID", func(t *ftt.Test) {
-				createTestResult(req, "test-id")
+				createTestResult(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
@@ -195,7 +298,27 @@ func TestCreateTestResult(t *testing.T) {
 
 			t.Run("without a request ID", func(t *ftt.Test) {
 				req.RequestId = ""
-				createTestResult(req, "test-id")
+				createTestResult(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
+			})
+
+			t.Run("with legacy test result", func(t *ftt.Test) {
+				req = legacyCreateTestResultRequest(clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id")
+
+				expected := proto.Clone(req.TestResult).(*pb.TestResult)
+				expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
+				expected.VariantHash = "c8643f74854d84b4"
+				expected.TestVariantIdentifier = &pb.TestVariantIdentifier{
+					ModuleName:   "legacy",
+					ModuleScheme: "legacy",
+					ModuleVariant: pbutil.Variant(
+						"a/b", "1",
+						"c", "2",
+					),
+					ModuleVariantHash: "c8643f74854d84b4",
+					CaseName:          "test-id",
+				}
+
+				createTestResult(req, expected, "test-id")
 			})
 		})
 

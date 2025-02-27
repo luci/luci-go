@@ -58,7 +58,7 @@ func TestCompiledConfig(t *testing.T) {
 		assert.Loosely(t, gtestScheme.HumanReadableName, should.Equal("GTest"))
 		assert.Loosely(t, gtestScheme.Coarse, should.BeNil)
 		assert.Loosely(t, gtestScheme.Fine.HumanReadableName, should.Equal("Suite"))
-		assert.Loosely(t, gtestScheme.Fine.ValidationRegexp.String(), should.Equal(`^[\_]+$`))
+		assert.Loosely(t, gtestScheme.Fine.ValidationRegexp.String(), should.Equal(`^[^_]+$`))
 		assert.Loosely(t, gtestScheme.Case.HumanReadableName, should.Equal("Method"))
 		assert.Loosely(t, gtestScheme.Case.ValidationRegexp, should.BeNil)
 
@@ -102,7 +102,7 @@ func generateServiceConfig(uniqifier int) *configpb.Config {
 				Fine: &configpb.Scheme_Level{
 					HumanReadableName: "Suite",
 					// Do not allow underscores as per https://google.github.io/googletest/reference/testing.html.
-					ValidationRegexp: `[\_]+`,
+					ValidationRegexp: `[^_]+`,
 				},
 				Case: &configpb.Scheme_Level{
 					HumanReadableName: "Method",

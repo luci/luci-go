@@ -77,7 +77,7 @@ func TestRead(t *testing.T) {
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
-				"TestId":          "t t",
+				"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 				"ResultId":        "r",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
@@ -89,12 +89,21 @@ func TestRead(t *testing.T) {
 			}),
 		)
 
-		const name = "invocations/inv/tests/t%20t/results/r"
+		const name = "invocations/inv/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/r"
 		tr, err := Read(span.Single(ctx), name)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, tr, should.Match(&pb.TestResult{
-			Name:        name,
-			TestId:      "t t",
+			Name: name,
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:        "//infra/junit_tests",
+				ModuleScheme:      "junit",
+				ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+				ModuleVariantHash: "68d82cb978092fc7",
+				CoarseName:        "org.chromium.go.luci",
+				FineName:          "ValidationTests",
+				CaseName:          "FooBar",
+			},
+			TestId:      "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 			ResultId:    "r",
 			Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
 			Expected:    false,

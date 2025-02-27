@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -97,21 +98,27 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
+		return nil, errors.Annotate(err, "fetch %q", name).Err()
 	}
+	// Populate structured test ID from flat-form ID and variant.
+	tr.TestVariantIdentifier, err = pbutil.ParseTestVariantIdentifier(testID, tr.Variant)
+	if err != nil {
+		return nil, errors.Annotate(err, "parse test variant identifier").Err()
+	}
+	pbutil.PopulateTestVariantIdentifierHashes(tr.TestVariantIdentifier)
 
 	tr.SummaryHtml = string(summaryHTML)
 	PopulateExpectedField(tr, maybeUnexpected)
 	PopulateDurationField(tr, micros)
 	PopulateSkipReasonField(tr, skipReason)
 	if err := PopulateTestMetadata(tr, tmd); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal test metadata").Err()
+		return nil, errors.Annotate(err, "unmarshal test metadata").Err()
 	}
 	if err := PopulateFailureReason(tr, fr); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal failure reason").Err()
+		return nil, errors.Annotate(err, "unmarshal failure reason").Err()
 	}
 	if err := PopulateProperties(tr, properties); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
+		return nil, errors.Annotate(err, "unmarshal properties").Err()
 	}
 	return tr, nil
 }

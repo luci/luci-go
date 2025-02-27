@@ -25,9 +25,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -43,7 +45,7 @@ func emptyOrEqual(name, actual, expected string) error {
 	return errors.Reason("%s must be either empty or equal to %q, but %q", name, expected, actual).Err()
 }
 
-func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest, now time.Time) error {
+func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
@@ -69,7 +71,7 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		if err := emptyOrEqual("request_id", r.RequestId, req.RequestId); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
 		}
-		if err := pbutil.ValidateTestResult(now, r.TestResult); err != nil {
+		if err := ValidateTestResult(now, cfg, r.TestResult); err != nil {
 			return errors.Annotate(err, "requests: %d: test_result", i).Err()
 		}
 
@@ -89,7 +91,11 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 // BatchCreateTestResults implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
-	if err := validateBatchCreateTestResultsRequest(in, now); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateBatchCreateTestResultsRequest(in, cfg, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -103,15 +109,15 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	for i, r := range in.Requests {
 		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 		if i == 0 {
-			commonPrefix = r.TestResult.TestId
+			commonPrefix = ret.TestResults[i].TestId
 		} else {
-			commonPrefix = longestCommonPrefix(commonPrefix, r.TestResult.TestId)
+			commonPrefix = longestCommonPrefix(commonPrefix, ret.TestResults[i].TestId)
 		}
-		varUnion.AddAll(pbutil.VariantToStrings(r.TestResult.GetVariant()))
+		varUnion.AddAll(pbutil.VariantToStrings(ret.TestResults[i].GetVariant()))
 	}
 
 	var realm string
-	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
@@ -158,8 +164,22 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
-	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
+
+	if ret.TestVariantIdentifier != nil {
+		// Use TestVariantIdentifier to set TestId and Variant (OUTPUT_ONLY fields).
+		// Also set the OUTPUT_ONLY fields in TestVariantIdentiifer.
+		ret.TestId = pbutil.TestIDFromTestVariantIdentifier(ret.TestVariantIdentifier)
+		ret.Variant = pbutil.VariantFromTestVariantIdentifier(ret.TestVariantIdentifier)
+		pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantIdentifier)
+	} else {
+		// Legacy test uploader.
+		// While we could use TestId and Variant to set TestVariantIdentifier,
+		// we do not return this structure to legacy clients to avoid changing
+		// API behaviour.
+	}
 	ret.VariantHash = pbutil.VariantHash(ret.Variant)
+
+	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
 
 	// handle values for nullable columns
 	var runDuration spanner.NullInt64
@@ -209,4 +229,108 @@ func longestCommonPrefix(str1, str2 string) string {
 		return str1
 	}
 	return str2
+}
+
+// ValidateTestResult returns a non-nil error if msg is invalid.
+func ValidateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb.TestResult) error {
+	if tr == nil {
+		return validate.Unspecified()
+	}
+	if tr.TestVariantIdentifier == nil && tr.TestId != "" {
+		// For backwards compatibility, we still accept legacy uploaders setting
+		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
+		testID, err := pbutil.ParseAndValidateTestID(tr.TestId)
+		if err != nil {
+			return errors.Annotate(err, "test_id").Err()
+		}
+		if err := pbutil.ValidateVariant(tr.Variant); err != nil {
+			return errors.Annotate(err, "variant").Err()
+		}
+		// Validate the test identifier meets the requirements of the scheme.
+		// This is enforced only at upload time.
+		if err := ValidateTestIDToScheme(cfg, testID); err != nil {
+			return errors.Annotate(err, "test_id").Err()
+		}
+	} else {
+		// Not a legacy uploader.
+		// The TestId and Variant fields are treated as output only as per
+		// the API spec and should be ignored. Instead read from the TestVariantIdentifier field.
+
+		if err := pbutil.ValidateTestVariantIdentifier(tr.TestVariantIdentifier); err != nil {
+			return errors.Annotate(err, "test_variant_identifier").Err()
+		}
+		// Validate the test identifier meets the requirements of the scheme.
+		// This is enforced only at upload time.
+		if err := ValidateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantIdentifier)); err != nil {
+			return errors.Annotate(err, "test_variant_identifier").Err()
+		}
+	}
+
+	if err := pbutil.ValidateResultID(tr.ResultId); err != nil {
+		return errors.Annotate(err, "result_id").Err()
+	}
+	if err := pbutil.ValidateTestResultStatus(tr.Status); err != nil {
+		return errors.Annotate(err, "status").Err()
+	}
+	if err := pbutil.ValidateSummaryHTML(tr.SummaryHtml); err != nil {
+		return errors.Annotate(err, "summary_html").Err()
+	}
+	if err := pbutil.ValidateStartTimeWithDuration(now, tr.StartTime, tr.Duration); err != nil {
+		return err
+	}
+	if err := pbutil.ValidateStringPairs(tr.Tags); err != nil {
+		return errors.Annotate(err, "tags").Err()
+	}
+	if tr.TestMetadata != nil {
+		if err := pbutil.ValidateTestMetadata(tr.TestMetadata); err != nil {
+			return errors.Annotate(err, "test_metadata").Err()
+		}
+	}
+	if tr.FailureReason != nil {
+		if err := pbutil.ValidateFailureReason(tr.FailureReason); err != nil {
+			return errors.Annotate(err, "failure_reason").Err()
+		}
+	}
+	if tr.Properties != nil {
+		if err := pbutil.ValidateTestResultProperties(tr.Properties); err != nil {
+			return errors.Annotate(err, "properties").Err()
+		}
+	}
+	if err := pbutil.ValidateTestResultSkipReason(tr.Status, tr.SkipReason); err != nil {
+		return errors.Annotate(err, "skip_reason").Err()
+	}
+	return nil
+}
+
+func ValidateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.TestIdentifier) error {
+	scheme, ok := cfg.Schemes[testID.ModuleScheme]
+	if !ok {
+		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()
+	}
+	if err := ValidateTestIDComponent(testID.CoarseName, testID.ModuleScheme, scheme.Coarse); err != nil {
+		return errors.Annotate(err, "coarse_name").Err()
+	}
+	if err := ValidateTestIDComponent(testID.FineName, testID.ModuleScheme, scheme.Fine); err != nil {
+		return errors.Annotate(err, "fine_name").Err()
+	}
+	if err := ValidateTestIDComponent(testID.CaseName, testID.ModuleScheme, scheme.Case); err != nil {
+		return errors.Annotate(err, "case_name").Err()
+	}
+	return nil
+}
+
+func ValidateTestIDComponent(component, scheme string, level *config.SchemeLevel) error {
+	if level != nil {
+		if component == "" {
+			return errors.Reason("required, please set a %s (scheme %q)", level.HumanReadableName, scheme).Err()
+		}
+		if level.ValidationRegexp != nil && !level.ValidationRegexp.MatchString(component) {
+			return errors.Reason("does not match validation regexp %q, please set a valid %s (scheme %q)", level.ValidationRegexp.String(), level.HumanReadableName, scheme).Err()
+		}
+	} else {
+		if component != "" {
+			return errors.Reason("expected empty value (level is not defined by scheme %q)", scheme).Err()
+		}
+	}
+	return nil
 }

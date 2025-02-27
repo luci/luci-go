@@ -38,13 +38,14 @@ const (
 	projectPattern  = `[a-z0-9\-]{1,40}`
 	// VariantHashRePattern is the regular expression pattern that matches
 	// validly formed Variant Hash.
-	variantHashRePattern      = `[0-9a-f]{16}`
-	maxLenSummaryHTML         = 4 * 1024
+	variantHashRePattern = `[0-9a-f]{16}`
+	// MaxLenSummaryHTML is the maximum length of summary HTML.
+	MaxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
 	maxSizeErrors             = 3*1024 + 100
 	maxLenPropertiesSchema    = 256
-	// clockSkew is the maxmium amount of time that clocks could have been out of sync for.
-	clockSkew = 10 * time.Minute
+	// MaxClockSkew is the maximum amount of time that clocks could have been out of sync for.
+	MaxClockSkew = 10 * time.Minute
 )
 
 var (
@@ -62,22 +63,6 @@ var (
 	monorailComponentRe = regexp.MustCompile(`^[a-zA-Z]([-_]?[a-zA-Z0-9])+(\>[a-zA-Z]([-_]?[a-zA-Z0-9])+)*$`)
 	propertiesSchemaRe  = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$`)
 )
-
-type checker struct {
-	lastCheckedErr *error
-}
-
-// isErr returns true if err is nil. False, otherwise.
-//
-// It also stores err into lastCheckedErr. If err was not nil, it wraps err with
-// errors.Annotate before storing it in lastErr.
-func (c *checker) isErr(err error, format string, args ...any) bool {
-	if err == nil {
-		return false
-	}
-	*c.lastCheckedErr = errors.Annotate(err, format, args...).Err()
-	return true
-}
 
 // ValidateProject returns a non-nil error if project is invalid.
 func ValidateProject(project string) error {
@@ -108,8 +93,8 @@ func ValidateTestResultName(name string) error {
 
 // ValidateSummaryHTML returns a non-nil error if summary is invalid.
 func ValidateSummaryHTML(summary string) error {
-	if len(summary) > maxLenSummaryHTML {
-		return errors.Reason("exceeds the maximum size of %d bytes", maxLenSummaryHTML).Err()
+	if len(summary) > MaxLenSummaryHTML {
+		return errors.Reason("exceeds the maximum size of %d bytes", MaxLenSummaryHTML).Err()
 	}
 	return nil
 }
@@ -127,37 +112,14 @@ func ValidateStartTimeWithDuration(now time.Time, startTime *timestamppb.Timesta
 	}
 
 	switch {
-	case startTime != nil && now.Add(clockSkew).Before(t):
-		return errors.Reason("start_time: cannot be > (now + %s), but was +%s", clockSkew, t.Sub(now)).Err()
+	case startTime != nil && now.Add(MaxClockSkew).Before(t):
+		return errors.Reason("start_time: cannot be > (now + %s), but was +%s", MaxClockSkew, t.Sub(now)).Err()
 	case duration != nil && d < 0:
 		return errors.Reason("duration: is < 0").Err()
-	case startTime != nil && duration != nil && now.Add(clockSkew).Before(t.Add(d)):
-		return errors.Reason("start_time + duration: cannot be > (now + %s), but was +%s", clockSkew, t.Add(d).Sub(now)).Err()
+	case startTime != nil && duration != nil && now.Add(MaxClockSkew).Before(t.Add(d)):
+		return errors.Reason("start_time + duration: cannot be > (now + %s), but was +%s", MaxClockSkew, t.Add(d).Sub(now)).Err()
 	}
 	return nil
-}
-
-// ValidateTestResult returns a non-nil error if msg is invalid.
-func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
-	ec := checker{&err}
-	switch {
-	case msg == nil:
-		return validate.Unspecified()
-	// skip `Name`
-	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
-	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
-	case ec.isErr(ValidateVariant(msg.Variant), "variant"):
-	// skip `Expected`
-	case ec.isErr(ValidateTestResultStatus(msg.Status), "status"):
-	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
-	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
-	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
-	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
-	case msg.FailureReason != nil && ec.isErr(ValidateFailureReason(msg.FailureReason), "failure_reason"):
-	case msg.Properties != nil && ec.isErr(ValidateTestResultProperties(msg.Properties), "properties"):
-	case ec.isErr(ValidateTestResultSkipReason(msg.Status, msg.SkipReason), "skip_reason"):
-	}
-	return err
 }
 
 // ValidateTestResultStatus returns a non-nil error if s is invalid for a test result.

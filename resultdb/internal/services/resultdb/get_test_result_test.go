@@ -42,7 +42,7 @@ func TestValidateGetTestResultRequest(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`ValidateGetTestResultRequest`, t, func(t *ftt.Test) {
 		t.Run(`Valid`, func(t *ftt.Test) {
-			req := &pb.GetTestResultRequest{Name: "invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"}
+			req := &pb.GetTestResultRequest{Name: "invocations/a/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result5"}
 			assert.Loosely(t, validateGetTestResultRequest(req), should.BeNil)
 		})
 
@@ -83,7 +83,7 @@ func TestGetTestResult(t *testing.T) {
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
-				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+				"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 				"ResultId":        "result_id_within_inv_0",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
@@ -94,18 +94,26 @@ func TestGetTestResult(t *testing.T) {
 			}))
 
 		// Fetch back the TestResult.
-		test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
-			&pb.TestResult{
-				Name:        "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
-				TestId:      "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				ResultId:    "result_id_within_inv_0",
-				Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
-				VariantHash: "deadbeef",
-				Expected:    false,
-				Status:      pb.TestStatus_FAIL,
-				Duration:    &durpb.Duration{Seconds: 1, Nanos: 234567000},
+		expected := &pb.TestResult{
+			Name:   "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0",
+			TestId: "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:        "//infra/junit_tests",
+				ModuleScheme:      "junit",
+				ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+				ModuleVariantHash: "68d82cb978092fc7",
+				CoarseName:        "org.chromium.go.luci",
+				FineName:          "ValidationTests",
+				CaseName:          "FooBar",
 			},
-		)
+			ResultId:    "result_id_within_inv_0",
+			Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+			VariantHash: "deadbeef",
+			Expected:    false,
+			Status:      pb.TestStatus_FAIL,
+			Duration:    &durpb.Duration{Seconds: 1, Nanos: 234567000},
+		}
+		test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
 
 		t.Run(`permission denied`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
@@ -129,19 +137,28 @@ func TestGetTestResult(t *testing.T) {
 				"RunDurationUsec": 1534567,
 			}))
 
-			// Fetch back the TestResult.
-			test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
-				&pb.TestResult{
-					Name:        "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
-					TestId:      "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-					ResultId:    "result_id_within_inv_1",
-					Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
-					VariantHash: "deadbeef",
-					Expected:    true,
-					Status:      pb.TestStatus_PASS,
-					Duration:    &durpb.Duration{Seconds: 1, Nanos: 534567000},
+			expected := &pb.TestResult{
+				Name:   "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
+				TestId: "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "legacy",
+					ModuleScheme:      "legacy",
+					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+					ModuleVariantHash: "68d82cb978092fc7",
+					CoarseName:        "",
+					FineName:          "",
+					CaseName:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				},
-			)
+				ResultId:    "result_id_within_inv_1",
+				Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+				VariantHash: "deadbeef",
+				Expected:    true,
+				Status:      pb.TestStatus_PASS,
+				Duration:    &durpb.Duration{Seconds: 1, Nanos: 534567000},
+			}
+
+			// Fetch back the TestResult.
+			test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1", expected)
 		})
 	})
 }

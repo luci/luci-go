@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -658,7 +657,6 @@ func TestToLimitedData(t *testing.T) {
 				},
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			expected := &pb.TestResult{
 				Name:        name,
@@ -680,7 +678,6 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:   true,
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
@@ -737,7 +734,6 @@ func TestToLimitedData(t *testing.T) {
 				},
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			limitedLongErrMsg := strings.Repeat("a very long error message",
 				10)[:limitedReasonLength] + "..."
@@ -763,7 +759,6 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:   true,
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
@@ -780,7 +775,6 @@ func TestToLimitedData(t *testing.T) {
 				VariantHash: variantHash,
 				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			expected := &pb.TestResult{
 				Name:        name,
@@ -792,7 +786,6 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:    true,
 				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}
-			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)

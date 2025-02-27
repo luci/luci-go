@@ -147,6 +147,10 @@ func TestValidateTestIdentifier(t *testing.T) {
 			assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
 		})
 		t.Run("Module Name", func(t *ftt.Test) {
+			t.Run("Unicode is allowed", func(t *ftt.Test) {
+				id.ModuleName = "µs-timing"
+				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
+			})
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.ModuleName = strings.Repeat("a", 301)
 				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_name: longer than 300 bytes"))
@@ -177,8 +181,17 @@ func TestValidateTestIdentifier(t *testing.T) {
 				id.ModuleScheme = "A"
 				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike(`module_scheme: does not match "^[a-z][a-z0-9]*$"`))
 			})
+			t.Run("Legacy is reserved", func(t *ftt.Test) {
+				id.ModuleName = "module"
+				id.ModuleScheme = "legacy"
+				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_scheme: must not be set to 'legacy' except for tests in the 'legacy' module"))
+			})
 		})
 		t.Run("Coarse Name", func(t *ftt.Test) {
+			t.Run("Unicode is allowed", func(t *ftt.Test) {
+				id.CoarseName = "µs"
+				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
+			})
 			t.Run("Empty with fine name", func(t *ftt.Test) {
 				id.CoarseName = ""
 				id.FineName = "fine"
@@ -221,6 +234,10 @@ func TestValidateTestIdentifier(t *testing.T) {
 			})
 		})
 		t.Run("Fine Name", func(t *ftt.Test) {
+			t.Run("Unicode is allowed", func(t *ftt.Test) {
+				id.FineName = "µs"
+				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
+			})
 			t.Run("Empty without coarse name", func(t *ftt.Test) {
 				id.CoarseName = ""
 				id.FineName = ""
@@ -264,6 +281,10 @@ func TestValidateTestIdentifier(t *testing.T) {
 			})
 		})
 		t.Run("Case Name", func(t *ftt.Test) {
+			t.Run("Unicode is allowed", func(t *ftt.Test) {
+				id.CaseName = "µs"
+				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
+			})
 			t.Run("Empty", func(t *ftt.Test) {
 				id.CaseName = ""
 				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("case_name: unspecified"))
@@ -311,6 +332,10 @@ func TestValidateTestIdentifier(t *testing.T) {
 			t.Run("Valid", func(t *ftt.Test) {
 				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
 			})
+			t.Run("Unicode is allowed", func(t *ftt.Test) {
+				id.CaseName = "TestVariousDeadlines/5µs"
+				assert.Loosely(t, validateTestIdentifier(id), should.BeNil)
+			})
 			t.Run("Invalid scheme", func(t *ftt.Test) {
 				id.ModuleScheme = "notlegacy"
 				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_scheme: must be set to 'legacy' for tests in the 'legacy' module"))
@@ -331,13 +356,6 @@ func TestValidateTestIdentifier(t *testing.T) {
 			t.Run("Invalid case name reserved", func(t *ftt.Test) {
 				id.CaseName = "*case"
 				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("case_name: must not start with '*' for tests in the 'legacy' module"))
-			})
-		})
-		t.Run("Structured", func(t *ftt.Test) {
-			t.Run("Invalid scheme", func(t *ftt.Test) {
-				id.ModuleName = "module"
-				id.ModuleScheme = "legacy"
-				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_scheme: must not be set to 'legacy' except for tests in the 'legacy' module"))
 			})
 		})
 		t.Run("Limit on encoded length", func(t *ftt.Test) {

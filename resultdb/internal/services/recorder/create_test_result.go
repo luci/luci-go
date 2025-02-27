@@ -22,15 +22,16 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, now time.Time) error {
+func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(msg.Invocation); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
-	if err := pbutil.ValidateTestResult(now, msg.TestResult); err != nil {
+	if err := ValidateTestResult(now, cfg, msg.TestResult); err != nil {
 		return errors.Annotate(err, "test_result").Err()
 	}
 	if err := pbutil.ValidateRequestID(msg.RequestId); err != nil {
@@ -42,7 +43,11 @@ func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, now time.T
 // CreateTestResult implements pb.RecorderServer.
 func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTestResultRequest) (*pb.TestResult, error) {
 	now := clock.Now(ctx).UTC()
-	if err := validateCreateTestResultRequest(in, now); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCreateTestResultRequest(in, cfg, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 

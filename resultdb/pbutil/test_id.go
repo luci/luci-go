@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
@@ -204,6 +205,38 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 	return builder.String(), len(testID), nil
 }
 
+func TestIDFromTestVariantIdentifier(id *pb.TestVariantIdentifier) string {
+	return EncodeTestID(ExtractTestIdentifier(id))
+}
+
+func VariantFromTestVariantIdentifier(id *pb.TestVariantIdentifier) *pb.Variant {
+	return proto.Clone(id.ModuleVariant).(*pb.Variant)
+}
+
+// ParseTestVariantIdentifier constructs a test variant identifier from the
+// given flat test ID and variant. OUTPUT_ONLY fields are not set.
+func ParseTestVariantIdentifier(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
+	testIdentifier, err := ParseAndValidateTestID(testID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.TestVariantIdentifier{
+		ModuleName:    testIdentifier.ModuleName,
+		ModuleScheme:  testIdentifier.ModuleScheme,
+		ModuleVariant: variant,
+		CoarseName:    testIdentifier.CoarseName,
+		FineName:      testIdentifier.FineName,
+		CaseName:      testIdentifier.CaseName,
+	}, nil
+}
+
+// PopulateTestVariantIdentifierHashes computes the OUTPUT_ONLY fields on TestVariantIdentifier
+// from the client-controlled field values.
+func PopulateTestVariantIdentifierHashes(id *pb.TestVariantIdentifier) {
+	id.ModuleVariantHash = VariantHash(id.ModuleVariant)
+}
+
 // ValidateTestVariantIdentifier validates a structured test variant identifier.
 //
 // N.B. This does not validate the test ID against the configured schemes, but
@@ -214,14 +247,7 @@ func ValidateTestVariantIdentifier(id *pb.TestVariantIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	testID := TestIdentifier{
-		ModuleName:   id.ModuleName,
-		ModuleScheme: id.ModuleScheme,
-		CoarseName:   id.CoarseName,
-		FineName:     id.FineName,
-		CaseName:     id.CaseName,
-	}
-	if err := validateTestIdentifier(testID); err != nil {
+	if err := validateTestIdentifier(ExtractTestIdentifier(id)); err != nil {
 		return err
 	}
 
@@ -373,6 +399,17 @@ func validateCaseNameLeadingCharacter(name string) error {
 		return errors.Reason("character %+q may not be used as a leading character of a case name", r).Err()
 	}
 	return nil
+}
+
+// ExtractTestIdentifier extracts the structured Test ID from a test variant idnetifier.
+func ExtractTestIdentifier(id *pb.TestVariantIdentifier) TestIdentifier {
+	return TestIdentifier{
+		ModuleName:   id.ModuleName,
+		ModuleScheme: id.ModuleScheme,
+		CoarseName:   id.CoarseName,
+		FineName:     id.FineName,
+		CaseName:     id.CaseName,
+	}
 }
 
 // EncodeTestID encodes a structured test ID into a flat-form test ID.

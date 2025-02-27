@@ -46,5 +46,31 @@ func CreatePlaceHolderServiceConfig() *configpb.Config {
 			Enabled:       true,
 			ExportPercent: 50,
 		},
+		Schemes: []*configpb.Scheme{
+			{
+				Id:                "gtest",
+				HumanReadableName: "GTest",
+				Fine: &configpb.Scheme_Level{
+					HumanReadableName: "Suite",
+					ValidationRegexp:  "[^_]+",
+				},
+				Case: &configpb.Scheme_Level{
+					HumanReadableName: "Method",
+				},
+			},
+			{
+				Id:                "junit",
+				HumanReadableName: "JUnit",
+				Coarse: &configpb.Scheme_Level{
+					HumanReadableName: "Package",
+				},
+				Fine: &configpb.Scheme_Level{
+					HumanReadableName: "Class",
+				},
+				Case: &configpb.Scheme_Level{
+					HumanReadableName: "Method",
+				},
+			},
+		},
 	}
 }
