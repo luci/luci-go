@@ -196,7 +196,11 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 		// Blow up if it takes too much time to converge. Note that this is fake
 		// time. Also the limit is much-much higher than expected mean time to
 		// make sure this test doesn't flake.
-		if clock.Now(ctx).Sub(epoch) >= 360*time.Minute { // 360 Sweeps.
+		//
+		// The tree closed anyway. I bumped the time from 360 to 720 fake minutes on
+		// 2025-02-26. If this test flakes again in less than two quarters, let's disable
+		// or rewrite it.
+		if clock.Now(ctx).Sub(epoch) >= 720*time.Minute { // 720 Sweeps.
 			panic("Looks like the test is stuck")
 		}
 
