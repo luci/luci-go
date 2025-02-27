@@ -79,6 +79,8 @@ message TestResult {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
+  //
+  // Output only. (Except for legacy uploaders.)
   Variant variant = 4 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
   // Whether the result of test case execution is expected.
@@ -220,6 +222,7 @@ enum SkipReason {
 // for an unexpected result of a test variant.
 // For example, the test variant fails both with and without CL, so it is not
 // CL's fault.
+// Next ID: 10.
 message TestExoneration {
   // Can be used to refer to this test exoneration, e.g. in
   // ResultDB.GetTestExoneration RPC.
@@ -234,13 +237,27 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Test identifier, see TestResult.test_id.
-  string test_id = 2;
+  // The structured test variant identifier.
+  //
+  // When uploading exonerations, this should be specified in preference
+  // to test_id and variant below (which is supported only for legacy uploaders).
+  TestVariantIdentifier test_variant_identifier = 9 [(google.api.field_behavior) = IMMUTABLE];
 
-  // Description of the variant of the test, see Variant type.
-  // Unlike TestResult.extra_variant_pairs, this one must be a full definition
-  // of the variant, i.e. it is not combined with Invocation.base_test_variant.
-  Variant variant = 3;
+  // The flat test id, a unique identifier of the test in a LUCI project.
+  // Regex: ^[[::print::]]{1,512}$
+  //
+  // This is the flat-form encoding of the test component of the structured test variant ID above.
+  // See TestVariantIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
+  //
+  // Output only. (Except for legacy uploaders.)
+  string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+
+  // Description of one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  //
+  // Output only. (Except for legacy uploaders.)
+  Variant variant = 3 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
   // Identifies an exoneration in a given invocation and test id.
   // It is server-generated.
