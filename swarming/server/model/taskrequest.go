@@ -558,9 +558,9 @@ func (p *CacheEntry) ToProto() *apipb.CacheEntry {
 // CASReference described where to fetch input files from.
 type CASReference struct {
 	// CASInstance is a full name of RBE-CAS instance.
-	CASInstance string `gae:"cas_instance"`
+	CASInstance string `gae:"cas_instance" json:"cas_instance"`
 	// Digest identifies the root tree to fetch.
-	Digest CASDigest `gae:"digest,lsp"`
+	Digest CASDigest `gae:"digest,lsp" json:"digest"`
 }
 
 // ToProto converts CASReference to apipb.CASReference.
@@ -580,9 +580,9 @@ func (p *CASReference) ToProto() *apipb.CASReference {
 // https://github.com/bazelbuild/remote-apis/blob/77cfb44a88577a7ade5dd2400425f6d50469ec6d/build/bazel/remote/execution/v2/remote_execution.proto#L753-L791
 type CASDigest struct {
 	// Hash is blob's hash digest as a hex string.
-	Hash string `gae:"hash"`
+	Hash string `gae:"hash" json:"hash"`
 	// SizeBytes is the blob size.
-	SizeBytes int64 `gae:"size_bytes"`
+	SizeBytes int64 `gae:"size_bytes" json:"size_bytes"`
 }
 
 // ToProto converts CASDigest to apipb.CASDigest.
@@ -599,11 +599,11 @@ func (p *CASDigest) ToProto() *apipb.Digest {
 // CIPDInput specifies which CIPD client and packages to install.
 type CIPDInput struct {
 	// Server is URL of the CIPD server (including "https://" schema).
-	Server string `gae:"server"`
+	Server string `gae:"server" json:"server"`
 	// ClientPackage defines a version of the CIPD client to use.
-	ClientPackage CIPDPackage `gae:"client_package,lsp"`
+	ClientPackage CIPDPackage `gae:"client_package,lsp" json:"client_package"`
 	// Packages is a list of packages to install.
-	Packages []CIPDPackage `gae:"packages,lsp"`
+	Packages []CIPDPackage `gae:"packages,lsp" json:"packages"`
 }
 
 // IsPopulated returns true if the struct carries some data.
@@ -630,11 +630,11 @@ func (p *CIPDInput) ToProto() *apipb.CipdInput {
 // CIPDPackage defines a CIPD package to install into the task directory.
 type CIPDPackage struct {
 	// PackageName is a package name template (e.g. may include `${platform}`).
-	PackageName string `gae:"package_name"`
+	PackageName string `gae:"package_name" json:"package_name"`
 	// Version is a package version to install.
-	Version string `gae:"version"`
+	Version string `gae:"version" json:"version"`
 	// Path is a path relative to the task directory where to install the package.
-	Path string `gae:"path"`
+	Path string `gae:"path" json:"path"`
 }
 
 // ToProto converts CIPDPackage to apipb.CipdPackage.
@@ -651,10 +651,10 @@ func (p *CIPDPackage) ToProto() *apipb.CipdPackage {
 
 // Containment describes the task process containment.
 type Containment struct {
-	ContainmentType           apipb.Containment_ContainmentType `gae:"containment_type"`
-	LowerPriority             bool                              `gae:"lower_priority"`
-	LimitProcesses            int64                             `gae:"limit_processes"`
-	LimitTotalCommittedMemory int64                             `gae:"limit_total_committed_memory"`
+	ContainmentType           apipb.Containment_ContainmentType `gae:"containment_type" json:"containment_type"`
+	LowerPriority             bool                              `gae:"lower_priority" json:"lower_priority,omitempty"`
+	LimitProcesses            int64                             `gae:"limit_processes" json:"limit_processes,omitempty"`
+	LimitTotalCommittedMemory int64                             `gae:"limit_total_committed_memory" json:"limit_total_committed_memory,omitempty"`
 }
 
 // ToProto converts Containment struct to apipb.Containment
