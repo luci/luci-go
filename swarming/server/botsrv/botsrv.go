@@ -72,6 +72,17 @@ func (dims BotDimensions) DimensionValues(key string) []string {
 	return out
 }
 
+// ToMap converts dimensions to a map form used in some APIs.
+func (dims BotDimensions) ToMap() map[string][]string {
+	m := map[string][]string{}
+	for _, kv := range dims {
+		if k, v, ok := strings.Cut(kv, ":"); ok {
+			m[k] = append(m[k], v)
+		}
+	}
+	return m
+}
+
 // Response is serialized as JSON and sent to the bot.
 type Response any
 

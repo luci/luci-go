@@ -415,3 +415,21 @@ func TestPythonProxying(t *testing.T) {
 		}))
 	})
 }
+
+func TestBotDimensions(t *testing.T) {
+	t.Parallel()
+
+	dims := BotDimensions{
+		"k1:v1",
+		"k1:v2",
+		"k2:v3",
+		"broken",
+	}
+
+	assert.That(t, dims.DimensionValues("k1"), should.Match([]string{"v1", "v2"}))
+	assert.That(t, dims.DimensionValues("??"), should.Match([]string(nil)))
+	assert.That(t, dims.ToMap(), should.Match(map[string][]string{
+		"k1": {"v1", "v2"},
+		"k2": {"v3"},
+	}))
+}
