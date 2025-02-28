@@ -80,6 +80,11 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "parse test variant identifier").Err()
 	}
-	pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantIdentifier)
+	// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
+	// erroneously allowed to set variant_hash only and not the variant. This means the
+	// hash of the variant is not always the variant_hash.
+	// Set ModuleVariantHash directly to the stored variant hash as a work around,
+	// do not compute it.
+	ret.TestVariantIdentifier.ModuleVariantHash = ret.VariantHash
 	return ret, nil
 }

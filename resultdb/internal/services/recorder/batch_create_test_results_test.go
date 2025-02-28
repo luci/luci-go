@@ -374,7 +374,7 @@ func TestValidateTestResult(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		validateTR := func(result *pb.TestResult) error {
-			return ValidateTestResult(now, cfg, result)
+			return validateTestResult(now, cfg, result)
 		}
 
 		msg := validTestResult(now)
@@ -385,117 +385,27 @@ func TestValidateTestResult(t *testing.T) {
 				msg.TestVariantIdentifier = nil
 				assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: unspecified"))
 			})
-			t.Run("structurally invalid", func(t *ftt.Test) {
+			t.Run("structure", func(t *ftt.Test) {
 				// ParseAndValidateTestID has its own extensive test cases, these do not need to be repeated here.
-				t.Run("case name", func(t *ftt.Test) {
+				t.Run("case name invalid", func(t *ftt.Test) {
 					msg.TestVariantIdentifier.CaseName = "case name \x00"
 					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: case_name: non-printable rune '\\x00' at byte index 10"))
 				})
-				t.Run("variant", func(t *ftt.Test) {
+				t.Run("variant invalid", func(t *ftt.Test) {
 					msg.TestVariantIdentifier.ModuleVariant = pbutil.Variant("key\x00", "case name")
 					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: module_variant: \"key\\x00\":\"case name\": key: does not match pattern"))
 				})
 			})
 			t.Run("scheme", func(t *ftt.Test) {
-				referenceConfig := &configpb.Config{
-					Schemes: []*configpb.Scheme{
-						{
-							Id:                "junit",
-							HumanReadableName: "JUnit",
-							Coarse: &configpb.Scheme_Level{
-								ValidationRegexp:  "[a-z][a-z_0-9.]+",
-								HumanReadableName: "Package",
-							},
-							Fine: &configpb.Scheme_Level{
-								ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
-								HumanReadableName: "Class",
-							},
-							Case: &configpb.Scheme_Level{
-								ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
-								HumanReadableName: "Method",
-							},
-						},
-						{
-							Id:                "gtest",
-							HumanReadableName: "GTest",
-							Fine: &configpb.Scheme_Level{
-								HumanReadableName: "Suite",
-							},
-							Case: &configpb.Scheme_Level{
-								HumanReadableName: "Method",
-							},
-						},
-						{
-							Id:                "basic",
-							HumanReadableName: "Basic",
-							Case: &configpb.Scheme_Level{
-								HumanReadableName: "Method",
-							},
-						},
-					},
-				}
-				cfg, err = config.NewCompiledServiceConfig(referenceConfig, "revision")
-				assert.NoErr(t, err)
-
-				msg.TestVariantIdentifier.ModuleScheme = "junit"
-				msg.TestVariantIdentifier.CoarseName = "com.example.package"
-				msg.TestVariantIdentifier.FineName = "ExampleClass"
-				msg.TestVariantIdentifier.CaseName = "testMethod"
-
-				t.Run("valid", func(t *ftt.Test) {
-					assert.Loosely(t, validateTR(msg), should.BeNil)
-				})
+				// Only test a couple of cases to make sure ValidateTestIDToScheme is correctly invoked.
+				// That method has its own extensive test cases, which don't need to be repeated here.
 				t.Run("Scheme not defined", func(t *ftt.Test) {
 					msg.TestVariantIdentifier.ModuleScheme = "undefined"
 					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
 				})
-				t.Run("Coarse Name", func(t *ftt.Test) {
-					t.Run("missing", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.CoarseName = ""
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: coarse_name: required, please set a Package (scheme \"junit\")"))
-					})
-					t.Run("invalid", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.CoarseName = "1com.example.package"
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: coarse_name: does not match validation regexp \"^[a-z][a-z_0-9.]+$\", please set a valid Package (scheme \"junit\")"))
-					})
-					t.Run("set when not expected", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.ModuleScheme = "basic"
-						msg.TestVariantIdentifier.CoarseName = "value"
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: coarse_name: expected empty value (level is not defined by scheme \"basic\")"))
-					})
-				})
-				t.Run("Fine Name", func(t *ftt.Test) {
-					t.Run("missing", func(t *ftt.Test) {
-						// To avoid erroring out earlier on one of:
-						// - "coarse name set but fine name not set"
-						// - "coarse name unset"
-						// We need to switch to another module scheme to do this test.
-						msg.TestVariantIdentifier.ModuleScheme = "gtest"
-						msg.TestVariantIdentifier.CoarseName = ""
-						msg.TestVariantIdentifier.FineName = ""
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: fine_name: required, please set a Suite (scheme \"gtest\")"))
-					})
-					t.Run("invalid", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.FineName = "1com.example.package"
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: fine_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Class (scheme \"junit\")"))
-					})
-					t.Run("set when not expected", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.ModuleScheme = "basic"
-						msg.TestVariantIdentifier.CoarseName = ""
-						msg.TestVariantIdentifier.FineName = "value"
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: fine_name: expected empty value (level is not defined by scheme \"basic\")"))
-					})
-				})
-				t.Run("Case Name", func(t *ftt.Test) {
-					t.Run("missing", func(t *ftt.Test) {
-						// We do not fall through to schema validation, we fail on basic validation as all test results must have a case name.
-						msg.TestVariantIdentifier.CaseName = ""
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: case_name: unspecified"))
-					})
-					t.Run("invalid", func(t *ftt.Test) {
-						msg.TestVariantIdentifier.CaseName = "1method"
-						assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: case_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Method (scheme \"junit\")"))
-					})
+				t.Run("Coarse name missing", func(t *ftt.Test) {
+					msg.TestVariantIdentifier.CoarseName = ""
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_identifier: coarse_name: required, please set a Package (scheme \"junit\")"))
 				})
 			})
 			t.Run("legacy", func(t *ftt.Test) {
@@ -508,6 +418,10 @@ func TestValidateTestResult(t *testing.T) {
 				t.Run("valid with no variant", func(t *ftt.Test) {
 					msg.Variant = nil
 					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("invalid Test ID scheme", func(t *ftt.Test) {
+					msg.TestId = ":myModule!undefined:Package:Class#Method"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
 				})
 				t.Run("invalid test ID", func(t *ftt.Test) {
 					// Uses printable unicode character 'µ'.
@@ -946,6 +860,98 @@ func TestValidateTestResult(t *testing.T) {
 				}
 				assert.Loosely(t, validateTR(msg), should.ErrLike("truncated_errors_count: "+
 					"must be non-negative"))
+			})
+		})
+	})
+}
+
+func TestValidateTestIDToScheme(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateTestIDToScheme`, t, func(t *ftt.Test) {
+		referenceConfig := &configpb.Config{
+			Schemes: []*configpb.Scheme{
+				{
+					Id:                "junit",
+					HumanReadableName: "JUnit",
+					Coarse: &configpb.Scheme_Level{
+						ValidationRegexp:  "[a-z][a-z_0-9.]+",
+						HumanReadableName: "Package",
+					},
+					Fine: &configpb.Scheme_Level{
+						ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
+						HumanReadableName: "Class",
+					},
+					Case: &configpb.Scheme_Level{
+						ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
+						HumanReadableName: "Method",
+					},
+				},
+				{
+					Id:                "basic",
+					HumanReadableName: "Basic",
+					Case: &configpb.Scheme_Level{
+						HumanReadableName: "Method",
+					},
+				},
+			},
+		}
+		cfg, err := config.NewCompiledServiceConfig(referenceConfig, "revision")
+		assert.NoErr(t, err)
+
+		testID := pbutil.TestIdentifier{
+			ModuleName:   "myModule",
+			ModuleScheme: "junit",
+			CoarseName:   "com.example.package",
+			FineName:     "ExampleClass",
+			CaseName:     "testMethod",
+		}
+
+		t.Run("valid", func(t *ftt.Test) {
+			assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.BeNil)
+		})
+		t.Run("Scheme not defined", func(t *ftt.Test) {
+			testID.ModuleScheme = "undefined"
+			assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
+		})
+		t.Run("Coarse Name", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
+				testID.CoarseName = ""
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: required, please set a Package (scheme \"junit\")"))
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				testID.CoarseName = "1com.example.package"
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: does not match validation regexp \"^[a-z][a-z_0-9.]+$\", please set a valid Package (scheme \"junit\")"))
+			})
+			t.Run("set when not expected", func(t *ftt.Test) {
+				testID.ModuleScheme = "basic"
+				testID.CoarseName = "value"
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: expected empty value (level is not defined by scheme \"basic\")"))
+			})
+		})
+		t.Run("Fine Name", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
+				testID.FineName = ""
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: required, please set a Class (scheme \"junit\")"))
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				testID.FineName = "1com.example.package"
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Class (scheme \"junit\")"))
+			})
+			t.Run("set when not expected", func(t *ftt.Test) {
+				testID.ModuleScheme = "basic"
+				testID.CoarseName = ""
+				testID.FineName = "value"
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: expected empty value (level is not defined by scheme \"basic\")"))
+			})
+		})
+		t.Run("Case Name", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
+				testID.CaseName = ""
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("case_name: required, please set a Method (scheme \"junit\")"))
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				testID.CaseName = "1method"
+				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("case_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Method (scheme \"junit\")"))
 			})
 		})
 	})

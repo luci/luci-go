@@ -72,16 +72,17 @@ func TestRead(t *testing.T) {
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
 		})
-		t.Run("Legacy Test ID", func(t *ftt.Test) {
-			// Insert a TestExoneration with a legacy Test ID.
+		t.Run("Legacy upload, VariantHash set and no Variant provided", func(t *ftt.Test) {
+			// Insert a TestExoneration.
+			// Set only a custom variant hash, no variant.
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":  invID,
 					"TestId":        "t t",
 					"ExonerationId": "id",
-					"Variant":       pbutil.Variant("k1", "v1", "k2", "v2"),
-					"VariantHash":   "68d82cb978092fc7",
+					"Variant":       pbutil.Variant(),
+					"VariantHash":   "deadbeef",
 					"Reason":        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 					// Leave ExplanationHTML as null.
 				}))
@@ -96,13 +97,11 @@ func TestRead(t *testing.T) {
 				TestVariantIdentifier: &pb.TestVariantIdentifier{
 					ModuleName:        "legacy",
 					ModuleScheme:      "legacy",
-					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
-					ModuleVariantHash: "68d82cb978092fc7",
+					ModuleVariantHash: "deadbeef",
 					CaseName:          "t t",
 				},
-				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
 				ExplanationHtml: "",
-				VariantHash:     "68d82cb978092fc7",
+				VariantHash:     "deadbeef",
 				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 			}))
 		})

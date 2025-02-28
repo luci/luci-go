@@ -31,7 +31,7 @@ func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, cfg *confi
 	if err := pbutil.ValidateInvocationName(msg.Invocation); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
-	if err := ValidateTestResult(now, cfg, msg.TestResult); err != nil {
+	if err := validateTestResult(now, cfg, msg.TestResult); err != nil {
 		return errors.Annotate(err, "test_result").Err()
 	}
 	if err := pbutil.ValidateRequestID(msg.RequestId); err != nil {

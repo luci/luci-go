@@ -71,7 +71,7 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		if err := emptyOrEqual("request_id", r.RequestId, req.RequestId); err != nil {
 			return errors.Annotate(err, "requests: %d", i).Err()
 		}
-		if err := ValidateTestResult(now, cfg, r.TestResult); err != nil {
+		if err := validateTestResult(now, cfg, r.TestResult); err != nil {
 			return errors.Annotate(err, "requests: %d: test_result", i).Err()
 		}
 
@@ -231,8 +231,8 @@ func longestCommonPrefix(str1, str2 string) string {
 	return str2
 }
 
-// ValidateTestResult returns a non-nil error if msg is invalid.
-func ValidateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb.TestResult) error {
+// validateTestResult returns a non-nil error if msg is invalid.
+func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb.TestResult) error {
 	if tr == nil {
 		return validate.Unspecified()
 	}
@@ -248,7 +248,7 @@ func ValidateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := ValidateTestIDToScheme(cfg, testID); err != nil {
+		if err := validateTestIDToScheme(cfg, testID); err != nil {
 			return errors.Annotate(err, "test_id").Err()
 		}
 	} else {
@@ -261,7 +261,7 @@ func ValidateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := ValidateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantIdentifier)); err != nil {
+		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantIdentifier)); err != nil {
 			return errors.Annotate(err, "test_variant_identifier").Err()
 		}
 	}
@@ -302,7 +302,7 @@ func ValidateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	return nil
 }
 
-func ValidateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.TestIdentifier) error {
+func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.TestIdentifier) error {
 	scheme, ok := cfg.Schemes[testID.ModuleScheme]
 	if !ok {
 		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()

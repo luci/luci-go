@@ -17,18 +17,20 @@ package recorder
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/exonerations"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -38,71 +40,179 @@ import (
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`TestValidateCreateTestExonerationRequest`, t, func(t *ftt.Test) {
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		req := &pb.CreateTestExonerationRequest{
 			Invocation: "invocations/inv",
 			TestExoneration: &pb.TestExoneration{
-				TestId: "ninja://ab/cd.ef",
-				Variant: pbutil.Variant(
-					"a/b", "1",
-					"c", "2",
-				),
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:   "//infra/junit_tests",
+					ModuleScheme: "junit",
+					ModuleVariant: pbutil.Variant(
+						"key", "value",
+					),
+					CoarseName: "org.chromium.go.luci",
+					FineName:   "ValidationTests",
+					CaseName:   "FooBar",
+				},
 				ExplanationHtml: "The test also failed without patch",
 				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 			},
 		}
 
-		t.Run(`Empty Invocation`, func(t *ftt.Test) {
+		t.Run(`Empty invocation`, func(t *ftt.Test) {
 			req.Invocation = ""
-			err := validateCreateTestExonerationRequest(req, true)
+			err := validateCreateTestExonerationRequest(req, cfg, true)
 			assert.Loosely(t, err, should.ErrLike(`invocation: unspecified`))
 		})
 
-		t.Run(`Empty Exoneration`, func(t *ftt.Test) {
+		t.Run(`Empty exoneration`, func(t *ftt.Test) {
 			req.TestExoneration = nil
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike(`test_exoneration: test_id: unspecified`))
+			err := validateCreateTestExonerationRequest(req, cfg, true)
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: unspecified`))
+		})
+		t.Run(`Invalid exoneration`, func(t *ftt.Test) {
+			// There are many more cases, but these are already tested in the test for
+			// validateTestExoneration. This test is to ensure that method is called.
+			req.TestExoneration.TestVariantIdentifier.CaseName = "test\x00"
+			err := validateCreateTestExonerationRequest(req, cfg, true)
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: test_variant_identifier: case_name: non-printable rune '\x00' at byte index 4`))
 		})
 
-		t.Run(`NUL in test id`, func(t *ftt.Test) {
-			req.TestExoneration.TestId = "\x01"
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike("test_id: non-printable rune"))
+		t.Run(`Request id`, func(t *ftt.Test) {
+			req.RequestId = "\u0123"
+			err := validateCreateTestExonerationRequest(req, cfg, true)
+			assert.Loosely(t, err, should.ErrLike(`request_id: does not match`))
 		})
 
-		t.Run(`Invalid variant`, func(t *ftt.Test) {
-			req.TestExoneration.Variant = pbutil.Variant("", "")
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike(`variant: "":"": key: unspecified`))
+		t.Run(`Valid request`, func(t *ftt.Test) {
+			err := validateCreateTestExonerationRequest(req, cfg, true)
+			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+}
+
+func TestValidateTestExoneration(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`TestValidateTestExoneration`, t, func(t *ftt.Test) {
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
+		t.Run(`Unspecified`, func(t *ftt.Test) {
+			err := validateTestExoneration(nil, cfg)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
 		})
 
-		t.Run(`Reason not specified`, func(t *ftt.Test) {
-			req.TestExoneration.Reason = pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike(`test_exoneration: reason: unspecified`))
-		})
-
-		t.Run(`Explanation HTML not specified`, func(t *ftt.Test) {
-			req.TestExoneration.ExplanationHtml = ""
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike(`test_exoneration: explanation_html: unspecified`))
-		})
-
+		ex := &pb.TestExoneration{
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:   "//infra/junit_tests",
+				ModuleScheme: "junit",
+				ModuleVariant: pbutil.Variant(
+					"key", "value",
+				),
+				CoarseName: "org.chromium.go.luci",
+				FineName:   "ValidationTests",
+				CaseName:   "FooBar",
+			},
+			ExplanationHtml: "Unexpected pass.",
+			Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
+		}
 		t.Run(`Valid`, func(t *ftt.Test) {
-			err := validateCreateTestExonerationRequest(req, true)
+			err := validateTestExoneration(ex, cfg)
 			assert.Loosely(t, err, should.BeNil)
 		})
-
-		t.Run(`Mismatching variant hashes`, func(t *ftt.Test) {
-			req.TestExoneration.VariantHash = "doesn't match"
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.ErrLike(`computed and supplied variant hash don't match`))
+		t.Run("Test variant identifier", func(t *ftt.Test) {
+			t.Run("Structure", func(t *ftt.Test) {
+				// ParseAndValidateTestID has its own extensive test cases, these do not need to be repeated here.
+				t.Run(`Invalid case name`, func(t *ftt.Test) {
+					ex.TestVariantIdentifier.CaseName = "case name \x00"
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_identifier: case_name: non-printable rune '\\x00' at byte index 10"))
+				})
+				t.Run(`Invalid module variant`, func(t *ftt.Test) {
+					ex.TestVariantIdentifier.ModuleVariant = pbutil.Variant("key\x00", "value")
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_identifier: module_variant: \"key\\x00\":\"value\": key: does not match pattern"))
+				})
+			})
+			t.Run("Scheme", func(t *ftt.Test) {
+				// Only test a couple of cases to make sure ValidateTestIDToScheme is correctly invoked.
+				// That method has its own extensive test cases, which don't need to be repeated here.
+				t.Run("Scheme not defined", func(t *ftt.Test) {
+					ex.TestVariantIdentifier.ModuleScheme = "undefined"
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_identifier: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
+				})
+				t.Run(`Coarse name missing`, func(t *ftt.Test) {
+					ex.TestVariantIdentifier = nil
+					ex.TestId = ":myModule!junit::Class#Method"
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_id: coarse_name: required, please set a Package (scheme \"junit\")"))
+				})
+			})
 		})
+		t.Run("Legacy", func(t *ftt.Test) {
+			t.Run("Legacy fields are ignored unless test variant identifier cleared", func(t *ftt.Test) {
+				ex.TestId = "something\x00"
+				ex.Variant = pbutil.Variant("", "")
+				err := validateTestExoneration(ex, cfg)
+				assert.Loosely(t, err, should.BeNil)
+			})
 
-		t.Run(`Matching variant hashes`, func(t *ftt.Test) {
-			req.TestExoneration.Variant = pbutil.Variant("a", "b")
-			req.TestExoneration.VariantHash = "c467ccce5a16dc72"
-			err := validateCreateTestExonerationRequest(req, true)
-			assert.Loosely(t, err, should.BeNil)
+			ex.TestVariantIdentifier = nil
+			ex.TestId = "something"
+			ex.Variant = pbutil.Variant("a", "1", "b", "2")
+
+			t.Run(`Valid`, func(t *ftt.Test) {
+				err := validateTestExoneration(ex, cfg)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run("Test ID", func(t *ftt.Test) {
+				t.Run(`Bad scheme`, func(t *ftt.Test) {
+					ex.TestId = ":MyModule!undefined:Package:Class#Method"
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.ErrLike("test_id: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
+				})
+				t.Run(`Non-printable runes`, func(t *ftt.Test) {
+					ex.TestId = "\x01"
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.ErrLike("test_id: non-printable rune"))
+				})
+			})
+			t.Run("Variant/VariantHash", func(t *ftt.Test) {
+				t.Run(`Mismatching variant hashes`, func(t *ftt.Test) {
+					ex.VariantHash = "doesn't match"
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.ErrLike(`computed and supplied variant hash don't match`))
+				})
+				t.Run(`Matching variant hashes`, func(t *ftt.Test) {
+					ex.Variant = pbutil.Variant("a", "b")
+					ex.VariantHash = "c467ccce5a16dc72"
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run(`Variant hash only`, func(t *ftt.Test) {
+					// Unfortunately we have to support this case for legacy clients, even though
+					// it means we are unable to capture a Variant.
+					ex.Variant = nil
+					ex.VariantHash = "c467ccce5a16dc72"
+
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run(`Invalid variant`, func(t *ftt.Test) {
+					ex.Variant = pbutil.Variant("", "")
+					err := validateTestExoneration(ex, cfg)
+					assert.Loosely(t, err, should.ErrLike(`variant: "":"": key: unspecified`))
+				})
+			})
+		})
+		t.Run(`Reason is not specified`, func(t *ftt.Test) {
+			ex.Reason = pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
+			err := validateTestExoneration(ex, cfg)
+			assert.Loosely(t, err, should.ErrLike(`reason: unspecified`))
+		})
+		t.Run(`Explanation HTML not specified`, func(t *ftt.Test) {
+			ex.ExplanationHtml = ""
+			err := validateTestExoneration(ex, cfg)
+			assert.Loosely(t, err, should.ErrLike(`explanation_html: unspecified`))
 		})
 	})
 }
@@ -110,6 +220,11 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 func TestCreateTestExoneration(t *testing.T) {
 	ftt.Run(`TestCreateTestExoneration`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
 
 		recorder := newTestRecorderServer()
 
@@ -145,40 +260,38 @@ func TestCreateTestExoneration(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`invocations/inv not found`))
 		})
 
-		e2eTest := func(req *pb.CreateTestExonerationRequest, expectedVariantHash, expectedId string) {
+		e2eTest := func(req *pb.CreateTestExonerationRequest, expected *pb.TestExoneration, expectedId string) {
 			// Insert the invocation.
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			res, err := recorder.CreateTestExoneration(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 
+			// Check the Exoneration ID.
 			if expectedId == "" {
-				assert.Loosely(t, res.ExonerationId, should.HavePrefix(expectedVariantHash+":"))
+				assert.Loosely(t, res.ExonerationId, should.HavePrefix(expected.VariantHash+":"))
 			} else {
-				assert.Loosely(t, res.ExonerationId, should.Equal(expectedVariantHash+":"+expectedId))
+				assert.Loosely(t, res.ExonerationId, should.Equal(expected.VariantHash+":"+expectedId))
 			}
 
-			expected := proto.Clone(req.TestExoneration).(*pb.TestExoneration)
-			proto.Merge(expected, &pb.TestExoneration{
-				Name:          pbutil.TestExonerationName("inv", "a", res.ExonerationId),
-				ExonerationId: res.ExonerationId,
-				VariantHash:   expectedVariantHash,
-			})
-			assert.Loosely(t, res, should.Match(expected))
+			expectedWireProto := proto.Clone(expected).(*pb.TestExoneration)
+			expectedWireProto.ExonerationId = res.ExonerationId
+			expectedWireProto.Name = pbutil.TestExonerationName("inv", expected.TestId, res.ExonerationId)
+			if req.TestExoneration.TestVariantIdentifier == nil {
+				// If the request is a legacy request, do not expect the test variant identifier
+				// to be set on the response. This is to minimise changes to existing clients.
+				expectedWireProto.TestVariantIdentifier = nil
+			}
+			assert.Loosely(t, res, should.Match(expectedWireProto))
 
 			// Now check the database.
+			expectedDBProto := proto.Clone(expected).(*pb.TestExoneration)
+			expectedDBProto.ExonerationId = res.ExonerationId
+			expectedDBProto.Name = pbutil.TestExonerationName("inv", expected.TestId, res.ExonerationId)
+
 			row, err := exonerations.Read(span.Single(ctx), res.Name)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, row.Variant, should.Match(expected.Variant))
-			assert.Loosely(t, row.ExplanationHtml, should.Equal(expected.ExplanationHtml))
-
-			// Check variant hash.
-			key := invocations.ID("inv").Key(res.TestId, res.ExonerationId)
-			var variantHash string
-			testutil.MustReadRow(ctx, t, "TestExonerations", key, map[string]any{
-				"VariantHash": &variantHash,
-			})
-			assert.Loosely(t, variantHash, should.Equal(expectedVariantHash))
+			assert.Loosely(t, row, should.Match(expectedDBProto))
 
 			if req.RequestId != "" {
 				// Test idempotency.
@@ -188,42 +301,90 @@ func TestCreateTestExoneration(t *testing.T) {
 			}
 		}
 
-		t.Run(`Without request id, e2e`, func(t *ftt.Test) {
-			e2eTest(&pb.CreateTestExonerationRequest{
-				Invocation: "invocations/inv",
-				TestExoneration: &pb.TestExoneration{
-					TestId:          "a",
-					Variant:         pbutil.Variant("a", "1", "b", "2"),
-					ExplanationHtml: "Test is known flaky. Similar test failures have been observed in other CLs.",
-					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+		request := &pb.CreateTestExonerationRequest{
+			Invocation: "invocations/inv",
+			TestExoneration: &pb.TestExoneration{
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:   "//infra/junit_tests",
+					ModuleScheme: "junit",
+					ModuleVariant: pbutil.Variant(
+						"key", "value",
+					),
+					CoarseName: "org.chromium.go.luci",
+					FineName:   "ValidationTests",
+					CaseName:   "FooBar",
 				},
-			}, "6408fdc5c36df5df", "")
+				ExplanationHtml: "Test is known flaky. Similar test failures have been observed in other CLs.",
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+			},
+		}
+		expected := &pb.TestExoneration{
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:   "//infra/junit_tests",
+				ModuleScheme: "junit",
+				ModuleVariant: pbutil.Variant(
+					"key", "value",
+				),
+				ModuleVariantHash: "5d8482c3056d8635",
+				CoarseName:        "org.chromium.go.luci",
+				FineName:          "ValidationTests",
+				CaseName:          "FooBar",
+			},
+			TestId:          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+			Variant:         pbutil.Variant("key", "value"),
+			VariantHash:     "5d8482c3056d8635",
+			ExplanationHtml: "Test is known flaky. Similar test failures have been observed in other CLs.",
+			Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+		}
+		t.Run(`Without request id, e2e`, func(t *ftt.Test) {
+			e2eTest(request, expected, "")
+		})
+		t.Run(`With request id, e2e`, func(t *ftt.Test) {
+			request.RequestId = "request id"
+			e2eTest(request, expected, "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
 		})
 
-		t.Run(`With request id, e2e`, func(t *ftt.Test) {
-			e2eTest(&pb.CreateTestExonerationRequest{
+		t.Run(`Legacy Uploader`, func(t *ftt.Test) {
+			request := &pb.CreateTestExonerationRequest{
 				RequestId:  "request id",
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestId:          "a",
+					TestId:          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 					Variant:         pbutil.Variant("a", "1", "b", "2"),
 					ExplanationHtml: "Test also failed when tried without patch.",
 					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 				},
-			}, "6408fdc5c36df5df", "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
-		})
-
-		t.Run(`With hash but no variant, e2e`, func(t *ftt.Test) {
-			e2eTest(&pb.CreateTestExonerationRequest{
-				RequestId:  "request id",
-				Invocation: "invocations/inv",
-				TestExoneration: &pb.TestExoneration{
-					TestId:          "a",
-					VariantHash:     "deadbeefdeadbeef",
-					ExplanationHtml: "Unexpected pass.",
-					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
+			}
+			expected := &pb.TestExoneration{
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//infra/junit_tests",
+					ModuleScheme:      "junit",
+					ModuleVariant:     pbutil.Variant("a", "1", "b", "2"),
+					ModuleVariantHash: "6408fdc5c36df5df",
+					CoarseName:        "org.chromium.go.luci",
+					FineName:          "ValidationTests",
+					CaseName:          "FooBar",
 				},
-			}, "deadbeefdeadbeef", "")
+				TestId:          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+				Variant:         pbutil.Variant("a", "1", "b", "2"),
+				VariantHash:     "6408fdc5c36df5df",
+				ExplanationHtml: "Test also failed when tried without patch.",
+				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+			}
+			t.Run(`Base case`, func(t *ftt.Test) {
+				e2eTest(request, expected, "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
+			})
+			t.Run(`With hash only, e2e`, func(t *ftt.Test) {
+				request.TestExoneration.Variant = nil
+				request.TestExoneration.VariantHash = "deadbeefdeadbeef"
+
+				expected.Variant = nil
+				expected.VariantHash = "deadbeefdeadbeef"
+				expected.TestVariantIdentifier.ModuleVariant = nil
+				expected.TestVariantIdentifier.ModuleVariantHash = "deadbeefdeadbeef"
+
+				e2eTest(request, expected, "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
+			})
 		})
 	})
 }
