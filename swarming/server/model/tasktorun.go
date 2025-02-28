@@ -152,6 +152,15 @@ type TaskToRun struct {
 	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
+// TaskRequestKey returns the parent task request key or panics if it is unset.
+func (t *TaskToRun) TaskRequestKey() *datastore.Key {
+	key := t.Key.Parent()
+	if key == nil || key.Kind() != "TaskRequest" {
+		panic(fmt.Sprintf("invalid TaskToRun key %q", t.Key))
+	}
+	return key
+}
+
 // IsReapable returns true if the TaskToRun is still pending.
 func (t *TaskToRun) IsReapable() bool {
 	return t.Expiration.IsSet()

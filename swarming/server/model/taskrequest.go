@@ -263,6 +263,25 @@ func (p *TaskRequest) ExecutionDeadline() time.Time {
 	return p.Created.Add(p.maxLifeTime())
 }
 
+// TaskFlags returns a bit field describing aspects of the task.
+func (p *TaskRequest) TaskFlags() TaskFlags {
+	var flags TaskFlags
+	if p.IsTerminate() {
+		flags |= TaskFlagTermination
+	}
+	return flags
+}
+
+// IsTerminate is true if any of the slices is a termination task slice.
+func (p *TaskRequest) IsTerminate() bool {
+	for _, s := range p.TaskSlices {
+		if s.Properties.IsTerminate() {
+			return true
+		}
+	}
+	return false
+}
+
 // maxLifeTime returns the maximum latency at which the task may still be running.
 func (p *TaskRequest) maxLifeTime() time.Duration {
 	var ret, offset int64
