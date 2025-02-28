@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
 
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/internal/testutil"
@@ -33,6 +34,7 @@ import (
 func TestExportStatus(t *testing.T) {
 	ftt.Run(`Export status`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		client := NewFakeClient()
 		// This should not be exported, because it's earlier than the one in BQ.
 		status.NewStatusBuilder().WithCreateTime(time.Unix(90, 0).UTC()).CreateInDB(ctx)
@@ -78,5 +80,6 @@ func TestExportStatus(t *testing.T) {
 				},
 			},
 		}))
+		assert.Loosely(t, luciTreeStatus.Get(ctx, "chromium"), should.Equal("closed"))
 	})
 }

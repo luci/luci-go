@@ -89,6 +89,8 @@ func export(ctx context.Context, client ExportClient) error {
 			return errors.Annotate(err, "to row").Err()
 		}
 		rows = append(rows, row)
+		// Export to Monarch
+		luciTreeStatus.Set(ctx, row.Status, row.TreeName)
 	}
 	err = client.InsertStatusRows(ctx, rows)
 	if err != nil {
