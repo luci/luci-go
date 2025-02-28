@@ -718,8 +718,7 @@ type QueryTestExonerationsRequest struct {
 	// Retrieve test exonerations included in these invocations, directly or
 	// indirectly (via Invocation.included_invocations).
 	//
-	// Specifying multiple invocations is equivalent to querying one invocation
-	// that includes these.
+	// As of February 2025, a maximum of one invocation may be specified.
 	Invocations []string `protobuf:"bytes,1,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	// A test exoneration in the response must satisfy this predicate.
 	Predicate *TestExonerationPredicate `protobuf:"bytes,2,opt,name=predicate,proto3" json:"predicate,omitempty"`

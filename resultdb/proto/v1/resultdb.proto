@@ -348,8 +348,7 @@ message QueryTestExonerationsRequest {
   // Retrieve test exonerations included in these invocations, directly or
   // indirectly (via Invocation.included_invocations).
   //
-  // Specifying multiple invocations is equivalent to querying one invocation
-  // that includes these.
+  // As of February 2025, a maximum of one invocation may be specified.
   repeated string invocations = 1;
 
   // A test exoneration in the response must satisfy this predicate.

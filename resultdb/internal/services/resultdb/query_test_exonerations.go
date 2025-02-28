@@ -34,6 +34,9 @@ import (
 // validateQueryTestExonerationsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) error {
+	if len(req.Invocations) > 1 {
+		return errors.Reason("invocations: only one invocation is allowed").Err()
+	}
 	if err := pbutil.ValidateTestExonerationPredicate(req.Predicate); err != nil {
 		return errors.Annotate(err, "predicate").Err()
 	}
