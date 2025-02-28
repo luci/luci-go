@@ -60,7 +60,7 @@ const (
 	),
 
 	latest AS (
-		SELECT MAX(these_keys.{{.keyColumn}}) AS key FROM these_keys)
+		SELECT MAX(these_keys.{{.keyColumn}}) AS key FROM these_keys
 		INNER JOIN other_keys
 		ON these_keys.{{.keyColumn}} = other_keys.{{.keyColumn}}
 	)
@@ -68,7 +68,7 @@ const (
 	SELECT * FROM {{.datasetID}}.{{.thisTableName}}
 	WHERE {{.keyColumn}} = COALESCE(
 		(SELECT key FROM latest),
-		(SELECT MAX({{.keyColumn}}) FROM {{.datasetID}}.{{.thisTableName}},
+		(SELECT MAX({{.keyColumn}}) FROM {{.datasetID}}.{{.thisTableName}})
 	)
 	`
 )
@@ -184,8 +184,8 @@ func (client *Client) InsertRealms(ctx context.Context, rows []*bqpb.RealmRow) e
 	return writer.AppendRowsWithPendingStream(ctx, payload)
 }
 
-func (client *Client) ensureLatestView(ctx context.Context,
-	viewName, thisTable, otherTable, version string) error {
+func constructLatestViewQuery(ctx context.Context,
+	thisTable, otherTable string) (string, error) {
 	// Construct the view query.
 	buf := bytes.Buffer{}
 	err := latestViewTemplate.Execute(&buf, map[string]string{
@@ -195,13 +195,23 @@ func (client *Client) ensureLatestView(ctx context.Context,
 		"otherTableName": otherTable,
 	})
 	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+func (client *Client) ensureLatestView(ctx context.Context,
+	viewName, thisTable, otherTable, version string) error {
+	viewQuery, err := constructLatestViewQuery(ctx, thisTable, otherTable)
+	if err != nil {
 		return errors.Annotate(err,
-			"failed to construct view query for latest %q", thisTable).Err()
+			"failed to construct view query for %q", viewName).Err()
 	}
 
 	// Ensure the view to propagate schema updates.
 	metadata := &bigquery.TableMetadata{
-		ViewQuery: buf.String(),
+		ViewQuery: viewQuery,
 		Labels:    map[string]string{bq.MetadataVersionKey: version},
 	}
 	view := client.bqClient.Dataset(datasetID).Table(viewName)
