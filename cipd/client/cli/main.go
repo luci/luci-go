@@ -434,25 +434,33 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	if err != nil {
 		return cipd.ClientOptions{}, errors.Annotate(err, "bad auth options").Tag(cipderr.BadArgument).Err()
 	}
-	client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
-	if err != nil {
-		return cipd.ClientOptions{}, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
-	}
 
 	realOpts := cipd.ClientOptions{
-		Root:                opts.rootDir,
-		CacheDir:            opts.cacheDir,
-		Versions:            opts.versions,
-		AuthenticatedClient: client,
-		MaxThreads:          opts.maxThreads.maxThreads,
-		AnonymousClient:     http.DefaultClient,
-		PluginsContext:      ctx,
-		LoginInstructions:   "run `cipd auth-login` to login or relogin",
+		Root:              opts.rootDir,
+		CacheDir:          opts.cacheDir,
+		Versions:          opts.versions,
+		MaxThreads:        opts.maxThreads.maxThreads,
+		AnonymousClient:   http.DefaultClient,
+		PluginsContext:    ctx,
+		LoginInstructions: "run `cipd auth-login` to login or relogin",
 	}
 	if err := realOpts.LoadFromEnv(ctx); err != nil {
 		return cipd.ClientOptions{}, err
 	}
 	realOpts.ServiceURL = opts.resolvedServiceURL(ctx)
+
+	// When using a proxy, the proxy does authenticated requests to the backend
+	// and the client just hits it anonymously (see ClientOptions.ProxyURL). Skip
+	// loading credentials.
+	if realOpts.ProxyURL != "" {
+		logging.Debugf(ctx, "Using %s=%s", cipd.EnvCIPDProxyURL, realOpts.ProxyURL)
+	} else {
+		realOpts.AuthenticatedClient, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
+		if err != nil {
+			return cipd.ClientOptions{}, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+		}
+	}
+
 	return realOpts, nil
 }
 
@@ -3587,6 +3595,10 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvCIPDServiceURL: {
 				Advanced:  true,
 				ShortDesc: "Override CIPD service URL.",
+			},
+			cipd.EnvCIPDProxyURL: {
+				Advanced:  true,
+				ShortDesc: "If set, send requests here instead of the remote backend. Only unix://<path> is supported currently.",
 			},
 			envSimpleTerminalUI: {
 				Advanced:  true,

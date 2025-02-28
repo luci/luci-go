@@ -83,6 +83,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/proxyclient"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
@@ -123,13 +124,14 @@ const (
 	EnvParallelDownloads   = "CIPD_PARALLEL_DOWNLOADS"
 	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
 	EnvCIPDServiceURL      = "CIPD_SERVICE_URL"
+	EnvCIPDProxyURL        = "CIPD_PROXY_URL"
 )
 
 var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.18"
+	UserAgent = "cipd 2.6.19"
 )
 
 func init() {
@@ -415,6 +417,37 @@ type ClientOptions struct {
 	// Will be started lazily when needed.
 	AdmissionPlugin []string
 
+	// ProxyURL is an URL of a local HTTP server to use for backend calls.
+	//
+	// This should be a regular clear text (not TLS) HTTP 1.1 or 2.0 server that
+	// exposes the same RPCs as the standard remote CIPD backend. This is **not**
+	// a generic HTTP proxy (i.e. CIPD client won't be sending CONNECT requests to
+	// it).
+	//
+	// The client will be sending all HTTP requests in a regular way, just into
+	// the proxy's port. It will keep `Host` header set to the original target of
+	// the request (to let the proxy know what CIPD backend service is being
+	// used).
+	//
+	// The primary purpose is to allow running the CIPD client in an environment
+	// where there's no direct network connectivity with the CIPD backend and
+	// the Google Storage.
+	//
+	// All calls to the proxy will be done without any credentials (since
+	// refreshing access tokens requires network connectivity to the OAuth
+	// backend). It is assumed the proxy has its own credentials it uses to
+	// communicate with the remote CIPD backend and that access to the proxy
+	// endpoint is secured via some other means (e.g. unix filesystem permissions,
+	// firewall rules, etc.) so that unauthorized processes can't take advantage
+	// of the proxy's credentials.
+	//
+	// When using a proxy, AnonymousClient and AuthenticatedClient are ignored
+	// (a custom private HTTP client is used instead).
+	//
+	// Currently only `unix://<abs path>` URLs are supported (to communicate with
+	// a proxy over a Unix domain socket at the given path).
+	ProxyURL string
+
 	// Mocks used by tests.
 	casMock          api.StorageClient
 	repoMock         api.RepositoryClient
@@ -481,8 +514,13 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 			}
 		}
 	}
+
+	// These are validated in NewClient.
 	if v := env.Get(EnvCIPDServiceURL); v != "" {
 		opts.ServiceURL = v
+	}
+	if v := env.Get(EnvCIPDProxyURL); v != "" {
+		opts.ProxyURL = v
 	}
 
 	// Load the config from CIPD_CONFIG_FILE if given, falling back to some
@@ -576,24 +614,29 @@ var initPluginHost func(ctx context.Context) plugin.Host
 // Root can be empty.
 //
 // If AuthenticatedClient in ClientOptions is unset, initializes a new
-// authenticating client using the hardcoded Chrome Infra OAuth client
-// credentials.
+// authenticating client if necessary using the hardcoded Chrome Infra OAuth
+// client credentials.
 //
-// The CIPD client will use the given context for logging from plugins
-// (if any).
+// The CIPD client will use the given context for logging from plugins (if any).
 //
 // The client must be shutdown with Close when no longer needed.
 func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
-	if opts.AuthenticatedClient == nil {
-		client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, chromeinfra.DefaultAuthOptions()).Client()
-		if err != nil {
-			return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
-		}
-		opts.AuthenticatedClient = client
-		opts.LoginInstructions = "run `cipd auth-login` to login or relogin"
-	}
 	if err := opts.LoadFromEnv(ctx); err != nil {
 		return nil, err
+	}
+	if opts.AuthenticatedClient == nil {
+		// When using a proxy, the proxy does authenticated requests to the backend
+		// and the client just hits it anonymously (see ClientOptions.ProxyURL).
+		if opts.ProxyURL != "" {
+			logging.Debugf(ctx, "Detected %q, skipping authentication", EnvCIPDProxyURL)
+		} else {
+			client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, chromeinfra.DefaultAuthOptions()).Client()
+			if err != nil {
+				return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+			}
+			opts.AuthenticatedClient = client
+			opts.LoginInstructions = "run `cipd auth-login` to login or relogin"
+		}
 	}
 	if opts.ServiceURL == "" {
 		opts.ServiceURL = chromeinfra.CIPDServiceURL
@@ -643,12 +686,31 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
+	// Setup an http.Client to talk to the proxy. We can't use the default one
+	// since it doesn't work over domain sockets. We also always want to connect
+	// to the proxy regardless of the target of the call.
+	anonClient := opts.AnonymousClient
+	authClient := opts.AuthenticatedClient
+	prpcInsecure := parsed.Scheme == "http" // for testing with local dev server
+	proxyAddr := proxyclient.ProxyAddr{}
+	if opts.ProxyURL != "" {
+		var proxyTransport http.RoundTripper
+		proxyTransport, proxyAddr, err = proxyclient.NewProxyTransport(opts.ProxyURL)
+		if err != nil {
+			return nil, errors.Annotate(err, "bad %s %q", EnvCIPDProxyURL, opts.ProxyURL).Tag(cipderr.BadArgument).Err()
+		}
+		anonClient = &http.Client{Transport: proxyTransport}
+		authClient = anonClient
+		prpcInsecure = true // no TLS when talking to the proxy
+		opts.LoginInstructions = "check the CIPD proxy configuration"
+	}
+
 	prpcC := &prpc.Client{
-		C:    opts.AuthenticatedClient,
+		C:    authClient,
 		Host: parsed.Host,
 		Options: &prpc.Options{
 			UserAgent: opts.UserAgent,
-			Insecure:  parsed.Scheme == "http", // for testing with local dev server
+			Insecure:  prpcInsecure,
 			Retry: func() retry.Iterator {
 				return &retry.ExponentialBackoff{
 					Limited: retry.Limited{
@@ -673,7 +735,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		s = &storageImpl{
 			chunkSize: uploadChunkSize,
 			userAgent: opts.UserAgent,
-			client:    opts.AnonymousClient,
+			client:    anonClient,
 		}
 	}
 
@@ -705,6 +767,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
+		proxyAddr:     proxyAddr,
 		pluginHost:    pluginHost,
 	}
 
@@ -774,6 +837,8 @@ type clientImpl struct {
 	storage storage
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer deployer.Deployer
+	// proxyAddr is the resolved address of the CIPD proxy, if any.
+	proxyAddr proxyclient.ProxyAddr
 
 	// tagCache is a file-system based cache of resolved tags.
 	tagCache     *internal.TagCache
@@ -1978,6 +2043,10 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			ErrorCode:    cipderr.ToCode(err),
 			ErrorDetails: cipderr.ToDetails(err),
 		})
+	}
+
+	if c.ProxyURL != "" {
+		logging.Infof(ctx, "Using CIPD proxy at %s", c.ProxyURL)
 	}
 
 	// Need a cache to fetch packages into.
