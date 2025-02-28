@@ -12,140 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { Link } from 'react-router-dom';
-
-import { getSwarmingStateDocLinkForLabel } from '@/fleet/constants/flops_doc_mapping';
-import {
-  Device,
-  DeviceState,
-  DeviceType,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GridColDef } from '@mui/x-data-grid';
 
 import { Cell } from './Cell';
+import { BASE_DIMENSIONS, DIMENSIONS } from './dimensions';
 
-interface Dimension {
-  id: string; // unique id used for sorting and filtering
-  displayName?: string;
-  getValue: (device: Device) => string;
-  renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
-}
+// This may be used later to add a 'common columns' section.
+// Currently, the columns from this string will appear
+// first and in the same order in the device table.
+const COMMON_COLUMNS: string[] = ['id', 'dut_id', 'state'];
 
-const getPathnameWithParams = () => {
-  return window.location.href.toString().split(window.location.host)[1];
+/**
+ * The idea is to first have the visible columns, then the rest.
+ * Inside of each group keep COMMON_COLUMNS in the order as they appear
+ * in the array.
+ */
+const sortingComparator = (
+  a: string,
+  b: string,
+  visibleColumnIds: string[],
+) => {
+  const aIsVisible = visibleColumnIds.includes(a);
+  const bIsVisible = visibleColumnIds.includes(b);
+
+  const aCommonIndex = COMMON_COLUMNS.findIndex((c) => c === a);
+  const bCommonIndex = COMMON_COLUMNS.findIndex((c) => c === b);
+
+  if (aIsVisible && !bIsVisible) {
+    return -1; // a comes before b (a is visible)
+  }
+  if (!aIsVisible && bIsVisible) {
+    return 1; // b comes before a (b is visible)
+  }
+
+  // Both visible or neither visible, then check common columns
+  if (aCommonIndex !== -1 && bCommonIndex !== -1) {
+    return aCommonIndex < bCommonIndex ? -1 : 1; // Sort as in COMMON_COLUMNS
+  }
+  if (aCommonIndex !== -1 && bCommonIndex === -1) {
+    return -1;
+  }
+  if (aCommonIndex === -1 && bCommonIndex !== -1) {
+    return 1;
+  }
+
+  return a.localeCompare(b); // Sort alphabetically
 };
-
-interface CellWithLinkProps {
-  cellProps: GridRenderCellParams;
-  linkTo: string;
-  linkText: string;
-  tooltipTitle?: string;
-  target?: string;
-}
-
-const getCellWithLink = (props: CellWithLinkProps) => {
-  return (
-    <Cell
-      {...props.cellProps}
-      value={
-        <Link
-          to={props.linkTo}
-          state={{
-            navigatedFromLink: getPathnameWithParams(),
-          }}
-          target={props.target || '_self'}
-        >
-          {props.linkText}
-        </Link>
-      }
-      tooltipTitle={props.tooltipTitle || props.linkText}
-    />
-  );
-};
-
-const getCellWithLinkToSwarmingDocs = (props: GridRenderCellParams) => {
-  return getCellWithLink({
-    cellProps: props,
-    linkTo: getSwarmingStateDocLinkForLabel(props.value),
-    linkText: props.value,
-    tooltipTitle: props.value,
-    target: '_blank',
-  });
-};
-
-export const BASE_DIMENSIONS: Dimension[] = [
-  {
-    id: 'id',
-    displayName: 'ID',
-    getValue: (device: Device) => device.id,
-    renderCell: (props) =>
-      getCellWithLink({
-        cellProps: props,
-        linkTo: `/ui/fleet/labs/devices/${props.value}`,
-        linkText: props.value,
-        tooltipTitle: props.value,
-      }),
-  },
-  {
-    id: 'dut_id',
-    displayName: 'Dut ID',
-    getValue: (device: Device) => device.dutId,
-  },
-  {
-    id: 'type',
-    displayName: 'Type',
-    getValue: (device: Device) => DeviceType[device.type],
-  },
-  {
-    id: 'state',
-    displayName: 'Lease state',
-    getValue: (device: Device) => DeviceState[device.state],
-  },
-  {
-    id: 'host',
-    displayName: 'Address',
-    getValue: (device: Device) => device.address?.host || '',
-  },
-  {
-    id: 'port',
-    displayName: 'Port',
-    getValue: (device: Device) => String(device.address?.port) || '',
-  },
-];
-
-const DIMENSIONS: Dimension[] = [
-  {
-    id: 'dut_state',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['dut_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
-  },
-  {
-    id: 'label-servo_state',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['label-servo_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
-  },
-  {
-    id: 'bluetooth_state',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['bluetooth_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
-  },
-];
 
 export const getColumns = (columnIds: string[]): GridColDef[] => {
-  // order columns as in BASE_DIMENSIONS and put labels at the end
-  const columnsOrdered = columnIds.sort((a, b) => {
-    const aindex = BASE_DIMENSIONS.findIndex((dim) => dim.id === a);
-    const bindex = BASE_DIMENSIONS.findIndex((dim) => dim.id === b);
-    if (aindex === bindex) return 0;
-    if (aindex < 0) return 1; // a is a label
-    if (bindex < 0) return -1; // b is a label
-    return aindex < bindex ? -1 : 1;
-  });
-
-  const columns: GridColDef[] = columnsOrdered.map((id) => ({
+  return columnIds.map((id) => ({
     field: id,
     headerName:
       [...BASE_DIMENSIONS, ...DIMENSIONS].find((dim) => dim.id === id)
@@ -159,6 +74,20 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
         .find((dim) => dim.id === id)
         ?.renderCell?.(props) || <Cell {...props}></Cell>,
   }));
+};
 
-  return columns;
+export const orderColumns = (
+  columnDefs: GridColDef[],
+  visibleColumnIds: string[],
+): GridColDef[] => {
+  if (columnDefs.length === 0) {
+    // If the columns are still not loaded show the visible ones.
+    return getColumns(visibleColumnIds).sort((a, b) =>
+      sortingComparator(a.field, b.field, []),
+    );
+  }
+
+  return columnDefs.sort((a, b) =>
+    sortingComparator(a.field, b.field, visibleColumnIds),
+  );
 };

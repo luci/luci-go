@@ -21,8 +21,7 @@ import {
   GridSortModel,
 } from '@mui/x-data-grid';
 import _ from 'lodash';
-import { useMemo, useState } from 'react';
-import * as React from 'react';
+import { useState, useMemo } from 'react';
 
 import {
   getPageSize,
@@ -38,7 +37,8 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { ColumnMenu } from './column_menu';
-import { BASE_DIMENSIONS, getColumns } from './columns';
+import { getColumns, orderColumns } from './columns';
+import { BASE_DIMENSIONS } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
@@ -109,7 +109,7 @@ const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
 
 interface DeviceTableProps {
   devices: readonly Device[];
-  columns: string[];
+  columnIds: string[];
   nextPageToken: string;
   pagerCtx: PagerContext;
   isError: boolean;
@@ -121,7 +121,7 @@ interface DeviceTableProps {
 
 export function DeviceTable({
   devices,
-  columns,
+  columnIds,
   nextPageToken,
   pagerCtx,
   isError,
@@ -136,7 +136,9 @@ export function DeviceTable({
 
   // See: https://mui.com/x/react-data-grid/row-selection/#controlled-row-selection
   const [rowSelectionModel, setRowSelectionModel] =
-    React.useState<GridRowSelectionModel>([]);
+    useState<GridRowSelectionModel>([]);
+
+  const rows = devices.map(getRow);
 
   const onSortModelChange = (newSortModel: GridSortModel) => {
     // Update order by param and clear pagination token when the sort model changes.
@@ -145,23 +147,14 @@ export function DeviceTable({
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
-  const rows = devices.map(getRow);
+  const columns = useMemo(() => {
+    return orderColumns(
+      getColumns(columnIds),
+      getVisibleColumnIds(searchParams),
+    );
+  }, [columnIds, searchParams]);
 
-  const columnDefs = useMemo(
-    () =>
-      getColumns(
-        isLoadingColumns
-          ? // Instead of waiting, we can show the
-            // visible columns until the data is loaded
-            getVisibleColumnIds(searchParams)
-          : // We need to avoid duplicates
-            // E.g. `dut_id` is in both base dimensions and labels
-            columns,
-      ),
-    [isLoadingColumns, columns, searchParams],
-  );
-
-  const defaultColumnVisibilityModel = columnDefs.reduce(
+  const defaultColumnVisibilityModel = columns.reduce(
     (visibilityModel, column) => ({
       ...visibilityModel,
       [column.field]: DEFAULT_DEVICE_COLUMNS.includes(column.field),
@@ -223,11 +216,11 @@ export function DeviceTable({
           columnVisibilityModel={getVisibleColumns(
             searchParams,
             defaultColumnVisibilityModel,
-            columnDefs,
+            columns,
           )}
           onColumnVisibilityModelChange={onColumnVisibilityModelChange}
           rows={rows}
-          columns={columnDefs}
+          columns={columns}
           loading={isLoading}
         />
       )}

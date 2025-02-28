@@ -135,7 +135,7 @@ export const DeviceListPage = () => {
       >
         <DeviceTable
           devices={devices}
-          columns={columns}
+          columnIds={columns}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={devicesQuery.isError || dimensionsQuery.isError}

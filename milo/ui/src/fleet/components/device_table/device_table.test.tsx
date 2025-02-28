@@ -175,7 +175,7 @@ function TestComponent({
   return (
     <DeviceTable
       devices={currentDevices}
-      columns={COLUMNS}
+      columnIds={COLUMNS}
       nextPageToken={nextPageToken}
       pagerCtx={pagerCtx}
       isError={false}
