@@ -17,11 +17,15 @@ package cfg
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
@@ -29,6 +33,10 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/validate"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(regexp.Regexp{}))
+}
 
 var goodTaskTemplate = &configpb.TaskTemplate{
 	Cache: []*configpb.TaskTemplate_CacheEntry{
@@ -85,6 +93,7 @@ var goodPoolsCfg = &configpb.PoolsCfg{
 			TaskDeploymentScheme: &configpb.Pool_TaskTemplateDeployment{
 				TaskTemplateDeployment: "d1",
 			},
+			InformationalDimensionRe: []string{"label-*"},
 		},
 		{
 			Name:  []string{"b", "c"},
@@ -125,20 +134,26 @@ func TestNewPoolsConfig(t *testing.T) {
 		pools, err := newPoolsConfig(goodPoolsCfg)
 		assert.NoErr(t, err)
 		assert.Loosely(t, pools, should.HaveLength(3))
-		assert.Loosely(t, pools["a"].Realm, should.Equal("test:1"))
-		assert.Loosely(t, pools["b"].Realm, should.Equal("test:2"))
-		assert.Loosely(t, pools["c"].Realm, should.Equal("test:2"))
+		assert.That(t, pools["a"].Realm, should.Equal("test:1"))
+		assert.That(t, pools["b"].Realm, should.Equal("test:2"))
+		assert.That(t, pools["c"].Realm, should.Equal("test:2"))
 
-		assert.Loosely(t, pools["a"].DefaultTaskRealm, should.Equal("test:default"))
+		assert.That(t, pools["a"].DefaultTaskRealm, should.Equal("test:default"))
 		assert.Loosely(t, pools["b"].DefaultTaskRealm, should.BeEmpty)
 		assert.Loosely(t, pools["c"].DefaultTaskRealm, should.BeEmpty)
+
+		assert.That(
+			t, pools["a"].InformationalDimensionRe,
+			should.Match([]*regexp.Regexp{regexp.MustCompile("label-*")}))
+		assert.Loosely(t, pools["b"].InformationalDimensionRe, should.BeEmpty)
+		assert.Loosely(t, pools["c"].InformationalDimensionRe, should.BeEmpty)
 
 		expectedInline := &configpb.TaskTemplateDeployment{
 			Prod:         goodTaskTemplate,
 			Canary:       goodTaskTemplate,
 			CanaryChance: 100,
 		}
-		assert.Loosely(t, pools["b"].Deployment, should.Match(expectedInline))
+		assert.That(t, pools["b"].Deployment, should.Match(expectedInline))
 
 		expectedShared := &configpb.TaskTemplateDeployment{
 			Name:         "d1",
@@ -146,10 +161,10 @@ func TestNewPoolsConfig(t *testing.T) {
 			Canary:       goodTaskTemplate,
 			CanaryChance: 1000,
 		}
-		assert.Loosely(t, pools["a"].Deployment, should.Match(expectedShared))
+		assert.That(t, pools["a"].Deployment, should.Match(expectedShared))
 
-		assert.Loosely(t, pools["b"].RBEInstance, should.Equal("some-instance"))
-		assert.Loosely(t, pools["b"].RBEModePercent, should.Equal(66))
+		assert.That(t, pools["b"].RBEInstance, should.Equal("some-instance"))
+		assert.That(t, pools["b"].RBEModePercent, should.Equal(66))
 	})
 }
 
@@ -246,7 +261,7 @@ func TestPoolsValidation(t *testing.T) {
 					for i := range tc.err {
 						tc.err[i] = `in "pools.cfg" ` + tc.err[i]
 					}
-					assert.Loosely(t, call(tc.cfg), should.Match(tc.err))
+					assert.That(t, call(tc.cfg), should.Match(tc.err))
 				})
 			}
 		})
@@ -434,9 +449,21 @@ func TestPoolsValidation(t *testing.T) {
 					}),
 					err: "(pool #1 (a) / rbe_migration): bot_mode_allocation percents should sum up to 100",
 				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						InformationalDimensionRe: []string{
+							"label-*",
+							"\\",
+							"name",
+						},
+					}),
+					err: `(pool #1 (a) / informational_dimension_re / #2 (\)): invalid regex`,
+				},
 			}
 			for _, cs := range testCases {
-				assert.Loosely(t, call(cs.cfg), should.Match([]string{`in "pools.cfg" ` + cs.err}))
+				assert.That(t, call(cs.cfg), should.Match([]string{`in "pools.cfg" ` + cs.err}))
 			}
 		})
 
@@ -850,7 +877,7 @@ func TestPoolsValidation(t *testing.T) {
 					for i := range tc.err {
 						tc.err[i] = `in "pools.cfg" ` + tc.err[i]
 					}
-					assert.Loosely(t, call(tc.cfg), should.Match(tc.err))
+					assert.That(t, call(tc.cfg), should.Match(tc.err))
 				})
 			}
 		})
@@ -1042,7 +1069,7 @@ func TestNewInclusionGraph(t *testing.T) {
 			t.Run(tc.name, func(t *ftt.Test) {
 				graph, merr := newInclusionGraph(tc.cfg.TaskTemplate)
 				assert.NoErr(t, merr.AsError())
-				assert.Loosely(t, inclusions(graph), should.Match(tc.res))
+				assert.That(t, inclusions(graph), should.Match(tc.res))
 			})
 		}
 	})

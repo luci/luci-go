@@ -17,6 +17,7 @@ package cfg
 import (
 	"crypto/sha256"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -45,6 +46,10 @@ type Pool struct {
 
 	// Deployment contains the resolved task templates.
 	Deployment *configpb.TaskTemplateDeployment
+
+	// InformationalDimensionRe is a list of regular expressions to match
+	// information dimension keys.
+	InformationalDimensionRe []*regexp.Regexp
 
 	// RBEInstance is the RBE instance for tasks in this pool.
 	RBEInstance string
@@ -165,6 +170,14 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 		if poolCfg.RBEModePercent < 0 || poolCfg.RBEModePercent > 100 {
 			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
 		}
+	}
+
+	for _, re := range pb.InformationalDimensionRe {
+		compiled, err := regexp.Compile(re)
+		if err != nil {
+			return nil, errors.Annotate(err, "invalid regular expression %s", re).Err()
+		}
+		poolCfg.InformationalDimensionRe = append(poolCfg.InformationalDimensionRe, compiled)
 	}
 
 	if pb.GetTaskTemplateDeployment() != "" {
@@ -311,6 +324,18 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		if pb.RbeMigration != nil {
 			ctx.Enter("rbe_migration")
 			validateRBEMigration(ctx, pb.RbeMigration)
+			ctx.Exit()
+		}
+
+		if len(pb.InformationalDimensionRe) > 0 {
+			ctx.Enter("informational_dimension_re")
+			for i, re := range pb.InformationalDimensionRe {
+				ctx.Enter("#%d (%s)", i+1, re)
+				if _, err := regexp.Compile(re); err != nil {
+					ctx.Errorf("invalid regex")
+				}
+				ctx.Exit()
+			}
 			ctx.Exit()
 		}
 

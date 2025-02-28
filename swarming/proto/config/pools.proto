@@ -200,6 +200,15 @@ message Pool {
     SCHEDULING_ALGORITHM_LIFO = 2;
   }
   SchedulingAlgorithm scheduling_algorithm = 14;
+
+  // Regex expression to match information dimension keys.
+  //
+  // Informational dimensions cannot be used for scheduling tasks, but they
+  // are still useful for describing bots in UI, filtering bots by them, etc.
+  //
+  // Scheduling a Swarming task using an informational dimension will result
+  // in InvalidArgument error.
+  repeated string informational_dimension_re = 15;
 }
 
 
