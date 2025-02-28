@@ -53,7 +53,6 @@ func sayHello(t testing.TB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Loosely(t, r.Method, should.Equal("POST"))
 		assert.Loosely(t, r.URL.Path == "/prpc/prpc.Greeter/SayHello" || r.URL.Path == "/python/prpc/prpc.Greeter/SayHello", should.BeTrue)
-		assert.Loosely(t, r.Header.Get("User-Agent"), should.Equal("prpc-test"))
 
 		var reqCodec protoCodec
 		switch r.Header.Get("Content-Type") {
@@ -259,6 +258,25 @@ func TestClient(t *testing.T) {
 
 				assert.Loosely(t, receivedHeader["Key"], should.Match([]string{"value 1", "value 2"}))
 				assert.Loosely(t, receivedHeader["Data-Bin"], should.Match([]string{"AAECAw=="}))
+				assert.Loosely(t, receivedHeader["User-Agent"], should.Match([]string{"prpc-test"}))
+			})
+
+			t.Run("With custom user-agent", func(t *ftt.Test) {
+				var receivedHeader http.Header
+				greeter := sayHello(t)
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+					receivedHeader = r.Header
+					greeter(w, r)
+				})
+				defer server.Close()
+
+				ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
+					"user-agent", "blarg",
+				))
+
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, receivedHeader["User-Agent"], should.Match([]string{"blarg"}))
 			})
 
 			t.Run("Works with compression", func(t *ftt.Test) {

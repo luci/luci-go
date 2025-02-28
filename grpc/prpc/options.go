@@ -33,7 +33,8 @@ type Options struct {
 	// controlling retry loop of a single RPC call.
 	Retry retry.Factory
 
-	// UserAgent is the value of User-Agent HTTP header.
+	// UserAgent is the value of User-Agent HTTP header to use if the request
+	// doesn't have "user-agent" outgoing metadata.
 	//
 	// If empty, DefaultUserAgent is used.
 	UserAgent string

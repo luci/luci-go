@@ -779,7 +779,9 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	// Add protocol-related headers.
 	headers.Set("Content-Type", options.reqCodec.Format().MediaType())
 	headers.Set("Accept", options.respCodec.Format().MediaType())
-	headers.Set("User-Agent", options.UserAgent)
+	if headers.Get("User-Agent") == "" {
+		headers.Set("User-Agent", options.UserAgent)
+	}
 
 	// This tells the server to give up sending very large responses. If the limit
 	// is disabled (by setting it to math.MaxInt), just don't set the header
