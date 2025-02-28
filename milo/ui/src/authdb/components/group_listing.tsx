@@ -28,6 +28,8 @@ import { useQuery } from '@tanstack/react-query';
 import { stripPrefix } from '@/authdb/common/helpers';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 
+import { GroupLink } from './group_link';
+
 interface GroupListingProps {
   name: string;
 }
@@ -140,7 +142,7 @@ export function GroupListing({ name }: GroupListingProps) {
                     {nested?.map((group) => {
                       return (
                         <li key={group}>
-                          <Typography variant="body2">{group}</Typography>
+                          <GroupLink name={group}></GroupLink>
                         </li>
                       );
                     })}

@@ -63,8 +63,29 @@ describe('<GroupListing />', () => {
     );
 
     await screen.findByTestId('listing-table');
-    expect(screen.getByText(mockGroup.nested[0])).toBeInTheDocument();
-    expect(screen.getByText(mockGroup.nested[1])).toBeInTheDocument();
+    mockGroup.nested.forEach((group) => {
+      expect(screen.getByText(group)).toBeInTheDocument();
+    });
+  });
+
+  test('nested groups have correct links', async () => {
+    const mockGroup = createMockExpandedGroup('123');
+    mockFetchGetExpandedGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupListing name="123" />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('listing-table');
+
+    mockGroup.nested.forEach((group) => {
+      expect(screen.getByText(group)).toBeInTheDocument();
+      expect(screen.getByTestId(`${group}-link`)).toHaveAttribute(
+        'href',
+        `/ui/auth/groups/${group}`,
+      );
+    });
   });
 
   test('if appropriate message is displayed for an error', async () => {
