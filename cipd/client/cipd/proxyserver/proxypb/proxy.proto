@@ -1,0 +1,19 @@
+// Copyright 2025 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package cipd.proxy;
+
+option go_package = "go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb";
+
+// ProxiedCASObject is encoded in the CAS object URL returned by the proxy.
+//
+// It gets serialized, encrypted and signed and sent to the proxy client. This
+// is a precaution against the client abusing the proxy to fetch arbitrary GCS
+// files.
+message ProxiedCASObject {
+  // The original GCS signed URL.
+  string signed_url = 1;
+}
