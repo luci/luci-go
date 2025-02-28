@@ -580,7 +580,7 @@ type QueryTestResultsRequest struct {
 	// match the call that provided the page token.
 	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// Fields to include in the response.
-	// If not set, the default mask is used where summary_html and tags are
+	// If not set, the default mask is used where summary_html, properties and tags are
 	// excluded.
 	// Test result names will always be included even if "name" is not a part of
 	// the mask.

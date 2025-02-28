@@ -448,6 +448,63 @@ func TestQueryTestResults(t *testing.T) {
 			})
 		})
 
+		t.Run(`TestVariantIdentifier in the mask`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+
+			v1 := pbutil.Variant("k", "1")
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv1", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestStatus_PASS),
+			)...)
+
+			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
+
+			expectedTVID := &pb.TestVariantIdentifier{
+				ModuleName:        "//infra/junit_tests",
+				ModuleScheme:      "junit",
+				ModuleVariant:     v1,
+				ModuleVariantHash: pbutil.VariantHash(v1),
+				CoarseName:        "org.chromium.go.luci",
+				FineName:          "ValidationTests",
+				CaseName:          "FooBar",
+			}
+
+			t.Run(`Present`, func(t *ftt.Test) {
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_identifier")
+				results, _ := mustFetch(q)
+				for _, r := range results {
+					assert.Loosely(t, r.TestVariantIdentifier, should.Match(expectedTVID))
+					assert.Loosely(t, r.TestId, should.BeEmpty)
+					assert.Loosely(t, r.Variant, should.BeNil)
+					assert.Loosely(t, r.VariantHash, should.BeEmpty)
+				}
+			})
+			t.Run(`Partially Present`, func(t *ftt.Test) {
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_identifier.fine_name", "test_variant_identifier.case_name")
+				results, _ := mustFetch(q)
+				for _, r := range results {
+					assert.Loosely(t, r.TestVariantIdentifier, should.Match(&pb.TestVariantIdentifier{
+						FineName: "ValidationTests",
+						CaseName: "FooBar",
+					}))
+					assert.Loosely(t, r.TestId, should.BeEmpty)
+					assert.Loosely(t, r.Variant, should.BeNil)
+					assert.Loosely(t, r.VariantHash, should.BeEmpty)
+				}
+			})
+
+			t.Run(`Not present`, func(t *ftt.Test) {
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name")
+				results, _ := mustFetch(q)
+				for _, r := range results {
+					assert.Loosely(t, r.TestVariantIdentifier, should.BeNil)
+					assert.Loosely(t, r.TestId, should.BeEmpty)
+					assert.Loosely(t, r.Variant, should.BeNil)
+					assert.Loosely(t, r.VariantHash, should.BeEmpty)
+				}
+			})
+		})
+
 		t.Run(`Empty list of invocations`, func(t *ftt.Test) {
 			q.InvocationIDs = invocations.NewIDSet()
 			actual, _ := mustFetch(q)
@@ -613,151 +670,120 @@ func TestToLimitedData(t *testing.T) {
 		variant := pbutil.Variant()
 		variantHash := pbutil.VariantHash(variant)
 
-		t.Run(`masks fields`, func(t *ftt.Test) {
-			testResult := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Variant:     variant,
-				Expected:    true,
-				Status:      pb.TestStatus_PASS,
-				SummaryHtml: "SummaryHtml",
-				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
-				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
-				Tags:        pbutil.StringPairs("k1", "v1", "k2", "v2"),
-				VariantHash: variantHash,
-				TestMetadata: &pb.TestMetadata{
-					Name: "name",
-					Location: &pb.TestLocation{
-						Repo:     "https://chromium.googlesource.com/chromium/src",
-						FileName: "//artifact_dir/a_test.cc",
-						Line:     54,
-					},
-					BugComponent: &pb.BugComponent{
-						System: &pb.BugComponent_Monorail{
-							Monorail: &pb.MonorailComponent{
-								Project: "chromium",
-								Value:   "Component>Value",
-							},
+		testResult := &pb.TestResult{
+			Name:     name,
+			TestId:   testID,
+			ResultId: resultID,
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "scheme",
+				ModuleVariant:     variant,
+				ModuleVariantHash: variantHash,
+				CoarseName:        "coarse",
+				FineName:          "fine",
+				CaseName:          "case",
+			},
+			Variant:     variant,
+			Expected:    true,
+			Status:      pb.TestStatus_PASS,
+			SummaryHtml: "SummaryHtml",
+			StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+			Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+			Tags:        pbutil.StringPairs("k1", "v1", "k2", "v2"),
+			VariantHash: variantHash,
+			TestMetadata: &pb.TestMetadata{
+				Name: "name",
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "//artifact_dir/a_test.cc",
+					Line:     54,
+				},
+				BugComponent: &pb.BugComponent{
+					System: &pb.BugComponent_Monorail{
+						Monorail: &pb.MonorailComponent{
+							Project: "chromium",
+							Value:   "Component>Value",
 						},
 					},
 				},
-				FailureReason: &pb.FailureReason{
-					PrimaryErrorMessage: "an error message",
-					Errors: []*pb.FailureReason_Error{
-						{Message: "an error message"},
-						{Message: "an error message2"},
-					},
-					TruncatedErrorsCount: 0,
+			},
+			FailureReason: &pb.FailureReason{
+				PrimaryErrorMessage: "an error message",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "an error message"},
+					{Message: "an error message2"},
 				},
-				Properties: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"key": structpb.NewStringValue("value"),
-					},
+				TruncatedErrorsCount: 0,
+			},
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": structpb.NewStringValue("value"),
 				},
-				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
-			}
+			},
+			SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+		}
 
-			expected := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Expected:    true,
-				Status:      pb.TestStatus_PASS,
-				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
-				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
-				VariantHash: variantHash,
-				FailureReason: &pb.FailureReason{
-					PrimaryErrorMessage: "an error message",
-					Errors: []*pb.FailureReason_Error{
-						{Message: "an error message"},
-						{Message: "an error message2"},
-					},
-					TruncatedErrorsCount: 0,
+		expected := &pb.TestResult{
+			Name:     name,
+			TestId:   testID,
+			ResultId: resultID,
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "scheme",
+				ModuleVariantHash: variantHash,
+				CoarseName:        "coarse",
+				FineName:          "fine",
+				CaseName:          "case",
+			},
+			Expected:    true,
+			Status:      pb.TestStatus_PASS,
+			StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+			Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+			VariantHash: variantHash,
+			FailureReason: &pb.FailureReason{
+				PrimaryErrorMessage: "an error message",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "an error message"},
+					{Message: "an error message2"},
 				},
-				IsMasked:   true,
-				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
-			}
-
+				TruncatedErrorsCount: 0,
+			},
+			IsMasked:   true,
+			SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+		}
+		t.Run(`masks fields`, func(t *ftt.Test) {
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, testResult, should.Match(expected))
 		})
 
 		t.Run(`truncates primary error message`, func(t *ftt.Test) {
-			testResult := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Variant:     variant,
-				Expected:    false,
-				Status:      pb.TestStatus_FAIL,
-				SummaryHtml: "SummaryHtml",
-				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
-				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
-				Tags:        pbutil.StringPairs("k1", "v1", "k2", "v2"),
-				VariantHash: variantHash,
-				TestMetadata: &pb.TestMetadata{
-					Name: "name",
-					Location: &pb.TestLocation{
-						Repo:     "https://chromium.googlesource.com/chromium/src",
-						FileName: "//artifact_dir/a_test.cc",
-						Line:     54,
+			testResult.FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: strings.Repeat("a very long error message", 10),
+				Errors: []*pb.FailureReason_Error{
+					{
+						Message: strings.Repeat("a very long error message",
+							10),
 					},
-					BugComponent: &pb.BugComponent{
-						System: &pb.BugComponent_Monorail{
-							Monorail: &pb.MonorailComponent{
-								Project: "chromium",
-								Value:   "Component>Value",
-							},
-						},
+					{
+						Message: strings.Repeat("a very long error message2",
+							10),
 					},
 				},
-				FailureReason: &pb.FailureReason{
-					PrimaryErrorMessage: strings.Repeat("a very long error message", 10),
-					Errors: []*pb.FailureReason_Error{
-						{
-							Message: strings.Repeat("a very long error message",
-								10),
-						},
-						{
-							Message: strings.Repeat("a very long error message2",
-								10),
-						},
-					},
-					TruncatedErrorsCount: 0,
-				},
-				Properties: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"key": structpb.NewStringValue("value"),
-					},
-				},
-				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+				TruncatedErrorsCount: 0,
 			}
 
 			limitedLongErrMsg := strings.Repeat("a very long error message",
 				10)[:limitedReasonLength] + "..."
 			limitedLongErrMsg2 := strings.Repeat("a very long error message2",
 				10)[:limitedReasonLength] + "..."
-			expected := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Expected:    false,
-				Status:      pb.TestStatus_FAIL,
-				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
-				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
-				VariantHash: variantHash,
-				FailureReason: &pb.FailureReason{
-					PrimaryErrorMessage: limitedLongErrMsg,
-					Errors: []*pb.FailureReason_Error{
-						{Message: limitedLongErrMsg},
-						{Message: limitedLongErrMsg2},
-					},
-					TruncatedErrorsCount: 0,
+			expected.FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: limitedLongErrMsg,
+				Errors: []*pb.FailureReason_Error{
+					{Message: limitedLongErrMsg},
+					{Message: limitedLongErrMsg2},
 				},
-				IsMasked:   true,
-				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+				TruncatedErrorsCount: 0,
 			}
 
 			err := ToLimitedData(ctx, testResult)
@@ -765,27 +791,8 @@ func TestToLimitedData(t *testing.T) {
 			assert.Loosely(t, testResult, should.Match(expected))
 		})
 		t.Run(`mask preserves skip reason`, func(t *ftt.Test) {
-			testResult := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Variant:     variant,
-				Expected:    true,
-				Status:      pb.TestStatus_SKIP,
-				VariantHash: variantHash,
-				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
-			}
-
-			expected := &pb.TestResult{
-				Name:        name,
-				TestId:      testID,
-				ResultId:    resultID,
-				Expected:    true,
-				Status:      pb.TestStatus_SKIP,
-				VariantHash: variantHash,
-				IsMasked:    true,
-				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
-			}
+			testResult.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+			expected.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)

@@ -121,14 +121,24 @@ func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, 
 	ms := make([]*spanner.Mutation, len(statuses))
 
 	for i, status := range statuses {
-		testID := "ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
+		testID := "://chrome/test\\:foo_tests!gtest::BarTest#" + testName
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
+		v := pbutil.Variant("k1", "v1", "k2", "v2")
 		trs[i] = &pb.TestResult{
-			Name:        pbutil.TestResultName(string(invID), testID, resultID),
-			TestId:      testID,
-			ResultId:    resultID,
-			Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+			Name:     pbutil.TestResultName(string(invID), testID, resultID),
+			TestId:   testID,
+			ResultId: resultID,
+			TestVariantIdentifier: &pb.TestVariantIdentifier{
+				ModuleName:        "//chrome/test:foo_tests",
+				ModuleScheme:      "gtest",
+				ModuleVariant:     v,
+				CoarseName:        "",
+				FineName:          "BarTest",
+				CaseName:          testName,
+				ModuleVariantHash: pbutil.VariantHash(v),
+			},
+			Variant:     v,
 			VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1", "k2", "v2")),
 			Expected:    status == pb.TestStatus_PASS,
 			Status:      status,

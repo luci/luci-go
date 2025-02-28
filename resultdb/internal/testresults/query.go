@@ -45,6 +45,12 @@ var AllFields = mask.All(&pb.TestResult{})
 var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
 	"name",
 	"test_id",
+	"test_variant_identifier.module_name",
+	"test_variant_identifier.module_scheme",
+	"test_variant_identifier.module_variant_hash",
+	"test_variant_identifier.coarse_name",
+	"test_variant_identifier.fine_name",
+	"test_variant_identifier.case_name",
 	"result_id",
 	"expected",
 	"status",
@@ -66,6 +72,7 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"name",
 	"test_id",
 	"result_id",
+	"test_variant_identifier",
 	"variant",
 	"variant_hash",
 	"expected",
@@ -150,6 +157,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		"InvocationId",
 		"TestId",
 		"ResultId",
+		"Variant",
 		"IsUnexpected",
 		"Status",
 		"StartTime",
@@ -174,7 +182,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("SummaryHtml", "summary_html")
 	selectIfIncluded("Tags", "tags")
 	selectIfIncluded("TestMetadata", "test_metadata")
-	selectIfIncluded("Variant", "variant")
 	selectIfIncluded("VariantHash", "variant_hash")
 	selectIfIncluded("FailureReason", "failure_reason")
 	selectIfIncluded("Properties", "properties")
@@ -197,6 +204,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 			&invID,
 			&tr.TestId,
 			&tr.ResultId,
+			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
 			&tr.StartTime,
@@ -211,8 +219,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &tr.Tags)
 			case "TestMetadata":
 				ptrs = append(ptrs, &tmd)
-			case "Variant":
-				ptrs = append(ptrs, &tr.Variant)
 			case "VariantHash":
 				ptrs = append(ptrs, &tr.VariantHash)
 			case "FailureReason":
@@ -234,22 +240,30 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		// Generate test result name now in case tr.TestId and tr.ResultId become
 		// empty after q.Mask.Trim(tr).
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+		tvID, err := pbutil.ParseTestVariantIdentifier(tr.TestId, tr.Variant)
+		if err != nil {
+			return nil, errors.Annotate(err, "populate test variant identifier for %s", trName).Err()
+		}
+		pbutil.PopulateTestVariantIdentifierHashes(tvID)
+
+		tr.TestVariantIdentifier = tvID
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
 		PopulateDurationField(tr, micros)
 		PopulateSkipReasonField(tr, skipReason)
 		if err := PopulateTestMetadata(tr, tmd); err != nil {
-			return nil, errors.Annotate(err, "error unmarshalling test_metadata for %s", trName).Err()
+			return nil, errors.Annotate(err, "unmarshal test_metadata for %s", trName).Err()
 		}
 		if err := PopulateFailureReason(tr, fr); err != nil {
-			return nil, errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
+			return nil, errors.Annotate(err, "unmarshal failure_reason for %s", trName).Err()
 		}
 		if err := PopulateProperties(tr, properties); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
+			return nil, errors.Annotate(err, "unmarshal properties for %s", trName).Err()
 		}
 		if err := q.Mask.Trim(tr); err != nil {
-			return nil, errors.Annotate(err, "error trimming fields for %s", trName).Err()
+			return nil, errors.Annotate(err, "trimming fields for %s", trName).Err()
 		}
+
 		// Always include name in tr because name is needed to calculate
 		// page token.
 		tr.Name = trName

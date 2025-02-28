@@ -88,17 +88,15 @@ func TestQueryTestResults(t *testing.T) {
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		insertInv := insert.FinalizedInvocationWithInclusions
-		insertTRs := insert.TestResults
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insertInv("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
-			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
-			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
+			insert.FinalizedInvocationWithInclusions("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
+			insert.FinalizedInvocationWithInclusions("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
+			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
-			insertInv("c", map[string]any{"Realm": "testproject:testrealm"}),
-			insertTRs(t, "a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insertTRs(t, "b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insertTRs(t, "c", "C", nil, pb.TestStatus_PASS),
+			insert.FinalizedInvocationWithInclusions("c", map[string]any{"Realm": "testproject:testrealm"}),
+			insert.TestResults(t, "a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResults(t, "c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS),
 		)...)
 
 		srv := newTestResultDBService()
@@ -109,6 +107,12 @@ func TestQueryTestResults(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.TestResults, should.HaveLength(5))
+			for _, r := range res.TestResults {
+				// By default, some large fields are omitted as per the API documentation.
+				assert.Loosely(t, r.SummaryHtml, should.BeEmpty)
+				assert.Loosely(t, r.Properties, should.BeNil)
+				assert.Loosely(t, r.Tags, should.BeNil)
+			}
 		})
 
 		t.Run(`Permission denied`, func(t *ftt.Test) {
@@ -123,6 +127,10 @@ func TestQueryTestResults(t *testing.T) {
 		t.Run(`Valid with included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
+				ReadMask: &field_mask.FieldMask{
+					// Query all fields to make comparison with expected results simpler.
+					Paths: []string{"*"},
+				},
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.TestResults, should.HaveLength(5))
@@ -131,36 +139,28 @@ func TestQueryTestResults(t *testing.T) {
 				return res.TestResults[i].Name < res.TestResults[j].Name
 			})
 
-			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/a/tests/A/results/0"))
-			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_FAIL))
-			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.BeEmpty)
-
-			assert.Loosely(t, res.TestResults[1].Name, should.Equal("invocations/a/tests/A/results/1"))
-			assert.Loosely(t, res.TestResults[1].Status, should.Equal(pb.TestStatus_PASS))
-
-			assert.Loosely(t, res.TestResults[2].Name, should.Equal("invocations/b/tests/B/results/0"))
-			assert.Loosely(t, res.TestResults[2].Status, should.Equal(pb.TestStatus_CRASH))
-
-			assert.Loosely(t, res.TestResults[3].Name, should.Equal("invocations/b/tests/B/results/1"))
-			assert.Loosely(t, res.TestResults[3].Status, should.Equal(pb.TestStatus_PASS))
-
-			assert.Loosely(t, res.TestResults[4].Name, should.Equal("invocations/c/tests/C/results/0"))
-			assert.Loosely(t, res.TestResults[4].Status, should.Equal(pb.TestStatus_PASS))
+			var expectedResults []*pb.TestResult
+			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS)...)
+			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 
 		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/c"},
+				ReadMask: &field_mask.FieldMask{
+					// Query all fields to make comparison with expected results simpler.
+					Paths: []string{"*"},
+				},
 			})
+
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.TestResults, should.HaveLength(1))
 
-			sort.Slice(res.TestResults, func(i, j int) bool {
-				return res.TestResults[i].Name < res.TestResults[j].Name
-			})
-
-			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/C/results/0"))
-			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_PASS))
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/:module%21gtest::Class%23C/results/0"))
+			expectedResults := insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 
 		t.Run(`Valid with missing included invocation`, func(t *ftt.Test) {
@@ -179,20 +179,20 @@ func TestQueryTestResults(t *testing.T) {
 				return res.TestResults[i].Name < res.TestResults[j].Name
 			})
 
-			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/a/tests/A/results/0"))
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/a/tests/:module%21gtest::Class%23A/results/0"))
 			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_FAIL))
 			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.BeEmpty)
 
-			assert.Loosely(t, res.TestResults[1].Name, should.Equal("invocations/a/tests/A/results/1"))
+			assert.Loosely(t, res.TestResults[1].Name, should.Equal("invocations/a/tests/:module%21gtest::Class%23A/results/1"))
 			assert.Loosely(t, res.TestResults[1].Status, should.Equal(pb.TestStatus_PASS))
 
-			assert.Loosely(t, res.TestResults[2].Name, should.Equal("invocations/b/tests/B/results/0"))
+			assert.Loosely(t, res.TestResults[2].Name, should.Equal("invocations/b/tests/:module%21gtest::Class%23B/results/0"))
 			assert.Loosely(t, res.TestResults[2].Status, should.Equal(pb.TestStatus_CRASH))
 
-			assert.Loosely(t, res.TestResults[3].Name, should.Equal("invocations/b/tests/B/results/1"))
+			assert.Loosely(t, res.TestResults[3].Name, should.Equal("invocations/b/tests/:module%21gtest::Class%23B/results/1"))
 			assert.Loosely(t, res.TestResults[3].Status, should.Equal(pb.TestStatus_PASS))
 
-			assert.Loosely(t, res.TestResults[4].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[4].Name, should.Equal("invocations/c/tests/:module%21gtest::Class%23C/results/0"))
 			assert.Loosely(t, res.TestResults[4].Status, should.Equal(pb.TestStatus_PASS))
 		})
 
@@ -207,7 +207,7 @@ func TestQueryTestResults(t *testing.T) {
 					}},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/:module%21gtest::Class%23C/results/0"))
 			assert.Loosely(t, res.TestResults[0].TestId, should.BeEmpty)
 			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.Equal("SummaryHtml"))
 		})
