@@ -85,7 +85,7 @@ export function AppMenu() {
           <ListItemIcon>
             <DescriptionIcon />
           </ListItemIcon>
-          <ListItemText>{"What's new"}</ListItemText>
+          <ListItemText>What{"'"}s new</ListItemText>
         </MenuItem>
         <MenuItem title={switchVersionTitle} onClick={() => switchVersion()}>
           <ListItemIcon>
