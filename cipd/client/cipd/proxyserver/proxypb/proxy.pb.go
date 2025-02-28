@@ -25,6 +25,80 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Policy defines what actions are allowed to be performed through the proxy.
+//
+// Very minimal right now. By default everything is forbidden. If a field
+// matching an RPC name is present, then this RPC is allowed, subject to
+// restrictions specified in the value of the field (if any).
+type Policy struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The set of CIPD backend hostnames that are allowed to be accessed.
+	AllowedRemotes []string                     `protobuf:"bytes,1,rep,name=allowed_remotes,json=allowedRemotes,proto3" json:"allowed_remotes,omitempty"`
+	ResolveVersion *Policy_ResolveVersionPolicy `protobuf:"bytes,2,opt,name=resolve_version,json=resolveVersion,proto3" json:"resolve_version,omitempty"`
+	GetInstanceUrl *Policy_GetInstanceURLPolicy `protobuf:"bytes,3,opt,name=get_instance_url,json=getInstanceUrl,proto3" json:"get_instance_url,omitempty"`
+	DescribeClient *Policy_DescribeClientPolicy `protobuf:"bytes,4,opt,name=describe_client,json=describeClient,proto3" json:"describe_client,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Policy) Reset() {
+	*x = Policy{}
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Policy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Policy) ProtoMessage() {}
+
+func (x *Policy) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Policy.ProtoReflect.Descriptor instead.
+func (*Policy) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Policy) GetAllowedRemotes() []string {
+	if x != nil {
+		return x.AllowedRemotes
+	}
+	return nil
+}
+
+func (x *Policy) GetResolveVersion() *Policy_ResolveVersionPolicy {
+	if x != nil {
+		return x.ResolveVersion
+	}
+	return nil
+}
+
+func (x *Policy) GetGetInstanceUrl() *Policy_GetInstanceURLPolicy {
+	if x != nil {
+		return x.GetInstanceUrl
+	}
+	return nil
+}
+
+func (x *Policy) GetDescribeClient() *Policy_DescribeClientPolicy {
+	if x != nil {
+		return x.DescribeClient
+	}
+	return nil
+}
+
 // ProxiedCASObject is encoded in the CAS object URL returned by the proxy.
 //
 // It gets serialized, encrypted and signed and sent to the proxy client. This
@@ -40,7 +114,7 @@ type ProxiedCASObject struct {
 
 func (x *ProxiedCASObject) Reset() {
 	*x = ProxiedCASObject{}
-	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[0]
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +126,7 @@ func (x *ProxiedCASObject) String() string {
 func (*ProxiedCASObject) ProtoMessage() {}
 
 func (x *ProxiedCASObject) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[0]
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +139,7 @@ func (x *ProxiedCASObject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProxiedCASObject.ProtoReflect.Descriptor instead.
 func (*ProxiedCASObject) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{0}
+	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ProxiedCASObject) GetSignedUrl() string {
@@ -73,6 +147,135 @@ func (x *ProxiedCASObject) GetSignedUrl() string {
 		return x.SignedUrl
 	}
 	return ""
+}
+
+// Policy for ResolveVersion RPC.
+type Policy_ResolveVersionPolicy struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// If set, allow resolving tags.
+	AllowTags bool `protobuf:"varint,1,opt,name=allow_tags,json=allowTags,proto3" json:"allow_tags,omitempty"`
+	// If set, allow resolving refs.
+	AllowRefs     bool `protobuf:"varint,2,opt,name=allow_refs,json=allowRefs,proto3" json:"allow_refs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Policy_ResolveVersionPolicy) Reset() {
+	*x = Policy_ResolveVersionPolicy{}
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Policy_ResolveVersionPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Policy_ResolveVersionPolicy) ProtoMessage() {}
+
+func (x *Policy_ResolveVersionPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Policy_ResolveVersionPolicy.ProtoReflect.Descriptor instead.
+func (*Policy_ResolveVersionPolicy) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{0, 0}
+}
+
+func (x *Policy_ResolveVersionPolicy) GetAllowTags() bool {
+	if x != nil {
+		return x.AllowTags
+	}
+	return false
+}
+
+func (x *Policy_ResolveVersionPolicy) GetAllowRefs() bool {
+	if x != nil {
+		return x.AllowRefs
+	}
+	return false
+}
+
+// Policy for GetInstanceURL RPC.
+type Policy_GetInstanceURLPolicy struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Policy_GetInstanceURLPolicy) Reset() {
+	*x = Policy_GetInstanceURLPolicy{}
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Policy_GetInstanceURLPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Policy_GetInstanceURLPolicy) ProtoMessage() {}
+
+func (x *Policy_GetInstanceURLPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Policy_GetInstanceURLPolicy.ProtoReflect.Descriptor instead.
+func (*Policy_GetInstanceURLPolicy) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{0, 1}
+}
+
+// Policy for DescribeClient RPC.
+type Policy_DescribeClientPolicy struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Policy_DescribeClientPolicy) Reset() {
+	*x = Policy_DescribeClientPolicy{}
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Policy_DescribeClientPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Policy_DescribeClientPolicy) ProtoMessage() {}
+
+func (x *Policy_DescribeClientPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Policy_DescribeClientPolicy.ProtoReflect.Descriptor instead.
+func (*Policy_DescribeClientPolicy) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescGZIP(), []int{0, 2}
 }
 
 var File_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto protoreflect.FileDescriptor
@@ -83,14 +286,41 @@ var file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_r
 	0x6e, 0x74, 0x2f, 0x63, 0x69, 0x70, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x73, 0x65, 0x72,
 	0x76, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x70, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x78,
 	0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0a, 0x63, 0x69, 0x70, 0x64, 0x2e, 0x70, 0x72,
-	0x6f, 0x78, 0x79, 0x22, 0x31, 0x0a, 0x10, 0x50, 0x72, 0x6f, 0x78, 0x69, 0x65, 0x64, 0x43, 0x41,
-	0x53, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x65,
-	0x64, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x69, 0x67,
-	0x6e, 0x65, 0x64, 0x55, 0x72, 0x6c, 0x42, 0x3b, 0x5a, 0x39, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72,
-	0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63,
-	0x69, 0x70, 0x64, 0x2f, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x63, 0x69, 0x70, 0x64, 0x2f,
-	0x70, 0x72, 0x6f, 0x78, 0x79, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f, 0x78,
-	0x79, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x78, 0x79, 0x22, 0xae, 0x03, 0x0a, 0x06, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x27,
+	0x0a, 0x0f, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x5f, 0x72, 0x65, 0x6d, 0x6f, 0x74, 0x65,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0e, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64,
+	0x52, 0x65, 0x6d, 0x6f, 0x74, 0x65, 0x73, 0x12, 0x50, 0x0a, 0x0f, 0x72, 0x65, 0x73, 0x6f, 0x6c,
+	0x76, 0x65, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x27, 0x2e, 0x63, 0x69, 0x70, 0x64, 0x2e, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e, 0x50, 0x6f,
+	0x6c, 0x69, 0x63, 0x79, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x56, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x0e, 0x72, 0x65, 0x73, 0x6f, 0x6c,
+	0x76, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x51, 0x0a, 0x10, 0x67, 0x65, 0x74,
+	0x5f, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x69, 0x70, 0x64, 0x2e, 0x70, 0x72, 0x6f, 0x78, 0x79,
+	0x2e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x61,
+	0x6e, 0x63, 0x65, 0x55, 0x52, 0x4c, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x0e, 0x67, 0x65,
+	0x74, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x55, 0x72, 0x6c, 0x12, 0x50, 0x0a, 0x0f,
+	0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x5f, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x69, 0x70, 0x64, 0x2e, 0x70, 0x72, 0x6f,
+	0x78, 0x79, 0x2e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x2e, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69,
+	0x62, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x0e,
+	0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x1a, 0x54,
+	0x0a, 0x14, 0x52, 0x65, 0x73, 0x6f, 0x6c, 0x76, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x5f,
+	0x74, 0x61, 0x67, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x61, 0x6c, 0x6c, 0x6f,
+	0x77, 0x54, 0x61, 0x67, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x61, 0x6c, 0x6c, 0x6f, 0x77, 0x5f, 0x72,
+	0x65, 0x66, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x61, 0x6c, 0x6c, 0x6f, 0x77,
+	0x52, 0x65, 0x66, 0x73, 0x1a, 0x16, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x61,
+	0x6e, 0x63, 0x65, 0x55, 0x52, 0x4c, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a, 0x16, 0x0a, 0x14,
+	0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x50, 0x6f,
+	0x6c, 0x69, 0x63, 0x79, 0x22, 0x31, 0x0a, 0x10, 0x50, 0x72, 0x6f, 0x78, 0x69, 0x65, 0x64, 0x43,
+	0x41, 0x53, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x69, 0x67, 0x6e,
+	0x65, 0x64, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x69,
+	0x67, 0x6e, 0x65, 0x64, 0x55, 0x72, 0x6c, 0x42, 0x3b, 0x5a, 0x39, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
+	0x63, 0x69, 0x70, 0x64, 0x2f, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2f, 0x63, 0x69, 0x70, 0x64,
+	0x2f, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x70, 0x72, 0x6f,
+	0x78, 0x79, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -105,16 +335,23 @@ func file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_
 	return file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_goTypes = []any{
-	(*ProxiedCASObject)(nil), // 0: cipd.proxy.ProxiedCASObject
+	(*Policy)(nil),                      // 0: cipd.proxy.Policy
+	(*ProxiedCASObject)(nil),            // 1: cipd.proxy.ProxiedCASObject
+	(*Policy_ResolveVersionPolicy)(nil), // 2: cipd.proxy.Policy.ResolveVersionPolicy
+	(*Policy_GetInstanceURLPolicy)(nil), // 3: cipd.proxy.Policy.GetInstanceURLPolicy
+	(*Policy_DescribeClientPolicy)(nil), // 4: cipd.proxy.Policy.DescribeClientPolicy
 }
 var file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: cipd.proxy.Policy.resolve_version:type_name -> cipd.proxy.Policy.ResolveVersionPolicy
+	3, // 1: cipd.proxy.Policy.get_instance_url:type_name -> cipd.proxy.Policy.GetInstanceURLPolicy
+	4, // 2: cipd.proxy.Policy.describe_client:type_name -> cipd.proxy.Policy.DescribeClientPolicy
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_init() }
@@ -128,7 +365,7 @@ func file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDesc), len(file_go_chromium_org_luci_cipd_client_cipd_proxyserver_proxypb_proxy_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

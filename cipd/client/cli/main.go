@@ -21,17 +21,17 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/exp/slices"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -55,6 +55,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/proxyserver"
+	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
@@ -1299,7 +1301,7 @@ func (c *createRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, error) {
-	f, err := ioutil.TempFile("", "cipd_pkg")
+	f, err := os.CreateTemp("", "cipd_pkg")
 	if err != nil {
 		return common.Pin{}, errors.Annotate(err, "creating temp instance file").Tag(cipderr.IO).Err()
 	}
@@ -3541,6 +3543,99 @@ func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Actio
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'proxy' subcommand.
+
+func cmdProxy(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "proxy <flags>",
+		ShortDesc: "Runs a local CIPD proxy",
+		LongDesc:  "Runs a local CIPD proxy.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &proxyRun{}
+			c.registerBaseFlags()
+			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
+			c.Flags.StringVar(&c.unixSocket, "unix-socket", "", "Unix domain socket path to serve the proxy on (default to a temp file).")
+			c.Flags.StringVar(&c.proxyPolicy, "proxy-policy", "-", "Path to a text protobuf file with cipd.proxy.Policy message (or - for reading from stdin).")
+			return c
+		},
+	}
+}
+
+type proxyRun struct {
+	cipdSubcommand
+	authFlags authcli.Flags
+
+	unixSocket  string // -unix-socket flag
+	proxyPolicy string // -proxy-policy flag
+}
+
+func (c *proxyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+	return c.done(runProxy(ctx, c.authFlags, c.unixSocket, c.proxyPolicy))
+}
+
+func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPolicy string) (*proxyserver.ProxyStats, error) {
+	if unixSocket == "" {
+		dir, err := os.MkdirTemp("", "cipd")
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to create a temp dir").Tag(cipderr.IO).Err()
+		}
+		defer func() {
+			if err := os.RemoveAll(dir); err != nil {
+				logging.Warningf(ctx, "Failed to cleanup CIPD proxy temp dir: %s", err)
+			}
+		}()
+		unixSocket = filepath.Join(dir, "proxy.unix")
+	}
+	policy, err := readProxyPolicy(ctx, proxyPolicy)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad proxy policy file").Tag(cipderr.BadArgument).Err()
+	}
+	authOpts, err := authFlags.Options()
+	if err != nil {
+		return nil, errors.Annotate(err, "bad auth options").Tag(cipderr.BadArgument).Err()
+	}
+	authClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	if err != nil {
+		return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+	}
+	return runProxyImpl(ctx, unixSocket, policy, authClient)
+}
+
+func readProxyPolicy(ctx context.Context, path string) (*proxypb.Policy, error) {
+	var file *os.File
+	if path == "-" {
+		logging.Infof(ctx, "Reading CIPD proxy policy from stdin...")
+		file = os.Stdin
+	} else {
+		var err error
+		file, err = os.Open(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, errors.Annotate(err, "missing proxy policy file").Tag(cipderr.BadArgument).Err()
+			}
+			return nil, errors.Annotate(err, "reading proxy policy file").Tag(cipderr.IO).Err()
+		}
+		defer func() { _ = file.Close() }()
+	}
+
+	blob, err := io.ReadAll(file)
+	if err != nil {
+		return nil, errors.Annotate(err, "reading proxy policy file").Tag(cipderr.IO).Err()
+	}
+
+	var policy proxypb.Policy
+	if err := (prototext.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(blob, &policy); err != nil {
+		return nil, errors.Annotate(err, "malformed proxy policy file").Tag(cipderr.BadArgument).Err()
+	}
+	return &policy, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 // GetApplication returns cli.Application.
@@ -3674,6 +3769,10 @@ func GetApplication(params Parameters) *cli.Application {
 			{Advanced: true},
 			cmdExpandPackageName(params),
 			cmdPuppetCheckUpdates(params),
+
+			// Utility commands.
+			{Advanced: true},
+			cmdProxy(params),
 		},
 	}
 }

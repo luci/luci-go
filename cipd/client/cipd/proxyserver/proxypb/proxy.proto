@@ -8,6 +8,39 @@ package cipd.proxy;
 
 option go_package = "go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb";
 
+
+// Policy defines what actions are allowed to be performed through the proxy.
+//
+// Very minimal right now. By default everything is forbidden. If a field
+// matching an RPC name is present, then this RPC is allowed, subject to
+// restrictions specified in the value of the field (if any).
+message Policy {
+  // The set of CIPD backend hostnames that are allowed to be accessed.
+  repeated string allowed_remotes = 1;
+
+  // Policy for ResolveVersion RPC.
+  message ResolveVersionPolicy {
+    // If set, allow resolving tags.
+    bool allow_tags = 1;
+    // If set, allow resolving refs.
+    bool allow_refs = 2;
+  }
+  ResolveVersionPolicy resolve_version = 2;
+
+  // Policy for GetInstanceURL RPC.
+  message GetInstanceURLPolicy {
+    // Nothing for now.
+  }
+  GetInstanceURLPolicy get_instance_url = 3;
+
+  // Policy for DescribeClient RPC.
+  message DescribeClientPolicy {
+    // Nothing for now.
+  }
+  DescribeClientPolicy describe_client = 4;
+}
+
+
 // ProxiedCASObject is encoded in the CAS object URL returned by the proxy.
 //
 // It gets serialized, encrypted and signed and sent to the proxy client. This
