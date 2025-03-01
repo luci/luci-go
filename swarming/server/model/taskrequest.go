@@ -226,8 +226,10 @@ func NewTaskRequestKey(ctx context.Context) *datastore.Key {
 	return key
 }
 
-// Pool is the pool the task wants to run in.
+// Pool is the pool the task wants to run in or "" if unknown.
 func (p *TaskRequest) Pool() string {
+	// Note all slices are validated to have the exact same "pool" value, and only
+	// one. See validateDimensions and validateNewTask in tasks_new_tasks.go.
 	pool, ok := p.TaskSlices[0].Properties.Dimensions["pool"]
 	if !ok || len(pool) == 0 {
 		return ""
@@ -236,12 +238,31 @@ func (p *TaskRequest) Pool() string {
 }
 
 // BotID is a specific bot the task wants to run on, if any.
+//
+// This is set only when all slices of the task specify the same "id" dimension
+// value.
 func (p *TaskRequest) BotID() string {
-	botID, ok := p.TaskSlices[0].Properties.Dimensions["id"]
-	if !ok || len(botID) == 0 {
-		return ""
+	// Note all slices are validated to have at most one "id" value. But they may
+	// be different. See validateDimensions in tasks_new_tasks.go.
+	botID := ""
+	for _, s := range p.TaskSlices {
+		var sliceBotID string
+		if val := s.Properties.Dimensions["id"]; len(val) > 0 {
+			sliceBotID = val[0]
+		}
+		if sliceBotID == "" {
+			// At least one slice doesn't have "id" => no overall bot ID.
+			return ""
+		}
+		if botID == "" {
+			// Initialize botID to the value in the first slice.
+			botID = sliceBotID
+		} else if botID != sliceBotID {
+			// Slices disagree on the bot ID => no overall bot ID.
+			return ""
+		}
 	}
-	return botID[0]
+	return botID
 }
 
 // TaskAuthInfo returns information about the task for ACL checks.

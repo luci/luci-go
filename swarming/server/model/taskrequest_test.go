@@ -700,3 +700,49 @@ func TestTaskDimensions(t *testing.T) {
 		})
 	})
 }
+
+func TestBotID(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		expected string
+		perSlice []string
+	}{
+		{
+			"", []string{},
+		},
+		{
+			"", []string{""},
+		},
+		{
+			"", []string{"", ""},
+		},
+		{
+			"bot", []string{"bot"},
+		},
+		{
+			"bot", []string{"bot", "bot"},
+		},
+		{
+			"", []string{"", "bot"},
+		},
+		{
+			"", []string{"bot", ""},
+		},
+		{
+			"", []string{"bot-1", "bot-1", "bot-2"},
+		},
+	}
+
+	for _, cs := range cases {
+		slices := make([]TaskSlice, len(cs.perSlice))
+		for i, v := range cs.perSlice {
+			if v != "" {
+				slices[i].Properties.Dimensions = TaskDimensions{
+					"id": {v},
+				}
+			}
+		}
+		assert.That(t, (&TaskRequest{TaskSlices: slices}).BotID(), should.Equal(cs.expected))
+	}
+}
