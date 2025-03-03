@@ -219,10 +219,10 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 	return err
 }
 
-func QueryFailureRateSampleRequest() (project string, asAtTime time.Time, testVariants []*pb.TestVariantIdentifier) {
+func QueryFailureRateSampleRequest() (project string, asAtTime time.Time, testVariants []*pb.QueryTestVariantFailureRateRequest_TestVariant) {
 	var1 := pbutil.Variant("key1", "val1", "key2", "val1")
 	var3 := pbutil.Variant("key1", "val2", "key2", "val2")
-	testVariants = []*pb.TestVariantIdentifier{
+	testVariants = []*pb.QueryTestVariantFailureRateRequest_TestVariant{
 		{
 			TestId:  "test_id",
 			Variant: var1,

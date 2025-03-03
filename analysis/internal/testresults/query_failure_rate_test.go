@@ -81,11 +81,11 @@ func TestQueryFailureRate(t *testing.T) {
 		t.Run("Works for tests without data", func(t *ftt.Test) {
 			notExistsVariant := pbutil.Variant("key1", "val1", "key2", "not_exists")
 			opts.TestVariants = append(opts.TestVariants,
-				&pb.TestVariantIdentifier{
+				&pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId:  "not_exists_test_id",
 					Variant: var1,
 				},
-				&pb.TestVariantIdentifier{
+				&pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId:  "test_id",
 					Variant: notExistsVariant,
 				})
@@ -101,11 +101,11 @@ func TestQueryFailureRate(t *testing.T) {
 		t.Run("Batching works correctly", func(t *ftt.Test) {
 			// Ensure the order of test variants in the request and response
 			// remain correct even when there are multiple batches.
-			var expandedInput []*pb.TestVariantIdentifier
+			var expandedInput []*pb.QueryTestVariantFailureRateRequest_TestVariant
 			var expectedOutput []*pb.TestVariantFailureRateAnalysis
 			for i := 0; i < batchSize; i++ {
 				testID := fmt.Sprintf("test_id_%v", i)
-				expandedInput = append(expandedInput, &pb.TestVariantIdentifier{
+				expandedInput = append(expandedInput, &pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId:  testID,
 					Variant: var1,
 				})

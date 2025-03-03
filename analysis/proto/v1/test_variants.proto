@@ -44,29 +44,32 @@ service TestVariants {
 }
 
 message QueryTestVariantFailureRateRequest {
+    // The identity of a test variant.
+    // N.B. Previously named 'TestVariantIdentifier' but renamed to
+    // avoid conflicting with the new TestVariantIdentifier introduced by
+    // ResultDB.
+    message TestVariant {
+        // A unique identifier of the test in a LUCI project.
+        string test_id = 1;
+
+        // Description of one specific way of running the test,
+        // e.g. a specific bucket, builder and a test suite.
+        Variant variant = 2;
+
+        // The variant hash. Alternative to specifying the variant.
+        // Prefer to specify the full variant (if available), as the
+        // variant hashing implementation is an implementation detail
+        // and may change.
+        string variant_hash = 3;
+    }
+
     // The LUCI Project for which test variants should be looked up.
     string project = 1;
 
     // The list of test variants to retrieve results for.
     // At most 100 test variants may be specified in one request.
     // It is an error to request the same test variant twice.
-    repeated TestVariantIdentifier test_variants = 2;
-}
-
-// The identity of a test variant.
-message TestVariantIdentifier {
-    // A unique identifier of the test in a LUCI project.
-    string test_id = 1;
-
-    // Description of one specific way of running the test,
-    // e.g. a specific bucket, builder and a test suite.
-    Variant variant = 2;
-
-    // The variant hash. Alternative to specifying the variant.
-    // Prefer to specify the full variant (if available), as the
-    // variant hashing implementation is an implementation detail
-    // and may change.
-    string variant_hash = 3;
+    repeated TestVariant test_variants = 2;
 }
 
 message QueryTestVariantFailureRateResponse {

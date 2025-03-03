@@ -48,7 +48,7 @@ type QueryFailureRateOptions struct {
 	// within the project to query.
 	SubRealms []string
 	// TestVariants are the test variants to query.
-	TestVariants []*pb.TestVariantIdentifier
+	TestVariants []*pb.QueryTestVariantFailureRateRequest_TestVariant
 	// AsAtTime is latest parititon time to include in the results;
 	// outside of testing contexts, this should be the current time.
 	// QueryTestVariants returns data for the 5 * 24 weekday hour
@@ -103,20 +103,20 @@ func QueryFailureRate(ctx context.Context, opts QueryFailureRateOptions) (*pb.Qu
 }
 
 type batch struct {
-	input  []*pb.TestVariantIdentifier
+	input  []*pb.QueryTestVariantFailureRateRequest_TestVariant
 	output []*pb.TestVariantFailureRateAnalysis
 }
 
 // partitionIntoBatches partitions a list of test variants into batches.
-func partitionIntoBatches(tvs []*pb.TestVariantIdentifier) []*batch {
+func partitionIntoBatches(tvs []*pb.QueryTestVariantFailureRateRequest_TestVariant) []*batch {
 	var batches []*batch
-	batchInput := make([]*pb.TestVariantIdentifier, 0, batchSize)
+	batchInput := make([]*pb.QueryTestVariantFailureRateRequest_TestVariant, 0, batchSize)
 	for _, tv := range tvs {
 		if len(batchInput) >= batchSize {
 			batches = append(batches, &batch{
 				input: batchInput,
 			})
-			batchInput = make([]*pb.TestVariantIdentifier, 0, batchSize)
+			batchInput = make([]*pb.QueryTestVariantFailureRateRequest_TestVariant, 0, batchSize)
 		}
 		batchInput = append(batchInput, tv)
 	}

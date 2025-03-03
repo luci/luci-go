@@ -152,7 +152,7 @@ func TestTestVariantsServer(t *testing.T) {
 				// Exhaustive checking of request validation is performed in TestValidateQueryRateRequest.
 				request := &pb.QueryTestVariantFailureRateRequest{
 					Project: "",
-					TestVariants: []*pb.TestVariantIdentifier{
+					TestVariants: []*pb.QueryTestVariantFailureRateRequest_TestVariant{
 						{
 							TestId: "my_test",
 						},
@@ -272,7 +272,7 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 	ftt.Run("ValidateQueryFailureRateRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestVariantFailureRateRequest{
 			Project: "project",
-			TestVariants: []*pb.TestVariantIdentifier{
+			TestVariants: []*pb.QueryTestVariantFailureRateRequest_TestVariant{
 				{
 					TestId: "my_test",
 					// Variant is optional as not all tests have variants.
@@ -308,9 +308,9 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 		})
 
 		t.Run("too many test variants", func(t *ftt.Test) {
-			req.TestVariants = make([]*pb.TestVariantIdentifier, 0, 101)
+			req.TestVariants = make([]*pb.QueryTestVariantFailureRateRequest_TestVariant, 0, 101)
 			for i := 0; i < 101; i++ {
-				req.TestVariants = append(req.TestVariants, &pb.TestVariantIdentifier{
+				req.TestVariants = append(req.TestVariants, &pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId: fmt.Sprintf("test_id%v", i),
 				})
 			}
@@ -337,7 +337,7 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 		})
 
 		t.Run("duplicate test variants", func(t *ftt.Test) {
-			req.TestVariants = []*pb.TestVariantIdentifier{
+			req.TestVariants = []*pb.QueryTestVariantFailureRateRequest_TestVariant{
 				{
 					TestId:  "my_test",
 					Variant: pbutil.Variant("key1", "val1", "key2", "val2"),
