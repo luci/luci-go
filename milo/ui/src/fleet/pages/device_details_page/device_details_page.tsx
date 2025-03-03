@@ -160,7 +160,7 @@ export const DeviceDetailsPage = () => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
             <Tab label="Tasks" value={TabValue.TASKS} />
-            <Tab label="Scheduling data" value={TabValue.SCHEDULING} />
+            <Tab label="Scheduling labels" value={TabValue.SCHEDULING} />
           </TabList>
         </Box>
         <TabPanel value={TabValue.TASKS}>
