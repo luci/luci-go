@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -90,7 +91,7 @@ type TagIndex struct {
 }
 
 // TagIndexIncomplete means the tag index is incomplete and thus cannot be searched.
-var TagIndexIncomplete = errors.BoolTag{Key: errors.NewTagKey("tag index incomplete")}
+var TagIndexIncomplete = errtag.Make("tag index incomplete", true)
 
 // SearchTagIndex searches the tag index for the given tag.
 // Returns an error tagged with TagIndexIncomplete if the tag index is

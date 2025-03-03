@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -65,7 +65,7 @@ var defaultTransactionOptions = datastore.TransactionOptions{
 // as transient).
 //
 // See runTxn for more info. This is used primarily by errUpdateConflict.
-var abortTransaction = errors.BoolTag{Key: errors.NewTagKey("this error aborts the transaction")}
+var abortTransaction = errtag.Make("this error aborts the transaction", true)
 
 // runTxn runs a datastore transaction retrying the body on transient errors or
 // when encountering a commit conflict.

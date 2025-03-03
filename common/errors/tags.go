@@ -26,7 +26,7 @@ type (
 	// TagKey objects are used for applying tags and finding tags/values in
 	// errors. See NewTag for details.
 	//
-	// Deprecated: Use errors.MakeBoolTag() instead.
+	// Deprecated: Use errtag.Make(<description>, true) instead.
 	TagKey *tagDescription
 
 	tagKeySlice []TagKey

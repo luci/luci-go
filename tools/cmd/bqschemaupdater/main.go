@@ -45,10 +45,7 @@ import (
 )
 
 var (
-	canceledByUser = errors.BoolTag{
-		Key: errors.NewTagKey("operation canceled by user"),
-	}
-	errCanceledByUser = errors.Reason("operation canceled by user").Tag(canceledByUser).Err()
+	errCanceledByUser = errors.New("operation canceled by user")
 )
 
 type tableDef struct {
@@ -255,7 +252,7 @@ func run(ctx context.Context) error {
 func main() {
 	ctx := gologger.StdConfig.Use(context.Background())
 	switch err := run(ctx); {
-	case canceledByUser.In(err):
+	case errors.Is(err, errCanceledByUser):
 		os.Exit(1)
 	case err != nil:
 		log.Fatal(err)

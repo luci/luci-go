@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -66,10 +66,10 @@ var (
 	// DuplicateTask means the backend has created multiple tasks for the same build.
 	// After the build has associated with one of those tasks (either by StartBuild or RegisterBuildTask),
 	// requests of associating other tasks with the build will fail with this error.
-	DuplicateTask = errors.BoolTag{Key: errors.NewTagKey("duplicate_backend_task")}
+	DuplicateTask = errtag.Make("duplicate_backend_task", true)
 	// TaskWithCollidedRequestID the backend has created multiple tasks for the same build,
 	// and two tasks among them have generated the same request_id for calling RegisterBuildTask.
-	TaskWithCollidedRequestID = errors.BoolTag{Key: errors.NewTagKey("task_with_collided_request_id")}
+	TaskWithCollidedRequestID = errtag.Make("task_with_collided_request_id", true)
 )
 
 var (

@@ -23,14 +23,14 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 )
 
 // InvalidArgumentTag is used to indicate that one of the query options
 // is invalid.
-var InvalidArgumentTag = errors.BoolTag{Key: errors.NewTagKey("invalid argument")}
+var InvalidArgumentTag = errtag.Make("invalid argument", true)
 
 // NewClient creates a new client for reading clusters. Close() MUST
 // be called after you have finished using this client.

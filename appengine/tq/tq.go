@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/taskqueue"
@@ -50,7 +51,7 @@ import (
 // be redelivered later.
 //
 // See Handler doc for more details.
-var Retry = errors.BoolTag{Key: errors.NewTagKey("the task should be retried")}
+var Retry = errtag.Make("the task should be retried", true)
 
 // Dispatcher submits and handles task queue tasks.
 type Dispatcher struct {

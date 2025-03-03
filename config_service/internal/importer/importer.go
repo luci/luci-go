@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
@@ -75,7 +76,7 @@ const (
 var (
 	// ErrFatalTag is an error tag to indicate an unrecoverable error in the
 	// configs importing flow.
-	ErrFatalTag = errors.BoolTag{Key: errors.NewTagKey("A config importing unrecoverable error")}
+	ErrFatalTag = errtag.Make("A config importing unrecoverable error", true)
 )
 
 // validator defines the interface to interact with validation logic.

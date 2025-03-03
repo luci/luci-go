@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
@@ -50,9 +51,7 @@ const reachCacheExpiration = 30 * 24 * time.Hour // 30 days
 
 // TooManyTag set in an error indicates that too many invocations
 // matched a condition.
-var TooManyTag = errors.BoolTag{
-	Key: errors.NewTagKey("too many matching invocations matched the condition"),
-}
+var TooManyTag = errtag.Make("too many matching invocations matched the condition", true)
 
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges. May return an appstatus-annotated error.

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 )
 
@@ -59,4 +59,4 @@ func Main(p Params, args []string) int {
 	return subcommands.Run(application(p), fixflagpos.FixSubcommands(args))
 }
 
-var badArgsTag = errors.BoolTag{Key: errors.NewTagKey("Bad arguments given")}
+var badArgsTag = errtag.Make("Bad arguments given", true)

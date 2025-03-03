@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server"
@@ -126,7 +127,7 @@ var errAlreadyFinalized = fmt.Errorf("the invocation is already finalized")
 
 // notReadyToFinalize means the invocation is not ready to finalize.
 // It is used exclusively inside readyToFinalize.
-var notReadyToFinalize = errors.BoolTag{Key: errors.NewTagKey("not ready to get finalized")}
+var notReadyToFinalize = errtag.Make("not ready to get finalized", true)
 
 // readyToFinalize returns true if the invocation should be finalized.
 // An invocation is ready to be finalized if no ACTIVE invocation is reachable

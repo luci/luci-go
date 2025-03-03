@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 
@@ -30,9 +31,7 @@ import (
 
 // IsUserError is tagged into errors caused by bad user inputs (e.g. modules or
 // scripts which don't exist).
-var IsUserError = errors.BoolTag{
-	Key: errors.NewTagKey("this error occurred due to a user input."),
-}
+var IsUserError = errtag.Make("this error occurred due to a user input.", true)
 
 // ResolveSpec resolves the configured environment specification. The resulting
 // spec is installed into o's EnvConfig.Spec field.

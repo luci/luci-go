@@ -24,11 +24,12 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 )
 
 // NotJWT is an error tag used to indicate that the string passed to
 // VerifyAndDecode is not in fact structurally a JWT.
-var NotJWT = errors.BoolTag{Key: errors.NewTagKey("not a JSON web token")}
+var NotJWT = errtag.Make("not a JSON web token", true)
 
 // SignatureVerifier can verify RS256 signatures.
 type SignatureVerifier interface {

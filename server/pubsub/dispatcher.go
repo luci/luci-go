@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -71,7 +72,7 @@ var (
 	// This results in the pub/sub push handler returning status 204
 	// (No Content) as opposed to status 200. This is particularly
 	// useful for allowing SLOs to be defined over useful messages only.
-	Ignore = errors.BoolTag{Key: errors.NewTagKey("the message should be dropped as not useful")}
+	Ignore = errtag.Make("the message should be dropped as not useful", true)
 )
 
 type Message struct {

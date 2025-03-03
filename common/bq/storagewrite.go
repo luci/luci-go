@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 )
@@ -46,9 +47,9 @@ const RowMaxBytes = 9 * 1000 * 1000 // 9 MB
 // It got added to proto.Size for the overhead not being captured.
 const RowSizeOverhead = 16 // 16 bytes
 
-// InvalidRowTagKey will be attached to error when appending rows if
+// InvalidRowTag will be attached to error when appending rows if
 // the rows are invalid (e.g. not UTF-8 compliance, or too large).
-var InvalidRowTagKey = errors.NewTagKey("InvalidRow")
+var InvalidRowTag = errtag.Make("InvalidRow", true)
 
 // NewWriterClient returns a new BigQuery managedwriter client for use with the
 // given GCP project, that authenticates as the project itself.
@@ -143,11 +144,11 @@ func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.M
 }
 
 // batchAppendRows chunk rows into batches and append each batch to the provided managedStream.
-// If the input rows are invalid, the error returned will be tagged with InvalidRowTagKey.
+// If the input rows are invalid, the error returned will be tagged with InvalidRowTag.
 func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedStream, rows []proto.Message) error {
 	batches, err := toBatches(rows)
 	if err != nil {
-		return errors.Annotate(err, "batching rows").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
+		return errors.Annotate(err, "batching rows").Tag(InvalidRowTag).Err()
 	}
 	results := make([]*managedwriter.AppendResult, 0, len(batches))
 	for _, batch := range batches {
@@ -155,7 +156,7 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		for _, r := range batch {
 			b, err := proto.Marshal(r)
 			if err != nil {
-				return errors.Annotate(err, "marshal proto").Tag(errors.BoolTag{Key: InvalidRowTagKey}).Err()
+				return errors.Annotate(err, "marshal proto").Tag(InvalidRowTag).Err()
 			}
 			encoded = append(encoded, b)
 		}

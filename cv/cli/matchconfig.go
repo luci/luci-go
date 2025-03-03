@@ -219,8 +219,7 @@ func (r *matchConfigRun) done(err error) int {
 		return 0
 	}
 	fmt.Fprintln(os.Stderr, err)
-	_, badArgs := errors.TagValueIn(badArgsTag.Key, err)
-	if badArgs {
+	if badArgsTag.In(err) {
 		return 2
 	}
 	return 1

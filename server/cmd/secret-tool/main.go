@@ -72,6 +72,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/flag/flagenum"
 	"go.chromium.org/luci/common/flag/stringmapflag"
@@ -91,7 +92,7 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // CLI boilerplate.
 
-var userError = errors.BoolTag{Key: errors.NewTagKey("user error")}
+var userError = errtag.Make("user error", true)
 
 var authOpts = chromeinfra.SetDefaultAuthOptions(auth.Options{
 	Scopes: []string{

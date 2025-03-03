@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -342,7 +343,7 @@ func (c *cipdSubcommand) doneWithPinMap(pins map[string][]pinInfo, err error) in
 }
 
 // cliErrorTag is used to tag errors related to CLI.
-var cliErrorTag = errors.BoolTag{Key: errors.NewTagKey("CIPD CLI error")}
+var cliErrorTag = errtag.Make("CIPD CLI error", true)
 
 // makeCLIError returns a new error tagged with cliErrorTag and BadArgument.
 func makeCLIError(msg string, args ...any) error {

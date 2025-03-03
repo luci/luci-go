@@ -30,6 +30,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/environ"
@@ -62,7 +63,7 @@ type BuildSender func()
 //
 // Errors with this tag set will cause the overall build status to be
 // INFRA_FAILURE instead of FAILURE.
-var InfraErrorTag = errors.BoolTag{Key: errors.NewTagKey("infra_error")}
+var InfraErrorTag = errtag.Make("infra_error", true)
 
 // MainFn is the function signature you must implement in your callback to Run.
 //

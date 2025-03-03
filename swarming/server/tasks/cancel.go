@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -31,7 +32,7 @@ import (
 
 const maxBatchCancellationRetries = 10
 
-var taskUnknownTag = errors.BoolTag{Key: errors.NewTagKey("unknown task")}
+var taskUnknownTag = errtag.Make("unknown task", true)
 
 // Cancellation contains information to cancel a task.
 type Cancellation struct {
