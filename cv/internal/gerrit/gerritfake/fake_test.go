@@ -71,7 +71,7 @@ func TestRelationship(t *testing.T) {
 					RevisionId: "1",
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{}))
+				assert.That(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{}))
 			})
 
 			t.Run("Descendants only", func(t *ftt.Test) {
@@ -82,7 +82,7 @@ func TestRelationship(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 				sortRelated(resp)
-				assert.Loosely(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
+				assert.That(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -125,7 +125,7 @@ func TestRelationship(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 				sortRelated(resp)
-				assert.Loosely(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
+				assert.That(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -181,7 +181,7 @@ func TestRelationship(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 				sortRelated(resp)
-				assert.Loosely(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
+				assert.That(t, resp, should.Match(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 						{
 							Project: "infra/infra",
@@ -280,7 +280,7 @@ func TestFiles(t *testing.T) {
 				RevisionId: ciDefault.GetCurrentRevision(),
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, sortedFiles(resp), should.Match([]string{"ps001/c.cpp", "shared/s.py"}))
+			assert.That(t, sortedFiles(resp), should.Match([]string{"ps001/c.cpp", "shared/s.py"}))
 		})
 
 		t.Run("Custom", func(t *ftt.Test) {
@@ -289,13 +289,13 @@ func TestFiles(t *testing.T) {
 				RevisionId: "1",
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, sortedFiles(resp), should.Match([]string{"bl.ah", "ps1/cus.tom"}))
+			assert.That(t, sortedFiles(resp), should.Match([]string{"bl.ah", "ps1/cus.tom"}))
 			resp, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciCustom.GetNumber(),
 				RevisionId: "2",
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, sortedFiles(resp), should.Match([]string{"still/custom"}))
+			assert.That(t, sortedFiles(resp), should.Match([]string{"still/custom"}))
 		})
 
 		t.Run("NoFiles", func(t *ftt.Test) {
@@ -355,7 +355,7 @@ func TestGetChange(t *testing.T) {
 					gerritpb.QueryOption_SUBMITTABLE,
 				}})
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp, should.Match(ci))
+			assert.That(t, resp, should.Match(ci))
 		})
 	})
 }
@@ -381,7 +381,7 @@ func TestListAccountEmails(t *testing.T) {
 			})
 
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&gerritpb.ListAccountEmailsResponse{
+			assert.That(t, res, should.Match(&gerritpb.ListAccountEmailsResponse{
 				Emails: []*gerritpb.EmailInfo{
 					{Email: "foo@google.com"},
 					{Email: "foo@chromium.org"},
@@ -451,7 +451,7 @@ func TestListChanges(t *testing.T) {
 
 		t.Run("Order and limit", func(t *ftt.Test) {
 			g := mustCurrentClient("chromium", "anyone")
-			assert.Loosely(t, listChangeIDs(g, &gerritpb.ListChangesRequest{}), should.Match([]int{8002, 8001, 8003}))
+			assert.That(t, listChangeIDs(g, &gerritpb.ListChangesRequest{}), should.Match([]int{8002, 8001, 8003}))
 
 			out, err := g.ListChanges(ctx, &gerritpb.ListChangesRequest{Limit: 2})
 			assert.NoErr(t, err)
@@ -466,41 +466,41 @@ func TestListChanges(t *testing.T) {
 					&gerritpb.ListChangesRequest{Query: q})
 			}
 			t.Run("before/after", func(t *ftt.Test) {
-				assert.Loosely(t, gerritutil.FormatTime(epoch), should.Match(`"2011-02-03 04:05:06.000000007"`))
-				assert.Loosely(t, query(`before:"2011-02-03 04:05:06.000000006"`), should.Match([]int{}))
+				assert.That(t, gerritutil.FormatTime(epoch), should.Match(`"2011-02-03 04:05:06.000000007"`))
+				assert.That(t, query(`before:"2011-02-03 04:05:06.000000006"`), should.Match([]int{}))
 				// 1 ns later
-				assert.Loosely(t, query(`before:"2011-02-03 04:05:06.000000007"`), should.Match([]int{8003}))
-				assert.Loosely(t, query(` after:"2011-02-03 04:05:06.000000007"`), should.Match([]int{8002, 8001, 8003}))
+				assert.That(t, query(`before:"2011-02-03 04:05:06.000000007"`), should.Match([]int{8003}))
+				assert.That(t, query(` after:"2011-02-03 04:05:06.000000007"`), should.Match([]int{8002, 8001, 8003}))
 				// 1 minute later
-				assert.Loosely(t, query(` after:"2011-02-03 04:06:06.000000007"`), should.Match([]int{8002, 8001}))
+				assert.That(t, query(` after:"2011-02-03 04:06:06.000000007"`), should.Match([]int{8002, 8001}))
 				// 1 minute later
-				assert.Loosely(t, query(` after:"2011-02-03 04:07:06.000000007"`), should.Match([]int{8002}))
+				assert.That(t, query(` after:"2011-02-03 04:07:06.000000007"`), should.Match([]int{8002}))
 				// Surround middle CL:
 				assert.Loosely(t, query(``+
 					` after:"2011-02-03 04:05:30.000000000" `+
 					`before:"2011-02-03 04:06:30.000000000"`), should.Match([]int{8001}))
 			})
 			t.Run("Project prefix", func(t *ftt.Test) {
-				assert.Loosely(t, query(`projects:"inf"`), should.Match([]int{8002, 8001, 8003}))
-				assert.Loosely(t, query(`projects:"infra/"`), should.Match([]int{8002, 8001, 8003}))
-				assert.Loosely(t, query(`projects:"infra/luci"`), should.Match([]int{8002, 8003}))
-				assert.Loosely(t, query(`projects:"typo"`), should.Match([]int{}))
+				assert.That(t, query(`projects:"inf"`), should.Match([]int{8002, 8001, 8003}))
+				assert.That(t, query(`projects:"infra/"`), should.Match([]int{8002, 8001, 8003}))
+				assert.That(t, query(`projects:"infra/luci"`), should.Match([]int{8002, 8003}))
+				assert.That(t, query(`projects:"typo"`), should.Match([]int{}))
 			})
 			t.Run("Project exact", func(t *ftt.Test) {
-				assert.Loosely(t, query(`project:"infra/infra"`), should.Match([]int{8001}))
-				assert.Loosely(t, query(`project:"infra"`), should.Match([]int{}))
-				assert.Loosely(t, query(`(project:"infra/infra" OR project:"infra/luci/luci-go")`), should.Match(
+				assert.That(t, query(`project:"infra/infra"`), should.Match([]int{8001}))
+				assert.That(t, query(`project:"infra"`), should.Match([]int{}))
+				assert.That(t, query(`(project:"infra/infra" OR project:"infra/luci/luci-go")`), should.Match(
 					[]int{8002, 8001, 8003}))
 			})
 			t.Run("Status", func(t *ftt.Test) {
-				assert.Loosely(t, query(`status:new`), should.Match([]int{8002, 8001}))
-				assert.Loosely(t, query(`status:abandoned`), should.Match([]int{}))
-				assert.Loosely(t, query(`status:merged`), should.Match([]int{8003}))
+				assert.That(t, query(`status:new`), should.Match([]int{8002, 8001}))
+				assert.That(t, query(`status:abandoned`), should.Match([]int{}))
+				assert.That(t, query(`status:merged`), should.Match([]int{8003}))
 			})
 			t.Run("label", func(t *ftt.Test) {
-				assert.Loosely(t, query(`label:Commit-Queue>0`), should.Match([]int{8002, 8001}))
-				assert.Loosely(t, query(`label:Commit-Queue>1`), should.Match([]int{8001}))
-				assert.Loosely(t, query(`label:Code-Review>-1`), should.Match([]int{8003}))
+				assert.That(t, query(`label:Commit-Queue>0`), should.Match([]int{8002, 8001}))
+				assert.That(t, query(`label:Commit-Queue>1`), should.Match([]int{8001}))
+				assert.That(t, query(`label:Code-Review>-1`), should.Match([]int{8003}))
 			})
 			t.Run("Typical CV query", func(t *ftt.Test) {
 				assert.Loosely(t, query(`label:Commit-Queue>0 status:NEW project:"infra/infra"`),
@@ -617,9 +617,9 @@ func TestSetReview(t *testing.T) {
 				Message: "this is a message",
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{}))
+			assert.That(t, res, should.Match(&gerritpb.ReviewResult{}))
 			assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
-			assert.Loosely(t, latestCI().GetMessages(), should.Match([]*gerritpb.ChangeMessageInfo{
+			assert.That(t, latestCI().GetMessages(), should.Match([]*gerritpb.ChangeMessageInfo{
 				{
 					Id:      "0",
 					Author:  U("chromium"),
@@ -638,13 +638,13 @@ func TestSetReview(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{
+			assert.That(t, res, should.Match(&gerritpb.ReviewResult{
 				Labels: map[string]int32{
 					"Commit-Queue": 2,
 				},
 			}))
 			assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
-			assert.Loosely(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Match([]*gerritpb.ApprovalInfo{
+			assert.That(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Match([]*gerritpb.ApprovalInfo{
 				{
 					User:  user,
 					Value: 1,
@@ -669,7 +669,7 @@ func TestSetReview(t *testing.T) {
 					OnBehalfOf: 123,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{
+				assert.That(t, res, should.Match(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 0,
 					},
@@ -687,13 +687,13 @@ func TestSetReview(t *testing.T) {
 					OnBehalfOf: 789,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&gerritpb.ReviewResult{
+				assert.That(t, res, should.Match(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 1,
 					},
 				}))
 				assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
-				assert.Loosely(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Match([]*gerritpb.ApprovalInfo{
+				assert.That(t, latestCI().GetLabels()["Commit-Queue"].GetAll(), should.Match([]*gerritpb.ApprovalInfo{
 					{
 						User:  user,
 						Value: 1,
@@ -803,7 +803,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&gerritpb.SubmitInfo{
+			assert.That(t, res, should.Match(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
 			}))
 			assertStatus(gerritpb.ChangeStatus_MERGED, ciSingular)
@@ -816,7 +816,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&gerritpb.SubmitInfo{
+			assert.That(t, res, should.Match(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
 			}))
 			assertStatus(gerritpb.ChangeStatus_MERGED, ciStackBase, ciStackMid, ciStackTop)
@@ -843,7 +843,7 @@ func TestSubmitRevision(t *testing.T) {
 					RevisionId: ciStackTop.GetCurrentRevision(),
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&gerritpb.SubmitInfo{
+				assert.That(t, res, should.Match(&gerritpb.SubmitInfo{
 					Status: gerritpb.ChangeStatus_MERGED,
 				}))
 			}

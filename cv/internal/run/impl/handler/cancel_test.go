@@ -76,9 +76,9 @@ func TestCancel(t *testing.T) {
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
-			assert.Loosely(t, res.State.StartTime, should.Match(now.Add(-1*time.Minute)))
-			assert.Loosely(t, res.State.EndTime, should.Match(now))
-			assert.Loosely(t, res.State.CancellationReasons, should.Match([]string{"user request"}))
+			assert.That(t, res.State.StartTime, should.Match(now.Add(-1*time.Minute)))
+			assert.That(t, res.State.EndTime, should.Match(now))
+			assert.That(t, res.State.CancellationReasons, should.Match([]string{"user request"}))
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 		})
@@ -88,7 +88,7 @@ func TestCancel(t *testing.T) {
 			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs, []string{"user request", "", "user request"})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State.CancellationReasons, should.Match([]string{"user request"}))
+			assert.That(t, res.State.CancellationReasons, should.Match([]string{"user request"}))
 		})
 
 		t.Run("Cancels SUBMITTING Run", func(t *ftt.Test) {

@@ -61,7 +61,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 		execBatchOnCLUpdatedTask := func() {
 			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, ct.TQ.Tasks()[0].Class, should.Match(BatchOnCLUpdatedTaskClass))
+			assert.That(t, ct.TQ.Tasks()[0].Class, should.Match(BatchOnCLUpdatedTaskClass))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
 		}
 		expectNoNotifications := func() {
@@ -81,12 +81,12 @@ func TestMutatorSingleCL(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(1))
-				assert.Loosely(t, cl.UpdateTime, should.Match(ct.Clock.Now()))
+				assert.That(t, cl.UpdateTime, should.Match(ct.Clock.Now()))
 				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
-				assert.Loosely(t, cl.Snapshot, should.Match(s))
+				assert.That(t, cl.Snapshot, should.Match(s))
 
 				execBatchOnCLUpdatedTask()
-				assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
+				assert.That(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
 				}))
 				assert.Loosely(t, rm.byRun, should.BeEmpty)
@@ -125,12 +125,12 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 
-				assert.Loosely(t, priorSnapshot, should.Match(s1))
+				assert.That(t, priorSnapshot, should.Match(s1))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(2))
 				assert.That(t, cl.UpdateTime, should.Match(ct.Clock.Now().UTC()))
 				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
-				assert.Loosely(t, cl.Snapshot, should.Match(s2))
+				assert.That(t, cl.Snapshot, should.Match(s2))
 				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
 					assert.That(t, clid, should.Equal(cl.ID))
@@ -138,10 +138,10 @@ func TestMutatorSingleCL(t *testing.T) {
 					assert.That(t, content.curMinEquiPS, should.Equal(s2.GetMinEquivalentPatchset()))
 				}
 				execBatchOnCLUpdatedTask()
-				assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
+				assert.That(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 					lProject: {cl.ID: cl.EVersion},
 				}))
-				assert.Loosely(t, rm.byRun, should.Match(map[common.RunID]map[common.CLID]int64{
+				assert.That(t, rm.byRun, should.Match(map[common.RunID]map[common.CLID]int64{
 					run1: {cl.ID: cl.EVersion},
 					run2: {cl.ID: cl.EVersion},
 				}))
@@ -191,16 +191,16 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 
-				assert.Loosely(t, cl.ID, should.Match(priorCL.ID))
+				assert.That(t, cl.ID, should.Match(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(2))
 				assert.That(t, cl.UpdateTime, should.Match(ct.Clock.Now().UTC()))
 				assert.Loosely(t, cl.RetentionKey, should.NotBeEmpty)
-				assert.Loosely(t, cl.Snapshot, should.Match(s2))
+				assert.That(t, cl.Snapshot, should.Match(s2))
 
 				execBatchOnCLUpdatedTask()
 				assert.That(t, pm.byProject[lProject][cl.ID], should.Equal(cl.EVersion))
-				assert.Loosely(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
+				assert.That(t, pm.byProject, should.Match(map[string]map[common.CLID]int64{
 					"prior-project": {cl.ID: cl.EVersion},
 					lProject:        {cl.ID: cl.EVersion},
 				}))
@@ -227,7 +227,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					return nil
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, cl.Snapshot, should.Match(s2))
+				assert.That(t, cl.Snapshot, should.Match(s2))
 				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
 					assert.That(t, clid, should.Equal(cl.ID))
@@ -245,7 +245,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 
-				assert.Loosely(t, cl.ID, should.Match(priorCL.ID))
+				assert.That(t, cl.ID, should.Match(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
 				assert.That(t, cl.UpdateTime, should.Match(priorCL.UpdateTime))
@@ -373,7 +373,7 @@ func TestMutatorBatch(t *testing.T) {
 					assert.That(t, dsCLs[i].EVersion, should.Equal(resCLs[i].EVersion))
 					assert.That(t, dsCLs[i].UpdateTime, should.Match(resCLs[i].UpdateTime))
 					assert.That(t, dsCLs[i].RetentionKey, should.Equal(resCLs[i].RetentionKey))
-					assert.Loosely(t, dsCLs[i].IncompleteRuns, should.Match(resCLs[i].IncompleteRuns))
+					assert.That(t, dsCLs[i].IncompleteRuns, should.Match(resCLs[i].IncompleteRuns))
 					eversions[dsCLs[i].ID] = dsCLs[i].EVersion
 				}
 
@@ -383,7 +383,7 @@ func TestMutatorBatch(t *testing.T) {
 					for _, id := range expectedIDs {
 						expected[id] = eversions[id]
 					}
-					assert.Loosely(t, actual, should.Match(expected))
+					assert.That(t, actual, should.Match(expected))
 				}
 				// The project in the context of which CLs were mutated must be notified
 				// on all CLs.
@@ -480,7 +480,7 @@ func TestMutatorBatch(t *testing.T) {
 				tasks := ct.TQ.Tasks()
 				assert.Loosely(t, tasks, should.HaveLength(N))
 				for _, tsk := range tasks {
-					assert.Loosely(t, tsk.Class, should.Match(BatchOnCLUpdatedTaskClass))
+					assert.That(t, tsk.Class, should.Match(BatchOnCLUpdatedTaskClass))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchOnCLUpdatedTaskClass))
 				}
 
@@ -592,7 +592,7 @@ func TestMutatorConcurrent(t *testing.T) {
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.
 		latestTS := epoch.Add((N - 1) * time.Second)
 		assert.That(t, cl.Snapshot.GetExternalUpdateTime().AsTime(), should.Match(latestTS))
-		assert.Loosely(t, cl.Access.GetByProject()[lProject].GetUpdateTime().AsTime(), should.Match(latestTS))
+		assert.That(t, cl.Access.GetByProject()[lProject].GetUpdateTime().AsTime(), should.Match(latestTS))
 		// Furthermore, there must have been at most N non-noop UpdateSnapshot calls
 		// (one per worker, iff they did it exactly in the increasing order of
 		// timestamps.

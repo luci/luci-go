@@ -91,6 +91,6 @@ func TestQueryCLIDsUpdatedBefore(t *testing.T) {
 
 		actual, err := QueryCLIDsUpdatedBefore(ctx, before)
 		assert.NoErr(t, err)
-		assert.Loosely(t, actual, should.Match(expected))
+		assert.That(t, actual, should.Match(expected))
 	})
 }

@@ -141,7 +141,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		ct.AddMember("foo", committers)
 		cl1 := updateCL(1, ci1, aplConfigOK, accessOK)
 		triggers1 := trigger.Find(&trigger.FindInput{ChangeInfo: ci1, ConfigGroup: cfg.GetConfigGroups()[0]})
-		assert.Loosely(t, triggers1.GetCqVoteTrigger(), should.Match(&run.Trigger{
+		assert.That(t, triggers1.GetCqVoteTrigger(), should.Match(&run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
 			Email:           "foo@example.com",
@@ -162,7 +162,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			ensureNoop := func() {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.State, should.Match(rs))
+				assert.That(t, res.State, should.Match(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
@@ -203,7 +203,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				rs.Status = run.Status_SUBMITTING
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.State, should.Match(rs))
+				assert.That(t, res.State, should.Match(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			})
@@ -227,7 +227,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				}
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.State, should.Match(rs))
+				assert.That(t, res.State, should.Match(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			})
@@ -236,7 +236,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
-				assert.Loosely(t, res.State.CancellationReasons, should.Match([]string{reason}))
+				assert.That(t, res.State.CancellationReasons, should.Match([]string{reason}))
 				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			}
@@ -283,14 +283,14 @@ func TestOnCLsUpdated(t *testing.T) {
 					updateCL(1, ci1, aplConfigOK, acc)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.State, should.Match(rs))
+					assert.That(t, res.State, should.Match(rs))
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					// Event must be preserved, s.t. the same CL is re-visited later.
 					assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 					// And Run Manager must have a task to re-check itself at around
 					// NoAccessTime.
 					assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.HaveLength(1))
-					assert.Loosely(t, ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), should.Match(string(rs.ID)))
+					assert.That(t, ct.TQ.Tasks().Payloads()[0].(*eventpb.ManageRunTask).GetRunId(), should.Match(string(rs.ID)))
 					assert.Loosely(t, ct.TQ.Tasks()[0].ETA, should.HappenOnOrBetween(noAccessAt, noAccessAt.Add(time.Second)))
 				})
 				t.Run("cancel if code review access was lost a while ago", func(t *ftt.Test) {
@@ -331,7 +331,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			)
 			cl2 := updateCL(2, ci2, aplConfigOK, accessOK)
 			triggers2 := trigger.Find(&trigger.FindInput{ChangeInfo: ci2, ConfigGroup: cfg.GetConfigGroups()[0]})
-			assert.Loosely(t, triggers2.GetCqVoteTrigger(), should.Match(&run.Trigger{
+			assert.That(t, triggers2.GetCqVoteTrigger(), should.Match(&run.Trigger{
 				Time:            timestamppb.New(triggerTime),
 				Mode:            string(run.FullRun),
 				Email:           "foo@example.com",
@@ -352,7 +352,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.State.CancellationReasons, should.Match([]string{"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6"}))
+					assert.That(t, res.State.CancellationReasons, should.Match([]string{"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6"}))
 					verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 						2: "Reset the trigger of this CL because the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
 					}, run.Status_CANCELLED)
@@ -408,7 +408,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
-				assert.Loosely(t, res.State.CancellationReasons, should.Match([]string{
+				assert.That(t, res.State.CancellationReasons, should.Match([]string{
 					"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
 					"the patchset of https://x-review.example.com/c/2 has changed from 7 to 8",
 				}))

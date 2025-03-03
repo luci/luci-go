@@ -86,7 +86,7 @@ func TestLongOps(t *testing.T) {
 		r := loadRun(ctx)
 		assert.Loosely(t, r.OngoingLongOps.GetOps(), should.HaveLength(1))
 		op := r.OngoingLongOps.GetOps()[opID]
-		assert.Loosely(t, op, should.Match(&run.OngoingLongOps_Op{
+		assert.That(t, op, should.Match(&run.OngoingLongOps_Op{
 			CancelRequested: false,
 			Deadline:        timestamppb.New(ct.Clock.Now().Add(time.Minute)),
 			Work: &run.OngoingLongOps_Op_PostStartMessage{
@@ -94,7 +94,7 @@ func TestLongOps(t *testing.T) {
 			},
 		}))
 		// Verify that long op task was enqueued.
-		assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{
+		assert.That(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{
 			&eventpb.ManageRunLongOpTask{
 				OperationId: opID,
 				RunId:       runID,
@@ -110,7 +110,7 @@ func TestLongOps(t *testing.T) {
 					called = true
 					d, ok := ctx.Deadline()
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, d.UTC(), should.Match(op.GetDeadline().AsTime()))
+					assert.That(t, d.UTC(), should.Match(op.GetDeadline().AsTime()))
 					return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))

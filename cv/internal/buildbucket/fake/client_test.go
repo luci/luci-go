@@ -73,7 +73,7 @@ func TestGetBuild(t *testing.T) {
 					Id: build.GetId(),
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, expected)))
+				assert.That(t, res, should.Match(trimmedBuildWithDefaultMask(t, expected)))
 			})
 			t.Run("With mask", func(t *ftt.Test) {
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
@@ -85,7 +85,7 @@ func TestGetBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&bbpb.Build{
+				assert.That(t, res, should.Match(&bbpb.Build{
 					Id:      build.GetId(),
 					Builder: builderID,
 				}))
@@ -167,7 +167,7 @@ func TestSearchBuild(t *testing.T) {
 		t.Run("Empty Predicate", func(t *ftt.Test) {
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&bbpb.SearchBuildsResponse{
+			assert.That(t, res, should.Match(&bbpb.SearchBuildsResponse{
 				Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 			}))
 		})
@@ -189,7 +189,7 @@ func TestSearchBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&bbpb.SearchBuildsResponse{
+				assert.That(t, res, should.Match(&bbpb.SearchBuildsResponse{
 					Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 				}))
 			})
@@ -235,7 +235,7 @@ func TestSearchBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&bbpb.SearchBuildsResponse{
+				assert.That(t, res, should.Match(&bbpb.SearchBuildsResponse{
 					Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 				}))
 			})
@@ -285,7 +285,7 @@ func TestSearchBuild(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&bbpb.SearchBuildsResponse{
+			assert.That(t, res, should.Match(&bbpb.SearchBuildsResponse{
 				Builds: []*bbpb.Build{{Id: build.GetId()}},
 			}))
 		})
@@ -370,7 +370,7 @@ func TestCancelBuild(t *testing.T) {
 					SummaryMarkdown: "no longer needed",
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, NewBuildConstructor().
+				assert.That(t, res, should.Match(trimmedBuildWithDefaultMask(t, NewBuildConstructor().
 					WithID(build.GetId()).
 					WithHost(bbHost).
 					WithBuilderID(builderID).
@@ -395,7 +395,7 @@ func TestCancelBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&bbpb.Build{
+				assert.That(t, res, should.Match(&bbpb.Build{
 					Id:     build.GetId(),
 					Status: bbpb.Status_CANCELED,
 				}))
@@ -447,7 +447,7 @@ func TestCancelBuild(t *testing.T) {
 						},
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, res, should.Match(&bbpb.Build{
+					assert.That(t, res, should.Match(&bbpb.Build{
 						Id:              build.GetId(),
 						Status:          status,
 						EndTime:         timestamppb.New(epoch.Add(2 * time.Minute)),
@@ -489,7 +489,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: builderNoProp,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
+				assert.That(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderNoProp,
 					Status:     bbpb.Status_SCHEDULED,
@@ -523,7 +523,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
+				assert.That(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderNoProp,
 					Status:     bbpb.Status_SCHEDULED,
@@ -555,7 +555,7 @@ func TestScheduleBuild(t *testing.T) {
 					Properties: props,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
+				assert.That(t, res, should.Match(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderWithProp,
 					Status:     bbpb.Status_SCHEDULED,
@@ -582,7 +582,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, res, should.Match(&bbpb.Build{
+				assert.That(t, res, should.Match(&bbpb.Build{
 					Id:     res.Id,
 					Status: bbpb.Status_SCHEDULED,
 				}))
@@ -723,7 +723,7 @@ func TestBatch(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&bbpb.BatchResponse{
+			assert.That(t, res, should.Match(&bbpb.BatchResponse{
 				Responses: []*bbpb.BatchResponse_Response{
 					{
 						Response: &bbpb.BatchResponse_Response_CancelBuild{
@@ -781,7 +781,7 @@ func TestBatch(t *testing.T) {
 				},
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(&bbpb.BatchResponse{
+			assert.That(t, res, should.Match(&bbpb.BatchResponse{
 				Responses: []*bbpb.BatchResponse_Response{
 					{
 						Response: &bbpb.BatchResponse_Response_CancelBuild{

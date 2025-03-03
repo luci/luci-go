@@ -26,20 +26,20 @@ func TestChunk(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Chunk", t, func(t *ftt.Test) {
-		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), should.Match([][]int{
+		assert.That(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 3), should.Match([][]int{
 			{1, 2, 3},
 			{4, 5, 6},
 			{7, 8, 9},
 			{10},
 		}))
-		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), should.Match([][]int{
+		assert.That(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 2), should.Match([][]int{
 			{1, 2},
 			{3, 4},
 			{5, 6},
 			{7, 8},
 			{9, 10},
 		}))
-		assert.Loosely(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), should.Match([][]int{
+		assert.That(t, chunk([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, 11), should.Match([][]int{
 			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		}))
 	})

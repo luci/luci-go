@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -42,7 +41,7 @@ func TestPageTokens(t *testing.T) {
 			assert.NoErr(t, err)
 			out := &timestamppb.Timestamp{}
 			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
-			assert.Loosely(t, out, should.Resemble(in))
+			assert.That(t, out, should.Match(in))
 		})
 		t.Run("empty page token", func(t *ftt.Test) {
 			token, err := EncryptPageToken(ctx, nil)
@@ -50,7 +49,7 @@ func TestPageTokens(t *testing.T) {
 			assert.Loosely(t, token, should.BeBlank)
 			out := &timestamppb.Timestamp{}
 			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
-			assert.Loosely(t, out, should.Resemble(&timestamppb.Timestamp{}))
+			assert.That(t, out, should.Match(&timestamppb.Timestamp{}))
 		})
 		t.Run("empty page token with typed nil", func(t *ftt.Test) {
 			var typedNil *timestamppb.Timestamp
@@ -71,6 +70,7 @@ func TestPageTokens(t *testing.T) {
 
 		as, ok := appstatus.Get(err)
 		assert.That(t, ok, should.BeTrue)
-		assert.That(t, as, should.Resemble(status.New(codes.InvalidArgument, "invalid page token")))
+		assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+		assert.That(t, as.Message(), should.ContainSubstring("invalid page token"))
 	})
 }

@@ -90,7 +90,7 @@ func TestDSMapperServer(t *testing.T) {
 
 			job, err := a.DSMGetJob(ctx, jobID)
 			assert.NoErr(t, err)
-			assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
+			assert.That(t, job.GetName(), should.Match("upgrade-something"))
 			assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_STARTING))
 
 			t.Run("SUCCESS", func(t *ftt.Test) {
@@ -98,7 +98,7 @@ func TestDSMapperServer(t *testing.T) {
 
 				job, err = a.DSMGetJob(ctx, jobID)
 				assert.NoErr(t, err)
-				assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
+				assert.That(t, job.GetName(), should.Match("upgrade-something"))
 				assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 			})
 			t.Run("Abort", func(t *ftt.Test) {

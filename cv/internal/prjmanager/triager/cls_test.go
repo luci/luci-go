@@ -88,7 +88,7 @@ func TestCLsTriage(t *testing.T) {
 			proto.Merge(&backup, sup.pb)
 
 			cls := triageCLs(ctx, c, pm)
-			assert.Loosely(t, sup.pb, should.Match(&backup)) // must not be modified
+			assert.That(t, sup.pb, should.Match(&backup)) // must not be modified
 			return cls
 		}
 
@@ -117,7 +117,7 @@ func TestCLsTriage(t *testing.T) {
 						deps:         &triagedDeps{},
 					},
 				}
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 
 				t.Run("ready may also be in 1+ Runs", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
@@ -127,7 +127,7 @@ func TestCLsTriage(t *testing.T) {
 					assert.Loosely(t, cls, should.HaveLength(1))
 					expected.runIndexes = []int32{0}
 					expected.runCountByMode["DRY_RUN"] = 1
-					assert.Loosely(t, cls[1], should.Match(expected))
+					assert.That(t, cls[1], should.Match(expected))
 				})
 			})
 
@@ -158,7 +158,7 @@ func TestCLsTriage(t *testing.T) {
 						purgeReasons: sup.pb.Pcls[0].GetPurgeReasons(),
 					},
 				}
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 			})
 
 			t.Run("Already purged is never ready", func(t *ftt.Test) {
@@ -180,7 +180,7 @@ func TestCLsTriage(t *testing.T) {
 						deps:         &triagedDeps{},
 					},
 				}
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 
 				t.Run("not even if inside 1+ Runs", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
@@ -190,7 +190,7 @@ func TestCLsTriage(t *testing.T) {
 					assert.Loosely(t, cls, should.HaveLength(1))
 					expected.runIndexes = []int32{0}
 					expected.runCountByMode["DRY_RUN"] = 1
-					assert.Loosely(t, cls[1], should.Match(expected))
+					assert.That(t, cls[1], should.Match(expected))
 				})
 			})
 
@@ -219,7 +219,7 @@ func TestCLsTriage(t *testing.T) {
 						deps:    nil, // not checked.
 					},
 				}
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 
 				t.Run("not even if inside 1+ Runs, but Run protects from purging", func(t *ftt.Test) {
 					cls := do(&prjpb.Component{
@@ -230,7 +230,7 @@ func TestCLsTriage(t *testing.T) {
 					expected.runIndexes = []int32{0}
 					expected.purgeReasons = nil
 					expected.runCountByMode["DRY_RUN"] = 1
-					assert.Loosely(t, cls[1], should.Match(expected))
+					assert.That(t, cls[1], should.Match(expected))
 				})
 			})
 		})
@@ -279,7 +279,7 @@ func TestCLsTriage(t *testing.T) {
 
 				cls := do(&prjpb.Component{Clids: []int64{1}})
 				assert.Loosely(t, cls, should.HaveLength(1))
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 			})
 
 			t.Run("new patch upload on CL with NPR being purged", func(t *ftt.Test) {
@@ -313,7 +313,7 @@ func TestCLsTriage(t *testing.T) {
 				}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
 				assert.Loosely(t, cls, should.HaveLength(1))
-				assert.Loosely(t, cls[1], should.Match(expected))
+				assert.That(t, cls[1], should.Match(expected))
 
 			})
 		})
@@ -342,7 +342,7 @@ func TestCLsTriage(t *testing.T) {
 				Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.NewPatchsetRun)}},
 			})
 			assert.Loosely(t, cls, should.HaveLength(1))
-			assert.Loosely(t, cls[1], should.Match(expected))
+			assert.That(t, cls[1], should.Match(expected))
 		})
 		t.Run("Single CL Runs: typical CL stack", func(t *ftt.Test) {
 			// CL 3 depends on 2, which in turn depends 1.
@@ -380,7 +380,7 @@ func TestCLsTriage(t *testing.T) {
 				for _, info := range cls {
 					assert.Loosely(t, info.cqReady, should.BeTrue)
 					assert.Loosely(t, info.deps.OK(), should.BeTrue)
-					assert.Loosely(t, info.lastCQVoteTriggered(), should.Match(epoch))
+					assert.That(t, info.lastCQVoteTriggered(), should.Match(epoch))
 				}
 			})
 
@@ -404,7 +404,7 @@ func TestCLsTriage(t *testing.T) {
 				assert.Loosely(t, cls[1].nprReady, should.BeTrue)
 				assert.Loosely(t, cls[2].nprReady, should.BeTrue)
 				assert.Loosely(t, cls[3].nprReady, should.BeTrue)
-				assert.Loosely(t, cls[3], should.Match(&clInfo{
+				assert.That(t, cls[3], should.Match(&clInfo{
 					pcl:            sup.PCL(3),
 					runCountByMode: map[run.Mode]int{},
 					triagedCL: triagedCL{
@@ -489,7 +489,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				assert.Loosely(t, cls[1].cqReady, should.BeTrue)
 				assert.Loosely(t, cls[2].cqReady, should.BeTrue)
-				assert.Loosely(t, cls[3], should.Match(&clInfo{
+				assert.That(t, cls[3], should.Match(&clInfo{
 					pcl:            sup.PCL(3),
 					runCountByMode: map[run.Mode]int{},
 					triagedCL: triagedCL{
@@ -525,7 +525,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				for _, info := range cls {
 					assert.Loosely(t, info.cqReady, should.BeFalse)
-					assert.Loosely(t, info.purgeReasons, should.Match([]*prjpb.PurgeReason{{
+					assert.That(t, info.purgeReasons, should.Match([]*prjpb.PurgeReason{{
 						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_InvalidDeps_{
 								InvalidDeps: info.triagedCL.deps.invalidDeps,
@@ -547,7 +547,7 @@ func TestCLsTriage(t *testing.T) {
 					for _, info := range cls {
 						assert.Loosely(t, info.cqReady, should.BeTrue)
 						assert.Loosely(t, info.purgeReasons, should.BeNil)
-						assert.Loosely(t, info.deps.submitted, should.Match([]*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}}))
+						assert.That(t, info.deps.submitted, should.Match([]*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}}))
 					}
 				})
 			})
@@ -568,7 +568,7 @@ func TestCLsTriage(t *testing.T) {
 				},
 			}
 			cls := do(&prjpb.Component{Clids: []int64{2}})
-			assert.Loosely(t, cls[2], should.Match(&clInfo{
+			assert.That(t, cls[2], should.Match(&clInfo{
 				pcl:            sup.PCL(2),
 				runCountByMode: map[run.Mode]int{},
 				triagedCL: triagedCL{
@@ -619,7 +619,7 @@ func TestCLsTriage(t *testing.T) {
 				// a CQ vote.
 				assert.Loosely(t, cls[clid1].deps, should.BeNil)
 				assert.Loosely(t, cls[clid2].deps, should.BeNil)
-				assert.Loosely(t, cls[clid3].deps.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, cls[clid3].deps.needToTrigger, should.Match([]*changelist.Dep{
 					Dep(clid1), Dep(clid2),
 				}))
 				assert.Loosely(t, cls[clid4].deps, should.BeNil)
@@ -644,11 +644,11 @@ func TestCLsTriage(t *testing.T) {
 				// the CQ vote. Deps are not triaged, unless a given CL has
 				// a CQ vote.
 				assert.Loosely(t, cls[clid1].deps, should.BeNil)
-				assert.Loosely(t, cls[clid2].deps.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, cls[clid2].deps.needToTrigger, should.Match([]*changelist.Dep{
 					Dep(clid1),
 				}))
 				assert.Loosely(t, cls[clid3].deps, should.BeNil)
-				assert.Loosely(t, cls[clid4].deps.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, cls[clid4].deps.needToTrigger, should.Match([]*changelist.Dep{
 					// Should NOT have clid4 in needToTrigger, as it is already
 					// voted.
 					Dep(clid1), Dep(clid3),

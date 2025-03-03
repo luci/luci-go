@@ -80,7 +80,7 @@ func TestParseStatusAndResult(t *testing.T) {
 					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
 					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_SUCCEEDED))
-					assert.Loosely(t, result, should.Match(&tryjob.Result{
+					assert.That(t, result, should.Match(&tryjob.Result{
 						Status:     tryjob.Result_SUCCEEDED,
 						CreateTime: timestamppb.New(createTime),
 						UpdateTime: timestamppb.New(endTime),
@@ -162,7 +162,7 @@ func TestParseOutput(t *testing.T) {
 		t.Run("Allow reuse", func(t *ftt.Test) {
 			t.Run("For full runs", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("reuse_full"))
-				assert.Loosely(t, result.output, should.Match(&recipe.Output{
+				assert.That(t, result.output, should.Match(&recipe.Output{
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "FULL_RUN"}},
 				}))
 				assert.Loosely(t, result.isTransFailure, should.BeFalse)
@@ -170,7 +170,7 @@ func TestParseOutput(t *testing.T) {
 			})
 			t.Run("For dry runs", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("reuse_dry"))
-				assert.Loosely(t, result.output, should.Match(&recipe.Output{
+				assert.That(t, result.output, should.Match(&recipe.Output{
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "DRY_RUN"}},
 				}))
 				assert.Loosely(t, result.isTransFailure, should.BeFalse)
@@ -180,13 +180,13 @@ func TestParseOutput(t *testing.T) {
 		t.Run("Do not retry", func(t *ftt.Test) {
 			t.Run("Legacy property only", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_legacy"))
-				assert.Loosely(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
+				assert.That(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
 				assert.Loosely(t, result.isTransFailure, should.BeFalse)
 				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
 			t.Run("Proto property only", func(t *ftt.Test) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_new"))
-				assert.Loosely(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
+				assert.That(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}))
 				assert.Loosely(t, result.isTransFailure, should.BeFalse)
 				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
@@ -195,14 +195,14 @@ func TestParseOutput(t *testing.T) {
 				// the legacy property denies it.
 				// Test that the protobuf property overrides the legacy one.
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_conflict"))
-				assert.Loosely(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_ALLOWED}))
+				assert.That(t, result.output, should.Match(&recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_ALLOWED}))
 				assert.Loosely(t, result.isTransFailure, should.BeFalse)
 				assert.That(t, result.err, should.Equal[*validation.Error](nil))
 			})
 		})
 		t.Run("Transient failure", func(t *ftt.Test) {
 			result := parseBuildResult(ctx, loadTestBuild("transient_failure"))
-			assert.Loosely(t, result.output, should.Match(&recipe.Output{}))
+			assert.That(t, result.output, should.Match(&recipe.Output{}))
 			assert.Loosely(t, result.isTransFailure, should.BeTrue)
 			assert.That(t, result.err, should.Equal[*validation.Error](nil))
 		})
@@ -214,7 +214,7 @@ func TestParseOutput(t *testing.T) {
 		})
 		t.Run("Bad data", func(t *ftt.Test) {
 			result := parseBuildResult(ctx, loadTestBuild("bad_data"))
-			assert.Loosely(t, result.output, should.Match(&recipe.Output{}))
+			assert.That(t, result.output, should.Match(&recipe.Output{}))
 			assert.Loosely(t, result.isTransFailure, should.BeFalse)
 			assert.Loosely(t, result.err.Errors, should.HaveLength(2))
 		})

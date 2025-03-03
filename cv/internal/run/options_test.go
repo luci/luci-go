@@ -187,19 +187,19 @@ func TestMergeOptions(t *testing.T) {
 
 	ftt.Run("MergeOptions works", t, func(t *ftt.Test) {
 		o := &Options{}
-		assert.Loosely(t, MergeOptions(o, nil), should.Match(o))
+		assert.That(t, MergeOptions(o, nil), should.Match(o))
 
 		a := &Options{
 			SkipTreeChecks:         true,
 			AvoidCancellingTryjobs: true,
 		}
-		assert.Loosely(t, MergeOptions(a, o), should.Match(a))
+		assert.That(t, MergeOptions(a, o), should.Match(a))
 
 		b := &Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 		}
-		assert.Loosely(t, MergeOptions(a, b), should.Match(&Options{
+		assert.That(t, MergeOptions(a, b), should.Match(&Options{
 			SkipTreeChecks:         true,
 			SkipEquivalentBuilders: true,
 			AvoidCancellingTryjobs: true,

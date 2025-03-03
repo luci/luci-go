@@ -31,7 +31,7 @@ func TestExtract(t *testing.T) {
 	ftt.Run("Extract works", t, func(t *ftt.Test) {
 
 		t.Run("Empty", func(t *ftt.Test) {
-			assert.Loosely(t, Extract(`Title.`), should.Match([]*changelist.StringPair{}))
+			assert.That(t, Extract(`Title.`), should.Match([]*changelist.StringPair{}))
 		})
 
 		t.Run("Git-style", func(t *ftt.Test) {

@@ -155,7 +155,7 @@ func TestGetRun(t *testing.T) {
 				},
 			), should.BeNil)
 
-			assert.Loosely(t, saveAndGet(r), should.Match(&apiv0pb.Run{
+			assert.That(t, saveAndGet(r), should.Match(&apiv0pb.Run{
 				Id:         rid.PublicID(),
 				Status:     apiv0pb.Run_SUCCEEDED,
 				CreateTime: timestamppb.New(epoch),
@@ -212,7 +212,7 @@ func TestGetRun(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, saveAndGet(r).TryjobInvocations, should.Match([]*apiv0pb.TryjobInvocation{
+				assert.That(t, saveAndGet(r).TryjobInvocations, should.Match([]*apiv0pb.TryjobInvocation{
 					{
 						BuilderConfig: &cfgpb.Verifiers_Tryjob_Builder{
 							Name: protoutil.FormatBuilderID(builderFoo),
@@ -243,7 +243,7 @@ func TestGetRun(t *testing.T) {
 					SubmittedCls: []int64{int64(cl1.ID)},
 					FailedCls:    []int64{int64(cl3.ID)},
 				}
-				assert.Loosely(t, saveAndGet(r).Submission, should.Match(&apiv0pb.Run_Submission{
+				assert.That(t, saveAndGet(r).Submission, should.Match(&apiv0pb.Run_Submission{
 					SubmittedClIndexes: []int32{0},
 					FailedClIndexes:    []int32{2},
 				}))

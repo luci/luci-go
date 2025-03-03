@@ -77,7 +77,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				t.Run("Updates previous attempts", func(t *ftt.Test) {
 					ensureTryjob(t, ctx, prevTryjobID, builderFooDef, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 					plan := prepPlan(execState, prevTryjobID)
-					assert.That(t, plan.isEmpty(), should.BeTrue)
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 					assert.That(t, execState, should.Match(newExecStateBuilder().
 						appendDefinition(builderFooDef).
 						appendAttempt(builderFoo, makeAttempt(prevTryjobID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
@@ -89,7 +89,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					const randomTryjob int64 = 567
 					ensureTryjob(t, ctx, randomTryjob, builderFooDef, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 					plan := prepPlan(execState, randomTryjob)
-					assert.That(t, plan.isEmpty(), should.BeTrue)
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 					assert.That(t, execState, should.Match(original))
 				})
 				assert.Loosely(t, executor.logEntries, should.BeEmpty)
@@ -112,11 +112,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 				t.Run("Succeeded", func(t *ftt.Test) {
 					tj := ensureTryjob(t, ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
 					plan := prepPlan(execState, tjID)
-					assert.That(t, plan.isEmpty(), should.BeTrue)
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 					assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 						makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED),
 					}))
-					assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
+					assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
 					assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -150,7 +150,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					attempt.Reused = true
 					attempt.Result.Output = ro
 					assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{attempt}))
-					assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
+					assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
 					assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -169,8 +169,8 @@ func TestPrepExecutionPlan(t *testing.T) {
 					tj := ensureTryjob(t, ctx, tjID, def, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
 					t.Run("Tryjob is critical", func(t *ftt.Test) {
 						plan := prepPlan(execState, tjID)
-						assert.That(t, plan.isEmpty(), should.BeTrue)
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
+						assert.Loosely(t, plan.isEmpty(), should.BeTrue)
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
 						}))
@@ -192,14 +192,14 @@ func TestPrepExecutionPlan(t *testing.T) {
 							attempt.Reused = true
 							attempt.Result.Output = ro
 							assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{attempt}))
-							assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
+							assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
 						})
 					})
 					t.Run("Tryjob is not critical", func(t *ftt.Test) {
 						execState.GetRequirement().GetDefinitions()[0].Critical = false
 						plan := prepPlan(execState, tjID)
-						assert.That(t, plan.isEmpty(), should.BeTrue)
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
+						assert.Loosely(t, plan.isEmpty(), should.BeTrue)
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
 						}))
@@ -219,7 +219,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY),
 						}))
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
 						assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 							{
 								Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -237,11 +237,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 						// Quota doesn't allow retrying permanent failure.
 						tj = ensureTryjob(t, ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
 						plan := prepPlan(execState, tjID)
-						assert.That(t, plan.isEmpty(), should.BeTrue)
+						assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
 						}))
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
 						assert.That(t, execState.Failures, should.Match(&tryjob.ExecutionState_Failures{
 							UnsuccessfulResults: []*tryjob.ExecutionState_Failures_UnsuccessfulResult{
 								{TryjobId: tjID},
@@ -275,13 +275,13 @@ func TestPrepExecutionPlan(t *testing.T) {
 						tj = ensureTryjob(t, ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
 						execState.GetRequirement().GetDefinitions()[0].Critical = false
 						plan := prepPlan(execState, tjID)
-						assert.That(t, plan.isEmpty(), should.BeTrue)
+						assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
 						}))
 						// Still consider execution as succeeded even though non-critical
 						// tryjob has failed.
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
 						assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 							{
 								Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -308,7 +308,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						attempt := makeAttempt(tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN)
 						attempt.Reused = true
 						assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{attempt}))
-						assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
+						assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_RUNNING))
 					})
 					t.Run("Not critical", func(t *ftt.Test) {
 						execState.GetRequirement().GetDefinitions()[0].Critical = false
@@ -383,8 +383,8 @@ func TestPrepExecutionPlan(t *testing.T) {
 					// One critical tryjob is still running.
 					ensureTryjob(t, ctx, 301, builder3Def, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
 					plan := prepPlan(execState, 101, 301)
-					assert.That(t, plan.isEmpty(), should.BeTrue)
-					assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
+					assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
 					assert.That(t, execState.Failures, should.Match(&tryjob.ExecutionState_Failures{
 						UnsuccessfulResults: []*tryjob.ExecutionState_Failures_UnsuccessfulResult{
 							{TryjobId: 101},
@@ -451,7 +451,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				assert.Loosely(t, plan.discard, should.HaveLength(1))
 				assert.That(t, plan.discard[0].definition, should.Match(removedDef))
 				assert.Loosely(t, execState.Executions, should.HaveLength(1))
-				assert.That(t, plan.discard[0].discardReason, should.Equal(noLongerRequiredInConfig))
+				assert.Loosely(t, plan.discard[0].discardReason, should.Equal(noLongerRequiredInConfig))
 				assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 					{
 						Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -471,7 +471,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				assert.NoErr(t, err)
 				assert.That(t, execState.Requirement, should.Match(latestReqmt))
-				assert.That(t, plan.isEmpty(), should.BeTrue)
+				assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 				assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 					{
 						Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -493,7 +493,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				assert.NoErr(t, err)
 				assert.That(t, execState.Requirement, should.Match(latestReqmt))
-				assert.That(t, plan.isEmpty(), should.BeTrue)
+				assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 				assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 					{
 						Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -748,8 +748,8 @@ func TestExecutePlan(t *testing.T) {
 				attempt := execState.GetExecutions()[0].GetAttempts()[0]
 				assert.That(t, attempt.GetTryjobId(), should.NotEqual(int64(0)))
 				assert.Loosely(t, attempt.GetExternalId(), should.BeEmpty)
-				assert.That(t, attempt.GetStatus(), should.Equal(tryjob.Status_UNTRIGGERED))
-				assert.That(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
+				assert.Loosely(t, attempt.GetStatus(), should.Equal(tryjob.Status_UNTRIGGERED))
+				assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_FAILED))
 				assert.That(t, execState.Failures, should.Match(&tryjob.ExecutionState_Failures{
 					LaunchFailures: []*tryjob.ExecutionState_Failures_LaunchFailure{
 						{

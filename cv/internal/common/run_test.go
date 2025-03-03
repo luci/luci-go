@@ -34,9 +34,9 @@ func TestID(t *testing.T) {
 		// Assert separately to ensure # of digits doesn't change,
 		// as this will break sorting order with IDs makde before.
 		assert.Loosely(t, id.InverseTS(), should.HaveLength(13))
-		assert.Loosely(t, id.InverseTS(), should.Match("0000000060000"))
-		assert.Loosely(t, id.LUCIProject(), should.Match("infra"))
-		assert.Loosely(t, id.AttemptKey(), should.Match("410f"))
+		assert.That(t, id.InverseTS(), should.Match("0000000060000"))
+		assert.That(t, id.LUCIProject(), should.Match("infra"))
+		assert.That(t, id.AttemptKey(), should.Match("410f"))
 
 		t.Run("lexical ordering is oldest last", func(t *ftt.Test) {
 			earlierId := MakeRunID("infra", endOfTheWorld.Add(-time.Hour), 2, []byte{31, 44})
@@ -70,7 +70,7 @@ func TestID(t *testing.T) {
 			assert.Loosely(t, publicID, should.Equal("projects/infra/runs/0000000060000-1-410f"))
 			id2, err := FromPublicRunID(publicID)
 			assert.NoErr(t, err)
-			assert.Loosely(t, id2, should.Match(id))
+			assert.That(t, id2, should.Match(id))
 
 			t.Run("panics if ID is invalid", func(t *ftt.Test) {
 				assert.Loosely(t, func() { RunID("something good").PublicID() }, should.Panic)
@@ -110,27 +110,27 @@ func TestIDs(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("IDs WithoutSorted works", t, func(t *ftt.Test) {
-		assert.Loosely(t, MakeRunIDs().WithoutSorted(MakeRunIDs("1")), should.Match(MakeRunIDs()))
+		assert.That(t, MakeRunIDs().WithoutSorted(MakeRunIDs("1")), should.Match(MakeRunIDs()))
 		assert.Loosely(t, RunIDs(nil).WithoutSorted(MakeRunIDs("1")), should.BeNil)
 
 		ids := MakeRunIDs("5", "8", "2")
 		sort.Sort(ids)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
 
 		assert.Loosely(t, ids.Equal(MakeRunIDs("2", "5", "8")), should.BeTrue)
 		assert.Loosely(t, ids.Equal(MakeRunIDs("2", "5", "8", "8")), should.BeFalse)
 
 		assertSameSlice(t, ids.WithoutSorted(nil), ids)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
 
 		assertSameSlice(t, ids.WithoutSorted(MakeRunIDs("1", "3", "9")), ids)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
 
-		assert.Loosely(t, ids.WithoutSorted(MakeRunIDs("1", "5", "9")), should.Match(MakeRunIDs("2", "8")))
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
+		assert.That(t, ids.WithoutSorted(MakeRunIDs("1", "5", "9")), should.Match(MakeRunIDs("2", "8")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
 
-		assert.Loosely(t, ids.WithoutSorted(MakeRunIDs("1", "5", "5", "7")), should.Match(MakeRunIDs("2", "8")))
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
+		assert.That(t, ids.WithoutSorted(MakeRunIDs("1", "5", "5", "7")), should.Match(MakeRunIDs("2", "8")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5", "8")))
 	})
 
 	ftt.Run("IDs InsertSorted & ContainsSorted works", t, func(t *ftt.Test) {
@@ -138,17 +138,17 @@ func TestIDs(t *testing.T) {
 
 		assert.Loosely(t, ids.ContainsSorted(RunID("5")), should.BeFalse)
 		ids.InsertSorted(RunID("5"))
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("5")))
+		assert.That(t, ids, should.Match(MakeRunIDs("5")))
 		assert.Loosely(t, ids.ContainsSorted(RunID("5")), should.BeTrue)
 
 		assert.Loosely(t, ids.ContainsSorted(RunID("2")), should.BeFalse)
 		ids.InsertSorted(RunID("2"))
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5")))
 		assert.Loosely(t, ids.ContainsSorted(RunID("2")), should.BeTrue)
 
 		assert.Loosely(t, ids.ContainsSorted(RunID("3")), should.BeFalse)
 		ids.InsertSorted(RunID("3"))
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "3", "5")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "3", "5")))
 		assert.Loosely(t, ids.ContainsSorted(RunID("3")), should.BeTrue)
 	})
 
@@ -160,11 +160,11 @@ func TestIDs(t *testing.T) {
 		assert.Loosely(t, ids.DelSorted(RunID("1")), should.BeFalse)
 		assert.Loosely(t, ids.DelSorted(RunID("10")), should.BeFalse)
 		assert.Loosely(t, ids.DelSorted(RunID("3")), should.BeTrue)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2", "5")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2", "5")))
 		assert.Loosely(t, ids.DelSorted(RunID("5")), should.BeTrue)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs("2")))
+		assert.That(t, ids, should.Match(MakeRunIDs("2")))
 		assert.Loosely(t, ids.DelSorted(RunID("2")), should.BeTrue)
-		assert.Loosely(t, ids, should.Match(MakeRunIDs()))
+		assert.That(t, ids, should.Match(MakeRunIDs()))
 	})
 
 	ftt.Run("IDs DifferenceSorted works", t, func(t *ftt.Test) {
@@ -172,11 +172,11 @@ func TestIDs(t *testing.T) {
 		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs("1")), should.BeEmpty)
 
 		ids = MakeRunIDs("2", "3", "5")
-		assert.Loosely(t, ids.DifferenceSorted(nil), should.Match(MakeRunIDs("2", "3", "5")))
-		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs()), should.Match(MakeRunIDs("2", "3", "5")))
-		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs("3")), should.Match(MakeRunIDs("2", "5")))
-		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs("4")), should.Match(MakeRunIDs("2", "3", "5")))
-		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs("1", "3", "4")), should.Match(MakeRunIDs("2", "5")))
+		assert.That(t, ids.DifferenceSorted(nil), should.Match(MakeRunIDs("2", "3", "5")))
+		assert.That(t, ids.DifferenceSorted(MakeRunIDs()), should.Match(MakeRunIDs("2", "3", "5")))
+		assert.That(t, ids.DifferenceSorted(MakeRunIDs("3")), should.Match(MakeRunIDs("2", "5")))
+		assert.That(t, ids.DifferenceSorted(MakeRunIDs("4")), should.Match(MakeRunIDs("2", "3", "5")))
+		assert.That(t, ids.DifferenceSorted(MakeRunIDs("1", "3", "4")), should.Match(MakeRunIDs("2", "5")))
 		assert.Loosely(t, ids.DifferenceSorted(MakeRunIDs("1", "2", "3", "4", "5")), should.BeEmpty)
 	})
 }
@@ -186,6 +186,6 @@ func assertSameSlice(t testing.TB, a, b RunIDs) {
 
 	// Go doesn't allow comparing slices, so compare their contents and ensure
 	// pointers to the first element are the same.
-	assert.Loosely(t, a, should.Match(b), truth.LineContext())
+	assert.That(t, a, should.Match(b), truth.LineContext())
 	assert.Loosely(t, &a[0], should.Equal(&b[0]), truth.LineContext())
 }

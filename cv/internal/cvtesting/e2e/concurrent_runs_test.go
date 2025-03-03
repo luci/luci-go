@@ -207,16 +207,16 @@ func TestConcurrentRunsSingular(t *testing.T) {
 			default:
 				actualWeird = append(actualWeird, a.gChange)
 			}
-			assert.Loosely(t, r.CreateTime, should.Match(datastore.RoundTime(a.triggerTime.UTC())))
+			assert.That(t, r.CreateTime, should.Match(datastore.RoundTime(a.triggerTime.UTC())))
 			assert.Loosely(t, r.EndTime, should.HappenAfter(a.finishTime))
 		}
 
 		sort.Ints(actualSubmitted)
 		sort.Ints(actualFailed)
 		sort.Ints(actualFinished)
-		assert.Loosely(t, actualSubmitted, should.Match(expectSubmitted))
-		assert.Loosely(t, actualFailed, should.Match(expectFailed))
-		assert.Loosely(t, actualFinished, should.Match(expectFinished))
+		assert.That(t, actualSubmitted, should.Match(expectSubmitted))
+		assert.That(t, actualFailed, should.Match(expectFailed))
+		assert.That(t, actualFinished, should.Match(expectFinished))
 		assert.Loosely(t, actualWeird, should.BeEmpty)
 
 		assert.Loosely(t, ct.LoadRunsOf(ctx, lProject), should.HaveLength(len(actions)))

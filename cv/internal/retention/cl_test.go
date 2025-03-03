@@ -65,7 +65,7 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 		}
 		sort.Sort(expectedCLIDs)
 		sort.Sort(actualCLIDs)
-		assert.Loosely(t, actualCLIDs, should.Match(expectedCLIDs))
+		assert.That(t, actualCLIDs, should.Match(expectedCLIDs))
 	})
 }
 func TestWipeoutCLs(t *testing.T) {

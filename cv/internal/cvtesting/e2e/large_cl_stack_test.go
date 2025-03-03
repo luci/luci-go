@@ -96,6 +96,6 @@ func TestHandleLargeCLStack(t *testing.T) {
 				actual = append(actual, gChange)
 			}
 		}
-		assert.Loosely(t, actual, should.Match(expected))
+		assert.That(t, actual, should.Match(expected))
 	})
 }

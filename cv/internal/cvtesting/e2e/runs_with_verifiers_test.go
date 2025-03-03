@@ -92,7 +92,7 @@ func TestCreatesSingularRun(t *testing.T) {
 			cs := ct.LoadProject(ctx, lProject).State.GetComponents()
 			return len(cs) == 1 && len(cs[0].GetPruns()) == 1
 		})
-		assert.Loosely(t, ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), should.Match(string(r.ID)))
+		assert.That(t, ct.LoadProject(ctx, lProject).State.GetComponents()[0].GetPruns()[0].GetId(), should.Match(string(r.ID)))
 
 		ct.LogPhase(ctx, "CV posts starting message")
 		ct.RunUntil(ctx, func() bool {
@@ -540,8 +540,8 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 			r13 = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r13 != nil && r13.Status == run.Status_RUNNING
 		})
-		assert.Loosely(t, r13.Mode, should.Match(run.DryRun))
-		assert.Loosely(t, r13.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID}))
+		assert.That(t, r13.Mode, should.Match(run.DryRun))
+		assert.That(t, r13.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 13).ID}))
 
 		ct.LogPhase(ctx, "User votes CQ+2 on 12, CV starts Run on just 12 and doesn't touch 13")
 		ct.Clock.Add(time.Minute)
@@ -555,8 +555,8 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 			return len(ct.LoadGerritCL(ctx, gHost, 12).IncompleteRuns) > 0
 		})
 		r12 := ct.LoadRun(ctx, ct.LoadGerritCL(ctx, gHost, 12).IncompleteRuns[0])
-		assert.Loosely(t, r12.Mode, should.Match(run.FullRun))
-		assert.Loosely(t, r12.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 12).ID}))
+		assert.That(t, r12.Mode, should.Match(run.FullRun))
+		assert.That(t, r12.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, 12).ID}))
 		assert.Loosely(t, ct.LoadRun(ctx, r13.ID).Status, should.Equal(run.Status_RUNNING))
 		assert.Loosely(t, r12.CreateTime, should.HappenAfter(r13.CreateTime))
 
@@ -657,7 +657,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		assert.Loosely(t, r.Mode, should.Equal(run.FullRun))
 		runCLIDs := r.CLs
 		sort.Sort(runCLIDs)
-		assert.Loosely(t, r.CLs, should.Match(clids))
+		assert.That(t, r.CLs, should.Match(clids))
 
 		ct.LogPhase(ctx, "Tryjob includes all CLs")
 		var buildID int64
@@ -678,7 +678,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			Id: buildID,
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Match([]*buildbucketpb.GerritChange{
+		assert.That(t, b.GetInput().GetGerritChanges(), should.Match([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange2, Patchset: gPatchSet},
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
 			{Host: gHost, Project: gRepo, Change: gChange1, Patchset: gPatchSet},
@@ -814,7 +814,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			return r != nil && r.Status == run.Status_RUNNING
 		})
 		assert.Loosely(t, r.Mode, should.Equal(run.FullRun))
-		assert.Loosely(t, r.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID}))
+		assert.That(t, r.CLs, should.Match(common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID}))
 
 		ct.LogPhase(ctx, "Tryjob only includes the CQ-ed CL")
 		var buildID int64
@@ -835,7 +835,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			Id: buildID,
 		})
 		assert.NoErr(t, err)
-		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Match([]*buildbucketpb.GerritChange{
+		assert.That(t, b.GetInput().GetGerritChanges(), should.Match([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
 		}))
 

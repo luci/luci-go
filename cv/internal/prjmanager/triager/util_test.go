@@ -73,14 +73,14 @@ func TestEarliest(t *testing.T) {
 		after := epoch.Add(time.Hour)
 		before := epoch.Add(-time.Hour)
 
-		assert.Loosely(t, earliest(), should.Match(zero))
-		assert.Loosely(t, earliest(zero), should.Match(zero))
-		assert.Loosely(t, earliest(epoch), should.Match(epoch))
+		assert.That(t, earliest(), should.Match(zero))
+		assert.That(t, earliest(zero), should.Match(zero))
+		assert.That(t, earliest(epoch), should.Match(epoch))
 
-		assert.Loosely(t, earliest(zero, epoch), should.Match(epoch))
-		assert.Loosely(t, earliest(epoch, zero), should.Match(epoch))
+		assert.That(t, earliest(zero, epoch), should.Match(epoch))
+		assert.That(t, earliest(epoch, zero), should.Match(epoch))
 
-		assert.Loosely(t, earliest(after, zero, epoch), should.Match(epoch))
-		assert.Loosely(t, earliest(epoch, before, zero, after), should.Match(before))
+		assert.That(t, earliest(after, zero, epoch), should.Match(epoch))
+		assert.That(t, earliest(epoch, before, zero, after), should.Match(before))
 	})
 }

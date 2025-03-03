@@ -70,8 +70,8 @@ func TestFindImmediateHardDeps(t *testing.T) {
 		t.Run("without deps", func(t *ftt.Test) {
 			cl1 := newCL()
 			cl2 := newCL()
-			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
 		})
 
 		t.Run("with HARD deps", func(t *ftt.Test) {
@@ -80,27 +80,27 @@ func TestFindImmediateHardDeps(t *testing.T) {
 				cl2 := newCL().Deps(cl1)
 				cl3 := newCL().Deps(cl1, cl2)
 
-				assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
-				assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
-				assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
+				assert.That(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+				assert.That(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
+				assert.That(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
 			})
 
 			t.Run("more than one immediate parents", func(t *ftt.Test) {
 				// stack 1
 				s1cl1 := newCL()
 				s1cl2 := newCL().Deps(s1cl1)
-				assert.Loosely(t, rs.findImmediateHardDeps(s1cl1.pcl), should.Match(CLIDs()))
-				assert.Loosely(t, rs.findImmediateHardDeps(s1cl2.pcl), should.Match(CLIDs(s1cl1.pcl)))
+				assert.That(t, rs.findImmediateHardDeps(s1cl1.pcl), should.Match(CLIDs()))
+				assert.That(t, rs.findImmediateHardDeps(s1cl2.pcl), should.Match(CLIDs(s1cl1.pcl)))
 				// stack 2
 				s2cl1 := newCL()
 				s2cl2 := newCL().Deps(s2cl1)
-				assert.Loosely(t, rs.findImmediateHardDeps(s2cl1.pcl), should.Match(CLIDs()))
-				assert.Loosely(t, rs.findImmediateHardDeps(s2cl2.pcl), should.Match(CLIDs(s2cl1.pcl)))
+				assert.That(t, rs.findImmediateHardDeps(s2cl1.pcl), should.Match(CLIDs()))
+				assert.That(t, rs.findImmediateHardDeps(s2cl2.pcl), should.Match(CLIDs(s2cl1.pcl)))
 
 				// cl3 belongs to both stack 1 and 2.
 				// both s1cl2 and s2cl2 should be its immediate parents.
 				cl3 := newCL().Deps(s1cl1, s1cl2, s2cl1, s2cl2)
-				assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(s1cl2.pcl, s2cl2.pcl)))
+				assert.That(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(s1cl2.pcl, s2cl2.pcl)))
 			})
 		})
 
@@ -109,9 +109,9 @@ func TestFindImmediateHardDeps(t *testing.T) {
 			cl2 := newCL().SoftDeps(cl1)
 			cl3 := newCL().SoftDeps(cl1, cl2)
 
-			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs()))
 		})
 
 		t.Run("with a mix of HARD and SOFT deps", func(t *ftt.Test) {
@@ -121,10 +121,10 @@ func TestFindImmediateHardDeps(t *testing.T) {
 			cl3 := newCL().Deps(cl1, cl2).SoftDeps(clA)
 			cl4 := newCL().Deps(cl1, cl2, cl3)
 
-			assert.Loosely(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
-			assert.Loosely(t, rs.findImmediateHardDeps(cl4.pcl), should.Match(CLIDs(cl3.pcl)))
+			assert.That(t, rs.findImmediateHardDeps(cl1.pcl), should.Match(CLIDs()))
+			assert.That(t, rs.findImmediateHardDeps(cl2.pcl), should.Match(CLIDs(cl1.pcl)))
+			assert.That(t, rs.findImmediateHardDeps(cl3.pcl), should.Match(CLIDs(cl2.pcl)))
+			assert.That(t, rs.findImmediateHardDeps(cl4.pcl), should.Match(CLIDs(cl3.pcl)))
 		})
 	})
 }

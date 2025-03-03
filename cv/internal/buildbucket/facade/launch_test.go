@@ -157,7 +157,7 @@ func TestLaunch(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, host, should.Equal(bbHost))
 				assert.Loosely(t, launchResult.Status, should.Equal(tryjob.Status_TRIGGERED))
-				assert.Loosely(t, launchResult.Result, should.Match(&tryjob.Result{
+				assert.That(t, launchResult.Result, should.Match(&tryjob.Result{
 					Status:     tryjob.Result_UNKNOWN,
 					CreateTime: timestamppb.New(ct.Clock.Now()),
 					UpdateTime: timestamppb.New(ct.Clock.Now()),
@@ -176,8 +176,8 @@ func TestLaunch(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, build.GetBuilder(), should.Match(builderID))
-				assert.Loosely(t, build.GetInput().GetProperties(), should.Match(&structpb.Struct{
+				assert.That(t, build.GetBuilder(), should.Match(builderID))
+				assert.That(t, build.GetInput().GetProperties(), should.Match(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"foo": structpb.NewStringValue("bar"),
 						propertyKey: structpb.NewStructValue(&structpb.Struct{
@@ -200,11 +200,11 @@ func TestLaunch(t *testing.T) {
 						}),
 					},
 				}))
-				assert.Loosely(t, build.GetInput().GetGerritChanges(), should.Match([]*bbpb.GerritChange{
+				assert.That(t, build.GetInput().GetGerritChanges(), should.Match([]*bbpb.GerritChange{
 					{Host: gHost, Project: gRepo, Change: gChange1, Patchset: 4},
 					{Host: gHost, Project: gRepo, Change: gChange2, Patchset: 10},
 				}))
-				assert.Loosely(t, build.GetTags(), should.Match([]*bbpb.StringPair{
+				assert.That(t, build.GetTags(), should.Match([]*bbpb.StringPair{
 					{Key: "cq_attempt_key", Value: "63616665"},
 					{Key: "cq_cl_group_key", Value: "42497728aa4b5097"},
 					{Key: "cq_cl_owner", Value: owner1Email},
@@ -215,7 +215,7 @@ func TestLaunch(t *testing.T) {
 					{Key: "cq_triggerer", Value: triggerEmail},
 					{Key: "user_agent", Value: "cq"},
 				}))
-				assert.Loosely(t, build.GetInput().GetExperiments(), should.Match([]string{"infra.experiment.bar", "infra.experiment.foo"}))
+				assert.That(t, build.GetInput().GetExperiments(), should.Match([]string{"infra.experiment.bar", "infra.experiment.foo"}))
 			})
 
 			t.Run("Optional Tryjob", func(t *ftt.Test) {
@@ -369,7 +369,7 @@ func TestLaunch(t *testing.T) {
 					},
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, build.GetBuilder(), should.Match(tryjobs[i].Definition.GetBuildbucket().GetBuilder()))
+				assert.That(t, build.GetBuilder(), should.Match(tryjobs[i].Definition.GetBuildbucket().GetBuilder()))
 			}
 		})
 

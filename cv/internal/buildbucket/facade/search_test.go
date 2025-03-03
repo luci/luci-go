@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -40,7 +40,7 @@ import (
 )
 
 func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(tryjob.Tryjob{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(tryjob.Tryjob{}))
 }
 
 func TestSearch(t *testing.T) {

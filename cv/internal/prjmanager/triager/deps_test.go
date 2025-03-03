@@ -66,7 +66,7 @@ func TestDepsTriage(t *testing.T) {
 
 			// Actual component doesn't matter in this test.
 			td := triageDeps(ctx, pcl, cgIdx, pmState{sup})
-			assert.Loosely(t, sup.pb, should.Match(&backup)) // must not be modified
+			assert.That(t, sup.pb, should.Match(&backup)) // must not be modified
 			return td
 		}
 
@@ -78,7 +78,7 @@ func TestDepsTriage(t *testing.T) {
 							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}},
 						}
 						td := do(sup.pb.Pcls[0], cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{}))
+						assert.That(t, td, should.Match(&triagedDeps{}))
 						assert.Loosely(t, td.OK(), should.BeTrue)
 					})
 
@@ -93,7 +93,7 @@ func TestDepsTriage(t *testing.T) {
 								}},
 						}
 						td := do(sup.PCL(33), cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{
+						assert.That(t, td, should.Match(&triagedDeps{
 							lastCQVoteTriggered: epoch.Add(3 * time.Second),
 						}))
 						assert.Loosely(t, td.OK(), should.BeTrue)
@@ -111,7 +111,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{notYetLoaded: pcl33.GetDeps()}))
+						assert.That(t, td, should.Match(&triagedDeps{notYetLoaded: pcl33.GetDeps()}))
 						assert.Loosely(t, td.OK(), should.BeTrue)
 					})
 
@@ -127,7 +127,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{
+						assert.That(t, td, should.Match(&triagedDeps{
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								Unwatched: pcl33.GetDeps(),
 							},
@@ -143,7 +143,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{submitted: pcl33.GetDeps()}))
+						assert.That(t, td, should.Match(&triagedDeps{submitted: pcl33.GetDeps()}))
 						assert.Loosely(t, td.OK(), should.BeTrue)
 					})
 
@@ -159,7 +159,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{
+						assert.That(t, td, should.Match(&triagedDeps{
 							lastCQVoteTriggered: epoch.Add(3 * time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								WrongConfigGroup: pcl33.GetDeps(),
@@ -188,7 +188,7 @@ func TestDepsTriage(t *testing.T) {
 							Deps:               deps,
 						})
 						td := do(sup.PCL(2000), cgIdx)
-						assert.Loosely(t, td, should.Match(&triagedDeps{
+						assert.That(t, td, should.Match(&triagedDeps{
 							lastCQVoteTriggered: epoch.Add(time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								TooMany: &changelist.CLError_InvalidDeps_TooMany{
@@ -228,7 +228,7 @@ func TestDepsTriage(t *testing.T) {
 			t.Run("dry run doesn't care about deps' triggers", func(t *ftt.Test) {
 				pcl33 := sup.PCL(33)
 				td := do(pcl33, singIdx)
-				assert.Loosely(t, td, should.Match(&triagedDeps{
+				assert.That(t, td, should.Match(&triagedDeps{
 					lastCQVoteTriggered: epoch.Add(3 * time.Second),
 				}))
 			})
@@ -245,7 +245,7 @@ func TestDepsTriage(t *testing.T) {
 					// single Submit gerrit RPC, so it can't be allowed.
 					pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
 					td := do(pcl32, singIdx)
-					assert.Loosely(t, td, should.Match(&triagedDeps{
+					assert.That(t, td, should.Match(&triagedDeps{
 						lastCQVoteTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							SingleFullDeps: pcl32.GetDeps(),
@@ -286,7 +286,7 @@ func TestDepsTriage(t *testing.T) {
 				// The triage dep result should be OK(), but have
 				// the not-yet-voted deps in needToTrigger
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 31, Kind: changelist.DepKind_HARD},
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
@@ -301,7 +301,7 @@ func TestDepsTriage(t *testing.T) {
 				td := do(pcl33, singIdx)
 
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
 			})
@@ -318,7 +318,7 @@ func TestDepsTriage(t *testing.T) {
 				// the CQ vote with CQ+2.
 				td := do(pcl33, singIdx)
 				assert.Loosely(t, td.OK(), should.BeTrue)
-				assert.Loosely(t, td.needToTrigger, should.Match([]*changelist.Dep{
+				assert.That(t, td.needToTrigger, should.Match([]*changelist.Dep{
 					{Clid: 31, Kind: changelist.DepKind_HARD},
 					{Clid: 32, Kind: changelist.DepKind_HARD},
 				}))
@@ -349,14 +349,14 @@ func TestDepsTriage(t *testing.T) {
 				pcl32 := sup.PCL(32)
 				t.Run("ok", func(t *ftt.Test) {
 					td := do(pcl32, combIdx)
-					assert.Loosely(t, td, should.Match(&triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)}))
+					assert.That(t, td, should.Match(&triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)}))
 				})
 
 				t.Run("... not full runs", func(t *ftt.Test) {
 					// TODO(tandrii): this can and should be supported.
 					sup.PCL(31).Triggers.CqVoteTrigger.Mode = string(run.FullRun)
 					td := do(pcl32, combIdx)
-					assert.Loosely(t, td, should.Match(&triagedDeps{
+					assert.That(t, td, should.Match(&triagedDeps{
 						lastCQVoteTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: pcl32.GetDeps(),
@@ -371,12 +371,12 @@ func TestDepsTriage(t *testing.T) {
 						pcl.Triggers.CqVoteTrigger.Mode = string(run.FullRun)
 					}
 					td := do(pcl33, combIdx)
-					assert.Loosely(t, td, should.Match(&triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)}))
+					assert.That(t, td, should.Match(&triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)}))
 				})
 				t.Run("... not dry runs", func(t *ftt.Test) {
 					sup.PCL(32).Triggers.CqVoteTrigger.Mode = string(run.FullRun)
 					td := do(pcl33, combIdx)
-					assert.Loosely(t, td, should.Match(&triagedDeps{
+					assert.That(t, td, should.Match(&triagedDeps{
 						lastCQVoteTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
@@ -410,21 +410,21 @@ func TestDepsTriage(t *testing.T) {
 			t.Run("some submitted", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
 				td.submitted = []*changelist.Dep{d3}
-				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d1, d2}))
+				assert.That(t, iterate(), should.Match([]*changelist.Dep{d1, d2}))
 				td.submitted = []*changelist.Dep{d1}
-				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d2}))
+				assert.That(t, iterate(), should.Match([]*changelist.Dep{d3, d2}))
 				td.submitted = []*changelist.Dep{d2}
-				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
+				assert.That(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
 			})
 			t.Run("none submitted", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
-				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1, d2}))
+				assert.That(t, iterate(), should.Match([]*changelist.Dep{d3, d1, d2}))
 			})
 			t.Run("notYetLoaded deps are iterated over, too", func(t *ftt.Test) {
 				pcl.Deps = []*changelist.Dep{d3, d1, d2}
 				td.notYetLoaded = []*changelist.Dep{d3}
 				td.submitted = []*changelist.Dep{d2}
-				assert.Loosely(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
+				assert.That(t, iterate(), should.Match([]*changelist.Dep{d3, d1}))
 			})
 			t.Run("panic on invalid usage", func(t *ftt.Test) {
 				t.Run("wrong PCL", func(t *ftt.Test) {

@@ -39,7 +39,7 @@ func TestUpgradeIfNecessary(t *testing.T) {
 			pb := backupPB(s0)
 			s1 := s0.UpgradeIfNecessary()
 			assert.Loosely(t, s1, should.Equal(s0))
-			assert.Loosely(t, s0.PB, should.Match(pb))
+			assert.That(t, s0.PB, should.Match(pb))
 		})
 
 		t.Run("necessary", func(t *ftt.Test) {

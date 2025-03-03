@@ -75,7 +75,7 @@ func TestExportRunToBQ(t *testing.T) {
 			t.Run("with JSONPB encoded message", func(t *ftt.Test) {
 				var msg cvpb.PubSubRun
 				assert.Loosely(t, protojson.Unmarshal(tsk.Message.GetData(), &msg), should.BeNil)
-				assert.Loosely(t, &msg, should.Match(&cvpb.PubSubRun{
+				assert.That(t, &msg, should.Match(&cvpb.PubSubRun{
 					Id:       r.ID.PublicID(),
 					Status:   cvpb.Run_SUCCEEDED,
 					Eversion: int64(r.EVersion),

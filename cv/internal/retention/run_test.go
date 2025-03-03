@@ -94,7 +94,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 				actualRuns.InsertSorted(common.RunID(id))
 			}
 		}
-		assert.Loosely(t, actualRuns, should.Match(expectedRuns))
+		assert.That(t, actualRuns, should.Match(expectedRuns))
 	})
 }
 
@@ -172,7 +172,7 @@ func TestWipeoutRuns(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
 			assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
-			assert.Loosely(t, mockRM.called, should.Match(common.RunIDs{r.ID}))
+			assert.That(t, mockRM.called, should.Match(common.RunIDs{r.ID}))
 		})
 	})
 }

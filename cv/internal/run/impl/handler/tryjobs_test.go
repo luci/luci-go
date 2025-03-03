@@ -190,7 +190,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-				assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+				assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 					State: &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_RUNNING,
 					},
@@ -213,7 +213,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
@@ -229,7 +229,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
@@ -237,7 +237,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has passed the run",
@@ -257,7 +257,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_SUCCEEDED,
 						},
@@ -265,7 +265,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{Clid: int64(rs.CLs[0])},
 						}))
 						assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_SUCCEEDED))
@@ -306,7 +306,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 							Failures: &tryjob.ExecutionState_Failures{
@@ -319,7 +319,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has failed the run. Reason:\n\nTryjob [chromium/test/foo](https://example.com/build/12345) has failed with summary ([view all results](https://example-review.googlesource.com/c/101?checksPatchset=2&tab=checks)):\n\n---\nthis is the summary",
@@ -370,7 +370,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 							Failures: &tryjob.ExecutionState_Failures{
@@ -386,7 +386,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "Failed to launch tryjob `chromium/test/foo`. Reason: permission denied",
@@ -417,7 +417,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-					assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+					assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
 							Status: tryjob.ExecutionState_FAILED,
 						},
@@ -425,7 +425,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink,
@@ -477,7 +477,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)
-						assert.Loosely(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
+						assert.That(t, op.GetResetTriggers().GetRequests(), should.Match([]*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(anotherCL.ID),
 								Message: "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink,

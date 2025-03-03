@@ -44,16 +44,16 @@ func TestPartitionConfig(t *testing.T) {
 				return
 			}
 			cgs := makeCfgs(singleRepoConfig("h1", "infra/222", "infra/111"))
-			assert.Loosely(t, partitionConfig(cgs), should.Match([]*QueryState{
+			assert.That(t, partitionConfig(cgs), should.Match([]*QueryState{
 				{Host: "h1", OrProjects: []string{"infra/111", "infra/222"}},
 			}))
 
 			cgs = append(cgs, makeCfgs(singleRepoConfig("h1", sharedPrefixRepos("infra", 30)...))...)
-			assert.Loosely(t, partitionConfig(cgs), should.Match([]*QueryState{
+			assert.That(t, partitionConfig(cgs), should.Match([]*QueryState{
 				{Host: "h1", CommonProjectPrefix: "infra"},
 			}))
 			cgs = append(cgs, makeCfgs(singleRepoConfig("h2", "infra/499", "infra/132"))...)
-			assert.Loosely(t, partitionConfig(cgs), should.Match([]*QueryState{
+			assert.That(t, partitionConfig(cgs), should.Match([]*QueryState{
 				{Host: "h1", CommonProjectPrefix: "infra"},
 				{Host: "h2", OrProjects: []string{"infra/132", "infra/499"}},
 			}))
@@ -82,7 +82,7 @@ func TestPartitionConfig(t *testing.T) {
 			}
 
 			// Ensure no overlaps or missed repos.
-			assert.Loosely(t, repos.ToSortedSlice(), should.Match([]string{}))
+			assert.That(t, repos.ToSortedSlice(), should.Match([]string{}))
 		})
 	})
 }

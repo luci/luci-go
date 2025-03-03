@@ -33,12 +33,12 @@ func TestPB2Time(t *testing.T) {
 		t.Run("Specified", func(t *ftt.Test) {
 			ts := testclock.TestRecentTimeUTC
 			pb := Time2PBNillable(ts)
-			assert.Loosely(t, pb, should.Match(Time2PBNillable(ts)))
-			assert.Loosely(t, pb, should.Match(timestamppb.New(ts)))
-			assert.Loosely(t, PB2TimeNillable(pb), should.Match(ts))
+			assert.That(t, pb, should.Match(Time2PBNillable(ts)))
+			assert.That(t, pb, should.Match(timestamppb.New(ts)))
+			assert.That(t, PB2TimeNillable(pb), should.Match(ts))
 		})
 		t.Run("Zero / nil", func(t *ftt.Test) {
-			assert.Loosely(t, PB2TimeNillable(nil), should.Match(time.Time{}))
+			assert.That(t, PB2TimeNillable(nil), should.Match(time.Time{}))
 			assert.Loosely(t, Time2PBNillable(time.Time{}), should.BeNil)
 		})
 	})

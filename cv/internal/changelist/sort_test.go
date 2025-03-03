@@ -28,6 +28,6 @@ func TestSort(t *testing.T) {
 	ftt.Run("Sort sorts by CL ID asc", t, func(t *ftt.Test) {
 		cls := []*CL{{ID: 3}, {ID: 1}, {ID: 2}}
 		Sort(cls)
-		assert.Loosely(t, cls, should.Match([]*CL{{ID: 1}, {ID: 2}, {ID: 3}}))
+		assert.That(t, cls, should.Match([]*CL{{ID: 1}, {ID: 2}, {ID: 3}}))
 	})
 }

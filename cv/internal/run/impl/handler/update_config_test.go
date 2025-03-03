@@ -260,7 +260,7 @@ func TestUpdateConfig(t *testing.T) {
 				res := ensureUpdated("main")
 				assert.Loosely(t, proto.Equal(res.State.Tryjobs.GetRequirement(), rs.Tryjobs.GetRequirement()), should.BeFalse)
 				assert.Loosely(t, res.State.Tryjobs.GetRequirementVersion(), should.Equal(rs.Tryjobs.GetRequirementVersion()+1))
-				assert.Loosely(t, res.State.Tryjobs.GetRequirementComputedAt().AsTime(), should.Match(ct.Clock.Now().UTC()))
+				assert.That(t, res.State.Tryjobs.GetRequirementComputedAt().AsTime(), should.Match(ct.Clock.Now().UTC()))
 			})
 		})
 

@@ -20,16 +20,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(Lease{}))
+}
 
 func TestLease(t *testing.T) {
 	t.Parallel()
@@ -57,13 +64,15 @@ func TestLease(t *testing.T) {
 				ExpireTime: now.Add(1 * time.Minute),
 				Token:      []byte{82, 253, 252, 7, 33, 130, 101, 79},
 			}
-			assert.Loosely(t, actual, should.Resemble(expected))
-			assert.Loosely(t, mustLoadLease(ctx, rid), should.Resemble(expected))
+			assert.That(t, actual, should.Match(expected))
+			assert.That(t, mustLoadLease(ctx, rid), should.Match(expected))
 
 			t.Run("Returns AlreadyInLeaseErr if existing lease is still active", func(t *ftt.Test) {
 				ct.Clock.Add(30 * time.Second) // lease expires after 1 minute
 				_, err := Apply(ctx, application)
-				assert.Loosely(t, err, should.Match(&AlreadyInLeaseErr{
+				var inLeaseErr *AlreadyInLeaseErr
+				assert.That(t, errors.As(err, &inLeaseErr), should.BeTrue)
+				assert.That(t, inLeaseErr, should.Match(&AlreadyInLeaseErr{
 					ExpireTime: now.Add(1 * time.Minute), // original lease expiry time
 					Holder:     "holder",
 					ResourceID: rid,
@@ -88,8 +97,8 @@ func TestLease(t *testing.T) {
 					ExpireTime: now.Add(1 * time.Minute),
 					Token:      []byte{22, 63, 95, 15, 154, 98, 29, 114},
 				}
-				assert.Loosely(t, actual, should.Resemble(expected))
-				assert.Loosely(t, mustLoadLease(ctx, rid), should.Resemble(expected))
+				assert.That(t, actual, should.Match(expected))
+				assert.That(t, mustLoadLease(ctx, rid), should.Match(expected))
 			})
 		})
 
@@ -104,7 +113,7 @@ func TestLease(t *testing.T) {
 				ExpireTime: now.Add(1 * time.Minute).Add(3 * time.Millisecond),
 				Token:      []byte{82, 253, 252, 7, 33, 130, 101, 79},
 			}
-			assert.Loosely(t, actual, should.Resemble(expected))
+			assert.That(t, actual, should.Match(expected))
 		})
 	})
 
@@ -142,7 +151,10 @@ func TestLease(t *testing.T) {
 				ExpireTime: now.Add(1 * time.Minute),
 			})
 			assert.NoErr(t, err)
-			assert.Loosely(t, l.Terminate(ctx), should.Match(&AlreadyInLeaseErr{
+			err = l.Terminate(ctx)
+			var inLeaseErr *AlreadyInLeaseErr
+			assert.That(t, errors.As(err, &inLeaseErr), should.BeTrue)
+			assert.That(t, inLeaseErr, should.Match(&AlreadyInLeaseErr{
 				ExpireTime: now.Add(1 * time.Minute), // original lease expiry time
 				Holder:     "holder2",
 				ResourceID: rid,
@@ -175,8 +187,8 @@ func TestLease(t *testing.T) {
 				Token:      []byte{22, 63, 95, 15, 154, 98, 29, 114},
 				Payload:    []byte("stuff"),
 			}
-			assert.Loosely(t, l, should.Resemble(expected))
-			assert.Loosely(t, mustLoadLease(ctx, rid), should.Resemble(expected))
+			assert.That(t, l, should.Match(expected))
+			assert.That(t, mustLoadLease(ctx, rid), should.Match(expected))
 		})
 
 		t.Run("Truncates to millisecond", func(t *ftt.Test) {
@@ -189,7 +201,7 @@ func TestLease(t *testing.T) {
 				Token:      []byte{22, 63, 95, 15, 154, 98, 29, 114},
 				Payload:    []byte("stuff"),
 			}
-			assert.Loosely(t, l, should.Resemble(expected))
+			assert.That(t, l, should.Match(expected))
 		})
 
 		t.Run("Errors if lease has expired", func(t *ftt.Test) {
@@ -215,7 +227,9 @@ func TestLease(t *testing.T) {
 			})
 			assert.NoErr(t, err)
 			err = l.Extend(ctx, 1*time.Minute)
-			assert.Loosely(t, err, should.Match(&AlreadyInLeaseErr{
+			var inLeaseErr *AlreadyInLeaseErr
+			assert.That(t, errors.As(err, &inLeaseErr), should.BeTrue)
+			assert.That(t, inLeaseErr, should.Match(&AlreadyInLeaseErr{
 				ExpireTime: now.Add(1 * time.Minute),
 				Holder:     "holder2",
 				ResourceID: rid,

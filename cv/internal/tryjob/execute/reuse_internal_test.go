@@ -100,8 +100,8 @@ func TestFindReuseInCV(t *testing.T) {
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion+1))
-			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Match(now))
-			assert.Loosely(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
+			assert.That(t, result[defFoo].EntityUpdateTime, should.Match(now))
+			assert.That(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
 		})
 
 		t.Run("Definition doesn't match but builder matches", func(t *ftt.Test) {
@@ -183,7 +183,7 @@ func TestFindReuseInCV(t *testing.T) {
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ID, should.Equal(newerTryjob.ID))
-			assert.Loosely(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
+			assert.That(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
 			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
 			assert.Loosely(t, tj.ReusedBy.Index(runID), should.BeLessThan(0))
 		})
@@ -197,8 +197,8 @@ func TestFindReuseInCV(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ID, should.Equal(tj.ID))
 			assert.Loosely(t, result[defFoo].EVersion, should.Equal(tj.EVersion))
-			assert.Loosely(t, result[defFoo].EntityUpdateTime, should.Match(tj.EntityUpdateTime))
-			assert.Loosely(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
+			assert.That(t, result[defFoo].EntityUpdateTime, should.Match(tj.EntityUpdateTime))
+			assert.That(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
 		})
 	})
 }

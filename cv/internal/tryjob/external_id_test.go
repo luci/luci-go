@@ -32,14 +32,14 @@ func TestExternalID(t *testing.T) {
 		t.Run("BuildbucketID", func(t *ftt.Test) {
 			eid, err := BuildbucketID("cr-buildbucket.appspot.com", 12)
 			assert.NoErr(t, err)
-			assert.Loosely(t, eid, should.Match(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
+			assert.That(t, eid, should.Match(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
 
 			host, build, err := eid.ParseBuildbucketID()
 			assert.NoErr(t, err)
-			assert.Loosely(t, host, should.Match("cr-buildbucket.appspot.com"))
+			assert.That(t, host, should.Match("cr-buildbucket.appspot.com"))
 			assert.Loosely(t, build, should.Equal(12))
 
-			assert.Loosely(t, eid.MustURL(), should.Match("https://cr-buildbucket.appspot.com/build/12"))
+			assert.That(t, eid.MustURL(), should.Match("https://cr-buildbucket.appspot.com/build/12"))
 		})
 		t.Run("Bad ID", func(t *ftt.Test) {
 			e := ExternalID("blah")

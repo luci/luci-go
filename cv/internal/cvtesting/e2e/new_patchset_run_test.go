@@ -388,7 +388,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		actual.Dedupe() // Sort.
 		expected := common.CLIDs{cla.ID, clb.ID}
 		expected.Dedupe() // Sort.
-		assert.Loosely(t, actual, should.Match(expected))
+		assert.That(t, actual, should.Match(expected))
 
 		// The new patchset runs each include one CL.
 		assert.Loosely(t, rs[1].Mode, should.Equal(run.NewPatchsetRun))

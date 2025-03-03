@@ -202,7 +202,7 @@ func TestPostGerritMessage(t *testing.T) {
 				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), should.HaveLength(2))
 				// And the timestamp isn't entirely right, but that's fine.
-				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ct.Clock.Now().UTC().Truncate(time.Second)))
+				assert.That(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ct.Clock.Now().UTC().Truncate(time.Second)))
 			})
 
 			t.Run("later retry", func(t *ftt.Test) {
@@ -214,7 +214,7 @@ func TestPostGerritMessage(t *testing.T) {
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
 				assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 				// and the timestamp must be exactly correct.
-				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ci.GetMessages()[0].GetDate().AsTime()))
+				assert.That(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ci.GetMessages()[0].GetDate().AsTime()))
 			})
 
 			t.Run("later retry avoids reposting msg even when gerrit appends metadata", func(t *ftt.Test) {
@@ -226,7 +226,7 @@ func TestPostGerritMessage(t *testing.T) {
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
 				assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
 				// and the timestamp must be exactly correct.
-				assert.Loosely(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ci.GetMessages()[0].GetDate().AsTime()))
+				assert.That(t, res.GetPostGerritMessage().GetTime().AsTime(), should.Match(ci.GetMessages()[0].GetDate().AsTime()))
 			})
 		})
 

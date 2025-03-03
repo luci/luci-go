@@ -70,7 +70,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 
 		assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
-		assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
+		assert.That(t, pmtest.Projects(ct.TQ.Tasks()), should.Match([]string{lProject}))
 		events1, err := eventbox.List(ctx, recipient)
 		assert.NoErr(t, err)
 
@@ -81,9 +81,9 @@ func TestProjectTQLateTasks(t *testing.T) {
 		assert.Loosely(t, datastore.Get(ctx, &prjmanager.Project{ID: lProject}), should.Equal(datastore.ErrNoSuchEntity))
 		events2, err := eventbox.List(ctx, recipient)
 		assert.NoErr(t, err)
-		assert.Loosely(t, events2, should.Resemble(events1))
+		assert.That(t, events2, should.Match(events1))
 		// But schedules new task instead.
-		assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
+		assert.That(t, pmtest.Projects(ct.TQ.Tasks()), should.Match([]string{lProject}))
 
 		// Next task coming ~on time proceeds normally.
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
@@ -116,7 +116,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			// Second event is a noop, but should still be consumed at once.
 			assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
-			assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
+			assert.That(t, pmtest.Projects(ct.TQ.Tasks()), should.Match([]string{lProject}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, recipient)
 			assert.NoErr(t, err)
@@ -125,7 +125,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			assert.Loosely(t, p.EVersion, should.Equal(1))
 			assert.Loosely(t, ps.Status, should.Equal(prjpb.Status_STARTED))
 			assert.Loosely(t, plog, should.NotBeNil)
-			assert.Loosely(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Resemble([]string{lProject}))
+			assert.That(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Match([]string{lProject}))
 
 			// Ensure first poller task gets executed.
 			ct.Clock.Add(time.Hour)
@@ -158,9 +158,9 @@ func TestProjectLifeCycle(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 				p, _, plog = loadProjectEntities(t, ctx, lProject)
-				assert.Loosely(t, p.IncompleteRuns(), should.Match(common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe")))
+				assert.That(t, p.IncompleteRuns(), should.Match(common.MakeRunIDs(lProject+"/111-beef", lProject+"/222-cafe")))
 				assert.Loosely(t, plog, should.NotBeNil)
-				assert.Loosely(t, runNotifier.popUpdateConfig(), should.Resemble(p.IncompleteRuns()))
+				assert.That(t, runNotifier.popUpdateConfig(), should.Match(p.IncompleteRuns()))
 
 				t.Run("disable project with incomplete runs", func(t *ftt.Test) {
 					prjcfgtest.Disable(ctx, lProject)
@@ -171,7 +171,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					assert.Loosely(t, p.EVersion, should.Equal(3))
 					assert.Loosely(t, ps.Status, should.Equal(prjpb.Status_STOPPING))
 					assert.Loosely(t, plog, should.NotBeNil)
-					assert.Loosely(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Resemble([]string{lProject}))
+					assert.That(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Match([]string{lProject}))
 					// Should ask Runs to cancel themselves.
 					reqs := make([]cancellationRequest, len(p.IncompleteRuns()))
 					for i, runID := range p.IncompleteRuns() {
@@ -180,7 +180,7 @@ func TestProjectLifeCycle(t *testing.T) {
 							reason: fmt.Sprintf("CV is disabled for LUCI Project %q", lProject),
 						}
 					}
-					assert.Loosely(t, runNotifier.popCancel(), should.Resemble(reqs))
+					assert.That(t, runNotifier.popCancel(), should.Match(reqs))
 
 					t.Run("wait for all IncompleteRuns to finish", func(t *ftt.Test) {
 						assert.Loosely(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef"), run.Status_CANCELLED), should.BeNil)
@@ -188,7 +188,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 						p, ps, plog := loadProjectEntities(t, ctx, lProject)
 						assert.Loosely(t, ps.Status, should.Equal(prjpb.Status_STOPPING))
-						assert.Loosely(t, p.IncompleteRuns(), should.Resemble(common.MakeRunIDs(lProject+"/222-cafe")))
+						assert.That(t, p.IncompleteRuns(), should.Match(common.MakeRunIDs(lProject+"/222-cafe")))
 						assert.Loosely(t, plog, should.BeNil) // still STOPPING.
 
 						assert.Loosely(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe"), run.Status_CANCELLED), should.BeNil)
@@ -213,7 +213,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				assert.Loosely(t, p.EVersion, should.Equal(2))
 				assert.Loosely(t, ps.Status, should.Equal(prjpb.Status_STOPPED))
 				assert.Loosely(t, plog, should.NotBeNil)
-				assert.Loosely(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Resemble([]string{lProject}))
+				assert.That(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Match([]string{lProject}))
 			})
 		})
 	})
@@ -342,7 +342,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		events, err = eventbox.List(ctx, recipient)
 		assert.NoErr(t, err)
 		assert.Loosely(t, events, should.BeEmpty)
-		assert.Loosely(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Resemble([]string{lProject}))
+		assert.That(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Match([]string{lProject}))
 
 		// At least 1 worker must finish successfully.
 		errCnt, _ := errs.Summary()
@@ -388,7 +388,7 @@ func loadProjectEntities(t testing.TB, ctx context.Context, luciProject string) 
 		assert.Loosely(t, plog.EVersion, should.Equal(p.EVersion), truth.LineContext())
 		assert.Loosely(t, plog.Status, should.Equal(ps.Status), truth.LineContext())
 		assert.Loosely(t, plog.ConfigHash, should.Equal(ps.ConfigHash), truth.LineContext())
-		assert.Loosely(t, plog.State, should.Resemble(p.State), truth.LineContext())
+		assert.That(t, plog.State, should.Match(p.State), truth.LineContext())
 		assert.Loosely(t, plog.Reasons, should.NotBeEmpty, truth.LineContext())
 		return p, ps, plog
 	}
@@ -426,6 +426,10 @@ type runNotifierMock struct {
 type cancellationRequest struct {
 	id     common.RunID
 	reason string
+}
+
+func (req cancellationRequest) Equal(other cancellationRequest) bool {
+	return req.id == other.id && req.reason == other.reason
 }
 
 func (r *runNotifierMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {

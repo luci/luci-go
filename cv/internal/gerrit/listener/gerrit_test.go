@@ -153,7 +153,7 @@ func TestGerrit(t *testing.T) {
 			t.Run("message from a watched repo", func(t *ftt.Test) {
 				check := func(t testing.TB) {
 					process()
-					assert.Loosely(t, sch.tasks, should.Match([]*changelist.UpdateCLTask{
+					assert.That(t, sch.tasks, should.Match([]*changelist.UpdateCLTask{
 						{
 							LuciProject: "chromium",
 							ExternalId:  "gerrit/example.org/123",

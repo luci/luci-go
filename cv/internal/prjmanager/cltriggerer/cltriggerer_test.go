@@ -193,13 +193,13 @@ func TestTriggerer(t *testing.T) {
 
 				cl1, cl2 := loadCL(change1), loadCL(change2)
 				assert.Loosely(t, tasks, should.HaveLength(2))
-				assert.Loosely(t, tasks[0], should.Match(&changelist.UpdateCLTask{
+				assert.That(t, tasks[0], should.Match(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl1.ExternalID),
 					Id:          int64(cl1.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
 				}))
-				assert.Loosely(t, tasks[1], should.Match(&changelist.UpdateCLTask{
+				assert.That(t, tasks[1], should.Match(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl2.ExternalID),
 					Id:          int64(cl2.ID),
@@ -360,13 +360,13 @@ func TestTriggerer(t *testing.T) {
 
 				cl1, cl2 := loadCL(change1), loadCL(change2)
 				assert.Loosely(t, tasks, should.HaveLength(2))
-				assert.Loosely(t, tasks[0], should.Match(&changelist.UpdateCLTask{
+				assert.That(t, tasks[0], should.Match(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl1.ExternalID),
 					Id:          int64(cl1.ID),
 					Requester:   changelist.UpdateCLTask_DEP_CL_TRIGGERER,
 				}))
-				assert.Loosely(t, tasks[1], should.Match(&changelist.UpdateCLTask{
+				assert.That(t, tasks[1], should.Match(&changelist.UpdateCLTask{
 					LuciProject: project,
 					ExternalId:  string(cl2.ExternalID),
 					Id:          int64(cl2.ID),

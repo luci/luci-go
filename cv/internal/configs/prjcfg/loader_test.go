@@ -18,7 +18,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -26,6 +29,10 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(Meta{}))
+}
 
 func mockUpdateProjectConfig(ctx context.Context, project string, cgs []*cfgpb.ConfigGroup) error {
 	const cfgHash = "sha256:deadbeef"
@@ -125,23 +132,23 @@ func TestLoadingConfigs(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeTrue)
 			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
-			assert.Loosely(t, m.ConfigGroupNames, should.Resemble([]string{cfgGroups[0].Name, cfgGroups[1].Name}))
-			assert.Loosely(t, m.ConfigGroupIDs, should.Resemble([]ConfigGroupID{
+			assert.That(t, m.ConfigGroupNames, should.Match([]string{cfgGroups[0].Name, cfgGroups[1].Name}))
+			assert.That(t, m.ConfigGroupIDs, should.Match([]ConfigGroupID{
 				ConfigGroupID(m.Hash() + "/" + cfgGroups[0].Name),
 				ConfigGroupID(m.Hash() + "/" + cfgGroups[1].Name),
 			}))
 
 			m2, err := GetHashMeta(ctx, project, m.Hash())
 			assert.NoErr(t, err)
-			assert.Loosely(t, m2, should.Resemble(m))
+			assert.That(t, m2, should.Match(m))
 
 			cgs, err := m.GetConfigGroups(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, len(cgs), should.Equal(2))
 			assert.Loosely(t, cgs[0].Project.StringID(), should.Equal(project))
-			assert.Loosely(t, cgs[0].Content, should.Resemble(cfgGroups[0]))
+			assert.That(t, cgs[0].Content, should.Match(cfgGroups[0]))
 			assert.Loosely(t, cgs[1].Project.StringID(), should.Equal(project))
-			assert.Loosely(t, cgs[1].Content, should.Resemble(cfgGroups[1]))
+			assert.That(t, cgs[1].Content, should.Match(cfgGroups[1]))
 		})
 
 		cfgGroups = append(cfgGroups, &cfgpb.ConfigGroup{
@@ -167,7 +174,7 @@ func TestLoadingConfigs(t *testing.T) {
 			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 			h := m.Hash()
 			assert.Loosely(t, h, should.HavePrefix("sha256:"))
-			assert.Loosely(t, m.ConfigGroupIDs, should.Resemble([]ConfigGroupID{
+			assert.That(t, m.ConfigGroupIDs, should.Match([]ConfigGroupID{
 				ConfigGroupID(h + "/" + cfgGroups[0].Name),
 				ConfigGroupID(h + "/" + cfgGroups[1].Name),
 				ConfigGroupID(h + "/" + cfgGroups[2].Name),
@@ -179,7 +186,7 @@ func TestLoadingConfigs(t *testing.T) {
 			t.Run("reading ConfigGroup directly works", func(t *ftt.Test) {
 				cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
 				assert.NoErr(t, err)
-				assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
+				assert.That(t, cg.Content, should.Match(cfgGroups[2]))
 			})
 		})
 
@@ -229,10 +236,10 @@ func TestLoadingConfigs(t *testing.T) {
 			// Can still read individual ConfigGroups.
 			cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[0])
 			assert.NoErr(t, err)
-			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[0]))
+			assert.That(t, cg.Content, should.Match(cfgGroups[0]))
 			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
 			assert.NoErr(t, err)
-			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
+			assert.That(t, cg.Content, should.Match(cfgGroups[2]))
 			// ... except the deleted one.
 			_, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
 			assert.Loosely(t, datastore.IsErrNoSuchEntity(err), should.BeTrue)

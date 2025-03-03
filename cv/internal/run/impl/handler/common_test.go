@@ -143,7 +143,7 @@ func TestEndRun(t *testing.T) {
 		impl, deps := makeImpl(&ct)
 		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
 		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
-		assert.Loosely(t, rs.EndTime, should.Match(ct.Clock.Now()))
+		assert.That(t, rs.EndTime, should.Match(ct.Clock.Now()))
 		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
 
 		t.Run("removeRunFromCLs", func(t *ftt.Test) {
@@ -153,12 +153,12 @@ func TestEndRun(t *testing.T) {
 
 			// it should have removed the ended Run, but not the other
 			// ongoing Run from the CL entity.
-			assert.Loosely(t, cl.IncompleteRuns, should.Match(common.RunIDs{rids[1]}))
+			assert.That(t, cl.IncompleteRuns, should.Match(common.RunIDs{rids[1]}))
 			t.Run("schedule CLUpdate for the removed Run", func(t *ftt.Test) {
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
 				pmtest.AssertReceivedRunFinished(t, ctx, rids[0], rs.Status)
 				pmtest.AssertReceivedCLsNotified(t, ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
-				assert.Loosely(t, deps.clUpdater.refreshedCLs, should.Match(common.MakeCLIDs(clid)))
+				assert.That(t, deps.clUpdater.refreshedCLs, should.Match(common.MakeCLIDs(clid)))
 			})
 		})
 
@@ -192,7 +192,7 @@ func TestEndRun(t *testing.T) {
 					break
 				}
 			}
-			assert.Loosely(t, task, should.Match(&pubsub.PublishRunEndedTask{
+			assert.That(t, task, should.Match(&pubsub.PublishRunEndedTask{
 				PublicId:    rs.ID.PublicID(),
 				LuciProject: rs.ID.LUCIProject(),
 				Status:      rs.Status,
@@ -205,7 +205,7 @@ func TestEndRun(t *testing.T) {
 			for _, op := range rs.OngoingLongOps.GetOps() {
 				if act := op.GetExecutePostAction(); act != nil {
 					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
-					assert.Loosely(t, op.GetDeadline(), should.Match(d))
+					assert.That(t, op.GetDeadline(), should.Match(d))
 					assert.Loosely(t, op.GetCancelRequested(), should.BeFalse)
 					postActions = append(postActions, act)
 				}
@@ -214,7 +214,7 @@ func TestEndRun(t *testing.T) {
 				return strings.Compare(postActions[i].GetName(), postActions[j].GetName()) < 0
 			})
 
-			assert.Loosely(t, postActions, should.Match([]*run.OngoingLongOps_Op_ExecutePostActionPayload{
+			assert.That(t, postActions, should.Match([]*run.OngoingLongOps_Op_ExecutePostActionPayload{
 				{
 					Name: postaction.CreditRunQuotaPostActionName,
 					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
@@ -320,7 +320,7 @@ func TestEndRun(t *testing.T) {
 		impl, _ := makeImpl(&ct)
 		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
 		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
-		assert.Loosely(t, rs.EndTime, should.Match(ct.Clock.Now()))
+		assert.That(t, rs.EndTime, should.Match(ct.Clock.Now()))
 		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
 
 		t.Run("Does not credit quota for on upload runs (NewPatchsetRun)", func(t *ftt.Test) {
@@ -328,7 +328,7 @@ func TestEndRun(t *testing.T) {
 			for _, op := range rs.OngoingLongOps.GetOps() {
 				if act := op.GetExecutePostAction(); act != nil {
 					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
-					assert.Loosely(t, op.GetDeadline(), should.Match(d))
+					assert.That(t, op.GetDeadline(), should.Match(d))
 					assert.Loosely(t, op.GetCancelRequested(), should.BeFalse)
 					postActions = append(postActions, act)
 				}
@@ -337,7 +337,7 @@ func TestEndRun(t *testing.T) {
 				return strings.Compare(postActions[i].GetName(), postActions[j].GetName()) < 0
 			})
 
-			assert.Loosely(t, postActions, should.Match([]*run.OngoingLongOps_Op_ExecutePostActionPayload{}))
+			assert.That(t, postActions, should.Match([]*run.OngoingLongOps_Op_ExecutePostActionPayload{}))
 		})
 	})
 }
@@ -484,12 +484,12 @@ func TestCheckRunCreate(t *testing.T) {
 				assert.Loosely(t, reqs, should.HaveLength(2))
 				assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
 				assert.Loosely(t, reqs[0].Message, should.Equal("CV cannot start a Run for `user-1@example.com` because the user is not a committer."))
-				assert.Loosely(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
+				assert.That(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
 					gerrit.Whom_OWNER,
 					gerrit.Whom_CQ_VOTERS}))
 				assert.Loosely(t, reqs[1].Clid, should.Equal(clid2))
 				assert.Loosely(t, reqs[1].Message, should.Equal("CV cannot start a Run for `user-1@example.com` because the user is not a committer."))
-				assert.Loosely(t, reqs[1].AddToAttention, should.Match([]gerrit.Whom{
+				assert.That(t, reqs[1].AddToAttention, should.Match([]gerrit.Whom{
 					gerrit.Whom_OWNER,
 					gerrit.Whom_CQ_VOTERS}))
 			}
@@ -527,7 +527,7 @@ func TestCheckRunCreate(t *testing.T) {
 					assert.Loosely(t, reqs, should.HaveLength(1))
 					assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
 					assert.Loosely(t, reqs[0].Message, should.ContainSubstring("CV cannot start a Run because this CL is not submittable"))
-					assert.Loosely(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
+					assert.That(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
 						gerrit.Whom_OWNER,
 						gerrit.Whom_CQ_VOTERS}))
 				}
@@ -543,7 +543,7 @@ func TestCheckRunCreate(t *testing.T) {
 					assert.Loosely(t, reqs, should.HaveLength(1))
 					assert.Loosely(t, reqs[0].Clid, should.Equal(clid1))
 					assert.Loosely(t, reqs[0].Message, should.ContainSubstring("can not start the Run due to following errors"))
-					assert.Loosely(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
+					assert.That(t, reqs[0].AddToAttention, should.Match([]gerrit.Whom{
 						gerrit.Whom_OWNER,
 						gerrit.Whom_CQ_VOTERS}))
 				}

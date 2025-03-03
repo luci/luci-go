@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -40,7 +40,7 @@ import (
 )
 
 func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(tryjob.Tryjob{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(tryjob.Tryjob{}))
 }
 
 func TestFindReuseInBackend(t *testing.T) {
@@ -135,7 +135,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			result[defFoo].RetentionKey = "" // clear the retention key before comparison
-			assert.Loosely(t, result[defFoo], should.Match(&tryjob.Tryjob{
+			assert.That(t, result[defFoo], should.Match(&tryjob.Tryjob{
 				ID:               tryjob.MustResolve(ctx, eid)[0],
 				ExternalID:       eid,
 				EVersion:         1,
@@ -262,7 +262,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			latest := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
 			assert.Loosely(t, datastore.Get(ctx, latest), should.BeNil)
 			latest.RetentionKey = "" // clear the retention key before comparison
-			assert.Loosely(t, latest, should.Match(&tryjob.Tryjob{
+			assert.That(t, latest, should.Match(&tryjob.Tryjob{
 				ID:               tj.ID,
 				ExternalID:       eid,
 				EVersion:         tj.EVersion + 1,

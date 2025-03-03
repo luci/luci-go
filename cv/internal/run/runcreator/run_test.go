@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -51,7 +51,7 @@ import (
 )
 
 func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(run.Run{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(run.Run{}))
 }
 
 func TestComputeCLsDigest(t *testing.T) {
@@ -300,7 +300,7 @@ func TestRunBuilder(t *testing.T) {
 			// For realism and to prevent non-determinism in production,
 			// make CreateTime in the past.
 			ct.Clock.Add(time.Second)
-			assert.Loosely(t, rb.ExpectedRunID(), should.Match(common.RunID(expectedRunID)))
+			assert.That(t, rb.ExpectedRunID(), should.Match(common.RunID(expectedRunID)))
 		})
 
 		t.Run("ExpectedRunID panics if CreateTime is not given", func(t *ftt.Test) {
@@ -330,17 +330,17 @@ func TestRunBuilder(t *testing.T) {
 				Options:             &run.Options{},
 				DepRuns:             common.RunIDs{"dead-beef"},
 			}
-			assert.Loosely(t, r, should.Match(expectedRun))
+			assert.That(t, r, should.Match(expectedRun))
 
 			for i, cl := range rb.cls {
 				assert.Loosely(t, cl.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
-				assert.Loosely(t, cl.UpdateTime, should.Match(r.CreateTime))
+				assert.That(t, cl.UpdateTime, should.Match(r.CreateTime))
 			}
 
 			// Run is properly saved
 			saved := &run.Run{ID: expectedRun.ID}
 			assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
-			assert.Loosely(t, saved, should.Match(expectedRun))
+			assert.That(t, saved, should.Match(expectedRun))
 
 			for i := range rb.InputCLs {
 				i := i
@@ -351,14 +351,14 @@ func TestRunBuilder(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
 					assert.Loosely(t, saved.ExternalID, should.Equal(rb.cls[i].ExternalID))
-					assert.Loosely(t, saved.Trigger, should.Match(rb.InputCLs[i].TriggerInfo))
-					assert.Loosely(t, saved.Detail, should.Match(rb.cls[i].Snapshot))
+					assert.That(t, saved.Trigger, should.Match(rb.InputCLs[i].TriggerInfo))
+					assert.That(t, saved.Detail, should.Match(rb.cls[i].Snapshot))
 				})
 				t.Run(fmt.Sprintf("CL %d-th is properly updated", i), func(t *ftt.Test) {
 					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
 					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
 					assert.Loosely(t, saved.IncompleteRuns.ContainsSorted(expectedRunID), should.BeTrue)
-					assert.Loosely(t, saved.UpdateTime, should.Match(expectedRun.UpdateTime))
+					assert.That(t, saved.UpdateTime, should.Match(expectedRun.UpdateTime))
 					assert.Loosely(t, saved.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))
 				})
 			}
@@ -367,7 +367,7 @@ func TestRunBuilder(t *testing.T) {
 			entries, err := run.LoadRunLogEntries(ctx, expectedRun.ID)
 			assert.NoErr(t, err)
 			assert.Loosely(t, entries, should.HaveLength(1))
-			assert.Loosely(t, entries[0].GetCreated().GetConfigGroupId(), should.Match(string(expectedRun.ConfigGroupID)))
+			assert.That(t, entries[0].GetCreated().GetConfigGroupId(), should.Match(string(expectedRun.ConfigGroupID)))
 
 			// Created metric is sent.
 			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunCreated, lProject, "cq-group", string(run.DryRun)), should.Equal(1))
@@ -378,7 +378,7 @@ func TestRunBuilder(t *testing.T) {
 			}}})
 			runtest.AssertInEventbox(t, ctx, r.ID, &eventpb.Event{Event: &eventpb.Event_Start{Start: &eventpb.Start{}}})
 			// RM must have an immediate task to start working on a new Run.
-			assert.Loosely(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{r.ID}))
+			assert.That(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{r.ID}))
 		})
 
 		t.Run("Non standard run", func(t *ftt.Test) {
@@ -395,7 +395,7 @@ func TestRunBuilder(t *testing.T) {
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
 			assert.NoErr(t, err)
 			assert.Loosely(t, r.Mode, should.Equal(run.Mode("CUSTOM_RUN")))
-			assert.Loosely(t, r.ModeDefinition, should.Match(rb.ModeDefinition))
+			assert.That(t, r.ModeDefinition, should.Match(rb.ModeDefinition))
 		})
 	})
 }

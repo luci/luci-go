@@ -20,11 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -33,6 +35,10 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(Run{}))
+}
 
 func TestLoadChildRuns(t *testing.T) {
 	t.Parallel()
@@ -125,14 +131,14 @@ func TestLoadRunLogEntries(t *testing.T) {
 		out1, err := LoadRunLogEntries(ctx, run1)
 		assert.NoErr(t, err)
 		assert.Loosely(t, out1, should.HaveLength(3))
-		assert.Loosely(t, out1[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst"))
-		assert.Loosely(t, out1[1].GetConfigChanged().GetConfigGroupId(), should.Match("se/cond"))
+		assert.That(t, out1[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst"))
+		assert.That(t, out1[1].GetConfigChanged().GetConfigGroupId(), should.Match("se/cond"))
 		assert.Loosely(t, out1[2].GetTryjobsRequirementUpdated(), should.NotBeNil)
 
 		out2, err := LoadRunLogEntries(ctx, run2)
 		assert.NoErr(t, err)
 		assert.Loosely(t, out2, should.HaveLength(1))
-		assert.Loosely(t, out2[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst-but-run2"))
+		assert.That(t, out2[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst-but-run2"))
 	})
 }
 
@@ -165,12 +171,12 @@ func TestLoadRunsBuilder(t *testing.T) {
 			t.Run("Every Run exists", func(t *ftt.Test) {
 				verify := func(b LoadRunsBuilder) {
 					runsA, errs := b.Do(ctx)
-					assert.Loosely(t, errs, should.Resemble(make(errors.MultiError, 2)))
-					assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202}))
+					assert.That(t, errs, should.Match(make(errors.MultiError, 2)))
+					assert.That(t, runsA, should.Match([]*Run{r201, r202}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
 					assert.NoErr(t, err)
-					assert.Loosely(t, runsB, should.Resemble(runsA))
+					assert.That(t, runsB, should.Match(runsA))
 				}
 				t.Run("IDs", func(t *ftt.Test) {
 					verify(LoadRunsFromIDs(r201.ID, r202.ID))
@@ -188,7 +194,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 				runsA, errs := b.Do(ctx)
 				assert.Loosely(t, errs, should.ErrLike(errors.MultiError{datastore.ErrNoSuchEntity}))
-				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
+				assert.That(t, runsA, should.Match([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
 				assert.NoErr(t, err)
@@ -200,7 +206,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				runsA, errs := b.Do(ctx)
 				assert.Loosely(t, errs, should.ErrLike(
 					errors.MultiError{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil}))
-				assert.Loosely(t, runsA, should.Resemble([]*Run{
+				assert.That(t, runsA, should.Match([]*Run{
 					r201,
 					{ID: r404.ID},
 					r202,
@@ -210,7 +216,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202, r4}))
+				assert.That(t, runsB, should.Match([]*Run{r201, r202, r4}))
 			})
 		})
 
@@ -223,12 +229,12 @@ func TestLoadRunsBuilder(t *testing.T) {
 				b := LoadRunsFromIDs(r201.ID, r202.ID, r4.ID).Checker(checker)
 
 				runsA, errs := b.Do(ctx)
-				assert.Loosely(t, errs, should.Resemble(make(errors.MultiError, 3)))
-				assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202, r4}))
+				assert.That(t, errs, should.Match(make(errors.MultiError, 3)))
+				assert.That(t, runsA, should.Match([]*Run{r201, r202, r4}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
 				assert.NoErr(t, err)
-				assert.Loosely(t, runsB, should.Resemble(runsA))
+				assert.That(t, runsB, should.Match(runsA))
 			})
 
 			t.Run("Missing in datastore", func(t *ftt.Test) {
@@ -236,7 +242,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 				runsA, errs := b.Do(ctx)
 				assert.Loosely(t, appstatus.Code(errs[0]), should.Equal(codes.NotFound))
-				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
+				assert.That(t, runsA, should.Match([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
 				assert.NoErr(t, err)
@@ -261,7 +267,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 					assert.Loosely(t, errs[2], should.BeNil) // r202
 					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
 					assert.Loosely(t, errs[4], should.ErrLike("not-found-ds"))
-					assert.Loosely(t, runsA, should.Resemble([]*Run{
+					assert.That(t, runsA, should.Match([]*Run{
 						r201,
 						{ID: r1.ID},
 						r202,
@@ -271,7 +277,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
 					assert.NoErr(t, err)
-					assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202}))
+					assert.That(t, runsB, should.Match([]*Run{r201, r202}))
 				})
 				t.Run("of everything", func(t *ftt.Test) {
 					b := LoadRunsFromIDs(r201.ID, r1.ID, r2.ID, r3.ID, r4.ID, r404.ID).Checker(checker)
@@ -283,7 +289,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
 					assert.Loosely(t, errs[4], should.ErrLike("after-oops"))
 					assert.Loosely(t, errs[5], should.ErrLike("not-found-ds"))
-					assert.Loosely(t, runsA, should.Resemble([]*Run{
+					assert.That(t, runsA, should.Match([]*Run{
 						r201,
 						{ID: r1.ID},
 						{ID: r2.ID},

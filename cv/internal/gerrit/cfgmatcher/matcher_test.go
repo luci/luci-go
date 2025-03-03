@@ -107,24 +107,24 @@ func TestPartitionConfig(t *testing.T) {
 				assert.Loosely(t, m.Match(gHost1, "random/repo", "refs/heads/main"), should.BeEmpty)
 				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/nei/ther"), should.BeEmpty)
 
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/main"), should.Match(ids("g1")))
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/exclud-not-really"), should.Match(ids("g1")))
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/excluded"), should.Match(ids("fallback")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/heads/main"), should.Match(ids("g1")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/heads/exclud-not-really"), should.Match(ids("g1")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/heads/excluded"), should.Match(ids("fallback")))
 
 				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/12"), should.BeEmpty)
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/123"), should.Match(ids("fallback")))
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/1234"), should.Match(ids("fallback")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/branch-heads/123"), should.Match(ids("fallback")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/branch-heads/1234"), should.Match(ids("fallback")))
 				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/branch-heads/12345"), should.BeEmpty)
 
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/g2"), should.Match(ids("g1", "g2")))
-				assert.Loosely(t, m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), should.Match(ids("g1")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/heads/g2"), should.Match(ids("g1", "g2")))
+				assert.That(t, m.Match(gHost1, "luci/go", "refs/heads/g2-not-any-more"), should.Match(ids("g1")))
 				// Test default.
 				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/stuff"), should.BeEmpty)
 				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/main"), should.BeEmpty)
-				assert.Loosely(t, m.Match(gHost1, "default", "refs/heads/master"), should.Match(ids("g1")))
+				assert.That(t, m.Match(gHost1, "default", "refs/heads/master"), should.Match(ids("g1")))
 
 				// 2nd host with 2 hosts in the same config group.
-				assert.Loosely(t, m.Match(gHost2, "fo/rk", "refs/heads/main"), should.Match(ids("g2")))
+				assert.That(t, m.Match(gHost2, "fo/rk", "refs/heads/main"), should.Match(ids("g2")))
 			})
 		}
 

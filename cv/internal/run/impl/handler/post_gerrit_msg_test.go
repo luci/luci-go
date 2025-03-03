@@ -94,7 +94,7 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
-			assert.Loosely(t, res.State.LogEntries[0].GetTime().AsTime(), should.Match(postedAt.UTC()))
+			assert.That(t, res.State.LogEntries[0].GetTime().AsTime(), should.Match(postedAt.UTC()))
 		})
 
 		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {

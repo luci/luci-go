@@ -141,7 +141,7 @@ func TestManager(t *testing.T) {
 			pid, err := qm.WritePolicy(ctx, lProject)
 
 			assert.NoErr(t, err)
-			assert.Loosely(t, pid, should.Match(&quotapb.PolicyConfigID{
+			assert.That(t, pid, should.Match(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
@@ -157,7 +157,7 @@ func TestManager(t *testing.T) {
 			pid, err := qm.WritePolicy(ctx, lProject)
 
 			assert.NoErr(t, err)
-			assert.Loosely(t, pid, should.Match(&quotapb.PolicyConfigID{
+			assert.That(t, pid, should.Match(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
@@ -173,7 +173,7 @@ func TestManager(t *testing.T) {
 			pid, err := qm.WritePolicy(ctx, lProject)
 
 			assert.NoErr(t, err)
-			assert.Loosely(t, pid, should.Match(&quotapb.PolicyConfigID{
+			assert.That(t, pid, should.Match(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
 				Version: pid.Version,
@@ -198,7 +198,7 @@ func TestManager(t *testing.T) {
 
 			res, err := qm.findRunLimit(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(googlerLimit))
 		})
 
 		t.Run("findRunLimit() works with user entry in principals", func(t *ftt.Test) {
@@ -219,7 +219,7 @@ func TestManager(t *testing.T) {
 			}
 			res, err := qm.findRunLimit(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(exampleLimit))
+			assert.That(t, res, should.Match(exampleLimit))
 		})
 
 		t.Run("findRunLimit() returns default user_limit if no valid user_limit is found", func(t *ftt.Test) {
@@ -240,7 +240,7 @@ func TestManager(t *testing.T) {
 
 			res, err := qm.findRunLimit(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.Match(genUserLimit("default", 5, nil))) // default name is overriden.
+			assert.That(t, res, should.Match(genUserLimit("default", 5, nil))) // default name is overridden.
 		})
 
 		t.Run("findRunLimit() returns nil when no valid policy is found", func(t *ftt.Test) {
@@ -281,8 +281,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.DebitRunQuota(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
@@ -316,8 +316,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.CreditRunQuota(ctx, r)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    5,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
@@ -351,8 +351,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
@@ -369,8 +369,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
@@ -402,8 +402,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    -1,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
@@ -424,8 +424,8 @@ func TestManager(t *testing.T) {
 			t.Run("quota underflow", func(t *ftt.Test) {
 				res, userLimit, err := qm.runQuotaOp(ctx, r, "debit", -2)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
-				assert.Loosely(t, userLimit, should.Match(googlerLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(googlerLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					Status:        quotapb.OpResult_ERR_UNDERFLOW,
 				}))
@@ -445,8 +445,8 @@ func TestManager(t *testing.T) {
 				// overflow doesn't err but gets capped.
 				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", 10)
 				assert.NoErr(t, err)
-				assert.Loosely(t, userLimit, should.Match(googlerLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(googlerLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
 					NewBalance:    1,
 				}))
@@ -479,8 +479,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
@@ -496,8 +496,8 @@ func TestManager(t *testing.T) {
 				// extreme examples.
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -2)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
-				assert.Loosely(t, userLimit, should.Match(partnerLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(partnerLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 1,
 					Status:                  quotapb.OpResult_ERR_UNDERFLOW,
@@ -513,8 +513,8 @@ func TestManager(t *testing.T) {
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
 				assert.NoErr(t, err)
-				assert.Loosely(t, userLimit, should.Match(partnerLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(partnerLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					NewBalance:              0,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 1,
@@ -531,8 +531,8 @@ func TestManager(t *testing.T) {
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
 				assert.NoErr(t, err)
-				assert.Loosely(t, userLimit, should.Match(chromiesLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(chromiesLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					NewBalance:              8,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 9,
@@ -551,8 +551,8 @@ func TestManager(t *testing.T) {
 				// extreme examples.
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", 2)
 				assert.NoErr(t, err)
-				assert.Loosely(t, userLimit, should.Match(chromiesLimit))
-				assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+				assert.That(t, userLimit, should.Match(chromiesLimit))
+				assert.That(t, res, should.Match(&quotapb.OpResult{
 					NewBalance:              10,
 					PreviousBalance:         4,
 					PreviousBalanceAdjusted: 9,
@@ -579,24 +579,24 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", -1)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:    4,
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
@@ -605,8 +605,8 @@ func TestManager(t *testing.T) {
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
 			assert.NoErr(t, err)
-			assert.Loosely(t, userLimit, should.Match(googlerLimit))
-			assert.Loosely(t, res, should.Match(&quotapb.OpResult{
+			assert.That(t, userLimit, should.Match(googlerLimit))
+			assert.That(t, res, should.Match(&quotapb.OpResult{
 				NewBalance:              2,
 				PreviousBalance:         4,
 				PreviousBalanceAdjusted: 4,
@@ -624,7 +624,7 @@ func TestManager(t *testing.T) {
 
 			emailHash := md5.Sum([]byte(tEmail))
 
-			assert.Loosely(t, qm.RunQuotaAccountID(r), should.Match(&quotapb.AccountID{
+			assert.That(t, qm.RunQuotaAccountID(r), should.Match(&quotapb.AccountID{
 				AppId:        "cv",
 				Realm:        "chromium",
 				Namespace:    "infra",

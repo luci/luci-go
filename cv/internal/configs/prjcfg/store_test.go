@@ -78,13 +78,13 @@ func TestGetAllProjectIDs(t *testing.T) {
 		t.Run("All", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, false)
 			assert.NoErr(t, err)
-			assert.Loosely(t, ret, should.Match([]string{"disabledProject", "enabledProject"}))
+			assert.That(t, ret, should.Match([]string{"disabledProject", "enabledProject"}))
 		})
 
 		t.Run("Enabled", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, true)
 			assert.NoErr(t, err)
-			assert.Loosely(t, ret, should.Match([]string{"enabledProject"}))
+			assert.That(t, ret, should.Match([]string{"enabledProject"}))
 		})
 	})
 }
@@ -155,9 +155,9 @@ func TestGetAllGerritHosts(t *testing.T) {
 
 			hosts, err := GetAllGerritHosts(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, hosts[pc1.Project].ToSortedSlice(), should.Match(
+			assert.That(t, hosts[pc1.Project].ToSortedSlice(), should.Match(
 				[]string{"example.com", "example.org"}))
-			assert.Loosely(t, hosts[pc2.Project].ToSortedSlice(), should.Match(
+			assert.That(t, hosts[pc2.Project].ToSortedSlice(), should.Match(
 				[]string{"example.edu", "example.net"}))
 		})
 

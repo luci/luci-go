@@ -314,7 +314,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 			for _, ppfn := range ppfns {
 				assert.Loosely(t, ppfn(ctx), should.BeNil)
 			}
-			assert.Loosely(t, calledForStates, should.Match([]int{150, 152}))
+			assert.That(t, calledForStates, should.Match([]int{150, 152}))
 		})
 	})
 }
@@ -494,7 +494,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			l, err := List(ctx, recipient)
 			assert.NoErr(t, err)
 			assert.Loosely(t, l, should.HaveLength(1))
-			assert.Loosely(t, l[0].Value, should.Match([]byte("msg")))
+			assert.That(t, l[0].Value, should.Match([]byte("msg")))
 		})
 		t.Run("Garbage is cleaned up even if Mutate also returns error", func(t *ftt.Test) {
 			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
@@ -507,7 +507,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			l, err := List(ctx, recipient)
 			assert.NoErr(t, err)
 			assert.Loosely(t, l, should.HaveLength(1))
-			assert.Loosely(t, l[0].Value, should.Match([]byte("msg")))
+			assert.That(t, l[0].Value, should.Match([]byte("msg")))
 		})
 		t.Run("Mutate returns empty slice of transitions", func(t *ftt.Test) {
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
@@ -585,11 +585,11 @@ func TestPrepareMutation(t *testing.T) {
 		})
 		t.Run("order is respected", func(t *ftt.Test) {
 			assert.Loosely(t, Chain(nil, f2, nil, f1, f2, f1, nil)(ctx), should.BeNil)
-			assert.Loosely(t, ops, should.Match([]string{"f2", "f1", "f2", "f1"}))
+			assert.That(t, ops, should.Match([]string{"f2", "f1", "f2", "f1"}))
 		})
 		t.Run("error aborts", func(t *ftt.Test) {
 			assert.Loosely(t, Chain(f1, nil, ferr, f2)(ctx), should.ErrLike(breakChain))
-			assert.Loosely(t, ops, should.Match([]string{"f1", "ferr"}))
+			assert.That(t, ops, should.Match([]string{"f1", "ferr"}))
 		})
 	})
 }

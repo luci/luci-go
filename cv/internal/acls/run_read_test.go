@@ -17,7 +17,7 @@ package acls
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(run.Run{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(run.Run{}))
 }
 
 func TestRunReadChecker(t *testing.T) {
@@ -96,7 +96,7 @@ func TestRunReadChecker(t *testing.T) {
 
 					st1, _ := appstatus.Get(err1)
 					st2, _ := appstatus.Get(err2)
-					assert.Loosely(t, st1.Message(), should.Match(st2.Message()))
+					assert.That(t, st1.Message(), should.Match(st2.Message()))
 					assert.Loosely(t, st1.Details(), should.BeEmpty)
 					assert.Loosely(t, st2.Details(), should.BeEmpty)
 				})
@@ -105,7 +105,7 @@ func TestRunReadChecker(t *testing.T) {
 			t.Run("OK public", func(t *ftt.Test) {
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
 				assert.NoErr(t, err)
-				assert.Loosely(t, r, should.Match(publicRun))
+				assert.That(t, r, should.Match(publicRun))
 			})
 
 			t.Run("OK internal", func(t *ftt.Test) {
@@ -116,7 +116,7 @@ func TestRunReadChecker(t *testing.T) {
 				})
 				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				assert.NoErr(t, err)
-				assert.Loosely(t, r, should.Match(internalRun))
+				assert.That(t, r, should.Match(internalRun))
 			})
 
 			t.Run("OK v0 API users", func(t *ftt.Test) {
@@ -126,10 +126,10 @@ func TestRunReadChecker(t *testing.T) {
 				})
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
 				assert.NoErr(t, err)
-				assert.Loosely(t, r, should.Match(publicRun))
+				assert.That(t, r, should.Match(publicRun))
 				r, err = run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				assert.NoErr(t, err)
-				assert.Loosely(t, r, should.Match(internalRun))
+				assert.That(t, r, should.Match(internalRun))
 			})
 
 			t.Run("PermissionDenied", func(t *ftt.Test) {

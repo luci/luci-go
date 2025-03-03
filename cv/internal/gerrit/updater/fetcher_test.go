@@ -94,7 +94,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(111, 3, 3, "107_1"),
 				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
-			assert.Loosely(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
+			assert.That(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
 				{Change: 107, Immediate: true},
 			}))
 		})
@@ -109,7 +109,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(114, 1, 3, "111_3"),
 				gf.RelatedChange(117, 2, 2, "114_1"),
 			})
-			assert.Loosely(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
+			assert.That(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
 				{Change: 107, Immediate: true},
 				{Change: 108, Immediate: true},
 				{Change: 104, Immediate: false},
@@ -127,7 +127,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				c105, // should be ignored, somewhat arbitrarily.
 				gf.RelatedChange(111, 3, 3, "104_1"),
 			})
-			assert.Loosely(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
+			assert.That(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
 				{Change: 104, Immediate: true},
 				{Change: 103, Immediate: false},
 			}))
@@ -141,7 +141,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 				gf.RelatedChange(104, 2, 2, "107_1"),
 				gf.RelatedChange(111, 3, 3, "104_1", "104_2"),
 			})
-			assert.Loosely(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
+			assert.That(t, f.toUpdate.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
 				{Change: 104, Immediate: true},
 				{Change: 107, Immediate: false},
 			}))

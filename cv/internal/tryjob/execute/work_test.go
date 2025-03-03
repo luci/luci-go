@@ -150,7 +150,7 @@ func TestWorker(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.Equal(eid))
-			assert.Loosely(t, w.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
+			assert.That(t, w.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
@@ -227,14 +227,14 @@ func TestWorker(t *testing.T) {
 			eidForBuilder2 := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			w.findReuseFns = []findReuseFn{
 				func(ctx context.Context, reuseKey string, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-					assert.Loosely(t, defs, should.Match(definitions))
+					assert.That(t, defs, should.Match(definitions))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: makeReuseTryjob(ctx, def, eidForBuilder0),
 					}, nil
 				},
 				func(ctx context.Context, reuseKey string, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					// reuse Tryjob already found for definitions[0]
-					assert.Loosely(t, defs, should.Match(definitions[1:]))
+					assert.That(t, defs, should.Match(definitions[1:]))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[2]: makeReuseTryjob(ctx, def, eidForBuilder2),
 					}, nil

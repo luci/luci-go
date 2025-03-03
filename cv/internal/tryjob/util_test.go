@@ -62,7 +62,7 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 
 	actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
 	assert.NoErr(t, err)
-	assert.Loosely(t, actual, should.Match(expected))
+	assert.That(t, actual, should.Match(expected))
 }
 
 func TestIsEnded(t *testing.T) {

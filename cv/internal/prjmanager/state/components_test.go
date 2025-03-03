@@ -63,7 +63,7 @@ func TestEarliestDecisionTime(t *testing.T) {
 			if ts.IsZero() {
 				assert.Loosely(t, tsPB, should.BeNil)
 			} else {
-				assert.Loosely(t, tsPB.AsTime(), should.Match(ts))
+				assert.That(t, tsPB.AsTime(), should.Match(ts))
 			}
 			return ts
 		}
@@ -71,26 +71,26 @@ func TestEarliestDecisionTime(t *testing.T) {
 		cs := []*prjpb.Component{
 			{DecisionTime: nil},
 		}
-		assert.Loosely(t, earliest(cs), should.Match(time.Time{}))
+		assert.That(t, earliest(cs), should.Match(time.Time{}))
 
 		cs = append(cs, &prjpb.Component{DecisionTime: timestamppb.New(t0.Add(time.Second))})
-		assert.Loosely(t, earliest(cs), should.Match(t0.Add(time.Second)))
+		assert.That(t, earliest(cs), should.Match(t0.Add(time.Second)))
 
 		cs = append(cs, &prjpb.Component{})
-		assert.Loosely(t, earliest(cs), should.Match(t0.Add(time.Second)))
+		assert.That(t, earliest(cs), should.Match(t0.Add(time.Second)))
 
 		cs = append(cs, &prjpb.Component{DecisionTime: timestamppb.New(t0.Add(time.Hour))})
-		assert.Loosely(t, earliest(cs), should.Match(t0.Add(time.Second)))
+		assert.That(t, earliest(cs), should.Match(t0.Add(time.Second)))
 
 		cs = append(cs, &prjpb.Component{DecisionTime: timestamppb.New(t0)})
-		assert.Loosely(t, earliest(cs), should.Match(t0))
+		assert.That(t, earliest(cs), should.Match(t0))
 
 		cs = append(cs, &prjpb.Component{
 			TriageRequired: true,
 			// DecisionTime in this case doesn't matter.
 			DecisionTime: timestamppb.New(t0.Add(10 * time.Hour)),
 		})
-		assert.Loosely(t, earliest(cs), should.Match(now))
+		assert.That(t, earliest(cs), should.Match(now))
 	})
 }
 
@@ -178,13 +178,13 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.BeNil)
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 			assert.Loosely(t, collectCalledOn(), should.BeEmpty)
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
 				assert.NoErr(t, err)
-				assert.Loosely(t, state.PB, should.Match(pb))
+				assert.That(t, state.PB, should.Match(pb))
 				assert.Loosely(t, state2, should.Equal(state)) // pointer comparison
 				assert.Loosely(t, sideEffect, should.BeNil)
 				// Always creates new task iff there is NextEvalTime.
@@ -212,7 +212,7 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
-			assert.Loosely(t, collectCalledOn(), should.Match([]int{1, 3}))
+			assert.That(t, collectCalledOn(), should.Match([]int{1, 3}))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
@@ -221,7 +221,7 @@ func TestComponentsActions(t *testing.T) {
 				pb.NextEvalTime = timestamppb.New(now.Add(2 * time.Minute))
 				pb.Components[1].DecisionTime = timestamppb.New(c1next)
 				pb.Components[3].TriageRequired = false
-				assert.Loosely(t, state2.PB, should.Match(pb))
+				assert.That(t, state2.PB, should.Match(pb))
 				assert.Loosely(t, pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, now.Add(2*time.Minute)), should.NotBeEmpty)
 			})
 		})
@@ -253,13 +253,13 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(3))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffects, err := h.ExecDeferred(ctx, state)
 				assert.NoErr(t, err)
 				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
-				assert.Loosely(t, state2.PB.GetPurgingCls(), should.Match([]*prjpb.PurgingCL{
+				assert.That(t, state2.PB.GetPurgingCls(), should.Match([]*prjpb.PurgingCL{
 					{Clid: 1, OperationId: "1580640000-1", Deadline: expectedDeadline,
 						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
@@ -274,9 +274,9 @@ func TestComponentsActions(t *testing.T) {
 				assert.Loosely(t, ps, should.HaveLength(2))
 				// Unlike PB.PurgingCls, the tasks aren't necessarily sorted.
 				sort.Slice(ps, func(i, j int) bool { return ps[i].GetPurgingCl().GetClid() < ps[j].GetPurgingCl().GetClid() })
-				assert.Loosely(t, ps[0].GetPurgingCl(), should.Match(state2.PB.GetPurgingCls()[0])) // CL#1
+				assert.That(t, ps[0].GetPurgingCl(), should.Match(state2.PB.GetPurgingCls()[0])) // CL#1
 				assert.Loosely(t, ps[0].GetLuciProject(), should.Equal(lProject))
-				assert.Loosely(t, ps[1].GetPurgingCl(), should.Match(state2.PB.GetPurgingCls()[1])) // CL#3
+				assert.That(t, ps[1].GetPurgingCl(), should.Match(state2.PB.GetPurgingCls()[1])) // CL#3
 			})
 		})
 
@@ -298,14 +298,14 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(3))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffects, err := h.ExecDeferred(ctx, state)
 				assert.NoErr(t, err)
 				expectedDeadline := timestamppb.New(now.Add(prjpb.MaxTriggeringCLDepsDuration))
 				assert.Loosely(t, state2.PB.GetTriggeringClDeps(), should.HaveLength(1))
-				assert.Loosely(t, state2.PB.GetTriggeringClDeps()[0], should.Match(&prjpb.TriggeringCLDeps{
+				assert.That(t, state2.PB.GetTriggeringClDeps()[0], should.Match(&prjpb.TriggeringCLDeps{
 					OriginClid:  3,
 					DepClids:    []int64{1, 2},
 					OperationId: fmt.Sprintf("%d-3", expectedDeadline.AsTime().Unix()),
@@ -324,7 +324,7 @@ func TestComponentsActions(t *testing.T) {
 				})
 				assert.Loosely(t, ts, should.HaveLength(1))
 				assert.Loosely(t, ts[0].GetLuciProject(), should.Equal(lProject))
-				assert.Loosely(t, ts[0].GetTriggeringClDeps(), should.Match(
+				assert.That(t, ts[0].GetTriggeringClDeps(), should.Match(
 					state2.PB.GetTriggeringClDeps()[0]))
 			})
 		})
@@ -344,7 +344,7 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				// Execute slightly after #1 component decision time.
@@ -355,7 +355,7 @@ func TestComponentsActions(t *testing.T) {
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
 				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
-				assert.Loosely(t, state2.PB, should.Match(pb))
+				assert.That(t, state2.PB, should.Match(pb))
 				// Self-poke task must be scheduled for earliest possible from now.
 				assert.Loosely(t, pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), should.NotBeEmpty)
 			})
@@ -376,7 +376,7 @@ func TestComponentsActions(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
@@ -385,7 +385,7 @@ func TestComponentsActions(t *testing.T) {
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
 				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
-				assert.Loosely(t, state2.PB, should.Match(pb))
+				assert.That(t, state2.PB, should.Match(pb))
 				// Self-poke task must be scheduled for earliest possible from now.
 				assert.Loosely(t, pmtest.ETAsWithin(ct.TQ.Tasks(), lProject, time.Second, ct.Clock.Now().Add(prjpb.PMTaskInterval)), should.NotBeEmpty)
 			})
@@ -398,7 +398,7 @@ func TestComponentsActions(t *testing.T) {
 			}
 			_, _, err := h.triageComponents(ctx, state)
 			assert.Loosely(t, err, should.ErrLike("failed to triage 2 components"))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
@@ -415,7 +415,7 @@ func TestComponentsActions(t *testing.T) {
 			}
 			_, _, err := h.ExecDeferred(ctx, state)
 			assert.Loosely(t, err, should.ErrLike(errCaughtPanic))
-			assert.Loosely(t, state.PB, should.Match(pb))
+			assert.That(t, state.PB, should.Match(pb))
 		})
 
 		t.Run("With Run Creation", func(t *ftt.Test) {
@@ -494,7 +494,7 @@ func TestComponentsActions(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				pb.Components[1].TriageRequired = false // must be saved, since Run Creation succeeded.
-				assert.Loosely(t, state2.PB, should.Match(pb))
+				assert.That(t, state2.PB, should.Match(pb))
 				assert.Loosely(t, findRunOf(1), should.NotBeNil)
 			})
 
@@ -565,7 +565,7 @@ func TestComponentsActions(t *testing.T) {
 					},
 				}
 				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.
-				assert.Loosely(t, state2.PB, should.Match(pb))
+				assert.That(t, state2.PB, should.Match(pb))
 			})
 
 			t.Run("Catches panic", func(t *ftt.Test) {
@@ -578,7 +578,7 @@ func TestComponentsActions(t *testing.T) {
 
 				_, _, err := h.ExecDeferred(ctx, state)
 				assert.Loosely(t, err, should.ErrLike(errCaughtPanic))
-				assert.Loosely(t, state.PB, should.Match(pb))
+				assert.That(t, state.PB, should.Match(pb))
 			})
 		})
 	})

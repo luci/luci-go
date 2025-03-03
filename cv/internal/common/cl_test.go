@@ -29,11 +29,11 @@ func TestCLIDs(t *testing.T) {
 		t.Run("Dedupe", func(t *ftt.Test) {
 			ids := CLIDs{7, 6, 3, 1, 3, 4, 9, 2, 1, 5, 8, 8, 8, 4, 9}
 			ids.Dedupe()
-			assert.Loosely(t, ids, should.Match(CLIDs{1, 2, 3, 4, 5, 6, 7, 8, 9}))
+			assert.That(t, ids, should.Match(CLIDs{1, 2, 3, 4, 5, 6, 7, 8, 9}))
 
 			ids = CLIDs{6, 1, 2, 2, 3, 4}
 			ids.Dedupe()
-			assert.Loosely(t, ids, should.Match(CLIDs{1, 2, 3, 4, 6}))
+			assert.That(t, ids, should.Match(CLIDs{1, 2, 3, 4, 6}))
 		})
 	})
 }

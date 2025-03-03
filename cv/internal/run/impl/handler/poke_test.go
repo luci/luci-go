@@ -115,7 +115,7 @@ func TestPoke(t *testing.T) {
 			},
 		}
 		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
-		assert.Loosely(t, triggers.GetCqVoteTrigger(), should.Match(&run.Trigger{
+		assert.That(t, triggers.GetCqVoteTrigger(), should.Match(&run.Trigger{
 			Time:            timestamppb.New(clock.Now(ctx).UTC()),
 			Mode:            string(run.DryRun),
 			Email:           "foo@example.com",
@@ -135,7 +135,7 @@ func TestPoke(t *testing.T) {
 		verifyNoOp := func() {
 			res, err := h.Poke(ctx, rs)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.State, should.Match(rs))
+			assert.That(t, res.State, should.Match(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			assert.Loosely(t, res.PostProcessFn, should.BeNil)
@@ -170,7 +170,7 @@ func TestPoke(t *testing.T) {
 					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
 					// proceed to submission right away
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
-					assert.Loosely(t, res.State.Submission, should.Match(&run.Submission{
+					assert.That(t, res.State.Submission, should.Match(&run.Submission{
 						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{gChange},
 						TaskId:            "task-foo",
@@ -188,7 +188,7 @@ func TestPoke(t *testing.T) {
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					// record the result and check again after 1 minute.
-					assert.Loosely(t, res.State.Submission, should.Match(&run.Submission{
+					assert.That(t, res.State.Submission, should.Match(&run.Submission{
 						TreeOpen:          false,
 						LastTreeCheckTime: timestamppb.New(now),
 					}))
@@ -279,7 +279,7 @@ func TestPoke(t *testing.T) {
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					assert.Loosely(t, res.State, should.NotEqual(rs))
-					assert.Loosely(t, res.State.LatestCLsRefresh, should.Match(datastore.RoundTime(ct.Clock.Now().UTC())))
+					assert.That(t, res.State.LatestCLsRefresh, should.Match(datastore.RoundTime(ct.Clock.Now().UTC())))
 					assert.Loosely(t, deps.clUpdater.refreshedCLs.Contains(1), should.BeTrue)
 				}
 				t.Run("For the first time", func(t *ftt.Test) {
@@ -308,7 +308,7 @@ func TestPoke(t *testing.T) {
 				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 				resetOp := longOp.GetResetTriggers()
 				assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
-				assert.Loosely(t, resetOp.Requests[0], should.Match(
+				assert.That(t, resetOp.Requests[0], should.Match(
 					&run.OngoingLongOps_Op_ResetTriggers_Request{
 						Clid:    int64(gChange),
 						Message: "CV cannot start a Run for `foo@example.com` because the user is not a dry-runner.",
@@ -386,8 +386,8 @@ func TestPoke(t *testing.T) {
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					assert.Loosely(t, res.State, should.NotEqual(rs))
-					assert.Loosely(t, res.State.LatestTryjobsRefresh, should.Match(datastore.RoundTime(ct.Clock.Now().UTC())))
-					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.Match(common.TryjobIDs{2}))
+					assert.That(t, res.State.LatestTryjobsRefresh, should.Match(datastore.RoundTime(ct.Clock.Now().UTC())))
+					assert.That(t, deps.tjNotifier.updateScheduled, should.Match(common.TryjobIDs{2}))
 				}
 				t.Run("For the first time", func(t *ftt.Test) {
 					rs.CreateTime = ct.Clock.Now().Add(-tryjobRefreshInterval - time.Second)

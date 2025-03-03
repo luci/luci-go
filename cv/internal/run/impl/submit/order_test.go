@@ -18,7 +18,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -26,6 +29,10 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(run.RunCL{}))
+}
 
 func TestComputeOrder(t *testing.T) {
 	t.Parallel()
@@ -40,7 +47,7 @@ func TestComputeOrder(t *testing.T) {
 		}
 		t.Run("Single CL", func(t *ftt.Test) {
 			assert.Loosely(t, mustComputeOrder([]*run.RunCL{{ID: 1}}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{{ID: 1}},
 				))
 		})
@@ -63,7 +70,7 @@ func TestComputeOrder(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, mustComputeOrder([]*run.RunCL{clHard, clSoft}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{clHard, clSoft},
 				))
 		})
@@ -76,7 +83,7 @@ func TestComputeOrder(t *testing.T) {
 
 		t.Run("Disjoint CLs", func(t *ftt.Test) {
 			assert.Loosely(t, mustComputeOrder([]*run.RunCL{{ID: 2}, {ID: 1}}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{{ID: 1}, {ID: 2}},
 				))
 		})
@@ -93,7 +100,7 @@ func TestComputeOrder(t *testing.T) {
 			cl2 := &run.RunCL{ID: 2}
 			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{cl2, cl1},
 				))
 
@@ -105,7 +112,7 @@ func TestComputeOrder(t *testing.T) {
 				}
 				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2}),
-					should.Resemble(
+					should.Match(
 						[]*run.RunCL{cl2, cl1},
 					))
 			})
@@ -130,7 +137,7 @@ func TestComputeOrder(t *testing.T) {
 			}
 			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{cl2, cl1},
 				))
 		})
@@ -178,7 +185,7 @@ func TestComputeOrder(t *testing.T) {
 			cl3 := &run.RunCL{ID: 3}
 			assert.Loosely(t,
 				mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-				should.Resemble(
+				should.Match(
 					[]*run.RunCL{cl3, cl2, cl1},
 				))
 
@@ -196,7 +203,7 @@ func TestComputeOrder(t *testing.T) {
 				}
 				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-					should.Resemble(
+					should.Match(
 						[]*run.RunCL{cl3, cl2, cl1},
 					))
 			})
@@ -209,18 +216,18 @@ func TestComputeOrder(t *testing.T) {
 				}
 				assert.Loosely(t,
 					mustComputeOrder([]*run.RunCL{cl1, cl2, cl3}),
-					should.Resemble(
+					should.Match(
 						[]*run.RunCL{cl3, cl2, cl1},
 					))
 				t.Run("Input order doesn't matter", func(t *ftt.Test) {
 					assert.Loosely(t,
 						mustComputeOrder([]*run.RunCL{cl3, cl2, cl1}),
-						should.Resemble(
+						should.Match(
 							[]*run.RunCL{cl3, cl2, cl1},
 						))
 					assert.Loosely(t,
 						mustComputeOrder([]*run.RunCL{cl2, cl1, cl3}),
-						should.Resemble(
+						should.Match(
 							[]*run.RunCL{cl3, cl2, cl1},
 						))
 				})
@@ -232,7 +239,7 @@ func TestComputeOrder(t *testing.T) {
 			cls := genFullGraph(N)
 			actual, numBrokenDeps, err := compute(cls)
 			assert.NoErr(t, err)
-			assert.Loosely(t, actual, should.Resemble(cls))
+			assert.That(t, actual, should.Match(cls))
 			assert.Loosely(t, numBrokenDeps, should.Equal((N-1)*(N-1)))
 		})
 	})

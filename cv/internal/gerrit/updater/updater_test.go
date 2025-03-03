@@ -88,7 +88,7 @@ func TestUpdaterBackend(t *testing.T) {
 			t.Run("Happy path", func(t *ftt.Test) {
 				acfg, err := gu.LookupApplicableConfig(ctx, cl)
 				assert.NoErr(t, err)
-				assert.Loosely(t, acfg, should.Match(&changelist.ApplicableConfig{
+				assert.That(t, acfg, should.Match(&changelist.ApplicableConfig{
 					Projects: []*changelist.ApplicableConfig_Project{
 						{Name: "luci-project-x", ConfigGroupIds: []string{string(xConfigGroupID)}},
 					},
@@ -108,7 +108,7 @@ func TestUpdaterBackend(t *testing.T) {
 				assert.NoErr(t, err)
 				// Must be empty, but not nil per updaterBackend interface contract.
 				assert.Loosely(t, acfg, should.NotBeNil)
-				assert.Loosely(t, acfg, should.Match(&changelist.ApplicableConfig{}))
+				assert.That(t, acfg, should.Match(&changelist.ApplicableConfig{}))
 			})
 
 			t.Run("Works with >1 LUCI project watching the same CL", func(t *ftt.Test) {
@@ -202,7 +202,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			}
 			sort.Ints(actual)
 			sort.Ints(expectedChanges)
-			assert.Loosely(t, actual, should.Match(expectedChanges))
+			assert.That(t, actual, should.Match(expectedChanges))
 		}
 
 		// Most of the code doesn't care if CL exists, so for simplicity we test it
@@ -232,7 +232,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			assert.NoErr(t, err)
 
 			assert.Loosely(t, res.AddDependentMeta, should.BeNil)
-			assert.Loosely(t, res.ApplicableConfig, should.Match(&changelist.ApplicableConfig{
+			assert.That(t, res.ApplicableConfig, should.Match(&changelist.ApplicableConfig{
 				Projects: []*changelist.ApplicableConfig_Project{
 					{
 						Name: lProject,
@@ -250,7 +250,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			// save Gerrit CI portion for later check and check high-level fields first.
 			ci = res.Snapshot.GetGerrit().GetInfo()
 			res.Snapshot.GetGerrit().Info = nil
-			assert.Loosely(t, res.Snapshot, should.Match(&changelist.Snapshot{
+			assert.That(t, res.Snapshot, should.Match(&changelist.Snapshot{
 				Deps:                  nil,
 				ExternalUpdateTime:    timestamppb.New(expUpdateTime),
 				LuciProject:           lProject,
@@ -268,7 +268,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			}))
 			expectedCI := ct.GFake.GetChange(gHost, gChange).Info
 			changelist.RemoveUnusedGerritInfo(expectedCI)
-			assert.Loosely(t, ci, should.Match(expectedCI))
+			assert.That(t, ci, should.Match(expectedCI))
 
 			t.Run("may re-uses files & related changes of the existing Snapshot", func(t *ftt.Test) {
 				// Simulate previously saved CL.
@@ -294,13 +294,13 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					// Only the ChangeInfo & ExternalUpdateTime must change.
 					expectedCI := ct.GFake.GetChange(gHost, gChange).Info
 					changelist.RemoveUnusedGerritInfo(expectedCI)
-					assert.Loosely(t, res2.Snapshot.GetGerrit().GetInfo(), should.Match(expectedCI))
+					assert.That(t, res2.Snapshot.GetGerrit().GetInfo(), should.Match(expectedCI))
 					// NOTE: the prior result Snapshot already has nil ChangeInfo due to
 					// the assertions done above. Now modify it to match what we expect to
 					// get in res2.
 					res.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now())
 					res2.Snapshot.GetGerrit().Info = nil
-					assert.Loosely(t, res2.Snapshot, should.Match(res.Snapshot))
+					assert.That(t, res2.Snapshot, should.Match(res.Snapshot))
 				})
 
 				t.Run("not possible", func(t *ftt.Test) {
@@ -314,8 +314,8 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 					res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 					assert.NoErr(t, err)
-					assert.Loosely(t, res2.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"new.file"}))
-					assert.Loosely(t, res2.Snapshot.GetGerrit().GetSoftDeps(), should.Match([]*changelist.GerritSoftDep{{Change: 444, Host: gHost}}))
+					assert.That(t, res2.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"new.file"}))
+					assert.That(t, res2.Snapshot.GetGerrit().GetSoftDeps(), should.Match([]*changelist.GerritSoftDep{{Change: 444, Host: gHost}}))
 				})
 			})
 		})
@@ -342,11 +342,11 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 			assert.NoErr(t, err)
 
-			assert.Loosely(t, res.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
+			assert.That(t, res.Snapshot.GetGerrit().GetGitDeps(), should.Match([]*changelist.GerritGitDep{
 				{Change: 55, Immediate: true},
 				{Change: 54, Immediate: false},
 			}))
-			assert.Loosely(t, res.Snapshot.GetGerrit().GetSoftDeps(), should.Match([]*changelist.GerritSoftDep{
+			assert.That(t, res.Snapshot.GetGerrit().GetSoftDeps(), should.Match([]*changelist.GerritSoftDep{
 				{Change: 55, Host: gHost},
 				{Change: 444, Host: gHostInternal},
 			}))
@@ -360,7 +360,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				{Clid: int64(cl444.ID), Kind: changelist.DepKind_SOFT},
 			}
 			sort.Slice(expected, func(i, j int) bool { return expected[i].GetClid() < expected[j].GetClid() })
-			assert.Loosely(t, res.Snapshot.GetDeps(), should.Match(expected))
+			assert.That(t, res.Snapshot.GetDeps(), should.Match(expected))
 		})
 
 		t.Run("happy path: fetches CL in ignorable state", func(t *ftt.Test) {
@@ -373,7 +373,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						)))
 					res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.Snapshot.GetGerrit().GetInfo().GetStatus(), should.Match(s))
+					assert.That(t, res.Snapshot.GetGerrit().GetInfo().GetStatus(), should.Match(s))
 					assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.BeNil)
 					assert.Loosely(t, res.Snapshot.GetDeps(), should.BeNil)
 
@@ -386,7 +386,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				)))
 				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"a.txt"}))
+				assert.That(t, res.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"a.txt"}))
 
 				savedCL := changelist.CL{
 					ID:               123123213,
@@ -413,7 +413,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				})
 				res, err = gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"a.txt"}))
+				assert.That(t, res.Snapshot.GetGerrit().GetFiles(), should.Match([]string{"a.txt"}))
 			})
 		})
 
@@ -465,7 +465,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.Snapshot, should.BeNil)
 			assert.Loosely(t, res.ApplicableConfig, should.BeNil)
-			assert.Loosely(t, res.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
+			assert.That(t, res.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
 				NoAccess:     true,
 				NoAccessTime: timestamppb.New(ct.Clock.Now().Add(noAccessGraceDuration)),
 				UpdateTime:   timestamppb.New(ct.Clock.Now()),
@@ -484,10 +484,10 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
 				assert.NoErr(t, err)
 				// res2 must be the same, except for the .UpdateTime.
-				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Match(timestamppb.New(ct.Clock.Now())))
+				assert.That(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Match(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
 				res2.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
-				assert.Loosely(t, res2, should.Match(res))
+				assert.That(t, res2, should.Match(res))
 				// And thus, lack of access is still uncertain.
 				assert.Loosely(t, cl.AccessKind(ctx, lProject), should.Equal(changelist.AccessDeniedProbably))
 			})
@@ -497,10 +497,10 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
 				assert.NoErr(t, err)
 				// res2 must be the same, except for the .UpdateTime.
-				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Match(timestamppb.New(ct.Clock.Now())))
+				assert.That(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Match(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
 				res2.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
-				assert.Loosely(t, res2, should.Match(res))
+				assert.That(t, res2, should.Match(res))
 				// Nothing new should be scheduled (on top of the existing task).
 				assertUpdateCLScheduledFor(gChange)
 				// Finally, certainty is reached.
@@ -515,7 +515,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				assert.NoErr(t, err)
 				// The previous record of lack of Access must be expunged.
 				assert.Loosely(t, res2.AddDependentMeta, should.BeNil)
-				assert.Loosely(t, res2.DelAccess, should.Match([]string{lProject}))
+				assert.That(t, res2.DelAccess, should.Match([]string{lProject}))
 				// Exact value of Snapshot and ApplicableConfig is tested in happy path,
 				// here we only care that both are set.
 				assert.Loosely(t, res2.Snapshot, should.NotBeNil)
@@ -533,7 +533,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 					assert.Loosely(t, res3.Snapshot, should.BeNil)         // nothing to update
 					assert.Loosely(t, res3.ApplicableConfig, should.BeNil) // nothing to update
-					assert.Loosely(t, res3.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
+					assert.That(t, res3.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
 						NoAccess:     true,
 						NoAccessTime: timestamppb.New(ct.Clock.Now().Add(noAccessGraceDuration)),
 						UpdateTime:   timestamppb.New(ct.Clock.Now()),
@@ -549,7 +549,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.Snapshot, should.BeNil)
 				assert.Loosely(t, res.ApplicableConfig, should.BeNil)
-				assert.Loosely(t, res.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
+				assert.That(t, res.AddDependentMeta.GetByProject()[lProject], should.Match(&changelist.Access_Project{
 					NoAccess:     true,
 					NoAccessTime: timestamppb.New(ct.Clock.Now()), // immediate no access.
 					UpdateTime:   timestamppb.New(ct.Clock.Now()),
@@ -566,7 +566,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				// TODO(tandrii): this is weird, and ought to be refactored together
 				// with weird "AddDependentMeta" field.
 				assert.Loosely(t, res.AddDependentMeta.GetByProject()[lProject], should.NotBeNil)
-				assert.Loosely(t, res.ApplicableConfig, should.Match(&changelist.ApplicableConfig{
+				assert.That(t, res.ApplicableConfig, should.Match(&changelist.ApplicableConfig{
 					// No watching projects.
 				}))
 			})

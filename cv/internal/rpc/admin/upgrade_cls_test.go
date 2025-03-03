@@ -73,9 +73,9 @@ func TestUpgradeCLs(t *testing.T) {
 		cl2 := mkCL(2, gf.CI(2, gf.PS(1), gf.Desc("PS#1 blah"), gf.PS(2), gf.Desc("PS#2 foo")))
 
 		// Check test setup.
-		assert.Loosely(t, clDesc(cl1, 1), should.Match("First"))
-		assert.Loosely(t, clDesc(cl2, 1), should.Match("PS#1 blah"))
-		assert.Loosely(t, clDesc(cl2, 2), should.Match("PS#2 foo"))
+		assert.That(t, clDesc(cl1, 1), should.Match("First"))
+		assert.That(t, clDesc(cl2, 1), should.Match("PS#1 blah"))
+		assert.That(t, clDesc(cl2, 2), should.Match("PS#2 foo"))
 
 		verify := func() {
 			assert.Loosely(t, datastore.Get(ctx, cl1, cl2), should.BeNil)

@@ -167,7 +167,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		t.Run("LookupProjects with the matched repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr/src")
 			assert.NoErr(t, err)
-			assert.Loosely(t, prjs, should.Match([]string{"chromium"}))
+			assert.That(t, prjs, should.Match([]string{"chromium"}))
 		})
 
 		t.Run("LookupProjects with an unmated repo", func(t *ftt.Test) {
@@ -467,7 +467,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			for _, mp := range mps {
 				// assert.That(t, mp.ConfigHash, should.Match(meta.Hash()))
 				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)
-				assert.Loosely(t, hostAndRepo[0], should.Match(gHost))
+				assert.That(t, hostAndRepo[0], should.Match(gHost))
 				// assert.That(t, expectedRepos.Del(hostAndRepo[1]), should.BeTrue)
 			}
 			// assert.Loosely(t, expectedRepos, should.BeEmpty)

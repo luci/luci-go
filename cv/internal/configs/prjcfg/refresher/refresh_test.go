@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
@@ -43,6 +45,11 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(prjcfg.ProjectConfig{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(prjcfg.ConfigHashInfo{}))
+}
 
 var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
 var testCfg = &cfgpb.Config{
@@ -131,16 +138,16 @@ func TestUpdateProject(t *testing.T) {
 				err := datastore.Get(ctx, &cg)
 				assert.NoErr(t, err)
 				assert.Loosely(t, cg.DrainingStartTime, should.Equal(cfg.GetDrainingStartTime()))
-				assert.Loosely(t, cg.SubmitOptions, should.Resemble(cfg.GetSubmitOptions()))
-				assert.Loosely(t, cg.Content, should.Resemble(cfg.GetConfigGroups()[i]))
-				assert.Loosely(t, cg.CQStatusHost, should.Resemble(cfg.GetCqStatusHost()))
+				assert.That(t, cg.SubmitOptions, should.Match(cfg.GetSubmitOptions()))
+				assert.That(t, cg.Content, should.Match(cfg.GetConfigGroups()[i]))
+				assert.That(t, cg.CQStatusHost, should.Match(cfg.GetCqStatusHost()))
 				assert.Loosely(t, cg.HonorGerritLinkedAccounts, should.Equal(cfg.GetHonorGerritLinkedAccounts()))
 			}
 			// Verify ProjectConfig.
 			pc := prjcfg.ProjectConfig{Project: "chromium"}
 			err = datastore.Get(ctx, &pc)
 			assert.NoErr(t, err)
-			assert.Loosely(t, pc, should.Resemble(prjcfg.ProjectConfig{
+			assert.That(t, pc, should.Match(prjcfg.ProjectConfig{
 				Project:          "chromium",
 				SchemaVersion:    prjcfg.SchemaVersion,
 				Enabled:          true,
@@ -161,7 +168,7 @@ func TestUpdateProject(t *testing.T) {
 			assert.Loosely(t, len(hashInfo.GitRevision), should.Equal(40))
 			hashInfo.GitRevision = ""
 			// Verify the rest of ConfigHashInfo.
-			assert.Loosely(t, hashInfo, should.Resemble(prjcfg.ConfigHashInfo{
+			assert.That(t, hashInfo, should.Match(prjcfg.ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
 				SchemaVersion:    prjcfg.SchemaVersion,
@@ -198,7 +205,7 @@ func TestUpdateProject(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, &pc), should.BeNil)
 				assert.Loosely(t, pc.EVersion, should.Equal(1))
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
-				assert.Loosely(t, pc.UpdateTime, should.Resemble(prevUpdatedTime.UTC()))
+				assert.That(t, pc.UpdateTime, should.Match(prevUpdatedTime.UTC()))
 				assert.Loosely(t, notifyCalled, should.BeFalse)
 
 				t.Run("But not noop if SchemaVersion changed", func(t *ftt.Test) {
@@ -280,7 +287,7 @@ func TestUpdateProject(t *testing.T) {
 
 					assert.Loosely(t, after.Enabled, should.BeTrue)
 					assert.Loosely(t, after.EVersion, should.Equal(before.EVersion+1))
-					assert.Loosely(t, after.Hash, should.Resemble(before.Hash))
+					assert.That(t, after.Hash, should.Match(before.Hash))
 					// Ensure deleted entities are re-created.
 					verifyEntitiesInDatastore(ctx, 4)
 					assert.Loosely(t, notifyCalled, should.BeTrue)
@@ -321,7 +328,7 @@ func TestDisableProject(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, &actual), should.BeNil)
 			assert.Loosely(t, actual.Enabled, should.BeFalse)
 			assert.Loosely(t, actual.EVersion, should.Equal(101))
-			assert.Loosely(t, actual.UpdateTime, should.Resemble(datastore.RoundTime(testClock.Now()).UTC()))
+			assert.That(t, actual.UpdateTime, should.Match(datastore.RoundTime(testClock.Now()).UTC()))
 			assert.Loosely(t, notifyCalled, should.BeTrue)
 		})
 
@@ -383,8 +390,8 @@ func TestPutConfigGroups(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)
 			assert.Loosely(t, stored.DrainingStartTime, should.Equal(testCfg.GetDrainingStartTime()))
-			assert.Loosely(t, stored.SubmitOptions, should.Resemble(testCfg.GetSubmitOptions()))
-			assert.Loosely(t, stored.Content, should.Resemble(testCfg.GetConfigGroups()[0]))
+			assert.That(t, stored.SubmitOptions, should.Match(testCfg.GetSubmitOptions()))
+			assert.That(t, stored.Content, should.Match(testCfg.GetConfigGroups()[0]))
 			assert.Loosely(t, stored.HonorGerritLinkedAccounts, should.Equal(testCfg.GetHonorGerritLinkedAccounts()))
 			assert.Loosely(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 

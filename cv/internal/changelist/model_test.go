@@ -53,11 +53,11 @@ func TestCL(t *testing.T) {
 		t.Run("ExternalID.MustCreateIfNotExists creates a CL", func(t *ftt.Test) {
 			cl := eid.MustCreateIfNotExists(ctx)
 			assert.Loosely(t, cl, should.NotBeNil)
-			assert.Loosely(t, cl.ExternalID, should.Resemble(eid))
+			assert.That(t, cl.ExternalID, should.Match(eid))
 			// ID must be autoset to non-0 value.
 			assert.Loosely(t, cl.ID, should.NotEqual(0))
 			assert.Loosely(t, cl.EVersion, should.Equal(1))
-			assert.Loosely(t, cl.UpdateTime, should.Match(epoch))
+			assert.That(t, cl.UpdateTime, should.Match(epoch))
 			assert.Loosely(t, cl.RetentionKey, should.Equal(fmt.Sprintf("%02d/%010d", cl.ID%retentionKeyShards, epoch.Unix())))
 
 			t.Run("ExternalID.Get loads existing CL", func(t *ftt.Test) {
@@ -66,25 +66,25 @@ func TestCL(t *testing.T) {
 				assert.Loosely(t, cl2.ID, should.Equal(cl.ID))
 				assert.Loosely(t, cl2.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl2.EVersion, should.Equal(1))
-				assert.Loosely(t, cl2.UpdateTime, should.Match(cl.UpdateTime))
-				assert.Loosely(t, cl2.Snapshot, should.Resemble(cl.Snapshot))
+				assert.That(t, cl2.UpdateTime, should.Match(cl.UpdateTime))
+				assert.That(t, cl2.Snapshot, should.Match(cl.Snapshot))
 			})
 
 			t.Run("ExternalID.MustCreateIfNotExists loads existing CL", func(t *ftt.Test) {
 				cl3 := eid.MustCreateIfNotExists(ctx)
 				assert.Loosely(t, cl3, should.NotBeNil)
 				assert.Loosely(t, cl3.ID, should.Equal(cl.ID))
-				assert.Loosely(t, cl3.ExternalID, should.Resemble(eid))
+				assert.That(t, cl3.ExternalID, should.Match(eid))
 				assert.Loosely(t, cl3.EVersion, should.Equal(1))
-				assert.Loosely(t, cl3.UpdateTime, should.Match(cl.UpdateTime))
-				assert.Loosely(t, cl3.Snapshot, should.Resemble(cl.Snapshot))
+				assert.That(t, cl3.UpdateTime, should.Match(cl.UpdateTime))
+				assert.That(t, cl3.Snapshot, should.Match(cl.Snapshot))
 			})
 
 			t.Run("Delete works", func(t *ftt.Test) {
 				err := Delete(ctx, cl.ID)
 				assert.NoErr(t, err)
 				// Verify.
-				assert.Loosely(t, datastore.Get(ctx, cl), should.Resemble(datastore.ErrNoSuchEntity))
+				assert.That(t, datastore.Get(ctx, cl), should.ErrLikeError(datastore.ErrNoSuchEntity))
 				cl2, err2 := eid.Load(ctx)
 				assert.Loosely(t, err2, should.BeNil)
 				assert.Loosely(t, cl2, should.BeNil)
@@ -116,7 +116,7 @@ func TestLookup(t *testing.T) {
 
 		actual, err := Lookup(ctx, eids)
 		assert.NoErr(t, err)
-		assert.Loosely(t, actual, should.Resemble(ids))
+		assert.That(t, actual, should.Match(ids))
 	})
 }
 

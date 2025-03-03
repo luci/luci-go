@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
@@ -35,7 +35,7 @@ import (
 )
 
 func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(queue{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(queue{}))
 }
 
 func TestQueue(t *testing.T) {
@@ -71,7 +71,7 @@ func TestQueue(t *testing.T) {
 			t.Run("When queue is empty", func(t *ftt.Test) {
 				waitlisted := mustTryAcquire(ctx, run1, nil)
 				assert.Loosely(t, waitlisted, should.BeFalse)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:      lProject,
 					Current: run1,
 				}))
@@ -79,7 +79,7 @@ func TestQueue(t *testing.T) {
 				t.Run("And acquire same Run again", func(t *ftt.Test) {
 					waitlisted := mustTryAcquire(ctx, run1, nil)
 					assert.Loosely(t, waitlisted, should.BeFalse)
-					assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+					assert.That(t, mustLoadQueue(), should.Match(&queue{
 						ID:      lProject,
 						Current: run1,
 					}))
@@ -94,14 +94,14 @@ func TestQueue(t *testing.T) {
 				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				assert.Loosely(t, waitlisted, should.BeTrue)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2},
 				}))
 				waitlisted = mustTryAcquire(ctx, run3, nil)
 				assert.Loosely(t, waitlisted, should.BeTrue)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
@@ -111,7 +111,7 @@ func TestQueue(t *testing.T) {
 					for _, r := range []common.RunID{run2, run3} {
 						waitlisted := mustTryAcquire(ctx, r, nil)
 						assert.Loosely(t, waitlisted, should.BeTrue)
-						assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+						assert.That(t, mustLoadQueue(), should.Match(&queue{
 							ID:       lProject,
 							Current:  run1,
 							Waitlist: common.RunIDs{run2, run3},
@@ -128,7 +128,7 @@ func TestQueue(t *testing.T) {
 				}), should.BeNil)
 				waitlisted := mustTryAcquire(ctx, run2, nil)
 				assert.Loosely(t, waitlisted, should.BeFalse)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run2,
 					Waitlist: common.RunIDs{run3},
@@ -153,11 +153,11 @@ func TestQueue(t *testing.T) {
 			}), should.BeNil)
 			t.Run("Current slot", func(t *ftt.Test) {
 				mustRelease(ctx, run1)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Waitlist: common.RunIDs{run2, run3},
 				}))
-				assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
+				assert.That(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
 				for _, r := range []common.RunID{run1, run3} {
 					assert.Loosely(t, notifier.notifyETAs(ctx, r), should.BeEmpty)
 				}
@@ -165,7 +165,7 @@ func TestQueue(t *testing.T) {
 
 			t.Run("Run in waitlist", func(t *ftt.Test) {
 				mustRelease(ctx, run2)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run3},
@@ -178,7 +178,7 @@ func TestQueue(t *testing.T) {
 			t.Run("Non-existing run", func(t *ftt.Test) {
 				nonExisting := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("badbadbad"))
 				mustRelease(ctx, nonExisting)
-				assert.Loosely(t, mustLoadQueue(), should.Match(&queue{
+				assert.That(t, mustLoadQueue(), should.Match(&queue{
 					ID:       lProject,
 					Current:  run1,
 					Waitlist: common.RunIDs{run2, run3},
@@ -215,7 +215,7 @@ func TestQueue(t *testing.T) {
 
 				t.Run("Records submitted timestamp", func(t *ftt.Test) {
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{now.Add(-1 * time.Second)}))
+					assert.That(t, mustLoadQueue().History, should.Match([]time.Time{now.Add(-1 * time.Second)}))
 				})
 
 				t.Run("Cleanup old history", func(t *ftt.Test) {
@@ -225,7 +225,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{
+					assert.That(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-1 * time.Minute),
 						now.Add(-1 * time.Second),
 					}))
@@ -235,7 +235,7 @@ func TestQueue(t *testing.T) {
 					q.History = []time.Time{now.Add(-100 * time.Millisecond)}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-200*time.Millisecond))
-					assert.Loosely(t, mustLoadQueue().History, should.Match([]time.Time{
+					assert.That(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-200 * time.Millisecond),
 						now.Add(-100 * time.Millisecond),
 					}))
@@ -245,7 +245,7 @@ func TestQueue(t *testing.T) {
 					q.History = []time.Time{now.Add(-2 * time.Minute)}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
+					assert.That(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
 				})
 
 				t.Run("Notify the next Run with later ETA if quota has been exhausted", func(t *ftt.Test) {
@@ -256,7 +256,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
-					assert.Loosely(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{now.Add(30 * time.Second)}))
+					assert.That(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{now.Add(30 * time.Second)}))
 				})
 			})
 
@@ -286,7 +286,7 @@ func TestQueue(t *testing.T) {
 					}
 					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
 					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeTrue)
-					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.Match([]time.Time{now.Add(15 * time.Second)}))
+					assert.That(t, notifier.notifyETAs(ctx, run1), should.Match([]time.Time{now.Add(15 * time.Second)}))
 				})
 			})
 		})

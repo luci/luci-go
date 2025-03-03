@@ -172,8 +172,8 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(1))
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-			assert.Loosely(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
-			assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+			assert.That(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
+			assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 				Requirement: &tryjob.Requirement{
 					Definitions: []*tryjob.Definition{
 						{
@@ -226,7 +226,7 @@ func TestStart(t *testing.T) {
 			ops := res.State.OngoingLongOps.GetOps()
 			assert.Loosely(t, len(ops), should.Equal(1))
 			assert.Loosely(t, ops, should.ContainKey("1-1"))
-			assert.Loosely(t, ops["1-1"].GetPostGerritMessage(), should.Match(&run.OngoingLongOps_Op_PostGerritMessage{
+			assert.That(t, ops["1-1"].GetPostGerritMessage(), should.Match(&run.OngoingLongOps_Op_PostGerritMessage{
 				Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.\n\nfoo bar.", rs.Run.BilledTo.Email()),
 			}))
 			assert.Loosely(t, ct.TSMonSentValue(
@@ -242,7 +242,7 @@ func TestStart(t *testing.T) {
 				assert.NoErr(t, err)
 				ops := res.State.OngoingLongOps.GetOps()
 				assert.Loosely(t, ops, should.ContainKey("1-1"))
-				assert.Loosely(t, ops["1-1"].GetPostGerritMessage(), should.Match(&run.OngoingLongOps_Op_PostGerritMessage{
+				assert.That(t, ops["1-1"].GetPostGerritMessage(), should.Match(&run.OngoingLongOps_Op_PostGerritMessage{
 					Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.\n\nfoo bar.", rs.Run.BilledTo.Email()),
 				}))
 			})
@@ -331,9 +331,9 @@ func TestStart(t *testing.T) {
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				assert.Loosely(t, resetCLs, should.Match(res.State.CLs))
+				assert.That(t, resetCLs, should.Match(res.State.CLs))
 				assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
-				assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
+				assert.That(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
 					Label:   "Tryjob Requirement Computation",
 					Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
 				}))
@@ -351,7 +351,7 @@ func TestStart(t *testing.T) {
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				assert.Loosely(t, resetCLs, should.Match(common.CLIDs{rs.RootCL}))
+				assert.That(t, resetCLs, should.Match(common.CLIDs{rs.RootCL}))
 			})
 		})
 
@@ -364,7 +364,7 @@ func TestStart(t *testing.T) {
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
-			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
+			assert.That(t, res.State.LogEntries[0].GetInfo(), should.Match(&run.LogEntry_Info{
 				Label: "Run failed",
 				Message: "" +
 					"the Run does not pass eligibility checks. See reasons at:" +
@@ -375,7 +375,7 @@ func TestStart(t *testing.T) {
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			resetOp := longOp.GetResetTriggers()
 			assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
-			assert.Loosely(t, resetOp.Requests[0], should.Match(
+			assert.That(t, resetOp.Requests[0], should.Match(
 				&run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid: int64(cl.ID),
 					Message: fmt.Sprintf(
@@ -409,7 +409,7 @@ func TestStart(t *testing.T) {
 				for _, req := range op.GetResetTriggers().GetRequests() {
 					resetCLs = append(resetCLs, common.CLID(req.Clid))
 				}
-				assert.Loosely(t, resetCLs, should.Match(common.CLIDs{rs.RootCL}))
+				assert.That(t, resetCLs, should.Match(common.CLIDs{rs.RootCL}))
 			})
 		})
 
@@ -515,8 +515,8 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(0))
 
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
-			assert.Loosely(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
-			assert.Loosely(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
+			assert.That(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
+			assert.That(t, res.State.Tryjobs, should.Match(&run.Tryjobs{
 				Requirement:           &tryjob.Requirement{},
 				RequirementVersion:    1,
 				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
@@ -616,7 +616,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
-			assert.Loosely(t, res.State.LogEntries[0].GetTime().AsTime(), should.Match(postedAt.UTC()))
+			assert.That(t, res.State.LogEntries[0].GetTime().AsTime(), should.Match(postedAt.UTC()))
 		})
 
 		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {
