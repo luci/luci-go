@@ -119,14 +119,6 @@ func TestTags(t *testing.T) {
 					ci, ok := aCustomIntTag.In(err)
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, ci, should.Equal(customInt(10)))
-
-					t.Run(`and all the correct values show up with GetTags`, func(t *ftt.Test) {
-						tags := GetTags(err)
-						assert.Loosely(t, tags, should.ContainKey(aStringTag.Key))
-
-						assert.Loosely(t, tags[aCustomIntTag.Key], should.Equal(10))
-						assert.Loosely(t, tags[aStringTag.Key], should.Equal("yep"))
-					})
 				})
 			})
 		})

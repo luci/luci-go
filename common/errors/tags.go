@@ -179,27 +179,3 @@ func (b BoolTag) In(err error) bool {
 func NewTagKey(description string) TagKey {
 	return &tagDescription{description}
 }
-
-// GetTags returns a map of all TagKeys set in this error to their value.
-//
-// A nil value means that the tag is present, but has a nil associated value.
-//
-// This is done in a depth-first traversal of the error stack, with the
-// most-recently-set value of the tag taking precedence.
-//
-// Deprecated: Use go.chromium.org/common/errors/errtag instead.
-func GetTags(err error) map[TagKey]any {
-	ret := map[TagKey]any{}
-	Walk(err, func(err error) bool {
-		if sc, ok := err.(stackContexter); ok {
-			ctx := sc.stackContext()
-			for k, v := range ctx.tags {
-				if _, ok := ret[k]; !ok {
-					ret[k] = v
-				}
-			}
-		}
-		return true
-	})
-	return ret
-}
