@@ -46,8 +46,8 @@ import {
 
 import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
-const DEFAULT_PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE = 100;
 
 export const DeviceListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
