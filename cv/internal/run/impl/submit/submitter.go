@@ -195,7 +195,7 @@ func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *event
 						return transient.Tag.Apply(err)
 					}
 					// Ensure err is not tagged with transient.
-					return transient.Tag.Off().Apply(err)
+					return transient.Tag.ApplyValue(err, false)
 				}
 			}
 			return s.rm.NotifyCLsSubmitted(ctx, s.runID, common.CLIDs{cl.ID})

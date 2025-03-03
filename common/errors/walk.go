@@ -52,6 +52,13 @@ func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 			}
 		}
 
+	case interface{ Unwrap() []error }:
+		for _, e := range t.Unwrap() {
+			if !walkVisit(e, fn, leavesOnly) {
+				return false
+			}
+		}
+
 	case Wrapped:
 		return walkVisit(t.Unwrap(), fn, leavesOnly)
 

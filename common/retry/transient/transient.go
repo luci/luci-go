@@ -26,7 +26,7 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/retry"
 )
 
@@ -76,4 +76,4 @@ func Only(next retry.Factory) retry.Factory {
 
 // Tag is used to indicate that an error is transient (i.e. something is
 // temporarially wrong).
-var Tag = errors.BoolTag{Key: errors.NewTagKey("this error is temporary")}
+var Tag = errtag.Make("error is transient", true)

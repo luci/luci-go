@@ -125,7 +125,7 @@ func MarkInvocationSubmitted(ctx context.Context, clientFactory RecorderClientFa
 	if err := parallel.WorkPool(10, taskGenerator); err != nil {
 		// Retries are handled in task through a 5 minute exponential backoff,
 		// so unless we have issues reading the run, we can remove transient tags.
-		return transient.Tag.Off().Apply(err)
+		return transient.Tag.ApplyValue(err, false)
 	}
 	return nil
 }

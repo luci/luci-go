@@ -53,21 +53,17 @@ var aStringTag = stringTag{NewTagKey("errors.testing string tag")}
 func TestTags(t *testing.T) {
 	t.Parallel()
 
-	aBoolTag := BoolTag{NewTagKey("errors.testing tag")}
-
 	ftt.Run("Tags", t, func(t *ftt.Test) {
 		t.Run(`have unique tagKey values`, func(t *ftt.Test) {
 			tagSet := map[TagKey]struct{}{}
-			tagSet[aBoolTag.Key] = struct{}{}
 			tagSet[aStringTag.Key] = struct{}{}
 			tagSet[aCustomIntTag.Key] = struct{}{}
-			assert.Loosely(t, tagSet, should.HaveLength(3))
+			assert.Loosely(t, tagSet, should.HaveLength(2))
 		})
 
 		t.Run(`can be applied to errors`, func(t *ftt.Test) {
 			t.Run(`at creation time`, func(t *ftt.Test) {
-				err := New("I am an error", aBoolTag, aStringTag.With("hi"))
-				assert.Loosely(t, aBoolTag.In(err), should.BeTrue)
+				err := New("I am an error", aStringTag.With("hi"))
 				d, ok := aStringTag.In(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, d, should.Equal("hi"))
@@ -79,16 +75,13 @@ func TestTags(t *testing.T) {
 			t.Run(`added to existing errors`, func(t *ftt.Test) {
 				err := New("I am an error")
 				err2 := aCustomIntTag.With(236).Apply(err)
-				err2 = aBoolTag.Apply(err2)
 
 				d, ok := aCustomIntTag.In(err2)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, d, should.Equal(customInt(236)))
-				assert.Loosely(t, aBoolTag.In(err2), should.BeTrue)
 
 				_, ok = aCustomIntTag.In(err)
 				assert.Loosely(t, ok, should.BeFalse)
-				assert.Loosely(t, aBoolTag.In(err), should.BeFalse)
 			})
 
 			t.Run(`added to stdlib errors`, func(t *ftt.Test) {
@@ -115,16 +108,13 @@ func TestTags(t *testing.T) {
 
 				t.Run(`muliterrors are first to last`, func(t *ftt.Test) {
 					err = NewMultiError(
-						New("a", aStringTag.With("hi"), aBoolTag),
-						New("b", aCustomIntTag.With(10), aStringTag.With("no")),
+						New("b", aCustomIntTag.With(10), aStringTag.With("yep")),
 						New("c", aCustomIntTag.With(20), aStringTag.With("nopers")),
 					)
 
-					assert.Loosely(t, aBoolTag.In(err), should.BeTrue)
-
 					d, ok := aStringTag.In(err)
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, d, should.Equal("hi"))
+					assert.Loosely(t, d, should.Equal("yep"))
 
 					ci, ok := aCustomIntTag.In(err)
 					assert.Loosely(t, ok, should.BeTrue)
@@ -133,11 +123,9 @@ func TestTags(t *testing.T) {
 					t.Run(`and all the correct values show up with GetTags`, func(t *ftt.Test) {
 						tags := GetTags(err)
 						assert.Loosely(t, tags, should.ContainKey(aStringTag.Key))
-						assert.Loosely(t, tags, should.ContainKey(aBoolTag.Key))
 
 						assert.Loosely(t, tags[aCustomIntTag.Key], should.Equal(10))
-						assert.Loosely(t, tags[aStringTag.Key], should.Equal("hi"))
-						assert.Loosely(t, tags[aBoolTag.Key], should.Equal(true))
+						assert.Loosely(t, tags[aStringTag.Key], should.Equal("yep"))
 					})
 				})
 			})

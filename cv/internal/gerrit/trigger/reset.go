@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
@@ -45,15 +46,11 @@ import (
 
 // ErrResetPreconditionFailedTag is an error tag indicating that the
 // precondition of resetting a trigger has not been met,
-var ErrResetPreconditionFailedTag = errors.BoolTag{
-	Key: errors.NewTagKey("reset precondition not met"),
-}
+var ErrResetPreconditionFailedTag = errtag.Make("reset precondition not met", true)
 
 // ErrResetPermanentTag is an error tag indicating that error occurs during the
 // reset is permanent (e.g. lack of vote permission).
-var ErrResetPermanentTag = errors.BoolTag{
-	Key: errors.NewTagKey("permanent error while resetting triggers"),
-}
+var ErrResetPermanentTag = errtag.Make("permanent error while resetting triggers", true)
 
 var errGerritTagKey = errors.NewTagKey("this is a Gerrit error")
 

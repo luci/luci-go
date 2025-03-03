@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -127,7 +128,7 @@ func New(
 				KnownRetry: []error{
 					submit.ErrTransientSubmissionFailure,
 				},
-				KnownIgnoreTags: []errors.BoolTag{
+				KnownIgnoreTags: []errtag.Tag[bool]{
 					trigger.ErrResetPreconditionFailedTag,
 					common.DSContentionTag,
 					ignoreErrTag,
@@ -149,9 +150,7 @@ func New(
 	return rm
 }
 
-var ignoreErrTag = errors.BoolTag{
-	Key: errors.NewTagKey("intentionally ignored RM error"),
-}
+var ignoreErrTag = errtag.Make("intentionally ignored RM error", true)
 
 var pokeInterval = 5 * time.Minute
 

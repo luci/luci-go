@@ -60,7 +60,7 @@ func newMirrorIterator(ctx context.Context, mirrorHostPrefixes ...string) *Mirro
 // Returns whatever error the given function returned last.
 func (it *MirrorIterator) RetryIfStale(f func(opt grpc.CallOption) error) error {
 	for {
-		if err := f(it.Next()); errors.Unwrap(err) != ErrStaleData || it.Empty() {
+		if err := f(it.Next()); !errors.Is(err, ErrStaleData) || it.Empty() {
 			return err
 		}
 	}

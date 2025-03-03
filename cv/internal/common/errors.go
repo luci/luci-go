@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -96,7 +97,7 @@ type TQIfy struct {
 	// the CV error should be tagged with.
 	//
 	// Must not contain `transient.Tag`.
-	KnownRetryTags []errors.BoolTag
+	KnownRetryTags []errtag.Tag[bool]
 	// NeverRetry instructs TQ not to retry on any unexpected error.
 	//
 	// Transient error will be tagged with `tq.Ignore` while non-transient error
@@ -117,7 +118,7 @@ type TQIfy struct {
 	// that the CV error should be tagged with.
 	//
 	// Must not contain `transient.Tag`.
-	KnownIgnoreTags []errors.BoolTag
+	KnownIgnoreTags []errtag.Tag[bool]
 }
 
 func (t TQIfy) Error(ctx context.Context, err error) error {
@@ -140,7 +141,7 @@ func (t TQIfy) Error(ctx context.Context, err error) error {
 		logging.Warningf(ctx, "Will retry due to anticipated error: %s", err)
 		if transient.Tag.In(err) {
 			// Get rid of transient tag for TQ to treat error as 429.
-			return transient.Tag.Off().Apply(err)
+			return transient.Tag.ApplyValue(err, false)
 		}
 		return err
 
@@ -196,29 +197,16 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 
 func matchesErrors(err error, knownErrors ...error) bool {
 	for _, kErr := range knownErrors {
-		switch kErr.(type) {
-		case errors.MultiError:
-			panic("knownErrors MUST not contain errors.MultiError")
-		case errors.Wrapped:
-			panic("knownErrors MUST not contain annotated error")
+		if errors.Is(err, kErr) {
+			return true
 		}
 	}
-	matched := false
-	errors.WalkLeaves(err, func(iErr error) bool {
-		for _, kErr := range knownErrors {
-			if iErr == kErr {
-				matched = true
-				return false // stop iteration
-			}
-		}
-		return true // continue iterating
-	})
-	return matched
+	return false
 }
 
-func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
+func matchesErrorTags(err error, knownTags ...errtag.Tag[bool]) bool {
 	for _, kTag := range knownTags {
-		if kTag == transient.Tag {
+		if kTag.Is(transient.Tag) {
 			panic("knownTags MUST not contain transient.Tag")
 		}
 		if kTag.In(err) {
@@ -232,7 +220,7 @@ func matchesErrorTags(err error, knownTags ...errors.BoolTag) bool {
 //
 // It's set on errors by parts of CV which are especially prone to DS contention
 // to reduce noise in logs and for more effective retries.
-var DSContentionTag = errors.BoolTag{Key: errors.NewTagKey("Datastore Contention")}
+var DSContentionTag = errtag.Make("Datastore Contention", true)
 
 // IsDatastoreContention is best-effort detection of transactions aborted due to
 // pessimistic concurrency control of Datastore backed by Firestore.

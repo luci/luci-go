@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -35,6 +36,9 @@ import (
 
 func TestTQifyError(t *testing.T) {
 	t.Parallel()
+
+	errRetryTag := errtag.Make("this error should be retried", true)
+	errIgnoreTag := errtag.Make("this error should be ignored", true)
 
 	ftt.Run("TQify works", t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())
@@ -75,11 +79,6 @@ func TestTQifyError(t *testing.T) {
 			assert.Loosely(t, matchesErrors(errTransRare, errOops, errBoo), should.BeFalse)
 		})
 
-		t.Run("matchesErrors panics for invalid knownErrs", func(t *ftt.Test) {
-			assert.Loosely(t, func() { matchesErrors(errOops, errMulti) }, should.Panic)
-			assert.Loosely(t, func() { matchesErrors(errOops, errWrapOops) }, should.Panic)
-		})
-
 		t.Run("Simple", func(t *ftt.Test) {
 			t.Run("noop", func(t *ftt.Test) {
 				err := TQifyError(ctx, nil)
@@ -115,17 +114,11 @@ func TestTQifyError(t *testing.T) {
 		})
 
 		t.Run("With Known errors", func(t *ftt.Test) {
-			errRetryTag := errors.BoolTag{
-				Key: errors.NewTagKey("this error should be retried"),
-			}
-			errIgnoreTag := errors.BoolTag{
-				Key: errors.NewTagKey("this error should be ignored"),
-			}
 			tqify := TQIfy{
 				KnownRetry:      []error{errBoo},
-				KnownRetryTags:  []errors.BoolTag{errRetryTag},
+				KnownRetryTags:  []errtag.Tag[bool]{errRetryTag},
 				KnownIgnore:     []error{errOops},
-				KnownIgnoreTags: []errors.BoolTag{errIgnoreTag},
+				KnownIgnoreTags: []errtag.Tag[bool]{errIgnoreTag},
 			}
 			t.Run("on unknown error", func(t *ftt.Test) {
 				t.Run("transient -> retry and log entire stack", func(t *ftt.Test) {
@@ -184,7 +177,7 @@ func TestTQifyError(t *testing.T) {
 			})
 			t.Run("Panic if KnownRetryTag is used with with NeverRetry", func(t *ftt.Test) {
 				tqify = TQIfy{
-					KnownRetryTags: []errors.BoolTag{errRetryTag},
+					KnownRetryTags: []errtag.Tag[bool]{errRetryTag},
 					NeverRetry:     true,
 				}
 				assert.Loosely(t, func() { tqify.Error(ctx, errRetryTag.Apply(errRare)) }, should.Panic)

@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
@@ -429,13 +430,13 @@ var (
 	// be dropped due to unrecoverable failure.
 	//
 	// See Handler doc for more details.
-	Fatal = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped due to fatal failure")}
+	Fatal = errtag.Make("the task should be dropped due to fatal failure", true)
 
 	// Ignore is an error tag used to indicate that the handler wants the task to
 	// be dropped as no longer needed.
 	//
 	// See Handler doc for more details.
-	Ignore = errors.BoolTag{Key: errors.NewTagKey("the task should be dropped as no longer needed")}
+	Ignore = errtag.Make("the task should be dropped as no longer needed", true)
 )
 
 // Used to override HTTP status of some errors.
@@ -446,7 +447,7 @@ var (
 )
 
 // quietOnError is an error tag used to implement TaskClass.QuietOnError.
-var quietOnError = errors.BoolTag{Key: errors.NewTagKey("QuietOnError")}
+var quietOnError = errtag.Make("QuietOnError", true)
 
 // Handler is called to handle one enqueued task.
 //

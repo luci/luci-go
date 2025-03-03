@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 )
 
 // Code is returned as part of JSON output by CIPD CLI.
@@ -60,35 +61,37 @@ type Details struct {
 	Subdir  string `json:"subdir,omitempty"`
 }
 
-var tagKey = errors.NewTagKey("cipderr.Code")
-
-type tagValue struct {
-	code    Code
-	details *Details
+type CodeDetails struct {
+	Code    Code
+	Details *Details
 }
 
-// GenerateErrorTagValue is part of errors.TagValueGenerator, allowing this
-// pair to be used as en error tag.
-func (v tagValue) GenerateErrorTagValue() errors.TagValue {
-	return errors.TagValue{Key: tagKey, Value: v}
-}
+func (c CodeDetails) GenerateErrorTagValue() (key, value any) { return nil, nil }
+func (c CodeDetails) Apply(err error) error                   { return Tag.ApplyValue(err, c) }
 
-// GenerateErrorTagValue is part of errors.TagValueGenerator, allowing this
-// code to be used as en error tag.
-func (c Code) GenerateErrorTagValue() errors.TagValue {
-	return errors.TagValue{Key: tagKey, Value: tagValue{code: c}}
-}
+var Tag = errtag.Make("cipderr.Code+details", CodeDetails{})
 
 // WithDetails returns a error tag that attaches this code together with some
 // details.
-func (c Code) WithDetails(d Details) errors.TagValueGenerator {
-	return tagValue{code: c, details: &d}
+func (c Code) WithDetails(d Details) CodeDetails {
+	return CodeDetails{c, &d}
+}
+
+// GenerateErrorTagValue allows Code to be used directly with
+// errors.Annotate(...).Tag.
+func (c Code) GenerateErrorTagValue() (key, value any) { return nil, nil }
+
+// Apply ensures that ToCode(err) will return `c`.
+func (c Code) Apply(err error) error {
+	cur, _ := Tag.Value(err)
+	cur.Code = c
+	return Tag.ApplyValue(err, cur)
 }
 
 // ToCode examines a CIPD error to get a representative error code.
 func ToCode(err error) Code {
-	if val, ok := errors.TagValueIn(tagKey, err); ok {
-		return val.(tagValue).code
+	if cd, ok := Tag.Value(err); ok {
+		return cd.Code
 	}
 	deadline := errors.Any(err, func(err error) bool {
 		return err == context.DeadlineExceeded || err == context.Canceled
@@ -101,8 +104,8 @@ func ToCode(err error) Code {
 
 // ToDetails extracts error details, if available.
 func ToDetails(err error) *Details {
-	if val, ok := errors.TagValueIn(tagKey, err); ok {
-		return val.(tagValue).details
+	if cd, ok := Tag.Value(err); ok {
+		return cd.Details
 	}
 	return nil
 }
@@ -112,6 +115,6 @@ func ToDetails(err error) *Details {
 // Overrides any previous details. Does nothing if `err` is nil.
 func AttachDetails(err *error, d Details) {
 	if *err != nil {
-		*err = errors.Annotate(*err, "").Tag(ToCode(*err).WithDetails(d)).Err()
+		*err = Tag.ApplyValue(*err, ToCode(*err).WithDetails(d))
 	}
 }

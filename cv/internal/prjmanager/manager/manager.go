@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -91,8 +92,8 @@ func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g 
 			err := pm.manageProject(ctx, task.GetLuciProject(), task.GetEta().AsTime())
 			return common.TQIfy{
 				KnownIgnore:     []error{errTaskArrivedTooLate},
-				KnownIgnoreTags: []errors.BoolTag{common.DSContentionTag},
-				KnownRetryTags:  []errors.BoolTag{runcreator.StateChangedTag},
+				KnownIgnoreTags: []errtag.Tag[bool]{common.DSContentionTag},
+				KnownRetryTags:  []errtag.Tag[bool]{runcreator.StateChangedTag},
 			}.Error(ctx, err)
 		},
 	)

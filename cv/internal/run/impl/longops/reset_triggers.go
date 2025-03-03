@@ -141,7 +141,7 @@ func (op *ResetTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, er
 	case lastTransErr != nil:
 		// Don't return a transient error to prevent long op from retrying.
 		// The transient error should have been retried many times in this long op.
-		return ret, transient.Tag.Off().Apply(lastTransErr)
+		return ret, transient.Tag.ApplyValue(lastTransErr, false)
 	default:
 		return ret, nil
 	}

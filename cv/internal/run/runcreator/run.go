@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -145,7 +146,7 @@ type rmNotifier interface {
 
 // StateChangedTag is an error tag used to indicate that state read from
 // Datastore differs from the expected state.
-var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state changed")}
+var StateChangedTag = errtag.Make("Run Creator: state changed", true)
 
 // Create atomically creates a new Run.
 //

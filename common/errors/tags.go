@@ -14,7 +14,9 @@
 
 package errors
 
-import "sort"
+import (
+	"sort"
+)
 
 type (
 	tagDescription struct {
@@ -23,6 +25,8 @@ type (
 
 	// TagKey objects are used for applying tags and finding tags/values in
 	// errors. See NewTag for details.
+	//
+	// Deprecated: Use errors.MakeBoolTag() instead.
 	TagKey *tagDescription
 
 	tagKeySlice []TagKey
@@ -33,6 +37,8 @@ type (
 	// Usually tag implementations will have a typesafe With method that generates
 	// these. Avoid constructing these ad-hoc so that a given tag definition can
 	// control the type safety around these.
+	//
+	// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 	TagValue struct {
 		Key   TagKey
 		Value any
@@ -40,8 +46,29 @@ type (
 
 	// TagValueGenerator generates (TagKey, value) pairs, for use with Annoatator.Tag
 	// and New().
+	//
+	// If the TagValueGenerator implements NormalGoWrapper, then
+	// NormalGoWrapper.Apply will be used instead.
+	//
+	// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 	TagValueGenerator interface {
-		GenerateErrorTagValue() TagValue
+		// key must be a TagKey from this package. This strange interface is because
+		// TagValueGenerator is being actively deprecated.
+		//
+		// NormalGoWrapper implementations must return (nil, nil).
+		GenerateErrorTagValue() (key, value any)
+	}
+
+	// NormalGoWrapper is an interface that tags may implement, to just wrap
+	// `err`, returning `wrapped`, rather than actually adding a tag to the
+	// internal annotator stack guts.
+	//
+	// This will be used to migrate away from these annotator tags to just
+	// standard go errors.
+	//
+	// Deprecated: Use go.chromium.org/common/errors/errtag instead.
+	NormalGoWrapper interface {
+		Apply(err error) (wrapped error)
 	}
 )
 
@@ -53,6 +80,8 @@ func (s tagKeySlice) Less(i, j int) bool { return s[i].description < s[j].descri
 
 // TagValueIn will retrieve the tagged value from the error that's associated
 // with this key, and a boolean indicating if the tag was present or not.
+//
+// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 func TagValueIn(t TagKey, err error) (value any, ok bool) {
 	Walk(err, func(err error) bool {
 		if sc, isSC := err.(stackContexter); isSC {
@@ -66,7 +95,7 @@ func TagValueIn(t TagKey, err error) (value any, ok bool) {
 }
 
 // GenerateErrorTagValue implements TagValueGenerator
-func (t TagValue) GenerateErrorTagValue() TagValue { return t }
+func (t TagValue) GenerateErrorTagValue() (key, value any) { return t.Key, t.Value }
 
 // Apply applies this tag value (key+value) directly to the error. This is
 // a shortcut for `errors.Annotate(err, "").Tag(t).Err()`.
@@ -74,21 +103,19 @@ func (t TagValue) Apply(err error) error {
 	if err == nil {
 		return nil
 	}
-	a := &Annotator{err, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
+	a := &Annotator{err, nil, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
 	return a.Tag(t).Err()
 }
 
-// BoolTag is an error tag implementation which holds a boolean value.
+// BoolTag is deprecated.
 //
-// It should be constructed like:
-//
-//	var myTag = errors.BoolTag{Key: errors.NewTagKey("some description")}
+// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 type BoolTag struct{ Key TagKey }
 
 // GenerateErrorTagValue implements TagValueGenerator, and returns a default
 // value for the tag of `true`. If you want to set this BoolTag value to false,
 // use BoolTag.Off().
-func (b BoolTag) GenerateErrorTagValue() TagValue { return TagValue{b.Key, true} }
+func (b BoolTag) GenerateErrorTagValue() (key, value any) { return b.Key, true }
 
 // Off allows you to "remove" this boolean tag from an error (by setting it to
 // false).
@@ -99,7 +126,7 @@ func (b BoolTag) Apply(err error) error {
 	if err == nil {
 		return nil
 	}
-	a := &Annotator{err, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
+	a := &Annotator{err, nil, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
 	return a.Tag(b).Err()
 }
 
@@ -147,6 +174,8 @@ func (b BoolTag) In(err error) bool {
 //	err = MyTag.With(100).Apply(err)
 //	MyTag.In(err) // == true
 //	errors.ValueIn(err) // == (SomeType(100), true)
+//
+// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 func NewTagKey(description string) TagKey {
 	return &tagDescription{description}
 }
@@ -157,6 +186,8 @@ func NewTagKey(description string) TagKey {
 //
 // This is done in a depth-first traversal of the error stack, with the
 // most-recently-set value of the tag taking precedence.
+//
+// Deprecated: Use go.chromium.org/common/errors/errtag instead.
 func GetTags(err error) map[TagKey]any {
 	ret := map[TagKey]any{}
 	Walk(err, func(err error) bool {

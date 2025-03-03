@@ -174,8 +174,9 @@ func (e *annotatedError) Unwrap() error              { return e.inner }
 //
 // See the example test for Annotate to see how this is meant to be used.
 type Annotator struct {
-	inner error
-	ctx   stackContext
+	inner    error
+	wrappers []NormalGoWrapper
+	ctx      stackContext
 }
 
 // Tag adds a tag with an optional value to this error.
@@ -186,10 +187,17 @@ func (a *Annotator) Tag(tags ...TagValueGenerator) *Annotator {
 	if a == nil {
 		return a
 	}
-	tagMap := make(map[TagKey]any, len(tags))
+	var tagMap map[TagKey]any
 	for _, t := range tags {
-		v := t.GenerateErrorTagValue()
-		tagMap[v.Key] = v.Value
+		key, value := t.GenerateErrorTagValue()
+		if key == nil {
+			a.wrappers = append(a.wrappers, t.(NormalGoWrapper))
+		} else {
+			if tagMap == nil {
+				tagMap = make(map[TagKey]any, len(tags))
+			}
+			tagMap[key.(TagKey)] = value
+		}
 	}
 	if len(tagMap) > 0 {
 		if a.ctx.tags == nil {
@@ -210,7 +218,14 @@ func (a *Annotator) Err() error {
 	if a == nil {
 		return nil
 	}
-	return (*annotatedError)(a)
+	var ret error = &annotatedError{
+		inner: a.inner,
+		ctx:   a.ctx,
+	}
+	for _, wrapper := range a.wrappers {
+		ret = wrapper.Apply(ret)
+	}
+	return ret
 }
 
 // Log logs the full error. If this is an Annotated error, it will log the full
@@ -624,7 +639,7 @@ func Annotate(err error, reason string, args ...any) *Annotator {
 	if err == nil {
 		return nil
 	}
-	return &Annotator{err, stackContext{
+	return &Annotator{err, nil, stackContext{
 		frameInfo: stackFrameInfoForError(1, err),
 		reason:    fmt.Sprintf(reason, args...),
 	}}
@@ -640,7 +655,7 @@ func Annotate(err error, reason string, args ...any) *Annotator {
 func Reason(reason string, args ...any) *Annotator {
 	currentStack := captureStack(1)
 	frameInfo := stackFrameInfo{0, currentStack}
-	return (&Annotator{nil, stackContext{
+	return (&Annotator{nil, nil, stackContext{
 		frameInfo: frameInfo,
 		reason:    fmt.Sprintf(reason, args...),
 	}})
@@ -652,14 +667,25 @@ func Reason(reason string, args ...any) *Annotator {
 func New(msg string, tags ...TagValueGenerator) error {
 	tse := &terminalStackError{
 		errors.New(msg), stackFrameInfo{forStack: captureStack(1)}, nil}
+	var wrappers []NormalGoWrapper
 	if len(tags) > 0 {
-		tse.tags = make(map[TagKey]any, len(tags))
 		for _, t := range tags {
-			v := t.GenerateErrorTagValue()
-			tse.tags[v.Key] = v.Value
+			key, value := t.GenerateErrorTagValue()
+			if key == nil {
+				wrappers = append(wrappers, t.(NormalGoWrapper))
+			} else {
+				if tse.tags == nil {
+					tse.tags = make(map[TagKey]any, len(tags))
+				}
+				tse.tags[key.(TagKey)] = value
+			}
 		}
 	}
-	return tse
+	var ret error = tse
+	for _, wrapper := range wrappers {
+		ret = wrapper.Apply(ret)
+	}
+	return ret
 }
 
 func captureStack(skip int) *stack {
