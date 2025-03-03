@@ -215,8 +215,12 @@ func TaskRequestToToRunKey(ctx context.Context, taskReq *TaskRequest, sliceIndex
 		return nil, errors.Reason("sliceIndex %d out of range: [0, %d)", sliceIndex, len(taskReq.TaskSlices)).Err()
 	}
 	shardIndex := sliceToToRunShardIndex(taskReq.TaskSlices[sliceIndex])
-	ttrID := int64(1 | (sliceIndex << 4))
-	return TaskToRunKey(ctx, taskReq.Key, shardIndex, ttrID), nil
+	return TaskToRunKey(ctx, taskReq.Key, shardIndex, TaskToRunID(sliceIndex)), nil
+}
+
+// TaskToRunID returns a TaskToRun entity key ID given a slice index.
+func TaskToRunID(sliceIndex int) int64 {
+	return int64(1 | (sliceIndex << 4))
 }
 
 func sliceToToRunShardIndex(slice TaskSlice) int32 {

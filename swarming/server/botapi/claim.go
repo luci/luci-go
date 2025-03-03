@@ -16,15 +16,27 @@ package botapi
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 
+	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 )
 
 // ClaimCommand instructs the bot what to do after it calls /bot/claim.
@@ -75,7 +87,7 @@ type ClaimRequest struct {
 	// is, see swarming.internals.rbe.TaskPayload proto message.
 	//
 	// Required.
-	TaskToRunShard int `json:"task_to_run_shard"`
+	TaskToRunShard int32 `json:"task_to_run_shard"`
 
 	// TaskToRunID identifies TaskToRun to claim.
 	//
@@ -117,6 +129,11 @@ type ClaimResponse struct {
 	//
 	// This is populated for both ClaimRun and ClaimTerminate.
 	TaskID string `json:"task_id,omitempty"`
+
+	// Reason is why a task was skipped.
+	//
+	// Present only for ClaimSkip command.
+	Reason string `json:"reason,omitempty"`
 }
 
 // TaskManifest describes to the bot what it should execute.
@@ -149,7 +166,7 @@ type TaskManifest struct {
 	// SecretBytes are the task secret, if any.
 	SecretBytes []byte `json:"secret_bytes,omitempty"`
 	// CASInputRoot is what CAS files to fetch.
-	CASInputRoot *model.CASDigest `json:"cas_input_root,omitempty"`
+	CASInputRoot *model.CASReference `json:"cas_input_root,omitempty"`
 	// Outputs are list of extra outputs to upload to RBE-CAS as task results.
 	Outputs []string `json:"outputs,omitempty"`
 	// Realm is the task's security realm.
@@ -159,10 +176,7 @@ type TaskManifest struct {
 	// ResultDB is parameters of the ResultDB invocation for the task.
 	ResultDB *TaskResultDB `json:"resultdb,omitempty"`
 	// ServiceAccounts describe what service account a task can use.
-	ServiceAccounts struct {
-		System TaskServiceAccount `json:"system"`
-		Task   TaskServiceAccount `json:"task"`
-	} `json:"service_accounts"`
+	ServiceAccounts TaskServiceAccounts `json:"service_accounts"`
 
 	// BotID is the ID of the calling bot.
 	BotID string `json:"bot_id"`
@@ -187,12 +201,15 @@ type TaskResultDB struct {
 	// Hostname is the hostname of ResultDB service to use.
 	Hostname string `json:"hostname"`
 	// CurrentInvocation is the ResultDB invocation to use.
-	CurrentInvocation struct {
-		// Name is the invocation name.
-		Name string `json:"name"`
-		// UpdateToken is the invocation's update token.
-		UpdateToken string `json:"update_token"`
-	} `json:"current_invocation"`
+	CurrentInvocation TaskInvocation `json:"current_invocation"`
+}
+
+// TaskInvocation is task's ResultDB invocation info.
+type TaskInvocation struct {
+	// Name is the invocation name.
+	Name string `json:"name"`
+	// UpdateToken is the invocation's update token.
+	UpdateToken string `json:"update_token"`
 }
 
 // TaskCache describes one named cache requested by a task.
@@ -203,6 +220,14 @@ type TaskCache struct {
 	Path string `json:"path"`
 	// Hint is cache size hint (as a decimal string) or "-1" if unknown.
 	Hint string `json:"hint"`
+}
+
+// TaskServiceAccounts are service accounts accessible to the task.
+type TaskServiceAccounts struct {
+	// System describes "system" logical account.
+	System TaskServiceAccount `json:"system"`
+	// System describes "task" logical account.
+	Task TaskServiceAccount `json:"task"`
 }
 
 // TaskServiceAccount describe what service account a task can use.
@@ -224,5 +249,297 @@ type TaskServiceAccount struct {
 //
 // Called by bots after they get a lease from the RBE.
 func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsrv.Request) (botsrv.Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	if body.ClaimID == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "missing claim ID")
+	}
+	if body.TaskID == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "missing task ID")
+	}
+	if body.TaskToRunID == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "missing task to run ID")
+	}
+
+	// Ignore invalid state. This broken state will be noticed in the next Poll
+	// call and move the bot into quarantined state. Here we already have a
+	// pending task which the bot must execute. Better to try to execute the task
+	// even if something is wrong than just totally ignore it.
+	var state *botstate.Dict
+	if !body.State.IsEmpty() {
+		if err := body.State.Unseal(); err != nil {
+			logging.Errorf(ctx, "Ignoring bad state: %s", err)
+		} else {
+			state = &body.State
+		}
+	}
+	_ = state // TODO: use it
+
+	// Fetch the requested TaskToRun.
+	reqKey, err := model.TaskIDToRequestKey(ctx, body.TaskID)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+	}
+	ttr := &model.TaskToRun{
+		Key: model.TaskToRunKey(ctx, reqKey, body.TaskToRunShard, body.TaskToRunID),
+	}
+	switch err := datastore.Get(ctx, ttr); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		// This should not be happening normally.
+		return srv.claimSkipped(ctx, ttr, "No such task")
+	case err != nil:
+		logging.Errorf(ctx, "Datastore error fetching TaskToRun: %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error fetching TaskToRun")
+	}
+
+	// Check the bot actually matches the task dimensions. This is a security
+	// check. A bot must not be able to claim tasks it doesn't match (in
+	// particular in "pool" and/or "id" dimensions) even if the bot knows their
+	// IDs.
+	filter, err := model.NewFilterFromTaskDimensions(ttr.Dimensions)
+	if err != nil {
+		return srv.claimSkipped(ctx, ttr, "Task dimensions are unexpectedly broken: %s", err)
+	}
+	if !filter.MatchesBot(r.Dimensions) {
+		return srv.claimSkipped(ctx, ttr, "Dimensions mismatch")
+	}
+
+	// Two bots should not be able to collide in their claim IDs.
+	claimID := fmt.Sprintf("%s:%s", r.Session.BotId, body.ClaimID)
+
+	// Check the task wasn't claimed yet or was already claimed by us.
+	if !ttr.IsReapable() {
+		switch existing := ttr.ClaimID.Get(); {
+		case existing == "":
+			return srv.claimSkipped(ctx, ttr, "The task slice has expired")
+		case existing != claimID:
+			return srv.claimSkipped(ctx, ttr, "Already claimed by %q", existing)
+		}
+		// This task was already claimed by us and this is a retry. Just return task
+		// details, no need to run any transactions.
+		switch details, err := srv.fetchClaimDetails(ctx, ttr, r); {
+		case details == nil:
+			// This should not be happening.
+			return srv.claimSkipped(ctx, ttr, "No such task")
+		case err != nil:
+			logging.Errorf(ctx, "Error fetching task details: %s", err)
+			return nil, status.Errorf(codes.Internal, "datastore error fetching task details")
+		default:
+			return srv.claimTask(ctx, details, r)
+		}
+	}
+
+	// Do a transaction to claim this TaskToRun.
+	panic("TODO")
+}
+
+// claimDetails are fetched before hitting heavy transactions.
+type claimDetails struct {
+	req      *model.TaskRequest
+	slice    int
+	secret   []byte
+	caches   []TaskCache
+	settings *configpb.SettingsCfg
+}
+
+// fetchClaimDetails fetches information about the task slice and named caches.
+//
+// Returns nil if there's no such task anymore for whatever reason.
+func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskToRun, r *botsrv.Request) (*claimDetails, error) {
+	req, err := model.FetchTaskRequest(ctx, ttr.TaskRequestKey())
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, nil
+	case err != nil:
+		return nil, errors.Annotate(err, "fetching TaskRequest").Err()
+	}
+	if req.IsTerminate() {
+		return &claimDetails{req: req}, nil
+	}
+
+	if ttr.TaskSliceIndex() >= len(req.TaskSlices) {
+		// This should not be happening.
+		logging.Errorf(ctx,
+			"TaskToRun references non-existing slice %d of %s, treating as a missing task",
+			ttr.TaskSliceIndex(),
+			model.RequestKeyToTaskID(ttr.TaskRequestKey(), model.AsRequest),
+		)
+		return nil, nil
+	}
+	slice := &req.TaskSlices[ttr.TaskSliceIndex()]
+
+	var secret []byte
+	if slice.Properties.HasSecretBytes {
+		secretEnt := &model.SecretBytes{Key: model.SecretBytesKey(ctx, req.Key)}
+		switch err := datastore.Get(ctx, secretEnt); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			// This should not be happening, but just carry on without the secret.
+			logging.Errorf(ctx, "SecretBytes for %s is missing, proceeding anyway",
+				model.RequestKeyToTaskID(req.Key, model.AsRequest))
+		case err != nil:
+			return nil, errors.Annotate(err, "fetching SecretBytes").Err()
+		default:
+			secret = secretEnt.SecretBytes
+		}
+	}
+
+	var caches []TaskCache
+	if len(slice.Properties.Caches) != 0 && req.Pool() != "" {
+		names := make([]string, len(slice.Properties.Caches))
+		for i, c := range slice.Properties.Caches {
+			names[i] = c.Name
+		}
+		hints, err := model.FetchNamedCacheSizeHints(ctx,
+			req.Pool(),
+			model.OSFamily(r.Dimensions.DimensionValues("os")),
+			names,
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "fetching named caches hints").Err()
+		}
+		caches = make([]TaskCache, len(slice.Properties.Caches))
+		for i, c := range slice.Properties.Caches {
+			caches[i] = TaskCache{
+				Name: c.Name,
+				Path: c.Path,
+				Hint: fmt.Sprintf("%d", hints[i]),
+			}
+		}
+	}
+
+	cfg, err := srv.cfg.FreshEnough(ctx, r.Session.LastSeenConfig.AsTime())
+	if err != nil {
+		return nil, errors.Annotate(err, "fetching service config").Err()
+	}
+
+	return &claimDetails{
+		req:      req,
+		slice:    ttr.TaskSliceIndex(),
+		secret:   secret,
+		caches:   caches,
+		settings: cfg.Settings(),
+	}, nil
+}
+
+// claimSkipped returns ClaimSkip response, logging it.
+func (srv *BotAPIServer) claimSkipped(ctx context.Context, ttr *model.TaskToRun, reason string, args ...any) (botsrv.Response, error) {
+	reason = fmt.Sprintf(reason, args...)
+	logging.Warningf(ctx, "Skipping task %s (slice %d): %s",
+		model.RequestKeyToTaskID(ttr.TaskRequestKey(), model.AsRunResult),
+		ttr.TaskSliceIndex(),
+		reason,
+	)
+	return &ClaimResponse{
+		Cmd:    ClaimSkip,
+		Reason: reason,
+	}, nil
+}
+
+// claimTask returns ClaimRun or ClaimTerminate response, logging it.
+//
+// Also refreshes the bot session if necessary, by making sure the bot config in
+// it can last as long as the task is expected to run.
+func (srv *BotAPIServer) claimTask(ctx context.Context, d *claimDetails, r *botsrv.Request) (botsrv.Response, error) {
+	taskID := model.RequestKeyToTaskID(d.req.Key, model.AsRunResult)
+
+	if d.req.IsTerminate() {
+		logging.Infof(ctx, "Claimed termination task %s", taskID)
+		return &ClaimResponse{
+			Cmd:    ClaimTerminate,
+			TaskID: taskID,
+		}, nil
+	}
+
+	props := &d.req.TaskSlices[d.slice].Properties
+
+	// Bump the config expiration in the session to be long enough to outlive the
+	// task (with some fudge factor). This would allow the bot to finish the task
+	// even if it is removed from the configs midway through the execution.
+	//
+	// TODO: Add a mechanism that ensures this expiry extension can't be abused
+	// by a malicious bot that was removed from config. Otherwise it can keep
+	// running tasks back-to-back forever, continuously bumping config expiry.
+	maxRuntimeSec := props.ExecutionTimeoutSecs + props.GracePeriodSecs + 300
+	r.Session.BotConfig.Expiry = timestamppb.New(clock.Now(ctx).Add(time.Second * time.Duration(maxRuntimeSec)))
+	r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.version)
+	r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
+	session, err := botsession.Marshal(r.Session, srv.hmacSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
+	}
+
+	// Extract ResultDB hostname from settings (if necessary).
+	var resultDB string
+	if d.req.ResultDBUpdateToken != "" {
+		resultDB = d.settings.GetResultdb().GetServer()
+		if resultDB != "" {
+			if u, err := url.Parse(resultDB); err == nil {
+				resultDB = u.Host
+			} else {
+				logging.Errorf(ctx, "Ignoring invalid ResultDB URL %q", resultDB)
+				resultDB = ""
+			}
+		}
+	}
+
+	logging.Infof(ctx, "Claimed task %s (slice %d)", taskID, d.slice)
+	return &ClaimResponse{
+		Cmd:     ClaimRun,
+		Session: session,
+		TaskID:  taskID,
+		Manifest: &TaskManifest{
+			TaskID: taskID,
+
+			Caches:          d.caches,
+			CIPDInput:       pick(props.CIPDInput.IsPopulated(), &props.CIPDInput),
+			Command:         props.Command,
+			Containment:     pick(props.Containment.ContainmentType != 0, &props.Containment),
+			Dimensions:      props.Dimensions,
+			Env:             props.Env,
+			EnvPrefixes:     props.EnvPrefixes,
+			GracePeriodSecs: props.GracePeriodSecs,
+			HardTimeoutSecs: props.ExecutionTimeoutSecs,
+			IOTimeoutSecs:   props.IOTimeoutSecs,
+			SecretBytes:     d.secret,
+			CASInputRoot:    pick(props.CASInputRoot.CASInstance != "", &props.CASInputRoot),
+			Outputs:         props.Outputs,
+			Realm: pick(d.req.Realm != "", &TaskRealm{
+				Name: d.req.Realm,
+			}),
+			RelativeCwd: props.RelativeCwd,
+			ResultDB: pick(resultDB != "", &TaskResultDB{
+				Hostname: resultDB,
+				CurrentInvocation: TaskInvocation{
+					Name:        resultdb.InvocationName(srv.project, taskID),
+					UpdateToken: d.req.ResultDBUpdateToken,
+				},
+			}),
+			ServiceAccounts: TaskServiceAccounts{
+				System: TaskServiceAccount{
+					ServiceAccount: valueOrNone(r.Session.BotConfig.SystemServiceAccount),
+				},
+				Task: TaskServiceAccount{
+					ServiceAccount: valueOrNone(d.req.ServiceAccount),
+				},
+			},
+
+			BotID:              r.Session.BotId,
+			BotDimensions:      r.Dimensions.ToMap(),
+			BotAuthenticatedAs: auth.CurrentIdentity(ctx),
+		},
+	}, nil
+}
+
+// pick returns `t` if yes is true or nil otherwise.
+func pick[T any](yes bool, t *T) *T {
+	if yes {
+		return t
+	}
+	return nil
+}
+
+// valueOrNone returns either val or "none".
+func valueOrNone(val string) string {
+	if val != "" {
+		return val
+	}
+	return "none"
 }
