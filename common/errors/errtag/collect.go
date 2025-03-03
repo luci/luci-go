@@ -21,36 +21,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-	"sync"
 )
-
-// We unfortunately need to keep track of TagKey -> MergeFn
-var tagKeyToMergeFn = map[TagKey]func(valuePtrs []any) any{}
-var tagKeyToMergeFnMu sync.RWMutex
-
-func registerMergeFn[T comparable](key TagKey, merge MergeFn[T]) {
-	mfn := func(valuePtrs []any) any {
-		arg := make([]*T, len(valuePtrs))
-		for i, v := range valuePtrs {
-			arg[i] = v.(*T)
-		}
-		return merge(arg)
-	}
-
-	tagKeyToMergeFnMu.Lock()
-	tagKeyToMergeFn[key] = mfn
-	tagKeyToMergeFnMu.Unlock()
-}
-
-func doMerge(key TagKey, valuePtrs []any) any {
-	tagKeyToMergeFnMu.RLock()
-	mfn := tagKeyToMergeFn[key]
-	tagKeyToMergeFnMu.RUnlock()
-	if mfn == nil {
-		panic(fmt.Errorf("impossible: tagkey %q has no merge function", key))
-	}
-	return mfn(valuePtrs)
-}
 
 type tagSet map[TagKey]struct{}
 
@@ -70,34 +41,56 @@ func (t tagSet) has(key TagKey) bool {
 // obtained via [Collect].
 type CollectedValues map[TagKey]any
 
-type collectedMultiValue map[TagKey][]any
-
-func (c *collectedMultiValue) set(key TagKey, valuePtr any) {
-	if *c == nil {
-		*c = collectedMultiValue{}
-	}
-	(*c)[key] = []any{valuePtr}
+type mergeableCollectedValuesItem struct {
+	valuePtrs []any
+	// mergeFn will only be set if len(valuePtrs) > 1
+	mergeFn func(valuePtrs []any) any
 }
 
-func (c *collectedMultiValue) update(other CollectedValues) {
-	if *c == nil {
-		*c = collectedMultiValue{}
+func (m *mergeableCollectedValuesItem) flatten() any {
+	var valuePtr any
+	if len(m.valuePtrs) == 1 {
+		valuePtr = m.valuePtrs[0]
+	} else {
+		valuePtr = m.mergeFn(m.valuePtrs)
+	}
+	return valuePtr
+}
+
+type mergeableCollectedValues map[TagKey]*mergeableCollectedValuesItem
+
+func (m *mergeableCollectedValues) set(key TagKey, valPtr any, merge func(valuePtrs []any) any) {
+	if *m == nil {
+		*m = mergeableCollectedValues{}
+	}
+	(*m)[key] = &mergeableCollectedValuesItem{valuePtrs: []any{valPtr}, mergeFn: merge}
+}
+
+func (m *mergeableCollectedValues) update(other mergeableCollectedValues) {
+	if *m == nil {
+		*m = mergeableCollectedValues{}
 	}
 	for key, value := range other {
-		(*c)[key] = append((*c)[key], value)
+		if cur, ok := (*m)[key]; ok {
+			cur.valuePtrs = append(cur.valuePtrs, value.valuePtrs...)
+		} else {
+			(*m)[key] = value
+		}
 	}
 }
 
-func (c *collectedMultiValue) flatten() CollectedValues {
-	if len(*c) == 0 {
+func (m mergeableCollectedValues) flatten() CollectedValues {
+	if len(m) == 0 {
 		return nil
 	}
-	ret := make(CollectedValues, len(*c))
-	for key, valuePtrs := range *c {
-		if lv := len(valuePtrs); lv == 1 {
-			ret[key] = valuePtrs[0]
-		} else if lv > 1 {
-			ret[key] = doMerge(key, valuePtrs)
+	ret := make(CollectedValues, len(m))
+	for key, item := range m {
+		// recall that the merge function may return nil to indicate 'remove this
+		// value'
+		val := item.flatten()
+		if val != nil {
+			// ret contains dereferenced values
+			ret[key] = reflect.ValueOf(val).Elem().Interface()
 		}
 	}
 	return ret
@@ -136,17 +129,17 @@ func Collect(err error, exclude ...TagType) CollectedValues {
 
 	// NOTE: CollectedValues will return *T values instead of T values, because of
 	// wrappedErr.tagValuePtr.
-	var collectPtrs func(err error, exclude tagSet) CollectedValues
-	collectPtrs = func(err error, exclude tagSet) CollectedValues {
-		var mval collectedMultiValue
+	var collectPtrs func(err error, exclude tagSet) mergeableCollectedValues
+	collectPtrs = func(err error, exclude tagSet) mergeableCollectedValues {
+		var ret mergeableCollectedValues
 
 		// first, check to see if we're a tag - if we are, then ignore this tag
 		// anywhere down the tree.
 		var alsoExclude TagKey
 		if werr, ok := err.(wrappedErrIface); ok {
-			key, valPtr := werr.tagValuePtr()
+			key, valPtr, merge := werr.tagValuePtr()
 			if !exclude.has(key) {
-				mval.set(key, valPtr)
+				ret.set(key, valPtr, merge)
 				alsoExclude = key
 			}
 		}
@@ -159,7 +152,7 @@ func Collect(err error, exclude ...TagType) CollectedValues {
 				exclude.add(alsoExclude)
 			}
 			for _, other := range x.Unwrap() {
-				mval.update(collectPtrs(other, exclude))
+				ret.update(collectPtrs(other, exclude))
 			}
 
 		case interface{ Unwrap() error }:
@@ -167,25 +160,11 @@ func Collect(err error, exclude ...TagType) CollectedValues {
 				exclude = maps.Clone(exclude)
 				exclude.add(alsoExclude)
 			}
-			mval.update(collectPtrs(x.Unwrap(), exclude))
+			ret.update(collectPtrs(x.Unwrap(), exclude))
 		}
 
-		// we need to flatten because in the case of a multi-error we could have
-		// multiple values for the same tag - mval.flatten() will apply the merge
-		// function associated with the tag for those values, giving just a single
-		// *T back.
-		return mval.flatten()
+		return ret
 	}
 
-	retPtrs := collectPtrs(err, excludedKeys)
-	if len(retPtrs) == 0 {
-		return nil
-	}
-
-	// dereference all the values to get just plain T's
-	ret := make(CollectedValues, len(retPtrs))
-	for key, valPtr := range retPtrs {
-		ret[key] = reflect.ValueOf(valPtr).Elem().Interface()
-	}
-	return ret
+	return collectPtrs(err, excludedKeys).flatten()
 }

@@ -216,16 +216,19 @@ func (t Tag[T]) ApplyValue(err error, value T) (wrapped error) {
 	if err == nil {
 		return err
 	}
-	return &wrappedErr[T]{key: t.key, inner: err, value: value}
+	return &wrappedErr[T]{key: t.key, inner: err, value: value, merge: t.merge}
 }
 
 // Apply is shorthand for ApplyValue(err, <defaultValue>).
 func (t Tag[T]) Apply(err error) (wrapped error) {
+	// NOTE: we don't actually do t.ApplyValue(err, *t.defaultValue) here because
+	// we want to do t.check() before we access t.defaultValue. At that point we
+	// may as well copy the implementation.
 	t.check()
 	if err == nil {
 		return err
 	}
-	return &wrappedErr[T]{key: t.key, inner: err, value: *t.defaultValue}
+	return &wrappedErr[T]{key: t.key, inner: err, value: *t.defaultValue, merge: t.merge}
 }
 
 var _ interface {

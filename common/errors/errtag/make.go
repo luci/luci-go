@@ -74,9 +74,7 @@ func MakeWithMerge[T comparable](description string, defaultValue T, merge Merge
 
 func makeImpl[T comparable](description string, defaultValue *T, merge MergeFn[T]) Tag[T] {
 	key := TagKey{&description}
-	ret := Tag[T]{key, defaultValue, merge}
-	registerMergeFn(key, merge)
-	return ret
+	return Tag[T]{key, defaultValue, merge}
 }
 
 // WithDefault returns a variant of this Tag with a different default (for

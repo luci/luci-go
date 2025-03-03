@@ -14,9 +14,10 @@
 
 package errtag
 
-type wrappedErr[T any] struct {
+type wrappedErr[T comparable] struct {
 	key   TagKey
 	inner error
+	merge MergeFn[T]
 	value T
 }
 
@@ -28,11 +29,19 @@ func (w *wrappedErr[T]) Error() string { return w.inner.Error() }
 func (w *wrappedErr[T]) Unwrap() error { return w.inner }
 
 type wrappedErrIface interface {
-	tagValuePtr() (TagKey, any)
+	tagValuePtr() (TagKey, any, func(valuePtrs []any) any)
 }
 
 var _ wrappedErrIface = (*wrappedErr[bool])(nil)
 
-func (w *wrappedErr[T]) tagValuePtr() (TagKey, any) {
-	return w.key, &w.value
+func (w *wrappedErr[T]) tagValuePtr() (TagKey, any, func(valuePtrs []any) any) {
+	return w.key, &w.value, w.mergePtrs
+}
+
+func (w *wrappedErr[T]) mergePtrs(valuePtrs []any) any {
+	arg := make([]*T, len(valuePtrs))
+	for i, v := range valuePtrs {
+		arg[i] = v.(*T)
+	}
+	return w.merge(arg)
 }
