@@ -12,11 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useMemo } from 'react';
+
 import { OptionCategory } from '@/fleet/types';
 import { SelectedOptions } from '@/fleet/types';
 
 import { AddFilterButton } from './add_filter_button';
 import { SelectedChip } from './selected_chip';
+
+function elevateSelectedFiltersToTheTop(
+  filterOptions: OptionCategory[],
+  selectedOptions: SelectedOptions,
+): OptionCategory[] {
+  // Unselected filters are also considered for reorganizing,
+  // as they are included in the selectedOptions with an empty array.
+  return filterOptions.map((filter) => {
+    if (filter.value in selectedOptions) {
+      filter.options.sort((a, b) => {
+        const aIsSelected = selectedOptions[filter.value].includes(a.value);
+        const bIsSelected = selectedOptions[filter.value].includes(b.value);
+        if (aIsSelected && !bIsSelected) return -1;
+        if (!aIsSelected && bIsSelected) return 1;
+
+        return a.value.localeCompare(b.value);
+      });
+    }
+
+    return filter;
+  });
+}
 
 export const MultiSelectFilter = ({
   filterOptions,
@@ -29,9 +53,14 @@ export const MultiSelectFilter = ({
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) => {
+  const sortedFilterOptions = useMemo(
+    () => elevateSelectedFiltersToTheTop(filterOptions, selectedOptions),
+    [filterOptions, selectedOptions],
+  );
+
   return (
     <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {filterOptions.map(
+      {sortedFilterOptions.map(
         (option, idx) =>
           option.options?.some((o2) =>
             selectedOptions[option.value]?.includes(o2.value),
@@ -46,7 +75,7 @@ export const MultiSelectFilter = ({
           ),
       )}
       <AddFilterButton
-        filterOptions={filterOptions}
+        filterOptions={sortedFilterOptions}
         selectedOptions={selectedOptions}
         onSelectedOptionsChange={onSelectedOptionsChange}
         isLoading={isLoading}

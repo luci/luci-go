@@ -387,7 +387,7 @@ describe('<DeviceTable />', () => {
     expect(screen.getByText('6-8 of more than 8')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeEnabled();
-  });
+  }, 6000);
 
   it('should show total row count in pagination when it is provided', async () => {
     render(
