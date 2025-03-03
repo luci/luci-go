@@ -115,3 +115,13 @@ func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.
 	slices.Sort(ret)
 	return ret, nil
 }
+
+// IsEnded returns true if the given Tryjob status is final.
+func IsEnded(status Status) bool {
+	switch status {
+	case Status_STATUS_UNSPECIFIED, Status_PENDING, Status_TRIGGERED:
+		return false
+	default:
+		return true
+	}
+}

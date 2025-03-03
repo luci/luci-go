@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -61,4 +63,29 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 	actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
 	assert.NoErr(t, err)
 	assert.Loosely(t, actual, should.Match(expected))
+}
+
+func TestIsEnded(t *testing.T) {
+	t.Parallel()
+
+	knownStatuses := map[Status]comparison.Func[bool]{
+		Status_STATUS_UNSPECIFIED: should.BeFalse,
+		Status_PENDING:            should.BeFalse,
+		Status_TRIGGERED:          should.BeFalse,
+		Status_ENDED:              should.BeTrue,
+		Status_CANCELLED:          should.BeTrue,
+		Status_UNTRIGGERED:        should.BeTrue,
+	}
+
+	ftt.Run("IsEnded works", t, func(t *ftt.Test) {
+		for st, exp := range knownStatuses {
+			assert.That(t, IsEnded(st), exp)
+		}
+	})
+
+	ftt.Run("This test is aware of all the statuses", t, func(t *ftt.Test) {
+		for st := range Status_name {
+			assert.Loosely(t, knownStatuses, should.ContainKey(st))
+		}
+	})
 }

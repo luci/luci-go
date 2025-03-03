@@ -160,3 +160,18 @@ func LoadExecutionLogs(ctx context.Context, runID common.RunID) ([]*ExecutionLog
 	}
 	return ret, nil
 }
+
+// AreAllCriticalTryjobsEnded returns true if all critical tryjobs ended.
+func AreAllCriticalTryjobsEnded(state *ExecutionState) bool {
+	if state.GetStatus() == ExecutionState_SUCCEEDED {
+		// No critical tryjobs should be running at this point.
+		return true
+	}
+	for i, def := range state.GetRequirement().GetDefinitions() {
+		attempt := LatestAttempt(state.GetExecutions()[i])
+		if def.GetCritical() && !IsEnded(attempt.GetStatus()) {
+			return false
+		}
+	}
+	return true
+}

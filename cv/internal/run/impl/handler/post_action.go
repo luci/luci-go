@@ -22,12 +22,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/postaction"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 const maxPostActionExecutionDuration = 8 * time.Minute
@@ -65,6 +67,33 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 	return &Result{State: rs}, nil
 }
 
+// enqueueCreditRunQuotaTask enqueues a long op to credit the Run quota.
+func enqueueCreditRunQuotaTask(ctx context.Context, rs *state.RunState) {
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
+		Work: &run.OngoingLongOps_Op_ExecutePostAction{
+			ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
+				Name: postaction.CreditRunQuotaPostActionName,
+				Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
+					CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+				},
+			},
+		},
+	})
+}
+
+// shouldCreditRunQuota returns whether the run quota should be credited.
+func shouldCreditRunQuota(rs *state.RunState) bool {
+	if !run.IsEnded(rs.Status) {
+		return false
+	}
+	// NewPatchsetRun doesn't consume run quota.
+	if rs.Mode == run.NewPatchsetRun {
+		return false
+	}
+	return tryjob.AreAllCriticalTryjobsEnded(rs.Tryjobs.GetState())
+}
+
 // enqueueExecutePostActionTask enqueues internal long ops for post action and
 // the post action defined in the config, of which triggering conditions are
 // met.
@@ -77,20 +106,15 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 // on ended Runs, and new project configs with PostAction shouldn't affect
 // already ended Runs and their ongoing PostActions, either.
 func enqueueExecutePostActionTask(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
-	// enqueue internal post actions.
-	// Do not credit the run quota for on upload runs (NewPatchsetRun).
-	if rs.Mode != run.NewPatchsetRun {
-		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
-			Work: &run.OngoingLongOps_Op_ExecutePostAction{
-				ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
-					Name: postaction.CreditRunQuotaPostActionName,
-					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
-						CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
-					},
-				},
-			},
-		})
+	// Case #1 - the Run status is ENDED, and all critical jobs are done.
+	// Credit it.
+	//
+	// Case #2 - the Run status is ENDED, and some critical jobs are not done.
+	// Do nothing; onCompletedExecuteTryjobs() will enqueue a long-op to credit
+	// the quota when the last critical tryjob completion is handled.
+	if shouldCreditRunQuota(rs) {
+		logging.Infof(ctx, "enqueueExecutePostActionTask: all critical tryjobs are finalized; enqueuing a long-op to credit the run quota.")
+		enqueueCreditRunQuotaTask(ctx, rs)
 	}
 	// enqueue actions defined in the configuration.
 	for _, pacfg := range cg.Content.GetPostActions() {

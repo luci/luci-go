@@ -23,11 +23,13 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 func TestOnCompletedPostAction(t *testing.T) {
@@ -134,6 +136,83 @@ func TestOnCompletedPostAction(t *testing.T) {
 				expected = "the execution failed"
 				innerCheck(t)
 			})
+		})
+	})
+}
+
+func TestShouldCreditRunQuotaOnPostAction(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("shouldCreditRunQuota", t, func(t *ftt.Test) {
+		execState := &tryjob.ExecutionState{
+			Requirement: &tryjob.Requirement{},
+		}
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:     "chromium/1111111111111-1-deadbeef",
+				Status: run.Status_FAILED,
+				Mode:   run.DryRun,
+				Tryjobs: &run.Tryjobs{
+					State: execState,
+				},
+			},
+		}
+
+		addExecution := func(isCritical bool, tid common.TryjobID, status tryjob.Status) {
+			execState.GetRequirement().Definitions = append(
+				execState.GetRequirement().Definitions,
+				&tryjob.Definition{Critical: isCritical},
+			)
+			execState.Executions = append(
+				execState.Executions,
+				&tryjob.ExecutionState_Execution{
+					Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId: int64(tid),
+							Status:   status,
+						},
+					},
+				},
+			)
+		}
+		addNonCritical := func(tid common.TryjobID, status tryjob.Status) {
+			addExecution(false, tid, status)
+		}
+		addCritical := func(tid common.TryjobID, status tryjob.Status) {
+			addExecution(true, tid, status)
+		}
+
+		t.Run("returns true if no critical jobs are running", func(t *ftt.Test) {
+			rs.Status = run.Status_FAILED
+			addNonCritical(1, tryjob.Status_PENDING)
+			addNonCritical(2, tryjob.Status_ENDED)
+			addCritical(3, tryjob.Status_ENDED)
+			addCritical(4, tryjob.Status_ENDED)
+
+			assert.That(t, shouldCreditRunQuota(rs), should.BeTrue)
+		})
+
+		t.Run("returns false if the run ended but critical tryjobs are running", func(t *ftt.Test) {
+			rs.Status = run.Status_FAILED
+			addCritical(1, tryjob.Status_TRIGGERED)
+			addCritical(2, tryjob.Status_ENDED)
+			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+		})
+
+		t.Run("returns false if the run is still running", func(t *ftt.Test) {
+			rs.Status = run.Status_RUNNING
+			// even if all tryjobs are ended
+			addCritical(1, tryjob.Status_ENDED)
+			addCritical(2, tryjob.Status_ENDED)
+			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+		})
+
+		t.Run("returns false if NewPatchsetRun", func(t *ftt.Test) {
+			rs.Mode = run.NewPatchsetRun
+			rs.Status = run.Status_FAILED
+			addCritical(1, tryjob.Status_ENDED)
+			addCritical(2, tryjob.Status_ENDED)
+			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
 		})
 	})
 }

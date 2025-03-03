@@ -91,3 +91,12 @@ func (s TryjobIDSet) Has(tjID TryjobID) bool {
 	_, exists := s[tjID]
 	return exists
 }
+
+// MakeTryjobIDSet constructs and returns a set with the given TryjobIDs.
+func MakeTryjobIDSet(tjIDs ...TryjobID) TryjobIDSet {
+	ret := make(TryjobIDSet, len(tjIDs))
+	for _, id := range tjIDs {
+		ret.Add(id)
+	}
+	return ret
+}

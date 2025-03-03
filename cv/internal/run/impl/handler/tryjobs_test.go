@@ -515,7 +515,23 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					Status: tryjob.ExecutionState_SUCCEEDED,
 				},
 			}))
-			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.BeEmpty)
+
+			// There should be one long-op for credit-run-quota.
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
+			quotaOp := &run.OngoingLongOps_Op{
+				Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(maxTryjobExecutorDuration)),
+				Work: &run.OngoingLongOps_Op_ExecutePostAction{
+					ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
+						Name: "credit-run-quota",
+						Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
+							CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+						},
+					},
+				},
+			}
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				assert.That(t, op, should.Match(quotaOp))
+			}
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.That(t, res.PreserveEvents, should.BeFalse)
 		})
@@ -751,6 +767,96 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 						{Definition: defBar, Reason: "builder not found"},
 					})
 				assert.Loosely(t, reason, should.Equal("Failed to launch the following tryjobs:\n* `ProjectBar/BucketBar/BuilderBar`; Failure reason: builder not found\n* `ProjectFoo/BucketFoo/BuilderFoo`; Failure reason: permission denied"))
+			})
+		})
+	})
+}
+
+func TestShouldCreditRunQuotaOnTryjobsUpdated(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("shouldCreditRunQuota on TryjobsUpdated", t, func(t *ftt.Test) {
+		ct := cvtesting.Test{}
+		ctx := ct.SetUp(t)
+		execState := &tryjob.ExecutionState{
+			Requirement: &tryjob.Requirement{},
+		}
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:     "chromium/1111111111111-1-deadbeef",
+				Status: run.Status_FAILED,
+				Mode:   run.DryRun,
+				Tryjobs: &run.Tryjobs{
+					State: execState,
+				},
+			},
+		}
+
+		addExecution := func(isCritical bool, tid common.TryjobID, status tryjob.Status) {
+			execState.GetRequirement().Definitions = append(
+				execState.GetRequirement().Definitions,
+				&tryjob.Definition{Critical: isCritical},
+			)
+			execState.Executions = append(
+				execState.Executions,
+				&tryjob.ExecutionState_Execution{
+					Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId: int64(tid),
+							Status:   status,
+						},
+					},
+				},
+			)
+			assert.NoErr(t, datastore.Put(ctx, &tryjob.Tryjob{ID: tid, Status: status}))
+		}
+		addNonCritical := func(tid common.TryjobID, status tryjob.Status) {
+			addExecution(false, tid, status)
+		}
+		addCritical := func(tid common.TryjobID, status tryjob.Status) {
+			addExecution(true, tid, status)
+		}
+
+		t.Run("Run is ended", func(t *ftt.Test) {
+			rs.Status = run.Status_FAILED
+
+			t.Run("all critical tryjobs are done", func(t *ftt.Test) {
+				addNonCritical(1, tryjob.Status_PENDING)
+				addNonCritical(2, tryjob.Status_ENDED)
+				addCritical(3, tryjob.Status_ENDED)
+				addCritical(4, tryjob.Status_ENDED)
+				assert.That(t, shouldCreditRunQuota(rs), should.BeTrue)
+			})
+
+			t.Run("some critical tryjobs are not done", func(t *ftt.Test) {
+				addNonCritical(1, tryjob.Status_PENDING)
+				addNonCritical(2, tryjob.Status_ENDED)
+				addCritical(3, tryjob.Status_TRIGGERED)
+				addCritical(4, tryjob.Status_ENDED)
+				assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+			})
+		})
+
+		t.Run("Run is not ended", func(t *ftt.Test) {
+			rs.Status = run.Status_RUNNING
+
+			t.Run("all critical tryjobs are done in the execution state", func(t *ftt.Test) {
+				addNonCritical(1, tryjob.Status_PENDING)
+				addNonCritical(2, tryjob.Status_ENDED)
+				addCritical(3, tryjob.Status_ENDED)
+				addCritical(4, tryjob.Status_ENDED)
+
+				// Then, PostAction should credit the quota, and
+				// OnTryjobsUpdated should not.
+				assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+			})
+
+			t.Run("some critical tryjobs are not done in the execution state", func(t *ftt.Test) {
+				addNonCritical(1, tryjob.Status_PENDING)
+				addNonCritical(2, tryjob.Status_ENDED)
+				addCritical(3, tryjob.Status_TRIGGERED)
+				addCritical(4, tryjob.Status_ENDED)
+				assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
 			})
 		})
 	})

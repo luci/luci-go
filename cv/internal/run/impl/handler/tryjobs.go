@@ -28,6 +28,7 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -63,6 +64,23 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		// just simply update the execution state to the latest.
 		if err := loadAndUpdateExecutionState(ctx, rs); err != nil {
 			return nil, err
+		}
+
+		// Case #1 - the Run status is RUNNING, and all critical jobs are done.
+		// Do nothing; the run will be marked as done in the next block, and
+		// PostAction will credit the quota.
+		//
+		// Case #2 - it's RUNNING, and some critical tryjobs are not done.
+		// Do nothing
+		//
+		// Case #3 - it's ENDED, but all critical jobs are done.
+		// Credit it!
+		//
+		// Case #4 - it's ENDED, but some are still running.
+		// Do nothing
+		if shouldCreditRunQuota(rs) {
+			logging.Infof(ctx, "onCompletedExecuteTryjobs: all critical tryjobs are finalized; enqueuing a long-op to credit the run quota.")
+			enqueueCreditRunQuotaTask(ctx, rs)
 		}
 		return &Result{State: rs}, nil
 	}

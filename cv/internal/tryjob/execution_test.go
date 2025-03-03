@@ -111,3 +111,53 @@ func TestLoadExecutionLogs(t *testing.T) {
 		assert.Loosely(t, ret[3].GetTryjobsEnded().GetTryjobs()[0].GetId(), should.Equal(2))
 	})
 }
+
+func TestAreAllCriticalTryjobsEnded(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("AreAllCriticalTryjobsEnded", t, func(t *ftt.Test) {
+		execState := &ExecutionState{
+			Requirement: &Requirement{},
+		}
+		addExecution := func(isCritical bool, tid common.TryjobID, status Status) {
+			execState.GetRequirement().Definitions = append(
+				execState.GetRequirement().Definitions,
+				&Definition{Critical: isCritical},
+			)
+			execState.Executions = append(
+				execState.Executions,
+				&ExecutionState_Execution{
+					Attempts: []*ExecutionState_Execution_Attempt{
+						{
+							TryjobId: int64(tid),
+							Status:   status,
+						},
+					},
+				},
+			)
+		}
+		addNonCritical := func(tid common.TryjobID, status Status) {
+			addExecution(false, tid, status)
+		}
+		addCritical := func(tid common.TryjobID, status Status) {
+			addExecution(true, tid, status)
+		}
+
+		t.Run("false if some critical tryjobs are not ended", func(t *ftt.Test) {
+			addNonCritical(1, Status_PENDING)
+			addNonCritical(2, Status_ENDED)
+			addCritical(3, Status_TRIGGERED)
+			addCritical(4, Status_ENDED)
+
+			assert.That(t, AreAllCriticalTryjobsEnded(execState), should.BeFalse)
+		})
+
+		t.Run("true if all critical tryjobs are not ended", func(t *ftt.Test) {
+			addNonCritical(1, Status_PENDING)
+			addNonCritical(2, Status_ENDED)
+			addCritical(3, Status_ENDED)
+
+			assert.That(t, AreAllCriticalTryjobsEnded(execState), should.BeTrue)
+		})
+	})
+}

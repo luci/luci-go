@@ -413,15 +413,10 @@ func hasAttemptEnded(attempt *tryjob.ExecutionState_Execution_Attempt) bool {
 	if attempt == nil {
 		return false // Hasn't launched any new Attempt.
 	}
-	// Only look at the latest Attempt.
-	switch attempt.Status {
-	case tryjob.Status_STATUS_UNSPECIFIED:
+	if attempt.Status == tryjob.Status_STATUS_UNSPECIFIED {
 		panic(fmt.Errorf("attempt status not specified for Tryjob %d", attempt.TryjobId))
-	case tryjob.Status_PENDING, tryjob.Status_TRIGGERED:
-		return false
-	default:
-		return true
 	}
+	return tryjob.IsEnded(attempt.Status)
 }
 
 // handleRequirementChange updates `execState` and makes a plan when the
