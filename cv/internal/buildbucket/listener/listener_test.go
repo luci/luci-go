@@ -382,7 +382,7 @@ func makeBuildPubsubData(t *ftt.Test, b *buildbucketpb.Build, dropLargeFields bo
 		zw := zlib.NewWriter(buf)
 		_, err := zw.Write(data)
 		assert.NoErr(t, err)
-		assert.That(t, zw.Close(), should.ErrLike(nil))
+		assert.NoErr(t, zw.Close())
 		return buf.Bytes()
 	}
 

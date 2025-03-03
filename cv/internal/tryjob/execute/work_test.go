@@ -133,7 +133,7 @@ func TestWorker(t *testing.T) {
 				tj.ReuseKey = reuseKey
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+			assert.NoErr(t, err, truth.LineContext())
 			return tj
 		}
 		t.Run("Reuse", func(t *ftt.Test) {
@@ -183,7 +183,7 @@ func TestWorker(t *testing.T) {
 				func(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					assert.Loosely(t, definitions, should.HaveLength(1))
 					tj := w.makePendingTryjob(ctx, definitions[0])
-					assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+					assert.NoErr(t, datastore.Put(ctx, tj))
 					reuseID = tj.ID
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: tj,

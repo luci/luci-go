@@ -110,7 +110,7 @@ func TestLaunch(t *testing.T) {
 		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
 		t.Run("Works", func(t *ftt.Test) {
 			tj := w.makePendingTryjob(ctx, defFoo)
-			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
@@ -154,7 +154,7 @@ func TestLaunch(t *testing.T) {
 				},
 			}
 			tj := w.makePendingTryjob(ctx, def)
-			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
@@ -183,7 +183,7 @@ func TestLaunch(t *testing.T) {
 			tj.LaunchedBy = runID
 			reuseRun := common.MakeRunID(lProject, ct.Clock.Now().Add(-30*time.Minute), 1, []byte("beef"))
 			tj.ReusedBy = append(tj.ReusedBy, reuseRun)
-			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			var existingTryjobID common.TryjobID
 			w.backend = &decoratedBackend{
 				TryjobBackend: w.backend,
@@ -198,7 +198,7 @@ func TestLaunch(t *testing.T) {
 						tj.Result = launchResults[0].Result
 						return nil
 					})
-					assert.That(t, err, should.ErrLike(nil))
+					assert.NoErr(t, err)
 					existingTryjobID = existingTryjob.ID
 				},
 			}
@@ -245,7 +245,7 @@ func TestLaunch(t *testing.T) {
 			}
 			w.cls = append(w.cls, depCL)
 			tj := w.makePendingTryjob(ctx, defFoo)
-			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))

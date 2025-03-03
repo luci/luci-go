@@ -682,7 +682,7 @@ func TestExecutePlan(t *testing.T) {
 				reuseTryjob.LaunchedBy = common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh"))
 				reuseTryjob.Result = result
 
-				assert.That(t, datastore.Put(ctx, reuseTryjob), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, reuseTryjob))
 				execState, err := executor.executePlan(ctx, &plan{
 					triggerNewAttempt: []planItem{
 						{
@@ -691,7 +691,7 @@ func TestExecutePlan(t *testing.T) {
 						},
 					},
 				}, r, execState)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
 				assert.That(t, execState.GetExecutions()[0].GetAttempts(), should.Match(
 					[]*tryjob.ExecutionState_Execution_Attempt{
@@ -715,7 +715,7 @@ func TestExecutePlan(t *testing.T) {
 						},
 					},
 				}, r, execState)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, execState.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
 				assert.Loosely(t, execState.GetExecutions()[0].GetAttempts(), should.HaveLength(1))
 				attempt := execState.GetExecutions()[0].GetAttempts()[0]

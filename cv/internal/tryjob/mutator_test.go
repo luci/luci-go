@@ -42,7 +42,7 @@ func TestUpsert(t *testing.T) {
 			tj.Status = Status_PENDING
 			return nil
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.ID, should.NotEqual(common.TryjobID(0)))
 		assert.That(t, tj.ExternalID, should.Equal(eid))
 		assert.That(t, tj.EVersion, should.Equal(int64(1)))
@@ -56,7 +56,7 @@ func TestUpsert(t *testing.T) {
 		tj, err := m.Upsert(ctx, MustBuildbucketID("example.bb.com", 1001), func(tj *Tryjob) error {
 			return ErrStopMutation
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.Loosely(t, tj, should.BeNil)
 	})
 	t.Run("Updates", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestUpsert(t *testing.T) {
 			tj.Status = Status_TRIGGERED
 			return nil
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.ExternalID, should.Equal(eid))
 		assert.That(t, tj.EVersion, should.Equal(int64(2)))
 		assert.That(t, tj.EntityCreateTime, should.Match(datastore.RoundTime(ct.Clock.Now().Add(-1*time.Minute))))
@@ -77,7 +77,7 @@ func TestUpsert(t *testing.T) {
 		tj, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 			return ErrStopMutation
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.EVersion, should.Equal(int64(2)))
 		assert.That(t, tj.EntityUpdateTime, should.Match(datastore.RoundTime(ct.Clock.Now().Add(-1*time.Minute))))
 	})
@@ -89,7 +89,7 @@ func TestUpsert(t *testing.T) {
 			tj.ReusedBy = append(tj.ReusedBy, runID2)
 			return nil
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.LaunchedBy, should.Equal(runID1))
 		assert.That(t, tj.ReusedBy, should.Match(common.RunIDs{runID2}))
 		assert.That(t, rm.notified, should.Match(map[common.RunID]common.TryjobIDs{
@@ -142,7 +142,7 @@ func TestUpdate(t *testing.T) {
 	tj, err := m.Upsert(ctx, MustBuildbucketID("example.bb.com", 2000), func(tj *Tryjob) error {
 		return nil
 	})
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 	tryjobID := tj.ID
 	ct.Clock.Add(1 * time.Minute)
 	t.Run("Update", func(t *testing.T) {
@@ -151,7 +151,7 @@ func TestUpdate(t *testing.T) {
 			tj.UntriggeredReason = "bad"
 			return nil
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.ID, should.Equal(tryjobID))
 		assert.That(t, tj.EVersion, should.Equal(int64(2)))
 		assert.That(t, tj.EntityUpdateTime, should.Match(datastore.RoundTime(ct.Clock.Now())))
@@ -162,21 +162,21 @@ func TestUpdate(t *testing.T) {
 	t.Run("Update External ID", func(t *testing.T) {
 		t.Run("No mapping exists", func(t *testing.T) {
 			newTryjob := &Tryjob{}
-			assert.That(t, datastore.Put(ctx, newTryjob), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, newTryjob))
 			newExternalID := MustBuildbucketID("example.bb.com", 999)
 			newTryjob, err := m.Update(ctx, newTryjob.ID, func(tj *Tryjob) error {
 				tj.ExternalID = newExternalID
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, newTryjob.ExternalID, should.Equal(newExternalID))
 			resolved, err := newExternalID.Resolve(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, resolved, should.Equal(newTryjob.ID))
 		})
 		t.Run("Conflicting mapping exists", func(t *testing.T) {
 			newTryjob := &Tryjob{}
-			assert.That(t, datastore.Put(ctx, newTryjob), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, newTryjob))
 			eid := tj.ExternalID // already maps to another Tryjob
 			_, err := m.Update(ctx, newTryjob.ID, func(tj *Tryjob) error {
 				tj.ExternalID = eid
@@ -198,7 +198,7 @@ func TestUpdate(t *testing.T) {
 		tj, err := m.Update(ctx, tryjobID, func(tj *Tryjob) error {
 			return ErrStopMutation
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.EVersion, should.Equal(int64(2)))
 		assert.That(t, tj.EntityUpdateTime, should.Match(datastore.RoundTime(ct.Clock.Now().Add(-1*time.Minute))))
 	})
@@ -211,7 +211,7 @@ func TestUpdate(t *testing.T) {
 			tj.ReusedBy = append(tj.ReusedBy, runID2)
 			return nil
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, tj.LaunchedBy, should.Equal(runID1))
 		assert.That(t, tj.ReusedBy, should.Match(common.RunIDs{runID2}))
 		assert.That(t, rm.notified, should.Match(map[common.RunID]common.TryjobIDs{
@@ -274,7 +274,7 @@ func TestMutatorBatch(t *testing.T) {
 			tj, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tryjobIDs[i] = tj.ID
 		}
 		var tryjobs []*Tryjob
@@ -289,7 +289,7 @@ func TestMutatorBatch(t *testing.T) {
 			tryjobs, err = m.FinalizeBatch(ctx, muts)
 			return err
 		}, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		for _, tj := range tryjobs {
 			assert.That(t, tj.EVersion, should.Equal(int64(2)))
@@ -304,7 +304,7 @@ func TestMutatorBatch(t *testing.T) {
 			tj, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tryjobIDs[i] = tj.ID
 		}
 		var tryjobs []*Tryjob
@@ -321,7 +321,7 @@ func TestMutatorBatch(t *testing.T) {
 			tryjobs, err = m.FinalizeBatch(ctx, muts)
 			return err
 		}, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		for _, tj := range tryjobs {
 			assert.That(t, tj.EVersion, should.Equal(int64(2)))
@@ -337,7 +337,7 @@ func TestMutatorBatch(t *testing.T) {
 			tj, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tryjobIDs[i] = tj.ID
 		}
 		var tryjobs []*Tryjob
@@ -356,7 +356,7 @@ func TestMutatorBatch(t *testing.T) {
 			}
 			return nil
 		}, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		for _, tj := range tryjobs {
 			assert.That(t, tj.EVersion, should.Equal(int64(2)))
@@ -374,7 +374,7 @@ func TestMutatorBatch(t *testing.T) {
 			tj, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 				return nil
 			})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tryjobIDs[i] = tj.ID
 		}
 		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -392,7 +392,7 @@ func TestMutatorBatch(t *testing.T) {
 			_, err = m.FinalizeBatch(ctx, muts)
 			return err
 		}, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		expectedNotify := map[common.RunID]common.TryjobIDs{}
 		for i, tjID := range tryjobIDs {

@@ -128,14 +128,14 @@ func TestHandleTask(t *testing.T) {
 
 		t.Run("noop", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			eid := tj.ExternalID
 			originalEVersion := tj.EVersion
 
 			check := func(t testing.TB) {
 				t.Helper()
-				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{ExternalId: string(eid)}), should.ErrLike(nil), truth.LineContext())
+				assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{ExternalId: string(eid)}), truth.LineContext())
 				// Reload to ensure no changes took place.
 				tj = eid.MustLoad(ctx)
 				assert.That(t, tj.EVersion, should.Equal(originalEVersion), truth.LineContext())
@@ -155,7 +155,7 @@ func TestHandleTask(t *testing.T) {
 		t.Run("succeeds updating", func(t *ftt.Test) {
 			t.Run("status and result", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				r := &run.Run{
 					ID:            tj.LaunchedBy,
 					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
@@ -179,7 +179,7 @@ func TestHandleTask(t *testing.T) {
 						},
 					},
 				}
-				assert.That(t, datastore.Put(ctx, r), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, r))
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
 
 				check := func(t testing.TB) {
@@ -194,25 +194,25 @@ func TestHandleTask(t *testing.T) {
 				}
 
 				t.Run("by internal ID", func(t *ftt.Test) {
-					assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+					assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						Id: int64(tj.ID),
-					}), should.ErrLike(nil))
+					}))
 					check(t)
 				})
 				t.Run("by external ID", func(t *ftt.Test) {
-					assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
+					assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						ExternalId: string(tj.ExternalID),
-					}), should.ErrLike(nil))
+					}))
 					check(t)
 				})
 			})
 
 			t.Run("result only", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 
 				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_UNKNOWN}, nil}}
-				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
+				assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
 				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -221,10 +221,10 @@ func TestHandleTask(t *testing.T) {
 
 			t.Run("status only", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_PENDING)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 
 				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, nil, nil}}
-				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
+				assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
 				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -233,7 +233,7 @@ func TestHandleTask(t *testing.T) {
 
 			t.Run("don't emit metrics if tryjob is already in end status", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{
 					Status: tryjob.Result_SUCCEEDED,
@@ -241,7 +241,7 @@ func TestHandleTask(t *testing.T) {
 						Retry: recipe.Output_OUTPUT_RETRY_DENIED,
 					},
 				}, nil}}
-				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), should.ErrLike(nil))
+				assert.NoErr(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}))
 				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.BeNil)
 				})
@@ -249,10 +249,10 @@ func TestHandleTask(t *testing.T) {
 		})
 		t.Run("fails to", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			t.Run("update a tryjob with an ID that doesn't exist", func(t *ftt.Test) {
-				assert.That(t, datastore.Delete(ctx, tj), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Delete(ctx, tj))
 				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					Id: int64(tj.ID),
 				}), should.ErrLike("unknown Tryjob with ID"))
@@ -286,18 +286,18 @@ func TestUpdate(t *testing.T) {
 
 		t.Run("noop", func(t *ftt.Test) {
 			tj, err := makeTryjob(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tj.Result = &tryjob.Result{
 				UpdateTime: timestamppb.New(clock.Now(ctx)),
 			}
-			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			eid := tj.ExternalID
 			originalEVersion := tj.EVersion
 			var data any
 
 			check := func(t testing.TB) {
 				t.Helper()
-				assert.That(t, updater.Update(ctx, eid, data), should.ErrLike(nil), truth.LineContext())
+				assert.NoErr(t, updater.Update(ctx, eid, data), truth.LineContext())
 				// Reload to ensure no changes took place.
 				tj = eid.MustLoad(ctx)
 				assert.That(t, tj.EVersion, should.Equal(originalEVersion), truth.LineContext())
@@ -341,7 +341,7 @@ func TestUpdate(t *testing.T) {
 		t.Run("succeeds updating", func(t *ftt.Test) {
 			t.Run("status and result", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				r := &run.Run{
 					ID:            tj.LaunchedBy,
 					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
@@ -365,14 +365,14 @@ func TestUpdate(t *testing.T) {
 						},
 					},
 				}
-				assert.That(t, datastore.Put(ctx, r), should.ErrLike(nil))
-				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.NoErr(t, datastore.Put(ctx, r))
+				assert.NoErr(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_ENDED,
 					r: &tryjob.Result{
 						Status:     tryjob.Result_SUCCEEDED,
 						UpdateTime: timestamppb.New(clock.Now(ctx)),
 					},
-				}), should.ErrLike(nil))
+				}))
 
 				// Ensure status updated.
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
@@ -385,13 +385,13 @@ func TestUpdate(t *testing.T) {
 
 			t.Run("result only", func(t *ftt.Test) {
 				tj, err := makeTryjob(ctx)
-				assert.That(t, err, should.ErrLike(nil))
-				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.NoErr(t, err)
+				assert.NoErr(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_TRIGGERED,
 					r: &tryjob.Result{
 						Status: tryjob.Result_UNKNOWN,
 					},
-				}), should.ErrLike(nil))
+				}))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
 				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -400,10 +400,10 @@ func TestUpdate(t *testing.T) {
 
 			t.Run("status only", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_PENDING)
-				assert.That(t, err, should.ErrLike(nil))
-				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.NoErr(t, err)
+				assert.NoErr(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_TRIGGERED,
-				}), should.ErrLike(nil))
+				}))
 
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
 				assert.That(t, tj.Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -412,9 +412,9 @@ func TestUpdate(t *testing.T) {
 
 			t.Run("don't emit metrics if tryjob is already in end status", func(t *ftt.Test) {
 				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 
-				assert.That(t, updater.Update(ctx, tj.ExternalID, &returnValues{
+				assert.NoErr(t, updater.Update(ctx, tj.ExternalID, &returnValues{
 					s: tryjob.Status_ENDED,
 					r: &tryjob.Result{
 						Status: tryjob.Result_SUCCEEDED,
@@ -422,7 +422,7 @@ func TestUpdate(t *testing.T) {
 							Retry: recipe.Output_OUTPUT_RETRY_DENIED,
 						},
 					},
-				}), should.ErrLike(nil))
+				}))
 				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 					assert.That(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.BeNil)
 				})

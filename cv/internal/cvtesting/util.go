@@ -164,7 +164,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	ctxTimed, cancelTimed := context.WithTimeout(ctxShared, t.MaxDuration)
 	t.TB.Cleanup(func() {
 		// Fail the test if the test has timed out.
-		assert.That(t.TB, ctxTimed.Err(), should.ErrLike(nil), truth.LineContext())
+		assert.NoErr(t.TB, ctxTimed.Err(), truth.LineContext())
 		cancelTimed()
 		cancel()
 	})
@@ -221,7 +221,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
 	t.GoMockCtl = gomock.NewController(t.TB)
-	assert.That(t.TB, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), should.ErrLike(nil), truth.LineContext())
+	assert.NoErr(t.TB, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), truth.LineContext())
 
 	return ctx
 }
@@ -340,12 +340,12 @@ func (t *Test) installDSReal(ctx context.Context, testingT testing.TB) (context.
 	ts, err := at.TokenSource()
 	if err != nil {
 		err = errors.Annotate(err, "failed to initialize the token source (are you in `$ luci-auth context`?)").Err()
-		assert.That(testingT, err, should.ErrLike(nil))
+		assert.NoErr(testingT, err)
 	}
 
 	logging.Debugf(ctx, "Using DS of project %q", project)
 	client, err := nativeDatastore.NewClient(ctx, project, option.WithTokenSource(ts))
-	assert.That(testingT, err, should.ErrLike(nil))
+	assert.NoErr(testingT, err)
 	return t.installDSshared(ctx, testingT, project, client), true
 }
 
@@ -369,7 +369,7 @@ func (t *Test) installDSEmulator(ctx context.Context, testingT testing.TB) (cont
 
 	logging.Debugf(ctx, "Using DS emulator at %q", emulatorHost)
 	client, err := nativeDatastore.NewClient(ctx, "luci-gae-emulator-test")
-	assert.That(testingT, err, should.ErrLike(nil))
+	assert.NoErr(testingT, err)
 	return t.installDSshared(ctx, testingT, "luci-gae-emulator-test", client), true
 }
 
@@ -384,7 +384,7 @@ func (t *Test) installDSshared(ctx context.Context, testingT testing.TB, cloudPr
 	ctx = info.MustNamespace(ctx, ns)
 	// Failure to clear is hard before the test,
 	// ignored after the test.
-	assert.That(testingT, clearDS(ctx), should.ErrLike(nil))
+	assert.NoErr(testingT, clearDS(ctx))
 	testingT.Cleanup(func() { _ = clearDS(ctx) })
 	return ctx
 }
