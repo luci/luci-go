@@ -48,7 +48,9 @@ const (
 )
 
 const (
-	buildSetMaxLength = 1024
+	buildSetMaxLength  = 1024
+	maxDimensionKeyLen = 64
+	maxDimensionValLen = 256
 )
 
 const (
@@ -64,6 +66,7 @@ var (
 	reservedKeys       = stringset.NewFromSlice("build_address")
 	gitilesCommitRegex = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
 	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
+	dimensionKeyRe     = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
 )
 
 func init() {
@@ -165,10 +168,10 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 		k = tag.Key
 		v = tag.Value
 		if strings.Contains(k, ":") {
-			return errors.Reason(`tag key "%s" cannot have a colon`, k).Err()
+			return errors.Reason(`tag key %q cannot have a colon`, k).Err()
 		}
 		if m == TagAppend && buildbucket.DisallowedAppendTagKeys.Has(k) {
-			return errors.Reason(`tag key "%s" cannot be added to an existing build`, k).Err()
+			return errors.Reason(`tag key %q cannot be added to an existing build`, k).Err()
 		}
 		if k == "buildset" {
 			if err := validateBuildSet(v); err != nil {
@@ -184,6 +187,12 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 		}
 		if reservedKeys.Has(k) {
 			return errors.Reason(`tag "%s" is reserved`, k).Err()
+		}
+		if err := validateKeyLength(k); err != nil {
+			return err
+		}
+		if err := validateTagValue(v); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -211,6 +220,26 @@ func validateBuildSet(bs string) error {
 		if !gerritCLRegex.MatchString(bs) {
 			return errors.Reason(`does not match regex "%s"`, gerritCLRegex).Err()
 		}
+	}
+	return nil
+}
+
+func validateKeyLength(k string) error {
+	if k == "" {
+		return errors.Reason("the key cannot be empty").Err()
+	}
+	if len(k) > maxDimensionKeyLen {
+		return errors.Reason("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(k)).Err()
+	}
+	return nil
+}
+
+func validateTagValue(v string) error {
+	if len(v) > maxDimensionValLen {
+		return errors.Reason("the value should be no longer than %d (got %d)", maxDimensionValLen, len(v)).Err()
+	}
+	if strings.TrimSpace(v) != v {
+		return errors.Reason("the value should have no leading or trailing spaces").Err()
 	}
 	return nil
 }

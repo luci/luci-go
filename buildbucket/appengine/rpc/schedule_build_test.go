@@ -7478,7 +7478,7 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
-					assert.Loosely(t, err, should.ErrLike("key must be specified"))
+					assert.Loosely(t, err, should.ErrLike("the key cannot be empty"))
 				})
 
 				t.Run("caches", func(t *ftt.Test) {

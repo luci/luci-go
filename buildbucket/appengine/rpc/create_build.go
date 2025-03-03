@@ -284,14 +284,35 @@ func validateCaches(caches []*pb.CacheEntry) error {
 	return nil
 }
 
-// validateDimensions validates the task dimension.
-func validateDimension(dim *pb.RequestedDimension) error {
+func validateDimensionKey(k string) error {
+	if err := validateKeyLength(k); err != nil {
+		return err
+	}
+	if !dimensionKeyRe.MatchString(k) {
+		return errors.Reason("the key should match %s", dimensionKeyRe).Err()
+	}
+	return nil
+}
+
+func validateDimensionValue(v string) error {
+	if v == "" {
+		return errors.Reason("the value cannot be empty").Err()
+	}
+	return validateTagValue(v)
+}
+
+// validateDimension validates the task dimension.
+func validateDimension(dim *pb.RequestedDimension, allowEmptyValue bool) error {
 	var err error
 	switch {
 	case teeErr(validateExpirationDuration(dim.GetExpiration()), &err) != nil:
 		return errors.Annotate(err, "expiration").Err()
-	case dim.GetKey() == "":
-		return errors.Reason("key must be specified").Err()
+	case teeErr(validateDimensionKey(dim.GetKey()), &err) != nil:
+		return err
+	case allowEmptyValue && dim.GetValue() == "":
+		return nil
+	case teeErr(validateDimensionValue(dim.GetValue()), &err) != nil:
+		return err
 	default:
 		return nil
 	}
@@ -300,7 +321,7 @@ func validateDimension(dim *pb.RequestedDimension) error {
 // validateDimensions validates the task dimensions.
 func validateDimensions(dims []*pb.RequestedDimension) error {
 	for i, dim := range dims {
-		switch err := validateDimension(dim); {
+		switch err := validateDimension(dim, false); {
 		case err != nil:
 			return errors.Annotate(err, "[%d]", i).Err()
 		case dim.Value == "":

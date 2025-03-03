@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/metadata"
@@ -352,14 +353,124 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			})
 
 			t.Run("Tags", func(t *ftt.Test) {
-				req.Build.Tags = []*pb.StringPair{
+				cases := []struct {
+					name string
+					tags []*pb.StringPair
+					err  any
+				}{
 					{
-						Key:   "build_address",
-						Value: "value2",
+						name: "build_address",
+						tags: []*pb.StringPair{
+							{
+								Key:   "build_address",
+								Value: "value2",
+							},
+						},
+						err: `tag "build_address" is reserved`,
+					},
+					{
+						name: "leading_space",
+						tags: []*pb.StringPair{
+							{
+								Key:   "k",
+								Value: " v",
+							},
+						},
+						err: `the value should have no leading or trailing spaces`,
+					},
+					{
+						name: "trailing_space",
+						tags: []*pb.StringPair{
+							{
+								Key:   "k",
+								Value: "v ",
+							},
+						},
+						err: `the value should have no leading or trailing spaces`,
+					},
+					{
+						name: "key_has_colon",
+						tags: []*pb.StringPair{
+							{
+								Key:   "k:k2",
+								Value: "v",
+							},
+						},
+						err: `tag key "k:k2" cannot have a colon`,
+					},
+					{
+						name: "builder_conflicts",
+						tags: []*pb.StringPair{
+							{
+								Key:   "builder",
+								Value: "bldr1",
+							},
+							{
+								Key:   "builder",
+								Value: "bldr2",
+							},
+						},
+						err: `tag "builder:bldr2" conflicts with tag "builder:bldr1"`,
+					},
+					{
+						name: "buildset_too_long",
+						tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: strings.Repeat("a", buildSetMaxLength),
+							},
+						},
+						err: `buildset tag is too long`,
+					},
+					{
+						name: "buildset_not_match_gitiles_regex",
+						tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "commit/gitiles/",
+							},
+						},
+						err: `does not match regex`,
+					},
+					{
+						name: "buildset_not_match_gerrit_regex",
+						tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "patch/gerrit/",
+							},
+						},
+						err: `does not match regex`,
+					},
+					{
+						name: "buildset_gitiles_project_wrong_prefix",
+						tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "commit/gitiles/prpject.example.com/a/prpject/src/+/d81d2e89d6c4c23a19e04187ca03adda2272f895",
+							},
+						},
+						err: `gitiles project must not start with "a/"`,
+					},
+					{
+						name: "buildset_gitiles_project_wrong_suffix",
+						tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "commit/gitiles/prpject.example.com/prpject/src.git/+/d81d2e89d6c4c23a19e04187ca03adda2272f895",
+							},
+						},
+						err: `gitiles project must not end with ".git"`,
 					},
 				}
-				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-				assert.Loosely(t, err, should.ErrLike(`build: tags`))
+
+				for _, c := range cases {
+					t.Run(c.name, func(t *ftt.Test) {
+						req.Build.Tags = c.tags
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						assert.That(t, err, should.ErrLike(c.err))
+					})
+				}
 			})
 
 			t.Run("Infra", func(t *ftt.Test) {
@@ -505,7 +616,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								},
 							}
 							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-							assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: task_dimensions: [0]: key must be specified`))
+							assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: task_dimensions: [0]: the key cannot be empty`))
 						})
 						t.Run("empty value", func(t *ftt.Test) {
 							req.Build.Infra.Swarming.TaskDimensions = []*pb.RequestedDimension{
@@ -515,7 +626,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								},
 							}
 							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-							assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: task_dimensions: [0]: value must be specified`))
+							assert.Loosely(t, err, should.ErrLike(`build: infra: swarming: task_dimensions: [0]: the value cannot be empty`))
 						})
 						t.Run("expiration", func(t *ftt.Test) {
 							req.Build.Infra.Swarming.TaskDimensions = []*pb.RequestedDimension{
@@ -587,7 +698,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 							},
 						}
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: task_dimensions: [0]: key must be specified`))
+						assert.Loosely(t, err, should.ErrLike(`build: infra: backend: task_dimensions: [0]: the key cannot be empty`))
 					})
 					t.Run("caches", func(t *ftt.Test) {
 						req.Build.Infra.Swarming = nil
