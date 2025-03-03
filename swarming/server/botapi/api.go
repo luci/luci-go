@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // BotAPIServer implements core Bot API handlers.
@@ -37,6 +38,8 @@ import (
 type BotAPIServer struct {
 	// cfg is the server config.
 	cfg *cfg.Provider
+	// lifecycleTasks is used to emit tasks related to task's lifecycle.
+	lifecycleTasks tasks.LifecycleTasks
 	// hmacSecret is used to generate new session tokens.
 	hmacSecret *hmactoken.Secret
 	// project is the Swarming Cloud Project name.
@@ -49,22 +52,33 @@ type BotAPIServer struct {
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
 	// submitUpdate calls u.Submit, but it can be mocked in tests.
 	submitUpdate func(ctx context.Context, u *model.BotInfoUpdate) error
+	// claimTxn calls op.ClaimTxn, but it can be mocked in tests.
+	claimTxn func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error)
+	// finishClaimOp calls op.Finish, but it can be mocked in tests.
+	finishClaimOp func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome)
 	// tokenServerClient produces a Token Server client, can be mocked in tests.
 	tokenServerClient func(ctx context.Context, realm string) (minterpb.TokenMinterClient, error)
 }
 
 // NewBotAPIServer constructs a new BotAPIServer.
-func NewBotAPIServer(cfg *cfg.Provider, secret *hmactoken.Secret, project, version string) *BotAPIServer {
+func NewBotAPIServer(cfg *cfg.Provider, lifecycleTasks tasks.LifecycleTasks, secret *hmactoken.Secret, project, version string) *BotAPIServer {
 	return &BotAPIServer{
-		cfg:          cfg,
-		hmacSecret:   secret,
-		project:      project,
-		version:      version,
-		botCodeCache: lru.New[string, []byte](2), // two versions: canary + stable
-		authorizeBot: botsrv.AuthorizeBot,
+		cfg:            cfg,
+		lifecycleTasks: lifecycleTasks,
+		hmacSecret:     secret,
+		project:        project,
+		version:        version,
+		botCodeCache:   lru.New[string, []byte](2), // two versions: canary + stable
+		authorizeBot:   botsrv.AuthorizeBot,
 		submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
 			_, err := u.Submit(ctx)
 			return err
+		},
+		claimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+			return op.ClaimTxn(ctx, bot)
+		},
+		finishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+			op.Finished(ctx, outcome)
 		},
 		tokenServerClient: tokenServerClient, // see tokens.go
 	}

@@ -111,6 +111,12 @@ func main() {
 		}
 		srv.RunInBackground("swarming.config", cfg.RefreshPeriodically)
 
+		// Handlers for TQ tasks involved in task lifecycle.
+		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
+			Dispatcher: &tq.Default,
+		}
+		taskLifeCycle.RegisterTQTasks()
+
 		// A reverse proxy that sends a portion of requests to the Python server.
 		// Proxied requests have "/python/..." prepended in the URL to make them
 		// correctly pass dispatch.yaml rules and not get routed back to the Go
@@ -134,7 +140,7 @@ func main() {
 		// A server that can authenticate bot API calls and route them to Python.
 		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, knownBotProvider, srv.Options.CloudProject, tokenSecret)
 		// A server that actually handles core Bot API calls.
-		botAPI := botapi.NewBotAPIServer(cfg, tokenSecret, srv.Options.CloudProject, srv.Options.ImageVersion())
+		botAPI := botapi.NewBotAPIServer(cfg, taskLifeCycle, tokenSecret, srv.Options.CloudProject, srv.Options.ImageVersion())
 
 		// A minimal handler used by bots to test network connectivity. Install it
 		// directly into the root router because we purposefully do not want to do
@@ -191,12 +197,6 @@ func main() {
 		srv.RegisterCleanup(func(context.Context) {
 			pubSubNotifier.Stop()
 		})
-
-		// Handlers for TQ tasks involved in task lifecycle.
-		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
-			Dispatcher: &tq.Default,
-		}
-		taskLifeCycle.RegisterTQTasks()
 
 		// Old task deletion cron and TQ handlers.
 		tasks.RegisterCleanupHandlers(&cron.Default, &tq.Default)

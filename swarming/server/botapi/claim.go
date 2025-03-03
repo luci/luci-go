@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/resultdb"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // ClaimCommand instructs the bot what to do after it calls /bot/claim.
@@ -271,7 +272,6 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 			state = &body.State
 		}
 	}
-	_ = state // TODO: use it
 
 	// Fetch the requested TaskToRun.
 	reqKey, err := model.TaskIDToRequestKey(ctx, body.TaskID)
@@ -305,7 +305,8 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	// Two bots should not be able to collide in their claim IDs.
 	claimID := fmt.Sprintf("%s:%s", r.Session.BotId, body.ClaimID)
 
-	// Check the task wasn't claimed yet or was already claimed by us.
+	// Check the task wasn't claimed yet or was already claimed by us. This will
+	// be rechecked under transaction in ClaimOp.ClaimTxn.
 	if !ttr.IsReapable() {
 		switch existing := ttr.ClaimID.Get(); {
 		case existing == "":
@@ -327,8 +328,66 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		}
 	}
 
-	// Do a transaction to claim this TaskToRun.
-	panic("TODO")
+	// Fetch task details outside of the transaction.
+	details, err := srv.fetchClaimDetails(ctx, ttr, r)
+	switch {
+	case details == nil:
+		// This should not be happening.
+		return srv.claimSkipped(ctx, ttr, "No such task")
+	case err != nil:
+		logging.Errorf(ctx, "Error fetching task details: %s", err)
+		return nil, status.Errorf(codes.Internal, "datastore error fetching task details")
+	}
+
+	// This will drive the task side of the claim transaction. Updated inside
+	// the BotInfo transaction callback below.
+	claimOp := &tasks.ClaimOp{
+		Request:        details.req,
+		TaskToRunKey:   ttr.Key,
+		ClaimID:        claimID,
+		LifecycleTasks: srv.lifecycleTasks,
+	}
+
+	// Transactionally claim the task and assign it to the bot. The transaction
+	// happens as part of the BotInfoUpdate operation that assigns the task ID
+	// to the bot.
+	var outcome *tasks.ClaimTxnOutcome
+	update := &model.BotInfoUpdate{
+		BotID:         r.Session.BotId,
+		EventType:     model.BotEventTask,
+		EventDedupKey: body.ClaimID,
+		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
+			if bot == nil {
+				return false, errors.Reason("unexpectedly missing BotInfo entity").Err()
+			}
+			outcome, err = srv.claimTxn(ctx, claimOp, &tasks.BotDetails{
+				Dimensions:       r.Dimensions.ToMap(),
+				Version:          bot.Version,
+				LogsCloudProject: r.Session.BotConfig.LogsCloudProject,
+				IdleSince:        bot.IdleSince.Get(),
+			})
+			proceed = err == nil && outcome.Claimed
+			return
+		},
+		State: state,
+		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+			SessionID: r.Session.SessionId,
+		}),
+		TaskInfo: &model.BotEventTaskInfo{
+			TaskID:    model.RequestKeyToTaskID(reqKey, model.AsRunResult),
+			TaskName:  details.req.Name,
+			TaskFlags: details.req.TaskFlags(),
+		},
+	}
+	if err := srv.submitUpdate(ctx, update); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to claim the task: %s", err)
+	}
+	srv.finishClaimOp(ctx, claimOp, outcome)
+
+	if outcome.Unavailable != "" {
+		return srv.claimSkipped(ctx, ttr, outcome.Unavailable)
+	}
+	return srv.claimTask(ctx, details, r)
 }
 
 // claimDetails are fetched before hitting heavy transactions.

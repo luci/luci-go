@@ -19,12 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -41,12 +43,20 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(
+		datastore.Nullable[string, datastore.Indexed]{},
+	))
+}
 
 func TestClaim(t *testing.T) {
 	t.Parallel()
 
 	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+	var idleSince = testTime.Add(-time.Hour)
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
@@ -69,7 +79,7 @@ func TestClaim(t *testing.T) {
 			hmacSecret: secret,
 		}
 
-		prepTask := func(dims model.TaskDimensions, claimID *string) {
+		prepTask := func(dims model.TaskDimensions, claimID *string) (*model.TaskRequest, *model.TaskToRun) {
 			var claim datastore.Optional[string, datastore.Unindexed]
 			var exp datastore.Optional[time.Time, datastore.Indexed]
 			if claimID != nil {
@@ -77,24 +87,25 @@ func TestClaim(t *testing.T) {
 			} else {
 				exp.Set(testTime.Add(time.Hour))
 			}
-			assert.NoErr(t, datastore.Put(ctx,
-				&model.TaskRequest{
-					Key: reqKey,
-					TaskSlices: []model.TaskSlice{
-						{
-							Properties: model.TaskProperties{
-								Dimensions: dims,
-							},
+			req := &model.TaskRequest{
+				Key:  reqKey,
+				Name: "task-name",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: dims,
 						},
 					},
 				},
-				&model.TaskToRun{
-					Key:        model.TaskToRunKey(ctx, reqKey, ttrShard, ttrID),
-					Dimensions: dims,
-					Expiration: exp,
-					ClaimID:    claim,
-				},
-			))
+			}
+			ttr := &model.TaskToRun{
+				Key:        model.TaskToRunKey(ctx, reqKey, ttrShard, ttrID),
+				Dimensions: dims,
+				Expiration: exp,
+				ClaimID:    claim,
+			}
+			assert.NoErr(t, datastore.Put(ctx, req, ttr))
+			return req, ttr
 		}
 
 		call := func(req *ClaimRequest) (*ClaimResponse, error) {
@@ -103,8 +114,11 @@ func TestClaim(t *testing.T) {
 			})
 			resp, err := srv.Claim(ctx, req, &botsrv.Request{
 				Session: &internalspb.Session{
-					BotId:     "bot-id",
-					BotConfig: &internalspb.BotConfig{},
+					BotId: "bot-id",
+					BotConfig: &internalspb.BotConfig{
+						LogsCloudProject: "logs-cloud-project",
+					},
+					SessionId: "session-id",
 				},
 				Dimensions: []string{
 					"id:bot-id",
@@ -229,7 +243,158 @@ func TestClaim(t *testing.T) {
 			}))
 		})
 
-		// TODO: The rest.
+		t.Run("Claim txn OK", func(t *ftt.Test) {
+			var botInfoUpdate *model.BotInfoUpdate
+			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				botInfoUpdate = u
+				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					proceed, err := u.Prepare(ctx, &model.BotInfo{
+						Key: model.BotInfoKey(ctx, u.BotID),
+						BotCommon: model.BotCommon{
+							Version:   "bot-version",
+							IdleSince: datastore.NewUnindexedOptional(idleSince),
+						},
+					})
+					assert.NoErr(t, err)
+					assert.That(t, proceed, should.BeTrue)
+					return nil
+				}, nil)
+			}
+
+			var claimOp *tasks.ClaimOp
+			var botDetails *tasks.BotDetails
+			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+				claimOp = op
+				botDetails = bot
+				return &tasks.ClaimTxnOutcome{Claimed: true}, nil
+			}
+			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+				assert.That(t, outcome.Claimed, should.BeTrue)
+			}
+
+			req, ttr := prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			resp, err := call(&ClaimRequest{
+				ClaimID:        "new-claim-id",
+				TaskID:         taskID,
+				TaskToRunShard: ttrShard,
+				TaskToRunID:    ttrID,
+				State:          botstate.Dict{JSON: []byte(`{"some": "state"}`)},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, resp, should.Match(&ClaimResponse{
+				Cmd:      ClaimRun,
+				TaskID:   runID,
+				Session:  resp.Session,
+				Manifest: resp.Manifest,
+			}))
+
+			assert.That(t, botInfoUpdate, should.Match(&model.BotInfoUpdate{
+				BotID:         "bot-id",
+				EventType:     model.BotEventTask,
+				EventDedupKey: "new-claim-id",
+				Prepare:       botInfoUpdate.Prepare,
+				State:         &botstate.Dict{JSON: []byte(`{"some": "state"}`)},
+				CallInfo: &model.BotEventCallInfo{
+					SessionID:       "session-id",
+					ExternalIP:      "127.0.0.1",
+					AuthenticatedAs: "bot:bot-id",
+				},
+				TaskInfo: &model.BotEventTaskInfo{
+					TaskID:    runID,
+					TaskName:  "task-name",
+					TaskFlags: 0,
+				},
+			}))
+
+			assert.That(t, claimOp, should.Match(&tasks.ClaimOp{
+				Request:      req,
+				TaskToRunKey: ttr.Key,
+				ClaimID:      "bot-id:new-claim-id",
+			}))
+
+			assert.That(t, botDetails, should.Match(&tasks.BotDetails{
+				Dimensions:       model.BotDimensions{"id": {"bot-id"}, "pool": {"bot-pool"}},
+				Version:          "bot-version",
+				LogsCloudProject: "logs-cloud-project",
+				IdleSince:        idleSince,
+			}))
+		})
+
+		t.Run("Claim txn unavailable", func(t *ftt.Test) {
+			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					proceed, err := u.Prepare(ctx, &model.BotInfo{
+						Key: model.BotInfoKey(ctx, u.BotID),
+						BotCommon: model.BotCommon{
+							Version:   "bot-version",
+							IdleSince: datastore.NewUnindexedOptional(idleSince),
+						},
+					})
+					assert.NoErr(t, err)
+					assert.That(t, proceed, should.BeFalse)
+					return nil
+				}, nil)
+			}
+
+			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+				return &tasks.ClaimTxnOutcome{Unavailable: "unavailable"}, nil
+			}
+			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+				assert.That(t, outcome.Claimed, should.BeFalse)
+			}
+
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			resp, err := call(&ClaimRequest{
+				ClaimID:        "new-claim-id",
+				TaskID:         taskID,
+				TaskToRunShard: ttrShard,
+				TaskToRunID:    ttrID,
+			})
+			assert.NoErr(t, err)
+			assert.That(t, resp, should.Match(&ClaimResponse{
+				Cmd:    ClaimSkip,
+				Reason: "unavailable",
+			}))
+		})
+
+		t.Run("Claim txn already claimed", func(t *ftt.Test) {
+			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					proceed, err := u.Prepare(ctx, &model.BotInfo{
+						Key: model.BotInfoKey(ctx, u.BotID),
+						BotCommon: model.BotCommon{
+							Version:   "bot-version",
+							IdleSince: datastore.NewUnindexedOptional(idleSince),
+						},
+					})
+					assert.NoErr(t, err)
+					assert.That(t, proceed, should.BeFalse)
+					return nil
+				}, nil)
+			}
+
+			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+				return &tasks.ClaimTxnOutcome{}, nil
+			}
+			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+				assert.That(t, outcome.Claimed, should.BeFalse)
+			}
+
+			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
+			resp, err := call(&ClaimRequest{
+				ClaimID:        "new-claim-id",
+				TaskID:         taskID,
+				TaskToRunShard: ttrShard,
+				TaskToRunID:    ttrID,
+			})
+			assert.NoErr(t, err)
+			assert.That(t, resp, should.Match(&ClaimResponse{
+				Cmd:      ClaimRun,
+				TaskID:   runID,
+				Session:  resp.Session,
+				Manifest: resp.Manifest,
+			}))
+		})
 	})
 }
 

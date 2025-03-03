@@ -92,7 +92,7 @@ func TestHandshake(t *testing.T) {
 			Active: []byte("secret"),
 		})
 
-		srv := NewBotAPIServer(conf, secret, "test-project", serverVer)
+		srv := NewBotAPIServer(conf, nil, secret, "test-project", serverVer)
 		srv.authorizeBot = func(ctx context.Context, bot string, methods []*configpb.BotAuth) error {
 			if bot == botID {
 				return nil
