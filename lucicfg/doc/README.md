@@ -32,6 +32,10 @@
 
 
 
+
+
+
+
 [TOC]
 
 ## Overview
@@ -4325,6 +4329,193 @@ Reads a serialized proto message from a file, deserializes and returns it.
 #### Returns  {#io.read-proto-returns}
 
 Deserialized proto message constructed via `ctor`.
+
+
+
+
+
+
+## (Experimental) LUCICFG_PACKAGE {#lucicfg-package}
+
+
+
+
+
+
+### declare {#declare}
+
+```python
+declare(name)
+```
+
+
+
+Sets the import name for this lucicfg package.
+
+The name must start with @ - all load statements referring to this package as
+remote code will use this name to refer to .star files within this
+package.
+
+For repos containing recipes, this should be the same value as the recipe
+repo-name for consistency, though to avoid recipe<->lucicfg entanglement,
+this is not a requirement.
+
+This statement is required exactly once.
+
+The names `@stdlib`, `@__main__` and `@proto` are reserved.
+
+#### Arguments {#declare-args}
+
+* **name**: the name for this package. Required.
+
+
+
+
+### require_lucicfg {#require-lucicfg}
+
+```python
+require_lucicfg(ver)
+```
+
+
+
+Set the minimal lucicfg version required by this package.
+
+This statement is required exactly once.
+
+#### Arguments {#require-lucicfg-args}
+
+* **ver**: the minimal lucicfg version required. Required.
+
+
+
+
+### depend {#depend}
+
+```python
+depend(name, src)
+```
+
+
+
+Require package dependency for the .star files in this package.
+
+Source information need to be provided and a pin file will be calculated
+based on its constrains.
+
+Name must match the name declared by the packacke.
+
+#### Arguments {#depend-args}
+
+* **name**: the name of the depended package. Required.
+* **src**: a source definition for fetcher to make package source available. Required.
+
+
+
+
+
+
+exported
+
+
+### source.googlesource {#source.googlesource}
+
+```python
+source.googlesource(
+    # Required arguments.
+    host,
+    repo,
+    ref,
+    path,
+    minimum_version,
+)
+```
+
+
+
+Define a source for googlesource.com.
+
+#### Arguments {#source.googlesource-args}
+
+* **host**: a googlesource.com source host. Required.
+* **repo**: a name for the repo in `https://<host>.googlesource.com/<repo>`. Required.
+* **ref**: a full git reference (e.g. refs/heads/main) for the repo. The history of this reference is used to determine the ordering of all commits. Required.
+* **path**: a directory path to the lucicfg package within this source repo. Required.
+* **minimum_version**: a full git commit id used as minimum version required for the repo. This is a constraint that ensures this version is the ancestry of the git commit agreed on. Required.
+
+
+#### Returns  {#source.googlesource-returns}
+
+A source struct for source fetcher.
+
+
+
+### source.read_submodule {#source.read-submodule}
+
+```python
+source.read_submodule(path)
+```
+
+
+
+Reads local submodule and returns the source definition for the path.
+
+The path must be within a submodule of the current repo for the package.
+
+#### Arguments {#source.read-submodule-args}
+
+* **path**: a path to a lucicfg package within a submodule. Required.
+
+
+#### Returns  {#source.read-submodule-returns}
+
+A source struct from the submodule.
+
+
+
+### source.read_local {#source.read-local}
+
+```python
+source.read_local(path)
+```
+
+
+
+Reads local repo and returns the source definition for the path.
+
+The path must be within the same repo for the package.
+
+#### Arguments {#source.read-local-args}
+
+* **path**: a path to a lucicfg package within the repo. Required.
+
+
+#### Returns  {#source.read-local-returns}
+
+A source struct from the local path.
+
+
+
+
+
+exported
+
+
+### options.fmt {#options.fmt}
+
+```python
+options.fmt(paths = None, function_args_sort = None)
+```
+
+
+
+set options for `lucicfg fmt`.
+
+#### Arguments {#options.fmt-args}
+
+* **paths**: forward-slash delimited path prefixes for which this Rules message applies. lucicfg will organize all Rules by path. Rules with duplicate path values are not permitted (i.e. you cannot have two Rules with a path of "something", nor can you have the path "something" duplicated within a single Rules entry). When processing files, lucicfg will calculate the file's path as relative to this lucicfg package, and will select a single Rules set based on the longest matching path prefix. For example, if there are two Rules sets, one formatting "a" and another formatting "a/folder", then for the file "a/folder/file.star", only the second Rules set would apply. If NO Rules set matches the file path, then only default formatting will occur (i.e. lucicfg will only apply formatting which is not controlled by this Rules message. In particular, this means that formatting will not attempt to reorder function call arguments in any way). Default is [].
+* **function_args_sort**: a list of arguments allows you to reorder the function call sites, based on the name of the arguments. If this is set, then all functions will be sorted first by the order of its `arg` field, and then alphanumerically. This implies that setting this message without setting any `arg` values will sort all function call sites alphabetically. If this message is completely omitted, no call site function argument reordering will occur. The sorting only applies to kwarg-style arguments in files we want to format. Default is [].
+
 
 
 

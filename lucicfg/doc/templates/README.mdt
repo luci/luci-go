@@ -59,6 +59,10 @@
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 {{ $buildbucket := Symbol "@stdlib//builtins.star" "buildbucket" }}
 
+{{ $pkg := Symbol "@pkg//pkg.star" "" }}
+{{ $pkg_source := Symbol "@pkg//pkg.star" "source" }}
+{{ $pkg_options := Symbol "@pkg//pkg.star" "options" }}
+
 {{/*
   Some symbols referenced from the non-generated portion of the doc below.
 */}}
@@ -626,3 +630,13 @@ In addition, `lucicfg` exposes the following functions.
 {{template "gen-funcs-doc" $json}}
 {{template "gen-funcs-doc" $proto}}
 {{template "gen-funcs-doc" $io}}
+
+
+## (Experimental) LUCICFG_PACKAGE {#lucicfg-package}
+{{/*
+  TODO(fancl): updates pkg documents.
+*/}}
+
+{{template "gen-funcs-doc" $pkg}}
+{{template "gen-funcs-doc" $pkg_source}}
+{{template "gen-funcs-doc" $pkg_options}}
