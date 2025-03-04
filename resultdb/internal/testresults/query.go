@@ -240,11 +240,10 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		// Generate test result name now in case tr.TestId and tr.ResultId become
 		// empty after q.Mask.Trim(tr).
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
-		tvID, err := pbutil.ParseTestVariantIdentifier(tr.TestId, tr.Variant)
+		tvID, err := pbutil.ParseTestVariantIdentifierForOutput(tr.TestId, tr.Variant)
 		if err != nil {
 			return nil, errors.Annotate(err, "populate test variant identifier for %s", trName).Err()
 		}
-		pbutil.PopulateTestVariantIdentifierHashes(tvID)
 
 		tr.TestVariantId = tvID
 		tr.SummaryHtml = string(summaryHTML)

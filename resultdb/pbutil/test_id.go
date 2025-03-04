@@ -213,9 +213,9 @@ func VariantFromTestVariantIdentifier(id *pb.TestVariantIdentifier) *pb.Variant 
 	return proto.Clone(id.ModuleVariant).(*pb.Variant)
 }
 
-// ParseTestVariantIdentifier constructs a test variant identifier from the
-// given flat test ID and variant. OUTPUT_ONLY fields are not set.
-func ParseTestVariantIdentifier(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
+// ParseTestVariantIdentifierForInput constructs a test variant identifier from the
+// given flat test ID and variant. OUTPUT_ONLY fields are NOT set.
+func ParseTestVariantIdentifierForInput(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
 	testIdentifier, err := ParseAndValidateTestID(testID)
 	if err != nil {
 		return nil, err
@@ -229,6 +229,18 @@ func ParseTestVariantIdentifier(testID string, variant *pb.Variant) (*pb.TestVar
 		FineName:      testIdentifier.FineName,
 		CaseName:      testIdentifier.CaseName,
 	}, nil
+}
+
+// ParseTestVariantIdentifierForOutput constructs a test variant identifier from the
+// given flat test ID and variant. OUTPUT_ONLY fields are set.
+func ParseTestVariantIdentifierForOutput(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
+	result, err := ParseTestVariantIdentifierForInput(testID, variant)
+	if err != nil {
+		return nil, err
+	}
+	// Set OUTPUT_ONLY fields.
+	PopulateTestVariantIdentifierHashes(result)
+	return result, nil
 }
 
 // PopulateTestVariantIdentifierHashes computes the OUTPUT_ONLY fields on TestVariantIdentifier

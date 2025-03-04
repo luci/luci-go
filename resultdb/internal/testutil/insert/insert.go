@@ -238,11 +238,10 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 		if status == pb.TestStatus_SKIP {
 			skipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 		}
-		tvID, err := pbutil.ParseTestVariantIdentifier(testID, v)
+		tvID, err := pbutil.ParseTestVariantIdentifierForOutput(testID, v)
 		if err != nil {
 			panic(errors.Annotate(err, "parse test variant identifier").Err())
 		}
-		pbutil.PopulateTestVariantIdentifierHashes(tvID)
 
 		trs[i] = &pb.TestResult{
 			Name:          pbutil.TestResultName(invID, testID, resultID),

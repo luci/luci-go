@@ -98,7 +98,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
 
-		ex.TestVariantId, err = pbutil.ParseTestVariantIdentifier(ex.TestId, ex.Variant)
+		ex.TestVariantId, err = pbutil.ParseTestVariantIdentifierForOutput(ex.TestId, ex.Variant)
 		if err != nil {
 			return errors.Annotate(err, "parse test variant identifier").Err()
 		}

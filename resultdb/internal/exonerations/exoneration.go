@@ -76,7 +76,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	}
 
 	ret.ExplanationHtml = string(explanationHTML)
-	ret.TestVariantId, err = pbutil.ParseTestVariantIdentifier(ret.TestId, ret.Variant)
+	ret.TestVariantId, err = pbutil.ParseTestVariantIdentifierForOutput(ret.TestId, ret.Variant)
 	if err != nil {
 		return nil, errors.Annotate(err, "parse test variant identifier").Err()
 	}
