@@ -470,20 +470,20 @@ func TestQueryTestResults(t *testing.T) {
 			}
 
 			t.Run(`Present`, func(t *ftt.Test) {
-				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_identifier")
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_id")
 				results, _ := mustFetch(q)
 				for _, r := range results {
-					assert.Loosely(t, r.TestVariantIdentifier, should.Match(expectedTVID))
+					assert.Loosely(t, r.TestVariantId, should.Match(expectedTVID))
 					assert.Loosely(t, r.TestId, should.BeEmpty)
 					assert.Loosely(t, r.Variant, should.BeNil)
 					assert.Loosely(t, r.VariantHash, should.BeEmpty)
 				}
 			})
 			t.Run(`Partially Present`, func(t *ftt.Test) {
-				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_identifier.fine_name", "test_variant_identifier.case_name")
+				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_variant_id.fine_name", "test_variant_id.case_name")
 				results, _ := mustFetch(q)
 				for _, r := range results {
-					assert.Loosely(t, r.TestVariantIdentifier, should.Match(&pb.TestVariantIdentifier{
+					assert.Loosely(t, r.TestVariantId, should.Match(&pb.TestVariantIdentifier{
 						FineName: "ValidationTests",
 						CaseName: "FooBar",
 					}))
@@ -497,7 +497,7 @@ func TestQueryTestResults(t *testing.T) {
 				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name")
 				results, _ := mustFetch(q)
 				for _, r := range results {
-					assert.Loosely(t, r.TestVariantIdentifier, should.BeNil)
+					assert.Loosely(t, r.TestVariantId, should.BeNil)
 					assert.Loosely(t, r.TestId, should.BeEmpty)
 					assert.Loosely(t, r.Variant, should.BeNil)
 					assert.Loosely(t, r.VariantHash, should.BeEmpty)
@@ -674,7 +674,7 @@ func TestToLimitedData(t *testing.T) {
 			Name:     name,
 			TestId:   testID,
 			ResultId: resultID,
-			TestVariantIdentifier: &pb.TestVariantIdentifier{
+			TestVariantId: &pb.TestVariantIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "scheme",
 				ModuleVariant:     variant,
@@ -727,7 +727,7 @@ func TestToLimitedData(t *testing.T) {
 			Name:     name,
 			TestId:   testID,
 			ResultId: resultID,
-			TestVariantIdentifier: &pb.TestVariantIdentifier{
+			TestVariantId: &pb.TestVariantIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "scheme",
 				ModuleVariantHash: variantHash,

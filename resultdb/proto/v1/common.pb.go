@@ -226,8 +226,11 @@ type TestVariantIdentifier struct {
 	// e.g. specific ABI (x64/x86/...), build flags and/or operating system.
 	//
 	// Variants identify the unique ways the module was run compared to every other way
-	// the module is run by the LUCI project. As such, some variant keys may be repeated
-	// for all modules in an invocation.
+	// the module is run by the LUCI project. As such, some variant key-value pairs
+	// may be repeated for all modules in an invocation.
+	//
+	// N.B. Presently this is always the same as test_result.variant but semantics could
+	// diverge in future if variants are introduced at other levels.
 	ModuleVariant *Variant `protobuf:"bytes,3,opt,name=module_variant,json=moduleVariant,proto3" json:"module_variant,omitempty"`
 	// Hash of the module variant.
 	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in module_variant.items()))))[:8].

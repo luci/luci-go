@@ -76,7 +76,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	}
 
 	ret.ExplanationHtml = string(explanationHTML)
-	ret.TestVariantIdentifier, err = pbutil.ParseTestVariantIdentifier(ret.TestId, ret.Variant)
+	ret.TestVariantId, err = pbutil.ParseTestVariantIdentifier(ret.TestId, ret.Variant)
 	if err != nil {
 		return nil, errors.Annotate(err, "parse test variant identifier").Err()
 	}
@@ -85,6 +85,6 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	// hash of the variant is not always the variant_hash.
 	// Set ModuleVariantHash directly to the stored variant hash as a work around,
 	// do not compute it.
-	ret.TestVariantIdentifier.ModuleVariantHash = ret.VariantHash
+	ret.TestVariantId.ModuleVariantHash = ret.VariantHash
 	return ret, nil
 }

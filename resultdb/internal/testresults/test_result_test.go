@@ -94,7 +94,7 @@ func TestRead(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, tr, should.Match(&pb.TestResult{
 			Name: name,
-			TestVariantIdentifier: &pb.TestVariantIdentifier{
+			TestVariantId: &pb.TestVariantIdentifier{
 				ModuleName:        "//infra/junit_tests",
 				ModuleScheme:      "junit",
 				ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),

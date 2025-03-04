@@ -56,7 +56,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 	if ex == nil {
 		return errors.Reason("unspecified").Err()
 	}
-	if ex.TestVariantIdentifier == nil && ex.TestId != "" {
+	if ex.TestVariantId == nil && ex.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant or variant_hash fields (even though they are
 		// officially OUTPUT_ONLY now).
@@ -96,13 +96,13 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// Note that TestVariantIdentifier.ModuleVariantHash is also output only and should
 		// also be ignored.
 
-		if err := pbutil.ValidateTestVariantIdentifier(ex.TestVariantIdentifier); err != nil {
-			return errors.Annotate(err, "test_variant_identifier").Err()
+		if err := pbutil.ValidateTestVariantIdentifier(ex.TestVariantId); err != nil {
+			return errors.Annotate(err, "test_variant_id").Err()
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(ex.TestVariantIdentifier)); err != nil {
-			return errors.Annotate(err, "test_variant_identifier").Err()
+		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(ex.TestVariantId)); err != nil {
+			return errors.Annotate(err, "test_variant_id").Err()
 		}
 	}
 
@@ -155,15 +155,15 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 	var variantHash string
 	var testVariantIdentifier *pb.TestVariantIdentifier
 
-	if body.TestVariantIdentifier != nil {
+	if body.TestVariantId != nil {
 		// Not a legacy uploader.
 		// Populate TestId, Variant, VariantHash in the result.
-		testID = pbutil.TestIDFromTestVariantIdentifier(body.TestVariantIdentifier)
-		variant = pbutil.VariantFromTestVariantIdentifier(body.TestVariantIdentifier)
+		testID = pbutil.TestIDFromTestVariantIdentifier(body.TestVariantId)
+		variant = pbutil.VariantFromTestVariantIdentifier(body.TestVariantId)
 		variantHash = pbutil.VariantHash(variant)
 
 		// Populate the output only fields in TestVariantIdentifier.
-		testVariantIdentifier = proto.Clone(body.TestVariantIdentifier).(*pb.TestVariantIdentifier)
+		testVariantIdentifier = proto.Clone(body.TestVariantId).(*pb.TestVariantIdentifier)
 		pbutil.PopulateTestVariantIdentifierHashes(testVariantIdentifier)
 	} else {
 		// Legacy uploader.
@@ -188,14 +188,14 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 
 	exonerationID := fmt.Sprintf("%s:%s", variantHash, exonerationIDSuffix)
 	ret := &pb.TestExoneration{
-		Name:                  pbutil.TestExonerationName(string(invID), testID, exonerationID),
-		TestVariantIdentifier: testVariantIdentifier,
-		TestId:                testID,
-		Variant:               variant,
-		VariantHash:           variantHash,
-		ExonerationId:         exonerationID,
-		ExplanationHtml:       body.ExplanationHtml,
-		Reason:                body.Reason,
+		Name:            pbutil.TestExonerationName(string(invID), testID, exonerationID),
+		TestVariantId:   testVariantIdentifier,
+		TestId:          testID,
+		Variant:         variant,
+		VariantHash:     variantHash,
+		ExonerationId:   exonerationID,
+		ExplanationHtml: body.ExplanationHtml,
+		Reason:          body.Reason,
 	}
 
 	mutation := mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]any{

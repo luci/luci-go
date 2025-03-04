@@ -56,7 +56,7 @@ func TestRead(t *testing.T) {
 			assert.Loosely(t, ex, should.Match(&pb.TestExoneration{
 				Name:          name,
 				ExonerationId: "id",
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "//infra/junit_tests",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
@@ -94,7 +94,7 @@ func TestRead(t *testing.T) {
 				Name:          name,
 				ExonerationId: "id",
 				TestId:        "t t",
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "legacy",
 					ModuleScheme:      "legacy",
 					ModuleVariantHash: "deadbeef",

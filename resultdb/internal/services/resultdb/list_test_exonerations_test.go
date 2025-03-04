@@ -100,7 +100,7 @@ func TestListTestExonerations(t *testing.T) {
 			{
 				Name:   pbutil.TestExonerationName("inv", testID, "0"),
 				TestId: testID,
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",
 					ModuleScheme:      "gtest",
 					ModuleVariant:     var0,
@@ -117,7 +117,7 @@ func TestListTestExonerations(t *testing.T) {
 			{
 				Name:   pbutil.TestExonerationName("inv", testID, "1"),
 				TestId: testID,
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",
 					ModuleScheme:      "gtest",
 					ModuleVariantHash: "deadbeef",
@@ -131,7 +131,7 @@ func TestListTestExonerations(t *testing.T) {
 			{
 				Name:   pbutil.TestExonerationName("inv", testID, "2"),
 				TestId: testID,
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",
 					ModuleScheme:      "gtest",
 					ModuleVariantHash: "deadbeef",

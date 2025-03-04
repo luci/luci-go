@@ -245,20 +245,20 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 		pbutil.PopulateTestVariantIdentifierHashes(tvID)
 
 		trs[i] = &pb.TestResult{
-			Name:                  pbutil.TestResultName(invID, testID, resultID),
-			TestId:                testID,
-			ResultId:              resultID,
-			TestVariantIdentifier: tvID,
-			Variant:               v,
-			VariantHash:           pbutil.VariantHash(v),
-			Expected:              status == pb.TestStatus_PASS,
-			Status:                status,
-			Duration:              &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-			SummaryHtml:           "SummaryHtml",
-			TestMetadata:          &pb.TestMetadata{Name: "testname"},
-			FailureReason:         reason,
-			Properties:            &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
-			SkipReason:            skipReason,
+			Name:          pbutil.TestResultName(invID, testID, resultID),
+			TestId:        testID,
+			ResultId:      resultID,
+			TestVariantId: tvID,
+			Variant:       v,
+			VariantHash:   pbutil.VariantHash(v),
+			Expected:      status == pb.TestStatus_PASS,
+			Status:        status,
+			Duration:      &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:   "SummaryHtml",
+			TestMetadata:  &pb.TestMetadata{Name: "testname"},
+			FailureReason: reason,
+			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:    skipReason,
 		}
 	}
 	return trs

@@ -34,12 +34,12 @@ import (
 var limitedFields = mask.MustFromReadMask(&pb.TestExoneration{},
 	"name",
 	"test_id",
-	"test_variant_identifier.module_name",
-	"test_variant_identifier.module_scheme",
-	"test_variant_identifier.module_variant_hash",
-	"test_variant_identifier.coarse_name",
-	"test_variant_identifier.fine_name",
-	"test_variant_identifier.case_name",
+	"test_variant_id.module_name",
+	"test_variant_id.module_scheme",
+	"test_variant_id.module_variant_hash",
+	"test_variant_id.coarse_name",
+	"test_variant_id.fine_name",
+	"test_variant_id.case_name",
 	"exoneration_id",
 	"variant_hash",
 	"explanation_html",
@@ -98,7 +98,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
 
-		ex.TestVariantIdentifier, err = pbutil.ParseTestVariantIdentifier(ex.TestId, ex.Variant)
+		ex.TestVariantId, err = pbutil.ParseTestVariantIdentifier(ex.TestId, ex.Variant)
 		if err != nil {
 			return errors.Annotate(err, "parse test variant identifier").Err()
 		}
@@ -107,7 +107,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		// hash of the variant is not always the variant_hash.
 		// Set ModuleVariantHash directly to the stored variant hash as a work around,
 		// do not compute it.
-		ex.TestVariantIdentifier.ModuleVariantHash = ex.VariantHash
+		ex.TestVariantId.ModuleVariantHash = ex.VariantHash
 
 		tes = append(tes, ex)
 		return nil

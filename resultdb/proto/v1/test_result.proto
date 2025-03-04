@@ -58,7 +58,7 @@ message TestResult {
   //
   // When uploading results, this should be specified in preference
   // to test_id and variant below (which is supported only for legacy uploaders).
-  TestVariantIdentifier test_variant_identifier = 19 [(google.api.field_behavior) = IMMUTABLE];
+  TestVariantIdentifier test_variant_id = 19 [(google.api.field_behavior) = IMMUTABLE];
 
   // The flat test id, a unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]{1,512}$
@@ -241,7 +241,7 @@ message TestExoneration {
   //
   // When uploading exonerations, this should be specified in preference
   // to test_id and variant below (which is supported only for legacy uploaders).
-  TestVariantIdentifier test_variant_identifier = 9 [(google.api.field_behavior) = IMMUTABLE];
+  TestVariantIdentifier test_variant_id = 9 [(google.api.field_behavior) = IMMUTABLE];
 
   // The flat test id, a unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]{1,512}$

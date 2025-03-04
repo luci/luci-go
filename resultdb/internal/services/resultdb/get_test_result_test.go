@@ -97,7 +97,7 @@ func TestGetTestResult(t *testing.T) {
 		expected := &pb.TestResult{
 			Name:   "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0",
 			TestId: "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
-			TestVariantIdentifier: &pb.TestVariantIdentifier{
+			TestVariantId: &pb.TestVariantIdentifier{
 				ModuleName:        "//infra/junit_tests",
 				ModuleScheme:      "junit",
 				ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
@@ -140,7 +140,7 @@ func TestGetTestResult(t *testing.T) {
 			expected := &pb.TestResult{
 				Name:   "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
 				TestId: "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				TestVariantIdentifier: &pb.TestVariantIdentifier{
+				TestVariantId: &pb.TestVariantIdentifier{
 					ModuleName:        "legacy",
 					ModuleScheme:      "legacy",
 					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),

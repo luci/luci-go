@@ -61,10 +61,10 @@ func validCreateTestResultRequest(now time.Time, invName string, testVariantID *
 		RequestId:  "request-id-123",
 
 		TestResult: &pb.TestResult{
-			TestVariantIdentifier: testVariantID,
-			ResultId:              "result-id-0",
-			Expected:              true,
-			Status:                pb.TestStatus_PASS,
+			TestVariantId: testVariantID,
+			ResultId:      "result-id-0",
+			Expected:      true,
+			Status:        pb.TestStatus_PASS,
 			TestMetadata: &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{
@@ -194,9 +194,9 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("test_result: unspecified"))
 			})
 			t.Run(`invalid test_result`, func(t *ftt.Test) {
-				req.TestResult.TestVariantIdentifier = nil
+				req.TestResult.TestVariantId = nil
 				err := validateCreateTestResultRequest(req, cfg, now)
-				assert.Loosely(t, err, should.ErrLike("test_result: test_variant_identifier: unspecified"))
+				assert.Loosely(t, err, should.ErrLike("test_result: test_variant_id: unspecified"))
 			})
 
 			t.Run("invalid request_id", func(t *ftt.Test) {
@@ -251,9 +251,9 @@ func TestCreateTestResult(t *testing.T) {
 
 		createTestResult := func(req *pb.CreateTestResultRequest, expected *pb.TestResult, expectedCommonPrefix string) {
 			expectedWireTR := proto.Clone(expected).(*pb.TestResult)
-			if req.TestResult.TestVariantIdentifier == nil {
+			if req.TestResult.TestVariantId == nil {
 				// For legacy create requests, expect the response to omit the TestVariantIdentifier.
-				expectedWireTR.TestVariantIdentifier = nil
+				expectedWireTR.TestVariantId = nil
 			}
 
 			res, err := recorder.CreateTestResult(ctx, req)
@@ -281,7 +281,7 @@ func TestCreateTestResult(t *testing.T) {
 		t.Run("succeeds", func(t *ftt.Test) {
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
 			expected.Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0"
-			expected.TestVariantIdentifier.ModuleVariantHash = "5d8482c3056d8635"
+			expected.TestVariantId.ModuleVariantHash = "5d8482c3056d8635"
 			expected.TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected.Variant = pbutil.Variant("key", "value")
 			expected.VariantHash = "5d8482c3056d8635"
@@ -307,7 +307,7 @@ func TestCreateTestResult(t *testing.T) {
 				expected := proto.Clone(req.TestResult).(*pb.TestResult)
 				expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
 				expected.VariantHash = "c8643f74854d84b4"
-				expected.TestVariantIdentifier = &pb.TestVariantIdentifier{
+				expected.TestVariantId = &pb.TestVariantIdentifier{
 					ModuleName:   "legacy",
 					ModuleScheme: "legacy",
 					ModuleVariant: pbutil.Variant(

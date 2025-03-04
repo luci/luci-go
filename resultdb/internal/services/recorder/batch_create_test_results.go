@@ -165,12 +165,12 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
 
-	if ret.TestVariantIdentifier != nil {
+	if ret.TestVariantId != nil {
 		// Use TestVariantIdentifier to set TestId and Variant (OUTPUT_ONLY fields).
 		// Also set the OUTPUT_ONLY fields in TestVariantIdentiifer.
-		ret.TestId = pbutil.TestIDFromTestVariantIdentifier(ret.TestVariantIdentifier)
-		ret.Variant = pbutil.VariantFromTestVariantIdentifier(ret.TestVariantIdentifier)
-		pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantIdentifier)
+		ret.TestId = pbutil.TestIDFromTestVariantIdentifier(ret.TestVariantId)
+		ret.Variant = pbutil.VariantFromTestVariantIdentifier(ret.TestVariantId)
+		pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantId)
 	} else {
 		// Legacy test uploader.
 		// While we could use TestId and Variant to set TestVariantIdentifier,
@@ -236,7 +236,7 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	if tr == nil {
 		return validate.Unspecified()
 	}
-	if tr.TestVariantIdentifier == nil && tr.TestId != "" {
+	if tr.TestVariantId == nil && tr.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
 		testID, err := pbutil.ParseAndValidateTestID(tr.TestId)
@@ -256,13 +256,13 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 		// The TestId and Variant fields are treated as output only as per
 		// the API spec and should be ignored. Instead read from the TestVariantIdentifier field.
 
-		if err := pbutil.ValidateTestVariantIdentifier(tr.TestVariantIdentifier); err != nil {
-			return errors.Annotate(err, "test_variant_identifier").Err()
+		if err := pbutil.ValidateTestVariantIdentifier(tr.TestVariantId); err != nil {
+			return errors.Annotate(err, "test_variant_id").Err()
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantIdentifier)); err != nil {
-			return errors.Annotate(err, "test_variant_identifier").Err()
+		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantId)); err != nil {
+			return errors.Annotate(err, "test_variant_id").Err()
 		}
 	}
 
