@@ -18,9 +18,11 @@ package validation
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	configpb "go.chromium.org/luci/common/proto/config"
 )
@@ -46,7 +48,7 @@ func (e *Error) Error() string {
 func (e *Error) WithSeverity(s Severity) error {
 	var filtered errors.MultiError
 	for _, valErr := range e.Errors {
-		if severity, ok := SeverityTag.In(valErr); ok && severity == s {
+		if severity, ok := SeverityTag.Value(valErr); ok && severity == s {
 			filtered = append(filtered, valErr)
 		}
 	}
@@ -67,7 +69,7 @@ func (e *Error) ToValidationResultMsgs(ctx context.Context) []*configpb.Validati
 		// validation.Context supports just 2 severities now,
 		// but defensively default to ERROR level in unexpected cases.
 		msgSeverity := configpb.ValidationResult_ERROR
-		switch severity, ok := SeverityTag.In(err); {
+		switch severity, ok := SeverityTag.Value(err); {
 		case !ok:
 			logging.Errorf(ctx, "unset validation.Severity in %s", err)
 		case severity == Warning:
@@ -75,7 +77,7 @@ func (e *Error) ToValidationResultMsgs(ctx context.Context) []*configpb.Validati
 		case severity != Blocking:
 			logging.Errorf(ctx, "unrecognized validation.Severity %d in %s", severity, err)
 		}
-		file, ok := fileTag.In(err)
+		file, ok := fileTag.Value(err)
 		if !ok || file == "" {
 			file = "unspecified file"
 		}
@@ -102,32 +104,6 @@ type Context struct {
 	element []string          // logical path of a sub-element we validate, see Enter
 }
 
-type fileTagType struct{ Key errors.TagKey }
-
-func (f fileTagType) With(name string) errors.TagValue {
-	return errors.TagValue{Key: f.Key, Value: name}
-}
-func (f fileTagType) In(err error) (v string, ok bool) {
-	d, ok := errors.TagValueIn(f.Key, err)
-	if ok {
-		v = d.(string)
-	}
-	return
-}
-
-type elementTagType struct{ Key errors.TagKey }
-
-func (e elementTagType) With(elements []string) errors.TagValue {
-	return errors.TagValue{Key: e.Key, Value: append([]string(nil), elements...)}
-}
-func (e elementTagType) In(err error) (v []string, ok bool) {
-	d, ok := errors.TagValueIn(e.Key, err)
-	if ok {
-		v = d.([]string)
-	}
-	return
-}
-
 // Severity of the validation message.
 //
 // Only Blocking and Warning severities are supported.
@@ -144,24 +120,13 @@ const (
 	Warning Severity = 1
 )
 
-type severityTagType struct{ Key errors.TagKey }
+// TODO: consider combining these tags into a single errorContext struct/tag.
 
-func (s severityTagType) With(severity Severity) errors.TagValue {
-	return errors.TagValue{Key: s.Key, Value: severity}
-}
-func (s severityTagType) In(err error) (v Severity, ok bool) {
-	d, ok := errors.TagValueIn(s.Key, err)
-	if ok {
-		v = d.(Severity)
-	}
-	return
-}
-
-var fileTag = fileTagType{errors.NewTagKey("holds the file name for tests")}
-var elementTag = elementTagType{errors.NewTagKey("holds the elements for tests")}
+var fileTag = errtag.Make("holds the file name for tests", "")
+var elementTag = errtag.Make("holds the elements for tests", (*[]string)(nil))
 
 // SeverityTag holds the severity of the given validation error.
-var SeverityTag = severityTagType{errors.NewTagKey("holds the severity")}
+var SeverityTag = errtag.Make("holds the severity", Blocking)
 
 // Errorf records the given format string and args as a blocking validation error.
 func (v *Context) Errorf(format string, args ...any) {
@@ -204,13 +169,18 @@ func (v *Context) record(severity Severity, err error) {
 		ctx += " (" + strings.Join(v.element, " / ") + ")"
 	}
 	// Make the file and the logical path also usable through error inspection.
-	v.errors = append(v.errors, errors.Annotate(err, "%s", ctx).Tag(
-		fileTag.With(v.file), elementTag.With(v.element), SeverityTag.With(severity)).Err())
+
+	err = errors.Annotate(err, "%s", ctx).Err()
+	err = fileTag.ApplyValue(err, v.file)
+	els := slices.Clone(v.element)
+	err = elementTag.ApplyValue(err, &els)
+	err = SeverityTag.ApplyValue(err, severity)
+	v.errors = append(v.errors, err)
 }
 
 func (v *Context) hasErrors(severity Severity) bool {
 	for _, err := range v.errors {
-		if sev, ok := SeverityTag.In(err); ok && sev == severity {
+		if sev, ok := SeverityTag.Value(err); ok && sev == severity {
 			return true
 		}
 	}

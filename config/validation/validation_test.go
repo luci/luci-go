@@ -55,15 +55,15 @@ func TestValidation(t *testing.T) {
 
 		singleErr := err.(*Error).Errors[0]
 		assert.Loosely(t, singleErr.Error(), should.Equal(`in "file.cfg" (ctx 123): blah zzz`))
-		d, ok := fileTag.In(singleErr)
+		d, ok := fileTag.Value(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, d, should.Equal("file.cfg"))
 
-		elts, ok := elementTag.In(singleErr)
+		elts, ok := elementTag.Value(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
-		assert.Loosely(t, elts, should.Match([]string{"ctx 123"}))
+		assert.Loosely(t, *elts, should.Match([]string{"ctx 123"}))
 
-		severity, ok := SeverityTag.In(singleErr)
+		severity, ok := SeverityTag.Value(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, severity, should.Equal(Blocking))
 
@@ -94,7 +94,7 @@ func TestValidation(t *testing.T) {
 		singleErr := err.(*Error).Errors[0]
 		assert.Loosely(t, singleErr.Error(), should.ContainSubstring(`option "xyz: true" is a noop, please remove`))
 
-		severity, ok := SeverityTag.In(singleErr)
+		severity, ok := SeverityTag.Value(singleErr)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, severity, should.Equal(Warning))
 

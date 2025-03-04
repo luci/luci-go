@@ -86,7 +86,7 @@ func readBlob(ctx context.Context, cl *client.Client, bd *digest.Digest) ([]byte
 	b, _, err := cl.ReadBlob(ctx, *bd)
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
-		t := grpcutil.Tag.With(status.Code(err))
+		t := grpcutil.Tag.WithDefault(status.Code(err))
 		return nil, errors.Annotate(err, "failed to read blob").Tag(t).Err()
 	}
 	return b, nil

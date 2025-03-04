@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 )
 
 const (
@@ -34,12 +35,11 @@ const (
 	contentTypeJSON = "application/json"
 )
 
-var statusTagKey = errors.NewTagKey("metadata server status code")
-
 // statusTag can be used to attach HTTP status code to the error.
-func statusTag(code int) errors.TagValue {
-	return errors.TagValue{Key: statusTagKey, Value: code}
-}
+//
+// TODO: change the default to StatusServiceUnavailable and remove
+// `statusCode()`
+var statusTag = errtag.Make("metadata server status code", 0)
 
 // statusCode extracts the status code from an error.
 func statusCode(err error) int {
@@ -47,8 +47,8 @@ func statusCode(err error) int {
 		return http.StatusOK
 	}
 	code := http.StatusServiceUnavailable
-	if val, ok := errors.TagValueIn(statusTagKey, err); ok {
-		code = val.(int)
+	if val, ok := statusTag.Value(err); ok {
+		code = val
 	}
 	return code
 }
@@ -278,16 +278,19 @@ type response struct {
 func serveMetadataImpl(root *node, req *http.Request) (*response, error) {
 	// See https://cloud.google.com/compute/docs/metadata/querying-metadata
 	if req.Method != "GET" {
-		return nil, errors.Reason("Method not allowed").
-			Tag(statusTag(http.StatusMethodNotAllowed)).Err()
+		return nil, statusTag.ApplyValue(
+			errors.New("Method not allowed"),
+			http.StatusMethodNotAllowed)
 	}
 	if fl := req.Header.Get("Metadata-Flavor"); fl != "Google" {
-		return nil, errors.Reason("Bad Metadata-Flavor: got %q, want %q", fl, "Google").
-			Tag(statusTag(http.StatusBadRequest)).Err()
+		return nil, statusTag.ApplyValue(
+			errors.Reason("Bad Metadata-Flavor: got %q, want %q", fl, "Google").Err(),
+			http.StatusBadRequest)
 	}
 	if ff := req.Header.Get("X-Forwarded-For"); ff != "" {
-		return nil, errors.Reason("Forbidden X-Forwarded-For header %q", ff).
-			Tag(statusTag(http.StatusBadRequest)).Err()
+		return nil, statusTag.ApplyValue(
+			errors.Reason("Forbidden X-Forwarded-For header %q", ff).Err(),
+			http.StatusBadRequest)
 	}
 
 	// Normalize the path to be "/something" (or "/" for the root).
@@ -308,8 +311,9 @@ func serveMetadataImpl(root *node, req *http.Request) (*response, error) {
 	alt := req.URL.Query().Get("alt")
 	if listing && !recursive && alt != "" {
 		// This is what the real GCE metadata server does as well.
-		return nil, errors.Reason("Non-recursive directory listings do not support ?alt.").
-			Tag(statusTag(http.StatusBadRequest)).Err()
+		return nil, statusTag.ApplyValue(
+			errors.New("Non-recursive directory listings do not support ?alt."),
+			http.StatusBadRequest)
 	}
 
 	// Normalize the path to be a list of node names. This will be e.g. `[]` for
@@ -324,21 +328,24 @@ func serveMetadataImpl(root *node, req *http.Request) (*response, error) {
 	cur := root
 	for _, name := range elems {
 		if cur.kind == kindLeaf {
-			return nil, errors.Reason("Metadata %q can't be listed", cur.path).
-				Tag(statusTag(http.StatusNotFound)).Err()
+			return nil, statusTag.ApplyValue(
+				errors.Reason("Metadata %q can't be listed", cur.path).Err(),
+				http.StatusNotFound)
 		}
 		next := cur.children[name]
 		if next == nil {
-			return nil, errors.Reason("Metadata directory %q doesn't have %q", cur.path, name).
-				Tag(statusTag(http.StatusNotFound)).Err()
+			return nil, statusTag.ApplyValue(
+				errors.Reason("Metadata directory %q doesn't have %q", cur.path, name).Err(),
+				http.StatusNotFound)
 		}
 		cur = next
 	}
 
 	if listing {
 		if cur.kind == kindLeaf {
-			return nil, errors.Reason("Metadata %q can't be listed", cur.path).
-				Tag(statusTag(http.StatusNotFound)).Err()
+			return nil, statusTag.ApplyValue(
+				errors.Reason("Metadata %q can't be listed", cur.path).Err(),
+				http.StatusNotFound)
 		}
 		switch {
 		case recursive && alt == "text":

@@ -249,8 +249,7 @@ func (s *Server) accountToken(ctx context.Context, q url.Values) (any, error) {
 func (s *Server) accountIdentity(ctx context.Context, q url.Values) (any, error) {
 	aud := q.Get("audience")
 	if aud == "" {
-		return nil, errors.Reason("`audience` is required").
-			Tag(statusTag(http.StatusBadRequest)).Err()
+		return nil, statusTag.ApplyValue(errors.New("`audience` is required"), http.StatusBadRequest)
 	}
 
 	// HACK(crbug.com/1210747): Refuse to serve ID tokens to "gcloud" CLI tool
@@ -261,8 +260,7 @@ func (s *Server) accountIdentity(ctx context.Context, q url.Values) (any, error)
 	// current "gcloud" calls from LUCI). This hack can be removed when all tasks
 	// that use "gcloud" are in the realms mode.
 	if aud == "32555940559.apps.googleusercontent.com" {
-		return nil, errors.Reason("Go away: crbug.com/1210747").
-			Tag(statusTag(http.StatusNotFound)).Err()
+		return nil, statusTag.ApplyValue(errors.New("Go away: crbug.com/1210747"), http.StatusNotFound)
 	}
 
 	tok, err := s.Generator.GenerateIDToken(ctx, aud, s.MinTokenLifetime)

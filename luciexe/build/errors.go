@@ -23,6 +23,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -31,7 +32,7 @@ type buildStatus struct {
 	details *bbpb.StatusDetails
 }
 
-var statusTag = errors.NewTagKey("build Status")
+var statusTag = errtag.Make("build Status", (*buildStatus)(nil))
 
 // AttachStatus attaches a buildbucket status (and details) to a given error.
 //
@@ -54,7 +55,7 @@ func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) er
 	if details != nil {
 		details = proto.Clone(details).(*bbpb.StatusDetails)
 	}
-	return errors.TagValue{Key: statusTag, Value: &buildStatus{status, details}}.Apply(err)
+	return statusTag.ApplyValue(err, &buildStatus{status, details})
 }
 
 // ExtractStatus retrieves the Buildbucket status (and details) from a given
@@ -74,8 +75,7 @@ func ExtractStatus(err error) (bbpb.Status, *bbpb.StatusDetails) {
 	if err == nil {
 		return bbpb.Status_SUCCESS, nil
 	}
-	if value, ok := errors.TagValueIn(statusTag, err); ok {
-		bs := value.(*buildStatus)
+	if bs, ok := statusTag.Value(err); ok {
 		details := bs.details
 		if details != nil {
 			details = proto.Clone(details).(*bbpb.StatusDetails)

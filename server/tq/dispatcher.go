@@ -441,9 +441,9 @@ var (
 
 // Used to override HTTP status of some errors.
 var (
-	httpStatusKey = errors.NewTagKey("http status override")
-	httpStatus404 = errors.TagValue{Key: httpStatusKey, Value: 404}
-	httpStatus400 = errors.TagValue{Key: httpStatusKey, Value: 400}
+	httpStatusTag = errtag.Make("http status override", 0)
+	httpStatus404 = httpStatusTag.WithDefault(404)
+	httpStatus400 = httpStatusTag.WithDefault(400)
 )
 
 // quietOnError is an error tag used to implement TaskClass.QuietOnError.
@@ -1512,8 +1512,8 @@ func replyWithErr(c *router.Context, err error) {
 		httpReply(c, http.StatusInternalServerError /* 500 */, "transient error", err)
 	default:
 		status := http.StatusTooManyRequests
-		if code, ok := errors.TagValueIn(httpStatusKey, err); ok {
-			status = code.(int)
+		if code, ok := httpStatusTag.Value(err); ok {
+			status = code
 		}
 		httpReply(c, status, "error", err)
 	}

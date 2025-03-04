@@ -233,7 +233,7 @@ func TestSetBuilderHealth(t *testing.T) {
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
 							Error: &status.Status{
 								Code:    7,
-								Message: "Builder: project/bucket/builder: attaching a status: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
+								Message: "Builder: project/bucket/builder: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
 							},
 						},
 					},
@@ -241,7 +241,7 @@ func TestSetBuilderHealth(t *testing.T) {
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
 							Error: &status.Status{
 								Code:    7,
-								Message: "Builder: project2/bucket2/builder2: attaching a status: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
+								Message: "Builder: project2/bucket2/builder2: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
 							},
 						},
 					},
@@ -341,7 +341,7 @@ func TestSetBuilderHealth(t *testing.T) {
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
 							Error: &status.Status{
-								Message: "attaching a status: rpc error: code = Internal desc = failed to get builder amd-cq-2: datastore: no such entity",
+								Message: "rpc error: code = Internal desc = failed to get builder amd-cq-2: datastore: no such entity",
 								Code:    13,
 							},
 						},
@@ -349,7 +349,7 @@ func TestSetBuilderHealth(t *testing.T) {
 					{
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
 							Error: &status.Status{
-								Message: "Builder: chromeos/cq/amd-cq: attaching a status: rpc error: code = NotFound desc = requested resource not found or \"user:someone@example.com\" does not have permission to view it",
+								Message: "Builder: chromeos/cq/amd-cq: rpc error: code = NotFound desc = requested resource not found or \"user:someone@example.com\" does not have permission to view it",
 								Code:    7,
 							},
 						},
@@ -531,7 +531,7 @@ func TestSetBuilderHealth(t *testing.T) {
 						Response: &pb.SetBuilderHealthResponse_Response_Error{
 							Error: &status.Status{
 								Code:    13,
-								Message: "attaching a status: rpc error: code = Internal desc = failed to get builder amd-cq-2: datastore: no such entity",
+								Message: "rpc error: code = Internal desc = failed to get builder amd-cq-2: datastore: no such entity",
 							},
 						},
 					},

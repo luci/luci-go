@@ -359,7 +359,7 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		ctx, err := a.AuthenticateHTTP(c.Request.Context(), c.Request)
 		if err != nil {
-			code, ok := grpcutil.Tag.In(err)
+			code, ok := grpcutil.Tag.Value(err)
 			if !ok {
 				if transient.Tag.In(err) {
 					code = codes.Internal

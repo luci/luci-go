@@ -217,7 +217,7 @@ func (m *mockedGS) Reader(ctx context.Context, path string, gen, minSpeed int64)
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}
-	return nil, errors.Reason("file %q is missing", path).Tag(gs.StatusCodeTag(http.StatusNotFound)).Err()
+	return nil, errors.Reason("file %q is missing", path).Tag(gs.StatusCodeTag.WithDefault(http.StatusNotFound)).Err()
 }
 
 func (m *mockedGS) Publish(ctx context.Context, dst, src string, srcGen int64) error {

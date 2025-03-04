@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
@@ -72,45 +73,32 @@ func WrapIfTransientOr(err error, extra ...codes.Code) error {
 	return err
 }
 
-type grpcCodeTag struct{ Key errors.TagKey }
-
-func (g grpcCodeTag) With(code codes.Code) errors.TagValue {
-	return errors.TagValue{Key: g.Key, Value: code}
-}
-func (g grpcCodeTag) In(err error) (v codes.Code, ok bool) {
-	d, ok := errors.TagValueIn(g.Key, err)
-	if ok {
-		v = d.(codes.Code)
-	}
-	return
-}
-
 // Tag may be used to associate a gRPC status code with this error.
 //
 // The tag value MUST be a "google.golang.org/grpc/codes".Code.
-var Tag = grpcCodeTag{errors.NewTagKey("gRPC Code")}
+var Tag = errtag.Make("gRPC Code", codes.Unknown)
 
 // Shortcuts for assigning tags with codes known at compile time.
 //
-// Instead errors.Annotate(...).Tag(grpcutil.Tag.With(codes.InvalidArgument)) do
-// errors.Annotate(...).Tag(grpcutil.InvalidArgumentTag)).
+// Instead of Tag.SetValue(err, codes.InvalidArgument), you can do
+// codes.InvalidArgumentTag.Apply(err).
 var (
-	CanceledTag           = Tag.With(codes.Canceled)
-	UnknownTag            = Tag.With(codes.Unknown)
-	InvalidArgumentTag    = Tag.With(codes.InvalidArgument)
-	DeadlineExceededTag   = Tag.With(codes.DeadlineExceeded)
-	NotFoundTag           = Tag.With(codes.NotFound)
-	AlreadyExistsTag      = Tag.With(codes.AlreadyExists)
-	PermissionDeniedTag   = Tag.With(codes.PermissionDenied)
-	UnauthenticatedTag    = Tag.With(codes.Unauthenticated)
-	ResourceExhaustedTag  = Tag.With(codes.ResourceExhausted)
-	FailedPreconditionTag = Tag.With(codes.FailedPrecondition)
-	AbortedTag            = Tag.With(codes.Aborted)
-	OutOfRangeTag         = Tag.With(codes.OutOfRange)
-	UnimplementedTag      = Tag.With(codes.Unimplemented)
-	InternalTag           = Tag.With(codes.Internal)
-	UnavailableTag        = Tag.With(codes.Unavailable)
-	DataLossTag           = Tag.With(codes.DataLoss)
+	CanceledTag           = Tag.WithDefault(codes.Canceled)
+	UnknownTag            = Tag.WithDefault(codes.Unknown)
+	InvalidArgumentTag    = Tag.WithDefault(codes.InvalidArgument)
+	DeadlineExceededTag   = Tag.WithDefault(codes.DeadlineExceeded)
+	NotFoundTag           = Tag.WithDefault(codes.NotFound)
+	AlreadyExistsTag      = Tag.WithDefault(codes.AlreadyExists)
+	PermissionDeniedTag   = Tag.WithDefault(codes.PermissionDenied)
+	UnauthenticatedTag    = Tag.WithDefault(codes.Unauthenticated)
+	ResourceExhaustedTag  = Tag.WithDefault(codes.ResourceExhausted)
+	FailedPreconditionTag = Tag.WithDefault(codes.FailedPrecondition)
+	AbortedTag            = Tag.WithDefault(codes.Aborted)
+	OutOfRangeTag         = Tag.WithDefault(codes.OutOfRange)
+	UnimplementedTag      = Tag.WithDefault(codes.Unimplemented)
+	InternalTag           = Tag.WithDefault(codes.Internal)
+	UnavailableTag        = Tag.WithDefault(codes.Unavailable)
+	DataLossTag           = Tag.WithDefault(codes.DataLoss)
 )
 
 // codeToStatus maps gRPC codes to HTTP statuses.
@@ -153,7 +141,7 @@ func CodeStatus(code codes.Code) int {
 // If the error is a MultiError containing more than one type of error code,
 // this will return codes.Unknown.
 func Code(err error) codes.Code {
-	if code, ok := Tag.In(err); ok {
+	if code, ok := Tag.Value(err); ok {
 		return code
 	}
 	// If it's a multi-error, see if all errors have the same code.

@@ -52,22 +52,18 @@ var ErrResetPreconditionFailedTag = errtag.Make("reset precondition not met", tr
 // reset is permanent (e.g. lack of vote permission).
 var ErrResetPermanentTag = errtag.Make("permanent error while resetting triggers", true)
 
-var errGerritTagKey = errors.NewTagKey("this is a Gerrit error")
-
-func applyGerritErrTag(err error, grpcCode codes.Code) error {
-	return errors.TagValue{Key: errGerritTagKey, Value: grpcCode}.Apply(err)
-}
+var errGerritTag = errtag.Make("this is a Gerrit error: holds grpcCode", codes.Unknown)
 
 // IsResetErrFromGerrit returns gerrit grpc error code if the `trigger.Reset`
 // fails because of Gerrit.
 func IsResetErrFromGerrit(err error) (codes.Code, bool) {
-	switch v, ok := errors.TagValueIn(errGerritTagKey, err); {
+	switch v, ok := errGerritTag.Value(err); {
 	case err == nil:
 		return codes.OK, false
 	case !ok:
 		return codes.Unknown, false
 	default:
-		return v.(codes.Code), true
+		return v, true
 	}
 }
 
@@ -621,6 +617,5 @@ func (c *change) annotateGerritErr(ctx context.Context, err error, action string
 	default:
 		retErr = gerrit.UnhandledError(ctx, err, "failed to %s %s/%d", action, c.Host, c.Number)
 	}
-	retErr = applyGerritErrTag(retErr, code)
-	return retErr
+	return errGerritTag.ApplyValue(retErr, code)
 }

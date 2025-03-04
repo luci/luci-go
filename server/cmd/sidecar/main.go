@@ -175,7 +175,7 @@ func (s *authServerImpl) Authenticate(ctx context.Context, req *sidecar.Authenti
 		// Find the statuspb.Status if available. Otherwise use LUCI error tags.
 		statuspb, ok := status.FromError(err)
 		if !ok {
-			code, ok := grpcutil.Tag.In(err)
+			code, ok := grpcutil.Tag.Value(err)
 			if !ok {
 				if transient.Tag.In(err) {
 					code = codes.Internal

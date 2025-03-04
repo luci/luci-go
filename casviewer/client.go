@@ -137,7 +137,7 @@ func newClient(ctx context.Context, instance string) (*client.Client, error) {
 	)
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
-		t := grpcutil.Tag.With(status.Code(err))
+		t := grpcutil.Tag.WithDefault(status.Code(err))
 		return nil, errors.Annotate(err, "failed to create client").Tag(t).Err()
 	}
 

@@ -73,7 +73,7 @@ func TestValidationRules(t *testing.T) {
 func mustHaveOnlySeverity(t testing.TB, err error, severity validation.Severity) error {
 	assert.Loosely(t, err, should.NotBeNil)
 	for _, e := range err.(*validation.Error).Errors {
-		s, ok := validation.SeverityTag.In(e)
+		s, ok := validation.SeverityTag.Value(e)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, s, should.Equal(severity))
 	}

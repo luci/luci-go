@@ -22,32 +22,22 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-var statusCodeTagKey = errors.NewTagKey("Google Storage API Status Code")
+// StatusCodeTag holds an http status code.
+var StatusCodeTag = errtag.Make("Google Storage API Status Code", 0)
 
-// StatusCode returns HTTP status code embedded inside the annotated error.
-//
-// Returns http.StatusOK if err is nil and 0 if the error doesn't have a status
-// code.
+// StatusCode returns 200 for a nil error, and otherwise returns
+// StatusCodeTag.Value(err).
 func StatusCode(err error) int {
 	if err == nil {
 		return http.StatusOK
 	}
-	if val, ok := errors.TagValueIn(statusCodeTagKey, err); ok {
-		return val.(int)
-	}
-	return 0
-}
-
-// StatusCodeTag can be used to attach HTTP status code to the error.
-//
-// This code will be available via StatusCode(err) function.
-func StatusCodeTag(code int) errors.TagValue {
-	return errors.TagValue{Key: statusCodeTagKey, Value: code}
+	return StatusCodeTag.ValueOrDefault(err)
 }
 
 // retryPolicy is a copy of the iterator returned by retry.Default as of 25Q1
@@ -94,7 +84,7 @@ func withRetry(ctx context.Context, call func() error) error {
 		logging.Infof(ctx, "GS replied with HTTP code %d", apiErr.Code)
 		logging.Debugf(ctx, "full response body:\n%s", apiErr.Body)
 		ann := errors.Annotate(err, "GS replied with HTTP code %d", apiErr.Code).
-			Tag(StatusCodeTag(apiErr.Code))
+			Tag(StatusCodeTag.WithDefault(apiErr.Code))
 		// Retry only on 429 and 5xx responses, according to
 		// https://cloud.google.com/storage/docs/exponential-backoff.
 		if apiErr.Code == 429 || apiErr.Code >= 500 {

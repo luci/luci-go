@@ -102,7 +102,7 @@ func AuthenticatingInterceptor(methods []Method) grpcutil.UnifiedServerIntercept
 	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
 		ctx, err := au.Authenticate(ctx, RequestMetadataForGRPC(ctx))
 		if err != nil {
-			code, ok := grpcutil.Tag.In(err)
+			code, ok := grpcutil.Tag.Value(err)
 			if !ok {
 				if transient.Tag.In(err) {
 					code = codes.Internal

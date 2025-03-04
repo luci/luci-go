@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -44,18 +45,10 @@ type ErrorHandler func(resp *http.Response, err error) error
 // documentation.
 type RequestGen func() (*http.Request, error)
 
-var httpTagKey = errors.NewTagKey("this is an HTTP error")
-
-func applyHTTPTag(err error, status int) error {
-	return errors.TagValue{Key: httpTagKey, Value: status}.Apply(err)
-}
+var httpTag = errtag.Make("this is an HTTP error", 0)
 
 func IsHTTPError(err error) (status int, ok bool) {
-	d, ok := errors.TagValueIn(httpTagKey, err)
-	if ok {
-		status = d.(int)
-	}
-	return
+	return httpTag.Value(err)
 }
 
 // NewRequest returns a retriable request.
@@ -122,7 +115,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 				return err
 			}
 
-			err = applyHTTPTag(err, status)
+			err = httpTag.ApplyValue(err, status)
 			return errorHandler(resp, err)
 		}, nil)
 		if err != nil {

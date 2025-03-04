@@ -18,10 +18,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 )
 
-var appStatusTagKey = errors.NewTagKey("application-specific response status")
+var appStatusTag = errtag.Make("application-specific response status", (*status.Status)(nil))
 
 // ToError converts an application-specific status to an error.
 func ToError(s *status.Status) error {
@@ -52,11 +52,7 @@ func Attach(err error, status *status.Status) error {
 		panic("err already has an application-specific status")
 	}
 
-	tag := errors.TagValue{
-		Key:   appStatusTagKey,
-		Value: status,
-	}
-	return errors.Annotate(err, "attaching a status").Tag(tag).Err()
+	return appStatusTag.ApplyValue(err, status)
 }
 
 // Attachf is a shortcut for Attach(err, status.Newf(...))
@@ -67,12 +63,7 @@ func Attachf(err error, code codes.Code, format string, args ...any) error {
 // Get returns an application-specific Status attached to err using this
 // package. If not explicitly set or if err is nil, then ok is false.
 func Get(err error) (st *status.Status, ok bool) {
-	v, ok := errors.TagValueIn(appStatusTagKey, err)
-	if !ok {
-		return nil, false
-	}
-
-	return v.(*status.Status), true
+	return appStatusTag.Value(err)
 }
 
 // Code returns a gRPC code in the application-specific Status attached to err

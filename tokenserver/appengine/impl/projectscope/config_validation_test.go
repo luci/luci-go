@@ -128,7 +128,7 @@ func TestValidation(t *testing.T) {
 					verr := verr.(*validation.Error)
 					assert.Loosely(c, verr.Errors, should.HaveLength(len(cs.Errors)))
 					for i, err := range verr.Errors {
-						sev, _ := validation.SeverityTag.In(err)
+						sev, _ := validation.SeverityTag.Value(err)
 						assert.Loosely(c, sev, should.Equal(validation.Blocking))
 						assert.Loosely(c, err, should.ErrLike(cs.Errors[i]))
 					}

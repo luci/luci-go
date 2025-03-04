@@ -50,7 +50,7 @@ func TestTree(t *testing.T) {
 
 	root.mount("/test/fail").dict(map[string]generator{
 		"not-found": fast(func(context.Context, url.Values) (any, error) {
-			return nil, errors.Reason("boom").Tag(statusTag(http.StatusNotFound)).Err()
+			return nil, statusTag.ApplyValue(errors.New("boom"), http.StatusNotFound)
 		}),
 		"transient": fast(func(context.Context, url.Values) (any, error) {
 			return nil, errors.Reason("boom").Err()
@@ -238,7 +238,7 @@ func TestRecursiveListing(t *testing.T) {
 		"dict-leaf-empty": emit(map[string]string{}),
 		"expensive":       expensive(nil), // will not be called, can be nil
 		"skipped": fast(func(context.Context, url.Values) (any, error) {
-			return nil, errors.Reason("boom").Tag(statusTag(http.StatusNotFound)).Err()
+			return nil, statusTag.ApplyValue(errors.New("boom"), http.StatusNotFound)
 		}),
 	})
 
