@@ -458,12 +458,18 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 
 // resubmitReservation submits a new RBE reservation for the given TaskToRun.
 func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datastore.Key, prev *internalspb.TaskPayload) error {
-	submitted := false
-	pool := ""
+	tr, err := model.FetchTaskRequest(ctx, ttr.Parent())
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		logging.Warningf(ctx, "TaskRequest entity is already gone")
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
+	}
 
-	err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+	submitted := false
+	err = datastore.RunInTransaction(ctx, func(tctx context.Context) error {
 		submitted = false
-		pool = ""
 
 		// Refetch TaskToRun and ensure it was untouched.
 		ttr := &model.TaskToRun{Key: ttr}
@@ -481,19 +487,8 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 			return nil
 		}
 
-		// Fetch TaskRequest non-transactionally, since it is static.
-		tr := &model.TaskRequest{Key: ttr.Key.Parent()}
-		switch err := datastore.Get(ctx, tr); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			logging.Warningf(tctx, "TaskRequest entity is already gone")
-			return nil
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
-		}
-
 		// Report this to monitoring (if the transaction actually lands).
 		submitted = true
-		pool = tr.Pool()
 
 		// Submit the retry.
 		ttr.RetryCount++
@@ -509,6 +504,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 	}
 
 	if submitted {
+		pool := tr.Pool()
 		if pool == "" {
 			pool = "<unknown>"
 		}

@@ -88,26 +88,31 @@ func (c *Cancellation) Run(ctx context.Context) (bool, bool, error) {
 		return false, false, err
 	}
 
-	var stateChanged, canceled, wasRunning bool
-	var toGet []any
 	if c.TaskRequest == nil {
-		c.TaskRequest = &model.TaskRequest{Key: trKey}
-		toGet = append(toGet, c.TaskRequest)
+		c.TaskRequest, err = model.FetchTaskRequest(ctx, trKey)
+		switch {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return false, false, errors.Annotate(err, "missing TaskRequest for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+		case err != nil:
+			return false, false, errors.Annotate(err, "datastore error fetching TaskRequest for task %s", c.TaskID).Err()
+		}
 	} else {
 		if !c.TaskRequest.Key.Equal(trKey) {
 			return false, false, errors.Reason("mismatched TaskID %s and TaskRequest with id %s", c.TaskID, model.RequestKeyToTaskID(c.TaskRequest.Key, model.AsRequest)).Err()
 		}
 	}
 
-	c.TaskResultSummary = &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, trKey)}
-	toGet = append(toGet, c.TaskResultSummary)
+	var stateChanged, canceled, wasRunning bool
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if err := datastore.Get(ctx, toGet); err != nil {
-			if err == datastore.ErrNoSuchEntity {
-				return errors.Annotate(err, "missing TaskRequest or TaskResultSummary for task %s", c.TaskID).Tag(taskUnknownTag).Err()
-			}
-			return errors.Annotate(err, "datastore error fetching entities for task %s", c.TaskID).Err()
+		c.TaskResultSummary = &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, trKey),
+		}
+		switch err := datastore.Get(ctx, c.TaskResultSummary); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return errors.Annotate(err, "missing TaskResultSummary for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+		case err != nil:
+			return errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", c.TaskID).Err()
 		}
 
 		origState := c.TaskResultSummary.State
@@ -184,19 +189,17 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 			return errors.Annotate(err, "failed to get the TaskToRun key for task %s", c.TaskID).Err()
 		}
 		toRun := &model.TaskToRun{Key: toRunKey}
-		if err = datastore.Get(ctx, toRun); err != nil {
-			if err == datastore.ErrNoSuchEntity {
-				return errors.Annotate(err, "missing TaskToRun for task %s", c.TaskID).Tag(taskUnknownTag).Err()
-			}
+		switch err = datastore.Get(ctx, toRun); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return errors.Annotate(err, "missing TaskToRun for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+		case err != nil:
 			return errors.Annotate(err, "datastore error fetching TaskToRun for task %s", c.TaskID).Err()
 		}
 
 		toRun.Consume("")
 		toPut = append(toPut, toRun)
-		if err = c.LifecycleTasks.enqueueRBECancel(ctx, tr, toRun); err != nil {
-			return errors.Annotate(err, "failed to cancel RBE resevation for task %s", c.TaskID).Err()
-		}
-		return nil
+
+		return c.LifecycleTasks.enqueueRBECancel(ctx, tr, toRun)
 	}
 
 	cancelRunning := func() error {
@@ -206,17 +209,18 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		// then when the bot reports the task has been terminated, set its state
 		// to KILLED.
 		trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, tr.Key)}
-		if err := datastore.Get(ctx, trr); err != nil {
-			if err == datastore.ErrNoSuchEntity {
-				return errors.Annotate(err, "missing TaskRunResult for task %s", c.TaskID).Tag(taskUnknownTag).Err()
-			}
+		switch err := datastore.Get(ctx, trr); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return errors.Annotate(err, "missing TaskRunResult for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+		case err != nil:
 			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", c.TaskID).Err()
 		}
 		if trr.Killing {
-			// The task has started cancelation. Skip.
+			// The task has started cancellation. Skip.
 			toPut = nil
 			return nil
 		}
+
 		trr.Killing = true
 		trr.Abandoned = datastore.NewIndexedNullable(now)
 		trr.Modified = now

@@ -91,7 +91,7 @@ func TestCancel(t *testing.T) {
 			LifecycleTasks: lt,
 		}
 
-		t.Run("bot id and kill runing uncompitable", func(t *ftt.Test) {
+		t.Run("bot id and kill running incompatible", func(t *ftt.Test) {
 			c.KillRunning = false
 			c.BotID = "bot"
 			_, _, err := c.Run(ctx)
@@ -100,10 +100,10 @@ func TestCancel(t *testing.T) {
 
 		t.Run("failed to get some entity", func(t *ftt.Test) {
 			_, _, err := c.Run(ctx)
-			assert.Loosely(t, err, should.ErrLike("datastore error fetching entities for task 65aba3a3e6b99310"))
+			assert.Loosely(t, err, should.ErrLike("missing TaskResultSummary for task 65aba3a3e6b99310"))
 		})
 
-		t.Run("mismatcked task id and request", func(t *ftt.Test) {
+		t.Run("mismatched task id and request", func(t *ftt.Test) {
 			wrongID := "65aba3a3e6b99500"
 			wrongKey, _ := model.TaskIDToRequestKey(ctx, wrongID)
 			c.TaskRequest = &model.TaskRequest{

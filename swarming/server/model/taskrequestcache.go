@@ -48,7 +48,9 @@ const (
 // critical for performance or reliability. It often falls back to fetching from
 // the datastore if the cache has problems or is slow to respond.
 //
-// Relies significantly on TaskRequest being immutable.
+// Relies significantly on TaskRequest being immutable. Ignores datastore
+// transactions (the datastore fetch, if necessary, happens
+// non-transactionally).
 //
 // Returns datastore.ErrNoSuchEntity if there's no such task request. Any other
 // error can be treated as transient.
@@ -128,7 +130,7 @@ func cacheTaskRequest(ctx context.Context, tid string, req *TaskRequest, cache c
 // fetchTaskRequest fetches TaskRequest from the datastore.
 func fetchTaskRequest(ctx context.Context, key *datastore.Key) (*TaskRequest, error) {
 	taskReq := &TaskRequest{Key: key}
-	if err := datastore.Get(ctx, taskReq); err != nil {
+	if err := datastore.Get(datastore.WithoutTransaction(ctx), taskReq); err != nil {
 		return nil, err
 	}
 	return taskReq, nil
