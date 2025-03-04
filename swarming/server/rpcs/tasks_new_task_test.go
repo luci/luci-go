@@ -176,15 +176,82 @@ func fullRequest() *apipb.NewTaskRequest {
 	}
 }
 
+func TestFindPool(t *testing.T) {
+	t.Parallel()
+
+	t.Run("different_pools_across_slices", func(t *testing.T) {
+		req := &apipb.NewTaskRequest{
+			Name:                 "new",
+			BotPingToleranceSecs: 300,
+			Priority:             30,
+			TaskSlices: []*apipb.TaskSlice{
+				simpliestValidSlice("pool1"),
+				simpliestValidSlice("pool2"),
+			},
+		}
+		_, err := findPool(req)
+		assert.That(t, err, should.ErrLike("each task slice must use the same pool dimensions"))
+	})
+
+	t.Run("no_task_slices", func(t *testing.T) {
+		req := simpliestValidRequest("pool")
+		req.TaskSlices = nil
+		_, err := findPool(req)
+		assert.That(t, err, should.ErrLike("task_slices is required"))
+	})
+
+	t.Run("no_pool", func(t *testing.T) {
+		req := simpliestValidRequest("pool")
+		req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+			{
+				Key:   "key",
+				Value: "value",
+			},
+		}
+		_, err := findPool(req)
+		assert.That(t, err, should.ErrLike("pool is required"))
+	})
+
+	t.Run("multiple_pool", func(t *testing.T) {
+		req := simpliestValidRequest("pool")
+		req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+			{
+				Key:   "pool",
+				Value: "p1",
+			},
+			{
+				Key:   "pool",
+				Value: "p2",
+			},
+		}
+		_, err := findPool(req)
+		assert.That(t, err, should.ErrLike("pool cannot be specified more than once"))
+	})
+	t.Run("multiple_pool_with_ordim", func(t *testing.T) {
+		req := simpliestValidRequest("pool")
+		req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+			{
+				Key:   "pool",
+				Value: "p1|p2",
+			},
+		}
+		_, err := findPool(req)
+		assert.That(t, err, should.ErrLike("pool cannot be specified more than once"))
+	})
+}
+
 func TestValidateNewTask(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("validateNewTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		state := NewMockedRequestState()
+		poolCfg := state.Configs.MockPool("pool", "project:pool-realm")
+		ctx = MockRequestState(ctx, state)
 
 		t.Run("empty", func(t *ftt.Test) {
 			req := &apipb.NewTaskRequest{}
-			_, err := validateNewTask(ctx, req)
+			err := validateNewTask(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike("name is required"))
 		})
 
@@ -193,7 +260,7 @@ func TestValidateNewTask(t *testing.T) {
 				Name:       "new",
 				Properties: &apipb.TaskProperties{},
 			}
-			_, err := validateNewTask(ctx, req)
+			err := validateNewTask(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike("properties is deprecated"))
 		})
 
@@ -202,14 +269,14 @@ func TestValidateNewTask(t *testing.T) {
 				Name:           "new",
 				ExpirationSecs: 300,
 			}
-			_, err := validateNewTask(ctx, req)
+			err := validateNewTask(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike("expiration_secs is deprecated"))
 		})
 
 		t.Run("parent_task_id", func(t *ftt.Test) {
 			req := simpliestValidRequest("pool")
 			req.ParentTaskId = "invalid"
-			_, err := validateNewTask(ctx, req)
+			err := validateNewTask(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike("bad task ID"))
 		})
 
@@ -217,13 +284,13 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("too_small", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.Priority = -1
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("must be between 1 and 255"))
 			})
 			t.Run("too_big", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.Priority = 500
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("must be between 1 and 255"))
 			})
 		})
@@ -243,7 +310,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run(cs.sa, func(t *ftt.Test) {
 					req := simpliestValidRequest("pool")
 					req.ServiceAccount = cs.sa
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike(cs.err))
 				})
 			}
@@ -263,7 +330,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run(cs.name, func(t *ftt.Test) {
 					req := simpliestValidRequest("pool")
 					req.PubsubTopic = cs.topic
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike(cs.err))
 				})
 			}
@@ -273,7 +340,7 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("no topic", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.PubsubAuthToken = "token"
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("pubsub_auth_token requires pubsub_topic"))
 			})
 
@@ -283,14 +350,14 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("no topic", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.PubsubUserdata = "data"
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("pubsub_userdata requires pubsub_topic"))
 			})
 			t.Run("too_long", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.PubsubTopic = "projects/project/topics/topic"
 				req.PubsubUserdata = strings.Repeat("l", maxPubsubUserDataLength+1)
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("too long"))
 			})
 
@@ -300,13 +367,13 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("too_small", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.BotPingToleranceSecs = 20
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("must be between"))
 			})
 			t.Run("too_big", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.BotPingToleranceSecs = 5000
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("must be between"))
 			})
 		})
@@ -314,7 +381,7 @@ func TestValidateNewTask(t *testing.T) {
 		t.Run("realm", func(t *ftt.Test) {
 			req := simpliestValidRequest("pool")
 			req.Realm = "invalid"
-			_, err := validateNewTask(ctx, req)
+			err := validateNewTask(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike("invalid"))
 		})
 
@@ -324,26 +391,18 @@ func TestValidateNewTask(t *testing.T) {
 				for i := 0; i < maxTagCount+1; i++ {
 					req.Tags = append(req.Tags, "k:v")
 				}
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("up to 256 tags"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.Tags = []string{"invalid"}
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("invalid"))
 			})
 		})
 
 		t.Run("task_slices", func(t *ftt.Test) {
-			t.Run("no_task_slices", func(t *ftt.Test) {
-				req := &apipb.NewTaskRequest{
-					Name: "new",
-				}
-				_, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike("task_slices is required"))
-			})
-
 			t.Run("secret_bytes", func(t *ftt.Test) {
 				t.Run("too_long", func(t *ftt.Test) {
 					req := &apipb.NewTaskRequest{
@@ -357,7 +416,7 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike("exceeding limit"))
 				})
 
@@ -400,7 +459,7 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike("when using secret_bytes multiple times, all values must match"))
 				})
 			})
@@ -415,7 +474,7 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike("must be between"))
 				})
 
@@ -430,23 +489,9 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike("must be between"))
 				})
-			})
-
-			t.Run("different_pools", func(t *ftt.Test) {
-				req := &apipb.NewTaskRequest{
-					Name:                 "new",
-					BotPingToleranceSecs: 300,
-					Priority:             30,
-					TaskSlices: []*apipb.TaskSlice{
-						simpliestValidSlice("pool1"),
-						simpliestValidSlice("pool2"),
-					},
-				}
-				_, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike("each task slice must use the same pool dimensions"))
 			})
 
 			t.Run("duplicated_slices", func(t *ftt.Test) {
@@ -459,7 +504,7 @@ func TestValidateNewTask(t *testing.T) {
 						simpliestValidSlice("pool1"),
 					},
 				}
-				_, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("cannot request duplicate task slice"))
 			})
 
@@ -474,20 +519,20 @@ func TestValidateNewTask(t *testing.T) {
 							},
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike("invalid properties of slice 0: required"))
 				})
 				t.Run("grace_period_secs", func(t *ftt.Test) {
 					t.Run("too_short", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.GracePeriodSecs = -10
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("must be between"))
 					})
 					t.Run("too_long", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.GracePeriodSecs = maxGracePeriodSecs + 1
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("must be between"))
 					})
 				})
@@ -496,7 +541,7 @@ func TestValidateNewTask(t *testing.T) {
 					t.Run("empty", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.Command = []string{}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("command: required"))
 					})
 					t.Run("too_many_args", func(t *ftt.Test) {
@@ -504,7 +549,7 @@ func TestValidateNewTask(t *testing.T) {
 						for i := 0; i < maxCmdArgs+1; i++ {
 							req.TaskSlices[0].Properties.Command = append(req.TaskSlices[0].Properties.Command, "arg")
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("can have up to 128 arguments"))
 					})
 				})
@@ -519,7 +564,7 @@ func TestValidateNewTask(t *testing.T) {
 						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
 							req.TaskSlices[0].Properties.Env = append(req.TaskSlices[0].Properties.Env, envItem)
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("can have up to 64 keys"))
 					})
 
@@ -535,7 +580,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "value",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("same key cannot be specified twice"))
 					})
 
@@ -546,7 +591,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "value",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("required"))
 					})
 
@@ -558,7 +603,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: strings.Repeat("a", validate.MaxEnvValueLength+1),
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("too long"))
 					})
 				})
@@ -575,7 +620,7 @@ func TestValidateNewTask(t *testing.T) {
 						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
 							req.TaskSlices[0].Properties.EnvPrefixes = append(req.TaskSlices[0].Properties.EnvPrefixes, epItem)
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("can have up to 64 keys"))
 					})
 
@@ -591,7 +636,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: []string{"value"},
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("same key cannot be specified twice"))
 					})
 
@@ -603,7 +648,7 @@ func TestValidateNewTask(t *testing.T) {
 									Key: "key",
 								},
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("value is required"))
 						})
 						t.Run("with_invalid_path", func(t *ftt.Test) {
@@ -616,7 +661,7 @@ func TestValidateNewTask(t *testing.T) {
 									},
 								},
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.Loosely(t, err, should.ErrLike(`cannot contain "\\".`))
 						})
 					})
@@ -627,7 +672,7 @@ func TestValidateNewTask(t *testing.T) {
 						t.Run("empty", func(t *ftt.Test) {
 							req := simpliestValidRequest("pool")
 							req.TaskSlices[0].Properties.CasInputRoot = &apipb.CASReference{}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("cas_instance is required"))
 						})
 						t.Run("invalid", func(t *ftt.Test) {
@@ -635,7 +680,7 @@ func TestValidateNewTask(t *testing.T) {
 							req.TaskSlices[0].Properties.CasInputRoot = &apipb.CASReference{
 								CasInstance: "invalid",
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("should match"))
 						})
 					})
@@ -646,12 +691,12 @@ func TestValidateNewTask(t *testing.T) {
 						}
 						req.TaskSlices[0].Properties.CasInputRoot = casInputRoot
 						t.Run("empty", func(t *ftt.Test) {
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("digest: required"))
 						})
 						t.Run("empty_hash", func(t *ftt.Test) {
 							casInputRoot.Digest = &apipb.Digest{}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("hash is required"))
 						})
 						t.Run("negative_size", func(t *ftt.Test) {
@@ -659,7 +704,7 @@ func TestValidateNewTask(t *testing.T) {
 								Hash:      "hash",
 								SizeBytes: -1,
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("size_bytes cannot be negative"))
 						})
 					})
@@ -671,7 +716,7 @@ func TestValidateNewTask(t *testing.T) {
 						for i := 0; i < maxOutputCount+1; i++ {
 							req.TaskSlices[0].Properties.Outputs = append(req.TaskSlices[0].Properties.Outputs, "output")
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("can have up to 512 outputs"))
 					})
 				})
@@ -688,7 +733,7 @@ func TestValidateNewTask(t *testing.T) {
 							Path: "a/b",
 						},
 					}
-					_, err := validateNewTask(ctx, req)
+					err := validateNewTask(ctx, req, "pool")
 					assert.That(t, err, should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name1[] and task_cache:name2[]`))
 				})
 
@@ -702,26 +747,26 @@ func TestValidateNewTask(t *testing.T) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{
 								Path: "a/b",
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("path must be unset"))
 						})
 						t.Run("no name", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("required"))
 						})
 						t.Run("invalid name", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{
 								PackageName: ".",
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("invalid package name"))
 						})
 						t.Run("no_version", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{
 								PackageName: "some/pkg",
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike("required"))
 						})
 					})
@@ -748,7 +793,7 @@ func TestValidateNewTask(t *testing.T) {
 									Path: "a/b",
 								},
 							}
-							_, err := validateNewTask(ctx, req)
+							err := validateNewTask(ctx, req, "pool")
 							assert.That(t, err, should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name[] and task_cipd_package[some/pkg:version1]`))
 						})
 					})
@@ -764,7 +809,7 @@ func TestValidateNewTask(t *testing.T) {
 									Value: "value",
 								})
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("too many dimension constraints 514 (max is 512)"))
 					})
 					t.Run("invalid_key", func(t *ftt.Test) {
@@ -775,47 +820,10 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "value",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("should match"))
 					})
 
-					t.Run("no_pool", func(t *ftt.Test) {
-						req := simpliestValidRequest("pool")
-						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
-							{
-								Key:   "key",
-								Value: "value",
-							},
-						}
-						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("pool is required"))
-					})
-					t.Run("multiple_pool", func(t *ftt.Test) {
-						req := simpliestValidRequest("pool")
-						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
-							{
-								Key:   "pool",
-								Value: "p1",
-							},
-							{
-								Key:   "pool",
-								Value: "p2",
-							},
-						}
-						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("pool cannot be specified more than once"))
-					})
-					t.Run("multiple_pool_with_ordim", func(t *ftt.Test) {
-						req := simpliestValidRequest("pool")
-						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
-							{
-								Key:   "pool",
-								Value: "p1|p2",
-							},
-						}
-						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("pool cannot be specified more than once"))
-					})
 					t.Run("multiple_id", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
@@ -828,7 +836,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "id2",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("id cannot be specified more than once"))
 					})
 					t.Run("repeated_values", func(t *ftt.Test) {
@@ -843,7 +851,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "value",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("has duplicate constraints"))
 					})
 					t.Run("invalid_value", func(t *ftt.Test) {
@@ -854,7 +862,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: " bad value",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("no leading or trailing spaces"))
 					})
 					t.Run("invalid_or_values", func(t *ftt.Test) {
@@ -865,7 +873,7 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "v1| v2",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("no leading or trailing spaces"))
 					})
 					t.Run("too_many_or_values", func(t *ftt.Test) {
@@ -880,8 +888,23 @@ func TestValidateNewTask(t *testing.T) {
 								Value: "v4|v5|v6",
 							},
 						}
-						_, err := validateNewTask(ctx, req)
+						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("too many combinations of dimensions 9 (max is 8)"))
+					})
+					t.Run("informational_dimensions", func(t *ftt.Test) {
+						poolCfg.InformationalDimensionRe = []string{
+							"label-*",
+						}
+						ctx := MockRequestState(ctx, state)
+						req := simpliestValidRequest("pool")
+						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+							{
+								Key:   "label-key",
+								Value: "label-value",
+							},
+						}
+						err := validateNewTask(ctx, req, "pool")
+						assert.That(t, err, should.ErrLike(`dimension "label-key" is informational, cannot use it for task creation`))
 					})
 				})
 			})
@@ -890,16 +913,14 @@ func TestValidateNewTask(t *testing.T) {
 		t.Run("OK", func(t *ftt.Test) {
 			t.Run("without_optional_fields", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
-				pool, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.NoErr(t, err)
-				assert.That(t, pool, should.Equal("pool"))
 			})
 
 			t.Run("with_all_fields", func(t *ftt.Test) {
 				req := fullRequest()
-				pool, err := validateNewTask(ctx, req)
+				err := validateNewTask(ctx, req, "pool")
 				assert.NoErr(t, err)
-				assert.That(t, pool, should.Equal("pool"))
 			})
 		})
 	})
@@ -1445,7 +1466,6 @@ func TestToTaskRequestEntities(t *testing.T) {
 
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
 			assert.NoErr(t, err)
-			fmt.Println(ents.request.ToProto())
 			expectedTR := &model.TaskRequest{
 				Name:                 "new",
 				Created:              now,
