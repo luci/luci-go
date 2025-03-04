@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 
@@ -26,25 +27,44 @@ import (
 // onTaskStatusChangeSchedulerLatency reports to TaskStatusChangeSchedulerLatency
 // for the task.
 func onTaskStatusChangeSchedulerLatency(ctx context.Context, trs *model.TaskResultSummary) {
-	tags := model.TagListToMap(trs.Tags)
 	latency, deduped := trs.PendingNow(ctx, clock.Now(ctx))
 	if deduped {
 		// Don't report deduped tasks, they have no state changes.
 		return
 	}
+	fields := trs.MetricFields(true)
 	metrics.TaskStatusChangeSchedulerLatency.Add(
-		ctx, float64(latency.Milliseconds()), tags["pool"],
-		model.SpecName(tags), trs.State.String(), tags["device_type"])
+		ctx, float64(latency.Milliseconds()),
+		fields.Pool,
+		fields.SpecName,
+		trs.State.String(),
+		fields.DeviceType,
+	)
 }
 
 // onTaskRequested reports to JobsRequested for the newly created task.
 func onTaskRequested(ctx context.Context, trs *model.TaskResultSummary, deduped bool) {
-	tags := model.TagListToMap(trs.Tags)
-	rbe, ok := tags["rbe"]
-	if !ok {
-		rbe = "none"
-	}
+	fields := trs.MetricFields(false)
 	metrics.JobsRequested.Add(
-		ctx, 1, model.SpecName(tags), tags["project"],
-		tags["subproject"], tags["pool"], rbe, deduped)
+		ctx, 1,
+		fields.SpecName,
+		fields.ProjectID,
+		fields.SubprojectID,
+		fields.Pool,
+		fields.RBE,
+		deduped,
+	)
+}
+
+// onTaskToRunConsumed reports how long TaskToRun was pending.
+func onTaskToRunConsumed(ctx context.Context, ttr *model.TaskToRun, trs *model.TaskResultSummary, consumedAt time.Time) {
+	fields := trs.MetricFields(false)
+	metrics.TaskToRunConsumeLatency.Add(
+		ctx, max(consumedAt.Sub(ttr.Created), 0).Seconds()*1000.0,
+		fields.SpecName,
+		fields.ProjectID,
+		fields.SubprojectID,
+		fields.Pool,
+		fields.RBE,
+	)
 }

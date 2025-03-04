@@ -52,24 +52,10 @@ func (r *ActiveJobsReporter) Prepare(ctx context.Context) {
 //
 // Part of TaskVisitor interface.
 func (r *ActiveJobsReporter) Visit(ctx context.Context, trs *model.TaskResultSummary) {
-	// TODO(vadimsh): Stop allocating a map each time. We know exactly what keys we
-	// are going to read. We can just pick them out one by one in O(N) scan without
-	// allocating a map. This matters because this function is called O(1M) times in
-	// a tight loop and optimizing it may potentially noticeably reduce the overall
-	// loop duration.
-	tagsMap := model.TagListToMap(trs.Tags)
-	key := taskCounterKey{
-		specName:     model.SpecName(tagsMap),
-		projectID:    tagsMap["project"],
-		subprojectID: tagsMap["subproject"],
-		pool:         tagsMap["pool"],
-		rbe:          tagsMap["rbe"],
-		status:       taskResultSummaryStatus(trs.State),
-	}
-	if key.rbe == "" {
-		key.rbe = "none"
-	}
-	r.counts[key] += 1
+	r.counts[taskCounterKey{
+		TaskMetricFields: trs.MetricFields(false),
+		status:           taskResultSummaryStatus(trs.State),
+	}] += 1
 }
 
 // Finalize is called once the scan is done.
@@ -83,7 +69,7 @@ func (r *ActiveJobsReporter) Finalize(ctx context.Context, scanErr error) error 
 	state := newTSMonState(r.ServiceName, r.JobName, r.Monitor)
 	mctx := tsmon.WithState(ctx, state)
 	for key, val := range r.counts {
-		metrics.JobsActives.Set(mctx, val, key.specName, key.projectID, key.subprojectID, key.pool, key.rbe, key.status)
+		metrics.JobsActives.Set(mctx, val, key.SpecName, key.ProjectID, key.SubprojectID, key.Pool, key.RBE, key.status)
 	}
 	return flushTSMonState(ctx, state)
 }
@@ -91,12 +77,8 @@ func (r *ActiveJobsReporter) Finalize(ctx context.Context, scanErr error) error 
 ////////////////////////////////////////////////////////////////////////////////
 
 type taskCounterKey struct {
-	specName     string // name of a job specification.
-	projectID    string // e.g. "chromium".
-	subprojectID string // e.g. "blink". Set to empty string if not used.
-	pool         string // e.g. "Chrome".
-	rbe          string // RBE instance of the task or literal "none".
-	status       string // "pending", or "running".
+	model.TaskMetricFields
+	status string // "pending" or "running".
 }
 
 func taskResultSummaryStatus(s apipb.TaskState) string {

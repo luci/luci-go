@@ -1156,3 +1156,88 @@ func TestPendingNow(t *testing.T) {
 		assert.Loosely(t, deduped, should.BeFalse)
 	})
 }
+
+func TestTaskMetricFields(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		tags           []string
+		withDeviceType bool
+		fields         TaskMetricFields
+	}{
+		{
+			tags: []string{},
+			fields: TaskMetricFields{
+				RBE: "none",
+			},
+		},
+		{
+			tags: []string{
+				"spec_name:some-spec",
+				"rbe:ignored",
+				"rbe:used",
+				"project:proj",
+				"subproject:subproj",
+				"pool:some-pool",
+				"device_type:ignored",
+			},
+			fields: TaskMetricFields{
+				SpecName:     "some-spec",
+				ProjectID:    "proj",
+				SubprojectID: "subproj",
+				Pool:         "some-pool",
+				RBE:          "used",
+			},
+		},
+		{
+			tags: []string{
+				"device_type:used",
+			},
+			withDeviceType: true,
+			fields: TaskMetricFields{
+				RBE:        "none",
+				DeviceType: "used",
+			},
+		},
+		{
+			tags: []string{
+				"buildername:builder",
+			},
+			fields: TaskMetricFields{
+				SpecName: "builder",
+				RBE:      "none",
+			},
+		},
+		{
+			tags: []string{
+				"buildername:builder",
+				"build_is_experimental:true",
+			},
+			fields: TaskMetricFields{
+				SpecName: "builder:experimental",
+				RBE:      "none",
+			},
+		},
+		{
+			tags: []string{
+				"terminate:1",
+			},
+			fields: TaskMetricFields{
+				SpecName: "swarming:terminate",
+				RBE:      "none",
+			},
+		},
+		{
+			tags: []string{
+				"swarming.terminate:1",
+			},
+			fields: TaskMetricFields{
+				SpecName: "swarming:terminate",
+				RBE:      "none",
+			},
+		},
+	}
+	for _, c := range cases {
+		assert.That(t, (&TaskResultSummary{Tags: c.tags}).MetricFields(c.withDeviceType), should.Match(c.fields))
+	}
+}

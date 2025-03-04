@@ -250,6 +250,16 @@ func (p *ResultDBInfo) ToProto() *apipb.ResultDBInfo {
 	}
 }
 
+// TaskMetricFields is used as metric fields in some metrics related to tasks.
+type TaskMetricFields struct {
+	SpecName     string // name of a job specification
+	ProjectID    string // e.g. "chromium".
+	SubprojectID string // e.g. "blink". Set to empty string if not used.
+	Pool         string // e.g. "Chrome".
+	RBE          string // RBE instance of the task or literal "none".
+	DeviceType   string // value of "device_type" tag if requested via MetricFields(true)
+}
+
 // TaskResultSummary represents the overall result of a task.
 //
 // Parent is a TaskRequest. Key id is always 1.
@@ -634,6 +644,78 @@ func (p *TaskResultSummary) PendingNow(ctx context.Context, now time.Time) (diff
 		diff = 0
 	}
 	return diff, false
+}
+
+// MetricFields returns metric fields to use to report metrics about this task.
+func (p *TaskResultSummary) MetricFields(withDeviceType bool) TaskMetricFields {
+	// This function is called a lot in the job scanning loop when collecting
+	// statistics about active tasks. Avoid allocating memory to make it slightly
+	// cheaper. Just scan the list of tags manually instead of converting them to
+	// a map and then throwing it away.
+	var (
+		buildername         string
+		buildIsExperimental string
+		deviceType          string
+		pool                string
+		project             string
+		rbe                 string
+		specName            string
+		subproject          string
+		swarmingTerminate   string
+		terminate           string
+	)
+	for _, t := range p.Tags {
+		switch k, v, _ := strings.Cut(t, ":"); k {
+		case "buildername":
+			buildername = v
+		case "build_is_experimental":
+			buildIsExperimental = v
+		case "device_type":
+			deviceType = v
+		case "pool":
+			pool = v
+		case "project":
+			project = v
+		case "rbe":
+			rbe = v
+		case "spec_name":
+			specName = v
+		case "subproject":
+			subproject = v
+		case "swarming.terminate":
+			swarmingTerminate = v
+		case "terminate":
+			terminate = v
+		}
+	}
+
+	if specName == "" {
+		specName = buildername
+		if buildIsExperimental == "true" {
+			specName += ":experimental"
+		}
+		if specName == "" {
+			if terminate == "1" || swarmingTerminate == "1" {
+				specName = "swarming:terminate"
+			}
+		}
+	}
+
+	if rbe == "" {
+		rbe = "none"
+	}
+	if !withDeviceType {
+		deviceType = ""
+	}
+
+	return TaskMetricFields{
+		SpecName:     specName,
+		ProjectID:    project,
+		SubprojectID: subproject,
+		Pool:         pool,
+		RBE:          rbe,
+		DeviceType:   deviceType,
+	}
 }
 
 // TaskResultSummaryKey construct a summary key given a task request key.
@@ -1215,31 +1297,4 @@ func FilterTasksByState(q *datastore.Query, state apipb.StateQuery, splitMode Sp
 		panic(fmt.Sprintf("unexpected StateQuery %q", state))
 	}
 	return []*datastore.Query{q}, splitMode
-}
-
-// TagListToMap converts tags in []string format to a string map.
-func TagListToMap(tags []string) (tagsMap map[string]string) {
-	tagsMap = make(map[string]string, len(tags))
-	for _, tag := range tags {
-		key, val, _ := strings.Cut(tag, ":")
-		tagsMap[key] = val
-	}
-	return tagsMap
-}
-
-// SpecName extracts the spec name from the tags map.
-func SpecName(tagsMap map[string]string) string {
-	if s := tagsMap["spec_name"]; s != "" {
-		return s
-	}
-	b := tagsMap["buildername"]
-	if tagsMap["build_is_experimental"] == "true" {
-		b += ":experimental"
-	}
-	if b == "" {
-		if tagsMap["terminate"] == "1" || tagsMap["swarming.terminate"] == "1" {
-			return "swarming:terminate"
-		}
-	}
-	return b
 }
