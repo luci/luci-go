@@ -136,6 +136,11 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		return nil, errors.Annotate(err, "invocation").Err()
 	}
 
+	testVariantID, err := bqutil.TestVariantIdentifier(tv.TestId, tv.Variant)
+	if err != nil {
+		return nil, errors.Annotate(err, "test_variant_id").Err()
+	}
+
 	variant, err := bqutil.VariantJSON(tv.Variant)
 	if err != nil {
 		return nil, errors.Annotate(err, "variant").Err()
@@ -143,6 +148,7 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 
 	return &bqpb.TestVerdictRow{
 		Project:           project,
+		TestVariantId:     testVariantID,
 		TestId:            tv.TestId,
 		Variant:           variant,
 		VariantHash:       tv.VariantHash,

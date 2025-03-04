@@ -73,7 +73,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 	response := &rdbpb.QueryTestVariantsResponse{
 		TestVariants: []*rdbpb.TestVariant{
 			{
-				TestId:      "ninja://test_consistent_failure",
+				TestId:      ":module!junit:package:class#test_consistent_failure",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_EXONERATED,
 				Exonerations: []*rdbpb.TestExoneration{
@@ -94,7 +94,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:    "one",
-							Name:        "invocations/build-1234/tests/ninja%3A%2F%2Ftest_consistent_failure/results/one",
+							Name:        "invocations/build-1234/tests/:module%21junit:package:class%23test_consistent_failure/results/one",
 							Expected:    false,
 							Status:      rdbpb.TestStatus_FAIL,
 							SummaryHtml: "SummaryHTML",
@@ -110,14 +110,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				SourcesId: "sources1",
 			},
 			{
-				TestId:      "ninja://test_expected",
+				TestId:      ":module!junit:package:class#test_expected",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_EXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_expected/results/one",
+							Name:      "invocations/build-1234/tests/:module%21junit:package:class%23test_expected/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
 							Expected:  true,
@@ -127,14 +127,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_filtering_event",
+				TestId:      ":module!junit:package:class#test_filtering_event",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_EXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:   "one",
-							Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_filtering_event/results/one",
+							Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_filtering_event/results/one",
 							StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 							Status:     rdbpb.TestStatus_SKIP,
 							SkipReason: rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
@@ -144,14 +144,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_from_luci_bisection",
+				TestId:      ":module!junit:package:class#test_from_luci_bisection",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId: "one",
-							Name:     "invocations/build-1234/tests/ninja%3A%2F%2Ftest_from_luci_bisection/results/one",
+							Name:     "invocations/build-1234/tests/:module%21junit:package:class%23test_from_luci_bisection/results/one",
 							Status:   rdbpb.TestStatus_PASS,
 							Expected: false,
 							Tags:     pbutil.StringPairs("is_luci_bisection", "true"),
@@ -160,14 +160,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_has_unexpected",
+				TestId:      ":module!junit:package:class#test_has_unexpected",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_FLAKY,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/invocation-0b/tests/ninja%3A%2F%2Ftest_has_unexpected/results/one",
+							Name:      "invocations/invocation-0b/tests/:module%21junit:package:class%23test_has_unexpected/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -176,7 +176,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "two",
-							Name:      "invocations/invocation-0a/tests/ninja%3A%2F%2Ftest_has_unexpected/results/two",
+							Name:      "invocations/invocation-0a/tests/:module%21junit:package:class%23test_has_unexpected/results/two",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
 							Expected:  true,
@@ -185,7 +185,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:       "ninja://test_known_flake",
+				TestId:       ":module!junit:package:class#test_known_flake",
 				VariantHash:  "hash_2",
 				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
 				Variant:      pbutil.Variant("k1", "v2"),
@@ -194,7 +194,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_known_flake/results/one",
+							Name:      "invocations/build-1234/tests/:module%21junit:package:class%23test_known_flake/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -205,7 +205,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:       "ninja://test_new_failure",
+				TestId:       ":module!junit:package:class#test_new_failure",
 				VariantHash:  "hash_1",
 				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
 				Variant:      pbutil.Variant("k1", "v1"),
@@ -214,7 +214,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_new_failure/results/one",
+							Name:      "invocations/build-1234/tests/:module%21junit:package:class%23test_new_failure/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -225,14 +225,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_new_flake",
+				TestId:      ":module!junit:package:class#test_new_flake",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_FLAKY,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "two",
-							Name:      "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/two",
+							Name:      "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/two",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -242,7 +242,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/one",
+							Name:      "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -252,7 +252,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "three",
-							Name:      "invocations/invocation-4567/tests/ninja%3A%2F%2Ftest_new_flake/results/three",
+							Name:      "invocations/invocation-4567/tests/:module%21junit:package:class%23test_new_flake/results/three",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
 							Expected:  true,
@@ -262,14 +262,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_no_new_results",
+				TestId:      ":module!junit:package:class#test_no_new_results",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_no_new_results/results/one",
+							Name:      "invocations/build-1234/tests/:module%21junit:package:class%23test_no_new_results/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
 							Expected:  false,
@@ -279,14 +279,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_skip",
+				TestId:      ":module!junit:package:class#test_skip",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:  "one",
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_skip/results/one",
+							Name:      "invocations/build-1234/tests/:module%21junit:package:class%23test_skip/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_SKIP,
 							Expected:  false,
@@ -295,14 +295,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_unexpected_pass",
+				TestId:      ":module!junit:package:class#test_unexpected_pass",
 				VariantHash: "hash",
 				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId: "one",
-							Name:     "invocations/build-1234/tests/ninja%3A%2F%2Ftest_unexpected_pass/results/one",
+							Name:     "invocations/build-1234/tests/:module%21junit:package:class%23test_unexpected_pass/results/one",
 							Status:   rdbpb.TestStatus_PASS,
 							Expected: false,
 						},

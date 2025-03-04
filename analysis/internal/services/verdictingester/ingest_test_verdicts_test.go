@@ -224,7 +224,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 						Project:    "project",
 						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
 						ProcessID:  "verdict-ingestion/analyze-changepoints",
-						Uniquifier: "ninja://test_consistent_failure/hash",
+						Uniquifier: ":module!junit:package:class#test_consistent_failure/hash",
 					},
 					// Creation and expiry time are not verified.
 				},
@@ -513,7 +513,7 @@ func setupTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime t
 	branch := &testvariantbranch.Entry{
 		IsNew:       true,
 		Project:     "project",
-		TestID:      "ninja://test_consistent_failure",
+		TestID:      ":module!junit:package:class#test_consistent_failure",
 		VariantHash: "hash",
 		SourceRef:   sr,
 		RefHash:     rdbpbutil.SourceRefHash(pbutil.SourceRefToResultDB(sr)),
@@ -564,7 +564,7 @@ func verifyTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime 
 
 	assert.Loosely(t, tvbs[0], should.Match(&testvariantbranch.Entry{
 		Project:     "project",
-		TestID:      "ninja://test_consistent_failure",
+		TestID:      ":module!junit:package:class#test_consistent_failure",
 		VariantHash: "hash",
 		SourceRef:   sr,
 		RefHash:     rdbpbutil.SourceRefHash(pbutil.SourceRefToResultDB(sr)),
@@ -651,7 +651,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 	}
 
 	expectedTRs := []*testresults.TestResult{
-		trBuilder.WithTestID("ninja://test_consistent_failure").
+		trBuilder.WithTestID(":module!junit:package:class#test_consistent_failure").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -662,7 +662,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithIsFromBisection(false).
 			WithSources(rdbSources).
 			Build(),
-		trBuilder.WithTestID("ninja://test_expected").
+		trBuilder.WithTestID(":module!junit:package:class#test_expected").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -672,7 +672,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_filtering_event").
+		trBuilder.WithTestID(":module!junit:package:class#test_filtering_event").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -682,7 +682,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_from_luci_bisection").
+		trBuilder.WithTestID(":module!junit:package:class#test_from_luci_bisection").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -692,7 +692,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(true).
 			Build(),
-		trBuilder.WithTestID("ninja://test_has_unexpected").
+		trBuilder.WithTestID(":module!junit:package:class#test_has_unexpected").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -702,7 +702,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_has_unexpected").
+		trBuilder.WithTestID(":module!junit:package:class#test_has_unexpected").
 			WithVariantHash("hash").
 			WithRunIndex(1).
 			WithResultIndex(0).
@@ -712,7 +712,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_known_flake").
+		trBuilder.WithTestID(":module!junit:package:class#test_known_flake").
 			WithVariantHash("hash_2").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -722,7 +722,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_new_failure").
+		trBuilder.WithTestID(":module!junit:package:class#test_new_failure").
 			WithVariantHash("hash_1").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -732,7 +732,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_new_flake").
+		trBuilder.WithTestID(":module!junit:package:class#test_new_flake").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -742,7 +742,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_new_flake").
+		trBuilder.WithTestID(":module!junit:package:class#test_new_flake").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(1).
@@ -752,7 +752,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_new_flake").
+		trBuilder.WithTestID(":module!junit:package:class#test_new_flake").
 			WithVariantHash("hash").
 			WithRunIndex(1).
 			WithResultIndex(0).
@@ -762,7 +762,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_no_new_results").
+		trBuilder.WithTestID(":module!junit:package:class#test_no_new_results").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -772,7 +772,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_skip").
+		trBuilder.WithTestID(":module!junit:package:class#test_skip").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -782,7 +782,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithoutExoneration().
 			WithIsFromBisection(false).
 			Build(),
-		trBuilder.WithTestID("ninja://test_unexpected_pass").
+		trBuilder.WithTestID(":module!junit:package:class#test_unexpected_pass").
 			WithVariantHash("hash").
 			WithRunIndex(0).
 			WithResultIndex(0).
@@ -814,77 +814,77 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 	expectedRealms := []*testresults.TestVariantRealm{
 		{
 			Project:     "project",
-			TestID:      "ninja://test_consistent_failure",
+			TestID:      ":module!junit:package:class#test_consistent_failure",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_expected",
+			TestID:      ":module!junit:package:class#test_expected",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_filtering_event",
+			TestID:      ":module!junit:package:class#test_filtering_event",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_from_luci_bisection",
+			TestID:      ":module!junit:package:class#test_from_luci_bisection",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_has_unexpected",
+			TestID:      ":module!junit:package:class#test_has_unexpected",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_known_flake",
+			TestID:      ":module!junit:package:class#test_known_flake",
 			VariantHash: "hash_2",
 			SubRealm:    "ci",
 			Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v2")),
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_new_failure",
+			TestID:      ":module!junit:package:class#test_new_failure",
 			VariantHash: "hash_1",
 			SubRealm:    "ci",
 			Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v1")),
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_new_flake",
+			TestID:      ":module!junit:package:class#test_new_flake",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_no_new_results",
+			TestID:      ":module!junit:package:class#test_no_new_results",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_skip",
+			TestID:      ":module!junit:package:class#test_skip",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
 		},
 		{
 			Project:     "project",
-			TestID:      "ninja://test_unexpected_pass",
+			TestID:      ":module!junit:package:class#test_unexpected_pass",
 			VariantHash: "hash",
 			SubRealm:    "ci",
 			Variant:     nil,
@@ -927,57 +927,57 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 	expectedTestRealms := []*testresults.TestRealm{
 		{
 			Project:  "project",
-			TestID:   "ninja://test_consistent_failure",
+			TestID:   ":module!junit:package:class#test_consistent_failure",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_expected",
+			TestID:   ":module!junit:package:class#test_expected",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_filtering_event",
+			TestID:   ":module!junit:package:class#test_filtering_event",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_from_luci_bisection",
+			TestID:   ":module!junit:package:class#test_from_luci_bisection",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_has_unexpected",
+			TestID:   ":module!junit:package:class#test_has_unexpected",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_known_flake",
+			TestID:   ":module!junit:package:class#test_known_flake",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_new_failure",
+			TestID:   ":module!junit:package:class#test_new_failure",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_new_flake",
+			TestID:   ":module!junit:package:class#test_new_flake",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_no_new_results",
+			TestID:   ":module!junit:package:class#test_no_new_results",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_skip",
+			TestID:   ":module!junit:package:class#test_skip",
 			SubRealm: "ci",
 		},
 		{
 			Project:  "project",
-			TestID:   "ninja://test_unexpected_pass",
+			TestID:   ":module!junit:package:class#test_unexpected_pass",
 			SubRealm: "ci",
 		},
 	}
@@ -1004,12 +1004,12 @@ func verifyClustering(t testing.TB, chunkStore *chunkstore.FakeClient, clustered
 		actualClusteredFailures[f.TestId] += 1
 	}
 	expectedClusteredFailures := map[string]int{
-		"ninja://test_new_failure":        1,
-		"ninja://test_known_flake":        1,
-		"ninja://test_consistent_failure": 2, // One failure is in two clusters due it having a failure reason.
-		"ninja://test_no_new_results":     1,
-		"ninja://test_new_flake":          2,
-		"ninja://test_has_unexpected":     1,
+		":module!junit:package:class#test_new_failure":        1,
+		":module!junit:package:class#test_known_flake":        1,
+		":module!junit:package:class#test_consistent_failure": 2, // One failure is in two clusters due it having a failure reason.
+		":module!junit:package:class#test_no_new_results":     1,
+		":module!junit:package:class#test_new_flake":          2,
+		":module!junit:package:class#test_has_unexpected":     1,
 	}
 	assert.Loosely(t, actualClusteredFailures, should.Match(expectedClusteredFailures), truth.LineContext())
 
@@ -1017,7 +1017,7 @@ func verifyClustering(t testing.TB, chunkStore *chunkstore.FakeClient, clustered
 		assert.Loosely(t, cf.BuildGardenerRotations, should.Match([]string{"rotation1", "rotation2"}), truth.LineContext())
 
 		// Verify test variant branch stats were correctly populated.
-		if cf.TestId == "ninja://test_consistent_failure" {
+		if cf.TestId == ":module!junit:package:class#test_consistent_failure" {
 			assert.Loosely(t, cf.TestVariantBranch, should.Match(&bqpb.ClusteredFailureRow_TestVariantBranch{
 				UnexpectedVerdicts_24H: 124,
 				FlakyVerdicts_24H:      456,
@@ -1092,8 +1092,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 	}
 	expectedRows := []*bqpb.TestVerdictRow{
 		{
-			Project:       "project",
-			TestId:        "ninja://test_consistent_failure",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()), // Hash of empty test variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_consistent_failure",
+			},
+			TestId:        ":module!junit:package:class#test_consistent_failure",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1104,7 +1113,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:        "invocations/build-1234/tests/ninja%3A%2F%2Ftest_consistent_failure/results/one",
+					Name:        "invocations/build-1234/tests/:module%21junit:package:class%23test_consistent_failure/results/one",
 					ResultId:    "one",
 					Expected:    false,
 					Status:      pb.TestResultStatus_FAIL,
@@ -1159,8 +1168,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_expected",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()), // Hash of empty test variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_expected",
+			},
+			TestId:        ":module!junit:package:class#test_expected",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1171,7 +1189,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_expected/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_expected/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1188,8 +1206,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_filtering_event",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()), // Hash of empty test variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_filtering_event",
+			},
+			TestId:        ":module!junit:package:class#test_filtering_event",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1200,7 +1227,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_filtering_event/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_filtering_event/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -1217,8 +1244,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_from_luci_bisection",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()), // Hash of empty test variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_from_luci_bisection",
+			},
+			TestId:        ":module!junit:package:class#test_from_luci_bisection",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1229,7 +1265,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_from_luci_bisection/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_from_luci_bisection/results/one",
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,
@@ -1245,8 +1281,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_has_unexpected",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()), // Hash of empty test variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_has_unexpected",
+			},
+			TestId:        ":module!junit:package:class#test_has_unexpected",
 			VariantHash:   "hash",
 			Variant:       "{}",
 			Invocation:    invocation,
@@ -1257,7 +1302,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-0b",
 					},
-					Name:       "invocations/invocation-0b/tests/ninja%3A%2F%2Ftest_has_unexpected/results/one",
+					Name:       "invocations/invocation-0b/tests/:module%21junit:package:class%23test_has_unexpected/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1268,7 +1313,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-0a",
 					},
-					Name:       "invocations/invocation-0a/tests/ninja%3A%2F%2Ftest_has_unexpected/results/two",
+					Name:       "invocations/invocation-0a/tests/:module%21junit:package:class%23test_has_unexpected/results/two",
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1284,8 +1329,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_known_flake",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k1":"v2"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v2")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_known_flake",
+			},
+			TestId:        ":module!junit:package:class#test_known_flake",
 			Variant:       `{"k1":"v2"}`,
 			VariantHash:   "hash_2",
 			Invocation:    invocation,
@@ -1297,7 +1351,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_known_flake/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_known_flake/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1315,8 +1369,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_new_failure",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k1":"v1"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_new_failure",
+			},
+			TestId:        ":module!junit:package:class#test_new_failure",
 			Variant:       `{"k1":"v1"}`,
 			VariantHash:   "hash_1",
 			Invocation:    invocation,
@@ -1328,7 +1391,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_new_failure/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_new_failure/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1346,8 +1409,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_new_flake",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_new_flake",
+			},
+			TestId:        ":module!junit:package:class#test_new_flake",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1358,7 +1430,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-1234",
 					},
-					Name:       "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/two",
+					Name:       "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/two",
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1370,7 +1442,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-1234",
 					},
-					Name:       "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/one",
+					Name:       "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1382,7 +1454,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "invocation-4567",
 					},
-					Name:       "invocations/invocation-4567/tests/ninja%3A%2F%2Ftest_new_flake/results/three",
+					Name:       "invocations/invocation-4567/tests/:module%21junit:package:class%23test_new_flake/results/three",
 					ResultId:   "three",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -1399,8 +1471,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_no_new_results",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_no_new_results",
+			},
+			TestId:        ":module!junit:package:class#test_no_new_results",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1411,7 +1492,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_no_new_results/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_no_new_results/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -1428,8 +1509,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_skip",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_skip",
+			},
+			TestId:        ":module!junit:package:class#test_skip",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1440,7 +1530,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_skip/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_skip/results/one",
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -1456,8 +1546,17 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
-			Project:       "project",
-			TestId:        "ninja://test_unexpected_pass",
+			Project: "project",
+			TestVariantId: &bqpb.TestVariantIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant()),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_unexpected_pass",
+			},
+			TestId:        ":module!junit:package:class#test_unexpected_pass",
 			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
@@ -1468,7 +1567,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
 						Id: "build-1234",
 					},
-					Name:       "invocations/build-1234/tests/ninja%3A%2F%2Ftest_unexpected_pass/results/one",
+					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_unexpected_pass/results/one",
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					Expected:   false,
