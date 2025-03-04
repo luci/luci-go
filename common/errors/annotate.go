@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
-	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -89,9 +88,6 @@ type stackContext struct {
 	frameInfo stackFrameInfo
 	// publicly-facing reason, and will show up in the Error() string.
 	reason string
-
-	// tags are any data associated with this frame.
-	tags map[TagKey]any
 }
 
 // renderPublic renders the public error.Error()-style string for this frame,
@@ -111,7 +107,7 @@ func (s *stackContext) renderPublic(inner error) string {
 //	reason: "The literal content of the reason field: %(key2)d"
 //	internal reason: I am an internal reason formatted with key1: value
 func (s *stackContext) render() lines {
-	siz := len(s.tags)
+	siz := 0
 	if s.reason != "" {
 		siz++
 	}
@@ -123,18 +119,6 @@ func (s *stackContext) render() lines {
 	if s.reason != "" {
 		ret = append(ret, fmt.Sprintf("reason: %s", s.reason))
 	}
-	keys := make(tagKeySlice, 0, len(s.tags))
-	for key := range s.tags {
-		keys = append(keys, key)
-	}
-	sort.Sort(keys)
-	for _, key := range keys {
-		if key != nil {
-			ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, s.tags[key]))
-		} else {
-			ret = append(ret, fmt.Sprintf("tag[nil]: %#v", s.tags[key]))
-		}
-	}
 
 	return ret
 }
@@ -142,7 +126,6 @@ func (s *stackContext) render() lines {
 type terminalStackError struct {
 	error
 	finfo stackFrameInfo
-	tags  map[TagKey]any
 }
 
 var _ interface {
@@ -151,7 +134,7 @@ var _ interface {
 } = (*terminalStackError)(nil)
 
 func (e *terminalStackError) stackContext() stackContext {
-	return stackContext{frameInfo: e.finfo, tags: e.tags}
+	return stackContext{frameInfo: e.finfo}
 }
 
 type annotatedError struct {
@@ -175,39 +158,27 @@ func (e *annotatedError) Unwrap() error              { return e.inner }
 // See the example test for Annotate to see how this is meant to be used.
 type Annotator struct {
 	inner    error
-	wrappers []NormalGoWrapper
+	wrappers []ErrorWrapper
 	ctx      stackContext
 }
 
-// Tag adds a tag with an optional value to this error.
+// ErrorWrapper describes a method which can accept an error and return an
+// optionally wrapped version of that error.
 //
-// `value` is a unary optional argument, and must be a simple type (i.e. has
-// a reflect.Kind which is a base data type like bool, string, or int).
-func (a *Annotator) Tag(tags ...TagValueGenerator) *Annotator {
+// Implementations should return `nil` if provided `nil`.
+type ErrorWrapper interface {
+	Apply(err error) (wrapped error)
+}
+
+// Tag wraps the final error with `wrappers`.
+//
+// This can be used with the go.chromium.org/luci/common/errors/errtag package
+// to allow tagging errors built with Annotator.
+func (a *Annotator) Tag(wrappers ...ErrorWrapper) *Annotator {
 	if a == nil {
 		return a
 	}
-	var tagMap map[TagKey]any
-	for _, t := range tags {
-		key, value := t.GenerateErrorTagValue()
-		if key == nil {
-			a.wrappers = append(a.wrappers, t.(NormalGoWrapper))
-		} else {
-			if tagMap == nil {
-				tagMap = make(map[TagKey]any, len(tags))
-			}
-			tagMap[key.(TagKey)] = value
-		}
-	}
-	if len(tagMap) > 0 {
-		if a.ctx.tags == nil {
-			a.ctx.tags = tagMap
-		} else {
-			for k, v := range tagMap {
-				a.ctx.tags[k] = v
-			}
-		}
-	}
+	a.wrappers = append(a.wrappers, wrappers...)
 	return a
 }
 
@@ -664,23 +635,9 @@ func Reason(reason string, args ...any) *Annotator {
 // New is an API-compatible version of the standard errors.New function. Unlike
 // the stdlib errors.New, this will capture the current stack information at the
 // place this error was created.
-func New(msg string, tags ...TagValueGenerator) error {
+func New(msg string, wrappers ...ErrorWrapper) error {
 	tse := &terminalStackError{
-		errors.New(msg), stackFrameInfo{forStack: captureStack(1)}, nil}
-	var wrappers []NormalGoWrapper
-	if len(tags) > 0 {
-		for _, t := range tags {
-			key, value := t.GenerateErrorTagValue()
-			if key == nil {
-				wrappers = append(wrappers, t.(NormalGoWrapper))
-			} else {
-				if tse.tags == nil {
-					tse.tags = make(map[TagKey]any, len(tags))
-				}
-				tse.tags[key.(TagKey)] = value
-			}
-		}
-	}
+		errors.New(msg), stackFrameInfo{forStack: captureStack(1)}}
 	var ret error = tse
 	for _, wrapper := range wrappers {
 		ret = wrapper.Apply(ret)
