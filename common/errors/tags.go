@@ -107,73 +107,9 @@ func (t TagValue) Apply(err error) error {
 	return a.Tag(t).Err()
 }
 
-// BoolTag is deprecated.
-//
-// Deprecated: Use go.chromium.org/common/errors/errtag instead.
-type BoolTag struct{ Key TagKey }
-
-// GenerateErrorTagValue implements TagValueGenerator, and returns a default
-// value for the tag of `true`. If you want to set this BoolTag value to false,
-// use BoolTag.Off().
-func (b BoolTag) GenerateErrorTagValue() (key, value any) { return b.Key, true }
-
-// Off allows you to "remove" this boolean tag from an error (by setting it to
-// false).
-func (b BoolTag) Off() TagValue { return TagValue{b.Key, false} }
-
-// Apply is a shortcut for With(true).Apply(err)
-func (b BoolTag) Apply(err error) error {
-	if err == nil {
-		return nil
-	}
-	a := &Annotator{err, nil, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
-	return a.Tag(b).Err()
-}
-
-// In returns true iff this tag value has been set to true on this error.
-func (b BoolTag) In(err error) bool {
-	v, ok := TagValueIn(b.Key, err)
-	if !ok {
-		return false
-	}
-	return v.(bool)
-}
-
 // NewTagKey creates a new TagKey.
 //
-// Use this with a BoolTag or your own custom tag implementation.
-//
-// Example (bool tag):
-//
-//	var myTag = errors.BoolTag{Key: errors.NewTagKey("this error is a user error")}
-//
-//	err = myTag.Apply(err)
-//	myTag.In(err) // == true
-//
-//	err2 := myTag.Off().Apply(err)
-//	myTag.In(err2) // == false
-//
-// Example (custom tag)
-//
-//	type SomeType int
-//	type myTag struct { Key errors.TagKey }
-//	func (m myTag) With(value SomeType) errors.TagValue {
-//	  return errors.TagValue{Key: m.Key, Value: value}
-//	}
-//	func (m myTag) In(err error) (v SomeType, ok bool) {
-//	  d, ok := errors.TagValueIn(m.Key, err)
-//	  if ok {
-//	    v = d.(SomeType)
-//	  }
-//	  return
-//	}
-//	var MyTag = myTag{errors.NewTagKey("has a SomeType")}
-//
-// You could then use it like:
-//
-//	err = MyTag.With(100).Apply(err)
-//	MyTag.In(err) // == true
-//	errors.ValueIn(err) // == (SomeType(100), true)
+// Use this with your own custom tag implementation.
 //
 // Deprecated: Use go.chromium.org/common/errors/errtag instead.
 func NewTagKey(description string) TagKey {
