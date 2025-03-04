@@ -127,6 +127,13 @@ export const Tasks = ({
         );
       },
     },
+    // TODO: 371010330 - Make rows and add a failure icon somewhere (for a11y)
+    // if result is a failure.
+    {
+      field: 'result',
+      headerName: 'Result',
+      flex: 1,
+    },
     {
       field: 'started',
       headerName: 'Started',
@@ -135,13 +142,6 @@ export const Tasks = ({
     {
       field: 'duration',
       headerName: 'Duration',
-      flex: 1,
-    },
-    // TODO: 371010330 - Make rows and add a failure icon somehwere (for a11y)
-    // if result is a failure.
-    {
-      field: 'result',
-      headerName: 'Result',
       flex: 1,
     },
   ];
