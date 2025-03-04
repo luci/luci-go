@@ -26,6 +26,8 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { colors } from '@/fleet/theme/colors';
 
+import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
+
 export const Header = ({
   sidebarOpen,
   setSidebarOpen,
@@ -103,7 +105,9 @@ export const Header = ({
         </IconButton>
         <IconButton
           onClick={() =>
-            window.open(genFeedbackUrl({ bugComponent: '1664178' }))
+            window.open(
+              genFeedbackUrl({ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }),
+            )
           }
         >
           <Tooltip title="File a bug">

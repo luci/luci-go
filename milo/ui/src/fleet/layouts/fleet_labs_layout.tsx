@@ -16,6 +16,7 @@ import { Outlet } from 'react-router-dom';
 
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 
+import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
 import { colors } from '../theme/colors';
 
 /**
@@ -32,7 +33,7 @@ export function Component() {
           width: '100%',
           boxSizing: 'border-box',
         }}
-        feedbackUrlArgs={{ bugComponent: '1664178' }}
+        feedbackUrlArgs={{ bugComponent: FEEDBACK_BUGANIZER_BUG_ID }}
       />
       <Outlet />
     </>

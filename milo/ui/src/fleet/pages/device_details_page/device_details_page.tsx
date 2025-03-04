@@ -16,14 +16,24 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Box, IconButton, Typography } from '@mui/material';
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  IconButton,
+  Link,
+  Typography,
+} from '@mui/material';
 import Tab from '@mui/material/Tab';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { genFeedbackUrl } from '@/common/tools/utils';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { extractDutState, extractDutId } from '@/fleet/utils/devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -98,16 +108,48 @@ export const DeviceDetailsPage = () => {
   const navigatedFromLink = useNavigatedFromLink();
   const [selectedTab, setSelectedTab] = useTabs();
 
-  // TODO: Add loading indicator for when the device is being loaded.
-  const device = useDeviceData(id);
-  const dutId = extractDutId(device);
-
   const navigate = useNavigate();
+  const { isLoading, device } = useDeviceData(id);
 
-  // TODO: b/397968435 - Tell the user when a device is not found.
-  if (!id || !selectedTab || !dutId) {
-    return <></>;
+  if (isLoading) {
+    return (
+      <div
+        css={{
+          width: '100%',
+          margin: '24px 0px',
+        }}
+      >
+        <CentralizedProgress />
+      </div>
+    );
   }
+
+  if (device === null) {
+    return (
+      <Alert severity="error">
+        <AlertTitle>Device not found!</AlertTitle>
+        <p>
+          Oh no! The device <code>{id}</code> you are looking for was not found.
+        </p>
+        <p>
+          If you believe that the device should be there, let us know by
+          submitting your{' '}
+          <Link
+            href={genFeedbackUrl({
+              bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
+              errMsg: `Device not found: ${id}`,
+            })}
+            target="_blank"
+          >
+            feedback
+          </Link>
+          !
+        </p>
+      </Alert>
+    );
+  }
+
+  const dutId = extractDutId(device);
 
   return (
     <div
@@ -156,7 +198,7 @@ export const DeviceDetailsPage = () => {
         />
       </div>
 
-      <TabContext value={selectedTab}>
+      <TabContext value={selectedTab || TabValue.TASKS}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
             <Tab label="Tasks" value={TabValue.TASKS} />

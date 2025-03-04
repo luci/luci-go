@@ -21,14 +21,18 @@ import {
   ListDevicesResponse,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+export type UseDeviceDataResult = {
+  isLoading: boolean;
+  device: Device | null;
+};
+
 /**
  * Queries for a device using ListDevices query with a single id filter
- * and serves cached data from previous ListDevices queries while loading
+ * and serves cached data from previous ListDevices queries while loading.
  *
  * @param deviceId - the id of the device to query
- * @returns the `Device` or `undefined` if the query is loading and no device is present in the cache
  */
-export const useDeviceData = (deviceId: string): Device | undefined => {
+export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
   const queryClient = useQueryClient();
   const listDevicesQueryKey = useListDevicesQueryKey();
 
@@ -42,16 +46,27 @@ export const useDeviceData = (deviceId: string): Device | undefined => {
   });
   const devicesQuery = useDevices(request);
 
-  if (devicesQuery.data) return devicesQuery.data.devices[0];
+  if (devicesQuery.data) {
+    return {
+      isLoading: false,
+      device: devicesQuery.data.devices[0] ?? null,
+    };
+  }
 
   for (const query of queriesData) {
     if (!query[1]) continue;
     for (const device of query[1].devices) {
       if (device.id === deviceId) {
-        return device;
+        return {
+          isLoading: false,
+          device: device,
+        };
       }
     }
   }
 
-  return undefined;
+  return {
+    isLoading: true,
+    device: null,
+  };
 };
