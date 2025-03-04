@@ -19,10 +19,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 
 import { stripPrefix, sortGroupsByName } from '@/authdb/common/helpers';
@@ -34,7 +31,7 @@ import {
   AuthGroup,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-import { GroupLink } from './group_link';
+import { CollapsibleList } from './collapsible_list';
 
 import './groups.css';
 
@@ -207,65 +204,27 @@ export function GroupLookup({ name }: GroupLookupProps) {
   const directIncluders = summary.directIncluders;
   const indirectIncluders = summary.indirectIncluders;
 
+  const getGroupNames = (groupsList: AuthGroup[]) => {
+    return groupsList.map((group) => {
+      return group.name;
+    });
+  };
+
   return (
     <>
       <TableContainer sx={{ p: 0 }}>
         <Table data-testid="lookup-table">
           <TableBody>
-            <TableRow>
-              <TableCell sx={{ pt: 0 }}>
-                <Typography variant="h6">Directly included by</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ pt: 0, pb: '16px' }}>
-                {directIncluders.length > 0 ? (
-                  <ul>
-                    {directIncluders.map((group) => {
-                      return (
-                        <li key={group.name}>
-                          <GroupLink name={group.name} />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ fontStyle: 'italic', pl: '20px', color: 'grey' }}
-                  >
-                    None
-                  </Typography>
-                )}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <Typography variant="h6">Indirectly included by</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ pt: 0 }}>
-                {indirectIncluders.length > 0 ? (
-                  <ul>
-                    {indirectIncluders.map((group) => {
-                      return (
-                        <li key={group.name}>
-                          <GroupLink name={group.name} />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ fontStyle: 'italic', pl: '20px', color: 'grey' }}
-                  >
-                    None
-                  </Typography>
-                )}
-              </TableCell>
-            </TableRow>
+            <CollapsibleList
+              items={getGroupNames(directIncluders)}
+              renderAsGroupLinks={true}
+              title="Directly included by"
+            />
+            <CollapsibleList
+              items={getGroupNames(indirectIncluders)}
+              renderAsGroupLinks={true}
+              title="Indirectly included by"
+            />
           </TableBody>
         </Table>
       </TableContainer>

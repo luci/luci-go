@@ -19,9 +19,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
@@ -29,6 +27,8 @@ import { Fragment } from 'react';
 import { useAuthServiceAuthDBClient } from '@/authdb/hooks/prpc_clients';
 import { RealmPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
 import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+
+import { CollapsibleList } from './collapsible_list';
 
 interface GroupPermissionsProps {
   name: string;
@@ -87,26 +87,11 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
                 {realmPermissions?.map((realm) => {
                   return (
                     <Fragment key={realm.name}>
-                      <TableRow>
-                        <TableCell>
-                          <Typography variant="h6">{realm.name}</Typography>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell sx={{ pb: '16px' }}>
-                          <ul>
-                            {realm.permissions.map((permission) => {
-                              return (
-                                <li key={permission}>
-                                  <Typography variant="body2">
-                                    {permission}
-                                  </Typography>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </TableCell>
-                      </TableRow>
+                      <CollapsibleList
+                        items={realm.permissions as string[]}
+                        renderAsGroupLinks={false}
+                        title={realm.name}
+                      />
                     </Fragment>
                   );
                 })}

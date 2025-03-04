@@ -19,16 +19,13 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 
 import { stripPrefix } from '@/authdb/common/helpers';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 
-import { GroupLink } from './group_link';
+import { CollapsibleList } from './collapsible_list';
 
 interface GroupListingProps {
   name: string;
@@ -76,87 +73,21 @@ export function GroupListing({ name }: GroupListingProps) {
       <TableContainer sx={{ p: 0 }}>
         <Table data-testid="listing-table">
           <TableBody>
-            <TableRow>
-              <TableCell>
-                <Typography variant="h6">Members</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ pb: '16px' }}>
-                {members.length > 0 ? (
-                  <ul>
-                    {members?.map((member) => {
-                      return (
-                        <li key={member}>
-                          <Typography variant="body2">{member}</Typography>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ fontStyle: 'italic', pl: '20px', color: 'grey' }}
-                  >
-                    No members
-                  </Typography>
-                )}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <Typography variant="h6">Globs</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ pb: '16px' }}>
-                {globs.length > 0 ? (
-                  <ul>
-                    {globs?.map((glob) => {
-                      return (
-                        <li key={glob}>
-                          <Typography variant="body2">{glob}</Typography>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ fontStyle: 'italic', pl: '20px', color: 'grey' }}
-                  >
-                    No globs
-                  </Typography>
-                )}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <Typography variant="h6">Nested Groups</Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ pb: '16px' }}>
-                {nested.length > 0 ? (
-                  <ul>
-                    {nested?.map((group) => {
-                      return (
-                        <li key={group}>
-                          <GroupLink name={group}></GroupLink>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{ fontStyle: 'italic', pl: '20px', color: 'grey' }}
-                  >
-                    No nested groups
-                  </Typography>
-                )}
-              </TableCell>
-            </TableRow>
+            <CollapsibleList
+              items={members}
+              renderAsGroupLinks={false}
+              title="Members"
+            />
+            <CollapsibleList
+              items={globs}
+              renderAsGroupLinks={false}
+              title="Globs"
+            />
+            <CollapsibleList
+              items={nested}
+              renderAsGroupLinks={true}
+              title="Nested Groups"
+            />
           </TableBody>
         </Table>
       </TableContainer>
