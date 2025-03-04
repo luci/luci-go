@@ -110,10 +110,10 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	}
 
 	ftt.Run("Update with nonexistent project stores nothing", t, func(t *ftt.Test) {
-		assert.Loosely(t, Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil), should.BeNil)
+		assert.NoErr(t, Update(ctx, &prjcfg.Meta{Project: "bogus", Status: prjcfg.StatusNotExists}, nil))
 		mps := []*mapPart{}
 		q := datastore.NewQuery(mapKind)
-		assert.Loosely(t, datastore.GetAll(ctx, q, &mps), should.BeNil)
+		assert.NoErr(t, datastore.GetAll(ctx, q, &mps))
 		assert.Loosely(t, mps, should.BeEmpty)
 	})
 
@@ -124,7 +124,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	})
 
 	ftt.Run("Basic behavior with one project", t, func(t *ftt.Test) {
-		assert.Loosely(t, update("chromium"), should.BeNil)
+		assert.NoErr(t, update("chromium"))
 
 		t.Run("Lookup with main ref returns main group", func(t *ftt.Test) {
 			// Note that even though the other config group also matches,
@@ -181,7 +181,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		// Simulate deleting project. Projects that are deleted are first disabled
 		// in practice.
 		prjcfgtest.Disable(ctx, "chromium")
-		assert.Loosely(t, update("chromium"), should.BeNil)
+		assert.NoErr(t, update("chromium"))
 		assert.Loosely(t, lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"), should.BeEmpty)
 	})
 
@@ -226,7 +226,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 
 		t.Run("Lookup main ref matching two refs", func(t *ftt.Test) {
 			// This adds coverage for matching two groups.
-			assert.Loosely(t, update("chromium"), should.BeNil)
+			assert.NoErr(t, update("chromium"))
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				should.Match(
@@ -264,7 +264,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				},
 			},
 		})
-		assert.Loosely(t, update("chromium"), should.BeNil)
+		assert.NoErr(t, update("chromium"))
 
 		t.Run("main group matches two different hosts", func(t *ftt.Test) {
 
@@ -307,7 +307,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 			},
 		})
 
-		assert.Loosely(t, update("foo"), should.BeNil)
+		assert.NoErr(t, update("foo"))
 		assert.Loosely(t,
 			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 			should.Match(
@@ -321,7 +321,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		prjcfgtest.Delete(ctx, "foo")
 		meta, err := prjcfg.GetLatestMeta(ctx, "foo")
 		assert.NoErr(t, err)
-		assert.Loosely(t, Update(ctx, &meta, nil), should.BeNil)
+		assert.NoErr(t, Update(ctx, &meta, nil))
 		assert.Loosely(t,
 			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 			should.Match(
@@ -435,7 +435,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 				return nil
 			})
 		}
-		assert.Loosely(t, eg.Wait(), should.BeNil)
+		assert.NoErr(t, eg.Wait())
 
 		// If individual retries exceed 1K, it's probably a good idea to tweak
 		// parameters s.t. test runs faster.
@@ -463,7 +463,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			// safe to call concurrently, so asserts are commented out.
 			// TODO(crbug/1179286): fix the code and the test.
 			var mps []*mapPart
-			assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps), should.BeNil)
+			assert.NoErr(t, datastore.GetAll(ctx, datastore.NewQuery(mapKind).Eq("Project", project), &mps))
 			for _, mp := range mps {
 				// assert.That(t, mp.ConfigHash, should.Match(meta.Hash()))
 				hostAndRepo := strings.SplitN(mp.Parent.StringID(), "/", 2)

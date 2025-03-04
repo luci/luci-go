@@ -156,7 +156,7 @@ func TestUpdateConfig(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg1))
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -582,7 +582,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg1))
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -655,7 +655,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 			t.Run("Marks affected components for triage", func(t *ftt.Test) {
 				cl101.EVersion++
-				assert.Loosely(t, datastore.Put(ctx, cl101), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl101))
 				// Add 2 components, one of which references cl101.
 				s1.PB.Components = []*prjpb.Component{
 					{Clids: []int64{int64(cl101.ID)}},
@@ -856,14 +856,14 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg1))
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 
 		run1 := &run.Run{ID: common.RunID(ct.lProject + "/101-new"), CLs: common.CLIDs{101}}
 		run789 := &run.Run{ID: common.RunID(ct.lProject + "/789-efg"), CLs: common.CLIDs{709, 707, 708}}
 		run1finished := &run.Run{ID: common.RunID(ct.lProject + "/101-done"), CLs: common.CLIDs{101}, Status: run.Status_FAILED}
-		assert.Loosely(t, datastore.Put(ctx, run1finished, run1, run789), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, run1finished, run1, run789))
 		assert.Loosely(t, run.IsEnded(run1finished.Status), should.BeTrue)
 
 		h := Handler{}
@@ -938,7 +938,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				run3 := &run.Run{ID: common.RunID(ct.lProject + "/203-ccc"), CLs: common.CLIDs{203}}
 				run23 := &run.Run{ID: common.RunID(ct.lProject + "/232-bcb"), CLs: common.CLIDs{203, 202}}
 				run234 := &run.Run{ID: common.RunID(ct.lProject + "/234-bcd"), CLs: common.CLIDs{203, 204, 202}}
-				assert.Loosely(t, datastore.Put(ctx, run2, run3, run23, run234, runX), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, run2, run3, run23, run234, runX))
 
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{
 					run2.ID, run3.ID, run23.ID, run234.ID, runX.ID,
@@ -1193,7 +1193,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg1))
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -1372,7 +1372,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 
 			t.Run("Outdated", func(t *ftt.Test) {
 				cl101.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-				assert.Loosely(t, datastore.Put(ctx, cl101), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl101))
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "1", Clid: int64(cl101.ID)},
 				})
@@ -1414,7 +1414,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg1 := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg1), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg1))
 
 		prjcfgtest.Create(ctx, ct.lProject, cfg1)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
@@ -1539,7 +1539,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 			})
 			t.Run("keeps the op, if any dep PCL is outdated", func(t *ftt.Test) {
 				cl102.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
-				assert.Loosely(t, datastore.Put(ctx, cl102 /* dep */), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl102 /* dep */))
 				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
 				assert.NoErr(t, err)
 				assert.Loosely(t, TriggeringCLDeps(s2, cl103 /* origin */), should.NotBeNil)

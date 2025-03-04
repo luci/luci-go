@@ -84,7 +84,7 @@ func TestGetRun(t *testing.T) {
 		})
 
 		saveAndGet := func(r *run.Run) *apiv0pb.Run {
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			resp, err := rs.GetRun(ctx, &apiv0pb.GetRunRequest{Id: rid.PublicID()})
 			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.OK))
 			return resp

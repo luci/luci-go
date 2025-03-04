@@ -56,7 +56,7 @@ func TestLongOps(t *testing.T) {
 
 		loadRun := func(ctx context.Context) *run.Run {
 			ret := &run.Run{ID: runID}
-			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, ret))
 			return ret
 		}
 
@@ -125,7 +125,7 @@ func TestLongOps(t *testing.T) {
 				rs := &state.RunState{Run: *loadRun(ctx)}
 				rs.RequestLongOpCancellation(opID)
 				rs.EVersion++
-				assert.Loosely(t, datastore.Put(ctx, &rs.Run), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, &rs.Run))
 
 				called := false
 				manager.testDoLongOperationWithDeadline = func(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
@@ -165,7 +165,7 @@ func TestLongOps(t *testing.T) {
 					for dctx.Err() == nil {
 						clock.Sleep(dctx, time.Second)
 					}
-					assert.Loosely(t, dctx.Err(), should.ErrLike(context.DeadlineExceeded))
+					assert.ErrIsLike(t, dctx.Err(), context.DeadlineExceeded)
 					return nil, errors.Annotate(dctx.Err(), "somehow treating as permanent failure").Err()
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
@@ -212,7 +212,7 @@ func TestLongOps(t *testing.T) {
 
 			t.Run("Doesn't execute in weird cases", func(t *ftt.Test) {
 				t.Run("Run deleted", func(t *ftt.Test) {
-					assert.Loosely(t, datastore.Delete(ctx, &run.Run{ID: runID}), should.BeNil)
+					assert.NoErr(t, datastore.Delete(ctx, &run.Run{ID: runID}))
 					called := false
 					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
@@ -225,7 +225,7 @@ func TestLongOps(t *testing.T) {
 				t.Run("Long op is no longer known", func(t *ftt.Test) {
 					r := loadRun(ctx)
 					r.OngoingLongOps = nil
-					assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, r))
 					called := false
 					manager.testDoLongOperationWithDeadline = func(ctx context.Context, _ *longops.Base) (*eventpb.LongOpCompleted, error) {
 						called = true
@@ -265,7 +265,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 
 		loadRun := func() *run.Run {
 			ret := &run.Run{ID: runID}
-			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, ret))
 			return ret
 		}
 
@@ -308,7 +308,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 		t.Run("Initial Run state with cancellation request is noticed immediately", func(t *ftt.Test) {
 			r := loadRun()
 			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 
 			stop := l.start(ctx, loadRun(), opID)
 			defer stop()
@@ -326,7 +326,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 			// Store request to cancel.
 			r := loadRun()
 			r.OngoingLongOps.GetOps()[opID].CancelRequested = true
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 
 			ct.Clock.Add(time.Minute)
 			// Must be done soon.
@@ -342,7 +342,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 
 				r := loadRun()
 				r.OngoingLongOps = nil
-				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, r))
 
 				ct.Clock.Add(time.Minute)
 				// Must be done soon.
@@ -355,7 +355,7 @@ func TestLongOpCancellationChecker(t *testing.T) {
 				stop := l.start(ctx, loadRun(), opID)
 				defer stop()
 
-				assert.Loosely(t, datastore.Delete(ctx, loadRun()), should.BeNil)
+				assert.NoErr(t, datastore.Delete(ctx, loadRun()))
 
 				ct.Clock.Add(time.Minute)
 				// Must be done soon.

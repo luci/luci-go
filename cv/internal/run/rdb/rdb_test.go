@@ -61,7 +61,7 @@ func TestRecorderClient(t *testing.T) {
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
+			assert.ErrIsLike(t, err, fmt.Sprintf("failed to mark %s submitted", inv))
 			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
@@ -74,7 +74,7 @@ func TestRecorderClient(t *testing.T) {
 			err := rc.MarkInvocationSubmitted(ctx, inv)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
-			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
+			assert.ErrIsLike(t, err, fmt.Sprintf("failed to mark %s submitted", inv))
 		})
 
 		t.Run(`No Code`, func(t *ftt.Test) {
@@ -87,7 +87,7 @@ func TestRecorderClient(t *testing.T) {
 			_, ok := appstatus.Get(err)
 			assert.Loosely(t, ok, should.BeFalse)
 			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
-			assert.Loosely(t, err, should.ErrLike("random error"))
+			assert.ErrIsLike(t, err, "random error")
 		})
 
 		t.Run(`Transient Error`, func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestRecorderClient(t *testing.T) {
 			err := rc.MarkInvocationSubmitted(ctx, inv)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unknown))
 			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
-			assert.Loosely(t, err, should.ErrLike("???"))
+			assert.ErrIsLike(t, err, "???")
 		})
 	})
 }

@@ -31,21 +31,21 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 
 		t.Run("No revisions", func(t *ftt.Test) {
 			_, _, err := EquivalentPatchsetRange(makeCI())
-			assert.Loosely(t, err, should.ErrLike("must have all revisions populated"))
+			assert.ErrIsLike(t, err, "must have all revisions populated")
 		})
 
 		t.Run("Wrong CurrentRevision", func(t *ftt.Test) {
 			ci := makeCI(gerritpb.RevisionInfo_REWORK)
 			ci.CurrentRevision = ""
 			_, _, err := EquivalentPatchsetRange(ci)
-			assert.Loosely(t, err, should.ErrLike("must have current_revision populated"))
+			assert.ErrIsLike(t, err, "must have current_revision populated")
 		})
 
 		t.Run("Wrong Kind", func(t *ftt.Test) {
 			_, _, err := EquivalentPatchsetRange(makeCI(
 				gerritpb.RevisionInfo_TRIVIAL_REBASE,
 				gerritpb.RevisionInfo_Kind(199)))
-			assert.Loosely(t, err, should.ErrLike("Unknown revision kind 199"))
+			assert.ErrIsLike(t, err, "Unknown revision kind 199")
 		})
 
 		t.Run("works", func(t *ftt.Test) {

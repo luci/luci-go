@@ -91,7 +91,7 @@ func TestReset(t *testing.T) {
 			},
 			TriggerNewPatchsetRunAfterPS: 1,
 		}
-		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl))
 		ct.GFake.CreateChange(&gf.Change{
 			Host: gHost,
 			Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
@@ -149,7 +149,7 @@ func TestReset(t *testing.T) {
 					},
 				}
 				err := Reset(ctx, input)
-				assert.Loosely(t, err, should.ErrLike("failed to reset trigger because CV lost access to this CL"))
+				assert.ErrIsLike(t, err, "failed to reset trigger because CV lost access to this CL")
 				assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
 			}
 
@@ -165,7 +165,7 @@ func TestReset(t *testing.T) {
 		})
 		isOutdated := func(cl *changelist.CL) bool {
 			e := &changelist.CL{ID: cl.ID}
-			assert.Loosely(t, datastore.Get(ctx, e), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, e))
 			return e.Snapshot.GetOutdated() != nil
 		}
 
@@ -190,9 +190,9 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, newCL), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, newCL))
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.ErrLike("failed to reset because ps 2 is not current for cl(99999)"))
+			assert.ErrIsLike(t, err, "failed to reset because ps 2 is not current for cl(99999)")
 			assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
@@ -203,7 +203,7 @@ func TestReset(t *testing.T) {
 				gf.PS(3)(c.Info)
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.ErrLike("failed to reset because ps 2 is not current for x-review.example.com/10001"))
+			assert.ErrIsLike(t, err, "failed to reset because ps 2 is not current for x-review.example.com/10001")
 			assert.Loosely(t, ErrResetPreconditionFailedTag.In(err), should.BeTrue)
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
@@ -214,7 +214,7 @@ func TestReset(t *testing.T) {
 				gf.Updated(clock.Now(ctx).Add(-3 * time.Minute))(c.Info)
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.ErrLike(gerrit.ErrStaleData))
+			assert.ErrIsLike(t, err, gerrit.ErrStaleData)
 			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 		})
@@ -224,16 +224,16 @@ func TestReset(t *testing.T) {
 			input.Message = "reset new patchset run trigger"
 
 			cl := &changelist.CL{ID: input.CL.ID}
-			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, cl))
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
-			assert.Loosely(t, Reset(ctx, input), should.BeNil)
+			assert.NoErr(t, Reset(ctx, input))
 			// cancelling a new patchset run doesn't mark the snapshot
 			// as outdated.
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 
 			cl = &changelist.CL{ID: input.CL.ID}
-			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, cl))
 			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.NotEqual(originalValue))
 			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.Equal(input.CL.Snapshot.Patchset))
 			change := ct.GFake.GetChange(input.CL.Snapshot.GetGerrit().GetHost(), int(input.CL.Snapshot.GetGerrit().GetInfo().GetNumber()))
@@ -258,7 +258,7 @@ func TestReset(t *testing.T) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
 			cl := &changelist.CL{ID: input.CL.ID}
-			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, cl))
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
 			err := Reset(ctx, input)
@@ -290,7 +290,7 @@ func TestReset(t *testing.T) {
 				{User: strconv.FormatInt(reviewerID, 10), Reason: "ps#2: " + usertext.StoppedRun},
 			}))
 			cl = &changelist.CL{ID: input.CL.ID}
-			assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, cl))
 			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.NotEqual(originalValue))
 			assert.Loosely(t, cl.TriggerNewPatchsetRunAfterPS, should.Equal(input.CL.Snapshot.Patchset))
 		})
@@ -512,7 +512,7 @@ func TestReset(t *testing.T) {
 					gf.ACLGrant(gf.OpReview, codes.PermissionDenied, lProject),
 				)
 			})
-			assert.Loosely(t, Reset(ctx, input), should.BeNil)
+			assert.NoErr(t, Reset(ctx, input))
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.
@@ -570,7 +570,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				c.ACLs = gf.ACLGrant(gf.OpRead, codes.PermissionDenied, lProject)
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.ErrLike("no permission to remove vote x-review.example.com/10001"))
+			assert.ErrIsLike(t, err, "no permission to remove vote x-review.example.com/10001")
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 			assert.Loosely(t, ErrResetPermanentTag.In(err), should.BeTrue)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info

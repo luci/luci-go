@@ -151,7 +151,7 @@ func TestLaunch(t *testing.T) {
 				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
 				assert.Loosely(t, launchResults, should.HaveLength(1))
 				launchResult := launchResults[0]
-				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.NoErr(t, launchResult.Err)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				assert.NoErr(t, err)
@@ -228,7 +228,7 @@ func TestLaunch(t *testing.T) {
 				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
 				assert.Loosely(t, launchResults, should.HaveLength(1))
 				launchResult := launchResults[0]
-				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.NoErr(t, launchResult.Err)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				_, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				assert.NoErr(t, err)
@@ -309,7 +309,7 @@ func TestLaunch(t *testing.T) {
 			ct.BuildbucketFake.AddBuilder(bbHost2, tryjobs[2].Definition.GetBuildbucket().GetBuilder(), nil)
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
 			for i, launchResult := range launchResults {
-				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.NoErr(t, launchResult.Err)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				assert.NoErr(t, err)
@@ -356,7 +356,7 @@ func TestLaunch(t *testing.T) {
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
 			assert.Loosely(t, launchResults, should.HaveLength(len(tryjobs)))
 			for i, launchResult := range launchResults {
-				assert.Loosely(t, launchResult.Err, should.BeNil)
+				assert.NoErr(t, launchResult.Err)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
 				assert.NoErr(t, err)
@@ -406,7 +406,7 @@ func TestLaunch(t *testing.T) {
 			}
 			launchResults := f.Launch(ctx, tryjobs, r, cls)
 			assert.Loosely(t, launchResults, should.HaveLength(2))
-			assert.Loosely(t, launchResults[0].Err, should.BeNil) // First Tryjob launched successfully
+			assert.NoErr(t, launchResults[0].Err) // First Tryjob launched successfully
 			assert.Loosely(t, launchResults[0].ExternalID, should.NotBeEmpty)
 			assert.Loosely(t, launchResults[1].Err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, launchResults[1].ExternalID, should.BeEmpty)
@@ -429,12 +429,12 @@ func TestLaunch(t *testing.T) {
 			}
 			launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
 			assert.Loosely(t, launchResults, should.HaveLength(1))
-			assert.Loosely(t, launchResults[0].Err, should.BeNil)
+			assert.NoErr(t, launchResults[0].Err)
 			firstExternalID := launchResults[0].ExternalID
 			ct.Clock.Add(10 * time.Second)
 			launchResults = f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
 			assert.Loosely(t, launchResults, should.HaveLength(1))
-			assert.Loosely(t, launchResults[0].Err, should.BeNil)
+			assert.NoErr(t, launchResults[0].Err)
 			secondExternalID := launchResults[0].ExternalID
 			assert.Loosely(t, secondExternalID, should.Equal(firstExternalID))
 		})

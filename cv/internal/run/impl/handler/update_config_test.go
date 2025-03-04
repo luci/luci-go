@@ -80,7 +80,7 @@ func TestUpdateConfig(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, &rcl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &rcl))
 		}
 
 		// Seed project with one version of prior config.

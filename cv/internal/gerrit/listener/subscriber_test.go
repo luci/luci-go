@@ -87,7 +87,7 @@ func TestSubscriber(t *testing.T) {
 
 		t.Run("starts", func(t *ftt.Test) {
 			assert.Loosely(t, sber.isStopped(), should.BeTrue)
-			assert.Loosely(t, sber.start(ctx), should.BeNil)
+			assert.NoErr(t, sber.start(ctx))
 			assert.Loosely(t, sber.isStopped(), should.BeFalse)
 
 			// publish a sample message and wait until it gets processed.
@@ -103,12 +103,12 @@ func TestSubscriber(t *testing.T) {
 		t.Run("fails", func(t *ftt.Test) {
 			t.Run("if subscription doesn't exist", func(t *ftt.Test) {
 				sber.sub = client.Subscription("sub_does_not_exist")
-				assert.Loosely(t, sber.start(ctx), should.ErrLike("doesn't exist"))
+				assert.ErrIsLike(t, sber.start(ctx), "doesn't exist")
 				assert.Loosely(t, sber.isStopped(), should.BeTrue)
 			})
 
 			t.Run("if called multiple times simultaneously", func(t *ftt.Test) {
-				assert.Loosely(t, sber.start(ctx), should.BeNil)
+				assert.NoErr(t, sber.start(ctx))
 				assert.Loosely(t, sber.start(ctx), should.ErrLike(
 					"cannot start again, while the subscriber is running"))
 			})
@@ -117,7 +117,7 @@ func TestSubscriber(t *testing.T) {
 		t.Run("stops", func(t *ftt.Test) {
 			assert.Loosely(t, sber.isStopped(), should.BeTrue)
 			sber.stop(ctx)
-			assert.Loosely(t, sber.start(ctx), should.BeNil)
+			assert.NoErr(t, sber.start(ctx))
 			assert.Loosely(t, sber.isStopped(), should.BeFalse)
 			sber.stop(ctx)
 			assert.Loosely(t, sber.isStopped(), should.BeTrue)

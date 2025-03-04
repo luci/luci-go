@@ -64,7 +64,7 @@ func TestPurgesCLWithoutOwner(t *testing.T) {
 		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(2))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
@@ -106,7 +106,7 @@ func TestPurgesCLWatchedByTwoConfigGroups(t *testing.T) {
 		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(1))
 
 		ct.LogPhase(ctx, "Run CV until CQ+1 vote is removed")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
@@ -142,8 +142,8 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 		ct.LogPhase(ctx, "Fully ingest overlapping configs")
 		prjcfgtest.Create(ctx, lProject1, MakeCfgSingular("cg1", gHost, gRepo, gRef))
 		prjcfgtest.Create(ctx, lProject2, MakeCfgSingular("cg2", gHost, gRepo, gRef))
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject1), should.BeNil)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject2), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject1))
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject2))
 		ct.RunUntil(ctx, func() bool {
 			res, err := gobmap.Lookup(ctx, gHost, gRepo, gRef)
 			if err != nil {
@@ -257,7 +257,7 @@ func testPurgesCLWithUnwatchedDeps(
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})
@@ -330,7 +330,7 @@ func TestPurgesCLWithMismatchedDepsMode(t *testing.T) {
 		// Now, ci45 and ci44 must be tested only together.
 
 		ct.LogPhase(ctx, "Run CV until both CLs are purged")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return (ct.MaxCQVote(ctx, gHost, gChange44) == 0 &&
 				ct.MaxCQVote(ctx, gHost, gChange45) == 0 &&
@@ -376,7 +376,7 @@ func TestPurgesCLCQDependingOnItself(t *testing.T) {
 		)))
 
 		ct.LogPhase(ctx, "Run CV until CL is purged")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange44) == 0
 		})
@@ -412,7 +412,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		})
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			{Email: "user-1@example.com"},
@@ -479,7 +479,7 @@ func TestPurgesOnCommitFalseFooter(t *testing.T) {
 		assert.Loosely(t, ct.MaxCQVote(ctx, gHost, gChange), should.Equal(2))
 
 		ct.LogPhase(ctx, "Run CV until CQ+2 vote is removed")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			return ct.MaxCQVote(ctx, gHost, gChange) == 0
 		})

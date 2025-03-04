@@ -48,7 +48,7 @@ func TestExtractTopicProject(t *testing.T) {
 	t.Parallel()
 	t.Run("bad", func(t *testing.T) {
 		_, err := extractTopicProject("bad-topic")
-		assert.That(t, err, should.ErrLike(`topic bad-topic doesn't match "^projects/(.*)/topics/(.*)$"`))
+		assert.ErrIsLike(t, err, `topic bad-topic doesn't match "^projects/(.*)/topics/(.*)$"`)
 	})
 
 	t.Run("bad", func(t *testing.T) {

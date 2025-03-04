@@ -49,7 +49,7 @@ func TestScheduleWipeoutTryjobs(t *testing.T) {
 		// Make half of the tryjobs eligible for wipeout
 		ct.Clock.Set(tryjobs[len(tryjobs)/2].EntityUpdateTime.Add(retentionPeriod))
 
-		assert.Loosely(t, scheduleWipeoutTryjobsTasks(ctx, ct.TQDispatcher), should.BeNil)
+		assert.NoErr(t, scheduleWipeoutTryjobsTasks(ctx, ct.TQDispatcher))
 		var expectedTryjobIDs common.TryjobIDs
 		for _, tj := range tryjobs[:len(tryjobs)/2] {
 			expectedTryjobIDs = append(expectedTryjobIDs, tj.ID)
@@ -82,14 +82,14 @@ func TestWipeoutTryjobs(t *testing.T) {
 
 		t.Run("Can wipeout tryjob", func(t *ftt.Test) {
 			t.Run("when there's no watching run", func(t *ftt.Test) {
-				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.NoErr(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}))
+				assert.ErrIsLike(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), datastore.ErrNoSuchEntity)
 			})
 			t.Run("when all watching run no longer exists", func(t *ftt.Test) {
 				tj.LaunchedBy = common.MakeRunID("infra", tj.EntityCreateTime, 1, []byte("deadbeef"))
 				tj.ReusedBy = append(tj.ReusedBy, common.MakeRunID("infra", tj.EntityCreateTime.Add(1*time.Minute), 1, []byte("deadbeef")))
-				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.NoErr(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}))
+				assert.ErrIsLike(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), datastore.ErrNoSuchEntity)
 			})
 		})
 
@@ -100,13 +100,13 @@ func TestWipeoutTryjobs(t *testing.T) {
 				}
 				tj.LaunchedBy = r.ID
 				tj.ReusedBy = append(tj.ReusedBy, common.MakeRunID("infra", tj.EntityCreateTime.Add(-1*time.Minute), 1, []byte("deadbeef")))
-				assert.Loosely(t, datastore.Put(ctx, r, tj), should.BeNil)
-				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}), should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, r, tj))
+				assert.NoErr(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID}))
+				assert.NoErr(t, datastore.Get(ctx, &tryjob.Tryjob{ID: tj.ID}))
 			})
 
 			t.Run("When Tryjob doesn't exist", func(t *ftt.Test) {
-				assert.Loosely(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID + 1}), should.BeNil)
+				assert.NoErr(t, wipeoutTryjobs(ctx, common.TryjobIDs{tj.ID + 1}))
 			})
 		})
 	})

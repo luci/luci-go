@@ -81,13 +81,13 @@ func TestProjectFinder(t *testing.T) {
 		}
 
 		t.Run("with no disabled projects", func(t *ftt.Test) {
-			assert.Loosely(t, finder.reload(lCfg), should.BeNil)
+			assert.NoErr(t, finder.reload(lCfg))
 			assert.That(t, check("cr-review.gs.com", "cr/src"), should.Match([]string{"chromium", "chromium-m123"}))
 		})
 
 		t.Run("with a disabled project", func(t *ftt.Test) {
 			lCfg.DisabledProjectRegexps = []string{"chromium"}
-			assert.Loosely(t, finder.reload(lCfg), should.BeNil)
+			assert.NoErr(t, finder.reload(lCfg))
 			assert.That(t, check("cr-review.gs.com", "cr/src"), should.Match([]string{"chromium-m123"}))
 		})
 	})

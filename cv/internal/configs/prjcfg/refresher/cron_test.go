@@ -73,7 +73,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				Project: "chromium",
 				Enabled: true,
 			}), should.BeNil)
-			assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
+			assert.NoErr(t, pcr.SubmitRefreshTasks(ctx))
 			assert.That(t, ct.TQ.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
 			}))
@@ -90,7 +90,7 @@ func TestConfigRefreshCron(t *testing.T) {
 				pokeBefore := ct.Clock.Now().Add(pokePMInterval)
 				for ct.Clock.Now().Before(pokeBefore) {
 					ct.Clock.Add(time.Minute)
-					assert.Loosely(t, pcr.SubmitRefreshTasks(ctx), should.BeNil)
+					assert.NoErr(t, pcr.SubmitRefreshTasks(ctx))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask("refresh-project-config"))
 					assert.Loosely(t, pm.updates, should.BeEmpty)
 					assert.That(t, qm.writes, should.Match([]string{"chromium"}))

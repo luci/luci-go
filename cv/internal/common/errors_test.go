@@ -199,13 +199,13 @@ func TestMostSevereError(t *testing.T) {
 		multTrans := errors.NewMultiError(nil, trans1, nil, trans2, nil)
 		tensor := errors.NewMultiError(nil, errors.NewMultiError(nil, multTrans, multFatal))
 
-		assert.Loosely(t, MostSevereError(nil), should.BeNil)
-		assert.Loosely(t, MostSevereError(fatal1), should.Equal(fatal1))
-		assert.Loosely(t, MostSevereError(trans1), should.Equal(trans1))
+		assert.NoErr(t, MostSevereError(nil))
+		assert.ErrIsLike(t, MostSevereError(fatal1), fatal1)
+		assert.ErrIsLike(t, MostSevereError(trans1), trans1)
 
-		assert.Loosely(t, MostSevereError(multFatal), should.Equal(fatal1))
-		assert.Loosely(t, MostSevereError(multTrans), should.Equal(trans1))
-		assert.Loosely(t, MostSevereError(tensor), should.Equal(fatal1))
+		assert.ErrIsLike(t, MostSevereError(multFatal), fatal1)
+		assert.ErrIsLike(t, MostSevereError(multTrans), trans1)
+		assert.ErrIsLike(t, MostSevereError(tensor), fatal1)
 	})
 }
 

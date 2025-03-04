@@ -102,7 +102,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 		placeRuns := func(runs ...*run.Run) common.RunIDs {
 			ids := make(common.RunIDs, len(runs))
-			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runs))
 			projects := stringset.New(10)
 			for i, r := range runs {
 				projects.Add(r.ID.LUCIProject())

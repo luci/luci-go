@@ -62,7 +62,7 @@ func TestParseStatusAndResult(t *testing.T) {
 			t.Run("On an invalid build status", func(t *ftt.Test) {
 				b.Status = bbpb.Status_ENDED_MASK
 				_, _, err := parseStatusAndResult(ctx, b)
-				assert.Loosely(t, err, should.ErrLike("unexpected buildbucket status"))
+				assert.ErrIsLike(t, err, "unexpected buildbucket status")
 			})
 		})
 		t.Run("Parses a valid build proto", func(t *ftt.Test) {

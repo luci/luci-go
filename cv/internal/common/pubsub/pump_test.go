@@ -63,7 +63,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 			t.Run("without concurrent batches", func(t *ftt.Test) {
 				pump.Options.ConcurrentBatches = 1
 			})
-			assert.Loosely(t, pump.Validate(), should.BeNil)
+			assert.NoErr(t, pump.Validate())
 			nMessages := pump.Options.MaxBatchSize + 1
 
 			sent := psSrv.PublishTestMessages(nMessages)
@@ -89,7 +89,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 			default:
 			}
 			cancelProcess()
-			assert.Loosely(t, <-done, should.BeNil)
+			assert.NoErr(t, <-done)
 			assert.That(t, received, should.Match(sent))
 		})
 
@@ -98,7 +98,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 			// batch results in the injected error.
 			pump.Options.MaxBatchSize = 1
 			pump.Options.ConcurrentBatches = 1
-			assert.Loosely(t, pump.Validate(), should.BeNil)
+			assert.NoErr(t, pump.Validate())
 
 			doCheck := func(t testing.TB, processingError error, deliveriesExpected, processedMessagesExpected int, processErrorAssertion comparison.Func[error], sentVSReceivedAssertion func(stringset.Set, ...cmp.Option) comparison.Func[stringset.Set]) {
 				// Publish two messages.
@@ -179,7 +179,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 				}
 				return nil
 			}
-			assert.Loosely(t, pump.Validate(), should.BeNil)
+			assert.NoErr(t, pump.Validate())
 
 			done := runProcessAsync(ctx, psSrv.Client, pump.process)
 

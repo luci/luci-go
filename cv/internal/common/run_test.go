@@ -78,30 +78,30 @@ func TestID(t *testing.T) {
 
 			t.Run("errors if Public ID is invalid", func(t *ftt.Test) {
 				_, err := FromPublicRunID("0000000060000-1-410f")
-				assert.Loosely(t, err, should.ErrLike("must be in the form"))
+				assert.ErrIsLike(t, err, "must be in the form")
 				_, err = FromPublicRunID("infra/0000000060000-1-410f")
-				assert.Loosely(t, err, should.ErrLike("must be in the form"))
+				assert.ErrIsLike(t, err, "must be in the form")
 				_, err = FromPublicRunID("pRoJeCtS/infra/runs/0000000060000-1-410f")
-				assert.Loosely(t, err, should.ErrLike("must be in the form"))
+				assert.ErrIsLike(t, err, "must be in the form")
 				_, err = FromPublicRunID("projects/infra/RuNs/0000000060000-1-410f")
-				assert.Loosely(t, err, should.ErrLike("must be in the form"))
+				assert.ErrIsLike(t, err, "must be in the form")
 			})
 		})
 
 		t.Run("Vallidate", func(t *ftt.Test) {
 			id := MakeRunID("infra", time.Date(2020, 01, 01, 1, 1, 1, 2, time.UTC), 1, []byte{31, 44})
-			assert.Loosely(t, id.Validate(), should.BeNil)
+			assert.NoErr(t, id.Validate())
 			minimal := RunID("i/1-1-a")
-			assert.Loosely(t, minimal.Validate(), should.BeNil)
+			assert.NoErr(t, minimal.Validate())
 
-			assert.Loosely(t, RunID("i/1-1-").Validate(), should.ErrLike("digest"))
-			assert.Loosely(t, RunID("i/1-1").Validate(), should.ErrLike("version"))
-			assert.Loosely(t, RunID("i/1").Validate(), should.ErrLike("InverseTS"))
-			assert.Loosely(t, RunID("/1-1-a").Validate(), should.ErrLike("project"))
+			assert.ErrIsLike(t, RunID("i/1-1-").Validate(), "digest")
+			assert.ErrIsLike(t, RunID("i/1-1").Validate(), "version")
+			assert.ErrIsLike(t, RunID("i/1").Validate(), "InverseTS")
+			assert.ErrIsLike(t, RunID("/1-1-a").Validate(), "project")
 
-			assert.Loosely(t, RunID("+/1-1-a").Validate(), should.ErrLike("invalid character at 0 (+)"))
-			assert.Loosely(t, RunID("a/a-1-a").Validate(), should.ErrLike("InverseTS"))
-			assert.Loosely(t, RunID("a/1-b-a").Validate(), should.ErrLike("version"))
+			assert.ErrIsLike(t, RunID("+/1-1-a").Validate(), "invalid character at 0 (+)")
+			assert.ErrIsLike(t, RunID("a/a-1-a").Validate(), "InverseTS")
+			assert.ErrIsLike(t, RunID("a/1-b-a").Validate(), "version")
 		})
 	})
 }

@@ -114,7 +114,7 @@ func TestSubmitter(t *testing.T) {
 		}
 
 		t.Run("Submit successfully", func(t *ftt.Test) {
-			assert.Loosely(t, s.Submit(ctx), should.BeNil)
+			assert.NoErr(t, s.Submit(ctx))
 			verifyRunReleased(s.runID)
 			runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
 			assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
@@ -141,7 +141,7 @@ func TestSubmitter(t *testing.T) {
 				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return Release(ctx, s.rm.NotifyReadyForSubmission, s.runID)
 				}, nil), should.BeNil)
-				assert.Loosely(t, s.Submit(ctx), should.BeNil)
+				assert.NoErr(t, s.Submit(ctx))
 				runtest.AssertReceivedSubmissionCompleted(t, ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result:                eventpb.SubmissionResult_FAILED_PERMANENT,
@@ -157,7 +157,7 @@ func TestSubmitter(t *testing.T) {
 				ct.GFake.MutateChange(gHost2, 2, func(c *gf.Change) {
 					c.ACLs = gf.ACLGrant(gf.OpSubmit, codes.PermissionDenied, "another_project")
 				})
-				assert.Loosely(t, s.Submit(ctx), should.BeNil)
+				assert.NoErr(t, s.Submit(ctx))
 				verifyRunReleased(s.runID)
 				runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
 				assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
@@ -184,7 +184,7 @@ func TestSubmitter(t *testing.T) {
 					c.Info = proto.Clone(ci2).(*gerritpb.ChangeInfo)
 					gf.PS(6)(c.Info)
 				})
-				assert.Loosely(t, s.Submit(ctx), should.BeNil)
+				assert.NoErr(t, s.Submit(ctx))
 				verifyRunReleased(s.runID)
 				assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 				runtest.AssertNotReceivedCLsSubmitted(t, ctx, s.runID, 2)
@@ -217,7 +217,7 @@ func TestSubmitter(t *testing.T) {
 			// for Submit RPC. But the subsequent GetChange will figure out that
 			// Change has been merged already and consider submission of gHost1/1
 			// as a success.
-			assert.Loosely(t, s.Submit(ctx), should.BeNil)
+			assert.NoErr(t, s.Submit(ctx))
 			verifyRunReleased(s.runID)
 			runtest.AssertReceivedCLsSubmitted(t, ctx, s.runID, 1)
 			assert.Loosely(t, ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))

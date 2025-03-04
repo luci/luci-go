@@ -57,7 +57,7 @@ func TestTaskHandler(t *testing.T) {
 			c.RegisterBackend(mb)
 			const clid = common.CLID(100)
 			cl := &changelist.CL{ID: clid}
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 			t.Run("no tryjobs", func(t *ftt.Test) {
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
@@ -79,7 +79,7 @@ func TestTaskHandler(t *testing.T) {
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
-				assert.Loosely(t, datastore.Get(ctx, tj1, tj2), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj1, tj2))
 				// Should not modify entities.
 				assert.Loosely(t, tj1.EVersion, should.Equal(1))
 				assert.Loosely(t, tj2.EVersion, should.Equal(1))
@@ -97,7 +97,7 @@ func TestTaskHandler(t *testing.T) {
 				assert.Loosely(t, mb.calledWith, should.HaveLength(1))
 				assert.Loosely(t, mb.calledWith[0].ExternalID, should.Equal(tj12.ExternalID))
 
-				assert.Loosely(t, datastore.Get(ctx, tj11, tj12), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj11, tj12))
 				// Should modify only tj12.
 				assert.Loosely(t, tj11.EVersion, should.Equal(1))
 				assert.Loosely(t, tj12.EVersion, should.Equal(2))
@@ -115,7 +115,7 @@ func TestTaskHandler(t *testing.T) {
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
-				assert.Loosely(t, datastore.Get(ctx, tj21), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj21))
 				// Should not modify the entity.
 				assert.Loosely(t, tj21.EVersion, should.Equal(1))
 				assert.Loosely(t, tj21.Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -136,7 +136,7 @@ func TestTaskHandler(t *testing.T) {
 				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
-				assert.Loosely(t, datastore.Get(ctx, tj31), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj31))
 				// Should not modify the entity.
 				assert.Loosely(t, tj31.EVersion, should.Equal(1))
 				assert.Loosely(t, tj31.Status, should.NotEqual(tryjob.Status_CANCELLED))
@@ -153,7 +153,7 @@ func TestTaskHandler(t *testing.T) {
 				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
-				assert.Loosely(t, datastore.Get(ctx, tj41), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj41))
 				// Should not modify the entity.
 				assert.Loosely(t, tj41.EVersion, should.Equal(1))
 				assert.Loosely(t, tj41.Status, should.NotEqual(tryjob.Status_CANCELLED))
@@ -168,7 +168,7 @@ func TestTaskHandler(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     int64(clid),
 					PreviousMinEquivPatchset: 2,
@@ -177,7 +177,7 @@ func TestTaskHandler(t *testing.T) {
 				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
-				assert.Loosely(t, datastore.Get(ctx, tj51), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, tj51))
 				// Should not modify the entity.
 				assert.Loosely(t, tj51.EVersion, should.Equal(1))
 				assert.Loosely(t, tj51.Status, should.NotEqual(tryjob.Status_CANCELLED))

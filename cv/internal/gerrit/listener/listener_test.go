@@ -66,7 +66,7 @@ func TestListener(t *testing.T) {
 					{Host: "a.example.org"},
 				},
 			}
-			assert.Loosely(t, updateCfg(lCfg), should.BeNil)
+			assert.NoErr(t, updateCfg(lCfg))
 
 			// launch and wait until the subscriber is up.
 			endC := make(chan struct{})
@@ -101,7 +101,7 @@ func TestListener(t *testing.T) {
 				{Host: "b.example.org"},
 			}
 			assert.Loosely(t, l.sbers, should.HaveLength(0))
-			assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+			assert.NoErr(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}))
 			aSub, bSub := l.getSubscriber("a.example.org"), l.getSubscriber("b.example.org")
 			assert.Loosely(t, aSub, should.NotBeNil)
 			assert.Loosely(t, aSub.sub.ID(), should.Equal("a.example.org"))
@@ -113,14 +113,14 @@ func TestListener(t *testing.T) {
 				subCfgs = append(subCfgs, &listenerpb.Settings_GerritSubscription{
 					Host: "c.example.org",
 				})
-				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+				assert.NoErr(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}))
 				assert.Loosely(t, l.sbers, should.HaveLength(3))
 				assert.Loosely(t, l.getSubscriber("c.example.org").sub.ID(), should.Equal("c.example.org"))
 			})
 
 			t.Run("removes subscribers for removed subscriptions", func(t *ftt.Test) {
 				subCfgs = subCfgs[0 : len(subCfgs)-1]
-				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+				assert.NoErr(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}))
 				assert.Loosely(t, l.sbers, should.HaveLength(1))
 				assert.Loosely(t, l.getSubscriber("b.example.org"), should.BeNil)
 			})
@@ -130,7 +130,7 @@ func TestListener(t *testing.T) {
 				subCfgs[1].ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
 					NumGoroutines: uint64(want),
 				}
-				assert.Loosely(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), should.BeNil)
+				assert.NoErr(t, l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}))
 				bSub := l.getSubscriber("b.example.org")
 				assert.Loosely(t, bSub, should.NotBeNil)
 				assert.Loosely(t, bSub.sub.ReceiveSettings.NumGoroutines, should.Equal(want))

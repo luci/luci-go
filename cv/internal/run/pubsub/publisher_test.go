@@ -61,7 +61,7 @@ func TestExportRunToBQ(t *testing.T) {
 					return publisher.RunEnded(tCtx, r.ID, r.Status, r.EVersion)
 				}, nil)
 			}
-			assert.Loosely(t, runEnded(), should.BeNil)
+			assert.NoErr(t, runEnded())
 			tsk := ct.TQ.Tasks()[0]
 
 			t.Run("with attributes", func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 			t.Run("with JSONPB encoded message", func(t *ftt.Test) {
 				var msg cvpb.PubSubRun
-				assert.Loosely(t, protojson.Unmarshal(tsk.Message.GetData(), &msg), should.BeNil)
+				assert.NoErr(t, protojson.Unmarshal(tsk.Message.GetData(), &msg))
 				assert.That(t, &msg, should.Match(&cvpb.PubSubRun{
 					Id:       r.ID.PublicID(),
 					Status:   cvpb.Run_SUCCEEDED,

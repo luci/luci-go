@@ -42,10 +42,10 @@ func TestExternalID(t *testing.T) {
 
 		t.Run("Invalid GobID", func(t *ftt.Test) {
 			_, _, err := ExternalID("meh").ParseGobID()
-			assert.Loosely(t, err, should.ErrLike("is not a valid GobID"))
+			assert.ErrIsLike(t, err, "is not a valid GobID")
 
 			_, _, err = ExternalID("gerrit/x/y").ParseGobID()
-			assert.Loosely(t, err, should.ErrLike("is not a valid GobID"))
+			assert.ErrIsLike(t, err, "is not a valid GobID")
 		})
 
 	})

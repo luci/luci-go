@@ -107,7 +107,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", r.ID)))
@@ -123,7 +123,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			qm.quotaSpecified = false
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
@@ -140,7 +140,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
@@ -155,7 +155,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: prjcfg.MakeConfigGroupID("another-config-group", "hash"),
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
@@ -170,7 +170,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				CreateTime:    runCreateTime,
 				ConfigGroupID: configGroupID,
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
@@ -194,7 +194,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				ConfigGroupID: configGroupID,
 				DepRuns:       common.RunIDs{depRun.ID},
 			}
-			assert.Loosely(t, datastore.Put(ctx, depRun, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, depRun, r))
 			summary, err := executor.Do(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
@@ -215,7 +215,7 @@ func TestCreditQuotaOp(t *testing.T) {
 					ConfigGroupID: configGroupID,
 				}
 			}
-			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runs))
 			var earliestRun *run.Run
 			for _, r := range runs {
 				if earliestRun == nil || r.CreateTime.Before(earliestRun.CreateTime) {

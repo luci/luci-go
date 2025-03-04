@@ -99,7 +99,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				Access:           acc,
 			}
 
-			assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &cl))
 			return cl
 		}
 
@@ -156,7 +156,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			},
 		}
 		assert.Loosely(t, runCLs[0].Trigger, should.NotBeNil) // ensure trigger find is working fine.
-		assert.Loosely(t, datastore.Put(ctx, runCLs), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, runCLs))
 
 		t.Run("Single CL Run", func(t *ftt.Test) {
 			ensureNoop := func() {
@@ -303,7 +303,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				t.Run("wait if access level is unknown", func(t *ftt.Test) {
 					cl1.Snapshot = nil
 					cl1.EVersion++
-					assert.Loosely(t, datastore.Put(ctx, &cl1), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, &cl1))
 					ensureNoop()
 				})
 			})
@@ -345,7 +345,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				Trigger: triggers2.GetCqVoteTrigger(),
 			})
 			assert.Loosely(t, runCLs[1].Trigger, should.NotBeNil) // ensure trigger find is working fine.
-			assert.Loosely(t, datastore.Put(ctx, runCLs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runCLs))
 
 			t.Run("Schedules a ResetTrigger long op", func(t *ftt.Test) {
 				t.Run("Part of the CLs cause cancellation", func(t *ftt.Test) {

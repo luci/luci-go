@@ -59,8 +59,8 @@ func TestExportRunToBQ(t *testing.T) {
 			Submission:    nil,
 			Mode:          run.DryRun,
 		}
-		assert.Loosely(t, datastore.Put(ctx, &r), should.BeNil)
-		assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
+		assert.NoErr(t, datastore.Put(ctx, &r))
+		assert.NoErr(t, datastore.Put(ctx, &run.RunCL{
 			ID:         1,
 			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			ExternalID: "gerrit/foo-review.googlesource.com/111",
@@ -80,8 +80,7 @@ func TestExportRunToBQ(t *testing.T) {
 				},
 			},
 			Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
-		}), should.BeNil)
-		assert.Loosely(t, nil, should.BeNil)
+		}))
 
 		// BQ Export tasks must be scheduled in a transaction.
 		schedule := func() error {
@@ -92,7 +91,7 @@ func TestExportRunToBQ(t *testing.T) {
 
 		t.Run("A row is sent", func(t *ftt.Test) {
 			t.Run("in prod", func(t *ftt.Test) {
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				rows := ct.BQFake.Rows("", CVDataset, CVTable)
 				assert.That(t, rows, should.Match([]protoreflect.ProtoMessage{&cvbqpb.Attempt{
@@ -129,7 +128,7 @@ func TestExportRunToBQ(t *testing.T) {
 			})
 
 			t.Run("in dev", func(t *ftt.Test) {
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.Env.IsGAEDev = true
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(exportRunToBQTaskClass))
 				assert.Loosely(t, ct.BQFake.Rows("", CVDataset, CVTable), should.HaveLength(1))

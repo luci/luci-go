@@ -73,7 +73,7 @@ func TestSet(t *testing.T) {
 		const limit = 10
 
 		// Add one item.
-		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
+		assert.NoErr(t, set.Add(c, []Item{{ID: "abc"}}))
 
 		// The item is returned by the listing.
 		listing, err := set.List(c, limit)
@@ -103,7 +103,7 @@ func TestSet(t *testing.T) {
 		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// Attempt to add it back (should be ignored).
-		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
+		assert.NoErr(t, set.Add(c, []Item{{ID: "abc"}}))
 
 		// The listing still doesn't return it, but we now have a tombstone to
 		// cleanup (again).
@@ -126,7 +126,7 @@ func TestSet(t *testing.T) {
 		// Cleaning up the storage, again. This should make List stop returning
 		// the tombstone (since it has no storage items associated with it and it's
 		// not ready to be evicted yet).
-		assert.Loosely(t, CleanupGarbage(c, listing.Garbage), should.BeNil)
+		assert.NoErr(t, CleanupGarbage(c, listing.Garbage))
 		listing, err = set.List(c, limit)
 		assert.NoErr(t, err)
 		assert.Loosely(t, listing.Items, should.BeNil)
@@ -143,7 +143,7 @@ func TestSet(t *testing.T) {
 		assert.Loosely(t, listing.Garbage[0].storage, should.BeNil) // cleaned already
 
 		// Cleanup storage keys.
-		assert.Loosely(t, CleanupGarbage(c, listing.Garbage), should.BeNil)
+		assert.NoErr(t, CleanupGarbage(c, listing.Garbage))
 
 		// Cleanup the tombstones themselves.
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
@@ -161,7 +161,7 @@ func TestSet(t *testing.T) {
 		assert.Loosely(t, listing.Garbage, should.BeNil)
 
 		// And the item can be added back now, since no trace of it is left.
-		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
+		assert.NoErr(t, set.Add(c, []Item{{ID: "abc"}}))
 
 		// Yep, it is there.
 		listing, err = set.List(c, limit)
@@ -176,9 +176,9 @@ func TestSet(t *testing.T) {
 			Parent:          datastore.MakeKey(c, "Parent", "parent"),
 			TombstonesDelay: time.Minute,
 		}
-		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
-		assert.Loosely(t, set.Add(c, []Item{{ID: "def"}}), should.BeNil)
-		assert.Loosely(t, set.Add(c, []Item{{ID: "ghi"}}), should.BeNil)
+		assert.NoErr(t, set.Add(c, []Item{{ID: "abc"}}))
+		assert.NoErr(t, set.Add(c, []Item{{ID: "def"}}))
+		assert.NoErr(t, set.Add(c, []Item{{ID: "ghi"}}))
 
 		l, err := set.List(c, 2)
 		assert.NoErr(t, err)
@@ -194,9 +194,9 @@ func TestSet(t *testing.T) {
 		}
 
 		// Add 3 items.
-		assert.Loosely(t, set.Add(c, []Item{{ID: "abc"}}), should.BeNil)
-		assert.Loosely(t, set.Add(c, []Item{{ID: "def"}}), should.BeNil)
-		assert.Loosely(t, set.Add(c, []Item{{ID: "ghi"}}), should.BeNil)
+		assert.NoErr(t, set.Add(c, []Item{{ID: "abc"}}))
+		assert.NoErr(t, set.Add(c, []Item{{ID: "def"}}))
+		assert.NoErr(t, set.Add(c, []Item{{ID: "ghi"}}))
 
 		l, err := set.List(c, 10)
 		assert.NoErr(t, err)

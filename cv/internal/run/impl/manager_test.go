@@ -67,7 +67,7 @@ func TestRunManager(t *testing.T) {
 
 		currentRun := func(ctx context.Context) *run.Run {
 			ret := &run.Run{ID: runID}
-			assert.Loosely(t, datastore.Get(ctx, ret), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, ret))
 			return ret
 		}
 
@@ -275,7 +275,7 @@ func TestRunManager(t *testing.T) {
 			t.Run(fmt.Sprintf("Can process Event %T", et.event.GetEvent()), func(t *ftt.Test) {
 				fh := &fakeHandler{}
 				ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-				assert.Loosely(t, et.sendFn(ctx), should.BeNil)
+				assert.NoErr(t, et.sendFn(ctx))
 				runtest.AssertInEventbox(t, ctx, runID, et.event)
 				assert.That(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{runID}))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
@@ -302,7 +302,7 @@ func TestRunManager(t *testing.T) {
 			})
 			for _, etc := range eventTestcases {
 				if etc.event.GetCancel() == nil {
-					assert.Loosely(t, etc.sendFn(ctx), should.BeNil)
+					assert.NoErr(t, etc.sendFn(ctx))
 				}
 			}
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
@@ -340,7 +340,7 @@ func TestRunManager(t *testing.T) {
 		t.Run("Can Preserve events", func(t *ftt.Test) {
 			fh := &fakeHandler{preserveEvents: true}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
+			assert.NoErr(t, notifier.Start(ctx, runID))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 			runtest.AssertInEventbox(t, ctx, runID,
@@ -362,7 +362,7 @@ func TestRunManager(t *testing.T) {
 				},
 			}}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
+			assert.NoErr(t, notifier.Start(ctx, runID))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 			entries, err := run.LoadRunLogEntries(ctx, runID)
@@ -379,7 +379,7 @@ func TestRunManager(t *testing.T) {
 				},
 			}
 			ctx = context.WithValue(ctx, &fakeHandlerKey, fh)
-			assert.Loosely(t, notifier.Start(ctx, runID), should.BeNil)
+			assert.NoErr(t, notifier.Start(ctx, runID))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			assert.Loosely(t, postProcessFnExecuted, should.BeTrue)
 		})
@@ -427,7 +427,7 @@ func TestRunManager(t *testing.T) {
 		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), tree.NewClientFactory(ct.TreeFakeSrv.Host()), ct.BQFake, cf, qm, ct.Env)
 
 		t.Run("Recursive", func(t *ftt.Test) {
-			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
+			assert.NoErr(t, notifier.PokeNow(ctx, runID))
 			assert.That(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{runID}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			for i := 0; i < 10; i++ {
@@ -456,8 +456,8 @@ func TestRunManager(t *testing.T) {
 		})
 
 		t.Run("Existing event due during the interval", func(t *ftt.Test) {
-			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
-			assert.Loosely(t, notifier.PokeAfter(ctx, runID, 30*time.Second), should.BeNil)
+			assert.NoErr(t, notifier.PokeNow(ctx, runID))
+			assert.NoErr(t, notifier.PokeAfter(ctx, runID, 30*time.Second))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 
 			runtest.AssertNotInEventbox(t, ctx, runID, &eventpb.Event{
@@ -474,8 +474,8 @@ func TestRunManager(t *testing.T) {
 		})
 
 		t.Run("Run is missing", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Delete(ctx, &run.Run{ID: runID}), should.BeNil)
-			assert.Loosely(t, notifier.PokeNow(ctx, runID), should.BeNil)
+			assert.NoErr(t, datastore.Delete(ctx, &run.Run{ID: runID}))
+			assert.NoErr(t, notifier.PokeNow(ctx, runID))
 			ctx = memlogger.Use(ctx)
 			log := logging.Get(ctx).(*memlogger.MemLogger)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))

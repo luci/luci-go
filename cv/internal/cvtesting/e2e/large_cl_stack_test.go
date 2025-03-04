@@ -48,7 +48,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 		cis := make([]*gerritpb.ChangeInfo, N)
 		for i := range cis {

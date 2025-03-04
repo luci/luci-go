@@ -188,12 +188,12 @@ func TestUpdaterSchedule(t *testing.T) {
 				Requester:   UpdateCLTask_RUN_POKE,
 			}
 			delay := time.Minute
-			assert.Loosely(t, u.ScheduleDelayed(ctx, task, delay), should.BeNil)
+			assert.NoErr(t, u.ScheduleDelayed(ctx, task, delay))
 			assert.That(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{task}))
 
 			t.Log("Dedup works")
 			ct.Clock.Add(delay)
-			assert.Loosely(t, u.Schedule(ctx, task), should.BeNil)
+			assert.NoErr(t, u.Schedule(ctx, task))
 			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.HaveLength(1))
 
 			t.Log("But not within the transaction")
@@ -205,7 +205,7 @@ func TestUpdaterSchedule(t *testing.T) {
 
 			t.Log("Once out of dedup window, schedules a new task")
 			ct.Clock.Add(knownRefreshInterval)
-			assert.Loosely(t, u.Schedule(ctx, task), should.BeNil)
+			assert.NoErr(t, u.Schedule(ctx, task))
 			assert.That(t, ct.TQ.Tasks().Payloads(), should.Match([]proto.Message{task, task, task}))
 		})
 	})
@@ -352,7 +352,7 @@ func TestUpdaterHappyPath(t *testing.T) {
 		const runID = "luci-project/123-1-beef"
 		cl.IncompleteRuns = common.RunIDs{runID}
 		cl.EVersion++
-		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl))
 
 		///////////////////////////////////////////////////
 		// Phase 2: update the CL with the new patchset. //
@@ -439,7 +439,7 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 		cl.ApplicableConfig = acfg
 		cl.Snapshot = snap
 		cl.EVersion++
-		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl))
 
 		t.Run("updaterBackend is aware that there is no new data", func(t *ftt.Test) {
 			b.fetchResult = UpdateFields{}
@@ -539,7 +539,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 			"another-project-with-invalid-cl-deps": {NoAccessTime: timestamppb.New(alsoLongTimeAgo)},
 		}}
 		cl.EVersion++
-		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl))
 
 		//////////////////////////////////////////////////////////////////////////
 		// Phase 2: simulate a Fetch which got access denied from backend.
@@ -627,14 +627,14 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 				err := u.handleCL(ctx, &UpdateCLTask{
 					LuciProject: "luci-project",
 				})
-				assert.Loosely(t, err, should.ErrLike("invalid task input"))
+				assert.ErrIsLike(t, err, "invalid task input")
 				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 			t.Run("No LUCI project given", func(t *ftt.Test) {
 				err := u.handleCL(ctx, &UpdateCLTask{
 					ExternalId: "fake/1",
 				})
-				assert.Loosely(t, err, should.ErrLike("invalid task input"))
+				assert.ErrIsLike(t, err, "invalid task input")
 				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 			t.Run("Contradicting external and internal IDs", func(t *ftt.Test) {
@@ -645,7 +645,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 					Id:          int64(cl1.ID),
 					ExternalId:  string(cl2.ExternalID),
 				})
-				assert.Loosely(t, err, should.ErrLike("invalid task"))
+				assert.ErrIsLike(t, err, "invalid task")
 				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 			t.Run("Internal ID doesn't actually exist", func(t *ftt.Test) {
@@ -658,7 +658,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 					Id:          404,
 					LuciProject: "luci-project",
 				})
-				assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.ErrIsLike(t, err, datastore.ErrNoSuchEntity)
 				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 			t.Run("CL from unregistered backend", func(t *ftt.Test) {
@@ -666,7 +666,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 					ExternalId:  "unknown/404",
 					LuciProject: "luci-project",
 				})
-				assert.Loosely(t, err, should.ErrLike("backend is not supported"))
+				assert.ErrIsLike(t, err, "backend is not supported")
 				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
 			})
 		})
@@ -683,7 +683,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 			u.RegisterBackend(b)
 			err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "lp", ExternalId: "fake/1"})
 			assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
-			assert.Loosely(t, err, should.ErrLike("ignore-me"))
+			assert.ErrIsLike(t, err, "ignore-me")
 		})
 	})
 }
@@ -717,7 +717,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 			},
 		}
 		cl.EVersion++
-		assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl))
 
 		task := &UpdateCLTask{
 			LuciProject: "luci-project",
@@ -730,7 +730,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 
 		t.Run("skips Fetch", func(t *ftt.Test) {
 			t.Run("happy path: everything is up to date", func(t *ftt.Test) {
-				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.NoErr(t, u.handleCL(ctx, task))
 
 				cl2 := reloadCL(ctx, cl)
 				// Quick-fail if EVersion changes.
@@ -762,7 +762,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				})
 				// Either way, fetch can be skipped & Snapshot can be preserved, but the
 				// ApplicableConfig must be updated.
-				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.NoErr(t, u.handleCL(ctx, task))
 				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 				cl2 := reloadCL(ctx, cl)
 				assert.That(t, cl2.Snapshot, should.Match(cl.Snapshot))
@@ -777,9 +777,9 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
 					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
 				}}
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 				task.Hint.MetaRevId = "deadbeef"
-				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.NoErr(t, u.handleCL(ctx, task))
 				assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 			})
 		})
@@ -787,8 +787,8 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 		t.Run("doesn't skip Fetch because ...", func(t *ftt.Test) {
 			saveCLAndRun := func() {
 				cl.EVersion++
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
-				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
+				assert.NoErr(t, u.handleCL(ctx, task))
 			}
 			t.Run("no snapshot", func(t *ftt.Test) {
 				cl.Snapshot = nil
@@ -841,9 +841,9 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
 					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
 				}}
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 				task.Hint.MetaRevId = "foo"
-				assert.Loosely(t, u.handleCL(ctx, task), should.BeNil)
+				assert.NoErr(t, u.handleCL(ctx, task))
 				assert.Loosely(t, b.wasFetchCalled(), should.BeTrue)
 			})
 		})
@@ -851,7 +851,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 		t.Run("aborts before the Fetch because LookupApplicableConfig failed", func(t *ftt.Test) {
 			b.lookupACfgError = errors.New("boo", transient.Tag)
 			err := u.handleCL(ctx, task)
-			assert.Loosely(t, err, should.ErrLike(b.lookupACfgError))
+			assert.ErrIsLike(t, err, b.lookupACfgError)
 			assert.Loosely(t, b.wasFetchCalled(), should.BeFalse)
 		})
 	})
@@ -907,7 +907,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		}
 		clUpToDateDiffProject.Snapshot = proto.Clone(clUpToDate.Snapshot).(*Snapshot)
 		clUpToDateDiffProject.Snapshot.LuciProject = "other-project"
-		assert.Loosely(t, datastore.Put(ctx, clUpToDate, clUpToDateDiffProject), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, clUpToDate, clUpToDateDiffProject))
 
 		t.Run("no deps", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil, UpdateCLTask_RUN_POKE)

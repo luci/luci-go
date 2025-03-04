@@ -95,7 +95,7 @@ func TestManager(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, rcls), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, rcls))
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			{Email: tEmail},

@@ -108,7 +108,7 @@ func TestCheckRunCLs(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 			cls = append(cls, cl)
 			tr := &run.Trigger{
 				Email: triggerer,
@@ -139,7 +139,7 @@ func TestCheckRunCLs(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, dep), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, dep))
 			base.Snapshot.Deps = append(base.Snapshot.Deps, &changelist.Dep{Clid: clid})
 			return dep
 		}
@@ -159,11 +159,11 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 		markCLSubmittable := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 		}
 		submitCL := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 		}
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
@@ -179,7 +179,7 @@ func TestCheckRunCLs(t *testing.T) {
 			ci := cl.Snapshot.Kind.(*changelist.Snapshot_Gerrit).Gerrit.Info
 			ci.SubmitRequirements = append(ci.SubmitRequirements,
 				&gerritpb.SubmitRequirementResultInfo{Name: name, Status: st})
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 		}
 		satisfiedReq := func(cl *changelist.CL, name string) {
 			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_SATISFIED)

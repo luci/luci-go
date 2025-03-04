@@ -35,7 +35,7 @@ func TestOwnerIdentity(t *testing.T) {
 	ftt.Run("Snapshot.OwnerIdentity works", t, func(t *ftt.Test) {
 		s := &Snapshot{}
 		_, err := s.OwnerIdentity()
-		assert.Loosely(t, err, should.ErrLike("non-Gerrit CL"))
+		assert.ErrIsLike(t, err, "non-Gerrit CL")
 
 		ci := gerritfake.CI(101, gerritfake.Owner("owner-1"))
 		s.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
@@ -50,7 +50,7 @@ func TestOwnerIdentity(t *testing.T) {
 			// Yes, this happens if no preferred email is set. See crbug/1175771.
 			ci.Owner.Email = ""
 			_, err = s.OwnerIdentity()
-			assert.Loosely(t, err, should.ErrLike("CL x-review.example.com/101 owner email of account 1 is unknown"))
+			assert.ErrIsLike(t, err, "CL x-review.example.com/101 owner email of account 1 is unknown")
 		})
 	})
 }

@@ -41,7 +41,7 @@ func TestDeleteEntities(t *testing.T) {
 		ent := &MockEntity{
 			ID: "foo",
 		}
-		assert.Loosely(t, datastore.Put(ctx, ent), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, ent))
 
 		runJobAndEnsureSuccess := func() {
 			ctrl := &dsmapper.Controller{}
@@ -66,7 +66,7 @@ func TestDeleteEntities(t *testing.T) {
 				{ID: "bar"},
 				{ID: "baz"},
 			}
-			assert.Loosely(t, datastore.Put(ctx, entities), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, entities))
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
 			assert.NoErr(t, err)
@@ -79,7 +79,7 @@ func TestDeleteEntities(t *testing.T) {
 				{ID: "bar"},
 				{ID: "baz"},
 			}
-			assert.Loosely(t, datastore.Put(ctx, entities[0], entities[2]), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, entities[0], entities[2]))
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
 			assert.NoErr(t, err)

@@ -103,7 +103,7 @@ func TestMirrorIterator(t *testing.T) {
 					}
 					return errors.New("something else")
 				})
-				assert.Loosely(t, err, should.ErrLike("something else"))
+				assert.ErrIsLike(t, err, "something else")
 				assert.Loosely(t, tried, should.Equal(2))
 				assert.That(t, (*it)[0], should.Match("m2"))
 			})

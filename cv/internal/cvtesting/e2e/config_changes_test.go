@@ -103,7 +103,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")
 		prjcfgtest.Create(ctx, lProject, cfgFirst)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 		var runFirstSingle, runFirstCombo *run.Run
 		ct.RunUntil(ctx, func() bool {
@@ -124,7 +124,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			RefRegexp: []string{"refs/heads/.+"},
 		})
 		prjcfgtest.Update(ctx, lProject, cfgBoth)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 		var runSecondSingle *run.Run
 		ct.RunUntil(ctx, func() bool {
@@ -142,7 +142,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		ct.LogPhase(ctx, "CV watches only the second repo, stops Runs on CLs from the first repo, and purges second combo CL")
 		cfgSecond := MakeCfgCombinable("main", gHost, gRepoSecond, "refs/heads/.+", builder)
 		prjcfgtest.Update(ctx, lProject, cfgSecond)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			runFirstSingle = ct.LoadRun(ctx, runFirstSingle.ID)
 			runFirstCombo = ct.LoadRun(ctx, runFirstCombo.ID)

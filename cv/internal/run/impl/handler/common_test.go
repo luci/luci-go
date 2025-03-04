@@ -104,7 +104,7 @@ func TestEndRun(t *testing.T) {
 			IncompleteRuns: rids,
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
-		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &cl))
 
 		// mock some child runs of rids[0]
 		childRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("child"))
@@ -118,7 +118,7 @@ func TestEndRun(t *testing.T) {
 			DepRuns: common.RunIDs{rids[0]},
 			Status:  run.Status_FAILED,
 		}
-		assert.Loosely(t, datastore.Put(ctx, &childRun, &finChildRun), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &childRun, &finChildRun))
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -144,12 +144,12 @@ func TestEndRun(t *testing.T) {
 		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
 		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
 		assert.That(t, rs.EndTime, should.Match(ct.Clock.Now()))
-		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
+		assert.NoErr(t, datastore.RunInTransaction(ctx, se, nil))
 
 		t.Run("removeRunFromCLs", func(t *ftt.Test) {
 			// fetch the updated CL entity.
 			cl = changelist.CL{ID: clid}
-			assert.Loosely(t, datastore.Get(ctx, &cl), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &cl))
 
 			// it should have removed the ended Run, but not the other
 			// ongoing Run from the CL entity.
@@ -281,7 +281,7 @@ func TestEndRun(t *testing.T) {
 			IncompleteRuns: rids,
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
-		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &cl))
 
 		// mock some child runs of rids[0]
 		childRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("child"))
@@ -295,7 +295,7 @@ func TestEndRun(t *testing.T) {
 			DepRuns: common.RunIDs{rids[0]},
 			Status:  run.Status_FAILED,
 		}
-		assert.Loosely(t, datastore.Put(ctx, &childRun, &finChildRun), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &childRun, &finChildRun))
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -321,7 +321,7 @@ func TestEndRun(t *testing.T) {
 		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
 		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
 		assert.That(t, rs.EndTime, should.Match(ct.Clock.Now()))
-		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
+		assert.NoErr(t, datastore.RunInTransaction(ctx, se, nil))
 
 		t.Run("Does not credit quota for on upload runs (NewPatchsetRun)", func(t *ftt.Test) {
 			postActions := make([]*run.OngoingLongOps_Op_ExecutePostActionPayload, 0, len(rs.OngoingLongOps.GetOps()))
@@ -451,7 +451,7 @@ func TestCheckRunCreate(t *testing.T) {
 				}).GetCqVoteTrigger(),
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, cls, rcls), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cls, rcls))
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 			{Email: "user-1@example.com"},
 		})
@@ -514,7 +514,7 @@ func TestCheckRunCreate(t *testing.T) {
 			)
 			rcls[0].Detail = cls[0].Snapshot
 			rcls[1].Detail = cls[1].Snapshot
-			assert.Loosely(t, datastore.Put(ctx, cls, rcls), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cls, rcls))
 
 			t.Run("Only root CL fails the ACL check", func(t *ftt.Test) {
 				ct.AddMember("user-1", "committer-group") // can create a full run on cl2 now

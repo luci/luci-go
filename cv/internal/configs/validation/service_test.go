@@ -41,7 +41,7 @@ func TestListenerConfigValidation(t *testing.T) {
 
 		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			assert.Loosely(t, validateListenerSettings(vctx, configSet, path, content), should.BeNil)
+			assert.NoErr(t, validateListenerSettings(vctx, configSet, path, content))
 			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
@@ -66,12 +66,12 @@ func TestListenerConfigValidation(t *testing.T) {
 				}
 			`)
 			t.Run("fully loaded", func(t *ftt.Test) {
-				assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("empty", func(t *ftt.Test) {
-				assert.Loosely(t, validateListenerSettings(vctx, configSet, path, []byte{}), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, validateListenerSettings(vctx, configSet, path, []byte{}))
+				assert.NoErr(t, vctx.Finalize())
 			})
 		})
 
@@ -89,16 +89,16 @@ func TestListenerConfigValidation(t *testing.T) {
 						message_format: JSON
 					}
 				`)
-				assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike(`already exists for host "example.org"`))
+				assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
+				assert.ErrIsLike(t, vctx.Finalize(), `already exists for host "example.org"`)
 			})
 
 			t.Run("invalid disabled_project_regexps", func(t *ftt.Test) {
 				cfg := []byte(`
 					disabled_project_regexps: "(123"
 				`)
-				assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("missing closing"))
+				assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
+				assert.ErrIsLike(t, vctx.Finalize(), "missing closing")
 			})
 
 			t.Run("invalid message_format", func(t *ftt.Test) {
@@ -107,7 +107,7 @@ func TestListenerConfigValidation(t *testing.T) {
 						host: "example.org"
 					}
 				`)
-				assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
+				assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
 				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(
 					"message_format): must be specified"))
 			})
@@ -137,7 +137,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				ID:      prjcfg.MakeConfigGroupID(pc.Hash, "main"),
 				Content: cpb,
 			}
-			assert.Loosely(t, datastore.Put(ctx, pc, cg), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, pc, cg))
 
 			t.Run("missing gerrit_subscriptions", func(t *ftt.Test) {
 				cfg := []byte(`
@@ -153,16 +153,16 @@ func TestListenerConfigValidation(t *testing.T) {
 				`)
 
 				t.Run("fails", func(t *ftt.Test) {
-					assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("there is no gerrit_subscriptions"))
+					assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
+					assert.ErrIsLike(t, vctx.Finalize(), "there is no gerrit_subscriptions")
 				})
 
 				t.Run("succeeeds if disabled in listener settings", func(t *ftt.Test) {
 					cfg := append(cfg, []byte(`
 						disabled_project_regexps: "chromium"
 					`)...)
-					assert.Loosely(t, validateListenerSettings(vctx, configSet, path, cfg), should.BeNil)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, validateListenerSettings(vctx, configSet, path, cfg))
+					assert.NoErr(t, vctx.Finalize())
 				})
 			})
 		})

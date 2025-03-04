@@ -263,7 +263,7 @@ func TestHandleTask(t *testing.T) {
 				}), should.ErrLike("unknown Tryjob with ExternalID"))
 			})
 			t.Run("update a tryjob with neither internal nor external ID", func(t *ftt.Test) {
-				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{}), should.ErrLike("expected at least one of {Id, ExternalId}"))
+				assert.ErrIsLike(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{}), "expected at least one of {Id, ExternalId}")
 			})
 			t.Run("update a tryjob with mismatching internal and external IDs", func(t *ftt.Test) {
 				assert.That(t, updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
@@ -431,7 +431,7 @@ func TestUpdate(t *testing.T) {
 		})
 
 		t.Run("fails to update a tryjob with an external ID that doesn't exist", func(t *ftt.Test) {
-			assert.That(t, updater.Update(ctx, tryjob.MustBuildbucketID("does-not-exist.example.com", 1), nil), should.ErrLike("unknown Tryjob with ExternalID"))
+			assert.ErrIsLike(t, updater.Update(ctx, tryjob.MustBuildbucketID("does-not-exist.example.com", 1), nil), "unknown Tryjob with ExternalID")
 		})
 	})
 }

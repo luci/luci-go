@@ -222,7 +222,7 @@ func TestRunAggregator(t *testing.T) {
 		t.Run("Refuses to report anything if there are too many active Runs", func(t *ftt.Test) {
 			putManyRuns(maxRuns+1, 16, 8)
 			ra := runsAggregator{}
-			assert.Loosely(t, ra.report(ctx, []string{lProject}), should.ErrLike("too many active Runs"))
+			assert.ErrIsLike(t, ra.report(ctx, []string{lProject}), "too many active Runs")
 			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 	})

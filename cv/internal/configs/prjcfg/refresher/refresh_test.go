@@ -202,7 +202,7 @@ func TestUpdateProject(t *testing.T) {
 				err := UpdateProject(ctx, "chromium", notify)
 				assert.NoErr(t, err)
 				pc := prjcfg.ProjectConfig{Project: "chromium"}
-				assert.Loosely(t, datastore.Get(ctx, &pc), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, &pc))
 				assert.Loosely(t, pc.EVersion, should.Equal(1))
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
 				assert.That(t, pc.UpdateTime, should.Match(prevUpdatedTime.UTC()))
@@ -211,12 +211,12 @@ func TestUpdateProject(t *testing.T) {
 				t.Run("But not noop if SchemaVersion changed", func(t *ftt.Test) {
 					old := pc // copy
 					old.SchemaVersion--
-					assert.Loosely(t, datastore.Put(ctx, &old), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, &old))
 
 					err := UpdateProject(ctx, "chromium", notify)
 					assert.NoErr(t, err)
 					assert.Loosely(t, notifyCalled, should.BeTrue)
-					assert.Loosely(t, datastore.Get(ctx, &pc), should.BeNil)
+					assert.NoErr(t, datastore.Get(ctx, &pc))
 					assert.Loosely(t, pc.EVersion, should.Equal(2))
 					assert.Loosely(t, pc.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 				})
@@ -266,9 +266,9 @@ func TestUpdateProject(t *testing.T) {
 
 				t.Run("Re-enables project even if config hash is the same", func(t *ftt.Test) {
 					testClock.Add(10 * time.Minute)
-					assert.Loosely(t, DisableProject(ctx, "chromium", notify), should.BeNil)
+					assert.NoErr(t, DisableProject(ctx, "chromium", notify))
 					before := prjcfg.ProjectConfig{Project: "chromium"}
-					assert.Loosely(t, datastore.Get(ctx, &before), should.BeNil)
+					assert.NoErr(t, datastore.Get(ctx, &before))
 					// Delete config entities.
 					projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 					err := datastore.Delete(ctx,
@@ -281,9 +281,9 @@ func TestUpdateProject(t *testing.T) {
 					assert.NoErr(t, err)
 
 					testClock.Add(10 * time.Minute)
-					assert.Loosely(t, UpdateProject(ctx, "chromium", notify), should.BeNil)
+					assert.NoErr(t, UpdateProject(ctx, "chromium", notify))
 					after := prjcfg.ProjectConfig{Project: "chromium"}
-					assert.Loosely(t, datastore.Get(ctx, &after), should.BeNil)
+					assert.NoErr(t, datastore.Get(ctx, &after))
 
 					assert.Loosely(t, after.Enabled, should.BeTrue)
 					assert.Loosely(t, after.EVersion, should.Equal(before.EVersion+1))
@@ -310,7 +310,7 @@ func TestDisableProject(t *testing.T) {
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: []string{"default"},
 			}
-			assert.Loosely(t, datastore.Put(ctx, &pc), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &pc))
 			testClock.Add(10 * time.Minute)
 		}
 
@@ -325,7 +325,7 @@ func TestDisableProject(t *testing.T) {
 			err := DisableProject(ctx, "chromium", notify)
 			assert.NoErr(t, err)
 			actual := prjcfg.ProjectConfig{Project: "chromium"}
-			assert.Loosely(t, datastore.Get(ctx, &actual), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &actual))
 			assert.Loosely(t, actual.Enabled, should.BeFalse)
 			assert.Loosely(t, actual.EVersion, should.Equal(101))
 			assert.That(t, actual.UpdateTime, should.Match(datastore.RoundTime(testClock.Now()).UTC()))
@@ -337,7 +337,7 @@ func TestDisableProject(t *testing.T) {
 			err := DisableProject(ctx, "chromium", notify)
 			assert.NoErr(t, err)
 			actual := prjcfg.ProjectConfig{Project: "chromium"}
-			assert.Loosely(t, datastore.Get(ctx, &actual), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &actual))
 			assert.Loosely(t, actual.Enabled, should.BeFalse)
 			assert.Loosely(t, actual.EVersion, should.Equal(100))
 			assert.Loosely(t, notifyCalled, should.BeFalse)
@@ -346,7 +346,7 @@ func TestDisableProject(t *testing.T) {
 		t.Run("non-existing Project", func(t *ftt.Test) {
 			err := DisableProject(ctx, "non-existing", notify)
 			assert.NoErr(t, err)
-			assert.Loosely(t, datastore.Get(ctx, &prjcfg.ProjectConfig{Project: "non-existing"}), should.ErrLike(datastore.ErrNoSuchEntity))
+			assert.ErrIsLike(t, datastore.Get(ctx, &prjcfg.ProjectConfig{Project: "non-existing"}), datastore.ErrNoSuchEntity)
 			assert.Loosely(t, notifyCalled, should.BeFalse)
 		})
 	})
@@ -388,7 +388,7 @@ func TestPutConfigGroups(t *testing.T) {
 				ID:      prjcfg.MakeConfigGroupID(hash, "group_foo"),
 				Project: prjcfg.ProjectConfigKey(ctx, "chromium"),
 			}
-			assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &stored))
 			assert.Loosely(t, stored.DrainingStartTime, should.Equal(testCfg.GetDrainingStartTime()))
 			assert.That(t, stored.SubmitOptions, should.Match(testCfg.GetSubmitOptions()))
 			assert.That(t, stored.Content, should.Match(testCfg.GetConfigGroups()[0]))
@@ -406,12 +406,12 @@ func TestPutConfigGroups(t *testing.T) {
 			t.Run("Update existing due to SchemaVersion", func(t *ftt.Test) {
 				old := stored // copy
 				old.SchemaVersion = prjcfg.SchemaVersion - 1
-				assert.Loosely(t, datastore.Put(ctx, &old), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, &old))
 
 				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.MustComputeHash(testCfg))
 				assert.NoErr(t, err)
 
-				assert.Loosely(t, datastore.Get(ctx, &stored), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, &stored))
 				assert.Loosely(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 			})
 		})

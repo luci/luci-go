@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 )
 
@@ -34,11 +33,11 @@ func TestGetRun(t *testing.T) {
 		}
 		ctx := UseFakeClient(context.Background(), runs)
 		client, err := NewClient(ctx, "host")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		req := &cvv0.GetRunRequest{
 			Id: rID,
 		}
 		_, err = client.GetRun(ctx, req)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 	})
 }

@@ -127,7 +127,7 @@ func TestPoke(t *testing.T) {
 			Detail:  cl.Snapshot,
 			Trigger: triggers.GetCqVoteTrigger(),
 		}
-		assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl, rcl))
 
 		now := ct.Clock.Now()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")

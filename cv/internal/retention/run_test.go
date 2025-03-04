@@ -67,7 +67,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 					CreateTime: createTime,
 				}
 			}
-			assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runs))
 			return runs
 		}
 
@@ -113,7 +113,7 @@ func TestWipeoutRuns(t *testing.T) {
 				CreateTime: createTime,
 				Status:     run.Status_SUCCEEDED,
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return r
 		}
 
@@ -128,11 +128,11 @@ func TestWipeoutRuns(t *testing.T) {
 				Run: datastore.KeyForObj(ctx, r),
 			}
 			t.Run("run and run cls", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Put(ctx, cl1, cl2), should.BeNil)
-				assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, r), should.ErrLike(datastore.ErrNoSuchEntity))
-				assert.Loosely(t, datastore.Get(ctx, cl1), should.ErrLike(datastore.ErrNoSuchEntity))
-				assert.Loosely(t, datastore.Get(ctx, cl2), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.NoErr(t, datastore.Put(ctx, cl1, cl2))
+				assert.NoErr(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM))
+				assert.ErrIsLike(t, datastore.Get(ctx, r), datastore.ErrNoSuchEntity)
+				assert.ErrIsLike(t, datastore.Get(ctx, cl1), datastore.ErrNoSuchEntity)
+				assert.ErrIsLike(t, datastore.Get(ctx, cl2), datastore.ErrNoSuchEntity)
 			})
 
 			t.Run("with a lot of log", func(t *ftt.Test) {
@@ -143,35 +143,35 @@ func TestWipeoutRuns(t *testing.T) {
 						Run: datastore.KeyForObj(ctx, r),
 					}
 				}
-				assert.Loosely(t, datastore.Put(ctx, cl1, cl2, logs), should.BeNil)
-				assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl1, cl2, logs))
+				assert.NoErr(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM))
 				for _, log := range logs {
-					assert.Loosely(t, datastore.Get(ctx, log), should.ErrLike(datastore.ErrNoSuchEntity))
+					assert.ErrIsLike(t, datastore.Get(ctx, log), datastore.ErrNoSuchEntity)
 				}
-				assert.Loosely(t, datastore.Get(ctx, r), should.ErrLike(datastore.ErrNoSuchEntity))
-				assert.Loosely(t, datastore.Get(ctx, cl1), should.ErrLike(datastore.ErrNoSuchEntity))
-				assert.Loosely(t, datastore.Get(ctx, cl2), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.ErrIsLike(t, datastore.Get(ctx, r), datastore.ErrNoSuchEntity)
+				assert.ErrIsLike(t, datastore.Get(ctx, cl1), datastore.ErrNoSuchEntity)
+				assert.ErrIsLike(t, datastore.Get(ctx, cl2), datastore.ErrNoSuchEntity)
 			})
 		})
 
 		t.Run("handle run doesn't exist", func(t *ftt.Test) {
 			createTime := ct.Clock.Now().Add(-2 * retentionPeriod).UTC()
 			rid := common.MakeRunID(lProject, createTime, 1, []byte("deadbeef"))
-			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{rid}, mockRM), should.BeNil)
+			assert.NoErr(t, wipeoutRuns(ctx, common.RunIDs{rid}, mockRM))
 		})
 
 		t.Run("handle run should still be retained", func(t *ftt.Test) {
 			r := makeRun(ct.Clock.Now().Add(-retentionPeriod / 2).UTC())
-			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
-			assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
+			assert.NoErr(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM))
+			assert.NoErr(t, datastore.Get(ctx, r))
 		})
 
 		t.Run("Poke run if it is not ended", func(t *ftt.Test) {
 			r := makeRun(ct.Clock.Now().Add(-2 * retentionPeriod).UTC())
 			r.Status = run.Status_PENDING
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
-			assert.Loosely(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM), should.BeNil)
-			assert.Loosely(t, datastore.Get(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
+			assert.NoErr(t, wipeoutRuns(ctx, common.RunIDs{r.ID}, mockRM))
+			assert.NoErr(t, datastore.Get(ctx, r))
 			assert.That(t, mockRM.called, should.Match(common.RunIDs{r.ID}))
 		})
 	})

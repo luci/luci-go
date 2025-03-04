@@ -329,7 +329,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
 			CLs:        runCLs,
 		}
-		assert.Loosely(t, datastore.Put(ctx, &r), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &r))
 		cg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "main"},
@@ -405,7 +405,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 		ci1, cl1, runCL1 := genCL(1, 1111, 2)
 		ci2, cl2, runCL2 := genCL(2, 2222)
-		assert.Loosely(t, datastore.Put(ctx, cl1, cl2, runCL1, runCL2), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl1, cl2, runCL1, runCL2))
 
 		ct.GFake.CreateChange(&gf.Change{
 			Host: gHost,
@@ -1132,7 +1132,7 @@ func TestOnCLsSubmitted(t *testing.T) {
 		})
 		t.Run("Error for unknown CLs", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})
-			assert.Loosely(t, err, should.ErrLike("received CLsSubmitted event for cls not belonging to this Run: [9 11]"))
+			assert.ErrIsLike(t, err, "received CLsSubmitted event for cls not belonging to this Run: [9 11]")
 			assert.Loosely(t, res, should.BeNil)
 		})
 	})

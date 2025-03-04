@@ -59,7 +59,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		t.Run("A single patchset is uploaded", func(t *ftt.Test) {
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.AddNewPatchsetRunner("uploader-99")
@@ -134,7 +134,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		})
 
 		t.Run("A single patchset is uploaded, and commit-queued at the same time", func(t *ftt.Test) {
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
@@ -162,7 +162,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		})
 
 		t.Run("A patchset is uploaded after a previous patchset upload run is complete", func(t *ftt.Test) {
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddCommitter("uploader-99")
 			ct.AddNewPatchsetRunner("uploader-99")
@@ -239,7 +239,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			// CL A depends on CL B, CL A is CQ+2 but CL B is not.
 			// This should create two NPR Runs and no CQ Run.
 			gChangeA, gChangeB := 1002, 1003
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.AddDryRunner("user-1")
 			ct.AddNewPatchsetRunner("user-1")
@@ -271,7 +271,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 				}
 				clI := &changelist.CL{ID: rs[i].CLs[0]}
 				clJ := &changelist.CL{ID: rs[j].CLs[0]}
-				assert.Loosely(t, datastore.Get(ctx, clI, clJ), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, clI, clJ))
 				return clI.ExternalID < clJ.ExternalID
 			})
 
@@ -294,7 +294,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		})
 
 		t.Run("If user is not authorized then the new patchset run is immediately cancelled", func(t *ftt.Test) {
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
 				{Email: "uploader-99@example.com"},
@@ -339,7 +339,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, cfg)
 		// A depends on B, both are ready. We should get three runs. Two NPR and one CQ
 		gChangeA, gChangeB := 1002, 1003
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		updated := ct.Clock.Now().Add(time.Minute)
 		ct.AddDryRunner("user-1")
 		ct.AddNewPatchsetRunner("user-1")
@@ -373,7 +373,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			}
 			clI := &changelist.CL{ID: rs[i].CLs[0]}
 			clJ := &changelist.CL{ID: rs[j].CLs[0]}
-			assert.Loosely(t, datastore.Get(ctx, clI, clJ), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, clI, clJ))
 			return clI.ExternalID < clJ.ExternalID
 		})
 

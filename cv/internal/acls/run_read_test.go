@@ -79,7 +79,7 @@ func TestRunReadChecker(t *testing.T) {
 			EVersion:      5,
 			ConfigGroupID: prjcfgtest.MustExist(ctx, projectInternal).ConfigGroupIDs[0],
 		}
-		assert.Loosely(t, datastore.Put(ctx, publicRun, internalRun), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, publicRun, internalRun))
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,

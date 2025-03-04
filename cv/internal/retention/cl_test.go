@@ -48,7 +48,7 @@ func TestScheduleWipeoutCLs(t *testing.T) {
 		// Make half of the CLs eligible for wipeout
 		ct.Clock.Set(cls[len(cls)/2].UpdateTime.Add(retentionPeriod))
 
-		assert.Loosely(t, scheduleWipeoutCLTasks(ctx, ct.TQDispatcher), should.BeNil)
+		assert.NoErr(t, scheduleWipeoutCLTasks(ctx, ct.TQDispatcher))
 		var expectedCLIDs common.CLIDs
 		for _, cl := range cls[:len(cls)/2] {
 			expectedCLIDs = append(expectedCLIDs, cl.ID)
@@ -79,8 +79,8 @@ func TestWipeoutCLs(t *testing.T) {
 		ct.Clock.Add(2 * retentionPeriod) // make cl eligible for wipeout
 
 		t.Run("Can wipeout CL", func(t *ftt.Test) {
-			assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}), should.BeNil)
-			assert.Loosely(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
+			assert.NoErr(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}))
+			assert.ErrIsLike(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}), datastore.ErrNoSuchEntity)
 		})
 
 		t.Run("Don't wipeout CL", func(t *ftt.Test) {
@@ -95,13 +95,13 @@ func TestWipeoutCLs(t *testing.T) {
 					IndexedID:  cl.ID,
 					ExternalID: cl.ExternalID,
 				}
-				assert.Loosely(t, datastore.Put(ctx, r, rcl), should.BeNil)
-				assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}), should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, r, rcl))
+				assert.NoErr(t, wipeoutCLs(ctx, common.CLIDs{cl.ID}))
+				assert.NoErr(t, datastore.Get(ctx, &changelist.CL{ID: cl.ID}))
 			})
 
 			t.Run("When CL doesn't exist", func(t *ftt.Test) {
-				assert.Loosely(t, wipeoutCLs(ctx, common.CLIDs{cl.ID + 1}), should.BeNil)
+				assert.NoErr(t, wipeoutCLs(ctx, common.CLIDs{cl.ID + 1}))
 			})
 		})
 	})

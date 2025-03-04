@@ -172,8 +172,8 @@ func TestGetCLRunInfo(t *testing.T) {
 					Patchset: 39,
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, rcl), should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, rcl))
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return &apiv0pb.GetCLRunInfoResponse_RunInfo{
 				Id:           fmt.Sprintf("projects/%s/runs/%s", rid.LUCIProject(), rid.Inner()),
 				CreateTime:   timestamppb.New(r.CreateTime),
@@ -211,7 +211,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				eid := changelist.MustGobID(dc.Host, dc.Change)
 				depCl := eid.MustCreateIfNotExists(ctx)
 				setSnapshot(depCl, dc, nil)
-				assert.Loosely(t, datastore.Put(ctx, depCl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, depCl))
 				deps[i] = &changelist.Dep{
 					Clid: int64(depCl.ID),
 				}
@@ -221,7 +221,7 @@ func TestGetCLRunInfo(t *testing.T) {
 			eid := changelist.MustGobID(change.Host, change.Change)
 			cl := eid.MustCreateIfNotExists(ctx)
 			setSnapshot(cl, change, deps)
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 		}
 
 		t.Run("DepChangeInfos w/ valid Gerrit Change and no deps", func(t *ftt.Test) {
@@ -268,7 +268,7 @@ func TestGetCLRunInfo(t *testing.T) {
 				cl, err := changelist.MustGobID(deps[0].GetHost(), deps[0].GetChange()).Load(ctx)
 				assert.NoErr(t, err)
 				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
 				assert.NoErr(t, err)
 				assert.That(t, resp.DepChangeInfos, should.Match([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{

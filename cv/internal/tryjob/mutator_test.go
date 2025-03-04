@@ -102,7 +102,7 @@ func TestUpsert(t *testing.T) {
 		_, err := m.Upsert(ctx, eid, func(tj *Tryjob) error {
 			return myErr
 		})
-		assert.That(t, err, should.ErrLike(myErr))
+		assert.ErrIsLike(t, err, myErr)
 	})
 	t.Run("MutatorCallback modify immutable fields", func(t *testing.T) {
 		assert.That(t, func() {
@@ -223,14 +223,14 @@ func TestUpdate(t *testing.T) {
 		_, err := m.Update(ctx, tryjobID+1000, func(tj *Tryjob) error {
 			return nil
 		})
-		assert.That(t, err, should.ErrLikeError(datastore.ErrNoSuchEntity))
+		assert.ErrIsLike(t, err, datastore.ErrNoSuchEntity)
 	})
 	t.Run("MutatorCallback error", func(t *testing.T) {
 		myErr := errors.New("my error")
 		_, err := m.Update(ctx, tryjobID, func(tj *Tryjob) error {
 			return myErr
 		})
-		assert.That(t, err, should.ErrLike(myErr))
+		assert.ErrIsLike(t, err, myErr)
 	})
 	t.Run("MutatorCallback modify immutable fields", func(t *testing.T) {
 		assert.That(t, func() {

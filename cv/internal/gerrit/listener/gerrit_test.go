@@ -132,7 +132,7 @@ func TestGerrit(t *testing.T) {
 			}`)
 			process := func() *subscriber {
 				sber := newGerritSubscriber(client, sch, finder, settings)
-				assert.Loosely(t, sber.proc.process(ctx, msg), should.BeNil)
+				assert.NoErr(t, sber.proc.process(ctx, msg))
 				return sber
 			}
 
@@ -145,7 +145,7 @@ func TestGerrit(t *testing.T) {
 					DisabledProjectRegexps: []string{"chromium"},
 					GerritSubscriptions:    []*listenerpb.Settings_GerritSubscription{settings},
 				}
-				assert.Loosely(t, finder.reload(cfg), should.BeNil)
+				assert.NoErr(t, finder.reload(cfg))
 				msg.Data = payload
 				process()
 				assert.Loosely(t, sch.tasks, should.HaveLength(0))
@@ -169,7 +169,7 @@ func TestGerrit(t *testing.T) {
 				})
 				t.Run("in binary", func(t *ftt.Test) {
 					event := &gerritpb.SourceRepoEvent{}
-					assert.Loosely(t, protojson.Unmarshal(payload, event), should.BeNil)
+					assert.NoErr(t, protojson.Unmarshal(payload, event))
 					bin, err := proto.Marshal(event)
 					assert.NoErr(t, err)
 					msg.Data = bin

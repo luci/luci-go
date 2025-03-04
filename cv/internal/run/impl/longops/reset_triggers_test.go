@@ -102,7 +102,7 @@ func TestResetTriggers(t *testing.T) {
 				Mode:          run.DryRun,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 			}
-			assert.Loosely(t, datastore.Put(ctx, r, cls, runCLs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r, cls, runCLs))
 			return r, clids
 		}
 
@@ -209,7 +209,7 @@ func TestResetTriggers(t *testing.T) {
 				// switch to the CL without trigger
 				op.Op.GetResetTriggers().GetRequests()[0].Clid = int64(clids[1])
 				_, err := op.Do(ctx)
-				assert.Loosely(t, err, should.ErrLike("requested trigger reset on CL 2 that doesn't have trigger at all"))
+				assert.ErrIsLike(t, err, "requested trigger reset on CL 2 that doesn't have trigger at all")
 			})
 		})
 

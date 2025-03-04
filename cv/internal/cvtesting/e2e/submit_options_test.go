@@ -55,7 +55,7 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 			BurstDelay: durationpb.New(burstDelay),
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 		// burstN CLs request FULL_RUN at the same time.
 		for gChange := 1; gChange <= burstN; gChange++ {

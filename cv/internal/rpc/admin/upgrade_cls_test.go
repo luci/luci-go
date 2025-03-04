@@ -55,7 +55,7 @@ func TestUpgradeCLs(t *testing.T) {
 					}},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 			return cl
 		}
 
@@ -78,7 +78,7 @@ func TestUpgradeCLs(t *testing.T) {
 		assert.That(t, clDesc(cl2, 2), should.Match("PS#2 foo"))
 
 		verify := func() {
-			assert.Loosely(t, datastore.Get(ctx, cl1, cl2), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, cl1, cl2))
 
 			assert.Loosely(t, clDesc(cl1, 1), should.BeEmpty)
 

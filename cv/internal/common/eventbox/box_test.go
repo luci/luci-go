@@ -154,7 +154,7 @@ func TestEventboxWorks(t *testing.T) {
 		const limit = 10000
 
 		// Seed the first cell.
-		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)), should.BeNil)
+		assert.NoErr(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)))
 		l, err := List(ctx, mkRecipient(ctx, 65))
 		assert.NoErr(t, err)
 		assert.Loosely(t, l, should.HaveLength(1))
@@ -210,11 +210,11 @@ func TestEventboxWorks(t *testing.T) {
 		assert.Loosely(t, ppfns, should.BeEmpty)
 
 		// Lots of events at once.
-		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil)
-		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil) // will have to wait
-		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)), should.BeNil) // will have to wait
-		assert.Loosely(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), should.BeNil) // not enough people, ignored.
-		assert.Loosely(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), should.BeNil) // not enough people, ignored.
+		assert.NoErr(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49)))
+		assert.NoErr(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49))) // will have to wait
+		assert.NoErr(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 49))) // will have to wait
+		assert.NoErr(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49))) // not enough people, ignored.
+		assert.NoErr(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49))) // not enough people, ignored.
 		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(5))
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
 		assert.NoErr(t, err)
@@ -312,7 +312,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.HaveLength(2))
 			for _, ppfn := range ppfns {
-				assert.Loosely(t, ppfn(ctx), should.BeNil)
+				assert.NoErr(t, ppfn(ctx))
 			}
 			assert.That(t, calledForStates, should.Match([]int{150, 152}))
 		})
@@ -329,8 +329,8 @@ func TestEventboxFails(t *testing.T) {
 		const limit = 100000
 		recipient := mkRecipient(ctx, 77)
 
-		assert.Loosely(t, Emit(ctx, []byte{'+'}, recipient), should.BeNil)
-		assert.Loosely(t, Emit(ctx, []byte{'-'}, recipient), should.BeNil)
+		assert.NoErr(t, Emit(ctx, []byte{'+'}, recipient))
+		assert.NoErr(t, Emit(ctx, []byte{'-'}, recipient))
 
 		initState := int(99)
 		p := &mockProc{
@@ -345,7 +345,7 @@ func TestEventboxFails(t *testing.T) {
 				return nil, nil, errors.New("oops")
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.ErrLike("oops"))
+			assert.ErrIsLike(t, err, "oops")
 			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 
@@ -376,7 +376,7 @@ func TestEventboxFails(t *testing.T) {
 				return 0, errors.New("ev error")
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.ErrLike("ev error"))
+			assert.ErrIsLike(t, err, "ev error")
 			assert.Loosely(t, ppfns, should.BeEmpty)
 			p.fetchEVersion = func(_ context.Context) (EVersion, error) {
 				return 1, nil
@@ -396,7 +396,7 @@ func TestEventboxFails(t *testing.T) {
 				return transient.Tag.Apply(errors.New("2nd failed"))
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.ErrLike("2nd failed"))
+			assert.ErrIsLike(t, err, "2nd failed")
 			assert.Loosely(t, ppfns, should.BeEmpty)
 			assert.Loosely(t, firstSideEffectCalled, should.BeTrue)
 			// ... but w/o any effect since transaction should have been aborted
@@ -414,7 +414,7 @@ func TestEventboxFails(t *testing.T) {
 				return transient.Tag.Apply(errors.New("savvvvvvvvvvvvvvvvvvvvvvvvvv hung"))
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.ErrLike("savvvvvvvvvvvvvvvv"))
+			assert.ErrIsLike(t, err, "savvvvvvvvvvvvvvvv")
 			assert.Loosely(t, ppfns, should.BeEmpty)
 			// ... still no side effect.
 			assert.Loosely(t, datastore.Get(ctx, &cell{Index: firstIndex}),
@@ -483,8 +483,8 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 		t.Run("Mutate returns no transitions, but some semantic garbage is still cleaned up", func(t *ftt.Test) {
-			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
-			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
+			assert.NoErr(t, Emit(ctx, []byte("msg"), recipient))
+			assert.NoErr(t, Emit(ctx, []byte("msg"), recipient))
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], nil
 			}
@@ -497,13 +497,13 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			assert.That(t, l[0].Value, should.Match([]byte("msg")))
 		})
 		t.Run("Garbage is cleaned up even if Mutate also returns error", func(t *ftt.Test) {
-			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
-			assert.Loosely(t, Emit(ctx, []byte("msg"), recipient), should.BeNil)
+			assert.NoErr(t, Emit(ctx, []byte("msg"), recipient))
+			assert.NoErr(t, Emit(ctx, []byte("msg"), recipient))
 			p.prepareMutation = func(_ context.Context, es Events, s State) ([]Transition, Events, error) {
 				return nil, es[:1], errors.New("boom")
 			}
 			_, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.ErrLike("boom"))
+			assert.ErrIsLike(t, err, "boom")
 			l, err := List(ctx, recipient)
 			assert.NoErr(t, err)
 			assert.Loosely(t, l, should.HaveLength(1))
@@ -584,11 +584,11 @@ func TestPrepareMutation(t *testing.T) {
 			assert.Loosely(t, Chain(nil, nil), should.BeNil)
 		})
 		t.Run("order is respected", func(t *ftt.Test) {
-			assert.Loosely(t, Chain(nil, f2, nil, f1, f2, f1, nil)(ctx), should.BeNil)
+			assert.NoErr(t, Chain(nil, f2, nil, f1, f2, f1, nil)(ctx))
 			assert.That(t, ops, should.Match([]string{"f2", "f1", "f2", "f1"}))
 		})
 		t.Run("error aborts", func(t *ftt.Test) {
-			assert.Loosely(t, Chain(f1, nil, ferr, f2)(ctx), should.ErrLike(breakChain))
+			assert.ErrIsLike(t, Chain(f1, nil, ferr, f2)(ctx), breakChain)
 			assert.That(t, ops, should.Match([]string{"f1", "ferr"}))
 		})
 	})

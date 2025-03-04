@@ -62,7 +62,7 @@ func TestQueue(t *testing.T) {
 				waitlisted, innerErr = TryAcquire(ctx, notifier.notify, runID, opts)
 				return innerErr
 			}, nil)
-			assert.Loosely(t, innerErr, should.BeNil)
+			assert.NoErr(t, innerErr)
 			assert.NoErr(t, err)
 			return waitlisted
 		}
@@ -143,7 +143,7 @@ func TestQueue(t *testing.T) {
 					innerErr = Release(ctx, notifier.notify, runID)
 					return innerErr
 				}, nil)
-				assert.Loosely(t, innerErr, should.BeNil)
+				assert.NoErr(t, innerErr)
 				assert.NoErr(t, err)
 			}
 			assert.Loosely(t, datastore.Put(ctx, &queue{
@@ -202,7 +202,7 @@ func TestQueue(t *testing.T) {
 						innerErr = ReleaseOnSuccess(ctx, notifier.notify, runID, submittedAt)
 						return innerErr
 					}, nil)
-					assert.Loosely(t, innerErr, should.BeNil)
+					assert.NoErr(t, innerErr)
 					assert.NoErr(t, err)
 				}
 				q := &queue{
@@ -211,7 +211,7 @@ func TestQueue(t *testing.T) {
 					Waitlist: common.RunIDs{run2},
 					Opts:     submitOpts,
 				}
-				assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, q))
 
 				t.Run("Records submitted timestamp", func(t *ftt.Test) {
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
@@ -223,7 +223,7 @@ func TestQueue(t *testing.T) {
 						now.Add(-1 * time.Hour),   // removed
 						now.Add(-1 * time.Minute), // kept
 					}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
 					assert.That(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-1 * time.Minute),
@@ -233,7 +233,7 @@ func TestQueue(t *testing.T) {
 
 				t.Run("Ensure order", func(t *ftt.Test) {
 					q.History = []time.Time{now.Add(-100 * time.Millisecond)}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					mustReleaseOnSuccess(ctx, run1, now.Add(-200*time.Millisecond))
 					assert.That(t, mustLoadQueue().History, should.Match([]time.Time{
 						now.Add(-200 * time.Millisecond),
@@ -243,7 +243,7 @@ func TestQueue(t *testing.T) {
 
 				t.Run("Notify the next Run immediately if below max burst", func(t *ftt.Test) {
 					q.History = []time.Time{now.Add(-2 * time.Minute)}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
 					assert.That(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{ct.Clock.Now()}))
 				})
@@ -254,7 +254,7 @@ func TestQueue(t *testing.T) {
 						now.Add(-30 * time.Second),
 						// next submit should happen on (now - 30s) + 1min = now + 30s
 					}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					mustReleaseOnSuccess(ctx, run1, now.Add(-1*time.Second))
 					assert.That(t, notifier.notifyETAs(ctx, run2), should.Match([]time.Time{now.Add(30 * time.Second)}))
 				})
@@ -265,14 +265,14 @@ func TestQueue(t *testing.T) {
 					ID:   lProject,
 					Opts: submitOpts,
 				}
-				assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, q))
 
 				t.Run("Succeeds if below max burst", func(t *ftt.Test) {
 					q.History = []time.Time{
 						now.Add(-2 * time.Minute),
 						now.Add(-30 * time.Second),
 					}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeFalse)
 					assert.Loosely(t, notifier.notifyETAs(ctx, run1), should.BeNil)
 				})
@@ -284,7 +284,7 @@ func TestQueue(t *testing.T) {
 						now.Add(-30 * time.Second),
 						// next submit should happen on (now - 45s) + 1min = now + 15s
 					}
-					assert.Loosely(t, datastore.Put(ctx, q), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, q))
 					assert.Loosely(t, mustTryAcquire(ctx, run1, submitOpts), should.BeTrue)
 					assert.That(t, notifier.notifyETAs(ctx, run1), should.Match([]time.Time{now.Add(15 * time.Second)}))
 				})

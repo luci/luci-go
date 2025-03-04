@@ -64,7 +64,7 @@ func TestPMReporter(t *testing.T) {
 		), should.BeNil)
 
 		r := pmReporter{}
-		assert.Loosely(t, r.report(ctx, []string{"small", "empty"}), should.BeNil)
+		assert.NoErr(t, r.report(ctx, []string{"small", "empty"}))
 		assert.Loosely(t, ct.TSMonSentValue(ctx, metricPMEntitySize, "small"), should.BeBetween(80, 90))
 		assert.Loosely(t, ct.TSMonSentValue(ctx, metricPMEntitySize, "empty"), should.BeBetween(40, 50))
 	})

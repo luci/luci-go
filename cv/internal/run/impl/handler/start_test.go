@@ -144,7 +144,7 @@ func TestStart(t *testing.T) {
 					GerritAccountId: accountID,
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, cl, rCL), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl, rCL))
 			return cl
 		}
 
@@ -199,7 +199,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[1]].GetPostStartMessage(), should.BeTrue)
 
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			assert.NoErr(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil))
 			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.DryRun)), should.Equal(1))
 			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				should.AlmostEqual(startLatency.Seconds()))
@@ -256,7 +256,7 @@ func TestStart(t *testing.T) {
 
 			res, err := h.Start(ctx, rs)
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("QM.DebitRunQuota: unexpected quotaOp Status ERR_UNKNOWN"))
+			assert.ErrIsLike(t, err, "QM.DebitRunQuota: unexpected quotaOp Status ERR_UNKNOWN")
 		})
 
 		t.Run("Does not proceed if any parent RUN is still PENDING", func(t *ftt.Test) {
@@ -304,7 +304,7 @@ func TestStart(t *testing.T) {
 			res, err := h.Start(ctx, rs)
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			assert.NoErr(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil))
 			runtest.AssertReceivedStart(t, ctx, child1)
 		})
 
@@ -528,7 +528,7 @@ func TestStart(t *testing.T) {
 			assert.Loosely(t, res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), should.NotBeNil)
 
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
-			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			assert.NoErr(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil))
 			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.NewPatchsetRun)), should.Equal(1))
 			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				should.AlmostEqual(startLatency.Seconds()))

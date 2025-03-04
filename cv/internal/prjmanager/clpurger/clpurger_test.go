@@ -150,7 +150,7 @@ func TestPurgeCL(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, schedule(), should.BeNil)
+			assert.NoErr(t, schedule())
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter := ct.GFake.GetChange(gHost, change).Info
@@ -179,7 +179,7 @@ func TestPurgeCL(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, schedule(), should.BeNil)
+			assert.NoErr(t, schedule())
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter = ct.GFake.GetChange(gHost, change).Info
@@ -194,7 +194,7 @@ func TestPurgeCL(t *testing.T) {
 			assertPMNotified(t, task.PurgingCl)
 		})
 		t.Run("Happy path: reset both triggers, schedule CL refresh, and notify PM", func(t *ftt.Test) {
-			assert.Loosely(t, schedule(), should.BeNil)
+			assert.NoErr(t, schedule())
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter := ct.GFake.GetChange(gHost, change).Info
@@ -214,7 +214,7 @@ func TestPurgeCL(t *testing.T) {
 					// Use different Operation ID s.t. we can easily assert PM was notified
 					// the 2nd time.
 					task.PurgingCl.OperationId = "op-2"
-					assert.Loosely(t, schedule(), should.BeNil)
+					assert.NoErr(t, schedule())
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 					// CL in Gerrit shouldn't be changed.
 					ciAfter2 := ct.GFake.GetChange(gHost, change).Info
@@ -244,7 +244,7 @@ func TestPurgeCL(t *testing.T) {
 		t.Run("Even if no purging is done, PM is always notified", func(t *ftt.Test) {
 			t.Run("Task arrives after the deadline", func(t *ftt.Test) {
 				task.PurgingCl.Deadline = timestamppb.New(ct.Clock.Now().Add(-time.Minute))
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				assert.Loosely(t, loadCL().EVersion, should.Equal(clBefore.EVersion)) // no changes.
 				assertPMNotified(t, task.PurgingCl)
@@ -257,9 +257,9 @@ func TestPurgeCL(t *testing.T) {
 				// Simulate NPR finished earlier.
 				cl := loadCL()
 				cl.TriggerNewPatchsetRunAfterPS = 2
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				assert.Loosely(t, loadCL().EVersion, should.Equal(clBefore.EVersion+1)) // +1 for setting Outdated{}
 				assertPMNotified(t, task.PurgingCl)
@@ -280,7 +280,7 @@ func TestPurgeCL(t *testing.T) {
 
 			t.Run("with the default NotifyTarget", func(t *ftt.Test) {
 				task.PurgingCl.Notification = nil
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				findSetReviewReqs()
 				assert.Loosely(t, reqs, should.HaveLength(2))
@@ -299,7 +299,7 @@ func TestPurgeCL(t *testing.T) {
 			t.Run("with a custom Notification target", func(t *ftt.Test) {
 				// 0 implies nobody
 				task.PurgingCl.Notification = NoNotification
-				assert.Loosely(t, schedule(), should.BeNil)
+				assert.NoErr(t, schedule())
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 				findSetReviewReqs()
 				assert.Loosely(t, reqs, should.HaveLength(2))

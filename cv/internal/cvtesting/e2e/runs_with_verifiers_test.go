@@ -77,7 +77,7 @@ func TestCreatesSingularRun(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -167,7 +167,7 @@ func TestCreatesSingularCustomRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -256,7 +256,7 @@ func TestCreatesSingularDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var qdr *run.Run
 		ct.RunUntil(ctx, func() bool {
 			qdr = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -374,7 +374,7 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -464,7 +464,7 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -534,7 +534,7 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		ct.GFake.SetDependsOn(gHost, "13_3", "12_2")
 
 		ct.LogPhase(ctx, "CV starts dry Run on just the 13")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		var r13 *run.Run
 		ct.RunUntil(ctx, func() bool {
 			r13 = ct.EarliestCreatedRunOf(ctx, lProject)
@@ -634,7 +634,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV discovers all CLs")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		clids := make(common.CLIDs, 3)
 		ct.RunUntil(ctx, func() bool {
 			for i, change := range []int64{gChange1, gChange2, gChange3} {
@@ -801,7 +801,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV discovers the CQ-ed CL")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange3) != nil })
 		ct.LogPhase(ctx, "CV loads deps of the CQ-ed CL")
 		ct.RunUntil(ctx, func() bool { return ct.LoadGerritCL(ctx, gHost, gChange2) != nil })
@@ -934,7 +934,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "CV discovers all CLs")
-		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 		ct.RunUntil(ctx, func() bool {
 			b1 := ct.LoadGerritCL(ctx, gHost, gChange1) != nil
 			b2 := ct.LoadGerritCL(ctx, gHost, gChange2) != nil

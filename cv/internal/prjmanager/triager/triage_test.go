@@ -162,7 +162,7 @@ func TestTriage(t *testing.T) {
 					Kind: depKind,
 				})
 			}
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 			pclTriggers := proto.Clone(trs).(*run.Triggers)
 			if pclTriggers.GetNewPatchsetRunTrigger() != nil {
 				pclTriggers.NewPatchsetRunTrigger.Email = owner.GetEmail()
@@ -488,7 +488,7 @@ func TestTriage(t *testing.T) {
 				const expectedRunID = "v8/9042327596854-1-42e0a59099a0f673"
 
 				t.Run("wait a bit if Run is RUNNING", func(t *ftt.Test) {
-					assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}))
 					res := mustTriage(oldC)
 					assert.Loosely(t, res.NewValue.GetTriageRequired(), should.BeFalse)
 					assert.That(t, res.NewValue.GetDecisionTime().AsTime(), should.Match(ct.Clock.Now().Add(5*time.Second).UTC()))
@@ -501,7 +501,7 @@ func TestTriage(t *testing.T) {
 					Status:  run.Status_CANCELLED,
 					EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				}
-				assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, r))
 
 				t.Run("wait a bit if Run was just finalized", func(t *ftt.Test) {
 					ct.Clock.Add(5 * time.Second)
@@ -580,11 +580,11 @@ func TestTriage(t *testing.T) {
 				t.Run("EVersion mismatch is an ErrOutdatedPMState", func(t *ftt.Test) {
 					cl, pcl := putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
 					cl.EVersion = 2
-					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, cl))
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					assert.That(t, err, should.ErrLikeError(itriager.ErrOutdatedPMState))
-					assert.That(t, err, should.ErrLikeString("EVersion changed 1 => 2"))
+					assert.ErrIsLike(t, err, itriager.ErrOutdatedPMState)
+					assert.ErrIsLike(t, err, "EVersion changed 1 => 2")
 				})
 
 			})
@@ -617,11 +617,11 @@ func TestTriage(t *testing.T) {
 				t.Run("EVersion mismatch is an ErrOutdatedPMState", func(t *ftt.Test) {
 					cl, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
 					cl.EVersion = 2
-					assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, cl))
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
-					assert.That(t, err, should.ErrLikeError(itriager.ErrOutdatedPMState))
-					assert.That(t, err, should.ErrLikeString("EVersion changed 1 => 2"))
+					assert.ErrIsLike(t, err, itriager.ErrOutdatedPMState)
+					assert.ErrIsLike(t, err, "EVersion changed 1 => 2")
 				})
 
 				t.Run("OK with resolved deps", func(t *ftt.Test) {

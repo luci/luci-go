@@ -127,7 +127,7 @@ func TestGetAllGerritHosts(t *testing.T) {
 			Hash:    "sha256:dddeadbbbbef",
 			Enabled: true,
 		}
-		assert.Loosely(t, datastore.Put(ctx, pc1, pc2), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, pc1, pc2))
 
 		addCG := func(pc *ProjectConfig, cgName string, hosts ...string) error {
 			cpb := &cfgpb.ConfigGroup{Name: cgName}
@@ -150,8 +150,8 @@ func TestGetAllGerritHosts(t *testing.T) {
 		}
 
 		t.Run("works", func(t *ftt.Test) {
-			assert.Loosely(t, addCG(pc1, "main", "example.com", "example.org"), should.BeNil)
-			assert.Loosely(t, addCG(pc2, "main", "example.edu", "example.net"), should.BeNil)
+			assert.NoErr(t, addCG(pc1, "main", "example.com", "example.org"))
+			assert.NoErr(t, addCG(pc2, "main", "example.edu", "example.net"))
 
 			hosts, err := GetAllGerritHosts(ctx)
 			assert.NoErr(t, err)
@@ -163,7 +163,7 @@ func TestGetAllGerritHosts(t *testing.T) {
 
 		t.Run("doesn't include disabled projects", func(t *ftt.Test) {
 			pc2.Enabled = false
-			assert.Loosely(t, datastore.Put(ctx, pc2), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, pc2))
 			hosts, err := GetAllGerritHosts(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, hosts, should.NotContainKey(pc2.Project))

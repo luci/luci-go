@@ -68,7 +68,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			Detail:     cl.Snapshot,
 		}
-		assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl, rcl))
 
 		ciInGerrit := proto.Clone(ciInCV).(*gerritpb.ChangeInfo)
 		gf.PS(2)(ciInGerrit)
@@ -126,7 +126,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 
 		t.Run("Don't go to Gerrit if CL is refreshed recently", func(t *ftt.Test) {
 			cl.Snapshot.ExternalUpdateTime = timestamppb.New(ct.Clock.Now().Add(-StaleCLAgeThreshold / 2))
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 
 			actionTime, err := IsActionTakenOnGerritCL(ctx, ct.GFake, rcl,
 				[]gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},

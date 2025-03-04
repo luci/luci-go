@@ -57,7 +57,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		cfg := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText1), cfg), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText1), cfg))
 		prjcfgtest.Create(ctx, ct.lProject, cfg)
 		meta := prjcfgtest.MustExist(ctx, ct.lProject)
 		gobmaptest.Update(ctx, ct.lProject)
@@ -67,7 +67,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 		const lProjectB = "test-b"
 		cfgTextB := strings.ReplaceAll(cfgText1, "repo/a", "repo/b")
 		cfgB := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgTextB), cfgB), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgTextB), cfgB))
 		prjcfgtest.Create(ctx, lProjectB, cfgB)
 		gobmaptest.Update(ctx, lProjectB)
 
@@ -154,7 +154,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			ID:  common.RunID(ct.lProject + "/789-ccc"),
 			CLs: common.CLIDs{cls[9].ID, cls[7].ID, cls[8].ID},
 		}
-		assert.Loosely(t, datastore.Put(ctx, run4, run56, run789), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, run4, run56, run789))
 
 		state := &State{PB: &prjpb.PState{
 			LuciProject:         ct.lProject,
@@ -187,7 +187,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			pbBefore := backupPB(state)
 
 			cat := state.categorizeCLs(ctx)
-			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 			assert.That(t, cat, should.Match(&categorizedCLs{
 				active:   mkClidsSet(cls, 5, 6, 7, 8, 9),
 				deps:     common.CLIDsSet{},
@@ -211,7 +211,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 2, 5, 6),
 			}))
-			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 			assert.That(t, cat, should.Match(&categorizedCLs{
 				active:   mkClidsSet(cls, 3, 2, 5, 6),
 				deps:     mkClidsSet(cls, 1),
@@ -237,7 +237,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				ID:  common.RunID(ct.lProject + "/111-s"),
 				CLs: common.CLIDs{cls[13].ID, cls[11].ID},
 			}
-			assert.Loosely(t, datastore.Put(ctx, runStale), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runStale))
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
@@ -248,7 +248,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				unused:   common.CLIDsSet{},
 				unloaded: mkClidsSet(cls, 11, 13),
 			}))
-			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 			assert.That(t, cat, should.Match(&categorizedCLs{
 				active: mkClidsSet(cls, 11, 13),
 				// 10 isn't in deps because this project has no visibility into CL 11.
@@ -276,7 +276,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				ID:  common.RunID(ct.lProject + "/404-s"),
 				CLs: common.CLIDs{cls[4].ID, 404},
 			}
-			assert.Loosely(t, datastore.Put(ctx, runStale), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, runStale))
 			state.PB.CreatedPruns = []*prjpb.PRun{prjpb.MakePRun(runStale)}
 			pb := backupPB(state)
 
@@ -287,7 +287,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				unused:   common.CLIDsSet{},
 				unloaded: common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 			}))
-			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 			assert.That(t, cat, should.Match(&categorizedCLs{
 				active:   common.CLIDsSet{cls[4].ID: struct{}{}, 404: struct{}{}},
 				deps:     common.CLIDsSet{},
@@ -329,7 +329,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unused:   mkClidsSet(cls, 1),
 				}
 				assert.That(t, cat, should.Match(exp))
-				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 				assert.That(t, cat, should.Match(exp))
 			})
 
@@ -350,7 +350,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unused:   common.CLIDsSet{},
 				}
 				assert.That(t, cat, should.Match(exp))
-				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 				assert.That(t, cat, should.Match(exp))
 			})
 
@@ -375,7 +375,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					unused:   common.CLIDsSet{},
 				}
 				assert.That(t, cat, should.Match(exp))
-				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 				assert.That(t, cat, should.Match(exp))
 			})
 		})
@@ -412,9 +412,9 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 				infoRef := cls[4].Snapshot.GetGerrit().GetInfo()
 				infoRef.Labels = nil
 				gf.CQ(2, ct.Clock.Now().Add(-common.MaxTriggerAge), gf.U("user-1"))(infoRef)
-				assert.Loosely(t, datastore.Put(ctx, cls[4]), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cls[4]))
 
-				assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+				assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 				assert.That(t, cat, should.Match(&categorizedCLs{
 					active:   mkClidsSet(cls, 1, 2),
 					deps:     mkClidsSet(cls, 4),
@@ -426,7 +426,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 
 		t.Run("noop", func(t *ftt.Test) {
 			cat := state.categorizeCLs(ctx)
-			assert.Loosely(t, state.loadActiveIntoPCLs(ctx, cat), should.BeNil)
+			assert.NoErr(t, state.loadActiveIntoPCLs(ctx, cat))
 			assert.That(t, cat, should.Match(&categorizedCLs{
 				active:   common.CLIDsSet{},
 				deps:     common.CLIDsSet{},

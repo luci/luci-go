@@ -48,7 +48,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
 			createdAt := ct.Clock.Now().Add(delay)
 			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
-			assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: runID, CLs: clids}), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &run.Run{ID: runID, CLs: clids}))
 			for _, clid := range clids {
 				assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
 					Run:       datastore.MakeKey(ctx, common.RunKind, string(runID)),

@@ -69,7 +69,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
 
-		assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+		assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 		assert.That(t, pmtest.Projects(ct.TQ.Tasks()), should.Match([]string{lProject}))
 		events1, err := eventbox.List(ctx, recipient)
 		assert.NoErr(t, err)
@@ -87,7 +87,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 		// Next task coming ~on time proceeds normally.
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
-		assert.Loosely(t, datastore.Get(ctx, &prjmanager.Project{ID: lProject}), should.BeNil)
+		assert.NoErr(t, datastore.Get(ctx, &prjmanager.Project{ID: lProject}))
 		events3, err := eventbox.List(ctx, recipient)
 		assert.NoErr(t, err)
 		assert.Loosely(t, events3, should.BeEmpty)
@@ -113,9 +113,9 @@ func TestProjectLifeCycle(t *testing.T) {
 
 		t.Run("with new project", func(t *ftt.Test) {
 			prjcfgtest.Create(ctx, lProject, singleRepoConfig("host", "repo"))
-			assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 			// Second event is a noop, but should still be consumed at once.
-			assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 			assert.That(t, pmtest.Projects(ct.TQ.Tasks()), should.Match([]string{lProject}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, recipient)
@@ -147,13 +147,13 @@ func TestProjectLifeCycle(t *testing.T) {
 					}}
 					value, err := proto.Marshal(e)
 					assert.NoErr(t, err)
-					assert.Loosely(t, eventbox.Emit(ctx, value, recipient), should.BeNil)
+					assert.NoErr(t, eventbox.Emit(ctx, value, recipient))
 				}
 				simulateRunCreated("111-beef")
 				simulateRunCreated("222-cafe")
 
 				prjcfgtest.Update(ctx, lProject, singleRepoConfig("host", "repo2"))
-				assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+				assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
@@ -164,7 +164,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 				t.Run("disable project with incomplete runs", func(t *ftt.Test) {
 					prjcfgtest.Disable(ctx, lProject)
-					assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+					assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 					p, ps, plog := loadProjectEntities(t, ctx, lProject)
@@ -183,7 +183,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					assert.That(t, runNotifier.popCancel(), should.Match(reqs))
 
 					t.Run("wait for all IncompleteRuns to finish", func(t *ftt.Test) {
-						assert.Loosely(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef"), run.Status_CANCELLED), should.BeNil)
+						assert.NoErr(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/111-beef"), run.Status_CANCELLED))
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 						p, ps, plog := loadProjectEntities(t, ctx, lProject)
@@ -191,7 +191,7 @@ func TestProjectLifeCycle(t *testing.T) {
 						assert.That(t, p.IncompleteRuns(), should.Match(common.MakeRunIDs(lProject+"/222-cafe")))
 						assert.Loosely(t, plog, should.BeNil) // still STOPPING.
 
-						assert.Loosely(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe"), run.Status_CANCELLED), should.BeNil)
+						assert.NoErr(t, pmNotifier.NotifyRunFinished(ctx, common.RunID(lProject+"/222-cafe"), run.Status_CANCELLED))
 						ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 						p, ps, plog = loadProjectEntities(t, ctx, lProject)
@@ -206,7 +206,7 @@ func TestProjectLifeCycle(t *testing.T) {
 				// No components means also no runs.
 				p.State.Components = nil
 				prjcfgtest.Delete(ctx, lProject)
-				assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+				assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 
 				p, ps, plog := loadProjectEntities(t, ctx, lProject)
@@ -266,7 +266,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 				{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, cl43), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl43))
 
 		cl44 := changelist.MustGobID(gHost, 44).MustCreateIfNotExists(ctx)
 		cl44.Snapshot = &changelist.Snapshot{
@@ -285,19 +285,19 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 				{Name: lProject, ConfigGroupIds: []string{string(meta.ConfigGroupIDs[0])}},
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, cl44), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl44))
 
 		// This event is the only event notifying PM about CL#43.
-		assert.Loosely(t, pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl43, cl44)), should.BeNil)
+		assert.NoErr(t, pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl43, cl44)))
 
 		const n = 20
 		for i := 0; i < n; i++ {
-			assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
-			assert.Loosely(t, pmNotifier.Poke(ctx, lProject), should.BeNil)
+			assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
+			assert.NoErr(t, pmNotifier.Poke(ctx, lProject))
 			// Simulate updating a CL.
 			cl44.EVersion++
-			assert.Loosely(t, datastore.Put(ctx, cl44), should.BeNil)
-			assert.Loosely(t, pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl44)), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl44))
+			assert.NoErr(t, pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl44)))
 		}
 
 		events, err := eventbox.List(ctx, recipient)
@@ -325,7 +325,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		// Exactly 1 of the workers must create PM entity, consume events and
 		// poke the poller.
 		p := prjmanager.Project{ID: lProject}
-		assert.Loosely(t, datastore.Get(ctx, &p), should.BeNil)
+		assert.NoErr(t, datastore.Get(ctx, &p))
 		// Both cl43 and cl44 must have corresponding PCLs with latest EVersions.
 		assert.Loosely(t, p.State.GetPcls(), should.HaveLength(2))
 		for _, pcl := range p.State.GetPcls() {

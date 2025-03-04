@@ -153,7 +153,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 		// Run statuses are used in this test to ensure Runs were actually loaded.
 		makeRun := func(id int, s Status) *Run {
 			r := &Run{ID: common.RunID(fmt.Sprintf("%s/%03d", lProject, id)), Status: s}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return r
 		}
 
@@ -165,7 +165,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 		r202 := makeRun(202, Status_FAILED)
 		r404 := makeRun(404, Status_PENDING)
 		r405 := makeRun(405, Status_PENDING)
-		assert.Loosely(t, datastore.Delete(ctx, r404, r405), should.BeNil)
+		assert.NoErr(t, datastore.Delete(ctx, r404, r405))
 
 		t.Run("Without checker", func(t *ftt.Test) {
 			t.Run("Every Run exists", func(t *ftt.Test) {
@@ -193,7 +193,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				b := LoadRunsFromIDs(r404.ID)
 
 				runsA, errs := b.Do(ctx)
-				assert.Loosely(t, errs, should.ErrLike(errors.MultiError{datastore.ErrNoSuchEntity}))
+				assert.ErrIsLike(t, errs, errors.MultiError{datastore.ErrNoSuchEntity})
 				assert.That(t, runsA, should.Match([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
@@ -262,11 +262,11 @@ func TestLoadRunsBuilder(t *testing.T) {
 					b := LoadRunsFromIDs(r201.ID, r1.ID, r202.ID, r3.ID, r404.ID).Checker(checker)
 
 					runsA, errs := b.Do(ctx)
-					assert.Loosely(t, errs[0], should.BeNil) // r201
-					assert.Loosely(t, errs[1], should.ErrLike("not-found-before"))
-					assert.Loosely(t, errs[2], should.BeNil) // r202
-					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
-					assert.Loosely(t, errs[4], should.ErrLike("not-found-ds"))
+					assert.NoErr(t, errs[0]) // r201
+					assert.ErrIsLike(t, errs[1], "not-found-before")
+					assert.NoErr(t, errs[2]) // r202
+					assert.ErrIsLike(t, errs[3], "not-found-after")
+					assert.ErrIsLike(t, errs[4], "not-found-ds")
 					assert.That(t, runsA, should.Match([]*Run{
 						r201,
 						{ID: r1.ID},
@@ -283,12 +283,12 @@ func TestLoadRunsBuilder(t *testing.T) {
 					b := LoadRunsFromIDs(r201.ID, r1.ID, r2.ID, r3.ID, r4.ID, r404.ID).Checker(checker)
 
 					runsA, errs := b.Do(ctx)
-					assert.Loosely(t, errs[0], should.BeNil) // r201
-					assert.Loosely(t, errs[1], should.ErrLike("not-found-before"))
-					assert.Loosely(t, errs[2], should.ErrLike("before-oops"))
-					assert.Loosely(t, errs[3], should.ErrLike("not-found-after"))
-					assert.Loosely(t, errs[4], should.ErrLike("after-oops"))
-					assert.Loosely(t, errs[5], should.ErrLike("not-found-ds"))
+					assert.NoErr(t, errs[0]) // r201
+					assert.ErrIsLike(t, errs[1], "not-found-before")
+					assert.ErrIsLike(t, errs[2], "before-oops")
+					assert.ErrIsLike(t, errs[3], "not-found-after")
+					assert.ErrIsLike(t, errs[4], "after-oops")
+					assert.ErrIsLike(t, errs[5], "not-found-ds")
 					assert.That(t, runsA, should.Match([]*Run{
 						r201,
 						{ID: r1.ID},
@@ -299,7 +299,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 					}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					assert.Loosely(t, err, should.ErrLike("before-oops"))
+					assert.ErrIsLike(t, err, "before-oops")
 					assert.Loosely(t, runsB, should.BeNil)
 				})
 			})

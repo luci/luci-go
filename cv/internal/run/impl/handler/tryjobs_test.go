@@ -290,7 +290,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						},
 					}
-					assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, tj))
 
 					err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
@@ -468,7 +468,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							Patchset: 2,
 						},
 					}
-					assert.Loosely(t, datastore.Put(ctx, anotherCL), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, anotherCL))
 					rs.CLs = append(rs.CLs, anotherCL.ID)
 
 					rs.RootCL = anotherCL.ID

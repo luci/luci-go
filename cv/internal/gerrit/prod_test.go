@@ -62,14 +62,14 @@ func TestMakeClient(t *testing.T) {
 					return nil, nil
 				}
 				_, err := f.token(ctx, gHost, "lProject-1")
-				assert.Loosely(t, err, should.ErrLike(errEmptyProjectToken))
+				assert.ErrIsLike(t, err, errEmptyProjectToken)
 			})
 			t.Run("error", func(t *ftt.Test) {
 				f.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 					return nil, errors.New("flake")
 				}
 				_, err := f.token(ctx, gHost, "lProject")
-				assert.Loosely(t, err, should.ErrLike("flake"))
+				assert.ErrIsLike(t, err, "flake")
 			})
 		})
 
@@ -93,7 +93,7 @@ func TestMakeClient(t *testing.T) {
 			t.Run("project-scoped account", func(t *ftt.Test) {
 				tokenCnt := 0
 				f.mockMintProjectToken = func(ctx context.Context, _ auth.ProjectTokenParams) (*auth.Token, error) {
-					assert.Loosely(t, ctx.Err(), should.BeNil) // must not be expired.
+					assert.NoErr(t, ctx.Err()) // must not be expired.
 					tokenCnt++
 					return &auth.Token{
 						Token:  fmt.Sprintf("tok-%d", tokenCnt),

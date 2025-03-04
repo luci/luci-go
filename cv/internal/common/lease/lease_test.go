@@ -207,19 +207,19 @@ func TestLease(t *testing.T) {
 		t.Run("Errors if lease has expired", func(t *ftt.Test) {
 			ct.Clock.Add(2 * time.Minute)
 			err := l.Extend(ctx, 1*time.Minute)
-			assert.Loosely(t, err, should.ErrLike("can't extend an expired lease"))
+			assert.ErrIsLike(t, err, "can't extend an expired lease")
 		})
 
 		t.Run("Errors if lease doesn't exist in Datastore", func(t *ftt.Test) {
 			ct.Clock.Add(30 * time.Second)
-			assert.Loosely(t, l.Terminate(ctx), should.BeNil)
+			assert.NoErr(t, l.Terminate(ctx))
 			err := l.Extend(ctx, 1*time.Minute)
-			assert.Loosely(t, err, should.ErrLike("target lease doesn't exist in datastore"))
+			assert.ErrIsLike(t, err, "target lease doesn't exist in datastore")
 		})
 
 		t.Run("Errors if lease is not current in Datastore", func(t *ftt.Test) {
 			ct.Clock.Add(30 * time.Second)
-			assert.Loosely(t, l.Terminate(ctx), should.BeNil)
+			assert.NoErr(t, l.Terminate(ctx))
 			_, err := Apply(ctx, Application{
 				ResourceID: rid,
 				Holder:     "holder2",

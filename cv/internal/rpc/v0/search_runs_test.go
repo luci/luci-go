@@ -138,7 +138,7 @@ func TestSearchRuns(t *testing.T) {
 				EndTime:    createdAt.Add(time.Hour),
 				Owner:      "user:foo@example.org",
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			for _, cl := range cls {
 				assert.Loosely(t, datastore.Put(ctx, &run.RunCL{
 					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),

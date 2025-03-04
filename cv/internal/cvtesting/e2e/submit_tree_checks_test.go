@@ -52,7 +52,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 				TreeName: lProject,
 			}
 			prjcfgtest.Create(ctx, lProject, cfg)
-			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 				gChange, gf.Project(gRepo), gf.Ref(gRef),
@@ -102,7 +102,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 					TreeName: lProject,
 				}
 				prjcfgtest.Create(ctx, lProject, cfg)
-				assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
+				assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
 
 				for _, gChange := range []int{gChange, gChangeSubmit} {
 					ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
@@ -146,7 +146,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 					Name: fmt.Sprintf("trees/%s/status/latest", lProject),
 				})
 				if expectedErr != nil {
-					assert.That(t, err, should.ErrLikeError(expectedErr))
+					assert.ErrIsLike(t, err, expectedErr)
 				} else {
 					assert.NoErr(t, err)
 					assert.That(t, status.GeneralState, should.NotEqual(tspb.GeneralState_OPEN))

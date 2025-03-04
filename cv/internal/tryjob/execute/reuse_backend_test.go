@@ -260,7 +260,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ExternalID, should.Equal(tryjob.MustBuildbucketID(bbHost, build.Id)))
 			latest := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
-			assert.Loosely(t, datastore.Get(ctx, latest), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, latest))
 			latest.RetentionKey = "" // clear the retention key before comparison
 			assert.That(t, latest, should.Match(&tryjob.Tryjob{
 				ID:               tj.ID,

@@ -78,7 +78,7 @@ func TestComputeOrder(t *testing.T) {
 		t.Run("Error when duplicated CLs provided", func(t *ftt.Test) {
 			res, err := ComputeOrder([]*run.RunCL{{ID: 1}, {ID: 1}})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("duplicate cl: 1"))
+			assert.ErrIsLike(t, err, "duplicate cl: 1")
 		})
 
 		t.Run("Disjoint CLs", func(t *ftt.Test) {
@@ -161,7 +161,7 @@ func TestComputeOrder(t *testing.T) {
 			}
 			res, err := ComputeOrder([]*run.RunCL{cl1, cl2})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, should.ErrLike("cycle detected for cl: 1"))
+			assert.ErrIsLike(t, err, "cycle detected for cl: 1")
 		})
 
 		t.Run("Chain of 3", func(t *ftt.Test) {

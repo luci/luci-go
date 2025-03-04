@@ -210,7 +210,7 @@ func TestLaunch(t *testing.T) {
 			assert.Loosely(t, tryjobs[0].ExternalID.MustLoad(ctx).ID, should.Equal(existingTryjobID))
 			// Check the dropped tryjob
 			tj = &tryjob.Tryjob{ID: tj.ID}
-			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, tj))
 			assert.Loosely(t, tj.Status, should.Equal(tryjob.Status_UNTRIGGERED))
 		})
 		t.Run("Launched Tryjob has CL in submission order", func(t *ftt.Test) {

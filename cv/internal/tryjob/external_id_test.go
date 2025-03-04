@@ -44,10 +44,10 @@ func TestExternalID(t *testing.T) {
 		t.Run("Bad ID", func(t *ftt.Test) {
 			e := ExternalID("blah")
 			_, _, err := e.ParseBuildbucketID()
-			assert.Loosely(t, err, should.ErrLike("not a valid BuildbucketID"))
+			assert.ErrIsLike(t, err, "not a valid BuildbucketID")
 
 			_, err = e.URL()
-			assert.Loosely(t, err, should.ErrLike("invalid ExternalID"))
+			assert.ErrIsLike(t, err, "invalid ExternalID")
 		})
 	})
 

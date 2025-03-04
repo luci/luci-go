@@ -97,7 +97,7 @@ func TestPostGerritMessage(t *testing.T) {
 			}
 			cl.Snapshot = rcl.Detail
 			cl.EVersion++
-			assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl, rcl))
 			return cl, rcl
 		}
 
@@ -120,7 +120,7 @@ func TestPostGerritMessage(t *testing.T) {
 			if r.ConfigGroupID == "" {
 				r.ConfigGroupID = prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return r
 		}
 

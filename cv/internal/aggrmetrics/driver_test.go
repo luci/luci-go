@@ -59,13 +59,13 @@ func TestDriver(t *testing.T) {
 		}
 
 		t.Run("No projects", func(t *ftt.Test) {
-			assert.Loosely(t, d.Cron(ctx), should.BeNil)
+			assert.NoErr(t, d.Cron(ctx))
 			assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 		})
 
 		t.Run("With one active project", func(t *ftt.Test) {
 			prjcfgtest.Create(ctx, "first", &cfgpb.Config{})
-			assert.Loosely(t, d.Cron(ctx), should.BeNil)
+			assert.NoErr(t, d.Cron(ctx))
 
 			t.Run("Reports new data", func(t *ftt.Test) {
 				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
@@ -76,7 +76,7 @@ func TestDriver(t *testing.T) {
 				prjcfgtest.Disable(ctx, "first")
 				prjcfgtest.Create(ctx, "second", &cfgpb.Config{})
 				ct.Clock.Add(1 * time.Hour)
-				assert.Loosely(t, d.Cron(ctx), should.BeNil)
+				assert.NoErr(t, d.Cron(ctx))
 				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
 				assert.Loosely(t, mSent("second", "agg"), should.Equal(1001))
 			})
@@ -93,7 +93,7 @@ func TestDriver(t *testing.T) {
 			prjcfgtest.Create(ctx, "first", &cfgpb.Config{})
 
 			t.Run("All succeeds", func(t *ftt.Test) {
-				assert.Loosely(t, d.Cron(ctx), should.BeNil)
+				assert.NoErr(t, d.Cron(ctx))
 				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(2))
 				assert.Loosely(t, mSent("first", "foo"), should.Equal(1001))
 				assert.Loosely(t, mSent("first", "bar"), should.Equal(1001))
@@ -101,7 +101,7 @@ func TestDriver(t *testing.T) {
 
 			t.Run("Fails but report partially", func(t *ftt.Test) {
 				aggregatorBar.err = errors.New("something wrong")
-				assert.Loosely(t, d.Cron(ctx), should.ErrLike("something wrong"))
+				assert.ErrIsLike(t, d.Cron(ctx), "something wrong")
 				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.HaveLength(1))
 				assert.Loosely(t, mSent("first", "foo"), should.Equal(1001))
 			})
@@ -109,7 +109,7 @@ func TestDriver(t *testing.T) {
 			t.Run("All failed", func(t *ftt.Test) {
 				aggregatorFoo.err = transient.Tag.Apply(errors.New("foo went wrong"))
 				aggregatorBar.err = errors.New("bar went wrong")
-				assert.Loosely(t, d.Cron(ctx), should.ErrLike("bar went wrong")) // use most serve error
+				assert.ErrIsLike(t, d.Cron(ctx), "bar went wrong") // use most serve error
 				assert.Loosely(t, ct.TSMonStore.GetAll(ctx), should.BeEmpty)
 			})
 		})

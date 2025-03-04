@@ -94,7 +94,7 @@ func TestFindReuseInCV(t *testing.T) {
 		})
 
 		t.Run("Found Reuse", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
@@ -118,7 +118,7 @@ func TestFindReuseInCV(t *testing.T) {
 				},
 				EquivalentTo: defFoo,
 			}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
@@ -143,7 +143,7 @@ func TestFindReuseInCV(t *testing.T) {
 				Bucket:  "BucketBar",
 				Builder: "BuilderBar",
 			}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
@@ -151,7 +151,7 @@ func TestFindReuseInCV(t *testing.T) {
 
 		t.Run("Tryjob already known", func(t *ftt.Test) {
 			w.knownTryjobIDs.Add(tjID)
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
@@ -159,7 +159,7 @@ func TestFindReuseInCV(t *testing.T) {
 
 		t.Run("Tryjob is from different project", func(t *ftt.Test) {
 			tj.LaunchedBy = common.MakeRunID("anotherProj", now.Add(-2*time.Hour), 1, []byte("cool"))
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
@@ -167,7 +167,7 @@ func TestFindReuseInCV(t *testing.T) {
 
 		t.Run("Tryjob is not reusable", func(t *ftt.Test) {
 			tj.Result.CreateTime = timestamppb.New(now.Add(-2 * staleTryjobAge))
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
@@ -177,20 +177,20 @@ func TestFindReuseInCV(t *testing.T) {
 			newerTryjob := *tj // shallow copy
 			newerTryjob.ID = tjID - 1
 			newerTryjob.EntityCreateTime = tj.EntityCreateTime.Add(1 * time.Minute)
-			assert.Loosely(t, datastore.Put(ctx, tj, &newerTryjob), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj, &newerTryjob))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ID, should.Equal(newerTryjob.ID))
 			assert.That(t, result[defFoo].ReusedBy, should.Match(common.RunIDs{runID}))
-			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, tj))
 			assert.Loosely(t, tj.ReusedBy.Index(runID), should.BeLessThan(0))
 		})
 
 		t.Run("Run already in Tryjob", func(t *ftt.Test) {
 			tj.ReusedBy = common.RunIDs{runID}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))

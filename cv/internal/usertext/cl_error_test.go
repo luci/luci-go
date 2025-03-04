@@ -133,7 +133,7 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, depCL))
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				invalidDeps := &changelist.CLError_InvalidDeps{ /*set below*/ }
@@ -224,7 +224,7 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, depCL))
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				reason.Kind = &changelist.CLError_TriggerDeps_{TriggerDeps: tdeps}
@@ -256,7 +256,7 @@ func TestFormatCLError(t *testing.T) {
 							},
 						},
 					}
-					assert.Loosely(t, datastore.Put(ctx, depCL), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, depCL))
 					deps[i] = &changelist.Dep{Clid: int64(depCL.ID)}
 				}
 				reason.Kind = &changelist.CLError_DepRunFailed{

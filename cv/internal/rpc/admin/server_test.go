@@ -119,7 +119,7 @@ func TestGetRun(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		const rid = "proj/123-deadbeef"
-		assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: rid}), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &run.Run{ID: rid}))
 
 		a := AdminServer{}
 
@@ -170,7 +170,7 @@ func TestGetCL(t *testing.T) {
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{allowGroup},
 			})
-			assert.Loosely(t, datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &changelist.CL{ID: 123, ExternalID: changelist.MustGobID("x-review", 44)}))
 			resp, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
 			assert.NoErr(t, err)
 			assert.Loosely(t, resp.GetExternalId(), should.Equal("gerrit/x-review/44"))
@@ -300,7 +300,7 @@ func TestSearchRuns(t *testing.T) {
 				assert.Loosely(t, resp.GetRuns(), should.HaveLength(0))
 			})
 			t.Run("two runs of the same project", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, &run.Run{ID: earlierID}, &run.Run{ID: laterID}))
 				resp, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
 				assert.NoErr(t, err)
 				assert.That(t, idsOf(resp), should.Match([]string{laterID, earlierID}))
@@ -464,7 +464,7 @@ func TestSearchRuns(t *testing.T) {
 
 				placeRuns := func(runs ...*run.Run) []string {
 					ids := make([]string, len(runs))
-					assert.Loosely(t, datastore.Put(ctx, runs), should.BeNil)
+					assert.NoErr(t, datastore.Put(ctx, runs))
 					projects := stringset.New(10)
 					for i, r := range runs {
 						projects.Add(r.ID.LUCIProject())
@@ -579,9 +579,9 @@ func TestDeleteProjectEvents(t *testing.T) {
 			})
 			pm := prjmanager.NewNotifier(ct.TQDispatcher)
 
-			assert.Loosely(t, pm.Poke(ctx, lProject), should.BeNil)
-			assert.Loosely(t, pm.UpdateConfig(ctx, lProject), should.BeNil)
-			assert.Loosely(t, pm.Poke(ctx, lProject), should.BeNil)
+			assert.NoErr(t, pm.Poke(ctx, lProject))
+			assert.NoErr(t, pm.UpdateConfig(ctx, lProject))
+			assert.NoErr(t, pm.Poke(ctx, lProject))
 
 			t.Run("All", func(t *ftt.Test) {
 				resp, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
@@ -642,7 +642,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 				EVersion:   4,
 				ExternalID: changelist.MustGobID("x-review.example.com", 55),
 			}
-			assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &cl))
 
 			resp, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			assert.NoErr(t, err)
@@ -790,19 +790,19 @@ func TestScheduleTask(t *testing.T) {
 					req.ManageProject = nil
 					_, err := a.ScheduleTask(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("none given"))
+					assert.ErrIsLike(t, err, "none given")
 				})
 				t.Run("Two payloads", func(t *ftt.Test) {
 					req.KickManageProject = reqTrans.GetKickManageProject()
 					_, err := a.ScheduleTask(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("but 2+ given"))
+					assert.ErrIsLike(t, err, "but 2+ given")
 				})
 				t.Run("Trans + DeduplicationKey is not allwoed", func(t *ftt.Test) {
 					reqTrans.DeduplicationKey = "beef"
 					_, err := a.ScheduleTask(ctx, reqTrans)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`"KickManageProjectTask" is transactional`))
+					assert.ErrIsLike(t, err, `"KickManageProjectTask" is transactional`)
 				})
 			})
 		})

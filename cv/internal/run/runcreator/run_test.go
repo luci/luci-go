@@ -142,7 +142,7 @@ func TestRunBuilder(t *testing.T) {
 			eid := changelist.MustGobID(snapshot.GetGerrit().GetHost(), snapshot.GetGerrit().GetInfo().GetNumber())
 			cl := eid.MustCreateIfNotExists(ctx)
 			cl.Snapshot = snapshot
-			assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl))
 			return cl
 		}
 		cqVoteTriggerOf := func(cl *changelist.CL) *run.Trigger {
@@ -159,7 +159,7 @@ func TestRunBuilder(t *testing.T) {
 		ct.Clock.Add(time.Minute)
 		cl2 := writeCL(makeSnapshot(makeCI(2)))
 		cl2.IncompleteRuns = common.MakeRunIDs("expected/000-run")
-		assert.Loosely(t, datastore.Put(ctx, cl2), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, cl2))
 
 		owner, err := identity.MakeIdentity("user:owner@example.com")
 		assert.NoErr(t, err)
@@ -198,31 +198,31 @@ func TestRunBuilder(t *testing.T) {
 			Status:     prjpb.Status_STARTED,
 			UpdateTime: ct.Clock.Now().UTC(),
 		}
-		assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, projectStateOffload))
 
 		t.Run("Checks preconditions", func(t *ftt.Test) {
 			t.Run("No ProjectStateOffload", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Delete(ctx, projectStateOffload), should.BeNil)
+				assert.NoErr(t, datastore.Delete(ctx, projectStateOffload))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike("failed to load ProjectStateOffload"))
+				assert.ErrIsLike(t, err, "failed to load ProjectStateOffload")
 				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
 			t.Run("Mismatched project status", func(t *ftt.Test) {
 				projectStateOffload.Status = prjpb.Status_STOPPING
-				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, projectStateOffload))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike("status is STOPPING, expected STARTED"))
+				assert.ErrIsLike(t, err, "status is STOPPING, expected STARTED")
 				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
 			t.Run("Mismatched project config", func(t *ftt.Test) {
 				projectStateOffload.ConfigHash = "wrong-hash"
-				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, projectStateOffload))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike("expected sha256:cafe"))
+				assert.ErrIsLike(t, err, "expected sha256:cafe")
 				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
@@ -230,15 +230,15 @@ func TestRunBuilder(t *testing.T) {
 			t.Run("Updated project config", func(t *ftt.Test) {
 				projectStateOffload.ConfigHash = "stale-hash"
 				projectStateOffload.UpdateTime = ct.Clock.Now().UTC().Add(-1 * time.Hour)
-				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, projectStateOffload))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
 				assert.NoErr(t, err)
 			})
 
 			t.Run("CL not exists", func(t *ftt.Test) {
-				assert.Loosely(t, datastore.Delete(ctx, cl2), should.BeNil)
+				assert.NoErr(t, datastore.Delete(ctx, cl2))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("CL %d doesn't exist", cl2.ID)))
+				assert.ErrIsLike(t, err, fmt.Sprintf("CL %d doesn't exist", cl2.ID))
 				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
@@ -246,16 +246,16 @@ func TestRunBuilder(t *testing.T) {
 			t.Run("Mismatched CL version", func(t *ftt.Test) {
 				rb.InputCLs[0].ExpectedEVersion = 11
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID)))
+				assert.ErrIsLike(t, err, fmt.Sprintf("CL %d changed since EVersion 11", cl1.ID))
 				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 
 			t.Run("Unexpected IncompleteRun in a CL", func(t *ftt.Test) {
 				cl2.IncompleteRuns = common.MakeRunIDs("unexpected/111-run")
-				assert.Loosely(t, datastore.Put(ctx, cl2), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl2))
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID)))
+				assert.ErrIsLike(t, err, fmt.Sprintf(`CL %d has unexpected incomplete runs: [unexpected/111-run]`, cl2.ID))
 				assert.Loosely(t, StateChangedTag.In(err), should.BeTrue)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
@@ -278,7 +278,7 @@ func TestRunBuilder(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 				_, err = rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.ErrLike(`already created with OperationID "concurrent runner"`))
+				assert.ErrIsLike(t, err, `already created with OperationID "concurrent runner"`)
 				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
@@ -339,7 +339,7 @@ func TestRunBuilder(t *testing.T) {
 
 			// Run is properly saved
 			saved := &run.Run{ID: expectedRun.ID}
-			assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, saved))
 			assert.That(t, saved, should.Match(expectedRun))
 
 			for i := range rb.InputCLs {
@@ -349,14 +349,14 @@ func TestRunBuilder(t *testing.T) {
 						ID:  rb.InputCLs[i].ID,
 						Run: datastore.MakeKey(ctx, common.RunKind, expectedRunID),
 					}
-					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+					assert.NoErr(t, datastore.Get(ctx, saved))
 					assert.Loosely(t, saved.ExternalID, should.Equal(rb.cls[i].ExternalID))
 					assert.That(t, saved.Trigger, should.Match(rb.InputCLs[i].TriggerInfo))
 					assert.That(t, saved.Detail, should.Match(rb.cls[i].Snapshot))
 				})
 				t.Run(fmt.Sprintf("CL %d-th is properly updated", i), func(t *ftt.Test) {
 					saved := &changelist.CL{ID: rb.InputCLs[i].ID}
-					assert.Loosely(t, datastore.Get(ctx, saved), should.BeNil)
+					assert.NoErr(t, datastore.Get(ctx, saved))
 					assert.Loosely(t, saved.IncompleteRuns.ContainsSorted(expectedRunID), should.BeTrue)
 					assert.That(t, saved.UpdateTime, should.Match(expectedRun.UpdateTime))
 					assert.Loosely(t, saved.EVersion, should.Equal(rb.InputCLs[i].ExpectedEVersion+1))

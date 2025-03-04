@@ -83,7 +83,7 @@ func TestPartitionConfig(t *testing.T) {
 				}
 			}`
 		cfg := &cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(cfgText), cfg), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(cfgText), cfg))
 
 		const luciProject = "luci"
 		const gHost1 = "1.example.com"

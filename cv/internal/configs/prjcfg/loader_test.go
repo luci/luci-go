@@ -118,7 +118,7 @@ func TestLoadingConfigs(t *testing.T) {
 			},
 		}
 
-		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
+		assert.NoErr(t, mockUpdateProjectConfig(ctx, project, cfgGroups))
 
 		t.Run("Not existing project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, "not_chromium")
@@ -165,7 +165,7 @@ func TestLoadingConfigs(t *testing.T) {
 				},
 			},
 		})
-		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
+		assert.NoErr(t, mockUpdateProjectConfig(ctx, project, cfgGroups))
 
 		t.Run("Updated project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
@@ -190,7 +190,7 @@ func TestLoadingConfigs(t *testing.T) {
 			})
 		})
 
-		assert.Loosely(t, mockDisableProjectConfig(ctx, project, cfgGroups), should.BeNil)
+		assert.NoErr(t, mockDisableProjectConfig(ctx, project, cfgGroups))
 
 		t.Run("Disabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
@@ -204,7 +204,7 @@ func TestLoadingConfigs(t *testing.T) {
 		})
 
 		// Re-enable the project.
-		assert.Loosely(t, mockUpdateProjectConfig(ctx, project, cfgGroups), should.BeNil)
+		assert.NoErr(t, mockUpdateProjectConfig(ctx, project, cfgGroups))
 
 		t.Run("Re-enabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
@@ -219,7 +219,7 @@ func TestLoadingConfigs(t *testing.T) {
 		assert.NoErr(t, err)
 
 		t.Run("Deleted project", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs), should.BeNil)
+			assert.NoErr(t, datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs))
 
 			m, err = GetLatestMeta(ctx, project)
 			assert.NoErr(t, err)
@@ -227,10 +227,10 @@ func TestLoadingConfigs(t *testing.T) {
 		})
 
 		t.Run("reading partially deleted project", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Delete(ctx, cgs[1]), should.BeNil)
+			assert.NoErr(t, datastore.Delete(ctx, cgs[1]))
 			_, err = m.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.ErrLike("ConfigGroups for"))
-			assert.Loosely(t, err, should.ErrLike("not found"))
+			assert.ErrIsLike(t, err, "ConfigGroups for")
+			assert.ErrIsLike(t, err, "not found")
 			assert.Loosely(t, datastore.IsErrNoSuchEntity(err), should.BeTrue)
 
 			// Can still read individual ConfigGroups.

@@ -486,7 +486,7 @@ func TestMakeAttempt(t *testing.T) {
 			r.RootCL = cl.ID
 			r.Submission.Cls = append(r.Submission.Cls, int64(anotherCL.ID))
 			r.Submission.SubmittedCls = append(r.Submission.SubmittedCls, int64(anotherCL.ID))
-			assert.Loosely(t, datastore.Put(ctx, anotherCL, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, anotherCL, r))
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl, anotherCL})
 			assert.NoErr(t, err)
 			assert.That(t, a.GetGerritChanges(), should.Match([]*cvbqpb.GerritChange{

@@ -427,7 +427,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			t.Run("CL's updated timestamp is before updatedHint", func(t *ftt.Test) {
 				task.Hint.ExternalUpdateTime = timestamppb.New(staleUpdateTime.Add(time.Minute))
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.ErrLike(gerrit.ErrStaleData))
+				assert.ErrIsLike(t, err, gerrit.ErrStaleData)
 			})
 
 			t.Run("CL's existing Snapshot is more recent", func(t *ftt.Test) {
@@ -440,7 +440,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				}
 
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
-				assert.Loosely(t, err, should.ErrLike(gerrit.ErrStaleData))
+				assert.ErrIsLike(t, err, gerrit.ErrStaleData)
 
 				t.Run("if MetaRevId was set, skip updating Snapshot", func(t *ftt.Test) {
 					task.Hint.MetaRevId = "deadbeef"
@@ -579,7 +579,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				}
 				ct.GFake.AddFrom(gf.WithCIs(gHost, fakeResponseStatus, gf.CI(gChange, gf.Ref("refs/heads/main"), gf.Project(gRepo))))
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.ErrLike(gerrit.ErrOutOfQuota))
+				assert.ErrIsLike(t, err, gerrit.ErrOutOfQuota)
 			})
 			t.Run("ListFiles or GetRelatedChanges fails", func(t *ftt.Test) {
 				// ListFiles and GetRelatedChanges are done in parallel but after the
@@ -593,7 +593,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				}
 				ct.GFake.AddFrom(gf.WithCIs(gHost, fakeResponseStatus, gf.CI(gChange, gf.Ref("refs/heads/main"), gf.Project(gRepo))))
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.ErrLike("2nd call failed"))
+				assert.ErrIsLike(t, err, "2nd call failed")
 			})
 		})
 

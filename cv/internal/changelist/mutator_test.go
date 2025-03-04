@@ -109,7 +109,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				cl := eid.MustCreateIfNotExists(ctx)
 				cl.Snapshot = s1
 				cl.IncompleteRuns = common.MakeRunIDs(run1)
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -180,7 +180,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				s1 := makeSnapshot("prior-project", ct.Clock.Now())
 				priorCL := eid.MustCreateIfNotExists(ctx)
 				priorCL.Snapshot = s1
-				assert.Loosely(t, datastore.Put(ctx, priorCL), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, priorCL))
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -217,7 +217,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				s1 := makeSnapshot(lProject, ct.Clock.Now())
 				cl := eid.MustCreateIfNotExists(ctx)
 				cl.Snapshot = s1
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
@@ -268,7 +268,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				_, err := m.Update(ctx, lProject, 123, func(cl *CL) error {
 					panic("must not be called")
 				})
-				assert.That(t, err, should.ErrLikeError(datastore.ErrNoSuchEntity))
+				assert.ErrIsLike(t, err, datastore.ErrNoSuchEntity)
 				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			})
 		})
@@ -277,10 +277,10 @@ func TestMutatorSingleCL(t *testing.T) {
 			type badCallback func(cl *CL)
 			cases := func(kind string, repro func(bad badCallback) error) {
 				t.Run(kind, func(t *ftt.Test) {
-					assert.Loosely(t, repro(func(cl *CL) { cl.EVersion = 2 }), should.ErrLike("CL.EVersion"))
-					assert.Loosely(t, repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }), should.ErrLike("CL.UpdateTime"))
-					assert.Loosely(t, repro(func(cl *CL) { cl.ID++ }), should.ErrLike("CL.ID"))
-					assert.Loosely(t, repro(func(cl *CL) { cl.ExternalID = "don't do this" }), should.ErrLike("CL.ExternalID"))
+					assert.ErrIsLike(t, repro(func(cl *CL) { cl.EVersion = 2 }), "CL.EVersion")
+					assert.ErrIsLike(t, repro(func(cl *CL) { cl.UpdateTime = ct.Clock.Now() }), "CL.UpdateTime")
+					assert.ErrIsLike(t, repro(func(cl *CL) { cl.ID++ }), "CL.ID")
+					assert.ErrIsLike(t, repro(func(cl *CL) { cl.ExternalID = "don't do this" }), "CL.ExternalID")
 				})
 			}
 			cases("Upsert creation", func(bad badCallback) error {
@@ -356,7 +356,7 @@ func TestMutatorBatch(t *testing.T) {
 				}
 				// Ensure each CL has unique EVersion later on.
 				cl.EVersion = int64(10 * gChange)
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 			}
 			ct.Clock.Add(time.Minute)
 
@@ -411,11 +411,11 @@ func TestMutatorBatch(t *testing.T) {
 							return nil
 						})
 					}
-					assert.Loosely(t, eg.Wait(), should.BeNil)
+					assert.NoErr(t, eg.Wait())
 					resCLs, err = m.FinalizeBatch(ctx, muts)
 					return err
 				}, nil)
-				assert.Loosely(t, transErr, should.BeNil)
+				assert.NoErr(t, transErr)
 
 				// Execute the expected BatchOnCLUpdatedTask.
 				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
@@ -442,12 +442,12 @@ func TestMutatorBatch(t *testing.T) {
 							return nil
 						})
 					}
-					assert.Loosely(t, eg.Wait(), should.BeNil)
+					assert.NoErr(t, eg.Wait())
 					var err error
 					resCLs, err = m.FinalizeBatch(ctx, muts)
 					return err
 				}, nil)
-				assert.Loosely(t, transErr, should.BeNil)
+				assert.NoErr(t, transErr)
 
 				// Execute the expected BatchOnCLUpdatedTask.
 				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
@@ -475,7 +475,7 @@ func TestMutatorBatch(t *testing.T) {
 					}
 					return eg.Wait()
 				}, nil)
-				assert.Loosely(t, transErr, should.BeNil)
+				assert.NoErr(t, transErr)
 
 				tasks := ct.TQ.Tasks()
 				assert.Loosely(t, tasks, should.HaveLength(N))

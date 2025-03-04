@@ -103,7 +103,7 @@ func TestNotifier(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, r))
 
 		t.Run(`Permission Denied`, func(t *ftt.Test) {
 			mcf.mc.EXPECT().MarkInvocationSubmitted(gomock.Any(), proto.MatcherEqual(&rdbpb.MarkInvocationSubmittedRequest{
@@ -114,7 +114,7 @@ func TestNotifier(t *testing.T) {
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.PermissionDenied, "permission denied"))
 
 			err := MarkInvocationSubmitted(ctx, mcf, runID)
-			assert.Loosely(t, err, should.ErrLike("failed to mark invocation submitted"))
+			assert.ErrIsLike(t, err, "failed to mark invocation submitted")
 		})
 
 		t.Run(`Valid`, func(t *ftt.Test) {

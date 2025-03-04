@@ -91,7 +91,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			}
 			cl.Snapshot = rcl.Detail
 			cl.EVersion++
-			assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl, rcl))
 			return cl, rcl
 		}
 
@@ -110,7 +110,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				_, rcl := ensureCL(ci)
 				r.CLs = append(r.CLs, rcl.ID)
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return r
 		}
 
@@ -217,7 +217,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("before the execution started", func(t *ftt.Test) {
 				exe.IsCancelRequested = func() bool { return true }
 				summary, err := exe.Do(ctx)
-				assert.Loosely(t, err, should.ErrLike("CancelRequested"))
+				assert.ErrIsLike(t, err, "CancelRequested")
 				assert.Loosely(t, summary, should.Equal("cancellation has been requested before the post action starts"))
 			})
 			t.Run("after the execution started", func(t *ftt.Test) {
@@ -235,7 +235,7 @@ func TestExecutePostActionOp(t *testing.T) {
 				}()
 				select {
 				case err := <-doErr:
-					assert.Loosely(t, err, should.ErrLike("CL mutation aborted due to op cancellation"))
+					assert.ErrIsLike(t, err, "CL mutation aborted due to op cancellation")
 				case <-ctx.Done():
 					panic("mutation didn't start within 10 secs")
 				}
@@ -293,16 +293,16 @@ func TestExecutePostActionOp(t *testing.T) {
 			configPostVote("label-1", 2)
 			exe := newExecutor(ctx, run)
 			_, err := exe.Do(ctx)
-			assert.Loosely(t, err, should.ErrLike("FailedPrecondition"))
+			assert.ErrIsLike(t, err, "FailedPrecondition")
 			assert.That(t, listLabels(gChange1), should.Match(map[string]int32{}))
 
 			t.Run("skip the post action, if the CL abandoned", func(t *ftt.Test) {
 				// mark the CL as abandoned.
 				cl := &changelist.CL{ID: run.CLs[0]}
-				assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, cl))
 				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
 				cl.EVersion++
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 
 				// give it another try
 				_, err := exe.Do(ctx)
@@ -314,10 +314,10 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("skip the post action, if the CL submitted", func(t *ftt.Test) {
 				// mark the CL as abandoned.
 				cl := &changelist.CL{ID: run.CLs[0]}
-				assert.Loosely(t, datastore.Get(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, cl))
 				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
 				cl.EVersion++
-				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, cl))
 
 				// give it another try
 				_, err := exe.Do(ctx)

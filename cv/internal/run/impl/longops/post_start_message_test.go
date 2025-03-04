@@ -96,7 +96,7 @@ func TestPostStartMessage(t *testing.T) {
 			}
 			cl.Snapshot = rcl.Detail
 			cl.EVersion++
-			assert.Loosely(t, datastore.Put(ctx, cl, rcl), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, cl, rcl))
 			return cl, rcl
 		}
 
@@ -119,7 +119,7 @@ func TestPostStartMessage(t *testing.T) {
 			if r.ConfigGroupID == "" {
 				r.ConfigGroupID = prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0]
 			}
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			return r
 		}
 
@@ -176,7 +176,7 @@ func TestPostStartMessage(t *testing.T) {
 				gf.CI(gChange2, gf.CQ(+1)),
 			)
 			r.RootCL = r.CLs[1]
-			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, r))
 			op := makeOp(r)
 
 			res, err := op.Do(ctx)

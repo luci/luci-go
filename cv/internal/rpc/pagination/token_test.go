@@ -40,7 +40,7 @@ func TestPageTokens(t *testing.T) {
 			token, err := EncryptPageToken(ctx, in)
 			assert.NoErr(t, err)
 			out := &timestamppb.Timestamp{}
-			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
+			assert.NoErr(t, DecryptPageToken(ctx, token, out))
 			assert.That(t, out, should.Match(in))
 		})
 		t.Run("empty page token", func(t *ftt.Test) {
@@ -48,7 +48,7 @@ func TestPageTokens(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, token, should.BeBlank)
 			out := &timestamppb.Timestamp{}
-			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
+			assert.NoErr(t, DecryptPageToken(ctx, token, out))
 			assert.That(t, out, should.Match(&timestamppb.Timestamp{}))
 		})
 		t.Run("empty page token with typed nil", func(t *ftt.Test) {
@@ -66,7 +66,7 @@ func TestPageTokens(t *testing.T) {
 		tokenBytes := []byte(goodToken)
 		tokenBytes[10] = '\\'
 		err = DecryptPageToken(ctx, string(tokenBytes), dst)
-		assert.Loosely(t, err, should.ErrLike("illegal base64"))
+		assert.ErrIsLike(t, err, "illegal base64")
 
 		as, ok := appstatus.Get(err)
 		assert.That(t, ok, should.BeTrue)

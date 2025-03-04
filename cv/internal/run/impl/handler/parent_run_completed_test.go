@@ -75,7 +75,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			IncompleteRuns: common.RunIDs{rid},
 			UpdateTime:     ct.Clock.Now().UTC(),
 		}
-		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &cl))
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -122,7 +122,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			Status: run.Status_RUNNING,
 		}
 
-		assert.Loosely(t, datastore.Put(ctx, &success1Run, &success2Run, &failedRun, &runningRun), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &success1Run, &success2Run, &failedRun, &runningRun))
 
 		t.Run("All parents successful, should submit", func(t *ftt.Test) {
 			rs.DepRuns = common.RunIDs{success1, success2}

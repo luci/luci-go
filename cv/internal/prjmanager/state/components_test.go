@@ -397,7 +397,7 @@ func TestComponentsActions(t *testing.T) {
 				return itriager.Result{}, errors.New("oops")
 			}
 			_, _, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.ErrLike("failed to triage 2 components"))
+			assert.ErrIsLike(t, err, "failed to triage 2 components")
 			assert.That(t, state.PB, should.Match(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
@@ -414,7 +414,7 @@ func TestComponentsActions(t *testing.T) {
 				panic(errors.New("oops"))
 			}
 			_, _, err := h.ExecDeferred(ctx, state)
-			assert.Loosely(t, err, should.ErrLike(errCaughtPanic))
+			assert.ErrIsLike(t, err, errCaughtPanic)
 			assert.That(t, state.PB, should.Match(pb))
 		})
 
@@ -506,7 +506,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 
 				_, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.ErrLike("failed to actOnComponents"))
+				assert.ErrIsLike(t, err, "failed to actOnComponents")
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, findRunOf(1), should.BeNil)
 			})
@@ -577,7 +577,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 
 				_, _, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.ErrLike(errCaughtPanic))
+				assert.ErrIsLike(t, err, errCaughtPanic)
 				assert.That(t, state.PB, should.Match(pb))
 			})
 		})

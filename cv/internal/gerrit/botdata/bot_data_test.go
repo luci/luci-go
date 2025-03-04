@@ -78,7 +78,7 @@ func TestAppend(t *testing.T) {
 				Revision:    "abcd",
 			}
 			_, err := append("", bd, 10)
-			assert.Loosely(t, err, should.ErrLike("bot data too long; max length: 10"))
+			assert.ErrIsLike(t, err, "bot data too long; max length: 10")
 		})
 
 		t.Run("Empty human message", func(t *ftt.Test) {
@@ -128,7 +128,7 @@ Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision
 			// Bot data itself is 89 characters long already.
 			// Placeholder is 31 characters long.
 			_, err := append("Message for human", bd, 100)
-			assert.Loosely(t, err, should.ErrLike("bot data too long to display human message; max length: 100"))
+			assert.ErrIsLike(t, err, "bot data too long to display human message; max length: 100")
 		})
 	})
 }

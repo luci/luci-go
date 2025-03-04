@@ -40,16 +40,16 @@ func TestTryjob(t *testing.T) {
 				ID:               1,
 				EntityUpdateTime: epoch,
 			}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			tj = &Tryjob{ID: 1}
-			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, tj))
 			assert.Loosely(t, tj.RetentionKey, should.Equal(fmt.Sprintf("01/%010d", epoch.Unix())))
 		})
 		t.Run("Fill in EntityUpdateTime if it's missing", func(t *ftt.Test) {
 			tj := &Tryjob{ID: 1}
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
 			tj = &Tryjob{ID: 1}
-			assert.Loosely(t, datastore.Get(ctx, tj), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, tj))
 			assert.Loosely(t, tj.EntityUpdateTime.IsZero(), should.BeFalse)
 			assert.Loosely(t, tj.RetentionKey, should.NotBeEmpty)
 		})
@@ -66,29 +66,29 @@ func TestDelete(t *testing.T) {
 		tj := MustBuildbucketID("bb.example.com", 10).MustCreateIfNotExists(ctx)
 
 		t.Run("Works", func(t *ftt.Test) {
-			assert.Loosely(t, CondDelete(ctx, tj.ID, tj.EVersion), should.BeNil)
-			assert.Loosely(t, datastore.Get(ctx, &Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
-			assert.Loosely(t, datastore.Get(ctx, &tryjobMap{ExternalID: tj.ExternalID}), should.ErrLike(datastore.ErrNoSuchEntity))
+			assert.NoErr(t, CondDelete(ctx, tj.ID, tj.EVersion))
+			assert.ErrIsLike(t, datastore.Get(ctx, &Tryjob{ID: tj.ID}), datastore.ErrNoSuchEntity)
+			assert.ErrIsLike(t, datastore.Get(ctx, &tryjobMap{ExternalID: tj.ExternalID}), datastore.ErrNoSuchEntity)
 			t.Run("Can handle deleted entity", func(t *ftt.Test) {
 				// delete the same entity again
-				assert.Loosely(t, CondDelete(ctx, tj.ID, tj.EVersion), should.BeNil)
+				assert.NoErr(t, CondDelete(ctx, tj.ID, tj.EVersion))
 			})
 		})
 		t.Run("Works without external ID", func(t *ftt.Test) {
 			prevExternalID := tj.ExternalID
 			tj.ExternalID = "" // not valid, but just for testing purpose.
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
-			assert.Loosely(t, CondDelete(ctx, tj.ID, tj.EVersion), should.BeNil)
-			assert.Loosely(t, datastore.Get(ctx, &Tryjob{ID: tj.ID}), should.ErrLike(datastore.ErrNoSuchEntity))
-			assert.Loosely(t, datastore.Get(ctx, &tryjobMap{ExternalID: prevExternalID}), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tj))
+			assert.NoErr(t, CondDelete(ctx, tj.ID, tj.EVersion))
+			assert.ErrIsLike(t, datastore.Get(ctx, &Tryjob{ID: tj.ID}), datastore.ErrNoSuchEntity)
+			assert.NoErr(t, datastore.Get(ctx, &tryjobMap{ExternalID: prevExternalID}))
 		})
 		t.Run("Returns error for invalid input", func(t *ftt.Test) {
-			assert.Loosely(t, CondDelete(ctx, tj.ID, 0), should.ErrLike("expected EVersion must be larger than 0"))
+			assert.ErrIsLike(t, CondDelete(ctx, tj.ID, 0), "expected EVersion must be larger than 0")
 		})
 		t.Run("Returns error if condition mismatch", func(t *ftt.Test) {
 			tj.EVersion = 15
-			assert.Loosely(t, datastore.Put(ctx, tj), should.BeNil)
-			assert.Loosely(t, CondDelete(ctx, tj.ID, tj.EVersion-1), should.ErrLike("request to delete tryjob"))
+			assert.NoErr(t, datastore.Put(ctx, tj))
+			assert.ErrIsLike(t, CondDelete(ctx, tj.ID, tj.EVersion-1), "request to delete tryjob")
 		})
 	})
 }
@@ -114,21 +114,21 @@ func TestCLPatchset(t *testing.T) {
 	ftt.Run("CLPatchset fails", t, func(t *ftt.Test) {
 		t.Run("with bad number of values", func(t *ftt.Test) {
 			_, _, err := CLPatchset("1/1").Parse()
-			assert.Loosely(t, err, should.ErrLike("CLPatchset in unexpected format"))
+			assert.ErrIsLike(t, err, "CLPatchset in unexpected format")
 		})
 		t.Run("with bad version", func(t *ftt.Test) {
 			_, _, err := CLPatchset("8/8/8").Parse()
-			assert.Loosely(t, err, should.ErrLike("unsupported version"))
+			assert.ErrIsLike(t, err, "unsupported version")
 		})
 		t.Run("with bad CLID", func(t *ftt.Test) {
 			_, _, err := CLPatchset("1/4d35683b24371b75c5f3fda0d48796638dc0d695/7").Parse()
-			assert.Loosely(t, err, should.ErrLike("clid segment in unexpected format"))
+			assert.ErrIsLike(t, err, "clid segment in unexpected format")
 			_, _, err = CLPatchset("1/gerrit/chromium-review.googlesource.com/3530834/7").Parse()
-			assert.Loosely(t, err, should.ErrLike("unexpected format"))
+			assert.ErrIsLike(t, err, "unexpected format")
 		})
 		t.Run("with bad patchset", func(t *ftt.Test) {
 			_, _, err := CLPatchset("1/1/ps1").Parse()
-			assert.Loosely(t, err, should.ErrLike("patchset segment in unexpected format"))
+			assert.ErrIsLike(t, err, "patchset segment in unexpected format")
 		})
 	})
 }

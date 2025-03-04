@@ -84,9 +84,9 @@ func TestCL(t *testing.T) {
 				err := Delete(ctx, cl.ID)
 				assert.NoErr(t, err)
 				// Verify.
-				assert.That(t, datastore.Get(ctx, cl), should.ErrLikeError(datastore.ErrNoSuchEntity))
+				assert.ErrIsLike(t, datastore.Get(ctx, cl), datastore.ErrNoSuchEntity)
 				cl2, err2 := eid.Load(ctx)
-				assert.Loosely(t, err2, should.BeNil)
+				assert.NoErr(t, err2)
 				assert.Loosely(t, cl2, should.BeNil)
 
 				t.Run("delete is now a noop", func(t *ftt.Test) {

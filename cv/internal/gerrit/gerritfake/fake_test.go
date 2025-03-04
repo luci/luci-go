@@ -393,7 +393,7 @@ func TestListAccountEmails(t *testing.T) {
 			_, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
 				Email: "bar@google.com",
 			})
-			assert.Loosely(t, err, should.ErrLike("Account 'bar@google.com' not found"))
+			assert.ErrIsLike(t, err, "Account 'bar@google.com' not found")
 		})
 	})
 }
@@ -523,29 +523,29 @@ func TestListChanges(t *testing.T) {
 				assert.NoErr(t, err)
 				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
 				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike(`invalid query argument`))
+				assert.ErrIsLike(t, err, `invalid query argument`)
 				return err
 			}
 
-			assert.Loosely(t, test(`"unmatched quote`), should.ErrLike(`invalid query argument "\"unmatched quote"`))
-			assert.Loosely(t, test(`status:new "unmatched`), should.ErrLike(`unrecognized token "\"unmatched`))
-			assert.Loosely(t, test(`project:"unmatched`), should.ErrLike(`"project:\"unmatched": expected quoted string`))
-			assert.Loosely(t, test(`project:raw/not/supported`), should.ErrLike(`expected quoted string`))
-			assert.Loosely(t, test(`project:"one" OR project:"two"`), should.ErrLike(`"OR" must be inside ()`))
-			assert.Loosely(t, test(`project:"one" project:"two")`), should.ErrLike(`"project:" must be inside ()`))
+			assert.ErrIsLike(t, test(`"unmatched quote`), `invalid query argument "\"unmatched quote"`)
+			assert.ErrIsLike(t, test(`status:new "unmatched`), `unrecognized token "\"unmatched`)
+			assert.ErrIsLike(t, test(`project:"unmatched`), `"project:\"unmatched": expected quoted string`)
+			assert.ErrIsLike(t, test(`project:raw/not/supported`), `expected quoted string`)
+			assert.ErrIsLike(t, test(`project:"one" OR project:"two"`), `"OR" must be inside ()`)
+			assert.ErrIsLike(t, test(`project:"one" project:"two")`), `"project:" must be inside ()`)
 			// This error can be better, but UX isn't essential for a fake.
-			assert.Loosely(t, test(`(project:"one" OR`), should.ErrLike(`"" must be outside of ()`))
+			assert.ErrIsLike(t, test(`(project:"one" OR`), `"" must be outside of ()`)
 
-			assert.Loosely(t, test(`status:rand-om`), should.ErrLike(`unrecognized status "rand-om"`))
-			assert.Loosely(t, test(`status:0`), should.ErrLike(`unrecognized status "0"`))
-			assert.Loosely(t, test(`label:0`), should.ErrLike(`invalid label: 0`))
-			assert.Loosely(t, test(`label:Commit-Queue`), should.ErrLike(`invalid label: Commit-Queue`))
+			assert.ErrIsLike(t, test(`status:rand-om`), `unrecognized status "rand-om"`)
+			assert.ErrIsLike(t, test(`status:0`), `unrecognized status "0"`)
+			assert.ErrIsLike(t, test(`label:0`), `invalid label: 0`)
+			assert.ErrIsLike(t, test(`label:Commit-Queue`), `invalid label: Commit-Queue`)
 
 			// Note these are actually allowed in Gerrit.
-			assert.Loosely(t, test(`label:Commit-Queue<1`), should.ErrLike(`invalid label: Commit-Queue<1`))
-			assert.Loosely(t, test(`before:2019-20-01`), should.ErrLike(`failed to parse Gerrit timestamp "2019-20-01"`))
-			assert.Loosely(t, test(` after:2019-20-01`), should.ErrLike(`failed to parse Gerrit timestamp "2019-20-01"`))
-			assert.Loosely(t, test(`before:"2019-20-01"`), should.ErrLike(`failed to parse Gerrit timestamp "\"2019-20-01\""`))
+			assert.ErrIsLike(t, test(`label:Commit-Queue<1`), `invalid label: Commit-Queue<1`)
+			assert.ErrIsLike(t, test(`before:2019-20-01`), `failed to parse Gerrit timestamp "2019-20-01"`)
+			assert.ErrIsLike(t, test(` after:2019-20-01`), `failed to parse Gerrit timestamp "2019-20-01"`)
+			assert.ErrIsLike(t, test(`before:"2019-20-01"`), `failed to parse Gerrit timestamp "\"2019-20-01\""`)
 		})
 	})
 }
@@ -793,7 +793,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: oldRev,
 			})
 			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
-			assert.Loosely(t, err, should.ErrLike("is not current"))
+			assert.ErrIsLike(t, err, "is not current")
 		})
 
 		t.Run("Works", func(t *ftt.Test) {
@@ -832,7 +832,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
 			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
-			assert.Loosely(t, err, should.ErrLike("change is merged"))
+			assert.ErrIsLike(t, err, "change is merged")
 		})
 
 		t.Run("already merged ones are skipped inside a CL Stack", func(t *ftt.Test) {
@@ -877,7 +877,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
 			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
-			assert.Loosely(t, err, should.ErrLike("change is abandoned"))
+			assert.ErrIsLike(t, err, "change is abandoned")
 		})
 		t.Run("Abandoned inside CL stack", func(t *ftt.Test) {
 			f.MutateChange(gHost, int(ciStackMid.GetNumber()), func(c *Change) {
@@ -889,7 +889,7 @@ func TestSubmitRevision(t *testing.T) {
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
 			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
-			assert.Loosely(t, err, should.ErrLike("change is abandoned"))
+			assert.ErrIsLike(t, err, "change is abandoned")
 		})
 	})
 }
