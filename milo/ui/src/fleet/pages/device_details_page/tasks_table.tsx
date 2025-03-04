@@ -71,6 +71,16 @@ const getRowClassName = (params: GridRowParams): string => {
   return '';
 };
 
+const getTaskDuration = (task: TaskResultResponse): string => {
+  let duration = task.duration;
+  // Running tasks have no duration set, so we can figure it out.
+  if (!duration && task.state === TaskState.RUNNING && task.startedTs) {
+    duration = (Date.now() - Date.parse(task.startedTs)) / 1000;
+  }
+
+  return prettySeconds(duration);
+};
+
 export const Tasks = ({
   dutId,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
@@ -98,7 +108,7 @@ export const Tasks = ({
     id: t.taskId,
     task: t.name,
     started: prettyDateTime(t.startedTs),
-    duration: prettySeconds(t.duration),
+    duration: getTaskDuration(t),
     result: prettifySwarmingState(t),
     tags: t.tags,
   }));
