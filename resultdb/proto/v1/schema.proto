@@ -20,6 +20,28 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
+// Service to read test schema.
+service Schemas {
+  // Reads information about the test result schema used on this ResultDB deployment.
+  rpc Get(GetSchemaRequest) returns (Schema) {};
+}
+
+message GetSchemaRequest {
+  // The resource name of the schema to retrieve.
+  // Currently there is only a single schema resource and its name is "schemas/global".
+  string name = 1;
+}
+
+// Schema contains information about the schema used for test results.
+message Schema {
+  // The resource name of the schema.
+  // Format: "schemas/global".
+  string name = 1;
+
+  // The schemes available for use in test identifiers.
+  repeated Scheme schemes = 2;
+}
+
 // A scheme represents a kind of test type. For example, a JUnit tests
 // or Google Tests. Schemes control how tests with that type are
 // presented on the UI.
@@ -31,15 +53,10 @@ option java_multiple_files = true;
 //
 // Next id: 6.
 message Scheme {
-  // The resource name of the scheme.
-  //
-  // Format: schemes/{id}.
-  string name = 1;
-
   // The identifier for the scheme, e.g. 'junit'.
   //
   // Limited to ^[a-z][a-z0-9]{0,19}$.
-  string id = 2;
+  string id = 1;
 
   // A human readable name for the scheme, describing the test type.
   // For example, "JUnit" or "Web Tests".
@@ -98,34 +115,4 @@ message Scheme {
 
   // The case level in the test hierarchy. This is the finest level. Required.
   Level case = 6;
-}
-
-// Service to read test schemes.
-service Schemes {
-  // Reads all schemes supported by the ResultDB deployment.
-  rpc List(ListSchemesRequest) returns (ListSchemesResponse) {};
-}
-
-message ListSchemesRequest {
-  // The maximum number of schemes to return. The service may return fewer than
-  // this value.
-  // If unspecified, at most 1000 schemes will be returned.
-  // The maximum value is 1000; values above 1000 will be coerced to 1000.
-  int32 page_size = 1;
-
-  // A page token, received from a previous `ListSchemes` call.
-  // Provide this to retrieve the subsequent page.
-  //
-  // When paginating, all other parameters provided to `ListSchemes` must match
-  // the call that provided the page token.
-  string page_token = 2;
-}
-
-message ListSchemesResponse {
-  // The schemes.
-  repeated Scheme schemes = 1;
-
-  // A token, which can be sent as `page_token` to retrieve the next page.
-  // If this field is omitted, there are no subsequent pages.
-  string next_page_token = 2;
 }

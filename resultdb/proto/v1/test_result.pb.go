@@ -542,7 +542,7 @@ type TestExoneration struct {
 	//
 	// This is the flat-form encoding of the test component of the structured test variant ID above.
 	// See TestVariantIdentifier for details how a structured test identifier is converted
-	// to flat test ID.
+	// to a flat test ID.
 	//
 	// Output only. (Except for legacy uploaders.)
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`

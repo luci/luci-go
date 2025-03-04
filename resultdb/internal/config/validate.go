@@ -24,6 +24,7 @@ import (
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
+	"google.golang.org/protobuf/proto"
 
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
@@ -133,6 +134,13 @@ func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArt
 func validateSchemes(ctx *validation.Context, schemes []*configpb.Scheme) {
 	ctx.Enter("schemes")
 	defer ctx.Exit()
+
+	if proto.Size(&configpb.Config{Schemes: schemes}) > 100_000 {
+		ctx.Errorf("too large; total size of configured schemes must not exceed 100 KB")
+	}
+	if len(schemes) > 1000 {
+		ctx.Errorf("too large; may not exceed 1000 configured schemes")
+	}
 
 	seenIDs := map[string]struct{}{}
 	for i, scheme := range schemes {

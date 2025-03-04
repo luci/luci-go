@@ -16,7 +16,9 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
@@ -168,6 +170,37 @@ func TestServiceConfigValidator(t *testing.T) {
 		t.Run("Valid", func(t *ftt.Test) {
 			assert.Loosely(t, validate(cfg), should.BeNil)
 		})
+		t.Run("Collection too Large", func(t *ftt.Test) {
+			t.Run("By size", func(t *ftt.Test) {
+				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
+				for i := 0; i < 1000; i++ {
+					// Each scheme is >100 bytes, and there are 1000, so
+					// the total size will be over 100 KB.
+					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
+						Id:                fmt.Sprintf("scheme%d", i),
+						HumanReadableName: strings.Repeat("A", 100),
+						Case: &configpb.Scheme_Level{
+							HumanReadableName: fmt.Sprintf("Case %d", i),
+						},
+					})
+				}
+				assert.Loosely(t, validate(cfg), should.ErrLike("(schemes): too large; total size of configured schemes must not exceed 100 KB"))
+			})
+			t.Run("By elements", func(t *ftt.Test) {
+				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
+				for i := 0; i < 1001; i++ {
+					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
+						Id:                fmt.Sprintf("scheme%d", i),
+						HumanReadableName: fmt.Sprintf("Scheme %d", i),
+						Case: &configpb.Scheme_Level{
+							HumanReadableName: fmt.Sprintf("Case %d", i),
+						},
+					})
+				}
+				assert.Loosely(t, validate(cfg), should.ErrLike("(schemes): too large; may not exceed 1000 configured schemes"))
+			})
+		})
+
 		scheme := cfg.Schemes[0]
 		path := "schemes / [0]"
 		t.Run("Id", func(t *ftt.Test) {

@@ -248,7 +248,7 @@ message TestExoneration {
   //
   // This is the flat-form encoding of the test component of the structured test variant ID above.
   // See TestVariantIdentifier for details how a structured test identifier is converted
-  // to flat test ID.
+  // to a flat test ID.
   //
   // Output only. (Except for legacy uploaders.)
   string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
