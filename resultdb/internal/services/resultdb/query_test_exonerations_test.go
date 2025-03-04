@@ -71,9 +71,9 @@ func TestQueryTestExonerations(t *testing.T) {
 			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
 			insertInv("c", map[string]any{"Realm": "testproject:testrealm"}),
-			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
-			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
-			insertEx("c", "D", pbutil.Variant("v", "d"), pb.ExonerationReason_UNEXPECTED_PASS),
+			insertEx("a", ":module!junit:org.chromium.foo:BarTest#A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
+			insertEx("c", ":module!junit:org.chromium.foo:BarTest#C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
+			insertEx("c", ":module!junit:org.chromium.foo:BarTest#D", pbutil.Variant("v", "d"), pb.ExonerationReason_UNEXPECTED_PASS),
 		)...)
 
 		srv := newTestResultDBService()
@@ -105,8 +105,17 @@ func TestQueryTestExonerations(t *testing.T) {
 
 			expected := []*pb.TestExoneration{
 				{
-					Name:            "invocations/a/tests/A/exonerations/0",
-					TestId:          "A",
+					Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/0",
+					TestId: ":module!junit:org.chromium.foo:BarTest#A",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "a"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "a")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "A",
+					},
 					Variant:         pbutil.Variant("v", "a"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "0",
@@ -114,8 +123,17 @@ func TestQueryTestExonerations(t *testing.T) {
 					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				},
 				{
-					Name:            "invocations/a/tests/A/exonerations/1",
-					TestId:          "A",
+					Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/1",
+					TestId: ":module!junit:org.chromium.foo:BarTest#A",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "a"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "a")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "A",
+					},
 					Variant:         pbutil.Variant("v", "a"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "1",
@@ -123,8 +141,17 @@ func TestQueryTestExonerations(t *testing.T) {
 					Reason:          pb.ExonerationReason_NOT_CRITICAL,
 				},
 				{
-					Name:            "invocations/c/tests/C/exonerations/0",
-					TestId:          "C",
+					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23C/exonerations/0",
+					TestId: ":module!junit:org.chromium.foo:BarTest#C",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "c"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "c")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "C",
+					},
 					Variant:         pbutil.Variant("v", "c"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 					ExonerationId:   "0",
@@ -132,8 +159,17 @@ func TestQueryTestExonerations(t *testing.T) {
 					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 				},
 				{
-					Name:            "invocations/c/tests/D/exonerations/0",
-					TestId:          "D",
+					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23D/exonerations/0",
+					TestId: ":module!junit:org.chromium.foo:BarTest#D",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "d"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "d")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "D",
+					},
 					Variant:         pbutil.Variant("v", "d"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "d")),
 					ExonerationId:   "0",
@@ -173,8 +209,17 @@ func TestQueryTestExonerations(t *testing.T) {
 			})
 			assert.Loosely(t, actual, should.Match([]*pb.TestExoneration{
 				{
-					Name:            "invocations/c/tests/C/exonerations/0",
-					TestId:          "C",
+					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23C/exonerations/0",
+					TestId: ":module!junit:org.chromium.foo:BarTest#C",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "c"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "c")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "C",
+					},
 					Variant:         pbutil.Variant("v", "c"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 					ExonerationId:   "0",
@@ -182,8 +227,17 @@ func TestQueryTestExonerations(t *testing.T) {
 					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 				},
 				{
-					Name:            "invocations/c/tests/D/exonerations/0",
-					TestId:          "D",
+					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23D/exonerations/0",
+					TestId: ":module!junit:org.chromium.foo:BarTest#D",
+					TestVariantIdentifier: &pb.TestVariantIdentifier{
+						ModuleName:        "module",
+						ModuleScheme:      "junit",
+						ModuleVariant:     pbutil.Variant("v", "d"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "d")),
+						CoarseName:        "org.chromium.foo",
+						FineName:          "BarTest",
+						CaseName:          "D",
+					},
 					Variant:         pbutil.Variant("v", "d"),
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "d")),
 					ExonerationId:   "0",

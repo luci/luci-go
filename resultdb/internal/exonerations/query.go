@@ -19,6 +19,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -33,6 +34,12 @@ import (
 var limitedFields = mask.MustFromReadMask(&pb.TestExoneration{},
 	"name",
 	"test_id",
+	"test_variant_identifier.module_name",
+	"test_variant_identifier.module_scheme",
+	"test_variant_identifier.module_variant_hash",
+	"test_variant_identifier.coarse_name",
+	"test_variant_identifier.fine_name",
+	"test_variant_identifier.case_name",
 	"exoneration_id",
 	"variant_hash",
 	"explanation_html",
@@ -90,6 +97,18 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		}
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
+
+		ex.TestVariantIdentifier, err = pbutil.ParseTestVariantIdentifier(ex.TestId, ex.Variant)
+		if err != nil {
+			return errors.Annotate(err, "parse test variant identifier").Err()
+		}
+		// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
+		// erroneously allowed to set variant_hash only and not the variant. This means the
+		// hash of the variant is not always the variant_hash.
+		// Set ModuleVariantHash directly to the stored variant hash as a work around,
+		// do not compute it.
+		ex.TestVariantIdentifier.ModuleVariantHash = ex.VariantHash
+
 		tes = append(tes, ex)
 		return nil
 	})

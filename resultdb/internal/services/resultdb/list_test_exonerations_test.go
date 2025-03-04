@@ -64,7 +64,7 @@ func TestListTestExonerations(t *testing.T) {
 
 		// Insert some TestExonerations.
 		invID := invocations.ID("inv")
-		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
+		testID := "://chrome/test\\:foo_tests!gtest::BarTest#DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx, t,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
@@ -98,8 +98,16 @@ func TestListTestExonerations(t *testing.T) {
 
 		all := []*pb.TestExoneration{
 			{
-				Name:            pbutil.TestExonerationName("inv", testID, "0"),
-				TestId:          testID,
+				Name:   pbutil.TestExonerationName("inv", testID, "0"),
+				TestId: testID,
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//chrome/test:foo_tests",
+					ModuleScheme:      "gtest",
+					ModuleVariant:     var0,
+					ModuleVariantHash: "deadbeef",
+					FineName:          "BarTest",
+					CaseName:          "DoBaz",
+				},
 				Variant:         var0,
 				VariantHash:     "deadbeef",
 				ExonerationId:   "0",
@@ -107,15 +115,29 @@ func TestListTestExonerations(t *testing.T) {
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			},
 			{
-				Name:          pbutil.TestExonerationName("inv", testID, "1"),
-				TestId:        testID,
+				Name:   pbutil.TestExonerationName("inv", testID, "1"),
+				TestId: testID,
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//chrome/test:foo_tests",
+					ModuleScheme:      "gtest",
+					ModuleVariantHash: "deadbeef",
+					FineName:          "BarTest",
+					CaseName:          "DoBaz",
+				},
 				ExonerationId: "1",
 				VariantHash:   "deadbeef",
 				Reason:        pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 			{
-				Name:          pbutil.TestExonerationName("inv", testID, "2"),
-				TestId:        testID,
+				Name:   pbutil.TestExonerationName("inv", testID, "2"),
+				TestId: testID,
+				TestVariantIdentifier: &pb.TestVariantIdentifier{
+					ModuleName:        "//chrome/test:foo_tests",
+					ModuleScheme:      "gtest",
+					ModuleVariantHash: "deadbeef",
+					FineName:          "BarTest",
+					CaseName:          "DoBaz",
+				},
 				ExonerationId: "2",
 				VariantHash:   "deadbeef",
 				Reason:        pb.ExonerationReason_UNEXPECTED_PASS,
