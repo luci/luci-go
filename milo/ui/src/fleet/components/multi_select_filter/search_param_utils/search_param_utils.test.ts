@@ -24,35 +24,35 @@ const sharedTestCases: [SelectedOptions, string][] = [
     {
       key: ['value'],
     },
-    'key = value',
+    'key = "value"',
   ],
   [
     {
       key1: ['value1'],
       key2: ['value2'],
     },
-    'key1 = value1 key2 = value2',
+    'key1 = "value1" key2 = "value2"',
   ],
   [
     {
       'labels.key1': ['value1'],
       key2: ['value2'],
     },
-    'labels.key1 = value1 key2 = value2',
+    'labels.key1 = "value1" key2 = "value2"',
   ],
   [
     {
       key1: ['value1', 'value2'],
       key2: ['value1', 'value2'],
     },
-    'key1 = (value1 OR value2) key2 = (value1 OR value2)',
+    'key1 = ("value1" OR "value2") key2 = ("value1" OR "value2")',
   ],
   [
     {
-      key1: ['value1', 'value2'],
+      key1: ['value 1', 'value2'],
       key2: ['value'],
     },
-    'key1 = (value1 OR value2) key2 = value',
+    'key1 = ("value 1" OR "value2") key2 = "value"',
   ],
 ];
 
@@ -62,7 +62,7 @@ const justStringifyCases: [SelectedOptions, string][] = [
       key: ['value1'],
       emptyKey: [],
     },
-    'key = value1',
+    'key = "value1"',
   ],
   [
     {
@@ -77,13 +77,13 @@ const justParseCases: [SelectedOptions, string][] = [
     {
       key1: ['value1', 'value2'],
     },
-    'key1= ( value1 OR value2)',
+    'key1= ( "value1" OR "value2")',
   ],
   [
     {
       'labels.key': ['value1'],
     },
-    'labels.key=value1',
+    'labels.key="value1"',
   ],
 ];
 
@@ -116,13 +116,18 @@ describe('multi_select_search_param_utils', () => {
 
   describe('parseFilters wrong examples', () => {
     it('throws on a missing close parenthesis', () => {
-      expect(() => parseFilters('labels.key = ( value')).toThrow(
+      expect(() => parseFilters('labels.key = ( "value"')).toThrow(
         'Missing closing parenthesis',
       );
     });
     it('throws on a hanging OR', () => {
-      expect(() => parseFilters('labels.key = ( value OR )')).toThrow(
+      expect(() => parseFilters('labels.key = ( "value" OR )')).toThrow(
         'Found a hanging ORs',
+      );
+    });
+    it('throws on an unexpected character', () => {
+      expect(() => parseFilters('labels.key = value')).toThrow(
+        "Unexpected character 'v': should be one of '(\"'",
       );
     });
   });

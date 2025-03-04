@@ -18,9 +18,9 @@ const FILTERS_PARAM_KEY = 'filters';
 
 /** The input is expected to follow AIP - 160.
  * For now it's limited to inputs following the format:
- *   "key1 = (value1 OR value2) key = value".
+ *   'key1 = ("value1" OR "value2") key = "value"'.
  * Nested parentheses are not supported.
- * E.g.: "fleet_labels.pool = (default OR test)"
+ * E.g.: 'fleet_labels.pool = ("default" OR "test")'
  * TODO: Consider moving this to a shared location
  */
 export const parseFilters = (
@@ -45,13 +45,15 @@ export const parseFilters = (
     values = rest
       .substring(1, rhsEndIdx)
       .split('OR')
-      .map((s) => s.trim());
+      .map((s) => s.trim().replace(/^"/, '').replace(/"$/, ''));
     if (values.some((v) => v === '')) {
       throw Error('Found a hanging ORs');
     }
+  } else if (rest[0] === '"') {
+    rhsEndIdx = rest.indexOf('"', 1) ?? rest.length;
+    values = [rest.substring(1, rhsEndIdx)];
   } else {
-    rhsEndIdx = rest.match(/\s/)?.index ?? rest.length;
-    values = [rest.substring(0, rhsEndIdx)];
+    throw Error(`Unexpected character '${rest[0]}': should be one of '("'`);
   }
 
   return parseFilters(rest.substring(rhsEndIdx + 1), {
@@ -65,6 +67,10 @@ export const parseFilters = (
  * For now it's limited to outputs following the format:
  *   "key1 = (value1 OR value2) key = value".
  * E.g.: "fleet_labels.pool = (default OR test)"
+ * It also encloses values in quotes, as values can contain whitespaces,
+ * and AIP-160 treats them as a whole.
+ * More information: see the STRING description:
+ * https://google.aip.dev/assets/misc/ebnf-filtering.txt
  * TODO: Consider moving this to a shared location
  */
 export const stringifyFilters = (filters: SelectedOptions): string =>
@@ -72,8 +78,8 @@ export const stringifyFilters = (filters: SelectedOptions): string =>
     .filter(([_key, values]) => values && values[0])
     .map(([key, values]) =>
       values.length > 1
-        ? `${key} = (${values.join(' OR ')})`
-        : `${key} = ${values[0]}`,
+        ? `${key} = (${values.map((v) => `"${v}"`).join(' OR ')})`
+        : `${key} = "${values[0]}"`,
     )
     .join(' ');
 
@@ -88,9 +94,9 @@ export function getFilterValue(params: URLSearchParams) {
  * Get the filter from the URLSearchParams.
  */
 export function getFilters(params: URLSearchParams) {
-  const status = getFilterValue(params);
+  const result = getFilterValue(params);
   try {
-    return parseFilters(status);
+    return parseFilters(result);
   } catch {
     return {};
   }

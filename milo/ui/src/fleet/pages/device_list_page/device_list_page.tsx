@@ -29,7 +29,6 @@ import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
   filtersUpdater,
   getFilters,
-  getFilterValue,
   stringifyFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -71,12 +70,13 @@ export const DeviceListPage = () => {
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
+  const stringifiedSelectedOptions = stringifyFilters(selectedOptions);
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
   const countQuery = useQuery(
     client.CountDevices.query(
       CountDevicesRequest.fromPartial({
-        filter: stringifyFilters(selectedOptions),
+        filter: stringifiedSelectedOptions,
       }),
     ),
   );
@@ -84,7 +84,7 @@ export const DeviceListPage = () => {
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
-    filter: getFilterValue(searchParams),
+    filter: stringifiedSelectedOptions,
   });
 
   const devicesQuery = useDevices(request);
