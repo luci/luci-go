@@ -12,7 +12,7 @@
 
 module go.chromium.org/luci
 
-go 1.23
+go 1.23.0
 
 // Don't add a `toolchain` directive here. We manage the version of our Go
 // toolchain with a different mechanism.
@@ -84,14 +84,14 @@ require (
 	go.opentelemetry.io/otel/sdk v1.34.0
 	go.opentelemetry.io/otel/trace v1.34.0
 	go.starlark.net v0.0.0-20250127224320-2fb1215d657f
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/net v0.34.0
 	golang.org/x/oauth2 v0.25.0
-	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.29.0
-	golang.org/x/term v0.28.0
-	golang.org/x/text v0.21.0
+	golang.org/x/sync v0.11.0
+	golang.org/x/sys v0.30.0
+	golang.org/x/term v0.29.0
+	golang.org/x/text v0.22.0
 	golang.org/x/time v0.9.0
 	golang.org/x/tools v0.29.0
 	gonum.org/v1/gonum v0.12.0
