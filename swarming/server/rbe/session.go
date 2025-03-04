@@ -112,7 +112,7 @@ type CreateBotSessionResponse struct {
 // CreateBotSession is an RPC handler that creates a new bot session.
 func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotSessionRequest, r *botsrv.Request) (botsrv.Response, error) {
 	// A non-RBE bot should not be attempting to open an RBE session.
-	rbeInstance := r.Session.BotConfig.GetRbeInstance()
+	rbeInstance := r.Session.BotConfig.RbeInstance
 	if rbeInstance == "" {
 		return nil, status.Errorf(codes.FailedPrecondition, "the bot is not in RBE mode")
 	}

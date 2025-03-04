@@ -147,6 +147,7 @@ func TestBotHandler(t *testing.T) {
 					Expiry:  timestamppb.New(now.Add(5 * time.Minute)),
 					BotAuth: []*configpb.BotAuth{ba},
 				},
+				LastSeenConfig: timestamppb.New(now),
 			}
 		}
 
@@ -222,6 +223,20 @@ func TestBotHandler(t *testing.T) {
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
 			assert.Loosely(t, resp, should.ContainSubstring("failed to verify or deserialize session token"))
+		})
+
+		t.Run("Broken session proto", func(t *ftt.Test) {
+			session := makeSession("good-bot", "sid", goodBotAuth)
+			session.BotConfig = nil
+
+			req := testRequest{
+				Session: genSessionToken(session),
+			}
+
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
+			assert.Loosely(t, seenReq, should.BeNil)
+			assert.Loosely(t, status, should.Equal(http.StatusInternalServerError))
+			assert.Loosely(t, resp, should.ContainSubstring("session proto is broken: no bot_config"))
 		})
 
 		t.Run("Expired session token", func(t *ftt.Test) {

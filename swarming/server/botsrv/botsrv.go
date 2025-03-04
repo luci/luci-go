@@ -228,6 +228,29 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			writeErr(status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err), req, wrt, RB(body), nil)
 			return
 		}
+
+		// Verify the session has all necessary fields to avoid random panics if
+		// the session is broken for whatever reason (which should not happen).
+		var brokenErr string
+		switch {
+		case session.BotId == "":
+			brokenErr = "no bot_id"
+		case session.SessionId == "":
+			brokenErr = "no session_id"
+		case session.Expiry == nil:
+			brokenErr = "no expiry"
+		case session.BotConfig == nil:
+			brokenErr = "no bot_config"
+		case session.LastSeenConfig == nil:
+			brokenErr = "no last_seen_config"
+		}
+		if brokenErr != "" {
+			writeErr(status.Errorf(codes.Internal, "session proto is broken: %s", brokenErr), req, wrt, RB(body), session)
+			return
+		}
+
+		// Check expiration time. It is occasionally bumped by various backend
+		// handlers.
 		if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
 			writeErr(status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt), req, wrt, RB(body), session)
 			return
@@ -241,7 +264,7 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		// TODO: Add a check for session.bot_config.expiry to limit how long a bot
 		// can reuse the "captured" config. This depends on actually populating this
 		// expiry correctly before launching long-running tasks.
-		if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.GetBotAuth()); err != nil {
+		if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.BotAuth); err != nil {
 			if transient.Tag.In(err) {
 				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err), req, wrt, RB(body), session)
 			} else {
