@@ -79,7 +79,7 @@ describe('generateSidebarSections', () => {
         title: `Admin`,
         pages: [
           {
-            page: UiPage.AuthService,
+            page: UiPage.AuthServiceGroups,
             url: '/ui/auth/groups',
             icon: <GroupsIcon />,
           },

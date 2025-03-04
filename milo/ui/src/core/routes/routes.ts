@@ -294,6 +294,10 @@ export const routes: RouteObject[] = [
           },
         ],
       },
+      {
+        path: 'auth/lookup',
+        lazy: () => import('@/authdb/pages/lookup_page'),
+      },
     ],
   },
   {

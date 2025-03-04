@@ -118,7 +118,7 @@ export function GroupsPage() {
 }
 
 export function Component() {
-  useDeclarePageId(UiPage.AuthService);
+  useDeclarePageId(UiPage.AuthServiceGroups);
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">

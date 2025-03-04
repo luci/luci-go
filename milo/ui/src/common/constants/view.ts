@@ -38,7 +38,8 @@ export enum UiPage {
   RegressionDetails = 'regression-details',
   LogSearch = 'log-search',
   Blamelist = 'blamelist',
-  AuthService = 'authdb-group',
+  AuthServiceGroups = 'authdb-group',
+  AuthServiceLookup = 'authdb-lookup',
   Clusters = 'clusters',
   Rules = 'rules',
 }

@@ -251,7 +251,7 @@ function generateAuthServiceSection(email: string | undefined): SidebarSection {
   const showAuthService = /@google\.com$/.test(email || '');
   if (showAuthService) {
     pages.push({
-      page: UiPage.AuthService,
+      page: UiPage.AuthServiceGroups,
       url: '/ui/auth/groups',
       icon: <GroupsIcon />,
     });
