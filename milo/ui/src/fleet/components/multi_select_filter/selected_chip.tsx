@@ -18,6 +18,7 @@ import { useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
+import { DIMENSION_SEPARATOR } from '../device_table/dimensions';
 import { OptionsDropdown } from '../options_dropdown';
 
 export function SelectedChip({
@@ -50,7 +51,7 @@ export function SelectedChip({
                   selectedOptions[option.value]?.includes(o2.value),
                 )
                 ?.map((o2) => o2.label)
-                .join(', ')}`}
+                .join(DIMENSION_SEPARATOR)}`}
             </span>
             <ArrowDropDownIcon />
           </p>

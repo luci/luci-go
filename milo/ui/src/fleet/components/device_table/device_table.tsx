@@ -38,7 +38,7 @@ import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.p
 
 import { ColumnMenu } from './column_menu';
 import { getColumns, orderColumns } from './columns';
-import { BASE_DIMENSIONS } from './dimensions';
+import { BASE_DIMENSIONS, DIMENSION_SEPARATOR } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
@@ -81,7 +81,7 @@ function getRow(device: Device): Record<string, string> {
       row[label] = device.deviceSpec.labels[label].values
         .concat()
         .sort((a, b) => (a.length < b.length ? 1 : -1))
-        .join(', ')
+        .join(DIMENSION_SEPARATOR)
         .toString();
     }
   }

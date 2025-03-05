@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GridRenderCellParams } from '@mui/x-data-grid';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/constants/flops_doc_mapping';
@@ -23,6 +24,11 @@ import {
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { Cell } from './Cell';
+
+// Constant for the the separator we use across the UI for displaying
+// multiple values as a string string (ie: in one chip or one table cell)
+// TODO: b/378634266 should be discussed how to show multiple values
+export const DIMENSION_SEPARATOR = ', ';
 
 interface Dimension {
   id: string; // unique id used for sorting and filtering
@@ -35,56 +41,62 @@ const getPathnameWithParams = () => {
   return window.location.href.toString().split(window.location.host)[1];
 };
 
-interface CellWithLinkProps {
-  cellProps: GridRenderCellParams;
-  linkTo: string;
-  linkText: string;
-  tooltipTitle?: string;
-  target?: string;
+/**
+ * Helper that generates a `renderCell` function based on a link generator.
+ * @param linkGenerator A function that takes a value and turns it into a URL.
+ * @returns A function that renders a <Cell /> based on GridRenderCellParams
+ */
+// TODO: b/394202288 - Add tests for this function.
+function renderCellWithLink(
+  linkGenerator: (value: string) => string,
+  newTab: boolean = true,
+): (props: GridRenderCellParams) => React.ReactElement {
+  const CellWithLink = (props: GridRenderCellParams) => {
+    const { value = '' } = props;
+
+    const links = value.split(DIMENSION_SEPARATOR).map((v: string) => (
+      <Link
+        key={v}
+        to={linkGenerator(v)}
+        state={{
+          navigatedFromLink: getPathnameWithParams(),
+        }}
+        target={newTab ? '_blank' : '_self'}
+      >
+        {v}
+      </Link>
+    ));
+
+    return (
+      <Cell
+        {...props}
+        value={links.map((link: React.ReactElement, i: number) => (
+          <>
+            {link}
+            {i < links.length - 1 ? DIMENSION_SEPARATOR : ''}
+          </>
+        ))}
+        tooltipTitle={value}
+      />
+    );
+  };
+  return CellWithLink;
 }
 
-const getCellWithLink = (props: CellWithLinkProps) => {
-  return (
-    <Cell
-      {...props.cellProps}
-      value={
-        <Link
-          to={props.linkTo}
-          state={{
-            navigatedFromLink: getPathnameWithParams(),
-          }}
-          target={props.target || '_self'}
-        >
-          {props.linkText}
-        </Link>
-      }
-      tooltipTitle={props.tooltipTitle || props.linkText}
-    />
-  );
-};
-
-const getCellWithLinkToSwarmingDocs = (props: GridRenderCellParams) => {
-  return getCellWithLink({
-    cellProps: props,
-    linkTo: getSwarmingStateDocLinkForLabel(props.value),
-    linkText: props.value,
-    tooltipTitle: props.value,
-    target: '_blank',
-  });
-};
-
+/**
+ * BASE_DIMENSIONS are dimensions associated with a device that are not labels,
+ * which essentially defined how the UI renders non-label fields from the
+ * `ListDevices` response.
+ */
 export const BASE_DIMENSIONS: Dimension[] = [
   {
     id: 'id',
     displayName: 'ID',
     getValue: (device: Device) => device.id,
-    renderCell: (props) =>
-      getCellWithLink({
-        cellProps: props,
-        linkTo: `/ui/fleet/labs/devices/${props.value}`,
-        linkText: props.value,
-        tooltipTitle: props.value,
-      }),
+    renderCell: renderCellWithLink(
+      (value) => `/ui/fleet/labs/devices/${value}`,
+      false,
+    ),
   },
   {
     id: 'dut_id',
@@ -113,23 +125,51 @@ export const BASE_DIMENSIONS: Dimension[] = [
   },
 ];
 
-export const DIMENSIONS: Dimension[] = [
+/**
+ * Customized ChromeOS config for applying custom overrides for different
+ * dimensions. Used, for example, to add doc links to specific table cells.
+ */
+// TODO: b/400795310 - Get rid of need to explicitly set getValue.
+export const CROS_DIMENSION_OVERRIDES: Dimension[] = [
   {
     id: 'dut_state',
     getValue: (device: Device) =>
       device.deviceSpec?.labels['dut_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
   },
   {
     id: 'label-servo_state',
     getValue: (device: Device) =>
       device.deviceSpec?.labels['label-servo_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
   },
   {
     id: 'bluetooth_state',
     getValue: (device: Device) =>
       device.deviceSpec?.labels['bluetooth_state']?.values[0] || '',
-    renderCell: getCellWithLinkToSwarmingDocs,
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
   },
+  {
+    id: 'label-model',
+    getValue: (device: Device) =>
+      device.deviceSpec?.labels['label-model']?.values[0] || '',
+    renderCell: renderCellWithLink((value) => `http://go/dlm-model/${value}`),
+  },
+  {
+    id: 'label-board',
+    getValue: (device: Device) =>
+      device.deviceSpec?.labels['label-board']?.values[0] || '',
+    renderCell: renderCellWithLink((value) => `http://go/dlm-board/${value}`),
+  },
+];
+
+/**
+ * Constant with all of the different configured overrides for columns. The
+ * UI has default logic to handle all label data, but will apply special logic
+ * in the case of certain commonly used labels (ie: labels containing
+ * links to docs)
+ */
+export const COLUMN_OVERRIDES: Dimension[] = [
+  ...BASE_DIMENSIONS,
+  ...CROS_DIMENSION_OVERRIDES,
 ];

@@ -15,7 +15,7 @@
 import { GridColDef } from '@mui/x-data-grid';
 
 import { Cell } from './Cell';
-import { BASE_DIMENSIONS, DIMENSIONS } from './dimensions';
+import { COLUMN_OVERRIDES } from './dimensions';
 
 // This may be used later to add a 'common columns' section.
 // Currently, the columns from this string will appear
@@ -63,16 +63,15 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
   return columnIds.map((id) => ({
     field: id,
     headerName:
-      [...BASE_DIMENSIONS, ...DIMENSIONS].find((dim) => dim.id === id)
-        ?.displayName || id,
+      COLUMN_OVERRIDES.find((dim) => dim.id === id)?.displayName || id,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
     flex: id === 'id' ? 3 : 1,
     renderCell: (props) =>
-      [...BASE_DIMENSIONS, ...DIMENSIONS]
-        .find((dim) => dim.id === id)
-        ?.renderCell?.(props) || <Cell {...props}></Cell>,
+      COLUMN_OVERRIDES.find((dim) => dim.id === id)?.renderCell?.(props) || (
+        <Cell {...props}></Cell>
+      ),
   }));
 };
 

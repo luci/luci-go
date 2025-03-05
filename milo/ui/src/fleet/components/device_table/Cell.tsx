@@ -27,6 +27,7 @@ export const Cell = ({
     <Tooltip
       title={tooltipTitle ?? value}
       disableHoverListener={
+        // Only show the hover tooltip when the column is smaller than the content.
         !!ref.current && ref.current?.offsetWidth + 20 <= (colDef.width ?? 0)
       }
     >
