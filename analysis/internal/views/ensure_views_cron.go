@@ -224,6 +224,8 @@ func projectWhereClause(luciProject string) string {
 		return `(project = "chromium" OR STARTS_WITH(project, "chromium-m"))`
 	} else if luciProject == "chrome" {
 		return `(project IN ("chromium", "chrome") OR STARTS_WITH(project, "chromium-m") OR STARTS_WITH(project, "chrome-m"))`
+	} else if luciProject == "fuchsia" {
+		return `(project IN ("fuchsia", "turquoise"))`
 	}
 
 	// Other LUCI Projects.
