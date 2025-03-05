@@ -111,6 +111,11 @@ export function Pagination({
             disabled: !hasNextPage,
           },
         },
+        select: {
+          MenuProps: {
+            sx: { zIndex: 1401 }, // luci's cookie_consent_bar is 14000
+          },
+        },
       }}
     />
   );
