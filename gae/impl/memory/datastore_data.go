@@ -543,17 +543,20 @@ func (d *dataStoreData) beginCommit(c context.Context, obj memContextObj) txnCom
 
 func (d *dataStoreData) mkTxn(o *ds.TransactionOptions) memContextObj {
 	readOnly := false
+	allocIDsOnCommit := false
 	if o != nil {
 		readOnly = o.ReadOnly
+		allocIDsOnCommit = o.AllocateIDsOnCommit
 	}
 	return &txnDataStoreData{
 		// alias to the main datastore's so that testing code can have primitive
 		// access to break features inside of transactions.
-		parent:   d,
-		txn:      &transactionImpl{},
-		readOnly: readOnly,
-		snap:     d.takeSnapshot(),
-		muts:     map[string][]txnMutation{},
+		parent:           d,
+		txn:              &transactionImpl{},
+		readOnly:         readOnly,
+		allocIDsOnCommit: allocIDsOnCommit,
+		snap:             d.takeSnapshot(),
+		muts:             map[string][]txnMutation{},
 	}
 }
 
@@ -571,7 +574,8 @@ type txnDataStoreData struct {
 	parent *dataStoreData
 	txn    *transactionImpl
 
-	readOnly bool
+	readOnly         bool
+	allocIDsOnCommit bool
 
 	snap memStore
 
@@ -645,12 +649,18 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 
 func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) {
 	for i, k := range keys {
-		k, err := td.parent.fixKey(k)
+		fixed, err := td.parent.fixKey(k)
 		if err == nil {
-			err = td.writeMutation(false, k, vals[i])
+			err = td.writeMutation(false, fixed, vals[i])
 		}
 		if cb != nil {
-			cb(i, k, err)
+			if td.allocIDsOnCommit {
+				// Give back the original incomplete key, since we "don't know" the
+				// complete key before the transaction lands in that mode.
+				cb(i, k, err)
+			} else {
+				cb(i, fixed, err)
+			}
 		}
 	}
 }

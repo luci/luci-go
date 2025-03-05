@@ -36,9 +36,28 @@ type TransactionOptions struct {
 	// Attempts controls the number of retries to perform when commits fail
 	// due to a conflicting transaction. If omitted, it defaults to 3.
 	Attempts int
+
 	// ReadOnly controls whether the transaction is a read only transaction.
 	// Read only transactions are potentially more efficient.
 	ReadOnly bool
+
+	// AllocateIDsOnCommit controls how entity ID auto-allocation behaves.
+	//
+	// If it is false, IDs for incomplete keys are allocated eagerly inside the
+	// transaction callback whenever datastore.Put is performed. This fully
+	// completes the key, allowing it to be referenced by other parts of the
+	// transaction.
+	//
+	// If it is true, IDs allocation is delayed until the transaction is
+	// committed. Keys passed to datastore.Put will remain incomplete and
+	// the datastore will pick some auto-generated ID when the transaction lands.
+	// This reduces number of round trips to the datastore, but auto-allocated
+	// keys can't be referenced in the transaction callback.
+	//
+	// It is also impossible to get back such auto-generated keys at all
+	// currently. It is not a fundamental problem, it will just require new API
+	// that is not implemented yet.
+	AllocateIDsOnCommit bool
 }
 
 // Toggle is a tri-state boolean (Auto/True/False), which allows structs

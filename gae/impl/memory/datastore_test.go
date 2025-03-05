@@ -562,6 +562,41 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					assert.Loosely(t, val, should.Match(100))
 					assert.Loosely(t, ds.Get(c, &Foo{ID: 1}), should.BeNil)
 				})
+
+				t.Run("Allocates IDs eagerly by default", func(t *ftt.Test) {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						f := &Foo{Val: 100}
+						assert.That(t, ds.KeyForObj(c, f).IsIncomplete(), should.BeTrue)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.That(t, ds.KeyForObj(c, f).IsIncomplete(), should.BeFalse)
+						assert.Loosely(t, f.ID, should.Equal(2))
+						return nil
+					}, nil)
+					assert.Loosely(t, err, should.BeNil)
+
+					f := &Foo{ID: 2}
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(100))
+				})
+
+				t.Run("Doesn't allocate IDs when AllocateIDsOnCommit is true", func(t *ftt.Test) {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						f := &Foo{Val: 100}
+						assert.That(t, ds.KeyForObj(c, f).IsIncomplete(), should.BeTrue)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
+						assert.That(t, ds.KeyForObj(c, f).IsIncomplete(), should.BeTrue)
+						return nil
+					}, &ds.TransactionOptions{
+						AllocateIDsOnCommit: true,
+					})
+					assert.Loosely(t, err, should.BeNil)
+
+					// Still actually stored it. But this ID is only "guessable" right
+					// now. There's no way to get it back.
+					f := &Foo{ID: 2}
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
+					assert.Loosely(t, f.Val, should.Equal(100))
+				})
 			})
 		})
 

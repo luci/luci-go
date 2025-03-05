@@ -87,7 +87,7 @@ func (bds *boundDatastore) RunInTransaction(fn func(context.Context) error, opts
 	}
 
 	_, err := bds.client.RunInTransaction(bds, func(tx *datastore.Transaction) error {
-		return fn(withDatastoreTransaction(bds, tx))
+		return fn(withDatastoreTransaction(bds, tx, opts))
 	}, txOpts...)
 	return normalizeError(err)
 }
@@ -211,51 +211,64 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 		nativePLS[i] = &nativePropertySaver{kc: bds.kc, pmap: vals[i]}
 	}
 
+	outKeys := append(make([]*ds.Key, 0, len(keys)), keys...)
+
 	var err error
-	if bds.transaction != nil {
-		// Transactional PutMulti.
+	switch {
+	case bds.transaction != nil && bds.transaction.allocateIDsEagerly():
+		// Transactional PutMulti with eager key ID allocation.
 		//
 		// In order to simulate the presence of mid-transaction key allocation, we
 		// will identify any incomplete keys and allocate IDs for them. This is
 		// potentially wasteful in the event of failed or retried transactions, but
-		// it is required to maintain API compatibility with the datastore
+		// it is required to maintain API compatibility with the GAE datastore
 		// interface.
 		var incompleteKeys []*datastore.Key
-		var incompleteKeyMap map[int]int
-		for i, k := range nativeKeys {
-			if k.Incomplete() {
-				if incompleteKeyMap == nil {
-					// Optimization: if there are any incomplete keys, allocate room for
-					// the full range.
-					incompleteKeyMap = make(map[int]int, len(nativeKeys)-i)
-					incompleteKeys = make([]*datastore.Key, 0, len(nativeKeys)-i)
-				}
-				incompleteKeyMap[len(incompleteKeys)] = i
-				incompleteKeys = append(incompleteKeys, k)
+		for i, k := range keys {
+			if k.IsIncomplete() {
+				incompleteKeys = append(incompleteKeys, nativeKeys[i])
 			}
 		}
 		if len(incompleteKeys) > 0 {
-			idKeys, err := bds.client.AllocateIDs(bds, incompleteKeys)
+			completeKeys, err := bds.client.AllocateIDs(bds, incompleteKeys)
 			if err != nil {
 				return err
 			}
-			for i, idKey := range idKeys {
-				nativeKeys[incompleteKeyMap[i]] = idKey
+			cursor := 0
+			for i, k := range keys {
+				if k.IsIncomplete() {
+					nativeKeys[i] = completeKeys[cursor]
+					outKeys[i] = nativeKeyToGAE(bds.kc, completeKeys[cursor])
+					cursor++
+				}
 			}
 		}
+		err = bds.transaction.PutMulti(nativeKeys, nativePLS)
 
-		_, err = bds.transaction.PutMulti(nativeKeys, nativePLS)
-	} else {
+	case bds.transaction != nil:
+		// Transactional PutMulti with delayed key allocation. Incomplete keys are
+		// not filled in currently.
+		err = bds.transaction.PutMulti(nativeKeys, nativePLS)
+
+	default:
 		// Non-transactional PutMulti.
 		nativeKeys, err = bds.client.PutMulti(bds, nativeKeys, nativePLS)
+		// Copy newly minted keys into `outKeys`, if any.
+		if err == nil {
+			for i, k := range keys {
+				if k.IsIncomplete() {
+					outKeys[i] = nativeKeyToGAE(bds.kc, nativeKeys[i])
+				}
+			}
+		}
 	}
 
-	return idxCallbacker(err, len(nativeKeys), func(idx int, err error) {
+	return idxCallbacker(err, len(outKeys), func(idx int, err error) {
 		if err == nil {
-			cb(idx, nativeKeyToGAE(bds.kc, nativeKeys[idx]), nil)
-			return
+			cb(idx, outKeys[idx], nil)
+		} else {
+			cb(idx, nil, err)
 		}
-		cb(idx, nil, err)
 	})
 }
 
@@ -687,24 +700,30 @@ func (nps *nativePropertySaver) Save() ([]datastore.Property, error) {
 // This is required until https://github.com/googleapis/google-cloud-go/issues/3750
 // is fixed.
 type transactionWrapper struct {
-	mu sync.Mutex
-	tx *datastore.Transaction
+	mu   sync.Mutex
+	tx   *datastore.Transaction
+	opts *ds.TransactionOptions
 }
 
-func (tw *transactionWrapper) GetMulti(keys []*datastore.Key, dst any) (err error) {
+func (tw *transactionWrapper) allocateIDsEagerly() bool {
+	return tw.opts == nil || !tw.opts.AllocateIDsOnCommit
+}
+
+func (tw *transactionWrapper) GetMulti(keys []*datastore.Key, dst any) error {
 	// We don't acquire a lock here because as of 2021 Q1 Transaction.GetMulti
 	// only reads the Transaction.id field, and doesn't make any mutations to the
 	// *Transaction state at all.
 	return tw.tx.GetMulti(keys, dst)
 }
 
-func (tw *transactionWrapper) PutMulti(keys []*datastore.Key, src any) (ret []*datastore.PendingKey, err error) {
+func (tw *transactionWrapper) PutMulti(keys []*datastore.Key, src any) error {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
-	return tw.tx.PutMulti(keys, src)
+	_, err := tw.tx.PutMulti(keys, src)
+	return err
 }
 
-func (tw *transactionWrapper) DeleteMulti(keys []*datastore.Key) (err error) {
+func (tw *transactionWrapper) DeleteMulti(keys []*datastore.Key) error {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 	return tw.tx.DeleteMulti(keys)
@@ -712,8 +731,8 @@ func (tw *transactionWrapper) DeleteMulti(keys []*datastore.Key) (err error) {
 
 var datastoreTransactionKey = "*transactionWrapper"
 
-func withDatastoreTransaction(c context.Context, tx *datastore.Transaction) context.Context {
-	return context.WithValue(c, &datastoreTransactionKey, &transactionWrapper{tx: tx})
+func withDatastoreTransaction(c context.Context, tx *datastore.Transaction, opts *ds.TransactionOptions) context.Context {
+	return context.WithValue(c, &datastoreTransactionKey, &transactionWrapper{tx: tx, opts: opts})
 }
 
 func withoutDatastoreTransaction(c context.Context) context.Context {

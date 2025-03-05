@@ -297,6 +297,10 @@ func (d *rdsImpl) Count(fq *ds.FinalizedQuery) (int64, error) {
 }
 
 func (d *rdsImpl) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
+	if opts != nil && opts.AllocateIDsOnCommit {
+		return errors.New("AllocateIDsOnCommit is not supported by GAE datastore library")
+	}
+
 	ropts := &datastore.TransactionOptions{
 		// Cloud Datastore no longer exposes the ability to explicitly allow
 		// cross-group transactions. Since appengine datastore is effectively

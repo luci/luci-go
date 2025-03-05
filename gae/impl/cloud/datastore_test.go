@@ -321,6 +321,73 @@ func TestDatastore(t *testing.T) {
 				}
 			})
 
+			t.Run(`Can allocate IDs in Put`, func(t *ftt.Test) {
+				type Ent struct {
+					ID  int64 `gae:"$id"`
+					Val int
+				}
+
+				// A mix of entities with and without IDs.
+				ents := []*Ent{
+					{Val: 100},
+					{Val: 101},
+					{Val: 102, ID: 1111},
+					{Val: 103},
+					{Val: 104, ID: 2222},
+					{Val: 105},
+				}
+
+				getVal := func(c context.Context, id int64) int {
+					ent := &Ent{ID: id}
+					if err := ds.Get(c, ent); err != nil {
+						return 0
+					}
+					return ent.Val
+				}
+
+				t.Run(`Outside of txn`, func(t *ftt.Test) {
+					assert.NoErr(t, ds.Put(c, ents))
+					for _, ent := range ents {
+						assert.That(t, ent.ID, should.NotEqual(int64(0)))
+						assert.That(t, getVal(c, ent.ID), should.Equal(ent.Val))
+					}
+				})
+
+				t.Run(`In txn by default`, func(t *ftt.Test) {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						assert.NoErr(t, ds.Put(c, ents))
+						for _, ent := range ents {
+							assert.That(t, ent.ID, should.NotEqual(int64(0)))
+						}
+						return nil
+					}, nil)
+					assert.NoErr(t, err)
+					for _, ent := range ents {
+						assert.That(t, getVal(c, ent.ID), should.Equal(ent.Val))
+					}
+				})
+
+				t.Run(`Delayed when AllocateIDsOnCommit`, func(t *ftt.Test) {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						assert.NoErr(t, ds.Put(c, ents))
+						var ids []int64
+						for _, ent := range ents {
+							ids = append(ids, ent.ID)
+						}
+						assert.That(t, ids, should.Match([]int64{
+							0, 0, 1111, 0, 2222, 0,
+						}))
+						return nil
+					}, &ds.TransactionOptions{AllocateIDsOnCommit: true})
+					assert.NoErr(t, err)
+
+					// Actually stored them all with some unknown IDs.
+					var stored []*Ent
+					assert.NoErr(t, ds.GetAll(c, ds.NewQuery("Ent"), &stored))
+					assert.Loosely(t, stored, should.HaveLength(len(ents)))
+				})
+			})
+
 			t.Run(`Can get, put, and delete entities`, func(t *ftt.Test) {
 				// Put: "foo", "bar", "baz".
 				put := []ds.PropertyMap{
