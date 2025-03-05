@@ -36,7 +36,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 	"text_artifacts": func(luciProject string) *bigquery.TableMetadata {
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.text_artifacts WHERE ` + projectWhereClause(luciProject),
-			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "3"},
 		}
 	},
 	"invocations": func(luciProject string) *bigquery.TableMetadata {
@@ -46,7 +46,7 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.invocations WHERE ` + projectWhereClause(luciProject),
-			Labels:    map[string]string{bq.MetadataVersionKey: "2"},
+			Labels:    map[string]string{bq.MetadataVersionKey: "3"},
 		}
 	},
 }
