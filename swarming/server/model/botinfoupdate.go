@@ -314,7 +314,8 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 		}
 		return err
 	}, &datastore.TransactionOptions{
-		Attempts: maxTxnAttempts,
+		Attempts:            maxTxnAttempts,
+		AllocateIDsOnCommit: true, // avoid unnecessary call to AllocateIDs RPC
 	})
 	u.reportBotInfoTxn(ctx, attempt, err)
 	switch {
@@ -542,8 +543,9 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	var eventToPut *BotEvent
 	if !frequentEvents[u.EventType] || dimensionsChanged || compositeChanged {
 		eventToPut = &BotEvent{
-			// Note: this means the entity ID will be auto-generated. We don't expose
-			// BotEvent entity IDs anywhere. This is mostly due to historical reasons.
+			// Note: this key means the entity ID will be auto-generated when the
+			// transaction is committed. We don't expose BotEvent entity IDs anywhere.
+			// This auto-generated key is used mostly due to historical reasons.
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, BotRootKey(ctx, u.BotID)),
 			Timestamp:  now,
 			EventType:  u.EventType,
