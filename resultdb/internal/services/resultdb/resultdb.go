@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/ensureviews"
 	"go.chromium.org/luci/resultdb/internal/rpcutil"
+	"go.chromium.org/luci/resultdb/internal/services/resultdb/schema"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -109,6 +110,7 @@ func InitServer(srv *server.Server, opts Options) error {
 		Service:  rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
+	pb.RegisterSchemasServer(srv, schema.NewSchemasServer())
 
 	// Register an empty Recorder server only to make the discovery service
 	// list it.

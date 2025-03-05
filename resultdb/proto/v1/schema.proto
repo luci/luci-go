@@ -38,8 +38,8 @@ message Schema {
   // Format: "schemas/global".
   string name = 1;
 
-  // The schemes available for use in test identifiers.
-  repeated Scheme schemes = 2;
+  // The schemes available for use in test identifiers, by scheme identifier.
+  map<string, Scheme> schemes = 2;
 }
 
 // A scheme represents a kind of test type. For example, a JUnit tests

@@ -37,6 +37,11 @@ var schemeRE = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 // denotes that the test covers the result of common setup/teardown logic for a fine name.
 const FixtureCaseName = "*fixture"
 
+// LegacySchemeID identifies the scheme used for tests that are not
+// natively structured. This allows such tests to still be represented
+// in the structured test ID space.
+const LegacySchemeID = "legacy"
+
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {
 	_, err := ParseAndValidateTestID(testID)
@@ -89,7 +94,7 @@ func parseTestIdentifier(testID string) (TestIdentifier, error) {
 		// This is a legacy test ID.
 		return TestIdentifier{
 			ModuleName:   "legacy",
-			ModuleScheme: "legacy",
+			ModuleScheme: LegacySchemeID,
 			CaseName:     testID,
 		}, nil
 	}
@@ -333,8 +338,8 @@ func validateTestIdentifier(id TestIdentifier) error {
 	// Additional validation for legacy test identifiers.
 	if id.ModuleName == "legacy" {
 		// Legacy test identifier represented in structured form.
-		if id.ModuleScheme != "legacy" {
-			return errors.Reason("module_scheme: must be set to 'legacy' for tests in the 'legacy' module").Err()
+		if id.ModuleScheme != LegacySchemeID {
+			return errors.Reason("module_scheme: must be set to %q for tests in the 'legacy' module", LegacySchemeID).Err()
 		}
 		if id.CoarseName != "" {
 			return errors.Reason("coarse_name: must be empty for tests in the 'legacy' module").Err()
@@ -352,8 +357,8 @@ func validateTestIdentifier(id TestIdentifier) error {
 		}
 	} else {
 		// Additional validation for natively structured test identifiers.
-		if id.ModuleScheme == "legacy" {
-			return errors.Reason("module_scheme: must not be set to 'legacy' except for tests in the 'legacy' module").Err()
+		if id.ModuleScheme == LegacySchemeID {
+			return errors.Reason("module_scheme: must not be set to %q except for tests in the 'legacy' module", LegacySchemeID).Err()
 		}
 		if err := validateCaseNameLeadingCharacter(id.CaseName); err != nil {
 			return errors.Annotate(err, "case_name").Err()
@@ -426,7 +431,7 @@ func ExtractTestIdentifier(id *pb.TestVariantIdentifier) TestIdentifier {
 
 // EncodeTestID encodes a structured test ID into a flat-form test ID.
 func EncodeTestID(id TestIdentifier) string {
-	if id.ModuleName == "legacy" && id.ModuleScheme == "legacy" && id.CoarseName == "" && id.FineName == "" {
+	if id.ModuleName == "legacy" && id.ModuleScheme == LegacySchemeID && id.CoarseName == "" && id.FineName == "" {
 		return id.CaseName
 	}
 	var builder strings.Builder
@@ -462,7 +467,7 @@ func writeEscapedTestIDComponent(builder *strings.Builder, s string) {
 // sizeEscapedTestID returns the size of the test ID when encoded to flat-form.
 // This is useful for validation and allocating string buffers.
 func sizeEscapedTestID(id TestIdentifier) int {
-	if id.ModuleName == "legacy" && id.ModuleScheme == "legacy" && id.CoarseName == "" && id.FineName == "" {
+	if id.ModuleName == "legacy" && id.ModuleScheme == LegacySchemeID && id.CoarseName == "" && id.FineName == "" {
 		// Legacy test ID roundtrips back to flat-form.
 		return len(id.CaseName)
 	}

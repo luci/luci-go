@@ -184,7 +184,7 @@ func TestValidateTestIdentifier(t *testing.T) {
 			t.Run("Legacy is reserved", func(t *ftt.Test) {
 				id.ModuleName = "module"
 				id.ModuleScheme = "legacy"
-				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_scheme: must not be set to 'legacy' except for tests in the 'legacy' module"))
+				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike(`module_scheme: must not be set to "legacy" except for tests in the 'legacy' module`))
 			})
 		})
 		t.Run("Coarse Name", func(t *ftt.Test) {
@@ -338,7 +338,7 @@ func TestValidateTestIdentifier(t *testing.T) {
 			})
 			t.Run("Invalid scheme", func(t *ftt.Test) {
 				id.ModuleScheme = "notlegacy"
-				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike("module_scheme: must be set to 'legacy' for tests in the 'legacy' module"))
+				assert.Loosely(t, validateTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" for tests in the 'legacy' module`))
 			})
 			t.Run("Invalid coarse name", func(t *ftt.Test) {
 				id.CoarseName = "coarse"

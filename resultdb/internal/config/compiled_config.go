@@ -24,12 +24,24 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
+// LegacyScheme is the built-in configuration for the special scheme "legacy".
+var LegacyScheme = &configpb.Scheme{
+	Id:                pbutil.LegacySchemeID,
+	HumanReadableName: "Legacy test results",
+	Case: &configpb.Scheme_Level{
+		HumanReadableName: "Test Identifier",
+	},
+}
+
 // CompiledServiceConfig is a copy of service configuration with
 // regular expression pre-compiled.
-// This object must be treated as immutable.
+// This object is shared between multiple request handlers and
+// must be treated as immutable, do not append to any of the
+// collections returned here.
 type CompiledServiceConfig struct {
 	// The raw service configuration.
 	Config   *configpb.Config
@@ -69,37 +81,16 @@ type SchemeLevel struct {
 // into a form that is faster to apply.
 func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledServiceConfig, error) {
 	compiledSchemes := make(map[string]*Scheme)
-	compiledSchemes["legacy"] = &Scheme{
-		ID:                "legacy",
-		HumanReadableName: "Legacy Test Results",
-		Case: &SchemeLevel{
-			HumanReadableName: "Test Identifier",
-		},
-	}
-	for _, scheme := range cfg.Schemes {
-		compiledScheme := &Scheme{
-			ID:                scheme.Id,
-			HumanReadableName: scheme.HumanReadableName,
-		}
-		if scheme.Coarse != nil {
-			compiledLevel, err := NewSchemeLevel(scheme.Coarse)
-			if err != nil {
-				return nil, err
-			}
-			compiledScheme.Coarse = compiledLevel
-		}
-		if scheme.Fine != nil {
-			compiledLevel, err := NewSchemeLevel(scheme.Fine)
-			if err != nil {
-				return nil, err
-			}
-			compiledScheme.Fine = compiledLevel
-		}
-		compiledLevel, err := NewSchemeLevel(scheme.Case)
+
+	allSchemes := make([]*configpb.Scheme, 0, 1+len(cfg.Schemes))
+	allSchemes = append(allSchemes, LegacyScheme)
+	allSchemes = append(allSchemes, cfg.Schemes...)
+
+	for _, scheme := range allSchemes {
+		compiledScheme, err := compileScheme(scheme)
 		if err != nil {
 			return nil, err
 		}
-		compiledScheme.Case = compiledLevel
 		compiledSchemes[scheme.Id] = compiledScheme
 	}
 	return &CompiledServiceConfig{
@@ -107,6 +98,33 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 		Revision: revision,
 		Schemes:  compiledSchemes,
 	}, nil
+}
+
+func compileScheme(scheme *configpb.Scheme) (*Scheme, error) {
+	compiledScheme := &Scheme{
+		ID:                scheme.Id,
+		HumanReadableName: scheme.HumanReadableName,
+	}
+	if scheme.Coarse != nil {
+		compiledLevel, err := NewSchemeLevel(scheme.Coarse)
+		if err != nil {
+			return nil, err
+		}
+		compiledScheme.Coarse = compiledLevel
+	}
+	if scheme.Fine != nil {
+		compiledLevel, err := NewSchemeLevel(scheme.Fine)
+		if err != nil {
+			return nil, err
+		}
+		compiledScheme.Fine = compiledLevel
+	}
+	compiledLevel, err := NewSchemeLevel(scheme.Case)
+	if err != nil {
+		return nil, err
+	}
+	compiledScheme.Case = compiledLevel
+	return compiledScheme, nil
 }
 
 func NewSchemeLevel(level *configpb.Scheme_Level) (*SchemeLevel, error) {

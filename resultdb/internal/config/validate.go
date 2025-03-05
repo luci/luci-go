@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
@@ -171,8 +172,8 @@ func validateSchemeID(ctx *validation.Context, id string, seenIDs map[string]str
 	ctx.Enter("id")
 	defer ctx.Exit()
 
-	if id == "legacy" {
-		ctx.Errorf(`"legacy" is a reserved built-in scheme and cannot be configured`)
+	if id == pbutil.LegacySchemeID {
+		ctx.Errorf(`%q is a reserved built-in scheme and cannot be configured`, pbutil.LegacySchemeID)
 	}
 	if err := validate.SpecifiedWithRe(SchemeIDRE, id); err != nil {
 		ctx.Error(err)
