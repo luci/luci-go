@@ -77,6 +77,7 @@ func TestClaim(t *testing.T) {
 		srv := BotAPIServer{
 			cfg:        cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs()),
 			hmacSecret: secret,
+			version:    "server-ver",
 		}
 
 		prepTask := func(dims model.TaskDimensions, claimID *string) (*model.TaskRequest, *model.TaskToRun) {
@@ -307,9 +308,10 @@ func TestClaim(t *testing.T) {
 			}))
 
 			assert.That(t, claimOp, should.Match(&tasks.ClaimOp{
-				Request:      req,
-				TaskToRunKey: ttr.Key,
-				ClaimID:      "bot-id:new-claim-id",
+				Request:       req,
+				TaskToRunKey:  ttr.Key,
+				ClaimID:       "bot-id:new-claim-id",
+				ServerVersion: "server-ver",
 			}))
 
 			assert.That(t, botDetails, should.Match(&tasks.BotDetails{

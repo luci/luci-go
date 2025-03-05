@@ -581,3 +581,11 @@ func (p BotDimensions) ToStructPB() *structpb.Struct {
 	}
 	return s
 }
+
+// BotID extracts the first value of "id" dimension or returns "".
+func (p BotDimensions) BotID() string {
+	for _, val := range p["id"] {
+		return val
+	}
+	return ""
+}

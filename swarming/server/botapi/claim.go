@@ -346,6 +346,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		TaskToRunKey:   ttr.Key,
 		ClaimID:        claimID,
 		LifecycleTasks: srv.lifecycleTasks,
+		ServerVersion:  srv.version,
 	}
 
 	// Transactionally claim the task and assign it to the bot. The transaction
