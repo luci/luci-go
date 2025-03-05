@@ -123,7 +123,7 @@ func checkInstance(c context.Context, vm *model.VM) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
-				logging.Debugf(c, "Check created instance %q: instance not found in %q  project", vm.Hostname, vm.Attributes.GetProject())
+				logging.Debugf(c, "Check created instance %q: instance not found in %q project", vm.Hostname, vm.Attributes.GetProject())
 				metrics.UpdateFailures(c, gerr.Code, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
 					return errors.Annotate(err, "check created instance %q: not found", vm.Hostname).Err()
@@ -132,10 +132,10 @@ func checkInstance(c context.Context, vm *model.VM) error {
 			}
 			logErrors(c, "Check created instance", vm.Hostname, gerr)
 		}
-		logging.Debugf(c, "Check created instance %q: fail to find in %q  project", vm.Hostname, vm.Attributes.GetProject())
+		logging.Debugf(c, "Check created instance %q: fail to find in %q project", vm.Hostname, vm.Attributes.GetProject())
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
-	logging.Debugf(c, "Check created instance %q: seccesful created %s", vm.Hostname, inst.SelfLink)
+	logging.Debugf(c, "Check created instance %q: successfully created %s", vm.Hostname, inst.SelfLink)
 	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.ScalingType, vm.Attributes.GetZone(), vm.Hostname)
 	return setCreated(c, vm.ID, inst)
 }
