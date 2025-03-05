@@ -22,7 +22,6 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet';
 
@@ -63,15 +62,11 @@ export function LookupPage() {
         </a>
       </Alert>
       <Box sx={{ p: 5 }}>
-        <Typography variant="body2">
-          Look up a principal (user, glob or group) to find its ancestors
-          (groups the principal is included by).
-        </Typography>
         <FormControl fullWidth>
           <TextField
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            label="An email, glob or group name. E.g. person@example.com, *@google.com, administrators."
+            label="Look up an email, glob, or group name to find its ancestors. e.g. person@example.com, *@google.com, administrators."
             slotProps={{
               input: {
                 endAdornment: (
