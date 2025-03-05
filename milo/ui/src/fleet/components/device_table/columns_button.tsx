@@ -13,17 +13,10 @@
 // limitations under the License.
 
 import Button from '@mui/material/Button';
-import {
-  gridColumnDefinitionsSelector,
-  GridColumnIcon,
-  gridColumnVisibilityModelSelector,
-  useGridApiContext,
-} from '@mui/x-data-grid';
+import { GridColumnIcon } from '@mui/x-data-grid';
 import { useState } from 'react';
 
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
-
-import { OptionsDropdown } from '../options_dropdown';
+import { ColumnsManageDropDown } from './column_manage_dropdown';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
@@ -33,38 +26,7 @@ interface ColumnsButtonProps {
  * Component for displaying a menu to customize the columns on a table.
  */
 export function ColumnsButton({ isLoading }: ColumnsButtonProps) {
-  const apiRef = useGridApiContext();
-  const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
-  const columnDefinitions = gridColumnDefinitionsSelector(apiRef);
-
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
-
-  const toggleColumn = (field: string) => {
-    if (!columnVisibilityModel) {
-      return;
-    }
-
-    apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
-  };
-
-  const columns: OptionCategory = {
-    label: 'column',
-    value: 'column',
-    options: columnDefinitions
-      .filter((column) => column.field !== '__check__')
-      .map((column) => ({
-        label: column.headerName ?? column.field,
-        value: column.field,
-      })),
-  };
-
-  const selectedColumns: SelectedOptions = {
-    column: columnVisibilityModel
-      ? Object.keys(columnVisibilityModel).filter(
-          (key) => columnVisibilityModel[key],
-        )
-      : [],
-  };
 
   return (
     <>
@@ -75,21 +37,10 @@ export function ColumnsButton({ isLoading }: ColumnsButtonProps) {
       >
         Columns
       </Button>
-      <OptionsDropdown
-        onClose={() => setAnchorEL(null)}
-        selectedOptions={selectedColumns}
-        anchorEl={anchorEl}
-        open={!!anchorEl}
-        option={columns}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        disableFooter={true}
-        enableSearchInput={true}
-        onFlipOption={toggleColumn}
-        maxHeight={500}
+      <ColumnsManageDropDown
         isLoading={isLoading}
+        anchorEl={anchorEl}
+        setAnchorEL={setAnchorEL}
       />
     </>
   );

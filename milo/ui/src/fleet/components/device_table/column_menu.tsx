@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColumnMenu, GridColumnMenuProps } from '@mui/x-data-grid';
+import {
+  GridColumnMenu,
+  GridColumnMenuHideItem,
+  GridColumnMenuItemProps,
+  GridColumnMenuProps,
+} from '@mui/x-data-grid';
+
+function ColumnsItem(props: GridColumnMenuItemProps) {
+  return <GridColumnMenuHideItem {...props} />;
+}
 
 /**
  * Customized implementation of GridColumnMenu for fleet use cases.
@@ -22,13 +31,13 @@ export function ColumnMenu(props: GridColumnMenuProps) {
     <GridColumnMenu
       {...props}
       slots={{
-        // Hide default filtering widget because it's very diffferent
+        // Hide default filtering widget because it's very different
         // from our custom filtering.
         columnMenuFilterItem: null,
         // TODO: b/393602662 - Column menu items are disabled because they're
         // different from our custom column component. We can re-add this later
         // if we can make sure state is synced and the components are aligned.
-        columnMenuColumnsItem: null,
+        columnMenuColumnsItem: ColumnsItem,
       }}
     />
   );
