@@ -13,6 +13,7 @@
 // limitations under the License.
 import './groups.css';
 
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
@@ -142,6 +143,19 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
 
     return (
       <>
+        <Box>
+          <Button
+            variant="contained"
+            disableElevation
+            sx={{ m: '16px', mb: 0 }}
+            data-testid="create-button"
+            component={Link}
+            to={getURLPathFromAuthGroup('new!')}
+            endIcon={<AddCircleOutlineIcon />}
+          >
+            Create Group
+          </Button>
+        </Box>
         <Box sx={{ p: 2 }}>
           <TextField
             id="outlined-basic"
@@ -150,18 +164,6 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
             style={{ width: '100%' }}
             onChange={(e) => changeSearchQuery(e.target.value)}
           />
-        </Box>
-        <Box>
-          <Button
-            variant="contained"
-            disableElevation
-            sx={{ m: '16px', mt: 0 }}
-            data-testid="create-button"
-            component={Link}
-            to={getURLPathFromAuthGroup('new!')}
-          >
-            Create Group
-          </Button>
         </Box>
         <Box sx={{ height: '100%' }} data-testid="groups-list">
           <Virtuoso
