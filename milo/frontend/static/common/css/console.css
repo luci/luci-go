@@ -87,6 +87,10 @@
   flex-direction: column;
 }
 
+.console-header-column:last-of-type {
+  min-width: 75%;
+}
+
 .console-header-groups {
   display: flex;
   justify-content: space-evenly;
