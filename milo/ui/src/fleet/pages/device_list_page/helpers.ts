@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {
+  BASE_DIMENSIONS,
+  DIMENSIONS,
+} from '@/fleet/components/device_table/dimensions';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -27,7 +31,8 @@ export const dimensionsToFilterOptions = (
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
-        label: key,
+        label:
+          BASE_DIMENSIONS.find((dim) => dim.id === key)?.displayName || key,
         value: key,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -45,7 +50,7 @@ export const dimensionsToFilterOptions = (
 
     return [
       {
-        label: key,
+        label: DIMENSIONS.find((dim) => dim.id === key)?.displayName || key,
         value: 'labels.' + key,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -54,7 +59,10 @@ export const dimensionsToFilterOptions = (
     ];
   });
 
-  return baseDimensions.concat(labels).filter((o) => o.options.length > 0);
+  return baseDimensions
+    .concat(labels)
+    .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically
+    .filter((o) => o.options.length > 0);
 };
 
 /**
@@ -68,24 +76,18 @@ export const filterOptionsPlaceholder = (
 ): OptionCategory[] => {
   return Object.entries(selectedOptions)
     .map(([key, values]) => {
+      const value = key;
+      key = key.replace('labels.', '');
       return {
-        label: key.replace('labels.', ''),
-        value: key,
+        label:
+          BASE_DIMENSIONS.find((dim) => dim.id === key)?.displayName ||
+          DIMENSIONS.find((dim) => dim.id === key)?.displayName ||
+          key,
+        value: value,
         options: values.map((value) => {
           return { label: value, value: value };
         }),
       } as OptionCategory;
     })
-    .sort((a, b) => {
-      const aHasLabels = a.value.startsWith('labels.');
-      const bHasLabels = b.value.startsWith('labels.');
-
-      if (aHasLabels && !bHasLabels) {
-        return 1;
-      } else if (!aHasLabels && bHasLabels) {
-        return -1;
-      } else {
-        return 0;
-      }
-    });
+    .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
 };
