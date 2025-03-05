@@ -349,13 +349,18 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		ServerVersion:  srv.version,
 	}
 
+	eventType := model.BotEventTask
+	if details.req.IsTerminate() {
+		eventType = model.BotEventTerminate
+	}
+
 	// Transactionally claim the task and assign it to the bot. The transaction
 	// happens as part of the BotInfoUpdate operation that assigns the task ID
 	// to the bot.
 	var outcome *tasks.ClaimTxnOutcome
 	update := &model.BotInfoUpdate{
 		BotID:         r.Session.BotId,
-		EventType:     model.BotEventTask,
+		EventType:     eventType,
 		EventDedupKey: body.ClaimID,
 		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
 			if bot == nil {
