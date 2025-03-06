@@ -21,7 +21,7 @@ import {
   PopoverOrigin,
   Skeleton,
 } from '@mui/material';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -152,6 +152,13 @@ export function OptionsDropdown({
 }: OptionsDropdownProps) {
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState(selectedOptions);
+
+  useEffect(() => {
+    if (open) {
+      setTempSelectedOptions(selectedOptions);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const flipOption = (o2Value: string) => {
     const currentValues = tempSelectedOptions[option.value] ?? [];
