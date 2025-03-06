@@ -643,7 +643,7 @@ type CIPDInput struct {
 	// ClientPackage defines a version of the CIPD client to use.
 	ClientPackage CIPDPackage `gae:"client_package,lsp" json:"client_package"`
 	// Packages is a list of packages to install.
-	Packages []CIPDPackage `gae:"packages,lsp" json:"packages"`
+	Packages []CIPDPackage `gae:"packages,lsp" json:"packages,omitempty"`
 }
 
 // IsPopulated returns true if the struct carries some data.
