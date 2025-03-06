@@ -1,0 +1,13 @@
+goroutine 7 [sleep, locked to thread]:
+time.Sleep(0x3b9aca00)
+	/usr/local/Cellar/go/1.15.6/libexec/src/runtime/time.go:188 +0xbf
+main.goSleep(...)
+	/Users/felix.geisendoerfer/go/src/github.com/DataDog/dd-trace-go/profiler/internal/stackparse/test-fixtures/cgo.go:53
+main._cgoexpwrap_65ad5df3a112_goSleep(0xf4240, 0xc000001b00)
+	_cgo_gotypes.go:73 +0x34
+main._Cfunc_c_go_sleep_loop(0xf4240)
+	_cgo_gotypes.go:43 +0x45
+main.cGoSleepLoop(0x3b9aca00)
+	/Users/felix.geisendoerfer/go/src/github.com/DataDog/dd-trace-go/profiler/internal/stackparse/test-fixtures/cgo.go:48 +0x45
+created by main.main
+	/Users/felix.geisendoerfer/go/src/github.com/DataDog/dd-trace-go/profiler/internal/stackparse/test-fixtures/cgo.go:37 +0x66

@@ -1,0 +1,2 @@
+goroutine 2 [running]:
+main.main()

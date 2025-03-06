@@ -1,0 +1,7 @@
+goroutine 18 [running]:
+main.printStack()
+	/Users/nick.ripley/repos/gostackparse/test-fixtures/go121_createdby.go:23 +0x40
+main.main.func1()
+	/Users/nick.ripley/repos/gostackparse/test-fixtures/go121_createdby.go:16 +0x4c
+created by main.main in goroutine 1
+	/Users/nick.ripley/repos/gostackparse/test-fixtures/go121_createdby.go:14 +0x70

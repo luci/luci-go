@@ -1,0 +1,33 @@
+goroutine 41 [IO wait, 1 minutes]:
+internal/poll.runtime_pollWait(0x1e91cb8, 0x72, 0x14e6ca0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/runtime/netpoll.go:222 +0x55
+internal/poll.(*pollDesc).wait(0xc00019e098, 0x72, 0x14e6c00, 0x16db878, 0x0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/internal/poll/fd_poll_runtime.go:87 +0x45
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/Cellar/go/1.15.6/libexec/src/internal/poll/fd_poll_runtime.go:92
+internal/poll.(*FD).Read(0xc00019e080, 0xc000326000, 0x1000, 0x1000, 0x0, 0x0, 0x0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/internal/poll/fd_unix.go:159 +0x1a5
+net.(*netFD).Read(0xc00019e080, 0xc000326000, 0x1000, 0x1000, 0x203000, 0x203000, 0x203000)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/fd_posix.go:55 +0x4f
+net.(*conn).Read(0xc000186028, 0xc000326000, 0x1000, 0x1000, 0x0, 0x0, 0x0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/net.go:182 +0x8e
+net/http.(*connReader).Read(0xc00007c300, 0xc000326000, 0x1000, 0x1000, 0x100000006, 0x10, 0x1819408)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/http/server.go:798 +0x1ad
+bufio.(*Reader).fill(0xc000290060)
+	/usr/local/Cellar/go/1.15.6/libexec/src/bufio/bufio.go:101 +0x105
+bufio.(*Reader).ReadSlice(0xc000290060, 0xa, 0x1819408, 0xc000337988, 0x100f6d0, 0xc000110000, 0x100)
+	/usr/local/Cellar/go/1.15.6/libexec/src/bufio/bufio.go:360 +0x3d
+bufio.(*Reader).ReadLine(0xc000290060, 0xc000110000, 0x1079694, 0xc0001a4000, 0x0, 0x1010038, 0x30)
+	/usr/local/Cellar/go/1.15.6/libexec/src/bufio/bufio.go:389 +0x34
+net/textproto.(*Reader).readLineSlice(0xc000182300, 0xc000110000, 0x10d7c4d, 0xc00019e080, 0x1068000, 0xc000282900)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/textproto/reader.go:58 +0x6c
+net/textproto.(*Reader).ReadLine(...)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/textproto/reader.go:39
+net/http.readRequest(0xc000290060, 0x0, 0xc000110000, 0x0, 0x0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/http/request.go:1012 +0xaa
+net/http.(*conn).readRequest(0xc0000c6320, 0x14ed4a0, 0xc000322000, 0x0, 0x0, 0x0)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/http/server.go:984 +0x19a
+net/http.(*conn).serve(0xc0000c6320, 0x14ed4a0, 0xc000322000)
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/http/server.go:1851 +0x705
+created by net/http.(*Server).Serve
+	/usr/local/Cellar/go/1.15.6/libexec/src/net/http/server.go:2969 +0x36c

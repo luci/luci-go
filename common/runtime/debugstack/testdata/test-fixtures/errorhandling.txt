@@ -1,0 +1,5 @@
+goroutine 3 [running]:
+main.foo()
+	/example/main.go:182 +0x123
+created by main.main
+	/example/main.go:110 +0x456

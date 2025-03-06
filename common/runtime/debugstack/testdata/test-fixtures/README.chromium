@@ -1,0 +1,13 @@
+Name: gostackparse test fixtures
+URL: https://github.com/DataDog/gostackparse/tree/3d65ba90c73f7636e503fa72101a2133e5260454/test-fixtures
+Version: 3d65ba90c73f7636e503fa72101a2133e5260454
+License: Apache-2.0
+License File: LICENSE
+License Android Compatible: yes
+Security Critical: no
+Description:
+Used in tests to validate debugstack parser.
+
+Local Modifications:
+Removed all files except for test-fixtures/*.txt
+Removed all stack traces except for the most interesting primary stack per text file.
