@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/secrets"
 
@@ -37,6 +38,7 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
@@ -89,17 +91,21 @@ func TestSessionServer(t *testing.T) {
 		}
 
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		rbe := &mockedBotsClient{}
 
+		cfg := cfgtest.NewMockedConfigs()
+		poolCfg := cfg.MockPool("some-pool", "project:realm")
+		poolCfg.InformationalDimensionRe = []string{"label-*"}
 		srv := &SessionServer{
 			rbe: rbe,
 			hmacSecret: hmactoken.NewStaticSecret(secrets.Secret{
 				Active: []byte("secret"),
 			}),
 			backendVer: "backend-ver",
+			cfg:        cfgtest.MockConfigs(ctx, cfg),
 		}
 
 		t.Run("CreateBotSession works", func(t *ftt.Test) {
@@ -167,6 +173,44 @@ func TestSessionServer(t *testing.T) {
 			}))
 		})
 
+		t.Run("informational dims are excluded", func(t *ftt.Test) {
+			req := &botsrv.Request{
+				Session: fakeSession,
+				Dimensions: []string{
+					"id:" + fakeBotID,
+					"extra1:a",
+					"extra1:b",
+					"extra2:c",
+					"extra2:d",
+					"label-info:shouldskip",
+					"pool:some-pool",
+				},
+			}
+			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
+				assert.Loosely(t, r.BotSession.Worker.Devices, should.HaveLength(1))
+				assert.That(t, r.BotSession.Worker.Devices[0].Properties, should.Match([]*remoteworkers.Device_Property{
+					{Key: "label:extra1", Value: "a"},
+					{Key: "label:extra1", Value: "b"},
+					{Key: "label:extra2", Value: "c"},
+					{Key: "label:extra2", Value: "d"},
+					{Key: "label:pool", Value: "some-pool"},
+				}))
+				return &remoteworkers.BotSession{
+					Name:   fakeRBESessionID,
+					Status: remoteworkers.BotStatus_INITIALIZING,
+				}, nil
+			})
+
+			_, err := srv.CreateBotSession(ctx, &CreateBotSessionRequest{
+				BotVersion: "bot-version",
+				WorkerProperties: &WorkerProperties{
+					PoolID:      "rbe-pool-id",
+					PoolVersion: "rbe-pool-version",
+				},
+			}, req)
+
+			assert.NoErr(t, err)
+		})
 		t.Run("CreateBotSession propagates RBE error", func(t *ftt.Test) {
 			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")

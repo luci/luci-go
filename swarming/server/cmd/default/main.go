@@ -175,7 +175,7 @@ func main() {
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_error/:TaskID", botAPI.TaskError)
 
 		// Bot API endpoints to control RBE session.
-		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret, srv.Options.ImageVersion())
+		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret, srv.Options.ImageVersion(), cfg)
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 

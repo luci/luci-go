@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
@@ -44,14 +46,16 @@ type SessionServer struct {
 	rbe        remoteworkers.BotsClient
 	hmacSecret *hmactoken.Secret // to generate session tokens
 	backendVer string            // to put into the DebugInfo in the tokens
+	cfg        *cfg.Provider
 }
 
 // NewSessionServer creates a new session server given an RBE client connection.
-func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSecret *hmactoken.Secret, backendVer string) *SessionServer {
+func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSecret *hmactoken.Secret, backendVer string, cfg *cfg.Provider) *SessionServer {
 	return &SessionServer{
 		rbe:        botsConnectionPool(cc),
 		hmacSecret: hmacSecret,
 		backendVer: backendVer,
+		cfg:        cfg,
 	}
 }
 
@@ -117,11 +121,15 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 		return nil, status.Errorf(codes.FailedPrecondition, "the bot is not in RBE mode")
 	}
 
+	cfg, err := srv.cfg.FreshEnough(ctx, r.Session.LastSeenConfig.AsTime())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch service config")
+	}
 	// Actually open the RBE session. This should not block, since we aren't
 	// picking up any tasks yet (indicated by INITIALIZING status).
 	rbeSession, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
 		Parent:     rbeInstance,
-		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, body.BotVersion, body.WorkerProperties, nil),
+		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, nil),
 	})
 	if err != nil {
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -339,9 +347,14 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	rpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	cfg, err := srv.cfg.FreshEnough(ctx, r.Session.LastSeenConfig.AsTime())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch service config")
+	}
+
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       rbeSessionID,
-		BotSession: rbeBotSession(rbeSessionID, botStatus, r.Dimensions, body.BotVersion, body.WorkerProperties, leaseIn),
+		BotSession: rbeBotSession(rbeSessionID, botStatus, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, leaseIn),
 	})
 
 	if err != nil {
@@ -490,33 +503,13 @@ func (srv *SessionServer) updateSessionToken(ctx context.Context, s *internalspb
 func rbeBotSession(
 	sessionID string,
 	status remoteworkers.BotStatus,
-	dims []string,
+	dims botsrv.BotDimensions,
+	cfg *cfg.Config,
 	botVersion string,
 	workerProps *WorkerProperties,
 	lease *remoteworkers.Lease,
 ) *remoteworkers.BotSession {
-	// Note that at this point `dims` are validated already by botsrv.Server and
-	// we can panic on unexpected values.
-	botID := ""
-	props := make([]*remoteworkers.Device_Property, 0, len(dims))
-	for _, kv := range dims {
-		if key, val, ok := strings.Cut(kv, ":"); ok {
-			if key == "id" {
-				if botID != "" {
-					panic(fmt.Sprintf("duplicate `id` dimension in %q", dims))
-				}
-				botID = val
-			} else {
-				props = append(props, &remoteworkers.Device_Property{
-					Key:   "label:" + key,
-					Value: val,
-				})
-			}
-		}
-	}
-	if botID == "" {
-		panic("bot ID is missing in dimensions")
-	}
+	botID, props := toDeviceProperties(dims, cfg)
 
 	// These are used to associated the RBE worker with its worker provider pool.
 	var workerPropsList []*remoteworkers.Worker_Property
@@ -556,6 +549,62 @@ func rbeBotSession(
 			},
 		},
 	}
+}
+
+func toDeviceProperties(dims botsrv.BotDimensions, cfg *cfg.Config) (string, []*remoteworkers.Device_Property) {
+	// Note that at this point `dims` are validated already by botsrv.Server and
+	// we can panic on unexpected values.
+	var pool string
+	for _, kv := range dims {
+		if key, val, ok := strings.Cut(kv, ":"); ok {
+			if key == "pool" {
+				pool = val
+				break
+			}
+		}
+	}
+	if pool == "" {
+		panic(`"pool" dimension is required`)
+	}
+
+	poolCfg := cfg.Pool(pool)
+	var infoDimRes []*regexp.Regexp
+	if poolCfg != nil {
+		infoDimRes = poolCfg.InformationalDimensionRe
+	}
+
+	botID := ""
+	props := make([]*remoteworkers.Device_Property, 0, len(dims))
+	for _, kv := range dims {
+		if key, val, ok := strings.Cut(kv, ":"); ok {
+			if key == "id" {
+				if botID != "" {
+					panic(fmt.Sprintf("duplicate `id` dimension in %q", dims))
+				}
+				botID = val
+				continue
+			}
+
+			var informational bool
+			for _, re := range infoDimRes {
+				if re.MatchString(key) {
+					informational = true
+					break
+				}
+			}
+			if informational {
+				continue
+			}
+			props = append(props, &remoteworkers.Device_Property{
+				Key:   "label:" + key,
+				Value: val,
+			})
+		}
+	}
+	if botID == "" {
+		panic("bot ID is missing in dimensions")
+	}
+	return botID, props
 }
 
 // randomDuration returns a uniformly distributed random number in range [a, b).
