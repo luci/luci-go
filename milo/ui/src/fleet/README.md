@@ -10,6 +10,16 @@ This codebase is hosted as part of Milo UI. To run the frontend, see the overall
 
 After running the Milo server locally, the Fleet Console UI will be available at: <http://localhost:8080/ui/fleet/labs/devices>
 
+### Set up SSH tunnel to Cloudtop
+
+You can easily set up a tunnel from your local machine to to your instance via this command:
+
+```
+ssh -L 8080:localhost:8080 ${cloudtop-name}.c.googlers.com
+```
+
+This enables you to access the UI locally at <http://localhost:8080/ui/fleet/labs/devices>.
+
 ## Running tests
 
 To run TS tests for just the Fleet Console (from the `ui/` root dir):
@@ -41,3 +51,5 @@ You can find this file in your file system and open it in your browser.
 The URL will be something like:
 
 `file:///{YOUR_INFRA_CHECKOUT_PARENT_DIR}/infra/infra/go/src/go.chromium.org/luci/milo/ui/coverage/lcov-report/index.html`
+
+If working with VSCode on a Cloudtop, using the Live Preview option will work to view the html file.
