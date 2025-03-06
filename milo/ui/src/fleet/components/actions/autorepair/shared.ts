@@ -117,6 +117,20 @@ export function autorepairRequestsFromDuts(
             value: 'unmanaged_p0',
           },
         ],
+        // Required for autorepair to run successfully. See: b/401004801
+        properties: {
+          admin_service: 'chromeos-skylab-bot-fleet.appspot.com',
+          configuration: '',
+          disable_cft: false,
+          enable_recovery: true,
+          inventory_namespace: 'os',
+          inventory_service: 'ufs.api.cr.dev',
+          no_metrics: false,
+          no_stepper: false,
+          task_name: 'recovery',
+          unit_name: dut.name,
+          update_inventory: true,
+        },
       },
     });
   });
