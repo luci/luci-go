@@ -38,7 +38,7 @@ import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.p
 
 import { ColumnMenu } from './column_menu';
 import { getColumns, orderColumns } from './columns';
-import { BASE_DIMENSIONS, DIMENSION_SEPARATOR } from './dimensions';
+import { BASE_DIMENSIONS, labelValuesToString } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
@@ -77,12 +77,7 @@ function getRow(device: Device): Record<string, string> {
 
   if (device.deviceSpec) {
     for (const label of Object.keys(device.deviceSpec.labels)) {
-      // TODO(b/378634266): should be discussed how to show multiple values
-      row[label] = device.deviceSpec.labels[label].values
-        .concat()
-        .sort((a, b) => (a.length < b.length ? 1 : -1))
-        .join(DIMENSION_SEPARATOR)
-        .toString();
+      row[label] = labelValuesToString(device.deviceSpec.labels[label].values);
     }
   }
 

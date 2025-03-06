@@ -14,6 +14,7 @@
 
 import { GridColDef } from '@mui/x-data-grid';
 
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -26,10 +27,10 @@ export const SchedulingData = ({ device }: SchedulingDataProps) => {
     return <></>;
   }
 
-  const rows = Object.keys(device.deviceSpec.labels).map((k) => {
+  const rows = Object.keys(device.deviceSpec.labels).map((label) => {
     return {
-      id: k,
-      value: device!.deviceSpec!.labels[k].values[0],
+      id: label,
+      value: labelValuesToString(device!.deviceSpec!.labels[label].values),
     };
   });
 

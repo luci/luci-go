@@ -29,6 +29,12 @@ import { Cell } from './Cell';
 // multiple values as a string string (ie: in one chip or one table cell)
 // TODO: b/378634266 should be discussed how to show multiple values
 export const DIMENSION_SEPARATOR = ', ';
+export const labelValuesToString = (labels: readonly string[]): string => {
+  return labels
+    .concat()
+    .sort((a, b) => (a.length < b.length ? 1 : -1))
+    .join(DIMENSION_SEPARATOR);
+};
 
 interface Dimension {
   id: string; // unique id used for sorting and filtering
