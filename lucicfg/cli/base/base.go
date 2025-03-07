@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 
@@ -173,16 +172,6 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// LegacyConfigServiceClient returns an authenticated client to call legacy
-// LUCI Config service.
-func (c *Subcommand) LegacyConfigServiceClient(ctx context.Context) (*http.Client, error) {
-	authOpts, err := c.authFlags.Options()
-	if err != nil {
-		return nil, err
-	}
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
-}
-
 // luciConfigRetryPolicy is the default grpc retry policy for LUCI Config client
 const luciConfigRetryPolicy = `{
 	"methodConfig": [{
@@ -198,9 +187,8 @@ const luciConfigRetryPolicy = `{
 	}]
 }`
 
-// MakeConfigServiceConn returns an authenticated grpc connection to call
-// call LUCI Config service.
-func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*grpc.ClientConn, error) {
+// ConfigService returns a gRPC connection to the LUCI Config service.
+func (c *Subcommand) ConfigService(ctx context.Context, host string) (*grpc.ClientConn, error) {
 	authOpts, err := c.authFlags.Options()
 	if err != nil {
 		return nil, err

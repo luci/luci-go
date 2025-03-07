@@ -107,6 +107,8 @@ type remoteValidator struct {
 	cfgClient configpb.ConfigsClient
 }
 
+// NewRemoteValidator makes a validator that validates configs via the LUCI
+// Config service.
 func NewRemoteValidator(conn *grpc.ClientConn) ConfigSetValidator {
 	return &remoteValidator{
 		cfgClient: configpb.NewConfigsClient(conn),
