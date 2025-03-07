@@ -181,6 +181,17 @@ message Pool {
       int32 percent = 2;
     }
     repeated BotModeAllocation bot_mode_allocation = 3;
+
+    // Dimension key to be used to derive bot id when communicating with RBE.
+    //
+    // To use effective bot id, each bot in this pool MUST have no more than one
+    // value for the dimension.
+    //
+    // effective_bot_id_dimension MUST NOT be an informational dimension.
+    //
+    // KI: effective bot id for bots belonging in multiple pools are
+    // not supported.
+    string effective_bot_id_dimension = 4;
   }
   RBEMigration rbe_migration = 13;
 
@@ -208,6 +219,9 @@ message Pool {
   //
   // Scheduling a Swarming task using an informational dimension will result
   // in InvalidArgument error.
+  //
+  // KI: informational dimensions for bots belonging in multiple pools are
+  // not supported.
   repeated string informational_dimension_re = 15;
 }
 

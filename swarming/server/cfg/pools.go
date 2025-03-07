@@ -57,6 +57,9 @@ type Pool struct {
 	// RBEModePercent is the percent of tasks targeting this pool to send to RBE.
 	RBEModePercent int
 
+	// RBEEffectiveBotIDDimension is the dimension key to derive RBE bot ID with.
+	RBEEffectiveBotIDDimension string
+
 	rbeBotsSwarmingPercent int // percent of bots using Swarming scheduler
 	rbeBotsHybridPercent   int // percent of bots using both schedulers
 	rbeBotsRBEPercent      int // percent of bots using RBE scheduler
@@ -160,6 +163,7 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 			}
 		}
 		poolCfg.RBEInstance = rbeCfg.RbeInstance
+		poolCfg.RBEEffectiveBotIDDimension = rbeCfg.EffectiveBotIdDimension
 		poolCfg.rbeBotsSwarmingPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_SWARMING]
 		poolCfg.rbeBotsHybridPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_HYBRID]
 		poolCfg.rbeBotsRBEPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_RBE]
@@ -324,21 +328,24 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			ctx.Exit()
 		}
 
-		if pb.RbeMigration != nil {
-			ctx.Enter("rbe_migration")
-			validateRBEMigration(ctx, pb.RbeMigration)
-			ctx.Exit()
-		}
-
+		var infoDimRes []*regexp.Regexp
 		if len(pb.InformationalDimensionRe) > 0 {
 			ctx.Enter("informational_dimension_re")
 			for i, re := range pb.InformationalDimensionRe {
 				ctx.Enter("#%d (%s)", i+1, re)
-				if _, err := regexp.Compile(re); err != nil {
+				re, err := regexp.Compile(re)
+				if err != nil {
 					ctx.Errorf("invalid regex")
 				}
+				infoDimRes = append(infoDimRes, re)
 				ctx.Exit()
 			}
+			ctx.Exit()
+		}
+
+		if pb.RbeMigration != nil {
+			ctx.Enter("rbe_migration")
+			validateRBEMigration(ctx, pb.RbeMigration, infoDimRes)
 			ctx.Exit()
 		}
 
@@ -401,12 +408,23 @@ func validateDefaultCIPD(ctx *validation.Context, pb *configpb.ExternalServices_
 	ctx.Exit()
 }
 
-func validateRBEMigration(ctx *validation.Context, pb *configpb.Pool_RBEMigration) {
+func validateRBEMigration(ctx *validation.Context, pb *configpb.Pool_RBEMigration, infoDimRes []*regexp.Regexp) {
 	if pb.RbeInstance == "" {
 		ctx.Errorf("rbe_instance is required")
 	}
 	if pb.RbeModePercent < 0 || pb.RbeModePercent > 100 {
 		ctx.Errorf("rbe_mode_percent should be in [0; 100]")
+	}
+
+	if pb.EffectiveBotIdDimension != "" {
+		if err := validate.DimensionKey(pb.EffectiveBotIdDimension); err != nil {
+			ctx.Errorf("effective_bot_id_dimension: %s", err)
+		}
+		for _, re := range infoDimRes {
+			if re.MatchString(pb.EffectiveBotIdDimension) {
+				ctx.Errorf("effective_bot_id_dimension cannot be an informational dimension: matching %q", re)
+			}
+		}
 	}
 
 	allocs := map[configpb.Pool_RBEMigration_BotModeAllocation_BotMode]int{}

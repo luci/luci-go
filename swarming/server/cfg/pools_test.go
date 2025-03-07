@@ -113,6 +113,7 @@ var goodPoolsCfg = &configpb.PoolsCfg{
 					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 10},
 					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 85},
 				},
+				EffectiveBotIdDimension: "dut_id",
 			},
 		},
 	},
@@ -165,6 +166,7 @@ func TestNewPoolsConfig(t *testing.T) {
 
 		assert.That(t, pools["b"].RBEInstance, should.Equal("some-instance"))
 		assert.That(t, pools["b"].RBEModePercent, should.Equal(66))
+		assert.That(t, pools["b"].RBEEffectiveBotIDDimension, should.Equal("dut_id"))
 	})
 }
 
@@ -455,6 +457,37 @@ func TestPoolsValidation(t *testing.T) {
 						},
 					}),
 					err: "(pool #1 (a) / rbe_migration): bot_mode_allocation percents should sum up to 100",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 20},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 80},
+							},
+							EffectiveBotIdDimension: "123",
+						},
+					}),
+					err: `(pool #1 (a) / rbe_migration): effective_bot_id_dimension: the key should match ^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`,
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 20},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 80},
+							},
+							EffectiveBotIdDimension: "dut_id",
+						},
+						InformationalDimensionRe: []string{"dut_*"},
+					}),
+					err: `(pool #1 (a) / rbe_migration): effective_bot_id_dimension cannot be an informational dimension: matching "dut_*"`,
 				},
 				{
 					cfg: onePool(&configpb.Pool{
