@@ -324,6 +324,13 @@ func TestPoolsValidation(t *testing.T) {
 				},
 				{
 					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a--b"},
+						Realm: "test:1",
+					}),
+					err: `(pool #1 (a--b)): bad pool name "a--b": cannot contain "--"`,
+				},
+				{
+					cfg: onePool(&configpb.Pool{
 						Name: []string{"a"},
 					}),
 					err: "(pool #1 (a)): missing required `realm` field",

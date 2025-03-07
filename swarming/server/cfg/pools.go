@@ -288,6 +288,9 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			if !pools.Add(name) {
 				ctx.Errorf("pool %q was already declared", name)
 			}
+			if strings.Contains(name, "--") {
+				ctx.Errorf("bad pool name %q: cannot contain \"--\"", name)
+			}
 		}
 
 		// Realm is required.
