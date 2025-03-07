@@ -97,7 +97,9 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
     onSuccess: (response) => {
       setErrorMessage('');
       onCreate();
-      navigate(getURLPathFromAuthGroup(response.name), { replace: true });
+      navigate(getURLPathFromAuthGroup(response.name), {
+        replace: true,
+      });
     },
     onError: () => {
       setErrorMessage('Error creating group');

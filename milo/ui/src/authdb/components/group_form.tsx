@@ -135,7 +135,9 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       return client.DeleteGroup(request);
     },
     onSuccess: () => {
-      navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
+      navigate(getURLPathFromAuthGroup('administrators'), {
+        replace: true,
+      });
       // The list of groups must be the latest, to ensure the group that
       // was just deleted is removed.
       refetchList(true);

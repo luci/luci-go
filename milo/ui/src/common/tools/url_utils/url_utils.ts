@@ -159,6 +159,15 @@ export function setSingleQueryParam(
   return updatedSearchParams;
 }
 
-export function getURLPathFromAuthGroup(groupName: string): string {
-  return `/ui/auth/groups/${groupName}`;
+export function getURLPathFromAuthGroup(
+  groupName: string,
+  // Optional arg to specify selecting specific tab when loading group details page.
+  // If not specified, only the group path is returned.
+  // This will default to the overview tab on the group details page.
+  currentTab?: string | null,
+) {
+  if (!currentTab) {
+    return `/ui/auth/groups/${groupName}`;
+  }
+  return `/ui/auth/groups/${groupName}?tab=${currentTab}`;
 }

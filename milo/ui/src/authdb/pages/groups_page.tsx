@@ -31,20 +31,27 @@ import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 export function GroupsPage() {
   const { ['__luci_ui__-raw-*']: groupName } = useParams();
   const navigate = useNavigate();
   const listRef = createRef<GroupsListElement>();
+  const [searchParams] = useSyncedSearchParams();
 
   useEffect(() => {
     if (!groupName) {
-      navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
+      navigate(
+        getURLPathFromAuthGroup('administrators', searchParams.get('tab')),
+        {
+          replace: true,
+        },
+      );
     }
     if (groupName) {
       listRef.current?.scrollToGroup(groupName);
     }
-  }, [navigate, groupName, listRef]);
+  }, [navigate, groupName, listRef, searchParams]);
 
   if (!groupName) {
     return <></>;

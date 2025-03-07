@@ -17,16 +17,19 @@ import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 interface GroupLinkProps {
   name: string;
 }
 
 export function GroupLink({ name }: GroupLinkProps) {
+  const [searchParams] = useSyncedSearchParams();
+
   return (
     <Link
       component={RouterLink}
-      to={getURLPathFromAuthGroup(name)}
+      to={getURLPathFromAuthGroup(name, searchParams.get('tab'))}
       data-testid={`${name}-link`}
     >
       <Typography variant="body2">{name}</Typography>

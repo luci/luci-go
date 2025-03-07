@@ -20,6 +20,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 interface GroupsItemProps {
@@ -35,6 +36,7 @@ function isExternalGroupName(name: string) {
 export function GroupsListItem({ group, selected }: GroupsItemProps) {
   const isExternal = isExternalGroupName(group.name);
   const description = isExternal ? 'External' : group.description;
+  const [searchParams] = useSyncedSearchParams();
 
   return (
     <ListItem
@@ -45,7 +47,7 @@ export function GroupsListItem({ group, selected }: GroupsItemProps) {
       <ListItemButton
         selected={selected}
         component={RouterLink}
-        to={getURLPathFromAuthGroup(group.name)}
+        to={getURLPathFromAuthGroup(group.name, searchParams.get('tab'))}
       >
         <ListItemText
           primary={group.name}
