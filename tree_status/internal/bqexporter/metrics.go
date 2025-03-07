@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	luciTreeStatus = metric.NewString("chrome/infra/luci-tree/status",
+	luciTreeStatus = metric.NewString("tree_status/status_by_tree",
 		"Tree status by Tree",
 		nil,
 		// The tree name.

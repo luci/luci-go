@@ -38,6 +38,7 @@ entrypoint: >
   -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
   -gerrit-auth-audience https://api.cr.dev
   -spanner-database ${SPANNER_DB}
+  -ts-mon-account ${TS_MON_ACCOUNT}
   -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-push-as ${TQ_PUSH_AS}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
