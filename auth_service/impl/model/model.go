@@ -696,7 +696,10 @@ func checkGroupsExist(ctx context.Context, groups []string) error {
 				missingRefs = append(missingRefs, r)
 			}
 		}
-		return fmt.Errorf("%w: %s", customerrors.ErrInvalidReference, strings.Join(missingRefs, ", "))
+		hint := fmt.Sprintf(
+			"Did you forget the system prefix, e.g. %q or %q?", "google/", "mdb/")
+		return fmt.Errorf("%w: %s. %s",
+			customerrors.ErrInvalidReference, strings.Join(missingRefs, ", "), hint)
 	}
 	return nil
 }
