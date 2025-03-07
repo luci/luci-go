@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	iofs "io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -2320,11 +2321,11 @@ func (f *testPackageInstance) Close(context.Context, bool) error { return nil }
 // separated. Symlink targets are slash separated too, but otherwise not
 // modified. Does not look inside symlinked directories.
 func scanDir(root string) (out []string) {
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry iofs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.Name() == fsLockName {
+		if entry.Name() == fsLockName {
 			return nil // .lock files are not interesting
 		}
 
@@ -2334,8 +2335,13 @@ func scanDir(root string) (out []string) {
 			return err
 		case rel == ".":
 			return nil
-		case info.Mode().IsDir() && !isEmptyDir(path):
+		case entry.IsDir() && !isEmptyDir(path):
 			return nil
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
 		}
 
 		rel = filepath.ToSlash(rel)

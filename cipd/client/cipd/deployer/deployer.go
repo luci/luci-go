@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -1519,7 +1520,7 @@ func parentDirs(rel string, cb func(p string) bool) {
 // needs to be deployed.
 func scanPackageDir(ctx context.Context, dir string) ([]pkg.FileInfo, error) {
 	var out []pkg.FileInfo
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(dir, func(path string, entry iofs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -1528,12 +1529,22 @@ func scanPackageDir(ctx context.Context, dir string) ([]pkg.FileInfo, error) {
 			return err
 		}
 		if rel == pkg.ServiceDir || rel == fs.SiteServiceDir {
-			return filepath.SkipDir
+			return iofs.SkipDir
 		}
-		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		if entry.IsDir() {
+			return nil
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		mode := info.Mode()
+
+		if mode.IsRegular() || mode&os.ModeSymlink != 0 {
 			symlink := ""
 			ok := true
-			if info.Mode()&os.ModeSymlink != 0 {
+			if mode&os.ModeSymlink != 0 {
 				symlink, err = os.Readlink(path)
 				if err != nil {
 					logging.Warningf(ctx, "Can't readlink %q, skipping: %s", path, err)
@@ -1544,7 +1555,7 @@ func scanPackageDir(ctx context.Context, dir string) ([]pkg.FileInfo, error) {
 				out = append(out, pkg.FileInfo{
 					Name:       filepath.ToSlash(rel),
 					Size:       uint64(info.Size()),
-					Executable: (info.Mode().Perm() & 0111) != 0,
+					Executable: (mode.Perm() & 0111) != 0,
 					Symlink:    symlink,
 				})
 			}

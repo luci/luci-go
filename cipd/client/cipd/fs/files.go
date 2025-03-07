@@ -17,6 +17,7 @@ package fs
 import (
 	"context"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -252,25 +253,30 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 	files := []File{}
 
 	svcDir := filepath.Join(root, SiteServiceDir)
-	err = filepath.Walk(dir, func(abs string, info os.FileInfo, err error) error {
+	err = filepath.WalkDir(dir, func(abs string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		// Skip the SiteServiceDir entirely.
 		if abs == svcDir {
-			return filepath.SkipDir
+			return fs.SkipDir
 		}
 
 		// Apply the exclusion filter. Also skip files for which filepath.Rel
 		// returns an error.
 		if exclude != nil && abs != dir {
 			if rel, err := filepath.Rel(dir, abs); err != nil || exclude(rel) {
-				if info.Mode().IsDir() {
-					return filepath.SkipDir
+				if entry.IsDir() {
+					return fs.SkipDir
 				}
 				return nil
 			}
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
 		}
 
 		// Skip exotic file types, we deal only with regular files and symlinks.
