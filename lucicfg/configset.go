@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -259,8 +260,8 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 // and returns them as a ConfigSet with given name.
 func ReadConfigSet(dir, name string) (ConfigSet, error) {
 	configs := map[string][]byte{}
-	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		if err != nil || !info.Mode().IsRegular() {
+	err := filepath.WalkDir(dir, func(p string, entry fs.DirEntry, err error) error {
+		if err != nil || !entry.Type().IsRegular() {
 			return err
 		}
 		content, err := os.ReadFile(p)

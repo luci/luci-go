@@ -21,6 +21,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +45,7 @@ func main() {
 func run(templates, starlark, outDir string) error {
 	// All input templates with paths relative to 'templates' dir.
 	var files []string
-	err := filepath.Walk(templates, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(templates, func(path string, entry fs.DirEntry, err error) error {
 		if err == nil && strings.HasSuffix(path, ".mdt") {
 			var rel string
 			if rel, err = filepath.Rel(templates, path); err == nil {
@@ -54,7 +55,7 @@ func run(templates, starlark, outDir string) error {
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("failed to walk %q - %s", templates, err)
+		return fmt.Errorf("failed to walk %q - %w", templates, err)
 	}
 
 	// Prepare the generator that can load starlark modules to extract docs from

@@ -15,6 +15,7 @@
 package base
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -46,8 +47,8 @@ func ExpandDirectories(paths []string) ([]string, error) {
 		case !info.IsDir():
 			files = append(files, p)
 		default:
-			err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
-				if err == nil && !info.IsDir() && filepath.Ext(info.Name()) == ".star" {
+			err := filepath.WalkDir(p, func(path string, entry fs.DirEntry, err error) error {
+				if err == nil && !entry.IsDir() && filepath.Ext(entry.Name()) == ".star" {
 					files = append(files, path)
 				}
 				return err

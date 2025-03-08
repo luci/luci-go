@@ -15,6 +15,7 @@
 package lucicfg
 
 import (
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -84,8 +85,8 @@ func FindTrackedFiles(dir string, patterns []string) ([]string, error) {
 	isTracked := TrackedSet(patterns)
 
 	var tracked []string
-	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		if err != nil || !info.Mode().IsRegular() {
+	err := filepath.WalkDir(dir, func(p string, entry fs.DirEntry, err error) error {
+		if err != nil || !entry.Type().IsRegular() {
 			return err
 		}
 		rel, err := filepath.Rel(dir, p)
