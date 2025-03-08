@@ -112,7 +112,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// the thread. This exposes it to Starlark code, so it can register descriptor
 	// sets in it.
 	ploader := starlarkproto.NewLoader()
-	pkgs["proto"] = func(path string) (dict starlark.StringDict, _ string, err error) {
+	pkgs["proto"] = func(_ context.Context, path string) (dict starlark.StringDict, _ string, err error) {
 		mod, err := ploader.Module(path)
 		if err != nil {
 			return nil, "", err

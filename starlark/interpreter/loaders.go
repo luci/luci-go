@@ -15,6 +15,7 @@
 package interpreter
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,7 @@ func FileSystemLoader(root string) Loader {
 	if err != nil {
 		panic(err)
 	}
-	return func(path string) (_ starlark.StringDict, src string, err error) {
+	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
 		abs := filepath.Join(root, filepath.FromSlash(path))
 		rel, err := filepath.Rel(root, abs)
 		if err != nil {
@@ -52,7 +53,7 @@ func FileSystemLoader(root string) Loader {
 // Useful together with 'assets' package to embed Starlark code into the
 // interpreter binary.
 func MemoryLoader(files map[string]string) Loader {
-	return func(path string) (_ starlark.StringDict, src string, err error) {
+	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
 		body, ok := files[path]
 		if !ok {
 			return nil, "", ErrNoModule

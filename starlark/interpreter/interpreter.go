@@ -209,14 +209,15 @@ func GetThreadModuleKey(th *starlark.Thread) *ModuleKey {
 
 // Loader knows how to load modules of some concrete package.
 //
-// It takes a module path relative to the package and returns either module's
-// dict (e.g. for go native modules) or module's source code, to be interpreted.
+// It takes the starlark thread context and a module path relative to the
+// package and returns either module's dict (e.g. for go native modules) or
+// module's source code, to be interpreted.
 //
 // Returns ErrNoModule if there's no such module in the package.
 //
 // The source code is returned as 'string' to guarantee immutability and
 // allowing efficient use of string Go constants.
-type Loader func(path string) (dict starlark.StringDict, src string, err error)
+type Loader func(ctx context.Context, path string) (dict starlark.StringDict, src string, err error)
 
 // Interpreter knows how to execute starlark modules that can load or execute
 // other starlark modules.
@@ -500,7 +501,7 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 		return "", err
 	}
 
-	dict, src, err := intr.invokeLoader(target)
+	dict, src, err := intr.invokeLoader(Context(th), target)
 	if err == nil && dict != nil {
 		err = fmt.Errorf("it is a native Go module")
 	}
@@ -589,19 +590,19 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 }
 
 // invokeLoader loads the module via the loader associated with the package.
-func (intr *Interpreter) invokeLoader(key ModuleKey) (dict starlark.StringDict, src string, err error) {
+func (intr *Interpreter) invokeLoader(ctx context.Context, key ModuleKey) (dict starlark.StringDict, src string, err error) {
 	loader, ok := intr.Packages[key.Package]
 	if !ok {
 		return nil, "", ErrNoPackage
 	}
-	return loader(key.Path)
+	return loader(ctx, key.Path)
 }
 
 // runModule really loads and executes the module, used by both LoadModule and
 // ExecModule.
 func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind ThreadKind) (starlark.StringDict, error) {
 	// Grab the source code.
-	dict, src, err := intr.invokeLoader(key)
+	dict, src, err := intr.invokeLoader(ctx, key)
 	switch {
 	case err != nil:
 		return nil, err

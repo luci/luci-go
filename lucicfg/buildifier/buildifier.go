@@ -21,6 +21,7 @@ package buildifier
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"runtime"
 	"strings"
@@ -98,7 +99,7 @@ func (f *Finding) Format() string {
 //
 // Returns all findings and a non-nil error (usually a MultiError) if some
 // findings are blocking.
-func Lint(loader interpreter.Loader, paths []string, lintChecks []string, getRewriterForPath func(path string) (*build.Rewriter, error)) (findings []*Finding, err error) {
+func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintChecks []string, getRewriterForPath func(path string) (*build.Rewriter, error)) (findings []*Finding, err error) {
 	checks, err := normalizeLintChecks(lintChecks)
 	if err != nil {
 		return nil, err
@@ -132,9 +133,9 @@ func Lint(loader interpreter.Loader, paths []string, lintChecks []string, getRew
 		return findings, nil
 	}
 
-	errs := Visit(loader, paths, func(path string, body []byte, f *build.File) (merr errors.MultiError) {
+	errs := Visit(ctx, loader, paths, func(path string, body []byte, f *build.File) (merr errors.MultiError) {
 		if len(buildifierWarns) != 0 {
-			findings := warn.FileWarnings(f, buildifierWarns, nil, warn.ModeWarn, newFileReader(loader))
+			findings := warn.FileWarnings(f, buildifierWarns, nil, warn.ModeWarn, newFileReader(ctx, loader))
 			for _, f := range findings {
 				merr = append(merr, &Finding{
 					Path: path,
@@ -206,7 +207,7 @@ type Visitor func(path string, body []byte, f *build.File) errors.MultiError
 // parsed file, in parallel.
 //
 // Collects all errors from all callbacks in a single joint multi-error.
-func Visit(loader interpreter.Loader, paths []string, v Visitor) errors.MultiError {
+func Visit(ctx context.Context, loader interpreter.Loader, paths []string, v Visitor) errors.MultiError {
 
 	m := sync.Mutex{}
 	perPath := make(map[string]errors.MultiError, len(paths))
@@ -216,7 +217,7 @@ func Visit(loader interpreter.Loader, paths []string, v Visitor) errors.MultiErr
 			path := path
 			tasks <- func() error {
 				var errs []error
-				switch body, f, err := parseFile(loader, path); {
+				switch body, f, err := parseFile(ctx, loader, path); {
 				case err != nil:
 					errs = []error{err}
 				case f != nil:
@@ -241,8 +242,8 @@ func Visit(loader interpreter.Loader, paths []string, v Visitor) errors.MultiErr
 // parseFile parses a Starlark module using the buildifier parser.
 //
 // Returns (nil, nil, nil) if the module is a native Go module.
-func parseFile(loader interpreter.Loader, path string) ([]byte, *build.File, error) {
-	switch dict, src, err := loader(path); {
+func parseFile(ctx context.Context, loader interpreter.Loader, path string) ([]byte, *build.File, error) {
+	switch dict, src, err := loader(ctx, path); {
 	case err != nil:
 		return nil, nil, err
 	case dict != nil:
@@ -262,9 +263,9 @@ func parseFile(loader interpreter.Loader, path string) ([]byte, *build.File, err
 //
 // Note: *warn.FileReader doesn't protect its caching guts with any locks so we
 // can't share a single copy across multiple goroutines.
-func newFileReader(loader interpreter.Loader) *warn.FileReader {
+func newFileReader(ctx context.Context, loader interpreter.Loader) *warn.FileReader {
 	return warn.NewFileReader(func(path string) ([]byte, error) {
-		switch dict, src, err := loader(path); {
+		switch dict, src, err := loader(ctx, path); {
 		case err != nil:
 			return nil, err
 		case dict != nil:

@@ -61,7 +61,7 @@ func deindent(s string) string {
 
 // deindentLoader deindents starlark code before returning it.
 func deindentLoader(files map[string]string) Loader {
-	return func(path string) (_ starlark.StringDict, src string, err error) {
+	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
 		body, ok := files[path]
 		if !ok {
 			return nil, "", ErrNoModule

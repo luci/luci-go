@@ -74,7 +74,7 @@ func (lr *lintRun) run(ctx context.Context, inputs []string) (res *lintResult, e
 		return nil, err
 	}
 
-	findings, err := buildifier.Lint(base.PathLoader, files, lr.checks, rewriterFactory.GetRewriter)
+	findings, err := buildifier.Lint(ctx, base.PathLoader, files, lr.checks, rewriterFactory.GetRewriter)
 	for _, f := range findings {
 		if text := f.Format(); text != "" {
 			fmt.Fprintf(os.Stderr, "%s", text)

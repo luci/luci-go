@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.16
-// +build go1.16
-
 package interpreter
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 
@@ -26,7 +24,7 @@ import (
 
 // FSLoader returns a loader that loads files from a fs.FS implementation.
 func FSLoader(fsys fs.FS) Loader {
-	return func(path string) (_ starlark.StringDict, src string, err error) {
+	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
 		switch body, err := fs.ReadFile(fsys, path); {
 		case errors.Is(err, fs.ErrNotExist):
 			return nil, "", ErrNoModule

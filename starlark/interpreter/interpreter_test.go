@@ -541,7 +541,7 @@ Error: invalid call of non-function (NoneType)`))
 			scripts: map[string]string{
 				"main.star": `load_src("@custom//something.txt")`,
 			},
-			custom: func(string) (starlark.StringDict, string, error) {
+			custom: func(context.Context, string) (starlark.StringDict, string, error) {
 				return starlark.StringDict{}, "", nil
 			},
 		})

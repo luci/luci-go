@@ -117,7 +117,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (res *fmtResult, err
 	}
 
 	// The visit method will track down all the wanted files within the directory
-	errs := buildifier.Visit(base.PathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
+	errs := buildifier.Visit(ctx, base.PathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
 		rewriter, err := rewriterFactory.GetRewriter(f.Path)
 		if err != nil {
 			return errors.NewMultiError(err)

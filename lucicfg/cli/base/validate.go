@@ -68,7 +68,7 @@ func Validate(ctx context.Context, params ValidateParams, getRewriterForPath fun
 
 	go func() {
 		defer wg.Done()
-		localRes, localErr = buildifier.Lint(
+		localRes, localErr = buildifier.Lint(ctx,
 			params.Loader,
 			params.Source,
 			params.Meta.LintChecks,
