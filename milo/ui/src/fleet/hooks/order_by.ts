@@ -18,6 +18,10 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 const ORDER_BY_PARAM_KEY = 'order_by';
 
+/**
+ * Generic hook for handling an order_by URL parameter based on AIP-132.
+ * See: https://google.aip.dev/132#ordering
+ */
 export function useOrderByParam(): [string, (value: string) => void] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const orderByParam = useMemo(

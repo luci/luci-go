@@ -24,6 +24,17 @@ export const fleetRoutes: RouteObject[] = [
     lazy: () => import('@/fleet/root'),
     children: [
       {
+        path: 'redirects',
+        children: [
+          {
+            path: 'singledevice',
+            index: true,
+            lazy: () =>
+              import('@/fleet/pages/redirects/single_device_redirect'),
+          },
+        ],
+      },
+      {
         path: 'labs',
         lazy: () => import('@/fleet/layouts/fleet_labs_layout'),
         children: [
