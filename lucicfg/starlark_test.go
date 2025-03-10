@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarktest"
+
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 // If this env var is 1, the test will regenerate the "Expect configs:" part of
@@ -98,14 +100,17 @@ func TestAllStarlark(t *testing.T) {
 			integrationTest := expectErrExct != "" || expectErrLike != "" || expectCfg != ""
 
 			state, err := Generate(context.Background(), Inputs{
-				// Use file system loader so test scripts can load supporting scripts
-				// (from '**/support/*' which is skipped by the test runner). This also
-				// makes error messages have the original scripts full name. Note that
-				// 'go test' executes tests with cwd set to corresponding package
-				// directories, regardless of what cwd was when 'go test' was called.
-				Code:  interpreter.FileSystemLoader("."),
-				Entry: filepath.ToSlash(path),
-				Vars:  presetVars,
+				Entry: &pkg.Entry{
+					// Use file system loader so test scripts can load supporting scripts
+					// (from '**/support/*' which is skipped by the test runner). This
+					// also makes error messages have the original scripts full name. Note
+					// that 'go test' executes tests with cwd set to corresponding package
+					// directories, regardless of what cwd was when 'go test' was called.
+					Main:   interpreter.FileSystemLoader("."),
+					Path:   "lucicfg/testdata", // matching luci-go.git repo boundary
+					Script: filepath.ToSlash(path),
+				},
+				Vars: presetVars,
 
 				// Expose 'assert' module, hook up error reporting to 't'.
 				testPredeclared: predeclared,

@@ -30,20 +30,20 @@ import (
 	"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
+	"go.chromium.org/luci/lucicfg/pkg"
 	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
 
 // Inputs define all inputs for the config generator.
 type Inputs struct {
-	Code  interpreter.Loader // a package with the user supplied code
-	Path  string             // absolute path to the main package, if known
-	Entry string             // a name of the entry point script in this package
-	Meta  *Meta              // defaults for lucicfg own parameters
-	Vars  map[string]string  // var values passed via `-var key=value` flags
+	Entry *pkg.Entry        // the main package and the entry point script
+	Meta  *Meta             // defaults for lucicfg own parameters
+	Vars  map[string]string // var values passed via `-var key=value` flags
 
 	// Used to setup additional facilities for unit tests.
 	testOmitHeader              bool
@@ -82,7 +82,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		"__native__": native(starlark.StringDict{
 			// How the generator was launched.
 			"version":       versionTuple(ver),
-			"entry_point":   starlark.String(in.Entry),
+			"entry_point":   starlark.String(in.Entry.Script),
+			"main_pkg_path": starlark.String(in.Entry.Path),
 			"var_flags":     asFrozenDict(in.Vars),
 			"running_tests": starlark.Bool(in.testThreadModifier != nil),
 			// Some built-in utilities implemented in `builtins` package.
@@ -105,7 +106,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// state of their own, but they call low-level __native__.* functions that
 	// manipulate 'state' by getting it through the context.
 	pkgs := embeddedPackages()
-	pkgs[interpreter.MainPkg] = in.Code
+	pkgs[interpreter.MainPkg] = in.Entry.Main
 
 	// Create a proto loader, hook up load("@proto//<path>", ...) to load proto
 	// modules through it. See ThreadModifier below where it is set as default in
@@ -118,6 +119,19 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			return nil, "", err
 		}
 		return starlark.StringDict{mod.Name: mod}, "", nil
+	}
+
+	// Add all dependencies last to verify they do not clobber predeclared ones.
+	var depErr errors.MultiError
+	for dep, loader := range in.Entry.Deps {
+		if pkgs[dep] != nil {
+			depErr = append(depErr, errors.Reason("dependency %q clashes with a predeclared dependency", dep).Err())
+		} else {
+			pkgs[dep] = loader
+		}
+	}
+	if len(depErr) != 0 {
+		return nil, depErr
 	}
 
 	// Capture details of fail(...) calls happening inside Starlark code.
@@ -147,7 +161,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// Load builtins.star, and then execute the user-supplied script.
 	var err error
 	if err = intr.Init(ctx); err == nil {
-		_, err = intr.ExecModule(ctx, interpreter.MainPkg, in.Entry)
+		_, err = intr.ExecModule(ctx, interpreter.MainPkg, in.Entry.Script)
 	}
 	if err != nil {
 		if f := failures.LatestFailure(); f != nil {

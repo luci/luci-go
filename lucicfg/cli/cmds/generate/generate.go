@@ -161,6 +161,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		return nil, err
 	}
 
+	// TODO(vadimsh): Integrate this with pkg.Entry.
 	rewriterFactory, err := base.GetRewriterFactory(filepath.Join(entryPath, base.ConfigName))
 	if err != nil {
 		return nil, err
@@ -170,7 +171,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 	// default.
 	if gr.validate {
 		result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-			Loader:        state.Inputs.Code,
+			Loader:        state.Inputs.Entry.Main,
 			Source:        state.Visited,
 			Output:        output,
 			Meta:          meta,

@@ -17,7 +17,6 @@ package lucicfg
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"sort"
 
 	"go.starlark.net/starlark"
@@ -45,7 +44,7 @@ type State struct {
 	Inputs  Inputs   // all inputs, exactly as passed to Generate.
 	Output  Output   // all generated config files, populated at the end
 	Meta    Meta     // lucicfg parameters, settable through Starlark
-	Visited []string // visited Starlark modules from Inputs
+	Visited []string // visited Starlark modules from the main package in Inputs
 
 	vars        vars.Vars         // holds state of lucicfg.var() variables
 	seq         sequences         // holds state for __native__.sequence_next()
@@ -226,21 +225,5 @@ func init() {
 			return nil, err
 		}
 		return call.State.vars.Get(call.Thread, id, def)
-	})
-
-	// package_dir(from_dir) returns a relative path to the main package.
-	declNative("package_dir", func(call nativeCall) (starlark.Value, error) {
-		var fromDir starlark.String
-		if err := call.unpack(1, &fromDir); err != nil {
-			return nil, err
-		}
-		// Abs path to the generated output.
-		fromAbs := filepath.Join(call.State.Inputs.Path, filepath.FromSlash(fromDir.GoString()))
-		// Relative path from generated outputs to the main package dir.
-		rel, err := filepath.Rel(fromAbs, call.State.Inputs.Path)
-		if err != nil {
-			return nil, err
-		}
-		return starlark.String(filepath.ToSlash(rel)), nil
 	})
 }

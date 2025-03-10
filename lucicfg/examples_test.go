@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/starlark/interpreter"
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 var regen = flag.Bool("test.regen", false, "regenerated configs")
@@ -48,17 +48,15 @@ func TestExamples(t *testing.T) {
 }
 
 func runExample(script string) error {
-	abs, err := filepath.Abs(script)
+	entry, root, err := pkg.EntryOnDisk(context.Background(), script)
 	if err != nil {
 		return err
 	}
 
-	root, main := filepath.Split(abs)
 	output := filepath.Join(root, "generated")
 
 	state, err := Generate(context.Background(), Inputs{
-		Code:        interpreter.FileSystemLoader(root),
-		Entry:       main,
+		Entry:       entry,
 		Meta:        &Meta{ConfigDir: "generated"},
 		testVersion: "1.1.1",
 	})

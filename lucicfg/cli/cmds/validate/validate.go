@@ -224,6 +224,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		return nil, err
 	}
 
+	// TODO(vadimsh): Integrate this with pkg.Entry.
 	rewriterFactory, err := base.GetRewriterFactory(filepath.Join(entryPath, base.ConfigName))
 	if err != nil {
 		return nil, err
@@ -232,7 +233,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-		Loader:        state.Inputs.Code,
+		Loader:        state.Inputs.Entry.Main,
 		Source:        state.Visited,
 		Output:        output,
 		Meta:          meta,

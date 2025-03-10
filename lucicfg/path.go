@@ -17,6 +17,7 @@ package lucicfg
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"go.starlark.net/starlark"
@@ -50,5 +51,67 @@ func init() {
 			errStr = err.Error()
 		}
 		return starlark.Tuple{starlark.String(res), starlark.String(errStr)}, nil
+	})
+
+	// package_dir(from_dir, main_pkg_path) returns a relative path from the
+	// given `from_dir` to the main package root.
+	//
+	// `from_dir` is itself given as relative path from the main package root
+	// and it is allowed to have ".." in it and be outside of the main package
+	// root (but it should still be within the repository containing the main
+	// package).
+	//
+	// This function essentially reverses the relative path.
+	//
+	// For example, imagine the following repository layout:
+	//   generated/
+	//      luci/
+	//         project.cfg
+	//         ...
+	//   starlark/    <- the main package root
+	//       main.star
+	//
+	// Then a reasonable question to ask is what is a relative path from the
+	// generated files to the package root. Here `from_dir` will be
+	// "../generated/luci" and package_dir("../generated/luci") return value
+	// will be "../../starlark".
+	//
+	// Answering this question requires knowing the path to the main package
+	// within its hosting repository. This is what `main_pkg_path` is for.
+	//
+	// Returns (rel_path, True) on success and ("", False) if the "from_dir" is
+	// outside of the repository.
+	declNative("package_dir", func(call nativeCall) (starlark.Value, error) {
+		var fromDir starlark.String
+		var mainPkgPath starlark.String
+		if err := call.unpack(2, &fromDir, &mainPkgPath); err != nil {
+			return nil, err
+		}
+
+		// Cleaned path from the repository root to the requested directory.
+		repoPath := path.Join(mainPkgPath.GoString(), fromDir.GoString())
+		if strings.HasPrefix(repoPath, "../") {
+			return starlark.Tuple{starlark.String(""), starlark.False}, nil
+		}
+
+		// Relative path from the requested directory to the main package root.
+		// Note that filepath.Rel doesn't actually use cwd nor touches file system,
+		// so it is fine to use it.
+		rel, err := filepath.Rel(
+			filepath.FromSlash(repoPath),
+			filepath.FromSlash(mainPkgPath.GoString()),
+		)
+		if err != nil {
+			return starlark.Tuple{starlark.String(""), starlark.False}, nil
+		}
+
+		// filepath.Rel seems to produce paths that end in "/." if the second
+		// argument is ".". Normalize them by dropping meaningless "/.".
+		rel = strings.TrimSuffix(filepath.ToSlash(rel), "/.")
+
+		return starlark.Tuple{
+			starlark.String(rel),
+			starlark.True,
+		}, nil
 	})
 }

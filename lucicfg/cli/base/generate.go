@@ -23,9 +23,9 @@ import (
 	"path/filepath"
 
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 // GenerateConfigs executes the Starlark script and assembles final values for
@@ -87,15 +87,17 @@ You may also optionally set +x flag on it, but this is not required.
 		}
 	}
 
-	// The directory with the input file becomes the root of the main package.
-	root, main := filepath.Split(abs)
+	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
+
+	// Load the main package with dependencies from disk.
+	entry, root, err := pkg.EntryOnDisk(ctx, abs)
+	if err != nil {
+		return nil, err
+	}
 
 	// Generate everything, storing the result in memory.
-	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
-		Code:  interpreter.FileSystemLoader(root),
-		Path:  root,
-		Entry: main,
+		Entry: entry,
 		Meta:  meta,
 		Vars:  vars,
 	})

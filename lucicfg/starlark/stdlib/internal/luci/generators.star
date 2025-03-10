@@ -222,6 +222,10 @@ def gen_project_cfg(ctx):
         allow_dots = True,
     )
 
+    package_dir, ok = __native__.package_dir(config_dir, __native__.main_pkg_path)
+    if not ok:
+        fail("directory with generated config files %s appears to be outside of the repository root, this is not allowed" % config_dir)
+
     emit_metadata = not __native__.running_tests and not proj.props.omit_lucicfg_metadata
 
     set_config(ctx, "project.cfg", config_pb.ProjectCfg(
@@ -230,7 +234,7 @@ def gen_project_cfg(ctx):
         lucicfg = config_pb.GeneratorMetadata(
             version = "%d.%d.%d" % lucicfg.version(),
             config_dir = config_dir,
-            package_dir = __native__.package_dir(config_dir),
+            package_dir = package_dir,
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
             experiments = __native__.list_enabled_experiments(),
