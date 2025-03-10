@@ -266,6 +266,22 @@ type Interpreter struct {
 	// 'load' calls do not trigger PreExec/PostExec hooks.
 	PostExec func(th *starlark.Thread, module ModuleKey)
 
+	// ForbidLoad, if set, disables load(...) builtin.
+	//
+	// Attempting to call load(...) will result in a failure with the message
+	// given by ForbidLoad value.
+	//
+	// Has no effect on explicit LoadModule calls from Go code.
+	ForbidLoad string
+
+	// ForbidExec, if set, disables exec(...) builtin.
+	//
+	// Attempting to call exec(...) will result in a failure with the message
+	// given by ForbidExec value.
+	//
+	// Has no effect on explicit ExecModule calls from Go code.
+	ForbidExec string
+
 	modules map[ModuleKey]*loadedModule // cache of the loaded modules
 	execed  map[ModuleKey]struct{}      // a set of modules that were ever exec'ed
 	visited []ModuleKey                 // all modules, in order of visits
@@ -555,6 +571,10 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		}
 		mod := module.GoString()
 
+		if intr.ForbidExec != "" {
+			return nil, fmt.Errorf("cannot exec %s: %s", mod, intr.ForbidExec)
+		}
+
 		// Only threads started via 'exec' (or equivalently ExecModule) can exec
 		// other scripts. Modules that are loaded via load(...), or custom callbacks
 		// from native code aren't allowed to call exec, since exec's impurity may
@@ -619,6 +639,9 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 		key, err := MakeModuleKey(th, module)
 		if err != nil {
 			return nil, err
+		}
+		if intr.ForbidLoad != "" {
+			return nil, fmt.Errorf("%s", intr.ForbidLoad)
 		}
 		dict, err := intr.LoadModule(ctx, key.Package, key.Path)
 		// See comment in execBuiltin about why we extract EvalError backtrace into

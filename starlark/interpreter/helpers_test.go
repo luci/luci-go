@@ -114,6 +114,9 @@ type intrParams struct {
 	preExec     func(th *starlark.Thread, module ModuleKey)
 	postExec    func(th *starlark.Thread, module ModuleKey)
 
+	forbidLoad string
+	forbidExec string
+
 	visited *[]ModuleKey
 }
 
@@ -140,6 +143,8 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 		Logger: func(file string, line int, message string) {
 			logs = append(logs, fmt.Sprintf("[%s:%d] %s", file, line, message))
 		},
+		ForbidLoad: p.forbidLoad,
+		ForbidExec: p.forbidExec,
 	}
 
 	if err = intr.Init(ctx); err != nil {

@@ -547,4 +547,24 @@ Error: invalid call of non-function (NoneType)`))
 		})
 		assert.Loosely(t, err, should.ErrLike("cannot load @custom//something.txt: it is a native Go module"))
 	})
+
+	ftt.Run("ForbidLoad works", t, func(t *ftt.Test) {
+		_, _, err := runIntr(intrParams{
+			forbidLoad: "boooo",
+			scripts: map[string]string{
+				"main.star": `load("//mod.star", "z")`,
+			},
+		})
+		assert.Loosely(t, err, should.ErrLike("cannot load //mod.star: boooo"))
+	})
+
+	ftt.Run("ForbidExec works", t, func(t *ftt.Test) {
+		_, _, err := runIntr(intrParams{
+			forbidExec: "boooo",
+			scripts: map[string]string{
+				"main.star": `exec("//mod.star")`,
+			},
+		})
+		assert.Loosely(t, err, should.ErrLike("cannot exec //mod.star: boooo"))
+	})
 }
