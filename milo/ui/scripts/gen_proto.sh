@@ -30,6 +30,24 @@ cd ../../../../..
 [ -d ./infra ] || die 'no infra directory'
 [ -d ./go.chromium.org/luci/common/proto/googleapis ] || die 'no googleapis protos'
 
+# This ridiculous hack, which creates and then removes a symlink to
+# go.chromium.org/infra, exists to work around the migration from infra to
+# go.chromium.org/infra which was started in Q1 2025 and is partially underway
+# as of 2023-03-10.
+#
+# Basically, we need to make sure that the protoc stuff, which is written to the
+# go package 'go.chromium.org/infra/...' is available at a path such that some
+# suffix of that path is LITERALLY go.chromium.org/infra/... VERBATIM.
+#
+# The best way I can think of to do that right now is to create a symlink and
+# then remove it when I'm done. I am still working on a longer-term solution.
+cleanup() {
+    unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
+}
+unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
+ln -s ../infra ./go.chromium.org/infra || die 'failed to make infra symlink'
+trap cleanup EXIT
+
 # Use ts-proto instead of the official grpc-web because it is RPC framework
 # agnostic. This is crucial because we use a non-standard protocol (pRPC) for
 # client-server communication.
