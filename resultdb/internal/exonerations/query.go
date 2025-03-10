@@ -34,12 +34,12 @@ import (
 var limitedFields = mask.MustFromReadMask(&pb.TestExoneration{},
 	"name",
 	"test_id",
-	"test_variant_id.module_name",
-	"test_variant_id.module_scheme",
-	"test_variant_id.module_variant_hash",
-	"test_variant_id.coarse_name",
-	"test_variant_id.fine_name",
-	"test_variant_id.case_name",
+	"test_id_structured.module_name",
+	"test_id_structured.module_scheme",
+	"test_id_structured.module_variant_hash",
+	"test_id_structured.coarse_name",
+	"test_id_structured.fine_name",
+	"test_id_structured.case_name",
 	"exoneration_id",
 	"variant_hash",
 	"explanation_html",
@@ -98,16 +98,16 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
 
-		ex.TestVariantId, err = pbutil.ParseTestVariantIdentifierForOutput(ex.TestId, ex.Variant)
+		ex.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ex.TestId, ex.Variant)
 		if err != nil {
-			return errors.Annotate(err, "parse test variant identifier").Err()
+			return errors.Annotate(err, "parse structured test identifier").Err()
 		}
 		// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
 		// erroneously allowed to set variant_hash only and not the variant. This means the
 		// hash of the variant is not always the variant_hash.
 		// Set ModuleVariantHash directly to the stored variant hash as a work around,
 		// do not compute it.
-		ex.TestVariantId.ModuleVariantHash = ex.VariantHash
+		ex.TestIdStructured.ModuleVariantHash = ex.VariantHash
 
 		tes = append(tes, ex)
 		return nil

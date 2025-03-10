@@ -45,12 +45,12 @@ var AllFields = mask.All(&pb.TestResult{})
 var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
 	"name",
 	"test_id",
-	"test_variant_id.module_name",
-	"test_variant_id.module_scheme",
-	"test_variant_id.module_variant_hash",
-	"test_variant_id.coarse_name",
-	"test_variant_id.fine_name",
-	"test_variant_id.case_name",
+	"test_id_structured.module_name",
+	"test_id_structured.module_scheme",
+	"test_id_structured.module_variant_hash",
+	"test_id_structured.coarse_name",
+	"test_id_structured.fine_name",
+	"test_id_structured.case_name",
 	"result_id",
 	"expected",
 	"status",
@@ -72,7 +72,7 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"name",
 	"test_id",
 	"result_id",
-	"test_variant_id",
+	"test_id_structured",
 	"variant",
 	"variant_hash",
 	"expected",
@@ -240,12 +240,12 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		// Generate test result name now in case tr.TestId and tr.ResultId become
 		// empty after q.Mask.Trim(tr).
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
-		tvID, err := pbutil.ParseTestVariantIdentifierForOutput(tr.TestId, tr.Variant)
+		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(tr.TestId, tr.Variant)
 		if err != nil {
-			return nil, errors.Annotate(err, "populate test variant identifier for %s", trName).Err()
+			return nil, errors.Annotate(err, "populate structured test identifier for %s", trName).Err()
 		}
 
-		tr.TestVariantId = tvID
+		tr.TestIdStructured = tvID
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
 		PopulateDurationField(tr, micros)

@@ -46,7 +46,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		req := &pb.CreateTestExonerationRequest{
 			Invocation: "invocations/inv",
 			TestExoneration: &pb.TestExoneration{
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:   "//infra/junit_tests",
 					ModuleScheme: "junit",
 					ModuleVariant: pbutil.Variant(
@@ -75,9 +75,9 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		t.Run(`Invalid exoneration`, func(t *ftt.Test) {
 			// There are many more cases, but these are already tested in the test for
 			// validateTestExoneration. This test is to ensure that method is called.
-			req.TestExoneration.TestVariantId.CaseName = "test\x00"
+			req.TestExoneration.TestIdStructured.CaseName = "test\x00"
 			err := validateCreateTestExonerationRequest(req, cfg, true)
-			assert.Loosely(t, err, should.ErrLike(`test_exoneration: test_variant_id: case_name: non-printable rune '\x00' at byte index 4`))
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: test_id_structured: case_name: non-printable rune '\x00' at byte index 4`))
 		})
 
 		t.Run(`Request id`, func(t *ftt.Test) {
@@ -105,7 +105,7 @@ func TestValidateTestExoneration(t *testing.T) {
 		})
 
 		ex := &pb.TestExoneration{
-			TestVariantId: &pb.TestVariantIdentifier{
+			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:   "//infra/junit_tests",
 				ModuleScheme: "junit",
 				ModuleVariant: pbutil.Variant(
@@ -122,41 +122,41 @@ func TestValidateTestExoneration(t *testing.T) {
 			err := validateTestExoneration(ex, cfg)
 			assert.Loosely(t, err, should.BeNil)
 		})
-		t.Run("Test variant identifier", func(t *ftt.Test) {
+		t.Run("Structured test identifier", func(t *ftt.Test) {
 			t.Run("Structure", func(t *ftt.Test) {
 				// ParseAndValidateTestID has its own extensive test cases, these do not need to be repeated here.
 				t.Run(`Invalid case name`, func(t *ftt.Test) {
-					ex.TestVariantId.CaseName = "case name \x00"
-					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_id: case_name: non-printable rune '\\x00' at byte index 10"))
+					ex.TestIdStructured.CaseName = "case name \x00"
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_id_structured: case_name: non-printable rune '\\x00' at byte index 10"))
 				})
 				t.Run(`Invalid module variant`, func(t *ftt.Test) {
-					ex.TestVariantId.ModuleVariant = pbutil.Variant("key\x00", "value")
-					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_id: module_variant: \"key\\x00\":\"value\": key: does not match pattern"))
+					ex.TestIdStructured.ModuleVariant = pbutil.Variant("key\x00", "value")
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_id_structured: module_variant: \"key\\x00\":\"value\": key: does not match pattern"))
 				})
 			})
 			t.Run("Scheme", func(t *ftt.Test) {
 				// Only test a couple of cases to make sure ValidateTestIDToScheme is correctly invoked.
 				// That method has its own extensive test cases, which don't need to be repeated here.
 				t.Run("Scheme not defined", func(t *ftt.Test) {
-					ex.TestVariantId.ModuleScheme = "undefined"
-					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_variant_id: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
+					ex.TestIdStructured.ModuleScheme = "undefined"
+					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_id_structured: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
 				})
 				t.Run(`Coarse name missing`, func(t *ftt.Test) {
-					ex.TestVariantId = nil
+					ex.TestIdStructured = nil
 					ex.TestId = ":myModule!junit::Class#Method"
 					assert.Loosely(t, validateTestExoneration(ex, cfg), should.ErrLike("test_id: coarse_name: required, please set a Package (scheme \"junit\")"))
 				})
 			})
 		})
 		t.Run("Legacy", func(t *ftt.Test) {
-			t.Run("Legacy fields are ignored unless test variant identifier cleared", func(t *ftt.Test) {
+			t.Run("Legacy fields are ignored unless structured test identifier cleared", func(t *ftt.Test) {
 				ex.TestId = "something\x00"
 				ex.Variant = pbutil.Variant("", "")
 				err := validateTestExoneration(ex, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
-			ex.TestVariantId = nil
+			ex.TestIdStructured = nil
 			ex.TestId = "something"
 			ex.Variant = pbutil.Variant("a", "1", "b", "2")
 
@@ -277,10 +277,10 @@ func TestCreateTestExoneration(t *testing.T) {
 			expectedWireProto := proto.Clone(expected).(*pb.TestExoneration)
 			expectedWireProto.ExonerationId = res.ExonerationId
 			expectedWireProto.Name = pbutil.TestExonerationName("inv", expected.TestId, res.ExonerationId)
-			if req.TestExoneration.TestVariantId == nil {
-				// If the request is a legacy request, do not expect the test variant identifier
+			if req.TestExoneration.TestIdStructured == nil {
+				// If the request is a legacy request, do not expect the structured test identifier
 				// to be set on the response. This is to minimise changes to existing clients.
-				expectedWireProto.TestVariantId = nil
+				expectedWireProto.TestIdStructured = nil
 			}
 			assert.Loosely(t, res, should.Match(expectedWireProto))
 
@@ -304,7 +304,7 @@ func TestCreateTestExoneration(t *testing.T) {
 		request := &pb.CreateTestExonerationRequest{
 			Invocation: "invocations/inv",
 			TestExoneration: &pb.TestExoneration{
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:   "//infra/junit_tests",
 					ModuleScheme: "junit",
 					ModuleVariant: pbutil.Variant(
@@ -319,7 +319,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			},
 		}
 		expected := &pb.TestExoneration{
-			TestVariantId: &pb.TestVariantIdentifier{
+			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:   "//infra/junit_tests",
 				ModuleScheme: "junit",
 				ModuleVariant: pbutil.Variant(
@@ -356,7 +356,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			expected := &pb.TestExoneration{
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//infra/junit_tests",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("a", "1", "b", "2"),
@@ -380,8 +380,8 @@ func TestCreateTestExoneration(t *testing.T) {
 
 				expected.Variant = nil
 				expected.VariantHash = "deadbeefdeadbeef"
-				expected.TestVariantId.ModuleVariant = nil
-				expected.TestVariantId.ModuleVariantHash = "deadbeefdeadbeef"
+				expected.TestIdStructured.ModuleVariant = nil
+				expected.TestIdStructured.ModuleVariantHash = "deadbeefdeadbeef"
 
 				e2eTest(request, expected, "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
 			})

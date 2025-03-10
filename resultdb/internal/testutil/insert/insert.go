@@ -238,26 +238,26 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 		if status == pb.TestStatus_SKIP {
 			skipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 		}
-		tvID, err := pbutil.ParseTestVariantIdentifierForOutput(testID, v)
+		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, v)
 		if err != nil {
 			panic(errors.Annotate(err, "parse test variant identifier").Err())
 		}
 
 		trs[i] = &pb.TestResult{
-			Name:          pbutil.TestResultName(invID, testID, resultID),
-			TestId:        testID,
-			ResultId:      resultID,
-			TestVariantId: tvID,
-			Variant:       v,
-			VariantHash:   pbutil.VariantHash(v),
-			Expected:      status == pb.TestStatus_PASS,
-			Status:        status,
-			Duration:      &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-			SummaryHtml:   "SummaryHtml",
-			TestMetadata:  &pb.TestMetadata{Name: "testname"},
-			FailureReason: reason,
-			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
-			SkipReason:    skipReason,
+			Name:             pbutil.TestResultName(invID, testID, resultID),
+			TestId:           testID,
+			ResultId:         resultID,
+			TestIdStructured: tvID,
+			Variant:          v,
+			VariantHash:      pbutil.VariantHash(v),
+			Expected:         status == pb.TestStatus_PASS,
+			Status:           status,
+			Duration:         &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:      "SummaryHtml",
+			TestMetadata:     &pb.TestMetadata{Name: "testname"},
+			FailureReason:    reason,
+			Properties:       &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:       skipReason,
 		}
 	}
 	return trs

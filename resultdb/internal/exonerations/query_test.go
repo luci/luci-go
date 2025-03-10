@@ -55,7 +55,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			{
 				Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/0",
 				TestId: ":module!junit:org.chromium.foo:BarTest#A",
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "module",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("v", "a"),
@@ -73,7 +73,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			{
 				Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/1",
 				TestId: ":module!junit:org.chromium.foo:BarTest#A",
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "module",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("v", "a"),
@@ -91,7 +91,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			{
 				Name:   "invocations/b/tests/:module%21junit:org.chromium.foo:BarTest%23C/exonerations/0",
 				TestId: ":module!junit:org.chromium.foo:BarTest#C",
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "module",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("v", "c"),
@@ -124,7 +124,7 @@ func TestToLimitedData(t *testing.T) {
 		testExoneration := &pb.TestExoneration{
 			Name:   name,
 			TestId: testID,
-			TestVariantId: &pb.TestVariantIdentifier{
+			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:        "//chrome/test:foo_tests",
 				ModuleScheme:      "junit",
 				ModuleVariant:     pbutil.Variant("v", "a"),
@@ -143,7 +143,7 @@ func TestToLimitedData(t *testing.T) {
 		expected := &pb.TestExoneration{
 			Name:   name,
 			TestId: testID,
-			TestVariantId: &pb.TestVariantIdentifier{
+			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:        "//chrome/test:foo_tests",
 				ModuleScheme:      "junit",
 				ModuleVariantHash: variantHash,

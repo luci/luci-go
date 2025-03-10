@@ -101,9 +101,9 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		return nil, errors.Annotate(err, "fetch %q", name).Err()
 	}
 	// Populate structured test ID from flat-form ID and variant.
-	tr.TestVariantId, err = pbutil.ParseTestVariantIdentifierForOutput(testID, tr.Variant)
+	tr.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(testID, tr.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse test variant identifier").Err()
+		return nil, errors.Annotate(err, "parse structured test identifier").Err()
 	}
 
 	tr.SummaryHtml = string(summaryHTML)

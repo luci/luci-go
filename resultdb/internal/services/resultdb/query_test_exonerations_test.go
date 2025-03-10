@@ -107,7 +107,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/0",
 					TestId: ":module!junit:org.chromium.foo:BarTest#A",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "a"),
@@ -125,7 +125,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/a/tests/:module%21junit:org.chromium.foo:BarTest%23A/exonerations/1",
 					TestId: ":module!junit:org.chromium.foo:BarTest#A",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "a"),
@@ -143,7 +143,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23C/exonerations/0",
 					TestId: ":module!junit:org.chromium.foo:BarTest#C",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "c"),
@@ -161,7 +161,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23D/exonerations/0",
 					TestId: ":module!junit:org.chromium.foo:BarTest#D",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "d"),
@@ -211,7 +211,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23C/exonerations/0",
 					TestId: ":module!junit:org.chromium.foo:BarTest#C",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "c"),
@@ -229,7 +229,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{
 					Name:   "invocations/c/tests/:module%21junit:org.chromium.foo:BarTest%23D/exonerations/0",
 					TestId: ":module!junit:org.chromium.foo:BarTest#D",
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "module",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("v", "d"),

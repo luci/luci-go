@@ -54,17 +54,24 @@ message TestResult {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // The structured test variant identifier.
+  // The structured test identifier.
+  //
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
   //
   // When uploading results, this should be specified in preference
-  // to test_id and variant below (which is supported only for legacy uploaders).
-  TestVariantIdentifier test_variant_id = 19 [(google.api.field_behavior) = IMMUTABLE];
+  // to test_id and variant. (Uploading test_id and variant is supported only for
+  // legacy uploaders).
+  TestIdentifier test_id_structured = 19 [(google.api.field_behavior) = IMMUTABLE];
 
-  // The flat test id, a unique identifier of the test in a LUCI project.
+  // A unique identifier of the test in a LUCI project, excluding variant.
   // Regex: ^[[::print::]]{1,512}$
   //
-  // This is the flat-form encoding of the test component of the structured test variant ID above.
-  // See TestVariantIdentifier for details how a structured test identifier is converted
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
   // to flat test ID.
   //
   // Output only. (Except for legacy uploaders.)
@@ -78,7 +85,7 @@ message TestResult {
   ];
 
   // Description of one specific way of running the test,
-  // e.g. a specific bucket, builder and a test suite.
+  // e.g. build configuration, CPU architecture, OS.
   //
   // Output only. (Except for legacy uploaders.)
   Variant variant = 4 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
@@ -237,24 +244,31 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // The structured test variant identifier.
+  // The structured test identifier.
   //
-  // When uploading exonerations, this should be specified in preference
-  // to test_id and variant below (which is supported only for legacy uploaders).
-  TestVariantIdentifier test_variant_id = 9 [(google.api.field_behavior) = IMMUTABLE];
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
+  //
+  // When uploading results, this should be specified in preference
+  // to test_id and variant. (Uploading test_id and variant is supported only for
+  // legacy uploaders).
+  TestIdentifier test_id_structured = 9 [(google.api.field_behavior) = IMMUTABLE];
 
-  // The flat test id, a unique identifier of the test in a LUCI project.
+  // A unique identifier of the test in a LUCI project, excluding variant.
   // Regex: ^[[::print::]]{1,512}$
   //
-  // This is the flat-form encoding of the test component of the structured test variant ID above.
-  // See TestVariantIdentifier for details how a structured test identifier is converted
-  // to a flat test ID.
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
   //
   // Output only. (Except for legacy uploaders.)
   string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
   // Description of one specific way of running the test,
-  // e.g. a specific bucket, builder and a test suite.
+  // e.g. build configuration, CPU architecture, OS.
   //
   // Output only. (Except for legacy uploaders.)
   Variant variant = 3 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];

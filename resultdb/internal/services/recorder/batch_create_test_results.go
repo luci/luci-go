@@ -165,12 +165,12 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
 
-	if ret.TestVariantId != nil {
+	if ret.TestIdStructured != nil {
 		// Use TestVariantIdentifier to set TestId and Variant (OUTPUT_ONLY fields).
 		// Also set the OUTPUT_ONLY fields in TestVariantIdentiifer.
-		ret.TestId = pbutil.TestIDFromTestVariantIdentifier(ret.TestVariantId)
-		ret.Variant = pbutil.VariantFromTestVariantIdentifier(ret.TestVariantId)
-		pbutil.PopulateTestVariantIdentifierHashes(ret.TestVariantId)
+		ret.TestId = pbutil.TestIDFromStructuredTestIdentifier(ret.TestIdStructured)
+		ret.Variant = pbutil.VariantFromStructuredTestIdentifier(ret.TestIdStructured)
+		pbutil.PopulateStructuredTestIdentifierHashes(ret.TestIdStructured)
 	} else {
 		// Legacy test uploader.
 		// While we could use TestId and Variant to set TestVariantIdentifier,
@@ -236,7 +236,7 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	if tr == nil {
 		return validate.Unspecified()
 	}
-	if tr.TestVariantId == nil && tr.TestId != "" {
+	if tr.TestIdStructured == nil && tr.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
 		testID, err := pbutil.ParseAndValidateTestID(tr.TestId)
@@ -254,15 +254,15 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	} else {
 		// Not a legacy uploader.
 		// The TestId and Variant fields are treated as output only as per
-		// the API spec and should be ignored. Instead read from the TestVariantIdentifier field.
+		// the API spec and should be ignored. Instead read from the TestIdStructured field.
 
-		if err := pbutil.ValidateTestVariantIdentifier(tr.TestVariantId); err != nil {
-			return errors.Annotate(err, "test_variant_id").Err()
+		if err := pbutil.ValidateStructuredTestIdentifier(tr.TestIdStructured); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(tr.TestVariantId)); err != nil {
-			return errors.Annotate(err, "test_variant_id").Err()
+		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(tr.TestIdStructured)); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
 		}
 	}
 
@@ -302,7 +302,7 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	return nil
 }
 
-func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.TestIdentifier) error {
+func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.BaseTestIdentifier) error {
 	scheme, ok := cfg.Schemes[testID.ModuleScheme]
 	if !ok {
 		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()

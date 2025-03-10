@@ -70,9 +70,11 @@ message StringPair {
   string value = 2;
 }
 
-// TestVariantIdentifier represents the identity of a test variant in structured form.
+// TestIdentifier represents the identity of a test in structured form.
+// It includes information about the configuration the test was run in (e.g.
+// build configuration, CPU architecture, OS).
 //
-// The structured test variant identifier represented in this proto corresponds to
+// The structured test identifier represented in this proto corresponds to
 // the flat test identifier with the following form:
 // :{module_name}!{module_scheme}:{coarse_name}:{fine_name}#{case_name}
 //
@@ -92,9 +94,9 @@ message StringPair {
 //
 // See go/resultdb-test-hierarchy-design for more details.
 //
-// Limits: the encoded test ID (as per rules above) must be less than
+// Limits: the encoded flat test ID (as per rules above) must be less than
 // 512 bytes in UTF-8.
-message TestVariantIdentifier {
+message TestIdentifier {
   // The name of the module being tested. A module is a set of tests which run
   // with the same test harness, and typically corresponds with a unit of
   // build, such as a bazel test target.
@@ -104,7 +106,10 @@ message TestVariantIdentifier {
   // Note: Modules are identified by the combination of module_name and scheme, not
   // only module_name. See `scheme` field below for more.
   //
-  // Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
+  // Constraints:
+  // - Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
   string module_name = 1;
 
   // The scheme of the module, for example, "junit" or "gtest".
@@ -152,6 +157,8 @@ message TestVariantIdentifier {
   // - Must match constraints set by the module's scheme.
   // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
   // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
   string coarse_name = 5;
 
   // Interemdiate hierarchy - fine name.
@@ -165,6 +172,8 @@ message TestVariantIdentifier {
   // - Must match constraints set by the module's scheme.
   // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
   // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
   string fine_name = 6;
 
   // The identifier of test case within the above fine grouping.
@@ -182,6 +191,11 @@ message TestVariantIdentifier {
   //   unless it is to write the value "*fixture". Exception is made for tests in the
   //   module 'legacy' for which a slightly broader set of starting characters is allowed
   //   for backwards compatibility but use of this quirk is discouraged.
+  // - Limited to 512 bytes of printable UTF-8, although in practice this can
+  //   never be reached except in case of legacy test IDs as the total encoded test ID is
+  //   also limited to 512 bytes (see limits on `TestIdentifier` as a whole).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
   string case_name = 7;
 }
 

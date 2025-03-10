@@ -48,9 +48,9 @@ func ValidateTestID(testID string) error {
 	return err
 }
 
-// TestIdentifier represents a structured test identifier (without
-// variant information).
-type TestIdentifier struct {
+// BaseTestIdentifier represents a structured test identifier, without
+// variant information.
+type BaseTestIdentifier struct {
 	ModuleName   string
 	ModuleScheme string
 	CoarseName   string
@@ -70,29 +70,29 @@ type TestIdentifier struct {
 //
 // See TestVariantIdentifier in common.proto for more details about
 // structured test identifiers.
-func ParseAndValidateTestID(testID string) (TestIdentifier, error) {
+func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 	// Perform some basic validation before we try to parse the ID.
 	if testID == "" {
-		return TestIdentifier{}, validate.Unspecified()
+		return BaseTestIdentifier{}, validate.Unspecified()
 	}
 	if err := validateUTF8Printable(testID, 512); err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
 
-	id, err := parseTestIdentifier(testID)
+	id, err := parseTestID(testID)
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
-	err = validateTestIdentifier(id)
+	err = validateBaseTestIdentifier(id)
 	return id, err
 }
 
-// parseTestIdentifier parses a test identifier from its flat-form string
+// parseTestID parses a test identifier from its flat-form string
 // representation into its structured representation.
-func parseTestIdentifier(testID string) (TestIdentifier, error) {
+func parseTestID(testID string) (BaseTestIdentifier, error) {
 	if !strings.HasPrefix(testID, ":") {
 		// This is a legacy test ID.
-		return TestIdentifier{
+		return BaseTestIdentifier{
 			ModuleName:   "legacy",
 			ModuleScheme: LegacySchemeID,
 			CaseName:     testID,
@@ -104,25 +104,25 @@ func parseTestIdentifier(testID string) (TestIdentifier, error) {
 	// We will read until the next '!' character.
 	moduleName, nextIndex, err := readEscapedComponent(testID, 1, '!')
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
 	moduleScheme, nextIndex, err := readEscapedComponent(testID, nextIndex+1, ':')
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
 	coarseName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, ':')
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
 	fineName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, '#')
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
 	caseName, _, err := readEscapedComponent(testID, nextIndex+1, 0)
 	if err != nil {
-		return TestIdentifier{}, err
+		return BaseTestIdentifier{}, err
 	}
-	return TestIdentifier{
+	return BaseTestIdentifier{
 		ModuleName:   moduleName,
 		ModuleScheme: moduleScheme,
 		CoarseName:   coarseName,
@@ -210,23 +210,23 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 	return builder.String(), len(testID), nil
 }
 
-func TestIDFromTestVariantIdentifier(id *pb.TestVariantIdentifier) string {
-	return EncodeTestID(ExtractTestIdentifier(id))
+func TestIDFromStructuredTestIdentifier(id *pb.TestIdentifier) string {
+	return EncodeTestID(ExtractBaseTestIdentifier(id))
 }
 
-func VariantFromTestVariantIdentifier(id *pb.TestVariantIdentifier) *pb.Variant {
+func VariantFromStructuredTestIdentifier(id *pb.TestIdentifier) *pb.Variant {
 	return proto.Clone(id.ModuleVariant).(*pb.Variant)
 }
 
-// ParseTestVariantIdentifierForInput constructs a test variant identifier from the
+// ParseStructuredTestIdentifierForInput constructs a test identifier from the
 // given flat test ID and variant. OUTPUT_ONLY fields are NOT set.
-func ParseTestVariantIdentifierForInput(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
+func ParseStructuredTestIdentifierForInput(testID string, variant *pb.Variant) (*pb.TestIdentifier, error) {
 	testIdentifier, err := ParseAndValidateTestID(testID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TestVariantIdentifier{
+	return &pb.TestIdentifier{
 		ModuleName:    testIdentifier.ModuleName,
 		ModuleScheme:  testIdentifier.ModuleScheme,
 		ModuleVariant: variant,
@@ -236,35 +236,35 @@ func ParseTestVariantIdentifierForInput(testID string, variant *pb.Variant) (*pb
 	}, nil
 }
 
-// ParseTestVariantIdentifierForOutput constructs a test variant identifier from the
+// ParseStructuredTestIdentifierForOutput constructs a test identifier from the
 // given flat test ID and variant. OUTPUT_ONLY fields are set.
-func ParseTestVariantIdentifierForOutput(testID string, variant *pb.Variant) (*pb.TestVariantIdentifier, error) {
-	result, err := ParseTestVariantIdentifierForInput(testID, variant)
+func ParseStructuredTestIdentifierForOutput(testID string, variant *pb.Variant) (*pb.TestIdentifier, error) {
+	result, err := ParseStructuredTestIdentifierForInput(testID, variant)
 	if err != nil {
 		return nil, err
 	}
 	// Set OUTPUT_ONLY fields.
-	PopulateTestVariantIdentifierHashes(result)
+	PopulateStructuredTestIdentifierHashes(result)
 	return result, nil
 }
 
-// PopulateTestVariantIdentifierHashes computes the OUTPUT_ONLY fields on TestVariantIdentifier
+// PopulateStructuredTestIdentifierHashes computes the OUTPUT_ONLY fields on TestVariantIdentifier
 // from the client-controlled field values.
-func PopulateTestVariantIdentifierHashes(id *pb.TestVariantIdentifier) {
+func PopulateStructuredTestIdentifierHashes(id *pb.TestIdentifier) {
 	id.ModuleVariantHash = VariantHash(id.ModuleVariant)
 }
 
-// ValidateTestVariantIdentifier validates a structured test variant identifier.
+// ValidateStructuredTestIdentifier validates a structured test identifier.
 //
 // N.B. This does not validate the test ID against the configured schemes, but
 // this validation must only be applied at upload time. (And must not be applied
 // at other times to ensure old tests uploaded under old schemes continue to be
 // ingestable and queryable.)
-func ValidateTestVariantIdentifier(id *pb.TestVariantIdentifier) error {
+func ValidateStructuredTestIdentifier(id *pb.TestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := validateTestIdentifier(ExtractTestIdentifier(id)); err != nil {
+	if err := validateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
 		return err
 	}
 
@@ -285,10 +285,10 @@ func ValidateTestVariantIdentifier(id *pb.TestVariantIdentifier) error {
 	return nil
 }
 
-// validateTestIdentifier validates a structured test identifier.
+// validateBaseTestIdentifier validates a structured base test identifier.
 //
 // Errors are annotated using field names in snake_case.
-func validateTestIdentifier(id TestIdentifier) error {
+func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	// Module name
 	if id.ModuleName == "" {
 		return errors.Reason("module_name: unspecified").Err()
@@ -418,9 +418,9 @@ func validateCaseNameLeadingCharacter(name string) error {
 	return nil
 }
 
-// ExtractTestIdentifier extracts the structured Test ID from a test variant idnetifier.
-func ExtractTestIdentifier(id *pb.TestVariantIdentifier) TestIdentifier {
-	return TestIdentifier{
+// ExtractBaseTestIdentifier extracts the structured Test ID from a structured test idnetifier.
+func ExtractBaseTestIdentifier(id *pb.TestIdentifier) BaseTestIdentifier {
+	return BaseTestIdentifier{
 		ModuleName:   id.ModuleName,
 		ModuleScheme: id.ModuleScheme,
 		CoarseName:   id.CoarseName,
@@ -429,8 +429,8 @@ func ExtractTestIdentifier(id *pb.TestVariantIdentifier) TestIdentifier {
 	}
 }
 
-// EncodeTestID encodes a structured test ID into a flat-form test ID.
-func EncodeTestID(id TestIdentifier) string {
+// EncodeTestID encodes a structured base test identifier into a flat-form test ID.
+func EncodeTestID(id BaseTestIdentifier) string {
 	if id.ModuleName == "legacy" && id.ModuleScheme == LegacySchemeID && id.CoarseName == "" && id.FineName == "" {
 		return id.CaseName
 	}
@@ -466,7 +466,7 @@ func writeEscapedTestIDComponent(builder *strings.Builder, s string) {
 
 // sizeEscapedTestID returns the size of the test ID when encoded to flat-form.
 // This is useful for validation and allocating string buffers.
-func sizeEscapedTestID(id TestIdentifier) int {
+func sizeEscapedTestID(id BaseTestIdentifier) int {
 	if id.ModuleName == "legacy" && id.ModuleScheme == LegacySchemeID && id.CoarseName == "" && id.FineName == "" {
 		// Legacy test ID roundtrips back to flat-form.
 		return len(id.CaseName)

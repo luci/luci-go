@@ -103,7 +103,7 @@ func TestGetTestExoneration(t *testing.T) {
 			assert.Loosely(t, tr, should.Match(&pb.TestExoneration{
 				Name:          "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/exonerations/id",
 				ExonerationId: "id",
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//infra/junit_tests",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),

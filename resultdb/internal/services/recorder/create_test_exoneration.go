@@ -56,7 +56,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 	if ex == nil {
 		return errors.Reason("unspecified").Err()
 	}
-	if ex.TestVariantId == nil && ex.TestId != "" {
+	if ex.TestIdStructured == nil && ex.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant or variant_hash fields (even though they are
 		// officially OUTPUT_ONLY now).
@@ -92,17 +92,17 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 	} else {
 		// Not a legacy uploader.
 		// The TestId, Variant, VariantHash fields are treated as output only as per
-		// the API spec and should be ignored. Instead read from the TestVariantIdentifier field.
-		// Note that TestVariantIdentifier.ModuleVariantHash is also output only and should
+		// the API spec and should be ignored. Instead read from the TestIdStructured field.
+		// Note that TestIdStructured.ModuleVariantHash is also output only and should
 		// also be ignored.
 
-		if err := pbutil.ValidateTestVariantIdentifier(ex.TestVariantId); err != nil {
-			return errors.Annotate(err, "test_variant_id").Err()
+		if err := pbutil.ValidateStructuredTestIdentifier(ex.TestIdStructured); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractTestIdentifier(ex.TestVariantId)); err != nil {
-			return errors.Annotate(err, "test_variant_id").Err()
+		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(ex.TestIdStructured)); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
 		}
 	}
 
@@ -153,18 +153,18 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 	var testID string
 	var variant *pb.Variant
 	var variantHash string
-	var testVariantIdentifier *pb.TestVariantIdentifier
+	var structuredTestIdentifier *pb.TestIdentifier
 
-	if body.TestVariantId != nil {
+	if body.TestIdStructured != nil {
 		// Not a legacy uploader.
 		// Populate TestId, Variant, VariantHash in the result.
-		testID = pbutil.TestIDFromTestVariantIdentifier(body.TestVariantId)
-		variant = pbutil.VariantFromTestVariantIdentifier(body.TestVariantId)
+		testID = pbutil.TestIDFromStructuredTestIdentifier(body.TestIdStructured)
+		variant = pbutil.VariantFromStructuredTestIdentifier(body.TestIdStructured)
 		variantHash = pbutil.VariantHash(variant)
 
-		// Populate the output only fields in TestVariantIdentifier.
-		testVariantIdentifier = proto.Clone(body.TestVariantId).(*pb.TestVariantIdentifier)
-		pbutil.PopulateTestVariantIdentifierHashes(testVariantIdentifier)
+		// Populate the output only fields in StructuredTestIdentifier.
+		structuredTestIdentifier = proto.Clone(body.TestIdStructured).(*pb.TestIdentifier)
+		pbutil.PopulateStructuredTestIdentifierHashes(structuredTestIdentifier)
 	} else {
 		// Legacy uploader.
 		testID = body.TestId
@@ -182,20 +182,20 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 			variantHash = pbutil.VariantHash(body.Variant)
 		}
 
-		// Do not set TestVariantIdentifier in the response to legacy requests
+		// Do not set StructuredTestIdentifier in the response to legacy requests
 		// to minimise changes for these clients.
 	}
 
 	exonerationID := fmt.Sprintf("%s:%s", variantHash, exonerationIDSuffix)
 	ret := &pb.TestExoneration{
-		Name:            pbutil.TestExonerationName(string(invID), testID, exonerationID),
-		TestVariantId:   testVariantIdentifier,
-		TestId:          testID,
-		Variant:         variant,
-		VariantHash:     variantHash,
-		ExonerationId:   exonerationID,
-		ExplanationHtml: body.ExplanationHtml,
-		Reason:          body.Reason,
+		Name:             pbutil.TestExonerationName(string(invID), testID, exonerationID),
+		TestIdStructured: structuredTestIdentifier,
+		TestId:           testID,
+		Variant:          variant,
+		VariantHash:      variantHash,
+		ExonerationId:    exonerationID,
+		ExplanationHtml:  body.ExplanationHtml,
+		Reason:           body.Reason,
 	}
 
 	mutation := mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]any{

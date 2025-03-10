@@ -105,9 +105,9 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 			})
 
 			t.Run("invalid test_result", func(t *ftt.Test) {
-				req.Requests[0].TestResult.TestVariantId = nil
+				req.Requests[0].TestResult.TestIdStructured = nil
 				err := validateBatchCreateTestResultsRequest(req, cfg, now)
-				assert.Loosely(t, err, should.ErrLike("test_result: test_variant_id: unspecified"))
+				assert.Loosely(t, err, should.ErrLike("test_result: test_id_structured: unspecified"))
 			})
 
 			t.Run("duplicated test_results", func(t *ftt.Test) {
@@ -145,7 +145,7 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 
 // validBatchCreateTestResultsRequest returns a valid BatchCreateTestResultsRequest message.
 func validBatchCreateTestResultRequest(now time.Time, invName string) *pb.BatchCreateTestResultsRequest {
-	tvID := &pb.TestVariantIdentifier{
+	tvID := &pb.TestIdentifier{
 		ModuleName:   "//infra/junit_tests",
 		ModuleScheme: "junit",
 		ModuleVariant: pbutil.Variant(
@@ -188,9 +188,9 @@ func TestBatchCreateTestResults(t *testing.T) {
 			assert.Loosely(t, len(response.TestResults), should.Equal(len(expectedTRs)))
 			for i, r := range req.Requests {
 				expectedWireTR := proto.Clone(expectedTRs[i]).(*pb.TestResult)
-				if r.TestResult.TestVariantId == nil {
+				if r.TestResult.TestIdStructured == nil {
 					// For legacy create requests, expect the response to omit the TestVariantIdentifier.
-					expectedWireTR.TestVariantId = nil
+					expectedWireTR.TestIdStructured = nil
 				}
 				assert.Loosely(t, response.TestResults[i], should.Match(expectedWireTR))
 
@@ -227,14 +227,14 @@ func TestBatchCreateTestResults(t *testing.T) {
 			expected := make([]*pb.TestResult, 2)
 			expected[0] = proto.Clone(req.Requests[0].TestResult).(*pb.TestResult)
 			expected[0].Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0"
-			expected[0].TestVariantId.ModuleVariantHash = "c8643f74854d84b4"
+			expected[0].TestIdStructured.ModuleVariantHash = "c8643f74854d84b4"
 			expected[0].TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected[0].Variant = pbutil.Variant("a/b", "1", "c", "2")
 			expected[0].VariantHash = "c8643f74854d84b4"
 
 			expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
 			expected[1].Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-1"
-			expected[1].TestVariantId.ModuleVariantHash = "c8643f74854d84b4"
+			expected[1].TestIdStructured.ModuleVariantHash = "c8643f74854d84b4"
 			expected[1].TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected[1].Variant = pbutil.Variant("a/b", "1", "c", "2")
 			expected[1].VariantHash = "c8643f74854d84b4"
@@ -256,7 +256,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				createTestResults(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
 			})
 			t.Run("with uncommon test id", func(t *ftt.Test) {
-				tvID := &pb.TestVariantIdentifier{
+				tvID := &pb.TestIdentifier{
 					ModuleName:   "//infra/gtest_tests",
 					ModuleScheme: "gtest",
 					ModuleVariant: pbutil.Variant(
@@ -272,7 +272,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 				expectedTR := proto.Clone(newTr.TestResult).(*pb.TestResult)
 				expectedTR.Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fgtest_tests%21gtest::MySuite%23TestCase/results/result-id-2"
-				expectedTR.TestVariantId.ModuleVariantHash = "c8643f74854d84b4"
+				expectedTR.TestIdStructured.ModuleVariantHash = "c8643f74854d84b4"
 				expectedTR.TestId = "://infra/gtest_tests!gtest::MySuite#TestCase"
 				expectedTR.Variant = pbutil.Variant("a/b", "1", "c", "2")
 				expectedTR.VariantHash = "c8643f74854d84b4"
@@ -290,7 +290,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				expected[0] = proto.Clone(req.Requests[0].TestResult).(*pb.TestResult)
 				expected[0].Name = "invocations/u-build-1/tests/some-other-test-one/results/result-id-0"
 				expected[0].TestId = "some-other-test-one"
-				expected[0].TestVariantId = &pb.TestVariantIdentifier{
+				expected[0].TestIdStructured = &pb.TestIdentifier{
 					ModuleName:   "legacy",
 					ModuleScheme: "legacy",
 					ModuleVariant: pbutil.Variant(
@@ -304,7 +304,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
 				expected[1].Name = "invocations/u-build-1/tests/some-other-test-two/results/result-id-0"
 				expected[1].TestId = "some-other-test-two"
-				expected[1].TestVariantId = &pb.TestVariantIdentifier{
+				expected[1].TestIdStructured = &pb.TestIdentifier{
 					ModuleName:   "legacy",
 					ModuleScheme: "legacy",
 					ModuleVariant: pbutil.Variant(
@@ -322,10 +322,10 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 		t.Run("fails", func(t *ftt.Test) {
 			t.Run("with Test ID using invalid scheme", func(t *ftt.Test) {
-				req.Requests[0].TestResult.TestVariantId.ModuleScheme = "undefined"
+				req.Requests[0].TestResult.TestIdStructured.ModuleScheme = "undefined"
 				_, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("bad request: requests: 0: test_result: test_variant_id: module_scheme: scheme \"undefined\" is not a known scheme"))
+				assert.Loosely(t, err, should.ErrLike("bad request: requests: 0: test_result: test_id_structured: module_scheme: scheme \"undefined\" is not a known scheme"))
 			})
 			t.Run("with an invalid request", func(t *ftt.Test) {
 				req.Invocation = "this is an invalid invocation name"
@@ -380,36 +380,36 @@ func TestValidateTestResult(t *testing.T) {
 		msg := validTestResult(now)
 		assert.Loosely(t, validateTR(msg), should.BeNil)
 
-		t.Run("test variant identifier", func(t *ftt.Test) {
+		t.Run("structured test identifier", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
-				msg.TestVariantId = nil
-				assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_id: unspecified"))
+				msg.TestIdStructured = nil
+				assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: unspecified"))
 			})
 			t.Run("structure", func(t *ftt.Test) {
 				// ParseAndValidateTestID has its own extensive test cases, these do not need to be repeated here.
 				t.Run("case name invalid", func(t *ftt.Test) {
-					msg.TestVariantId.CaseName = "case name \x00"
-					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_id: case_name: non-printable rune '\\x00' at byte index 10"))
+					msg.TestIdStructured.CaseName = "case name \x00"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: case_name: non-printable rune '\\x00' at byte index 10"))
 				})
 				t.Run("variant invalid", func(t *ftt.Test) {
-					msg.TestVariantId.ModuleVariant = pbutil.Variant("key\x00", "case name")
-					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_id: module_variant: \"key\\x00\":\"case name\": key: does not match pattern"))
+					msg.TestIdStructured.ModuleVariant = pbutil.Variant("key\x00", "case name")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: module_variant: \"key\\x00\":\"case name\": key: does not match pattern"))
 				})
 			})
 			t.Run("scheme", func(t *ftt.Test) {
 				// Only test a couple of cases to make sure ValidateTestIDToScheme is correctly invoked.
 				// That method has its own extensive test cases, which don't need to be repeated here.
 				t.Run("Scheme not defined", func(t *ftt.Test) {
-					msg.TestVariantId.ModuleScheme = "undefined"
-					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_id: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
+					msg.TestIdStructured.ModuleScheme = "undefined"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
 				})
 				t.Run("Coarse name missing", func(t *ftt.Test) {
-					msg.TestVariantId.CoarseName = ""
-					assert.Loosely(t, validateTR(msg), should.ErrLike("test_variant_id: coarse_name: required, please set a Package (scheme \"junit\")"))
+					msg.TestIdStructured.CoarseName = ""
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: coarse_name: required, please set a Package (scheme \"junit\")"))
 				})
 			})
 			t.Run("legacy", func(t *ftt.Test) {
-				msg.TestVariantId = nil
+				msg.TestIdStructured = nil
 				msg.TestId = "this is a test ID"
 				msg.Variant = pbutil.Variant("key", "value")
 				t.Run("valid", func(t *ftt.Test) {
@@ -898,7 +898,7 @@ func TestValidateTestIDToScheme(t *testing.T) {
 		cfg, err := config.NewCompiledServiceConfig(referenceConfig, "revision")
 		assert.NoErr(t, err)
 
-		testID := pbutil.TestIdentifier{
+		testID := pbutil.BaseTestIdentifier{
 			ModuleName:   "myModule",
 			ModuleScheme: "junit",
 			CoarseName:   "com.example.package",
@@ -962,7 +962,7 @@ func validTestResult(now time.Time) *pb.TestResult {
 	st := timestamppb.New(now.Add(-2 * time.Minute))
 	return &pb.TestResult{
 		ResultId: "result_id1",
-		TestVariantId: &pb.TestVariantIdentifier{
+		TestIdStructured: &pb.TestIdentifier{
 			ModuleName:    "//infra/java_tests",
 			ModuleVariant: pbutil.Variant("a", "b"),
 			ModuleScheme:  "junit",

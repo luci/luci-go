@@ -76,15 +76,15 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	}
 
 	ret.ExplanationHtml = string(explanationHTML)
-	ret.TestVariantId, err = pbutil.ParseTestVariantIdentifierForOutput(ret.TestId, ret.Variant)
+	ret.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ret.TestId, ret.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse test variant identifier").Err()
+		return nil, errors.Annotate(err, "parse structured test identifier").Err()
 	}
 	// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
 	// erroneously allowed to set variant_hash only and not the variant. This means the
 	// hash of the variant is not always the variant_hash.
 	// Set ModuleVariantHash directly to the stored variant hash as a work around,
 	// do not compute it.
-	ret.TestVariantId.ModuleVariantHash = ret.VariantHash
+	ret.TestIdStructured.ModuleVariantHash = ret.VariantHash
 	return ret, nil
 }

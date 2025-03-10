@@ -202,10 +202,10 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				})
 
 				expectedWire := proto.Clone(expectedDB).(*pb.TestExoneration)
-				if req.Requests[i].TestExoneration.TestVariantId == nil {
+				if req.Requests[i].TestExoneration.TestIdStructured == nil {
 					// If the request from a legacy client, expect TestVariantIdentifier
 					// to be unset on the response.
-					expectedWire.TestVariantId = nil
+					expectedWire.TestIdStructured = nil
 				}
 
 				assert.Loosely(t, actual, should.Match(expectedWire))
@@ -229,7 +229,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 			Requests: []*pb.CreateTestExonerationRequest{
 				{
 					TestExoneration: &pb.TestExoneration{
-						TestVariantId: &pb.TestVariantIdentifier{
+						TestIdStructured: &pb.TestIdentifier{
 							ModuleName:    "//infra/junit_tests",
 							ModuleScheme:  "junit",
 							ModuleVariant: pbutil.Variant("key", "value"),
@@ -243,7 +243,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				},
 				{
 					TestExoneration: &pb.TestExoneration{
-						TestVariantId: &pb.TestVariantIdentifier{
+						TestIdStructured: &pb.TestIdentifier{
 							ModuleName:    "//infra/junit_tests",
 							ModuleScheme:  "junit",
 							ModuleVariant: pbutil.Variant("key", "value"),
@@ -259,7 +259,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		}
 		expected := []*pb.TestExoneration{
 			{
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//infra/junit_tests",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("key", "value"),
@@ -275,7 +275,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 			{
-				TestVariantId: &pb.TestVariantIdentifier{
+				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//infra/junit_tests",
 					ModuleScheme:      "junit",
 					ModuleVariant:     pbutil.Variant("key", "value"),
@@ -324,7 +324,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 			}
 			expected := []*pb.TestExoneration{
 				{
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "//infra/junit_tests",
 						ModuleScheme:      "junit",
 						ModuleVariant:     pbutil.Variant("a", "1", "b", "2"),
@@ -340,7 +340,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				},
 				{
-					TestVariantId: &pb.TestVariantIdentifier{
+					TestIdStructured: &pb.TestIdentifier{
 						ModuleName:        "legacy",
 						ModuleScheme:      "legacy",
 						ModuleVariant:     pbutil.Variant("a", "1", "b", "2"),

@@ -129,7 +129,7 @@ func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, 
 			Name:     pbutil.TestResultName(string(invID), testID, resultID),
 			TestId:   testID,
 			ResultId: resultID,
-			TestVariantId: &pb.TestVariantIdentifier{
+			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:        "//chrome/test:foo_tests",
 				ModuleScheme:      "gtest",
 				ModuleVariant:     v,
