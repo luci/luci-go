@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -161,15 +162,15 @@ func drainVMsAsync(c context.Context) error {
 
 // auditInstances schedules an audit task for every project:zone combination
 func auditInstances(c context.Context) error {
-	var projects []string
-	addProject := func(p *model.Project) {
-		proj := p.Config.GetProject()
-		projects = append(projects, proj)
+	proj := stringset.New(10)
+	addProject := func(cfg *model.Config) {
+		proj.Add(cfg.Config.GetAttributes().GetProject())
 	}
-	q := datastore.NewQuery(model.ProjectKind)
+	q := datastore.NewQuery(model.ConfigKind)
 	if err := datastore.Run(c, q, addProject); err != nil {
 		return errors.Annotate(err, "failed to schedule audits").Err()
 	}
+	projects := proj.ToSlice()
 	jobs := make([]*tq.Task, 0)
 	srv := getCompute(c).Stable.Zones
 	for _, proj := range projects {

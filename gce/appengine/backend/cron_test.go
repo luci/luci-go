@@ -324,10 +324,12 @@ func TestCron(t *testing.T) {
 						return http.StatusInternalServerError, nil
 					}
 				}
-				err := datastore.Put(c, &model.Project{
+				err := datastore.Put(c, &model.Config{
 					ID: "id",
-					Config: &projects.Config{
-						Project: "gnu-hurd",
+					Config: &config.Config{
+						Attributes: &config.VM{
+							Project: "gnu-hurd",
+						},
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
@@ -360,17 +362,21 @@ func TestCron(t *testing.T) {
 						return http.StatusInternalServerError, nil
 					}
 				}
-				err := datastore.Put(c, &model.Project{
+				err := datastore.Put(c, &model.Config{
 					ID: "id",
-					Config: &projects.Config{
-						Project: "gnu-hurd",
+					Config: &config.Config{
+						Attributes: &config.VM{
+							Project: "gnu-hurd",
+						},
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				err = datastore.Put(c, &model.Project{
+				err = datastore.Put(c, &model.Config{
 					ID: "id2",
-					Config: &projects.Config{
-						Project: "libreboot",
+					Config: &config.Config{
+						Attributes: &config.VM{
+							Project: "libreboot",
+						},
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
