@@ -104,6 +104,10 @@ message BotConfig {
   string logs_cloud_project = 5;
   // The RBE instance to establish an RBE session at.
   string rbe_instance = 6;
+  // The derived bot ID to use to communicate with RBE.
+  string rbe_effective_bot_id = 7;
+  // Dimension key to derive effective_bot_id when communicating with RBE.
+  string rbe_effective_bot_id_dimension = 8;
 }
 
 

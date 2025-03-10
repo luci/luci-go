@@ -129,7 +129,7 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 	// picking up any tasks yet (indicated by INITIALIZING status).
 	rbeSession, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
 		Parent:     rbeInstance,
-		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, nil),
+		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, nil, r.Session),
 	})
 	if err != nil {
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -354,7 +354,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       rbeSessionID,
-		BotSession: rbeBotSession(rbeSessionID, botStatus, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, leaseIn),
+		BotSession: rbeBotSession(rbeSessionID, botStatus, r.Dimensions, cfg, body.BotVersion, body.WorkerProperties, leaseIn, r.Session),
 	})
 
 	if err != nil {
@@ -508,8 +508,9 @@ func rbeBotSession(
 	botVersion string,
 	workerProps *WorkerProperties,
 	lease *remoteworkers.Lease,
+	swarmingSession *internalspb.Session,
 ) *remoteworkers.BotSession {
-	botID, props := toDeviceProperties(dims, cfg)
+	botID, props := toDeviceProperties(dims, cfg, swarmingSession)
 
 	// These are used to associated the RBE worker with its worker provider pool.
 	var workerPropsList []*remoteworkers.Worker_Property
@@ -551,7 +552,7 @@ func rbeBotSession(
 	}
 }
 
-func toDeviceProperties(dims botsrv.BotDimensions, cfg *cfg.Config) (string, []*remoteworkers.Device_Property) {
+func toDeviceProperties(dims botsrv.BotDimensions, cfg *cfg.Config, swarmingSession *internalspb.Session) (string, []*remoteworkers.Device_Property) {
 	// Note that at this point `dims` are validated already by botsrv.Server and
 	// we can panic on unexpected values.
 	var pool string
@@ -585,6 +586,10 @@ func toDeviceProperties(dims botsrv.BotDimensions, cfg *cfg.Config) (string, []*
 				continue
 			}
 
+			if key == swarmingSession.BotConfig.RbeEffectiveBotIdDimension {
+				continue
+			}
+
 			var informational bool
 			for _, re := range infoDimRes {
 				if re.MatchString(key) {
@@ -604,6 +609,11 @@ func toDeviceProperties(dims botsrv.BotDimensions, cfg *cfg.Config) (string, []*
 	if botID == "" {
 		panic("bot ID is missing in dimensions")
 	}
+
+	if swarmingSession.BotConfig.RbeEffectiveBotId != "" {
+		botID = swarmingSession.BotConfig.RbeEffectiveBotId
+	}
+
 	return botID, props
 }
 

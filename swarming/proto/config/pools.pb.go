@@ -1133,8 +1133,10 @@ type Pool_RBEMigration struct {
 	BotModeAllocation []*Pool_RBEMigration_BotModeAllocation `protobuf:"bytes,3,rep,name=bot_mode_allocation,json=botModeAllocation,proto3" json:"bot_mode_allocation,omitempty"`
 	// Dimension key to be used to derive bot id when communicating with RBE.
 	//
-	// To use effective bot id, each bot in this pool MUST have no more than one
-	// value for the dimension.
+	// To use effective bot id,
+	//   - each bot in this pool MUST have no more than one value for the
+	//     dimension.
+	//   - each bot SHOULD have a uniqueue value for the dimension within the pool.
 	//
 	// effective_bot_id_dimension MUST NOT be an informational dimension.
 	//

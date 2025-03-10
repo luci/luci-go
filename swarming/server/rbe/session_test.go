@@ -211,6 +211,48 @@ func TestSessionServer(t *testing.T) {
 
 			assert.NoErr(t, err)
 		})
+
+		t.Run("effective bot id is used", func(t *ftt.Test) {
+			req := &botsrv.Request{
+				Session: &internalspb.Session{
+					BotId:     fakeBotID,
+					SessionId: fakeSessionID,
+					BotConfig: &internalspb.BotConfig{
+						RbeInstance:                fakeRBEInstance,
+						RbeEffectiveBotId:          "effective-bot-id",
+						RbeEffectiveBotIdDimension: "dut_id",
+					},
+					RbeBotSessionId: fakeRBESessionID,
+				},
+				Dimensions: []string{
+					"id:" + fakeBotID,
+					"dut_id:effective-bot-id",
+					"pool:some-pool",
+				},
+			}
+			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
+				assert.That(t, r.BotSession.BotId, should.Equal("effective-bot-id"))
+				assert.Loosely(t, r.BotSession.Worker.Devices, should.HaveLength(1))
+				assert.That(t, r.BotSession.Worker.Devices[0].Properties, should.Match([]*remoteworkers.Device_Property{
+					{Key: "label:pool", Value: "some-pool"},
+				}))
+				return &remoteworkers.BotSession{
+					Name:   fakeRBESessionID,
+					Status: remoteworkers.BotStatus_INITIALIZING,
+				}, nil
+			})
+
+			_, err := srv.CreateBotSession(ctx, &CreateBotSessionRequest{
+				BotVersion: "bot-version",
+				WorkerProperties: &WorkerProperties{
+					PoolID:      "rbe-pool-id",
+					PoolVersion: "rbe-pool-version",
+				},
+			}, req)
+
+			assert.NoErr(t, err)
+		})
+
 		t.Run("CreateBotSession propagates RBE error", func(t *ftt.Test) {
 			rbe.expectCreateBotSession(func(r *remoteworkers.CreateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")
