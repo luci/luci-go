@@ -46,7 +46,7 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.Loosely(t, entry.Deps, should.HaveLength(0))
 		assert.That(t, entry.Path, should.Equal("a/b/c"))
 		assert.That(t, entry.Script, should.Equal("main.star"))
-		assert.That(t, entry.MinLucicfgVersion.IsZero(), should.BeTrue)
+		assert.Loosely(t, entry.LucicfgVersionConstraints, should.HaveLength(0))
 	})
 
 	t.Run("Loads PACKAGE.star", func(t *testing.T) {
@@ -70,7 +70,13 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.Loosely(t, entry.Deps, should.HaveLength(0))
 		assert.That(t, entry.Path, should.Equal("a/b"))
 		assert.That(t, entry.Script, should.Equal("c/main.star"))
-		assert.That(t, entry.MinLucicfgVersion.String(), should.Equal("1.2.3"))
+		assert.That(t, entry.LucicfgVersionConstraints, should.Match([]LucicfgVersionConstraint{
+			{
+				Min:     LucicfgVersion{1, 2, 3},
+				Package: "some/pkg",
+				Main:    true,
+			},
+		}))
 	})
 
 	t.Run("Borked PACKAGE.star", func(t *testing.T) {

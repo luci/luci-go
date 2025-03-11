@@ -46,8 +46,15 @@ type Entry struct {
 	Path string
 	// Script is a slash-separated path to the script within the package to run.
 	Script string
-	// MinLucicfgVersion is the declare minimum required lucicfg version if known.
-	MinLucicfgVersion LucicfgVersion
+	// LucicfgVersionConstraints is the requirements for the lucicfg version.
+	LucicfgVersionConstraints []LucicfgVersionConstraint
+}
+
+// LucicfgVersionConstraint puts a constraint on the current lucicfg version.
+type LucicfgVersionConstraint struct {
+	Min     LucicfgVersion // minimal required version
+	Package string         // name of the package that required it
+	Main    bool           // true if this is the main package (i.e. contains the entry point)
 }
 
 // EntryOnDisk loads the entry point based on a Starlark file on disk.
@@ -132,10 +139,16 @@ func EntryOnDisk(ctx context.Context, path string) (entry *Entry, root string, e
 	}
 
 	return &Entry{
-		Main:              interpreter.FileSystemLoader(root),
-		Path:              filepath.ToSlash(rel),
-		Script:            script,
-		MinLucicfgVersion: def.MinLucicfgVersion,
+		Main:   interpreter.FileSystemLoader(root),
+		Path:   filepath.ToSlash(rel),
+		Script: script,
+		LucicfgVersionConstraints: []LucicfgVersionConstraint{
+			{
+				Min:     def.MinLucicfgVersion,
+				Package: def.Name,
+				Main:    true,
+			},
+		},
 	}, root, nil
 }
 

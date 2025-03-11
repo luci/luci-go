@@ -17,6 +17,9 @@ package internal
 
 import (
 	"context"
+
+	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
 // testingTweaksKey is used as a context key.
@@ -25,7 +28,16 @@ var testingTweaksKey = "lucicfg.internal.TestingTweaks"
 // TestingTweaks live in the context and affect behavior of some functions when
 // they are used by lucicfg own tests.
 type TestingTweaks struct {
-	SkipEntrypointCheck bool // do not check pkg.entrypoint(...)
+	SkipEntrypointCheck     bool // do not check pkg.entrypoint(...)
+	SkipPackageCompatChecks bool // do not check lucicfg.check_version(...) matches pkg.declare(...) and similar
+}
+
+// ToStruct returns a matching Starlark struct.
+func (tt *TestingTweaks) ToStruct() *starlarkstruct.Struct {
+	return starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
+		"skip_entrypoint_check":      starlark.Bool(tt.SkipEntrypointCheck),
+		"skip_package_compat_checks": starlark.Bool(tt.SkipPackageCompatChecks),
+	})
 }
 
 var noTweaks = TestingTweaks{}

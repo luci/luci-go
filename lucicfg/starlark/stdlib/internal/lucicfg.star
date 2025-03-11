@@ -52,6 +52,19 @@ def _check_version(min, message = None):
       message: a custom failure message to show.
     """
     min_ver = strutil.parse_version(min)
+    if (__native__.pkg_min_lucicfg and
+        min_ver != __native__.pkg_min_lucicfg and
+        not __native__.testing_tweaks.skip_package_compat_checks):
+        fail(
+            ("Version passed to lucicfg.check_version (which is %r) should match the " +
+             "lucicfg version in pkg.declare(...) in PACKAGE.star (which is %r). " +
+             "Eventually pkg.declare(...) in PACKAGE.star will become authoritative and " +
+             "lucicfg.check_version will be retired. Until then the versions must agree. " +
+             "Please update lucicfg.check_version(...) call.") % (
+                "%d.%d.%d" % min_ver,
+                "%d.%d.%d" % __native__.pkg_min_lucicfg,
+            ),
+        )
     cur_ver = _version()
     if cur_ver < min_ver:
         fail(

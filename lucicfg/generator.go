@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
+	"go.chromium.org/luci/lucicfg/internal"
 	"go.chromium.org/luci/lucicfg/pkg"
 	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
@@ -68,6 +69,23 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		ver = in.testVersion
 	}
 
+	// Should satisfy version constraint of all dependencies.
+	pkgMinLucicfg := starlark.Value(starlark.None)
+	for _, constraint := range in.Entry.LucicfgVersionConstraints {
+		if err := VerifyVersion(constraint, ver); err != nil {
+			return nil, err
+		}
+		asTuple := starlark.Tuple{
+			starlark.MakeInt(constraint.Min[0]),
+			starlark.MakeInt(constraint.Min[1]),
+			starlark.MakeInt(constraint.Min[2]),
+		}
+		if constraint.Main {
+			pkgMinLucicfg = asTuple
+			state.experiments.setMinVersion(asTuple)
+		}
+	}
+
 	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
@@ -82,11 +100,14 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		// @stdlib functions.
 		"__native__": native(starlark.StringDict{
 			// How the generator was launched.
-			"version":       versionTuple(ver),
-			"entry_point":   starlark.String(in.Entry.Script),
-			"main_pkg_path": starlark.String(in.Entry.Path),
-			"var_flags":     asFrozenDict(in.Vars),
-			"running_tests": starlark.Bool(in.testThreadModifier != nil),
+			"version":        versionTuple(ver),
+			"entry_point":    starlark.String(in.Entry.Script),
+			"main_pkg_path":  starlark.String(in.Entry.Path),
+			"var_flags":      asFrozenDict(in.Vars),
+			"running_tests":  starlark.Bool(in.testThreadModifier != nil),
+			"testing_tweaks": internal.GetTestingTweaks(ctx).ToStruct(),
+			// Data pulled from PACKAGE.star, if any.
+			"pkg_min_lucicfg": pkgMinLucicfg,
 			// Some built-in utilities implemented in `builtins` package.
 			"ctor":          builtins.Ctor,
 			"genstruct":     builtins.GenStruct,

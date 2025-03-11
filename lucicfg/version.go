@@ -18,6 +18,10 @@ import (
 	"fmt"
 
 	"go.starlark.net/starlark"
+
+	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 const (
@@ -29,6 +33,30 @@ const (
 	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
 	UserAgent = "lucicfg v" + Version
 )
+
+// VerifyVersion checks if the current lucicfg is fresh enough.
+//
+// If ver is "", will use the version of the currently running lucicfg binary.
+func VerifyVersion(constraint pkg.LucicfgVersionConstraint, ver string) error {
+	if ver == "" {
+		ver = Version
+	}
+	cur, err := pkg.ValidateVersion(ver)
+	if err != nil {
+		return err
+	}
+	if cur.Older(constraint.Min) {
+		msg := fmt.Sprintf("Your lucicfg version v%s is older than v%s", cur, constraint.Min)
+		if constraint.Main {
+			msg += " as required by pkg.declare(...) in PACKAGE.star"
+		} else {
+			msg += fmt.Sprintf(" as required by lucicfg package %q", constraint.Package)
+		}
+		msg += ". Please update."
+		return errors.New(msg)
+	}
+	return nil
+}
 
 // versionTuple converts the given version string to a 3-tuple.
 func versionTuple(ver string) starlark.Tuple {

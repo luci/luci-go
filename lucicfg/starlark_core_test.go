@@ -55,6 +55,10 @@ func TestCore(t *testing.T) {
 		// test. There a TON of them and duplicating them all in PACKAGE.star is
 		// annoying.
 		SkipEntrypointCheck: true,
+		// Do not verify version passed to lucicfg.check_version(...) matches the
+		// version in pkg.declare(...). This interferes with unit tests for
+		// lucicfg.check_version(...). This logic is tested in pkg tests.
+		SkipPackageCompatChecks: true,
 	})
 
 	gotExpectationErrors := false
@@ -109,7 +113,7 @@ func TestCore(t *testing.T) {
 			// See below for why this is important.
 			integrationTest := expectErrExct != "" || expectErrLike != "" || expectCfg != ""
 
-			state, err := Generate(context.Background(), Inputs{
+			state, err := Generate(ctx, Inputs{
 				Entry: entry,
 				Vars:  presetVars,
 
