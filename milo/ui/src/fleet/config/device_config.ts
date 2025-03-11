@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { stringifyFilters } from '../components/multi_select_filter/search_param_utils/search_param_utils';
+
 import { getSwarmingStateDocLinkForLabel } from './flops_doc_mapping';
 
 // this is loosely defining default columns based on b/391621656
@@ -42,6 +44,17 @@ export const COMMON_DEVICE_FILTERS: string[] = [
   'label-phase',
 ];
 
+/**
+ * Generate a link to find a particular device by its dut_name Swarming label.
+ * Technically, ID is the same as dut_name for ChromeOS - but we might not
+ * always be able to assume this in the future.
+ */
+// TODO: b/402410880 - Consider making it possible to directly use the id of a
+// device for a URL in the future.
+const generateDutNameRedirectURL = (dutName: string): string => {
+  return `/ui/fleet/redirects/singledevice?filters=${stringifyFilters({ 'labels.dut_name': [dutName] })}`;
+};
+
 interface DocMapping {
   id: string;
   linkGenerator: (value: string) => string;
@@ -70,5 +83,21 @@ export const CROS_DIMENSION_DOC_MAPPING: DocMapping[] = [
   {
     id: 'label-board',
     linkGenerator: (value) => `http://go/dlm-board/${value}`,
+  },
+  {
+    id: 'dut_name',
+    linkGenerator: generateDutNameRedirectURL,
+  },
+  {
+    id: 'label-associated_hostname',
+    linkGenerator: generateDutNameRedirectURL,
+  },
+  {
+    id: 'label-primary_dut',
+    linkGenerator: generateDutNameRedirectURL,
+  },
+  {
+    id: 'label-managed_dut',
+    linkGenerator: generateDutNameRedirectURL,
   },
 ];
