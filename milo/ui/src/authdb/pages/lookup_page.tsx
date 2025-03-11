@@ -38,6 +38,14 @@ export function LookupPage() {
   const searchQuery = () => {
     setPrincipal(query);
   };
+
+  const checkFieldSubmit = (keyPressed: string) => {
+    if (keyPressed !== 'Enter') {
+      return;
+    }
+    searchQuery();
+  };
+
   return (
     <Paper className="lookup-container-paper">
       <Alert severity="warning">
@@ -64,14 +72,19 @@ export function LookupPage() {
       <Box sx={{ p: 5 }}>
         <FormControl fullWidth>
           <TextField
+            data-testid="lookup-textfield"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => checkFieldSubmit(e.key)}
             label="Look up an email, glob, or group name to find its ancestors. e.g. person@example.com, *@google.com, administrators."
             slotProps={{
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={searchQuery}>
+                    <IconButton
+                      onClick={searchQuery}
+                      data-testid="search-button"
+                    >
                       <SearchIcon />
                     </IconButton>
                   </InputAdornment>
