@@ -17,7 +17,7 @@ import fetchMock from 'fetch-mock-jest';
 import {
   Device,
   ListDevicesResponse,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const LIST_DEVICES_ENDPOINT = `https://${SETTINGS.fleetConsole.host}/prpc/fleetconsole.FleetConsole/ListDevices`;
 

@@ -19,7 +19,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { ResourceRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ResourceRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;

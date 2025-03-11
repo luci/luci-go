@@ -20,7 +20,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import {
   FleetClientImpl,
   ListMachinesRequest,
-} from '@/proto/infra/unifiedfleet/api/v1/rpc/fleet.pb';
+} from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 import { FleetHelmet } from '../layouts/fleet_helmet';
 

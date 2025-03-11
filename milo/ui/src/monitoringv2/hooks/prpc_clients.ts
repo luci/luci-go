@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { AlertsClientImpl as SoMAlertsClientImpl } from '@/proto/go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 import { AlertsClientImpl as NotifyAlertsClientImpl } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
-import { AlertsClientImpl as SoMAlertsClientImpl } from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 
 export function useSoMAlertsClient() {
   return usePrpcServiceClient({

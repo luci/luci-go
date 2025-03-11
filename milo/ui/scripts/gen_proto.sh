@@ -114,7 +114,7 @@ protoc \
   ./go.chromium.org/luci/swarming/proto/api_v2/swarming.proto \
   ./go.chromium.org/luci/tree_status/proto/v1/tree_status.proto \
   ./go.chromium.org/luci/tree_status/proto/v1/trees.proto \
-  ./infra/appengine/cr-rev/frontend/api/v1/service.proto \
-  ./infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
-  ./infra/fleetconsole/api/fleetconsolerpc/service.proto \
-  ./infra/unifiedfleet/api/v1/rpc/fleet.proto \
+  ./go.chromium.org/infra/appengine/cr-rev/frontend/api/v1/service.proto \
+  ./go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
+  ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto \
+  ./go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.proto \

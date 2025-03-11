@@ -19,7 +19,7 @@ import {
   Device,
   ListDevicesRequest,
   ListDevicesResponse,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 export type UseDeviceDataResult = {
   isLoading: boolean;

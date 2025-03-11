@@ -21,7 +21,7 @@ import {
   Device,
   DeviceState,
   DeviceType,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { Cell } from './Cell';
 

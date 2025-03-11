@@ -17,7 +17,7 @@ import {
   CROS_DIMENSION_OVERRIDES,
 } from '@/fleet/components/device_table/dimensions';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
-import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
  * Converts a response from GetDeviceDimensions into a list of options

@@ -34,7 +34,7 @@ import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { ColumnMenu } from './column_menu';
 import { getColumns, orderColumns } from './columns';

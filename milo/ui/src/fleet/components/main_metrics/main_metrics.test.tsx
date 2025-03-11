@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { CountDevicesResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { MainMetrics } from './main_metrics';

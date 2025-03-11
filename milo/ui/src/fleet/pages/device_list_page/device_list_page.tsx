@@ -41,7 +41,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import {
   CountDevicesRequest,
   ListDevicesRequest,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 

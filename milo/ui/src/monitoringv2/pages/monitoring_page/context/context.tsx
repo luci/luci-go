@@ -38,6 +38,7 @@ import {
   builderPath,
   TreeJson,
 } from '@/monitoringv2/util/server_json';
+import { ListAlertsRequest } from '@/proto/go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -47,7 +48,6 @@ import {
   TestVariant,
   TestVariantStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { ListAlertsRequest } from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 const FIELD_MASK = Object.freeze([

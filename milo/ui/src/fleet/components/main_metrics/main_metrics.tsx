@@ -21,7 +21,7 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { ReactElement } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
-import { CountDevicesResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {

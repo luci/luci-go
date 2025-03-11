@@ -14,7 +14,7 @@
 
 import { DateTime, Duration } from 'luxon';
 
-import { DateOnly } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
+import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 export const toIsoString = (dateOnly: DateOnly | undefined): string => {
   if (!dateOnly) {

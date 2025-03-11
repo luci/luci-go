@@ -28,8 +28,8 @@ import {
   bugFromJson,
   TreeJson,
 } from '@/monitoring/util/server_json';
+import { ListAlertsRequest } from '@/proto/go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 import { BatchGetAlertsRequest } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
-import { ListAlertsRequest } from '@/proto/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
 
 export interface ExtendedAlert {
   readonly bug: string;

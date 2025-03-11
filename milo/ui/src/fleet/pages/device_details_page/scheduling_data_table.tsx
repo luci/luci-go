@@ -20,7 +20,7 @@ import {
   labelValuesToString,
 } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
-import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 interface SchedulingDataProps {
   device?: Device;

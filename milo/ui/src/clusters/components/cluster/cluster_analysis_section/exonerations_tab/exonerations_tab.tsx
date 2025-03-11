@@ -38,7 +38,7 @@ import {
 import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
 import {
   QueryTestVariantFailureRateRequest,
-  TestVariantIdentifier,
+  QueryTestVariantFailureRateRequest_TestVariant,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 import { ClusterContext } from '../../cluster_context';
@@ -87,7 +87,7 @@ const ExonerationsTab = ({ value }: Props) => {
       const tvRequest: QueryTestVariantFailureRateRequest = {
         project: project,
         testVariants: clusterExoneratedTestVariants.map((v) => {
-          return TestVariantIdentifier.create({
+          return QueryTestVariantFailureRateRequest_TestVariant.create({
             testId: v.testId,
             variant: v.variant,
           });

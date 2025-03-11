@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
  * Gets the state of a DUT from a device object if it exists.

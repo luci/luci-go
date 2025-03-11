@@ -15,21 +15,21 @@
 import fetchMock from 'fetch-mock-jest';
 
 import {
-  TestVariantIdentifier,
-  TestVariantFailureRateAnalysis,
   QueryTestVariantFailureRateRequest,
+  QueryTestVariantFailureRateRequest_TestVariant,
   QueryTestVariantFailureRateResponse,
-  QueryTestVariantStabilityRequest_TestVariantPosition,
   QueryTestVariantStabilityRequest,
+  QueryTestVariantStabilityRequest_TestVariantPosition,
   QueryTestVariantStabilityResponse,
-  TestVariantStabilityAnalysis,
   TestStabilityCriteria,
+  TestVariantFailureRateAnalysis,
+  TestVariantStabilityAnalysis,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 export const getMockTestVariantIdentifier = (
   id: string,
-): TestVariantIdentifier => {
-  return TestVariantIdentifier.create({
+): QueryTestVariantFailureRateRequest_TestVariant => {
+  return QueryTestVariantFailureRateRequest_TestVariant.create({
     testId: id,
   });
 };
