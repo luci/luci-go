@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './search_input';
+export type { SearchInputProps } from './search_input';
+export { SearchInput } from './search_input';
