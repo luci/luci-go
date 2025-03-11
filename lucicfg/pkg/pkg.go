@@ -23,6 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
+
+	"go.chromium.org/luci/lucicfg/internal"
 )
 
 // PackageScript is a name of the script with the package definition.
@@ -120,11 +122,13 @@ func EntryOnDisk(ctx context.Context, path string) (entry *Entry, root string, e
 	}
 
 	// Verify the entry point is known.
-	if !slices.Contains(def.Entrypoints, script) {
-		return nil, "", errors.Reason(
-			"%s is not declared as a pkg.entrypoint(...) in %s and "+
-				"thus cannot be executed. Available entrypoints: %v",
-			script, PackageScript, def.Entrypoints).Err()
+	if !internal.GetTestingTweaks(ctx).SkipEntrypointCheck {
+		if !slices.Contains(def.Entrypoints, script) {
+			return nil, "", errors.Reason(
+				"%s is not declared as a pkg.entrypoint(...) in %s and "+
+					"thus cannot be executed. Available entrypoints: %v",
+				script, PackageScript, def.Entrypoints).Err()
+		}
 	}
 
 	return &Entry{

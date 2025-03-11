@@ -37,7 +37,7 @@ var testMessageType *starlarkproto.MessageType
 
 func init() {
 	// See testdata/gen.go for where this file is generated.
-	blob, err := os.ReadFile("testdata/misc/support/test_descpb.bin")
+	blob, err := os.ReadFile("testdata/core/misc/support/test_descpb.bin")
 	if err != nil {
 		panic(err)
 	}
