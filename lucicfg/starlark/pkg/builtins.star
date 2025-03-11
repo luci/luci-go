@@ -50,7 +50,10 @@ def _declare(*, name, lucicfg):
       lucicfg: a string `major.minor.revision` with a minimum lucicfg version
         this package requires. Required.
     """
-    _unused(name, lucicfg)
+    __native__.declare(
+        _validate_string("name", name),
+        _validate_string("lucicfg", lucicfg),
+    )
 
 def _depend(*, name, source):
     """Declares a dependency on another lucicfg package.
@@ -86,6 +89,7 @@ def _depend(*, name, source):
         pkg.source.read_local(...). Required.
     """
     _unused(name, source)
+    fail("not implemented")
 
 def _resources(*, files):
     """Declares non-Starlark files to includes into the package.
@@ -109,6 +113,19 @@ def _resources(*, files):
         positive `**/*` glob is implied as well.
     """
     _unused(files)
+    fail("not implemented")
+
+def _entrypoint(path):
+    """Declares that the given Starlark file is one of the entry point scripts.
+
+    Entry point scripts are scripts that can be executed (via
+    `lucicfg gen <path>`) to generate some configuration file. Only entry point
+    scripts can be executed.
+
+    Args:
+      path: a path to a Starlark file relative to the package root.
+    """
+    __native__.entrypoint(_validate_string("path", path))
 
 def _googlesource(*, host, repo, ref, path, minimum_version):
     """Defines a reference to package source stored in a googlesource.com repo.
@@ -131,6 +148,7 @@ def _googlesource(*, host, repo, ref, path, minimum_version):
       A pkg.source.ref struct that can be passed to pkg.depend(...).
     """
     _unused(host, repo, ref, path, minimum_version)
+    fail("not implemented")
 
 def _read_submodule(path):
     """Builds a reference to package source by reading a git submodule.
@@ -155,6 +173,7 @@ def _read_submodule(path):
       A pkg.source.ref struct that can be passed to pkg.depend(...).
     """
     _unused(path)
+    fail("not implemented")
 
 def _read_local(path):
     """Builds a reference to package source stored in the current repository.
@@ -175,6 +194,7 @@ def _read_local(path):
       A pkg.source.ref struct that can be passed to pkg.depend(...).
     """
     _unused(path)
+    fail("not implemented")
 
 def _fmt_sort_func_args(*, paths, args):
     """Adds a rule for ordering functions arguments in `lucicfg fmt`.
@@ -200,6 +220,7 @@ def _fmt_sort_func_args(*, paths, args):
         rule's paths. Required.
     """
     _unused(paths, args)
+    fail("not implemented")
 
 def _unused(*args):  # @unused
     """Used exclusively to shut up `unused-variable` lint."""
@@ -208,6 +229,7 @@ pkg = struct(
     declare = _declare,
     depend = _depend,
     resources = _resources,
+    entrypoint = _entrypoint,
     source = struct(
         googlesource = _googlesource,
         read_submodule = _read_submodule,
@@ -219,3 +241,32 @@ pkg = struct(
         ),
     ),
 )
+
+### Internals.
+
+def _validate_string(attr, val, *, allow_empty = False, default = None, required = True):
+    """Validates that the value is a string and returns it.
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+      allow_empty: if True, accept empty string as valid.
+      default: a value to use if 'val' is None, ignored if required is True.
+      required: if False, allow 'val' to be None, return 'default' in this case.
+
+    Returns:
+      The validated string or None if required is False and default is None.
+    """
+    if val == None:
+        if required:
+            fail("missing required field %r" % attr)
+        if default == None:
+            return None
+        val = default
+
+    if type(val) != "string":
+        fail("bad %r: got %s, want string" % (attr, type(val)))
+    if not allow_empty and not val:
+        fail("bad %r: must not be empty" % (attr,))
+
+    return val

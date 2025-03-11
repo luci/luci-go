@@ -59,9 +59,9 @@
 {{ $proto := Symbol "@stdlib//proto_doc.star" "proto" }}
 {{ $buildbucket := Symbol "@stdlib//builtins.star" "buildbucket" }}
 
-{{ $pkg := Symbol "@pkg//pkg.star" "pkg" }}
-{{ $pkg_source := Symbol "@pkg//pkg.star" "pkg.source" }}
-{{ $pkg_options_fmt := Symbol "@pkg//pkg.star" "pkg.options.fmt" }}
+{{ $pkg := Symbol "@pkg//builtins.star" "pkg" }}
+{{ $pkg_source := Symbol "@pkg//builtins.star" "pkg.source" }}
+{{ $pkg_options_fmt := Symbol "@pkg//builtins.star" "pkg.options.fmt" }}
 
 {{/*
   Some symbols referenced from the non-generated portion of the doc below.

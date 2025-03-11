@@ -19,5 +19,5 @@ import (
 	"embed"
 )
 
-//go:embed stdlib/*
+//go:embed stdlib/* pkg/*
 var Content embed.FS

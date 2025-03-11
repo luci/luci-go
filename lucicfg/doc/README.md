@@ -4451,6 +4451,27 @@ Can be called multiple times. Works additively.
 
 
 
+### pkg.entrypoint {#pkg.entrypoint}
+
+```python
+pkg.entrypoint(path = None)
+```
+
+
+
+Declares that the given Starlark file is one of the entry point scripts.
+
+Entry point scripts are scripts that can be executed (via
+`lucicfg gen <path>`) to generate some configuration file. Only entry point
+scripts can be executed.
+
+#### Arguments {#pkg.entrypoint-args}
+
+* **path**: a path to a Starlark file relative to the package root.
+
+
+
+
 
 
 

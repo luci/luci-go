@@ -25,28 +25,41 @@ var repoSentinel = []string{".git", ".citc"}
 
 // findRoot, given a directory path on disk, finds the closest repository or
 // volume root directory and returns it as an absolute path.
-func findRoot(dir string) (string, error) {
+//
+// If given a markerFile, will stop searching if finds a directory that contains
+// this file, returning (dir path, true, nil) in that case.
+func findRoot(dir, markerFile string) (string, bool, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
-		return "", err
+		return "", false, err
+	}
+
+	var probes []string
+	if markerFile == "" {
+		probes = repoSentinel
+	} else {
+		// Note the order is important: need to probe for the marker file before
+		// probing .git in case the marker file is at the repo root.
+		probes = append(make([]string, 0, 3), markerFile)
+		probes = append(probes, repoSentinel...)
 	}
 
 	for {
-		up := filepath.Dir(dir)
-		if up == dir {
-			return dir, nil // hit the volume root
-		}
-
-		for _, probe := range repoSentinel {
+		for _, probe := range probes {
 			switch _, err := os.Stat(filepath.Join(dir, probe)); {
 			case err == nil:
-				return dir, nil // found the repository root
+				return dir, probe == markerFile, nil // found the repository root or the marker file
 			case errors.Is(err, os.ErrNotExist):
 				// Carry on searching
 			default:
 				// Some file system error (likely no access).
-				return "", err
+				return "", false, err
 			}
+		}
+
+		up := filepath.Dir(dir)
+		if up == dir {
+			return dir, false, nil // hit the volume root
 		}
 
 		dir = up
