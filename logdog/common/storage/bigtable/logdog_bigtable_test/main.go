@@ -21,7 +21,6 @@ import (
 	"flag"
 	"io"
 	"os"
-	"strings"
 
 	cloudBT "cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
@@ -162,7 +161,7 @@ func main() {
 
 func renderErr(c context.Context, err error) {
 	log.Errorf(c, "Error encountered during operation: %s\n%s", err,
-		strings.Join(errors.RenderStack(err), "\n"))
+		errors.RenderStack(err))
 }
 
 func unmarshalAndDump(c context.Context, out io.Writer, data []byte, msg proto.Message) error {

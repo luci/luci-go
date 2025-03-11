@@ -23,7 +23,6 @@ import (
 	"io"
 	"math"
 	"os"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -126,7 +125,7 @@ func main() {
 
 func renderErr(c context.Context, err error) {
 	log.Errorf(c, "Error encountered during operation: %s\n%s", err,
-		strings.Join(errors.RenderStack(err), "\n"))
+		errors.RenderStack(err))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

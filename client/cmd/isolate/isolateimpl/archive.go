@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -98,7 +97,7 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands
 		return 1
 	}
 	if err := c.main(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), strings.Join(errors.RenderStack(err), "\n"))
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), errors.RenderStack(err))
 		return 1
 	}
 	return 0

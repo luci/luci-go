@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -190,7 +189,7 @@ func logAnnotatedErr(ctx context.Context, err error, f string, args ...any) {
 	}
 
 	nargs := make([]any, len(args)+1)
-	nargs[copy(nargs, args)] = strings.Join(errors.RenderStack(err), "\n")
+	nargs[copy(nargs, args)] = errors.RenderStack(err)
 
 	if f == "" {
 		f = "Captured error stack:"

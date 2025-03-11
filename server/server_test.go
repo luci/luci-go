@@ -289,7 +289,7 @@ func TestServer(t *testing.T) {
 				select {
 				case pair := <-activities:
 					if pair.err != nil {
-						t.Errorf("Activity %q:\n%s", pair.name, strings.Join(errors.RenderStack(pair.err), "\n"))
+						t.Errorf("Activity %q:\n%s", pair.name, errors.RenderStack(pair.err))
 					}
 				case <-time.After(10 * time.Second):
 					panic("timeout")

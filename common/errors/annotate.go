@@ -469,17 +469,17 @@ func frameHeaderDetails(frm uintptr) (pkg, filename, funcName string, lineno int
 // RenderStack renders the error message and a stack to a list of lines.
 //
 // Uses a compact stack format.
-func RenderStack(err error, excludePkgs ...string) []string {
+func RenderStack(err error, excludePkgs ...string) string {
 	r := renderStack(err)
 	if r.originalError != "" && len(r.stacks) == 0 {
-		return []string{r.originalError}
+		return r.originalError
 	}
 	buf := bytes.Buffer{}
 	if r.originalError != "" {
 		_, _ = fmt.Fprintf(&buf, "original error: %s\n\n", r.originalError)
 	}
 	_, _ = r.dumpTo(&buf, excludePkgs...)
-	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	return strings.TrimSuffix(buf.String(), "\n")
 }
 
 // RenderGoStack renders the error to a Go-style stacktrace.

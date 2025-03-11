@@ -77,9 +77,8 @@ func mainImpl(args []string) (int, error) {
 func main() {
 	rc, err := mainImpl(os.Args[1:])
 	if err != nil {
-		for _, line := range errors.RenderStack(err) {
-			os.Stderr.WriteString(line + "\n")
-		}
+		os.Stderr.WriteString(errors.RenderStack(err))
+		os.Stderr.WriteString("\n")
 	}
 	os.Exit(rc)
 }
