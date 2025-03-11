@@ -16,7 +16,7 @@ import { GridRenderCellParams } from '@mui/x-data-grid';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { getSwarmingStateDocLinkForLabel } from '@/fleet/constants/flops_doc_mapping';
+import { CROS_DIMENSION_DOC_MAPPING } from '@/fleet/config/device_config';
 import {
   Device,
   DeviceState,
@@ -104,6 +104,7 @@ export const BASE_DIMENSIONS: Dimension[] = [
       false,
     ),
   },
+  // TODO(b/400711755): Rename this to Asset Tag
   {
     id: 'dut_id',
     displayName: 'Dut ID',
@@ -135,39 +136,15 @@ export const BASE_DIMENSIONS: Dimension[] = [
  * Customized ChromeOS config for applying custom overrides for different
  * dimensions. Used, for example, to add doc links to specific table cells.
  */
-// TODO: b/400795310 - Get rid of need to explicitly set getValue.
-export const CROS_DIMENSION_OVERRIDES: Dimension[] = [
-  {
-    id: 'dut_state',
+export const CROS_DIMENSION_OVERRIDES: Dimension[] =
+  CROS_DIMENSION_DOC_MAPPING.map(({ id, linkGenerator }) => ({
+    id,
+    // The first Array entry of values is a comma separated string with all
+    // values.
     getValue: (device: Device) =>
-      device.deviceSpec?.labels['dut_state']?.values[0] || '',
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
-  },
-  {
-    id: 'label-servo_state',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['label-servo_state']?.values[0] || '',
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
-  },
-  {
-    id: 'bluetooth_state',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['bluetooth_state']?.values[0] || '',
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
-  },
-  {
-    id: 'label-model',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['label-model']?.values[0] || '',
-    renderCell: renderCellWithLink((value) => `http://go/dlm-model/${value}`),
-  },
-  {
-    id: 'label-board',
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels['label-board']?.values[0] || '',
-    renderCell: renderCellWithLink((value) => `http://go/dlm-board/${value}`),
-  },
-];
+      device.deviceSpec?.labels[id]?.values[0] || '',
+    renderCell: renderCellWithLink(linkGenerator),
+  }));
 
 /**
  * Constant with all of the different configured overrides for columns. The

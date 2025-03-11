@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { getSwarmingStateDocLinkForLabel } from './flops_doc_mapping';
+
 // this is loosely defining default columns based on b/391621656
 // Swarming labels are dynamic, but for specific views, such as FLOPS'
 // ChromeOS device view, commonly used labels are known. The code will
@@ -38,4 +40,35 @@ export const COMMON_DEVICE_FILTERS: string[] = [
   'label-model',
   'label-pool',
   'label-phase',
+];
+
+interface DocMapping {
+  id: string;
+  linkGenerator: (value: string) => string;
+}
+
+/**
+ * Configuration for generating doc links for specific labels.
+ */
+export const CROS_DIMENSION_DOC_MAPPING: DocMapping[] = [
+  {
+    id: 'dut_state',
+    linkGenerator: getSwarmingStateDocLinkForLabel,
+  },
+  {
+    id: 'label-servo_state',
+    linkGenerator: getSwarmingStateDocLinkForLabel,
+  },
+  {
+    id: 'bluetooth_state',
+    linkGenerator: getSwarmingStateDocLinkForLabel,
+  },
+  {
+    id: 'label-model',
+    linkGenerator: (value) => `http://go/dlm-model/${value}`,
+  },
+  {
+    id: 'label-board',
+    linkGenerator: (value) => `http://go/dlm-board/${value}`,
+  },
 ];
