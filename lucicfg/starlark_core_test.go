@@ -148,77 +148,21 @@ func TestCore(t *testing.T) {
 				testVersion: "1.1.1",
 			})
 
-			// If test was expected to fail on Starlark side, make sure it did, in
-			// an expected way.
+			// If test was expected to fail, make sure it did, in an expected way.
 			if expectErrExct != "" || expectErrLike != "" {
-				allErrs := strings.Builder{}
-				var skip bool
-				errors.Walk(err, func(err error) bool {
-					if skip {
-						skip = false
-						return true
-					}
-
-					if bt, ok := err.(BacktracableError); ok {
-						allErrs.WriteString(bt.Backtrace())
-						// We need to skip Unwrap from starlark.EvalError
-						_, skip = err.(*starlark.EvalError)
-					} else {
-						switch err.(type) {
-						case errors.MultiError, errors.Wrapped:
-							return true
-						}
-
-						allErrs.WriteString(err.Error())
-					}
-					allErrs.WriteString("\n\n")
-					return true
-				})
-
-				// Strip line and column numbers from backtraces.
-				normalized := builtins.NormalizeStacktrace(allErrs.String())
-
-				if expectErrExct != "" {
-					errorOnDiff(t, normalized, expectErrExct)
-				} else {
-					errorOnPatternMismatch(t, normalized, expectErrLike)
-				}
+				checkExpectedErrs(t, err, expectErrExct, expectErrLike)
 				return nil
 			}
 
-			// Otherwise just report all errors to Mr. T.
-			errors.WalkLeaves(err, func(err error) bool {
-				if bt, ok := err.(BacktracableError); ok {
-					t.Errorf("%s\n", bt.Backtrace())
-				} else {
-					t.Errorf("%s\n", err)
-				}
-				return true
-			})
+			// Otherwise just report all errors (if any) to Mr. T.
+			reportErr(t, err)
 			if err != nil {
 				return nil // the error has been reported already
 			}
 
 			// If was expecting to see some configs, assert we did see them.
 			if expectCfg != "" {
-				got := bytes.Buffer{}
-				for idx, f := range state.Output.Files() {
-					if idx != 0 {
-						fmt.Fprintf(&got, "\n\n")
-					}
-					fmt.Fprintf(&got, "=== %s\n", f)
-					if blob, err := state.Output.Data[f].Bytes(); err != nil {
-						t.Errorf("Serializing %s: %s", f, err)
-					} else {
-						fmt.Fprintf(&got, "%s", blob)
-					}
-					fmt.Fprintf(&got, "===")
-				}
-				if os.Getenv(RegenEnvVar) == "1" {
-					if err := updateExpected(path, got.String()); err != nil {
-						t.Errorf("Failed to updated %q: %s", path, err)
-					}
-				} else if errorOnDiff(t, got.String(), expectCfg) {
+				if ok := checkOrRegenExpectedOut(t, path, &state.Output, expectCfg); !ok {
 					gotExpectationErrors = true
 				}
 			}
@@ -283,6 +227,93 @@ func updateExpected(path, exp string) error {
 	}
 
 	return os.WriteFile(path, blob, 0666)
+}
+
+// checkOrRegenExpectedOut verifies or regenerates the output expectations.
+//
+// Depends on the value of LUCICFG_TEST_REGEN env var. Returns true if
+// everything looks good and false if the output doesn't match expectations.
+func checkOrRegenExpectedOut(t *testing.T, scriptPath string, output *Output, expectCfg string) bool {
+	t.Helper()
+
+	got := bytes.Buffer{}
+	for idx, f := range output.Files() {
+		if idx != 0 {
+			fmt.Fprintf(&got, "\n\n")
+		}
+		fmt.Fprintf(&got, "=== %s\n", f)
+		if blob, err := output.Data[f].Bytes(); err != nil {
+			t.Errorf("Serializing %s: %s", f, err)
+		} else {
+			fmt.Fprintf(&got, "%s", blob)
+		}
+		fmt.Fprintf(&got, "===")
+	}
+	if os.Getenv(RegenEnvVar) == "1" {
+		if err := updateExpected(scriptPath, got.String()); err != nil {
+			t.Errorf("Failed to updated %q: %s", scriptPath, err)
+		}
+	} else if errorOnDiff(t, got.String(), expectCfg) {
+		return false
+	}
+	return true
+}
+
+// reportErr reports all suberrors of err to `t` (with starlark backtraces).
+func reportErr(t *testing.T, err error) {
+	t.Helper()
+
+	errors.WalkLeaves(err, func(err error) bool {
+		var bt BacktracableError
+		if errors.As(err, &bt) {
+			t.Errorf("%s\n", bt.Backtrace())
+		} else {
+			t.Errorf("%s\n", err)
+		}
+		return true
+	})
+}
+
+// checkExpectedErrs verifies the error matches expectations.
+func checkExpectedErrs(t *testing.T, err error, expectErrExct, expectErrLike string) {
+	t.Helper()
+
+	allErrs := strings.Builder{}
+	var skip bool
+	errors.Walk(err, func(err error) bool {
+		if skip {
+			skip = false
+			return true
+		}
+
+		if bt, ok := err.(BacktracableError); ok {
+			allErrs.WriteString(bt.Backtrace())
+			// We need to skip Unwrap from starlark.EvalError to avoid logging the
+			// same error twice.
+			_, skip = err.(*starlark.EvalError)
+		} else {
+			switch err := err.(type) {
+			case errors.MultiError:
+				return true
+			case errors.Wrapped:
+				if err.Unwrap() != nil {
+					return true
+				}
+			}
+			allErrs.WriteString(err.Error())
+		}
+		allErrs.WriteString("\n\n")
+		return true
+	})
+
+	// Strip line and column numbers from backtraces.
+	normalized := builtins.NormalizeStacktrace(allErrs.String())
+
+	if expectErrExct != "" {
+		errorOnDiff(t, normalized, expectErrExct)
+	} else {
+		errorOnPatternMismatch(t, normalized, expectErrLike)
+	}
 }
 
 // errorOnDiff emits an error to T and returns true if got != exp.
