@@ -70,6 +70,16 @@ func TestWalk(t *testing.T) {
 			assert.Loosely(t, count, should.BeZero)
 		})
 
+		t.Run(`Will visit a simple annotator error.`, func(t *ftt.Test) {
+			WalkLeaves(Reason("sup").Err(), walkFn)
+			assert.Loosely(t, count, should.Equal(1))
+		})
+
+		t.Run(`Will visit a wrapped annotator error.`, func(t *ftt.Test) {
+			WalkLeaves(Annotate(Reason("sup").Err(), "boo").Err(), walkFn)
+			assert.Loosely(t, count, should.Equal(1))
+		})
+
 		t.Run(`Will traverse leaves of a wrapped MultiError.`, func(t *ftt.Test) {
 			WalkLeaves(MultiError{nil, testWrap(New("sup")), New("sup")}, walkFn)
 			assert.Loosely(t, count, should.Equal(2))
