@@ -48,6 +48,8 @@ import {
   DeleteGroupRequest,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
+import { GroupLink } from './group_link';
+
 // True if group name starts with '<something>/' prefix, where
 // <something> is a non-empty string.
 function isExternalGroupName(name: string) {
@@ -396,10 +398,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                         placeholder="administrators"
                       ></TextField>
                     ) : (
-                      <Typography variant="body2" style={{ width: '100%' }}>
-                        {' '}
-                        {owners}{' '}
-                      </Typography>
+                      owners && <GroupLink name={owners} />
                     )}
                   </TableCell>
                 </TableRow>

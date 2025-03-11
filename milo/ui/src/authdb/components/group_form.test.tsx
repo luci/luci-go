@@ -361,4 +361,24 @@ describe('<GroupForm />', () => {
       screen.getByText('Invalid owners name. Must be a group.'),
     ).toBeInTheDocument();
   });
+
+  test('owners group links correctly', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+          <GroupForm name="123" refetchList={() => {}} />
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('group-form');
+
+    expect(screen.getByText(mockGroup.owners)).toBeInTheDocument();
+    expect(screen.getByTestId(`${mockGroup.owners}-link`)).toHaveAttribute(
+      'href',
+      `/ui/auth/groups/${mockGroup.owners}`,
+    );
+  });
 });
