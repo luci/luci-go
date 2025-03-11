@@ -2,6 +2,7 @@ import styled from '@emotion/styled';
 import { Alert, CircularProgress } from '@mui/material';
 import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -12,10 +13,16 @@ import {
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
+import {
+  filtersUpdater,
+  getFilters,
+} from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -134,16 +141,94 @@ const getOrderByDto = (sortModel: GridSortModel) => {
   return `${getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id} ${sortColumn.sort}`;
 };
 
+// TODO(justinsuen): remove hardcoded filter categories and pull them from BQ.
+const filterOpts: OptionCategory[] = [
+  {
+    label: 'RR ID',
+    value: 'rr_id',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+  {
+    label: 'Resource Details',
+    value: 'resource_details',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+  {
+    label: 'Procurement End Date',
+    value: 'procurement_end_date',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+  {
+    label: 'Build Target End Date',
+    value: 'build_target_end_date',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+  {
+    label: 'QA Target End Date',
+    value: 'qa_end_date',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+  {
+    label: 'Config Target End Date',
+    value: 'config_target_end_date',
+    options: [
+      {
+        label: 'filter 1',
+        value: 'filter value 1',
+      },
+    ],
+  },
+];
+
 export const ResourceRequestListPage = () => {
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [orderByParam, updateOrderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const [orderByParam, updateOrderByParam] = useOrderByParam();
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-
   const sortModel = getSortModelFromOrderByParam(orderByParam);
+
+  // Hardcoding filter options
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
+    getFilters(searchParams),
+  );
+
+  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
+    setSelectedOptions(newSelectedOptions);
+    setSearchParams(filtersUpdater(newSelectedOptions));
+
+    // Clear out all the page tokens when the filter changes.
+    // An AIP-158 page token is only valid for the filter
+    // option that generated it.
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  };
 
   const handleSortModelChange = (newSortModel: GridSortModel) => {
     updateOrderByParam(getOrderByParamFromSortModel(newSortModel));
@@ -188,31 +273,57 @@ export const ResourceRequestListPage = () => {
 
   return (
     <Container>
+      <div
+        css={{
+          marginTop: 24,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 28,
+          borderRadius: 4,
+        }}
+      >
+        <MultiSelectFilter
+          filterOptions={filterOpts}
+          selectedOptions={selectedOptions}
+          onSelectedOptionsChange={onSelectedOptionsChange}
+          isLoading={false}
+        />
+      </div>
+
       {/* TODO: this piece of code is similar to data_table.tsx and could probably be separated to a shared component */}
-      <StyledGrid
-        columns={columns.map((column) => column.gridColDef)}
-        rows={rows}
-        slots={{
-          pagination: Pagination,
+      <div
+        css={{
+          borderRadius: 4,
+          marginTop: 24,
         }}
-        slotProps={{
-          pagination: {
-            pagerCtx: pagerCtx,
-            nextPageToken: query.data.nextPageToken,
-          },
-        }}
-        paginationMode="server"
-        pageSizeOptions={pagerCtx.options.pageSizeOptions}
-        rowCount={-1}
-        paginationModel={{
-          page: getCurrentPageIndex(pagerCtx),
-          pageSize: pagerCtx.options.defaultPageSize,
-        }}
-        rowSelection={false}
-        sortModel={sortModel}
-        sortingMode="server"
-        onSortModelChange={handleSortModelChange}
-      />
+      >
+        <StyledGrid
+          columns={columns.map((column) => column.gridColDef)}
+          rows={rows}
+          slots={{
+            pagination: Pagination,
+          }}
+          slotProps={{
+            pagination: {
+              pagerCtx: pagerCtx,
+              nextPageToken: query.data.nextPageToken,
+            },
+          }}
+          paginationMode="server"
+          pageSizeOptions={pagerCtx.options.pageSizeOptions}
+          rowCount={-1}
+          paginationModel={{
+            page: getCurrentPageIndex(pagerCtx),
+            pageSize: pagerCtx.options.defaultPageSize,
+          }}
+          rowSelection={false}
+          sortModel={sortModel}
+          sortingMode="server"
+          onSortModelChange={handleSortModelChange}
+        />
+      </div>
     </Container>
   );
 };
