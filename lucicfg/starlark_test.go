@@ -200,7 +200,7 @@ func TestAllStarlark(t *testing.T) {
 					if blob, err := state.Output.Data[f].Bytes(); err != nil {
 						t.Errorf("Serializing %s: %s", f, err)
 					} else {
-						fmt.Fprintf(&got, string(blob))
+						fmt.Fprintf(&got, "%s", blob)
 					}
 					fmt.Fprintf(&got, "===")
 				}

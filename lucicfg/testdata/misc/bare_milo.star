@@ -10,7 +10,7 @@ luci.milo(
 # Expect configs:
 #
 # === luci-milo.cfg
-# bug_url_template: "https://b.corp.google.com/createIssue?notes={{{milo_build_url}}}&title=build%20{{{build.builder.build}}}%20failed"
+# bug_url_template: "https://b.corp.google.com/createIssue?notes={{{milo_build_url}}}&title=build%%20{{{build.builder.build}}}%%20failed"
 # ===
 #
 # === project.cfg
