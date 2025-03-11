@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -132,6 +134,24 @@ func TestListArtifactLines(t *testing.T) {
 			_, err := srv.ListArtifactLines(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("invocations/inv2 not found"))
+		})
+
+		t.Run("given an not found error from the content reader, then should return not found", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv", "", "a", map[string]any{
+					"Size": len(contentString),
+				}),
+			)
+			const name = "invocations/inv/artifacts/a"
+			req := &pb.ListArtifactLinesRequest{Parent: name}
+			casReader := &artifactcontenttest.FakeCASReader{
+				ResErr: status.Errorf(codes.NotFound, "not found"),
+			}
+			errSrv := newTestResultDBServiceWithCASReader(casReader)
+			_, err := errSrv.ListArtifactLines(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.ErrIsLike(t, err, "artifact not found")
 		})
 
 		t.Run("given valid content, then should return valid lines", func(t *ftt.Test) {

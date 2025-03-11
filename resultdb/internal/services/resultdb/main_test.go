@@ -41,6 +41,10 @@ func newTestResultDBServiceWithArtifactContent(artifactContent string) pb.Result
 			{Data: []byte(artifactContent)},
 		},
 	}
+	return newTestResultDBServiceWithCASReader(casReader)
+}
+
+func newTestResultDBServiceWithCASReader(casReader *artifactcontenttest.FakeCASReader) pb.ResultDBServer {
 	svr := &resultDBServer{
 		contentServer: &artifactcontent.Server{
 			HostnameProvider: func(string) string {

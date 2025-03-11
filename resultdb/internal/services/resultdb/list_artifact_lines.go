@@ -19,6 +19,8 @@ import (
 	"io"
 
 	"google.golang.org/genproto/googleapis/bytestream"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -66,7 +68,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 
 	content, err := s.readArtifactData(ctx, art)
 	if err != nil {
-		return nil, errors.Annotate(err, "read artifact").Err()
+		return nil, errors.Annotate(err, "read artifact data").Err()
 	}
 
 	year := invocation.CreateTime.AsTime().Year()
@@ -112,6 +114,10 @@ func (s *resultDBServer) readArtifactData(ctx context.Context, art *artifacts.Ar
 			break // End of stream reached
 		}
 		if err != nil {
+			st, ok := status.FromError(err)
+			if ok && st.Code() == codes.NotFound {
+				return nil, appstatus.Error(codes.NotFound, "artifact not found")
+			}
 			return nil, errors.Annotate(err, "reading bytes for artifact").Err()
 		}
 
