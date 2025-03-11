@@ -111,6 +111,7 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"go.starlark.net/syntax"
 )
 
 var (
@@ -282,10 +283,18 @@ type Interpreter struct {
 	// Has no effect on explicit ExecModule calls from Go code.
 	ForbidExec string
 
+	// Options passed to the Starlark interpreter (or DefaultFileOptions if nil).
+	Options *syntax.FileOptions
+
 	modules map[ModuleKey]*loadedModule // cache of the loaded modules
 	execed  map[ModuleKey]struct{}      // a set of modules that were ever exec'ed
 	visited []ModuleKey                 // all modules, in order of visits
 	globals starlark.StringDict         // global symbols exposed to all modules
+}
+
+// DefaultFileOptions are options used by default.
+func DefaultFileOptions() *syntax.FileOptions {
+	return &syntax.FileOptions{Set: true}
 }
 
 // ModuleKey is a key of a module within a cache of loaded modules.
@@ -676,5 +685,9 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 	//
 	// Use user-friendly module name (with omitted "@__main__") for error messages
 	// and stack traces to avoid confusing the user.
-	return starlark.ExecFile(th, key.String(), src, intr.globals)
+	opts := intr.Options
+	if opts == nil {
+		opts = DefaultFileOptions()
+	}
+	return starlark.ExecFileOptions(opts, th, key.String(), src, intr.globals)
 }

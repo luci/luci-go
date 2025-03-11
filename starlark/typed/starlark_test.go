@@ -17,16 +17,10 @@ package typed
 import (
 	"testing"
 
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/starlark/starlarktest"
 )
-
-func init() {
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-}
 
 func TestAllStarlark(t *testing.T) {
 	t.Parallel()

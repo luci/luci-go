@@ -29,6 +29,7 @@ import (
 
 	"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/builtins"
@@ -155,6 +156,10 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			if in.testThreadModifier != nil {
 				in.testThreadModifier(th)
 			}
+		},
+
+		Options: &syntax.FileOptions{
+			Set: true, // allow set(...) datatype
 		},
 	}
 

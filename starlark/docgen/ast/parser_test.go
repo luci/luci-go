@@ -126,7 +126,7 @@ func TestParseModule(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		mod, err := ParseModule("mod.star", goodInput, func(s string) (string, error) { return s, nil })
+		mod, err := ParseModule(&syntax.FileOptions{}, "mod.star", goodInput, func(s string) (string, error) { return s, nil })
 		assert.Loosely(t, err, should.BeNil)
 		buf := strings.Builder{}
 		dumpTree(mod, &buf, "")

@@ -205,8 +205,8 @@ func (n *Module) Doc() string { return n.docstring }
 // ParseModule parses a single Starlark module.
 //
 // Filename is only used when recording position information.
-func ParseModule(filename, body string, normalize func(string) (string, error)) (*Module, error) {
-	ast, err := syntax.Parse(filename, body, syntax.RetainComments)
+func ParseModule(opts *syntax.FileOptions, filename, body string, normalize func(string) (string, error)) (*Module, error) {
+	ast, err := opts.Parse(filename, body, syntax.RetainComments)
 	if err != nil {
 		return nil, err
 	}

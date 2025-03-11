@@ -26,7 +26,6 @@ import (
 	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/errors"
@@ -46,14 +45,6 @@ const (
 	expectErrorsHeader     = "Expect errors:"
 	expectErrorsLikeHeader = "Expect errors like:"
 )
-
-func init() {
-	// Enable not-yet-standard features.
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-	resolve.AllowFloat = true
-	resolve.AllowSet = true
-}
 
 // TestAllStarlark loads and executes all test scripts (testdata/*.star).
 func TestAllStarlark(t *testing.T) {

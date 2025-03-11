@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
-	"go.starlark.net/resolve"
 	"gopkg.in/yaml.v2"
 
 	"go.chromium.org/luci/auth/client/authcli"
@@ -39,12 +38,6 @@ import (
 
 // Main runs the lucicfg CLI.
 func Main(params base.Parameters, args []string) int {
-	// Enable not-yet-standard Starlark features.
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-	resolve.AllowFloat = true
-	resolve.AllowSet = true
-
 	// We prefer not to wrap lines in generated YAML.
 	yaml.FutureLineWrap()
 

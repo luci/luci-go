@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -51,10 +52,11 @@ func TestRegexp(t *testing.T) {
 	submatches := RegexpMatcher("submatches")
 
 	runScript := func(code string) error {
-		_, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
-			"submatches": submatches,
-			"fail":       Fail, // for 'assert'
-		})
+		_, err := starlark.ExecFileOptions(&syntax.FileOptions{}, &starlark.Thread{}, "main", code,
+			starlark.StringDict{
+				"submatches": submatches,
+				"fail":       Fail, // for 'assert'
+			})
 		return err
 	}
 

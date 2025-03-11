@@ -18,19 +18,11 @@ import (
 	"os"
 	"testing"
 
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarktest"
 )
-
-func init() {
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-	resolve.AllowFloat = true
-	resolve.AllowSet = true
-}
 
 func TestAllStarlark(t *testing.T) {
 	t.Parallel()

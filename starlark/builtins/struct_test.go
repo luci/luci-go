@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -40,13 +41,14 @@ func TestStruct(t *testing.T) {
 	t.Parallel()
 
 	runScript := func(code string) error {
-		_, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
-			"struct":    Struct,
-			"genstruct": GenStruct,
-			"ctor":      Ctor,
+		_, err := starlark.ExecFileOptions(&syntax.FileOptions{}, &starlark.Thread{}, "main", code,
+			starlark.StringDict{
+				"struct":    Struct,
+				"genstruct": GenStruct,
+				"ctor":      Ctor,
 
-			"fail": Fail, // for 'assert'
-		})
+				"fail": Fail, // for 'assert'
+			})
 		return err
 	}
 

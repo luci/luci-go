@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -29,9 +30,10 @@ func TestStacktrace(t *testing.T) {
 	t.Parallel()
 
 	runScript := func(code string) (string, error) {
-		out, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
-			"stacktrace": Stacktrace,
-		})
+		out, err := starlark.ExecFileOptions(&syntax.FileOptions{}, &starlark.Thread{}, "main", code,
+			starlark.StringDict{
+				"stacktrace": Stacktrace,
+			})
 		if err != nil {
 			return "", err
 		}

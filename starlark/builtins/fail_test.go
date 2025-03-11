@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -31,10 +32,11 @@ func TestFail(t *testing.T) {
 		th := &starlark.Thread{}
 		fc := &FailureCollector{}
 		fc.Install(th)
-		_, err := starlark.ExecFile(th, "main", code, starlark.StringDict{
-			"fail":       Fail,
-			"stacktrace": Stacktrace,
-		})
+		_, err := starlark.ExecFileOptions(&syntax.FileOptions{}, th, "main", code,
+			starlark.StringDict{
+				"fail":       Fail,
+				"stacktrace": Stacktrace,
+			})
 		if f := fc.LatestFailure(); f != nil {
 			return f
 		}

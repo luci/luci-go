@@ -17,18 +17,11 @@ package graph
 import (
 	"testing"
 
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarktest"
 )
-
-func init() {
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-	resolve.AllowSet = true
-}
 
 func TestGraph(t *testing.T) {
 	t.Parallel()

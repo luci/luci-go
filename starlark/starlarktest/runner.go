@@ -29,6 +29,7 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarktest"
+	"go.starlark.net/syntax"
 
 	"go.chromium.org/luci/starlark/starlarktest/vendored"
 )
@@ -38,6 +39,7 @@ type Options struct {
 	TestsDir    string              // directory to search for *.star files
 	Skip        string              // directories with this name are skipped
 	Predeclared starlark.StringDict // symbols to put into the global dict
+	FileOptions *syntax.FileOptions // passed to the Starlark interpreter
 
 	// Executor runs a single starlark test file.
 	//
@@ -69,7 +71,10 @@ func RunTests(t *testing.T, opts Options) {
 
 	opts.Predeclared = predecl
 	if opts.Executor == nil {
-		opts.Executor = defaultExecutor
+		if opts.FileOptions == nil {
+			opts.FileOptions = &syntax.FileOptions{Set: true}
+		}
+		opts.Executor = makeDefaultExecutor(opts.FileOptions)
 	}
 
 	var files []string
@@ -112,19 +117,21 @@ func runSingleTest(t *testing.T, script string, opts Options) {
 	}
 }
 
-func defaultExecutor(t *testing.T, path string, predeclared starlark.StringDict) error {
-	th := starlark.Thread{}
-	HookThread(&th, t)
+func makeDefaultExecutor(opts *syntax.FileOptions) func(*testing.T, string, starlark.StringDict) error {
+	return func(t *testing.T, path string, predeclared starlark.StringDict) error {
+		th := starlark.Thread{}
+		HookThread(&th, t)
 
-	code, err := os.ReadFile(path)
-	if err != nil {
+		code, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		// Use slash path as a script name to make stack traces look uniform across
+		// OSes.
+		_, err = starlark.ExecFileOptions(&syntax.FileOptions{Set: true}, &th, filepath.ToSlash(path), code, predeclared)
 		return err
 	}
-
-	// Use slash path as a script name to make stack traces look uniform across
-	// OSes.
-	_, err = starlark.ExecFile(&th, filepath.ToSlash(path), code, predeclared)
-	return err
 }
 
 // materializeAssertStar creates assert.star file on disk to feed it to the

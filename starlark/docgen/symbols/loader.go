@@ -15,6 +15,8 @@
 package symbols
 
 import (
+	"go.starlark.net/syntax"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/docgen/ast"
@@ -51,6 +53,8 @@ import (
 // they are gathered from many internal modules via load(...) statements,
 // assignments and structs.
 type Loader struct {
+	// Options defines how to parse Starlark (if nil, will use some default).
+	Options *syntax.FileOptions
 	// Normalize normalizes a load() statement relative to the parent.
 	Normalize func(parent, module string) (string, error)
 	// Source loads module's source code.
@@ -100,7 +104,7 @@ func (l *Loader) Load(module string) (syms *Struct, err error) {
 		return nil, err
 	}
 	l.sources[module] = src
-	mod, err := ast.ParseModule(module, src, func(s string) (string, error) {
+	mod, err := ast.ParseModule(l.opts(), module, src, func(s string) (string, error) {
 		return l.Normalize(module, s)
 	})
 	if err != nil {
@@ -116,6 +120,14 @@ func (l *Loader) Load(module string) (syms *Struct, err error) {
 	}
 	l.symbols[module] = top
 	return top, nil
+}
+
+// opts returns syntax.FileOptions to use for parsing.
+func (l *Loader) opts() *syntax.FileOptions {
+	if l.Options != nil {
+		return l.Options
+	}
+	return &syntax.FileOptions{Set: true}
 }
 
 // resolveRefs visits nodes in the namespace and follows References and
