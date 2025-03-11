@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef } from '@mui/x-data-grid';
+import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
+import { Cell } from '@/fleet/components/device_table/Cell';
+import {
+  COLUMN_OVERRIDES,
+  labelValuesToString,
+} from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -36,7 +40,15 @@ export const SchedulingData = ({ device }: SchedulingDataProps) => {
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'Key', flex: 1 },
-    { field: 'value', headerName: 'Value', flex: 3 },
+    {
+      field: 'value',
+      headerName: 'Value',
+      flex: 3,
+      renderCell: (props: GridRenderCellParams) =>
+        COLUMN_OVERRIDES.find((dim) => dim.id === props.id)?.renderCell?.(
+          props,
+        ) || <Cell {...props}></Cell>,
+    },
   ];
 
   return (
