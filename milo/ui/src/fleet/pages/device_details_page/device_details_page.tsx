@@ -217,6 +217,7 @@ export const DeviceDetailsPage = () => {
 };
 
 export function Component() {
+  const { id = '' } = useParams();
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-details">
       <RecoverableErrorBoundary
@@ -224,8 +225,7 @@ export function Component() {
         // this way.
         key="fleet-device-details-page"
       >
-        {/** TODO: Update this to show the ID of the device being viewed.  */}
-        <FleetHelmet pageTitle="Device Details" />
+        <FleetHelmet pageTitle={`${id ? `${id} | ` : ''}Device Details`} />
         <LoggedInBoundary>
           <DeviceDetailsPage />
         </LoggedInBoundary>

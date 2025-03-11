@@ -51,7 +51,7 @@ export const FleetLayout = () => {
   return (
     <ThemeProvider theme={theme}>
       <ScrollingBase>
-        <Helmet titleTemplate="%s | Fleet" defaultTitle="Fleet">
+        <Helmet titleTemplate="%s | Fleet Console" defaultTitle="Fleet Console">
           <link rel="icon" href={bassFavicon} />
         </Helmet>
         <Sticky

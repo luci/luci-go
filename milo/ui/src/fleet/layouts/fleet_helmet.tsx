@@ -26,7 +26,7 @@ interface FleetHelmetProps {
 export function FleetHelmet({ pageTitle }: FleetHelmetProps) {
   return (
     <Helmet>
-      <title>Fleet Console {pageTitle ? ` | ${pageTitle}` : ''}</title>
+      <title>{pageTitle}</title>
       <link rel="icon" href={bassFavicon} />
     </Helmet>
   );
