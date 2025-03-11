@@ -17,6 +17,7 @@ package gsutil
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -34,6 +35,10 @@ import (
 
 func TestGenerateSignedURL(t *testing.T) {
 	t.Parallel()
+
+	if os.Getenv("INTEGRATION_TESTS") != "1" {
+		t.Skip("talks to real Google Storage")
+	}
 
 	ftt.Run(`Generate Signed URL`, t, func(t *ftt.Test) {
 		t.Run(`Valid`, func(t *ftt.Test) {
