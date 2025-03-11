@@ -309,6 +309,9 @@ type BotInfo struct {
 	// This is used to skip recording the same event over and over if the bot
 	// retries the call.
 	LastEventDedupKey string `gae:"last_event_dedup_key,noindex"`
+
+	// RBEEffectiveBotID is the derived bot ID to use to communicate with RBE.
+	RBEEffectiveBotID string `gae:"rbe_effective_bot_id,noindex"`
 }
 
 // LastTaskDetails holds information about the task most recently finished by
