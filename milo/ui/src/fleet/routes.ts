@@ -32,6 +32,10 @@ export const fleetRoutes: RouteObject[] = [
             lazy: () =>
               import('@/fleet/pages/redirects/single_device_redirect'),
           },
+          {
+            path: 'swarming/*',
+            lazy: () => import('@/fleet/pages/redirects/swarming_redirect'),
+          },
         ],
       },
       {

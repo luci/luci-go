@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { TasksClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import {
+  BotsClientImpl,
+  TasksClientImpl,
+} from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
 const ALLOWED_HOSTS = Object.freeze([
   SETTINGS.swarming.defaultHost,
@@ -28,5 +31,16 @@ export function useTasksClient(host: string) {
   return usePrpcServiceClient({
     host,
     ClientImpl: TasksClientImpl,
+  });
+}
+
+export function useBotsClient(host: string) {
+  if (!ALLOWED_HOSTS.includes(host)) {
+    throw new Error(`'${host}' is not an allowed host`);
+  }
+
+  return usePrpcServiceClient({
+    host,
+    ClientImpl: BotsClientImpl,
   });
 }
