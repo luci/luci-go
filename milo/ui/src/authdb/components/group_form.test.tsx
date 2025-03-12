@@ -16,6 +16,7 @@ import List from '@mui/material/List';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
+import { stripPrefix } from '@/authdb/common/helpers';
 import {
   createMockGroupIndividual,
   mockFetchGetGroup,
@@ -54,8 +55,11 @@ describe('<GroupForm />', () => {
 
     expect(screen.getByText(mockGroup.description)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.owners)).toBeInTheDocument();
-    expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
-    expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
+    expect(screen.getByText(editedMembers[0])).toBeInTheDocument();
+    expect(screen.getByText(editedMembers[1])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.nested[0])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.nested[1])).toBeInTheDocument();
   });
@@ -91,11 +95,13 @@ describe('<GroupForm />', () => {
       </FakeContextProvider>,
     );
     await screen.findByTestId('group-form');
-
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
     expect(screen.queryByText(mockGroup.description)).toBeNull();
     expect(screen.queryByText(mockGroup.owners)).toBeNull();
-    expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
-    expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
+    expect(screen.getByText(editedMembers[0])).toBeInTheDocument();
+    expect(screen.getByText(editedMembers[1])).toBeInTheDocument();
     expect(screen.queryByText(mockGroup.nested[0])).toBeNull();
     expect(screen.queryByText(mockGroup.nested[1])).toBeNull();
   });

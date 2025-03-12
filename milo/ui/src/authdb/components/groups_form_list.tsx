@@ -39,6 +39,7 @@ import {
 } from 'react';
 
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
+import { addPrefixToItems, stripPrefix } from '@/authdb/common/helpers';
 
 import { GroupLink } from './group_link';
 
@@ -90,6 +91,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const [addingItem, setAddingItem] = useState<boolean>(false);
     const [newItems, setNewItems] = useState<string>('');
     const [errorMessage, setErrorMessage] = useState<string>('');
+    if (name === 'Members') {
+      initialValues = initialValues.map((member) =>
+        stripPrefix('user', member),
+      );
+    }
     // The initial form items which reflect the items currently in auth service backend.
     const [savedValues, setSavedValues] = useState<string[]>(initialValues);
     // The current edited item list, including removed & added items.
@@ -122,6 +128,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     useImperativeHandle(ref, () => ({
       getItems: () => {
+        // Re-add 'user' prefix in members before sending back to groups form.
+        if (name === 'Members') {
+          const editedMembers = addPrefixToItems('user', asString(items) || []);
+          return editedMembers;
+        }
         return asString(items);
       },
       changeItems: (newValues: string[]) => {
@@ -141,9 +152,12 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const addToItems = () => {
       if (validateItems()) {
         const updatedItems = [...items];
-        const newItemsArray = newItems
+        let newItemsArray = newItems
           .split(/[\n ]+/)
           .filter((item) => item !== '');
+        if (name === 'Globs') {
+          newItemsArray = addPrefixToItems('user', newItemsArray);
+        }
         updatedItems.push(...asItems(newItemsArray));
         setItems(updatedItems);
         resetTextfield();
@@ -152,13 +166,24 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     const validateItems = useCallback(() => {
       // Make sure item added is not a duplicate.
-      const newItemsArray = newItems
+      let newItemsArray = newItems
         .split(/[\n ]+/)
         .filter((item) => item !== '');
+      // Globs need prefix to be added before duplication validation.
+      // E.g. Otherwise user:*@email.com will not be detected as a duplicate to *@email.com
+      if (name === 'Globs') {
+        newItemsArray = addPrefixToItems('user', newItemsArray);
+      }
       const hasValues = (value: string) => {
         for (const item of items) {
-          if (item.value === value) {
-            return true;
+          if (name === 'Members') {
+            if (item.value.toLowerCase() === value.toLowerCase()) {
+              return true;
+            }
+          } else {
+            if (item.value === value) {
+              return true;
+            }
           }
         }
         return false;

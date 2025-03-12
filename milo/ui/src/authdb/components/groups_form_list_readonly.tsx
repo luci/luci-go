@@ -19,6 +19,8 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState, useEffect } from 'react';
 
+import { stripPrefix } from '@/authdb/common/helpers';
+
 import './groups.css';
 
 interface GroupsFormListReadonlyProps {
@@ -30,6 +32,7 @@ export function GroupsFormListReadonly({
   initialItems,
   name,
 }: GroupsFormListReadonlyProps) {
+  initialItems = initialItems.map((member) => stripPrefix('user', member));
   const [items, setItems] = useState<string[]>(initialItems);
 
   useEffect(() => {

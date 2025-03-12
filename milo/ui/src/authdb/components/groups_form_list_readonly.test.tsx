@@ -14,6 +14,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
+import { stripPrefix } from '@/authdb/common/helpers';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -38,12 +39,15 @@ describe('<GroupsFormList readonly/>', () => {
   });
 
   test('does not show remove button on hover', async () => {
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
     // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
+      const row = screen.getByTestId(`item-row-${editedMembers[i]}`);
       fireEvent.mouseEnter(row);
       expect(
-        screen.queryByTestId(`remove-button-${mockGroup.members[i]}`),
+        screen.queryByTestId(`remove-button-${editedMembers[i]}`),
       ).toBeNull();
     }
   });

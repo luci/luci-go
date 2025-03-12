@@ -16,6 +16,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 
+import { stripPrefix } from '@/authdb/common/helpers';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -36,21 +37,27 @@ describe('<GroupsFormList editable/>', () => {
     await screen.findByTestId('groups-form-list');
   });
   test('displays items', async () => {
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
     // Check each member is displayed.
-    for (let i = 0; i < mockGroup.members.length; i++) {
-      expect(screen.getByText(mockGroup.members[i])).toBeInTheDocument();
+    for (let i = 0; i < editedMembers.length; i++) {
+      expect(screen.getByText(editedMembers[i])).toBeInTheDocument();
     }
     // Check no remove button exists on readonly.
     expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
   });
 
   test('shows removed members confirm dialog', async () => {
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
     // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
+      const row = screen.getByTestId(`item-row-${editedMembers[i]}`);
       fireEvent.mouseEnter(row);
       const removeCheckbox = screen
-        .getByTestId(`checkbox-button-${mockGroup.members[i]}`)
+        .getByTestId(`checkbox-button-${editedMembers[i]}`)
         .querySelector('input');
       act(() => removeCheckbox!.click());
       const removeButton = screen.getByTestId('remove-button');
@@ -124,7 +131,7 @@ describe('<GroupsFormList editable/>', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows error message on duplicate item added', async () => {
+  test('shows error message on duplicate item added (case-insensitive)', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -134,13 +141,13 @@ describe('<GroupsFormList editable/>', () => {
       .getByTestId('add-textfield')
       .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
-    await userEvent.type(textfield!, 'member1@email.com');
     // Add member that already exists.
+    await userEvent.type(textfield!, 'member1@Email.com');
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(
-      screen.getByText('Invalid Members: member1@email.com'),
+      screen.getByText('Invalid Members: member1@Email.com'),
     ).toBeInTheDocument();
   });
 
@@ -194,7 +201,40 @@ describe('<GroupsFormList editable globs/>', () => {
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
-    expect(screen.getByText('Invalid Globs: .glob')).toBeInTheDocument();
+    expect(screen.getByText('Invalid Globs: user:.glob')).toBeInTheDocument();
+  });
+  test('shows error message on duplicate item added, case-sensitive', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
+    await userEvent.type(textfield!, '*@email.com');
+    // Add member that already exists.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).toBeNull();
+    // Check correct error message is shown.
+    expect(
+      screen.getByText('Invalid Globs: user:*@email.com'),
+    ).toBeInTheDocument();
+  });
+  test('allows adding globs, case-sensitive', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
+    await userEvent.type(textfield!, '*@Email.com');
+    const confirmButton = screen.queryByTestId('confirm-button');
+    act(() => confirmButton!.click());
+    // Check new member shown in list?
+    expect(screen.getByText('user:*@Email.com')).toBeInTheDocument();
   });
 });
 
@@ -229,7 +269,24 @@ describe('<GroupsFormList editable subgroups/>', () => {
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Subgroups: Subgroup')).toBeInTheDocument();
   });
-
+  test('shows error message on duplicate subgroup added', async () => {
+    // Click add button.
+    const addButton = screen.queryByTestId('add-button');
+    expect(addButton).not.toBeNull();
+    act(() => addButton!.click());
+    // Type in textfield.
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
+    await userEvent.type(textfield!, 'subgroup1');
+    // Add member that already exists.
+    const confirmButton = screen.queryByTestId('confirm-button');
+    expect(confirmButton).toBeNull();
+    // Check correct error message is shown.
+    expect(
+      screen.getByText('Invalid Subgroups: subgroup1'),
+    ).toBeInTheDocument();
+  });
   test('subgroups link correctly', async () => {
     const groups = mockGroup.nested;
     groups.forEach((group) => {

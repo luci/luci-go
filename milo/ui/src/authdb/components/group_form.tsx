@@ -34,7 +34,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { addPrefixToItems, nameRe, stripPrefix } from '@/authdb/common/helpers';
+import { nameRe, stripPrefix } from '@/authdb/common/helpers';
 import {
   GroupsFormList,
   FormListElement,
@@ -169,16 +169,9 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
     setIsUpdating(true);
     setErrorMessage('');
     setSuccessEditedGroup(false);
-    const editedMembers = addPrefixToItems(
-      'user',
-      membersRef.current?.getItems() || [],
-    );
+    const editedMembers = membersRef.current?.getItems();
     const editedSubgroups = subgroupsRef.current?.getItems();
-    const editedGlobs = addPrefixToItems(
-      'user',
-      globsRef.current?.getItems() || [],
-    );
-
+    const editedGlobs = globsRef.current?.getItems();
     const editedGroup = AuthGroup.fromPartial({
       name: name,
       description: description || '',
@@ -288,9 +281,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
     setEtag(response?.etag);
   }
 
-  const members: string[] =
-    response?.members?.map((member) => stripPrefix('user', member)) ||
-    ([] as string[]);
+  const members: string[] = (response?.members || []) as string[];
   const subgroups: string[] = (response?.nested || []) as string[];
   const globs: string[] = (response?.globs || []) as string[];
   const callerCanModify: boolean = response?.callerCanModify || false;
