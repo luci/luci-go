@@ -39,6 +39,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const trustedCreatorGroup = "luci-resultdb-trusted-invocation-creators"
+
 // TestMagicOverdueDeadlineUnixSecs is a magic value used by tests to set an
 // invocation's deadline in the past.
 const TestMagicOverdueDeadlineUnixSecs = 904924800
@@ -196,11 +198,11 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		// in this realm, it has permission in every realm of the project.
 		project, _ := realms.Split(realm)
 		rootRealm := realms.Join(project, realms.RootRealm)
-
-		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, rootRealm, nil); {
-		case err != nil:
+		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permCreateWithReservedID, trustedCreatorGroup)
+		if err != nil {
 			return err
-		case !allowed:
+		}
+		if !allowed {
 			return appstatus.Errorf(codes.PermissionDenied, `only invocations created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`)
 		}
 	}
@@ -209,10 +211,11 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		// Export roots cannot have their realm changed after creation,
 		// so we do not need to check the project's root realm, like the
 		// other cases.
-		switch allowed, err := auth.HasPermission(ctx, permSetExportRoot, realm, nil); {
-		case err != nil:
+		allowed, err := checkPermissionOrGroupMember(ctx, realm, permSetExportRoot, trustedCreatorGroup)
+		if err != nil {
 			return err
-		case !allowed:
+		}
+		if !allowed {
 			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to set export roots in realm %q`, realm)
 		}
 	}
@@ -252,11 +255,11 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		// in this realm, it has permission in every realm of the project.
 		project, _ := realms.Split(realm)
 		rootRealm := realms.Join(project, realms.RootRealm)
-
-		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, rootRealm, nil); {
-		case err != nil:
+		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetProducerResource, trustedCreatorGroup)
+		if err != nil {
 			return err
-		case !allowed:
+		}
+		if !allowed {
 			return appstatus.Errorf(codes.PermissionDenied, `only invocations created by trusted system may have a populated producer_resource field`)
 		}
 	}
@@ -276,6 +279,23 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	return nil
+}
+
+// checkPermissionOrGroupMember returns true if the caller has permission in realm
+// or is a member of the group.
+func checkPermissionOrGroupMember(ctx context.Context, realm string, permission realms.Permission, group string) (bool, error) {
+	switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
+	case err != nil:
+		return false, err
+	case !allowed:
+		switch isMember, err := auth.IsMember(ctx, group); {
+		case err != nil:
+			return false, err
+		case !isMember:
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // CreateInvocation implements pb.RecorderServer.

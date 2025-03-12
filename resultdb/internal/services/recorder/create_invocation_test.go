@@ -93,12 +93,28 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`only invocations created by trusted systems may have id not starting with "u-"`))
 		})
 
-		t.Run(`reserved prefix, allowed`, func(t *ftt.Test) {
+		t.Run(`reserved prefix, allowed with realm permission`, func(t *ftt.Test) {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:ci", Permission: permCreateInvocation},
 					{Realm: "chromium:@root", Permission: permCreateWithReservedID},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "build:8765432100",
+				Invocation: &pb.Invocation{
+					Realm: "chromium:ci",
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+		})
+		t.Run(`reserved prefix, allowed with trusted group`, func(t *ftt.Test) {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"luci-resultdb-trusted-invocation-creators"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:ci", Permission: permCreateInvocation},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
@@ -126,7 +142,7 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`only invocations created by trusted system may have a populated producer_resource field`))
 		})
 
-		t.Run(`producer_resource allowed`, func(t *ftt.Test) {
+		t.Run(`producer_resource allowed with realm permission`, func(t *ftt.Test) {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -143,12 +159,48 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 		})
-		t.Run(`is_export_root allowed`, func(t *ftt.Test) {
+
+		t.Run(`producer_resource allowed with trusted group`, func(t *ftt.Test) {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"luci-resultdb-trusted-invocation-creators"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:ci", Permission: permCreateInvocation},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-0",
+				Invocation: &pb.Invocation{
+					Realm:            "chromium:ci",
+					ProducerResource: "//builds.example.com/builds/1",
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run(`is_export_root allowed with realm permission`, func(t *ftt.Test) {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:ci", Permission: permCreateInvocation},
 					{Realm: "chromium:ci", Permission: permSetExportRoot},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:        "chromium:ci",
+					IsExportRoot: true,
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+		})
+		t.Run(`is_export_root allowed with with trusted group`, func(t *ftt.Test) {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"luci-resultdb-trusted-invocation-creators"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:ci", Permission: permCreateInvocation},
 				},
 			})
 			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
