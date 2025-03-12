@@ -111,33 +111,31 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (res *fmtResult, err
 		l.Unlock()
 	}
 
-	rewriterFactory, err := base.GuessRewriterFactoryFunc(files)
+	formatter, err := base.GuessFormatterPolicy(files)
 	if err != nil {
 		return nil, err
 	}
 
-	// The visit method will track down all the wanted files within the directory
-	errs := buildifier.Visit(ctx, base.PathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
-		rewriter, err := rewriterFactory.GetRewriter(f.Path)
+	// The visit method will track down all the wanted files within the directory.
+	// TODO: Use package-relative paths and pass the correct root.
+	errs := buildifier.Visit(ctx, base.PathLoader, files, func(body []byte, f *build.File) errors.MultiError {
+		formatted, err := buildifier.Format(ctx, f, formatter)
 		if err != nil {
 			return errors.NewMultiError(err)
 		}
-
-		formatted := build.FormatWithRewriter(rewriter, f)
-
 		if bytes.Equal(body, formatted) {
-			outcome(path, outcomeGood, nil)
+			outcome(f.Path, outcomeGood, nil)
 			return nil
 		}
 		if fr.dryRun {
-			outcome(path, outcomeUnformatted, nil)
+			outcome(f.Path, outcomeUnformatted, nil)
 			return nil
 		}
-		if err := os.WriteFile(path, formatted, 0666); err != nil {
-			outcome(path, outcomeFailed, err)
+		if err := os.WriteFile(f.Path, formatted, 0666); err != nil {
+			outcome(f.Path, outcomeFailed, err)
 			return errors.NewMultiError(err)
 		}
-		outcome(path, outcomeFormatted, nil)
+		outcome(f.Path, outcomeFormatted, nil)
 		return nil
 	})
 

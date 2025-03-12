@@ -20,7 +20,6 @@ package vars
 import (
 	"fmt"
 
-	"github.com/bazelbuild/buildtools/build"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -63,19 +62,6 @@ type Vars struct {
 type scope struct {
 	values map[ID]varValue  // var -> (value, trace)
 	thread *starlark.Thread // just for asserts
-}
-
-// GetDefaultRewriter will return the default rewriter with basic rewriter properties
-func GetDefaultRewriter() *build.Rewriter {
-	return &build.Rewriter{
-		RewriteSet: []string{
-			"listsort",
-			"loadsort",
-			"formatdocstrings",
-			"reorderarguments",
-			"editoctal",
-		},
-	}
 }
 
 // assign mutates 'values' map, auto-initializing it if necessary.

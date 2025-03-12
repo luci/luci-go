@@ -19,11 +19,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/bazelbuild/buildtools/build"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -150,7 +148,7 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 		Output:        configSet.AsOutput("."),
 		Meta:          vr.Meta,
 		ConfigService: vr.ConfigService,
-	}, nil)
+	})
 	return &validateResult{Validation: res}, err
 }
 
@@ -215,17 +213,8 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		}
 	}
 
-	entryPath, err := filepath.Abs(filepath.Dir(path))
-	if err != nil {
-		return nil, err
-	}
-
-	if err := base.CheckForBogusConfig(entryPath); err != nil {
-		return nil, err
-	}
-
-	// TODO(vadimsh): Integrate this with pkg.Entry.
-	rewriterFactory, err := base.GetRewriterFactory(filepath.Join(entryPath, base.ConfigName))
+	// TODO(vadimsh): Use state.Inputs.Entry.Local.Formatter.
+	formatter, err := base.FormatterPolicy(state.Inputs.Entry.Local.DiskPath)
 	if err != nil {
 		return nil, err
 	}
@@ -237,15 +226,9 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Source:        state.Visited,
 		Output:        output,
 		Meta:          meta,
+		Root:          state.Inputs.Entry.Local.DiskPath,
+		Formatter:     formatter,
 		ConfigService: vr.ConfigService,
-	}, func(path string) (*build.Rewriter, error) {
-		// GetRewriter needs to see absolute paths; In Validate the paths are all
-		// relative to the entrypoint (e.g. main.star) becuase they refer to
-		// Starlark module import paths.
-		//
-		// Adjusting state.Visited above will fail because part of Validate's
-		// functionality needs to retain these relative paths.
-		return rewriterFactory.GetRewriter(filepath.Join(entryPath, path))
 	})
 	return result, err
 }

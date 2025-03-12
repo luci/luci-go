@@ -15,6 +15,7 @@
 package base
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -152,7 +153,7 @@ func TestConfigParsing(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			_, err := formatterPolicyWithRoot("", filepath.Join(root, ConfigName))
 			assert.Loosely(t, err, should.ErrLike("rule[0].path[1]: Found duplicate path '/'"))
 		})
 
@@ -174,7 +175,7 @@ func TestConfigParsing(t *testing.T) {
 				t.Errorf(err.Error())
 			}
 
-			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			_, err := formatterPolicyWithRoot("", filepath.Join(root, ConfigName))
 			assert.Loosely(t, err, should.ErrLike("rule[1].path[0]: Found duplicate path '/'"))
 		})
 
@@ -192,7 +193,7 @@ func TestConfigParsing(t *testing.T) {
 			if err := testfs.Build(root, layout); err != nil {
 				t.Errorf(err.Error())
 			}
-			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			_, err := formatterPolicyWithRoot("", filepath.Join(root, ConfigName))
 			assert.Loosely(t, err, should.ErrLike("rule[0].path[0]: Path should not contain backslash '\\'"))
 		})
 
@@ -218,6 +219,7 @@ func TestConfigParsing(t *testing.T) {
 			}
 
 			rewriterFactoryManualAlphanumeric, _ := getPostProcessedRewriterFactory(
+				"",
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{
@@ -233,7 +235,8 @@ func TestConfigParsing(t *testing.T) {
 				},
 			)
 
-			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.RewriterForPath(
+				context.Background(),
 				filepath.Join(root, "test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
 			assert.Loosely(t, rewriterManualAlphanumeric, should.Resemble(actualRewriterManualAlphanumeric))
@@ -253,7 +256,7 @@ func TestConfigParsing(t *testing.T) {
 			if err := testfs.Build(root, layout); err != nil {
 				t.Errorf(err.Error())
 			}
-			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			_, err := formatterPolicyWithRoot("", filepath.Join(root, ConfigName))
 			assert.Loosely(t, err, should.ErrLike("rule[0].path[1]: Found duplicate path 'something/'"))
 		})
 
@@ -269,16 +272,12 @@ func TestConfigParsing(t *testing.T) {
 			if err := testfs.Build(root, layout); err != nil {
 				t.Errorf(err.Error())
 			}
-			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			_, err := formatterPolicyWithRoot("", filepath.Join(root, ConfigName))
 			assert.Loosely(t, err, should.ErrLike("rule[0]: Does not contain any paths"))
 		})
 		t.Run("Lucicfg file does not exit, should return default RewriterFactory", func(t *ftt.Test) {
-			defaultRewriter, _ := GetRewriterFactory("RANDOM_PATH/A/B/C/D")
-			var rewriter = &RewriterFactory{
-				rules:          []pathRules{},
-				configFilePath: "",
-			}
-			assert.Loosely(t, defaultRewriter, should.Resemble(rewriter))
+			defaultRewriter, _ := formatterPolicyWithRoot("", "RANDOM_PATH/A/B/C/D")
+			assert.Loosely(t, defaultRewriter, should.BeNil)
 		})
 	})
 }
@@ -306,18 +305,22 @@ func TestGetRewriter(t *testing.T) {
 
 		t.Run("No matching path returns a rewriter that doesn't apply the callsort rewrite", func(t *ftt.Test) {
 			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
+				"",
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{},
 				},
 			)
-			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("no_rule_match/test.star"))
+			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.RewriterForPath(
+				context.Background(),
+				abs("no_rule_match/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
 			assert.Loosely(t, rewriterNoCallsort, should.Resemble(actualRewriterNoCallSort))
 		})
 
 		t.Run("Matching rule to nil FunctionArgSort, return rewriter without callsort rewrite", func(t *ftt.Test) {
 			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
+				"",
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{
@@ -329,7 +332,9 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("a/b/c/test.star"))
+			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.RewriterForPath(
+				context.Background(),
+				abs("a/b/c/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
 			assert.Loosely(t, rewriterNoCallSort, should.Resemble(actualRewriterNoCallSort))
 		})
@@ -340,6 +345,7 @@ func TestGetRewriter(t *testing.T) {
 				"name2",
 			}
 			rewriterFactoryManualAlphanumeric, _ := getPostProcessedRewriterFactory(
+				"",
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{
@@ -354,7 +360,9 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(abs("a/test.star"))
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.RewriterForPath(
+				context.Background(),
+				abs("a/test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
 			assert.Loosely(t, rewriterManualAlphanumeric, should.Resemble(actualRewriterManualAlphanumeric))
 		})
@@ -365,6 +373,7 @@ func TestGetRewriter(t *testing.T) {
 				"name2",
 			}
 			rewriterFactoryAlphanumeric, _ := getPostProcessedRewriterFactory(
+				"",
 				filepath.Join(root, ".lucicfgfmtrc"),
 				&buildifier.LucicfgFmtConfig{
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{
@@ -385,7 +394,9 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.GetRewriter(abs("a/b/test.star"))
+			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.RewriterForPath(
+				context.Background(),
+				abs("a/b/test.star"))
 			var actualRewriterAlphanumeric = rewriterFromConfig(convertOrderingToTable([]string{}))
 			assert.Loosely(t, rewriterAlphanumeric, should.Resemble(actualRewriterAlphanumeric))
 		})

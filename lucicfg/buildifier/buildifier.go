@@ -23,19 +23,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/buildtools/warn"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/starlark/interpreter"
-
-	"go.chromium.org/luci/lucicfg/vars"
 )
 
 var (
@@ -54,7 +50,8 @@ const formattingCategory = "formatting"
 // Implements error interface. Non-actionable findings are assumed to be
 // non-blocking errors.
 type Finding struct {
-	Path       string    `json:"path"`
+	Root       string    `json:"root"` // absolute path to the package root
+	Path       string    `json:"path"` // relative to the package root
 	Start      *Position `json:"start,omitempty"`
 	End        *Position `json:"end,omitempty"`
 	Category   string    `json:"string,omitempty"`
@@ -90,25 +87,63 @@ func (f *Finding) Format() string {
 	}
 }
 
+// FormatterPolicy controls behavior of the Starlark code auto-formatter.
+type FormatterPolicy interface {
+	// RewriterForPath produces a *build.Rewriter to use for a concrete file.
+	//
+	// Takes a slash-separated path relative to the package root (i.e. the same
+	// sort of path as passed to the interpreter.Loader).
+	//
+	// Returns nil to indicate to use DefaultRewriter().
+	//
+	// Can be called concurrently.
+	RewriterForPath(ctx context.Context, path string) (*build.Rewriter, error)
+}
+
+// DefaultRewriter returns a new build.Rewriter with default settings.
+func DefaultRewriter() *build.Rewriter {
+	return &build.Rewriter{
+		RewriteSet: []string{
+			"listsort",
+			"loadsort",
+			"formatdocstrings",
+			"reorderarguments",
+			"editoctal",
+		},
+	}
+}
+
+// defaultRewriter is a shared static default rewriter.
+var defaultRewriter = DefaultRewriter()
+
+// Format formats the given file according to the formatter policy.
+func Format(ctx context.Context, f *build.File, policy FormatterPolicy) ([]byte, error) {
+	var rewriter *build.Rewriter
+	if policy != nil {
+		var err error
+		rewriter, err = policy.RewriterForPath(ctx, f.Path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if rewriter == nil {
+		rewriter = defaultRewriter
+	}
+	return build.FormatWithRewriter(rewriter, f), nil
+}
+
 // Lint applies linting and formatting checks to the given files.
-//
-// getRewriterForPath should return a Rewriter, given the path which
-// needs linting. This will be used to check the 'format' lint check.
-// If getRewriterForPath is nil, we will use vars.GetDefaultRewriter for
-// this.
 //
 // Returns all findings and a non-nil error (usually a MultiError) if some
 // findings are blocking.
-func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintChecks []string, getRewriterForPath func(path string) (*build.Rewriter, error)) (findings []*Finding, err error) {
+//
+// The given `root` will be put into all Findings (it identifies the location
+// of files represented by the loader, if known). It isn't used in any other
+// way (all reads happen through the loader).
+func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintChecks []string, root string, policy FormatterPolicy) (findings []*Finding, err error) {
 	checks, err := normalizeLintChecks(lintChecks)
 	if err != nil {
 		return nil, err
-	}
-
-	if getRewriterForPath == nil {
-		getRewriterForPath = func(path string) (*build.Rewriter, error) {
-			return vars.GetDefaultRewriter(), nil
-		}
 	}
 
 	// Transform unrecognized linter checks into warning-level findings.
@@ -119,6 +154,7 @@ func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintCh
 		switch {
 		case !allPossible.Has(check):
 			findings = append(findings, &Finding{
+				Root:     root,
 				Category: "linter",
 				Message:  fmt.Sprintf("Unknown linter check %q", check),
 			})
@@ -133,12 +169,13 @@ func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintCh
 		return findings, nil
 	}
 
-	errs := Visit(ctx, loader, paths, func(path string, body []byte, f *build.File) (merr errors.MultiError) {
+	errs := Visit(ctx, loader, paths, func(body []byte, file *build.File) (merr errors.MultiError) {
 		if len(buildifierWarns) != 0 {
-			findings := warn.FileWarnings(f, buildifierWarns, nil, warn.ModeWarn, newFileReader(ctx, loader))
+			findings := warn.FileWarnings(file, buildifierWarns, nil, warn.ModeWarn, newFileReader(ctx, loader))
 			for _, f := range findings {
 				merr = append(merr, &Finding{
-					Path: path,
+					Root: root,
+					Path: file.Path,
 					Start: &Position{
 						Line:   f.Start.Line,
 						Column: f.Start.LineRune,
@@ -156,18 +193,25 @@ func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintCh
 			}
 		}
 
-		rewriter, err := getRewriterForPath(f.Path)
-		if err != nil {
-			return errors.MultiError{err}
-		}
-
-		if checkFmt && !bytes.Equal(build.FormatWithRewriter(rewriter, f), body) {
-			merr = append(merr, &Finding{
-				Path:       path,
-				Category:   formattingCategory,
-				Message:    `The file is not properly formatted, use 'lucicfg fmt' to format it.`,
-				Actionable: true,
-			})
+		if checkFmt {
+			formatted, err := Format(ctx, file, policy)
+			if err != nil {
+				merr = append(merr, &Finding{
+					Root:       root,
+					Path:       file.Path,
+					Category:   formattingCategory,
+					Message:    fmt.Sprintf("Internal error formatting the file: %s", err),
+					Actionable: true, // the action is to wallow in despair (need to return an overall error)
+				})
+			} else if !bytes.Equal(formatted, body) {
+				merr = append(merr, &Finding{
+					Root:       root,
+					Path:       file.Path,
+					Category:   formattingCategory,
+					Message:    `The file is not properly formatted, use 'lucicfg fmt' to format it.`,
+					Actionable: true,
+				})
+			}
 		}
 		return merr
 	})
@@ -201,40 +245,36 @@ func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintCh
 
 // Visitor processes a parsed Starlark file, returning all errors encountered
 // when processing it.
-type Visitor func(path string, body []byte, f *build.File) errors.MultiError
+type Visitor func(body []byte, f *build.File) errors.MultiError
 
 // Visit parses Starlark files using Buildifier and calls the callback for each
 // parsed file, in parallel.
 //
 // Collects all errors from all callbacks in a single joint multi-error.
 func Visit(ctx context.Context, loader interpreter.Loader, paths []string, v Visitor) errors.MultiError {
+	perPath := make([]errors.MultiError, len(paths))
 
-	m := sync.Mutex{}
-	perPath := make(map[string]errors.MultiError, len(paths))
-
-	parallel.WorkPool(runtime.NumCPU(), func(tasks chan<- func() error) {
-		for _, path := range paths {
-			path := path
-			tasks <- func() error {
-				var errs []error
-				switch body, f, err := parseFile(ctx, loader, path); {
-				case err != nil:
-					errs = []error{err}
-				case f != nil:
-					errs = v(path, body, f)
-				}
-				m.Lock()
-				perPath[path] = errs
-				m.Unlock()
-				return nil
+	eg, _ := errgroup.WithContext(ctx)
+	eg.SetLimit(128) // to avoid OOM loading everything at once
+	for idx, path := range paths {
+		eg.Go(func() error {
+			var errs []error
+			switch body, f, err := parseFile(ctx, loader, path); {
+			case err != nil:
+				errs = []error{err}
+			case f != nil:
+				errs = v(body, f)
 			}
-		}
-	})
+			perPath[idx] = errs
+			return nil
+		})
+	}
+	_ = eg.Wait()
 
-	// Assemble errors in original order.
+	// Assemble errors in the original order.
 	var errs errors.MultiError
-	for _, path := range paths {
-		errs = append(errs, perPath[path]...)
+	for _, pathErr := range perPath {
+		errs = append(errs, pathErr...)
 	}
 	return errs
 }
@@ -252,6 +292,9 @@ func parseFile(ctx context.Context, loader interpreter.Loader, path string) ([]b
 		body := []byte(src)
 		f, err := build.ParseDefault(path, body)
 		if f != nil {
+			if f.Path != path {
+				panic(fmt.Sprintf("unexpected build.File.Path %q != %q", f.Path, path))
+			}
 			f.Type = build.TypeDefault // always generic Starlark file, not a BUILD
 			f.Label = path             // lucicfg loader paths ~= map to Bazel labels
 		}

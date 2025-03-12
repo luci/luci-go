@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 
+	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/internal"
 )
 
@@ -131,6 +132,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 				Code:       code,
 				DiskPath:   root,
 				Definition: legacyDefinition(),
+				Formatter:  nil, // TODO
 			},
 		}, nil
 	}
@@ -161,6 +163,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 			Code:       code,
 			DiskPath:   root,
 			Definition: def,
+			Formatter:  nil, // TODO
 		},
 	}, nil
 }
@@ -176,6 +179,8 @@ type Local struct {
 	DiskPath string
 	// Definition is the full package definition.
 	Definition *Definition
+	// Formatter defines how to format files in the package.
+	Formatter buildifier.FormatterPolicy
 }
 
 // PackageOnDisk loads a local package from a directory on disk.
@@ -215,6 +220,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 			Code:       interpreter.FileSystemLoader(abs),
 			DiskPath:   abs,
 			Definition: legacyDefinition(),
+			Formatter:  nil, // TODO
 		}, nil
 
 	default:

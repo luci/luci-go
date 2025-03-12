@@ -16,7 +16,7 @@
 package base
 
 import (
-	"fmt"
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 
 	"go.chromium.org/luci/lucicfg/buildifier"
-	"go.chromium.org/luci/lucicfg/vars"
 )
 
 // ConfigName is the file name we will be used for lucicfg formatting
@@ -43,13 +42,13 @@ const ConfigName = ".lucicfgfmtrc"
 // config file), this should be extended.
 var sentinel = []string{".git", ".citc"}
 
-// RewriterFactory is used to map from 'file to be formatted' to a Rewriter object,
+// rewriterFactory is used to map from 'file to be formatted' to a Rewriter object,
 // via its GetRewriter method.
 //
 // This struct is obtained via the GetRewriterFactory function.
-type RewriterFactory struct {
-	rules          []pathRules
-	configFilePath string
+type rewriterFactory struct {
+	root  string // if set, assume all paths are relative to it, otherwise they are absolute
+	rules []pathRules
 }
 
 type pathRules struct {
@@ -125,7 +124,7 @@ func convertOrderingToTable(nameOrdering []string) map[string]int {
 }
 
 func rewriterFromConfig(nameOrdering map[string]int) *build.Rewriter {
-	var rewriter = vars.GetDefaultRewriter()
+	var rewriter = buildifier.DefaultRewriter()
 	if nameOrdering != nil {
 		rewriter.NamePriority = nameOrdering
 		rewriter.RewriteSet = append(rewriter.RewriteSet, "callsort")
@@ -133,34 +132,36 @@ func rewriterFromConfig(nameOrdering map[string]int) *build.Rewriter {
 	return rewriter
 }
 
-// GetRewriterFactory will attempt to create a RewriterFactory object
+// FormatterPolicy creates a formatter policy based on the config in the given
+// directory, if any.
 //
-// If configPath is empty, or points to a file which doesn't exist, the returned
-// factory will just produce GetDefaultRewriter() when asked about any path.
-// We will return an error if the config file is invalid.
-func GetRewriterFactory(configPath string) (rewriterFactory *RewriterFactory, err error) {
-	rewriterFactory = &RewriterFactory{
-		rules:          []pathRules{},
-		configFilePath: "",
+// Returns nil to use the default policy (happens if there's no config file).
+//
+// The returns policy expects slash-separated relative paths.
+func FormatterPolicy(root string) (buildifier.FormatterPolicy, error) {
+	switch factory, err := formatterPolicyWithRoot(root, filepath.Join(root, ConfigName)); {
+	case err != nil:
+		return nil, err
+	case factory != nil:
+		return factory, nil
+	default:
+		return nil, nil
 	}
-	if configPath == "" {
-		return
-	}
-	contents, err := os.ReadFile(configPath)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("Failed on reading file - %s", configPath)
-			return nil, err
-		} else {
-			return rewriterFactory, nil
-		}
-	}
-	luci := &buildifier.LucicfgFmtConfig{}
+}
 
-	if err := prototext.Unmarshal(contents, luci); err != nil {
+func formatterPolicyWithRoot(root, configPath string) (*rewriterFactory, error) {
+	contents, err := os.ReadFile(configPath)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		return nil, nil // use default
+	case err != nil:
 		return nil, err
 	}
-	return getPostProcessedRewriterFactory(configPath, luci)
+	cfg := &buildifier.LucicfgFmtConfig{}
+	if err := prototext.Unmarshal(contents, cfg); err != nil {
+		return nil, err
+	}
+	return getPostProcessedRewriterFactory(root, configPath, cfg)
 }
 
 // getPostProcessedRewriterFactory will contain all logic used to make sure
@@ -169,7 +170,7 @@ func GetRewriterFactory(configPath string) (rewriterFactory *RewriterFactory, er
 // Currently, we will fix paths so that they are absolute.
 // We will also perform a check so that there are no duplicate paths and
 // all paths are delimited with "/"
-func getPostProcessedRewriterFactory(configPath string, cfg *buildifier.LucicfgFmtConfig) (*RewriterFactory, error) {
+func getPostProcessedRewriterFactory(root, configPath string, cfg *buildifier.LucicfgFmtConfig) (*rewriterFactory, error) {
 	pathSet := stringset.New(0)
 	rules := cfg.Rules
 	rulesSlice := make([]pathRules, 0)
@@ -213,25 +214,29 @@ func getPostProcessedRewriterFactory(configPath string, cfg *buildifier.LucicfgF
 		}
 	}
 
-	return &RewriterFactory{
-		rulesSlice,
-		filepath.Dir(configPath),
+	return &rewriterFactory{
+		root:  root,
+		rules: rulesSlice,
 	}, nil
 }
 
-// GetRewriter will return the Rewriter which is appropriate for formatting
+// RewriterForPath will return the Rewriter which is appropriate for formatting
 // the file at `path`, using the previously loaded formatting configuration.
 //
 // Note the method signature will pass in values that we need to evaluate
 // the correct rewriter.
 //
 // We will accept both relative and absolute paths.
-func (f *RewriterFactory) GetRewriter(path string) (*build.Rewriter, error) {
-	rules := f.rules
-	// Check if path is abs, if not, fix it
-	if !filepath.IsAbs(path) {
-		return nil, errors.Reason("GetRewriter got non-absolute path: %q", path).Err()
+func (f *rewriterFactory) RewriterForPath(_ context.Context, path string) (*build.Rewriter, error) {
+	if f.root != "" {
+		path = filepath.Join(f.root, filepath.FromSlash(path))
 	}
+	if f.root == "" && !filepath.IsAbs(path) {
+		return nil, errors.Reason("RewriterForPath got non-absolute path: %q", path).Err()
+	}
+
+	rules := f.rules
+
 	longestPathMatch := ""
 	var matchingRule *buildifier.LucicfgFmtConfig_Rules
 
@@ -258,26 +263,24 @@ func (f *RewriterFactory) GetRewriter(path string) (*build.Rewriter, error) {
 		), nil
 	}
 
-	return vars.GetDefaultRewriter(), nil
+	return buildifier.DefaultRewriter(), nil
 }
 
-// GuessRewriterFactoryFunc will find the common ancestor dir from all given paths
+// GuessFormatterPolicy will find the common ancestor dir from all given paths
 // and return a func that returns the rewriter factory.
 //
 // Will look for a config file upwards(inclusive). If found, it will be used to determine
 // rewriter properties. It will also look downwards(exclusive) to expose any misplaced
 // config files.
-func GuessRewriterFactoryFunc(paths []string) (*RewriterFactory, error) {
+//
+// The returned FormatterPolicy expects absolute paths.
+func GuessFormatterPolicy(paths []string) (buildifier.FormatterPolicy, error) {
 	// Find the common ancestor
 	commonAncestorPath, err := filesystem.GetCommonAncestor(paths, sentinel)
 
 	if errors.Is(err, filesystem.ErrRootSentinel) {
 		// we hit the repo root, just return function that returns default rewriter
-		rewriterFactory, err := GetRewriterFactory("")
-		if err != nil {
-			return nil, err
-		}
-		return rewriterFactory, nil
+		return nil, nil
 	}
 	if err != nil {
 		// other errors are fatal
@@ -291,10 +294,13 @@ func GuessRewriterFactoryFunc(paths []string) (*RewriterFactory, error) {
 	if err != nil {
 		return nil, err
 	}
-	rewriterFactory, err := GetRewriterFactory(luciConfigPath)
-	if err != nil {
-		return nil, err
-	}
 
-	return rewriterFactory, nil
+	switch factory, err := formatterPolicyWithRoot("", luciConfigPath); {
+	case err != nil:
+		return nil, err
+	case factory != nil:
+		return factory, nil
+	default:
+		return nil, nil
+	}
 }

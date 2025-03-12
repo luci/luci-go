@@ -20,7 +20,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/bazelbuild/buildtools/build"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
@@ -33,10 +32,12 @@ import (
 
 // ValidateParams contains parameters for Validate call.
 type ValidateParams struct {
-	Loader interpreter.Loader // represents the main package
-	Source []string           // paths to lint, relative to the main package
-	Output lucicfg.Output     // generated output files to validate
-	Meta   lucicfg.Meta       // validation options (settable through Starlark)
+	Loader    interpreter.Loader         // represents the main package
+	Source    []string                   // paths to lint, relative to the main package
+	Output    lucicfg.Output             // generated output files to validate
+	Meta      lucicfg.Meta               // validation options (settable through Starlark)
+	Root      string                     // absolute path to the package root on disk (for Findings)
+	Formatter buildifier.FormatterPolicy // options for "fmt" (or nil for some defaults)
 
 	// ConfigService returns a gRPC connection to the LUCI Config service.
 	//
@@ -52,7 +53,7 @@ type ConfigServiceFactory func(ctx context.Context, host string) (*grpc.ClientCo
 // It is a common part of subcommands that validate configs.
 //
 // Source code is checked using buildifier linters and formatters, if enabled.
-// This is controlled by LintChecks meta args.
+// This is controlled by LintChecks meta args and params.Formatter policy.
 //
 // Generated config files are split into 0 or more config sets and sent to
 // the LUCI Config remote service for validation, if enabled. This is controlled
@@ -60,7 +61,7 @@ type ConfigServiceFactory func(ctx context.Context, host string) (*grpc.ClientCo
 //
 // Dumps all validation errors to the stderr. In addition to detailed validation
 // results, also returns a multi-error with all blocking errors.
-func Validate(ctx context.Context, params ValidateParams, getRewriterForPath func(path string) (*build.Rewriter, error)) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
+func Validate(ctx context.Context, params ValidateParams) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var localRes []*buildifier.Finding
@@ -72,7 +73,8 @@ func Validate(ctx context.Context, params ValidateParams, getRewriterForPath fun
 			params.Loader,
 			params.Source,
 			params.Meta.LintChecks,
-			getRewriterForPath,
+			params.Root,
+			params.Formatter,
 		)
 	}()
 
