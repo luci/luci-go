@@ -31,104 +31,76 @@ func TestFetchURLs(t *testing.T) {
 		plats := Platforms{}
 
 		t.Run("ok", func(t *ftt.Test) {
-			g := &FetchURLs{
-				Name: "urls",
-				URLs: map[string]FetchURL{
-					"something1": {
-						URL:  "https://host/path1",
-						Mode: 0o777,
-					},
-					"dir1/something2": {
-						URL:           "https://host/path2",
-						HashAlgorithm: core.HashAlgorithm_HASH_MD5,
-						HashValue:     "abcdef",
-					},
+			gs, err := FetchURLs("urls", []*FetchURL{
+				{
+					URL:      "https://host/path1",
+					Filename: "something1",
+					Mode:     0o777,
 				},
-			}
-			a, err := g.Generate(ctx, plats)
+				{
+					URL:           "https://host/path2",
+					HashAlgorithm: core.HashAlgorithm_HASH_MD5,
+					Filename:      "something2",
+					HashValue:     "abcdef",
+				},
+			})
 			assert.Loosely(t, err, should.BeNil)
 
-			url := testutils.Assert[*core.Action_Copy](t, a.Spec)
-			assert.Loosely(t, url.Copy.Files, should.Match(map[string]*core.ActionFilesCopy_Source{
-				"something1": {
-					Content: &core.ActionFilesCopy_Source_Output_{
-						Output: &core.ActionFilesCopy_Source_Output{Name: "urls_2o025r0794", Path: "file"},
-					},
-					Mode: 0o777,
-				},
-				"dir1/something2": {
-					Content: &core.ActionFilesCopy_Source_Output_{
-						Output: &core.ActionFilesCopy_Source_Output{Name: "urls_om04u163h4", Path: "file"},
-					},
-					Mode: 0o666,
-				},
-			}))
+			var as []*core.Action
+			for _, g := range gs {
+				a, err := g.Generate(ctx, plats)
+				assert.Loosely(t, err, should.BeNil)
+				as = append(as, a)
+			}
 
 			{
-				assert.Loosely(t, a.Deps, should.HaveLength(2))
-				for _, d := range a.Deps {
-					u := testutils.Assert[*core.Action_Url](t, d.Spec)
-					switch d.Name {
-					case "urls_2o025r0794":
-						assert.Loosely(t, u.Url, should.Match(&core.ActionURLFetch{
-							Url: "https://host/path1",
-						}))
-					case "urls_om04u163h4":
-						assert.Loosely(t, u.Url, should.Match(&core.ActionURLFetch{
-							Url:           "https://host/path2",
-							HashAlgorithm: core.HashAlgorithm_HASH_MD5,
-							HashValue:     "abcdef",
-						}))
-					}
-				}
+				assert.Loosely(t, as, should.HaveLength(2))
+				assert.Loosely(t, as[0].Name, should.Equal("urls_9k6l6isoio"))
+				assert.Loosely(t, testutils.Assert[*core.Action_Url](t, as[0].Spec).Url, should.Match(&core.ActionURLFetch{
+					Name: "something1",
+					Url:  "https://host/path1",
+					Mode: 0o777,
+				}))
+				assert.Loosely(t, as[1].Name, should.Equal("urls_oeinoi9b4g"))
+				assert.Loosely(t, testutils.Assert[*core.Action_Url](t, as[1].Spec).Url, should.Match(&core.ActionURLFetch{
+					Name:          "something2",
+					Url:           "https://host/path2",
+					HashAlgorithm: core.HashAlgorithm_HASH_MD5,
+					HashValue:     "abcdef",
+				}))
 			}
-		})
-
-		// context info should be inherited since urls and url are treated as one
-		// thing.
-		t.Run("context info", func(t *ftt.Test) {
-			g := &FetchURLs{
-				Name:     "urls",
-				Metadata: &core.Action_Metadata{ContextInfo: "info"},
-				URLs: map[string]FetchURL{
-					"something1": {
-						URL:  "https://host/path1",
-						Mode: 0o777,
-					},
-				},
-			}
-			a, err := g.Generate(ctx, plats)
-			assert.Loosely(t, err, should.BeNil)
-
-			assert.Loosely(t, a.Metadata.GetContextInfo(), should.Equal("info"))
-			assert.Loosely(t, a.Deps, should.HaveLength(1))
-			assert.Loosely(t, a.Deps[0].Metadata.GetContextInfo(), should.Equal("info"))
 		})
 
 		t.Run("stable", func(t *ftt.Test) {
-			g := &FetchURLs{
-				Name: "urls",
-				URLs: map[string]FetchURL{
-					"something1": {
-						URL:  "https://host/path1",
-						Mode: 0o777,
-					},
-					"dir1/something2": {
-						URL:           "https://host/path2",
-						HashAlgorithm: core.HashAlgorithm_HASH_MD5,
-						HashValue:     "abcdef",
-					},
+			gs, err := FetchURLs("urls", []*FetchURL{
+				{
+					URL:      "https://host/path1",
+					Filename: "something1",
+					Mode:     0o777,
 				},
-			}
-			a, err := g.Generate(ctx, plats)
-			assert.Loosely(t, err, should.BeNil)
+				{
+					URL:           "https://host/path2",
+					HashAlgorithm: core.HashAlgorithm_HASH_MD5,
+					Filename:      "something2",
+					HashValue:     "abcdef",
+				},
+			})
 
-			for range 10 {
-				aa, err := g.Generate(ctx, plats)
+			gen := func() []*core.Action {
+				var as []*core.Action
+				for _, g := range gs {
+					a, err := g.Generate(ctx, plats)
+					assert.Loosely(t, err, should.BeNil)
+					as = append(as, a)
+				}
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, aa, should.Match(a))
+				return as
+			}
+
+			as := gen()
+			for range 10 {
+				assert.Loosely(t, gen(), should.Match(as))
 			}
 		})
 	})
-
 }

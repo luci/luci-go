@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -53,11 +54,23 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	}
 	defer joinErr(resp.Body.Close)
 
-	f, err := os.Create(filepath.Join(out, "file"))
+	name := a.Name
+	if name == "" {
+		name = "file"
+	}
+	f, err := os.Create(filepath.Join(out, name))
 	if err != nil {
 		return
 	}
 	defer joinErr(f.Close)
+
+	mode := a.Mode
+	if mode == 0 {
+		mode = 0o666
+	}
+	if err := f.Chmod(fs.FileMode(mode)); err != nil {
+		return err
+	}
 
 	h, err := hashFromEnum(a.HashAlgorithm)
 	if err != nil {

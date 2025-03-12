@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 
@@ -88,6 +90,31 @@ func TestExecuteURL(t *testing.T) {
 				b, err := io.ReadAll(f)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, string(b), should.Equal("something"))
+			}
+		})
+
+		t.Run("Test download file with name and mode", func(t *ftt.Test) {
+			a := &core.ActionURLFetch{
+				Url:  s.URL,
+				Name: "else.txt",
+				Mode: 0o644,
+			}
+
+			err := ActionURLFetchExecutor(ctx, a, out)
+			assert.Loosely(t, err, should.BeNil)
+
+			{
+				f, err := os.Open(filepath.Join(out, "else.txt"))
+				assert.Loosely(t, err, should.BeNil)
+				defer f.Close()
+				b, err := io.ReadAll(f)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.Equal("something"))
+				if runtime.GOOS != "windows" {
+					s, err := f.Stat()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.Mode(), should.Equal(fs.FileMode(0o644)))
+				}
 			}
 		})
 

@@ -30,72 +30,66 @@ import (
 )
 
 type FetchURL struct {
-	URL           string
-	Mode          fs.FileMode
-	HashAlgorithm core.HashAlgorithm
-	HashValue     string
-}
-
-// FetchURLs downloads files from servers based on the path-url pairs of URLs.
-type FetchURLs struct {
 	Name     string
 	Metadata *core.Action_Metadata
-	URLs     map[string]FetchURL
+
+	URL           string
+	HashAlgorithm core.HashAlgorithm
+	HashValue     string
+	Filename      string
+	Mode          fs.FileMode
 }
 
-func (f *FetchURLs) Generate(ctx context.Context, plats Platforms) (*core.Action, error) {
-	var deps []*core.Action
-
-	// Generate separate action for every url.
-	files := make(map[string]*core.ActionFilesCopy_Source)
-	for k, v := range f.URLs {
-		spec := &core.ActionURLFetch{
-			Url:           v.URL,
-			HashAlgorithm: v.HashAlgorithm,
-			HashValue:     v.HashValue,
-		}
-
-		// Truncate the id to save some characters for windows because this id will
-		// be used as part of the path. 32^6 = 2^30 should be good enough.
-		id, err := stableID(spec, 6)
-		if err != nil {
-			return nil, err
-		}
-		name := fmt.Sprintf("%s_%s", f.Name, id)
-
-		deps = append(deps, &core.Action{
-			Name:     name,
-			Metadata: &core.Action_Metadata{ContextInfo: f.Metadata.GetContextInfo()},
-			Spec:     &core.Action_Url{Url: spec},
-		})
-
-		m := v.Mode
-		if m == 0 {
-			m = 0o666
-		}
-		files[k] = &core.ActionFilesCopy_Source{
-			Content: &core.ActionFilesCopy_Source_Output_{
-				Output: &core.ActionFilesCopy_Source_Output{Name: name, Path: "file"},
-			},
-			Mode: uint32(m),
-		}
-	}
-
-	// Make sure deps is sorted so action id can be stable.
-	slices.SortFunc(deps, func(a *core.Action, b *core.Action) int {
-		return strings.Compare(a.Name, b.Name)
-	})
-
+func (f *FetchURL) Generate(ctx context.Context, plats Platforms) (*core.Action, error) {
 	return &core.Action{
 		Name:     f.Name,
 		Metadata: f.Metadata,
-		Deps:     deps,
-		Spec: &core.Action_Copy{
-			Copy: &core.ActionFilesCopy{
-				Files: files,
+		Spec: &core.Action_Url{
+			Url: &core.ActionURLFetch{
+				Url:           f.URL,
+				HashAlgorithm: f.HashAlgorithm,
+				HashValue:     f.HashValue,
+				Name:          f.Filename,
+				Mode:          uint32(f.Mode),
 			},
 		},
 	}, nil
+}
+
+// FetchURLs update the urls slices passed in place and generates a sorted list
+// of FetchURL and set a unique name with hash calculated from the content if
+// the Name of FetchURL is empty.
+func FetchURLs(prefix string, urls []*FetchURL) ([]Generator, error) {
+	for _, u := range urls {
+		// Truncate the id to save some characters for windows because this id will
+		// be used as part of the path. 32^6 = 2^30 should be good enough.
+		id, err := stableID(&core.ActionURLFetch{
+			Url:           u.URL,
+			HashAlgorithm: u.HashAlgorithm,
+			HashValue:     u.HashValue,
+			Name:          u.Filename,
+			Mode:          uint32(u.Mode),
+		}, 6)
+		if err != nil {
+			return nil, err
+		}
+
+		if u.Name == "" {
+			u.Name = fmt.Sprintf("%s_%s", prefix, id)
+		}
+	}
+
+	// Make sure urls is sorted so dependencies can be stable.
+	slices.SortFunc(urls, func(a *FetchURL, b *FetchURL) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	gs := make([]Generator, 0, len(urls))
+	for _, u := range urls {
+		gs = append(gs, u)
+	}
+
+	return gs, nil
 }
 
 func stableID(m proto.Message, n uint) (string, error) {
