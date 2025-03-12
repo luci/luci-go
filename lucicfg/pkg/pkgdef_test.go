@@ -22,6 +22,7 @@ import (
 	"unicode"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -39,8 +40,25 @@ func TestLoadDefinition(t *testing.T) {
 			pkg.entrypoint("main.star")
 			pkg.entrypoint("another/main.star")
 			pkg.options.lint_checks(["none", "+formatting"])
+			pkg.options.fmt_rules(
+				paths = [".", "some/deeper"],
+				function_args_sort = ["arg1", "arg2"],
+			)
+			pkg.options.fmt_rules(
+				paths = ["default-sort"],
+				function_args_sort = [],
+			)
+			pkg.options.fmt_rules(
+				paths = ["noop"],
+			)
 		`)
 		assert.NoErr(t, err)
+
+		// Clear stack traces to simplify comparison.
+		for _, r := range pkgDef.FmtRules {
+			r.Stack = nil
+		}
+
 		assert.That(t, pkgDef, should.Match(&Definition{
 			Name:              "pkg/name",
 			MinLucicfgVersion: [3]int{1, 2, 3},
@@ -49,6 +67,21 @@ func TestLoadDefinition(t *testing.T) {
 				"another/main.star",
 			},
 			LintChecks: []string{"none", "+formatting"},
+			FmtRules: []*FmtRule{
+				{
+					Paths:                 []string{".", "some/deeper"},
+					SortFunctionArgs:      true,
+					SortFunctionArgsOrder: []string{"arg1", "arg2"},
+				},
+				{
+					Paths:                 []string{"default-sort"},
+					SortFunctionArgs:      true,
+					SortFunctionArgsOrder: []string{},
+				},
+				{
+					Paths: []string{"noop"},
+				},
+			},
 		}))
 	})
 
@@ -101,22 +134,17 @@ func TestLoadDefinition(t *testing.T) {
 	})
 
 	t.Run("Bad entrypoint", func(t *testing.T) {
-		cases := []struct {
-			val string
-			err string
-		}{
-			{"None", `missing required field "path"`},
-			{`"../main.star"`, `entry point path must be within the package, got "../main.star"`},
-			{`"fail.star"`, `entry point "fail.star": not passing ValidateEntrypoint`},
-			{`"deeper/../main.star"`, `entry point path must be in normalized form (i.e. "main.star" instead of "deeper/../main.star")`},
-		}
-		for _, cs := range cases {
-			_, err := call(fmt.Sprintf(`
+		assertGenErrs(t, `
 				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
 				pkg.entrypoint(%s)
-			`, cs.val))
-			assert.That(t, err, should.ErrLike(cs.err))
-		}
+			`,
+			[]genErrCase{
+				{"None", `missing required field "path"`},
+				{`"../main.star"`, `entry point path must be within the package, got "../main.star"`},
+				{`"fail.star"`, `entry point "fail.star": not passing ValidateEntrypoint`},
+				{`"deeper/../main.star"`, `entry point path must be in normalized form (i.e. "main.star" instead of "deeper/../main.star")`},
+			},
+		)
 	})
 
 	t.Run("pkg.options.lint_checks must be called once", func(t *testing.T) {
@@ -127,6 +155,65 @@ func TestLoadDefinition(t *testing.T) {
 		`)
 		assert.That(t, err, should.ErrLike("pkg.options.lint_checks(...) can be called at most once"))
 	})
+
+	t.Run("pkg.options.fmt_rules bad path", func(t *testing.T) {
+		assertGenErrs(t, `
+				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+				pkg.options.fmt_rules(paths = %s)
+			`,
+			[]genErrCase{
+				{`[None]`, `bad "paths[0]": got NoneType, want string`},
+				{`[""]`, `bad "paths[0]": an empty string`},
+				{`["abc/.."]`, `invalid paths: must be in normalized form (i.e. "." instead of "abc/..")`},
+				{`["abc\\def"]`, `invalid paths: must be in normalized form (i.e. "abc/def" instead of "abc\\def")`},
+				{`["../abc"]`, `invalid paths: must point inside the package, but got "../abc"`},
+				{`["a", "a"]`, `invalid paths: "a" is specified more than once`},
+			},
+		)
+	})
+
+	t.Run("pkg.options.fmt_rules bad function_args_sort", func(t *testing.T) {
+		assertGenErrs(t, `
+				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+				pkg.options.fmt_rules(paths = ["."], function_args_sort = %s)
+			`,
+			[]genErrCase{
+				{`[None]`, `bad "function_args_sort[0]": got NoneType, want string`},
+				{`[""]`, `bad "function_args_sort[0]": an empty string`},
+				{`["a", "a"]`, `invalid function_args_sort: "a" is specified more than once`},
+			},
+		)
+	})
+
+	t.Run("Dup pkg.options.fmt_rules", func(t *testing.T) {
+		_, err := call(`
+			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.options.fmt_rules(
+				paths = ["a", "b"],
+			)
+			pkg.options.fmt_rules(
+				paths = ["c", "b"],
+			)
+		`)
+		assert.That(t, err, should.ErrLike(`path "b" is already covered by an existing rule`))
+	})
+}
+
+type genErrCase struct {
+	val string
+	err string
+}
+
+func assertGenErrs(t *testing.T, codeTemplate string, cases []genErrCase) {
+	t.Helper()
+	for _, cs := range cases {
+		_, err := LoadDefinition(
+			context.Background(),
+			[]byte(deindent(fmt.Sprintf(codeTemplate, cs.val))),
+			fakeLoaderValidator{},
+		)
+		assert.That(t, err, should.ErrLike(cs.err), truth.Explain("val = %s", cs.val))
+	}
 }
 
 type fakeLoaderValidator struct {

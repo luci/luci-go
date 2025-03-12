@@ -61,7 +61,7 @@
 
 {{ $pkg := Symbol "@pkg//builtins.star" "pkg" }}
 {{ $pkg_source := Symbol "@pkg//builtins.star" "pkg.source" }}
-{{ $pkg_options_fmt := Symbol "@pkg//builtins.star" "pkg.options.fmt" }}
+{{ $pkg_options := Symbol "@pkg//builtins.star" "pkg.options" }}
 
 {{/*
   Some symbols referenced from the non-generated portion of the doc below.
@@ -639,4 +639,4 @@ In addition, `lucicfg` exposes the following functions.
 
 {{template "gen-funcs-doc" $pkg}}
 {{template "gen-funcs-doc" $pkg_source}}
-{{template "gen-funcs-doc" $pkg_options_fmt}}
+{{template "gen-funcs-doc" $pkg_options}}

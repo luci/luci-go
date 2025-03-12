@@ -4573,20 +4573,45 @@ A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 
 
 
-### pkg.options.fmt.sort_func_args {#pkg.options.fmt.sort-func-args}
+### pkg.options.lint_checks {#pkg.options.lint-checks}
 
 ```python
-pkg.options.fmt.sort_func_args(paths, args)
+pkg.options.lint_checks(checks = None)
 ```
 
 
 
-Adds a rule for ordering functions arguments in `lucicfg fmt`.
+Configures linting rules that apply to files in this package.
 
-#### Arguments {#pkg.options.fmt.sort-func-args-args}
+Can be called at most once.
 
-* **paths**: forward-slash delimited path prefixes for which this rule applies. lucicfg will organize all rules by path. Rules with duplicate path values are not permitted (i.e. you cannot have two rules with a path of "something", nor can you have the path "something" duplicated within a single rule). When processing files, lucicfg will calculate the file's path as relative to the current lucicfg package, and will select a single rule set based on the longest matching path prefix. For example, if there are two rule sets, one formatting "a" and another formatting "a/folder", then for the file "a/folder/file.star", only the second rules set would apply. If NO rules set matches the file path, then only default formatting will occur. Required.
-* **args**: a list of arguments allows you to reorder the function call sites, based on the name of the arguments. If this is set, then all functions will be sorted first by the order of its `arg` field, and then alphanumerically. This implies that setting this message without setting any `arg` values will sort all function call sites alphabetically. The sorting only applies to kwarg-style arguments in files matching the rule's paths. Required.
+#### Arguments {#pkg.options.lint-checks-args}
+
+* **checks**: a list of linter checks to apply in `lucicfg validate` and `lucicfg lint`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Default is `['none']` for now.
+
+
+
+
+### pkg.options.fmt_rules {#pkg.options.fmt-rules}
+
+```python
+pkg.options.fmt_rules(paths, function_args_sort = None)
+```
+
+
+
+Adds a formatting rule set applying to some paths in the package.
+
+When processing files, lucicfg will select a single rule set based on the
+longest matching rule's path prefix. For example, if there are two rule
+sets, one formatting "a" and another formatting "a/folder", then for the
+file "a/folder/file.star", only the second rules set would apply. If NO
+rules set matches the file path, then only default formatting will occur.
+
+#### Arguments {#pkg.options.fmt-rules-args}
+
+* **paths**: forward-slash delimited path prefixes for which this rule set applies. Rules with duplicate path values are not permitted (i.e. you cannot have two rules with a path of "something", nor can you have the path "something" duplicated within a single rule). Required.
+* **function_args_sort**: if set, specifies how to sort keyword argument in function calls. Should be a list of strings (perhaps empty). Keyword arguments in all function calls will be ordered based on the order in this list. Arguments that do not appear in the list, will be sorted alphanumerically and put after all arguments in the list. This implies that passing an empty list will result in sorting all keyword arguments in all function calls alphanumerically. Optional.
 
 
 

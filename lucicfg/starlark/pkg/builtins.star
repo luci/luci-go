@@ -202,45 +202,43 @@ def _lint_checks(checks):
     Can be called at most once.
 
     Args:
-      checks: a list of linter checks to apply in `lucicfg validate`. The
-        first entry defines what group of checks to use as a base and it can
-        be one of `none`, `default` or `all`. The following entries either
-        add checks to the set (`+<name>`) or remove them (`-<name>`). See
-        [Formatting and linting Starlark code](#formatting-linting) for more
-        info. Default is `['none']` for now.
+      checks: a list of linter checks to apply in `lucicfg validate` and
+        `lucicfg lint`. The first entry defines what group of checks to use as
+        a base and it can be one of `none`, `default` or `all`. The following
+        entries either add checks to the set (`+<name>`) or remove them
+        (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting)
+        for more info. Default is `['none']` for now.
     """
-    if type(checks) != "list" and type(checks) != "tuple":
-        fail("bad checks: expecting a list or a tuple, got %s" % type(checks))
-    checks = tuple(checks)
-    for check in checks:
-        _validate_string("checks", check)
-    __native__.lint_checks(checks or ("none",))
+    __native__.lint_checks(_validate_str_list("checks", checks) or ("none",))
 
-def _fmt_sort_func_args(*, paths, args):
-    """Adds a rule for ordering functions arguments in `lucicfg fmt`.
+def _fmt_rules(*, paths, function_args_sort = None):
+    """Adds a formatting rule set applying to some paths in the package.
+
+    When processing files, lucicfg will select a single rule set based on the
+    longest matching rule's path prefix. For example, if there are two rule
+    sets, one formatting "a" and another formatting "a/folder", then for the
+    file "a/folder/file.star", only the second rules set would apply. If NO
+    rules set matches the file path, then only default formatting will occur.
 
     Args:
-      paths: forward-slash delimited path prefixes for which this rule applies.
-        lucicfg will organize all rules by path. Rules with duplicate path
-        values are not permitted (i.e. you cannot have two rules with a path
-        of "something", nor can you have the path "something" duplicated within
-        a single rule). When processing files, lucicfg will calculate the file's
-        path as relative to the current lucicfg package, and will select a
-        single rule set based on the longest matching path prefix. For example,
-        if there are two rule sets, one formatting "a" and another formatting
-        "a/folder", then for the file "a/folder/file.star", only the second
-        rules set would apply. If NO rules set matches the file path, then only
-        default formatting will occur. Required.
-      args: a list of arguments allows you to reorder the function call sites,
-        based on the name of the arguments. If this is set, then all functions
-        will be sorted first by the order of its `arg` field, and then
-        alphanumerically. This implies that setting this message without setting
-        any `arg` values will sort all function call sites alphabetically. The
-        sorting only applies to kwarg-style arguments in files matching the
-        rule's paths. Required.
+      paths: forward-slash delimited path prefixes for which this rule set
+        applies. Rules with duplicate path values are not permitted (i.e. you
+        cannot have two rules with a path of "something", nor can you have the
+        path "something" duplicated within a single rule). Required.
+      function_args_sort: if set, specifies how to sort keyword argument in
+        function calls. Should be a list of strings (perhaps empty). Keyword
+        arguments in all function calls will be ordered based on the order in
+        this list. Arguments that do not appear in the list, will be sorted
+        alphanumerically and put after all arguments in the list. This implies
+        that passing an empty list will result in sorting all keyword arguments
+        in all function calls alphanumerically. Optional.
     """
-    _unused(paths, args)
-    fail("not implemented")
+    paths = _validate_str_list("paths", paths)
+    if not paths:
+        fail("paths cannot be empty")
+    if function_args_sort != None:
+        function_args_sort = _validate_str_list("function_args_sort", function_args_sort)
+    __native__.fmt_rules(__native__.stacktrace(1), paths, function_args_sort)
 
 def _unused(*args):  # @unused
     """Used exclusively to shut up `unused-variable` lint."""
@@ -257,9 +255,7 @@ pkg = struct(
     ),
     options = struct(
         lint_checks = _lint_checks,
-        fmt = struct(
-            sort_func_args = _fmt_sort_func_args,
-        ),
+        fmt_rules = _fmt_rules,
     ),
 )
 
@@ -291,3 +287,23 @@ def _validate_string(attr, val, *, allow_empty = False, default = None, required
         fail("bad %r: must not be empty" % (attr,))
 
     return val
+
+def _validate_str_list(attr, val):
+    """Validate that the value is a list or tuple of strings.
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+
+    Returns:
+      The tuple of strings.
+    """
+    if type(val) != "list" and type(val) != "tuple":
+        fail("bad %s: expecting a list or a tuple, got %s" % (attr, type(val)))
+    tup = tuple(val)
+    for idx, elem in enumerate(tup):
+        if type(elem) != "string":
+            fail("bad \"%s[%d]\": got %s, want string" % (attr, idx, type(elem)))
+        if elem == "":
+            fail("bad \"%s[%d]\": an empty string" % (attr, idx))
+    return tup

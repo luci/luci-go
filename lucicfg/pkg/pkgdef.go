@@ -25,6 +25,7 @@ import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/builtins"
@@ -64,6 +65,20 @@ type Definition struct {
 	Entrypoints []string
 	// LintChecks is what was passed to pkg.options.lint_checks(...).
 	LintChecks []string
+	// FmtRules are all registered format rule sets.
+	FmtRules []*FmtRule
+}
+
+// FmtRule represents a registered pkg.options.fmt_rule(...), see its doc.
+type FmtRule struct {
+	// Stack is where this rule was declared, if known.
+	Stack *builtins.CapturedStacktrace
+	// Paths this rule applies to.
+	Paths []string
+	// SortFunctionArgs is true if need to order function call args.
+	SortFunctionArgs bool
+	// SortFunctionArgsOrder defines ordering of known arguments.
+	SortFunctionArgsOrder []string
 }
 
 // LoaderValidator can do extra validation checks right when loading
@@ -96,7 +111,9 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 	state := &state{val: val}
 
 	// All native symbols exposed to PACKAGE.star file.
-	native := starlark.StringDict{}
+	native := starlark.StringDict{
+		"stacktrace": builtins.Stacktrace,
+	}
 	state.declNative(native)
 
 	// Code with Starlark API available to PACKAGE.star.
@@ -170,6 +187,11 @@ func (c *nativeCall) unpack(min int, vars ...any) error {
 	return starlark.UnpackPositionalArgs(c.fn.Name(), c.args, c.kwargs, min, vars...)
 }
 
+// cleanPath normalizes a path.
+func cleanPath(p string) string {
+	return path.Clean(strings.Replace(p, "\\", "/", -1))
+}
+
 // declNative registers all __native__.<name> functions.
 func (s *state) declNative(native starlark.StringDict) {
 	decl := func(name string, requiredDeclareFirst bool, nativeFn func(ctx context.Context, call nativeCall) (starlark.Value, error)) {
@@ -189,6 +211,7 @@ func (s *state) declNative(native starlark.StringDict) {
 	decl("declare", false, s.declare)
 	decl("entrypoint", true, s.entrypoint)
 	decl("lint_checks", true, s.lintChecks)
+	decl("fmt_rules", true, s.fmtRules)
 }
 
 func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, error) {
@@ -220,7 +243,7 @@ func (s *state) entrypoint(ctx context.Context, call nativeCall) (starlark.Value
 	if err := call.unpack(1, &relPath); err != nil {
 		return nil, err
 	}
-	clean := path.Clean(relPath.GoString())
+	clean := cleanPath(relPath.GoString())
 	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
 		return nil, errors.Reason("entry point path must be within the package, got %q", relPath.GoString()).Err()
 	}
@@ -251,5 +274,61 @@ func (s *state) lintChecks(ctx context.Context, call nativeCall) (starlark.Value
 	for i, val := range checks {
 		s.def.LintChecks[i] = val.(starlark.String).GoString()
 	}
+	return starlark.None, nil
+}
+
+func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, error) {
+	var stack *builtins.CapturedStacktrace
+	var pathsTup starlark.Tuple
+	var argsSortVal starlark.Value
+	if err := call.unpack(3, &stack, &pathsTup, &argsSortVal); err != nil {
+		return nil, err
+	}
+
+	rule := FmtRule{
+		Stack:            stack,
+		Paths:            make([]string, len(pathsTup)),
+		SortFunctionArgs: argsSortVal != starlark.None,
+	}
+
+	// Validate paths (the type and length was already validated in starlark).
+	seenPaths := stringset.New(len(pathsTup))
+	for i, v := range pathsTup {
+		rel := v.(starlark.String).GoString()
+		if clean := cleanPath(rel); clean != rel {
+			return nil, errors.Reason("invalid paths: must be in normalized form (i.e. %q instead of %q)", clean, rel).Err()
+		}
+		if rel == ".." || strings.HasPrefix(rel, "../") {
+			return nil, errors.Reason("invalid paths: must point inside the package, but got %q", rel).Err()
+		}
+		if !seenPaths.Add(rel) {
+			return nil, errors.Reason("invalid paths: %q is specified more than once", rel).Err()
+		}
+		rule.Paths[i] = rel
+	}
+
+	// Validate function_args_sort (the type was already validated in starlark).
+	if argsSortVal != starlark.None {
+		rule.SortFunctionArgsOrder = make([]string, len(argsSortVal.(starlark.Tuple)))
+		seenArgs := stringset.New(len(rule.SortFunctionArgsOrder))
+		for i, v := range argsSortVal.(starlark.Tuple) {
+			arg := v.(starlark.String).GoString()
+			if !seenArgs.Add(arg) {
+				return nil, errors.Reason("invalid function_args_sort: %q is specified more than once", arg).Err()
+			}
+			rule.SortFunctionArgsOrder[i] = arg
+		}
+	}
+
+	// Check there are no rules that cover the exact same path.
+	for _, r := range s.def.FmtRules {
+		for _, p := range r.Paths {
+			if seenPaths.Has(p) {
+				return nil, errors.Reason("path %q is already covered by an existing rule defined at\n%s", p, r.Stack).Err()
+			}
+		}
+	}
+	s.def.FmtRules = append(s.def.FmtRules, &rule)
+
 	return starlark.None, nil
 }
