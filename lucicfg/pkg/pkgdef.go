@@ -62,6 +62,8 @@ type Definition struct {
 	// Entrypoints is the declared list of entry points as slash-separated paths
 	// relative to the package root.
 	Entrypoints []string
+	// LintChecks is what was passed to pkg.options.lint_checks(...).
+	LintChecks []string
 }
 
 // LoaderValidator can do extra validation checks right when loading
@@ -186,6 +188,7 @@ func (s *state) declNative(native starlark.StringDict) {
 
 	decl("declare", false, s.declare)
 	decl("entrypoint", true, s.entrypoint)
+	decl("lint_checks", true, s.lintChecks)
 }
 
 func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, error) {
@@ -233,5 +236,20 @@ func (s *state) entrypoint(ctx context.Context, call nativeCall) (starlark.Value
 		return nil, errors.Annotate(err, "entry point %q", clean).Err()
 	}
 	s.def.Entrypoints = append(s.def.Entrypoints, clean)
+	return starlark.None, nil
+}
+
+func (s *state) lintChecks(ctx context.Context, call nativeCall) (starlark.Value, error) {
+	var checks starlark.Tuple
+	if err := call.unpack(1, &checks); err != nil {
+		return nil, err
+	}
+	if len(s.def.LintChecks) != 0 {
+		return nil, errors.Reason("pkg.options.lint_checks(...) can be called at most once").Err()
+	}
+	s.def.LintChecks = make([]string, len(checks))
+	for i, val := range checks {
+		s.def.LintChecks[i] = val.(starlark.String).GoString()
+	}
 	return starlark.None, nil
 }

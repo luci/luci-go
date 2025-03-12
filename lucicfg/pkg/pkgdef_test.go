@@ -38,6 +38,7 @@ func TestLoadDefinition(t *testing.T) {
 			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
 			pkg.entrypoint("main.star")
 			pkg.entrypoint("another/main.star")
+			pkg.options.lint_checks(["none", "+formatting"])
 		`)
 		assert.NoErr(t, err)
 		assert.That(t, pkgDef, should.Match(&Definition{
@@ -47,6 +48,7 @@ func TestLoadDefinition(t *testing.T) {
 				"main.star",
 				"another/main.star",
 			},
+			LintChecks: []string{"none", "+formatting"},
 		}))
 	})
 
@@ -115,6 +117,15 @@ func TestLoadDefinition(t *testing.T) {
 			`, cs.val))
 			assert.That(t, err, should.ErrLike(cs.err))
 		}
+	})
+
+	t.Run("pkg.options.lint_checks must be called once", func(t *testing.T) {
+		_, err := call(`
+			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.options.lint_checks(["none", "+formatting"])
+			pkg.options.lint_checks(["none", "+formatting"])
+		`)
+		assert.That(t, err, should.ErrLike("pkg.options.lint_checks(...) can be called at most once"))
 	})
 }
 

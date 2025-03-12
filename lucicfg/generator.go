@@ -86,6 +86,16 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		}
 	}
 
+	var pkgLintChecks starlark.Tuple
+	if len(in.Entry.LintChecks) != 0 {
+		for _, check := range in.Entry.LintChecks {
+			pkgLintChecks = append(pkgLintChecks, starlark.String(check))
+		}
+		if err := state.Meta.setField("lint_checks", pkgLintChecks); err != nil {
+			return nil, errors.Annotate(err, "presetting lint_checks").Err()
+		}
+	}
+
 	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
@@ -108,6 +118,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			"testing_tweaks": internal.GetTestingTweaks(ctx).ToStruct(),
 			// Data pulled from PACKAGE.star, if any.
 			"pkg_min_lucicfg": pkgMinLucicfg,
+			"pkg_lint_checks": pkgLintChecks,
 			// Some built-in utilities implemented in `builtins` package.
 			"ctor":          builtins.Ctor,
 			"genstruct":     builtins.GenStruct,

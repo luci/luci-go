@@ -48,6 +48,8 @@ type Entry struct {
 	Script string
 	// LucicfgVersionConstraints is the requirements for the lucicfg version.
 	LucicfgVersionConstraints []LucicfgVersionConstraint
+	// LintChecks are enabled lint checks.
+	LintChecks []string
 }
 
 // LucicfgVersionConstraint puts a constraint on the current lucicfg version.
@@ -149,6 +151,7 @@ func EntryOnDisk(ctx context.Context, path string) (entry *Entry, root string, e
 				Main:    true,
 			},
 		},
+		LintChecks: def.LintChecks,
 	}, root, nil
 }
 

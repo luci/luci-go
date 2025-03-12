@@ -146,6 +146,19 @@ def _config(
     if fail_on_warnings != None:
         __native__.set_meta("fail_on_warnings", fail_on_warnings)
     if lint_checks != None:
+        if (__native__.pkg_lint_checks != None and
+            __native__.pkg_lint_checks != tuple(lint_checks) and
+            not __native__.testing_tweaks.skip_package_compat_checks):
+            fail(
+                ("Lint checks set via lucicfg.config(...) (which are %s) " +
+                 "do not match lint checks set via pkg.options.lint_checks(...) in PACKAGE.star (which are %s). " +
+                 "Eventually pkg.options.lint_checks(...) in PACKAGE.star will become authoritative and " +
+                 "setting lint checks via lucicfg.config(...) will be retired. Until then the values must agree. " +
+                 "Please update lucicfg.config(...) call.") % (
+                    list(lint_checks),
+                    list(__native__.pkg_lint_checks),
+                ),
+            )
         __native__.set_meta("lint_checks", lint_checks)
 
 def _enable_experiment(experiment):

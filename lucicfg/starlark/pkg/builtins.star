@@ -196,6 +196,26 @@ def _read_local(path):
     _unused(path)
     fail("not implemented")
 
+def _lint_checks(checks):
+    """Configures linting rules that apply to files in this package.
+
+    Can be called at most once.
+
+    Args:
+      checks: a list of linter checks to apply in `lucicfg validate`. The
+        first entry defines what group of checks to use as a base and it can
+        be one of `none`, `default` or `all`. The following entries either
+        add checks to the set (`+<name>`) or remove them (`-<name>`). See
+        [Formatting and linting Starlark code](#formatting-linting) for more
+        info. Default is `['none']` for now.
+    """
+    if type(checks) != "list" and type(checks) != "tuple":
+        fail("bad checks: expecting a list or a tuple, got %s" % type(checks))
+    checks = tuple(checks)
+    for check in checks:
+        _validate_string("checks", check)
+    __native__.lint_checks(checks or ("none",))
+
 def _fmt_sort_func_args(*, paths, args):
     """Adds a rule for ordering functions arguments in `lucicfg fmt`.
 
@@ -236,6 +256,7 @@ pkg = struct(
         read_local = _read_local,
     ),
     options = struct(
+        lint_checks = _lint_checks,
         fmt = struct(
             sort_func_args = _fmt_sort_func_args,
         ),

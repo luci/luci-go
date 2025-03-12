@@ -3,4 +3,4 @@ pkg.declare(
     lucicfg = "1.1.1",  # mocked
 )
 pkg.entrypoint("main.star")
-pkg.options.lint_checks(["default", "+formatting"])
+pkg.options.lint_checks(["default"])
