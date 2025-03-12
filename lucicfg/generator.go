@@ -86,9 +86,11 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		}
 	}
 
+	// Plumb lint_checks though only for local packages. They don't matter when
+	// executing remote packages (linting is a purely local workflow).
 	var pkgLintChecks starlark.Tuple
-	if len(in.Entry.LintChecks) != 0 {
-		for _, check := range in.Entry.LintChecks {
+	if in.Entry.Local != nil && len(in.Entry.Local.Definition.LintChecks) != 0 {
+		for _, check := range in.Entry.Local.Definition.LintChecks {
 			pkgLintChecks = append(pkgLintChecks, starlark.String(check))
 		}
 		if err := state.Meta.setField("lint_checks", pkgLintChecks); err != nil {

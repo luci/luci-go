@@ -48,12 +48,12 @@ func TestExamples(t *testing.T) {
 }
 
 func runExample(script string) error {
-	entry, root, err := pkg.EntryOnDisk(context.Background(), script)
+	entry, err := pkg.EntryOnDisk(context.Background(), script)
 	if err != nil {
 		return err
 	}
 
-	output := filepath.Join(root, "generated")
+	output := filepath.Join(entry.Local.DiskPath, "generated")
 
 	state, err := Generate(context.Background(), Inputs{
 		Entry:       entry,

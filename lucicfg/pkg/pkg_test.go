@@ -35,9 +35,9 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, root, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
 		assert.NoErr(t, err)
-		assert.That(t, root, should.Equal(filepath.Join(tmp, "a/b/c")))
+		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b/c")))
 
 		_, src, err := entry.Main(ctx, "main.star")
 		assert.NoErr(t, err)
@@ -59,9 +59,9 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, root, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
 		assert.NoErr(t, err)
-		assert.That(t, root, should.Equal(filepath.Join(tmp, "a/b")))
+		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b")))
 
 		_, src, err := entry.Main(ctx, "c/main.star")
 		assert.NoErr(t, err)
@@ -84,7 +84,7 @@ func TestEntryOnDisk(t *testing.T) {
 			".git/config":  `# Denotes repo root`,
 			"PACKAGE.star": ``,
 		})
-		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
 		assert.That(t, err, should.ErrLike(`loading package containing main.star: PACKAGE.star must call pkg.declare(...)`))
 	})
 
@@ -96,7 +96,7 @@ func TestEntryOnDisk(t *testing.T) {
 				pkg.entrypoint("missing.star")
 			`,
 		})
-		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"))
 		assert.That(t, err, should.ErrLike(`entry point "missing.star": no such file in the package`))
 	})
 
@@ -112,9 +112,63 @@ func TestEntryOnDisk(t *testing.T) {
 			"another1.star": `print("Hi")`,
 			"another2.star": `print("Hi")`,
 		})
-		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
 		assert.That(t, err, should.ErrLike(
 			`main.star is not declared as a pkg.entrypoint(...) in PACKAGE.star and thus cannot be executed. Available entrypoints: [another1.star another2.star]`))
+	})
+}
+
+func TestPackageOnDisk(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	t.Run("Legacy mode", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			"a/b/c/main.star": `print("Hi")`,
+		})
+
+		pkg, err := PackageOnDisk(ctx, filepath.Join(tmp, "a/b/c"))
+		assert.NoErr(t, err)
+		assert.That(t, pkg.DiskPath, should.Equal(filepath.Join(tmp, "a/b/c")))
+
+		_, src, err := pkg.Code(ctx, "main.star")
+		assert.NoErr(t, err)
+		assert.That(t, src, should.Equal(`print("Hi")`))
+
+		assert.That(t, pkg.Definition, should.Match(&Definition{
+			Name: "legacy-unknown",
+		}))
+	})
+
+	t.Run("Loads PACKAGE.star", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			"a/b/PACKAGE.star": `
+				pkg.declare(name = "some/pkg", lucicfg = "1.2.3")
+			`,
+			"a/b/c/main.star": `print("Hi")`,
+		})
+
+		pkg, err := PackageOnDisk(ctx, filepath.Join(tmp, "a/b"))
+		assert.NoErr(t, err)
+		assert.That(t, pkg.DiskPath, should.Equal(filepath.Join(tmp, "a/b")))
+
+		_, src, err := pkg.Code(ctx, "c/main.star")
+		assert.NoErr(t, err)
+		assert.That(t, src, should.Equal(`print("Hi")`))
+
+		assert.That(t, pkg.Definition, should.Match(&Definition{
+			Name:              "some/pkg",
+			MinLucicfgVersion: LucicfgVersion{1, 2, 3},
+		}))
+	})
+
+	t.Run("Borked PACKAGE.star", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			"PACKAGE.star": ``,
+		})
+		_, err := PackageOnDisk(ctx, tmp)
+		assert.That(t, err, should.ErrLike(`loading package definition: PACKAGE.star must call pkg.declare(...)`))
 	})
 }
 

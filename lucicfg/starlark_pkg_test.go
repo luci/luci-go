@@ -72,7 +72,7 @@ func runPkgTest(t *testing.T, dir string) bool {
 	}
 
 	var state *State
-	entry, _, err := pkg.EntryOnDisk(ctx, main)
+	entry, err := pkg.EntryOnDisk(ctx, main)
 	if err == nil {
 		state, err = Generate(ctx, Inputs{
 			Entry: entry,

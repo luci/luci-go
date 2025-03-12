@@ -102,7 +102,7 @@ func TestCore(t *testing.T) {
 
 			// This will load testdata/core/PACKAGE.star, making testdata/core the
 			// root of the package (mostly affecting stack traces).
-			entry, _, err := pkg.EntryOnDisk(ctx, path)
+			entry, err := pkg.EntryOnDisk(ctx, path)
 			if err != nil {
 				t.Errorf("Loading PACKAGE.star for %s: %s", path, err)
 				return nil

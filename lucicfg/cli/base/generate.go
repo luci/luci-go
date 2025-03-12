@@ -90,7 +90,7 @@ You may also optionally set +x flag on it, but this is not required.
 	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
 
 	// Load the main package with dependencies from disk.
-	entry, root, err := pkg.EntryOnDisk(ctx, abs)
+	entry, err := pkg.EntryOnDisk(ctx, abs)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ You may also optionally set +x flag on it, but this is not required.
 	if err != nil {
 		return nil, err
 	}
-	meta.RebaseConfigDir(root)
-	state.Meta.RebaseConfigDir(root)
+	meta.RebaseConfigDir(entry.Local.DiskPath)
+	state.Meta.RebaseConfigDir(entry.Local.DiskPath)
 	flags.RebaseConfigDir(cwd)
 
 	// Figure out the final meta config: values set via starlark override
