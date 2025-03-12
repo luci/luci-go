@@ -141,7 +141,7 @@ func EntryOnDisk(ctx context.Context, path string) (entry *Entry, root string, e
 	}
 
 	return &Entry{
-		Main:   interpreter.FileSystemLoader(root),
+		Main:   diskPackageLoader(root),
 		Path:   filepath.ToSlash(rel),
 		Script: script,
 		LucicfgVersionConstraints: []LucicfgVersionConstraint{
