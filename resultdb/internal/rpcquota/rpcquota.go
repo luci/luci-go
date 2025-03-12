@@ -125,11 +125,11 @@ func UpdateUserQuota(ctx context.Context, resourcePrefix string, cost int64, ser
 	// Try deduct from current user first.  If no policy exists for this
 	// user this fails quickly, because policies are in in-process memory.
 	err = quota.UpdateQuota(ctx, map[string]int64{resourcePrefix + who: -cost}, nil)
-	if errors.Unwrap(err) == quotaconfig.ErrNotFound {
+	if errors.Is(err, quotaconfig.ErrNotFound) {
 		// Fallback to generic ${user} policy.
 		wildcard = true
 		err = quota.UpdateQuota(ctx, map[string]int64{resourcePrefix + "${user}": -cost}, &quota.Options{User: who})
-		if errors.Unwrap(err) == quotaconfig.ErrNotFound {
+		if errors.Is(err, quotaconfig.ErrNotFound) {
 			// If there's no wildcard config either then deny this.
 			err = quota.ErrInsufficientQuota
 		}

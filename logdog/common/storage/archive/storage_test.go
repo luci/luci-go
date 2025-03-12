@@ -341,19 +341,19 @@ func testArchiveStorage(t *testing.T, limit int64) {
 				t.Run(`With a client error returns that error.`, func(t *ftt.Test) {
 					client.err = errors.New("test error")
 
-					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.err))
+					assert.Loosely(t, tc.fn(), should.ErrLike(client.err))
 				})
 
 				t.Run(`With an index reader error returns that error.`, func(t *ftt.Test) {
 					client.indexErr = errors.New("test error")
 
-					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.indexErr))
+					assert.Loosely(t, tc.fn(), should.ErrLike(client.indexErr))
 				})
 
 				t.Run(`With an stream reader error returns that error.`, func(t *ftt.Test) {
 					client.streamErr = errors.New("test error")
 
-					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.streamErr))
+					assert.Loosely(t, tc.fn(), should.ErrLike(client.streamErr))
 				})
 
 				t.Run(`With junk index data returns an error.`, func(t *ftt.Test) {
@@ -379,7 +379,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 					// we don't accidentally test something that doesn't follow the path
 					// we're intending to follow.
 					client.indexErr = errors.New("not using a cache")
-					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.indexErr))
+					assert.Loosely(t, tc.fn(), should.ErrLike(client.indexErr))
 
 					for i := 0; i < 10; i++ {
 						if i == 0 {

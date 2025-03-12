@@ -50,7 +50,7 @@ func TestInitCallbackError(t *testing.T) {
 			return boomErr
 		},
 	})
-	assert.That(t, errors.Unwrap(err), should.Equal(boomErr))
+	assert.That(t, err, should.ErrLike(boomErr))
 	assert.Loosely(t, srv, should.BeNil)
 }
 

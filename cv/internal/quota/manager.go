@@ -131,7 +131,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
 		opResponse, err = srvquota.ApplyOps(ctx, requestID(r.ID, opID), durationpb.New(accountLifeTime), quotaOp)
-		if errors.Unwrap(err) == srvquota.ErrQuotaApply && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
+		if errors.Is(err, srvquota.ErrQuotaApply) && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
 			if _, err := qm.WritePolicy(ctx, r.ID.LUCIProject()); err != nil {
 				return err
 			}
@@ -142,7 +142,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 		return
 	}, nil)
 
-	if err == nil || errors.Unwrap(err) == srvquota.ErrQuotaApply {
+	if err == nil || errors.Is(err, srvquota.ErrQuotaApply) {
 		metrics.Internal.QuotaOp.Add(
 			ctx,
 			1,

@@ -53,7 +53,7 @@ func TestButlerCallbacks(t *testing.T) {
 					streamLines = append(streamLines, "<EOF>")
 					return
 				}
-				for _, line := range append(e.GetText().Lines) {
+				for _, line := range e.GetText().GetLines() {
 					streamLines = append(streamLines, string(line.Value)+line.Delimiter)
 				}
 			}

@@ -40,7 +40,7 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 	// decode from tuple.
 	var elems []any
 	if err := json.Unmarshal(data, &elems); err != nil {
-		return fmt.Errorf("invalid entry: %s: %s", err, string(data))
+		return fmt.Errorf("invalid entry: %w: %s", err, string(data))
 	}
 	if len(elems) != 2 {
 		return fmt.Errorf("invalid entry: expected 2 items: %s", string(data))

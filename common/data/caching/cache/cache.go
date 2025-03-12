@@ -22,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -343,7 +342,7 @@ func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb fun
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
-	tmp, err := ioutil.TempFile(d.path, string(digest)+".*.tmp")
+	tmp, err := os.CreateTemp(d.path, string(digest)+".*.tmp")
 	if err != nil {
 		return errors.Annotate(err, "failed to create tempfile for %s", digest).Err()
 	}
