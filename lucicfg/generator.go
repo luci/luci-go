@@ -88,14 +88,16 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 	// Plumb lint_checks though only for local packages. They don't matter when
 	// executing remote packages (linting is a purely local workflow).
-	var pkgLintChecks starlark.Tuple
+	pkgLintChecks := starlark.Value(starlark.None)
 	if in.Entry.Local != nil && len(in.Entry.Local.Definition.LintChecks) != 0 {
+		var pkgLintChecksTup starlark.Tuple
 		for _, check := range in.Entry.Local.Definition.LintChecks {
-			pkgLintChecks = append(pkgLintChecks, starlark.String(check))
+			pkgLintChecksTup = append(pkgLintChecksTup, starlark.String(check))
 		}
-		if err := state.Meta.setField("lint_checks", pkgLintChecks); err != nil {
+		if err := state.Meta.setField("lint_checks", pkgLintChecksTup); err != nil {
 			return nil, errors.Annotate(err, "presetting lint_checks").Err()
 		}
+		pkgLintChecks = pkgLintChecksTup
 	}
 
 	// All available symbols implemented in go.
