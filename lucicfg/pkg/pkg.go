@@ -81,7 +81,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 	// Find PACKAGE.star indicating the root of the package.
 	var found bool
 	scriptDir, main := filepath.Split(abs)
-	root, found, err := findRoot(scriptDir, PackageScript)
+	root, found, err := findRoot(scriptDir, PackageScript, nil)
 	if err != nil {
 		return nil, errors.Annotate(err, "searching for %s", PackageScript).Err()
 	}
@@ -110,7 +110,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 	// Calculate path from the repo root to the package root. This is needed by
 	// some lucicfg introspection functionality (these paths end up in
 	// project.cfg).
-	repoRoot, _, err := findRoot(root, "")
+	repoRoot, _, err := findRoot(root, "", nil)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not determine the repository or volume root of %q", abs).Err()
 	}

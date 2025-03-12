@@ -85,12 +85,14 @@ func ScanForRoots(paths []string) ([]*ScanResult, error) {
 	allRoots := map[string]*ScanResult{}    // abs root path => *ScanResult for it
 	seen := stringset.New(len(paths))       // all visited leaf files
 
+	cache := unsyncStatCache()
+
 	findPkgRoot := func(dir string) (*ScanResult, error) {
 		if found := perDirRoots[dir]; found != nil {
 			return found, nil
 		}
 
-		root, marker, err := findAnyRoot(dir)
+		root, marker, err := findAnyRoot(dir, cache)
 		if err != nil {
 			return nil, err
 		}
@@ -140,14 +142,14 @@ func ScanForRoots(paths []string) ([]*ScanResult, error) {
 //
 // `marker` is either "PACKAGE.star" or ".lucicfgfmtrc" or "" depending on what
 // kind of root was found.
-func findAnyRoot(dir string) (root, marker string, err error) {
-	switch root, found, err := findRoot(dir, PackageScript); {
+func findAnyRoot(dir string, cache *statCache) (root, marker string, err error) {
+	switch root, found, err := findRoot(dir, PackageScript, cache); {
 	case err != nil:
 		return "", "", err
 	case found:
 		return root, PackageScript, nil
 	}
-	switch root, found, err := findRoot(dir, legacyConfig); {
+	switch root, found, err := findRoot(dir, legacyConfig, cache); {
 	case err != nil:
 		return "", "", err
 	case found:

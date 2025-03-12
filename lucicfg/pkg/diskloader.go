@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"go.starlark.net/starlark"
 
@@ -42,7 +41,10 @@ func diskPackageLoader(root string) interpreter.Loader {
 		panic(err)
 	}
 
-	loader := &diskLoaderState{root: root}
+	loader := &diskLoaderState{
+		root:  root,
+		cache: syncStatCache(),
+	}
 
 	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
 		abs := filepath.Join(root, filepath.FromSlash(path))
@@ -65,40 +67,22 @@ func diskPackageLoader(root string) interpreter.Loader {
 }
 
 type diskLoaderState struct {
-	root string // clean absolute path to the directory with PACKAGE.star
-
-	m   sync.RWMutex
-	vis map[string]bool // relative dir path => true if can load from it
+	root  string     // clean absolute path to the directory with PACKAGE.star
+	cache *statCache // caches os.Stat calls
 }
 
 func (l *diskLoaderState) checkDirectoryVisible(rel string) error {
-	l.m.RLock()
-	vis, found := l.vis[rel]
-	l.m.RUnlock()
-	if !found {
-		l.m.Lock()
-		defer l.m.Unlock()
-
-		pkgRoot, found, err := findRoot(filepath.Join(l.root, rel), PackageScript)
-		if err != nil {
-			return err
-		}
-		if !found {
-			// This should not normally be happening, since we know l.root is a
-			// package root. It can theoretically happen if it was deleted on disk
-			// after we started running lucicfg.
-			return errors.Reason("path %s is not inside of any package", rel).Err()
-		}
-		vis = pkgRoot == l.root
-
-		if l.vis == nil {
-			l.vis = make(map[string]bool, 1)
-		}
-		l.vis[rel] = vis
-	}
-
-	if vis {
+	switch pkgRoot, found, err := findRoot(filepath.Join(l.root, rel), PackageScript, l.cache); {
+	case err != nil:
+		return err
+	case !found:
+		// This should not normally be happening, since we know l.root is a
+		// package root. It can theoretically happen if it was deleted on disk
+		// after we started running lucicfg.
+		return errors.Reason("path %s is not inside of any package", rel).Err()
+	case pkgRoot == l.root:
 		return nil
+	default:
+		return errors.Reason("directory %q belongs to a different (nested) package and files from it cannot be loaded directly", filepath.ToSlash(rel)).Err()
 	}
-	return errors.Reason("directory %q belongs to a different (nested) package and files from it cannot be loaded directly", filepath.ToSlash(rel)).Err()
 }
