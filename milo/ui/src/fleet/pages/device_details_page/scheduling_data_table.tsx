@@ -14,7 +14,7 @@
 
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import { Cell } from '@/fleet/components/device_table/Cell';
+import { DeviceDataCell } from '@/fleet/components/device_table/device_data_cell';
 import {
   COLUMN_OVERRIDES,
   labelValuesToString,
@@ -47,7 +47,7 @@ export const SchedulingData = ({ device }: SchedulingDataProps) => {
       renderCell: (props: GridRenderCellParams) =>
         COLUMN_OVERRIDES.find((dim) => dim.id === props.id)?.renderCell?.(
           props,
-        ) || <Cell {...props}></Cell>,
+        ) || <DeviceDataCell {...props}></DeviceDataCell>,
     },
   ];
 

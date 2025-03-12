@@ -23,7 +23,7 @@ import {
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { Cell } from './Cell';
+import { DeviceDataCell } from './device_data_cell';
 
 // Constant for the the separator we use across the UI for displaying
 // multiple values as a string string (ie: in one chip or one table cell)
@@ -50,7 +50,7 @@ const getPathnameWithParams = () => {
 /**
  * Helper that generates a `renderCell` function based on a link generator.
  * @param linkGenerator A function that takes a value and turns it into a URL.
- * @returns A function that renders a <Cell /> based on GridRenderCellParams
+ * @returns A function that renders a <DeviceDataCell /> based on GridRenderCellParams
  */
 // TODO: b/394202288 - Add tests for this function.
 function renderCellWithLink(
@@ -74,7 +74,7 @@ function renderCellWithLink(
     ));
 
     return (
-      <Cell
+      <DeviceDataCell
         {...props}
         value={links.map((link: React.ReactElement, i: number) => (
           <>
