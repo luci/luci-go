@@ -290,7 +290,16 @@ func expectedExports() []*bqpb.TestVariantBranchRow {
 
 	return []*bqpb.TestVariantBranchRow{
 		{
-			Project:     "rootproject",
+			Project: "rootproject",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_flaky",
+			},
 			TestId:      ":module!junit:package:class#test_flaky",
 			Variant:     `{}`,
 			VariantHash: "hash",
@@ -320,7 +329,16 @@ func expectedExports() []*bqpb.TestVariantBranchRow {
 			},
 		},
 		{
-			Project:     "rootproject",
+			Project: "rootproject",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     "{}",
+				ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_expected",
+			},
 			TestId:      ":module!junit:package:class#test_expected",
 			Variant:     `{}`,
 			VariantHash: "hash",

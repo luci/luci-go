@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -95,12 +96,18 @@ type PartialBigQueryRow struct {
 // will be retained by this method or its result. (All data will
 // be copied.)
 func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, segments []analyzer.Segment) (PartialBigQueryRow, error) {
+	testIDStructured, err := bqutil.StructuredTestIdentifier(tvb.TestID, tvb.Variant)
+	if err != nil {
+		return PartialBigQueryRow{}, errors.Annotate(err, "structured test identifier").Err()
+	}
+
 	row := &bqpb.TestVariantBranchRow{
-		Project:     tvb.Project,
-		TestId:      tvb.TestID,
-		VariantHash: tvb.VariantHash,
-		RefHash:     hex.EncodeToString(tvb.RefHash),
-		Ref:         proto.Clone(tvb.SourceRef).(*analysispb.SourceRef),
+		Project:          tvb.Project,
+		TestIdStructured: testIDStructured,
+		TestId:           tvb.TestID,
+		VariantHash:      tvb.VariantHash,
+		RefHash:          hex.EncodeToString(tvb.RefHash),
+		Ref:              proto.Clone(tvb.SourceRef).(*analysispb.SourceRef),
 	}
 
 	// Variant.

@@ -16,16 +16,24 @@ package bqutil
 
 import (
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/resultdb/pbutil"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // StructuredTestIdentifier constructs a BigQuery-format TestIdentifier from
 // a flat ResultDB test ID and variant combination.
-func StructuredTestIdentifier(testID string, variant *rdbpb.Variant) (*bqpb.TestIdentifier, error) {
-	test, err := pbutil.ParseAndValidateTestID(testID)
+func StructuredTestIdentifier(testID string, variant *pb.Variant) (*bqpb.TestIdentifier, error) {
+	return StructuredTestIdentifierRDB(testID, pbutil.VariantToResultDB(variant))
+}
+
+// StructuredTestIdentifierRDB constructs a BigQuery-format TestIdentifier from
+// a flat ResultDB test ID and variant combination.
+func StructuredTestIdentifierRDB(testID string, variant *rdbpb.Variant) (*bqpb.TestIdentifier, error) {
+	test, err := rdbpbutil.ParseAndValidateTestID(testID)
 	if err != nil {
 		return nil, errors.Annotate(err, "parse test ID").Err()
 	}
@@ -37,7 +45,7 @@ func StructuredTestIdentifier(testID string, variant *rdbpb.Variant) (*bqpb.Test
 		ModuleName:        test.ModuleName,
 		ModuleScheme:      test.ModuleScheme,
 		ModuleVariant:     variantJSON,
-		ModuleVariantHash: pbutil.VariantHash(variant),
+		ModuleVariantHash: rdbpbutil.VariantHash(variant),
 		CoarseName:        test.CoarseName,
 		FineName:          test.FineName,
 		CaseName:          test.CaseName,

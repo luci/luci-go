@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -65,7 +66,7 @@ func TestBQExporter(t *testing.T) {
 		row1 := &RowInput{
 			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
-				TestID:      "test_id_1",
+				TestID:      ":module!junit:package:class#test_id_1",
 				VariantHash: "variant_hash_1",
 				RefHash:     []byte("refhash1"),
 				Variant:     variant,
@@ -90,7 +91,7 @@ func TestBQExporter(t *testing.T) {
 		row2 := &RowInput{
 			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
-				TestID:      "test_id_2",
+				TestID:      ":module!junit:package:class#test_id_2",
 				VariantHash: "variant_hash_2",
 				RefHash:     []byte("refhash2"),
 				Variant:     variant,
@@ -168,7 +169,7 @@ func TestBQExporter(t *testing.T) {
 		row3 := &RowInput{
 			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
-				TestID:      "test_id_3",
+				TestID:      ":module!junit:package:class#test_id_3",
 				VariantHash: "variant_hash_3",
 				RefHash:     []byte("refhash3"),
 				Variant:     variant,
@@ -212,11 +213,20 @@ func TestBQExporter(t *testing.T) {
 
 		// Asserts the rows.
 		assert.Loosely(t, rows[0], should.Match(&bqpb.TestVariantBranchRow{
-			Project:     "chromium",
-			TestId:      "test_id_1",
+			Project: "chromium",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k":"v"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_id_1",
+			},
+			TestId:      ":module!junit:package:class#test_id_1",
+			Variant:     "{\"k\":\"v\"}",
 			VariantHash: "variant_hash_1",
 			RefHash:     hex.EncodeToString([]byte("refhash1")),
-			Variant:     "{\"k\":\"v\"}",
 			Ref:         sourceRef,
 			Version:     timestamppb.New(time.Unix(10000*3600, 0)),
 			Segments: []*bqpb.Segment{
@@ -236,11 +246,20 @@ func TestBQExporter(t *testing.T) {
 		}))
 
 		assert.Loosely(t, rows[1], should.Match(&bqpb.TestVariantBranchRow{
-			Project:                    "chromium",
-			TestId:                     "test_id_2",
+			Project: "chromium",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k":"v"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_id_2",
+			},
+			TestId:                     ":module!junit:package:class#test_id_2",
+			Variant:                    "{\"k\":\"v\"}",
 			VariantHash:                "variant_hash_2",
 			RefHash:                    hex.EncodeToString([]byte("refhash2")),
-			Variant:                    "{\"k\":\"v\"}",
 			Ref:                        sourceRef,
 			Version:                    timestamppb.New(time.Unix(10000*3600, 0)),
 			HasRecentUnexpectedResults: 1,
@@ -313,11 +332,20 @@ func TestBQExporter(t *testing.T) {
 		}))
 
 		assert.Loosely(t, rows[2], should.Match(&bqpb.TestVariantBranchRow{
-			Project:     "chromium",
-			TestId:      "test_id_3",
+			Project: "chromium",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k":"v"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_id_3",
+			},
+			TestId:      ":module!junit:package:class#test_id_3",
+			Variant:     "{\"k\":\"v\"}",
 			VariantHash: "variant_hash_3",
 			RefHash:     hex.EncodeToString([]byte("refhash3")),
-			Variant:     "{\"k\":\"v\"}",
 			Ref:         sourceRef,
 			Version:     timestamppb.New(time.Unix(10000*3600, 0)),
 			Segments: []*bqpb.Segment{

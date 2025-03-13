@@ -288,7 +288,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		sourcesMap := tu.SampleSourcesWithChangelistsMap(10)
 		tvs := []*rdbpb.TestVariant{
 			{
-				TestId:      "test_1",
+				TestId:      ":module!junit:package:class#test_1",
 				VariantHash: "hash_1",
 				Variant: &rdbpb.Variant{
 					Def: map[string]string{
@@ -308,7 +308,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				SourcesId: "sources_id",
 			},
 			{
-				TestId:      "test_2",
+				TestId:      ":module!junit:package:class#test_2",
 				VariantHash: "hash_2",
 				Variant: &rdbpb.Variant{
 					Def: map[string]string{
@@ -400,7 +400,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		assert.Loosely(t, tvbs[0], should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
-			TestID:      "test_1",
+			TestID:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
@@ -439,7 +439,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		assert.Loosely(t, tvbs[1], should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
-			TestID:      "test_2",
+			TestID:      ":module!junit:package:class#test_2",
 			VariantHash: "hash_2",
 			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
@@ -497,11 +497,20 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			return client.Insertions[i].TestId < client.Insertions[j].TestId
 		})
 		assert.Loosely(t, client.Insertions[0], should.Match(&bqpb.TestVariantBranchRow{
-			Project:     "chromium",
-			TestId:      "test_1",
+			Project: "chromium",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k":"v"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_1",
+			},
+			TestId:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			RefHash:     "6de221242e011c91",
-			Variant:     "{\"k\":\"v\"}",
+			Variant:     `{"k":"v"}`,
 			Ref: &pb.SourceRef{
 				System: &pb.SourceRef_Gitiles{
 					Gitiles: &pb.GitilesRef{
@@ -527,11 +536,20 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}))
 		assert.Loosely(t, client.Insertions[1], should.Match(&bqpb.TestVariantBranchRow{
-			Project:     "chromium",
-			TestId:      "test_2",
+			Project: "chromium",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "junit",
+				ModuleVariant:     `{"k2":"v2"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
+				CoarseName:        "package",
+				FineName:          "class",
+				CaseName:          "test_2",
+			},
+			TestId:      ":module!junit:package:class#test_2",
 			VariantHash: "hash_2",
 			RefHash:     "6de221242e011c91",
-			Variant:     "{\"k2\":\"v2\"}",
+			Variant:     `{"k2":"v2"}`,
 			Ref: &pb.SourceRef{
 				System: &pb.SourceRef_Gitiles{
 					Gitiles: &pb.GitilesRef{
@@ -593,7 +611,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
-			TestID:      "test_1",
+			TestID:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			SourceRef:   ref,
 			RefHash:     pbutil.SourceRefHash(ref),
@@ -624,7 +642,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		tvs := []*rdbpb.TestVariant{
 			{
-				TestId:      "test_1",
+				TestId:      ":module!junit:package:class#test_1",
 				VariantHash: "hash_1",
 				Status:      rdbpb.TestVariantStatus_EXPECTED,
 				Results: []*rdbpb.TestResultBundle{
@@ -693,7 +711,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		assert.Loosely(t, tvb, should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
-			TestID:      "test_1",
+			TestID:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(sourcesMap["sources_id"])),
 			Variant: &pb.Variant{
@@ -780,7 +798,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
-			TestID:      "test_1",
+			TestID:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			SourceRef:   sourceRef,
 			RefHash:     pbutil.SourceRefHash(sourceRef),
@@ -819,7 +837,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		tvs := []*rdbpb.TestVariant{
 			{
-				TestId:      "test_1",
+				TestId:      ":module!junit:package:class#test_1",
 				VariantHash: "hash_1",
 				Status:      rdbpb.TestVariantStatus_EXPECTED,
 				Results: []*rdbpb.TestResultBundle{
@@ -857,7 +875,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		assert.Loosely(t, tvb, should.Match(&testvariantbranch.Entry{
 			Project:     "chromium",
-			TestID:      "test_1",
+			TestID:      ":module!junit:package:class#test_1",
 			VariantHash: "hash_1",
 			RefHash:     pbutil.SourceRefHash(sourceRef),
 			Variant: &pb.Variant{

@@ -114,7 +114,7 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 			return nil, errors.Annotate(err, "variant").Err()
 		}
 
-		testIDStructured, err := bqutil.StructuredTestIdentifier(tv.TestId, tv.Variant)
+		testIDStructured, err := bqutil.StructuredTestIdentifierRDB(tv.TestId, tv.Variant)
 		if err != nil {
 			return nil, errors.Annotate(err, "parse structured test id").Err()
 		}
