@@ -278,14 +278,71 @@ type TestIdentifier struct {
 	// This is the finest granularity component of the test identifier, and typically
 	// refers to sub-file granularity unless no such granularity exists.
 	//
-	// The special value "*fixture" may be used for reporting the result of
-	// setup and teardown common to tests in the same fine_name.
+	// Application guidance:
+	// * Standard usage: E.g. GTest methods, JUnit methods, etc.
+	//
+	//	Put the test method name in this field, escaping any forward ('/')
+	//	and backwards ('\') slashes with a backslash '\'.
+	//	If your tests have additional hierarchy in the test case name,
+	//	consider the section on 'Extended depth hierarchies' below.
+	//
+	// * Class/package-level setup/teardown:
+	//
+	//	Use the special value "*fixture" when reporting the result of
+	//	setup and teardown common to tests in the same fine_name.
+	//
+	// * Extended depth hierarchies:
+	//
+	//	When uploading a test case from an extended depth hierarchy, use the separator '/'
+	//	to separate the components of the test case identifier (e.g. the describe blocks
+	//	in a jest/mocha test). Text between the separators must have all occurrences
+	//	of '/' and '\' escaped with a backslash ('\') to avoid them being interpreted
+	//	as separators. Each component of such a hierarchical test case ID must not be blank.
+	//
+	//	Rationale and Important Caveats
+	//
+	//	Most test hierarchy should be captured by the module, coarse and fine names.
+	//	For example, the module typically capture the compilation unit, the coarse name
+	//	the directory (e.g. package name) and the fine name the file (e.g. class name).
+	//	This leaves the case name to capture sub-file granularity, which
+	//	in many frameworks is simply the method name.
+	//
+	//	However, some frameworks have additional levels of test hierarchy within the
+	//	"file" level. For example, Jest and Mocha allow tests to be nested within
+	//	an arbitrary number of describe('subscope', func() { ... }) blocks. There may
+	//	also be parameterisations of tests. For such cases, we offer a standardised
+	//	way to express the additional hierarchy using slashes ('/') to separate components.
+	//	UI may give special treatment to components so expressed in future.
+	//
+	//	Only consider uploading separate results for each test in such an additional
+	//	depth hierarchy if all of the following hold:
+	//	- Passes are reported for each test, not just failures.
+	//	- Tests are independent (e.g. a assertion failure does not cause multiple
+	//	  failing results, e.g. failure of the child test does not also cause the
+	//	  parent to fail or vice-versa as is typical in many 'subtest' arrangements).
+	//	- In case of retries, you are happy for each test passing individually at least
+	//	  once to allow CL submission. I.E. they do not all have to pass in the same run.
+	//
+	//	The above criteria are important to keep the test results view understandable in
+	//	case of retries, and to protect the data model that downstream clients
+	//	rely on (e.g. clients must report passes where they report failures).
+	//
+	//	If they cannot be met, do not upload separate tests results and prefer to upload one
+	//	test result per top-level method. Currently Mocha and Jest tests, and parameterised
+	//	GTest methods are the only cases where it is known these requirements can be met. Python
+	//	unittests and go subtests do not meet the requirements due to falling foul of the
+	//	independence requirement (and in case of python unittests, also the inability to
+	//	report passes for subtests).
 	//
 	// Constraints:
 	//   - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
 	//     unless it is to write the value "*fixture". Exception is made for tests in the
 	//     module 'legacy' for which a slightly broader set of starting characters is allowed
 	//     for backwards compatibility but use of this quirk is discouraged.
+	//   - The use of the '/' character is reserved for denoting variable depth/extended depth
+	//     hierarchies. If you do not intend this semantic, you must escape it using a backslash.
+	//     When the case_name is broken up by '/', each component must be non-empty. Again,
+	//     exception is made for tests in the module legacy.
 	//   - Limited to 512 bytes of printable UTF-8, although in practice this can
 	//     never be reached except in case of legacy test IDs as the total encoded test ID is
 	//     also limited to 512 bytes (see limits on `TestIdentifier` as a whole).
