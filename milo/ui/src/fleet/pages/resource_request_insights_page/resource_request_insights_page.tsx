@@ -40,7 +40,10 @@ import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { ResourceRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  ResourceRequest,
+  ResourceRequest_Status,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -49,23 +52,27 @@ const Container = styled.div`
   margin: 24px;
 `;
 
-interface GridRow {
-  id: string;
-  resource_details: string;
-  expected_eta: string;
-  material_sourcing_target_delivery_date: string;
-  build_target_delivery_date: string;
-  qa_target_delivery_date: string;
-  config_target_delivery_date: string;
-}
-
 interface ColumnDescriptor {
   id: string;
-  gridColDef: GridColDef & {
-    field: keyof GridRow; // custom GridColDef to limit fields to those defined in GridRow
-  };
+  gridColDef: GridColDef;
   valueGetter: (rr: ResourceRequest) => string;
 }
+
+const mapFulfillmentStatus = (
+  fulfillmentStatus: ResourceRequest_Status | undefined,
+): string => {
+  if (fulfillmentStatus === undefined) return '';
+  switch (fulfillmentStatus) {
+    case ResourceRequest_Status.NOT_STARTED:
+      return 'Not Started';
+    case ResourceRequest_Status.IN_PROGRESS:
+      return 'In Progress';
+    case ResourceRequest_Status.COMPLETED:
+      return 'Completed';
+    default:
+      return '';
+  }
+};
 
 const columns: ColumnDescriptor[] = [
   {
@@ -94,6 +101,16 @@ const columns: ColumnDescriptor[] = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
+  },
+  {
+    id: 'fulfillment_status',
+    gridColDef: {
+      field: 'fulfillment_status',
+      headerName: 'Fulfillment Status',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) =>
+      mapFulfillmentStatus(rr.fulfillmentStatus),
   },
   {
     id: 'material_sourcing_target_delivery_date',
@@ -295,18 +312,14 @@ export const ResourceRequestListPage = () => {
     );
   }
 
-  const rows: GridRow[] = query.data.resourceRequests.map(
-    (resourceRequest) => ({
-      id: resourceRequest.rrId,
-      resource_details: resourceRequest.resourceDetails,
-      expected_eta: toIsoString(resourceRequest.expectedEta),
-      material_sourcing_target_delivery_date: toIsoString(
-        resourceRequest.procurementEndDate,
-      ),
-      build_target_delivery_date: toIsoString(resourceRequest.buildEndDate),
-      qa_target_delivery_date: toIsoString(resourceRequest.qaEndDate),
-      config_target_delivery_date: toIsoString(resourceRequest.configEndDate),
-    }),
+  const rows: Record<string, string>[] = query.data.resourceRequests.map(
+    (resourceRequest) => {
+      const row: Record<string, string> = {};
+      for (const column of columns) {
+        row[column.gridColDef.field] = column.valueGetter(resourceRequest);
+      }
+      return row;
+    },
   );
 
   return (

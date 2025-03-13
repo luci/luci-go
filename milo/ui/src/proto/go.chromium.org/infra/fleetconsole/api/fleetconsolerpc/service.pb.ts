@@ -284,23 +284,62 @@ export interface ResourceRequest {
   /** The details of the resource request. */
   readonly resourceDetails: string;
   /** The procurement end date of the resource request. */
-  readonly procurementEndDate:
+  readonly procurementEndDate?:
     | DateOnly
     | undefined;
   /** The build end date of the resource request. */
-  readonly buildEndDate:
+  readonly buildEndDate?:
     | DateOnly
     | undefined;
   /** The QA end date of the resource request. */
-  readonly qaEndDate:
+  readonly qaEndDate?:
     | DateOnly
     | undefined;
   /** The config end date of the resource request. */
-  readonly configEndDate:
+  readonly configEndDate?:
     | DateOnly
     | undefined;
   /** Expected ETA for the resource request. */
-  readonly expectedEta: DateOnly | undefined;
+  readonly expectedEta?:
+    | DateOnly
+    | undefined;
+  /** Status of the Fulfillment bug for the resource request. */
+  readonly fulfillmentStatus?: ResourceRequest_Status | undefined;
+}
+
+export enum ResourceRequest_Status {
+  NOT_STARTED = 0,
+  IN_PROGRESS = 1,
+  COMPLETED = 2,
+}
+
+export function resourceRequest_StatusFromJSON(object: any): ResourceRequest_Status {
+  switch (object) {
+    case 0:
+    case "NOT_STARTED":
+      return ResourceRequest_Status.NOT_STARTED;
+    case 1:
+    case "IN_PROGRESS":
+      return ResourceRequest_Status.IN_PROGRESS;
+    case 2:
+    case "COMPLETED":
+      return ResourceRequest_Status.COMPLETED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ResourceRequest_Status");
+  }
+}
+
+export function resourceRequest_StatusToJSON(object: ResourceRequest_Status): string {
+  switch (object) {
+    case ResourceRequest_Status.NOT_STARTED:
+      return "NOT_STARTED";
+    case ResourceRequest_Status.IN_PROGRESS:
+      return "IN_PROGRESS";
+    case ResourceRequest_Status.COMPLETED:
+      return "COMPLETED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum ResourceRequest_Status");
+  }
 }
 
 function createBasePingRequest(): PingRequest {
@@ -2343,6 +2382,7 @@ function createBaseResourceRequest(): ResourceRequest {
     qaEndDate: undefined,
     configEndDate: undefined,
     expectedEta: undefined,
+    fulfillmentStatus: undefined,
   };
 }
 
@@ -2371,6 +2411,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.expectedEta !== undefined) {
       DateOnly.encode(message.expectedEta, writer.uint32(66).fork()).join();
+    }
+    if (message.fulfillmentStatus !== undefined) {
+      writer.uint32(72).int32(message.fulfillmentStatus);
     }
     return writer;
   },
@@ -2446,6 +2489,14 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.expectedEta = DateOnly.decode(reader, reader.uint32());
           continue;
         }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.fulfillmentStatus = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2465,6 +2516,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       qaEndDate: isSet(object.qaEndDate) ? DateOnly.fromJSON(object.qaEndDate) : undefined,
       configEndDate: isSet(object.configEndDate) ? DateOnly.fromJSON(object.configEndDate) : undefined,
       expectedEta: isSet(object.expectedEta) ? DateOnly.fromJSON(object.expectedEta) : undefined,
+      fulfillmentStatus: isSet(object.fulfillmentStatus)
+        ? resourceRequest_StatusFromJSON(object.fulfillmentStatus)
+        : undefined,
     };
   },
 
@@ -2494,6 +2548,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.expectedEta !== undefined) {
       obj.expectedEta = DateOnly.toJSON(message.expectedEta);
     }
+    if (message.fulfillmentStatus !== undefined) {
+      obj.fulfillmentStatus = resourceRequest_StatusToJSON(message.fulfillmentStatus);
+    }
     return obj;
   },
 
@@ -2520,6 +2577,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     message.expectedEta = (object.expectedEta !== undefined && object.expectedEta !== null)
       ? DateOnly.fromPartial(object.expectedEta)
       : undefined;
+    message.fulfillmentStatus = object.fulfillmentStatus ?? undefined;
     return message;
   },
 };
