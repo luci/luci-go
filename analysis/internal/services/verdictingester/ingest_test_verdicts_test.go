@@ -1093,7 +1093,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 	expectedRows := []*bqpb.TestVerdictRow{
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     "{}",
@@ -1169,7 +1169,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     "{}",
@@ -1207,7 +1207,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     "{}",
@@ -1245,7 +1245,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     "{}",
@@ -1282,7 +1282,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     "{}",
@@ -1330,7 +1330,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{"k1":"v2"}`,
@@ -1370,7 +1370,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{"k1":"v1"}`,
@@ -1410,7 +1410,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{}`,
@@ -1472,7 +1472,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{}`,
@@ -1510,7 +1510,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{}`,
@@ -1547,7 +1547,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		},
 		{
 			Project: "project",
-			TestVariantId: &bqpb.TestVariantIdentifier{
+			TestIdStructured: &bqpb.TestIdentifier{
 				ModuleName:        "module",
 				ModuleScheme:      "junit",
 				ModuleVariant:     `{}`,

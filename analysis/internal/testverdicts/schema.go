@@ -70,9 +70,9 @@ func init() {
 
 func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestVerdictRow{})
-	// We also need to get FileDescriptorProto for StringPair, FailureReason,
-	// Sources, GitilesCommit, Changelist, TestMetadata, TestLocation and
-	// BugComponent.
+	// We also need to get FileDescriptorProto for other referenced protos
+	// because they are defined in different files.
+	fdtid, _ := descriptor.MessageDescriptorProto(&bqpb.TestIdentifier{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
 	fdsrc, _ := descriptor.MessageDescriptorProto(&pb.Sources{})
@@ -82,7 +82,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fdtl, _ := descriptor.MessageDescriptorProto(&pb.TestLocation{})
 	fdbtc, _ := descriptor.MessageDescriptorProto(&pb.BugComponent{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{
-		fd, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc,
+		fd, fdtid, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc,
 	}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }

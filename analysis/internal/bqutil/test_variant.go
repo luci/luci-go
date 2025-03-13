@@ -22,9 +22,9 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 )
 
-// TestVariantIdentifier constructs a BigQuery-format TestVariantIdentifier from
+// StructuredTestIdentifier constructs a BigQuery-format TestIdentifier from
 // a flat ResultDB test ID and variant combination.
-func TestVariantIdentifier(testID string, variant *rdbpb.Variant) (*bqpb.TestVariantIdentifier, error) {
+func StructuredTestIdentifier(testID string, variant *rdbpb.Variant) (*bqpb.TestIdentifier, error) {
 	test, err := pbutil.ParseAndValidateTestID(testID)
 	if err != nil {
 		return nil, errors.Annotate(err, "parse test ID").Err()
@@ -33,7 +33,7 @@ func TestVariantIdentifier(testID string, variant *rdbpb.Variant) (*bqpb.TestVar
 	if err != nil {
 		return nil, errors.Annotate(err, "format variant").Err()
 	}
-	return &bqpb.TestVariantIdentifier{
+	return &bqpb.TestIdentifier{
 		ModuleName:        test.ModuleName,
 		ModuleScheme:      test.ModuleScheme,
 		ModuleVariant:     variantJSON,

@@ -18,6 +18,7 @@ package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
@@ -38,17 +39,29 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //   retain data for 510 days.
 // - Cluster by project, test_id.
 //
-// NextId: 24
+// NextId: 25
 message TestResultRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
 
-  // Is a unique identifier of the test in a LUCI project.
-  // Refer to TestResult.test_id for details.
+  // The structured test identifier.
+  //
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
+  TestIdentifier test_id_structured = 24;
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  //
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
   string test_id = 2;
 
-  // Describes one specific way of running the test,
-  // e.g. a specific bucket, builder and a test suite.
+  // Description of one specific way of running the test,
+  // e.g. build configuration, CPU architecture, OS.
   //
   // This will be encoded as a JSON object like
   // {"builder":"linux-rel","os":"Ubuntu-18.04",...}

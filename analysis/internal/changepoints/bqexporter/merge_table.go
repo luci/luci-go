@@ -79,10 +79,10 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 		ON T.project = S.row.project AND T.test_id = S.row.test_id AND T.variant_hash = S.row.variant_hash AND T.ref_hash = S.row.ref_hash
 		-- Row in source is newer than target, update.
 		WHEN MATCHED AND S.row.version > T.version THEN
-			UPDATE SET T.has_recent_unexpected_results = S.row.has_recent_unexpected_results, T.segments = S.row.segments, T.version=S.row.version
+			UPDATE SET T.has_recent_unexpected_results = S.row.has_recent_unexpected_results, T.segments = S.row.segments, T.version=S.row.version, T.test_id_structured=S.row.test_id_structured
 		-- Row in source that does not exist in target. Insert.
 		WHEN NOT MATCHED BY TARGET THEN
-			INSERT (project, test_id, variant_hash, ref_hash, variant, ref, segments, has_recent_unexpected_results, version) VALUES (S.row.project, S.row.test_id, S.row.variant_hash, S.row.ref_hash, S.row.variant, S.row.ref, S.row.segments, S.row.has_recent_unexpected_results, S.row.version)
+			INSERT (project, test_id, variant_hash, ref_hash, test_id_structured, variant, ref, segments, has_recent_unexpected_results, version) VALUES (S.row.project, S.row.test_id, S.row.variant_hash, S.row.ref_hash, S.row.test_id_structured, S.row.variant, S.row.ref, S.row.segments, S.row.has_recent_unexpected_results, S.row.version)
 		-- Delete rows from target older than 90 days that are not being updated.
 		WHEN NOT MATCHED BY SOURCE AND T.version < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY) THEN
 			DELETE;

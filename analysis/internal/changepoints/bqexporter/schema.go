@@ -77,11 +77,12 @@ func init() {
 
 func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestVariantBranchRow{})
-	// We also need to get FileDescriptorProto for SourceRef and GitilesRef
+	// We also need to get FileDescriptorProto for other referenced protos
 	// because they are defined in different files.
+	fdtid, _ := descriptor.MessageDescriptorProto(&bqpb.TestIdentifier{})
 	fdsr, _ := descriptor.MessageDescriptorProto(&pb.SourceRef{})
 	fdgr, _ := descriptor.MessageDescriptorProto(&pb.GitilesRef{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsr, fdgr}}
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdtid, fdsr, fdgr}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }
 

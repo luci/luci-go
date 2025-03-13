@@ -1,0 +1,152 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// TestIdentifier represents the identity of a test in structured form.
+// It includes information about the configuration the test was run in (e.g.
+// build configuration, CPU architecture, OS).
+//
+// The structured test identifier represented in this proto corresponds to
+// the flat test identifier with the following form:
+// :{module_name}!{module_scheme}:{coarse_name}:{fine_name}#{case_name}
+//
+// and variant matching module_variant.
+//
+// Where {x} represents inserting the value of x with the characters
+// ':', '!', '#', and '\' escaped using a '\'.
+//
+// Special treatment exists for legacy test identifiers, for which
+// module_name = "legacy", module_scheme = "legacy", coarse_name = "",
+// fine_name = "" and case_name = <legacy_id>. For these, the corresponding
+// flat test ID is simply:
+// {case_name}
+//
+// (no escaping applies to this form, although method starting with ':'
+// is illegal for legacy test identifiers).
+//
+// See go/resultdb-test-hierarchy-design for more details.
+//
+// Limits: the encoded flat test ID (as per rules above) must be less than
+// 512 bytes in UTF-8.
+message TestIdentifier {
+  // The name of the module being tested. A module is a set of tests which run
+  // with the same test harness, and typically corresponds with a unit of
+  // build, such as a bazel test target.
+  //
+  // For example, "CtsSdkExtensionsTestCases" or "chrome/test:blink_webkit_tests".
+  //
+  // Note: Modules are identified by the combination of module_name and scheme, not
+  // only module_name. See `scheme` field below for more.
+  //
+  // Constraints:
+  // - Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
+  string module_name = 1;
+
+  // The scheme of the module, for example, "junit" or "gtest".
+  //
+  // Must match one of the schemes in the ResultDB service configuration (see
+  // go/resultdb-schemes). Additional values can be configured as needed.
+  //
+  // Note: modules are identified by the combination of module_name, module_variant and
+  // module_scheme.
+  // Nonetheless, when presenting data on a frontend, it is acceptable to not show the scheme
+  // as it exists primarily to allow customisation of the labels shown next to the coarse_name,
+  // fine_name and case_name fields.
+  // When uploading data it is STRONGLY DISCOURAGED to use different schemes with the same
+  // module name as it may lead to ambiguous UI for users.
+  //
+  // Limited to ^[a-z][a-z0-9]{0,19}$.
+  string module_scheme = 2;
+
+  // Description of one specific way of running the tests in a module,
+  // e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+  //
+  // This will be encoded as a JSON object like
+  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
+  // to take advantage of BigQuery's JSON support, so that
+  // the query will only be billed for the variant
+  // keys it reads.
+  //
+  // N.B. Presently this is always the same as test_result.variant but semantics could
+  // diverge in future if variants are introduced at other levels.
+  string module_variant = 3 [(bqschema.options).bq_type = "JSON"];
+
+  // Hash of the module variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
+  string module_variant_hash = 4;
+
+  // Intermediate hierarchy - coarse name.
+  //
+  // For example "com.android.os.ext".
+  //
+  // A scheme dependent value used to organise the test into a coarse group of related tests,
+  // such as a package or directory.
+  // If the scheme does not define a coarse grouping, this must be blank.
+  // If only one intermediate hierarchy level is used for a scheme, it is always the
+  // fine hierarchy level.
+  //
+  // Constraints:
+  // - Must match constraints set by the module's scheme.
+  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
+  string coarse_name = 5;
+
+  // Interemdiate hierarchy - fine name.
+  //
+  // For example "SdkExtensionsTest" or "WebDialogBrowserTest".
+  //
+  // A finer grouping within the above coarse grouping (if any), e.g. class or file.
+  // If the scheme does not define a fine grouping, this must be blank.
+  //
+  // Constraints:
+  // - Must match constraints set by the module's scheme.
+  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
+  string fine_name = 6;
+
+  // The identifier of test case within the above fine grouping.
+  //
+  // For example "testBadArgument" or "CloseParentWindow".
+  //
+  // This is the finest granularity component of the test identifier, and typically
+  // refers to sub-file granularity unless no such granularity exists.
+  //
+  // The special value "*fixture" may be used for reporting the result of
+  // setup and teardown common to tests in the same fine_name.
+  //
+  // Constraints:
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
+  //   unless it is to write the value "*fixture". Exception is made for tests in the
+  //   module 'legacy' for which a slightly broader set of starting characters is allowed
+  //   for backwards compatibility but use of this quirk is discouraged.
+  // - Limited to 512 bytes of printable UTF-8, although in practice this can
+  //   never be reached except in case of legacy test IDs as the total encoded test ID is
+  //   also limited to 512 bytes (see limits on `TestIdentifier` as a whole).
+  // - All unicode must be in Normalization Form C.
+  // - Use of spaces is allowed, but discouraged.
+  string case_name = 7;
+}

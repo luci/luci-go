@@ -45,9 +45,7 @@ service TestVariants {
 
 message QueryTestVariantFailureRateRequest {
     // The identity of a test variant.
-    // N.B. Previously named 'TestVariantIdentifier' but renamed to
-    // avoid conflicting with the new TestVariantIdentifier introduced by
-    // ResultDB.
+    // N.B. Previously named 'TestVariantIdentifier'.
     message TestVariant {
         // A unique identifier of the test in a LUCI project.
         string test_id = 1;

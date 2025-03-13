@@ -17,28 +17,37 @@ syntax = "proto3";
 package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // Represents analysis for a test variant on a source branch at a point in time.
+//
+// Primary key (test_variant_segments): project, test_id, variant_hash, ref_hash.
 message TestVariantBranchRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
 
-  // The identity of the test.
+  // The structured test identifier.
+  //
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
+  TestIdentifier test_id_structured = 10;
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  //
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
   string test_id = 2;
 
-  // Hash of the variant, as 16 lowercase hexadecimal characters.
-  // E.g. "96c68dc946ab4068".
-  string variant_hash = 3;
-
-  // Hash of the source branch, as 16 lowercase hexadecimal characters.
-  string ref_hash = 4;
-
-  // Describes one specific way of running the test, e.g. a specific bucket,
-  // builder and a test suite.
+  // Description of one specific way of running the test,
+  // e.g. build configuration, CPU architecture, OS.
   //
   // This will be encoded as a JSON object like
   // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
@@ -48,6 +57,13 @@ message TestVariantBranchRow {
   // In the protocol buffer, it must be a string as per
   // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
   string variant = 5 [(bqschema.options).bq_type = "JSON"];
+
+  // Hash of the variant, as 16 lowercase hexadecimal characters.
+  // E.g. "96c68dc946ab4068".
+  string variant_hash = 3;
+
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 4;
 
   // The branch in source control.
   luci.analysis.v1.SourceRef ref = 6;

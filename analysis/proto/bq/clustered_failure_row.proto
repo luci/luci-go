@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
@@ -25,6 +26,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // ClusteredFailureRow represents a row in a BigQuery table for a clustered
 // test failure.
+// Next ID: 46.
 message ClusteredFailureRow {
   // The LUCI project that the test failure belongs to.
   string project = 39;
@@ -146,13 +148,24 @@ message ClusteredFailureRow {
   // "{LUCI_PROJECT}:{REALM_SUFFIX}", for example "chromium:ci".
   string realm = 11;
 
-  // The unique identifier of the test.
-  // For test results from ResultDB, see luci.resultdb.v1.TestResult.test_id.
+  // The structured test identifier.
+  //
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
+  TestIdentifier test_id_structured = 45;
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  //
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
   string test_id = 12;
 
-  // key:value pairs to specify the way of running a particular test.
-  // e.g. a specific bucket, builder and a test suite.
-  // For ResultDB, this is the known field.
+  // Key-value pairs describing one specific way of running the test,
+  // e.g. build configuration, CPU architecture, OS.
   repeated luci.analysis.v1.StringPair variant = 13;
 
   // Metadata key value pairs for this test result.
@@ -354,6 +367,4 @@ message ClusteredFailureRow {
 
   // Information about the test variant branch the result is from.
   TestVariantBranch test_variant_branch = 44;
-
-  // Next ID: 45.
 }

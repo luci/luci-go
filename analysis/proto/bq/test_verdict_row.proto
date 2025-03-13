@@ -18,6 +18,7 @@ package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
@@ -43,18 +44,24 @@ message TestVerdictRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
 
-  // Structured-form test variant identifier.
-  TestVariantIdentifier test_variant_id = 18;
-
-  // Is a unique identifier of the test in a LUCI project.
+  // The structured test identifier.
   //
-  // This is the flat-form encoding of the test component of the structured test variant ID above.
-  // See TestVariantIdentifier for details how a structured test identifier is converted
-  // to a flat test ID.
+  // Uniquely identifies the test that was run, including the specific way of running that
+  // test, e.g. build configuration, CPU architecture, OS.
+  TestIdentifier test_id_structured = 18;
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  //
+  // This is the flat-form encoding of the structured test variant ID above,
+  // excluding information about the specific way of running test (e.g. build configuration,
+  // CPU architecture). Such information is captured separately in the `variant` field below.
+  //
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
   string test_id = 2;
 
-  // Describes one specific way of running the test,
-  // e.g. a specific bucket, builder and a test suite.
+  // Description of one specific way of running the test,
+  // e.g. build configuration, CPU architecture, OS.
   //
   // This will be encoded as a JSON object like
   // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
@@ -320,125 +327,4 @@ message TestVerdictRow {
   // function that is part of the BigQuery change history feature:
   // https://cloud.google.com/bigquery/docs/change-history
   google.protobuf.Timestamp insert_time = 17;
-}
-
-// TestVariantIdentifier represents the identity of a test variant in structured form.
-//
-// The structured test variant identifier represented in this proto corresponds to
-// the flat test identifier with the following form:
-// :{module_name}!{module_scheme}:{coarse_name}:{fine_name}#{case_name}
-//
-// and variant matching module_variant.
-//
-// Where {x} represents inserting the value of x with the characters
-// ':', '!', '#', and '\' escaped using a '\'.
-//
-// Special treatment exists for legacy test identifiers, for which
-// module_name = "legacy", module_scheme = "legacy", coarse_name = "",
-// fine_name = "" and case_name = <legacy_id>. For these, the corresponding
-// flat test ID is simply:
-// {case_name}
-//
-// (no escaping applies to this form, although method starting with ':'
-// is illegal for legacy test identifiers).
-//
-// See go/resultdb-test-hierarchy-design for more details.
-//
-// Limits: the encoded test ID (as per rules above) must be less than
-// 512 bytes in UTF-8.
-message TestVariantIdentifier {
-  // The name of the module being tested. A module is a set of tests which run
-  // with the same test harness, and typically corresponds with a unit of
-  // build, such as a bazel test target.
-  //
-  // For example, "CtsSdkExtensionsTestCases" or "chrome/test:blink_webkit_tests".
-  //
-  // Note: Modules are identified by the combination of module_name and scheme, not
-  // only module_name. See `scheme` field below for more.
-  //
-  // Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
-  string module_name = 1;
-
-  // The scheme of the module, for example, "junit" or "gtest".
-  //
-  // Must match one of the schemes in the ResultDB service configuration (see
-  // go/resultdb-schemes). Additional values can be configured as needed.
-  //
-  // Note: modules are identified by the combination of module_name, module_variant and
-  // module_scheme.
-  // Nonetheless, when presenting data on a frontend, it is acceptable to not show the scheme
-  // as it exists primarily to allow customisation of the labels shown next to the coarse_name,
-  // fine_name and case_name fields.
-  // When uploading data it is STRONGLY DISCOURAGED to use different schemes with the same
-  // module name as it may lead to ambiguous UI for users.
-  //
-  // Limited to ^[a-z][a-z0-9]{0,19}$.
-  string module_scheme = 2;
-
-  // Description of one specific way of running the tests in a module,
-  // e.g. specific ABI (x64/x86/...), build flags and/or operating system.
-  //
-  // Variants identify the unique ways the module was run compared to every other way
-  // the module is run by the LUCI project. As such, some variant key-value pairs
-  // may be repeated for all modules in an invocation.
-  //
-  // This will be encoded as a JSON object like
-  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
-  // to take advantage of BigQuery's JSON support, so that
-  // the query will only be billed for the variant
-  // keys it reads.
-  //
-  // In the protocol buffer, it must be a string as per
-  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
-  string module_variant = 3 [(bqschema.options).bq_type = "JSON"];
-
-  // Hash of the module variant.
-  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
-  string module_variant_hash = 4;
-
-  // Intermediate hierarchy - coarse name.
-  //
-  // For example "com.android.os.ext".
-  //
-  // A scheme dependent value used to organise the test into a coarse group of related tests,
-  // such as a package or directory.
-  // If the scheme does not define a coarse grouping, this must be blank.
-  // If only one intermediate hierarchy level is used for a scheme, it is always the
-  // fine hierarchy level.
-  //
-  // Constraints:
-  // - Must match constraints set by the module's scheme.
-  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
-  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
-  string coarse_name = 5;
-
-  // Interemdiate hierarchy - fine name.
-  //
-  // For example "SdkExtensionsTest" or "WebDialogBrowserTest".
-  //
-  // A finer grouping within the above coarse grouping (if any), e.g. class or file.
-  // If the scheme does not define a fine grouping, this must be blank.
-  //
-  // Constraints:
-  // - Must match constraints set by the module's scheme.
-  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
-  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
-  string fine_name = 6;
-
-  // The identifier of test case within the above fine grouping.
-  //
-  // For example "testBadArgument" or "CloseParentWindow".
-  //
-  // This is the finest granularity component of the test identifier, and typically
-  // refers to sub-file granularity unless no such granularity exists.
-  //
-  // The special value "*fixture" may be used for reporting the result of
-  // setup and teardown common to tests in the same fine_name.
-  //
-  // Constraints:
-  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
-  //   unless it is to write the value "*fixture". Exception is made for tests in the
-  //   module 'legacy' for which a slightly broader set of starting characters is allowed
-  //   for backwards compatibility but use of this quirk is discouraged.
-  string case_name = 7;
 }

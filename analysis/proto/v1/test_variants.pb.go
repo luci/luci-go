@@ -552,9 +552,7 @@ func (x *TestVariantStabilityAnalysis) GetFlakeRate() *TestVariantStabilityAnaly
 }
 
 // The identity of a test variant.
-// N.B. Previously named 'TestVariantIdentifier' but renamed to
-// avoid conflicting with the new TestVariantIdentifier introduced by
-// ResultDB.
+// N.B. Previously named 'TestVariantIdentifier'.
 type QueryTestVariantFailureRateRequest_TestVariant struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A unique identifier of the test in a LUCI project.
