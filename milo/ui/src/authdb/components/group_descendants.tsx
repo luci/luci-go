@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import './groups.css';
 
 import Alert from '@mui/material/Alert';
@@ -27,11 +28,11 @@ import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 
 import { CollapsibleList } from './collapsible_list';
 
-interface GroupListingProps {
+interface GroupDescendantsProps {
   name: string;
 }
 
-export function GroupListing({ name }: GroupListingProps) {
+export function GroupDescendants({ name }: GroupDescendantsProps) {
   const client = useAuthServiceGroupsClient();
 
   const {
@@ -53,9 +54,9 @@ export function GroupListing({ name }: GroupListingProps) {
 
   if (isError) {
     return (
-      <div className="section" data-testid="group-listing-error">
+      <div className="section" data-testid="group-descendants-error">
         <Alert severity="error">
-          <AlertTitle>Failed to load group listing </AlertTitle>
+          <AlertTitle>Failed to load group descendants </AlertTitle>
           <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
         </Alert>
       </div>
@@ -71,7 +72,7 @@ export function GroupListing({ name }: GroupListingProps) {
   return (
     <>
       <TableContainer sx={{ p: 0 }}>
-        <Table data-testid="listing-table">
+        <Table data-testid="descendants-table">
           <TableBody>
             <CollapsibleList
               items={members}

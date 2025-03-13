@@ -21,20 +21,20 @@ import {
 } from '@/authdb/testing_tools/mocks/group_expanded_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { GroupListing } from './group_listing';
+import { GroupDescendants } from './group_descendants';
 
-describe('<GroupListing />', () => {
+describe('<GroupDescendants />', () => {
   test('displays group members', async () => {
     const mockGroup = createMockExpandedGroup('123');
     mockFetchGetExpandedGroup(mockGroup);
 
     render(
       <FakeContextProvider>
-        <GroupListing name="123" />
+        <GroupDescendants name="123" />
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('listing-table');
+    await screen.findByTestId('descendants-table');
     expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
   });
@@ -44,11 +44,11 @@ describe('<GroupListing />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupListing name="123" />
+        <GroupDescendants name="123" />
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('listing-table');
+    await screen.findByTestId('descendants-table');
     expect(screen.getByText(mockGroup.globs[0])).toBeInTheDocument();
   });
 
@@ -58,11 +58,11 @@ describe('<GroupListing />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupListing name="123" />
+        <GroupDescendants name="123" />
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('listing-table');
+    await screen.findByTestId('descendants-table');
     mockGroup.nested.forEach((group) => {
       expect(screen.getByText(group)).toBeInTheDocument();
     });
@@ -74,10 +74,10 @@ describe('<GroupListing />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupListing name="123" />
+        <GroupDescendants name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('listing-table');
+    await screen.findByTestId('descendants-table');
 
     mockGroup.nested.forEach((group) => {
       expect(screen.getByText(group)).toBeInTheDocument();
@@ -93,14 +93,14 @@ describe('<GroupListing />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupListing name="123" />
+        <GroupDescendants name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('group-listing-error');
+    await screen.findByTestId('group-descendants-error');
 
     expect(
-      screen.getByText('Failed to load group listing'),
+      screen.getByText('Failed to load group descendants'),
     ).toBeInTheDocument();
-    expect(screen.queryByTestId('listing-table')).toBeNull();
+    expect(screen.queryByTestId('descendants-table')).toBeNull();
   });
 });

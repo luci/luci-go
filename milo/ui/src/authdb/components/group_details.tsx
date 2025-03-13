@@ -20,8 +20,8 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+import { GroupDescendants } from '@/authdb/components/group_descendants';
 import { GroupForm } from '@/authdb/components/group_form';
-import { GroupListing } from '@/authdb/components/group_listing';
 import { GroupLookup } from '@/authdb/components/group_lookup';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -71,7 +71,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
     );
   };
 
-  const validValues = ['overview', 'permissions', 'listing', 'ancestors'];
+  const validValues = ['overview', 'permissions', 'descendants', 'ancestors'];
 
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
@@ -98,7 +98,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
               <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
                 <Tab label="Overview" {...a11yProps('overview')} />
                 <Tab label="Permissions" {...a11yProps('permissions')} />
-                <Tab label="Full Listing" {...a11yProps('listing')} />
+                <Tab label="Descendants" {...a11yProps('descendants')} />
                 <Tab label="Ancestors" {...a11yProps('ancestors')} />
               </TabList>
             </Box>
@@ -112,8 +112,12 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             >
               <GroupPermissions name={name}></GroupPermissions>
             </TabPanel>
-            <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
-              <GroupListing name={name}></GroupListing>
+            <TabPanel
+              value="descendants"
+              role="tabpanel"
+              id="tabpanel-descendants"
+            >
+              <GroupDescendants name={name}></GroupDescendants>
             </TabPanel>
             <TabPanel value="ancestors" role="tabpanel" id="tabpanel-ancestors">
               <GroupLookup name={name}></GroupLookup>
