@@ -26,11 +26,10 @@ import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
+import { interpretLookupResults } from '@/authdb/common/helpers';
+import { GroupLink } from '@/authdb/components/group_link';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-import { GroupLink } from './group_link';
-import { interpretLookupResults } from './group_lookup';
 
 interface LookupResultsProps {
   name: string;

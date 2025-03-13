@@ -20,7 +20,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { GroupLink } from './group_link';
+import { GroupLink } from '@/authdb/components/group_link';
 
 interface CollapsibleListProps {
   items: string[];

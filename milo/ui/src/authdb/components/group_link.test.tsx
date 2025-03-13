@@ -14,9 +14,8 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { GroupLink } from '@/authdb/components/group_link';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupLink } from './group_link';
 
 describe('<GroupLink />', () => {
   test('routes correctly', async () => {

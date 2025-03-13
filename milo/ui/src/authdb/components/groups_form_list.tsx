@@ -38,10 +38,14 @@ import {
   useCallback,
 } from 'react';
 
-import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
-import { addPrefixToItems, stripPrefix } from '@/authdb/common/helpers';
-
-import { GroupLink } from './group_link';
+import {
+  addPrefixToItems,
+  isGlob,
+  isMember,
+  isSubgroup,
+  stripPrefix,
+} from '@/authdb/common/helpers';
+import { GroupLink } from '@/authdb/components/group_link';
 
 import './groups.css';
 

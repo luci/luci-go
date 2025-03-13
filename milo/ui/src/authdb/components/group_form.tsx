@@ -35,6 +35,7 @@ import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { nameRe, stripPrefix } from '@/authdb/common/helpers';
+import { GroupLink } from '@/authdb/components/group_link';
 import {
   GroupsFormList,
   FormListElement,
@@ -47,8 +48,6 @@ import {
   UpdateGroupRequest,
   DeleteGroupRequest,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-import { GroupLink } from './group_link';
 
 // True if group name starts with '<something>/' prefix, where
 // <something> is a non-empty string.

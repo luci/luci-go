@@ -22,144 +22,16 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import { useQuery } from '@tanstack/react-query';
 
-import { stripPrefix, sortGroupsByName } from '@/authdb/common/helpers';
+import { interpretLookupResults } from '@/authdb/common/helpers';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import {
-  PrincipalKind,
-  Subgraph,
-  Node,
   AuthGroup,
+  PrincipalKind,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 import { CollapsibleList } from './collapsible_list';
 
 import './groups.css';
-
-// For each long path in the list, kick out the middle and replace it with ''.
-const shortenInclusionPaths = (paths: string[]) => {
-  const out: string[] = [];
-  const seen = new Set();
-
-  paths.forEach((path) => {
-    if (path.length <= 3) {
-      out.push(path); // short enough already
-      return;
-    }
-    const shorter = [path[0], '', path[path.length - 1]];
-    const key = shorter.join('\n');
-    if (!seen.has(key)) {
-      seen.add(key);
-      out.push(...shorter);
-    }
-  });
-
-  return out;
-};
-
-export const interpretLookupResults = (subgraph: Subgraph) => {
-  // Note: the principal is always represented by nodes[0] per API guarantee.
-  const nodes = subgraph.nodes;
-  const principalNode = nodes[0];
-  const principal = principalNode.principal;
-
-  const includers = new Map();
-  const getIncluder = (groupName: string) => {
-    if (!includers.has(groupName)) {
-      includers.set(groupName, {
-        name: groupName,
-        includesDirectly: false,
-        includesViaGlobs: [],
-        includesIndirectly: [],
-      });
-    }
-    return includers.get(groupName);
-  };
-
-  const enumeratePaths = (
-    current: Node[],
-    visitCallback: (path: Node[]) => void,
-  ) => {
-    visitCallback(current);
-    const lastNode = current[current.length - 1];
-    if (lastNode.includedBy) {
-      lastNode.includedBy.forEach((idx) => {
-        const node = nodes[idx];
-        current.push(node);
-        enumeratePaths(current, visitCallback);
-        current.pop();
-      });
-    }
-  };
-
-  const visitor = (path: Node[]) => {
-    if (path.length === 1) {
-      return; // the trivial [principal] path
-    }
-
-    const lastNode = path[path.length - 1];
-    if (lastNode!.principal!.kind !== PrincipalKind.GROUP) {
-      return; // we are only interested in examining groups; skip GLOBs
-    }
-
-    const groupIncluder = getIncluder(lastNode!.principal!.name);
-    if (path.length === 2) {
-      // The entire path is 'principalNode -> lastNode', meaning group
-      // 'last' includes the principal directly.
-      groupIncluder.includesDirectly = true;
-    } else if (
-      path.length === 3 &&
-      path[1]!.principal!.kind === PrincipalKind.GLOB
-    ) {
-      // The entire path is 'principalNode -> GLOB -> lastNode', meaning
-      // 'last' includes the principal via the GLOB.
-      groupIncluder.includesViaGlobs.push(
-        stripPrefix('user', path[1]!.principal!.name),
-      );
-    } else {
-      // Some arbitrarily long indirect inclusion path. Just record all
-      // group names in it (skipping GLOBs). Skip the root principal
-      // itself (path[0]) and the currrently analyzed node (path[-1]);
-      // it's not useful information as it's the same for all paths.
-      const groupNames = [];
-      for (let i = 1; i < path.length - 1; i++) {
-        if (path[i]!.principal!.kind === PrincipalKind.GROUP) {
-          groupNames.push(path[i]!.principal!.name);
-        }
-      }
-      groupIncluder.includesIndirectly.push(groupNames);
-    }
-  };
-  enumeratePaths([principalNode], visitor);
-
-  // Finally, massage the findings for easier display. Note that
-  // directIncluders and indirectIncluders are NOT disjoint sets.
-  let directIncluders: AuthGroup[] = [];
-  let indirectIncluders: AuthGroup[] = [];
-  includers.forEach((inc) => {
-    if (inc.includesDirectly || inc.includesViaGlobs.length > 0) {
-      directIncluders.push(inc);
-    }
-
-    if (inc.includesIndirectly.length > 0) {
-      // Long inclusion paths look like data dumps in UI and don't fit
-      // most of the time. The most interesting components are at the
-      // ends, so keep only them.
-      inc.includesIndirectly = shortenInclusionPaths(inc.includesIndirectly);
-      indirectIncluders.push(inc);
-    }
-  });
-
-  directIncluders = sortGroupsByName(directIncluders);
-  indirectIncluders = sortGroupsByName(indirectIncluders);
-
-  return {
-    principalName: stripPrefix('user', principal!.name),
-    principalIsGroup: principal!.kind === PrincipalKind.GROUP,
-    includers: includers, // will be used to construct popovers
-    directIncluders: directIncluders,
-    indirectIncluders: indirectIncluders,
-  };
-};
 
 interface GroupLookupProps {
   name: string;

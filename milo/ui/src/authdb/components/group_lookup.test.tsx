@@ -14,14 +14,14 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { interpretLookupResults } from '@/authdb/common/helpers';
+import { GroupLookup } from '@/authdb/components/group_lookup';
 import {
   createMockSubgraph,
   mockErrorFetchingGetSubgraph,
   mockFetchGetSubgraph,
 } from '@/authdb/testing_tools/mocks/group_subgraph_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupLookup, interpretLookupResults } from './group_lookup';
 
 describe('<GroupLookup />', () => {
   test('interprets lookup results correctly', async () => {
