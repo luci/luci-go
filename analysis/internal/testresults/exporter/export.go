@@ -114,6 +114,11 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 			return nil, errors.Annotate(err, "variant").Err()
 		}
 
+		testIDStructured, err := bqutil.StructuredTestIdentifier(tv.TestId, tv.Variant)
+		if err != nil {
+			return nil, errors.Annotate(err, "parse structured test id").Err()
+		}
+
 		for _, tr := range tv.Results {
 			var skipReasonString string
 			skipReason := pbutil.SkipReasonFromResultDB(tr.Result.SkipReason)
@@ -127,10 +132,11 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 			}
 
 			results = append(results, &bqpb.TestResultRow{
-				Project:     rootProject,
-				TestId:      tv.TestId,
-				Variant:     variant,
-				VariantHash: tv.VariantHash,
+				Project:          rootProject,
+				TestIdStructured: testIDStructured,
+				TestId:           tv.TestId,
+				Variant:          variant,
+				VariantHash:      tv.VariantHash,
 				Invocation: &bqpb.TestResultRow_InvocationRecord{
 					Id:    opts.RootInvocationID,
 					Realm: opts.RootRealm,

@@ -77,7 +77,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 				Project:    "rootproject",
 				ResourceID: "fake.rdb.host/test-root-invocation-name/test-invocation-name",
 				ProcessID:  "result-ingestion/analyze-changepoints",
-				Uniquifier: "ninja://test_expected/hash",
+				Uniquifier: ":module!junit:package:class#test_expected/hash",
 			},
 			// Creation and expiry time not validated.
 		}
@@ -214,7 +214,7 @@ func createTestVariantBranchRecords(ctx context.Context) error {
 	existingRecord := &testvariantbranch.Entry{
 		IsNew:       true,
 		Project:     "rootproject",
-		TestID:      "ninja://test_flaky",
+		TestID:      ":module!junit:package:class#test_flaky",
 		Variant:     &analysispb.Variant{},
 		VariantHash: "hash",
 		RefHash:     pbutil.SourceRefHash(sourceRef),
@@ -291,7 +291,7 @@ func expectedExports() []*bqpb.TestVariantBranchRow {
 	return []*bqpb.TestVariantBranchRow{
 		{
 			Project:     "rootproject",
-			TestId:      "ninja://test_flaky",
+			TestId:      ":module!junit:package:class#test_flaky",
 			Variant:     `{}`,
 			VariantHash: "hash",
 			RefHash:     "5d47c679cf080cb5",
@@ -321,7 +321,7 @@ func expectedExports() []*bqpb.TestVariantBranchRow {
 		},
 		{
 			Project:     "rootproject",
-			TestId:      "ninja://test_expected",
+			TestId:      ":module!junit:package:class#test_expected",
 			Variant:     `{}`,
 			VariantHash: "hash",
 			RefHash:     "5d47c679cf080cb5",

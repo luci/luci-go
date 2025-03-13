@@ -74,13 +74,13 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 	response := &rdbpb.QueryRunTestVerdictsResponse{
 		RunTestVerdicts: []*rdbpb.RunTestVerdict{
 			{
-				TestId:      "ninja://test_expected",
+				TestId:      ":module!junit:package:class#test_expected",
 				VariantHash: "hash",
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:    "one",
-							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_expected/results/one",
+							Name:        "invocations/test-invocation-name/tests/:module%21junit:package:class%23test_expected/results/one",
 							Status:      rdbpb.TestStatus_PASS,
 							SummaryHtml: "SummaryHTML for test_expected/one",
 							Expected:    true,
@@ -93,13 +93,13 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 				TestMetadata: updatedTmd,
 			},
 			{
-				TestId:      "ninja://test_flaky",
+				TestId:      ":module!junit:package:class#test_flaky",
 				VariantHash: "hash",
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:    "one",
-							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_flaky/results/one",
+							Name:        "invocations/test-invocation-name/tests/:module%21junit:package:class%23test_flaky/results/one",
 							StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 							Status:      rdbpb.TestStatus_FAIL,
 							SummaryHtml: "SummaryHTML for test_flaky/one",
@@ -112,7 +112,7 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:    "two",
-							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_flaky/results/two",
+							Name:        "invocations/test-invocation-name/tests/:module%21junit:package:class%23test_flaky/results/two",
 							StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 							Status:      rdbpb.TestStatus_PASS,
 							SummaryHtml: "SummaryHTML for test_flaky/two",
@@ -122,14 +122,14 @@ func mockedQueryRunTestVerdictsRsp() *rdbpb.QueryRunTestVerdictsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_skip",
+				TestId:      ":module!junit:package:class#test_skip",
 				Variant:     sampleVar,
 				VariantHash: pbutil.VariantHash(sampleVar),
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
 							ResultId:    "one",
-							Name:        "invocations/test-invocation-name/tests/ninja%3A%2F%2Ftest_skip/results/one",
+							Name:        "invocations/test-invocation-name/tests/:module%21junit:package:class%23test_skip/results/one",
 							Expected:    true,
 							Status:      rdbpb.TestStatus_SKIP,
 							SummaryHtml: "SummaryHTML for test_skip/one",

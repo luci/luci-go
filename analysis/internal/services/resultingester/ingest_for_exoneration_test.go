@@ -65,7 +65,7 @@ func TestIngestForExoneration(t *testing.T) {
 		expectedResults := []*lowlatency.TestResult{
 			{
 				Project:          "rootproject",
-				TestID:           "ninja://test_expected",
+				TestID:           ":module!junit:package:class#test_expected",
 				VariantHash:      "hash",
 				Sources:          sources,
 				RootInvocationID: "test-root-invocation-name",
@@ -77,7 +77,7 @@ func TestIngestForExoneration(t *testing.T) {
 			},
 			{
 				Project:          "rootproject",
-				TestID:           "ninja://test_flaky",
+				TestID:           ":module!junit:package:class#test_flaky",
 				VariantHash:      "hash",
 				Sources:          sources,
 				RootInvocationID: "test-root-invocation-name",
@@ -90,7 +90,7 @@ func TestIngestForExoneration(t *testing.T) {
 			},
 			{
 				Project:          "rootproject",
-				TestID:           "ninja://test_flaky",
+				TestID:           ":module!junit:package:class#test_flaky",
 				VariantHash:      "hash",
 				Sources:          sources,
 				RootInvocationID: "test-root-invocation-name",
@@ -102,7 +102,7 @@ func TestIngestForExoneration(t *testing.T) {
 			},
 			{
 				Project:          "rootproject",
-				TestID:           "ninja://test_skip",
+				TestID:           ":module!junit:package:class#test_skip",
 				VariantHash:      "d70268c39e188014",
 				Sources:          sources,
 				RootInvocationID: "test-root-invocation-name",
