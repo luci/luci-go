@@ -36,7 +36,7 @@ export const extractDutState = (device?: Device): string => {
  * @param device Device data type from the Fleet Console backend.
  * @returns String with the id of the DUT.
  */
-export const extractDutId = (device?: Device): string => {
+export const extractDutId = (device?: Device | null): string => {
   if (!device) {
     return '';
   }

@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert } from '@mui/material';
-import { AlertTitle } from '@mui/material';
 import { Navigate } from 'react-router';
-import { Link } from 'react-router-dom';
 
-import { genFeedbackUrl } from '@/common/tools/utils';
+import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import {
   getFilters,
   stringifyFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
-import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -42,18 +38,6 @@ export function SingleDeviceRedirect() {
 
   const devicesQuery = useDevices(request);
 
-  const feedback = (
-    <Link
-      to={genFeedbackUrl({
-        bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
-        errMsg: `Device not found for query: ${filter}`,
-      })}
-      target="_blank"
-    >
-      feedback
-    </Link>
-  );
-
   // Intentionally show a blank page when loading. Showing a loading bar is
   // more jarring because the load time is quick for one device.
   if (devicesQuery.isFetching) return <></>;
@@ -61,33 +45,30 @@ export function SingleDeviceRedirect() {
   // TODO: b/401486024 - Use shared error code for this.
   if (devicesQuery.error) {
     return (
-      <Alert data-testid="single-device-redirect" severity="error">
-        <AlertTitle>Redirection failed</AlertTitle>
-
+      <AlertWithFeedback
+        testId="single-device-redirect"
+        severity="error"
+        title="Redirection failed"
+        bugErrorMessage={`Device not found for query: ${filter}`}
+      >
         <p>An error occured.</p>
-
-        <p>
-          If you believe this is a bug, let us know by submitting your{' '}
-          {feedback}!
-        </p>
-      </Alert>
+      </AlertWithFeedback>
     );
   }
 
   if (!devicesQuery.data?.devices.length) {
     return (
-      <Alert data-testid="single-device-redirect" severity="error">
-        <AlertTitle>No devices found</AlertTitle>
-
+      <AlertWithFeedback
+        testId="single-device-redirect"
+        severity="error"
+        title="No devices found"
+        bugErrorMessage={`Device not found for query: ${filter}`}
+      >
         <p>
           No devices matched the search, so the redirection was canceled. It
           {"'"}s possible the link you clicked might be malformed.
         </p>
-        <p>
-          If you believe that this link should match a device, let us know by
-          submitting your {feedback}!
-        </p>
-      </Alert>
+      </AlertWithFeedback>
     );
   }
 

@@ -16,24 +16,16 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  IconButton,
-  Link,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, TextField, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { genFeedbackUrl } from '@/common/tools/utils';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
+import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { extractDutState, extractDutId } from '@/fleet/utils/devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -105,11 +97,26 @@ const useNavigatedFromLink = () => {
 
 export const DeviceDetailsPage = () => {
   const { id = '' } = useParams();
+  const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigatedFromLink = useNavigatedFromLink();
   const [selectedTab, setSelectedTab] = useTabs();
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoading, device } = useDeviceData(id);
+
+  useEffect(() => {
+    setDeviceIdInputValue(id);
+  }, [id]);
+
+  const navigateToDeviceIfChanged = (deviceId: string) => {
+    const parts = location.pathname.toString().split('/');
+    const urlId = parts[parts.length - 1];
+    if (urlId !== deviceId) {
+      // TODO: b/402770033 - fix URL generation
+      navigate(`/ui/fleet/labs/devices/${deviceId}?tab=${selectedTab}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -121,31 +128,6 @@ export const DeviceDetailsPage = () => {
       >
         <CentralizedProgress />
       </div>
-    );
-  }
-
-  if (device === null) {
-    return (
-      <Alert severity="error">
-        <AlertTitle>Device not found!</AlertTitle>
-        <p>
-          Oh no! The device <code>{id}</code> you are looking for was not found.
-        </p>
-        <p>
-          If you believe that the device should be there, let us know by
-          submitting your{' '}
-          <Link
-            href={genFeedbackUrl({
-              bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
-              errMsg: `Device not found: ${id}`,
-            })}
-            target="_blank"
-          >
-            feedback
-          </Link>
-          !
-        </p>
-      </Alert>
     );
   }
 
@@ -178,40 +160,74 @@ export const DeviceDetailsPage = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4">Device details: {id}</Typography>
-      </div>
-      <div
-        css={{
-          boxSizing: 'border-box',
-          width: '100%',
-          paddingLeft: '72px',
-          marginBottom: '32px',
-        }}
-      >
-        <RunAutorepair
-          selectedDuts={[
-            {
-              name: id,
-              state: extractDutState(device),
-            },
-          ]}
+        <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
+          Device details:
+        </Typography>
+        <TextField
+          variant="standard"
+          value={deviceIdInputValue}
+          onChange={(event) => setDeviceIdInputValue(event.target.value)}
+          slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
+          fullWidth
+          onBlur={(e) => {
+            navigateToDeviceIfChanged(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            const target = e.target as HTMLInputElement;
+            if (e.key === 'Enter') {
+              navigateToDeviceIfChanged(target.value);
+            }
+          }}
         />
       </div>
-
-      <TabContext value={selectedTab || TabValue.TASKS}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-            <Tab label="Tasks" value={TabValue.TASKS} />
-            <Tab label="Scheduling labels" value={TabValue.SCHEDULING} />
-          </TabList>
-        </Box>
-        <TabPanel value={TabValue.TASKS}>
-          <Tasks dutId={dutId} />
-        </TabPanel>
-        <TabPanel value={TabValue.SCHEDULING}>
-          <SchedulingData device={device} />
-        </TabPanel>
-      </TabContext>
+      <>
+        {device === null && (
+          <AlertWithFeedback
+            title="Device not found!"
+            bugErrorMessage={`Device not found: ${id}`}
+          >
+            <p>
+              Oh no! The device <code>{id}</code> you are looking for was not
+              found.
+            </p>
+          </AlertWithFeedback>
+        )}
+      </>
+      {device && dutId && (
+        <>
+          <div
+            css={{
+              boxSizing: 'border-box',
+              width: '100%',
+              paddingLeft: '72px',
+              marginBottom: '32px',
+            }}
+          >
+            <RunAutorepair
+              selectedDuts={[
+                {
+                  name: id,
+                  state: extractDutState(device),
+                },
+              ]}
+            />
+          </div>
+          <TabContext value={selectedTab || TabValue.TASKS}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
+                <Tab label="Tasks" value={TabValue.TASKS} />
+                <Tab label="Scheduling labels" value={TabValue.SCHEDULING} />
+              </TabList>
+            </Box>
+            <TabPanel value={TabValue.TASKS}>
+              <Tasks dutId={dutId} />
+            </TabPanel>
+            <TabPanel value={TabValue.SCHEDULING}>
+              <SchedulingData device={device} />
+            </TabPanel>
+          </TabContext>
+        </>
+      )}
     </div>
   );
 };
