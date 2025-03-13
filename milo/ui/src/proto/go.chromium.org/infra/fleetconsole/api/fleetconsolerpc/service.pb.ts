@@ -296,7 +296,11 @@ export interface ResourceRequest {
     | DateOnly
     | undefined;
   /** The config end date of the resource request. */
-  readonly configEndDate: DateOnly | undefined;
+  readonly configEndDate:
+    | DateOnly
+    | undefined;
+  /** Expected ETA for the resource request. */
+  readonly expectedEta: DateOnly | undefined;
 }
 
 function createBasePingRequest(): PingRequest {
@@ -2338,6 +2342,7 @@ function createBaseResourceRequest(): ResourceRequest {
     buildEndDate: undefined,
     qaEndDate: undefined,
     configEndDate: undefined,
+    expectedEta: undefined,
   };
 }
 
@@ -2363,6 +2368,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.configEndDate !== undefined) {
       DateOnly.encode(message.configEndDate, writer.uint32(58).fork()).join();
+    }
+    if (message.expectedEta !== undefined) {
+      DateOnly.encode(message.expectedEta, writer.uint32(66).fork()).join();
     }
     return writer;
   },
@@ -2430,6 +2438,14 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.configEndDate = DateOnly.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.expectedEta = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2448,6 +2464,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       buildEndDate: isSet(object.buildEndDate) ? DateOnly.fromJSON(object.buildEndDate) : undefined,
       qaEndDate: isSet(object.qaEndDate) ? DateOnly.fromJSON(object.qaEndDate) : undefined,
       configEndDate: isSet(object.configEndDate) ? DateOnly.fromJSON(object.configEndDate) : undefined,
+      expectedEta: isSet(object.expectedEta) ? DateOnly.fromJSON(object.expectedEta) : undefined,
     };
   },
 
@@ -2474,6 +2491,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.configEndDate !== undefined) {
       obj.configEndDate = DateOnly.toJSON(message.configEndDate);
     }
+    if (message.expectedEta !== undefined) {
+      obj.expectedEta = DateOnly.toJSON(message.expectedEta);
+    }
     return obj;
   },
 
@@ -2496,6 +2516,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       : undefined;
     message.configEndDate = (object.configEndDate !== undefined && object.configEndDate !== null)
       ? DateOnly.fromPartial(object.configEndDate)
+      : undefined;
+    message.expectedEta = (object.expectedEta !== undefined && object.expectedEta !== null)
+      ? DateOnly.fromPartial(object.expectedEta)
       : undefined;
     return message;
   },

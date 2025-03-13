@@ -49,9 +49,21 @@ const Container = styled.div`
   margin: 24px;
 `;
 
+interface GridRow {
+  id: string;
+  resource_details: string;
+  expected_eta: string;
+  material_sourcing_target_delivery_date: string;
+  build_target_delivery_date: string;
+  qa_target_delivery_date: string;
+  config_target_delivery_date: string;
+}
+
 interface ColumnDescriptor {
   id: string;
-  gridColDef: GridColDef;
+  gridColDef: GridColDef & {
+    field: keyof GridRow; // custom GridColDef to limit fields to those defined in GridRow
+  };
   valueGetter: (rr: ResourceRequest) => string;
 }
 
@@ -75,42 +87,51 @@ const columns: ColumnDescriptor[] = [
     valueGetter: (rr: ResourceRequest) => rr.resourceDetails,
   },
   {
-    id: 'procurement_end_date',
+    id: 'expected_eta',
     gridColDef: {
-      field: 'procurement_end_date',
-      headerName: 'Procurement End Date',
+      field: 'expected_eta',
+      headerName: 'Expected ETA',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
+  },
+  {
+    id: 'material_sourcing_target_delivery_date',
+    gridColDef: {
+      field: 'material_sourcing_target_delivery_date',
+      headerName: 'Material Sourcing Target Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.procurementEndDate),
   },
   {
-    id: 'build_end_date',
+    id: 'build_target_delivery_date',
     gridColDef: {
-      field: 'build_end_date',
-      headerName: 'Build End Date',
+      field: 'build_target_delivery_date',
+      headerName: 'Build Target Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.buildEndDate),
   },
   {
-    id: 'qa_end_date',
+    id: 'qa_target_delivery_date',
     gridColDef: {
-      field: 'qa_end_date',
-      headerName: 'QA End Date',
+      field: 'qa_target_delivery_date',
+      headerName: 'QA Target Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaEndDate),
   },
   {
-    id: 'config_end_date',
+    id: 'config_target_delivery_date',
     gridColDef: {
-      field: 'config_end_date',
-      headerName: 'Config End Date',
+      field: 'config_target_delivery_date',
+      headerName: 'Config Target Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.configEndDate),
   },
-];
+] as const;
 
 const DEFAULT_SORT_COLUMN: ColumnDescriptor =
   columns.find((c) => c.id === 'rr_id') ?? columns[0];
@@ -179,7 +200,7 @@ const filterOpts: OptionCategory[] = [
   },
   {
     label: 'Procurement End Date',
-    value: 'procurement_end_date',
+    value: 'procurement_delivery_date',
     options: [
       {
         label: 'filter 1',
@@ -189,7 +210,7 @@ const filterOpts: OptionCategory[] = [
   },
   {
     label: 'Build Target End Date',
-    value: 'build_target_end_date',
+    value: 'build_target_delivery_date',
     options: [
       {
         label: 'filter 1',
@@ -199,7 +220,7 @@ const filterOpts: OptionCategory[] = [
   },
   {
     label: 'QA Target End Date',
-    value: 'qa_end_date',
+    value: 'qa_delivery_date',
     options: [
       {
         label: 'filter 1',
@@ -209,7 +230,7 @@ const filterOpts: OptionCategory[] = [
   },
   {
     label: 'Config Target End Date',
-    value: 'config_target_end_date',
+    value: 'config_target_delivery_date',
     options: [
       {
         label: 'filter 1',
@@ -274,14 +295,17 @@ export const ResourceRequestListPage = () => {
     );
   }
 
-  const rows: Record<string, string>[] = query.data.resourceRequests.map(
+  const rows: GridRow[] = query.data.resourceRequests.map(
     (resourceRequest) => ({
       id: resourceRequest.rrId,
       resource_details: resourceRequest.resourceDetails,
-      procurement_end_date: toIsoString(resourceRequest.procurementEndDate),
-      build_end_date: toIsoString(resourceRequest.buildEndDate),
-      qa_end_date: toIsoString(resourceRequest.qaEndDate),
-      config_end_date: toIsoString(resourceRequest.configEndDate),
+      expected_eta: toIsoString(resourceRequest.expectedEta),
+      material_sourcing_target_delivery_date: toIsoString(
+        resourceRequest.procurementEndDate,
+      ),
+      build_target_delivery_date: toIsoString(resourceRequest.buildEndDate),
+      qa_target_delivery_date: toIsoString(resourceRequest.qaEndDate),
+      config_target_delivery_date: toIsoString(resourceRequest.configEndDate),
     }),
   );
 
