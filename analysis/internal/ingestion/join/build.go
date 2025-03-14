@@ -67,9 +67,12 @@ var (
 // Ingestion tasks are created when all required data for this build
 // (including any associated LUCI CV run and invocation) is available.
 func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (processed bool, err error) {
-	buildReadMask := &field_mask.FieldMask{
-		Paths: []string{"ancestor_ids", "builder", "create_time", "infra.resultdb", "input", "output", "status", "tags"},
+	buildReadMask := &bbpb.BuildMask{
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"ancestor_ids", "builder", "create_time", "infra.resultdb", "input", "output.gitiles_commit", "status", "tags"},
+		},
 	}
+
 	build, err := retrieveBuild(ctx, bbHost, project, buildID, buildReadMask)
 	code := status.Code(err)
 	if code == codes.NotFound {
@@ -227,16 +230,14 @@ func extractTagValues(tags []*bbpb.StringPair, key string) []string {
 	return values
 }
 
-func retrieveBuild(ctx context.Context, bbHost, project string, id int64, readMask *field_mask.FieldMask) (*bbpb.Build, error) {
+func retrieveBuild(ctx context.Context, bbHost, project string, id int64, readMask *bbpb.BuildMask) (*bbpb.Build, error) {
 	bc, err := buildbucket.NewClient(ctx, bbHost, project)
 	if err != nil {
 		return nil, err
 	}
 	request := &bbpb.GetBuildRequest{
-		Id: id,
-		Mask: &bbpb.BuildMask{
-			Fields: readMask,
-		},
+		Id:   id,
+		Mask: readMask,
 	}
 	b, err := bc.GetBuild(ctx, request)
 	switch {
