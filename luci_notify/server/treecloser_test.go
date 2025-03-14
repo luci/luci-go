@@ -81,7 +81,7 @@ func TestCheckTreeCloser(t *testing.T) {
 
 		treeCloser := &config.TreeCloser{
 			BuilderKey: datastore.KeyForObj(c, builder),
-			TreeCloser: apiconfig.TreeCloser{
+			TreeCloser: &apiconfig.TreeCloser{
 				FailedStepRegexp: "compile",
 			},
 		}

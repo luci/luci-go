@@ -138,7 +138,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     builder1Status,
 				Timestamp:  time.Now().UTC(),
 				// In fully automatic operation, this should not be considered.
@@ -147,7 +147,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     builder2Status,
 				Timestamp:  time.Now().UTC(),
 				// In fully automatic operation, this should not be considered.
@@ -201,7 +201,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Open,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
@@ -230,7 +230,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
@@ -260,7 +260,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: evenEarlierTime,
@@ -290,7 +290,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
@@ -320,7 +320,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder7),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
@@ -356,21 +356,21 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder3),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
@@ -378,21 +378,21 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "v8",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder3),
 				TreeName:   "v8",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder4),
 				TreeName:   "v8",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  earlierTime,
 				Message:    "Correct message",
@@ -433,14 +433,14 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Open,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
 			}, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder2),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
@@ -473,14 +473,14 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Open,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: evenEarlierTime,
 			}, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder2),
 				TreeName:        "chromium",
-				TreeCloser:      notifypb.TreeCloser{},
+				TreeCloser:      &notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
@@ -516,13 +516,13 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder5),
 				TreeName:   "infra",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  time.Now().UTC(),
 				Message:    "Close it up!",
@@ -573,25 +573,25 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder5),
 				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "infra",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder6),
 				TreeName:   "infra",
-				TreeCloser: notifypb.TreeCloser{},
+				TreeCloser: &notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)

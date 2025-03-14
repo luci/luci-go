@@ -202,7 +202,7 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 
 				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
 					treeCloser := treeClosers[treeCloserIndex]
-					treeCloser.TreeCloser = *cfgTreeCloser
+					treeCloser.TreeCloser = proto.Clone(cfgTreeCloser).(*notifypb.TreeCloser)
 
 					// Default the status to "Open" for new TreeClosers that we haven't
 					// yet seen any builds for.
