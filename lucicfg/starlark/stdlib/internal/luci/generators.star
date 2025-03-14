@@ -235,6 +235,7 @@ def gen_project_cfg(ctx):
             version = "%d.%d.%d" % lucicfg.version(),
             config_dir = config_dir,
             package_dir = package_dir,
+            package_name = __native__.main_pkg_name,
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
             experiments = __native__.list_enabled_experiments(),

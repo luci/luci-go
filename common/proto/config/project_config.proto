@@ -39,9 +39,13 @@ message ProjectCfg {
 
 // GeneratorMetadata is produced by lucicfg to describe how it generated the
 // config.
+//
+// Next ID: 8.
 message GeneratorMetadata {
   // Version of lucicfg binary used to generate the config.
   string version = 1;
+  // A lucicfg package name with the config (if not a legacy package).
+  string package_name = 7;
   // Path to the main package relative to project.cfg.
   string package_dir = 5;
   // Directory with generated LUCI project configs relative to the main package.

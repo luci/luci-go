@@ -54,7 +54,8 @@ func TestPkg(t *testing.T) {
 //
 // Returns false if the output expectation needs to be regenerated.
 func runPkgTest(t *testing.T, dir string) bool {
-	t.Parallel()
+	// Note: avoid t.Parallel() because we want to test for finish synchronously
+	// in TestPkg to check gotExpectationErrors.
 
 	main := filepath.Join(dir, "main.star")
 	ctx := context.Background()

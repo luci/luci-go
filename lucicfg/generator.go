@@ -100,6 +100,14 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		pkgLintChecks = pkgLintChecksTup
 	}
 
+	// Propagate the package name to Starlark if this is a non-legacy package.
+	// This eventually ends up in generated project.cfg, allowing to track rollout
+	// of PACKAGE.star across LUCI project configs.
+	mainPkgName := in.Entry.Package
+	if mainPkgName == pkg.LegacyPackageNamePlaceholder {
+		mainPkgName = ""
+	}
+
 	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
@@ -117,6 +125,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			"version":        versionTuple(ver),
 			"entry_point":    starlark.String(in.Entry.Script),
 			"main_pkg_path":  starlark.String(in.Entry.Path),
+			"main_pkg_name":  starlark.String(mainPkgName),
 			"var_flags":      asFrozenDict(in.Vars),
 			"running_tests":  starlark.Bool(in.testThreadModifier != nil),
 			"testing_tweaks": internal.GetTestingTweaks(ctx).ToStruct(),

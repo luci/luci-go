@@ -31,6 +31,9 @@ import (
 // PackageScript is a name of the script with the package definition.
 const PackageScript = "PACKAGE.star"
 
+// LegacyPackageNamePlaceholder is used as package name of legacy packages.
+const LegacyPackageNamePlaceholder = "@legacy-unknown"
+
 // Entry is a main package plus an entry point executable file in it.
 //
 // This package and all its dependencies are fully resolved and prefetched and
@@ -43,6 +46,8 @@ type Entry struct {
 	Main interpreter.Loader
 	// Deps contains the code of all dependencies at resolved versions.
 	Deps map[string]interpreter.Loader
+	// Package is the name of the package being executed from its PACKAGE.star.
+	Package string
 	// Path is a slash-separate path from the repo root to the package root.
 	Path string
 	// Script is a slash-separated path to the script within the package to run.
@@ -125,9 +130,10 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 	if def == nil {
 		code := interpreter.FileSystemLoader(root)
 		return &Entry{
-			Main:   code,
-			Path:   filepath.ToSlash(rel),
-			Script: script,
+			Main:    code,
+			Package: LegacyPackageNamePlaceholder,
+			Path:    filepath.ToSlash(rel),
+			Script:  script,
 			Local: &Local{
 				Code:       code,
 				DiskPath:   root,
@@ -149,9 +155,10 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 
 	code := diskPackageLoader(root)
 	return &Entry{
-		Main:   code,
-		Path:   filepath.ToSlash(rel),
-		Script: script,
+		Main:    code,
+		Package: def.Name,
+		Path:    filepath.ToSlash(rel),
+		Script:  script,
 		LucicfgVersionConstraints: []LucicfgVersionConstraint{
 			{
 				Min:     def.MinLucicfgVersion,
@@ -231,7 +238,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 
 func legacyDefinition() *Definition {
 	return &Definition{
-		Name: "legacy-unknown",
+		Name: LegacyPackageNamePlaceholder,
 	}
 }
 
