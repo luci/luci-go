@@ -73,6 +73,15 @@ func runPkgTest(t *testing.T, dir string) bool {
 
 	var state *State
 	entry, err := pkg.EntryOnDisk(ctx, main)
+
+	// Verify formatter is initialized..
+	if err == nil && entry.Local.Formatter != nil {
+		err = entry.Local.Formatter.CheckValid(ctx)
+		if err == nil {
+			_, err = entry.Local.Formatter.RewriterForPath(ctx, "main.star")
+		}
+	}
+
 	if err == nil {
 		state, err = Generate(ctx, Inputs{
 			Entry: entry,

@@ -89,6 +89,12 @@ func (f *Finding) Format() string {
 
 // FormatterPolicy controls behavior of the Starlark code auto-formatter.
 type FormatterPolicy interface {
+	// CheckValid checks if the policy is properly configured.
+	//
+	// Called before formatting a bunch of files. The returned error will be
+	// propagated up the stack as an overall formatting error for all of them.
+	CheckValid(ctx context.Context) error
+
 	// RewriterForPath produces a *build.Rewriter to use for a concrete file.
 	//
 	// Takes a slash-separated path relative to the package root (i.e. the same
@@ -167,6 +173,12 @@ func Lint(ctx context.Context, loader interpreter.Loader, paths []string, lintCh
 
 	if len(paths) == 0 || (!checkFmt && len(buildifierWarns) == 0) {
 		return findings, nil
+	}
+
+	if checkFmt && policy != nil {
+		if err := policy.CheckValid(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	errs := Visit(ctx, loader, paths, func(body []byte, file *build.File) (merr errors.MultiError) {

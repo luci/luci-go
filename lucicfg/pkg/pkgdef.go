@@ -81,6 +81,13 @@ type FmtRule struct {
 	SortFunctionArgsOrder []string
 }
 
+// Equal is true if `a` equals `b`, ignoring Stack.
+func (a *FmtRule) Equal(b *FmtRule) bool {
+	return slices.Equal(a.Paths, b.Paths) &&
+		a.SortFunctionArgs == b.SortFunctionArgs &&
+		slices.Equal(a.SortFunctionArgsOrder, b.SortFunctionArgsOrder)
+}
+
 // LoaderValidator can do extra validation checks right when loading
 // PACKAGE.star.
 //

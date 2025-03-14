@@ -220,6 +220,11 @@ func getPostProcessedRewriterFactory(root, configPath string, cfg *buildifier.Lu
 	}, nil
 }
 
+// CheckValid does nothing, since this FormatterPolicy is validated when loaded.
+func (f *rewriterFactory) CheckValid(context.Context) error {
+	return nil
+}
+
 // RewriterForPath will return the Rewriter which is appropriate for formatting
 // the file at `path`, using the previously loaded formatting configuration.
 //

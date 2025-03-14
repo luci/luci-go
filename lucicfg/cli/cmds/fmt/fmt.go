@@ -115,6 +115,11 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (res *fmtResult, err
 	if err != nil {
 		return nil, err
 	}
+	if formatter != nil {
+		if err := formatter.CheckValid(ctx); err != nil {
+			return nil, err
+		}
+	}
 
 	// The visit method will track down all the wanted files within the directory.
 	// TODO: Use package-relative paths and pass the correct root.

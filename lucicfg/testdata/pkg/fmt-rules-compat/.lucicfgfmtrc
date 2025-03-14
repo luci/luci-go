@@ -1,0 +1,6 @@
+rules {
+	path: "."
+	function_args_sort {
+		arg: "another"
+	}
+}

@@ -132,7 +132,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 				Code:       code,
 				DiskPath:   root,
 				Definition: legacyDefinition(),
-				Formatter:  nil, // TODO
+				Formatter:  legacyFormatter(root),
 			},
 		}, nil
 	}
@@ -163,7 +163,7 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 			Code:       code,
 			DiskPath:   root,
 			Definition: def,
-			Formatter:  nil, // TODO
+			Formatter:  legacyCompatibleFormatter(root, def.FmtRules),
 		},
 	}, nil
 }
@@ -212,6 +212,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 			Code:       diskPackageLoader(abs),
 			DiskPath:   abs,
 			Definition: def,
+			Formatter:  legacyCompatibleFormatter(abs, def.FmtRules),
 		}, nil
 
 	case errors.Is(err, os.ErrNotExist):
@@ -220,7 +221,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 			Code:       interpreter.FileSystemLoader(abs),
 			DiskPath:   abs,
 			Definition: legacyDefinition(),
-			Formatter:  nil, // TODO
+			Formatter:  legacyFormatter(abs),
 		}, nil
 
 	default:
