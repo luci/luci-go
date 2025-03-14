@@ -31,6 +31,7 @@ import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
   filtersUpdater,
   getFilters,
+  GetFiltersResult,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -268,12 +269,12 @@ export const ResourceRequestListPage = () => {
   const sortModel = getSortModelFromOrderByParam(orderByParam);
 
   // Hardcoding filter options
-  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
+  const [selectedOptions, setSelectedOptions] = useState<GetFiltersResult>(
     getFilters(searchParams),
   );
 
   const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    setSelectedOptions(newSelectedOptions);
+    setSelectedOptions({ filters: newSelectedOptions, error: undefined });
     setSearchParams(filtersUpdater(newSelectedOptions));
 
     // Clear out all the page tokens when the filter changes.
@@ -298,7 +299,7 @@ export const ResourceRequestListPage = () => {
     }),
   );
 
-  if (query.isError) {
+  if (selectedOptions.error || query.isError) {
     return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
   }
 
@@ -337,7 +338,7 @@ export const ResourceRequestListPage = () => {
       >
         <MultiSelectFilter
           filterOptions={filterOpts}
-          selectedOptions={selectedOptions}
+          selectedOptions={selectedOptions.filters}
           onSelectedOptionsChange={onSelectedOptionsChange}
           isLoading={false}
         />

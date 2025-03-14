@@ -18,7 +18,7 @@ import fetchMock from 'fetch-mock-jest';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
-import { SwarmingRedirect } from './swarming_redirect';
+import { SwarmingRedirect } from '.';
 
 const FakeDeviceDetails = () => {
   return <>Fake Device details</>;

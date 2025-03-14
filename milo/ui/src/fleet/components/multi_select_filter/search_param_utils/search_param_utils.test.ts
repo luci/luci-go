@@ -101,7 +101,7 @@ describe('multi_select_search_param_utils', () => {
     it.each(sharedTestCases.concat(justParseCases))(
       'parseFilters(%s)',
       (expectedOutput, input) => {
-        const realOutput = parseFilters(input);
+        const realOutput = parseFilters(input).filters;
 
         try {
           expect(realOutput).toEqual(expectedOutput);
@@ -116,17 +116,17 @@ describe('multi_select_search_param_utils', () => {
 
   describe('parseFilters wrong examples', () => {
     it('throws on a missing close parenthesis', () => {
-      expect(() => parseFilters('labels.key = ( "value"')).toThrow(
+      expect(parseFilters('labels.key = ( "value"').error?.message).toEqual(
         'Missing closing parenthesis',
       );
     });
     it('throws on a hanging OR', () => {
-      expect(() => parseFilters('labels.key = ( "value" OR )')).toThrow(
-        'Found a hanging ORs',
-      );
+      expect(
+        parseFilters('labels.key = ( "value" OR )').error?.message,
+      ).toEqual('Found a hanging ORs');
     });
     it('throws on an unexpected character', () => {
-      expect(() => parseFilters('labels.key = value')).toThrow(
+      expect(parseFilters('labels.key = value').error?.message).toEqual(
         "Unexpected character 'v': should be one of '(\"'",
       );
     });

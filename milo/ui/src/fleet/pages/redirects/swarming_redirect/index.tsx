@@ -14,21 +14,18 @@
 
 import { Alert, AlertTitle, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, To, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  BotRequest,
-  BotsClientImpl,
-} from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
+
+import { getRedirectAddress } from './get_redirect_address';
 
 export function SwarmingRedirect() {
   const params = useParams();
@@ -36,6 +33,7 @@ export function SwarmingRedirect() {
 
   const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
   const q = useQuery({
+    queryKey: [params['*'], searchParams, client],
     queryFn: () => getRedirectAddress(params['*'], searchParams, client),
   });
 
@@ -80,37 +78,3 @@ export function Component() {
     </TrackLeafRoutePageView>
   );
 }
-
-const pathPrefix = '/ui/fleet/labs';
-/* Maps swarming path to fleet console paths.
- * Supports:
- *    https://chromeos-swarming.appspot.com/botlist
- *    https://chromeos-swarming.appspot.com/bot?id={BOT_ID}
- * */
-const getRedirectAddress = async (
-  url: string | undefined,
-  searchParams: URLSearchParams,
-  swarmingClient: DecoratedClient<BotsClientImpl>,
-): Promise<To> => {
-  switch (url) {
-    case 'botlist':
-      return { pathname: `${pathPrefix}/devices` };
-    case 'bot': {
-      const bot_id = searchParams.get('id');
-      if (!bot_id) throw Error(`Missing bot id`);
-
-      const res = await swarmingClient.GetBot(
-        BotRequest.fromPartial({ botId: bot_id }),
-      );
-
-      const dutName = res.dimensions.find(
-        ({ key }) => key === 'dut_name',
-      )?.value;
-      if (!dutName) throw Error(`Cannot find dut_name of device ${bot_id}`);
-
-      return { pathname: `${pathPrefix}/devices/${dutName}` };
-    }
-  }
-
-  throw Error('No page mapping found');
-};

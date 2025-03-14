@@ -16,6 +16,10 @@ import { SelectedOptions } from '@/fleet/types';
 
 const FILTERS_PARAM_KEY = 'filters';
 
+export type GetFiltersResult =
+  | { filters: SelectedOptions; error: undefined }
+  | { filters: undefined; error: Error };
+
 /** The input is expected to follow AIP - 160.
  * For now it's limited to inputs following the format:
  *   'key1 = ("value1" OR "value2") key = "value"'.
@@ -26,9 +30,9 @@ const FILTERS_PARAM_KEY = 'filters';
 export const parseFilters = (
   str: string,
   filters: SelectedOptions = {},
-): SelectedOptions => {
+): GetFiltersResult => {
   const firstEqIdx = str.indexOf('=');
-  if (firstEqIdx === -1) return filters;
+  if (firstEqIdx === -1) return { filters, error: undefined };
 
   const key = str.substring(0, firstEqIdx).trim();
 
@@ -39,7 +43,10 @@ export const parseFilters = (
   if (rest[0] === '(') {
     rhsEndIdx = rest.indexOf(')', 1);
     if (rhsEndIdx === -1) {
-      throw Error('Missing closing parenthesis');
+      return {
+        filters: undefined,
+        error: Error('Missing closing parenthesis'),
+      };
     }
 
     values = rest
@@ -47,13 +54,16 @@ export const parseFilters = (
       .split('OR')
       .map((s) => s.trim().replace(/^"/, '').replace(/"$/, ''));
     if (values.some((v) => v === '')) {
-      throw Error('Found a hanging ORs');
+      return { filters: undefined, error: Error('Found a hanging ORs') };
     }
   } else if (rest[0] === '"') {
     rhsEndIdx = rest.indexOf('"', 1) ?? rest.length;
     values = [rest.substring(1, rhsEndIdx)];
   } else {
-    throw Error(`Unexpected character '${rest[0]}': should be one of '("'`);
+    return {
+      filters: undefined,
+      error: Error(`Unexpected character '${rest[0]}': should be one of '("'`),
+    };
   }
 
   return parseFilters(rest.substring(rhsEndIdx + 1), {
@@ -95,11 +105,7 @@ export function getFilterValue(params: URLSearchParams) {
  */
 export function getFilters(params: URLSearchParams) {
   const result = getFilterValue(params);
-  try {
-    return parseFilters(result);
-  } catch {
-    return {};
-  }
+  return parseFilters(result);
 }
 
 /**

@@ -11,9 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { Alert, Chip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -31,6 +32,7 @@ import {
   getFilters,
   stringifyFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
+import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
@@ -43,7 +45,12 @@ import {
   ListDevicesRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
+import {
+  dimensionsToFilterOptions,
+  filterOptionsPlaceholder,
+  getWrongColumnsFromParams,
+  useWarnings,
+} from './helpers';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -56,12 +63,12 @@ export const DeviceListPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
-    getFilters(searchParams),
+  const selectedOptions = useMemo(
+    () => getFilters(searchParams),
+    [searchParams],
   );
 
   const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    setSelectedOptions(newSelectedOptions);
     setSearchParams(filtersUpdater(newSelectedOptions));
 
     // Clear out all the page tokens when the filter changes.
@@ -70,16 +77,19 @@ export const DeviceListPage = () => {
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
-  const stringifiedSelectedOptions = stringifyFilters(selectedOptions);
+  const stringifiedSelectedOptions = selectedOptions.error
+    ? ''
+    : stringifyFilters(selectedOptions.filters);
+
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
-  const countQuery = useQuery(
-    client.CountDevices.query(
+  const countQuery = useQuery({
+    ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
         filter: stringifiedSelectedOptions,
       }),
     ),
-  );
+  });
   const request = ListDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
@@ -90,13 +100,47 @@ export const DeviceListPage = () => {
   const devicesQuery = useDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-  const columns = dimensionsQuery.data
-    ? _.uniq(
-        Object.keys(dimensionsQuery.data.baseDimensions).concat(
-          Object.keys(dimensionsQuery.data.labels),
-        ),
-      )
-    : [];
+  const columns = useMemo(
+    () =>
+      dimensionsQuery.data
+        ? _.uniq(
+            Object.keys(dimensionsQuery.data.baseDimensions).concat(
+              Object.keys(dimensionsQuery.data.labels),
+            ),
+          )
+        : [],
+    [dimensionsQuery.data],
+  );
+
+  const [warnings, addWarning] = useWarnings();
+  useEffect(() => {
+    if (dimensionsQuery.isLoading) return;
+
+    const missingParamsColoumns = getWrongColumnsFromParams(
+      searchParams,
+      columns,
+    );
+    if (missingParamsColoumns.length === 0) return;
+    addWarning(
+      'The following columns are not available: ' +
+        missingParamsColoumns?.join(', '),
+    );
+    for (const col of missingParamsColoumns) {
+      searchParams.delete(COLUMNS_PARAM_KEY, col);
+    }
+    setSearchParams(searchParams);
+  }, [
+    addWarning,
+    columns,
+    dimensionsQuery.isLoading,
+    searchParams,
+    setSearchParams,
+  ]);
+  useEffect(() => {
+    if (!selectedOptions.error) return;
+    addWarning('Invalid filters');
+    setSearchParams(filtersUpdater({}));
+  }, [addWarning, selectedOptions.error, setSearchParams]);
 
   return (
     <div
@@ -104,6 +148,21 @@ export const DeviceListPage = () => {
         margin: '24px',
       }}
     >
+      {warnings.length > 0 &&
+        warnings.map((message, i) => (
+          <Alert
+            key={message}
+            sx={{
+              position: 'absolute',
+              top: 64 + 10 + 55 * i,
+              right: 10,
+              zIndex: 10_000,
+            }}
+            severity="warning"
+          >
+            {message}
+          </Alert>
+        ))}
       <MainMetrics countQuery={countQuery} />
       <div
         css={{
@@ -116,16 +175,25 @@ export const DeviceListPage = () => {
           borderRadius: 4,
         }}
       >
-        <MultiSelectFilter
-          filterOptions={
-            dimensionsQuery.data
-              ? dimensionsToFilterOptions(dimensionsQuery.data)
-              : filterOptionsPlaceholder(selectedOptions)
-          }
-          selectedOptions={selectedOptions}
-          onSelectedOptionsChange={onSelectedOptionsChange}
-          isLoading={dimensionsQuery.isLoading}
-        />
+        {selectedOptions.error ? (
+          <Chip
+            variant="outlined"
+            onDelete={() => setSearchParams(filtersUpdater({}))}
+            label="Invalid filters"
+            color="error"
+          />
+        ) : (
+          <MultiSelectFilter
+            filterOptions={
+              dimensionsQuery.data
+                ? dimensionsToFilterOptions(dimensionsQuery.data)
+                : filterOptionsPlaceholder(selectedOptions.filters)
+            }
+            selectedOptions={selectedOptions.filters}
+            onSelectedOptionsChange={onSelectedOptionsChange}
+            isLoading={dimensionsQuery.isLoading}
+          />
+        )}
       </div>
       <div
         css={{

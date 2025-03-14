@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useState } from 'react';
+
 import {
   BASE_DIMENSIONS,
   CROS_DIMENSION_OVERRIDES,
 } from '@/fleet/components/device_table/dimensions';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -92,4 +96,32 @@ export const filterOptionsPlaceholder = (
       } as OptionCategory;
     })
     .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
+};
+
+export const getWrongColumnsFromParams = (
+  searchParams: URLSearchParams,
+  columnIds: string[],
+) => {
+  const visibleColumns = searchParams.getAll(COLUMNS_PARAM_KEY);
+  if (visibleColumns.length === 0) return [];
+
+  return visibleColumns.filter(
+    (visibleColumn) =>
+      !columnIds.includes(visibleColumn) &&
+      !DEFAULT_DEVICE_COLUMNS.includes(visibleColumn),
+  );
+};
+
+export const useWarnings = () => {
+  const [warnings, setWarnings] = useState<string[]>([]);
+
+  const addWarning = (newWarning: string) => {
+    setWarnings((warnings) => [...warnings, newWarning]);
+
+    setTimeout(() => {
+      setWarnings((warnings) => warnings.filter((w) => newWarning !== w));
+    }, 5_000);
+  };
+
+  return [warnings, addWarning] as const;
 };
