@@ -38,7 +38,7 @@ def test_bad_syntax():
 
 def test_bad_execution():
     t = strutil.template("{{range .number}}{{end}}")
-    assert.fails(lambda: t.render(number = 123), "range can't iterate over 123")
+    assert.fails(lambda: t.render(number = 123.4), "range can't iterate over 123.4")
 
 test_template_works()
 test_iteration_works()
