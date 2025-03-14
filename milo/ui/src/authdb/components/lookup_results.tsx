@@ -125,10 +125,10 @@ export function LookupResults({ name }: LookupResultsProps) {
           <Table data-testid="lookup-table">
             <TableBody>
               <TableRow>
-                <TableCell>
+                <TableCell sx={{ pt: 0 }}>
                   <Typography variant="h6">Directly included by</Typography>
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ pt: 0 }}>
                   <Typography variant="h6">Indirectly included by</Typography>
                 </TableCell>
               </TableRow>

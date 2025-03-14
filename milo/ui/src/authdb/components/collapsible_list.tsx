@@ -36,7 +36,7 @@ export function CollapsibleList({
   renderAsGroupLinks,
   title,
 }: CollapsibleListProps) {
-  const [expanded, setExpanded] = useState<boolean>(true);
+  const [expanded, setExpanded] = useState<boolean>(false);
   const expandable = items.length > expansionThreshold;
 
   const titleRow = (

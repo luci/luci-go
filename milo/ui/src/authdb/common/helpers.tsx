@@ -239,3 +239,31 @@ const shortenInclusionPaths = (paths: string[]) => {
 
   return out;
 };
+
+export const principalAsRequestProto = (principal: string) => {
+  // Normalize the principal to the form the API expects. As everywhere in the UI,
+  // if there is no identity type prefix, we assume the 'user:' prefix for emails and globs.
+  // In addition, emails all have '@' symbol and (unlike external groups such as google/a@b)
+  // don't have '/', and globs all have '*' symbol. Everything else is assumed
+  // to be a group.
+  const isEmail =
+    principal.indexOf('@') !== -1 && principal.indexOf('/') === -1;
+  const isGlob = principal.indexOf('*') !== -1;
+  if ((isEmail || isGlob) && principal.indexOf(':') === -1) {
+    principal = 'user:' + principal;
+  }
+  let kind = PrincipalKind.GROUP;
+  if (isGlob) {
+    kind = PrincipalKind.GLOB;
+  } else if (isEmail) {
+    kind = PrincipalKind.IDENTITY;
+  }
+  const principalRequest = {
+    name: principal,
+    kind: kind,
+  };
+  const request = {
+    principal: principalRequest,
+  };
+  return request;
+};
