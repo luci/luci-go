@@ -26,7 +26,10 @@ func ValidateName(name string) error {
 	if name == "" {
 		return errors.New("cannot be empty")
 	}
-	for _, token := range strings.Split(name, "/") {
+	if !strings.HasPrefix(name, "@") {
+		return errors.New("must start with @")
+	}
+	for _, token := range strings.Split(name[1:], "/") {
 		if err := validatePathComponent(token); err != nil {
 			return errors.Annotate(err, "%s", token).Err()
 		}

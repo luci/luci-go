@@ -36,7 +36,7 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("Works", func(t *testing.T) {
 		pkgDef, err := call(`
-			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 			pkg.entrypoint("main.star")
 			pkg.entrypoint("another/main.star")
 			pkg.options.lint_checks(["none", "+formatting"])
@@ -60,7 +60,7 @@ func TestLoadDefinition(t *testing.T) {
 		}
 
 		assert.That(t, pkgDef, should.Match(&Definition{
-			Name:              "pkg/name",
+			Name:              "@pkg/name",
 			MinLucicfgVersion: [3]int{1, 2, 3},
 			Entrypoints: []string{
 				"main.star",
@@ -107,8 +107,8 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("pkg.declare must be called once", func(t *testing.T) {
 		_, err := call(`
-			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
-			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 		`)
 		assert.That(t, err, should.ErrLike("pkg.declare(...) can be called at most once"))
 	})
@@ -120,7 +120,7 @@ func TestLoadDefinition(t *testing.T) {
 		}{
 			{"None", `missing required field "name"`},
 			{"123", `bad "name": got int, want string`},
-			{`"//"`, `bad package name "//": empty path component`},
+			{`"zzz"`, `bad package name "zzz": must start with @`},
 		}
 		for _, cs := range cases {
 			_, err := call(fmt.Sprintf(`pkg.declare(name = %s, lucicfg = "1.2.3")`, cs.val))
@@ -129,13 +129,13 @@ func TestLoadDefinition(t *testing.T) {
 	})
 
 	t.Run("Bad version", func(t *testing.T) {
-		_, err := call(`pkg.declare(name = "pkg/name", lucicfg = "1.2.3.4")`)
+		_, err := call(`pkg.declare(name = "@pkg/name", lucicfg = "1.2.3.4")`)
 		assert.That(t, err, should.ErrLike(`bad lucicfg version string "1.2.3.4": expecting <major>.<minor>.<patch>`))
 	})
 
 	t.Run("Bad entrypoint", func(t *testing.T) {
 		assertGenErrs(t, `
-				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 				pkg.entrypoint(%s)
 			`,
 			[]genErrCase{
@@ -149,7 +149,7 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("pkg.options.lint_checks must be called once", func(t *testing.T) {
 		_, err := call(`
-			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 			pkg.options.lint_checks(["none", "+formatting"])
 			pkg.options.lint_checks(["none", "+formatting"])
 		`)
@@ -158,7 +158,7 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("pkg.options.fmt_rules bad path", func(t *testing.T) {
 		assertGenErrs(t, `
-				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 				pkg.options.fmt_rules(paths = %s)
 			`,
 			[]genErrCase{
@@ -174,7 +174,7 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("pkg.options.fmt_rules bad function_args_sort", func(t *testing.T) {
 		assertGenErrs(t, `
-				pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 				pkg.options.fmt_rules(paths = ["."], function_args_sort = %s)
 			`,
 			[]genErrCase{
@@ -187,7 +187,7 @@ func TestLoadDefinition(t *testing.T) {
 
 	t.Run("Dup pkg.options.fmt_rules", func(t *testing.T) {
 		_, err := call(`
-			pkg.declare(name = "pkg/name", lucicfg = "1.2.3")
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 			pkg.options.fmt_rules(
 				paths = ["a", "b"],
 			)

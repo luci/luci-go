@@ -53,7 +53,7 @@ func TestEntryOnDisk(t *testing.T) {
 		tmp := prepDisk(t, map[string]string{
 			".git/config": `# Denotes repo root`,
 			"a/b/PACKAGE.star": `
-				pkg.declare(name = "some/pkg", lucicfg = "1.2.3")
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
 				pkg.entrypoint("c/main.star")
 			`,
 			"a/b/c/main.star": `print("Hi")`,
@@ -73,7 +73,7 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.That(t, entry.LucicfgVersionConstraints, should.Match([]LucicfgVersionConstraint{
 			{
 				Min:     LucicfgVersion{1, 2, 3},
-				Package: "some/pkg",
+				Package: "@some/pkg",
 				Main:    true,
 			},
 		}))
@@ -92,7 +92,7 @@ func TestEntryOnDisk(t *testing.T) {
 		tmp := prepDisk(t, map[string]string{
 			".git/config": `# Denotes repo root`,
 			"PACKAGE.star": `
-				pkg.declare(name = "some/pkg", lucicfg = "1.2.3")
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
 				pkg.entrypoint("missing.star")
 			`,
 		})
@@ -104,7 +104,7 @@ func TestEntryOnDisk(t *testing.T) {
 		tmp := prepDisk(t, map[string]string{
 			".git/config": `# Denotes repo root`,
 			"PACKAGE.star": `
-				pkg.declare(name = "some/pkg", lucicfg = "1.2.3")
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
 				pkg.entrypoint("another1.star")
 				pkg.entrypoint("another2.star")
 			`,
@@ -144,7 +144,7 @@ func TestPackageOnDisk(t *testing.T) {
 	t.Run("Loads PACKAGE.star", func(t *testing.T) {
 		tmp := prepDisk(t, map[string]string{
 			"a/b/PACKAGE.star": `
-				pkg.declare(name = "some/pkg", lucicfg = "1.2.3")
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
 			`,
 			"a/b/c/main.star": `print("Hi")`,
 		})
@@ -158,7 +158,7 @@ func TestPackageOnDisk(t *testing.T) {
 		assert.That(t, src, should.Equal(`print("Hi")`))
 
 		assert.That(t, pkg.Definition, should.Match(&Definition{
-			Name:              "some/pkg",
+			Name:              "@some/pkg",
 			MinLucicfgVersion: LucicfgVersion{1, 2, 3},
 		}))
 	})

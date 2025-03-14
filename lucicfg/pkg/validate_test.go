@@ -30,16 +30,17 @@ func TestValidateName(t *testing.T) {
 		name string
 		err  any
 	}{
-		{"good", nil},
-		{"also-_goodaz09", nil},
-		{"also/good/blah", nil},
-		{strings.Repeat("z", 300), nil},
-		{"BAD", "invalid character at 0 (B)"},
-		{"0bad", "must begin with a letter"},
+		{"@good", nil},
+		{"@also-_goodaz09", nil},
+		{"@also/good/blah", nil},
+		{"@" + strings.Repeat("z", 299), nil},
+		{"bad", "must start with @"},
+		{"@BAD", "invalid character at 0 (B)"},
+		{"@0bad", "must begin with a letter"},
 		{"", "cannot be empty"},
-		{"/zzz", "empty path component"},
-		{"aaa//zzz", "empty path component"},
-		{strings.Repeat("z", 301), "should be no longer than 300 characters"},
+		{"@/zzz", "empty path component"},
+		{"@aaa//zzz", "empty path component"},
+		{"@" + strings.Repeat("z", 300), "should be no longer than 300 characters"},
 	}
 	for _, cs := range cases {
 		assert.That(t, ValidateName(cs.name), should.ErrLike(cs.err), truth.Explain("%s", cs.name))
