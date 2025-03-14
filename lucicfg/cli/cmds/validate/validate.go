@@ -213,12 +213,6 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		}
 	}
 
-	// TODO(vadimsh): Use state.Inputs.Entry.Local.Formatter.
-	formatter, err := base.FormatterPolicy(state.Inputs.Entry.Local.DiskPath)
-	if err != nil {
-		return nil, err
-	}
-
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
@@ -227,7 +221,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Output:        output,
 		Meta:          meta,
 		Root:          state.Inputs.Entry.Local.DiskPath,
-		Formatter:     formatter,
+		Formatter:     state.Inputs.Entry.Local.Formatter,
 		ConfigService: vr.ConfigService,
 	})
 	return result, err

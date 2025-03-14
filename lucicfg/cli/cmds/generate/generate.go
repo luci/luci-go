@@ -151,12 +151,6 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		}
 	}
 
-	// TODO(vadimsh): Use state.Inputs.Entry.Local.Formatter.
-	formatter, err := base.FormatterPolicy(state.Inputs.Entry.Local.DiskPath)
-	if err != nil {
-		return nil, err
-	}
-
 	// Optionally validate via RPC and apply linters. This is slow, thus off by
 	// default.
 	if gr.validate {
@@ -166,7 +160,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			Output:        output,
 			Meta:          meta,
 			Root:          state.Inputs.Entry.Local.DiskPath,
-			Formatter:     formatter,
+			Formatter:     state.Inputs.Entry.Local.Formatter,
 			ConfigService: gr.ConfigService,
 		})
 	}
