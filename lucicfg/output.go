@@ -36,6 +36,8 @@ import (
 	"go.chromium.org/luci/common/proto/textpb"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/starlark/starlarkproto"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 // Output is an in-memory representation of all generated output files.
@@ -398,7 +400,7 @@ func (o Output) DebugDump() {
 }
 
 // DiscardChangesToUntracked replaces bodies of the files that are in the output
-// set, but not in the `tracked` set (per TrackedSet semantics) with what's on
+// set, but not in the `tracked` set (per fileset.Set semantics) with what's on
 // disk in the given `dir`.
 //
 // This allows to construct partially generated output: some configs (the ones
@@ -407,10 +409,13 @@ func (o Output) DebugDump() {
 // If `dir` is "-" (which indicates that the output is going to be dumped to
 // stdout rather then to disk), just removes untracked files from the output.
 func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string, dir string) error {
-	isTracked := TrackedSet(tracked)
+	trackedSet, err := fileset.New(tracked)
+	if err != nil {
+		return err
+	}
 
 	for _, path := range o.Files() {
-		yes, err := isTracked(path)
+		yes, err := trackedSet.Contains(path)
 		if err != nil {
 			return err
 		}

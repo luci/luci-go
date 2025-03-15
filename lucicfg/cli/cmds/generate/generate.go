@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 // Cmd is 'generate' subcommand.
@@ -131,7 +132,11 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		// no longer in the output. Note that if TrackedFiles is empty (default),
 		// nothing is deleted, it is the responsibility of lucicfg users to make
 		// sure there's no stale output in this case.
-		tracked, err := lucicfg.FindTrackedFiles(meta.ConfigDir, meta.TrackedFiles)
+		trackedSet, err := fileset.New(meta.TrackedFiles)
+		if err != nil {
+			return result, err
+		}
+		tracked, err := fileset.ScanDirectory(meta.ConfigDir, trackedSet)
 		if err != nil {
 			return result, err
 		}

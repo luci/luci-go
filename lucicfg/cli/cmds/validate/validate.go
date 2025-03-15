@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 // Cmd is 'validate' subcommand.
@@ -173,7 +174,11 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 
 	if meta.ConfigDir != "-" {
 		// Find files that are present on disk, but no longer in the output.
-		tracked, err := lucicfg.FindTrackedFiles(meta.ConfigDir, meta.TrackedFiles)
+		trackedSet, err := fileset.New(meta.TrackedFiles)
+		if err != nil {
+			return result, err
+		}
+		tracked, err := fileset.ScanDirectory(meta.ConfigDir, trackedSet)
 		if err != nil {
 			return result, err
 		}
