@@ -43,6 +43,8 @@ import (
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -55,6 +57,10 @@ func TestReservationServer(t *testing.T) {
 
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		config := cfgtest.NewMockedConfigs()
+		poolCfg := config.MockPool("some-pool", "project:realm")
+		poolCfg.InformationalDimensionRe = []string{"label-*"}
+		p := cfgtest.MockConfigs(ctx, config)
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 		}
@@ -64,6 +70,7 @@ func TestReservationServer(t *testing.T) {
 			internals:     &internals,
 			serverProject: "cloud-proj",
 			serverVersion: "go-version",
+			cfg:           p,
 		}
 
 		expirationTimeout := time.Hour
@@ -278,7 +285,7 @@ func TestReservationServer(t *testing.T) {
 			}
 
 			var resubmittedTTR []*model.TaskToRun
-			srv.enqueueNew = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+			srv.enqueueNew = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, _ *cfg.Config) error {
 				assert.That(t, tr.Key.Equal(ttr.Key.Parent()), should.BeTrue)
 				resubmittedTTR = append(resubmittedTTR, ttr)
 				return nil
@@ -311,16 +318,19 @@ func TestReservationServer(t *testing.T) {
 					State:  state,
 					Status: status.Convert(statusErr).Proto(),
 				}
-				rbe.reservation.Payload, _ = anypb.New(&internalspb.TaskPayload{
+
+				taskPayload := &internalspb.TaskPayload{
 					ReservationId:  reservationID,
 					TaskId:         taskID,
 					SliceIndex:     taskSliceIndex,
 					TaskToRunShard: taskToRunShard,
 					TaskToRunId:    taskToRunID,
-				})
+				}
+
 				if result != nil {
 					rbe.reservation.Result, _ = anypb.New(result)
 				}
+				rbe.reservation.Payload, _ = anypb.New(taskPayload)
 				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
 				expireSliceDetails = ""
 				assert.NoErr(t, srv.expireSliceBasedOnReservation(ctx, reservationName))
@@ -340,7 +350,7 @@ func TestReservationServer(t *testing.T) {
 				assert.Loosely(t, expireSliceDetails, should.ContainSubstring(details))
 			}
 
-			expectResubmit := func(reservationID string) {
+			expectResubmit := func(reservationID string, effectiveBotIDDim string) {
 				expectNoExpireSlice()
 				assert.Loosely(t, resubmittedTTR, should.HaveLength(1))
 				assert.That(t, resubmittedTTR[0].RBEReservation, should.Equal(reservationID))
@@ -419,9 +429,11 @@ func TestReservationServer(t *testing.T) {
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
 					reservationID(0),
 					status.Errorf(codes.DeadlineExceeded, "ignored"),
-					&internalspb.TaskResult{BotInternalError: "boom"},
+					&internalspb.TaskResult{
+						BotInternalError: "boom",
+					},
 				)
-				expectResubmit(reservationID(1))
+				expectResubmit(reservationID(1), "dut_id")
 			})
 
 			t.Run("Bot internal error, last attempt", func(t *ftt.Test) {
@@ -443,7 +455,7 @@ func TestReservationServer(t *testing.T) {
 					status.Errorf(codes.Aborted, "bot died"),
 					nil,
 				)
-				expectResubmit(reservationID(1))
+				expectResubmit(reservationID(1), "")
 			})
 
 			t.Run("Aborted before claimed, last attempt", func(t *ftt.Test) {
@@ -465,7 +477,7 @@ func TestReservationServer(t *testing.T) {
 					nil,
 					nil,
 				)
-				expectResubmit(reservationID(1))
+				expectResubmit(reservationID(1), "")
 			})
 
 			t.Run("Unexpectedly successful reservations, last attempt", func(t *ftt.Test) {
@@ -532,6 +544,21 @@ func TestEnqueueTasks(t *testing.T) {
 	ctx = txndefer.FilterRDS(ctx)
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
+	cfg := cfgtest.NewMockedConfigs()
+	poolCfg := cfg.MockPool("pool", "project:realm")
+	poolCfg.RbeMigration = &configpb.Pool_RBEMigration{
+		RbeInstance: "rbe-instance",
+		BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+			{
+				Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+				Percent: 100,
+			},
+		},
+		EffectiveBotIdDimension: "dut_id",
+	}
+	cfg.MockBot("bot1", "pool")
+	p := cfgtest.MockConfigs(ctx, cfg)
+
 	rbe := mockedReservationClient{
 		newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 	}
@@ -540,6 +567,7 @@ func TestEnqueueTasks(t *testing.T) {
 		rbe:           &rbe,
 		internals:     &internals,
 		serverVersion: "go-version",
+		cfg:           p,
 	}
 	srv.RegisterTQTasks(&tq.Default)
 
@@ -585,75 +613,210 @@ func TestEnqueueTasks(t *testing.T) {
 	})
 
 	ftt.Run("EnqueueNew", t, func(t *ftt.Test) {
-		ctx, sch := tq.TestingContext(ctx, nil)
-		tID := "65aba3a3e6b69310"
-		reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
-		tr := &model.TaskRequest{
-			Key:         reqKey,
-			RBEInstance: "rbe-instance",
-			TaskSlices: []model.TaskSlice{
-				{
-					Properties: model.TaskProperties{
-						Dimensions: model.TaskDimensions{
-							"d1": {"v1", "v2|v3"},
-							"id": {"bot1"},
+		t.Run("OK", func(t *ftt.Test) {
+			ctx, sch := tq.TestingContext(ctx, nil)
+			tID := "65aba3a3e6b69310"
+			reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+			tr := &model.TaskRequest{
+				Key:         reqKey,
+				RBEInstance: "rbe-instance",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"d1": {"v1", "v2|v3"},
+								"id": {"bot1"},
+							},
+							ExecutionTimeoutSecs: 3600,
+							GracePeriodSecs:      300,
 						},
-						ExecutionTimeoutSecs: 3600,
-						GracePeriodSecs:      300,
 					},
 				},
-			},
-			Name:                "task",
-			Priority:            30,
-			SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
-		}
-		ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
-		ttr := &model.TaskToRun{
-			Key:            ttrKey,
-			RBEReservation: "rbe-reservation",
-		}
-		txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			return EnqueueNew(ctx, tr, ttr)
-		}, nil)
-		assert.NoErr(t, txErr)
-		assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				Name:                "task",
+				Priority:            30,
+				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			}
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+			ttr := &model.TaskToRun{
+				Key:            ttrKey,
+				RBEReservation: "rbe-reservation",
+			}
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return EnqueueNew(ctx, tr, ttr, p.Cached(ctx))
+			}, nil)
+			assert.NoErr(t, txErr)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 
-		expected := &internalspb.EnqueueRBETask{
-			Payload: &internalspb.TaskPayload{
-				ReservationId:  "rbe-reservation",
-				TaskId:         tID,
-				SliceIndex:     0,
-				TaskToRunShard: 5,
-				TaskToRunId:    1,
-				DebugInfo: &internalspb.TaskPayload_DebugInfo{
-					Created:  timestamppb.New(now),
-					TaskName: "task",
+			expected := &internalspb.EnqueueRBETask{
+				Payload: &internalspb.TaskPayload{
+					ReservationId:  "rbe-reservation",
+					TaskId:         tID,
+					SliceIndex:     0,
+					TaskToRunShard: 5,
+					TaskToRunId:    1,
+					DebugInfo: &internalspb.TaskPayload_DebugInfo{
+						Created:  timestamppb.New(now),
+						TaskName: "task",
+					},
 				},
-			},
-			RbeInstance:    "rbe-instance",
-			Expiry:         timestamppb.New(ttr.Expiration.Get()),
-			RequestedBotId: "bot1",
-			Constraints: []*internalspb.EnqueueRBETask_Constraint{
-				{Key: "d1", AllowedValues: []string{"v1"}},
-				{Key: "d1", AllowedValues: []string{"v2", "v3"}},
-			},
-			Priority:            30,
-			SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
-			ExecutionTimeout:    durationpb.New(time.Duration(3930) * time.Second),
-		}
-		actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
-		assert.Loosely(t, actual, should.Match(expected))
+				RbeInstance:    "rbe-instance",
+				Expiry:         timestamppb.New(ttr.Expiration.Get()),
+				RequestedBotId: "bot1",
+				Constraints: []*internalspb.EnqueueRBETask_Constraint{
+					{Key: "d1", AllowedValues: []string{"v1"}},
+					{Key: "d1", AllowedValues: []string{"v2", "v3"}},
+				},
+				Priority:            30,
+				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+				ExecutionTimeout:    durationpb.New(time.Duration(3930) * time.Second),
+			}
+			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
+			assert.Loosely(t, actual, should.Match(expected))
+		})
+
+		t.Run("OK_with_effective_bot_id", func(t *ftt.Test) {
+			ctx, sch := tq.TestingContext(ctx, nil)
+			tID := "65aba3a3e6b69320"
+			reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+			tr := &model.TaskRequest{
+				Key:         reqKey,
+				RBEInstance: "rbe-instance",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"d1":     {"v1", "v2|v3"},
+								"pool":   {"pool"},
+								"dut_id": {"dut1"},
+							},
+							ExecutionTimeoutSecs: 3600,
+							GracePeriodSecs:      300,
+						},
+					},
+				},
+				Name:                "task",
+				Priority:            30,
+				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			}
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+			ttr := &model.TaskToRun{
+				Key:            ttrKey,
+				RBEReservation: "rbe-reservation",
+			}
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return EnqueueNew(ctx, tr, ttr, p.Cached(ctx))
+			}, nil)
+			assert.NoErr(t, txErr)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+
+			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
+			assert.That(t, actual.RequestedBotId, should.Equal("pool--dut1"))
+		})
+
+		t.Run("OK_with_effective_bot_id_from_bot", func(t *ftt.Test) {
+			ctx, sch := tq.TestingContext(ctx, nil)
+
+			botInfo := &model.BotInfo{
+				Key:               model.BotInfoKey(ctx, "bot1"),
+				RBEEffectiveBotID: "pool--dut1",
+			}
+			assert.NoErr(t, datastore.Put(ctx, botInfo))
+
+			tID := "65aba3a3e6b69330"
+			reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+			tr := &model.TaskRequest{
+				Key:         reqKey,
+				RBEInstance: "rbe-instance",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"d1": {"v1", "v2|v3"},
+								"id": {"bot1"},
+							},
+							ExecutionTimeoutSecs: 3600,
+							GracePeriodSecs:      300,
+						},
+					},
+				},
+				Name:                "task",
+				Priority:            30,
+				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			}
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+			ttr := &model.TaskToRun{
+				Key:            ttrKey,
+				RBEReservation: "rbe-reservation",
+			}
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return EnqueueNew(ctx, tr, ttr, p.Cached(ctx))
+			}, nil)
+			assert.NoErr(t, txErr)
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+
+			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
+			assert.That(t, actual.RequestedBotId, should.Equal("pool--dut1"))
+		})
+
+		t.Run("fail_if_no_pool_nor_id", func(t *ftt.Test) {
+			tID := "65aba3a3e6b69340"
+			reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+			tr := &model.TaskRequest{
+				Key:         reqKey,
+				RBEInstance: "rbe-instance",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"d1": {"v1", "v2|v3"},
+							},
+							ExecutionTimeoutSecs: 3600,
+							GracePeriodSecs:      300,
+						},
+					},
+				},
+				Name:                "task",
+				Priority:            30,
+				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			}
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+			ttr := &model.TaskToRun{
+				Key:            ttrKey,
+				RBEReservation: "rbe-reservation",
+			}
+			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return EnqueueNew(ctx, tr, ttr, p.Cached(ctx))
+			}, nil)
+			assert.That(t, txErr, should.ErrLike(
+				"expect task without pool dimension to have exactly one id dimension, got []"))
+		})
 	})
 }
 
 func TestDimsToBotIDAndConstraints(t *testing.T) {
 	t.Parallel()
+	ctx := memory.Use(context.Background())
+
+	bot2 := "bot2"
+	bot2Info := &model.BotInfo{
+		Key:               model.BotInfoKey(ctx, bot2),
+		RBEEffectiveBotID: "pool--bot2",
+	}
+
+	bot3 := "bot3"
+	bot3Info := &model.BotInfo{
+		Key: model.BotInfoKey(ctx, bot3),
+	}
+	assert.NoErr(t, datastore.Put(ctx, bot2Info, bot3Info))
+
 	cases := []struct {
-		name        string
-		dims        model.TaskDimensions
-		botID       string
-		constraints []*internalspb.EnqueueRBETask_Constraint
-		err         string
+		name                 string
+		dims                 model.TaskDimensions
+		botID                string
+		constraints          []*internalspb.EnqueueRBETask_Constraint
+		rbeEffectiveBotIDDim string
+		pool                 string
+		err                  string
 	}{
 		{
 			name: "ok_with_bot_id",
@@ -676,12 +839,67 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 				{Key: "key", AllowedValues: []string{"value"}},
 			},
 		},
+		{
+			name: "ok_to_translate_id_with_effective_one",
+			dims: model.TaskDimensions{
+				"id": {"bot2"},
+			},
+			botID:                "pool--bot2",
+			rbeEffectiveBotIDDim: "dut_id",
+		},
+		{
+			name: "ok_with_effective_bot_id",
+			dims: model.TaskDimensions{
+				"dut_id": {"value"},
+			},
+			botID:                "pool--value",
+			rbeEffectiveBotIDDim: "dut_id",
+			pool:                 "pool",
+		},
+		{
+			name: "ok_with_id_and_effective_bot_id_if_not_confilicting",
+			dims: model.TaskDimensions{
+				"id":     {"bot2"},
+				"dut_id": {"bot2"},
+			},
+			botID:                "pool--bot2",
+			rbeEffectiveBotIDDim: "dut_id",
+			pool:                 "pool",
+		},
+		{
+			name: "use_bot_id_if_failed_to_get_effective_bot_id",
+			dims: model.TaskDimensions{
+				"id": {"bot1"},
+			},
+			botID:                "bot1",
+			rbeEffectiveBotIDDim: "dut_id",
+			pool:                 "pool",
+		},
+		{
+			name: "use_bot_id_if_bot_does_not_have_effective_bot_id",
+			dims: model.TaskDimensions{
+				"id": {"bot3"},
+			},
+			botID:                "bot3",
+			rbeEffectiveBotIDDim: "dut_id",
+			pool:                 "pool",
+		},
+		{
+			name: "confilicting_effective_bot_id",
+			dims: model.TaskDimensions{
+				"id":     {"bot2"},
+				"dut_id": {"value"},
+			},
+			rbeEffectiveBotIDDim: "dut_id",
+			pool:                 "pool",
+			err:                  `conflicting effective bot IDs: "pool--bot2" (according to bot "bot2") and "pool--value" (according to task)`,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			botID, constraints, err := dimsToBotIDAndConstraints(tc.dims)
+			botID, constraints, err := dimsToBotIDAndConstraints(ctx, tc.dims, tc.rbeEffectiveBotIDDim, tc.pool)
 			assert.That(t, botID, should.Equal(tc.botID))
 			assert.That(t, constraints, should.Match(tc.constraints))
 			if tc.err == "" {

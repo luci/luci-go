@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -54,7 +55,7 @@ func (lt *LifecycleTasksForTests) enqueueRBECancel(ctx context.Context, tr *mode
 	return nil
 }
 
-func (lt *LifecycleTasksForTests) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+func (lt *LifecycleTasksForTests) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, _ *cfg.Config) error {
 	lt.m.Lock()
 	defer lt.m.Unlock()
 	lt.fakeTaskQueue["rbe-new"] = append(lt.fakeTaskQueue["rbe-new"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))

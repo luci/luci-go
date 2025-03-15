@@ -626,6 +626,8 @@ func TestBuildQueriableConfig(t *testing.T) {
 func TestBotRBEConfig(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	build := func(dims []string, pools []*configpb.Pool) *Config {
 		cfg, err := buildQueriableConfig(context.Background(), &configBundle{
 			Bundle: &internalcfgpb.ConfigBundle{
@@ -651,7 +653,7 @@ func TestBotRBEConfig(t *testing.T) {
 
 	ftt.Run("Unknown pools", t, func(t *ftt.Test) {
 		cfg := build([]string{"pool:unknown", "pool:another-unknown"}, nil)
-		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
 			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
 		}))
 	})
@@ -671,7 +673,7 @@ func TestBotRBEConfig(t *testing.T) {
 				},
 			},
 		})
-		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
 			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
 			Instance: "some-instance",
 		}))
@@ -683,7 +685,7 @@ func TestBotRBEConfig(t *testing.T) {
 				Name: []string{"a", "b"},
 			},
 		})
-		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
 			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
 		}))
 	})
@@ -706,8 +708,53 @@ func TestBotRBEConfig(t *testing.T) {
 				},
 			},
 		})
-		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
 			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+			Instance: "some-instance",
+		}))
+	})
+
+	ftt.Run("Effective Bot ID works for bot in single pool", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:a"}, []*configpb.Pool{
+			{
+				Name: []string{"a"},
+				RbeMigration: &configpb.Pool_RBEMigration{
+					RbeInstance: "some-instance",
+					BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+						{
+							Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+							Percent: 100,
+						},
+					},
+					EffectiveBotIdDimension: "dut_id",
+				},
+			},
+		})
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
+			Mode:                    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+			Instance:                "some-instance",
+			EffectiveBotIDDimension: "dut_id",
+		}))
+	})
+
+	ftt.Run("Effective Bot ID doesn't work for bot in multiple pools", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:a", "pool:b"}, []*configpb.Pool{
+			{
+				Name: []string{"a", "b"},
+				RbeMigration: &configpb.Pool_RBEMigration{
+					RbeInstance: "some-instance",
+					BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+						{
+							Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+							Percent: 100,
+						},
+					},
+					EffectiveBotIdDimension: "dut_id",
+				},
+			},
+		})
+		assert.That(t, cfg.RBEConfig(ctx, "bot"), should.Equal(RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
 			Instance: "some-instance",
 		}))
 	})

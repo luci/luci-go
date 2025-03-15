@@ -544,18 +544,30 @@ func validateDimensions(ctx context.Context, dims []*apipb.StringPair, pool stri
 		}
 	}
 
-	// Informational dimensions.
 	poolCfg := State(ctx).Config.Pool(pool)
 	if poolCfg == nil {
 		panic(fmt.Sprintf("pool %q not found after pool perm check", pool))
 	}
 
+	// Informational dimensions.
 	for _, re := range poolCfg.InformationalDimensionRe {
 		for _, dim := range dims {
 			if re.MatchString(dim.Key) {
 				return errors.Reason(
 					"dimension %q is informational, cannot use it for task creation",
 					dim.Key).Err()
+			}
+		}
+	}
+
+	// Effective bot ID.
+	if poolCfg.RBEEffectiveBotIDDimension != "" {
+		effectiveBotID := filter.NarrowToKey(poolCfg.RBEEffectiveBotIDDimension)
+		if !effectiveBotID.IsEmpty() {
+			if effectiveBotID.PairCount() > 1 {
+				return errors.Reason(
+					"dimension %q cannot be specified more than once",
+					poolCfg.RBEEffectiveBotIDDimension).Err()
 			}
 		}
 	}

@@ -288,7 +288,7 @@ func (cfg *Config) BotGroup(botID string) *BotGroup {
 //
 // It checks per-pool RBE configs for all pools the bot belongs to and "merges"
 // them into the final config.
-func (cfg *Config) RBEConfig(botID string) RBEConfig {
+func (cfg *Config) RBEConfig(ctx context.Context, botID string) RBEConfig {
 	// For each known pool (usually just one) calculate the mode and the RBE
 	// instance the bot should be using there.
 	pools := cfg.BotGroup(botID).Pools()
@@ -338,6 +338,26 @@ func (cfg *Config) RBEConfig(botID string) RBEConfig {
 	}
 	if instance == "" {
 		panic("no RBE instance set in RBEMigration")
+	}
+
+	var effectiveBotIDDimensions []string
+	for _, poolCfg := range perPool {
+		if poolCfg.EffectiveBotIDDimension != "" {
+			effectiveBotIDDimensions = append(effectiveBotIDDimensions, poolCfg.EffectiveBotIDDimension)
+		}
+	}
+
+	if len(effectiveBotIDDimensions) == 1 {
+		return RBEConfig{
+			Mode:                    mode,
+			Instance:                instance,
+			EffectiveBotIDDimension: effectiveBotIDDimensions[0],
+		}
+	}
+
+	if len(effectiveBotIDDimensions) > 1 {
+		logging.Errorf(
+			ctx, "Bot %s: bots using effective Bot ID feature cannot belong to multiple pools.", botID)
 	}
 	return RBEConfig{
 		Mode:     mode,

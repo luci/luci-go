@@ -44,6 +44,7 @@ import (
 	notificationspb "go.chromium.org/luci/swarming/internal/notifications"
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 
 	// Enable datastore transactional tasks support.
@@ -71,19 +72,21 @@ type ReservationServer struct {
 	internals     internalspb.InternalsClient
 	serverProject string
 	serverVersion string
+	cfg           *cfg.Provider
 
 	// enqueueNew is usually EnqueueNew, but it can be mocked in tests.
-	enqueueNew func(context.Context, *model.TaskRequest, *model.TaskToRun) error
+	enqueueNew func(context.Context, *model.TaskRequest, *model.TaskToRun, *cfg.Config) error
 }
 
 // NewReservationServer creates a new reservation server given an RBE client
 // connection.
-func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverProject, serverVersion string) *ReservationServer {
+func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverProject, serverVersion string, cfg *cfg.Provider) *ReservationServer {
 	return &ReservationServer{
 		rbe:           remoteworkers.NewReservationsClient(cc),
 		internals:     internals,
 		serverProject: serverProject,
 		serverVersion: serverVersion,
+		cfg:           cfg,
 		enqueueNew:    EnqueueNew,
 	}
 }
@@ -496,7 +499,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		if err := datastore.Put(tctx, ttr); err != nil {
 			return errors.Annotate(err, "failed to store TaskToRun").Tag(transient.Tag).Err()
 		}
-		return s.enqueueNew(tctx, tr, ttr)
+		return s.enqueueNew(tctx, tr, ttr, s.cfg.Cached(ctx))
 	}, nil)
 
 	if err != nil {
@@ -581,11 +584,15 @@ func EnqueueCancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskTo
 
 // EnqueueNew enqueues a `rbe-enqueue` task to create RBE reservation for
 // a task.
-func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error {
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	sliceIndex := ttr.TaskSliceIndex()
 	s := tr.TaskSlices[sliceIndex]
-	botID, constrains, err := dimsToBotIDAndConstraints(s.Properties.Dimensions)
+	rbeEffectiveBotIDDim, err := getRBEEffectiveBotIDDimension(ctx, s, cfg, tr.Pool())
+	if err != nil {
+		return err
+	}
+	botID, constraints, err := dimsToBotIDAndConstraints(ctx, s.Properties.Dimensions, rbeEffectiveBotIDDim, tr.Pool())
 	if err != nil {
 		return err
 	}
@@ -611,7 +618,7 @@ func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun
 			RbeInstance:         tr.RBEInstance,
 			Expiry:              timestamppb.New(ttr.Expiration.Get()),
 			RequestedBotId:      botID,
-			Constraints:         constrains,
+			Constraints:         constraints,
 			Priority:            int32(tr.Priority),
 			SchedulingAlgorithm: tr.SchedulingAlgorithm,
 			ExecutionTimeout:    durationpb.New(time.Duration(timeout) * time.Second),
@@ -619,20 +626,47 @@ func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun
 	})
 }
 
-func dimsToBotIDAndConstraints(dims model.TaskDimensions) (botID string, constraints []*internalspb.EnqueueRBETask_Constraint, err error) {
-	// TODO(chanli): handle the special ChromeOS case where Scheduke schedules
-	// tasks targeting specific duts.
-	// The short-term workaround would be using `dut_id` as bot id when
-	// communicating with RBE, since bots and duts are 1-1 mapped as of now.
-	// In the long term after bots and duts are decoupled (bots become generic
-	// and can talk to any duts), we could remove it.
+func getRBEEffectiveBotIDDimension(ctx context.Context, s model.TaskSlice, cfg *cfg.Config, pool string) (string, error) {
+	if pool != "" {
+		poolCfg := cfg.Pool(pool)
+		if poolCfg == nil {
+			logging.Errorf(ctx, "pool %q not found, cannot use effective bot ID dimension", pool)
+			return "", nil
+		}
+		return poolCfg.RBEEffectiveBotIDDimension, nil
+	}
+
+	// The task doesn't use pool, it must use bot ID.
+	botIDs := s.Properties.Dimensions["id"]
+	if len(botIDs) != 1 || strings.Contains(botIDs[0], "|") {
+		return "", errors.Reason("expect task without pool dimension to have exactly one id dimension, got %q", botIDs).Err()
+	}
+	botID := botIDs[0]
+	return cfg.RBEConfig(ctx, botID).EffectiveBotIDDimension, nil
+}
+
+func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, rbeEffectiveBotIDDim, pool string) (botID string, constraints []*internalspb.EnqueueRBETask_Constraint, err error) {
+	var effectiveBotIDFromBot, effectiveBotID string
 	for key, values := range dims {
-		switch key {
-		case "id":
+		switch {
+		case key == "id":
 			if len(values) != 1 || strings.Contains(values[0], "|") {
 				return "", nil, errors.Reason("invalid id dimension: %q", values).Err()
 			}
 			botID = values[0]
+			if rbeEffectiveBotIDDim != "" {
+				effectiveBotIDFromBot, err = getEffectiveBotID(ctx, botID)
+				if err != nil {
+					return "", nil, err
+				}
+			}
+		case key == rbeEffectiveBotIDDim:
+			if len(values) != 1 || strings.Contains(values[0], "|") {
+				return "", nil, errors.Reason("invalid %q dimension: %q", rbeEffectiveBotIDDim, values).Err()
+			}
+			if pool != "" {
+				effectiveBotID = fmt.Sprintf("%s--%s", pool, values[0])
+			}
 		default:
 			for _, v := range values {
 				constraints = append(constraints, &internalspb.EnqueueRBETask_Constraint{
@@ -642,6 +676,44 @@ func dimsToBotIDAndConstraints(dims model.TaskDimensions) (botID string, constra
 			}
 		}
 	}
+	if effectiveBotIDFromBot != "" && effectiveBotID != "" && effectiveBotIDFromBot != effectiveBotID {
+		return "", nil, errors.Reason(
+			"conflicting effective bot IDs: %q (according to bot %q) and %q (according to task)",
+			effectiveBotIDFromBot, botID, effectiveBotID).Err()
+	}
+	if effectiveBotIDFromBot != "" {
+		botID = effectiveBotIDFromBot
+	}
+	if effectiveBotID != "" {
+		botID = effectiveBotID
+	}
 
 	return botID, constraints, nil
+}
+
+func getEffectiveBotID(ctx context.Context, botID string) (string, error) {
+	info := &model.BotInfo{Key: model.BotInfoKey(ctx, botID)}
+	if err := datastore.Get(ctx, info); err != nil {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			logging.Errorf(ctx, "Failed to get effective bot ID for %q: %s", botID, err)
+			return "", nil
+		}
+		return "", errors.Annotate(err, "failed to get effective bot ID for %q", botID).Err()
+	}
+
+	if info.RBEEffectiveBotID == "" {
+		// If cannot find the effective Bot ID for the bot,
+		// it could be because
+		// * the bot is still in handshake;
+		// * the effective_bot_id_dimension is newly added and the bot has not
+		//   call bot/poll yet;
+		// * the bot doesn't provide valid effective Bot ID dimension (missing
+		//   or multiple);
+		// * the bot belongs to multiple pools to make the effective Bot ID
+		//   feature not usable;
+		// Add a log here and move on, the task will either be rejected by RBE
+		// with NO_RESOURCE or execute with botID.
+		logging.Debugf(ctx, "Effective bot ID for %q not found", botID)
+	}
+	return info.RBEEffectiveBotID, nil
 }

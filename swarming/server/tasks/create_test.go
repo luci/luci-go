@@ -164,6 +164,14 @@ func TestCreation(t *testing.T) {
 						Server: "https://rdbhost.example.com",
 					},
 				},
+				Pools: &configpb.PoolsCfg{
+					Pool: []*configpb.Pool{
+						{
+							Name:  []string{"pool"},
+							Realm: "project:realm",
+						},
+					},
+				},
 			}
 			p := cfgtest.MockConfigs(ctx, mockCfg)
 			cfg := p.Cached(ctx)
@@ -285,6 +293,9 @@ func TestCreation(t *testing.T) {
 							{
 								Properties: model.TaskProperties{
 									Idempotent: true,
+									Dimensions: model.TaskDimensions{
+										"pool": {"pool"},
+									},
 								},
 							},
 						},
@@ -399,6 +410,14 @@ func TestCreation(t *testing.T) {
 							Server: "https://rdbhost.example.com",
 						},
 					},
+					Pools: &configpb.PoolsCfg{
+						Pool: []*configpb.Pool{
+							{
+								Name:  []string{"pool"},
+								Realm: "project:realm",
+							},
+						},
+					},
 				}
 				p := cfgtest.MockConfigs(ctx, mockCfg)
 				cfg := p.Cached(ctx)
@@ -434,10 +453,33 @@ func TestCreation(t *testing.T) {
 					assert.That(t, trs.ResultDBInfo.Invocation, should.Equal(inv.Name))
 				})
 			})
-
 		})
 
 		t.Run("OK", func(t *ftt.Test) {
+			mockCfg := &cfgtest.MockedConfigs{
+				Settings: &configpb.SettingsCfg{
+					Resultdb: &configpb.ResultDBSettings{
+						Server: "https://rdbhost.example.com",
+					},
+				},
+				Pools: &configpb.PoolsCfg{
+					Pool: []*configpb.Pool{
+						{
+							Name:  []string{"pool"},
+							Realm: "project:realm",
+							RbeMigration: &configpb.Pool_RBEMigration{
+								RbeInstance: "rbe-instance",
+								BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+									{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+								},
+								EffectiveBotIdDimension: "dut_id",
+							},
+						},
+					},
+				},
+			}
+			p := cfgtest.MockConfigs(ctx, mockCfg)
+			cfg := p.Cached(ctx)
 			now := testclock.TestRecentTimeUTC
 			newTR := &model.TaskRequest{
 				TaskSlices: []model.TaskSlice{
@@ -463,6 +505,7 @@ func TestCreation(t *testing.T) {
 					PubSubTopic:      "topic",
 					UpdateID:         now.UnixNano(),
 				},
+				Config: cfg,
 			}
 			res, err := c.Run(ctx)
 			assert.NoErr(t, err)

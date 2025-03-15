@@ -237,7 +237,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 
 	// Figure out if the bot should be using RBE.
 	var rbeParams *BotRBEParams
-	rbeConfig := conf.RBEConfig(botID)
+	rbeConfig := conf.RBEConfig(ctx, botID)
 	if rbeConfig.Instance != "" {
 		rbeParams = &BotRBEParams{
 			Instance:   rbeConfig.Instance,

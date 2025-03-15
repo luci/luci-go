@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/rbe"
@@ -32,7 +33,7 @@ type LifecycleTasks interface {
 	EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error
 	enqueueChildCancellation(ctx context.Context, taskID string) error
 	enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
-	enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
+	enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error
 	sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error
 }
 
@@ -90,8 +91,8 @@ func (l *LifecycleTasksViaTQ) enqueueRBECancel(ctx context.Context, tr *model.Ta
 	return rbe.EnqueueCancel(ctx, tr, ttr)
 }
 
-func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-	return rbe.EnqueueNew(ctx, tr, ttr)
+func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error {
+	return rbe.EnqueueNew(ctx, tr, ttr, cfg)
 }
 
 func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {

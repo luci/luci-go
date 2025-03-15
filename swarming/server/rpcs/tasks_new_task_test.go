@@ -906,6 +906,28 @@ func TestValidateNewTask(t *testing.T) {
 						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike(`dimension "label-key" is informational, cannot use it for task creation`))
 					})
+					t.Run("effective_bot_id", func(t *ftt.Test) {
+						poolCfg.RbeMigration = &configpb.Pool_RBEMigration{
+							RbeInstance: "rbe-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{
+									Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+									Percent: 100,
+								},
+							},
+							EffectiveBotIdDimension: "dut_id",
+						}
+						ctx := MockRequestState(ctx, state)
+						req := simpliestValidRequest("pool")
+						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+							{
+								Key:   "dut_id",
+								Value: "dut1|dut2",
+							},
+						}
+						err := validateNewTask(ctx, req, "pool")
+						assert.That(t, err, should.ErrLike(`dimension "dut_id" cannot be specified more than once`))
+					})
 				})
 			})
 		})

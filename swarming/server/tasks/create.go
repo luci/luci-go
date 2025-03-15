@@ -268,7 +268,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 
 		if ttr != nil {
 			toPut = append(toPut, ttr)
-			if err := c.LifecycleTasks.enqueueRBENew(ctx, tr, ttr); err != nil {
+			if err := c.LifecycleTasks.enqueueRBENew(ctx, tr, ttr, c.Config); err != nil {
 				return err
 			}
 		}

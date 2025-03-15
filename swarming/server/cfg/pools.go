@@ -71,6 +71,8 @@ type RBEConfig struct {
 	Mode configpb.Pool_RBEMigration_BotModeAllocation_BotMode
 	// Instance is a full RBE instance name to poll tasks from, if any.
 	Instance string
+	// EffectiveBotIDDimension is the dimension key to derive RBE bot ID with.
+	EffectiveBotIDDimension string
 }
 
 // rbeConfig returns RBE-related configuration for a bot in this pool.
@@ -98,15 +100,18 @@ func (cfg *Pool) rbeConfig(botID string) RBEConfig {
 		}
 	case rnd < cfg.rbeBotsSwarmingPercent+cfg.rbeBotsHybridPercent:
 		return RBEConfig{
-			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
-			Instance: cfg.RBEInstance,
+			Mode:                    configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+			Instance:                cfg.RBEInstance,
+			EffectiveBotIDDimension: cfg.RBEEffectiveBotIDDimension,
 		}
 	default:
 		return RBEConfig{
-			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
-			Instance: cfg.RBEInstance,
+			Mode:                    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+			Instance:                cfg.RBEInstance,
+			EffectiveBotIDDimension: cfg.RBEEffectiveBotIDDimension,
 		}
 	}
+
 }
 
 // newPoolsConfig converts pools.cfg proto to a queryable map.
