@@ -93,8 +93,8 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 func TestMutateACLs(t *testing.T) {
 	t.Parallel()
 
-	original := func() api.PrefixMetadata {
-		return api.PrefixMetadata{
+	original := func() *api.PrefixMetadata {
+		return &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{"group:a"}},
 			},
@@ -103,13 +103,13 @@ func TestMutateACLs(t *testing.T) {
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		meta := original()
-		dirty, err := mutateACLs(&meta, []PackageACLChange{
+		dirty, err := mutateACLs(meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:b"},
 			{Action: RevokeRole, Role: "READER", Principal: "group:a"},
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, dirty, should.BeTrue)
-		assert.Loosely(t, meta, should.Resemble(api.PrefixMetadata{
+		assert.That(t, meta, should.Match(&api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_OWNER, Principals: []string{"group:b"}},
 			},
@@ -118,17 +118,17 @@ func TestMutateACLs(t *testing.T) {
 
 	ftt.Run("Noop change", t, func(t *ftt.Test) {
 		meta := original()
-		dirty, err := mutateACLs(&meta, []PackageACLChange{
+		dirty, err := mutateACLs(meta, []PackageACLChange{
 			{Action: GrantRole, Role: "READER", Principal: "group:a"},
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, dirty, should.BeFalse)
-		assert.Loosely(t, meta, should.Resemble(original()))
+		assert.That(t, meta, should.Match(original()))
 	})
 
 	ftt.Run("Bad role", t, func(t *ftt.Test) {
 		meta := original()
-		dirty, err := mutateACLs(&meta, []PackageACLChange{
+		dirty, err := mutateACLs(meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:a"},
 			{Action: GrantRole, Role: "ZZZ", Principal: "group:a"},
 		})
@@ -138,7 +138,7 @@ func TestMutateACLs(t *testing.T) {
 
 	ftt.Run("Bad action", t, func(t *ftt.Test) {
 		meta := original()
-		dirty, err := mutateACLs(&meta, []PackageACLChange{
+		dirty, err := mutateACLs(meta, []PackageACLChange{
 			{Action: GrantRole, Role: "OWNER", Principal: "group:a"},
 			{Action: "ZZZ", Role: "WRITER", Principal: "group:a"},
 		})
