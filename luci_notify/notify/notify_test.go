@@ -350,7 +350,7 @@ func TestNotify(t *testing.T) {
 		c = logging.SetLevel(c, logging.Debug)
 
 		build := &Build{
-			Build: buildbucketpb.Build{
+			Build: &buildbucketpb.Build{
 				Id: 54,
 				Builder: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -411,7 +411,7 @@ func TestNotify(t *testing.T) {
 
 			tasks, err := createEmailTasks(c, emailNotify, &notifypb.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
-				Build:               &build.Build,
+				Build:               build.Build,
 				OldStatus:           buildbucketpb.Status_SUCCESS,
 			})
 			assert.Loosely(t, err, should.BeNil)
@@ -449,7 +449,7 @@ func TestNotify(t *testing.T) {
 			}
 			tasks, err := createEmailTasks(c, emailNotify, &notifypb.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
-				Build:               &build.Build,
+				Build:               build.Build,
 				OldStatus:           buildbucketpb.Status_SUCCESS,
 			})
 			assert.Loosely(t, err, should.BeNil)

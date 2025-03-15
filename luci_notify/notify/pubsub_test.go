@@ -52,7 +52,7 @@ import (
 
 func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	ret := &Build{
-		Build: buildbucketpb.Build{
+		Build: &buildbucketpb.Build{
 			Builder: &buildbucketpb.BuilderID{
 				Project: "chromium",
 				Bucket:  "ci",
@@ -75,7 +75,7 @@ func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationT
 
 func dummyBuildWithFailingSteps(status buildbucketpb.Status, failingSteps []string) *Build {
 	build := &Build{
-		Build: buildbucketpb.Build{
+		Build: &buildbucketpb.Build{
 			Builder: &buildbucketpb.BuilderID{
 				Project: "chromium",
 				Bucket:  "ci",
@@ -280,7 +280,7 @@ func TestHandleBuild(t *testing.T) {
 
 		verifyBuilder := func(build *Build, revision string, checkout Checkout) {
 			datastore.GetTestable(c).CatchupIndexes()
-			id := getBuilderID(&build.Build)
+			id := getBuilderID(build.Build)
 			builder := config.Builder{
 				ProjectKey: datastore.KeyForObj(c, project),
 				ID:         id,
@@ -351,7 +351,7 @@ func TestHandleBuild(t *testing.T) {
 
 		t.Run(`no revision`, func(t *ftt.Test) {
 			build := &Build{
-				Build: buildbucketpb.Build{
+				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",
@@ -389,7 +389,7 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(build, rev1, nil)
 
 			newBuild := &Build{
-				Build: buildbucketpb.Build{
+				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",

@@ -103,9 +103,9 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 		}
 		seen.Add(emailKey)
 
-		task := *taskTemplates[name] // copy
+		task := proto.Clone(taskTemplates[name]).(*internal.EmailTask)
 		task.Recipients = []string{r.Email}
-		tasks[emailKey] = &task
+		tasks[emailKey] = task
 	}
 	return tasks, nil
 }
@@ -408,7 +408,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 	project := &config.Project{Name: build.Builder.Project}
 	parentBuilder := &config.Builder{
 		ProjectKey: datastore.KeyForObj(c, project),
-		ID:         getBuilderID(&build.Build),
+		ID:         getBuilderID(build.Build),
 	}
 	q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, parentBuilder))
 	var toUpdate []*config.TreeCloser
@@ -422,7 +422,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		if build.Status == buildbucketpb.Status_FAILURE {
 			t := tc.TreeCloser
 			var match bool
-			if match, steps = matchingSteps(findFailingSteps(&build.Build), t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
+			if match, steps = matchingSteps(findFailingSteps(build.Build), t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
 				newStatus = config.Closed
 			}
 		}
@@ -445,7 +445,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 			tc.Message = bundle.GenerateStatusMessage(c, tc.TreeCloser.Template,
 				&notifypb.TemplateInput{
 					BuildbucketHostname: build.BuildbucketHostname,
-					Build:               &build.Build,
+					Build:               build.Build,
 					OldStatus:           oldStatus,
 					MatchingFailedSteps: steps,
 				})

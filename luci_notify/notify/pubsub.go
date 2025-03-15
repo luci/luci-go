@@ -196,10 +196,10 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 	}
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
-	builderID := getBuilderID(&build.Build)
+	builderID := getBuilderID(build.Build)
 	templateInput := &notifypb.TemplateInput{
 		BuildbucketHostname: build.BuildbucketHostname,
-		Build:               &build.Build,
+		Build:               build.Build,
 	}
 
 	// Set up the initial list of recipients, derived from the build.
@@ -208,7 +208,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 
 	// Helper functions for notifying and updating tree closer status.
 	notifyNoBlame := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
-		notifications := Filter(c, b.Notifications, oldStatus, &build.Build)
+		notifications := Filter(c, b.Notifications, oldStatus, build.Build)
 		recipients = append(recipients, ComputeRecipients(c, notifications, nil, nil)...)
 		templateInput.OldStatus = oldStatus
 		return Notify(c, recipients, templateInput)
@@ -385,7 +385,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		}
 
 		// Notify, and include the blamelist.
-		n := Filter(c, builder.Notifications, builder.Status, &build.Build)
+		n := Filter(c, builder.Notifications, builder.Status, build.Build)
 		recipients = append(recipients, ComputeRecipients(c, n, commits[:index], aggregateLogs)...)
 		templateInput.OldStatus = builder.Status
 
@@ -441,7 +441,7 @@ func errStatus(err error) string {
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
 	BuildbucketHostname string
-	buildbucketpb.Build
+	*buildbucketpb.Build
 	EmailNotify []EmailNotify
 }
 
@@ -468,7 +468,7 @@ func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) 
 
 	return &Build{
 		BuildbucketHostname: buildsV2Msg.Build.GetInfra().GetBuildbucket().GetHostname(),
-		Build:               *buildsV2Msg.Build,
+		Build:               proto.Clone(buildsV2Msg.Build).(*buildbucketpb.Build),
 		EmailNotify:         emails,
 	}, nil
 }
