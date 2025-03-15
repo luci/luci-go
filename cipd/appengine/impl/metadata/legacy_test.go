@@ -200,7 +200,7 @@ func TestLegacyMetadata(t *testing.T) {
 
 			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
 				assert.Loosely(t, md, should.Resemble(expected["a"]))
-				*md = *newMD
+				proto.Merge(md, newMD)
 				return nil
 			})
 			assert.Loosely(t, err, should.BeNil)
