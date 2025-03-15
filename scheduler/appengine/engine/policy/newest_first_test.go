@@ -44,7 +44,7 @@ func TestNewestFirst(t *testing.T) {
 		const noDelay = time.Duration(0)
 		lastAddedTrigger := 0
 		addTriggers := func(delay time.Duration, n int) {
-			ts := make([]internal.Trigger, n)
+			ts := make([]*internal.Trigger, n)
 			for i := range ts {
 				lastAddedTrigger++
 				ts[i] = internal.NoopTrigger(

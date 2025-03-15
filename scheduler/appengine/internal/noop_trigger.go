@@ -21,8 +21,8 @@ import (
 // NoopTrigger constructs a noop trigger proto with given ID and data payload.
 //
 // No other fields are populated.
-func NoopTrigger(id, data string) Trigger {
-	return Trigger{
+func NoopTrigger(id, data string) *Trigger {
+	return &Trigger{
 		Id:      id,
 		Payload: &Trigger_Noop{Noop: &api.NoopTrigger{Data: data}},
 	}

@@ -31,32 +31,32 @@ import (
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	run := func(p messages.TriggeringPolicy) error {
+	run := func(p *messages.TriggeringPolicy) error {
 		ctx := validation.Context{}
-		ValidateDefinition(&ctx, &p)
+		ValidateDefinition(&ctx, p)
 		return ctx.Finalize()
 	}
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		assert.Loosely(t, run(messages.TriggeringPolicy{}), should.BeNil)
-		assert.Loosely(t, run(messages.TriggeringPolicy{Kind: 123}),
+		assert.Loosely(t, run(&messages.TriggeringPolicy{}), should.BeNil)
+		assert.Loosely(t, run(&messages.TriggeringPolicy{Kind: 123}),
 			should.ErrLike("unrecognized policy kind 123"))
-		assert.Loosely(t, run(messages.TriggeringPolicy{MaxConcurrentInvocations: -1}),
+		assert.Loosely(t, run(&messages.TriggeringPolicy{MaxConcurrentInvocations: -1}),
 			should.ErrLike("max_concurrent_invocations should be positive, got -1"))
-		assert.Loosely(t, run(messages.TriggeringPolicy{MaxBatchSize: -1}),
+		assert.Loosely(t, run(&messages.TriggeringPolicy{MaxBatchSize: -1}),
 			should.ErrLike("max_batch_size should be positive, got -1"))
-		assert.Loosely(t, run(messages.TriggeringPolicy{
+		assert.Loosely(t, run(&messages.TriggeringPolicy{
 			Kind: messages.TriggeringPolicy_GREEDY_BATCHING}), should.BeNil)
-		assert.Loosely(t, run(messages.TriggeringPolicy{
+		assert.Loosely(t, run(&messages.TriggeringPolicy{
 			Kind: messages.TriggeringPolicy_NEWEST_FIRST}), should.BeNil)
-		assert.Loosely(t, run(messages.TriggeringPolicy{
+		assert.Loosely(t, run(&messages.TriggeringPolicy{
 			Kind: messages.TriggeringPolicy_LOGARITHMIC_BATCHING, LogBase: 0.5}),
 			should.ErrLike("log_base should be larger or equal 1.0001, got 0.5"))
-		assert.Loosely(t, run(messages.TriggeringPolicy{
+		assert.Loosely(t, run(&messages.TriggeringPolicy{
 			Kind:           messages.TriggeringPolicy_NEWEST_FIRST,
 			PendingTimeout: durationpb.New(-time.Hour)}),
 			should.ErrLike("pending_timeout should be positive, got -1h"))
-		assert.Loosely(t, run(messages.TriggeringPolicy{
+		assert.Loosely(t, run(&messages.TriggeringPolicy{
 			PendingTimeout: durationpb.New(time.Hour)}),
 			should.ErrLike("pending_timeout is non-zero with non-NEWEST_FIRST policy"))
 	})

@@ -136,7 +136,7 @@ func (s *Simulator) Last() *SimulatedInvocation {
 // 'delay' is time interval from the previously submitted trigger. It is used to
 // advance time. The current simulation time will be used to populate trigger's
 // Created field.
-func (s *Simulator) AddTrigger(delay time.Duration, t ...internal.Trigger) {
+func (s *Simulator) AddTrigger(delay time.Duration, t ...*internal.Trigger) {
 	s.AdvanceTime(delay)
 
 	if s.seenTriggers == nil {
@@ -145,7 +145,7 @@ func (s *Simulator) AddTrigger(delay time.Duration, t ...internal.Trigger) {
 
 	ts := timestamppb.New(s.Now)
 	for _, tr := range t {
-		tr := proto.Clone(&tr).(*internal.Trigger)
+		tr := proto.Clone(tr).(*internal.Trigger)
 		tr.Created = ts
 		if s.seenTriggers.Add(tr.Id) {
 			s.PendingTriggers = append(s.PendingTriggers, tr)
