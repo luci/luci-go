@@ -59,28 +59,25 @@ function renderCellWithLink(
 ): (props: GridRenderCellParams) => React.ReactElement {
   const CellWithLink = (props: GridRenderCellParams) => {
     const { value = '' } = props;
-
-    const links = value.split(DIMENSION_SEPARATOR).map((v: string) => (
-      <Link
-        key={v}
-        to={linkGenerator(v)}
-        state={{
-          navigatedFromLink: getPathnameWithParams(),
-        }}
-        target={newTab ? '_blank' : '_self'}
-      >
-        {v}
-      </Link>
-    ));
+    const links: string[] = value.split(DIMENSION_SEPARATOR);
 
     return (
       <DeviceDataCell
         {...props}
-        value={links.map((link: React.ReactElement, i: number) => (
-          <>
-            {link}
+        value={links.map((v: string, i: number) => (
+          <React.Fragment key={v}>
+            <Link
+              key={v}
+              to={linkGenerator(v)}
+              state={{
+                navigatedFromLink: getPathnameWithParams(),
+              }}
+              target={newTab ? '_blank' : '_self'}
+            >
+              {v}
+            </Link>
             {i < links.length - 1 ? DIMENSION_SEPARATOR : ''}
-          </>
+          </React.Fragment>
         ))}
         tooltipTitle={value}
       />
