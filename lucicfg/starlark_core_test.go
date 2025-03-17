@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarktest"
 
+	"go.chromium.org/luci/lucicfg/errs"
 	"go.chromium.org/luci/lucicfg/internal"
 	"go.chromium.org/luci/lucicfg/pkg"
 )
@@ -268,7 +269,7 @@ func reportErr(t *testing.T, err error) {
 	t.Helper()
 
 	errors.WalkLeaves(err, func(err error) bool {
-		var bt BacktracableError
+		var bt errs.Backtracable
 		if errors.As(err, &bt) {
 			t.Errorf("%s\n", bt.Backtrace())
 		} else {
@@ -290,7 +291,7 @@ func checkExpectedErrs(t *testing.T, err error, expectErrExct, expectErrLike str
 			return true
 		}
 
-		if bt, ok := err.(BacktracableError); ok {
+		if bt, ok := err.(errs.Backtracable); ok {
 			allErrs.WriteString(bt.Backtrace())
 			// We need to skip Unwrap from starlark.EvalError to avoid logging the
 			// same error twice.

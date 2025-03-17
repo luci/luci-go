@@ -76,6 +76,8 @@ type LucicfgVersionConstraint struct {
 // packages.
 //
 // Returns the loaded entry point with Local populated.
+//
+// The returned error may be backtracable.
 func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -96,13 +98,14 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 		if err != nil {
 			return nil, errors.Annotate(err, "getting relative path from %s to %s", root, abs).Err()
 		}
-		pkgBody, err := os.ReadFile(filepath.Join(root, PackageScript))
+		pkgScript := filepath.Join(root, PackageScript)
+		pkgBody, err := os.ReadFile(pkgScript)
 		if err != nil {
 			return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
 		}
 		def, err = LoadDefinition(ctx, pkgBody, &diskLoaderValidator{root: root})
 		if err != nil {
-			return nil, errors.Annotate(err, "loading package containing %s", filepath.ToSlash(main)).Err()
+			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 		}
 	} else {
 		// Fallback to the pre-PACKAGE.star behavior where entry point scripts were
@@ -206,17 +209,20 @@ type Local struct {
 // directory will be treated as a legacy package directory for compatibility
 // with pre-PACKAGE.star code (some minimal package definition will be
 // synthesized for it).
+//
+// The returned error may be backtracable.
 func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, errors.Annotate(err, "taking absolute path of %q", dir).Err()
 	}
 
-	switch body, err := os.ReadFile(filepath.Join(abs, PackageScript)); {
+	pkgScript := filepath.Join(abs, PackageScript)
+	switch body, err := os.ReadFile(pkgScript); {
 	case err == nil:
 		def, err := LoadDefinition(ctx, body, &diskLoaderValidator{root: abs})
 		if err != nil {
-			return nil, errors.Annotate(err, "loading package definition").Err()
+			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 		}
 		code, err := diskPackageLoader(abs, def.Resources)
 		if err != nil {
@@ -241,6 +247,22 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	default:
 		return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
 	}
+}
+
+// cwdRel converts the given path to be relative to the current working
+// directory, if possible.
+//
+// Exclusively for error messages. Not very rigorous and gives up on errors.
+func cwdRel(abs string) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return abs
+	}
+	rel, err := filepath.Rel(cwd, abs)
+	if err != nil {
+		return abs
+	}
+	return rel
 }
 
 func legacyDefinition() *Definition {

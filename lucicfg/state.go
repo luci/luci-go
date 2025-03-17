@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 
+	"go.chromium.org/luci/lucicfg/errs"
 	"go.chromium.org/luci/lucicfg/graph"
 	"go.chromium.org/luci/lucicfg/vars"
 )
@@ -114,7 +115,12 @@ func (s *State) err(err ...error) error {
 		s.seenErrs = stringset.New(len(err))
 	}
 	for _, e := range err {
-		if bt, _ := e.(BacktracableError); bt == nil || s.seenErrs.Add(bt.Backtrace()) {
+		var bterr errs.Backtracable
+		if errors.As(e, &bterr) {
+			if s.seenErrs.Add(bterr.Backtrace()) {
+				s.errors = append(s.errors, e)
+			}
+		} else {
 			s.errors = append(s.errors, e)
 		}
 	}

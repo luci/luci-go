@@ -57,8 +57,9 @@ type Inputs struct {
 
 // Generate interprets the high-level config.
 //
-// Returns a multi-error with all captured errors. Some of them may implement
-// BacktracableError interface.
+// Returns either a singular error (if the call crashed before executing any
+// Starlark) or a multi-error with all errors captured during the execution.
+// Some of them may be backtracable.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := NewState(in)
 	ctx = withState(ctx, state)

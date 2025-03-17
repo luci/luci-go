@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/errs"
 )
 
 // CommandLineError is used to tag errors related to command line arguments.
@@ -229,12 +230,12 @@ func (c *Subcommand) Done(result any, err error) int {
 //
 // Recognizes various sorts of known errors and reports the appropriately.
 func (c *Subcommand) printError(err error) {
-	if _, ok := err.(CommandLineError); ok {
+	var cmdErr CommandLineError
+	if errors.As(err, &cmdErr) {
 		fmt.Fprintf(os.Stderr, "Bad command line: %s.\n\n", err)
 		c.Flags.Usage()
 	} else {
-		os.Stderr.WriteString(strings.Join(CollectErrorMessages(err, nil), "\n"))
-		os.Stderr.WriteString("\n")
+		fmt.Fprintf(os.Stderr, "%s\n", strings.Join(errs.Collect(err, nil), "\n"))
 	}
 }
 
@@ -263,7 +264,7 @@ func (c *Subcommand) writeJSONOutput(result any, err error) error {
 	output.Result = result
 	if err != nil {
 		output.Error = err.Error()
-		for _, msg := range CollectErrorMessages(err, nil) {
+		for _, msg := range errs.Collect(err, nil) {
 			output.Errors = append(output.Errors, detailedError{Message: msg})
 		}
 	}

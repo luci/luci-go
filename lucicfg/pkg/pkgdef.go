@@ -115,6 +115,8 @@ func (NoopLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint st
 // some checks to the given validator.
 //
 // Doesn't validate dependencies are up-to-date or make sense at all.
+//
+// The returned error may be backtracable.
 func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Definition, error) {
 	// State is mutated while executing PACKAGE.star file.
 	state := &state{val: val}

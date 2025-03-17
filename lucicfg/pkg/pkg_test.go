@@ -85,7 +85,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"PACKAGE.star": ``,
 		})
 		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
-		assert.That(t, err, should.ErrLike(`loading package containing main.star: PACKAGE.star must call pkg.declare(...)`))
+		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
 
 	t.Run("Missing entry point", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestPackageOnDisk(t *testing.T) {
 			"PACKAGE.star": ``,
 		})
 		_, err := PackageOnDisk(ctx, tmp)
-		assert.That(t, err, should.ErrLike(`loading package definition: PACKAGE.star must call pkg.declare(...)`))
+		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
 }
 

@@ -19,49 +19,8 @@ import (
 
 	"go.chromium.org/luci/starlark/builtins"
 
-	"go.chromium.org/luci/lucicfg/graph"
+	"go.chromium.org/luci/lucicfg/errs"
 )
-
-// BacktracableError is an error that has a starlark backtrace attached to it.
-//
-// Implemented by Error here, by starlark.EvalError and graph errors.
-type BacktracableError interface {
-	error
-
-	// Backtrace returns a user-friendly error message describing the stack
-	// of calls that led to this error, along with the error message itself.
-	Backtrace() string
-}
-
-var (
-	_ BacktracableError = (*starlark.EvalError)(nil)
-	_ BacktracableError = (*builtins.Failure)(nil)
-	_ BacktracableError = (*Error)(nil)
-	_ BacktracableError = (*graph.NodeRedeclarationError)(nil)
-	_ BacktracableError = (*graph.CycleError)(nil)
-	_ BacktracableError = (*graph.DanglingEdgeError)(nil)
-)
-
-// Error is a single error message emitted by the config generator.
-//
-// It holds a stack trace responsible for the error.
-type Error struct {
-	Msg   string
-	Stack *builtins.CapturedStacktrace
-}
-
-// Error is part of 'error' interface.
-func (e *Error) Error() string {
-	return e.Msg
-}
-
-// Backtrace is part of BacktracableError interface.
-func (e *Error) Backtrace() string {
-	if e.Stack == nil {
-		return e.Msg
-	}
-	return e.Stack.String() + "Error: " + e.Msg
-}
 
 func init() {
 	// emit_error(msg, stack) adds the given error to the list of errors in the
@@ -74,7 +33,7 @@ func init() {
 		if err := call.unpack(2, &msg, &stack); err != nil {
 			return nil, err
 		}
-		err := &Error{
+		err := &errs.Error{
 			Msg:   msg.GoString(),
 			Stack: stack,
 		}
