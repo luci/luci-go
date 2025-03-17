@@ -28,16 +28,20 @@ func TestDiskPackageLoader(t *testing.T) {
 	ctx := context.Background()
 
 	tmp := prepDisk(t, map[string]string{
-		"PACKAGE.star":        "The main root",
-		"1.star":              "1",
-		"good/2.star":         "2",
-		"good/as/well/3.star": "3",
-		"bad/PACKAGE.star":    "Nested package",
-		"bad/4.star":          "4",
-		"bad/as/well/5.star":  "5",
+		"PACKAGE.star":         "The main root",
+		"1.star":               "1",
+		"good/2.star":          "2",
+		"good/as/well/3.star":  "3",
+		"good/res.txt":         "zzz",
+		"good/as/well/res.txt": "zzz",
+		"bad/PACKAGE.star":     "Nested package",
+		"bad/4.star":           "4",
+		"bad/as/well/5.star":   "5",
+		"wrong/res.bin":        "zzz",
 	})
 
-	loader := diskPackageLoader(tmp)
+	loader, err := diskPackageLoader(tmp, []string{"**/*.txt"})
+	assert.NoErr(t, err)
 
 	good := []struct {
 		path string
@@ -46,6 +50,8 @@ func TestDiskPackageLoader(t *testing.T) {
 		{"1.star", "1"},
 		{"good/2.star", "2"},
 		{"good/as/well/3.star", "3"},
+		{"good/res.txt", "zzz"},
+		{"good/as/well/res.txt", "zzz"},
 	}
 	for _, cs := range good {
 		_, body, err := loader(ctx, cs.path)
@@ -61,6 +67,7 @@ func TestDiskPackageLoader(t *testing.T) {
 		{"../file.star", "outside the package root"},
 		{"bad/4.star", `directory "bad" belongs to a different (nested) package and files from it cannot be loaded directly`},
 		{"bad/as/well/5.star", `directory "bad/as/well" belongs to a different (nested) package and files from it cannot be loaded directly`},
+		{"wrong/res.bin", "this non-starlark file is not declared as a resource in pkg.resources(...) in PACKAGE.star and cannot be loaded"},
 		{"missing.star", `no such module`},
 	}
 	for _, cs := range bad {

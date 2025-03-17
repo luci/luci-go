@@ -91,7 +91,7 @@ def _depend(*, name, source):
     _unused(name, source)
     fail("not implemented")
 
-def _resources(*, files):
+def _resources(patterns):
     """Declares non-Starlark files to includes into the package.
 
     Only these files can be read at runtime via io.read_file(...) or
@@ -103,8 +103,8 @@ def _resources(*, files):
     Can be called multiple times. Works additively.
 
     Args:
-      files: a list of glob patterns that define a subset of non-Starlark files
-        under the package directory. Each entry is either `<glob pattern>`
+      patterns: a list of glob patterns that define a subset of non-Starlark
+        files under the package directory. Each entry is either `<glob pattern>`
         (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file is
         considered to be a resource file if its slash-separated path matches any
         of the positive globs and none of the negative globs. If a pattern
@@ -112,8 +112,7 @@ def _resources(*, files):
         file (not the whole path). If only negative globs are given, a single
         positive `**/*` glob is implied as well.
     """
-    _unused(files)
-    fail("not implemented")
+    __native__.resources(_validate_str_list("patterns", patterns))
 
 def _entrypoint(path):
     """Declares that the given Starlark file is one of the entry point scripts.

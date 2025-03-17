@@ -3,6 +3,9 @@ lucicfg.config(lint_checks = ["default", "+formatting"])
 
 luci.project(name = "minimal")
 
+# Can be loaded as a resource, since it was defined in pkg.resources(...).
+_ = io.read_file("resource.txt")
+
 # Expect configs:
 #
 # === project.cfg

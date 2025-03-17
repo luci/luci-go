@@ -17,6 +17,7 @@ package pkg
 import (
 	"context"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -24,6 +25,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 // diskPackageLoader returns a loader that can load files belonging to the
@@ -33,12 +36,15 @@ import (
 // It is aware of possible nested packages (i.e. subdirectories of the root that
 // have their own PACKAGE.star). Files inside such nested packages are
 // invisible.
-//
-// TODO: Add resource file checks as well.
-func diskPackageLoader(root string) interpreter.Loader {
+func diskPackageLoader(root string, resources []string) (interpreter.Loader, error) {
 	root, err := filepath.Abs(root)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	resourceSet, err := fileset.New(resources)
+	if err != nil {
+		return nil, err
 	}
 
 	loader := &diskLoaderState{
@@ -46,8 +52,8 @@ func diskPackageLoader(root string) interpreter.Loader {
 		cache: syncStatCache(),
 	}
 
-	return func(_ context.Context, path string) (_ starlark.StringDict, src string, err error) {
-		abs := filepath.Join(root, filepath.FromSlash(path))
+	return func(_ context.Context, p string) (_ starlark.StringDict, src string, err error) {
+		abs := filepath.Join(root, filepath.FromSlash(p))
 		rel, err := filepath.Rel(root, abs)
 		if err != nil {
 			return nil, "", errors.Annotate(err, "failed to calculate relative path").Err()
@@ -58,12 +64,25 @@ func diskPackageLoader(root string) interpreter.Loader {
 		if err := loader.checkDirectoryVisible(filepath.Dir(rel)); err != nil {
 			return nil, "", err
 		}
+
+		if !strings.HasSuffix(abs, ".star") {
+			clean := path.Clean(p)
+			switch loadable, err := resourceSet.Contains(clean); {
+			case err != nil:
+				return nil, "", errors.Annotate(err, "checking %q against pkg.resources(...) patterns", clean).Err()
+			case !loadable:
+				return nil, "", errors.Reason(
+					"this non-starlark file is not declared as a resource in " +
+						"pkg.resources(...) in PACKAGE.star and cannot be loaded").Err()
+			}
+		}
+
 		body, err := os.ReadFile(abs)
 		if os.IsNotExist(err) {
 			return nil, "", interpreter.ErrNoModule
 		}
 		return nil, string(body), err
-	}
+	}, nil
 }
 
 type diskLoaderState struct {

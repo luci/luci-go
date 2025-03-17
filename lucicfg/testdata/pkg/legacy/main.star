@@ -3,6 +3,9 @@ lucicfg.config(lint_checks = ["default", "+formatting"])
 
 luci.project(name = "legacy")
 
+# Verify there's no limit on what resources can be loaded.
+_ = io.read_file("resource.txt")
+
 # Expect configs:
 #
 # === project.cfg

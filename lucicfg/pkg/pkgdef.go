@@ -67,6 +67,8 @@ type Definition struct {
 	LintChecks []string
 	// FmtRules are all registered format rule sets.
 	FmtRules []*FmtRule
+	// Resources are all declared resource patterns (positive and negative).
+	Resources []string
 }
 
 // FmtRule represents a registered pkg.options.fmt_rule(...), see its doc.
@@ -219,6 +221,7 @@ func (s *state) declNative(native starlark.StringDict) {
 	decl("entrypoint", true, s.entrypoint)
 	decl("lint_checks", true, s.lintChecks)
 	decl("fmt_rules", true, s.fmtRules)
+	decl("resources", true, s.resources)
 }
 
 func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, error) {
@@ -337,5 +340,20 @@ func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, 
 	}
 	s.def.FmtRules = append(s.def.FmtRules, &rule)
 
+	return starlark.None, nil
+}
+
+func (s *state) resources(ctx context.Context, call nativeCall) (starlark.Value, error) {
+	var patterns starlark.Tuple
+	if err := call.unpack(1, &patterns); err != nil {
+		return nil, err
+	}
+	for _, pat := range patterns {
+		str := pat.(starlark.String).GoString()
+		if slices.Contains(s.def.Resources, str) {
+			return nil, errors.Reason("resource pattern %q is declared more than once", str).Err()
+		}
+		s.def.Resources = append(s.def.Resources, str)
+	}
 	return starlark.None, nil
 }

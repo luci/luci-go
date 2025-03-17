@@ -153,7 +153,10 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 		}
 	}
 
-	code := diskPackageLoader(root)
+	code, err := diskPackageLoader(root, def.Resources)
+	if err != nil {
+		return nil, err
+	}
 	return &Entry{
 		Main:    code,
 		Package: def.Name,
@@ -215,8 +218,12 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 		if err != nil {
 			return nil, errors.Annotate(err, "loading package definition").Err()
 		}
+		code, err := diskPackageLoader(abs, def.Resources)
+		if err != nil {
+			return nil, err
+		}
 		return &Local{
-			Code:       diskPackageLoader(abs),
+			Code:       code,
 			DiskPath:   abs,
 			Definition: def,
 			Formatter:  legacyCompatibleFormatter(abs, def.FmtRules),
@@ -238,7 +245,8 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 
 func legacyDefinition() *Definition {
 	return &Definition{
-		Name: LegacyPackageNamePlaceholder,
+		Name:      LegacyPackageNamePlaceholder,
+		Resources: []string{"**/*"},
 	}
 }
 

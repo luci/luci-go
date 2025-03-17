@@ -51,6 +51,8 @@ func TestLoadDefinition(t *testing.T) {
 			pkg.options.fmt_rules(
 				paths = ["noop"],
 			)
+			pkg.resources(["a"])
+			pkg.resources(["b", "c"])
 		`)
 		assert.NoErr(t, err)
 
@@ -82,6 +84,7 @@ func TestLoadDefinition(t *testing.T) {
 					Paths: []string{"noop"},
 				},
 			},
+			Resources: []string{"a", "b", "c"},
 		}))
 	})
 
@@ -196,6 +199,19 @@ func TestLoadDefinition(t *testing.T) {
 			)
 		`)
 		assert.That(t, err, should.ErrLike(`path "b" is already covered by an existing rule`))
+	})
+
+	t.Run("pkg.resources bad calls", func(t *testing.T) {
+		assertGenErrs(t, `
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+				pkg.resources(%s)
+			`,
+			[]genErrCase{
+				{`[None]`, `bad "patterns[0]": got NoneType, want string`},
+				{`[""]`, `bad "patterns[0]": an empty string`},
+				{`["a", "a"]`, `resource pattern "a" is declared more than once`},
+			},
+		)
 	})
 }
 

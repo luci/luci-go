@@ -137,7 +137,8 @@ func TestPackageOnDisk(t *testing.T) {
 		assert.That(t, src, should.Equal(`print("Hi")`))
 
 		assert.That(t, pkg.Definition, should.Match(&Definition{
-			Name: LegacyPackageNamePlaceholder,
+			Name:      LegacyPackageNamePlaceholder,
+			Resources: []string{"**/*"},
 		}))
 	})
 

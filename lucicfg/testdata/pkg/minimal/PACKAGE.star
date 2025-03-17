@@ -8,3 +8,4 @@ pkg.options.fmt_rules(
     paths = ["somedir"],
     function_args_sort = ["arg1"],
 )
+pkg.resources(["**/*.txt"])
