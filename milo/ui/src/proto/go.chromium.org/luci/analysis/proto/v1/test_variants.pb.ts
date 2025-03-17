@@ -25,9 +25,7 @@ export interface QueryTestVariantFailureRateRequest {
 
 /**
  * The identity of a test variant.
- * N.B. Previously named 'TestVariantIdentifier' but renamed to
- * avoid conflicting with the new TestVariantIdentifier introduced by
- * ResultDB.
+ * N.B. Previously named 'TestVariantIdentifier'.
  */
 export interface QueryTestVariantFailureRateRequest_TestVariant {
   /** A unique identifier of the test in a LUCI project. */

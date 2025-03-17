@@ -102,6 +102,7 @@ protoc \
   ./go.chromium.org/luci/analysis/proto/v1/test_variants.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_variant_branches.proto \
   ./go.chromium.org/luci/auth_service/api/rpcpb/authdb.proto \
+  ./go.chromium.org/luci/auth_service/api/rpcpb/changelogs.proto \
   ./go.chromium.org/luci/auth_service/api/rpcpb/groups.proto \
   ./go.chromium.org/luci/bisection/proto/v1/analyses.proto \
   ./go.chromium.org/luci/buildbucket/proto/builder_service.proto \
