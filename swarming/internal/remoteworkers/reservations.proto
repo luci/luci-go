@@ -97,6 +97,16 @@ message Reservation {
   google.protobuf.Duration execution_timeout = 15
       [(google.api.field_behavior) = OPTIONAL];
 
+  // Limits how long the reservation can be queued without matching bots online
+  // before being killed. Has no effect once there are matching bots online
+  // (even if those bots are busy working on other tasks).
+  //
+  // If unspecified, the reservation may fail immediately if no matching bots
+  // are online (though occasionally it may take up to a few minutes before such
+  // reservations fail).
+  google.protobuf.Duration match_timeout = 16
+      [(google.api.field_behavior) = OPTIONAL];
+
   // The priority (relative importance) of this reservation. Generally, a lower
   // value means that the reservation should be run sooner than reservations
   // having a greater priority value, but the interpretation of a given value is

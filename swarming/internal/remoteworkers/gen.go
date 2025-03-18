@@ -14,7 +14,7 @@
 
 // Package remoteworkers contains protos for RBE Reservations API.
 //
-// Protos are copied from http://shortn/_mcfgni4dHh at revision 549920528.
+// Protos are copied from http://shortn/_mcfgni4dHh at revision 690693583.
 //
 // Changes:
 //
