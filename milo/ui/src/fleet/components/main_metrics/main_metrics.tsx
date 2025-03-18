@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -21,18 +20,8 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { ReactElement } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof GrpcError) {
-    if (error.code === 7) {
-      return 'You dont have permission to get the main metrics';
-    }
-
-    return error.description;
-  }
-  return 'Unknown error';
-}
 
 const Container = styled.div`
   padding: 16px 21px;
@@ -55,7 +44,9 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
   const getContent = () => {
     if (countQuery.isError) {
       return (
-        <Alert severity="error">{getErrorMessage(countQuery.error)}</Alert>
+        <Alert severity="error">
+          {getErrorMessage(countQuery.error, 'get the main metrics')}
+        </Alert>
       );
     }
 

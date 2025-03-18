@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
 import {
   GridColumnVisibilityModel,
@@ -33,6 +32,7 @@ import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -49,17 +49,6 @@ const UNKNOWN_ROW_COUNT = -1;
 // See: https://mui.com/x/react-data-grid/components/?srsltid=AfmBOoqlDTexbfxLLrstTWIEaJ97nrqXGVqhaMHF3Q2yIujjoMRTtTvF#custom-slot-props-with-typescript
 declare module '@mui/x-data-grid' {
   interface ToolbarPropsOverrides extends FleetToolbarProps {}
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof GrpcError) {
-    if (error.code === 7) {
-      return "You don't have permission to list devices";
-    }
-
-    return error.description;
-  }
-  return 'Unknown error';
 }
 
 const computeSelectedRows = (
@@ -172,7 +161,7 @@ export function DeviceTable({
     <>
       {isError ? (
         <Alert severity="error">
-          Something went wrong: {getErrorMessage(error)}
+          Something went wrong: {getErrorMessage(error, 'list devices')}
         </Alert>
       ) : (
         <StyledGrid

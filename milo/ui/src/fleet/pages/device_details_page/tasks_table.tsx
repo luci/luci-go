@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert, AlertTitle } from '@mui/material';
 import { GridColDef, GridRowParams } from '@mui/x-data-grid';
-import { useQuery } from '@tanstack/react-query';
 
+import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
+import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import {
   TASK_ONGOING_STATES,
@@ -27,14 +29,15 @@ import {
   extractBuildUrlFromTagData,
 } from '@/fleet/utils/builds';
 import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import {
-  StateQuery,
   TaskResultResponse,
   TaskState,
   taskStateToJSON,
-  TasksWithPerfRequest,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
-import { useTasksClient } from '@/swarming/hooks/prpc_clients';
+import { useBotsClient } from '@/swarming/hooks/prpc_clients';
+
+import { useBotId, useTasks } from './hooks';
 
 // Similar to Swarming's implementation in:
 // https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/luci/appengine/swarming/ui2/modules/task-page/task-page-helpers.js;l=100;drc=6c1b10b83a339300fc10d5f5e08a56f1c48b3d3e
@@ -88,23 +91,81 @@ export const Tasks = ({
   dutId: string;
   swarmingHost?: string;
 }) => {
-  const swarmingCli = useTasksClient(swarmingHost);
-  const taskData = useQuery({
-    ...swarmingCli.ListTasks.query(
-      TasksWithPerfRequest.fromPartial({
-        tags: [`dut_id:${dutId}`],
-        state: StateQuery.QUERY_ALL,
-        limit: 20,
-      }),
-    ),
-    refetchInterval: 60000,
-  });
+  const client = useBotsClient(swarmingHost);
+  const botData = useBotId(client, dutId);
+  const tasksData = useTasks(client, botData.botId);
 
-  const tasks = taskData?.data?.items || [];
+  // First, ensure we have a valid botId to work with.
+  if (botData.isError) {
+    return (
+      <Alert severity="error">
+        {getErrorMessage(botData.error, 'list bots')}{' '}
+      </Alert>
+    );
+  }
+  if (botData.isLoading) {
+    return (
+      <div
+        css={{
+          width: '100%',
+          margin: '24px 0px',
+        }}
+      >
+        <CentralizedProgress />
+      </div>
+    );
+  }
+  if (!botData.botFound) {
+    return (
+      <AlertWithFeedback
+        severity="warning"
+        title="Bot not found!"
+        bugErrorMessage={`Bot not found for device: ${dutId}`}
+      >
+        <p>
+          Oh no! No bots were found for this device (<code>dut_id={dutId}</code>
+          ).
+        </p>
+      </AlertWithFeedback>
+    );
+  }
 
-  const taskMap = new Map(tasks.map((t) => [t.taskId, t]));
+  // Now, check the tasks request.
+  if (tasksData.isError) {
+    return (
+      <Alert severity="error">
+        {getErrorMessage(tasksData.error, 'list tasks')}{' '}
+      </Alert>
+    );
+  }
+  if (tasksData.isLoading) {
+    return (
+      <div
+        css={{
+          width: '100%',
+          margin: '24px 0px',
+        }}
+      >
+        <CentralizedProgress />
+      </div>
+    );
+  }
+  if (!tasksData.tasks?.length) {
+    return (
+      <Alert severity="info">
+        <AlertTitle>No tasks found</AlertTitle>
+        <dl>
+          <dt>DUT ID</dt>
+          <dd>{dutId}</dd>
+          <dt>Bot ID</dt>
+          <dd>{botData.botId}</dd>
+        </dl>
+      </Alert>
+    );
+  }
 
-  const taskGridData = tasks.map((t) => ({
+  const taskMap = new Map(tasksData.tasks.map((t) => [t.taskId, t]));
+  const taskGridData = tasksData.tasks.map((t) => ({
     id: t.taskId,
     task: t.name,
     started: prettyDateTime(t.startedTs),
