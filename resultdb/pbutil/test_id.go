@@ -75,7 +75,7 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 	if testID == "" {
 		return BaseTestIdentifier{}, validate.Unspecified()
 	}
-	if err := validateUTF8Printable(testID, 512); err != nil {
+	if err := validateUTF8Printable(testID, 512, validationModeLoose); err != nil {
 		return BaseTestIdentifier{}, err
 	}
 
@@ -89,6 +89,12 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 
 // parseTestID parses a test identifier from its flat-form string
 // representation into its structured representation.
+//
+// Except for legacy test IDs, the test identifier has the structure:
+// :module!scheme:coarse:fine#case
+//
+// Where case may be a simple string or have multiple components,
+// e.g. `part1:part2:part3`.
 func parseTestID(testID string) (BaseTestIdentifier, error) {
 	if !strings.HasPrefix(testID, ":") {
 		// This is a legacy test ID.
@@ -102,23 +108,23 @@ func parseTestID(testID string) (BaseTestIdentifier, error) {
 	// This is a structured test ID.
 	// We expect the next character to be the module name.
 	// We will read until the next '!' character.
-	moduleName, nextIndex, err := readEscapedComponent(testID, 1, '!')
+	moduleName, nextIndex, err := readEscapedComponent(testID, 1, componentParseOptions{Terminator: '!'})
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	moduleScheme, nextIndex, err := readEscapedComponent(testID, nextIndex+1, ':')
+	moduleScheme, nextIndex, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{Terminator: ':'})
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	coarseName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, ':')
+	coarseName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{Terminator: ':'})
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	fineName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, '#')
+	fineName, nextIndex, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{Terminator: '#'})
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	caseName, _, err := readEscapedComponent(testID, nextIndex+1, 0)
+	caseName, _, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{IsCaseName: true})
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
@@ -131,19 +137,49 @@ func parseTestID(testID string) (BaseTestIdentifier, error) {
 	}, nil
 }
 
+// componentParseOptions are options for parsing a test component.
+//
+// A test component is one of (module, scheme, coarse, fine, case) in:
+// :module!scheme:coarse:fine#case
+type componentParseOptions struct {
+	// The terminator of the component. This should be one of ':', '#', '!'.
+	// This must be set to zero if IsCaseName is set (denoting end of string
+	// as the terminator).
+	Terminator rune
+
+	// IsCaseName enables special processing for the test case name.
+	//
+	// The case name consists of one or more parts separated by
+	// a ':'. For example, "someTest" or
+	// "topLevelTest:withSettingsPage:doesThat"
+	//
+	// For convenience of most clients which do not care about
+	// this substructure, the case name is read as one string
+	// of the form:
+	//    test_case_part, {':', test_case_part} ;
+	// (ENBF grammar.)
+	//
+	// where each test_case_part has characters : and \ escaped
+	// with backslashes.
+	//
+	// In practice, the implementation achieves this by reading from the
+	// input string until end of string, decoding the escape sequences
+	// "\#" and "\!" to "#" and "!", but leaving '\:' and '\\' in place.
+	IsCaseName bool
+}
+
 // readEscapedComponent reads a test ID component from the provided
-// `testID` input starting at `startIndex`. It reads until the given
-// terminator is found, which must be one of ':', '#', '!' or U+0000
-// (which denotes end of string).
+// `testID` input starting at `startIndex`. The terminator it reads
+// up to and string handling is controlled by `opts`.
 //
 // The read component (excluding terminator) is returned, and the
 // advanced index (up to the position of the terminator) is returned
 // as nextIndex.
 //
 // When reading, it decodes the escape sequences \: \# \! and \\.
-func readEscapedComponent(testID string, startIndex int, terminator rune) (component string, nextIndex int, err error) {
-	if terminator != ':' && terminator != '#' && terminator != '!' && terminator != 0 {
-		panic("unsupported terminator")
+func readEscapedComponent(testID string, startIndex int, opts componentParseOptions) (component string, nextIndex int, err error) {
+	if !(opts.Terminator == ':' || opts.Terminator == '#' || opts.Terminator == '!' || (opts.Terminator == 0 && opts.IsCaseName)) {
+		panic("bad parse options")
 	}
 
 	var builder strings.Builder
@@ -164,6 +200,19 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 				// Invalid escape sequence.
 				return "", -1, errors.Reason(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters :!#\ may be escaped`, r, i).Err()
 			}
+			if opts.IsCaseName && (r == '\\' || r == ':') {
+				// Keep the sequences \\ and \: escaped in the parsed case name.
+			} else {
+				// Decode the escape sequence by not copying the
+				// prior \ into the output.
+
+				// Write out whatever we have up until now except for the last slash (1 byte).
+				builder.WriteString(testID[copyFromIndex : i-1])
+
+				// Resume copying from the character after the '\'.
+				copyFromIndex = i
+			}
+
 			// Exit the escape sequence.
 			inEscapeSequence = false
 			continue
@@ -172,15 +221,14 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 		case '\\':
 			// Begin escape sequence.
 			inEscapeSequence = true
-			// Write out whatever we have up until now.
-			builder.WriteString(testID[copyFromIndex:i])
-			// The character following the '\' is included verbatim unless it
-			// is invalid.
-			// Resume copying from the character after this '\'.
-			copyFromIndex = i + width
 		case ':', '#', '!':
+			if r == ':' && opts.IsCaseName {
+				// Read over this delimiter, it is part of the case name.
+				continue
+			}
+
 			// We found a terminator (other than end of string).
-			if r == terminator {
+			if r == opts.Terminator {
 				// It is the terminator we expected.
 				// Read up to the terminator, but do not consume it.
 				builder.WriteString(testID[copyFromIndex:i])
@@ -188,10 +236,10 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 			} else {
 				// Other special character that is not escaped and not our terminator.
 				// Return an error message.
-				if terminator != 0 {
-					return "", -1, errors.Reason("got delimeter character %+q at byte %v; expected normal character, escape sequence or delimeter %+q (test ID pattern is :module!scheme:coarse:fine#case)", r, i, terminator).Err()
+				if opts.IsCaseName {
+					return "", -1, errors.Reason("got delimiter character %+q at byte %v; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)", r, i).Err()
 				}
-				return "", -1, errors.Reason("got delimeter character %+q at byte %v; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)", r, i).Err()
+				return "", -1, errors.Reason("got delimiter character %+q at byte %v; expected normal character, escape sequence or delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", r, i, opts.Terminator).Err()
 			}
 		default:
 			// Normal non-terminal character.
@@ -202,12 +250,96 @@ func readEscapedComponent(testID string, startIndex int, terminator rune) (compo
 		// Reached end of string while still in an escape sequence. This is invalid.
 		return "", -1, errors.Reason(`unfinished escape sequence at byte %v, got end of string; expected one of :!#\`, i).Err()
 	}
-	if terminator != 0 {
+	if !opts.IsCaseName {
 		// We did not expect to reach end of string, we were looking for another terminator.
-		return "", -1, errors.Reason("unexpected end of string at byte %v, expected delimeter %+q (test ID pattern is :module!scheme:coarse:fine#case)", i, terminator).Err()
+		return "", -1, errors.Reason("unexpected end of string at byte %v, expected delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", i, opts.Terminator).Err()
 	}
 	builder.WriteString(testID[copyFromIndex:i])
 	return builder.String(), len(testID), nil
+}
+
+// parseTestCaseName extracts the parts embedded in a test case name.
+//
+// A test case name looks like one of the following:
+// - "myTest" (one component, most common)
+// - "topLevelTest:with_settings_page:does_something" (multiple components)
+// Where "myTest", "topLevelTest", "with_settings_page", "does_something"
+// are parts.
+//
+// The test case name is one of components of the Test ID, see parseTestID
+// for details.
+func parseTestCaseName(caseName string) ([]string, error) {
+	var result []string
+	startIndex := 0
+	for {
+		component, nextIndex, err := readCaseNamePart(caseName, startIndex)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, component)
+		if nextIndex >= len(caseName) {
+			// Done
+			break
+		}
+		// Skip over the separator and continue parsing.
+		startIndex = nextIndex + 1
+	}
+	return result, nil
+}
+
+// readCaseNamePart reads a case name component from the provided
+// case name starting at `startIndex`. It reads until
+// the next unescaped ':' separator is found, or end of string.
+// The escape sequences \\ and \: are decoded.
+func readCaseNamePart(caseName string, startIndex int) (component string, nextIndex int, err error) {
+	var builder strings.Builder
+	inEscapeSequence := false
+
+	var r rune
+	var width int
+
+	copyFromIndex := startIndex
+	i := startIndex
+	for ; i < len(caseName); i += width {
+		r, width = utf8.DecodeRuneInString(caseName[i:])
+		if r == utf8.RuneError {
+			return "", -1, errors.Reason(`invalid UTF-8 rune at byte %v`, i).Err()
+		}
+		if inEscapeSequence {
+			if r != '\\' && r != ':' {
+				// Invalid escape sequence.
+				return "", -1, errors.Reason(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters \ and : may be escaped`, r, i).Err()
+			}
+			// Exit the escape sequence.
+			inEscapeSequence = false
+			continue
+		}
+		switch r {
+		case '\\':
+			// Begin escape sequence.
+			inEscapeSequence = true
+			// Write out whatever we have up until now.
+			builder.WriteString(caseName[copyFromIndex:i])
+			// The character following the '\' is included verbatim unless it
+			// is invalid.
+			// Resume copying from the character after this '\'.
+			copyFromIndex = i + width
+		case ':':
+			// We found a separator.
+			// Read up to the separator, but do not consume it.
+			builder.WriteString(caseName[copyFromIndex:i])
+			return builder.String(), i, nil
+		default:
+			// Normal non-terminal character.
+		}
+	}
+	// We reached the end of the string.
+	if inEscapeSequence {
+		// Reached end of string while still in an escape sequence. This is invalid.
+		return "", -1, errors.Reason(`unfinished escape sequence at byte %v, got end of string; expected one of \ or :`, i).Err()
+	}
+	builder.WriteString(caseName[copyFromIndex:i])
+	return builder.String(), len(caseName), nil
 }
 
 func TestIDFromStructuredTestIdentifier(id *pb.TestIdentifier) string {
@@ -293,7 +425,7 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	if id.ModuleName == "" {
 		return errors.Reason("module_name: unspecified").Err()
 	}
-	if err := validateUTF8Printable(id.ModuleName, 300); err != nil {
+	if err := validateUTF8PrintableStrict(id.ModuleName, 300); err != nil {
 		return errors.Annotate(err, "module_name").Err()
 	}
 
@@ -301,7 +433,7 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	if id.ModuleScheme == "" {
 		return errors.Reason("module_scheme: unspecified").Err()
 	}
-	if err := validateUTF8Printable(id.ModuleScheme, 20); err != nil {
+	if err := validateUTF8PrintableStrict(id.ModuleScheme, 20); err != nil {
 		return errors.Annotate(err, "module_scheme").Err()
 	}
 	if !schemeRE.MatchString(id.ModuleScheme) {
@@ -309,13 +441,13 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	}
 
 	// Coarse name and fine name
-	if err := validateUTF8Printable(id.CoarseName, 300); err != nil {
+	if err := validateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
 		return errors.Annotate(err, "coarse_name").Err()
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
 		return errors.Annotate(err, "coarse_name").Err()
 	}
-	if err := validateUTF8Printable(id.FineName, 300); err != nil {
+	if err := validateUTF8PrintableStrict(id.FineName, 300); err != nil {
 		return errors.Annotate(err, "fine_name").Err()
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
@@ -330,9 +462,6 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	// Case name
 	if id.CaseName == "" {
 		return errors.Reason("case_name: unspecified").Err()
-	}
-	if err := validateUTF8Printable(id.CaseName, 512); err != nil {
-		return errors.Annotate(err, "case_name").Err()
 	}
 
 	// Additional validation for legacy test identifiers.
@@ -350,6 +479,9 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 		if strings.HasPrefix(id.CaseName, ":") {
 			return errors.Reason("case_name: must not start with ':' for tests in the 'legacy' module").Err()
 		}
+		if err := validateUTF8Printable(id.CaseName, 512, validationModeLoose); err != nil {
+			return errors.Annotate(err, "case_name").Err()
+		}
 		// This is a lightweight version of validateCaseNameNotReserved for legacy tests
 		// that still backtests on already uploaded test results.
 		if strings.HasPrefix(id.CaseName, "*") {
@@ -360,7 +492,10 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 		if id.ModuleScheme == LegacySchemeID {
 			return errors.Reason("module_scheme: must not be set to %q except for tests in the 'legacy' module", LegacySchemeID).Err()
 		}
-		if err := validateCaseNameLeadingCharacter(id.CaseName); err != nil {
+		if err := validateUTF8PrintableStrict(id.CaseName, 512); err != nil {
+			return errors.Annotate(err, "case_name").Err()
+		}
+		if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
 			return errors.Annotate(err, "case_name").Err()
 		}
 	}
@@ -395,13 +530,16 @@ func validateCoarseOrFineNameLeadingCharacter(name string) error {
 	return nil
 }
 
-// validateCaseNameLeadingCharacter performs additional validation on a case name to
-// ensure it does not use one of the reserved leading characters, unless it is for
-// one of the allowed reserved values.
+// validateCaseNameNonLegacy performs additional validation on a case name
+// used outside the legacy module.
 //
-// This validation should only be applied to non-legacy test identifiers as some
-// legacy test IDs may use such reserved leading characters.
-func validateCaseNameLeadingCharacter(name string) error {
+// The additional requirements that are validated are:
+//   - it does not use one of the reserved leading characters, unless it is for
+//     the reserved value *fixture.
+//   - the case name follows the format defined for TestResult.case_name, meaning the only
+//     allowed escape sequences are \\ \:. And when broken up by colons ':' (excluding
+//     escaped colons), each component is not empty.
+func validateCaseNameNonLegacy(name string) error {
 	r, _ := utf8.DecodeRuneInString(name)
 	if r == utf8.RuneError {
 		return errors.Reason("leading character is not a valid rune").Err()
@@ -414,6 +552,15 @@ func validateCaseNameLeadingCharacter(name string) error {
 			return errors.Reason("character * may not be used as a leading character of a case name, unless the case name is '%s'", FixtureCaseName).Err()
 		}
 		return errors.Reason("character %+q may not be used as a leading character of a case name", r).Err()
+	}
+	parts, err := parseTestCaseName(name)
+	if err != nil {
+		return err
+	}
+	for i, component := range parts {
+		if len(component) == 0 {
+			return errors.Reason("component %v is empty, each component of the case name must be non-empty", i+1).Err()
+		}
 	}
 	return nil
 }
@@ -434,27 +581,38 @@ func EncodeTestID(id BaseTestIdentifier) string {
 	if id.ModuleName == "legacy" && id.ModuleScheme == LegacySchemeID && id.CoarseName == "" && id.FineName == "" {
 		return id.CaseName
 	}
+	// For module name, coarse name and fine name, the characters : ! # and \ are escaped.
+	// For module scheme, no escaping is required as it uses a safe alphabet.
+	// For case name, only ! and # are escaped. ':' is a valid delimiter between components
+	// of the case name and should lift to the top-level encoding. Moreover, '\' and occurances of
+	// ':' that are not intended to be delimieters should already be escaped for valid case names.
+
 	var builder strings.Builder
 	builder.Grow(sizeEscapedTestID(id))
 	builder.WriteString(":")
-	writeEscapedTestIDComponent(&builder, id.ModuleName)
+	writeEscapedTestIDComponent(&builder, id.ModuleName, false)
 	builder.WriteString("!")
 	builder.WriteString(id.ModuleScheme)
 	builder.WriteString(":")
-	writeEscapedTestIDComponent(&builder, id.CoarseName)
+	writeEscapedTestIDComponent(&builder, id.CoarseName, false)
 	builder.WriteString(":")
-	writeEscapedTestIDComponent(&builder, id.FineName)
+	writeEscapedTestIDComponent(&builder, id.FineName, false)
 	builder.WriteString("#")
-	writeEscapedTestIDComponent(&builder, id.CaseName)
+	writeEscapedTestIDComponent(&builder, id.CaseName, true /* isCaseName */)
 	return builder.String()
 }
 
 // writeEscapedTestIDComponent writes the string s to builder, escaping
 // any occurrences of the characters ':', '\', '#' and '!'.
-func writeEscapedTestIDComponent(builder *strings.Builder, s string) {
+func writeEscapedTestIDComponent(builder *strings.Builder, s string, isCaseName bool) {
 	startIndex := 0
 	for i, r := range s {
-		if r == ':' || r == '\\' || r == '#' || r == '!' {
+		// Escape the characters #, !, :, \.
+		// For case names, do not escape : and \ as any occurrences in the case name parts
+		// have already been escaped when encoded into the case name and we want to avoid
+		// double-escaping.
+		needsEscape := ((r == ':' || r == '\\') && !isCaseName) || r == '#' || r == '!'
+		if needsEscape {
 			builder.WriteString(s[startIndex:i])
 			builder.WriteByte('\\')
 			builder.WriteRune(r)
@@ -473,29 +631,48 @@ func sizeEscapedTestID(id BaseTestIdentifier) int {
 	}
 	// Structured Test ID.
 	finalSize := len(":!::#") +
-		sizeEscapedTestIDComponent(id.ModuleName) +
+		sizeEscapedTestIDComponent(id.ModuleName, false) +
+		// Scheme does not need escaping as it uses a safe alphabet.
 		len(id.ModuleScheme) +
-		sizeEscapedTestIDComponent(id.CoarseName) +
-		sizeEscapedTestIDComponent(id.FineName) +
-		sizeEscapedTestIDComponent(id.CaseName)
+		sizeEscapedTestIDComponent(id.CoarseName, false) +
+		sizeEscapedTestIDComponent(id.FineName, false) +
+		sizeEscapedTestIDComponent(id.CaseName, true /* isCaseName */)
 	return finalSize
 }
 
 // sizeEscapedTestIDComponent returns the size of a test ID component
 // after escaping the characters ':', '\', '#' and '!'.
-func sizeEscapedTestIDComponent(s string) int {
+func sizeEscapedTestIDComponent(s string, isCaseName bool) int {
 	escapesRequired := 0
 	for _, r := range s {
-		if r == ':' || r == '\\' || r == '#' || r == '!' {
+		needsEscape := ((r == ':' || r == '\\') && !isCaseName) || r == '#' || r == '!'
+		if needsEscape {
 			escapesRequired++
 		}
 	}
 	return len(s) + escapesRequired
 }
 
+type validationMode int
+
+const (
+	// validationModeStrict does not allow the unicode replacement character U+FFFD.
+	validationModeStrict validationMode = iota
+	// validationModeLoose allows the unicode replacement character U+FFFD. This
+	// should be used for legacy-form test IDs.
+	validationModeLoose
+)
+
+// validateUTF8Printable validates that a string is valid UTF-8, in Normal form C,
+// consists only for printable runes, and does not contain the unicode replacement
+// character (U+FFFD).
+func validateUTF8PrintableStrict(text string, maxLength int) error {
+	return validateUTF8Printable(text, maxLength, validationModeStrict)
+}
+
 // validateUTF8Printable validates that a string is valid UTF-8, in Normal form C,
 // and consists only for printable runes.
-func validateUTF8Printable(text string, maxLength int) error {
+func validateUTF8Printable(text string, maxLength int, mode validationMode) error {
 	if len(text) > maxLength {
 		return errors.Reason("longer than %v bytes", maxLength).Err()
 	}
@@ -509,6 +686,67 @@ func validateUTF8Printable(text string, maxLength int) error {
 		if !unicode.IsPrint(rune) {
 			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
 		}
+		if mode == validationModeStrict && rune == utf8.RuneError {
+			return fmt.Errorf("unicode replacement character (U+FFFD) at byte index %d", i)
+		}
 	}
 	return nil
+}
+
+// EncodeCaseName encodes a set of case name parts into a test case name.
+func EncodeCaseName(components ...string) string {
+	if len(components) <= 0 {
+		panic("at least one component must be specified")
+	}
+
+	var result strings.Builder
+	sizeRequired := 0
+	for i := 0; i < len(components); i++ {
+		sizeRequired += sizeEscapedCaseNameComponent(components[i])
+	}
+	// For N-1 separating forward slashes.
+	sizeRequired += len(components) - 1
+	result.Grow(sizeRequired)
+
+	for i := 0; i < len(components); i++ {
+		if i > 0 {
+			result.WriteRune(':')
+		}
+		writeEscapedCaseNameComponent(&result, components[i])
+	}
+	return result.String()
+}
+
+// sizeEscapedTestIDComponent returns the size of a test ID component
+// after escaping the characters ':' and '\'.
+func sizeEscapedCaseNameComponent(s string) int {
+	escapesRequired := 0
+	for _, r := range s {
+		if r == ':' || r == '\\' {
+			escapesRequired++
+		}
+	}
+	return len(s) + escapesRequired
+}
+
+// writeEscapedCaseNameComponent writes the string s to builder, escaping
+// any occurrences of the characters ':', '\'.
+func writeEscapedCaseNameComponent(builder *strings.Builder, s string) {
+	// The start of the range to copy.
+	startIndex := 0
+
+	for i, r := range s {
+		if r == ':' || r == '\\' {
+			// Copy the range up to now.
+			builder.WriteString(s[startIndex:i])
+
+			// Insert the escape sequence.
+			builder.WriteByte('\\')
+			builder.WriteRune(r)
+
+			// Continue copying from the next rune onwards.
+			startIndex = i + 1
+		}
+	}
+	builder.WriteString(s[startIndex:])
 }

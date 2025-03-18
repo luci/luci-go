@@ -178,10 +178,16 @@ func (x *StringPair) GetValue() string {
 // the flat test identifier with the following form:
 // :{module_name}!{module_scheme}:{coarse_name}:{fine_name}#{case_name}
 //
-// and variant matching module_variant.
+// and variant matching module_variant. (Note that {case_name} may in turn
+// include multiple components separated by colons, see 'Extended depth
+// hierarchies' under case_name below.)
 //
-// Where {x} represents inserting the value of x with the characters
-// ':', '!', '#', and '\' escaped using a '\'.
+// The precise algorithm for encoding a structured test ID to a flat
+// test ID is an implementation detail of ResultDB and must not be relied
+// upon by clients. Use the provided encode and decode functions in the
+// pbutil library if you need to encode or decode them. BigQuery exports
+// should include the structured form Test ID to avoid clients needing
+// to decode IDs.
 //
 // Special treatment exists for legacy test identifiers, for which
 // module_name = "legacy", module_scheme = "legacy", coarse_name = "",
@@ -208,9 +214,11 @@ type TestIdentifier struct {
 	// only module_name. See `scheme` field below for more.
 	//
 	// Constraints:
-	// - Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
-	// - All unicode must be in Normalization Form C.
-	// - Use of spaces is allowed, but discouraged.
+	//   - Limited to 300 bytes of valid, printable UTF-8. For the purposes of this
+	//     definition, the unicode replacement character (U+FFFD) is not considered printable.
+	//     See also length limits on `TestIdentifier` as a whole.
+	//   - All unicode must be in Normalization Form C.
+	//   - Use of spaces is allowed, but discouraged.
 	ModuleName string `protobuf:"bytes,1,opt,name=module_name,json=moduleName,proto3" json:"module_name,omitempty"`
 	// The scheme of the module, for example, "junit" or "gtest".
 	//
@@ -251,11 +259,13 @@ type TestIdentifier struct {
 	// fine hierarchy level.
 	//
 	// Constraints:
-	// - Must match constraints set by the module's scheme.
-	// - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
-	// - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
-	// - All unicode must be in Normalization Form C.
-	// - Use of spaces is allowed, but discouraged.
+	//   - Must match constraints set by the module's scheme.
+	//   - Limited to 300 bytes of printable UTF-8. For the purposes of this
+	//     definition, the unicode replacement character (U+FFFD) is not considered printable.
+	//     See also length limits on `TestIdentifier` as a whole.
+	//   - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+	//   - All unicode must be in Normalization Form C.
+	//   - Use of spaces is allowed, but discouraged.
 	CoarseName string `protobuf:"bytes,5,opt,name=coarse_name,json=coarseName,proto3" json:"coarse_name,omitempty"`
 	// Interemdiate hierarchy - fine name.
 	//
@@ -265,15 +275,17 @@ type TestIdentifier struct {
 	// If the scheme does not define a fine grouping, this must be blank.
 	//
 	// Constraints:
-	// - Must match constraints set by the module's scheme.
-	// - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
-	// - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
-	// - All unicode must be in Normalization Form C.
-	// - Use of spaces is allowed, but discouraged.
+	//   - Must match constraints set by the module's scheme.
+	//   - Limited to 300 bytes of printable UTF-8. For the purposes of this
+	//     definition, the unicode replacement character (U+FFFD) is not considered printable.
+	//     See also length limits on `TestIdentifier` as a whole.
+	//   - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
+	//   - All unicode must be in Normalization Form C.
+	//   - Use of spaces is allowed, but discouraged.
 	FineName string `protobuf:"bytes,6,opt,name=fine_name,json=fineName,proto3" json:"fine_name,omitempty"`
 	// The identifier of test case within the above fine grouping.
 	//
-	// For example "testBadArgument" or "CloseParentWindow".
+	// For example "testBadArgument" or "topLevelTest:with_context:does_something".
 	//
 	// This is the finest granularity component of the test identifier, and typically
 	// refers to sub-file granularity unless no such granularity exists.
@@ -281,8 +293,8 @@ type TestIdentifier struct {
 	// Application guidance:
 	// * Standard usage: E.g. GTest methods, JUnit methods, etc.
 	//
-	//	Put the test method name in this field, escaping any forward ('/')
-	//	and backwards ('\') slashes with a backslash '\'.
+	//	Put the test method name in this field, escaping any colons (':')
+	//	and backlashes ('\') with a backslash '\'.
 	//	If your tests have additional hierarchy in the test case name,
 	//	consider the section on 'Extended depth hierarchies' below.
 	//
@@ -293,16 +305,17 @@ type TestIdentifier struct {
 	//
 	// * Extended depth hierarchies:
 	//
-	//	When uploading a test case from an extended depth hierarchy, use the separator '/'
+	//	When uploading a test case from an extended depth hierarchy, use the separator ':'
 	//	to separate the components of the test case identifier (e.g. the describe blocks
 	//	in a jest/mocha test). Text between the separators must have all occurrences
-	//	of '/' and '\' escaped with a backslash ('\') to avoid them being interpreted
-	//	as separators. Each component of such a hierarchical test case ID must not be blank.
+	//	of ':' and '\' escaped with a backslash ('\') to avoid other colons being interpreted
+	//	as separators. Each component of such a hierarchical test case ID must not be empty.
+	//	E.g. 'topLevelTest:' is not valid.
 	//
 	//	Rationale and Important Caveats
 	//
 	//	Most test hierarchy should be captured by the module, coarse and fine names.
-	//	For example, the module typically capture the compilation unit, the coarse name
+	//	For example, the module typically captures the compilation unit, the coarse name
 	//	the directory (e.g. package name) and the fine name the file (e.g. class name).
 	//	This leaves the case name to capture sub-file granularity, which
 	//	in many frameworks is simply the method name.
@@ -311,7 +324,7 @@ type TestIdentifier struct {
 	//	"file" level. For example, Jest and Mocha allow tests to be nested within
 	//	an arbitrary number of describe('subscope', func() { ... }) blocks. There may
 	//	also be parameterisations of tests. For such cases, we offer a standardised
-	//	way to express the additional hierarchy using slashes ('/') to separate components.
+	//	way to express the additional hierarchy using colons (':') to separate components.
 	//	UI may give special treatment to components so expressed in future.
 	//
 	//	Only consider uploading separate results for each test in such an additional
@@ -336,18 +349,20 @@ type TestIdentifier struct {
 	//
 	// Constraints:
 	//   - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
-	//     unless it is to write the value "*fixture". Exception is made for tests in the
-	//     module 'legacy' for which a slightly broader set of starting characters is allowed
-	//     for backwards compatibility but use of this quirk is discouraged.
-	//   - The use of the '/' character is reserved for denoting variable depth/extended depth
+	//     unless it is to write the value "*fixture".
+	//   - The use of the ':' character is reserved for denoting variable depth/extended depth
 	//     hierarchies. If you do not intend this semantic, you must escape it using a backslash.
-	//     When the case_name is broken up by '/', each component must be non-empty. Again,
-	//     exception is made for tests in the module legacy.
-	//   - Limited to 512 bytes of printable UTF-8, although in practice this can
-	//     never be reached except in case of legacy test IDs as the total encoded test ID is
-	//     also limited to 512 bytes (see limits on `TestIdentifier` as a whole).
+	//     (You must also escape all backslashes that are not denoting an escape sequence with
+	//     a backslash.)
+	//   - When the case_name is broken up by ':', each such component must be non-empty.
+	//   - Limited to 512 bytes of printable UTF-8. For the purposes of this
+	//     definition, the unicode replacement character (U+FFFD) is not considered printable.
+	//     See also length limits on `TestIdentifier` as a whole.
 	//   - All unicode must be in Normalization Form C.
 	//   - Use of spaces is allowed, but discouraged.
+	//   - Legacy test identifiers (in module "legacy") are exempted from some of the
+	//     above constraints to facilitate backwards compatibility but use of this quirk is
+	//     discouraged.
 	CaseName      string `protobuf:"bytes,7,opt,name=case_name,json=caseName,proto3" json:"case_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

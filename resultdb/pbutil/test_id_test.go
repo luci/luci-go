@@ -80,33 +80,44 @@ func TestParseAndValidateTestID(t *testing.T) {
 					CaseName:     "case",
 				}))
 			})
+			t.Run("Valid with multi-part case name", func(t *ftt.Test) {
+				id, err := ParseAndValidateTestID(":module!scheme:coarse:fine#case:part2:part3")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, id, should.Match(BaseTestIdentifier{
+					ModuleName:   "module",
+					ModuleScheme: "scheme",
+					CoarseName:   "coarse",
+					FineName:     "fine",
+					CaseName:     "case:part2:part3",
+				}))
+			})
 			t.Run("Valid with Escapes", func(t *ftt.Test) {
-				id, err := ParseAndValidateTestID(`:module\:!sch3m3:coarse\#:fine\:\!#case\\`)
+				id, err := ParseAndValidateTestID(`:module\:!sch3m3:coarse\#:fine\:\!#case\:\\\#\!:subCase`)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, id, should.Match(BaseTestIdentifier{
 					ModuleName:   "module:",
 					ModuleScheme: "sch3m3",
 					CoarseName:   "coarse#",
 					FineName:     "fine:!",
-					CaseName:     `case\`,
+					CaseName:     `case\:\\#!:subCase`,
 				}))
 			})
 			t.Run("Invalid structure", func(t *ftt.Test) {
 				t.Run("Missing scheme", func(t *ftt.Test) {
 					_, err := ParseAndValidateTestID(":module")
-					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 7, expected delimeter '!' (test ID pattern is :module!scheme:coarse:fine#case)"))
+					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 7, expected delimiter '!' (test ID pattern is :module!scheme:coarse:fine#case)"))
 				})
 				t.Run("Missing coarse name", func(t *ftt.Test) {
 					_, err := ParseAndValidateTestID(":module!scheme")
-					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 14, expected delimeter ':' (test ID pattern is :module!scheme:coarse:fine#case)"))
+					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 14, expected delimiter ':' (test ID pattern is :module!scheme:coarse:fine#case)"))
 				})
 				t.Run("Missing fine name", func(t *ftt.Test) {
 					_, err := ParseAndValidateTestID(":module!scheme:coarse")
-					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 21, expected delimeter ':' (test ID pattern is :module!scheme:coarse:fine#case)"))
+					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 21, expected delimiter ':' (test ID pattern is :module!scheme:coarse:fine#case)"))
 				})
 				t.Run("Missing case name", func(t *ftt.Test) {
 					_, err := ParseAndValidateTestID(":module!scheme:coarse:fine")
-					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 26, expected delimeter '#' (test ID pattern is :module!scheme:coarse:fine#case)"))
+					assert.Loosely(t, err, should.ErrLike("unexpected end of string at byte 26, expected delimiter '#' (test ID pattern is :module!scheme:coarse:fine#case)"))
 				})
 			})
 			t.Run("Invalid escape", func(t *ftt.Test) {
@@ -117,13 +128,13 @@ func TestParseAndValidateTestID(t *testing.T) {
 				_, err := ParseAndValidateTestID(`:module!scheme:coarse:fine#case\`)
 				assert.Loosely(t, err, should.ErrLike("unfinished escape sequence at byte 32, got end of string; expected one of :!#\\"))
 			})
-			t.Run("Invalid delimeter when expected different delimeter", func(t *ftt.Test) {
-				_, err := ParseAndValidateTestID(`:module:scheme:coarse:fine#case:`)
-				assert.Loosely(t, err, should.ErrLike("got delimeter character ':' at byte 7; expected normal character, escape sequence or delimeter '!' (test ID pattern is :module!scheme:coarse:fine#case)"))
+			t.Run("Invalid delimiter when expected different delimiter", func(t *ftt.Test) {
+				_, err := ParseAndValidateTestID(`:module:scheme:coarse:fine#case`)
+				assert.Loosely(t, err, should.ErrLike("got delimiter character ':' at byte 7; expected normal character, escape sequence or delimiter '!' (test ID pattern is :module!scheme:coarse:fine#case)"))
 			})
-			t.Run("Invalid delimeter when expected end of string", func(t *ftt.Test) {
-				_, err := ParseAndValidateTestID(`:module!scheme:coarse:fine#case:`)
-				assert.Loosely(t, err, should.ErrLike("got delimeter character ':' at byte 31; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)"))
+			t.Run("Invalid delimiter when expected end of string", func(t *ftt.Test) {
+				_, err := ParseAndValidateTestID(`:module!scheme:coarse:fine#case#`)
+				assert.Loosely(t, err, should.ErrLike("got delimiter character '#' at byte 31; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)"))
 			})
 		})
 	})
@@ -166,6 +177,10 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 			t.Run("Not valid UTF-8", func(t *ftt.Test) {
 				id.ModuleName = "\xbd"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: not a valid utf8 string"))
+			})
+			t.Run("Error rune", func(t *ftt.Test) {
+				id.ModuleName = "aa\ufffd"
+				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: unicode replacement character (U+FFFD) at byte index 2"))
 			})
 		})
 		t.Run("Module Scheme", func(t *ftt.Test) {
@@ -218,6 +233,10 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				id.CoarseName = "\xbd"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: not a valid utf8 string"))
 			})
+			t.Run("Error rune", func(t *ftt.Test) {
+				id.CoarseName = "aa\ufffd"
+				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: unicode replacement character (U+FFFD) at byte index 2"))
+			})
 			t.Run("Reserved leading character", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.CoarseName = "+"
@@ -265,6 +284,10 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				id.FineName = "\xbd"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: not a valid utf8 string"))
 			})
+			t.Run("Error rune", func(t *ftt.Test) {
+				id.FineName = "aa\ufffd"
+				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: unicode replacement character (U+FFFD) at byte index 2"))
+			})
 			t.Run("Reserved leading characters", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.FineName = "+"
@@ -305,6 +328,10 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				id.CaseName = "\xbd"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: not a valid utf8 string"))
 			})
+			t.Run("Error rune", func(t *ftt.Test) {
+				id.CaseName = "aa\ufffd"
+				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: unicode replacement character (U+FFFD) at byte index 2"))
+			})
 			t.Run("Reserved names", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.CaseName = "!"
@@ -323,6 +350,39 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
 				})
 			})
+			t.Run("Multi-component", func(t *ftt.Test) {
+				t.Run("Valid, multi-part", func(t *ftt.Test) {
+					id.CaseName = EncodeCaseName("a", "b", "c")
+					assert.Loosely(t, id.CaseName, should.Equal("a:b:c"))
+					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				})
+				t.Run("Valid, special characters", func(t *ftt.Test) {
+					id.CaseName = `Colon\:Backslash\\:Colon\::MyTest`
+					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				})
+				t.Run("Empty part", func(t *ftt.Test) {
+					t.Run("Leading", func(t *ftt.Test) {
+						id.CaseName = ":b:c"
+						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 1 is empty, each component of the case name must be non-empty"))
+					})
+					t.Run("Middle", func(t *ftt.Test) {
+						id.CaseName = "a::c"
+						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 2 is empty, each component of the case name must be non-empty"))
+					})
+					t.Run("Trailing", func(t *ftt.Test) {
+						id.CaseName = "a:b:"
+						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 3 is empty, each component of the case name must be non-empty"))
+					})
+				})
+				t.Run("Invalid escape sequence", func(t *ftt.Test) {
+					id.CaseName = `\#`
+					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: got unexpected character '#' at byte 1, while processing escape sequence (\\); only the characters \\ and : may be escaped"))
+				})
+				t.Run("Unfinished escape sequence", func(t *ftt.Test) {
+					id.CaseName = `a\`
+					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: unfinished escape sequence at byte 2, got end of string; expected one of \\ or :"))
+				})
+			})
 		})
 		t.Run("Legacy", func(t *ftt.Test) {
 			id.ModuleName = "legacy"
@@ -336,6 +396,12 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				id.CaseName = "TestVariousDeadlines/5µs"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
 			})
+			t.Run("Error rune is allowed", func(t *ftt.Test) {
+				// Unicode replacement character.
+				id.CaseName = "\ufffd"
+				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+			})
+
 			t.Run("Invalid scheme", func(t *ftt.Test) {
 				id.ModuleScheme = "notlegacy"
 				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" for tests in the 'legacy' module`))
@@ -378,11 +444,12 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				})
 			})
 			t.Run("With escaping", func(t *ftt.Test) {
-				id.ModuleName = strings.Repeat(":", 50)
-				id.ModuleScheme = "scheme1"
-				id.CoarseName = "aa" + strings.Repeat("!", 49) // ! may not be used as a leading character in a coarse name.
-				id.FineName = "aa" + strings.Repeat("#", 49)   // # may not be used as a leading character in a fine name.
-				id.CaseName = strings.Repeat("\\", 100)
+				// 100 bytes (module name) + 7 (scheme) + 100 (coarse name) + 100 (fine name) + 200 (case name) + 5 for ":!::#"  = 512 bytes
+				id.ModuleName = strings.Repeat(":", 50)        // Will be escaped, leading to 100 bytes used.
+				id.ModuleScheme = "scheme1"                    // 7 bytes
+				id.CoarseName = "aa" + strings.Repeat("!", 49) // ! may not be used as a leading character in a coarse name. 100 bytes when escaped.
+				id.FineName = "aa" + strings.Repeat("#", 49)   // # may not be used as a leading character in a fine name. 100 bytes when escaped.
+				id.CaseName = "aa" + strings.Repeat("#", 99)   // # may not be used as a leading character in a case name. 200 bytes when escaped.
 				t.Run("Not too long", func(t *ftt.Test) {
 					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(512))
 					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(512))
@@ -534,15 +601,99 @@ func TestEncodeTestID(t *testing.T) {
 				ModuleScheme: "scheme",
 				CoarseName:   `mytest:amazing!`,
 				FineName:     `path\to\blah.html#subreference`,
-				CaseName:     "?test=\u0123",
+				CaseName:     EncodeCaseName("?test=\u0123!#", `withABackslash\andAColon:`),
 			}
 			encodedID := EncodeTestID(id)
-			assert.Loosely(t, encodedID, should.Equal(`:module!scheme:mytest\:amazing\!:path\\to\\blah.html\#subreference#?test=ģ`))
+			assert.Loosely(t, encodedID, should.Equal(`:module!scheme:mytest\:amazing\!:path\\to\\blah.html\#subreference#?test=ģ\!\#:withABackslash\\andAColon\:`))
 
 			parsedID, err := ParseAndValidateTestID(encodedID)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, parsedID, should.Match(id))
 		})
+	})
+}
+
+func TestEncodeCaseName(t *testing.T) {
+	t.Parallel()
+	ftt.Run("EncodeCaseName", t, func(t *ftt.Test) {
+		t.Run("Single", func(t *ftt.Test) {
+			assert.Loosely(t, EncodeCaseName("a"), should.Equal("a"))
+		})
+		t.Run("Multiple", func(t *ftt.Test) {
+			assert.Loosely(t, EncodeCaseName("a", "b", "c"), should.Equal("a:b:c"))
+		})
+		t.Run("Escapes", func(t *ftt.Test) {
+			assert.Loosely(t, EncodeCaseName(`a\:`, `b#!b`, `c:`), should.Equal(`a\\\::b#!b:c\:`))
+		})
+	})
+}
+
+func TestParseTestCaseName(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ParseTestCaseName", t, func(t *ftt.Test) {
+		t.Run("Single", func(t *ftt.Test) {
+			parts, err := parseTestCaseName("a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parts, should.Match([]string{"a"}))
+		})
+		t.Run("Multiple", func(t *ftt.Test) {
+			parts, err := parseTestCaseName("a:b:c")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parts, should.Match([]string{"a", "b", "c"}))
+		})
+		t.Run("Multiple with escapes", func(t *ftt.Test) {
+			parts, err := parseTestCaseName(`a\\\::b#!b:c\:`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parts, should.Match([]string{`a\:`, `b#!b`, `c:`}))
+		})
+		t.Run("Invalid", func(t *ftt.Test) {
+			t.Run("Invalid rune", func(t *ftt.Test) {
+				_, err := parseTestCaseName("aa\xff")
+				assert.Loosely(t, err, should.ErrLike("invalid UTF-8 rune at byte 2"))
+			})
+			t.Run("Unicode replacement character", func(t *ftt.Test) {
+				_, err := parseTestCaseName("aa\ufffd")
+				assert.Loosely(t, err, should.ErrLike("invalid UTF-8 rune at byte 2"))
+			})
+			t.Run("Invalid escape sequence", func(t *ftt.Test) {
+				_, err := parseTestCaseName(`\#`)
+				assert.Loosely(t, err, should.ErrLike("got unexpected character '#' at byte 1, while processing escape sequence (\\); only the characters \\ and : may be escaped"))
+			})
+			t.Run("Unfinished escape sequence", func(t *ftt.Test) {
+				_, err := parseTestCaseName(`a\`)
+				assert.Loosely(t, err, should.ErrLike("unfinished escape sequence at byte 2, got end of string; expected one of \\ or :"))
+			})
+		})
+	})
+}
+
+func FuzzTestIDRoundtrip(f *testing.F) {
+	// Seeds
+	f.Add("module", "scheme", "coarse", "fine", "case")
+	f.Add("module", "scheme", "coarse", "fine", "case:subcase:subcase")
+	f.Add("legacy", "legacy", "", "", "ninja://case:subcase:subcase")
+	f.Add("\ufffd", "scheme", "coarse", "fine", "case")
+
+	f.Fuzz(func(t *testing.T, moduleName string, moduleScheme string, coarseName string, fineName string, caseName string) {
+		// Any test identifier that passes validation should roundtrip
+		// back to the original.
+		id := BaseTestIdentifier{
+			ModuleName:   moduleName,
+			ModuleScheme: moduleScheme,
+			CoarseName:   coarseName,
+			FineName:     fineName,
+			CaseName:     caseName,
+		}
+		if err := validateBaseTestIdentifier(id); err != nil {
+			// Invalid input.
+			return
+		}
+		encoded := EncodeTestID(id)
+		decoded, err := ParseAndValidateTestID(encoded)
+		if err != nil {
+			t.Errorf("Failed to parse input: %v", encoded)
+		}
+		assert.Loosely(t, decoded, should.Match(id))
 	})
 }
 
@@ -553,7 +704,7 @@ func TestEncodeTestID(t *testing.T) {
 // We benchmark them to ensure they are reasonably efficient.
 
 // cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-// BenchmarkValidateStructuredTestIdentifier-96    	  401269	      2847 ns/op	     297 B/op	      14 allocs/op
+// BenchmarkValidateStructuredTestIdentifier-96    	  358879	      3212 ns/op	     337 B/op	      16 allocs/op
 func BenchmarkValidateStructuredTestIdentifier(b *testing.B) {
 	id := &pb.TestIdentifier{
 		ModuleName:   "android_webview/test:android_webview_junit_tests",
@@ -581,7 +732,7 @@ func BenchmarkValidateStructuredTestIdentifier(b *testing.B) {
 }
 
 // cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-// BenchmarkParseAndValidateTestIDLegacy-96    	  616791	      1965 ns/op	      48 B/op	       6 allocs/op
+// BenchmarkParseAndValidateTestIDLegacy-96    	  654147	      1883 ns/op	      48 B/op	       6 allocs/op
 func BenchmarkParseAndValidateTestIDLegacy(b *testing.B) {
 	// Tests a legacy test identifier.
 	testID := "ninja://android_webview/test:android_webview_junit_tests/org.chromium.android_webview.robolectric.AwDisplayModeControllerTest#testFullscreen[28]"
@@ -594,7 +745,7 @@ func BenchmarkParseAndValidateTestIDLegacy(b *testing.B) {
 }
 
 // cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-// BenchmarkParseAndValidateTestID-96    	  327799	      3558 ns/op	     233 B/op	      12 allocs/op
+// BenchmarkParseAndValidateTestID-96    	  304288	      3681 ns/op	     273 B/op	      14 allocs/op
 func BenchmarkParseAndValidateTestID(b *testing.B) {
 	// Tests a structured test identifier in flat-form.
 	testID := ":android_webview/test\\:android_webview_junit_tests!junit:org.chromium.android_webview.robolectric:AwDisplayModeControllerTest#testFullscreen[28]"
@@ -607,7 +758,7 @@ func BenchmarkParseAndValidateTestID(b *testing.B) {
 }
 
 // cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
-// BenchmarkEncode-96    	 1987162	       600.6 ns/op	     144 B/op	       1 allocs/op
+// BenchmarkEncode-96    	 1973002	       611.2 ns/op	     144 B/op	       1 allocs/op
 func BenchmarkEncode(b *testing.B) {
 	id := BaseTestIdentifier{
 		ModuleName:   "android_webview/test:android_webview_junit_tests",
