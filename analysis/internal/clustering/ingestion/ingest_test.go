@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -202,6 +203,8 @@ func TestIngest(t *testing.T) {
 
 				for _, cf := range expectedCFs {
 					cf.Variant = nil
+					cf.TestIdStructured.ModuleVariant = `{}`
+					cf.TestIdStructured.ModuleVariantHash = pbutil.VariantHash(pbutil.Variant()) // hash of the empty variant.
 				}
 
 				testIngestion(tvs, expectedCFs)
@@ -526,7 +529,7 @@ func clusteredFailureKey(cf *bqpb.ClusteredFailureRow) string {
 }
 
 func newTestVerdict(uniqifier, testRunCount, resultsPerTestRun int, bugComponent *rdbpb.BugComponent) TestVerdict {
-	testID := fmt.Sprintf("ninja://test_name/%v", uniqifier)
+	testID := fmt.Sprintf(":module!scheme:coarse:fine#case%v", uniqifier)
 	variant := &rdbpb.Variant{
 		Def: map[string]string{
 			"k1": "v1",
@@ -628,8 +631,17 @@ func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTes
 		ChunkId:    "",
 		ChunkIndex: 0, // To be set by caller as needed.
 
-		Realm:  "chromium:ci",
-		TestId: fmt.Sprintf("ninja://test_name/%v", uniqifier),
+		Realm: "chromium:ci",
+		TestIdStructured: &bqpb.TestIdentifier{
+			ModuleName:        "module",
+			ModuleScheme:      "scheme",
+			ModuleVariant:     `{"k1":"v1"}`,
+			ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
+			CoarseName:        "coarse",
+			FineName:          "fine",
+			CaseName:          fmt.Sprintf("case%v", uniqifier),
+		},
+		TestId: fmt.Sprintf(":module!scheme:coarse:fine#case%v", uniqifier),
 		Tags: []*pb.StringPair{
 			{
 				Key:   "monorail_component",

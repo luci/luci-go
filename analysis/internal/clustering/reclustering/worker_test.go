@@ -467,21 +467,21 @@ func bigQueryKey(row *bqpb.ClusteredFailureRow) string {
 type testResultBuilder struct {
 	uniqifier     int
 	failureReason *pb.FailureReason
-	testName      string
+	testSuffix    string
 }
 
 func newTestResult(uniqifier int) *testResultBuilder {
 	return &testResultBuilder{
-		uniqifier: uniqifier,
-		testName:  fmt.Sprintf("ninja://test_name/%v", uniqifier),
+		uniqifier:  uniqifier,
+		testSuffix: fmt.Sprintf("%v", uniqifier),
 		failureReason: &pb.FailureReason{
 			PrimaryErrorMessage: fmt.Sprintf("Failure reason %v.", uniqifier),
 		},
 	}
 }
 
-func (b *testResultBuilder) withTestName(name string) *testResultBuilder {
-	b.testName = name
+func (b *testResultBuilder) withTestSuffix(suffix string) *testResultBuilder {
+	b.testSuffix = suffix
 	return b
 }
 
@@ -491,16 +491,15 @@ func (b *testResultBuilder) withFailureReason(reason *pb.FailureReason) *testRes
 }
 
 func (b *testResultBuilder) buildFailure() *cpb.Failure {
-	keyHash := sha256.Sum256([]byte("variantkey:value\n"))
 	buildCritical := b.uniqifier%2 == 0
 	return &cpb.Failure{
 		TestResultId:  pbutil.TestResultIDFromResultDB(fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%v", b.uniqifier, b.uniqifier, b.uniqifier)),
 		PartitionTime: timestamppb.New(time.Date(2020, time.April, 1, 2, 3, 4, 0, time.UTC)),
 		ChunkIndex:    -1, // To be populated by caller.
 		Realm:         "testproject:realm",
-		TestId:        b.testName,
+		TestId:        ":module!scheme:coarse:fine#case" + b.testSuffix,
 		Variant:       &pb.Variant{Def: map[string]string{"variantkey": "value"}},
-		VariantHash:   hex.EncodeToString(keyHash[:]),
+		VariantHash:   pbutil.VariantHash(pbutil.Variant("variantkey", "value")),
 		FailureReason: b.failureReason,
 		BugTrackingComponent: &pb.BugTrackingComponent{
 			System:    "monorail",
@@ -542,7 +541,6 @@ func (b *testResultBuilder) buildFailure() *cpb.Failure {
 // Note that deletions are not returned; these are simply the 'net' rows that
 // would be expected.
 func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*bqpb.ClusteredFailureRow {
-	keyHash := sha256.Sum256([]byte("variantkey:value\n"))
 	var inBugCluster bool
 	for _, cID := range clusterIDs {
 		if cID.IsBugCluster() {
@@ -573,15 +571,24 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 			ChunkId:    "", // To be set by caller.
 			ChunkIndex: 0,  // To be set by caller.
 
-			Realm:  "testproject:realm",
-			TestId: b.testName,
+			Realm: "testproject:realm",
+			TestIdStructured: &bqpb.TestIdentifier{
+				ModuleName:        "module",
+				ModuleScheme:      "scheme",
+				ModuleVariant:     `{"variantkey":"value"}`,
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("variantkey", "value")),
+				CoarseName:        "coarse",
+				FineName:          "fine",
+				CaseName:          "case" + b.testSuffix,
+			},
+			TestId: ":module!scheme:coarse:fine#case" + b.testSuffix,
 			Variant: []*pb.StringPair{
 				{
 					Key:   "variantkey",
 					Value: "value",
 				},
 			},
-			VariantHash:   hex.EncodeToString(keyHash[:]),
+			VariantHash:   pbutil.VariantHash(pbutil.Variant("variantkey", "value")),
 			FailureReason: b.failureReason,
 			BugTrackingComponent: &pb.BugTrackingComponent{
 				System:    "monorail",
@@ -624,7 +631,7 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 func (b *testResultBuilder) buildClusters(rules *cache.Ruleset, config *compiledcfg.ProjectConfig) []clustering.ClusterID {
 	var clusters []clustering.ClusterID
 	failure := &clustering.Failure{
-		TestID: b.testName,
+		TestID: ":module!scheme:coarse:fine#case" + b.testSuffix,
 		Reason: b.failureReason,
 	}
 	testNameAlg := &testname.Algorithm{}
@@ -640,7 +647,7 @@ func (b *testResultBuilder) buildClusters(rules *cache.Ruleset, config *compiled
 		})
 	}
 	vals := &clustering.Failure{
-		TestID: b.testName,
+		TestID: ":module!scheme:coarse:fine#case" + b.testSuffix,
 		Reason: &pb.FailureReason{PrimaryErrorMessage: b.failureReason.GetPrimaryErrorMessage()},
 	}
 	for _, rule := range rules.ActiveRulesSorted {
@@ -921,10 +928,10 @@ func (b *scenarioBuilder) build(t testing.TB) *scenario {
 	for i := 0; i < b.chunkCount; i++ {
 		trOne := newTestResult(i * 2).withFailureReason(&pb.FailureReason{
 			PrimaryErrorMessage: "reason_a",
-		}).withTestName("test_a")
+		}).withTestSuffix("a")
 		trTwo := newTestResult(i*2 + 1).withFailureReason(&pb.FailureReason{
 			PrimaryErrorMessage: "reason_b",
-		}).withTestName("test_b")
+		}).withTestSuffix("b")
 
 		cb := newChunk(i).withProject(b.project).
 			withOldAlgorithms(b.oldAlgorithms).

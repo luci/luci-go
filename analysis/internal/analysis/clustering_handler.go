@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -60,7 +61,10 @@ func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
 // to be applied as part of the original transaction and retrying them at
 // a later point if they do not succeed).
 func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *clustering.Update, commitTime time.Time) error {
-	rowUpdates := prepareInserts(updates, commitTime)
+	rowUpdates, err := prepareInserts(updates, commitTime)
+	if err != nil {
+		return errors.Annotate(err, "prepare rows to insert").Err()
+	}
 	if err := r.cfClient.Insert(ctx, rowUpdates); err != nil {
 		return errors.Annotate(err, "inserting %d clustered failure rows", len(rowUpdates)).Err()
 	}
@@ -70,7 +74,7 @@ func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *
 // prepareInserts prepares entries into the BigQuery clustered failures table
 // in response to a (re-)clustering. For efficiency, only the updated rows are
 // returned.
-func prepareInserts(updates *clustering.Update, commitTime time.Time) []*bqpb.ClusteredFailureRow {
+func prepareInserts(updates *clustering.Update, commitTime time.Time) ([]*bqpb.ClusteredFailureRow, error) {
 	var result []*bqpb.ClusteredFailureRow
 	for _, u := range updates.Updates {
 		deleted := make(map[string]clustering.ClusterID)
@@ -101,7 +105,10 @@ func prepareInserts(updates *clustering.Update, commitTime time.Time) []*bqpb.Cl
 		for _, dc := range deleted {
 			isIncluded := false
 			isIncludedWithHighPriority := false
-			row := entryFromUpdate(updates.Project, updates.ChunkID, dc, u.TestResult, isIncluded, isIncludedWithHighPriority, commitTime)
+			row, err := entryFromUpdate(updates.Project, updates.ChunkID, dc, u.TestResult, isIncluded, isIncludedWithHighPriority, commitTime)
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, row)
 		}
 		// Create rows for retained clusters for which inclusion was modified.
@@ -118,7 +125,10 @@ func prepareInserts(updates *clustering.Update, commitTime time.Time) []*bqpb.Cl
 				// For efficiency, do not stream an update.
 				continue
 			}
-			row := entryFromUpdate(updates.Project, updates.ChunkID, rc, u.TestResult, isIncluded, newIncludedWithHighPriority, commitTime)
+			row, err := entryFromUpdate(updates.Project, updates.ChunkID, rc, u.TestResult, isIncluded, newIncludedWithHighPriority, commitTime)
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, row)
 		}
 		// Create rows for new clusters.
@@ -129,14 +139,17 @@ func prepareInserts(updates *clustering.Update, commitTime time.Time) []*bqpb.Cl
 			// appear with high priority in any suggested clusters it appears
 			// in.
 			isIncludedWithHighPriority := nc.IsBugCluster() || !newInBugCluster
-			row := entryFromUpdate(updates.Project, updates.ChunkID, nc, u.TestResult, isIncluded, isIncludedWithHighPriority, commitTime)
+			row, err := entryFromUpdate(updates.Project, updates.ChunkID, nc, u.TestResult, isIncluded, isIncludedWithHighPriority, commitTime)
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, row)
 		}
 	}
-	return result
+	return result, nil
 }
 
-func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, failure *cpb.Failure, included, includedWithHighPriority bool, commitTime time.Time) *bqpb.ClusteredFailureRow {
+func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, failure *cpb.Failure, included, includedWithHighPriority bool, commitTime time.Time) (*bqpb.ClusteredFailureRow, error) {
 	// Copy the failure, to ensure the returned ClusteredFailure does not
 	// alias any of the original failure's nested message protos.
 	failure = proto.Clone(failure).(*cpb.Failure)
@@ -148,6 +161,11 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		})
 	}
 
+	testIDStructured, err := bqutil.StructuredTestIdentifier(failure.TestId, failure.Variant)
+	if err != nil {
+		// This should not happen. It means we ingested a bad test identifier.
+		return nil, errors.Annotate(err, "structured test identifier").Err()
+	}
 	entry := &bqpb.ClusteredFailureRow{
 		ClusterAlgorithm: cluster.Algorithm,
 		ClusterId:        cluster.ID,
@@ -165,6 +183,7 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		ChunkIndex: failure.ChunkIndex,
 
 		Realm:                failure.Realm,
+		TestIdStructured:     testIDStructured,
 		TestId:               failure.TestId,
 		Variant:              variantPairs(failure.Variant),
 		Tags:                 failure.Tags,
@@ -201,7 +220,7 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		entry.PresubmitRunMode = ToBQPresubmitRunMode(failure.PresubmitRun.Mode)
 		entry.PresubmitRunStatus = ToBQPresubmitRunStatus(failure.PresubmitRun.Status)
 	}
-	return entry
+	return entry, nil
 }
 
 func testVariantBranch(tvb *cpb.TestVariantBranch) *bqpb.ClusteredFailureRow_TestVariantBranch {
