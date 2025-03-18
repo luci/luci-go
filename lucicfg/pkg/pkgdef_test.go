@@ -53,12 +53,23 @@ func TestLoadDefinition(t *testing.T) {
 			)
 			pkg.resources(["a"])
 			pkg.resources(["b", "c"])
+			pkg.depend(
+				name = "@local-1",
+				source = pkg.source.local("../local-1"),
+			)
+			pkg.depend(
+				name = "@local-2",
+				source = pkg.source.local("inner"),
+			)
 		`)
 		assert.NoErr(t, err)
 
 		// Clear stack traces to simplify comparison.
 		for _, r := range pkgDef.FmtRules {
 			r.Stack = nil
+		}
+		for _, d := range pkgDef.Deps {
+			d.Stack = nil
 		}
 
 		assert.That(t, pkgDef, should.Match(&Definition{
@@ -85,6 +96,16 @@ func TestLoadDefinition(t *testing.T) {
 				},
 			},
 			Resources: []string{"a", "b", "c"},
+			Deps: []*DepDecl{
+				{
+					Name:      "@local-1",
+					LocalPath: "../local-1",
+				},
+				{
+					Name:      "@local-2",
+					LocalPath: "inner",
+				},
+			},
 		}))
 	})
 
@@ -96,6 +117,11 @@ func TestLoadDefinition(t *testing.T) {
 	t.Run("No exec(...)", func(t *testing.T) {
 		_, err := call(`exec("@stdlib//builtins.star")`)
 		assert.That(t, err, should.ErrLike("cannot exec @stdlib//builtins.star: exec(...) is not allowed in PACKAGE.star file"))
+	})
+
+	t.Run("No direct native calls", func(t *testing.T) {
+		_, err := call(`__native__.declare("", "")`)
+		assert.That(t, err, should.ErrLike("forbidden direct call to __native__ API"))
 	})
 
 	t.Run("No pkg.declare", func(t *testing.T) {
@@ -143,9 +169,9 @@ func TestLoadDefinition(t *testing.T) {
 			`,
 			[]genErrCase{
 				{"None", `missing required field "path"`},
-				{`"../main.star"`, `entry point path must be within the package, got "../main.star"`},
+				{`"../main.star"`, `bad "path": the path must be within the package`},
 				{`"fail.star"`, `entry point "fail.star": not passing ValidateEntrypoint`},
-				{`"deeper/../main.star"`, `entry point path must be in normalized form (i.e. "main.star" instead of "deeper/../main.star")`},
+				{`"deeper/../main.star"`, `bad "path": the path must be in normalized form (i.e. "main.star" instead of "deeper/../main.star")`},
 			},
 		)
 	})
@@ -167,9 +193,9 @@ func TestLoadDefinition(t *testing.T) {
 			[]genErrCase{
 				{`[None]`, `bad "paths[0]": got NoneType, want string`},
 				{`[""]`, `bad "paths[0]": an empty string`},
-				{`["abc/.."]`, `invalid paths: must be in normalized form (i.e. "." instead of "abc/..")`},
-				{`["abc\\def"]`, `invalid paths: must be in normalized form (i.e. "abc/def" instead of "abc\\def")`},
-				{`["../abc"]`, `invalid paths: must point inside the package, but got "../abc"`},
+				{`["abc/.."]`, `bad "paths[0]": the path must be in normalized form (i.e. "." instead of "abc/..")`},
+				{`["abc\\def"]`, `bad "paths[0]": the path must be in normalized form (i.e. "abc/def" instead of "abc\\def")`},
+				{`["../abc"]`, `bad "paths[0]": the path must be within the package`},
 				{`["a", "a"]`, `invalid paths: "a" is specified more than once`},
 			},
 		)
@@ -210,6 +236,36 @@ func TestLoadDefinition(t *testing.T) {
 				{`[None]`, `bad "patterns[0]": got NoneType, want string`},
 				{`[""]`, `bad "patterns[0]": an empty string`},
 				{`["a", "a"]`, `resource pattern "a" is declared more than once`},
+			},
+		)
+	})
+
+	t.Run("pkg.depend bad name", func(t *testing.T) {
+		_, err := call(`
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+			pkg.depend(name = "blah", source = pkg.source.local("../another"))
+		`)
+		assert.That(t, err, should.ErrLike(`bad "name": must start with @`))
+	})
+
+	t.Run("pkg.depend dup", func(t *testing.T) {
+		_, err := call(`
+			pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+			pkg.depend(name = "@blah", source = pkg.source.local("../another"))
+			pkg.depend(name = "@blah", source = pkg.source.local("../another"))
+		`)
+		assert.That(t, err, should.ErrLike(`dependency on "@blah" was already declared at`))
+	})
+
+	t.Run("pkg.source.local bad paths", func(t *testing.T) {
+		assertGenErrs(t, `
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+				_ = pkg.source.local(%s)
+			`,
+			[]genErrCase{
+				{`None`, `missing required field "path"`},
+				{`""`, `bad "path": must not be empty`},
+				{`"abc/../def"`, `bad "path": the path must be in normalized form (i.e. "def" instead of "abc/../def")`},
 			},
 		)
 	})

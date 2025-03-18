@@ -4421,7 +4421,7 @@ of the package. It is validated as part of `lucicfg validate` call.
 #### Arguments {#pkg.depend-args}
 
 * **name**: the name of the depended package. Required.
-* **source**: a pkg.source.ref struct as produced by [pkg.source.googlesource(...)](#pkg.source.googlesource), [pkg.source.read_submodule(...)](#pkg.source.read-submodule) or [pkg.source.read_local(...)](#pkg.source.read-local). Required.
+* **source**: a pkg.source.ref struct as produced by [pkg.source.googlesource(...)](#pkg.source.googlesource), [pkg.source.submodule(...)](#pkg.source.submodule) or [pkg.source.local(...)](#pkg.source.local). Required.
 
 
 
@@ -4429,7 +4429,7 @@ of the package. It is validated as part of `lucicfg validate` call.
 ### pkg.resources {#pkg.resources}
 
 ```python
-pkg.resources(files = None)
+pkg.resources(patterns = None)
 ```
 
 
@@ -4446,7 +4446,7 @@ Can be called multiple times. Works additively.
 
 #### Arguments {#pkg.resources-args}
 
-* **files**: a list of glob patterns that define a subset of non-Starlark files under the package directory. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file is considered to be a resource file if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, a single positive `**/*` glob is implied as well.
+* **patterns**: a list of glob patterns that define a subset of non-Starlark files under the package directory. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file is considered to be a resource file if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, a single positive `**/*` glob is implied as well.
 
 
 
@@ -4509,10 +4509,10 @@ A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 
 
 
-### pkg.source.read_submodule {#pkg.source.read-submodule}
+### pkg.source.submodule {#pkg.source.submodule}
 
 ```python
-pkg.source.read_submodule(path)
+pkg.source.submodule(path)
 ```
 
 
@@ -4529,21 +4529,21 @@ the given path.
 
 Recursive submodules are not supported.
 
-#### Arguments {#pkg.source.read-submodule-args}
+#### Arguments {#pkg.source.submodule-args}
 
 * **path**: a relative path from the current package directory to the directory with the target dependency (i.e. the directory that contains PACKAGE.star file). This directory must be within some git submodule path. Required.
 
 
-#### Returns  {#pkg.source.read-submodule-returns}
+#### Returns  {#pkg.source.submodule-returns}
 
 A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 
 
 
-### pkg.source.read_local {#pkg.source.read-local}
+### pkg.source.local {#pkg.source.local}
 
 ```python
-pkg.source.read_local(path)
+pkg.source.local(path)
 ```
 
 
@@ -4557,12 +4557,12 @@ Constructs [pkg.source.googlesource(...)](#pkg.source.googlesource) by taking th
 the current package and replacing the path there to point to another
 package.
 
-#### Arguments {#pkg.source.read-local-args}
+#### Arguments {#pkg.source.local-args}
 
 * **path**: a relative path from the current package directory to the directory (within the same repository) with the target dependency. Required.
 
 
-#### Returns  {#pkg.source.read-local-returns}
+#### Returns  {#pkg.source.local-returns}
 
 A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 

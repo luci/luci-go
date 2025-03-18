@@ -85,11 +85,14 @@ def _depend(*, name, source):
     Args:
       name: the name of the depended package. Required.
       source: a pkg.source.ref struct as produced by
-        pkg.source.googlesource(...), pkg.source.read_submodule(...) or
-        pkg.source.read_local(...). Required.
+        pkg.source.googlesource(...), pkg.source.submodule(...) or
+        pkg.source.local(...). Required.
     """
-    _unused(name, source)
-    fail("not implemented")
+    __native__.depend(
+        __native__.stacktrace(1),
+        _validate_string("name", name),
+        _validate_source_ref("source", source),
+    )
 
 def _resources(patterns):
     """Declares non-Starlark files to includes into the package.
@@ -124,7 +127,7 @@ def _entrypoint(path):
     Args:
       path: a path to a Starlark file relative to the package root.
     """
-    __native__.entrypoint(_validate_string("path", path))
+    __native__.entrypoint(_validate_path("path", path))
 
 def _googlesource(*, host, repo, ref, path, minimum_version):
     """Defines a reference to package source stored in a googlesource.com repo.
@@ -149,7 +152,7 @@ def _googlesource(*, host, repo, ref, path, minimum_version):
     _unused(host, repo, ref, path, minimum_version)
     fail("not implemented")
 
-def _read_submodule(path):
+def _submodule(path):
     """Builds a reference to package source by reading a git submodule.
 
     Works relative to the repository of the package that declared the
@@ -174,7 +177,7 @@ def _read_submodule(path):
     _unused(path)
     fail("not implemented")
 
-def _read_local(path):
+def _local(path):
     """Builds a reference to package source stored in the current repository.
 
     Works relative to the repository of the package that declared the
@@ -192,8 +195,9 @@ def _read_local(path):
     Returns:
       A pkg.source.ref struct that can be passed to pkg.depend(...).
     """
-    _unused(path)
-    fail("not implemented")
+    return _make_source_ref(
+        local_path = _validate_path("path", path, allow_dots = True),
+    )
 
 def _lint_checks(checks):
     """Configures linting rules that apply to files in this package.
@@ -235,6 +239,8 @@ def _fmt_rules(*, paths, function_args_sort = None):
     paths = _validate_str_list("paths", paths)
     if not paths:
         fail("paths cannot be empty")
+    for i, p in enumerate(paths):
+        _validate_path("paths[%d]" % i, p)
     if function_args_sort != None:
         function_args_sort = _validate_str_list("function_args_sort", function_args_sort)
     __native__.fmt_rules(__native__.stacktrace(1), paths, function_args_sort)
@@ -249,8 +255,8 @@ pkg = struct(
     entrypoint = _entrypoint,
     source = struct(
         googlesource = _googlesource,
-        read_submodule = _read_submodule,
-        read_local = _read_local,
+        submodule = _submodule,
+        local = _local,
     ),
     options = struct(
         lint_checks = _lint_checks,
@@ -259,6 +265,37 @@ pkg = struct(
 )
 
 ### Internals.
+
+# A constructor for pkg.source.ref(...) structs.
+_source_ref = __native__.genstruct("pkg.source.ref")
+
+def _make_source_ref(*, local_path = None):
+    """Constructs a new pkg.source.ref(...) struct.
+
+    Assumes field types were validated already.
+
+    Args:
+      local_path: is a relative path for local dependencies or None for remote
+        dependencies.
+
+    Returns:
+      A pkg.source.ref(...) struct.
+    """
+    return _source_ref(local_path = local_path)
+
+def _validate_source_ref(attr, val):
+    """Validates that `val` is a pkg.source.ref(...) struct.
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+
+    Returns:
+      The same value.
+    """
+    if __native__.ctor(val) != _source_ref:
+        fail("bad %r: got %s, want a pkg.source.ref(...) struct" % (attr, type(val)))
+    return val
 
 def _validate_string(attr, val, *, allow_empty = False, default = None, required = True):
     """Validates that the value is a string and returns it.
@@ -306,3 +343,21 @@ def _validate_str_list(attr, val):
         if elem == "":
             fail("bad \"%s[%d]\": an empty string" % (attr, idx))
     return tup
+
+def _validate_path(attr, val, *, allow_dots = False):
+    """Validates `val` is a string that is a slash-separated relative path.
+
+    Will verify it is "clean".
+
+    Args:
+      attr: field name with this value, for error messages.
+      val: a value to validate.
+      allow_dots: if True, allow ".." (i.e. the path may point outside).
+
+    Returns:
+      The same value.
+    """
+    err = __native__.validate_path(_validate_string(attr, val), allow_dots)
+    if err:
+        fail("bad %r: %s" % (attr, err))
+    return val

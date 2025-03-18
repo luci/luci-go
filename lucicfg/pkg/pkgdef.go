@@ -69,6 +69,8 @@ type Definition struct {
 	FmtRules []*FmtRule
 	// Resources are all declared resource patterns (positive and negative).
 	Resources []string
+	// Deps are declared dependencies (validated only syntactically).
+	Deps []*DepDecl
 }
 
 // FmtRule represents a registered pkg.options.fmt_rule(...), see its doc.
@@ -88,6 +90,22 @@ func (a *FmtRule) Equal(b *FmtRule) bool {
 	return slices.Equal(a.Paths, b.Paths) &&
 		a.SortFunctionArgs == b.SortFunctionArgs &&
 		slices.Equal(a.SortFunctionArgsOrder, b.SortFunctionArgsOrder)
+}
+
+// DepDecl represents a declared dependency on another module.
+type DepDecl struct {
+	// Stack is where this dependency was declared, if known.
+	Stack *builtins.CapturedStacktrace
+
+	// Name is the name of the package being dependent on.
+	Name string
+
+	// LocalPath is set to a slash-separated relative path (perhaps with ".."")
+	// if this is a local dependency: a dependency on a package within the same
+	// repository as the current PACKAGE.star.
+	//
+	// Unset for remote dependencies.
+	LocalPath string
 }
 
 // LoaderValidator can do extra validation checks right when loading
@@ -124,6 +142,8 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 	// All native symbols exposed to PACKAGE.star file.
 	native := starlark.StringDict{
 		"stacktrace": builtins.Stacktrace,
+		"ctor":       builtins.Ctor,
+		"genstruct":  builtins.GenStruct,
 	}
 	state.declNative(native)
 
@@ -205,8 +225,16 @@ func cleanPath(p string) string {
 
 // declNative registers all __native__.<name> functions.
 func (s *state) declNative(native starlark.StringDict) {
+	builtinsStar := fmt.Sprintf("@%s//builtins.star", interpreter.StdlibPkg)
+
 	decl := func(name string, requiredDeclareFirst bool, nativeFn func(ctx context.Context, call nativeCall) (starlark.Value, error)) {
 		native[name] = starlark.NewBuiltin(name, func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+			// Forbid calling __native__.* directly from PACKAGE.star scripts, only
+			// wrappers in pkg/builtins.star can use this API, since they implement
+			// important extra validation checks that Go code assumes.
+			if frame := th.CallFrame(1); frame.Pos.Filename() != builtinsStar {
+				return nil, errors.New("forbidden direct call to __native__ API")
+			}
 			if requiredDeclareFirst && !s.declareCalled {
 				return nil, errors.New("pkg.declare(...) must be the first statement in PACKAGE.star")
 			}
@@ -219,11 +247,32 @@ func (s *state) declNative(native starlark.StringDict) {
 		})
 	}
 
+	// Helpers.
+	decl("validate_path", false, s.validatePath)
+
+	// Declarations.
 	decl("declare", false, s.declare)
 	decl("entrypoint", true, s.entrypoint)
 	decl("lint_checks", true, s.lintChecks)
 	decl("fmt_rules", true, s.fmtRules)
 	decl("resources", true, s.resources)
+	decl("depend", true, s.depend)
+}
+
+func (s *state) validatePath(ctx context.Context, call nativeCall) (starlark.Value, error) {
+	var val starlark.String
+	var allowDots starlark.Bool
+	if err := call.unpack(2, &val, &allowDots); err != nil {
+		return nil, err
+	}
+	clean := cleanPath(val.GoString())
+	if clean != val.GoString() {
+		return starlark.String(fmt.Sprintf("the path must be in normalized form (i.e. %q instead of %q)", clean, val.GoString())), nil
+	}
+	if allowDots != starlark.True && (clean == ".." || strings.HasPrefix(clean, "../")) {
+		return starlark.String("the path must be within the package"), nil
+	}
+	return starlark.None, nil
 }
 
 func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, error) {
@@ -255,22 +304,16 @@ func (s *state) entrypoint(ctx context.Context, call nativeCall) (starlark.Value
 	if err := call.unpack(1, &relPath); err != nil {
 		return nil, err
 	}
-	clean := cleanPath(relPath.GoString())
-	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
-		return nil, errors.Reason("entry point path must be within the package, got %q", relPath.GoString()).Err()
-	}
-	if clean != relPath.GoString() {
-		return nil, errors.Reason("entry point path must be in normalized form (i.e. %q instead of %q)", clean, relPath.GoString()).Err()
-	}
+	entrypoint := relPath.GoString()
 	for _, p := range s.def.Entrypoints {
-		if p == clean {
+		if p == entrypoint {
 			return nil, errors.Reason("entry point %q was already defined", p).Err()
 		}
 	}
-	if err := s.val.ValidateEntrypoint(ctx, clean); err != nil {
-		return nil, errors.Annotate(err, "entry point %q", clean).Err()
+	if err := s.val.ValidateEntrypoint(ctx, entrypoint); err != nil {
+		return nil, errors.Annotate(err, "entry point %q", entrypoint).Err()
 	}
-	s.def.Entrypoints = append(s.def.Entrypoints, clean)
+	s.def.Entrypoints = append(s.def.Entrypoints, entrypoint)
 	return starlark.None, nil
 }
 
@@ -303,16 +346,10 @@ func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, 
 		SortFunctionArgs: argsSortVal != starlark.None,
 	}
 
-	// Validate paths (the type and length was already validated in starlark).
+	// Validate there are no dup paths (other aspects are validated in Starlark).
 	seenPaths := stringset.New(len(pathsTup))
 	for i, v := range pathsTup {
 		rel := v.(starlark.String).GoString()
-		if clean := cleanPath(rel); clean != rel {
-			return nil, errors.Reason("invalid paths: must be in normalized form (i.e. %q instead of %q)", clean, rel).Err()
-		}
-		if rel == ".." || strings.HasPrefix(rel, "../") {
-			return nil, errors.Reason("invalid paths: must point inside the package, but got %q", rel).Err()
-		}
 		if !seenPaths.Add(rel) {
 			return nil, errors.Reason("invalid paths: %q is specified more than once", rel).Err()
 		}
@@ -357,5 +394,50 @@ func (s *state) resources(ctx context.Context, call nativeCall) (starlark.Value,
 		}
 		s.def.Resources = append(s.def.Resources, str)
 	}
+	return starlark.None, nil
+}
+
+func (s *state) depend(ctx context.Context, call nativeCall) (starlark.Value, error) {
+	var stack *builtins.CapturedStacktrace
+	var name starlark.String
+	var source *starlarkstruct.Struct
+	if err := call.unpack(3, &stack, &name, &source); err != nil {
+		return nil, err
+	}
+
+	dep := DepDecl{
+		Stack: stack,
+		Name:  name.GoString(),
+	}
+	if err := ValidateName(dep.Name); err != nil {
+		return nil, errors.Reason(`bad "name": %s`, err).Err()
+	}
+
+	// sourceField reads a string field of pkg.source.ref structs.
+	sourceField := func(key string) string {
+		val, err := source.Attr(key)
+		if err != nil {
+			panic(err) // unknown attr, should not happen
+		}
+		switch val := val.(type) {
+		case starlark.NoneType:
+			return ""
+		case starlark.String:
+			return val.GoString()
+		default:
+			panic(fmt.Sprintf("source.%s is not a string: %s", key, val))
+		}
+	}
+
+	dep.LocalPath = sourceField("local_path")
+
+	dup := slices.IndexFunc(s.def.Deps, func(existing *DepDecl) bool {
+		return existing.Name == dep.Name
+	})
+	if dup != -1 {
+		return nil, errors.Reason("dependency on %q was already declared at\n%s", dep.Name, s.def.Deps[dup].Stack).Err()
+	}
+
+	s.def.Deps = append(s.def.Deps, &dep)
 	return starlark.None, nil
 }
