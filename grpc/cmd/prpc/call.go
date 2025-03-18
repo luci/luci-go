@@ -82,6 +82,10 @@ func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.
 	host, target := args[0], args[1]
 	args = args[2:]
 
+	if r.verbose {
+		fmt.Fprint(os.Stderr, "Reading message on STDIN.\n")
+	}
+
 	req := request{
 		format:       r.format,
 		message:      os.Stdin,
