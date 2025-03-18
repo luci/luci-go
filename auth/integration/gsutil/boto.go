@@ -15,15 +15,24 @@
 package gsutil
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
 )
+
+const defaultBotoEnvVar = "BOTO_CONFIG"
+const defaultBotoPathEnvVar = "BOTO_PATH"
+const botoFileBotoBlockHeader = "[Boto]"
 
 // Boto represents a subset of .boto gsutil configuration file.
 type Boto struct {
+	botoSection       []byte // [Boto] block of a .boto file.
 	StateDir          string // value of GSUtil.state_dir
 	RefreshToken      string // value of Credentials.gs_oauth2_refresh_token
 	GCEServiceAccount string // value of GoogleCompute.service_account
@@ -73,16 +82,139 @@ func (b *Boto) Write(path string) error {
 		opts("provider_token_uri", b.ProviderTokenURI)
 	}
 
+	if b.botoSection != nil {
+		line("")
+		line(botoFileBotoBlockHeader)
+		buf.Write(b.botoSection)
+	}
+
 	return os.WriteFile(path, buf.Bytes(), 0600)
 }
 
+func readBotoSection(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read existing .boto file at %s", path).Err()
+	}
+
+	defer func() { _ = f.Close() }()
+
+	buf := bytes.Buffer{}
+
+	s := bufio.NewScanner(f)
+	sectionFound := false
+	for s.Scan() {
+		ln := s.Text()
+		if ln == botoFileBotoBlockHeader {
+			sectionFound = true
+			continue
+		}
+
+		if strings.HasPrefix(strings.TrimLeft(ln, " \t"), "#") {
+			continue
+		}
+
+		if sectionFound && strings.HasPrefix(ln, "[") {
+			break
+		}
+
+		if sectionFound {
+			buf.WriteString(ln)
+			buf.WriteRune('\n')
+			continue
+		}
+	}
+
+	if s.Err() != nil {
+		return nil, errors.Annotate(s.Err(), "failed to read existing .boto file at %s", path).Err()
+	}
+
+	if !sectionFound {
+		return nil, nil
+	}
+
+	return buf.Bytes(), nil
+}
+
+// mock home dir for tests so we can still use environ.Env.
+var homeDirKey = "mocked os.UserHomeDir"
+
+func withMockHomeDir(ctx context.Context, dir string) context.Context {
+	return context.WithValue(ctx, &homeDirKey, dir)
+}
+
+func userHomeDir(ctx context.Context) (string, error) {
+	val, _ := ctx.Value(&homeDirKey).(string)
+	if val != "" {
+		return val, nil
+	}
+	return os.UserHomeDir()
+}
+
+// findUserBotoConfig finds a users boto config if configured.
+// https://cloud.google.com/storage/docs/boto-gsutil#location
+func findUserBotoConfig(ctx context.Context) (string, error) {
+	env := environ.FromCtx(ctx)
+	exists := func(path string) bool {
+		_, err := os.Stat(path)
+		return err == nil
+	}
+
+	// 1. BOTO_CONFIG env var
+	if p := env.Get(defaultBotoEnvVar); p != "" {
+		if exists(p) {
+			return p, nil
+		}
+	}
+
+	// 2. BOTO_PATH
+	if p := env.Get(defaultBotoPathEnvVar); p != "" {
+		paths := strings.Split(p, string(os.PathListSeparator))
+		for i := len(paths) - 1; i >= 0; i-- {
+			if exists(paths[i]) {
+				return paths[i], nil
+			}
+		}
+	}
+
+	// 3. $HOME/.boto
+	homeDir, err := userHomeDir(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if h := filepath.Join(homeDir, ".boto"); exists(h) {
+		return h, nil
+	}
+
+	return "", nil
+
+}
+
 // PrepareStateDir prepares a directory (based on b.StateDir) for gsutil to keep
-// its state and drops .boto config there.
-//
-// Returns path to the created .boto file.
-func PrepareStateDir(b *Boto) (string, error) {
+// its state and drops .boto config there. If `botoPath` is set the [Boto] block
+// of the configuration is included in the new .boto config.
+
+// PrepareStateDir returns a path to the created .boto file.
+func PrepareStateDir(ctx context.Context, b *Boto) (string, error) {
 	if err := os.MkdirAll(b.StateDir, 0700); err != nil {
 		return "", errors.Annotate(err, "failed to create gsutil state dir at %s", b.StateDir).Err()
+	}
+
+	// Find the path to the users boto config if it exists.
+	botoPath, err := findUserBotoConfig(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if botoPath != "" {
+		// Copy the [Boto] block into the newly generated config. This block
+		// contains proxy configuration.
+		botoSection, err := readBotoSection(botoPath)
+		if err != nil && !os.IsNotExist(err) {
+			return "", err
+		}
+		b.botoSection = botoSection
 	}
 
 	botoCfg := filepath.Join(b.StateDir, ".boto")

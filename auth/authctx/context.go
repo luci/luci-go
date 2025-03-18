@@ -627,7 +627,7 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 	// ~/.gsutil/... state dir.
 	var err error
 	ac.gsutilState = filepath.Join(tempDir, "gsutil-"+ac.ID)
-	ac.gsutilBoto, err = gsutil.PrepareStateDir(&gsutil.Boto{
+	ac.gsutilBoto, err = gsutil.PrepareStateDir(ctx, &gsutil.Boto{
 		StateDir:          ac.gsutilState,
 		GCEServiceAccount: botoGCEAccount, // may be "" in anonymous mode
 	})

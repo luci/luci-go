@@ -91,7 +91,7 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 
 	// Prepare a state directory for gsutil (otherwise it uses '~/.gsutil'), drop
 	// .boto file there pointing to this directory and to our server.
-	return PrepareStateDir(&Boto{
+	return PrepareStateDir(ctx, &Boto{
 		StateDir:         s.StateDir,
 		RefreshToken:     secret,
 		ProviderLabel:    "LUCI Local",
