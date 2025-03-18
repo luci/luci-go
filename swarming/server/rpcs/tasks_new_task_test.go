@@ -1433,6 +1433,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 						req := fullRequest()
 						req.PoolTaskTemplate = tc.poolTaskTemplate
 						req.ParentTaskId = ""
+						req.TaskSlices[0].WaitForCapacity = true
 						ents, err := toTaskRequestEntities(ctx, req, "pool")
 						assert.NoErr(t, err)
 						res := ents.request.ToProto()
@@ -1445,6 +1446,8 @@ func TestToTaskRequestEntities(t *testing.T) {
 						assert.That(t, props.GetEnv(), should.Match(expectedEnv(tc.template)))
 						assert.That(t, props.GetEnvPrefixes(),
 							should.Match(expectedEnvPrefix(tc.template)))
+
+						assert.That(t, res.GetTaskSlices()[0].GetWaitForCapacity(), should.BeTrue)
 					})
 				}
 

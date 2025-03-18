@@ -401,7 +401,7 @@ func TestComputeNewTaskRequest(t *testing.T) {
 		sb, err := hex.DecodeString("1a05746f6b656e")
 		assert.NoErr(t, err)
 
-		slice := func(dims []*apipb.StringPair, exp time.Duration) *apipb.TaskSlice {
+		slice := func(dims []*apipb.StringPair, exp time.Duration, waitForCapacity bool) *apipb.TaskSlice {
 			return &apipb.TaskSlice{
 				ExpirationSecs: int32(exp.Seconds()),
 				Properties: &apipb.TaskProperties{
@@ -424,6 +424,7 @@ func TestComputeNewTaskRequest(t *testing.T) {
 					},
 					SecretBytes: sb,
 				},
+				WaitForCapacity: waitForCapacity,
 			}
 		}
 
@@ -447,8 +448,8 @@ func TestComputeNewTaskRequest(t *testing.T) {
 			Realm:       "project:bucket",
 			RequestUuid: "req-bb-12345678",
 			TaskSlices: []*apipb.TaskSlice{
-				slice(dims1, time.Minute),
-				slice(dims2, 240*time.Second),
+				slice(dims1, time.Minute, false),
+				slice(dims2, 240*time.Second, true),
 			},
 		}
 		assert.That(t, newReq, should.Match(expected))
@@ -474,6 +475,7 @@ func validRequest(now time.Time) *bbpb.RunTaskRequest {
 			"tag1:v1",
 			"tag2:v2",
 		},
+		"wait_for_capacity": true,
 	}
 	return &bbpb.RunTaskRequest{
 		Target:           "swarming://target",

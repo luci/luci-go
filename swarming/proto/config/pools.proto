@@ -214,7 +214,7 @@ message Pool {
   }
   SchedulingAlgorithm scheduling_algorithm = 14;
 
-  // Regex expression to match information dimension keys.
+  // Regex expression to match informational dimension keys.
   //
   // Informational dimensions cannot be used for scheduling tasks, but they
   // are still useful for describing bots in UI, filtering bots by them, etc.

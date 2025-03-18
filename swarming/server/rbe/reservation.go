@@ -222,6 +222,11 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 		untilExpired = 0
 	}
 	queuingTimeout := durationpb.New(untilExpired)
+	// How much time left to wait for a matching bot.
+	var matchTimeout *durationpb.Duration
+	if task.WaitForCapacity {
+		matchTimeout = queuingTimeout
+	}
 	// How much time there is to run once started.
 	executionTimeout := task.ExecutionTimeout
 	// The task must be done by that time.
@@ -241,6 +246,7 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 			Priority:         task.Priority,
 			Constraints:      constraints,
 			RequestedBotId:   task.RequestedBotId,
+			MatchTimeout:     matchTimeout,
 		},
 	})
 	if status.Code(err) == codes.AlreadyExists {
@@ -622,6 +628,7 @@ func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun
 			Priority:            int32(tr.Priority),
 			SchedulingAlgorithm: tr.SchedulingAlgorithm,
 			ExecutionTimeout:    durationpb.New(time.Duration(timeout) * time.Second),
+			WaitForCapacity:     s.WaitForCapacity,
 		},
 	})
 }

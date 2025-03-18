@@ -695,8 +695,9 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 		totalExpirationSecs += s.ExpirationSecs
 		props, propsTags := toTaskProperties(s.Properties)
 		ts := model.TaskSlice{
-			Properties:     props,
-			ExpirationSecs: int64(s.ExpirationSecs),
+			Properties:      props,
+			ExpirationSecs:  int64(s.ExpirationSecs),
+			WaitForCapacity: s.WaitForCapacity,
 		}
 		tr.TaskSlices = append(tr.TaskSlices, ts)
 

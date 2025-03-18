@@ -387,9 +387,9 @@ type TaskSlice struct {
 	// enqueued instead.
 	ExpirationSecs int64 `gae:"expiration_secs"`
 
-	// WaitForCapacity is a legacy flag that does nothing, always false now.
-	//
-	// TODO(vadimsh): Remove it when no longer referenced
+	// WaitForCapacity is a flag indicating whether the slice should remain
+	// PENDING if there is no matching bot online, instead of directly being
+	// rejected with NO_RESOURCE error.
 	WaitForCapacity bool `gae:"wait_for_capacity"`
 }
 

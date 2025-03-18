@@ -95,7 +95,8 @@ func TestReservationServer(t *testing.T) {
 				{Key: "key1", AllowedValues: []string{"v1", "v2"}},
 				{Key: "key2", AllowedValues: []string{"v3"}},
 			},
-			Priority: 123,
+			Priority:        123,
+			WaitForCapacity: true,
 		}
 
 		taskReqKey, err := model.TaskIDToRequestKey(ctx, enqueueTask.Payload.TaskId)
@@ -137,6 +138,7 @@ func TestReservationServer(t *testing.T) {
 				ExecutionTimeout: durationpb.New(executionTimeout),
 				Priority:         123,
 				RequestedBotId:   "some-bot-id",
+				MatchTimeout:     durationpb.New(expirationTimeout),
 			}))
 		})
 
@@ -630,6 +632,7 @@ func TestEnqueueTasks(t *testing.T) {
 							ExecutionTimeoutSecs: 3600,
 							GracePeriodSecs:      300,
 						},
+						WaitForCapacity: true,
 					},
 				},
 				Name:                "task",
@@ -669,6 +672,7 @@ func TestEnqueueTasks(t *testing.T) {
 				Priority:            30,
 				SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
 				ExecutionTimeout:    durationpb.New(time.Duration(3930) * time.Second),
+				WaitForCapacity:     true,
 			}
 			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
 			assert.Loosely(t, actual, should.Match(expected))

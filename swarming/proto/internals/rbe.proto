@@ -23,10 +23,7 @@ message EnqueueRBETask {
   // Payload of the new RBE reservation. It will eventually be routed to a bot.
   TaskPayload payload = 1;
 
-  // Fields below are used to decide how to schedule the reservation. Data in
-  // them duplicates immutable data already stored in Datastore, but this data
-  // is potentially hard to get from Go due to use of LocalStructuredProperty so
-  // it is duplicated here.
+  // Fields below are used to decide how to schedule the reservation.
 
   // Full RBE instance ID to submit this task to, extracted from TaskRequest.
   string rbe_instance = 2;
@@ -48,6 +45,10 @@ message EnqueueRBETask {
   swarming.config.Pool.SchedulingAlgorithm scheduling_algorithm = 7;
   // How long the task is allowed to run once it starts on the bot.
   google.protobuf.Duration execution_timeout = 8;
+  // A flag indicating whether RBE should keep the reservation in queue until
+  // `expiry` if there is no matching bot online, instead of directly killing
+  // it.
+  bool wait_for_capacity = 9;
 }
 
 

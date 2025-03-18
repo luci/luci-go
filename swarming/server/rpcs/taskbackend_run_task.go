@@ -142,7 +142,7 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 		return nil, status.Errorf(codes.Internal, "failed to marshal secrets")
 	}
 
-	genSlice := func(dims []*apipb.StringPair, exp time.Duration) *apipb.TaskSlice {
+	genSlice := func(dims []*apipb.StringPair, exp time.Duration, waitForCapacity bool) *apipb.TaskSlice {
 		return &apipb.TaskSlice{
 			ExpirationSecs: int32(exp.Seconds()),
 			Properties: &apipb.TaskProperties{
@@ -163,6 +163,7 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 				},
 				SecretBytes: secretBytes,
 			},
+			WaitForCapacity: waitForCapacity,
 		}
 	}
 
@@ -172,12 +173,13 @@ func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb
 	slices := make([]*apipb.TaskSlice, 0, len(exps))
 	for i := 1; i < len(exps); i++ {
 		curExp := exps[i] - lastExp
-		slices = append(slices, genSlice(dimsByExp[exps[i]], curExp))
+		slices = append(slices, genSlice(dimsByExp[exps[i]], curExp, false))
 		lastExp = exps[i]
 	}
 
 	baseExp = max(baseExp-lastExp, 60*time.Second)
-	slices = append(slices, genSlice(dimsByExp[exps[0]], baseExp))
+
+	slices = append(slices, genSlice(dimsByExp[exps[0]], baseExp, cfg.WaitForCapacity))
 	return slices, nil
 }
 
