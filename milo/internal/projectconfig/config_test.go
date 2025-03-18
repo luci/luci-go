@@ -15,6 +15,7 @@
 package projectconfig
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -26,9 +27,11 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/protobuf/proto"
 
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
@@ -508,4 +511,63 @@ var mockedConfigsBroken = map[config.Set]memcfg.Files{
 		"${appid}.cfg": externalConsoleCfg,
 		"project.cfg":  externalProjectCfg,
 	},
+}
+
+// TestOldProtosStillReadable creates a datastore record (in the emulator) using the LegacyConsole type
+// and then tries to read it using the Console type.
+//
+// The field that was once `Def projectconfigpb.Console` became `Def *projectconfigpb.Console` and this
+// test, in some small way, makes sure that that path continues to work.
+func TestOldProtosStillReadable(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	ctx = memory.Use(ctx)
+	datastore.GetTestable(ctx).Consistent(true)
+
+	mustMarshal := func(msg proto.Message) []byte {
+		b, err := proto.Marshal(msg)
+		if err != nil {
+			panic(err)
+		}
+		return b
+	}
+
+	// LegacyConsole deliberately uses the old encoding for the proto projectconfigpb.Console.
+	//
+	// This test ensures that old records stay readable.
+	type LegacyConsole struct {
+		Kind           string `gae:"$kind,Console"`
+		ID             string `gae:"$id"`
+		ConfigRevision string `gae:",noindex"`
+		EncodedProto   []byte `gae:"Def,noindex"`
+	}
+
+	legacyConsole := &LegacyConsole{
+		ID:             "moneycat",
+		ConfigRevision: "fake config revision",
+		EncodedProto: mustMarshal(&projectconfigpb.Console{
+			RepoUrl: "fake repo url",
+		}),
+	}
+
+	expected := &Console{
+		ID:             "moneycat",
+		ConfigRevision: "fake config revision",
+		Def: projectconfigpb.Console{
+			RepoUrl: "fake repo url",
+		},
+	}
+
+	if err := datastore.Put(ctx, legacyConsole); err != nil {
+		t.Errorf("failed to put: %s", err)
+	}
+
+	actual := &Console{ID: "moneycat"}
+
+	if err := datastore.Get(ctx, actual); err != nil {
+		t.Errorf("failed to get: %s", err)
+	}
+
+	assert.That(t, actual, should.Match(expected))
 }
