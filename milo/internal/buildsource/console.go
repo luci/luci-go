@@ -121,7 +121,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*projectconfig
 
 	for _, ent := range consoleEnts {
 		cid := ent.ConsoleID()
-		consoles[cid] = &ent.Def
+		consoles[cid] = ent.Def
 
 		summaries[cid] = &ui.BuilderSummaryGroup{
 			Builders: make([]*model.BuilderSummary, len(ent.Def.Builders)),

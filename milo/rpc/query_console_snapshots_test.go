@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
@@ -236,7 +237,7 @@ func TestQueryConsoleSnapshots(t *testing.T) {
 				ID:      conDef.Id,
 			}
 			console := conID.SetID(ctx, nil)
-			console.Def = *conDef
+			console.Def = proto.Clone(conDef).(*projectconfigpb.Console)
 			console.Builders = make([]string, 0, len(conDef.Builders))
 			for _, builder := range conDef.Builders {
 				legacyID := utils.LegacyBuilderIDString(builder.Id)

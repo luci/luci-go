@@ -119,7 +119,7 @@ type Console struct {
 	// If this console is external (i.e. a reference to a console from
 	// another project), this will contain the resolved Console definition,
 	// but with ExternalId and ExternalProject also set.
-	Def projectconfigpb.Console `gae:",noindex"`
+	Def *projectconfigpb.Console `gae:",legacy"`
 
 	// Realm that the console exists under.
 	Realm string
@@ -417,7 +417,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			ConfigURL:      configURL(c, meta),
 			ConfigRevision: meta.Revision,
 			Builders:       pc.AllLegacyBuilderIDs(),
-			Def:            *pc,
+			Def:            proto.Clone(pc).(*projectconfigpb.Console),
 			Realm:          pc.Realm,
 		})
 	}

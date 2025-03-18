@@ -161,7 +161,7 @@ func TestQueryConsoles(t *testing.T) {
 		for i, conID := range consoleIDs {
 			console := conID.SetID(ctx, nil)
 			console.Builders = make([]string, 0, len(consoleBuilders[i]))
-			console.Def = projectconfigpb.Console{
+			console.Def = &projectconfigpb.Console{
 				Builders: make([]*projectconfigpb.Builder, 0, len(consoleBuilders[i])),
 			}
 			for _, builderID := range consoleBuilders[i] {

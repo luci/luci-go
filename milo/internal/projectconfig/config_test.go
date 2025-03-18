@@ -554,7 +554,7 @@ func TestOldProtosStillReadable(t *testing.T) {
 	expected := &Console{
 		ID:             "moneycat",
 		ConfigRevision: "fake config revision",
-		Def: projectconfigpb.Console{
+		Def: &projectconfigpb.Console{
 			RepoUrl: "fake repo url",
 		},
 	}

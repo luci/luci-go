@@ -204,7 +204,7 @@ func consoleRowCommits(c context.Context, project string, def *projectconfigpb.C
 }
 
 func console(c context.Context, project, id string, limit int, con *projectconfig.Console, headerCons []*projectconfig.Console, consoleGroupsErr error) (*ui.Console, error) {
-	def := &con.Def
+	def := con.Def
 	consoleID := projectconfig.ConsoleID{Project: project, ID: id}
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
