@@ -420,7 +420,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 		newStatus := config.Open
 		var steps []*buildbucketpb.Step
 		if build.Status == buildbucketpb.Status_FAILURE {
-			t := tc.TreeCloser
+			t := &tc.TreeCloser
 			var match bool
 			if match, steps = matchingSteps(findFailingSteps(build.Build), t.FailedStepRegexp, t.FailedStepRegexpExclude); match {
 				newStatus = config.Closed

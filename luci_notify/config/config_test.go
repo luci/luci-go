@@ -195,7 +195,7 @@ func TestConfigIngestion(t *testing.T) {
 		assert.That(t, tc.BuilderKey, should.Match(datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux")))
 		assert.That(t, tc.TreeName, should.Equal("chromium"))
 		assert.That(t, tc.Status, should.Equal(Open))
-		assert.That(t, tc.TreeCloser, should.Match(&notifypb.TreeCloser{
+		assert.That(t, &tc.TreeCloser, should.Match(&notifypb.TreeCloser{
 			TreeStatusHost:          "chromium-status.appspot.com",
 			FailedStepRegexp:        "test",
 			FailedStepRegexpExclude: "experimental_test",

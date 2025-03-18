@@ -43,7 +43,7 @@ type TreeCloser struct {
 
 	// TreeCloser is the underlying TreeCloser proto from the current
 	// version of the config.
-	TreeCloser *notifypb.TreeCloser
+	TreeCloser notifypb.TreeCloser
 
 	// Status is the current status of this rule. If any TreeCloser for a
 	// given tree-status host has a status of 'Closed', the tree will be

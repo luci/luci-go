@@ -542,7 +542,7 @@ func TestHandleBuild(t *testing.T) {
 			tc := &config.TreeCloser{
 				BuilderKey: builderKey,
 				TreeName:   "chromium-status.appspot.com",
-				TreeCloser: &apicfg.TreeCloser{
+				TreeCloser: apicfg.TreeCloser{
 					FailedStepRegexp:        "include",
 					FailedStepRegexpExclude: "exclude",
 					Template:                "template",
@@ -628,7 +628,7 @@ func TestHandleBuild(t *testing.T) {
 			tc := &config.TreeCloser{
 				BuilderKey: builderKey,
 				TreeName:   "chromium-status.appspot.com",
-				TreeCloser: &apicfg.TreeCloser{Template: "template"},
+				TreeCloser: apicfg.TreeCloser{Template: "template"},
 				Status:     config.Open,
 				Timestamp:  initialTimestamp,
 			}
