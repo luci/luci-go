@@ -61,6 +61,16 @@ func TestLoadDefinition(t *testing.T) {
 				name = "@local-2",
 				source = pkg.source.local("inner"),
 			)
+			pkg.depend(
+				name = "@remote",
+				source = pkg.source.googlesource(
+					host = "something",
+					repo = "some/repo",
+					ref = "refs/heads/main",
+					path = ".",
+					revision = "a" * 40,
+				)
+			)
 		`)
 		assert.NoErr(t, err)
 
@@ -104,6 +114,14 @@ func TestLoadDefinition(t *testing.T) {
 				{
 					Name:      "@local-2",
 					LocalPath: "inner",
+				},
+				{
+					Name:     "@remote",
+					Host:     "something",
+					Repo:     "some/repo",
+					Ref:      "refs/heads/main",
+					Path:     ".",
+					Revision: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				},
 			},
 		}))
@@ -261,6 +279,25 @@ func TestLoadDefinition(t *testing.T) {
 		assertGenErrs(t, `
 				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
 				_ = pkg.source.local(%s)
+			`,
+			[]genErrCase{
+				{`None`, `missing required field "path"`},
+				{`""`, `bad "path": must not be empty`},
+				{`"abc/../def"`, `bad "path": the path must be in normalized form (i.e. "def" instead of "abc/../def")`},
+			},
+		)
+	})
+
+	t.Run("pkg.source.googlesource bad paths", func(t *testing.T) {
+		assertGenErrs(t, `
+				pkg.declare(name = "@pkg/name", lucicfg = "1.2.3")
+				_ = pkg.source.googlesource(
+					path = %s,
+					host = "something",
+					repo = "some/repo",
+					ref = "refs/heads/main",
+					revision = "a" * 40,
+				)
 			`,
 			[]genErrCase{
 				{`None`, `missing required field "path"`},

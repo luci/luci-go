@@ -106,6 +106,35 @@ type DepDecl struct {
 	//
 	// Unset for remote dependencies.
 	LocalPath string
+
+	// Host is a googlesource host of the remote dependency.
+	//
+	// Unset for local dependencies.
+	Host string
+
+	// Repo is the repository name on the host.
+	//
+	// Unset for local dependencies.
+	Repo string
+
+	// Ref is a git ref (e.g. "refs/heads/main") in the repository.
+	//
+	// Unset for local dependencies.
+	Ref string
+
+	// Path is a path within the repository.
+	//
+	// Unset for local dependencies.
+	Path string
+
+	// Revision is a full git commit specifying a constraint on the required
+	// remote version.
+	//
+	// In the final resolved version set, this dependency will be at this or
+	// newer (based on the git log for Ref) revision.
+	//
+	// Unset for local dependencies.
+	Revision string
 }
 
 // LoaderValidator can do extra validation checks right when loading
@@ -429,7 +458,13 @@ func (s *state) depend(ctx context.Context, call nativeCall) (starlark.Value, er
 		}
 	}
 
+	// Note: basic types and presence of fields were already validated.
 	dep.LocalPath = sourceField("local_path")
+	dep.Host = sourceField("host")
+	dep.Repo = sourceField("repo")
+	dep.Ref = sourceField("ref")
+	dep.Path = sourceField("path")
+	dep.Revision = sourceField("revision")
 
 	dup := slices.IndexFunc(s.def.Deps, func(existing *DepDecl) bool {
 		return existing.Name == dep.Name

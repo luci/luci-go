@@ -129,7 +129,7 @@ def _entrypoint(path):
     """
     __native__.entrypoint(_validate_path("path", path))
 
-def _googlesource(*, host, repo, ref, path, minimum_version):
+def _googlesource(*, host, repo, ref, path, revision):
     """Defines a reference to package source stored in a googlesource.com repo.
 
     Args:
@@ -141,16 +141,21 @@ def _googlesource(*, host, repo, ref, path, minimum_version):
         resolving versions of dependencies. Required.
       path: a directory path to the lucicfg package root (a directory with
         PACKAGE.star file) within the source repo. Required.
-      minimum_version: a full git commit hash with a minimum compatible version
-        of this dependency. In the final resolved dependency set, the dependency
-        will be at this revision or newer (in case some other package depends
-        on a newer version). Must be reachable from the given git ref. Required.
+      revision: a full git commit hash with a minimum compatible version of this
+        dependency. In the final resolved dependency set, the dependency will be
+        at this revision or newer (in case some other package depends on a newer
+        version). Must be reachable from the given git ref. Required.
 
     Returns:
       A pkg.source.ref struct that can be passed to pkg.depend(...).
     """
-    _unused(host, repo, ref, path, minimum_version)
-    fail("not implemented")
+    return _make_source_ref(
+        host = _validate_string("host", host),
+        repo = _validate_path("repo", repo),
+        ref = _validate_string("ref", ref),
+        path = _validate_path("path", path),
+        revision = _validate_string("revision", revision),
+    )
 
 def _submodule(path):
     """Builds a reference to package source by reading a git submodule.
@@ -269,7 +274,14 @@ pkg = struct(
 # A constructor for pkg.source.ref(...) structs.
 _source_ref = __native__.genstruct("pkg.source.ref")
 
-def _make_source_ref(*, local_path = None):
+def _make_source_ref(
+        *,
+        local_path = None,
+        host = None,
+        repo = None,
+        ref = None,
+        path = None,
+        revision = None):
     """Constructs a new pkg.source.ref(...) struct.
 
     Assumes field types were validated already.
@@ -277,11 +289,28 @@ def _make_source_ref(*, local_path = None):
     Args:
       local_path: is a relative path for local dependencies or None for remote
         dependencies.
+      host: a googlesource host for a remote dependency or None for local
+        dependencies.
+      repo: a git repo on the host for a remote dependency or None for local
+        dependencies.
+      ref: a git ref in the repo for a remote dependency or None for local
+        dependencies.
+      path: a path within the git repo for a remote dependency or None for local
+        dependencies.
+      revision: a full git commit (SHA1) for a remote dependency or None for
+        local dependencies.
 
     Returns:
       A pkg.source.ref(...) struct.
     """
-    return _source_ref(local_path = local_path)
+    return _source_ref(
+        local_path = local_path,
+        host = host,
+        repo = repo,
+        ref = ref,
+        path = path,
+        revision = revision,
+    )
 
 def _validate_source_ref(attr, val):
     """Validates that `val` is a pkg.source.ref(...) struct.

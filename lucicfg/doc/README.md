@@ -4486,7 +4486,7 @@ pkg.source.googlesource(
     repo,
     ref,
     path,
-    minimum_version,
+    revision,
 )
 ```
 
@@ -4500,7 +4500,7 @@ Defines a reference to package source stored in a googlesource.com repo.
 * **repo**: a name of the repository on the host (e.g. `chromium/src`). Required.
 * **ref**: a full git reference (e.g. `refs/heads/main`) to fetch. The history of this reference is used to determine the ordering of commits when resolving versions of dependencies. Required.
 * **path**: a directory path to the lucicfg package root (a directory with PACKAGE.star file) within the source repo. Required.
-* **minimum_version**: a full git commit hash with a minimum compatible version of this dependency. In the final resolved dependency set, the dependency will be at this revision or newer (in case some other package depends on a newer version). Must be reachable from the given git ref. Required.
+* **revision**: a full git commit hash with a minimum compatible version of this dependency. In the final resolved dependency set, the dependency will be at this revision or newer (in case some other package depends on a newer version). Must be reachable from the given git ref. Required.
 
 
 #### Returns  {#pkg.source.googlesource-returns}
