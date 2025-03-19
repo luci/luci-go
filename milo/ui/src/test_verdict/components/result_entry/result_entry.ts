@@ -304,7 +304,8 @@ ${errMsg}</pre
 
     return html`
       <div id="inv-artifacts-header">
-        From the <a href=${getInvURLPath(this.parentInvId)}>parent inv</a>:
+        From the
+        <a href=${getInvURLPath(this.parentInvId)}>parent invocation</a>:
       </div>
       <ul>
         ${this.invArtifacts.map(
