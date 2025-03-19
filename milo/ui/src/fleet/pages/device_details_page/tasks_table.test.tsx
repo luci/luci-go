@@ -87,10 +87,13 @@ describe('<Tasks />', () => {
 
   it('renders tasks list', async () => {
     mockListBots([BotInfo.fromPartial({ botId: 'bot-1' })]);
-    mockListBotTasks([
-      TaskResultResponse.fromPartial({ taskId: '1', name: 'task-1' }),
-      TaskResultResponse.fromPartial({ taskId: '2', name: 'task-2' }),
-    ]);
+    mockListBotTasks(
+      [
+        TaskResultResponse.fromPartial({ taskId: '1', name: 'task-1' }),
+        TaskResultResponse.fromPartial({ taskId: '2', name: 'task-2' }),
+      ],
+      '',
+    );
 
     render(
       <FakeContextProvider>
@@ -101,6 +104,8 @@ describe('<Tasks />', () => {
     await waitFor(() => {
       expect(screen.getByText('task-1')).toBeVisible();
       expect(screen.getByText('task-2')).toBeVisible();
+      // Check pagination
+      expect(screen.getByText('1-2 of 2')).toBeVisible();
     });
   });
 
@@ -108,7 +113,7 @@ describe('<Tasks />', () => {
     const dutId = 'A1234';
     const botId = 'bot-1';
     mockListBots([BotInfo.fromPartial({ botId })]);
-    mockListBotTasks([]);
+    mockListBotTasks([], '');
 
     render(
       <FakeContextProvider>

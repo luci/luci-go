@@ -22,11 +22,17 @@ import {
 // TODO: b/404534941 Use `DEVICE_TASKS_SWARMING_HOST` instead.
 const LIST_BOT_TASKS_ENDPOINT = `https://${SETTINGS.swarming.defaultHost}/prpc/swarming.v2.Bots/ListBotTasks`;
 
-export function createMockTaskListResponse(tasks: TaskResultResponse[]) {
-  return TaskListResponse.fromPartial({ items: tasks });
+export function createMockTaskListResponse(
+  tasks: TaskResultResponse[],
+  nextPageToken: string | undefined,
+) {
+  return TaskListResponse.fromPartial({ items: tasks, cursor: nextPageToken });
 }
 
-export function mockListBotTasks(tasks: TaskResultResponse[]) {
+export function mockListBotTasks(
+  tasks: TaskResultResponse[],
+  nextPageToken: string | undefined,
+) {
   fetchMock.post(LIST_BOT_TASKS_ENDPOINT, {
     headers: {
       'X-Prpc-Grpc-Code': '0',
@@ -34,7 +40,9 @@ export function mockListBotTasks(tasks: TaskResultResponse[]) {
     body:
       ")]}'\n" +
       JSON.stringify(
-        TaskListResponse.toJSON(createMockTaskListResponse(tasks)),
+        TaskListResponse.toJSON(
+          createMockTaskListResponse(tasks, nextPageToken),
+        ),
       ),
   });
 }

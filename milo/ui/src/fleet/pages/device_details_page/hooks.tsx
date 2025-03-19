@@ -55,11 +55,19 @@ export const useBotId = (
   return { botId, botFound, error, isError, isLoading };
 };
 
-export const useTasks = (
-  client: DecoratedClient<BotsClientImpl>,
-  botId: string,
-): {
+export const useTasks = ({
+  client,
+  botId,
+  limit,
+  pageToken,
+}: {
+  client: DecoratedClient<BotsClientImpl>;
+  botId: string;
+  limit: number;
+  pageToken: string;
+}): {
   tasks: readonly TaskResultResponse[] | undefined;
+  nextPageToken: string;
   error: unknown;
   isError: boolean;
   isLoading: boolean;
@@ -69,7 +77,8 @@ export const useTasks = (
     ...client.ListBotTasks.query(
       BotTasksRequest.fromPartial({
         botId: botId,
-        limit: 30,
+        limit: limit,
+        cursor: pageToken,
         state: StateQuery.QUERY_ALL,
         sort: SortQuery.QUERY_STARTED_TS,
       }),
@@ -79,5 +88,11 @@ export const useTasks = (
     enabled: botId !== '',
   });
 
-  return { tasks: data?.items, error, isError, isLoading };
+  return {
+    tasks: data?.items,
+    nextPageToken: data?.cursor || '',
+    error,
+    isError,
+    isLoading,
+  };
 };

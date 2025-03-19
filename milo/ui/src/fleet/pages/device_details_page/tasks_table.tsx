@@ -16,6 +16,13 @@ import { Alert, AlertTitle } from '@mui/material';
 import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
+import {
+  getCurrentPageIndex,
+  getPageSize,
+  getPageToken,
+  usePagerContext,
+} from '@/common/components/params_pager';
+import { Pagination } from '@/fleet/components/device_table/pagination';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import {
@@ -30,6 +37,7 @@ import {
 } from '@/fleet/utils/builds';
 import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   TaskResultResponse,
   TaskState,
@@ -38,6 +46,10 @@ import {
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
 import { useBotId, useTasks } from './hooks';
+
+const UNKNOWN_ROW_COUNT = -1;
+const DEFAULT_PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 // Similar to Swarming's implementation in:
 // https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/luci/appengine/swarming/ui2/modules/task-page/task-page-helpers.js;l=100;drc=6c1b10b83a339300fc10d5f5e08a56f1c48b3d3e
@@ -91,9 +103,20 @@ export const Tasks = ({
   dutId: string;
   swarmingHost?: string;
 }) => {
+  const [searchParams] = useSyncedSearchParams();
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
+    defaultPageSize: DEFAULT_PAGE_SIZE,
+  });
+
   const client = useBotsClient(swarmingHost);
   const botData = useBotId(client, dutId);
-  const tasksData = useTasks(client, botData.botId);
+  const tasksData = useTasks({
+    client,
+    botId: botData.botId,
+    limit: getPageSize(pagerCtx, searchParams),
+    pageToken: getPageToken(pagerCtx, searchParams),
+  });
 
   // First, ensure we have a valid botId to work with.
   if (botData.isError) {
@@ -221,10 +244,23 @@ export const Tasks = ({
     <StyledGrid
       rows={taskGridData}
       columns={columns}
+      slots={{ pagination: Pagination }}
+      slotProps={{
+        pagination: {
+          pagerCtx: pagerCtx,
+          nextPageToken: tasksData.nextPageToken,
+        },
+      }}
+      paginationMode="server"
+      pageSizeOptions={pagerCtx.options.pageSizeOptions}
+      paginationModel={{
+        page: getCurrentPageIndex(pagerCtx),
+        pageSize: getPageSize(pagerCtx, searchParams),
+      }}
+      rowCount={UNKNOWN_ROW_COUNT}
       disableColumnMenu
       disableColumnFilter
       disableRowSelectionOnClick
-      hideFooterPagination
       getRowClassName={getRowClassName}
       sx={{
         '& .row--failure, .row--failure:hover': {
