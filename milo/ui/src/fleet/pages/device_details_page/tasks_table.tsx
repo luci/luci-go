@@ -227,20 +227,23 @@ export const Tasks = ({
       hideFooterPagination
       getRowClassName={getRowClassName}
       sx={{
-        '& .row--failure': {
+        '& .row--failure, .row--failure:hover': {
           backgroundColor: colors.red[100],
         },
-        '& .row--pending': {
+        '& .row--pending, .row--pending:hover': {
           backgroundColor: colors.yellow[100],
         },
-        '& .row--bot_died': {
+        '& .row--bot_died, .row--bot_died:hover': {
           backgroundColor: colors.grey[100],
         },
-        '& .row--client_error': {
+        '& .row--client_error, .row--client_error:hover': {
           backgroundColor: colors.orange[100],
         },
-        '& .row--exception': {
+        '& .row--exception, .row--exception:hover': {
           backgroundColor: colors.purple[100],
+        },
+        '& .MuiDataGrid-row:hover': {
+          filter: 'brightness(0.94)',
         },
       }}
     />
