@@ -15,13 +15,23 @@
 import styled from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Skeleton, Typography } from '@mui/material';
+import { Alert, Button, Skeleton, Typography } from '@mui/material';
 import { UseQueryResult } from '@tanstack/react-query';
 import { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { colors } from '@/fleet/theme/colors';
+import { theme } from '@/fleet/theme/theme';
+import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { addOrUpdateQueryParam } from '@/fleet/utils/search_param';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import {
+  FILTERS_PARAM_KEY,
+  stringifyFilters,
+} from '../multi_select_filter/search_param_utils/search_param_utils';
 
 const Container = styled.div`
   padding: 16px 21px;
@@ -37,10 +47,33 @@ const HAS_RIGHT_SIBLING_STYLES = {
 
 interface MainMetricsProps {
   countQuery: UseQueryResult<CountDevicesResponse, unknown>;
+  selectedFilters: SelectedOptions | undefined;
 }
 
 // TODO: b/393624377 - Refactor this component to make it easier to test.
-export function MainMetrics({ countQuery }: MainMetricsProps) {
+export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
+  selectedFilters = selectedFilters ?? {};
+  const [searchParams, _] = useSyncedSearchParams();
+
+  /**
+   * @param filterName name of the filter, ex. state
+   * @param filterValue array of filter values, ex. DEVICE_STATE_LEASED
+   * @returns will return URL query part with filters and existing parameters, like sorting
+   */
+  const getFilterQueryString = (filterName: string, filterValue: string[]) => {
+    return (
+      '?' +
+      addOrUpdateQueryParam(
+        searchParams,
+        FILTERS_PARAM_KEY,
+        stringifyFilters({
+          ...selectedFilters,
+          [filterName]: filterValue,
+        }).toString(),
+      )
+    );
+  };
+
   const getContent = () => {
     if (countQuery.isError) {
       return (
@@ -100,12 +133,16 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
               value={countQuery.data?.taskState?.busy}
               total={countQuery.data?.total}
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('state', ['DEVICE_STATE_LEASED'])}
             />
             <SingleMetric
               name="Available"
               value={countQuery.data?.taskState?.idle}
               total={countQuery.data?.total}
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('state', [
+                'DEVICE_STATE_AVAILABLE',
+              ])}
             />
           </div>
         </div>
@@ -123,6 +160,7 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
               value={countQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('labels.dut_state', ['ready'])}
             />
             <SingleMetric
               name="Need repair"
@@ -134,6 +172,9 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
                 />
               }
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('labels.dut_state', [
+                'needs_repair',
+              ])}
             />
             <SingleMetric
               name="Repair failed"
@@ -141,6 +182,9 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('labels.dut_state', [
+                'repair_failed',
+              ])}
             />
             <SingleMetric
               name="Need manual repair"
@@ -148,6 +192,9 @@ export function MainMetrics({ countQuery }: MainMetricsProps) {
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
+              filterUrl={getFilterQueryString('labels.dut_state', [
+                'needs_manual_repair',
+              ])}
             />
           </div>
         </div>
@@ -168,6 +215,7 @@ type SingleMetricProps = {
   value?: number;
   total?: number;
   Icon?: ReactElement;
+  filterUrl?: string;
   loading?: boolean;
 };
 
@@ -176,9 +224,11 @@ export function SingleMetric({
   value,
   total,
   Icon,
+  filterUrl,
   loading,
 }: SingleMetricProps) {
-  const percentage = total && value ? value / total : -1;
+  const navigate = useNavigate();
+  const percentage = total && typeof value !== 'undefined' ? value / total : -1;
 
   const renderPercent = () => {
     if (percentage < 0) return <></>;
@@ -195,8 +245,8 @@ export function SingleMetric({
     );
   };
 
-  return (
-    <div css={{ marginRight: 'auto' }}>
+  const content = (
+    <>
       <Typography variant="body2">{name}</Typography>
       <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {Icon && Icon}
@@ -214,6 +264,28 @@ export function SingleMetric({
         )}
       </div>
       {renderPercent()}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {filterUrl && (
+        <Button
+          variant="text"
+          sx={{
+            marginRight: 'auto',
+            display: 'block',
+            textAlign: 'left',
+            color: theme.palette.text.primary,
+          }}
+          onClick={() => {
+            navigate(filterUrl);
+          }}
+        >
+          {content}
+        </Button>
+      )}
+      {!filterUrl && <div css={{ marginRight: 'auto' }}>{content}</div>}
+    </>
   );
 }

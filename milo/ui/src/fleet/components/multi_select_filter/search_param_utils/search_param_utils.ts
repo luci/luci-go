@@ -14,7 +14,9 @@
 
 import { SelectedOptions } from '@/fleet/types';
 
-const FILTERS_PARAM_KEY = 'filters';
+// TODO: b/404269860 extract to a common location
+
+export const FILTERS_PARAM_KEY = 'filters';
 
 export type GetFiltersResult =
   | { filters: SelectedOptions; error: undefined }
@@ -121,4 +123,13 @@ export function filtersUpdater(newFilters: SelectedOptions) {
     }
     return searchParams;
   };
+}
+
+/**
+ * Get URL query part with provided filters.
+ */
+export function getFilterQuery(newFilters: SelectedOptions): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  searchParams.set(FILTERS_PARAM_KEY, stringifyFilters(newFilters));
+  return searchParams;
 }

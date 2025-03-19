@@ -44,7 +44,7 @@ describe('<MainMetrics />', () => {
 
     render(
       <FakeContextProvider>
-        <MainMetrics countQuery={mockCountQuery()} />
+        <MainMetrics countQuery={mockCountQuery()} selectedFilters={{}} />
       </FakeContextProvider>,
     );
 
