@@ -31,12 +31,14 @@ import { extractDutState, extractDutId } from '@/fleet/utils/devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+import { BotData } from './bot_data';
 import { SchedulingData } from './scheduling_data_table';
 import { Tasks } from './tasks_table';
 import { useDeviceData } from './use_device_data';
 
 enum TabValue {
   TASKS = 'tasks',
+  BOT_INFO = 'bot-info',
   SCHEDULING = 'scheduling',
 }
 
@@ -216,11 +218,15 @@ export const DeviceDetailsPage = () => {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
                 <Tab label="Tasks" value={TabValue.TASKS} />
+                <Tab label="Bot Info" value={TabValue.BOT_INFO} />
                 <Tab label="Scheduling labels" value={TabValue.SCHEDULING} />
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
               <Tasks dutId={dutId} />
+            </TabPanel>
+            <TabPanel value={TabValue.BOT_INFO}>
+              <BotData dutId={dutId} />
             </TabPanel>
             <TabPanel value={TabValue.SCHEDULING}>
               <SchedulingData device={device} />

@@ -45,7 +45,7 @@ import {
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
-import { useBotId, useTasks } from './hooks';
+import { useBot, useTasks } from './hooks';
 
 const UNKNOWN_ROW_COUNT = -1;
 const DEFAULT_PAGE_SIZE = 50;
@@ -110,10 +110,10 @@ export const Tasks = ({
   });
 
   const client = useBotsClient(swarmingHost);
-  const botData = useBotId(client, dutId);
+  const botData = useBot(client, dutId);
   const tasksData = useTasks({
     client,
-    botId: botData.botId,
+    botId: botData.info?.botId || '',
     limit: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
   });
@@ -181,7 +181,7 @@ export const Tasks = ({
           <dt>DUT ID</dt>
           <dd>{dutId}</dd>
           <dt>Bot ID</dt>
-          <dd>{botData.botId}</dd>
+          <dd>{botData.info?.botId}</dd>
         </dl>
       </Alert>
     );

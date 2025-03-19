@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
 import {
+  BotInfo,
   BotsClientImpl,
   BotsRequest,
   BotTasksRequest,
@@ -24,11 +25,11 @@ import {
   TaskResultResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
-export const useBotId = (
+export const useBot = (
   client: DecoratedClient<BotsClientImpl>,
   dutId: string,
 ): {
-  botId: string;
+  info: BotInfo | undefined;
   botFound: boolean;
   error: unknown;
   isError: boolean;
@@ -45,14 +46,14 @@ export const useBotId = (
     refetchInterval: 60000,
   });
 
-  let botId = '';
+  let info = undefined;
   let botFound = false;
   if (!isError && !isLoading && data.items.length) {
+    info = data.items[0];
     botFound = true;
-    botId = data.items[0].botId;
   }
 
-  return { botId, botFound, error, isError, isLoading };
+  return { info, botFound, error, isError, isLoading };
 };
 
 export const useTasks = ({
