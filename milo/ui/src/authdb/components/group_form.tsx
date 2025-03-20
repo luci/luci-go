@@ -128,6 +128,12 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
     onError: () => {
       setErrorMessage('Error editing group');
       setIsUpdating(false);
+      // Reset all fields to saved values, otherwise an invalid value will be showing.
+      membersRef.current?.resetToSavedValues();
+      globsRef.current?.resetToSavedValues();
+      subgroupsRef.current?.resetToSavedValues();
+      setDescription(savedDescription);
+      setOwners(savedOwners);
     },
   });
 

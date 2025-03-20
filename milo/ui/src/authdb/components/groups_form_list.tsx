@@ -63,6 +63,7 @@ interface GroupsFormListProps {
 export interface FormListElement {
   getItems: () => string[];
   changeItems: (items: string[]) => void;
+  resetToSavedValues: () => void;
 }
 
 type Item = {
@@ -144,6 +145,9 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
           setItems(asItems(newValues));
           setSavedValues(newValues);
         }
+      },
+      resetToSavedValues: () => {
+        setItems(asItems(savedValues));
       },
     }));
 
