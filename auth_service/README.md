@@ -173,7 +173,7 @@ depends on where the new service is running and what client library it uses.
 
 Go GAE/GKE/GCE services should use [go.chromium.org/luci/server]:
   1. Add the service account of the new service to `auth-trusted-services` group
-    group by filing a [go/peepsec-bug](https://goto.google.com/peepsec-bug).
+    group by filing a [go/pdeiosec-bug](https://goto.google.com/pdeiosec-bug).
   1. Pass the `-auth-service-host <auth-service>.appspot.com` flag.
       * For GAE services, in its config file (`app.yaml` for the `default`
       service, `<service-name>.yaml` for additional services), pass the
