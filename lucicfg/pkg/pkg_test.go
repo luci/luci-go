@@ -16,11 +16,12 @@ package pkg
 
 import (
 	"context"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -30,8 +31,23 @@ func TestEntryOnDisk(t *testing.T) {
 
 	ctx := context.Background()
 
-	repoMgr := &ErroringRepoManager{
-		Error: errors.New("TODO"),
+	repoMgr := &TestRepoManager{
+		Root: prepDisk(t, map[string]string{
+			"remote/v1/a/PACKAGE.star": `
+				pkg.declare(name = "@remote/a", lucicfg = "1.2.5")
+				pkg.resources(["**/*.cfg"])
+				pkg.depend(
+					name = "@remote/b",
+					source = pkg.source.local(
+						path = "../b",
+					)
+				)
+			`,
+			"remote/v1/a/test.cfg": "",
+			"remote/v1/b/PACKAGE.star": `
+				pkg.declare(name = "@remote/b", lucicfg = "1.2.6")
+			`,
+		}),
 	}
 
 	t.Run("Legacy mode", func(t *testing.T) {
@@ -81,6 +97,53 @@ func TestEntryOnDisk(t *testing.T) {
 				Package: "@some/pkg",
 				Main:    true,
 			},
+		}))
+	})
+
+	t.Run("Loads dependencies", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			".git/config": `# Denotes repo root`,
+			"a/b/PACKAGE.star": `
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
+				pkg.entrypoint("c/main.star")
+				pkg.depend(
+					name = "@local",
+					source = pkg.source.local(
+						path = "../dep",
+					)
+				)
+			`,
+			"a/b/c/main.star": `print("Hi")`,
+
+			"a/dep/PACKAGE.star": `
+				pkg.declare(name = "@local", lucicfg = "1.2.4")
+				pkg.depend(
+					name = "@remote/a",
+					source = pkg.source.googlesource(
+						host = "ignored-in-test",
+						repo = "remote",
+						ref = "ignored-in-test",
+						path = "a",
+						revision = "v1",
+					)
+				)
+			`,
+		})
+
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
+		assert.NoErr(t, err)
+
+		assert.That(t, slices.Sorted(maps.Keys(entry.Deps)), should.Match([]string{
+			"local",
+			"remote/a",
+			"remote/b",
+		}))
+
+		assert.That(t, entry.LucicfgVersionConstraints, should.Match([]LucicfgVersionConstraint{
+			{Min: LucicfgVersion{1, 2, 3}, Package: "@some/pkg", Main: true},
+			{Min: LucicfgVersion{1, 2, 4}, Package: "@local"},
+			{Min: LucicfgVersion{1, 2, 5}, Package: "@remote/a"},
+			{Min: LucicfgVersion{1, 2, 6}, Package: "@remote/b"},
 		}))
 	})
 

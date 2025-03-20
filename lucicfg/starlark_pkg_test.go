@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
 
 	"go.chromium.org/luci/lucicfg/pkg"
@@ -55,7 +54,7 @@ func TestPkg(t *testing.T) {
 //
 // Returns false if the output expectation needs to be regenerated.
 func runPkgTest(t *testing.T, dir string) bool {
-	// Note: avoid t.Parallel() because we want to test for finish synchronously
+	// Note: avoid t.Parallel() because we want the test to finish synchronously
 	// in TestPkg to check gotExpectationErrors.
 
 	main := filepath.Join(dir, "main.star")
@@ -73,10 +72,14 @@ func runPkgTest(t *testing.T, dir string) bool {
 		return true
 	}
 
+	var repoMgr pkg.RepoManager
+	depsDir := filepath.Join(dir, "remote")
+	if _, err := os.Stat(depsDir); err == nil {
+		repoMgr = &pkg.TestRepoManager{Root: depsDir}
+	}
+
 	var state *State
-	entry, err := pkg.EntryOnDisk(ctx, main, &pkg.ErroringRepoManager{
-		Error: errors.New("TODO"),
-	})
+	entry, err := pkg.EntryOnDisk(ctx, main, repoMgr)
 
 	// Verify formatter is initialized..
 	if err == nil && entry.Local.Formatter != nil {

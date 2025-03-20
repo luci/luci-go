@@ -17,9 +17,11 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
@@ -167,25 +169,66 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 			Error: errors.Reason("remote dependencies are not supported in this context").Err(),
 		}
 	}
-	// TODO: Use.
-	_ = remotes
+
+	// Construct a trivial Repo implementation that just fetches files directly
+	// from disk. Since we don't really know what this local repo represents (it
+	// may not even exists as a remote repo, e.g. for new packages being
+	// developed), use a special magical RepoKey for it. See also a comment for
+	// PinnedVersion for more details on special status of root-local packages.
+	localRepo := &LocalDiskRepo{
+		Root: repoRoot,
+		Key:  RepoKey{Root: true},
+	}
+
+	// Load transitive closure of all dependencies.
+	repoPath := filepath.ToSlash(rel)
+	deps, err := discoverDeps(ctx, &DepContext{
+		Package: def.Name,
+		Version: PinnedVersion,
+		Repo:    localRepo,
+		Path:    repoPath,
+		RepoManager: &PreconfiguredRepoManager{
+			Repos: []Repo{localRepo},
+			Other: remotes,
+		},
+		Known: def,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert them to a form suitable for Entry.
+	depsLoaders := make(map[string]interpreter.Loader, len(deps))
+	constraints := []LucicfgVersionConstraint{
+		{
+			Min:     def.MinLucicfgVersion,
+			Package: def.Name,
+			Main:    true,
+		},
+	}
+	for _, dep := range deps {
+		name, ok := strings.CutPrefix(dep.Package, "@")
+		if !ok {
+			panic(fmt.Sprintf("unexpected package name %q", dep.Package))
+		}
+		depsLoaders[name] = dep.Code
+		constraints = append(constraints, LucicfgVersionConstraint{
+			Min:     dep.Min,
+			Package: dep.Package,
+		})
+	}
 
 	code, err := diskPackageLoader(root, def.Resources)
 	if err != nil {
 		return nil, err
 	}
 	return &Entry{
-		Main:    code,
-		Package: def.Name,
-		Path:    filepath.ToSlash(rel),
-		Script:  script,
-		LucicfgVersionConstraints: []LucicfgVersionConstraint{
-			{
-				Min:     def.MinLucicfgVersion,
-				Package: def.Name,
-				Main:    true,
-			},
-		},
+		Main:                      code,
+		Deps:                      depsLoaders,
+		Package:                   def.Name,
+		Path:                      repoPath,
+		Script:                    script,
+		LucicfgVersionConstraints: constraints,
 		Local: &Local{
 			Code:       code,
 			DiskPath:   root,
