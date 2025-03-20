@@ -26,14 +26,27 @@ import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 
-// A local equivalent of luci.resultdb.TestResult message
-// in ../../v1/test_result.proto.
+// A local equivalent of luci.resultdb.v1.TestResult message
+// in ../../../proto/v1/test_result.proto.
 // See its comments for details.
 message TestResult {
   reserved 10; // test_location
   reserved "test_location";
 
-  // Equivalent of luci.resultdb.v1.TestResult.TestId.
+  // Equivalent of luci.resultdb.v1.TestResult.test_id_structured.
+  //
+  // To support migration from test_id to test_id_structured,
+  // it is acceptable to set both test_id_structured and test_id.
+  // If rdb stream is run with a module name specified, test_id_structured
+  // will be used. Otherwise, test_id will be used.
+  TestIdentifier test_id_structured = 15;
+
+  // Equivalent of luci.resultdb.v1.TestResult.test_id.
+  // Deprecated: new uploaders should set test_id_structured only.
+  //
+  // Where a structured ID is used and this ID is set, and a legacy test ID
+  // base is provided to `rdb stream`, it may be used to populate the original
+  // test ID of the result (test metadata field).
   string test_id = 1;
 
   // Equivalent of luci.resultdb.v1.TestResult.result_id.
@@ -64,7 +77,7 @@ message TestResult {
   map<string, Artifact> artifacts = 9;
 
   // Equivalent of luci.resultdb.v1.TestResult.test_metadata.
-  luci.resultdb.v1.TestMetadata test_metadata = 11;
+  TestMetadata test_metadata = 11;
 
   // Equivalent of luci.resultdb.v1.TestResult.failure_reason.
   luci.resultdb.v1.FailureReason failure_reason = 12;
@@ -73,6 +86,8 @@ message TestResult {
   // The variant for all test cases should be passed by command line args to rdb
   // stream, however you can override or add to the variant on a per test case
   // basis using this field.
+  // Deprecated: pass the module-level variant to rdb stream. If there is further
+  // variant information at the test case level, encode it into the test ID.
   luci.resultdb.v1.Variant variant = 13;
 
   // Arbitrary JSON object that contains structured, domain-specific properties
@@ -82,8 +97,47 @@ message TestResult {
   google.protobuf.Struct properties = 14;
 }
 
+
+// A local equivalent of luci.resultdb.TestMetadata message
+// in ../../../proto/v1/test_metadata.proto.
+message TestMetadata {
+  // The original test name.
+  // Deprecated: This was an attempt to solve the problem of test IDs that were
+  // too long to show on the UI. Structured test IDs are now the recommended
+  // solution instead.
+  string name = 1;
+
+  // Where the test is defined, e.g. the file name.
+  // location.repo MUST be specified.
+  luci.resultdb.v1.TestLocation location = 2;
+
+  // The issue tracker component associated with the test, if any.
+  // Bugs related to the test may be filed here.
+  luci.resultdb.v1.BugComponent bug_component = 3;
+
+  // Identifies the schema of the JSON object in the properties field.
+  // Use the fully-qualified name of the source protocol buffer.
+  // eg. chromiumos.test.api.TestCaseInfo
+  // ResultDB will *not* validate the properties field with respect to this
+  // schema. Downstream systems may however use this field to inform how the
+  // properties field is interpreted.
+  string properties_schema = 4;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the test.
+  //
+  // The serialized size must be <= 4096 bytes.
+  //
+  // If this field is specified, properties_schema must also be specified.
+  google.protobuf.Struct properties = 5;
+
+  // previous_test_id elided as currently set by rdb stream to support test_id ->
+  // test_id_structured migrations. If it is added in future to support other types
+  // of migrations, a structured form may be more suitable.
+}
+
 // A local equivalent of luci.resultdb.Artifact message
-// in ../../rpc/v1/artifact.proto.
+// in ../../../proto/v1/artifact.proto.
 // See its comments for details.
 // Does not have a name or artifact_id because they are represented by the
 // TestResult.artifacts map key.
@@ -136,4 +190,35 @@ message TestResultFile {
 
   // Format of the file.
   Format format = 2;
+}
+
+// A local equivalent of luci.resultdb.v1.TestIdentifier message
+// in ../../../proto/v1/common.proto.
+// See its comments for details.
+message TestIdentifier {
+  // module_* fields elided here as they should be set via arguments to rdb stream.
+
+  // Equivalent of luci.resultdb.v1.TestIdentifier.coarse_name.
+  string coarse_name = 1;
+
+  // Equivalent of luci.resultdb.v1.TestIdentifier.fine_name.
+  string fine_name = 2;
+
+  // Equivalent of luci.resultdb.v1.TestIdentifier.case_name, but
+  // specified as a set of components to avoid uploaders needing to handle
+  // encoding themselves.
+  //
+  // Typically, only one component is specified: the JUnit/GTest/... method name.
+  // E.g. ["barTest"]
+  //
+  // However, in case of extended hierarchies (e.g. Mocha/Jest test hierarchies,
+  // some parameterised tests), multiple components MAY be specified.
+  // E.g. ["GerritChangesContentCell", "when_there_are_changes", "should_expand/collapse_correctly"]
+  //
+  // When reporting the status of fine name-level setup/teardown, use
+  // the special value ["*fixture"].
+  //
+  // See luci.resultdb.v1.TestIdentifier.case_name for detailed application
+  // guidance.
+  repeated string case_name_components = 3;
 }

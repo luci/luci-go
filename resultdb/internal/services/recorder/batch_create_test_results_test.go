@@ -782,6 +782,26 @@ func TestValidateTestResult(t *testing.T) {
 					assert.Loosely(t, validateTR(msg), should.BeNil)
 				})
 			})
+			t.Run("Previous Test ID", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					msg.TestMetadata = &pb.TestMetadata{
+						PreviousTestId: "",
+					}
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					msg.TestMetadata = &pb.TestMetadata{
+						PreviousTestId: "ninja://old_test_id",
+					}
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					msg.TestMetadata = &pb.TestMetadata{
+						PreviousTestId: ":module!scheme#",
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: previous_test_id: got delimiter character '#' at byte 14; expected"))
+				})
+			})
 		})
 		t.Run("Failure reason", func(t *ftt.Test) {
 			errorMessage1 := "error1"

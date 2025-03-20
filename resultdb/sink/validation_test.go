@@ -42,7 +42,7 @@ func TestValidateTestResult(t *testing.T) {
 		})
 
 		t.Run(`TestMetadata`, func(t *ftt.Test) {
-			tr.TestMetadata = &pb.TestMetadata{
+			tr.TestMetadata = &sinkpb.TestMetadata{
 				Name: "name",
 				Location: &pb.TestLocation{
 					Repo:     "https://chromium.googlesource.com/chromium/src",

@@ -69,7 +69,7 @@ func TestReportTestResults(t *testing.T) {
 			return nil, nil
 		}
 
-		expectedTR := &pb.TestResult{
+		expectedTR := proto.Clone(&pb.TestResult{
 			TestId:        tr.TestId,
 			ResultId:      tr.ResultId,
 			Expected:      tr.Expected,
@@ -79,9 +79,9 @@ func TestReportTestResults(t *testing.T) {
 			Duration:      tr.Duration,
 			Tags:          tr.Tags,
 			Variant:       tr.Variant,
-			TestMetadata:  tr.TestMetadata,
+			TestMetadata:  toRdbTestMetadata(tr.TestMetadata),
 			FailureReason: tr.FailureReason,
-		}
+		}).(*pb.TestResult)
 
 		checkResults := func() {
 			sink, err := newSinkServer(ctx, cfg)
@@ -325,7 +325,6 @@ func TestReportTestResults(t *testing.T) {
 		t.Run("with ServerConfig.TestLocationBase", func(t *ftt.Test) {
 			cfg.TestLocationBase = "//base/"
 			tr.TestMetadata.Location.FileName = "artifact_dir/a_test.cc"
-			expectedTR.TestMetadata = proto.Clone(expectedTR.TestMetadata).(*pb.TestMetadata)
 			expectedTR.TestMetadata.Location.FileName = "//base/artifact_dir/a_test.cc"
 			checkResults()
 		})
@@ -374,6 +373,9 @@ func TestReportTestResults(t *testing.T) {
 					},
 				},
 			}
+			// Let the bug component be derived from the location.
+			tr.TestMetadata.BugComponent = nil
+
 			expectedTR.Tags = append(expectedTR.Tags, pbutil.StringPairs(
 				"feature", "feature2",
 				"feature", "feature3",
@@ -421,6 +423,8 @@ func TestReportTestResults(t *testing.T) {
 					},
 				},
 			}
+			// Let the bug component be derived from the location.
+			tr.TestMetadata.BugComponent = nil
 
 			expectedTR.Tags = append(expectedTR.Tags, pbutil.StringPairs(
 				"feature", "feature2",

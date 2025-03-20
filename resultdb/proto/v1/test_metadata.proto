@@ -57,6 +57,9 @@ message TestMetadataDetail {
 // Information about a test.
 message TestMetadata {
   // The original test name.
+  // Deprecated: This was an attempt to solve the problem of test IDs that were
+  // too long to show on the UI. Structured test IDs are now the recommended
+  // solution instead.
   string name = 1;
 
   // Where the test is defined, e.g. the file name.
@@ -82,6 +85,9 @@ message TestMetadata {
   //
   // If this field is specified, properties_schema must also be specified.
   google.protobuf.Struct properties = 5;
+
+  // The test ID this test previously had.
+  string previous_test_id = 6;
 }
 
 // Location of the test definition.

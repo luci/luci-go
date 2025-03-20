@@ -26,23 +26,46 @@ import (
 
 // validateTestResult returns a non-nil error if msg is invalid.
 func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
-	ec := checker{&err}
-	switch {
-	case msg == nil:
-		return unspecified()
-	case ec.isErr(pbutil.ValidateTestID(msg.TestId), "test_id"):
-	case ec.isErr(pbutil.ValidateResultID(msg.ResultId), "result_id"):
-	// skip `Expected`
-	case ec.isErr(pbutil.ValidateTestResultStatus(msg.Status), "status"):
-	case ec.isErr(pbutil.ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
-	case ec.isErr(pbutil.ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
-	case ec.isErr(pbutil.ValidateStringPairs(msg.Tags), "tags"):
-	case ec.isErr(validateArtifacts(msg.Artifacts), "artifacts"):
-	case msg.TestMetadata != nil && ec.isErr(pbutil.ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
-	case msg.FailureReason != nil && ec.isErr(pbutil.ValidateFailureReason(msg.FailureReason), "failure_reason"):
-	case msg.Properties != nil && ec.isErr(pbutil.ValidateTestResultProperties(msg.Properties), "properties"):
+	if msg == nil {
+		return errors.Reason("unspecified").Err()
 	}
-	return err
+	if err := pbutil.ValidateTestID(msg.TestId); err != nil {
+		return errors.Annotate(err, "test_id").Err()
+	}
+	if err := pbutil.ValidateResultID(msg.ResultId); err != nil {
+		return errors.Annotate(err, "result_id").Err()
+	}
+	if err := pbutil.ValidateTestResultStatus(msg.Status); err != nil {
+		return errors.Annotate(err, "status").Err()
+	}
+	if err := pbutil.ValidateSummaryHTML(msg.SummaryHtml); err != nil {
+		return errors.Annotate(err, "summary_html").Err()
+	}
+	if err := pbutil.ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration); err != nil {
+		return err
+	}
+	if err := pbutil.ValidateStringPairs(msg.Tags); err != nil {
+		return errors.Annotate(err, "tags").Err()
+	}
+	if err := validateArtifacts(msg.Artifacts); err != nil {
+		return errors.Annotate(err, "artifacts").Err()
+	}
+	if msg.TestMetadata != nil {
+		if err := pbutil.ValidateTestMetadata(toRdbTestMetadata(msg.TestMetadata)); err != nil {
+			return errors.Annotate(err, "test_metadata").Err()
+		}
+	}
+	if msg.FailureReason != nil {
+		if err := pbutil.ValidateFailureReason(msg.FailureReason); err != nil {
+			return errors.Annotate(err, "failure_reason").Err()
+		}
+	}
+	if msg.Properties != nil {
+		if err := pbutil.ValidateTestResultProperties(msg.Properties); err != nil {
+			return errors.Annotate(err, "properties").Err()
+		}
+	}
+	return nil
 }
 
 // validateArtifact returns a non-nil error if art is invalid.
@@ -63,7 +86,7 @@ func validateArtifact(art *sinkpb.Artifact) error {
 func validateArtifacts(arts map[string]*sinkpb.Artifact) error {
 	for id, art := range arts {
 		if art == nil {
-			return errors.Reason("%s: %s", id, unspecified()).Err()
+			return errors.Reason("%s: unspecified", id).Err()
 		}
 		if err := pbutil.ValidateArtifactID(id); err != nil {
 			return errors.Annotate(err, "%s", id).Err()
@@ -73,24 +96,4 @@ func validateArtifacts(arts map[string]*sinkpb.Artifact) error {
 		}
 	}
 	return nil
-}
-
-type checker struct {
-	lastCheckedErr *error
-}
-
-// isErr returns true if err is nil. False, otherwise.
-//
-// It also stores err into lastCheckedErr. If err was not nil, it wraps err with
-// errors.Annotate before storing it in lastErr.
-func (c *checker) isErr(err error, format string, args ...any) bool {
-	if err == nil {
-		return false
-	}
-	*c.lastCheckedErr = errors.Annotate(err, format, args...).Err()
-	return true
-}
-
-func unspecified() error {
-	return errors.Reason("unspecified").Err()
 }

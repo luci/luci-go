@@ -158,6 +158,11 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 			return errors.Annotate(err, "properties").Err()
 		}
 	}
+	if tmd.PreviousTestId != "" {
+		if err := ValidateTestID(tmd.PreviousTestId); err != nil {
+			return errors.Annotate(err, "previous_test_id").Err()
+		}
+	}
 	return nil
 }
 
