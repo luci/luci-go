@@ -54,15 +54,15 @@ export function CollapsibleList({
 
   return (
     <>
-      <TableRow>
+      <TableRow
+        onClick={() => {
+          setExpanded(!expanded);
+        }}
+        style={{ cursor: 'pointer' }}
+      >
         <TableCell>
           <Typography variant="h6">{title}</Typography>
-          <IconButton
-            sx={{ pb: 0, pt: 0 }}
-            onClick={() => {
-              setExpanded(!expanded);
-            }}
-          >
+          <IconButton sx={{ pb: 0, pt: 0 }}>
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
         </TableCell>
