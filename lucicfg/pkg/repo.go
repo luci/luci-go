@@ -1,0 +1,336 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package pkg
+
+import (
+	"context"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+
+	"go.chromium.org/luci/common/errors"
+)
+
+// PinnedVersion is a version placeholder that is used only by the root package
+// and its local dependencies and it means "use the exact same revision as the
+// root package".
+//
+// When loading packages from disk, we don't really know their real revision.
+// We could ask the local git repo, but it will often return some local revision
+// not comparable with anything in the remote repo. Essentially local
+// dependencies exists at some indeterminable "virtual" version not comparable
+// with any other remote version (and consequently this version can't
+// participate in the Minimal Version Selection algorithm). "@pinned" represents
+// such a version.
+//
+// Also, when doing Minimal Version Selection, there's a potential edge case of
+// some remote dependency depending back on a root-local dependency. It is not
+// clear what is the expected behavior in that case. As already mentioned we
+// generally can't compare the local version to the requested remote version
+// (to pick the most recent one). Arbitrarily deciding the local version is
+// automatically "the most recent" can potentially violate version constraints
+// (if this local version actually happens to be quite ancient).
+//
+// For now this edge case is forbidden and encountering it while evaluating
+// dependencies will result in an error.
+//
+// Finally, when loading a root package from some remote storage, even if we
+// know its correct (i.e. comparable) version, we still must preserve the exact
+// same logic of handling of root-local dependencies. Otherwise executions that
+// use a local disk and executions that use a remote storage will differ, even
+// when the actual inputs are identical. For that reason we use "@pinned" for
+// root-local packages even when the root is actually remote and has a known
+// comparable revision.
+const PinnedVersion = "@pinned"
+
+// ErrFileNotInRepo is wrapped and returned by Repo.Fetch if the requested file
+// is not in the repository.
+var ErrFileNotInRepo = errors.New("no such file")
+
+// RepoKey identifies a repository.
+//
+// It is either a remote repository or a local root package repository (which
+// is essentially equivalent to a local disk: the local repository can't
+// generally compare versions).
+type RepoKey struct {
+	// Root is true for the local root repo (we assume we don't know what it is).
+	Root bool
+	// Host is a googlesource host of this package or "" for local root repo.
+	Host string
+	// Repo is the repository name on the host or "" for local root repo.
+	Repo string
+	// Ref is a git ref in the repository or "" for local root repo.
+	Ref string
+}
+
+// String returns the representation of RepoKey for error messages and logs.
+func (k RepoKey) String() string {
+	if k.Root {
+		return "the root package repository"
+	}
+	return fmt.Sprintf("https://%s.googlesource.com/%s/+/%s", k.Host, k.Repo, k.Ref)
+}
+
+// RepoManager knows how to work with repositories to fetch package files.
+type RepoManager interface {
+	// Repo returns a representation of the given repository.
+	//
+	// Calling Repo with some repoKey twice should produce the exact same Repo
+	// instance.
+	Repo(ctx context.Context, repoKey RepoKey) (Repo, error)
+}
+
+// Repo is a representation of a repository (all revisions of some ref at once).
+//
+// All paths are slash-separated and relative to the repository root.
+type Repo interface {
+	// RepoKey identifies this particular repository.
+	RepoKey() RepoKey
+	// PickMostRecent returns the most recent version from the given list.
+	PickMostRecent(ctx context.Context, vers []string) (string, error)
+	// Prefetch asks the repo to prefetch files matching the filter.
+	Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error
+	// Fetch fetches the file at some revision. May return ErrFileNotInRepo.
+	Fetch(ctx context.Context, rev, path string) ([]byte, error)
+}
+
+// ErroringRepoManager implements RepoManager by returning errors.
+type ErroringRepoManager struct {
+	// Error will be wrapped and returned.
+	Error error
+}
+
+// Repo is a part of RepoManager interface.
+func (rm *ErroringRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, error) {
+	if rm.Error == nil {
+		panic("error should not be nil")
+	}
+	return nil, errors.Annotate(rm.Error, "repo %s", repoKey).Err()
+}
+
+// PreconfiguredRepoManager uses an existing static set of Repo instances with
+// a RepoManager to use as a fallback to find other repos.
+type PreconfiguredRepoManager struct {
+	// Repos are known "preconfigured" repositories.
+	Repos []Repo
+	// Other is used to construct all other repositories.
+	Other RepoManager
+}
+
+// Repo is a part of RepoManager interface.
+func (rm *PreconfiguredRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, error) {
+	for _, r := range rm.Repos {
+		if r.RepoKey() == repoKey {
+			return r, nil
+		}
+	}
+	return rm.Other.Repo(ctx, repoKey)
+}
+
+// LocalDiskRepo implements Repo by fetching files from the local disk.
+//
+// It always expects to see "@pinned" as a revision in all calls. Attempting to
+// compare "@pinned" to anything else is an error (see the PinnedVersion comment
+// for details).
+type LocalDiskRepo struct {
+	// Root is an absolute native path to the repository checkout on disk.
+	Root string
+	// Key is the RepoKey this repository is known as.
+	Key RepoKey
+}
+
+// RepoKey is a part of Repo interface.
+func (r *LocalDiskRepo) RepoKey() RepoKey {
+	return r.Key
+}
+
+// PickMostRecent is a part of Repo interface.
+func (r *LocalDiskRepo) PickMostRecent(ctx context.Context, vers []string) (string, error) {
+	var remote []string
+	for _, ver := range vers {
+		if ver != PinnedVersion {
+			remote = append(remote, ver)
+		}
+	}
+	if len(remote) == 0 {
+		return PinnedVersion, nil
+	}
+	return "", errors.Reason("local disk repo was unexpectedly asked to compare remote revisions: %v", remote).Err()
+}
+
+// Prefetch is a part of Repo interface.
+func (r *LocalDiskRepo) Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error {
+	if rev != PinnedVersion {
+		return errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+	}
+	return nil
+}
+
+// Fetch is a part of Repo interface.
+func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) {
+	if rev != PinnedVersion {
+		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+	}
+	switch blob, err := os.ReadFile(filepath.Join(r.Root, filepath.FromSlash(path))); {
+	case errors.Is(err, os.ErrNotExist):
+		return nil, errors.Annotate(ErrFileNotInRepo, "local file: %s", path).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "local file %s", path).Err()
+	default:
+		return blob, nil
+	}
+}
+
+// TestRepoManager is used in tests as a mock for remote repositories.
+//
+// Repositories are represented by directories on disk matching the repository
+// name (the host and the ref are ignored). Versions are "vN" strings (ordered
+// as one would expect, e.g. v2 > v1). Each version is represented by
+// a subdirectory of the repository directory.
+type TestRepoManager struct {
+	// Root is the path to the directory with test repositories.
+	Root string
+
+	m     sync.Mutex
+	cache map[RepoKey]*TestRepo
+}
+
+// Repo is a part of RepoManager interface.
+//
+// It returns *TestRepo.
+func (rm *TestRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, error) {
+	if repoKey.Root {
+		return nil, errors.Reason("unexpected request for a root repository").Err()
+	}
+	rm.m.Lock()
+	defer rm.m.Unlock()
+	if r, ok := rm.cache[repoKey]; ok {
+		return r, nil
+	}
+	r := &TestRepo{
+		Path: filepath.Join(rm.Root, filepath.FromSlash(repoKey.Repo)),
+		Key:  repoKey,
+	}
+	if rm.cache == nil {
+		rm.cache = map[RepoKey]*TestRepo{}
+	}
+	rm.cache[repoKey] = r
+	return r, nil
+}
+
+// TestRepo implements Repo as used in tests.
+type TestRepo struct {
+	// Path is a path to the test repository directory.
+	Path string
+	// Key is the corresponding RepoKey.
+	Key RepoKey
+
+	m          sync.Mutex
+	prefetched []string
+}
+
+func parseTestVer(v string) (int, bool) {
+	if val, ok := strings.CutPrefix(v, "v"); ok {
+		if parsed, err := strconv.ParseInt(val, 10, 32); err == nil {
+			return int(parsed), true
+		}
+	}
+	return 0, false
+}
+
+func (r *TestRepo) verDir(v string) (string, error) {
+	if _, ok := parseTestVer(v); !ok {
+		return "", errors.Reason("test repo %s got unexpected version %q", r.Key, v).Err()
+	}
+	d := filepath.Join(r.Path, v)
+	if _, err := os.Stat(d); err != nil {
+		return "", errors.Annotate(err, "test repo %s doesn have version %q", r.Key, v).Err()
+	}
+	return d, nil
+}
+
+// Prefetched returns a list of prefetched files.
+//
+// Each entry is "vN/<path>" string.
+func (r *TestRepo) Prefetched() []string {
+	r.m.Lock()
+	defer r.m.Unlock()
+	return slices.Clone(r.prefetched)
+}
+
+// RepoKey is a part of Repo interface.
+func (r *TestRepo) RepoKey() RepoKey {
+	return r.Key
+}
+
+// PickMostRecent is a part of Repo interface.
+func (r *TestRepo) PickMostRecent(ctx context.Context, vers []string) (string, error) {
+	var nums []int
+	for _, v := range vers {
+		if _, err := r.verDir(v); err != nil {
+			return "", err
+		}
+		val, _ := parseTestVer(v)
+		nums = append(nums, val)
+	}
+	return fmt.Sprintf("v%d", slices.Max(nums)), nil
+}
+
+// Prefetch is a part of Repo interface.
+func (r *TestRepo) Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error {
+	dir, err := r.verDir(rev)
+	if err != nil {
+		return err
+	}
+	r.m.Lock()
+	defer r.m.Unlock()
+	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || !d.Type().IsRegular() {
+			return err
+		}
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		if pathFilter(rel) {
+			r.prefetched = append(r.prefetched, fmt.Sprintf("%s/%s", rev, rel))
+		}
+		return nil
+	})
+	slices.Sort(r.prefetched)
+	return err
+}
+
+// Fetch is a part of Repo interface.
+func (r *TestRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) {
+	dir, err := r.verDir(rev)
+	if err != nil {
+		return nil, err
+	}
+	switch blob, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
+	case errors.Is(err, os.ErrNotExist):
+		return nil, errors.Annotate(ErrFileNotInRepo, "repository file: %s", path).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "repository file %s", path).Err()
+	default:
+		return blob, nil
+	}
+}

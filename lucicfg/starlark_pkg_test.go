@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
 
 	"go.chromium.org/luci/lucicfg/pkg"
@@ -73,7 +74,9 @@ func runPkgTest(t *testing.T, dir string) bool {
 	}
 
 	var state *State
-	entry, err := pkg.EntryOnDisk(ctx, main)
+	entry, err := pkg.EntryOnDisk(ctx, main, &pkg.ErroringRepoManager{
+		Error: errors.New("TODO"),
+	})
 
 	// Verify formatter is initialized..
 	if err == nil && entry.Local.Formatter != nil {

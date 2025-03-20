@@ -75,10 +75,16 @@ type LucicfgVersionConstraint struct {
 // file's directory as the package root. This is useful during the migration to
 // packages.
 //
+// The given RepoManager will be used to load all remote (non-local) transitive
+// dependencies. It is used only if this package has a remote (perhaps
+// transitive) dependency. If nil, remote dependencies won't be supported.
+//
+// Local dependencies are always supported.
+//
 // Returns the loaded entry point with Local populated.
 //
 // The returned error may be backtracable.
-func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
+func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
@@ -155,6 +161,14 @@ func EntryOnDisk(ctx context.Context, path string) (*Entry, error) {
 				script, PackageScript, def.Entrypoints).Err()
 		}
 	}
+
+	if remotes == nil {
+		remotes = &ErroringRepoManager{
+			Error: errors.Reason("remote dependencies are not supported in this context").Err(),
+		}
+	}
+	// TODO: Use.
+	_ = remotes
 
 	code, err := diskPackageLoader(root, def.Resources)
 	if err != nil {

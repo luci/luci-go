@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -29,13 +30,17 @@ func TestEntryOnDisk(t *testing.T) {
 
 	ctx := context.Background()
 
+	repoMgr := &ErroringRepoManager{
+		Error: errors.New("TODO"),
+	}
+
 	t.Run("Legacy mode", func(t *testing.T) {
 		tmp := prepDisk(t, map[string]string{
 			".git/config":     `# Denotes repo root`,
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b/c")))
 
@@ -59,7 +64,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"))
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b")))
 
@@ -84,7 +89,7 @@ func TestEntryOnDisk(t *testing.T) {
 			".git/config":  `# Denotes repo root`,
 			"PACKAGE.star": ``,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr)
 		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
 
@@ -96,7 +101,7 @@ func TestEntryOnDisk(t *testing.T) {
 				pkg.entrypoint("missing.star")
 			`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"), repoMgr)
 		assert.That(t, err, should.ErrLike(`entry point "missing.star": no such file in the package`))
 	})
 
@@ -112,7 +117,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"another1.star": `print("Hi")`,
 			"another2.star": `print("Hi")`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"))
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr)
 		assert.That(t, err, should.ErrLike(
 			`main.star is not declared as a pkg.entrypoint(...) in PACKAGE.star and thus cannot be executed. Available entrypoints: [another1.star another2.star]`))
 	})

@@ -100,7 +100,7 @@ type DepDecl struct {
 	// Name is the name of the package being dependent on.
 	Name string
 
-	// LocalPath is set to a slash-separated relative path (perhaps with ".."")
+	// LocalPath is set to a slash-separated relative path (perhaps with "..")
 	// if this is a local dependency: a dependency on a package within the same
 	// repository as the current PACKAGE.star.
 	//

@@ -17,6 +17,7 @@ package base
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -90,7 +91,9 @@ You may also optionally set +x flag on it, but this is not required.
 	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
 
 	// Load the main package with dependencies from disk.
-	entry, err := pkg.EntryOnDisk(ctx, abs)
+	entry, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
+		Error: errors.New("remote packages aren't implemented yet"),
+	})
 	if err != nil {
 		return nil, err
 	}
