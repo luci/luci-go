@@ -88,6 +88,11 @@ export function stripPrefix(prefix: string, value: string) {
   return value;
 }
 
+// Applies 'stripPrefix' to each item of a list.
+export function stripPrefixFromItems(prefix: string, items: string[]) {
+  return items.map((item) => stripPrefix(prefix, item));
+}
+
 export const toComparableGroupName = (group: AuthGroup) => {
   // Note: callerCanModify is optional; it can be undefined.
   const prefix = group.callerCanModify ? 'A' : 'B';

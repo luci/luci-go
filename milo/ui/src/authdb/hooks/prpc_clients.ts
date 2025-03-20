@@ -14,6 +14,7 @@
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { AuthDBClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
+import { ChangeLogsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/changelogs.pb';
 import { GroupsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 export function useAuthServiceGroupsClient() {
@@ -27,5 +28,12 @@ export function useAuthServiceAuthDBClient() {
   return usePrpcServiceClient({
     host: SETTINGS.authService.host,
     ClientImpl: AuthDBClientImpl,
+  });
+}
+
+export function useAuthServiceChangeLogsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.authService.host,
+    ClientImpl: ChangeLogsClientImpl,
   });
 }

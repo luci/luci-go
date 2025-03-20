@@ -22,6 +22,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import { GroupDescendants } from '@/authdb/components/group_descendants';
 import { GroupForm } from '@/authdb/components/group_form';
+import { GroupHistory } from '@/authdb/components/group_history';
 import { GroupLookup } from '@/authdb/components/group_lookup';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -71,7 +72,13 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
     );
   };
 
-  const validValues = ['overview', 'permissions', 'descendants', 'ancestors'];
+  const validValues = [
+    'overview',
+    'permissions',
+    'descendants',
+    'ancestors',
+    'history',
+  ];
 
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
@@ -100,6 +107,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
                 <Tab label="Permissions" {...a11yProps('permissions')} />
                 <Tab label="Descendants" {...a11yProps('descendants')} />
                 <Tab label="Ancestors" {...a11yProps('ancestors')} />
+                <Tab label="History" {...a11yProps('history')} />
               </TabList>
             </Box>
             <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
@@ -121,6 +129,9 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             </TabPanel>
             <TabPanel value="ancestors" role="tabpanel" id="tabpanel-ancestors">
               <GroupLookup name={name}></GroupLookup>
+            </TabPanel>
+            <TabPanel value="history" role="tabpanel" id="tabpanel-history">
+              <GroupHistory name={name}></GroupHistory>
             </TabPanel>
           </Box>
         </TabContext>

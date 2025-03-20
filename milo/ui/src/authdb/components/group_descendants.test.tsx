@@ -63,7 +63,7 @@ describe('<GroupDescendants />', () => {
     );
 
     await screen.findByTestId('descendants-table');
-    mockGroup.nested.forEach((group) => {
+    mockGroup.nested.forEach((group: string) => {
       expect(screen.getByText(group)).toBeInTheDocument();
     });
   });
@@ -79,7 +79,7 @@ describe('<GroupDescendants />', () => {
     );
     await screen.findByTestId('descendants-table');
 
-    mockGroup.nested.forEach((group) => {
+    mockGroup.nested.forEach((group: string) => {
       expect(screen.getByText(group)).toBeInTheDocument();
       expect(screen.getByTestId(`${group}-link`)).toHaveAttribute(
         'href',
