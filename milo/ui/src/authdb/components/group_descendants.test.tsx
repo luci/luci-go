@@ -25,7 +25,7 @@ import { GroupDescendants } from './group_descendants';
 
 describe('<GroupDescendants />', () => {
   test('displays group members', async () => {
-    const mockGroup = createMockExpandedGroup('123');
+    const mockGroup = createMockExpandedGroup('123', false);
     mockFetchGetExpandedGroup(mockGroup);
 
     render(
@@ -39,7 +39,7 @@ describe('<GroupDescendants />', () => {
     expect(screen.getByText(mockGroup.members[1])).toBeInTheDocument();
   });
   test('displays group globs', async () => {
-    const mockGroup = createMockExpandedGroup('123');
+    const mockGroup = createMockExpandedGroup('123', false);
     mockFetchGetExpandedGroup(mockGroup);
 
     render(
@@ -53,7 +53,7 @@ describe('<GroupDescendants />', () => {
   });
 
   test('displays nested groups', async () => {
-    const mockGroup = createMockExpandedGroup('123');
+    const mockGroup = createMockExpandedGroup('123', false);
     mockFetchGetExpandedGroup(mockGroup);
 
     render(
@@ -69,7 +69,7 @@ describe('<GroupDescendants />', () => {
   });
 
   test('nested groups have correct links', async () => {
-    const mockGroup = createMockExpandedGroup('123');
+    const mockGroup = createMockExpandedGroup('123', false);
     mockFetchGetExpandedGroup(mockGroup);
 
     render(
@@ -102,5 +102,22 @@ describe('<GroupDescendants />', () => {
       screen.getByText('Failed to load group descendants'),
     ).toBeInTheDocument();
     expect(screen.queryByTestId('descendants-table')).toBeNull();
+  });
+
+  test('shows number of redacted members', async () => {
+    const mockGroup = createMockExpandedGroup('123', true);
+    mockFetchGetExpandedGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <GroupDescendants name="123" />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('descendants-table');
+
+    expect(screen.getByText('2 members redacted.')).toBeInTheDocument();
+    for (const member of mockGroup.members) {
+      expect(screen.getByText(member)).toBeInTheDocument();
+    }
   });
 });

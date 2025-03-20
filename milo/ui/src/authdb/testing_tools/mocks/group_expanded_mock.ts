@@ -16,7 +16,7 @@ import fetchMock from 'fetch-mock-jest';
 
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-export function createMockExpandedGroup(name: string) {
+export function createMockExpandedGroup(name: string, redacted: boolean) {
   return AuthGroup.fromPartial({
     name: name,
     description: 'testDescription',
@@ -27,6 +27,7 @@ export function createMockExpandedGroup(name: string) {
     createdTs: '2014-06-19T03:17:22.823080Z',
     createdBy: 'user:test@example.com',
     etag: 'W/"MjAyNC0wNC0wMVQyMzoyNjozOS45MDI1MzNa"',
+    numRedacted: redacted ? 2 : 0,
   });
 }
 

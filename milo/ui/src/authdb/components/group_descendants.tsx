@@ -78,6 +78,7 @@ export function GroupDescendants({ name }: GroupDescendantsProps) {
               items={members}
               renderAsGroupLinks={false}
               title="Members"
+              numRedacted={response?.numRedacted}
             />
             <CollapsibleList
               items={globs}

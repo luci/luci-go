@@ -27,40 +27,21 @@ interface CollapsibleListProps {
   // Determines whether to use GroupLink or not.
   renderAsGroupLinks: boolean;
   title: string;
+  numRedacted?: number;
 }
-
-const expansionThreshold = 10;
 
 export function CollapsibleList({
   items,
   renderAsGroupLinks,
   title,
+  numRedacted = 0,
 }: CollapsibleListProps) {
-  const [expanded, setExpanded] = useState<boolean>(false);
-  const expandable = items.length > expansionThreshold;
-
-  const titleRow = (
-    <TableRow>
-      <TableCell>
-        <Typography variant="h6">{title}</Typography>
-        {expandable && (
-          <IconButton
-            sx={{ pb: 0, pt: 0 }}
-            onClick={() => {
-              setExpanded(!expanded);
-            }}
-          >
-            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
-        )}
-      </TableCell>
-    </TableRow>
-  );
+  const [expanded, setExpanded] = useState<boolean>(true);
 
   if (items.length === 0) {
     return (
       <>
-        {titleRow}
+        <Typography variant="h6">{title}</Typography>
         <Typography
           variant="body2"
           sx={{ fontStyle: 'italic', pl: '20px', pb: '16px', color: 'grey' }}
@@ -73,12 +54,35 @@ export function CollapsibleList({
 
   return (
     <>
-      {titleRow}
-      {(expanded || !expandable) && (
+      <TableRow>
+        <TableCell>
+          <Typography variant="h6">{title}</Typography>
+          <IconButton
+            sx={{ pb: 0, pt: 0 }}
+            onClick={() => {
+              setExpanded(!expanded);
+            }}
+          >
+            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        </TableCell>
+      </TableRow>
+      {expanded && (
         <>
-          <TableRow>
+          <TableRow data-testid="collapsible-list">
             <TableCell sx={{ pt: 0, pb: '16px' }}>
               <ul>
+                {numRedacted > 0 && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontStyle: 'italic',
+                      color: 'grey',
+                    }}
+                  >
+                    {numRedacted} members redacted.
+                  </Typography>
+                )}
                 {items.map((item) => {
                   return (
                     <li key={item}>
