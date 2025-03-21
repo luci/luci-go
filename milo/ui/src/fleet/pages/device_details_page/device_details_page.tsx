@@ -28,6 +28,7 @@ import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { extractDutState, extractDutId } from '@/fleet/utils/devices';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -105,7 +106,7 @@ export const DeviceDetailsPage = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoading, device } = useDeviceData(id);
+  const { error, isError, isLoading, device } = useDeviceData(id);
 
   useEffect(() => {
     setDeviceIdInputValue(id);
@@ -119,6 +120,14 @@ export const DeviceDetailsPage = () => {
       navigate(`/ui/fleet/labs/devices/${deviceId}?tab=${selectedTab}`);
     }
   };
+
+  if (isError) {
+    return (
+      <Alert severity="error">
+        Something went wrong: {getErrorMessage(error, 'fetch device')}
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return (
