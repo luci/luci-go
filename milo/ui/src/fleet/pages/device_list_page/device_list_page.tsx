@@ -128,6 +128,9 @@ export const DeviceListPage = () => {
     for (const col of missingParamsColoumns) {
       searchParams.delete(COLUMNS_PARAM_KEY, col);
     }
+    if (searchParams.getAll(COLUMNS_PARAM_KEY).length <= 1)
+      searchParams.delete(COLUMNS_PARAM_KEY);
+
     setSearchParams(searchParams);
   }, [
     addWarning,
