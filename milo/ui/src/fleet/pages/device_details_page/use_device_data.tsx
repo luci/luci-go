@@ -14,6 +14,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { stringifyFilters } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useDevices, useListDevicesQueryKey } from '@/fleet/hooks/use_devices';
 import {
   Device,
@@ -42,7 +43,7 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
   const request = ListDevicesRequest.fromPartial({
     pageSize: 1,
     pageToken: undefined,
-    filter: 'id = ' + deviceId,
+    filter: stringifyFilters({ id: [deviceId] }),
   });
   const devicesQuery = useDevices(request);
 
