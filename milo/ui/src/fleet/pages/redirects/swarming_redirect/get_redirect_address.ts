@@ -81,7 +81,7 @@ const convertFilters = (searchParams: URLSearchParams) => {
     let [key, val] = f.split(':', 2);
     val = `"${val}"`;
 
-    if (!BASE_DIMENSIONS.some((bd) => bd.id === key)) key = 'labels.' + key;
+    if (!BASE_DIMENSIONS[key]) key = 'labels.' + key;
 
     if (filterObj[key]) filterObj[key].push(val);
     else filterObj[key] = [val];
@@ -110,9 +110,7 @@ const convertOrderBy = (searchParams: URLSearchParams) => {
 
   if (!sParam) return [];
 
-  const by = !BASE_DIMENSIONS.some((bd) => bd.id === sParam)
-    ? `labels.${sParam}`
-    : sParam;
+  const by = !BASE_DIMENSIONS[sParam] ? `labels.${sParam}` : sParam;
 
   if (ascDesc === 'desc') return [['order_by', `${by} desc`]];
   return [['order_by', by]];

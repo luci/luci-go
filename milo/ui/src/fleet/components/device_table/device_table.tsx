@@ -38,7 +38,11 @@ import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetcons
 
 import { ColumnMenu } from './column_menu';
 import { getColumns, orderColumns } from './columns';
-import { BASE_DIMENSIONS, labelValuesToString } from './dimensions';
+import {
+  BASE_DIMENSIONS,
+  COLUMN_OVERRIDES,
+  labelValuesToString,
+} from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
@@ -59,19 +63,20 @@ const computeSelectedRows = (
   return rows.filter((r) => selectedSet.has(r.id));
 };
 
-function getRow(device: Device): Record<string, string> {
-  const row: Record<string, string> = Object.fromEntries(
-    BASE_DIMENSIONS.map((dim) => [dim.id, dim.getValue(device)]),
-  );
-
-  if (device.deviceSpec) {
-    for (const label of Object.keys(device.deviceSpec.labels)) {
-      row[label] = labelValuesToString(device.deviceSpec.labels[label].values);
-    }
-  }
-
-  return row;
-}
+const getRow = (device: Device) =>
+  Object.fromEntries<string>([
+    ...Object.entries(BASE_DIMENSIONS).map<[string, string]>(([id, dim]) => [
+      id,
+      dim.getValue?.(device) ?? labelValuesToString([id]),
+    ]),
+    ...Object.entries(device.deviceSpec?.labels ?? {}).map<[string, string]>(
+      ([label, { values }]) => [
+        label,
+        COLUMN_OVERRIDES[label]?.getValue?.(device) ??
+          labelValuesToString(values),
+      ],
+    ),
+  ]);
 
 function getVisibleColumnIds(params: URLSearchParams) {
   const visibleColumns = params.getAll(COLUMNS_PARAM_KEY);
@@ -84,10 +89,9 @@ const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
   }
 
   const sortItem = sortModel[0];
-  const baseDimension = BASE_DIMENSIONS.filter(
-    (dim) => dim.id === sortItem.field,
-  )[0];
-  const sortKey = baseDimension ? baseDimension.id : `labels.${sortItem.field}`;
+  const sortKey = BASE_DIMENSIONS[sortItem.field]
+    ? sortItem.field
+    : `labels.${sortItem.field}`;
   return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
 };
 
@@ -157,57 +161,56 @@ export function DeviceTable({
     );
   };
 
+  if (isError)
+    return (
+      <Alert severity="error">
+        Something went wrong: {getErrorMessage(error, 'list devices')}
+      </Alert>
+    );
+
   return (
-    <>
-      {isError ? (
-        <Alert severity="error">
-          Something went wrong: {getErrorMessage(error, 'list devices')}
-        </Alert>
-      ) : (
-        <StyledGrid
-          slots={{
-            pagination: Pagination,
-            columnMenu: ColumnMenu,
-            toolbar: FleetToolbar,
-          }}
-          slotProps={{
-            pagination: {
-              pagerCtx: pagerCtx,
-              nextPageToken: nextPageToken,
-              totalRowCount: totalRowCount,
-            },
-            toolbar: {
-              selectedRows: computeSelectedRows(rowSelectionModel, rows),
-              isLoadingColumns: isLoadingColumns,
-            },
-          }}
-          disableRowSelectionOnClick
-          checkboxSelection
-          onRowSelectionModelChange={(newRowSelectionModel) => {
-            setRowSelectionModel(newRowSelectionModel);
-          }}
-          rowSelectionModel={rowSelectionModel}
-          sortModel={sortModel}
-          onSortModelChange={onSortModelChange}
-          rowCount={UNKNOWN_ROW_COUNT}
-          sortingMode="server"
-          paginationMode="server"
-          pageSizeOptions={pagerCtx.options.pageSizeOptions}
-          paginationModel={{
-            page: getCurrentPageIndex(pagerCtx),
-            pageSize: getPageSize(pagerCtx, searchParams),
-          }}
-          columnVisibilityModel={getVisibleColumns(
-            searchParams,
-            defaultColumnVisibilityModel,
-            columns,
-          )}
-          onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-        />
+    <StyledGrid
+      slots={{
+        pagination: Pagination,
+        columnMenu: ColumnMenu,
+        toolbar: FleetToolbar,
+      }}
+      slotProps={{
+        pagination: {
+          pagerCtx: pagerCtx,
+          nextPageToken: nextPageToken,
+          totalRowCount: totalRowCount,
+        },
+        toolbar: {
+          selectedRows: computeSelectedRows(rowSelectionModel, rows),
+          isLoadingColumns: isLoadingColumns,
+        },
+      }}
+      disableRowSelectionOnClick
+      checkboxSelection
+      onRowSelectionModelChange={(newRowSelectionModel) => {
+        setRowSelectionModel(newRowSelectionModel);
+      }}
+      rowSelectionModel={rowSelectionModel}
+      sortModel={sortModel}
+      onSortModelChange={onSortModelChange}
+      rowCount={UNKNOWN_ROW_COUNT}
+      sortingMode="server"
+      paginationMode="server"
+      pageSizeOptions={pagerCtx.options.pageSizeOptions}
+      paginationModel={{
+        page: getCurrentPageIndex(pagerCtx),
+        pageSize: getPageSize(pagerCtx, searchParams),
+      }}
+      columnVisibilityModel={getVisibleColumns(
+        searchParams,
+        defaultColumnVisibilityModel,
+        columns,
       )}
-    </>
+      onColumnVisibilityModelChange={onColumnVisibilityModelChange}
+      rows={rows}
+      columns={columns}
+      loading={isLoading}
+    />
   );
 }

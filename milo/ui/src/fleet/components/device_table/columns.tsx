@@ -62,14 +62,13 @@ const sortingComparator = (
 export const getColumns = (columnIds: string[]): GridColDef[] => {
   return columnIds.map((id) => ({
     field: id,
-    headerName:
-      COLUMN_OVERRIDES.find((dim) => dim.id === id)?.displayName || id,
+    headerName: COLUMN_OVERRIDES[id]?.displayName || id,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
     flex: id === 'id' ? 3 : 1,
     renderCell: (props) =>
-      COLUMN_OVERRIDES.find((dim) => dim.id === id)?.renderCell?.(props) || (
+      COLUMN_OVERRIDES[id]?.renderCell?.(props) || (
         <DeviceDataCell {...props}></DeviceDataCell>
       ),
   }));

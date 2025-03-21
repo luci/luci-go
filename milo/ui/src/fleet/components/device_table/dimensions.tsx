@@ -16,7 +16,8 @@ import { GridRenderCellParams } from '@mui/x-data-grid';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { CROS_DIMENSION_DOC_MAPPING } from '@/fleet/config/device_config';
+import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
+import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import {
   Device,
   DeviceState,
@@ -36,12 +37,14 @@ export const labelValuesToString = (labels: readonly string[]): string => {
     .join(DIMENSION_SEPARATOR);
 };
 
-interface Dimension {
-  id: string; // unique id used for sorting and filtering
-  displayName?: string;
-  getValue: (device: Device) => string;
-  renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
-}
+type Dimension = Record<
+  string, // unique id used for sorting and filtering
+  {
+    displayName?: string;
+    getValue?: (device: Device) => string;
+    renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
+  }
+>;
 
 const getPathnameWithParams = () => {
   return window.location.href.toString().split(window.location.host)[1];
@@ -91,9 +94,8 @@ function renderCellWithLink(
  * which essentially defined how the UI renders non-label fields from the
  * `ListDevices` response.
  */
-export const BASE_DIMENSIONS: Dimension[] = [
-  {
-    id: 'id',
+export const BASE_DIMENSIONS: Dimension = {
+  id: {
     displayName: 'ID',
     getValue: (device: Device) => device.id,
     renderCell: renderCellWithLink(
@@ -102,46 +104,63 @@ export const BASE_DIMENSIONS: Dimension[] = [
     ),
   },
   // TODO(b/400711755): Rename this to Asset Tag
-  {
-    id: 'dut_id',
+  dut_id: {
     displayName: 'Dut ID',
     getValue: (device: Device) => device.dutId,
   },
-  {
-    id: 'type',
+  type: {
     displayName: 'Type',
     getValue: (device: Device) => DeviceType[device.type],
   },
-  {
-    id: 'state',
+  state: {
     displayName: 'Lease state',
-    getValue: (device: Device) => DeviceState[device.state],
+    getValue: (device: Device) => DeviceState[device.state].substring(13), // Removing DEVICE_STATE_ prefix
   },
-  {
-    id: 'host',
+  host: {
     displayName: 'Address',
     getValue: (device: Device) => device.address?.host || '',
   },
-  {
-    id: 'port',
+  port: {
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
   },
-];
+};
 
 /**
  * Customized ChromeOS config for applying custom overrides for different
  * dimensions. Used, for example, to add doc links to specific table cells.
  */
-export const CROS_DIMENSION_OVERRIDES: Dimension[] =
-  CROS_DIMENSION_DOC_MAPPING.map(({ id, linkGenerator }) => ({
-    id,
-    // The first Array entry of values is a comma separated string with all
-    // values.
-    getValue: (device: Device) =>
-      device.deviceSpec?.labels[id]?.values[0] || '',
-    renderCell: renderCellWithLink(linkGenerator),
-  }));
+export const CROS_DIMENSION_OVERRIDES: Dimension = {
+  dut_state: {
+    getValue: (device) =>
+      device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
+  },
+  'label-servo_state': {
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
+  },
+  bluetooth_state: {
+    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
+  },
+  'label-model': {
+    renderCell: renderCellWithLink((value) => `http://go/dlm-model/${value}`),
+  },
+  'label-board': {
+    renderCell: renderCellWithLink((value) => `http://go/dlm-board/${value}`),
+  },
+  dut_name: {
+    renderCell: renderCellWithLink(generateDutNameRedirectURL),
+  },
+  'label-associated_hostname': {
+    renderCell: renderCellWithLink(generateDutNameRedirectURL),
+  },
+  'label-primary_dut': {
+    renderCell: renderCellWithLink(generateDutNameRedirectURL),
+  },
+  'label-managed_dut': {
+    renderCell: renderCellWithLink(generateDutNameRedirectURL),
+  },
+};
 
 /**
  * Constant with all of the different configured overrides for columns. The
@@ -149,7 +168,7 @@ export const CROS_DIMENSION_OVERRIDES: Dimension[] =
  * in the case of certain commonly used labels (ie: labels containing
  * links to docs)
  */
-export const COLUMN_OVERRIDES: Dimension[] = [
+export const COLUMN_OVERRIDES: Dimension = {
   ...BASE_DIMENSIONS,
   ...CROS_DIMENSION_OVERRIDES,
-];
+};

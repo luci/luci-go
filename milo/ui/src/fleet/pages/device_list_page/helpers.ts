@@ -15,7 +15,7 @@
 import { useState } from 'react';
 
 import {
-  BASE_DIMENSIONS,
+  COLUMN_OVERRIDES,
   CROS_DIMENSION_OVERRIDES,
 } from '@/fleet/components/device_table/dimensions';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
@@ -35,8 +35,7 @@ export const dimensionsToFilterOptions = (
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
-        label:
-          BASE_DIMENSIONS.find((dim) => dim.id === key)?.displayName || key,
+        label: COLUMN_OVERRIDES[key]?.displayName || key,
         value: key,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -54,9 +53,7 @@ export const dimensionsToFilterOptions = (
 
     return [
       {
-        label:
-          CROS_DIMENSION_OVERRIDES.find((dim) => dim.id === key)?.displayName ||
-          key,
+        label: CROS_DIMENSION_OVERRIDES[key]?.displayName || key,
         value: 'labels.' + key,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -85,10 +82,7 @@ export const filterOptionsPlaceholder = (
       const value = key;
       key = key.replace('labels.', '');
       return {
-        label:
-          BASE_DIMENSIONS.find((dim) => dim.id === key)?.displayName ||
-          CROS_DIMENSION_OVERRIDES.find((dim) => dim.id === key)?.displayName ||
-          key,
+        label: COLUMN_OVERRIDES[key]?.displayName || key,
         value: value,
         options: values.map((value) => {
           return { label: value, value: value };

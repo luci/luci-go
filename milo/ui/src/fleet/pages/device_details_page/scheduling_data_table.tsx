@@ -45,9 +45,9 @@ export const SchedulingData = ({ device }: SchedulingDataProps) => {
       headerName: 'Value',
       flex: 3,
       renderCell: (props: GridRenderCellParams) =>
-        COLUMN_OVERRIDES.find((dim) => dim.id === props.id)?.renderCell?.(
-          props,
-        ) || <DeviceDataCell {...props}></DeviceDataCell>,
+        COLUMN_OVERRIDES[props.id]?.renderCell?.(props) || (
+          <DeviceDataCell {...props}></DeviceDataCell>
+        ),
     },
   ];
 
