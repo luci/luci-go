@@ -144,7 +144,7 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 	t.Parallel()
 	ftt.Run("validateBaseTestIdentifier", t, func(t *ftt.Test) {
 		t.Run("Empty", func(t *ftt.Test) {
-			err := validateBaseTestIdentifier(BaseTestIdentifier{})
+			err := ValidateBaseTestIdentifier(BaseTestIdentifier{})
 			assert.Loosely(t, err, should.ErrLike("module_name: unspecified"))
 		})
 		id := BaseTestIdentifier{
@@ -155,232 +155,232 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 			CaseName:     "case",
 		}
 		t.Run("Valid", func(t *ftt.Test) {
-			assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+			assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 		})
 		t.Run("Module Name", func(t *ftt.Test) {
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.ModuleName = "µs-timing"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.ModuleName = strings.Repeat("a", 301)
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: longer than 300 bytes"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: longer than 300 bytes"))
 			})
 			t.Run("Non-Printable", func(t *ftt.Test) {
 				id.ModuleName = "abc\u0000def"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: non-printable rune"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: non-printable rune"))
 			})
 			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
 				id.ModuleName = "e\u0301"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: not in unicode normalized form C"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: not in unicode normalized form C"))
 			})
 			t.Run("Not valid UTF-8", func(t *ftt.Test) {
 				id.ModuleName = "\xbd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: not a valid utf8 string"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: not a valid utf8 string"))
 			})
 			t.Run("Error rune", func(t *ftt.Test) {
 				id.ModuleName = "aa\ufffd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_name: unicode replacement character (U+FFFD) at byte index 2"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: unicode replacement character (U+FFFD) at byte index 2"))
 			})
 		})
 		t.Run("Module Scheme", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				id.ModuleScheme = ""
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_scheme: unspecified"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_scheme: unspecified"))
 			})
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.ModuleScheme = strings.Repeat("a", 21)
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("module_scheme: longer than 20 bytes"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_scheme: longer than 20 bytes"))
 			})
 			t.Run("Invalid", func(t *ftt.Test) {
 				id.ModuleScheme = "A"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`module_scheme: does not match "^[a-z][a-z0-9]*$"`))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: does not match "^[a-z][a-z0-9]*$"`))
 			})
 			t.Run("Legacy is reserved", func(t *ftt.Test) {
 				id.ModuleName = "module"
 				id.ModuleScheme = "legacy"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must not be set to "legacy" except for tests in the 'legacy' module`))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must not be set to "legacy" except for tests in the "legacy" module`))
 			})
 		})
 		t.Run("Coarse Name", func(t *ftt.Test) {
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.CoarseName = "µs"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Empty with fine name", func(t *ftt.Test) {
 				id.CoarseName = ""
 				id.FineName = "fine"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Empty without fine name", func(t *ftt.Test) {
 				id.CoarseName = ""
 				id.FineName = ""
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.CoarseName = strings.Repeat("a", 301)
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: longer than 300 bytes"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("coarse_name: longer than 300 bytes"))
 			})
 			t.Run("Non-Printable", func(t *ftt.Test) {
 				id.CoarseName = "abc\u0000def"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: non-printable rune"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("coarse_name: non-printable rune"))
 			})
 			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
 				id.CoarseName = "e\u0301"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: not in unicode normalized form C"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("coarse_name: not in unicode normalized form C"))
 			})
 			t.Run("Not valid UTF-8", func(t *ftt.Test) {
 				id.CoarseName = "\xbd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: not a valid utf8 string"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("coarse_name: not a valid utf8 string"))
 			})
 			t.Run("Error rune", func(t *ftt.Test) {
 				id.CoarseName = "aa\ufffd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: unicode replacement character (U+FFFD) at byte index 2"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("coarse_name: unicode replacement character (U+FFFD) at byte index 2"))
 			})
 			t.Run("Reserved leading character", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.CoarseName = "+"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`coarse_name: character '+' may not be used as a leading character of a coarse or fine name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`coarse_name: character '+' may not be used as a leading character of a coarse or fine name`))
 				})
 				t.Run("Last reserved character (,)", func(t *ftt.Test) {
 					id.CoarseName = ","
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`coarse_name: character ',' may not be used as a leading character of a coarse or fine name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`coarse_name: character ',' may not be used as a leading character of a coarse or fine name`))
 				})
 				t.Run("First non-reserved character (-)", func(t *ftt.Test) {
 					id.CoarseName = "-"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 			})
 		})
 		t.Run("Fine Name", func(t *ftt.Test) {
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.FineName = "µs"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Empty without coarse name", func(t *ftt.Test) {
 				id.CoarseName = ""
 				id.FineName = ""
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Empty with coarse name", func(t *ftt.Test) {
 				id.CoarseName = "coarse"
 				id.FineName = ""
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: unspecified when coarse_name is specified"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: unspecified when coarse_name is specified"))
 			})
 
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.FineName = strings.Repeat("a", 301)
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: longer than 300 bytes"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: longer than 300 bytes"))
 			})
 			t.Run("Non-Printable", func(t *ftt.Test) {
 				id.FineName = "abc\u0000def"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: non-printable rune"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: non-printable rune"))
 			})
 			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
 				id.FineName = "e\u0301"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: not in unicode normalized form C"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: not in unicode normalized form C"))
 			})
 			t.Run("Not valid UTF-8", func(t *ftt.Test) {
 				id.FineName = "\xbd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: not a valid utf8 string"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: not a valid utf8 string"))
 			})
 			t.Run("Error rune", func(t *ftt.Test) {
 				id.FineName = "aa\ufffd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: unicode replacement character (U+FFFD) at byte index 2"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("fine_name: unicode replacement character (U+FFFD) at byte index 2"))
 			})
 			t.Run("Reserved leading characters", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.FineName = "+"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`fine_name: character '+' may not be used as a leading character of a coarse or fine name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`fine_name: character '+' may not be used as a leading character of a coarse or fine name`))
 				})
 				t.Run("Last reserved character (,)", func(t *ftt.Test) {
 					id.FineName = ","
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`fine_name: character ',' may not be used as a leading character of a coarse or fine name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`fine_name: character ',' may not be used as a leading character of a coarse or fine name`))
 				})
 				t.Run("First non-reserved character (-)", func(t *ftt.Test) {
 					id.FineName = "-"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 			})
 		})
 		t.Run("Case Name", func(t *ftt.Test) {
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.CaseName = "µs"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Empty", func(t *ftt.Test) {
 				id.CaseName = ""
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: unspecified"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: unspecified"))
 			})
 			t.Run("Too Long", func(t *ftt.Test) {
 				id.CaseName = strings.Repeat("a", 513)
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: longer than 512 bytes"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: longer than 512 bytes"))
 			})
 			t.Run("Non-Printable", func(t *ftt.Test) {
 				id.CaseName = "abc\u0000def"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: non-printable rune"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: non-printable rune"))
 			})
 			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
 				id.CaseName = "e\u0301"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: not in unicode normalized form C"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: not in unicode normalized form C"))
 			})
 			t.Run("Not valid UTF-8", func(t *ftt.Test) {
 				id.CaseName = "\xbd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: not a valid utf8 string"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: not a valid utf8 string"))
 			})
 			t.Run("Error rune", func(t *ftt.Test) {
 				id.CaseName = "aa\ufffd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: unicode replacement character (U+FFFD) at byte index 2"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: unicode replacement character (U+FFFD) at byte index 2"))
 			})
 			t.Run("Reserved names", func(t *ftt.Test) {
 				t.Run("Reserved character prior to ,", func(t *ftt.Test) {
 					id.CaseName = "!"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`case_name: character '!' may not be used as a leading character of a case name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`case_name: character '!' may not be used as a leading character of a case name`))
 				})
 				t.Run("Last reserved character (,)", func(t *ftt.Test) {
 					id.CaseName = ","
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`case_name: character ',' may not be used as a leading character of a case name`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`case_name: character ',' may not be used as a leading character of a case name`))
 				})
 				t.Run("*", func(t *ftt.Test) {
 					id.CaseName = "*"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`case_name: character * may not be used as a leading character of a case name, unless the case name is '*fixture'`))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`case_name: character * may not be used as a leading character of a case name, unless the case name is '*fixture'`))
 				})
 				t.Run("*fixture", func(t *ftt.Test) {
 					id.CaseName = "*fixture"
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 			})
 			t.Run("Multi-component", func(t *ftt.Test) {
 				t.Run("Valid, multi-part", func(t *ftt.Test) {
 					id.CaseName = EncodeCaseName("a", "b", "c")
 					assert.Loosely(t, id.CaseName, should.Equal("a:b:c"))
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 				t.Run("Valid, special characters", func(t *ftt.Test) {
 					id.CaseName = `Colon\:Backslash\\:Colon\::MyTest`
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 				t.Run("Empty part", func(t *ftt.Test) {
 					t.Run("Leading", func(t *ftt.Test) {
 						id.CaseName = ":b:c"
-						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 1 is empty, each component of the case name must be non-empty"))
+						assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: component 1 is empty, each component of the case name must be non-empty"))
 					})
 					t.Run("Middle", func(t *ftt.Test) {
 						id.CaseName = "a::c"
-						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 2 is empty, each component of the case name must be non-empty"))
+						assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: component 2 is empty, each component of the case name must be non-empty"))
 					})
 					t.Run("Trailing", func(t *ftt.Test) {
 						id.CaseName = "a:b:"
-						assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: component 3 is empty, each component of the case name must be non-empty"))
+						assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: component 3 is empty, each component of the case name must be non-empty"))
 					})
 				})
 				t.Run("Invalid escape sequence", func(t *ftt.Test) {
 					id.CaseName = `\#`
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: got unexpected character '#' at byte 1, while processing escape sequence (\\); only the characters \\ and : may be escaped"))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: got unexpected character '#' at byte 1, while processing escape sequence (\\); only the characters \\ and : may be escaped"))
 				})
 				t.Run("Unfinished escape sequence", func(t *ftt.Test) {
 					id.CaseName = `a\`
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: unfinished escape sequence at byte 2, got end of string; expected one of \\ or :"))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("case_name: unfinished escape sequence at byte 2, got end of string; expected one of \\ or :"))
 				})
 			})
 		})
@@ -390,38 +390,38 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 			id.CoarseName = ""
 			id.FineName = ""
 			t.Run("Valid", func(t *ftt.Test) {
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.CaseName = "TestVariousDeadlines/5µs"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 			t.Run("Error rune is allowed", func(t *ftt.Test) {
 				// Unicode replacement character.
 				id.CaseName = "\ufffd"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 			})
 
 			t.Run("Invalid scheme", func(t *ftt.Test) {
 				id.ModuleScheme = "notlegacy"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" for tests in the 'legacy' module`))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" for tests in the "legacy" module`))
 			})
 			t.Run("Invalid coarse name", func(t *ftt.Test) {
 				id.CoarseName = "coarse"
 				id.FineName = "fine" // Must be specified to get past "unspecified when coarse_name is specified" error.
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("coarse_name: must be empty for tests in the 'legacy' module"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`coarse_name: must be empty for tests in the "legacy" module`))
 			})
 			t.Run("Invalid fine name", func(t *ftt.Test) {
 				id.FineName = "fine"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("fine_name: must be empty for tests in the 'legacy' module"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`fine_name: must be empty for tests in the "legacy" module`))
 			})
 			t.Run("Invalid case name", func(t *ftt.Test) {
 				id.CaseName = ":case"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: must not start with ':' for tests in the 'legacy' module"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`case_name: must not start with ':' for tests in the "legacy" module`))
 			})
 			t.Run("Invalid case name reserved", func(t *ftt.Test) {
 				id.CaseName = "*case"
-				assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("case_name: must not start with '*' for tests in the 'legacy' module"))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`case_name: must not start with '*' for tests in the "legacy" module`))
 			})
 		})
 		t.Run("Limit on encoded length", func(t *ftt.Test) {
@@ -434,13 +434,13 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				t.Run("Not too long", func(t *ftt.Test) {
 					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(512))
 					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(512))
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 				t.Run("Too long", func(t *ftt.Test) {
 					id.CaseName += "d"
 					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(513))
 					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(513))
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("test ID exceeds 512 bytes in encoded form"))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("test ID exceeds 512 bytes in encoded form"))
 				})
 			})
 			t.Run("With escaping", func(t *ftt.Test) {
@@ -453,13 +453,13 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 				t.Run("Not too long", func(t *ftt.Test) {
 					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(512))
 					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(512))
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.BeNil)
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 				})
 				t.Run("Too long", func(t *ftt.Test) {
 					id.CaseName += "d"
 					assert.Loosely(t, sizeEscapedTestID(id), should.Equal(513))
 					assert.Loosely(t, len(EncodeTestID(id)), should.Equal(513))
-					assert.Loosely(t, validateBaseTestIdentifier(id), should.ErrLike("test ID exceeds 512 bytes in encoded form"))
+					assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("test ID exceeds 512 bytes in encoded form"))
 				})
 			})
 		})
@@ -684,7 +684,7 @@ func FuzzTestIDRoundtrip(f *testing.F) {
 			FineName:     fineName,
 			CaseName:     caseName,
 		}
-		if err := validateBaseTestIdentifier(id); err != nil {
+		if err := ValidateBaseTestIdentifier(id); err != nil {
 			// Invalid input.
 			return
 		}

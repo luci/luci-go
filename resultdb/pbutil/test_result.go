@@ -39,13 +39,13 @@ const (
 	// VariantHashRePattern is the regular expression pattern that matches
 	// validly formed Variant Hash.
 	variantHashRePattern = `[0-9a-f]{16}`
-	// MaxLenSummaryHTML is the maximum length of summary HTML.
-	MaxLenSummaryHTML         = 4 * 1024
+	// maxLenSummaryHTML is the maximum length of summary HTML.
+	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
 	maxSizeErrors             = 3*1024 + 100
 	maxLenPropertiesSchema    = 256
-	// MaxClockSkew is the maximum amount of time that clocks could have been out of sync for.
-	MaxClockSkew = 10 * time.Minute
+	// maxClockSkew is the maximum amount of time that clocks could have been out of sync for.
+	maxClockSkew = 10 * time.Minute
 )
 
 var (
@@ -80,6 +80,88 @@ func ValidateVariantHash(variantHash string) error {
 	return nil
 }
 
+// ValidateToScheme represents a callback function that validates a given base test identifier
+// matches a configured test scheme.
+type ValidateToScheme func(id BaseTestIdentifier) error
+
+// ValidateTestResult validates the given test result.
+//
+// If the test result is being uploaded for the first time, supply a validateToScheme
+// function that validates the test ID matches configured scheme. Otherwise, leave it nil.
+func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb.TestResult) error {
+	if tr == nil {
+		return validate.Unspecified()
+	}
+	if tr.TestIdStructured == nil && tr.TestId != "" {
+		// For backwards compatibility, we still accept legacy uploaders setting
+		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
+		testID, err := ParseAndValidateTestID(tr.TestId)
+		if err != nil {
+			return errors.Annotate(err, "test_id").Err()
+		}
+		if err := ValidateVariant(tr.Variant); err != nil {
+			return errors.Annotate(err, "variant").Err()
+		}
+		if validateToScheme != nil {
+			// Validate the test identifier meets the requirements of the scheme.
+			// This is enforced only at upload time.
+			if err := validateToScheme(testID); err != nil {
+				return errors.Annotate(err, "test_id").Err()
+			}
+		}
+	} else {
+		// Not a legacy uploader.
+		// The TestId and Variant fields are treated as output only as per
+		// the API spec and should be ignored. Instead read from the TestIdStructured field.
+
+		if err := ValidateStructuredTestIdentifier(tr.TestIdStructured); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
+		}
+		if validateToScheme != nil {
+			// Validate the test identifier meets the requirements of the scheme.
+			// This is enforced only at upload time.
+			if err := validateToScheme(ExtractBaseTestIdentifier(tr.TestIdStructured)); err != nil {
+				return errors.Annotate(err, "test_id_structured").Err()
+			}
+		}
+	}
+
+	if err := ValidateResultID(tr.ResultId); err != nil {
+		return errors.Annotate(err, "result_id").Err()
+	}
+	if err := ValidateTestResultStatus(tr.Status); err != nil {
+		return errors.Annotate(err, "status").Err()
+	}
+	if err := ValidateSummaryHTML(tr.SummaryHtml); err != nil {
+		return errors.Annotate(err, "summary_html").Err()
+	}
+	if err := ValidateStartTimeWithDuration(now, tr.StartTime, tr.Duration); err != nil {
+		return err
+	}
+	if err := ValidateStringPairs(tr.Tags); err != nil {
+		return errors.Annotate(err, "tags").Err()
+	}
+	if tr.TestMetadata != nil {
+		if err := ValidateTestMetadata(tr.TestMetadata); err != nil {
+			return errors.Annotate(err, "test_metadata").Err()
+		}
+	}
+	if tr.FailureReason != nil {
+		if err := ValidateFailureReason(tr.FailureReason); err != nil {
+			return errors.Annotate(err, "failure_reason").Err()
+		}
+	}
+	if tr.Properties != nil {
+		if err := ValidateTestResultProperties(tr.Properties); err != nil {
+			return errors.Annotate(err, "properties").Err()
+		}
+	}
+	if err := ValidateTestResultSkipReason(tr.Status, tr.SkipReason); err != nil {
+		return errors.Annotate(err, "skip_reason").Err()
+	}
+	return nil
+}
+
 // ValidateResultID returns a non-nil error if resultID is invalid.
 func ValidateResultID(resultID string) error {
 	return validate.SpecifiedWithRe(resultIDRe, resultID)
@@ -93,8 +175,8 @@ func ValidateTestResultName(name string) error {
 
 // ValidateSummaryHTML returns a non-nil error if summary is invalid.
 func ValidateSummaryHTML(summary string) error {
-	if len(summary) > MaxLenSummaryHTML {
-		return errors.Reason("exceeds the maximum size of %d bytes", MaxLenSummaryHTML).Err()
+	if len(summary) > maxLenSummaryHTML {
+		return errors.Reason("exceeds the maximum size of %d bytes", maxLenSummaryHTML).Err()
 	}
 	return nil
 }
@@ -112,12 +194,12 @@ func ValidateStartTimeWithDuration(now time.Time, startTime *timestamppb.Timesta
 	}
 
 	switch {
-	case startTime != nil && now.Add(MaxClockSkew).Before(t):
-		return errors.Reason("start_time: cannot be > (now + %s), but was +%s", MaxClockSkew, t.Sub(now)).Err()
+	case startTime != nil && now.Add(maxClockSkew).Before(t):
+		return errors.Reason("start_time: cannot be > (now + %s), but was +%s", maxClockSkew, t.Sub(now)).Err()
 	case duration != nil && d < 0:
 		return errors.Reason("duration: is < 0").Err()
-	case startTime != nil && duration != nil && now.Add(MaxClockSkew).Before(t.Add(d)):
-		return errors.Reason("start_time + duration: cannot be > (now + %s), but was +%s", MaxClockSkew, t.Add(d).Sub(now)).Err()
+	case startTime != nil && duration != nil && now.Add(maxClockSkew).Before(t.Add(d)):
+		return errors.Reason("start_time + duration: cannot be > (now + %s), but was +%s", maxClockSkew, t.Add(d).Sub(now)).Err()
 	}
 	return nil
 }

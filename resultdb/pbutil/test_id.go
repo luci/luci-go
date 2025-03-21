@@ -42,6 +42,11 @@ const FixtureCaseName = "*fixture"
 // in the structured test ID space.
 const LegacySchemeID = "legacy"
 
+// LegacyModuleName identifies the module name used for tests that are not
+// natively structured. This allows such tests to still be represented
+// in the structured test ID space.
+const LegacyModuleName = "legacy"
+
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {
 	_, err := ParseAndValidateTestID(testID)
@@ -83,7 +88,7 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	err = validateBaseTestIdentifier(id)
+	err = ValidateBaseTestIdentifier(id)
 	return id, err
 }
 
@@ -96,10 +101,10 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 // Where case may be a simple string or have multiple components,
 // e.g. `part1:part2:part3`.
 func parseTestID(testID string) (BaseTestIdentifier, error) {
-	if !strings.HasPrefix(testID, ":") {
+	if !IsStructuredTestID(testID) {
 		// This is a legacy test ID.
 		return BaseTestIdentifier{
-			ModuleName:   "legacy",
+			ModuleName:   LegacyModuleName,
 			ModuleScheme: LegacySchemeID,
 			CaseName:     testID,
 		}, nil
@@ -135,6 +140,12 @@ func parseTestID(testID string) (BaseTestIdentifier, error) {
 		FineName:     fineName,
 		CaseName:     caseName,
 	}, nil
+}
+
+// IsStructuredTestID returns whether the given test ID is a structured
+// test ID (starts with the prefix ":").
+func IsStructuredTestID(testID string) bool {
+	return strings.HasPrefix(testID, ":")
 }
 
 // componentParseOptions are options for parsing a test component.
@@ -396,7 +407,7 @@ func ValidateStructuredTestIdentifier(id *pb.TestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := validateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
+	if err := ValidateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
 		return err
 	}
 
@@ -417,27 +428,19 @@ func ValidateStructuredTestIdentifier(id *pb.TestIdentifier) error {
 	return nil
 }
 
-// validateBaseTestIdentifier validates a structured base test identifier.
+// ValidateBaseTestIdentifier validates a structured base test identifier.
 //
 // Errors are annotated using field names in snake_case.
-func validateBaseTestIdentifier(id BaseTestIdentifier) error {
+func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 	// Module name
-	if id.ModuleName == "" {
-		return errors.Reason("module_name: unspecified").Err()
-	}
-	if err := validateUTF8PrintableStrict(id.ModuleName, 300); err != nil {
+	if err := ValidateModuleName(id.ModuleName); err != nil {
 		return errors.Annotate(err, "module_name").Err()
 	}
 
 	// Module scheme
-	if id.ModuleScheme == "" {
-		return errors.Reason("module_scheme: unspecified").Err()
-	}
-	if err := validateUTF8PrintableStrict(id.ModuleScheme, 20); err != nil {
+	isLegacyModule := id.ModuleName == LegacyModuleName
+	if err := ValidateModuleScheme(id.ModuleScheme, isLegacyModule); err != nil {
 		return errors.Annotate(err, "module_scheme").Err()
-	}
-	if !schemeRE.MatchString(id.ModuleScheme) {
-		return errors.Reason("module_scheme: does not match %q", schemeRE).Err()
 	}
 
 	// Coarse name and fine name
@@ -465,19 +468,16 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	}
 
 	// Additional validation for legacy test identifiers.
-	if id.ModuleName == "legacy" {
+	if isLegacyModule {
 		// Legacy test identifier represented in structured form.
-		if id.ModuleScheme != LegacySchemeID {
-			return errors.Reason("module_scheme: must be set to %q for tests in the 'legacy' module", LegacySchemeID).Err()
-		}
 		if id.CoarseName != "" {
-			return errors.Reason("coarse_name: must be empty for tests in the 'legacy' module").Err()
+			return errors.Reason("coarse_name: must be empty for tests in the %q module", LegacyModuleName).Err()
 		}
 		if id.FineName != "" {
-			return errors.Reason("fine_name: must be empty for tests in the 'legacy' module").Err()
+			return errors.Reason("fine_name: must be empty for tests in the %q module", LegacyModuleName).Err()
 		}
 		if strings.HasPrefix(id.CaseName, ":") {
-			return errors.Reason("case_name: must not start with ':' for tests in the 'legacy' module").Err()
+			return errors.Reason("case_name: must not start with ':' for tests in the %q module", LegacyModuleName).Err()
 		}
 		if err := validateUTF8Printable(id.CaseName, 512, validationModeLoose); err != nil {
 			return errors.Annotate(err, "case_name").Err()
@@ -485,13 +485,10 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 		// This is a lightweight version of validateCaseNameNotReserved for legacy tests
 		// that still backtests on already uploaded test results.
 		if strings.HasPrefix(id.CaseName, "*") {
-			return errors.Reason("case_name: must not start with '*' for tests in the 'legacy' module").Err()
+			return errors.Reason("case_name: must not start with '*' for tests in the %q module", LegacyModuleName).Err()
 		}
 	} else {
 		// Additional validation for natively structured test identifiers.
-		if id.ModuleScheme == LegacySchemeID {
-			return errors.Reason("module_scheme: must not be set to %q except for tests in the 'legacy' module", LegacySchemeID).Err()
-		}
 		if err := validateUTF8PrintableStrict(id.CaseName, 512); err != nil {
 			return errors.Annotate(err, "case_name").Err()
 		}
@@ -504,6 +501,42 @@ func validateBaseTestIdentifier(id BaseTestIdentifier) error {
 	// it is less than 512 bytes.
 	if sizeEscapedTestID(id) > 512 {
 		return errors.Reason("test ID exceeds 512 bytes in encoded form").Err()
+	}
+	return nil
+}
+
+// ValidateModuleName validates a module name is syntactically valid.
+func ValidateModuleName(name string) error {
+	if name == "" {
+		return errors.Reason("unspecified").Err()
+	}
+	if err := validateUTF8PrintableStrict(name, 300); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateModuleScheme validates a scheme name is syntactically valid.
+// Set isLegacyModule to true if the module name is LegacyModuleName,
+// and false otherwise.
+func ValidateModuleScheme(scheme string, isLegacyModule bool) error {
+	if scheme == "" {
+		return errors.Reason("unspecified").Err()
+	}
+	if err := validateUTF8PrintableStrict(scheme, 20); err != nil {
+		return err
+	}
+	if !schemeRE.MatchString(scheme) {
+		return errors.Reason("does not match %q", schemeRE).Err()
+	}
+	if isLegacyModule {
+		if scheme != LegacySchemeID {
+			return errors.Reason("must be set to %q for tests in the %q module", LegacySchemeID, LegacyModuleName).Err()
+		}
+	} else {
+		if scheme == LegacySchemeID {
+			return errors.Reason("must not be set to %q except for tests in the %q module", LegacySchemeID, LegacyModuleName).Err()
+		}
 	}
 	return nil
 }

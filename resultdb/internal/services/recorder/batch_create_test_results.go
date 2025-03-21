@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -233,71 +232,11 @@ func longestCommonPrefix(str1, str2 string) string {
 
 // validateTestResult returns a non-nil error if msg is invalid.
 func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb.TestResult) error {
-	if tr == nil {
-		return validate.Unspecified()
+	validateToScheme := func(testID pbutil.BaseTestIdentifier) error {
+		return validateTestIDToScheme(cfg, testID)
 	}
-	if tr.TestIdStructured == nil && tr.TestId != "" {
-		// For backwards compatibility, we still accept legacy uploaders setting
-		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
-		testID, err := pbutil.ParseAndValidateTestID(tr.TestId)
-		if err != nil {
-			return errors.Annotate(err, "test_id").Err()
-		}
-		if err := pbutil.ValidateVariant(tr.Variant); err != nil {
-			return errors.Annotate(err, "variant").Err()
-		}
-		// Validate the test identifier meets the requirements of the scheme.
-		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, testID); err != nil {
-			return errors.Annotate(err, "test_id").Err()
-		}
-	} else {
-		// Not a legacy uploader.
-		// The TestId and Variant fields are treated as output only as per
-		// the API spec and should be ignored. Instead read from the TestIdStructured field.
-
-		if err := pbutil.ValidateStructuredTestIdentifier(tr.TestIdStructured); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
-		}
-		// Validate the test identifier meets the requirements of the scheme.
-		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(tr.TestIdStructured)); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
-		}
-	}
-
-	if err := pbutil.ValidateResultID(tr.ResultId); err != nil {
-		return errors.Annotate(err, "result_id").Err()
-	}
-	if err := pbutil.ValidateTestResultStatus(tr.Status); err != nil {
-		return errors.Annotate(err, "status").Err()
-	}
-	if err := pbutil.ValidateSummaryHTML(tr.SummaryHtml); err != nil {
-		return errors.Annotate(err, "summary_html").Err()
-	}
-	if err := pbutil.ValidateStartTimeWithDuration(now, tr.StartTime, tr.Duration); err != nil {
+	if err := pbutil.ValidateTestResult(now, validateToScheme, tr); err != nil {
 		return err
-	}
-	if err := pbutil.ValidateStringPairs(tr.Tags); err != nil {
-		return errors.Annotate(err, "tags").Err()
-	}
-	if tr.TestMetadata != nil {
-		if err := pbutil.ValidateTestMetadata(tr.TestMetadata); err != nil {
-			return errors.Annotate(err, "test_metadata").Err()
-		}
-	}
-	if tr.FailureReason != nil {
-		if err := pbutil.ValidateFailureReason(tr.FailureReason); err != nil {
-			return errors.Annotate(err, "failure_reason").Err()
-		}
-	}
-	if tr.Properties != nil {
-		if err := pbutil.ValidateTestResultProperties(tr.Properties); err != nil {
-			return errors.Annotate(err, "properties").Err()
-		}
-	}
-	if err := pbutil.ValidateTestResultSkipReason(tr.Status, tr.SkipReason); err != nil {
-		return errors.Annotate(err, "skip_reason").Err()
 	}
 	return nil
 }
