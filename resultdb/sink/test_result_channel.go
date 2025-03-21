@@ -191,7 +191,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch[*sinkpb.
 					StartTime:     tr.GetStartTime(),
 					Duration:      tr.GetDuration(),
 					Tags:          tags,
-					TestMetadata:  toRdbTestMetadata(tr.GetTestMetadata()),
+					TestMetadata:  tr.GetTestMetadata(),
 					FailureReason: tr.GetFailureReason(),
 					Properties:    tr.GetProperties(),
 				},
@@ -206,17 +206,4 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch[*sinkpb.
 	}
 	_, err := c.cfg.Recorder.BatchCreateTestResults(ctx, b.Meta.(*pb.BatchCreateTestResultsRequest))
 	return err
-}
-
-func toRdbTestMetadata(tmd *sinkpb.TestMetadata) *pb.TestMetadata {
-	if tmd == nil {
-		return nil
-	}
-	return &pb.TestMetadata{
-		Name:             tmd.Name,
-		Location:         tmd.Location,
-		BugComponent:     tmd.BugComponent,
-		PropertiesSchema: tmd.PropertiesSchema,
-		Properties:       tmd.Properties,
-	}
 }

@@ -119,7 +119,7 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,
 		},
-		TestMetadata: &sinkpb.TestMetadata{
+		TestMetadata: &pb.TestMetadata{
 			Name: "name",
 			Location: &pb.TestLocation{
 				Repo:     "https://chromium.googlesource.com/chromium/src",

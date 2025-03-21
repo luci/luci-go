@@ -51,7 +51,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 		return errors.Annotate(err, "artifacts").Err()
 	}
 	if msg.TestMetadata != nil {
-		if err := pbutil.ValidateTestMetadata(toRdbTestMetadata(msg.TestMetadata)); err != nil {
+		if err := pbutil.ValidateTestMetadata(msg.TestMetadata); err != nil {
 			return errors.Annotate(err, "test_metadata").Err()
 		}
 	}

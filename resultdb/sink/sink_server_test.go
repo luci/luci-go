@@ -79,7 +79,7 @@ func TestReportTestResults(t *testing.T) {
 			Duration:      tr.Duration,
 			Tags:          tr.Tags,
 			Variant:       tr.Variant,
-			TestMetadata:  toRdbTestMetadata(tr.TestMetadata),
+			TestMetadata:  tr.TestMetadata,
 			FailureReason: tr.FailureReason,
 		}).(*pb.TestResult)
 
