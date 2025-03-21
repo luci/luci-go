@@ -156,7 +156,7 @@ export const DeviceListPage = () => {
           <Alert
             key={message}
             sx={{
-              position: 'absolute',
+              position: 'fixed',
               top: 64 + 10 + 55 * i,
               right: 10,
               zIndex: 10_000,
