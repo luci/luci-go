@@ -16,7 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Box, IconButton, TextField, Typography } from '@mui/material';
+import { Alert, Box, IconButton, TextField, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -195,7 +195,7 @@ export const DeviceDetailsPage = () => {
           </AlertWithFeedback>
         )}
       </>
-      {device && dutId && (
+      {device && (
         <>
           <div
             css={{
@@ -223,10 +223,22 @@ export const DeviceDetailsPage = () => {
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
-              <Tasks dutId={dutId} />
+              {dutId === '' ? (
+                <Alert severity="warning">
+                  No <code>dutID</code> set on this device
+                </Alert>
+              ) : (
+                <Tasks dutId={dutId} />
+              )}
             </TabPanel>
             <TabPanel value={TabValue.BOT_INFO}>
-              <BotData dutId={dutId} />
+              {dutId === '' ? (
+                <Alert severity="warning">
+                  No <code>dutID</code> set on this device
+                </Alert>
+              ) : (
+                <BotData dutId={dutId} />
+              )}
             </TabPanel>
             <TabPanel value={TabValue.SCHEDULING}>
               <SchedulingData device={device} />
