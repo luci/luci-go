@@ -27,9 +27,8 @@ export const prettyDateTime = (dt: string | undefined): string => {
   if (!dt) {
     return '';
   }
-  return DateTime.fromISO(dt).toLocaleString(
-    DateTime.DATETIME_SHORT_WITH_SECONDS,
-  );
+  const asObj = DateTime.fromISO(dt);
+  return `${asObj.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)} (${asObj.zoneName})`;
 };
 
 export const prettySeconds = (seconds: number | undefined): string => {
