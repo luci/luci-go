@@ -936,7 +936,7 @@ func PerformanceStatsKey(ctx context.Context, taskReq *datastore.Key) *datastore
 // Stored as a unindexed subentity of PerformanceStats entity.
 type OperationStats struct {
 	// DurationSecs is how long the operation ran.
-	DurationSecs float64 `gae:"duration"`
+	DurationSecs float64 `gae:"duration" json:"duration"`
 }
 
 // ToProto converts the OperationStats struct to apipb.OperationStats.
@@ -954,23 +954,23 @@ func (p *OperationStats) ToProto() *apipb.OperationStats {
 // Stored as a unindexed subentity of PerformanceStats entity.
 type CASOperationStats struct {
 	// DurationSecs is how long the operation ran.
-	DurationSecs float64 `gae:"duration"`
+	DurationSecs float64 `gae:"duration" json:"duration"`
 
 	// InitialItems is the number of items in the cache before the operation.
-	InitialItems int64 `gae:"initial_number_items"`
+	InitialItems int64 `gae:"initial_number_items" json:"initial_number_items"`
 
 	// InitialSize is the total cache size before the operation.
-	InitialSize int64 `gae:"initial_size"`
+	InitialSize int64 `gae:"initial_size" json:"initial_size"`
 
 	// ItemsCold is a set of sizes of items that were downloaded or uploaded.
 	//
 	// It is encoded in a special way, see packedintset.Unpack.
-	ItemsCold []byte `gae:"items_cold"`
+	ItemsCold []byte `gae:"items_cold" json:"items_cold"`
 
 	// ItemsHot is a set of sizes of items that were already present in the cache.
 	//
 	// It is encoded in a special way, see packedintset.Unpack.
-	ItemsHot []byte `gae:"items_hot"`
+	ItemsHot []byte `gae:"items_hot" json:"items_hot"`
 }
 
 // IsEmpty is true if this struct is unpopulated.
