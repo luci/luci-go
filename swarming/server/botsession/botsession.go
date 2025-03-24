@@ -23,12 +23,15 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/cfg"
@@ -196,5 +199,60 @@ func DebugInfo(ctx context.Context, backendVer string) *internalspb.DebugInfo {
 		Created:         timestamppb.New(clock.Now(ctx)),
 		SwarmingVersion: backendVer,
 		RequestId:       trace.SpanContextFromContext(ctx).TraceID().String(),
+	}
+}
+
+// CheckSessionToken deserializes the session token, checks the session has all
+// necessary fields set and it hasn't expired yet.
+//
+// Returns gRPC errors. All errors indicate there's something wrong with the
+// token (i.e. transient errors are impossible). May return both a session and
+// an error (in case it managed to deserialize the session, but it is broken).
+func CheckSessionToken(tok []byte, secret *hmactoken.Secret, now time.Time) (*internalspb.Session, error) {
+	session, err := Unmarshal(tok, secret)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err)
+	}
+
+	// Verify the session has all necessary fields to avoid random panics if
+	// the session is broken for whatever reason (which should not happen).
+	var brokenErr string
+	switch {
+	case session.BotId == "":
+		brokenErr = "no bot_id"
+	case session.SessionId == "":
+		brokenErr = "no session_id"
+	case session.Expiry == nil:
+		brokenErr = "no expiry"
+	case session.BotConfig == nil:
+		brokenErr = "no bot_config"
+	case session.LastSeenConfig == nil:
+		brokenErr = "no last_seen_config"
+	}
+	if brokenErr != "" {
+		return session, status.Errorf(codes.Internal, "session proto is broken: %s", brokenErr)
+	}
+
+	// Check expiration time. It is occasionally bumped by various backend
+	// handlers.
+	if dt := now.Sub(session.Expiry.AsTime()); dt > 0 {
+		return session, status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt)
+	}
+
+	return session, nil
+}
+
+// LogSession logs some session fields (usually on errors).
+func LogSession(ctx context.Context, session *internalspb.Session) {
+	logging.Infof(ctx, "Bot ID: %s", session.BotId)
+	logging.Infof(ctx, "Session ID: %s", session.SessionId)
+	logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
+	if session.DebugInfo != nil {
+		logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
+		logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
+	}
+	if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
+		logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
+		logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
 	}
 }

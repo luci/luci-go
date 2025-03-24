@@ -223,36 +223,9 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			writeErr(status.Errorf(codes.Unauthenticated, "no session token"), req, wrt, RB(body), nil)
 			return
 		}
-		session, err := botsession.Unmarshal(sessionTok, s.hmacSecret)
+		session, err := botsession.CheckSessionToken(sessionTok, s.hmacSecret, clock.Now(ctx))
 		if err != nil {
-			writeErr(status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err), req, wrt, RB(body), nil)
-			return
-		}
-
-		// Verify the session has all necessary fields to avoid random panics if
-		// the session is broken for whatever reason (which should not happen).
-		var brokenErr string
-		switch {
-		case session.BotId == "":
-			brokenErr = "no bot_id"
-		case session.SessionId == "":
-			brokenErr = "no session_id"
-		case session.Expiry == nil:
-			brokenErr = "no expiry"
-		case session.BotConfig == nil:
-			brokenErr = "no bot_config"
-		case session.LastSeenConfig == nil:
-			brokenErr = "no last_seen_config"
-		}
-		if brokenErr != "" {
-			writeErr(status.Errorf(codes.Internal, "session proto is broken: %s", brokenErr), req, wrt, RB(body), session)
-			return
-		}
-
-		// Check expiration time. It is occasionally bumped by various backend
-		// handlers.
-		if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
-			writeErr(status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt), req, wrt, RB(body), session)
+			writeErr(err, req, wrt, RB(body), session)
 			return
 		}
 
@@ -389,17 +362,7 @@ func writeErr(err error, req *http.Request, rw http.ResponseWriter, body Request
 	logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
 	logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
 	if session != nil {
-		logging.Infof(ctx, "Bot ID: %s", session.BotId)
-		logging.Infof(ctx, "Session ID: %s", session.SessionId)
-		logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
-		if session.DebugInfo != nil {
-			logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
-			logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
-		}
-		if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
-			logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
-			logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
-		}
+		botsession.LogSession(ctx, session)
 	}
 	if body != nil {
 		blob, _ := json.MarshalIndent(body.ExtractDebugRequest(), "", "  ")
