@@ -14,6 +14,7 @@
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
+import EmojiNatureIcon from '@mui/icons-material/EmojiNature';
 import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
 import React from 'react';
@@ -33,6 +34,7 @@ export interface SidebarSection {
 export function generateSidebarSections(): SidebarSection[] {
   return [
     generateFleetConsoleSection(),
+    generateChromeOSSection(),
     generateChromeSection(),
     generateDocsSection(),
   ];
@@ -46,6 +48,20 @@ function generateFleetConsoleSection(): SidebarSection {
         label: 'Devices',
         url: '/ui/fleet/labs/devices',
         icon: <DevicesIcon />,
+      },
+    ],
+  };
+}
+
+function generateChromeOSSection(): SidebarSection {
+  return {
+    title: 'ChromeOS',
+    pages: [
+      {
+        label: 'Swarming',
+        url: 'https://chromeos-swarming.appspot.com/botlist',
+        icon: <EmojiNatureIcon />,
+        external: true,
       },
     ],
   };

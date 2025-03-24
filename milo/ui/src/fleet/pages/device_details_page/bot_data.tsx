@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Box, Typography } from '@mui/material';
+import LaunchIcon from '@mui/icons-material/Launch';
+import { Alert, Box, Button, Typography } from '@mui/material';
 import { EditorConfiguration, ModeSpec } from 'codemirror';
 import { useRef } from 'react';
 
@@ -82,9 +83,21 @@ export const BotData = ({
   const prettyState = JSON.stringify(state, undefined, 2);
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 1.5 }}>
-        State
-      </Typography>
+      <div css={{ marginBottom: 12, display: 'flex' }}>
+        <Typography variant="h4" sx={{ marginRight: 'auto' }}>
+          State
+        </Typography>
+        {botData.info?.botId && (
+          <Button
+            color="primary"
+            startIcon={<LaunchIcon />}
+            size="small"
+            href={`https://chromeos-swarming.appspot.com/bot?id=${botData.info?.botId}`}
+          >
+            View in swarming
+          </Button>
+        )}
+      </div>
       <CodeMirrorEditor
         value={prettyState}
         initOptions={editorOptions.current}
