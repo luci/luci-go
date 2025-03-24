@@ -24,7 +24,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -88,6 +88,7 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
   const [subgroupsErrorMessage, setSubgroupsErrorMessage] =
     useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>();
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const client = useAuthServiceGroupsClient();
   const createMutation = useMutation({
@@ -207,6 +208,10 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
     return message === '';
   };
 
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
+
   return (
     <Box sx={{ minHeight: '500px', p: '20px' }}>
       <ThemeProvider theme={theme}>
@@ -243,6 +248,7 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
                       placeholder="required"
                       error={nameErrorMessage !== ''}
                       helperText={nameErrorMessage}
+                      inputRef={nameRef}
                     ></TextField>
                   </TableCell>
                 </TableRow>
