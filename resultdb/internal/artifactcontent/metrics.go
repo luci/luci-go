@@ -28,6 +28,8 @@ import (
 
 const firstBucket = 1024
 
+const BreakEvenSize = 15 * 1000 // 15kb.
+
 var (
 	// artifactTransferDurations tracks the duration of artifacts transfers
 	// between client and storage, e.g. RBE-CAS.
@@ -48,6 +50,29 @@ var (
 		field.Int("http_status"),
 		field.Int("size_bucket"),
 		field.String("op"), // "upload" or "download".
+	)
+
+	ArtifactCounter = metric.NewCounter(
+		"resultdb/artifact/count",
+		"Count of artifact uploads to ResultDB",
+		&types.MetricMetadata{Units: types.Bytes},
+		field.Bool("less_than_15kb"),
+		field.String("content_type"),
+	)
+
+	LogicalSizeCounter = metric.NewCounter(
+		"resultdb/artifact/logical_size",
+		"Cumulative logical size of artifact uploads to ResultDB",
+		&types.MetricMetadata{Units: types.Bytes},
+		field.Bool("less_than_15kb"), // Whether the compressed size is less than or equal to 15kb.
+		field.String("content_type"),
+	)
+	CompressedSizeCounter = metric.NewCounter(
+		"resultdb/artifact/compressed_size",
+		"Cumulative compressed size of artifact uploads to ResultDB",
+		&types.MetricMetadata{Units: types.Bytes},
+		field.Bool("less_than_15kb"), // Whether the compressed size is less than or equal to 15kb.
+		field.String("content_type"),
 	)
 )
 
