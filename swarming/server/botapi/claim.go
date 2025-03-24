@@ -366,7 +366,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 			if bot == nil {
 				return false, errors.Reason("unexpectedly missing BotInfo entity").Err()
 			}
-			outcome, err = srv.claimTxn(ctx, claimOp, &tasks.BotDetails{
+			outcome, err = srv.taskWriteOp.ClaimTxn(ctx, claimOp, &tasks.BotDetails{
 				Dimensions:       r.Dimensions.ToMap(),
 				Version:          bot.Version,
 				LogsCloudProject: r.Session.BotConfig.LogsCloudProject,
@@ -388,7 +388,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	if err := srv.submitUpdate(ctx, update); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to claim the task: %s", err)
 	}
-	srv.finishClaimOp(ctx, claimOp, outcome)
+	srv.taskWriteOp.FinishClaimOp(ctx, claimOp, outcome)
 
 	if outcome.Unavailable != "" {
 		return srv.claimSkipped(ctx, ttr, outcome.Unavailable)

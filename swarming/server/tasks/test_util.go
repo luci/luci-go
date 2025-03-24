@@ -117,3 +117,17 @@ func MockTQTasks() *LifecycleTasksForTests {
 		fakeTaskQueue: make(map[string][]string, 5),
 	}
 }
+
+// TaskWriteOpForTests mocks TaskWriteOp, only used for tests.
+type TaskWriteOpForTests struct {
+	MockedClaimTxn      func(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error)
+	MockedFinishClaimOp func(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome)
+}
+
+func (t *TaskWriteOpForTests) ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error) {
+	return t.MockedClaimTxn(ctx, op, bot)
+}
+
+func (t *TaskWriteOpForTests) FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome) {
+	t.MockedFinishClaimOp(ctx, op, outcome)
+}

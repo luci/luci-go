@@ -52,10 +52,8 @@ type BotAPIServer struct {
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
 	// submitUpdate calls u.Submit, but it can be mocked in tests.
 	submitUpdate func(ctx context.Context, u *model.BotInfoUpdate) error
-	// claimTxn calls op.ClaimTxn, but it can be mocked in tests.
-	claimTxn func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error)
-	// finishClaimOp calls op.Finish, but it can be mocked in tests.
-	finishClaimOp func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome)
+	// taskWriteOp is used to perform datastore writes on a task throughout its lifecycle.
+	taskWriteOp tasks.TaskWriteOp
 	// tokenServerClient produces a Token Server client, can be mocked in tests.
 	tokenServerClient func(ctx context.Context, realm string) (minterpb.TokenMinterClient, error)
 }
@@ -74,12 +72,7 @@ func NewBotAPIServer(cfg *cfg.Provider, lifecycleTasks tasks.LifecycleTasks, sec
 			_, err := u.Submit(ctx)
 			return err
 		},
-		claimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-			return op.ClaimTxn(ctx, bot)
-		},
-		finishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-			op.Finished(ctx, outcome)
-		},
+		taskWriteOp:       &tasks.TaskWriteOpProd{},
 		tokenServerClient: tokenServerClient, // see tokens.go
 	}
 }

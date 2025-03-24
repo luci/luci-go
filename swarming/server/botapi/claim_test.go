@@ -264,13 +264,16 @@ func TestClaim(t *testing.T) {
 
 			var claimOp *tasks.ClaimOp
 			var botDetails *tasks.BotDetails
-			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-				claimOp = op
-				botDetails = bot
-				return &tasks.ClaimTxnOutcome{Claimed: true}, nil
-			}
-			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-				assert.That(t, outcome.Claimed, should.BeTrue)
+
+			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
+				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+					claimOp = op
+					botDetails = bot
+					return &tasks.ClaimTxnOutcome{Claimed: true}, nil
+				},
+				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+					assert.That(t, outcome.Claimed, should.BeTrue)
+				},
 			}
 
 			req, ttr := prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
@@ -338,11 +341,13 @@ func TestClaim(t *testing.T) {
 				}, nil)
 			}
 
-			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-				return &tasks.ClaimTxnOutcome{Unavailable: "unavailable"}, nil
-			}
-			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-				assert.That(t, outcome.Claimed, should.BeFalse)
+			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
+				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+					return &tasks.ClaimTxnOutcome{Unavailable: "unavailable"}, nil
+				},
+				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+					assert.That(t, outcome.Claimed, should.BeFalse)
+				},
 			}
 
 			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)
@@ -375,11 +380,13 @@ func TestClaim(t *testing.T) {
 				}, nil)
 			}
 
-			srv.claimTxn = func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-				return &tasks.ClaimTxnOutcome{}, nil
-			}
-			srv.finishClaimOp = func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-				assert.That(t, outcome.Claimed, should.BeFalse)
+			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
+				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+					return &tasks.ClaimTxnOutcome{}, nil
+				},
+				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
+					assert.That(t, outcome.Claimed, should.BeFalse)
+				},
 			}
 
 			prepTask(model.TaskDimensions{"pool": {"bot-pool"}}, nil)

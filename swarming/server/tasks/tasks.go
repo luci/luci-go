@@ -98,3 +98,21 @@ func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskR
 func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
 	return notifications.SendOnTaskUpdate(ctx, tr, trs)
 }
+
+// TaskWriteOp is used to perform datastore writes on a task throughout its lifecycle.
+type TaskWriteOp interface {
+	// ClaimTxn calls op.ClaimTxn, but it can be mocked in tests.
+	ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error)
+	// FinishClaimOp calls op.Finish, but it can be mocked in tests.
+	FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome)
+}
+
+type TaskWriteOpProd struct{}
+
+func (t *TaskWriteOpProd) ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error) {
+	return op.ClaimTxn(ctx, bot)
+}
+
+func (t *TaskWriteOpProd) FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome) {
+	op.Finished(ctx, outcome)
+}
