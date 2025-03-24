@@ -24,6 +24,7 @@ import (
 )
 
 func main() {
+	os.Stderr.WriteString("Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms) and [Privacy Policy](https://policies.google.com/privacy)\n\n")
 	p := cli.Params{
 		Auth:                chromeinfra.DefaultAuthOptions(),
 		DefaultResultDBHost: chromeinfra.ResultDBHost,
