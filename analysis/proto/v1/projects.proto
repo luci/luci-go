@@ -22,6 +22,9 @@ import "go.chromium.org/luci/analysis/proto/v1/issue_tracking.proto";
 import "go.chromium.org/luci/analysis/proto/v1/project.proto";
 
 // Provides methods to access the projects which are using LUCI Analysis.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Projects {
   // Gets LUCI Analysis configuration for a LUCI Project.
   //

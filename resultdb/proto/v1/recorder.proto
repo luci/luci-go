@@ -35,6 +35,9 @@ option java_multiple_files = true;
 //
 // RPCs that mutate an invocation return FAILED_PRECONDITION error code if the
 // invocation is finalized.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Recorder {
 
   // == Invocations ============================================================

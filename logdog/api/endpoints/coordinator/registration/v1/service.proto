@@ -69,6 +69,9 @@ message RegisterPrefixResponse {
 // Registration service is a LogDog Coordinator endpoint that interfaces with
 // LogDog Butler instances and enables stream prefix registration and Butler
 // streaming initialization.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Registration {
   // RegisterStream allows a Butler instance to register a log stream with the
   // Coordinator. Upon success, the Coordinator will return registration

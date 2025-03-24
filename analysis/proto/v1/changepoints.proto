@@ -24,6 +24,9 @@ import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
 // This service currently only return changepoints which have an increase in unexpected verdict rate, aka. Regression.
 // In the future, it may be extended for obtaining groups which have a decreased unexpected verdict rate aka. fixes.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Changepoints {
   // Query the changepoint group summaries.
   // Currently this RPC only returns at most 1000 changepoint groups starting at the current week.

@@ -19,6 +19,9 @@ package luci.notify.v1;
 option go_package = "go.chromium.org/luci/luci_notify/api/service/v1;lucinotifypb";
 
 // Service to query tree closer data on the server.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service TreeCloser {
   // Checks if the builder in CheckTreeCloserRequest is tree-closer or not
   rpc CheckTreeCloser(CheckTreeCloserRequest) returns (CheckTreeCloserResponse) {};

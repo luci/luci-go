@@ -25,6 +25,9 @@ option go_package = "go.chromium.org/luci/luci_notify/api/service/v1;lucinotifyp
 // For now it only tracks mutable fields, with alerts being generated
 // by Sheriff-o-Matic, but eventually the alerts available through this
 // service will incorporate all of the needed information.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Alerts {
   // BatchGetAlerts allows getting a number of alerts by resource name.
   // If no alert exists by the given name an empty alert will be returned.

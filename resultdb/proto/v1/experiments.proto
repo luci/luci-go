@@ -25,6 +25,9 @@ option java_multiple_files = true;
 // Reliability and backwards compatibility is not assured. Do not
 // depend on this service from your production environment or anywhere
 // you cannot accept breakage at any time.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Experiments {
   // Sample RPC to allow verification the server is up and running.
   // Replace with actual RPC.

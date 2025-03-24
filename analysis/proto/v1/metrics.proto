@@ -19,6 +19,9 @@ package luci.analysis.v1;
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Provides information about metrics in LUCI Analysis.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Metrics {
     // ListForProject lists metrics in a given LUCI Project.
     // Designed to follow aip.dev/132.

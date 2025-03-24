@@ -21,6 +21,10 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
 
+// Service to get and set status for LUCI trees.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service TreeStatus {
   // List all status values for a tree in reverse chronological order.
   rpc ListStatus(ListStatusRequest) returns (ListStatusResponse) {};

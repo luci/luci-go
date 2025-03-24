@@ -23,6 +23,9 @@ import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 
 // Provides methods to obtain statistics about test variants.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service TestVariants {
     // Queries the failure rate of specified test variants, returning
     // signals indicating if the test variant is flaky and/or

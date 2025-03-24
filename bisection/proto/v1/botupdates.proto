@@ -23,6 +23,9 @@ option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
 
 // BotUpdates service contains APIs called from bots, used to update
 // the progress on an analysis.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service BotUpdates {
   // RPC called from bots to update the compile analysis progress.
   rpc UpdateAnalysisProgress(UpdateAnalysisProgressRequest)

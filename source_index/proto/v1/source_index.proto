@@ -19,6 +19,9 @@ package luci.source_index.v1;
 option go_package = "go.chromium.org/luci/source_index/proto/v1;sourceindexpb";
 
 // Provides methods to retrieve metadata of git commits.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service SourceIndex {
   // QueryCommitHash returns commit that matches desired position of commit,
   // based on QueryCommitHashRequest parameters. Commit position is based on

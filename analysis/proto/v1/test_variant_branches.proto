@@ -29,6 +29,9 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Provide methods to read data for test variant branches including
 // results from changepoint analysis, and test verdicts.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service TestVariantBranches {
   // Retrieves the raw state of test variant branch analysis.
   // For reading test variant branch analyses from Spanner.

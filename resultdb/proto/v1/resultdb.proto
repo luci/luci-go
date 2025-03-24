@@ -33,6 +33,9 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // Service to read test results.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service ResultDB {
   // Retrieves an invocation.
   rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};

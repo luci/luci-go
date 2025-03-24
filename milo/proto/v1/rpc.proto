@@ -30,6 +30,9 @@ option go_package = "go.chromium.org/luci/milo/proto/v1;milopb";
 // Note: this is private API and should only be used by Milo apps. Breaking
 // changes might be introduced without notice.
 // Please contact chops-luci-test@ if your code needs to depend on this service.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service MiloInternal {
   // Query logs from a gitiles host.
   //

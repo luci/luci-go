@@ -18,6 +18,10 @@ package luci.tree_status.v1;
 
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
 
+// Service to list valid LUCI trees.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Trees {
   // Get information of a tree.
   rpc GetTree(GetTreeRequest) returns (Tree) {};

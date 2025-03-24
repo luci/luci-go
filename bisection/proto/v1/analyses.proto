@@ -31,6 +31,9 @@ option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
 
 // Analyses service includes all methods related to failure analyses
 // called from LUCI Bisection clients, such as SoM.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Analyses {
   // GetAnalysis is used to get an analysis by analysis ID.
   rpc GetAnalysis(GetAnalysisRequest) returns (Analysis);

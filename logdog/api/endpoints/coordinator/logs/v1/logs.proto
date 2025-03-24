@@ -265,6 +265,9 @@ message QueryResponse {
 }
 
 // Logs is the user-facing log access and query endpoint service.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Logs {
   // Get returns state and log data for a single log stream.
   rpc Get(GetRequest) returns (GetResponse);

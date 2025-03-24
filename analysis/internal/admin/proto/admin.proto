@@ -21,6 +21,9 @@ option go_package = "go.chromium.org/luci/analysis/internal/admin/proto;adminpb"
 import "google/protobuf/timestamp.proto";
 
 // Provides methods used to manage LUCI Analysis. Not for general use.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Admin {
   // Initiates backfill of test results in the test_results BigQuery table.
   rpc BackfillTestResults(BackfillTestResultsRequest) returns (BackfillTestResultsResponse) {};

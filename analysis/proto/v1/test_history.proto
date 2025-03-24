@@ -26,6 +26,9 @@ import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Provide methods to read test histories.
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service TestHistory {
   // Retrieves test verdicts for a given test ID in a given project and in a
   // given range of time.

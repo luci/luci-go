@@ -32,6 +32,9 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // The auth token is available via resultdb.resultsink.auth_token LUCI_CONTEXT
 // value. For more information, visit
 // https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Sink {
   // Reports test results.
   rpc ReportTestResults(ReportTestResultsRequest)

@@ -24,6 +24,9 @@ import "go.chromium.org/luci/luci_notify/proto/v1/triage_state.proto";
 option go_package = "go.chromium.org/luci/luci_notify/proto/v1;notifypb";
 
 // Gardening provides information to help keep builders green (passing).
+//
+// Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
+// and [Privacy Policy](https://policies.google.com/privacy).
 service Gardening {
    // Retrieves builders in the given gardening rotation.
    rpc QueryGardenedBuilders(QueryGardenedBuildersRequest) returns (QueryGardenedBuildersResponse);
