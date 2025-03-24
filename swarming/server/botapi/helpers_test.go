@@ -39,7 +39,7 @@ func TestCheckBotHealthInfo(t *testing.T) {
 	}
 
 	for _, cs := range cases {
-		info, out, err := checkBotHealthInfo(botstate.Dict{JSON: []byte(cs.before)}, cs.dim)
+		info, out, err := updateBotHealthInfo(botstate.Dict{JSON: []byte(cs.before)}, cs.dim, nil)
 		assert.NoErr(t, err)
 		assert.That(t, info.Quarantined, should.Equal(cs.msg))
 		assert.That(t, string(out.JSON), should.Equal(cs.after))

@@ -19,12 +19,35 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/validate"
 )
+
+// peekBotID extracts bot ID from the dimensions.
+//
+// It is called early when authorizing bots (in particular ancient ones that
+// don't use session tokens). Doesn't do full validation, validates only the
+// bot ID.
+//
+// Returns gRPC errors.
+func peekBotID(dims map[string][]string) (string, error) {
+	idDim := dims["id"]
+	if len(idDim) == 0 {
+		return "", status.Errorf(codes.InvalidArgument, "no `id` dimension reported")
+	}
+	botID := idDim[0]
+	if err := validate.DimensionValue(botID); err != nil {
+		return "", status.Errorf(codes.InvalidArgument, "bad bot `id` %q: %s", botID, err)
+	}
+	return botID, nil
+}
 
 // botCallInfo populates fields of BotEventCallInfo based on the state in the
 // context.
@@ -35,12 +58,15 @@ func botCallInfo(ctx context.Context, info *model.BotEventCallInfo) *model.BotEv
 	return info
 }
 
-// checkBotHealthInfo extract quarantine and maintenance status of the bot from
-// the state and the "quarantined" dimension values, and (if the bot is indeed
-// quarantined) updates the state dict to indicate that.
+// updateBotHealthInfo derives quarantine and maintenance status of the bot
+// based on the state dict, the "quarantined" dimension values and the given
+// list of request validation errors.
+//
+// If the bot is indeed quarantined or there are errors present, updates the
+// state dict to indicate that.
 //
 // Returns the extracted health info and the updated state dict.
-func checkBotHealthInfo(state botstate.Dict, quarantinedDim []string) (model.BotHealthInfo, botstate.Dict, error) {
+func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs errors.MultiError) (model.BotHealthInfo, botstate.Dict, error) {
 	// First read the quarantine message from the state.
 	var msg string
 	var val any
@@ -63,6 +89,16 @@ func checkBotHealthInfo(state botstate.Dict, quarantinedDim []string) (model.Bot
 			}
 		}
 	}
+
+	// Append all validation error lines, if any.
+	lines := make([]string, 0, len(errs)+1)
+	if msg != "" {
+		lines = append(lines, msg)
+	}
+	for _, err := range errs {
+		lines = append(lines, err.Error())
+	}
+	msg = strings.Join(lines, "\n")
 
 	healthInfo := model.BotHealthInfo{
 		Quarantined: msg,

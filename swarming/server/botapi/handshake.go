@@ -17,7 +17,6 @@ package botapi
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -112,7 +111,7 @@ type BotRBEParams struct {
 	Instance string `json:"instance"`
 	// HybridMode, if true, indicates to use RBE and native scheduler together.
 	HybridMode bool `json:"hybrid_mode"`
-	// Sleep is how long to sleep (in seconds) before next Swarming check in.
+	// Sleep is a legacy unused field preserved for compatibility.
 	Sleep float64 `json:"sleep"`
 	// PollToken is a legacy unused field preserved for compatibility.
 	PollToken string `json:"poll_token"`
@@ -136,13 +135,9 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 
 	// Extract bot ID from dimensions to authorize the bot before doing anything
 	// else. Dimensions will be fully validated later.
-	idDim := body.Dimensions["id"]
-	if len(idDim) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "no `id` dimension reported")
-	}
-	botID := idDim[0]
-	if err := validate.DimensionValue(botID); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad bot `id` %q: %s", botID, err)
+	botID, err := peekBotID(body.Dimensions)
+	if err != nil {
+		return nil, err
 	}
 
 	// Authorize the bot by checking it uses the expected credentials.
@@ -176,39 +171,21 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 		body.State = botstate.Dict{}
 	}
 
+	// Log all errors for easier debugging.
+	for _, err := range errs {
+		logging.Errorf(ctx, "Validation error: %s", err)
+	}
+
 	// Update the bot state by marking the bot as "in handshake now". This is used
 	// by the monitoring cron to distinguish fully connected bots from bots that
-	// have just appeared and may not have full set of dimensions yet.
-	//
-	// Also update the quarantine message if there are any validation errors. This
-	// will result in the bot being placed in a quarantine, with these errors
-	// visible in the bot UI.
+	// have just appeared and may not have full set of dimensions yet. Put the
+	// reported (but unused) dimensions into the state for debugging.
 	body.State, err = botstate.Edit(body.State, func(state *botstate.EditableDict) error {
 		if err := state.Write(botstate.HandshakingKey, true); err != nil {
 			return errors.Annotate(err, "writing %s", botstate.HandshakingKey).Err()
 		}
 		if err := state.Write(botstate.InitialDimensionsKey, body.Dimensions); err != nil {
 			return errors.Annotate(err, "writing %s", botstate.InitialDimensionsKey).Err()
-		}
-		if len(errs) != 0 {
-			var msg string
-			var val any
-			if err := state.Read(botstate.QuarantinedKey, &val); err != nil {
-				msg = fmt.Sprintf("Can't read self-quarantine message from state: %s", err)
-			} else {
-				msg = model.QuarantineMessage(val)
-			}
-			lines := make([]string, 0, len(errs)+1)
-			if msg != "" {
-				lines = append(lines, msg)
-			}
-			for _, err := range errs {
-				logging.Errorf(ctx, "Validation error: %s", err)
-				lines = append(lines, err.Error())
-			}
-			if err := state.Write(botstate.QuarantinedKey, strings.Join(lines, "\n")); err != nil {
-				return errors.Annotate(err, "writing %s", botstate.QuarantinedKey).Err()
-			}
 		}
 		return nil
 	})
@@ -217,9 +194,11 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	}
 
 	// See if the bot self-quarantined, in maintenance or sent invalid handshake
-	// request. This also update the quarantine message in the state if necessary.
+	// request. This also updates the quarantine message in the state if
+	// necessary (e.g. there were validation errors). This will result in the bot
+	// being placed in a quarantine, with these errors visible in the bot UI.
 	var healthInfo model.BotHealthInfo
-	healthInfo, body.State, err = checkBotHealthInfo(body.State, body.Dimensions[botstate.QuarantinedKey])
+	healthInfo, body.State, err = updateBotHealthInfo(body.State, body.Dimensions[botstate.QuarantinedKey], errs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
 	}

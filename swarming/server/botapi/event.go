@@ -107,7 +107,7 @@ func (srv *BotAPIServer) Event(ctx context.Context, body *EventRequest, r *botsr
 	var botState *botstate.Dict
 	var botHealth *model.BotHealthInfo
 	if !body.State.IsEmpty() {
-		health, state, err := checkBotHealthInfo(body.State, r.Dimensions.DimensionValues(botstate.QuarantinedKey))
+		health, state, err := updateBotHealthInfo(body.State, r.Dimensions.DimensionValues(botstate.QuarantinedKey), nil)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
 		}
