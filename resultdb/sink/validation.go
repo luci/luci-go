@@ -24,14 +24,44 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
-// validateTestResult returns a non-nil error if msg is invalid.
+// validateTestResult returns a non-nil error if the result sink result is invalid.
+// This performs basic validation agnostic of the resultsink server configuration,
+// a second validation pass will be performed on the result merged with test prefixes,
+// etc. etc. configured on the server.
+//
+// Note: This will not pick up all errors on results uploaded to ResultDB,
+// but it will pick up a significant set.
 func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	if msg == nil {
 		return errors.Reason("unspecified").Err()
 	}
-	if err := pbutil.ValidateTestID(msg.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+
+	// If the flat test ID field is present, validate it.
+	if msg.TestId != "" {
+		if err := pbutil.ValidateTestID(msg.TestId); err != nil {
+			return errors.Annotate(err, "test_id").Err()
+		}
 	}
+	// If structured test ID is present, validate it.
+	// Also, if the flat test ID is missing
+	if msg.TestId == "" || msg.TestIdStructured != nil {
+		if msg.TestIdStructured == nil {
+			return errors.Reason("test_id_structured: unspecified").Err()
+		}
+		// Perform basic validation, using a placeholder module name and scheme.
+		baseID := pbutil.BaseTestIdentifier{
+			ModuleName:   "placeholder",
+			ModuleScheme: "scheme",
+			CoarseName:   msg.TestIdStructured.CoarseName,
+			FineName:     msg.TestIdStructured.FineName,
+			CaseName:     pbutil.EncodeCaseName(msg.TestIdStructured.CaseNameComponents...),
+		}
+
+		if err := pbutil.ValidateBaseTestIdentifier(baseID); err != nil {
+			return errors.Annotate(err, "test_id_structured").Err()
+		}
+	}
+
 	if err := pbutil.ValidateResultID(msg.ResultId); err != nil {
 		return errors.Annotate(err, "result_id").Err()
 	}

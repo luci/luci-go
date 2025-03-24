@@ -101,11 +101,33 @@ type ServerConfig struct {
 	UpdateToken string
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
+	// Setting this forces use of legacy (unstructured string) test IDs in uploads
+	// and requires test harnesses support the same.
+	// Note: even if this is unset, if ModuleName is not set, we default to uploading
+	// legacy test IDs to preserve compatibility.
+	// Must not be set in conjunction with ModuleName.
 	TestIDPrefix string
 
-	// BaseVariant will be added to the variant of each TestResult. If there are duplicate
-	// keys, the variant value given by the test command always wins.
-	BaseVariant *pb.Variant
+	// The module name associated with uploaded test results.
+	// Setting this enables use of structured test IDs in uploads and requires test
+	// harness to support the same.
+	// Must not be set in conjunction with TestIDPrefix.
+	ModuleName string
+
+	// The test scheme of the module. Must be set if ModuleName is set.
+	// Refer to go/resultdb-schemes for information about test schemes.
+	ModuleScheme string
+
+	// The module variant.
+	// This also sets the module variant for test results uploaded with legacy-form IDs.
+	Variant *pb.Variant
+
+	// Specifies the test_id prefix that will be combined with the (legacy) test_id
+	// provided to ReportTestResults to set the test_metadata.previous_test_id field.
+	//
+	// Set to nil to disable this functionality. Setting this to an empty string
+	// uploads the (legacy) test_Id to test_metadata.previous_test_id without modification.
+	PreviousTestIDPrefix *string
 
 	// TestLocationBase will be prepended to the Location.FileName of each TestResult.
 	TestLocationBase string
@@ -148,31 +170,62 @@ type ServerConfig struct {
 
 // Validate validates all the config fields.
 func (c *ServerConfig) Validate() error {
-	var err error
-	isErr := func(e error) bool {
-		err = e
-		return e != nil
-	}
-
-	switch {
-	case c.ArtifactStreamClient == nil:
+	if c.ArtifactStreamClient == nil {
 		return errors.Reason("ArtifactStreamClient: unspecified").Err()
-	case isErr(pbutil.ValidateStringPairs(c.BaseTags)):
+	}
+	if err := pbutil.ValidateStringPairs(c.BaseTags); err != nil {
 		return errors.Annotate(err, "BaseTags").Err()
-	case isErr(pbutil.ValidateVariant(c.BaseVariant)):
-		return errors.Annotate(err, "BaseVariant").Err()
-	case isErr(pbutil.ValidateInvocationName(c.Invocation)):
+	}
+	if err := pbutil.ValidateVariant(c.Variant); err != nil {
+		return errors.Annotate(err, "Variant").Err()
+	}
+	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
 		return errors.Annotate(err, "Invocation").Err()
-	case c.Recorder == nil:
+	}
+	if c.Recorder == nil {
 		return errors.Reason("Recorder: unspecified").Err()
-	case c.UpdateToken == "":
+	}
+	if c.UpdateToken == "" {
 		return errors.Reason("UpdateToken: unspecified").Err()
-	case c.TestIDPrefix != "" && isErr(pbutil.ValidateTestID(c.TestIDPrefix)):
-		return errors.Annotate(err, "TestIDPrefix").Err()
-	case c.TestLocationBase != "" && isErr(pbutil.ValidateFilePath(c.TestLocationBase)):
-		return errors.Annotate(err, "TestLocationBase").Err()
-	case c.MaxBatchableArtifactSize > 10*1024*1024:
+	}
+	if c.TestLocationBase != "" {
+		if err := pbutil.ValidateFilePath(c.TestLocationBase); err != nil {
+			return errors.Annotate(err, "TestLocationBase").Err()
+		}
+	}
+	if c.MaxBatchableArtifactSize > 10*1024*1024 {
 		return errors.Reason("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize).Err()
+	}
+	if c.ModuleName != "" || c.ModuleScheme != "" {
+		if err := pbutil.ValidateModuleName(c.ModuleName); err != nil {
+			return errors.Annotate(err, "ModuleName").Err()
+		}
+		if c.ModuleName == pbutil.LegacyModuleName {
+			return errors.Reason("ModuleName: cannot be %q", pbutil.LegacyModuleName).Err()
+		}
+		if err := pbutil.ValidateModuleScheme(c.ModuleScheme, false /*isLegacyModule*/); err != nil {
+			return errors.Annotate(err, "ModuleScheme").Err()
+		}
+		if c.TestIDPrefix != "" {
+			return errors.Reason("TestIDPrefix: may not be set if ModuleName is set").Err()
+		}
+	}
+	if c.PreviousTestIDPrefix != nil {
+		if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
+			return errors.Reason("PreviousTestIDPrefix: must not start with prefix of structured test IDs").Err()
+		}
+		if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix); err != nil {
+			return errors.Annotate(err, "PreviousTestIDPrefix").Err()
+		}
+	}
+	// For clients still using legacy test IDs, deprecated.
+	if c.TestIDPrefix != "" {
+		if pbutil.IsStructuredTestID(c.TestIDPrefix) {
+			return errors.Reason("TestIDPrefix: must not start with prefix of structured test IDs").Err()
+		}
+		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
+			return errors.Annotate(err, "TestIDPrefix").Err()
+		}
 	}
 	return nil
 }

@@ -44,9 +44,11 @@ message TestResult {
   // Equivalent of luci.resultdb.v1.TestResult.test_id.
   // Deprecated: new uploaders should set test_id_structured only.
   //
-  // Where a structured ID is used and this ID is set, and a legacy test ID
-  // base is provided to `rdb stream`, it may be used to populate the original
-  // test ID of the result (test metadata field).
+  // To facilitate migrating from legacy test IDs to structured IDs,
+  // existing test harnesses should keep setting this field.
+  // When structured IDs are used, if this ID is set and -previous-test-id-prefix
+  // is passed to ResultSink the combination will populate into
+  // test_metadata.previous_test_id.
   string test_id = 1;
 
   // Equivalent of luci.resultdb.v1.TestResult.result_id.
@@ -77,6 +79,7 @@ message TestResult {
   map<string, Artifact> artifacts = 9;
 
   // Equivalent of luci.resultdb.v1.TestResult.test_metadata.
+  // Note: do not set previous_test_id. It will be ignored.
   luci.resultdb.v1.TestMetadata test_metadata = 11;
 
   // Equivalent of luci.resultdb.v1.TestResult.failure_reason.

@@ -112,9 +112,11 @@ type TestResult struct {
 	// Equivalent of luci.resultdb.v1.TestResult.test_id.
 	// Deprecated: new uploaders should set test_id_structured only.
 	//
-	// Where a structured ID is used and this ID is set, and a legacy test ID
-	// base is provided to `rdb stream`, it may be used to populate the original
-	// test ID of the result (test metadata field).
+	// To facilitate migrating from legacy test IDs to structured IDs,
+	// existing test harnesses should keep setting this field.
+	// When structured IDs are used, if this ID is set and -previous-test-id-prefix
+	// is passed to ResultSink the combination will populate into
+	// test_metadata.previous_test_id.
 	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.result_id.
 	//
@@ -136,6 +138,7 @@ type TestResult struct {
 	// The map key is an artifact id.
 	Artifacts map[string]*Artifact `protobuf:"bytes,9,rep,name=artifacts,proto3" json:"artifacts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Equivalent of luci.resultdb.v1.TestResult.test_metadata.
+	// Note: do not set previous_test_id. It will be ignored.
 	TestMetadata *v1.TestMetadata `protobuf:"bytes,11,opt,name=test_metadata,json=testMetadata,proto3" json:"test_metadata,omitempty"`
 	// Equivalent of luci.resultdb.v1.TestResult.failure_reason.
 	FailureReason *v1.FailureReason `protobuf:"bytes,12,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`

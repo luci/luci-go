@@ -70,7 +70,13 @@ func TestReportTestResults(t *testing.T) {
 		}
 
 		expectedTR := proto.Clone(&pb.TestResult{
-			TestId:        tr.TestId,
+			TestIdStructured: &pb.TestIdentifier{
+				ModuleName:   "module_name",
+				ModuleScheme: "scheme",
+				CoarseName:   "coarse_name",
+				FineName:     "fine_name",
+				CaseName:     "component1:component2",
+			},
 			ResultId:      tr.ResultId,
 			Expected:      tr.Expected,
 			Status:        tr.Status,
@@ -78,7 +84,6 @@ func TestReportTestResults(t *testing.T) {
 			StartTime:     tr.StartTime,
 			Duration:      tr.Duration,
 			Tags:          tr.Tags,
-			Variant:       tr.Variant,
 			TestMetadata:  tr.TestMetadata,
 			FailureReason: tr.FailureReason,
 		}).(*pb.TestResult)
@@ -104,57 +109,154 @@ func TestReportTestResults(t *testing.T) {
 			assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Match(expectedTR))
 		}
 
-		t.Run("works", func(t *ftt.Test) {
+		t.Run("with ServerConfig.BaseTags", func(t *ftt.Test) {
+			t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
+			// (nil, nil)
+			cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, nil, nil
+			checkResults()
+
+			// (tag, nil)
+			cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, nil, t1
+			checkResults()
+
+			// (nil, tag)
+			cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, t1, t1
+			checkResults()
+
+			// (tag1, tag2)
+			cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, t2, append(t1, t2...)
+			checkResults()
+		})
+
+		t.Run("legacy test ID and variant", func(t *ftt.Test) {
+			cfg.ModuleName = ""
+			cfg.ModuleScheme = ""
+
+			t.Run("without ServerConfig.TestIDPrefix", func(t *ftt.Test) {
+				cfg.TestIDPrefix = ""
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				tr.TestId = "HelloWorld.TestA"
+				tr.TestIdStructured = nil
+				expectedTR.TestId = "HelloWorld.TestA"
+				expectedTR.TestIdStructured = nil
+				checkResults()
+			})
 			t.Run("with ServerConfig.TestIDPrefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
 				tr.TestId = "HelloWorld.TestA"
 				expectedTR.TestId = "ninja://foo/bar/HelloWorld.TestA"
+				expectedTR.TestIdStructured = nil
+
+				t.Run("with structured test ID uploaded in addition to legacy ID", func(t *ftt.Test) {
+					tr.TestIdStructured = &sinkpb.TestIdentifier{
+						CoarseName:         "coarse_name",
+						FineName:           "fine_name",
+						CaseNameComponents: []string{"component1", "component2"},
+					}
+					// Should not change result.
+					checkResults()
+				})
+				t.Run("without structured test ID uploaded in addition to legacy ID", func(t *ftt.Test) {
+					tr.TestIdStructured = nil
+					checkResults()
+				})
+
+				t.Run("with ServerConfig.Variant and/or test result variant", func(t *ftt.Test) {
+					v1, v2 := pbutil.Variant("bucket", "try"), pbutil.Variant("builder", "linux-rel")
+					// (nil, nil)
+					cfg.Variant, tr.Variant, expectedTR.Variant = nil, nil, nil
+					checkResults()
+
+					// (variant, nil)
+					cfg.Variant, tr.Variant, expectedTR.Variant = v1, nil, v1
+					checkResults()
+
+					// (nil, variant)
+					cfg.Variant, tr.Variant, expectedTR.Variant = nil, v1, v1
+					checkResults()
+
+					// (variant1, variant2)
+					cfg.Variant, tr.Variant, expectedTR.Variant = v1, v2, pbutil.CombineVariant(v1, v2)
+					checkResults()
+				})
+			})
+		})
+		t.Run("structured test ID", func(t *ftt.Test) {
+			cfg.TestIDPrefix = ""
+			cfg.ModuleName = "mymodule"
+			cfg.ModuleScheme = "myscheme"
+			assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+			expectedTR.TestId = ""
+			expectedTR.TestIdStructured = &pb.TestIdentifier{
+				ModuleName:   "mymodule",
+				ModuleScheme: "myscheme",
+				CoarseName:   "coarse_name",
+				FineName:     "fine_name",
+				CaseName:     "component1:component2",
+			}
+			t.Run("without ServerConfig.variant", func(t *ftt.Test) {
+				cfg.Variant = nil
+				expectedTR.TestIdStructured.ModuleVariant = nil
 				checkResults()
 			})
-
-			t.Run("with ServerConfig.BaseVariant", func(t *ftt.Test) {
+			t.Run("with ServerConfig.variant", func(t *ftt.Test) {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
-				cfg.BaseVariant = pbutil.Variant(base...)
-				expectedTR.Variant = pbutil.Variant(base...)
+				cfg.Variant = pbutil.Variant(base...)
+				expectedTR.TestIdStructured.ModuleVariant = pbutil.Variant(base...)
 				checkResults()
 			})
+			t.Run("with legacy test ID uploaded in addition to structured ID", func(t *ftt.Test) {
+				tr.TestId = "HelloWorld.TestA"
+				tr.Variant = pbutil.Variant("arch", "x64")
 
-			t.Run("with ServerConfig.BaseTags", func(t *ftt.Test) {
-				t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
-				// (nil, nil)
-				cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, nil, nil
+				// Legacy fields are ignored.
 				checkResults()
 
-				// (tag, nil)
-				cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, nil, t1
-				checkResults()
+				t.Run("with PreviousTestIdPrefix", func(t *ftt.Test) {
+					previousPrefix := "ninja://oldfoo/bar/"
+					cfg.PreviousTestIDPrefix = &previousPrefix
 
-				// (nil, tag)
-				cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, t1, t1
-				checkResults()
+					t.Run("merges with existing test metadata", func(t *ftt.Test) {
+						// Test case where metadata is merged.
+						tr.TestMetadata = &pb.TestMetadata{
+							Name: "MyTest",
+						}
+						expectedTR.TestMetadata = &pb.TestMetadata{
+							Name:           "MyTest",
+							PreviousTestId: "ninja://oldfoo/bar/HelloWorld.TestA",
+						}
+						checkResults()
+					})
+					t.Run("sets test metadata if it does not exist", func(t *ftt.Test) {
+						// Test case where test metadata not set.
+						tr.TestMetadata = nil
 
-				// (tag1, tag2)
-				cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, t2, append(t1, t2...)
-				checkResults()
+						expectedTR.TestMetadata = &pb.TestMetadata{
+							PreviousTestId: "ninja://oldfoo/bar/HelloWorld.TestA",
+						}
+						checkResults()
+					})
+				})
 			})
+			t.Run("without legacy test ID uploaded in addition to structured ID", func(t *ftt.Test) {
+				tr.TestId = ""
+				tr.Variant = nil
 
-			t.Run("with ServerConfig.BaseVariant and test result variant", func(t *ftt.Test) {
-				v1, v2 := pbutil.Variant("bucket", "try"), pbutil.Variant("builder", "linux-rel")
-				// (nil, nil)
-				cfg.BaseVariant, tr.Variant, expectedTR.Variant = nil, nil, nil
+				// Legacy fields are ignored.
 				checkResults()
 
-				// (variant, nil)
-				cfg.BaseVariant, tr.Variant, expectedTR.Variant = v1, nil, v1
-				checkResults()
+				t.Run("with PreviousTestIdPrefix", func(t *ftt.Test) {
+					previousPrefix := "ninja://oldfoo/bar/"
+					cfg.PreviousTestIDPrefix = &previousPrefix
 
-				// (nil, variant)
-				cfg.BaseVariant, tr.Variant, expectedTR.Variant = nil, v1, v1
-				checkResults()
-
-				// (variant1, variant2)
-				cfg.BaseVariant, tr.Variant, expectedTR.Variant = v1, v2, pbutil.CombineVariant(v1, v2)
-				checkResults()
+					// Because no legacy test ID uploaded, no previous test ID uploaded.
+					expectedTR.TestMetadata.PreviousTestId = ""
+					checkResults()
+				})
 			})
 		})
 
@@ -345,7 +447,7 @@ func TestReportTestResults(t *testing.T) {
 		rootTags := pbutil.StringPairs(
 			"feature", "feature1",
 			"monorail_component", "Monorail>Component",
-			"teamEmail", "team_email@chromium.org",
+			"team_email", "team_email@chromium.org",
 			"os", "WINDOWS",
 		)
 		rootComponent := &pb.BugComponent{
@@ -380,7 +482,7 @@ func TestReportTestResults(t *testing.T) {
 				"feature", "feature2",
 				"feature", "feature3",
 				"monorail_component", "Monorail>Component>Sub",
-				"teamEmail", "team_email@chromium.org",
+				"team_email", "team_email@chromium.org",
 				"os", "WINDOWS",
 			)...)
 			expectedTR.TestMetadata.BugComponent = subComponent
@@ -390,7 +492,7 @@ func TestReportTestResults(t *testing.T) {
 
 		t.Run("with ServerConfig.LocationTags file based", func(t *ftt.Test) {
 			overriddenTags := pbutil.StringPairs(
-				"featureX", "featureY",
+				"feature_x", "featureY",
 				"monorail_component", "Monorail>File>Component",
 			)
 			overriddenComponent := &pb.BugComponent{
@@ -429,9 +531,9 @@ func TestReportTestResults(t *testing.T) {
 			expectedTR.Tags = append(expectedTR.Tags, pbutil.StringPairs(
 				"feature", "feature2",
 				"feature", "feature3",
-				"featureX", "featureY",
+				"feature_x", "featureY",
 				"monorail_component", "Monorail>File>Component",
-				"teamEmail", "team_email@chromium.org",
+				"team_email", "team_email@chromium.org",
 				"os", "WINDOWS",
 			)...)
 			expectedTR.TestMetadata.BugComponent = overriddenComponent
@@ -485,12 +587,16 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		t.Run("report exoneration", func(t *ftt.Test) {
-			cfg.ExonerateUnexpectedPass = true
-			sink, err := newSinkServer(ctx, cfg)
-			assert.Loosely(t, err, should.BeNil)
-			defer closeSinkServer(ctx, sink)
+			t.Run("legacy test ID", func(t *ftt.Test) {
+				cfg.ModuleName = ""
+				cfg.ModuleScheme = ""
+				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
+				cfg.ExonerateUnexpectedPass = true
 
-			t.Run("exonerate unexpected pass", func(t *ftt.Test) {
+				sink, err := newSinkServer(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				defer closeSinkServer(ctx, sink)
+
 				tr.Expected = false
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
@@ -500,35 +606,68 @@ func TestReportTestResults(t *testing.T) {
 				assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
 				assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Match(&pb.TestExoneration{
 					TestId:          tr.TestId,
+					Variant:         pbutil.Variant("bucket", "try", "builder", "linux-rel"),
 					ExplanationHtml: "Unexpected passes are exonerated",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				}))
 			})
+			t.Run("structured test ID", func(t *ftt.Test) {
+				cfg.ModuleName = "modulename"
+				cfg.ModuleScheme = "scheme"
+				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
+				cfg.ExonerateUnexpectedPass = true
 
-			t.Run("not exonerate unexpected failure", func(t *ftt.Test) {
-				tr.Expected = false
-				tr.Status = pb.TestStatus_FAIL
+				sink, err := newSinkServer(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				defer closeSinkServer(ctx, sink)
 
-				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-				closeSinkServer(ctx, sink)
-				assert.Loosely(t, sentExoReq, should.BeNil)
-			})
+				t.Run("exonerate unexpected pass", func(t *ftt.Test) {
+					tr.Expected = false
 
-			t.Run("not exonerate expected pass", func(t *ftt.Test) {
-				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-				closeSinkServer(ctx, sink)
-				assert.Loosely(t, sentExoReq, should.BeNil)
-			})
+					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+					closeSinkServer(ctx, sink)
+					assert.Loosely(t, sentExoReq, should.NotBeNil)
+					assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
+					assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Match(&pb.TestExoneration{
+						TestIdStructured: &pb.TestIdentifier{
+							ModuleName:    "modulename",
+							ModuleScheme:  "scheme",
+							ModuleVariant: pbutil.Variant("bucket", "try", "builder", "linux-rel"),
+							CoarseName:    "coarse_name",
+							FineName:      "fine_name",
+							CaseName:      "component1:component2",
+						},
+						ExplanationHtml: "Unexpected passes are exonerated",
+						Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
+					}))
+				})
 
-			t.Run("not exonerate expected failure", func(t *ftt.Test) {
-				tr.Status = pb.TestStatus_FAIL
+				t.Run("not exonerate unexpected failure", func(t *ftt.Test) {
+					tr.Expected = false
+					tr.Status = pb.TestStatus_FAIL
 
-				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-				closeSinkServer(ctx, sink)
-				assert.Loosely(t, sentExoReq, should.BeNil)
+					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+					closeSinkServer(ctx, sink)
+					assert.Loosely(t, sentExoReq, should.BeNil)
+				})
+
+				t.Run("not exonerate expected pass", func(t *ftt.Test) {
+					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+					closeSinkServer(ctx, sink)
+					assert.Loosely(t, sentExoReq, should.BeNil)
+				})
+
+				t.Run("not exonerate expected failure", func(t *ftt.Test) {
+					tr.Status = pb.TestStatus_FAIL
+
+					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+					closeSinkServer(ctx, sink)
+					assert.Loosely(t, sentExoReq, should.BeNil)
+				})
 			})
 		})
 	})

@@ -59,6 +59,8 @@ const (
 	// reservePeriodSecs is how many seconds should be reserved for `rdb stream` to
 	// complete (out of a grace period), the rest can be given to the payload.
 	reservePeriodSecs = 3
+
+	previousTestIDPrefixDisabledValue = ":disabled"
 )
 
 // MustReturnInvURL returns a string of the Invocation URL.
@@ -105,13 +107,34 @@ func cmdStream(p Params) *subcommands.Command {
 				ignored otherwise.
 				e.g. "chromium:public"
 			`))
+			r.Flags.StringVar(&r.moduleName, "module-name", "", text.Doc(`
+				Module name to upload test results to.
+				Requires clients to supply structured test IDs to ReportTestResults.
+				Set in conjunction with -module-scheme. May not be set in conjunction with
+				-test-id-prefix.
+			`))
+			r.Flags.StringVar(&r.moduleScheme, "module-scheme", "", text.Doc(`
+				Module scheme to upload test results to. See go/resultdb-schemes.
+			`))
 			r.Flags.StringVar(&r.testIDPrefix, "test-id-prefix", "", text.Doc(`
 				Prefix to prepend to the test ID of every test result.
+				Deprecated. Requires clients to supply legacy test IDs to ReportTestResults.
+				Prefer to use upload structured test IDs by setting -module-name and -module-scheme.
+			`))
+			r.Flags.StringVar(&r.previousTestIDPrefix, "previous-test-id-prefix", previousTestIDPrefixDisabledValue, text.Doc(`
+				Sets the test ID prefix that was previously used for these tests.
+				This prefix will be combined with the legacy test ID reported to
+				ReportTestResults and used to populate test_metadata.previous_test_id.
+
+				When used in conjunction with test harnesses that report both structured
+				and legacy test IDs to ReportTestResults, facilitates migration from legacy
+				test IDs to structured test IDs.
+				Omitting this flag or setting the value '`+previousTestIDPrefixDisabledValue+`'
+				disables this feature.
 			`))
 			r.Flags.Var(flag.StringMap(r.vars), "var", text.Doc(`
-				Variant to add to every test result in "key:value" format.
-				If the test command adds a variant with the same key, the value given by
-				this flag will get overridden.
+				The module variant. This also sets the module variant when uploading
+				test results with legacy test IDs.
 			`))
 			r.Flags.UintVar(&r.artChannelMaxLeases, "max-concurrent-artifact-uploads",
 				sink.DefaultArtChannelMaxLeases, text.Doc(`
@@ -264,7 +287,10 @@ type streamRun struct {
 	isNew                    bool
 	isIncluded               bool
 	realm                    string
-	testIDPrefix             string
+	moduleName               string
+	moduleScheme             string
+	previousTestIDPrefix     string
+	testIDPrefix             string // deprecated
 	testTestLocationBase     string
 	vars                     map[string]string
 	artChannelMaxLeases      uint
@@ -316,6 +342,7 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	if sourceSpecs > 1 {
 		return errors.Reason("cannot specify more than one of -inherit-sources, -sources and -sources-file at the same time").Err()
 	}
+
 	return nil
 }
 
@@ -471,12 +498,15 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		Invocation:  r.invocation.Name,
 		UpdateToken: r.invocation.UpdateToken,
 
+		TestIDPrefix:            r.testIDPrefix,
+		ModuleName:              r.moduleName,
+		ModuleScheme:            r.moduleScheme,
+		PreviousTestIDPrefix:    r.previousTestIDPrefixFromArg(),
 		BaseTags:                pbutil.FromStrpairMap(r.tags),
-		BaseVariant:             &pb.Variant{Def: r.vars},
+		Variant:                 &pb.Variant{Def: r.vars},
 		CoerceNegativeDuration:  r.coerceNegativeDuration,
 		LocationTags:            locationTags,
 		TestLocationBase:        r.testTestLocationBase,
-		TestIDPrefix:            r.testIDPrefix,
 		ExonerateUnexpectedPass: r.exonerateUnexpectedPass,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
@@ -525,6 +555,14 @@ func (r *streamRun) locationTagsFromArg(ctx context.Context) (*sinkpb.LocationTa
 		return nil, err
 	}
 	return locationTags, nil
+}
+
+func (r *streamRun) previousTestIDPrefixFromArg() *string {
+	if r.previousTestIDPrefix == previousTestIDPrefixDisabledValue {
+		return nil
+	}
+	val := r.previousTestIDPrefix
+	return &val
 }
 
 // invPropertiesFromArgs gets invocation-level properties from arguments.

@@ -60,6 +60,8 @@ func testServerConfig(addr, tk string) ServerConfig {
 		Invocation:               "invocations/u-foo-1587421194_893166206",
 		invocationID:             "u-foo-1587421194_893166206",
 		UpdateToken:              "UpdateToken-ABC",
+		ModuleName:               "module_name",
+		ModuleScheme:             "scheme",
 		MaxBatchableArtifactSize: 2 * 1024 * 1024,
 	}
 }
@@ -107,7 +109,12 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 	})
 
 	return &sinkpb.TestResult{
-		TestId:      "this is testID",
+		TestId: "this is testID",
+		TestIdStructured: &sinkpb.TestIdentifier{
+			CoarseName:         "coarse_name",
+			FineName:           "fine_name",
+			CaseNameComponents: []string{"component1", "component2"},
+		},
 		ResultId:    "result_id1",
 		Expected:    true,
 		Status:      pb.TestStatus_PASS,
@@ -115,7 +122,6 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 		StartTime:   st,
 		Duration:    durationpb.New(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
-		Variant:     pbutil.Variant(),
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,
 		},
