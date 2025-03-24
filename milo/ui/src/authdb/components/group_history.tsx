@@ -229,7 +229,7 @@ export function GroupHistory({ name }: GroupHistoryProps) {
               {response?.changes.map((item, index) => {
                 return (
                   <TableRow key={index}>
-                    <TableCell style={{ display: 'flex' }}>
+                    <TableCell>
                       <Typography variant="body2">{item.changeType}</Typography>
                     </TableCell>
                     <TableCell>
