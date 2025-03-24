@@ -22,7 +22,7 @@ const prefix = '/ui/fleet/labs/';
 describe('getRedirectAddress', () => {
   const swarmingClient = jest.mocked({
     GetBot: () => ({
-      dimensions: [{ key: 'dut_name', value: 'dut_name_value' }],
+      dimensions: [{ key: 'dut_name', value: ['dut_name_value'] }],
     }),
   }) as unknown as DecoratedClient<BotsClientImpl>;
 

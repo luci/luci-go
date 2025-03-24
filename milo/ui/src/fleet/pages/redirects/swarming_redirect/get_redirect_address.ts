@@ -16,10 +16,8 @@ import { To } from 'react-router-dom';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { BASE_DIMENSIONS } from '@/fleet/components/device_table/dimensions';
-import {
-  BotRequest,
-  BotsClientImpl,
-} from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import { getDutName } from '@/fleet/utils/swarming';
+import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
 const prefix = '/ui/fleet/labs/';
 
@@ -43,15 +41,7 @@ export const getRedirectAddress = async (
       const bot_id = searchParams.get('id');
       if (!bot_id) throw Error(`Missing bot id`);
 
-      const res = await swarmingClient.GetBot(
-        BotRequest.fromPartial({
-          botId: bot_id,
-        }),
-      );
-
-      const dutName = res.dimensions.find(
-        ({ key }) => key === 'dut_name',
-      )?.value;
+      const dutName = await getDutName(swarmingClient, bot_id);
       if (!dutName) throw Error(`Cannot find dut_name of device ${bot_id}`);
 
       return {

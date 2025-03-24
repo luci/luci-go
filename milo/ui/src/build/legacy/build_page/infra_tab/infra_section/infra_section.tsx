@@ -20,6 +20,7 @@ import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';
 import { BuildbucketRow } from './buildbucket_row';
 import { CreatedByRow } from './created_by_row';
+import { DutRows } from './dut_rows';
 import { InvocationRow } from './invocation_row';
 import { RecipeRow } from './recipe_row';
 import { ServiceAccountRow } from './service_account_row';
@@ -49,6 +50,9 @@ export function InfraSection() {
           <CreatedByRow createdBy={build.createdBy} />
           {build.infra?.backend && (
             <BackendRows backend={build.infra.backend} />
+          )}
+          {build.builder.project === 'chromeos' && (
+            <DutRows backend={build.infra.backend} />
           )}
           {build.infra?.swarming && (
             <>
