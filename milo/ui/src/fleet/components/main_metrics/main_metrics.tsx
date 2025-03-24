@@ -42,7 +42,8 @@ const Container = styled.div`
 
 const HAS_RIGHT_SIBLING_STYLES = {
   borderRight: `1px solid ${colors.grey[300]}`,
-  marginRight: 32,
+  marginRight: 15,
+  paddingRight: 10,
 };
 
 interface MainMetricsProps {
@@ -114,7 +115,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
         <div
           css={{
             ...HAS_RIGHT_SIBLING_STYLES,
-            flexGrow: 0.4,
+            flexGrow: 0.3,
           }}
         >
           {/* Changed Task status to Lease state as it is what we show right now,
@@ -126,6 +127,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               display: 'flex',
               justifyContent: 'space-around',
               marginTop: 5,
+              flexWrap: 'wrap',
             }}
           >
             <SingleMetric
@@ -153,6 +155,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               display: 'flex',
               marginTop: 5,
               marginLeft: 8,
+              flexWrap: 'wrap',
             }}
           >
             <SingleMetric
@@ -256,7 +259,10 @@ export function SingleMetric({
           <>
             <Typography variant="h3">{value || 0}</Typography>
             {total ? (
-              <Typography variant="caption">{` / ${total}`}</Typography>
+              <Typography
+                variant="caption"
+                sx={{ textWrap: 'nowrap' }}
+              >{` / ${total}`}</Typography>
             ) : (
               <></>
             )}
