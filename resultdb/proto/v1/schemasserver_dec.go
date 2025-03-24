@@ -39,3 +39,20 @@ func (s *DecoratedSchemas) Get(ctx context.Context, req *GetSchemaRequest) (rsp 
 	}
 	return
 }
+
+func (s *DecoratedSchemas) GetScheme(ctx context.Context, req *GetSchemeRequest) (rsp *Scheme, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetScheme", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetScheme(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetScheme", rsp, err)
+	}
+	return
+}

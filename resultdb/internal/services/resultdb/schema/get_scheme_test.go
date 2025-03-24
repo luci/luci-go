@@ -30,11 +30,12 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func TestGetSchema(t *testing.T) {
+func TestGetScheme(t *testing.T) {
 	ftt.Run("With a schemas server", t, func(t *ftt.Test) {
 		// For user identification.
 		ctx := authtest.MockAuthConfig(context.Background())
@@ -79,72 +80,70 @@ func TestGetSchema(t *testing.T) {
 		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.NoErr(t, err)
 
-		request := &pb.GetSchemaRequest{
-			Name: "schema",
+		server := NewSchemasServer()
+
+		request := &pb.GetSchemeRequest{
+			Name: "schema/schemes/junit",
 		}
 
-		expectedResponse := &pb.Schema{
-			Name: "schema",
-			Schemes: map[string]*pb.Scheme{
-				"legacy": {
-					Name:              "schema/schemes/legacy",
-					Id:                "legacy",
-					HumanReadableName: "Legacy test results",
-					Case: &pb.Scheme_Level{
-						HumanReadableName: "Test Identifier",
-					},
-				},
-				"gtest": {
-					Name:              "schema/schemes/gtest",
-					Id:                "gtest",
-					HumanReadableName: "GTest",
-					Fine: &pb.Scheme_Level{
-						HumanReadableName: "Suite",
-					},
-					Case: &pb.Scheme_Level{
-						HumanReadableName: "Method",
-					},
-				},
-				"junit": {
-					Name:              "schema/schemes/junit",
-					Id:                "junit",
-					HumanReadableName: "JUnit",
-					Coarse: &pb.Scheme_Level{
-						HumanReadableName: "Package",
-						ValidationRegexp:  "^PackageRe.*$",
-					},
-					Fine: &pb.Scheme_Level{
-						HumanReadableName: "Class",
-						ValidationRegexp:  "^ClassRe.*$",
-					},
-					Case: &pb.Scheme_Level{
-						HumanReadableName: "Method",
-						ValidationRegexp:  "^MethodRe.*$",
-					},
-				},
+		expectedResponse := &pb.Scheme{
+			Name:              "schema/schemes/junit",
+			Id:                "junit",
+			HumanReadableName: "JUnit",
+			Coarse: &pb.Scheme_Level{
+				HumanReadableName: "Package",
+				ValidationRegexp:  "^PackageRe.*$",
+			},
+			Fine: &pb.Scheme_Level{
+				HumanReadableName: "Class",
+				ValidationRegexp:  "^ClassRe.*$",
+			},
+			Case: &pb.Scheme_Level{
+				HumanReadableName: "Method",
+				ValidationRegexp:  "^MethodRe.*$",
 			},
 		}
 
-		server := NewSchemasServer()
-
 		t.Run("Exists", func(t *ftt.Test) {
-			response, err := server.Get(ctx, request)
+			response, err := server.GetScheme(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, response, should.Match(expectedResponse))
+		})
+		t.Run("Built-in legacy scheme", func(t *ftt.Test) {
+			request := &pb.GetSchemeRequest{
+				Name: "schema/schemes/legacy",
+			}
+			response, err := server.GetScheme(ctx, request)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Match(&pb.Scheme{
+				Name:              "schema/schemes/legacy",
+				Id:                pbutil.LegacySchemeID,
+				HumanReadableName: "Legacy test results",
+				Case: &pb.Scheme_Level{
+					HumanReadableName: "Test Identifier",
+				},
+			}))
+		})
+		t.Run("Not exists", func(t *ftt.Test) {
+			request.Name = "schema/schemes/notexisting"
+
+			_, err := server.GetScheme(ctx, request)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`scheme with ID "notexisting" not found`))
 		})
 		t.Run("Invalid request", func(t *ftt.Test) {
 			t.Run("Name", func(t *ftt.Test) {
 				t.Run("Empty", func(t *ftt.Test) {
 					request.Name = ""
-					_, err := server.Get(ctx, request)
+					_, err := server.GetScheme(ctx, request)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike("name: unspecified"))
 				})
 				t.Run("Invalid", func(t *ftt.Test) {
 					request.Name = "blah"
-					_, err := server.Get(ctx, request)
+					_, err := server.GetScheme(ctx, request)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`name: invalid; "schema" is currently the only valid schema resource name`))
+					assert.Loosely(t, err, should.ErrLike(`name: invalid scheme name, expected format: "^schema/schemes/([a-z][a-z0-9]{0,19})$"`))
 				})
 			})
 		})
@@ -152,12 +151,9 @@ func TestGetSchema(t *testing.T) {
 			err := config.SetServiceConfigForTesting(ctx, &configpb.Config{})
 			assert.NoErr(t, err)
 
-			delete(expectedResponse.Schemes, "gtest")
-			delete(expectedResponse.Schemes, "junit")
-
-			response, err := server.Get(ctx, request)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, response, should.Match(expectedResponse))
+			_, err = server.GetScheme(ctx, request)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`scheme with ID "junit" not found`))
 		})
 	})
 }

@@ -132,7 +132,7 @@ func NewSchemeLevel(level *configpb.Scheme_Level) (*SchemeLevel, error) {
 		HumanReadableName: level.HumanReadableName,
 	}
 	if level.ValidationRegexp != "" {
-		compiledRegexp, err := regexp.Compile(`^` + level.ValidationRegexp + `$`)
+		compiledRegexp, err := regexp.Compile(level.ValidationRegexp)
 		if err != nil {
 			// This should never happen as the configuration has been validated.
 			return nil, errors.Annotate(err, "could not compile validation regexp").Err()

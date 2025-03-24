@@ -24,22 +24,32 @@ option java_multiple_files = true;
 service Schemas {
   // Reads information about the test result schema used on this ResultDB deployment.
   rpc Get(GetSchemaRequest) returns (Schema) {};
+
+  // Reads information about a particular test scheme.
+  rpc GetScheme(GetSchemeRequest) returns (Scheme) {};
 }
 
 message GetSchemaRequest {
   // The resource name of the schema to retrieve.
-  // Currently there is only a single schema resource and its name is "schemas/global".
+  // Note: This is currently a https://google.aip.dev/156 singleton resource, so
+  // the only valid resource name is "schema".
   string name = 1;
 }
 
 // Schema contains information about the schema used for test results.
 message Schema {
   // The resource name of the schema.
-  // Format: "schemas/global".
+  // Currently, this is always "schema".
   string name = 1;
 
   // The schemes available for use in test identifiers, by scheme identifier.
   map<string, Scheme> schemes = 2;
+}
+
+message GetSchemeRequest {
+  // The resource name of the scheme to retrieve.
+  // Format: schema/schemes/{scheme_id}.
+  string name = 1;
 }
 
 // A scheme represents a kind of test type. For example, a JUnit tests
@@ -53,10 +63,14 @@ message Schema {
 //
 // Next id: 6.
 message Scheme {
+  // The resource name of the scheme.
+  // Format: schema/schemes/{id}.
+  string name = 1;
+
   // The identifier for the scheme, e.g. 'junit'.
   //
   // Limited to ^[a-z][a-z0-9]{0,19}$.
-  string id = 1;
+  string id = 2;
 
   // A human readable name for the scheme, describing the test type.
   // For example, "JUnit" or "Web Tests".

@@ -164,7 +164,7 @@ type Scheme_Level struct {
 	//
 	// Required.
 	HumanReadableName string `protobuf:"bytes,1,opt,name=human_readable_name,json=humanReadableName,proto3" json:"human_readable_name,omitempty"`
-	// The regexp that defines valid values for this field. The value here will be
+	// The regexp that defines valid values for this field. The value here must be
 	// wrapped in ^...$. Validation will apply to all newly uploaded test results.
 	// Use RE2 syntax.
 	//

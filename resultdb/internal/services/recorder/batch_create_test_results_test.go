@@ -413,15 +413,15 @@ func TestValidateTestIDToScheme(t *testing.T) {
 					Id:                "junit",
 					HumanReadableName: "JUnit",
 					Coarse: &configpb.Scheme_Level{
-						ValidationRegexp:  "[a-z][a-z_0-9.]+",
+						ValidationRegexp:  "^[a-z][a-z_0-9.]+$",
 						HumanReadableName: "Package",
 					},
 					Fine: &configpb.Scheme_Level{
-						ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
+						ValidationRegexp:  "^[a-zA-Z_][a-zA-Z_0-9]+$",
 						HumanReadableName: "Class",
 					},
 					Case: &configpb.Scheme_Level{
-						ValidationRegexp:  "[a-zA-Z_][a-zA-Z_0-9]+",
+						ValidationRegexp:  "^[a-zA-Z_][a-zA-Z_0-9]+$",
 						HumanReadableName: "Method",
 					},
 				},

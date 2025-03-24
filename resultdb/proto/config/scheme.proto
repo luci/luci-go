@@ -52,7 +52,7 @@ message Scheme {
     // Required.
     string human_readable_name = 1;
 
-    // The regexp that defines valid values for this field. The value here will be
+    // The regexp that defines valid values for this field. The value here must be
     // wrapped in ^...$. Validation will apply to all newly uploaded test results.
     // Use RE2 syntax.
     //

@@ -52,7 +52,7 @@ func CreatePlaceHolderServiceConfig() *configpb.Config {
 				HumanReadableName: "GTest",
 				Fine: &configpb.Scheme_Level{
 					HumanReadableName: "Suite",
-					ValidationRegexp:  "[^_]+",
+					ValidationRegexp:  "^[^_]+$",
 				},
 				Case: &configpb.Scheme_Level{
 					HumanReadableName: "Method",

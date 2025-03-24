@@ -249,7 +249,7 @@ func TestServiceConfigValidator(t *testing.T) {
 		t.Run("Coarse", func(t *ftt.Test) {
 			scheme.Coarse = &configpb.Scheme_Level{
 				HumanReadableName: "Package",
-				ValidationRegexp:  "[a-z.0-9]+",
+				ValidationRegexp:  "^[a-z.0-9]+$",
 			}
 			path := path + " / coarse"
 
@@ -273,21 +273,31 @@ func TestServiceConfigValidator(t *testing.T) {
 				})
 			})
 			t.Run("Validation Regexp", func(t *ftt.Test) {
+				path := path + " / validation_regexp"
 				t.Run("Empty", func(t *ftt.Test) {
 					// Empty validation regexp is valid, it means no additional validation should be applied.
 					scheme.Coarse.ValidationRegexp = ""
 					assert.Loosely(t, validate(cfg), should.BeNil)
 				})
-				t.Run("Invalid", func(t *ftt.Test) {
-					scheme.Coarse.ValidationRegexp = "["
-					assert.Loosely(t, validate(cfg), should.ErrLike(`could not compile pattern: error parsing regexp: missing closing ]: `))
+				t.Run("Invalid (no starting ^)", func(t *ftt.Test) {
+					scheme.Coarse.ValidationRegexp = "a$"
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): pattern must start and end with ^ and $`))
+				})
+				t.Run("Invalid (no ending $)", func(t *ftt.Test) {
+					scheme.Coarse.ValidationRegexp = "^a"
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): pattern must start and end with ^ and $`))
+				})
+
+				t.Run("Invalid (does not compile)", func(t *ftt.Test) {
+					scheme.Coarse.ValidationRegexp = "^[$"
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): could not compile pattern: error parsing regexp: missing closing ]: `))
 				})
 			})
 		})
 		t.Run("Fine", func(t *ftt.Test) {
 			scheme.Fine = &configpb.Scheme_Level{
 				HumanReadableName: "Class",
-				ValidationRegexp:  "[a-zA-Z_0-9]+",
+				ValidationRegexp:  "^[a-zA-Z_0-9]+$",
 			}
 			path := path + " / fine"
 
@@ -318,7 +328,7 @@ func TestServiceConfigValidator(t *testing.T) {
 		t.Run("Case", func(t *ftt.Test) {
 			scheme.Case = &configpb.Scheme_Level{
 				HumanReadableName: "Method",
-				ValidationRegexp:  "[a-zA-Z_0-9]+",
+				ValidationRegexp:  "^[a-zA-Z_0-9]+$",
 			}
 			path := path + " / case"
 

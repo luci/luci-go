@@ -102,7 +102,7 @@ func generateServiceConfig(uniqifier int) *configpb.Config {
 				Fine: &configpb.Scheme_Level{
 					HumanReadableName: "Suite",
 					// Do not allow underscores as per https://google.github.io/googletest/reference/testing.html.
-					ValidationRegexp: `[^_]+`,
+					ValidationRegexp: `^[^_]+$`,
 				},
 				Case: &configpb.Scheme_Level{
 					HumanReadableName: "Method",

@@ -30,13 +30,16 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
-var GCSBucketRE = regexp.MustCompile(`^[a-z0-9_\.\-]{3,222}$`)
-var SchemeIDRE = regexp.MustCompile(`^[a-z][a-z0-9]{0,19}$`)
-var HumanReadableRE = regexp.MustCompile(`^[[:print:]]{1,100}$`)
-
 const (
+	// The pattern of a valid test scheme, excluding ^ and $.
+	SchemeIDPattern = `[a-z][a-z0-9]{0,19}`
+
 	unspecifiedMessage = "unspecified"
 )
+
+var gcsBucketRE = regexp.MustCompile(`^[a-z0-9_\.\-]{3,222}$`)
+var schemeIDRE = regexp.MustCompile(`^` + SchemeIDPattern + `$`)
+var humanReadableRE = regexp.MustCompile(`^[[:print:]]{1,100}$`)
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp) {
 	ctx.Enter(name)
@@ -93,7 +96,7 @@ func validateGCSAllowlist(ctx *validation.Context, name string, allowList *confi
 		ctx.Errorf("buckets must have at least one bucket")
 	}
 	for _, bucket := range allowList.Buckets {
-		validateStringConfig(ctx, "bucket", bucket, GCSBucketRE)
+		validateStringConfig(ctx, "bucket", bucket, gcsBucketRE)
 	}
 }
 
@@ -175,7 +178,7 @@ func validateSchemeID(ctx *validation.Context, id string, seenIDs map[string]str
 	if id == pbutil.LegacySchemeID {
 		ctx.Errorf(`%q is a reserved built-in scheme and cannot be configured`, pbutil.LegacySchemeID)
 	}
-	if err := validate.SpecifiedWithRe(SchemeIDRE, id); err != nil {
+	if err := validate.SpecifiedWithRe(schemeIDRE, id); err != nil {
 		ctx.Error(err)
 	}
 	if _, ok := seenIDs[id]; ok {
@@ -188,7 +191,7 @@ func validateHumanReadableName(ctx *validation.Context, value string) {
 	ctx.Enter("human_readable_name")
 	defer ctx.Exit()
 
-	if err := validate.SpecifiedWithRe(HumanReadableRE, value); err != nil {
+	if err := validate.SpecifiedWithRe(humanReadableRE, value); err != nil {
 		ctx.Error(err)
 	}
 }
@@ -214,7 +217,11 @@ func validateValidationRegexp(ctx *validation.Context, pattern string) {
 		// Empty pattern means that no additional validation should be applied.
 		return
 	}
-	_, err := regexp.Compile(`^` + pattern + `$`)
+	if !strings.HasPrefix(pattern, "^") || !strings.HasSuffix(pattern, "$") {
+		ctx.Errorf("pattern must start and end with ^ and $")
+		return
+	}
+	_, err := regexp.Compile(pattern)
 	if err != nil {
 		ctx.Errorf("could not compile pattern: %s", err)
 	}
