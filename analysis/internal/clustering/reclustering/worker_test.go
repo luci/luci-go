@@ -50,6 +50,7 @@ import (
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
+	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
 	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -646,9 +647,9 @@ func (b *testResultBuilder) buildClusters(rules *cache.Ruleset, config *compiled
 			ID:        hex.EncodeToString(failureReasonAlg.Cluster(config, failure)),
 		})
 	}
-	vals := &clustering.Failure{
-		TestID: ":module!scheme:coarse:fine#case" + b.testSuffix,
-		Reason: &pb.FailureReason{PrimaryErrorMessage: b.failureReason.GetPrimaryErrorMessage()},
+	vals := lang.Failure{
+		Test:   ":module!scheme:coarse:fine#case" + b.testSuffix,
+		Reason: b.failureReason.GetPrimaryErrorMessage(),
 	}
 	for _, rule := range rules.ActiveRulesSorted {
 		if rule.Expr.Evaluate(vals) {

@@ -24,8 +24,10 @@ import (
 // Failure captures the minimal information required to cluster a failure.
 // This is a subset of the information captured by LUCI Analysis for failures.
 type Failure struct {
-	// The name of the test that failed.
+	// The ID of the test that failed.
 	TestID string
+	// The ID this test previously used, if any.
+	PreviousTestID string
 	// The failure reason explaining the reason why the test failed.
 	Reason *pb.FailureReason
 }

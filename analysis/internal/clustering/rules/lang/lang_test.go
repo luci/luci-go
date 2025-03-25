@@ -22,9 +22,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	"go.chromium.org/luci/analysis/internal/clustering"
-	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func TestRules(t *testing.T) {
@@ -93,25 +90,25 @@ func TestRules(t *testing.T) {
 		})
 	})
 	ftt.Run(`Semantics`, t, func(t *ftt.Test) {
-		eval := func(input string, failure *clustering.Failure) bool {
+		eval := func(input string, failure Failure) bool {
 			eval, err := Parse(input)
 			assert.Loosely(t, err, should.BeNil)
 			return eval.eval(failure)
 		}
-		boot := &clustering.Failure{
-			TestID: "tast.arc.Boot",
-			Reason: &analysispb.FailureReason{PrimaryErrorMessage: "annotation 1: annotation 2: failure"},
+		boot := Failure{
+			Test:   "tast.arc.Boot",
+			Reason: "annotation 1: annotation 2: failure",
 		}
-		dbus := &clustering.Failure{
-			TestID: "tast.example.DBus",
-			Reason: &analysispb.FailureReason{PrimaryErrorMessage: "true was not true"},
+		dbus := Failure{
+			Test:   "tast.example.DBus",
+			Reason: "true was not true",
 		}
 		t.Run(`String Expression`, func(t *ftt.Test) {
 			assert.Loosely(t, eval(`test = "tast.arc.Boot"`, boot), should.BeTrue)
 			assert.Loosely(t, eval(`test = "tast.arc.Boot"`, dbus), should.BeFalse)
 			assert.Loosely(t, eval(`test = test`, dbus), should.BeTrue)
-			escaping := &clustering.Failure{
-				TestID: "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042",
+			escaping := Failure{
+				Test: "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042",
 			}
 			assert.Loosely(t, eval(`test = "\a\b\f\n\r\t\v\"\101\x42\u0042\U00000042"`, escaping), should.BeTrue)
 		})
@@ -148,8 +145,8 @@ func TestRules(t *testing.T) {
 				assert.Loosely(t, eval(`test LIKE "%.Boot"`, boot), should.BeTrue)
 				assert.Loosely(t, eval(`test LIKE "tast.%.Boot"`, boot), should.BeTrue)
 
-				escapeTest := &clustering.Failure{
-					TestID: "a\\.+*?()|[]{}^$a",
+				escapeTest := Failure{
+					Test: "a\\.+*?()|[]{}^$a",
 				}
 				assert.Loosely(t, eval(`test LIKE "\\\\.+*?()|[]{}^$a"`, escapeTest), should.BeFalse)
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$"`, escapeTest), should.BeFalse)
@@ -157,23 +154,21 @@ func TestRules(t *testing.T) {
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$_"`, escapeTest), should.BeTrue)
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$%"`, escapeTest), should.BeTrue)
 
-				escapeTest2 := &clustering.Failure{
-					TestID: "a\\.+*?()|[]{}^$_",
+				escapeTest2 := Failure{
+					Test: "a\\.+*?()|[]{}^$_",
 				}
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest), should.BeFalse)
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\_"`, escapeTest2), should.BeTrue)
 
-				escapeTest3 := &clustering.Failure{
-					TestID: "a\\.+*?()|[]{}^$%",
+				escapeTest3 := Failure{
+					Test: "a\\.+*?()|[]{}^$%",
 				}
 
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest), should.BeFalse)
 				assert.Loosely(t, eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest3), should.BeTrue)
 
-				escapeTest4 := &clustering.Failure{
-					Reason: &analysispb.FailureReason{
-						PrimaryErrorMessage: "a\nb",
-					},
+				escapeTest4 := Failure{
+					Reason: "a\nb",
 				}
 				assert.Loosely(t, eval(`reason LIKE "a"`, escapeTest4), should.BeFalse)
 				assert.Loosely(t, eval(`reason LIKE "%"`, escapeTest4), should.BeTrue)
@@ -269,9 +264,9 @@ func BenchmarkRules(b *testing.B) {
 		testText.WriteString("blah")
 		reasonText.WriteString("blah")
 	}
-	data := &clustering.Failure{
-		TestID: testText.String(),
-		Reason: &analysispb.FailureReason{PrimaryErrorMessage: reasonText.String()},
+	data := Failure{
+		Test:   testText.String(),
+		Reason: reasonText.String(),
 	}
 
 	// Start benchmark.

@@ -64,8 +64,6 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/analysis/internal/clustering"
 )
 
 type validator struct {
@@ -89,10 +87,18 @@ func (v *validator) error() error {
 	return nil
 }
 
-type failure *clustering.Failure
-type boolEval func(failure) bool
-type stringEval func(failure) string
-type predicateEval func(failure, string) bool
+// Failure represents the values of a failure that may be matched
+// by a failure association rule.
+type Failure struct {
+	// The value assigned to the identifier "test".
+	Test string
+	// The value assigned to the identifier "reason".
+	Reason string
+}
+
+type boolEval func(Failure) bool
+type stringEval func(Failure) string
+type predicateEval func(Failure, string) bool
 
 // Expr represents a predicate for a failure association rule.
 type Expr struct {
@@ -109,8 +115,8 @@ func (e *Expr) String() string {
 
 // Evaluate evaluates the given expression, using the given values
 // for variables used in the expression.
-func (e *Expr) Evaluate(failure *clustering.Failure) bool {
-	return e.eval(failure)
+func (e *Expr) Evaluate(f Failure) bool {
+	return e.eval(f)
 }
 
 type boolExpr struct {
@@ -134,7 +140,7 @@ func (e *boolExpr) evaluator(v *validator) boolEval {
 	if len(termEvals) == 1 {
 		return termEvals[0]
 	}
-	return func(f failure) bool {
+	return func(f Failure) bool {
 		for _, termEval := range termEvals {
 			if termEval(f) {
 				return true
@@ -165,7 +171,7 @@ func (t *boolTerm) evaluator(v *validator) boolEval {
 	if len(factorEvals) == 1 {
 		return factorEvals[0]
 	}
-	return func(f failure) bool {
+	return func(f Failure) bool {
 		for _, factorEval := range factorEvals {
 			if !factorEval(f) {
 				return false
@@ -190,7 +196,7 @@ func (f *boolFactor) format(w io.Writer) {
 func (f *boolFactor) evaluator(v *validator) boolEval {
 	predicate := f.Primary.evaluator(v)
 	if f.Not {
-		return func(f failure) bool {
+		return func(f Failure) bool {
 			return !predicate(f)
 		}
 	}
@@ -238,15 +244,15 @@ func (i *boolItem) format(w io.Writer) {
 	}
 }
 
-func (p *boolItem) evaluator(v *validator) boolEval {
-	if p.Const != nil {
-		return p.Const.evaluator(v)
+func (i *boolItem) evaluator(v *validator) boolEval {
+	if i.Const != nil {
+		return i.Const.evaluator(v)
 	}
-	if p.Expr != nil {
-		return p.Expr.evaluator(v)
+	if i.Expr != nil {
+		return i.Expr.evaluator(v)
 	}
-	if p.Func != nil {
-		return p.Func.evaluator(v)
+	if i.Func != nil {
+		return i.Func.evaluator(v)
 	}
 	return nil
 }
@@ -261,7 +267,7 @@ func (c *boolConst) format(w io.Writer) {
 
 func (c *boolConst) evaluator(v *validator) boolEval {
 	value := c.Value == "TRUE"
-	return func(f failure) bool {
+	return func(f Failure) bool {
 		return value
 	}
 }
@@ -304,7 +310,7 @@ func (f *boolFunction) evaluator(v *validator) boolEval {
 			return nil
 		}
 
-		return func(f failure) bool {
+		return func(f Failure) bool {
 			value := valueEval(f)
 			return re.MatchString(value)
 		}
@@ -327,7 +333,7 @@ func (t *boolPredicate) format(w io.Writer) {
 func (t *boolPredicate) evaluator(v *validator) boolEval {
 	value := t.Value.evaluator(v)
 	test := t.Test.evaluator(v)
-	return func(f failure) bool {
+	return func(f Failure) bool {
 		return test(f, value(f))
 	}
 }
@@ -380,7 +386,7 @@ func (p *negatablePredicate) evaluator(v *validator) predicateEval {
 		predicate = p.Like.evaluator(v)
 	}
 	if p.Not {
-		return func(f failure, s string) bool {
+		return func(f Failure, s string) bool {
 			return !predicate(f, s)
 		}
 	}
@@ -401,11 +407,11 @@ func (p *compPredicate) evaluator(v *validator) predicateEval {
 	val := p.Value.evaluator(v)
 	switch p.Op {
 	case "=":
-		return func(f failure, s string) bool {
+		return func(f Failure, s string) bool {
 			return s == val(f)
 		}
 	case "!=", "<>":
-		return func(f failure, s string) bool {
+		return func(f Failure, s string) bool {
 			return s != val(f)
 		}
 	default:
@@ -433,7 +439,7 @@ func (p *inPredicate) evaluator(v *validator) predicateEval {
 	for _, item := range p.List {
 		list = append(list, item.evaluator(v))
 	}
-	return func(f failure, s string) bool {
+	return func(f Failure, s string) bool {
 		for _, item := range list {
 			if item(f) == s {
 				return true
@@ -471,7 +477,7 @@ func (p *likePredicate) evaluator(v *validator) predicateEval {
 		v.reportError(fmt.Errorf("invalid LIKE expression: %s", likePattern))
 		return nil
 	}
-	return func(f failure, s string) bool {
+	return func(f Failure, s string) bool {
 		return re.MatchString(s)
 	}
 }
@@ -512,24 +518,24 @@ func (e *stringExpr) evaluator(v *validator) stringEval {
 			v.reportError(err)
 			return nil
 		}
-		return func(f failure) string { return literal }
+		return func(f Failure) string { return literal }
 	}
 	if e.Ident != nil {
 		varName := *e.Ident
-		var accessor func(c *clustering.Failure) string
+		var accessor func(c Failure) string
 		switch varName {
 		case "test":
-			accessor = func(f *clustering.Failure) string {
-				return f.TestID
+			accessor = func(f Failure) string {
+				return f.Test
 			}
 		case "reason":
-			accessor = func(f *clustering.Failure) string {
-				return f.Reason.GetPrimaryErrorMessage()
+			accessor = func(f Failure) string {
+				return f.Reason
 			}
 		default:
 			v.reportError(fmt.Errorf("undeclared identifier %q", varName))
 		}
-		return func(f failure) string { return accessor(f) }
+		return func(f Failure) string { return accessor(f) }
 	}
 	return nil
 }

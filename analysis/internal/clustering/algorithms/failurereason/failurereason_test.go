@@ -89,7 +89,7 @@ func TestAlgorithm(t *testing.T) {
 			// Test the rule is valid syntax and matches at least the example failure.
 			expr, err := lang.Parse(rule)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, expr.Evaluate(failure), should.BeTrue)
+			assert.Loosely(t, expr.Evaluate(lang.Failure{Reason: failure.Reason.GetPrimaryErrorMessage()}), should.BeTrue)
 		}
 		t.Run(`Hexadecimal`, func(t *ftt.Test) {
 			failure := &clustering.Failure{

@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
+	"go.chromium.org/luci/analysis/internal/clustering/rules/lang"
 )
 
 type Algorithm struct{}
@@ -62,7 +63,20 @@ func (a *Algorithm) Cluster(ruleset *cache.Ruleset, existingRulesVersion time.Ti
 	// last call to Cluster(...).
 	newRules := ruleset.ActiveRulesWithPredicateUpdatedSince(existingRulesVersion)
 	for _, r := range newRules {
-		if r.Expr.Evaluate(failure) {
+		f := lang.Failure{
+			Test:   failure.TestID,
+			Reason: failure.Reason.GetPrimaryErrorMessage(),
+		}
+		matches := r.Expr.Evaluate(f)
+		if failure.PreviousTestID != "" {
+			// Also try matching against the old test ID.
+			f = lang.Failure{
+				Test:   failure.PreviousTestID,
+				Reason: failure.Reason.GetPrimaryErrorMessage(),
+			}
+			matches = matches || r.Expr.Evaluate(f)
+		}
+		if matches {
 			ruleIDs[r.Rule.RuleID] = struct{}{}
 		} else {
 			// If this is a modified rule (rather than a new rule)

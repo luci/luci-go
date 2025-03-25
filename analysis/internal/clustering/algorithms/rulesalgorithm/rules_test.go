@@ -46,12 +46,12 @@ func TestAlgorithm(t *testing.T) {
 			assert.Loosely(t, ids, should.BeEmpty)
 		})
 		t.Run(`With Rules`, func(t *ftt.Test) {
-			rule1, err := cache.NewCachedRule(
+			ruleOnTest, err := cache.NewCachedRule(
 				rules.NewRule(100).
 					WithRuleDefinition(`test = "ninja://test_name_one/"`).
 					Build())
 			assert.Loosely(t, err, should.BeNil)
-			rule2, err := cache.NewCachedRule(
+			ruleOnReason, err := cache.NewCachedRule(
 				rules.NewRule(101).
 					WithRuleDefinition(`reason LIKE "failed to connect to %.%.%.%"`).
 					Build())
@@ -61,7 +61,7 @@ func TestAlgorithm(t *testing.T) {
 				Predicates: time.Now(),
 			}
 			lastUpdated := time.Now()
-			rules := []*cache.CachedRule{rule1, rule2}
+			rules := []*cache.CachedRule{ruleOnTest, ruleOnReason}
 			ruleset := cache.NewRuleset("myproject", rules, rulesVersion, lastUpdated)
 
 			t.Run(`Without failure reason`, func(t *ftt.Test) {
@@ -70,7 +70,7 @@ func TestAlgorithm(t *testing.T) {
 						TestID: "ninja://test_name_one/",
 					})
 					assert.Loosely(t, ids, should.Match(map[string]struct{}{
-						rule1.Rule.RuleID: {},
+						ruleOnTest.Rule.RuleID: {},
 					}))
 				})
 				t.Run(`Non-matcing`, func(t *ftt.Test) {
@@ -88,7 +88,7 @@ func TestAlgorithm(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, ids, should.Match(map[string]struct{}{
-					rule2.Rule.RuleID: {},
+					ruleOnReason.Rule.RuleID: {},
 				}))
 			})
 			t.Run(`Matches multiple`, func(t *ftt.Test) {
@@ -98,11 +98,22 @@ func TestAlgorithm(t *testing.T) {
 						PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 					},
 				})
-				expectedIDs := []string{rule1.Rule.RuleID, rule2.Rule.RuleID}
+				expectedIDs := []string{ruleOnTest.Rule.RuleID, ruleOnReason.Rule.RuleID}
 				sort.Strings(expectedIDs)
 				assert.Loosely(t, ids, should.Match(map[string]struct{}{
-					rule1.Rule.RuleID: {},
-					rule2.Rule.RuleID: {},
+					ruleOnTest.Rule.RuleID:   {},
+					ruleOnReason.Rule.RuleID: {},
+				}))
+			})
+			t.Run(`Matches on PreviousTestID, if set`, func(t *ftt.Test) {
+				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
+					TestID:         ":module!scheme::#new_test",
+					PreviousTestID: "ninja://test_name_one/",
+				})
+				expectedIDs := []string{ruleOnTest.Rule.RuleID, ruleOnReason.Rule.RuleID}
+				sort.Strings(expectedIDs)
+				assert.Loosely(t, ids, should.Match(map[string]struct{}{
+					ruleOnTest.Rule.RuleID: {},
 				}))
 			})
 		})
