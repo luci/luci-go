@@ -713,7 +713,7 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 				return "", nil, errors.Annotate(ErrBadReservation, "invalid effective bot ID dimension %q: %q", rbeEffectiveBotIDDim, values).Err()
 			}
 			if pool != "" {
-				effectiveBotID = fmt.Sprintf("%s--%s", pool, values[0])
+				effectiveBotID = model.RBEEffectiveBotID(pool, values[0])
 			}
 		default:
 			for _, v := range values {

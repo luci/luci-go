@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -55,11 +56,19 @@ func TestProcessPoll(t *testing.T) {
 	t.Parallel()
 
 	const (
-		testBotID       = "bot-id"
+		testBotID       = "test-bot"
 		testBotPool     = "test-pool"
 		testSessionID   = "session-id"
 		testBotVersion  = "test-version"
 		testRequestUUID = "test-uuid"
+		testRBEInstance = "test-rbe-instance"
+
+		testNonRBEBotID = "test-bot-non-rbe"
+		testNonRBEPool  = "test-pool-non-rbe"
+
+		testEffectiveBotID = "test-bot-effective"
+		testEffectivePool  = "test-pool-effective"
+		testEffectiveDim   = "bot-effective-id"
 	)
 
 	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
@@ -89,14 +98,52 @@ func TestProcessPoll(t *testing.T) {
 		}
 
 		conf := cfgtest.NewMockedConfigs()
-		group := conf.MockBot(testBotID, testBotPool)
-		group.Dimensions = append(group.Dimensions, "extra:2", "extra:1")
+
+		// A normal RBE bot.
+		conf.MockBot(testBotID, testBotPool, "extra:2", "extra:1")
+		conf.MockPool(testBotPool, "proj:realm").RbeMigration = &configpb.Pool_RBEMigration{
+			RbeInstance:    testRBEInstance,
+			RbeModePercent: 100,
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{
+					Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+					Percent: 100,
+				},
+			},
+		}
+
+		// A bot without RBE config.
+		conf.MockBot(testNonRBEBotID, testNonRBEPool)
+		conf.MockPool(testNonRBEPool, "proj:realm").RbeMigration = &configpb.Pool_RBEMigration{
+			RbeInstance:    testRBEInstance,
+			RbeModePercent: 100,
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{
+					Mode:    configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+					Percent: 100,
+				},
+			},
+		}
+
+		// A bot that uses effective_bot_id.
+		conf.MockBot(testEffectiveBotID, testEffectivePool)
+		conf.MockPool(testEffectivePool, "proj:realm").RbeMigration = &configpb.Pool_RBEMigration{
+			RbeInstance:    testRBEInstance,
+			RbeModePercent: 100,
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{
+					Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+					Percent: 100,
+				},
+			},
+			EffectiveBotIdDimension: testEffectiveDim,
+		}
 
 		srv := BotAPIServer{
 			cfg:        cfgtest.MockConfigs(ctx, conf),
 			hmacSecret: secret,
 			authorizeBot: func(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
-				if botID != testBotID {
+				if !strings.HasPrefix(botID, "test-bot") {
 					return errors.New("boo")
 				}
 				return nil
@@ -132,16 +179,78 @@ func TestProcessPoll(t *testing.T) {
 				dims: []string{
 					"extra:1",
 					"extra:2",
-					"id:bot-id",
+					"id:test-bot",
 					"more:a",
 					"more:b",
 					"pool:test-pool",
 					"quarantined:boom",
 				},
-				conf:        req.conf,
-				group:       req.group,
-				quarantined: []string{"boom"},
+				conf:  req.conf,
+				group: req.group,
+				rbeConf: cfg.RBEConfig{
+					Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+					Instance: testRBEInstance,
+				},
+				effectiveBotID: &model.RBEEffectiveBotIDInfo{},
+				quarantined:    []string{"boom"},
 			}))
+		})
+
+		t.Run("OK with effective bot ID", func(t *ftt.Test) {
+			req, err := srv.processPoll(ctx, &PollRequest{
+				Dimensions: map[string][]string{
+					"id":             {testEffectiveBotID},
+					"pool":           {testEffectivePool, "will-be-ignored"},
+					testEffectiveDim: {"effective-val"},
+				},
+				Version: testBotVersion,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, req.errs, should.HaveLength(0))
+			assert.That(t, req.botID, should.Equal(testEffectiveBotID))
+			assert.That(t, req.effectiveBotID, should.Match(&model.RBEEffectiveBotIDInfo{
+				RBEEffectiveBotID: "test-pool-effective--effective-val",
+			}))
+		})
+
+		t.Run("Non-RBE bot", func(t *ftt.Test) {
+			req, err := srv.processPoll(ctx, &PollRequest{
+				Dimensions: map[string][]string{
+					"id":   {testNonRBEBotID},
+					"pool": {testNonRBEPool},
+				},
+				Version: testBotVersion,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, req.errs, should.HaveLength(1))
+			assert.That(t, req.errs[0], should.ErrLike(`unsupported RBE mode HYBRID`))
+		})
+
+		t.Run("Ambiguous effective bot ID", func(t *ftt.Test) {
+			req, err := srv.processPoll(ctx, &PollRequest{
+				Dimensions: map[string][]string{
+					"id":             {testEffectiveBotID},
+					"pool":           {testEffectivePool, "will-be-ignored"},
+					testEffectiveDim: {"effective-val-1", "effective-val-2"},
+				},
+				Version: testBotVersion,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, req.errs, should.HaveLength(1))
+			assert.That(t, req.errs[0], should.ErrLike(`effective bot ID dimension "bot-effective-id" must have only one value`))
+		})
+
+		t.Run("Missing effective bot ID", func(t *ftt.Test) {
+			req, err := srv.processPoll(ctx, &PollRequest{
+				Dimensions: map[string][]string{
+					"id":   {testEffectiveBotID},
+					"pool": {testEffectivePool, "will-be-ignored"},
+				},
+				Version: testBotVersion,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, req.errs, should.HaveLength(0))
+			assert.That(t, req.effectiveBotID, should.Match(&model.RBEEffectiveBotIDInfo{}))
 		})
 
 		t.Run("Bad dimensions", func(t *ftt.Test) {
@@ -162,6 +271,22 @@ func TestProcessPoll(t *testing.T) {
 			assert.That(t, req.errs[1], should.ErrLike(`bad dimensions: key "more"`))
 			assert.Loosely(t, req.dims, should.BeNil)
 			assert.That(t, req.quarantined, should.Match([]string{"boom"}))
+		})
+
+		t.Run("Bad dimensions with effective bot ID", func(t *ftt.Test) {
+			req, err := srv.processPoll(ctx, &PollRequest{
+				Dimensions: map[string][]string{
+					"id":        {testEffectiveBotID},
+					"pool":      {testEffectivePool},
+					"  bad key": {"a"},
+				},
+				Version: testBotVersion,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, req.errs, should.HaveLength(1))
+			assert.Loosely(t, req.dims, should.BeNil)
+			// Can't derive it if dimensions are broken.
+			assert.Loosely(t, req.effectiveBotID, should.BeNil)
 		})
 
 		t.Run("Missing ID dim", func(t *ftt.Test) {
@@ -188,7 +313,7 @@ func TestProcessPoll(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.That(t, req.botID, should.Equal(testBotID))
 			assert.Loosely(t, req.errs, should.HaveLength(1))
-			assert.That(t, req.errs[0], should.ErrLike(`"id" dimension "wrong-bot-id" doesn't match bot ID in the session "bot-id"`))
+			assert.That(t, req.errs[0], should.ErrLike(`"id" dimension "wrong-bot-id" doesn't match bot ID in the session "test-bot"`))
 			assert.Loosely(t, req.dims, should.BeNil)
 		})
 

@@ -212,6 +212,16 @@ type BotInfoUpdate struct {
 	// If a pointer to an empty struct, the current values will be reset. This is
 	// used when the bot becomes idle.
 	TaskInfo *BotEventTaskInfo
+
+	// EffectiveBotIDInfo can be used to change the bot ID in RBE sessions.
+	//
+	// It is derived from the bot dimensions and RBE config in the
+	// BotAPIServer.Poll handler.
+	//
+	// Takes effect only if non-nil and Dimensions are also populated. If non-nil
+	// but the actual ID is empty, the RBE session will just use BotID as its
+	// bot ID.
+	EffectiveBotIDInfo *RBEEffectiveBotIDInfo
 }
 
 // BotEventCallInfo is information describing the bot API call.
@@ -260,6 +270,14 @@ type BotEventTaskInfo struct {
 	TaskName string
 	// TaskFlags hold aspects of the task, see TaskFlag*.
 	TaskFlags TaskFlags
+}
+
+// RBEEffectiveBotIDInfo carries the bot ID to use in RBE sessions.
+type RBEEffectiveBotIDInfo struct {
+	// RBEEffectiveBotID is the bot ID to use in RBE sessions.
+	//
+	// An empty string means to use the standard bot ID.
+	RBEEffectiveBotID string
 }
 
 // SubmittedBotInfoUpdate is details about a submitted bot info update.
@@ -413,9 +431,14 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// the event type is not otherwise interesting. Most often this code path is
 	// hit when an idle bot is dynamically changing its dimensions.
 	dimensionsChanged := false
+	effectiveBotIDChange := ""
 	if len(u.Dimensions) != 0 {
 		dimensionsChanged = !slices.Equal(current.Dimensions, u.Dimensions)
 		current.Dimensions = u.Dimensions
+		if u.EffectiveBotIDInfo != nil && current.RBEEffectiveBotID != u.EffectiveBotIDInfo.RBEEffectiveBotID {
+			effectiveBotIDChange = fmt.Sprintf("RBE effective bot ID: %q => %q", current.RBEEffectiveBotID, u.EffectiveBotIDInfo.RBEEffectiveBotID)
+			current.RBEEffectiveBotID = u.EffectiveBotIDInfo.RBEEffectiveBotID
+		}
 	}
 
 	// Unlike dimension changes, state changes do not trigger recording of the
@@ -541,7 +564,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// Store BotEvent only if it looks interesting enough. Otherwise we'll have
 	// tons and tons of BotEventIdle events.
 	var eventToPut *BotEvent
-	if !frequentEvents[u.EventType] || dimensionsChanged || compositeChanged {
+	if !frequentEvents[u.EventType] || dimensionsChanged || effectiveBotIDChange != "" || compositeChanged {
 		eventToPut = &BotEvent{
 			// Note: this key means the entity ID will be auto-generated when the
 			// transaction is committed. We don't expose BotEvent entity IDs anywhere.
@@ -549,7 +572,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, BotRootKey(ctx, u.BotID)),
 			Timestamp:  now,
 			EventType:  u.EventType,
-			Message:    u.eventMessage(),
+			Message:    u.eventMessage(effectiveBotIDChange),
 			Dimensions: current.Dimensions,
 			BotCommon: BotCommon{
 				State:           current.State,
@@ -598,7 +621,7 @@ func (u *BotInfoUpdate) fullEventDedupKey() string {
 }
 
 // eventMessage is the final event message to store.
-func (u *BotInfoUpdate) eventMessage() string {
+func (u *BotInfoUpdate) eventMessage(fallback string) string {
 	switch {
 	case u.EventMessage != "":
 		return u.EventMessage
@@ -607,7 +630,7 @@ func (u *BotInfoUpdate) eventMessage() string {
 	case u.HealthInfo != nil && u.HealthInfo.Quarantined != "":
 		return u.HealthInfo.Quarantined
 	default:
-		return ""
+		return fallback
 	}
 }
 

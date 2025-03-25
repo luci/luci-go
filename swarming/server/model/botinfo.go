@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -591,4 +592,16 @@ func (p BotDimensions) BotID() string {
 		return val
 	}
 	return ""
+}
+
+// RBEEffectiveBotID derives the effective bot ID used in RBE sessions.
+//
+// Used only for bots in pools that have rbe_effective_bot_id configured.
+//
+// Takes the pool the bot belongs to and the value of the dimension matching
+// the configured rbe_effective_bot_id key.
+func RBEEffectiveBotID(pool, dimVal string) string {
+	// TODO: Replace "--" with something else, since "--" is already used in
+	// composite bot IDs.
+	return fmt.Sprintf("%s--%s", pool, dimVal)
 }

@@ -18,6 +18,7 @@ package cfgtest
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -92,10 +93,12 @@ func (cfg *MockedConfigs) MockPool(name, realm string) *configpb.Pool {
 }
 
 // MockBot adds a bot in some pool.
-func (cfg *MockedConfigs) MockBot(botID, pool string) *configpb.BotGroup {
+func (cfg *MockedConfigs) MockBot(botID, pool string, extraDims ...string) *configpb.BotGroup {
+	dims := append([]string{"pool:" + pool}, extraDims...)
+	slices.Sort(dims)
 	pb := &configpb.BotGroup{
 		BotId:      []string{botID},
-		Dimensions: []string{"pool:" + pool},
+		Dimensions: dims,
 		Auth: []*configpb.BotAuth{
 			{
 				RequireLuciMachineToken: true,

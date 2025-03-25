@@ -81,12 +81,10 @@ func TestHandshake(t *testing.T) {
 			},
 		}
 
-		botGroupCfg := mockedCfg.MockBot(botID, botPool)
-		botGroupCfg.Dimensions = append(botGroupCfg.Dimensions, "extra:1", "extra:2")
+		botGroupCfg := mockedCfg.MockBot(botID, botPool, "extra:1", "extra:2")
 		botGroupCfg.BotConfigScript = botHooksPy
 
-		conflicting := mockedCfg.MockBot(conflictingBotID, botPool)
-		conflicting.Dimensions = append(conflicting.Dimensions, "pool:extra")
+		mockedCfg.MockBot(conflictingBotID, botPool, "pool:extra")
 		mockedCfg.MockPool("extra", "some:realm").RbeMigration = &configpb.Pool_RBEMigration{
 			RbeInstance:    "another-instance",
 			RbeModePercent: 100,

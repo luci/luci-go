@@ -618,8 +618,7 @@ func TestEnqueueTasks(t *testing.T) {
 		},
 		// No EffectiveBotIdDimension here.
 	}
-	bg := cfg.MockBot("conflicting", "pool")
-	bg.Dimensions = append(bg.Dimensions, "pool:pool-2")
+	cfg.MockBot("conflicting", "pool", "pool:pool-2")
 
 	p := cfgtest.MockConfigs(ctx, cfg)
 

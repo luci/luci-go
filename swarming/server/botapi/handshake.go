@@ -189,6 +189,10 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	}
 
 	// Figure out if the bot should be using RBE.
+	//
+	// TODO: Start requiring pure RBE mode with instance set (just like in Poll
+	// handler) once all bots are migrated to RBE. Right now Handshake is used
+	// for pure-Swarming and hybrid bots as well.
 	var rbeParams *BotRBEParams
 	rbeConfig, err := conf.RBEConfig(botID)
 	switch {

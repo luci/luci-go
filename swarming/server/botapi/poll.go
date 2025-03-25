@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
@@ -154,6 +156,9 @@ type pollRequest struct {
 
 	conf  *cfg.Config   // the config snapshot used to authorize the bot
 	group *cfg.BotGroup // the group the bot belongs to
+
+	rbeConf        cfg.RBEConfig                // the matching RBEConfig
+	effectiveBotID *model.RBEEffectiveBotIDInfo // derived from dimensions and rbeConf
 
 	quarantined []string             // values of "quarantined" dimension (set even if `dims` are nil)
 	healthInfo  *model.BotHealthInfo // populated lazily in calculateHealthInfo()
@@ -299,23 +304,59 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		errs = append(errs, errors.Reason("no `version` in the request").Err())
 	}
 
+	// The bot must be in the RBE mode with the RBE instance configured.
+	rbeConf, err := conf.RBEConfig(botID)
+	switch {
+	case err != nil:
+		errs = append(errs, errors.Annotate(err, "conflicting RBE config").Err())
+	case rbeConf.Instance == "":
+		errs = append(errs, errors.Reason("RBE is not configured").Err())
+	case rbeConf.Mode != configpb.Pool_RBEMigration_BotModeAllocation_RBE:
+		errs = append(errs, errors.Reason("unsupported RBE mode %s", rbeConf.Mode).Err())
+	}
+
+	// Derive the effective bot ID to use in RBE sessions. This fails if there's
+	// no effective bot ID dimensions or it has more than one value. Note need to
+	// use `dims` here (not body.Dimensions) to make sure we pick up
+	// server-enforced dimensions applied to it.
+	//
+	// Do not change the current effective bot ID if dimensions are broken or
+	// a new one can't be derived.
+	var effectiveBotID *model.RBEEffectiveBotIDInfo
+	if len(dims) != 0 {
+		if rbeConf.EffectiveBotIDDimension == "" {
+			effectiveBotID = &model.RBEEffectiveBotIDInfo{} // use default bot ID
+		} else {
+			rbeEffectiveBotID, err := deriveRBEEffectiveBotID(dims, rbeConf.EffectiveBotIDDimension)
+			if err != nil {
+				errs = append(errs, errors.Annotate(err, "RBE effective bot ID").Err())
+			} else {
+				effectiveBotID = &model.RBEEffectiveBotIDInfo{
+					RBEEffectiveBotID: rbeEffectiveBotID,
+				}
+			}
+		}
+	}
+
 	// Log all errors for easier debugging.
 	for _, err := range errs {
 		logging.Errorf(ctx, "Validation error: %s", err)
 	}
 
 	return &pollRequest{
-		botID:         botID,
-		errs:          errs,
-		session:       session,
-		sessionBroken: sessionBroken,
-		version:       body.Version,
-		requestUUID:   body.RequestUUID,
-		state:         state,
-		dims:          dims,
-		conf:          conf,
-		group:         group,
-		quarantined:   body.Dimensions[botstate.QuarantinedKey],
+		botID:          botID,
+		errs:           errs,
+		session:        session,
+		sessionBroken:  sessionBroken,
+		version:        body.Version,
+		requestUUID:    body.RequestUUID,
+		state:          state,
+		dims:           dims,
+		conf:           conf,
+		rbeConf:        rbeConf,
+		effectiveBotID: effectiveBotID,
+		group:          group,
+		quarantined:    body.Dimensions[botstate.QuarantinedKey],
 	}, nil
 }
 
@@ -366,11 +407,40 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 			SessionID: pr.session.GetSessionId(),
 			Version:   pr.version,
 		}),
-		HealthInfo: healthInfo,
-		TaskInfo:   &model.BotEventTaskInfo{}, // not running tasks in /bot/poll
+		HealthInfo:         healthInfo,
+		TaskInfo:           &model.BotEventTaskInfo{}, // not running tasks in /bot/poll
+		EffectiveBotIDInfo: pr.effectiveBotID,
 	}
 	if err := srv.submitUpdate(ctx, update); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update bot info: %s", err)
 	}
 	return resp, nil
+}
+
+// deriveRBEEffectiveBotID derives the effective bot ID to use in RBE sessions.
+//
+// May return ("", nil) if it is fine to keep using the real bot ID.
+func deriveRBEEffectiveBotID(dims []string, effectiveDimKey string) (string, error) {
+	var pool, effectiveDim string
+	for _, dim := range dims {
+		switch k, v, _ := strings.Cut(dim, ":"); {
+		case k == "pool":
+			if pool != "" {
+				return "", errors.Reason("bots using effective Bot ID feature cannot belong to multiple pools").Err()
+			}
+			pool = v
+		case k == effectiveDimKey:
+			if effectiveDim != "" {
+				return "", errors.Reason("effective bot ID dimension %q must have only one value", effectiveDimKey).Err()
+			}
+			effectiveDim = v
+		}
+	}
+	if pool == "" {
+		panic("impossible bot without a pool")
+	}
+	if effectiveDim == "" {
+		return "", nil
+	}
+	return model.RBEEffectiveBotID(pool, effectiveDim), nil
 }
