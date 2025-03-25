@@ -129,7 +129,7 @@ describe('<GroupForm />', () => {
     act(() => editButton.click());
     const descriptionTextfield = screen
       .getByTestId('description-textfield')
-      .querySelector('input');
+      .querySelector('textarea');
     act(() => {
       fireEvent.change(descriptionTextfield!, {
         target: { value: 'new description' },
@@ -162,7 +162,7 @@ describe('<GroupForm />', () => {
     act(() => editButton.click());
     const descriptionTextfield = screen
       .getByTestId('description-textfield')
-      .querySelector('input');
+      .querySelector('textarea');
     act(() => {
       fireEvent.change(descriptionTextfield!, {
         target: { value: 'new description' },
@@ -306,7 +306,7 @@ describe('<GroupForm />', () => {
     act(() => editButton.click());
     const descriptionTextfield = screen
       .getByTestId('description-textfield')
-      .querySelector('input');
+      .querySelector('textarea');
     act(() => {
       fireEvent.change(descriptionTextfield!, { target: { value: '' } });
     });

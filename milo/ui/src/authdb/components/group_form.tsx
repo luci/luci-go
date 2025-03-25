@@ -328,15 +328,13 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   >
                     {descriptionMode ? (
                       <TextField
+                        multiline
                         value={description}
                         style={{
                           width: '100%',
                           whiteSpace: 'pre-wrap',
                         }}
                         onChange={(e) => setDescription(e.target.value)}
-                        onKeyDown={(e) =>
-                          checkFieldSubmit(e.key, 'description')
-                        }
                         id="descriptionTextfield"
                         data-testid="description-textfield"
                         error={descriptionErrorMessage !== ''}
@@ -344,9 +342,12 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                         onBlur={validateDescription}
                       ></TextField>
                     ) : (
-                      <Typography variant="body2" style={{ width: '100%' }}>
-                        {' '}
-                        {description}{' '}
+                      <Typography
+                        variant="body2"
+                        style={{ width: '100%' }}
+                        whiteSpace="pre-line"
+                      >
+                        {description}
                       </Typography>
                     )}
                   </TableCell>
