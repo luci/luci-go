@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
 )
 
@@ -153,6 +154,39 @@ type pollRequest struct {
 
 	conf  *cfg.Config   // the config snapshot used to authorize the bot
 	group *cfg.BotGroup // the group the bot belongs to
+
+	quarantined []string             // values of "quarantined" dimension (set even if `dims` are nil)
+	healthInfo  *model.BotHealthInfo // populated lazily in calculateHealthInfo()
+}
+
+// validationErr logs the error and appends it to the list of validation errors.
+//
+// Validation errors will result in the bot being quarantined. Must be called
+// before calculateHealthInfo(), panics otherwise.
+func (pr *pollRequest) validationErr(ctx context.Context, err error) {
+	if pr.healthInfo != nil {
+		panic("validationErr called after calculateHealthInfo")
+	}
+	logging.Errorf(ctx, "Quarantining %s: %s", pr.botID, err)
+	pr.errs = append(pr.errs, err)
+}
+
+// calculateHealthInfo calculates HealthInfo if it wasn't calculated yet.
+//
+// This also may update `pr.state` if the bot ends up quarantined due to
+// validation errors.
+//
+// Returns an internal gRPC error if the state dict can't be updated.
+func (pr *pollRequest) calculateHealthInfo() (*model.BotHealthInfo, error) {
+	if pr.healthInfo == nil {
+		healthInfo, state, err := updateBotHealthInfo(pr.state, pr.quarantined, pr.errs)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
+		}
+		pr.healthInfo = &healthInfo
+		pr.state = state
+	}
+	return pr.healthInfo, nil
 }
 
 // processPoll parses poll arguments, does validation and authorization.
@@ -281,5 +315,62 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		dims:          dims,
 		conf:          conf,
 		group:         group,
+		quarantined:   body.Dimensions[botstate.QuarantinedKey],
 	}, nil
+}
+
+// pollResponse completes the request by recording the BotInfo event matching
+// the command in the PollResponse.
+//
+// On success returns `resp` itself.
+func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp *PollResponse) (botsrv.Response, error) {
+	var ev model.BotEventType
+	switch resp.Cmd {
+	case PollRBE:
+		if pr.state.MustReadBool("rbe_idle") {
+			ev = model.BotEventIdle
+		} else {
+			ev = model.BotEventPolling
+		}
+	case PollSleep:
+		ev = model.BotEventSleep
+	case PollUpdate:
+		ev = model.BotEventUpdate
+	case PollBotRestart:
+		ev = model.BotEventRestart
+	default:
+		panic(fmt.Sprintf("unknown resp.Cmd %s", resp.Cmd))
+	}
+
+	// Note: must do it before checking pr.state, since calculateHealthInfo may
+	// update pr.state as a side effect.
+	healthInfo, err := pr.calculateHealthInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	var botState *botstate.Dict
+	if !pr.state.IsEmpty() {
+		botState = &pr.state
+	}
+
+	update := &model.BotInfoUpdate{
+		BotID:              pr.botID,
+		EventType:          ev,
+		EventDedupKey:      pr.requestUUID,
+		EventMessage:       resp.Message,
+		Dimensions:         pr.dims, // will be nil if the request is broken, meaning do not update dims in BotInfo
+		BotGroupDimensions: pr.group.Dimensions,
+		State:              botState,
+		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+			SessionID: pr.session.GetSessionId(),
+			Version:   pr.version,
+		}),
+		HealthInfo: healthInfo,
+		TaskInfo:   &model.BotEventTaskInfo{}, // not running tasks in /bot/poll
+	}
+	if err := srv.submitUpdate(ctx, update); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update bot info: %s", err)
+	}
+	return resp, nil
 }
