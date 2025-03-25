@@ -326,10 +326,10 @@ func TestPoolsValidation(t *testing.T) {
 				},
 				{
 					cfg: onePool(&configpb.Pool{
-						Name:  []string{"a--b"},
+						Name:  []string{"a:b"},
 						Realm: "test:1",
 					}),
-					err: `(pool #1 (a--b)): bad pool name "a--b": cannot contain "--"`,
+					err: `(pool #1 (a:b)): bad pool name "a:b": pool ID is not allowed to contain ":"`,
 				},
 				{
 					cfg: onePool(&configpb.Pool{

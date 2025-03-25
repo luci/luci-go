@@ -291,14 +291,11 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			ctx.Errorf("at least one pool name must be given")
 		}
 		for _, name := range pb.Name {
-			if err := validate.DimensionValue(name); err != nil {
+			if err := validate.DimensionValue("pool", name); err != nil {
 				ctx.Errorf("bad pool name %q: %s", name, err)
 			}
 			if !pools.Add(name) {
 				ctx.Errorf("pool %q was already declared", name)
-			}
-			if strings.Contains(name, "--") {
-				ctx.Errorf("bad pool name %q: cannot contain \"--\"", name)
 			}
 		}
 

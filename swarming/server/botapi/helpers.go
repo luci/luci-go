@@ -43,7 +43,7 @@ func peekBotID(dims map[string][]string) (string, error) {
 		return "", status.Errorf(codes.InvalidArgument, "no `id` dimension reported")
 	}
 	botID := idDim[0]
-	if err := validate.DimensionValue(botID); err != nil {
+	if err := validate.DimensionValue("id", botID); err != nil {
 		return "", status.Errorf(codes.InvalidArgument, "bad bot `id` %q: %s", botID, err)
 	}
 	return botID, nil

@@ -112,12 +112,38 @@ func tagOrDimValue(val string) error {
 	return nil
 }
 
-// DimensionValue checks if `val` can be a dimension value.
-func DimensionValue(val string) error {
+// DimensionValue checks if `val` can be a dimension value for the given key.
+func DimensionValue(key, val string) error {
 	if val == "" {
 		return errors.Reason("the value cannot be empty").Err()
 	}
-	return tagOrDimValue(val)
+	if err := tagOrDimValue(val); err != nil {
+		return err
+	}
+	switch key {
+	case "id":
+		return validateBotID(val)
+	case "pool":
+		return validatePool(val)
+	default:
+		return nil
+	}
+}
+
+// validateBotID are extra validation rules for "id" dimension values.
+func validateBotID(val string) error {
+	if strings.Contains(val, ":") {
+		return errors.Reason(`bot ID is not allowed to contain ":"`).Err()
+	}
+	return nil
+}
+
+// validatePool are extra validation rules for "pool" dimension values.
+func validatePool(val string) error {
+	if strings.Contains(val, ":") {
+		return errors.Reason(`pool ID is not allowed to contain ":"`).Err()
+	}
+	return nil
 }
 
 // SessionID checks if `val` is a valid bot session ID.
@@ -500,7 +526,7 @@ func BotDimensions(dims map[string][]string) errors.MultiError {
 		}
 		seen := stringset.New(len(vals))
 		for _, val := range vals {
-			if err := DimensionValue(val); err != nil {
+			if err := DimensionValue(key, val); err != nil {
 				recordErr(key, errors.Annotate(err, "bad value %q", trimLen(val, maxDimensionValLen+5)).Err())
 			} else if !seen.Add(val) {
 				recordErr(key, errors.Reason("duplicate value %q", val).Err())

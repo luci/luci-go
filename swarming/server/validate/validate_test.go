@@ -52,20 +52,24 @@ func TestDimensionValue(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
+		key string
 		dim string
 		err any
 	}{
-		{"good value", nil},
-		{strings.Repeat("a", maxDimensionValLen), nil},
-		{"", "cannot be empty"},
-		{strings.Repeat("a", maxDimensionValLen+1), "should be no longer"},
-		{" bad value", "no leading or trailing spaces"},
-		{"bad value ", "no leading or trailing spaces"},
+		{"dim", "good value", nil},
+		{"dim", "good:value", nil},
+		{"dim", strings.Repeat("a", maxDimensionValLen), nil},
+		{"dim", "", "cannot be empty"},
+		{"dim", strings.Repeat("a", maxDimensionValLen+1), "should be no longer"},
+		{"dim", " bad value", "no leading or trailing spaces"},
+		{"dim", "bad value ", "no leading or trailing spaces"},
+		{"id", "bad:value", `bot ID is not allowed to contain ":"`},
+		{"pool", "bad:value", `pool ID is not allowed to contain ":"`},
 	}
 
 	for _, cs := range cases {
 		t.Run(cs.dim, func(t *testing.T) {
-			assert.That(t, DimensionValue(cs.dim), should.ErrLike(cs.err))
+			assert.That(t, DimensionValue(cs.key, cs.dim), should.ErrLike(cs.err))
 		})
 	}
 }

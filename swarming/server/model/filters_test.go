@@ -111,6 +111,7 @@ func TestFilter(t *testing.T) {
 		}
 		assert.That(t, call(strings.Repeat("k", 100), "val"), should.ErrLike("bad key"))
 		assert.That(t, call("key", strings.Repeat("v", 300)), should.ErrLike("should be no longer"))
+		assert.That(t, call("id", "bad:id"), should.ErrLike(`bot ID is not allowed to contain ":"`))
 	})
 
 	ftt.Run("Duplicate value in a predicate", t, func(t *ftt.Test) {

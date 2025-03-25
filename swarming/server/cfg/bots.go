@@ -359,7 +359,7 @@ func validateBotsCfg(ctx *validation.Context, cfg *configpb.BotsCfg) {
 		if err := validate.DimensionKey(key); err != nil {
 			ctx.Errorf("bad dimension key %q: %s", key, err)
 		}
-		if err := validate.DimensionValue(val); err != nil {
+		if err := validate.DimensionValue(key, val); err != nil {
 			ctx.Errorf("bad dimension value %q: %s", val, err)
 		}
 	}

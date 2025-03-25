@@ -178,7 +178,7 @@ func NewFilterFromTaskDimensions(dims TaskDimensions) (Filter, error) {
 // initFilter is actual implementation of NewFilter.
 func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pairs iter.Seq[*apipb.StringPair]) error {
 	var validateKey func(key string) error
-	var validateVal func(val string) error
+	var validateVal func(key, val string) error
 	switch validation {
 	case ValidateAsTags:
 		validateKey = func(key string) error {
@@ -190,7 +190,9 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 			}
 			return nil
 		}
-		validateVal = validateKey // the same rules
+		validateVal = func(key, val string) error {
+			return validateKey(val) // the same rules
+		}
 
 	case ValidateAsDimensions:
 		validateKey = validate.DimensionKey
@@ -198,7 +200,7 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 
 	case ValidateMinimally:
 		validateKey = func(key string) error { return nil }
-		validateVal = func(val string) error { return nil }
+		validateVal = func(key, val string) error { return nil }
 
 	default:
 		panic("unknown FilterValidation mode")
@@ -212,7 +214,7 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 		vals := strings.Split(pair.Value, "|")
 		deduped := stringset.New(len(vals))
 		for _, val := range vals {
-			if err := validateVal(val); err != nil {
+			if err := validateVal(pair.Key, val); err != nil {
 				return errors.Annotate(err, "key %q: value %q", pair.Key, val).Err()
 			}
 			deduped.Add(val)
