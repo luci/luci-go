@@ -22,12 +22,9 @@ import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import { useQuery } from '@tanstack/react-query';
 
-import { interpretLookupResults } from '@/authdb/common/helpers';
+import { getGroupNames, interpretLookupResults } from '@/authdb/common/helpers';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
-import {
-  AuthGroup,
-  PrincipalKind,
-} from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 import { CollapsibleList } from './collapsible_list';
 
@@ -75,12 +72,6 @@ export function GroupLookup({ name }: GroupLookupProps) {
   const summary = interpretLookupResults(response);
   const directIncluders = summary.directIncluders;
   const indirectIncluders = summary.indirectIncluders;
-
-  const getGroupNames = (groupsList: AuthGroup[]) => {
-    return groupsList.map((group) => {
-      return group.name;
-    });
-  };
 
   return (
     <>

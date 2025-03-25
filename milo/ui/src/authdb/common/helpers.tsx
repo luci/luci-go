@@ -16,7 +16,6 @@
 import { isEmail } from 'validator';
 
 import {
-  AuthGroup,
   Node,
   PrincipalKind,
   Subgraph,
@@ -93,7 +92,16 @@ export function stripPrefixFromItems(prefix: string, items: string[]) {
   return items.map((item) => stripPrefix(prefix, item));
 }
 
-export const toComparableGroupName = (group: AuthGroup) => {
+interface NamedGroup {
+  name: string;
+  callerCanModify?: boolean;
+}
+
+export const getGroupNames = (groups: NamedGroup[]) => {
+  return groups.map((g) => g.name);
+};
+
+export const toComparableGroupName = (group: NamedGroup) => {
   // Note: callerCanModify is optional; it can be undefined.
   const prefix = group.callerCanModify ? 'A' : 'B';
   const name = group.name;
@@ -106,8 +114,8 @@ export const toComparableGroupName = (group: AuthGroup) => {
   return prefix + 'A' + name;
 };
 
-export const sortGroupsByName = (groups: AuthGroup[]) => {
-  return groups.sort((a: AuthGroup, b: AuthGroup) => {
+export const sortGroupsByName = (groups: NamedGroup[]) => {
+  return groups.sort((a: NamedGroup, b: NamedGroup) => {
     const aName = toComparableGroupName(a);
     const bName = toComparableGroupName(b);
     if (aName < bName) {
@@ -119,13 +127,20 @@ export const sortGroupsByName = (groups: AuthGroup[]) => {
   });
 };
 
+type Includer = {
+  name: string;
+  includesDirectly: boolean;
+  includesViaGlobs: string[];
+  includesIndirectly: string[][];
+};
+
 export const interpretLookupResults = (subgraph: Subgraph) => {
   // Note: the principal is always represented by nodes[0] per API guarantee.
   const nodes = subgraph.nodes;
   const principalNode = nodes[0];
   const principal = principalNode.principal;
 
-  const includers = new Map();
+  const includers = new Map<string, Includer>();
   const getIncluder = (groupName: string) => {
     if (!includers.has(groupName)) {
       includers.set(groupName, {
@@ -168,20 +183,20 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
     if (path.length === 2) {
       // The entire path is 'principalNode -> lastNode', meaning group
       // 'last' includes the principal directly.
-      groupIncluder.includesDirectly = true;
+      groupIncluder!.includesDirectly = true;
     } else if (
       path.length === 3 &&
       path[1]!.principal!.kind === PrincipalKind.GLOB
     ) {
       // The entire path is 'principalNode -> GLOB -> lastNode', meaning
       // 'last' includes the principal via the GLOB.
-      groupIncluder.includesViaGlobs.push(
+      groupIncluder!.includesViaGlobs.push(
         stripPrefix('user', path[1]!.principal!.name),
       );
     } else {
       // Some arbitrarily long indirect inclusion path. Just record all
       // group names in it (skipping GLOBs). Skip the root principal
-      // itself (path[0]) and the currrently analyzed node (path[-1]);
+      // itself (path[0]) and the currently analyzed node (path[-1]);
       // it's not useful information as it's the same for all paths.
       const groupNames = [];
       for (let i = 1; i < path.length - 1; i++) {
@@ -189,15 +204,15 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
           groupNames.push(path[i]!.principal!.name);
         }
       }
-      groupIncluder.includesIndirectly.push(groupNames);
+      groupIncluder!.includesIndirectly.push(groupNames);
     }
   };
   enumeratePaths([principalNode], visitor);
 
   // Finally, massage the findings for easier display. Note that
   // directIncluders and indirectIncluders are NOT disjoint sets.
-  let directIncluders: AuthGroup[] = [];
-  let indirectIncluders: AuthGroup[] = [];
+  const directIncluders: Includer[] = [];
+  const indirectIncluders: Includer[] = [];
   includers.forEach((inc) => {
     if (inc.includesDirectly || inc.includesViaGlobs.length > 0) {
       directIncluders.push(inc);
@@ -212,8 +227,8 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
     }
   });
 
-  directIncluders = sortGroupsByName(directIncluders);
-  indirectIncluders = sortGroupsByName(indirectIncluders);
+  sortGroupsByName(directIncluders);
+  sortGroupsByName(indirectIncluders);
 
   return {
     principalName: stripPrefix('user', principal!.name),
@@ -224,9 +239,9 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
   };
 };
 
-const shortenInclusionPaths = (paths: string[]) => {
+const shortenInclusionPaths = (paths: string[][]) => {
   // For each long path in the list, kick out the middle and replace it with ''.
-  const out: string[] = [];
+  const out: string[][] = [];
   const seen = new Set();
 
   paths.forEach((path) => {
@@ -238,7 +253,7 @@ const shortenInclusionPaths = (paths: string[]) => {
     const key = shorter.join('\n');
     if (!seen.has(key)) {
       seen.add(key);
-      out.push(...shorter);
+      out.push(shorter);
     }
   });
 

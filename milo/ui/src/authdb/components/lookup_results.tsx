@@ -121,10 +121,12 @@ export function LookupResults({ name }: LookupResultsProps) {
 
   const getIncluderTooltip = (group: string) => {
     const includers: string[][] =
-      summary.includers.get(group).includesIndirectly;
+      summary.includers.get(group)!.includesIndirectly;
     const content: string[] = [];
     includers.forEach((groupNames: string[]) => {
+      // Replace blank groups with an ellipsis.
       const displayNames = groupNames.map((g) => (g === '' ? '\u2026' : g));
+      // Join the path with arrows.
       const pathResult = displayNames.join(' \u2192 ');
       content.push(pathResult);
     });
