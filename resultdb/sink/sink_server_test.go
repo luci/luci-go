@@ -601,6 +601,7 @@ func TestReportTestResults(t *testing.T) {
 
 					assert.Loosely(t, sentArtReq, should.NotBeNil)
 					assert.Loosely(t, sentArtReq.Requests, should.HaveLength(1))
+					assert.Loosely(t, sentArtReq.Requests[0].Parent, should.HaveSuffix("/tests/:module_name%21scheme:coarse_name:fine_name%23component1:component2/results/result_id1"))
 					assert.Loosely(t, sentArtReq.Requests[0].Artifact, should.Match(&pb.Artifact{
 						ArtifactId:  "art1",
 						ContentType: "text/plain",

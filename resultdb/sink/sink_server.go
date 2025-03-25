@@ -162,6 +162,15 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 				tr.TestMetadata.Location.FileName = "/" + path.Join(s.cfg.TestLocationBase, locFn)
 			}
 		}
+
+		// partialTestID is a partial test ID uploaded by the client, for use in error messages.
+		var partialTestID string
+		if tr.TestIdStructured != nil {
+			partialTestID = fmt.Sprintf("%s:%s#%s", tr.TestIdStructured.CoarseName, tr.TestIdStructured.FineName, strings.Join(tr.TestIdStructured.CaseNameComponents, ":"))
+		} else {
+			partialTestID = tr.TestId
+		}
+
 		// The system-clock of GCE machines may get updated by ntp while a test is running.
 		// It can possibly cause a negative duration produced, because most test harnesses
 		// use system-clock to calculate the run time of a test. For more info, visit
@@ -169,7 +178,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if duration := tr.GetDuration(); duration != nil && s.cfg.CoerceNegativeDuration {
 			// If a negative duration was reported, remove the duration.
 			if d := duration.AsDuration(); d < 0 {
-				logging.Warningf(ctx, "Test result for %q has a negative duration(%s); coercing it to 0", tr.TestId, d)
+				logging.Warningf(ctx, "Test result for %q has a negative duration(%s); coercing it to 0", partialTestID, d)
 				tr.Duration = zeroDuration
 			}
 		}
@@ -177,7 +186,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		// Validation pass 1: test result before merging with prefixes/variant keys/
 		// tags provided for by server configuration.
 		if err := validateTestResult(now, tr); err != nil {
-			logging.Warningf(ctx, "Test result for %q is invalid: %s", tr.TestId, err)
+			logging.Warningf(ctx, "Test result for %q is invalid: %s", partialTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: %s", i, err)
 		}
 
@@ -196,12 +205,20 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return s.cfg.ModuleScheme.Validate(b)
 		}
 		if err := pbutil.ValidateTestResult(now, validateToScheme, rdbtr); err != nil {
+			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", partialTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
 
 		for id, a := range tr.GetArtifacts() {
-			n := pbutil.TestResultArtifactName(s.cfg.invocationID, tr.TestId, tr.ResultId, id)
-			t, err := newUploadTask(n, a, tr.Status)
+			var testID string
+			if rdbtr.TestIdStructured != nil {
+				testID = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(rdbtr.TestIdStructured))
+			} else {
+				testID = rdbtr.TestId
+			}
+
+			n := pbutil.TestResultArtifactName(s.cfg.invocationID, testID, rdbtr.ResultId, id)
+			t, err := newUploadTask(n, a, rdbtr.Status)
 
 			// newUploadTask can return an error if os.Stat() fails.
 			if err != nil {
