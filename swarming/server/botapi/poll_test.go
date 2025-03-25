@@ -209,7 +209,7 @@ func TestProcessPoll(t *testing.T) {
 			assert.Loosely(t, req.errs, should.HaveLength(0))
 			assert.That(t, req.botID, should.Equal(testEffectiveBotID))
 			assert.That(t, req.effectiveBotID, should.Match(&model.RBEEffectiveBotIDInfo{
-				RBEEffectiveBotID: "test-pool-effective--effective-val",
+				RBEEffectiveBotID: "test-pool-effective:bot-effective-id:effective-val",
 			}))
 		})
 

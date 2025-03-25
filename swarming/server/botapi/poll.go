@@ -442,5 +442,5 @@ func deriveRBEEffectiveBotID(dims []string, effectiveDimKey string) (string, err
 	if effectiveDim == "" {
 		return "", nil
 	}
-	return model.RBEEffectiveBotID(pool, effectiveDim), nil
+	return model.RBEEffectiveBotID(pool, effectiveDimKey, effectiveDim), nil
 }

@@ -474,14 +474,18 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 }
 
 // expireSlice calls Swarming Python's ExpireSlice RPC.
-func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritBotID, details string) error {
+func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID, details string) error {
+	// Do not use effective bot ID in place of the real bot ID.
+	if _, _, _, ok := model.ParseRBEEffectiveBotID(culpritRBEBotID); ok {
+		culpritRBEBotID = ""
+	}
 	_, err := s.internals.ExpireSlice(ctx, &internalspb.ExpireSliceRequest{
 		TaskId:         task.TaskId,
 		TaskToRunShard: task.TaskToRunShard,
 		TaskToRunId:    task.TaskToRunId,
 		Reason:         code,
 		Details:        details,
-		CulpritBotId:   culpritBotID,
+		CulpritBotId:   culpritRBEBotID,
 	})
 	return err
 }
@@ -713,7 +717,7 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 				return "", nil, errors.Annotate(ErrBadReservation, "invalid effective bot ID dimension %q: %q", rbeEffectiveBotIDDim, values).Err()
 			}
 			if pool != "" {
-				effectiveBotID = model.RBEEffectiveBotID(pool, values[0])
+				effectiveBotID = model.RBEEffectiveBotID(pool, rbeEffectiveBotIDDim, values[0])
 			}
 		default:
 			for _, v := range values {

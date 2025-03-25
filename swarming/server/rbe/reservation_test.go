@@ -810,7 +810,7 @@ func TestEnqueueTasks(t *testing.T) {
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 
 			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
-			assert.That(t, actual.RequestedBotId, should.Equal("pool--dut1"))
+			assert.That(t, actual.RequestedBotId, should.Equal("pool:dut_id:dut1"))
 		})
 
 		t.Run("OK_with_effective_bot_id_from_bot", func(t *ftt.Test) {
@@ -818,7 +818,7 @@ func TestEnqueueTasks(t *testing.T) {
 
 			botInfo := &model.BotInfo{
 				Key:               model.BotInfoKey(ctx, "bot1"),
-				RBEEffectiveBotID: "pool--dut1",
+				RBEEffectiveBotID: "pool:dut_id:dut1",
 			}
 			assert.NoErr(t, datastore.Put(ctx, botInfo))
 
@@ -855,7 +855,7 @@ func TestEnqueueTasks(t *testing.T) {
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 
 			actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
-			assert.That(t, actual.RequestedBotId, should.Equal("pool--dut1"))
+			assert.That(t, actual.RequestedBotId, should.Equal("pool:dut_id:dut1"))
 		})
 	})
 }
@@ -867,7 +867,7 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 	bot2 := "bot2"
 	bot2Info := &model.BotInfo{
 		Key:               model.BotInfoKey(ctx, bot2),
-		RBEEffectiveBotID: "pool--bot2",
+		RBEEffectiveBotID: "pool:dut_id:bot2",
 	}
 
 	bot3 := "bot3"
@@ -911,7 +911,7 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 			dims: model.TaskDimensions{
 				"id": {"bot2"},
 			},
-			botID:                "pool--bot2",
+			botID:                "pool:dut_id:bot2",
 			rbeEffectiveBotIDDim: "dut_id",
 		},
 		{
@@ -919,7 +919,7 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 			dims: model.TaskDimensions{
 				"dut_id": {"value"},
 			},
-			botID:                "pool--value",
+			botID:                "pool:dut_id:value",
 			rbeEffectiveBotIDDim: "dut_id",
 			pool:                 "pool",
 		},
@@ -929,7 +929,7 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 				"id":     {"bot2"},
 				"dut_id": {"bot2"},
 			},
-			botID:                "pool--bot2",
+			botID:                "pool:dut_id:bot2",
 			rbeEffectiveBotIDDim: "dut_id",
 			pool:                 "pool",
 		},
@@ -959,7 +959,7 @@ func TestDimsToBotIDAndConstraints(t *testing.T) {
 			},
 			rbeEffectiveBotIDDim: "dut_id",
 			pool:                 "pool",
-			err:                  `conflicting effective bot IDs: "pool--bot2" (according to bot "bot2") and "pool--value" (according to task)`,
+			err:                  `conflicting effective bot IDs: "pool:dut_id:bot2" (according to bot "bot2") and "pool:dut_id:value" (according to task)`,
 		},
 	}
 

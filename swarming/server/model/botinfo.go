@@ -598,10 +598,24 @@ func (p BotDimensions) BotID() string {
 //
 // Used only for bots in pools that have rbe_effective_bot_id configured.
 //
-// Takes the pool the bot belongs to and the value of the dimension matching
-// the configured rbe_effective_bot_id key.
-func RBEEffectiveBotID(pool, dimVal string) string {
-	// TODO: Replace "--" with something else, since "--" is already used in
-	// composite bot IDs.
-	return fmt.Sprintf("%s--%s", pool, dimVal)
+// Takes the pool the bot belongs to and the key and the value of the dimension
+// matching the configured rbe_effective_bot_id key.
+func RBEEffectiveBotID(pool, dimKey, dimVal string) string {
+	return fmt.Sprintf("%s:%s:%s", pool, dimKey, dimVal)
+}
+
+// ParseRBEEffectiveBotID parses a string created via RBEEffectiveBotID.
+//
+// Returns ("", "", "", false) if it doesn't look like it.
+func ParseRBEEffectiveBotID(val string) (pool, dimKey, dimVal string, ok bool) {
+	chunks := strings.SplitN(val, ":", 3)
+	if len(chunks) == 3 {
+		for _, chunk := range chunks {
+			if chunk == "" {
+				return "", "", "", false
+			}
+		}
+		return chunks[0], chunks[1], chunks[2], true
+	}
+	return "", "", "", false
 }

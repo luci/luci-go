@@ -97,3 +97,33 @@ func TestBotEvent(t *testing.T) {
 		assert.That(t, event.QuarantineMessage(), should.Equal(cs.msg), truth.Explain("%s", cs.state))
 	}
 }
+
+func TestRBEEffectiveBotID(t *testing.T) {
+	t.Parallel()
+
+	assert.That(t, RBEEffectiveBotID("pool", "dim", "val"), should.Equal("pool:dim:val"))
+
+	p, d, v, ok := ParseRBEEffectiveBotID("pool:dim:val")
+	assert.That(t, ok, should.BeTrue)
+	assert.That(t, p, should.Equal("pool"))
+	assert.That(t, d, should.Equal("dim"))
+	assert.That(t, v, should.Equal("val"))
+
+	p, d, v, ok = ParseRBEEffectiveBotID("pool:dim:val:more")
+	assert.That(t, ok, should.BeTrue)
+	assert.That(t, p, should.Equal("pool"))
+	assert.That(t, d, should.Equal("dim"))
+	assert.That(t, v, should.Equal("val:more"))
+
+	for _, bad := range []string{
+		"pool:dim:",
+		"pool:dim",
+		"pool::val",
+		":dim:val",
+		"",
+		"normal-bot-id",
+	} {
+		_, _, _, ok = ParseRBEEffectiveBotID(bad)
+		assert.That(t, ok, should.BeFalse)
+	}
+}
