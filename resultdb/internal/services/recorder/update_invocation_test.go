@@ -175,6 +175,24 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
+		t.Run(`tags`, func(t *ftt.Test) {
+			request.UpdateMask.Paths = []string{"tags"}
+
+			t.Run(`invalid`, func(t *ftt.Test) {
+				request.Invocation.Tags = []*pb.StringPair{
+					{Key: "key1", Value: strings.Repeat("1", 300)},
+				}
+				err := validateUpdateInvocationRequest(request, now)
+				assert.Loosely(t, err, should.ErrLike(`value length must be less or equal to`))
+			})
+			t.Run(`valid`, func(t *ftt.Test) {
+				request.Invocation.Tags = []*pb.StringPair{
+					{Key: "key1", Value: "val1"},
+				}
+				err := validateUpdateInvocationRequest(request, now)
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
 		t.Run(`source spec`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"source_spec"}
 
@@ -1023,7 +1041,7 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 
 			updateMask := &field_mask.FieldMask{
-				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "instructions"},
+				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "instructions", "tags"},
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
@@ -1038,6 +1056,9 @@ func TestUpdateInvocation(t *testing.T) {
 					BaselineId:        "try:linux-rel",
 					Realm:             "testproject:newrealm",
 					Instructions:      instructions,
+					Tags: []*pb.StringPair{
+						{Key: "key", Value: "value"},
+					},
 				},
 				UpdateMask: updateMask,
 			}
@@ -1058,6 +1079,9 @@ func TestUpdateInvocation(t *testing.T) {
 				BaselineId:        "try:linux-rel",
 				Realm:             "testproject:newrealm",
 				Instructions:      instructionutil.InstructionsWithNames(instructions, "inv"),
+				Tags: []*pb.StringPair{
+					{Key: "key", Value: "value"},
+				},
 			}
 			assert.Loosely(t, inv.Name, should.Equal(expected.Name))
 			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_ACTIVE))
@@ -1068,6 +1092,7 @@ func TestUpdateInvocation(t *testing.T) {
 			assert.Loosely(t, inv.BaselineId, should.Equal(expected.BaselineId))
 			assert.Loosely(t, inv.Realm, should.Equal(expected.Realm))
 			assert.Loosely(t, inv.Instructions, should.Match(expected.Instructions))
+			assert.Loosely(t, inv.Tags, should.Match(expected.Tags))
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -1089,6 +1114,7 @@ func TestUpdateInvocation(t *testing.T) {
 				"BaselineId":        &actual.BaselineId,
 				"Realm":             &actual.Realm,
 				"Instructions":      &compressedInstructions,
+				"Tags":              &actual.Tags,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)

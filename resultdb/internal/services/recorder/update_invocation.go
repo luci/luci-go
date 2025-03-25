@@ -135,6 +135,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.Annotate(err, "invocation: extended_properties").Err()
 			}
 
+		case "tags":
+			if err := pbutil.ValidateStringPairs(req.Invocation.GetTags()); err != nil {
+				return errors.Annotate(err, "invocation: tags").Err()
+			}
+
 		default:
 			return errors.Reason("update_mask: unsupported path %q", path).Err()
 		}
@@ -305,6 +310,10 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "properties":
 				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.Properties))
 				ret.Properties = in.Invocation.Properties
+
+			case "tags":
+				values["Tags"] = in.Invocation.Tags
+				ret.Tags = in.Invocation.Tags
 
 			case "source_spec":
 				// Are we setting the field to a value other than its current value?

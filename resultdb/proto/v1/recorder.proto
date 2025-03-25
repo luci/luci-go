@@ -155,6 +155,7 @@ message BatchCreateInvocationsResponse {
 // A request message for UpdateInvocation RPC.
 message UpdateInvocationRequest {
   // Invocation to update.
+  // If updating tags, the existing tags will be replaced with the new ones.
   Invocation invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The list of fields to be updated.
