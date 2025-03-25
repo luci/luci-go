@@ -22,6 +22,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
@@ -118,6 +119,18 @@ export function LookupResults({ name }: LookupResultsProps) {
   const directIncluders = summary.directIncluders;
   const indirectIncluders = summary.indirectIncluders;
 
+  const getIncluderTooltip = (group: string) => {
+    const includers: string[][] =
+      summary.includers.get(group).includesIndirectly;
+    const content: string[] = [];
+    includers.forEach((groupNames: string[]) => {
+      const displayNames = groupNames.map((g) => (g === '' ? '\u2026' : g));
+      const pathResult = displayNames.join(' \u2192 ');
+      content.push(pathResult);
+    });
+    return content.join('\n');
+  };
+
   return (
     <>
       <ThemeProvider theme={theme}>
@@ -158,9 +171,24 @@ export function LookupResults({ name }: LookupResultsProps) {
                     <ul>
                       {indirectIncluders.map((group) => {
                         return (
-                          <li key={group.name}>
-                            <GroupLink name={group.name} />
-                          </li>
+                          <Tooltip
+                            title={
+                              <div style={{ whiteSpace: 'pre-line' }}>
+                                <Typography variant="caption">
+                                  Included via
+                                </Typography>
+                                <br />
+                                {getIncluderTooltip(group.name)}
+                              </div>
+                            }
+                            placement="left-start"
+                            key={group.name}
+                            arrow
+                          >
+                            <li>
+                              <GroupLink name={group.name} />
+                            </li>
+                          </Tooltip>
                         );
                       })}
                     </ul>
