@@ -66,6 +66,16 @@ var resubmitCount = metric.NewCounter(
 	field.String("pool"),
 )
 
+// ErrBadReservation is wrapped and returned by EnqueueNew if the reservation
+// fails to pass minimal validation checks using the current version of
+// the server config.
+//
+// This should be rare and happen only for reservations that are being retried,
+// since completely new reservations are validated before EnqueueNew call. When
+// reservations are retried, the server config may be different already from
+// what it was when the reservation was created initially.
+var ErrBadReservation = errors.New("the reservation cannot be submitted")
+
 // ReservationServer is responsible for creating and canceling RBE reservations.
 type ReservationServer struct {
 	rbe           remoteworkers.ReservationsClient
@@ -439,9 +449,20 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 	if reasonCode == internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR {
 		if ttr.RetryCount < maxReservationRetryCount {
 			logging.Warningf(ctx, "Resubmitting reservation (retry #%d)", ttr.RetryCount+1)
-			return s.resubmitReservation(ctx, ttr.Key, &payload)
+			switch err := s.resubmitReservation(ctx, ttr.Key, &payload); {
+			case err == nil:
+				return nil
+			case errors.Is(err, ErrBadReservation):
+				logging.Errorf(ctx, "Giving up: %s", err)
+				reasonCode = internalspb.ExpireSliceRequest_EXPIRED
+				statusErr = err
+			default:
+				logging.Warningf(ctx, "Transient error resubmitting reservation: %s", err)
+				return transient.Tag.Apply(err)
+			}
+		} else {
+			logging.Warningf(ctx, "The reservation was retried too many times, giving up")
 		}
-		logging.Warningf(ctx, "The reservation was retried too many times, giving up")
 	}
 
 	// Tell Swarming to switch to the next slice, if necessary
@@ -466,6 +487,12 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 }
 
 // resubmitReservation submits a new RBE reservation for the given TaskToRun.
+//
+// Returns:
+//   - nil if successfully submitted the reservation or it is no longer needed.
+//   - a wrapped ErrBadReservation if the reservation is "broken" now and cannot
+//     be resubmitted. This can happen if the server config changes.
+//   - all other errors can be considered transient.
 func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datastore.Key, prev *internalspb.TaskPayload) error {
 	tr, err := model.FetchTaskRequest(ctx, ttr.Parent())
 	switch {
@@ -473,7 +500,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		logging.Warningf(ctx, "TaskRequest entity is already gone")
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to fetch TaskRequest").Err()
 	}
 
 	submitted := false
@@ -487,7 +514,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 			logging.Warningf(tctx, "TaskToRun entity is already gone")
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to fetch TaskToRun").Err()
 		case !ttr.IsReapable():
 			logging.Warningf(tctx, "TaskToRun is no longer pending")
 			return nil
@@ -503,7 +530,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		ttr.RetryCount++
 		ttr.RBEReservation = model.NewReservationID(s.serverProject, ttr.Key.Parent(), ttr.TaskSliceIndex(), int(ttr.RetryCount))
 		if err := datastore.Put(tctx, ttr); err != nil {
-			return errors.Annotate(err, "failed to store TaskToRun").Tag(transient.Tag).Err()
+			return errors.Annotate(err, "failed to store TaskToRun").Err()
 		}
 		return s.enqueueNew(tctx, tr, ttr, s.cfg.Cached(ctx))
 	}, nil)
@@ -637,19 +664,26 @@ func getRBEEffectiveBotIDDimension(ctx context.Context, s model.TaskSlice, cfg *
 	if pool != "" {
 		poolCfg := cfg.Pool(pool)
 		if poolCfg == nil {
-			logging.Errorf(ctx, "pool %q not found, cannot use effective bot ID dimension", pool)
+			logging.Warningf(ctx, "Pool %q not found, assume it doesn't use effective bot ID dimension", pool)
 			return "", nil
 		}
 		return poolCfg.RBEEffectiveBotIDDimension, nil
 	}
 
-	// The task doesn't use pool, it must use bot ID.
+	// The task doesn't use pool, it must use bot ID. Tasks that use bot ID are
+	// validated to have at most one bot ID.
 	botIDs := s.Properties.Dimensions["id"]
 	if len(botIDs) != 1 || strings.Contains(botIDs[0], "|") {
-		return "", errors.Reason("expect task without pool dimension to have exactly one id dimension, got %q", botIDs).Err()
+		panic(fmt.Sprintf("expecting a task without pool dimension to have exactly one id dimension, got %q", botIDs))
 	}
+
+	// Lookup the pool configs for that particular bot.
 	botID := botIDs[0]
-	return cfg.RBEConfig(ctx, botID).EffectiveBotIDDimension, nil
+	conf, err := cfg.RBEConfig(botID)
+	if err != nil {
+		return "", errors.Annotate(ErrBadReservation, "conflicting RBE config for bot %q: %s", botID, err).Err()
+	}
+	return conf.EffectiveBotIDDimension, nil
 }
 
 func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, rbeEffectiveBotIDDim, pool string) (botID string, constraints []*internalspb.EnqueueRBETask_Constraint, err error) {
@@ -658,18 +692,25 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 		switch {
 		case key == "id":
 			if len(values) != 1 || strings.Contains(values[0], "|") {
-				return "", nil, errors.Reason("invalid id dimension: %q", values).Err()
+				// This has been validated when the task was submitted.
+				panic(fmt.Sprintf("invalid id dimension: %q", values))
 			}
 			botID = values[0]
 			if rbeEffectiveBotIDDim != "" {
-				effectiveBotIDFromBot, err = getEffectiveBotID(ctx, botID)
+				effectiveBotIDFromBot, err = fetchEffectiveBotID(ctx, botID)
 				if err != nil {
 					return "", nil, err
 				}
 			}
 		case key == rbeEffectiveBotIDDim:
 			if len(values) != 1 || strings.Contains(values[0], "|") {
-				return "", nil, errors.Reason("invalid %q dimension: %q", rbeEffectiveBotIDDim, values).Err()
+				// Normally the task is validated so that the effective bot ID dimension
+				// has at most one value, but here we may be retrying the submission and
+				// may be using a different version of the config (not the one used
+				// during the initial validation). A different rbeEffectiveBotIDDim may
+				// be "broken". This should be rare. Return an error to give up on this
+				// reservation.
+				return "", nil, errors.Annotate(ErrBadReservation, "invalid effective bot ID dimension %q: %q", rbeEffectiveBotIDDim, values).Err()
 			}
 			if pool != "" {
 				effectiveBotID = fmt.Sprintf("%s--%s", pool, values[0])
@@ -684,7 +725,7 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 		}
 	}
 	if effectiveBotIDFromBot != "" && effectiveBotID != "" && effectiveBotIDFromBot != effectiveBotID {
-		return "", nil, errors.Reason(
+		return "", nil, errors.Annotate(ErrBadReservation,
 			"conflicting effective bot IDs: %q (according to bot %q) and %q (according to task)",
 			effectiveBotIDFromBot, botID, effectiveBotID).Err()
 	}
@@ -698,9 +739,9 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 	return botID, constraints, nil
 }
 
-func getEffectiveBotID(ctx context.Context, botID string) (string, error) {
+func fetchEffectiveBotID(ctx context.Context, botID string) (string, error) {
 	info := &model.BotInfo{Key: model.BotInfoKey(ctx, botID)}
-	if err := datastore.Get(ctx, info); err != nil {
+	if err := datastore.Get(datastore.WithoutTransaction(ctx), info); err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			logging.Errorf(ctx, "Failed to get effective bot ID for %q: %s", botID, err)
 			return "", nil
@@ -720,6 +761,9 @@ func getEffectiveBotID(ctx context.Context, botID string) (string, error) {
 		//   feature not usable;
 		// Add a log here and move on, the task will either be rejected by RBE
 		// with NO_RESOURCE or execute with botID.
+		//
+		// TODO: Such tasks may get stuck for a long time if they have
+		// WaitForCapacity set.
 		logging.Debugf(ctx, "Effective bot ID for %q not found", botID)
 	}
 	return info.RBEEffectiveBotID, nil

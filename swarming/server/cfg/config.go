@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -288,7 +289,10 @@ func (cfg *Config) BotGroup(botID string) *BotGroup {
 //
 // It checks per-pool RBE configs for all pools the bot belongs to and "merges"
 // them into the final config.
-func (cfg *Config) RBEConfig(ctx context.Context, botID string) RBEConfig {
+//
+// Returns an error if the bot belongs to multiple pools and their configs are
+// incompatible.
+func (cfg *Config) RBEConfig(botID string) (RBEConfig, error) {
 	// For each known pool (usually just one) calculate the mode and the RBE
 	// instance the bot should be using there.
 	pools := cfg.BotGroup(botID).Pools()
@@ -305,7 +309,7 @@ func (cfg *Config) RBEConfig(ctx context.Context, botID string) RBEConfig {
 	if len(perPool) == 0 {
 		return RBEConfig{
 			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
-		}
+		}, nil
 	}
 
 	// If all pools agree on a single mode, use it whatever it is. Otherwise use
@@ -324,45 +328,49 @@ func (cfg *Config) RBEConfig(ctx context.Context, botID string) RBEConfig {
 	if mode == configpb.Pool_RBEMigration_BotModeAllocation_SWARMING {
 		return RBEConfig{
 			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
-		}
+		}, nil
 	}
 
-	// RBE pools must be configured to agree on what RBE instance to use. Pick
-	// the first set instance.
-	instance := ""
+	// RBE pools must be configured to agree on what RBE instance to use.
+	instances := stringset.New(len(perPool))
 	for _, poolCfg := range perPool {
 		if poolCfg.Instance != "" {
-			instance = poolCfg.Instance
-			break
+			instances.Add(poolCfg.Instance)
 		}
 	}
-	if instance == "" {
+	var instance string
+	switch instances.Len() {
+	case 0:
+		// Should be impossible per RBEMigration config validation.
 		panic("no RBE instance set in RBEMigration")
+	case 1:
+		instance = instances.ToSlice()[0]
+	default:
+		return RBEConfig{}, errors.Reason("bot pools are configured with conflicting RBE instances: %q", instances.ToSortedSlice()).Err()
 	}
 
-	var effectiveBotIDDimensions []string
+	// Pools that have RBE enabled either should all have EffectiveBotIDDimension
+	// disabled, or there should be at most one such pool (otherwise derived RBE
+	// bot ID is ambiguous, since it includes the pool name). This applies even
+	// if pools have equal EffectiveBotIDDimension values.
+	rbePools := 0
+	effectiveBotIDDimension := ""
 	for _, poolCfg := range perPool {
-		if poolCfg.EffectiveBotIDDimension != "" {
-			effectiveBotIDDimensions = append(effectiveBotIDDimensions, poolCfg.EffectiveBotIDDimension)
+		if poolCfg.Instance != "" {
+			rbePools++
+			if poolCfg.EffectiveBotIDDimension != "" {
+				effectiveBotIDDimension = poolCfg.EffectiveBotIDDimension
+			}
 		}
 	}
-
-	if len(effectiveBotIDDimensions) == 1 {
-		return RBEConfig{
-			Mode:                    mode,
-			Instance:                instance,
-			EffectiveBotIDDimension: effectiveBotIDDimensions[0],
-		}
-	}
-
-	if len(effectiveBotIDDimensions) > 1 {
-		logging.Errorf(
-			ctx, "Bot %s: bots using effective Bot ID feature cannot belong to multiple pools.", botID)
+	if effectiveBotIDDimension != "" && rbePools != 1 {
+		return RBEConfig{}, errors.Reason("bots using effective Bot ID feature cannot belong to multiple pools").Err()
 	}
 	return RBEConfig{
-		Mode:     mode,
-		Instance: instance,
-	}
+		Mode:                    mode,
+		Instance:                instance,
+		EffectiveBotIDDimension: effectiveBotIDDimension,
+	}, nil
 }
 
 // RouteToGoPercent returns how much traffic to this route should be handled by

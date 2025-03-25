@@ -171,11 +171,6 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 		body.State = botstate.Dict{}
 	}
 
-	// Log all errors for easier debugging.
-	for _, err := range errs {
-		logging.Errorf(ctx, "Validation error: %s", err)
-	}
-
 	// Update the bot state by marking the bot as "in handshake now". This is used
 	// by the monitoring cron to distinguish fully connected bots from bots that
 	// have just appeared and may not have full set of dimensions yet. Put the
@@ -191,6 +186,25 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
+	}
+
+	// Figure out if the bot should be using RBE.
+	var rbeParams *BotRBEParams
+	rbeConfig, err := conf.RBEConfig(botID)
+	switch {
+	case err != nil:
+		errs = append(errs, errors.Annotate(err, "conflicting RBE config").Err())
+	case rbeConfig.Instance != "":
+		rbeParams = &BotRBEParams{
+			Instance:   rbeConfig.Instance,
+			HybridMode: rbeConfig.Mode == configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+			PollToken:  "legacy-unused-field",
+		}
+	}
+
+	// Log all errors for easier debugging.
+	for _, err := range errs {
+		logging.Errorf(ctx, "Validation error: %s", err)
 	}
 
 	// See if the bot self-quarantined, in maintenance or sent invalid handshake
@@ -212,17 +226,6 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	botConfigName := botGroup.BotConfigScriptName
 	if botConfigName == "" {
 		botConfigName = "bot_config.py"
-	}
-
-	// Figure out if the bot should be using RBE.
-	var rbeParams *BotRBEParams
-	rbeConfig := conf.RBEConfig(ctx, botID)
-	if rbeConfig.Instance != "" {
-		rbeParams = &BotRBEParams{
-			Instance:   rbeConfig.Instance,
-			HybridMode: rbeConfig.Mode == configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
-			PollToken:  "legacy-unused-field",
-		}
 	}
 
 	// Initialize a new session.

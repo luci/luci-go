@@ -50,14 +50,15 @@ func TestHandshake(t *testing.T) {
 	t.Parallel()
 
 	const (
-		botID          = "good-bot"
-		botIdent       = "user:bot@example.com"
-		botIP          = "192.0.2.1"
-		botPool        = "bot-pool"
-		botHooksPy     = "custom_hooks.py"
-		botHooksPyBody = "custom hooks body"
-		rbeInstance    = "some-instance"
-		serverVer      = "server-version"
+		botID            = "good-bot"
+		botIdent         = "user:bot@example.com"
+		botIP            = "192.0.2.1"
+		botPool          = "bot-pool"
+		botHooksPy       = "custom_hooks.py"
+		botHooksPyBody   = "custom hooks body"
+		rbeInstance      = "some-instance"
+		serverVer        = "server-version"
+		conflictingBotID = "conflicting-bot"
 	)
 
 	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
@@ -84,6 +85,16 @@ func TestHandshake(t *testing.T) {
 		botGroupCfg.Dimensions = append(botGroupCfg.Dimensions, "extra:1", "extra:2")
 		botGroupCfg.BotConfigScript = botHooksPy
 
+		conflicting := mockedCfg.MockBot(conflictingBotID, botPool)
+		conflicting.Dimensions = append(conflicting.Dimensions, "pool:extra")
+		mockedCfg.MockPool("extra", "some:realm").RbeMigration = &configpb.Pool_RBEMigration{
+			RbeInstance:    "another-instance",
+			RbeModePercent: 100,
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+			},
+		}
+
 		conf := cfgtest.MockConfigs(ctx, mockedCfg)
 		configRev := conf.Cached(ctx).VersionInfo.Revision
 		botDigest := conf.Cached(ctx).VersionInfo.StableBot.Digest
@@ -94,7 +105,7 @@ func TestHandshake(t *testing.T) {
 
 		srv := NewBotAPIServer(conf, nil, secret, "test-project", serverVer)
 		srv.authorizeBot = func(ctx context.Context, bot string, methods []*configpb.BotAuth) error {
-			if bot == botID {
+			if bot == botID || bot == conflictingBotID {
 				return nil
 			}
 			return errors.Reason("denied").Err()
@@ -341,6 +352,22 @@ bad state dict: invalid character 'o' in literal null (expecting 'u')`))
 
 			assert.That(t, latestUpdate.HealthInfo.Quarantined, should.Equal(
 				"Bot self-quarantined.\nbad dimensions: key \"id\": must have only one value"))
+		})
+
+		t.Run("Conflicting RBE config", func(t *ftt.Test) {
+			_, err := call(&HandshakeRequest{
+				Dimensions: map[string][]string{
+					"id": {conflictingBotID},
+				},
+				State: botstate.Dict{
+					JSON: []byte(`{"state_key": "state_val"}`),
+				},
+				SessionID: "reported-session-id",
+			})
+			assert.NoErr(t, err)
+			assert.That(t, latestUpdate.HealthInfo, should.Match(&model.BotHealthInfo{
+				Quarantined: `conflicting RBE config: bot pools are configured with conflicting RBE instances: ["another-instance" "some-instance"]`,
+			}))
 		})
 	})
 }
