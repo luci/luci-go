@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
+	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -130,17 +131,32 @@ func TestReportTestResults(t *testing.T) {
 
 		t.Run("legacy test ID and variant", func(t *ftt.Test) {
 			cfg.ModuleName = ""
-			cfg.ModuleScheme = ""
+			cfg.ModuleScheme = legacyScheme()
 
 			t.Run("without ServerConfig.TestIDPrefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = ""
 				assert.Loosely(t, cfg.Validate(), should.BeNil)
 
-				tr.TestId = "HelloWorld.TestA"
-				tr.TestIdStructured = nil
-				expectedTR.TestId = "HelloWorld.TestA"
-				expectedTR.TestIdStructured = nil
-				checkResults()
+				t.Run("with legacy-style test ID", func(t *ftt.Test) {
+					tr.TestId = "HelloWorld.TestA"
+					tr.TestIdStructured = nil
+					expectedTR.TestId = "HelloWorld.TestA"
+					expectedTR.TestIdStructured = nil
+					checkResults()
+				})
+				t.Run("attempt to upload structured test ID via test_id field", func(t *ftt.Test) {
+					// While such usage is allowed when calling ResultDB directly, it is not
+					// allowed when using ResultSink as we expect the scheme to be declared
+					// upfront.
+					tr.TestId = ":module!myscheme:coarse:fine#method"
+
+					sink, err := newSinkServer(ctx, cfg)
+					assert.Loosely(t, err, should.BeNil)
+					req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+					_, err = sink.ReportTestResults(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`test_id: module_scheme: expected test scheme "legacy" but got scheme "myscheme"`))
+				})
 			})
 			t.Run("with ServerConfig.TestIDPrefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
@@ -187,7 +203,7 @@ func TestReportTestResults(t *testing.T) {
 		t.Run("structured test ID", func(t *ftt.Test) {
 			cfg.TestIDPrefix = ""
 			cfg.ModuleName = "mymodule"
-			cfg.ModuleScheme = "myscheme"
+			cfg.ModuleScheme = testScheme("myscheme")
 			assert.Loosely(t, cfg.Validate(), should.BeNil)
 
 			expectedTR.TestId = ""
@@ -257,6 +273,16 @@ func TestReportTestResults(t *testing.T) {
 					expectedTR.TestMetadata.PreviousTestId = ""
 					checkResults()
 				})
+			})
+			t.Run("with fields missing", func(t *ftt.Test) {
+				tr.TestIdStructured.CoarseName = ""
+
+				sink, err := newSinkServer(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+				_, err = sink.ReportTestResults(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`test_id_structured: coarse_name: required, please set a Package (scheme "myscheme")`))
 			})
 		})
 
@@ -589,7 +615,7 @@ func TestReportTestResults(t *testing.T) {
 		t.Run("report exoneration", func(t *ftt.Test) {
 			t.Run("legacy test ID", func(t *ftt.Test) {
 				cfg.ModuleName = ""
-				cfg.ModuleScheme = ""
+				cfg.ModuleScheme = legacyScheme()
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
 				cfg.ExonerateUnexpectedPass = true
 
@@ -613,7 +639,7 @@ func TestReportTestResults(t *testing.T) {
 			})
 			t.Run("structured test ID", func(t *ftt.Test) {
 				cfg.ModuleName = "modulename"
-				cfg.ModuleScheme = "scheme"
+				cfg.ModuleScheme = testScheme("scheme")
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
 				cfg.ExonerateUnexpectedPass = true
 
@@ -752,4 +778,40 @@ func TestUpdateInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})
+}
+
+// legacyScheme returns the 'legacy' Scheme for testing.
+func legacyScheme() *schemes.Scheme {
+	legacyScheme, err := schemes.FromProto(&pb.Scheme{
+		Id:                pbutil.LegacySchemeID,
+		HumanReadableName: "Legacy test results",
+		Case: &pb.Scheme_Level{
+			HumanReadableName: "Test Identifier",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	return legacyScheme
+}
+
+// testScheme returns the a Scheme for testing.
+func testScheme(id string) *schemes.Scheme {
+	scheme, err := schemes.FromProto(&pb.Scheme{
+		Id:                id,
+		HumanReadableName: "My scheme",
+		Coarse: &pb.Scheme_Level{
+			HumanReadableName: "Package",
+		},
+		Fine: &pb.Scheme_Level{
+			HumanReadableName: "Class",
+		},
+		Case: &pb.Scheme_Level{
+			HumanReadableName: "Method",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	return scheme
 }

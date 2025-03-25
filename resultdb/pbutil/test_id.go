@@ -117,6 +117,12 @@ func parseTestID(testID string) (BaseTestIdentifier, error) {
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
+	if moduleName == LegacyModuleName {
+		// To ensure our flat test IDs roundtrip back to the same value,
+		// we expect legacy test IDs to be serialized directly as the case
+		// name, not as :legacy...
+		return BaseTestIdentifier{}, errors.Reason("module %q may not be used within a structured test ID encoding", LegacySchemeID).Err()
+	}
 	moduleScheme, nextIndex, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{Terminator: ':'})
 	if err != nil {
 		return BaseTestIdentifier{}, err

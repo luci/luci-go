@@ -452,46 +452,13 @@ func TestValidateTestIDToScheme(t *testing.T) {
 			testID.ModuleScheme = "undefined"
 			assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
 		})
-		t.Run("Coarse Name", func(t *ftt.Test) {
-			t.Run("missing", func(t *ftt.Test) {
-				testID.CoarseName = ""
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: required, please set a Package (scheme \"junit\")"))
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				testID.CoarseName = "1com.example.package"
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: does not match validation regexp \"^[a-z][a-z_0-9.]+$\", please set a valid Package (scheme \"junit\")"))
-			})
-			t.Run("set when not expected", func(t *ftt.Test) {
-				testID.ModuleScheme = "basic"
-				testID.CoarseName = "value"
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: expected empty value (level is not defined by scheme \"basic\")"))
-			})
-		})
-		t.Run("Fine Name", func(t *ftt.Test) {
-			t.Run("missing", func(t *ftt.Test) {
-				testID.FineName = ""
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: required, please set a Class (scheme \"junit\")"))
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				testID.FineName = "1com.example.package"
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Class (scheme \"junit\")"))
-			})
-			t.Run("set when not expected", func(t *ftt.Test) {
-				testID.ModuleScheme = "basic"
-				testID.CoarseName = ""
-				testID.FineName = "value"
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("fine_name: expected empty value (level is not defined by scheme \"basic\")"))
-			})
-		})
-		t.Run("Case Name", func(t *ftt.Test) {
-			t.Run("missing", func(t *ftt.Test) {
-				testID.CaseName = ""
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("case_name: required, please set a Method (scheme \"junit\")"))
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				testID.CaseName = "1method"
-				assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("case_name: does not match validation regexp \"^[a-zA-Z_][a-zA-Z_0-9]+$\", please set a valid Method (scheme \"junit\")"))
-			})
+		t.Run("Invalid with respect to scheme", func(t *ftt.Test) {
+			// We do not need to test all ways a test result could be invalid,
+			// Scheme.Validate has plenty of test cases already. We just need to
+			// check that method is invoked.
+
+			testID.CoarseName = ""
+			assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: required, please set a Package (scheme \"junit\")"))
 		})
 	})
 }

@@ -67,6 +67,10 @@ func TestParseAndValidateTestID(t *testing.T) {
 					CaseName:     "ninja://:blink_web_tests/http/tests/inspector-protocol/network/response-interception-request-completes-network-closes.js",
 				}))
 			})
+			t.Run("Non-roundtrippable encodings illegal", func(t *ftt.Test) {
+				_, err := ParseAndValidateTestID(":legacy!legacy::#method")
+				assert.Loosely(t, err, should.ErrLike(`module "legacy" may not be used within a structured test ID encoding`))
+			})
 		})
 		t.Run("Structured", func(t *ftt.Test) {
 			t.Run("Valid", func(t *ftt.Test) {

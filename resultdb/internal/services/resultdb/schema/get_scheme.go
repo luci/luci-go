@@ -63,37 +63,7 @@ func (s *schemasServer) GetScheme(ctx context.Context, in *pb.GetSchemeRequest) 
 	if !ok {
 		return nil, appstatus.Errorf(codes.NotFound, "scheme with ID %q not found", schemeID)
 	}
-	return schemeFromConfig(scheme), nil
-}
-
-func schemeFromConfig(scheme *config.Scheme) *pb.Scheme {
-	return &pb.Scheme{
-		Name:              formatSchemeName(scheme.ID),
-		Id:                scheme.ID,
-		HumanReadableName: scheme.HumanReadableName,
-		Coarse:            schemeLevelFromConfig(scheme.Coarse),
-		Fine:              schemeLevelFromConfig(scheme.Fine),
-		Case:              schemeLevelFromConfig(scheme.Case),
-	}
-}
-
-func schemeLevelFromConfig(level *config.SchemeLevel) *pb.Scheme_Level {
-	if level == nil {
-		return nil
-	}
-	regexp := ""
-	if level.ValidationRegexp != nil {
-		regexp = level.ValidationRegexp.String()
-	}
-	return &pb.Scheme_Level{
-		HumanReadableName: level.HumanReadableName,
-		ValidationRegexp:  regexp,
-	}
-}
-
-func formatSchemeName(schemeID string) string {
-	// No escaping required as schemeID uses a safe alphabet.
-	return "schema/schemes/" + schemeID
+	return scheme.ToProto(), nil
 }
 
 // parseSchemeName parses a scheme resource name into its constituent ID.

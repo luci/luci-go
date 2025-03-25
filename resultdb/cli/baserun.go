@@ -55,6 +55,7 @@ type baseCommandRun struct {
 	http        *http.Client
 	prpcClient  *prpc.Client
 	resultdb    pb.ResultDBClient
+	schemas     pb.SchemasClient
 	recorder    pb.RecorderClient
 	resultdbCtx *lucictx.ResultDB
 }
@@ -137,6 +138,7 @@ func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMo
 		MaxConcurrentRequests: r.maxConcurrentRPCs,
 	}
 	r.resultdb = pb.NewResultDBPRPCClient(r.prpcClient)
+	r.schemas = pb.NewSchemasClient(r.prpcClient)
 	r.recorder = pb.NewRecorderPRPCClient(r.prpcClient)
 	return nil
 }

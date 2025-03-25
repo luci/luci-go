@@ -192,8 +192,11 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		// (at least based on local system time). This gives the best assurance
 		// the result will not be rejected by ResultDB backend when we upload
 		// it later. If it will, push back now to surface the error.
-		if err := pbutil.ValidateTestResult(now, nil, rdbtr); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate prepared result after applying resultsink config: %s", i, err)
+		validateToScheme := func(b pbutil.BaseTestIdentifier) error {
+			return s.cfg.ModuleScheme.Validate(b)
+		}
+		if err := pbutil.ValidateTestResult(now, validateToScheme, rdbtr); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
 
 		for id, a := range tr.GetArtifacts() {
@@ -318,7 +321,7 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 		// Structured test ID.
 		testID := &pb.TestIdentifier{
 			ModuleName:    cfg.ModuleName,
-			ModuleScheme:  cfg.ModuleScheme,
+			ModuleScheme:  cfg.ModuleScheme.ID,
 			ModuleVariant: cfg.Variant,
 			CoarseName:    tr.TestIdStructured.CoarseName,
 			FineName:      tr.TestIdStructured.FineName,

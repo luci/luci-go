@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -75,9 +76,11 @@ var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").E
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
 	Recorder pb.RecorderClient
+
 	// ArtifactStreamClient is an HTTP client to be used for streaming artifacts larger than
 	// MaxBatchableArtifactSize.
 	ArtifactStreamClient *http.Client
+
 	// ArtifactStreamHost is the hostname of an ResultDB service instance to which
 	// artifacts are streamed.
 	ArtifactStreamHost string
@@ -94,6 +97,7 @@ type ServerConfig struct {
 
 	// Invocation is the name of the invocation that test results should append to.
 	Invocation string
+
 	// invocationID is a cached copy of the ID extracted from `Invocation`.
 	invocationID string
 
@@ -114,9 +118,11 @@ type ServerConfig struct {
 	// Must not be set in conjunction with TestIDPrefix.
 	ModuleName string
 
-	// The test scheme of the module. Must be set if ModuleName is set.
+	// The test scheme, as retrieved from the luci.resultdb.v1.Schema service.
+	// Must be set. If ModuleName is set, a scheme other than 'legacy' is expected.
+	// Otherwise, the scheme for 'legacy' is expected.
 	// Refer to go/resultdb-schemes for information about test schemes.
-	ModuleScheme string
+	ModuleScheme *schemes.Scheme
 
 	// The module variant.
 	// This also sets the module variant for test results uploaded with legacy-form IDs.
@@ -170,6 +176,9 @@ type ServerConfig struct {
 
 // Validate validates all the config fields.
 func (c *ServerConfig) Validate() error {
+	if c.Recorder == nil {
+		return errors.Reason("Recorder: unspecified").Err()
+	}
 	if c.ArtifactStreamClient == nil {
 		return errors.Reason("ArtifactStreamClient: unspecified").Err()
 	}
@@ -182,9 +191,6 @@ func (c *ServerConfig) Validate() error {
 	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
 		return errors.Annotate(err, "Invocation").Err()
 	}
-	if c.Recorder == nil {
-		return errors.Reason("Recorder: unspecified").Err()
-	}
 	if c.UpdateToken == "" {
 		return errors.Reason("UpdateToken: unspecified").Err()
 	}
@@ -196,18 +202,28 @@ func (c *ServerConfig) Validate() error {
 	if c.MaxBatchableArtifactSize > 10*1024*1024 {
 		return errors.Reason("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize).Err()
 	}
-	if c.ModuleName != "" || c.ModuleScheme != "" {
+	if c.ModuleScheme == nil {
+		// Having the module name, scheme and variant locked-in upfront makes
+		// it easy for us to start uploading work unit-level errors to each
+		// module in future, based on the resultsink status.
+		return errors.Reason("ModuleScheme: unspecified").Err()
+	}
+	if c.ModuleName != "" {
 		if err := pbutil.ValidateModuleName(c.ModuleName); err != nil {
 			return errors.Annotate(err, "ModuleName").Err()
 		}
 		if c.ModuleName == pbutil.LegacyModuleName {
 			return errors.Reason("ModuleName: cannot be %q", pbutil.LegacyModuleName).Err()
 		}
-		if err := pbutil.ValidateModuleScheme(c.ModuleScheme, false /*isLegacyModule*/); err != nil {
-			return errors.Annotate(err, "ModuleScheme").Err()
+		if c.ModuleScheme.ID == pbutil.LegacySchemeID {
+			return errors.Reason("ModuleScheme: may not be 'legacy' if ModuleName is set").Err()
 		}
 		if c.TestIDPrefix != "" {
 			return errors.Reason("TestIDPrefix: may not be set if ModuleName is set").Err()
+		}
+	} else {
+		if c.ModuleScheme.ID != pbutil.LegacySchemeID {
+			return errors.Reason("ModuleScheme: should be 'legacy' if ModuleName is not set").Err()
 		}
 	}
 	if c.PreviousTestIDPrefix != nil {

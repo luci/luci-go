@@ -246,30 +246,5 @@ func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.Bas
 	if !ok {
 		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()
 	}
-	if err := ValidateTestIDComponent(testID.CoarseName, testID.ModuleScheme, scheme.Coarse); err != nil {
-		return errors.Annotate(err, "coarse_name").Err()
-	}
-	if err := ValidateTestIDComponent(testID.FineName, testID.ModuleScheme, scheme.Fine); err != nil {
-		return errors.Annotate(err, "fine_name").Err()
-	}
-	if err := ValidateTestIDComponent(testID.CaseName, testID.ModuleScheme, scheme.Case); err != nil {
-		return errors.Annotate(err, "case_name").Err()
-	}
-	return nil
-}
-
-func ValidateTestIDComponent(component, scheme string, level *config.SchemeLevel) error {
-	if level != nil {
-		if component == "" {
-			return errors.Reason("required, please set a %s (scheme %q)", level.HumanReadableName, scheme).Err()
-		}
-		if level.ValidationRegexp != nil && !level.ValidationRegexp.MatchString(component) {
-			return errors.Reason("does not match validation regexp %q, please set a valid %s (scheme %q)", level.ValidationRegexp.String(), level.HumanReadableName, scheme).Err()
-		}
-	} else {
-		if component != "" {
-			return errors.Reason("expected empty value (level is not defined by scheme %q)", scheme).Err()
-		}
-	}
-	return nil
+	return scheme.Validate(testID)
 }

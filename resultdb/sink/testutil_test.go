@@ -61,7 +61,7 @@ func testServerConfig(addr, tk string) ServerConfig {
 		invocationID:             "u-foo-1587421194_893166206",
 		UpdateToken:              "UpdateToken-ABC",
 		ModuleName:               "module_name",
-		ModuleScheme:             "scheme",
+		ModuleScheme:             testScheme("scheme"),
 		MaxBatchableArtifactSize: 2 * 1024 * 1024,
 	}
 }

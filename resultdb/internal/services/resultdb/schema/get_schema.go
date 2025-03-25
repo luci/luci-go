@@ -58,7 +58,7 @@ func (s *schemasServer) Get(ctx context.Context, in *pb.GetSchemaRequest) (*pb.S
 	// Construct schemes for response.
 	schemes := make(map[string]*pb.Scheme, 1+len(cfg.Schemes))
 	for _, scheme := range cfg.Schemes {
-		schemes[scheme.ID] = schemeFromConfig(scheme)
+		schemes[scheme.ID] = scheme.ToProto()
 	}
 
 	return &pb.Schema{

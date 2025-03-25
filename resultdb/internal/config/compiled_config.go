@@ -24,18 +24,10 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
-
-// LegacyScheme is the built-in configuration for the special scheme "legacy".
-var LegacyScheme = &configpb.Scheme{
-	Id:                pbutil.LegacySchemeID,
-	HumanReadableName: "Legacy test results",
-	Case: &configpb.Scheme_Level{
-		HumanReadableName: "Test Identifier",
-	},
-}
 
 // CompiledServiceConfig is a copy of service configuration with
 // regular expression pre-compiled.
@@ -47,46 +39,16 @@ type CompiledServiceConfig struct {
 	Config   *configpb.Config
 	Revision string
 	// The compiled scheme configuration, by scheme ID.
-	Schemes map[string]*Scheme
-}
-
-// Scheme represents the configuration for a type of test.
-// For example, JUnit or GTest.
-type Scheme struct {
-	// The identifier of the scheme.
-	ID string
-	// The human readable scheme name.
-	HumanReadableName string
-	// Configuration for the coarse name level.
-	// If set, the scheme uses the coarse name level.
-	Coarse *SchemeLevel
-	// Configuration for the fine name level.
-	// If set, the fine name.
-	Fine *SchemeLevel
-	// Configuration for the case name level.
-	// Always set.
-	Case *SchemeLevel
-}
-
-// SchemeLevel represents a test hierarchy level in a test scheme.
-type SchemeLevel struct {
-	// The human readable name of the level.
-	HumanReadableName string
-	// The compiled validation regular expression.
-	// May be nil if no validation is to be appled.
-	ValidationRegexp *regexp.Regexp
+	Schemes map[string]*schemes.Scheme
 }
 
 // NewCompiledServiceConfig compiles the given raw service config
 // into a form that is faster to apply.
 func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledServiceConfig, error) {
-	compiledSchemes := make(map[string]*Scheme)
+	compiledSchemes := make(map[string]*schemes.Scheme)
 
-	allSchemes := make([]*configpb.Scheme, 0, 1+len(cfg.Schemes))
-	allSchemes = append(allSchemes, LegacyScheme)
-	allSchemes = append(allSchemes, cfg.Schemes...)
-
-	for _, scheme := range allSchemes {
+	compiledSchemes[pbutil.LegacySchemeID] = schemes.LegacyScheme
+	for _, scheme := range cfg.Schemes {
 		compiledScheme, err := compileScheme(scheme)
 		if err != nil {
 			return nil, err
@@ -100,8 +62,8 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 	}, nil
 }
 
-func compileScheme(scheme *configpb.Scheme) (*Scheme, error) {
-	compiledScheme := &Scheme{
+func compileScheme(scheme *configpb.Scheme) (*schemes.Scheme, error) {
+	compiledScheme := &schemes.Scheme{
 		ID:                scheme.Id,
 		HumanReadableName: scheme.HumanReadableName,
 	}
@@ -127,8 +89,8 @@ func compileScheme(scheme *configpb.Scheme) (*Scheme, error) {
 	return compiledScheme, nil
 }
 
-func NewSchemeLevel(level *configpb.Scheme_Level) (*SchemeLevel, error) {
-	result := &SchemeLevel{
+func NewSchemeLevel(level *configpb.Scheme_Level) (*schemes.SchemeLevel, error) {
+	result := &schemes.SchemeLevel{
 		HumanReadableName: level.HumanReadableName,
 	}
 	if level.ValidationRegexp != "" {

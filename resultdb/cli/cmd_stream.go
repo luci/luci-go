@@ -29,7 +29,9 @@ import (
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -42,11 +44,15 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/realms"
 
+	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/sink"
@@ -329,6 +335,25 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	if r.invProperties.Struct != nil && r.invPropertiesFile != "" {
 		return errors.Reason("cannot specify both -inv-properties and -inv-properties-file at the same time").Err()
 	}
+	if r.moduleName != "" {
+		if err := pbutil.ValidateModuleName(r.moduleName); err != nil {
+			return errors.Annotate(err, "invalid module name").Err()
+		}
+		if r.moduleName == pbutil.LegacyModuleName {
+			return errors.Reason("-module-name cannot be %q", pbutil.LegacyModuleName).Err()
+		}
+		if r.moduleScheme == "" {
+			return errors.Reason("-module-name requires -module-scheme to also be specified").Err()
+		}
+		if err := pbutil.ValidateModuleScheme(r.moduleScheme, false /*isLegacyModule*/); err != nil {
+			return errors.Annotate(err, "invalid module scheme").Err()
+		}
+	} else {
+		if r.moduleScheme != "" {
+			return errors.Reason("-module-scheme requires -module-name to also be specified").Err()
+		}
+	}
+
 	sourceSpecs := 0
 	if r.sources.Sources != nil {
 		sourceSpecs++
@@ -363,6 +388,15 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	if err := r.initClients(ctx, loginMode); err != nil {
 		return r.done(err)
+	}
+
+	// Fetch details of the module scheme from the ResultDB host.
+	// This allows us to locally validate test IDs against the scheme and push
+	// back against any invalid test IDs before we buffer them for async
+	// upload.
+	scheme, err := r.fetchScheme(ctx)
+	if err != nil {
+		return r.done(errors.Annotate(err, "fetch scheme").Err())
 	}
 
 	// if -new is passed, create a new invocation. If not, use the existing one set in
@@ -426,7 +460,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 	}()
 
-	err = r.runTestCmd(ctx, args)
+	err = r.runTestCmd(ctx, args, scheme)
 	ec, ok := exitcode.Get(err)
 	if !ok {
 		logging.Errorf(ctx, "rdb-stream: failed to run the test command: %s", err)
@@ -448,7 +482,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	return ec
 }
 
-func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
+func (r *streamRun) runTestCmd(ctx context.Context, args []string, scheme *schemes.Scheme) error {
 	cmdCtx, cancelCmd := lucictx.TrackSoftDeadline(ctx, reservePeriodSecs*time.Second)
 	defer cancelCmd()
 
@@ -489,10 +523,11 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 
 	cfg := sink.ServerConfig{
+		Recorder:             r.recorder,
+		ArtifactStreamClient: r.http,
+
 		ArtChannelMaxLeases:        r.artChannelMaxLeases,
-		ArtifactStreamClient:       r.http,
 		ArtifactStreamHost:         r.host,
-		Recorder:                   r.recorder,
 		TestResultChannelMaxLeases: r.trChannelMaxLeases,
 
 		Invocation:  r.invocation.Name,
@@ -500,7 +535,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 
 		TestIDPrefix:            r.testIDPrefix,
 		ModuleName:              r.moduleName,
-		ModuleScheme:            r.moduleScheme,
+		ModuleScheme:            scheme,
 		PreviousTestIDPrefix:    r.previousTestIDPrefixFromArg(),
 		BaseTags:                pbutil.FromStrpairMap(r.tags),
 		Variant:                 &pb.Variant{Def: r.vars},
@@ -536,6 +571,49 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		}
 		return nil
 	})
+}
+
+func (r *streamRun) fetchScheme(ctx context.Context) (*schemes.Scheme, error) {
+	schemeToFetch := r.moduleScheme
+	if r.moduleScheme == "" {
+		// Use of structured test result uploads not enabled.
+		return schemes.LegacyScheme, nil
+	}
+
+	var scheme *pb.Scheme
+	doFetchScheme := func() error {
+		result, err := r.schemas.GetScheme(ctx, &pb.GetSchemeRequest{
+			Name: fmt.Sprintf("schema/schemes/%s", r.moduleScheme),
+		})
+		if err != nil {
+			if status.Code(err) == codes.NotFound {
+				logging.Errorf(ctx, "Module scheme %q is not known by the ResultDB deployment. Refer to go/resultdb-schemes for information about valid schemes and/or update the value passed to -module-scheme.", schemeToFetch)
+			}
+			// Tag transient response codes with transient.Tag so that
+			// they can be retried.
+			return grpcutil.WrapIfTransient(err)
+		}
+		scheme = result
+		return nil
+	}
+
+	// Configure the retry
+	err := retry.Retry(ctx, transient.Only(func() retry.Iterator {
+		// Start at one second, and increase exponentially to
+		// 32 seconds.
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   1 * time.Second, // initial delay time
+				Retries: 6,               // number of retries
+			},
+			Multiplier: 2,                // backoff multiplier
+			MaxDelay:   32 * time.Second, // maximum delay time
+		}
+	}), doFetchScheme, nil)
+	if err != nil {
+		return nil, err
+	}
+	return schemes.FromProto(scheme)
 }
 
 func (r *streamRun) locationTagsFromArg(ctx context.Context) (*sinkpb.LocationTags, error) {
