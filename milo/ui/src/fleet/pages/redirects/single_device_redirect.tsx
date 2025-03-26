@@ -15,7 +15,7 @@
 import { Navigate } from 'react-router';
 
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
-import { getFilterValue } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
+import { getFilterValue } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';

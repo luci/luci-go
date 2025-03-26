@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { MultiSelectFilter } from './multi_select_filter';
+export { DeviceListFilterBar as MultiSelectFilter } from '../device_table/device_list_filter_bar';

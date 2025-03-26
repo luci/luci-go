@@ -14,11 +14,7 @@
 
 import React from 'react';
 
-export function hasAnyModifier(
-  e:
-    | React.KeyboardEvent<HTMLDivElement>
-    | React.KeyboardEvent<HTMLUListElement>,
-) {
+export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
   return e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
 }
 

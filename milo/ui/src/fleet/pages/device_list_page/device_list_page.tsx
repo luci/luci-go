@@ -24,14 +24,14 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
-import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { MainMetrics } from '@/fleet/components/main_metrics';
-import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
+import { MultiSelectFilter } from '@/fleet/components/filter_dropdown';
 import {
   filtersUpdater,
   getFilters,
   stringifyFilters,
-} from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
+} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { MainMetrics } from '@/fleet/components/main_metrics';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';

@@ -16,20 +16,19 @@ import AddIcon from '@mui/icons-material/Add';
 import { Chip, colors } from '@mui/material';
 import { useState } from 'react';
 
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  FilterDropdown,
+  FilterCategoryData as FilterCategoryData,
+} from './filter_dropdown';
 
-import { AddFilterDropdown } from './add_filter_dropdown';
-
-export function AddFilterButton({
+export function FilterButton<T>({
   filterOptions,
-  selectedOptions,
-  onSelectedOptionsChange,
   isLoading,
+  onApply,
 }: {
-  filterOptions: OptionCategory[];
-  selectedOptions: SelectedOptions;
-  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
+  filterOptions: FilterCategoryData<T>[];
   isLoading?: boolean;
+  onApply: () => void;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -41,13 +40,12 @@ export function AddFilterButton({
         variant="outlined"
         icon={<AddIcon sx={{ color: colors.blue[600], width: 18 }} />}
       ></Chip>
-      <AddFilterDropdown
+      <FilterDropdown
         filterOptions={filterOptions}
-        selectedOptions={selectedOptions}
-        onSelectedOptionsChange={onSelectedOptionsChange}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
         isLoading={isLoading}
+        onApply={onApply}
       />
     </>
   );

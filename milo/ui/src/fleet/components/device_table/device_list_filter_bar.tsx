@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 
 import { useMemo } from 'react';
 
-import { OptionCategory } from '@/fleet/types';
-import { SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
-import { AddFilterButton } from './add_filter_button';
-import { SelectedChip } from './selected_chip';
+import { SelectedChip } from '../filter_dropdown/selected_chip';
+
+import { DeviceListFilterButton } from './device_list_filter_button';
 
 function elevateSelectedFiltersToTheTop(
   filterOptions: OptionCategory[],
@@ -42,7 +42,7 @@ function elevateSelectedFiltersToTheTop(
   });
 }
 
-export const MultiSelectFilter = ({
+export const DeviceListFilterBar = ({
   filterOptions,
   selectedOptions,
   onSelectedOptionsChange,
@@ -74,7 +74,7 @@ export const MultiSelectFilter = ({
             />
           ),
       )}
-      <AddFilterButton
+      <DeviceListFilterButton
         filterOptions={sortedFilterOptions}
         selectedOptions={selectedOptions}
         onSelectedOptionsChange={onSelectedOptionsChange}

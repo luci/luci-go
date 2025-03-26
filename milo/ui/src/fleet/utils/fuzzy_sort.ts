@@ -50,7 +50,10 @@ export type SortedElement<ElementType> = {
  * characters in the query are present in the target in the same
  * order and priorities consecutive matches
  */
-const fuzzySubstring: ScoringFunction = (query: string, target: string) => {
+export const fuzzySubstring: ScoringFunction = (
+  query: string,
+  target: string,
+) => {
   // Convert strings to lowercase for case-insensitive matching
   target = target.toLowerCase();
   query = query.toLowerCase();

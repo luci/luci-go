@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 // Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,40 +22,53 @@ import {
   MenuList,
   Skeleton,
 } from '@mui/material';
-import _ from 'lodash';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { SelectedOptions } from '@/fleet/types';
-import { OptionCategory, OptionValue } from '@/fleet/types/option';
-import { fuzzySort, SortedElement } from '@/fleet/utils/fuzzy_sort';
+import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 import { SearchInput } from '../search_input';
 
-import { OptionsMenu } from './options_menu';
+export type OptionComponentProps<T> = {
+  searchQuery: string;
+  optionComponentProps: T;
+};
 
-export function AddFilterDropdown({
-  filterOptions,
-  selectedOptions: initSelectedOptions,
-  onSelectedOptionsChange,
-  anchorEl,
-  setAnchorEL,
-  isLoading,
-}: {
-  filterOptions: OptionCategory[];
-  selectedOptions: SelectedOptions;
-  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
+export type OptionComponent<T> = React.FC<OptionComponentProps<T>>;
+
+export type FilterCategoryData<T> = {
+  value: string;
+  label: string;
+  getSearchScore: (searchQuery: string) => {
+    score: number;
+    matches: number[];
+  };
+  optionsComponent: OptionComponent<T>;
+  optionsComponentProps: T;
+};
+
+interface FilterDropdownProps<T> {
+  filterOptions: FilterCategoryData<T>[];
+  onApply: () => void;
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
   isLoading?: boolean;
-}) {
-  const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
-  const [openCategory, setOpenCategory] = useState<string | undefined>();
+}
+
+// TODO: b/406242608 Cover this with tests. We could probably split the device_list_filter_bar tests to be shared for this component
+export function FilterDropdown<T>({
+  filterOptions,
+  onApply,
+  anchorEl,
+  setAnchorEL,
+  isLoading,
+}: FilterDropdownProps<T>) {
+  const [openCategory, setOpenCategory] = useState<
+    { value: string; anchor: HTMLElement } | undefined
+  >();
   const [searchQuery, setSearchQuery] = useState('');
-  const [tempSelectedOptions, setTempSelectedOptions] =
-    useState(initSelectedOptions);
   const searchInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -65,15 +79,10 @@ export function AddFilterDropdown({
     }
   }, [anchorEl]);
 
-  useEffect(() => {
-    setTempSelectedOptions(initSelectedOptions);
-  }, [initSelectedOptions, openCategory]);
-
   const closeInnerMenu = useCallback(() => {
+    openCategory?.anchor?.focus();
     setOpenCategory(undefined);
-    anchorElInner?.focus();
-    setAnchorELInner(null);
-  }, [anchorElInner]);
+  }, [openCategory]);
 
   const closeMenu = () => {
     setSearchQuery('');
@@ -83,30 +92,81 @@ export function AddFilterDropdown({
 
   const applyOptions = () => {
     closeMenu();
-    onSelectedOptionsChange(tempSelectedOptions);
+    onApply();
   };
 
-  const filterResults = useMemo(() => {
-    const newFilterResults = updateFilterResults(filterOptions, searchQuery);
-    if (
-      newFilterResults.filter((f) => f.parent.el.value === openCategory)
-        .length === 0
-    ) {
-      closeInnerMenu();
-    }
+  const filterResults = filterOptions
+    .map((option) => {
+      const searchScore = option.getSearchScore(searchQuery);
 
-    return newFilterResults;
-  }, [closeInnerMenu, filterOptions, openCategory, searchQuery]);
+      return {
+        el: option,
+        score: searchScore.score,
+        matches: searchScore.matches,
+      } as SortedElement<FilterCategoryData<T>>;
+    })
+    .filter((a) => searchQuery === '' || a.score > 0)
+    .sort((a, b) => b.score - a.score);
 
-  const handleRandomTextInput: (
-    e: React.KeyboardEvent<HTMLUListElement>,
-  ) => void = (e: React.KeyboardEvent<HTMLUListElement>) => {
+  const handleRandomTextInput: (e: React.KeyboardEvent<HTMLElement>) => void = (
+    e: React.KeyboardEvent<HTMLElement>,
+  ) => {
     // allow user to search when any alphanumeric key has been pressed
     if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
       searchInput.current?.focus();
       setSearchQuery((old) => old + e.key);
       e.preventDefault(); // Avoid race condition to type twice in the input
     }
+  };
+
+  const renderOpenCategory = () => {
+    if (!openCategory) return <></>;
+
+    const openCategoryData = filterOptions.find(
+      (option) => option.value === openCategory.value,
+    )!;
+
+    const OptionComponent = openCategoryData.optionsComponent;
+
+    return (
+      <Card onClick={(e) => e.stopPropagation()}>
+        <div
+          onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+            if (e.key === 'Tab') {
+              closeMenu();
+            }
+            if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+              closeInnerMenu();
+            }
+            if (e.key === 'Enter' && e.ctrlKey) {
+              applyOptions();
+            }
+            if (
+              e.key === 'Delete' ||
+              e.key === 'Backspace' ||
+              e.key === 'Cancel'
+            ) {
+              setSearchQuery('');
+              searchInput.current?.focus();
+            }
+
+            handleRandomTextInput(e);
+          }}
+        >
+          <OptionComponent
+            key={openCategoryData.value}
+            searchQuery={searchQuery}
+            optionComponentProps={openCategoryData.optionsComponentProps}
+          />
+          <Footer
+            onCancelClick={closeMenu}
+            onApplyClick={() => {
+              applyOptions();
+            }}
+          />
+        </div>
+      </Card>
+    );
   };
 
   return (
@@ -183,19 +243,20 @@ export function AddFilterDropdown({
             ) : (
               [
                 filterResults.map((searchResult) => {
-                  const parent = searchResult.parent;
+                  const parent = searchResult;
                   const parentMatches = parent.matches;
 
                   return (
                     <MenuItem
                       onClick={(event) => {
                         // The onClick fires also when closing the menu
-                        if (openCategory !== parent.el.value) {
-                          setOpenCategory(parent.el.value);
-                          setAnchorELInner(event.currentTarget);
+                        if (openCategory?.value !== parent.el.value) {
+                          setOpenCategory({
+                            value: parent.el.value,
+                            anchor: event.currentTarget,
+                          });
                         } else {
                           setOpenCategory(undefined);
-                          setAnchorELInner(null);
                         }
                       }}
                       onKeyDown={(e) => {
@@ -205,7 +266,7 @@ export function AddFilterDropdown({
                       }}
                       key={`item-${parent.el.value}`}
                       disableRipple
-                      selected={openCategory === parent.el.value}
+                      selected={openCategory?.value === parent.el.value}
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -231,82 +292,15 @@ export function AddFilterDropdown({
         <div
           css={{
             position: 'absolute',
-            ...getInnerCardRefPositions(anchorEl, anchorElInner, openCategory),
+            ...getInnerCardRefPositions(anchorEl, openCategory?.anchor),
           }}
         >
-          {anchorElInner && openCategory !== undefined && (
-            <Card onClick={(e) => e.stopPropagation()}>
-              <MenuList
-                variant="selectedMenu"
-                sx={{
-                  maxHeight: 400,
-                  width: 300,
-                }}
-                onKeyDown={(e: React.KeyboardEvent<HTMLUListElement>) => {
-                  if (e.key === 'Tab') {
-                    closeMenu();
-                  }
-                  if (e.key === 'Escape' || e.key === 'ArrowLeft') {
-                    closeInnerMenu();
-                  }
-                  if (e.key === 'Enter' && e.ctrlKey) {
-                    applyOptions();
-                  }
-                  if (
-                    e.key === 'Delete' ||
-                    e.key === 'Backspace' ||
-                    e.key === 'Cancel'
-                  ) {
-                    setSearchQuery('');
-                    searchInput.current?.focus();
-                  }
-
-                  handleRandomTextInput(e);
-                }}
-              >
-                <OptionsMenu
-                  elements={
-                    filterResults.find(
-                      (r) => r.parent.el.value === openCategory,
-                    )?.children ?? []
-                  }
-                  selectedElements={new Set(tempSelectedOptions[openCategory])}
-                  flipOption={(value) =>
-                    flipOption(
-                      openCategory,
-                      value,
-                      tempSelectedOptions,
-                      setTempSelectedOptions,
-                    )
-                  }
-                />
-              </MenuList>
-              <Footer onCancelClick={closeMenu} onApplyClick={applyOptions} />
-            </Card>
-          )}
+          {renderOpenCategory()}
         </div>
       </div>
     </>
   );
 }
-
-const flipOption = (
-  parentValue: string,
-  o2Value: string,
-  tempSelectedOptions: SelectedOptions,
-  setTempSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>,
-) => {
-  const currentValues = tempSelectedOptions[parentValue] ?? [];
-
-  const newValues = currentValues.includes(o2Value)
-    ? currentValues.filter((v) => v !== o2Value)
-    : currentValues.concat(o2Value);
-
-  setTempSelectedOptions({
-    ...(tempSelectedOptions ?? {}),
-    [parentValue]: newValues,
-  });
-};
 
 const getCardRefPosition = (anchorEl: HTMLElement | null) => {
   const anchorRect = anchorEl?.getBoundingClientRect();
@@ -321,20 +315,17 @@ const getCardRefPosition = (anchorEl: HTMLElement | null) => {
 
 const getInnerCardRefPositions = (
   anchorEl: HTMLElement | null,
-  anchorElInner: HTMLElement | null,
-  openCategory: string | undefined,
+  anchorElInner: HTMLElement | undefined,
 ) => {
   const anchorRect = anchorEl?.getBoundingClientRect();
   const outerMenuRect = anchorElInner?.getBoundingClientRect();
 
   if (!anchorRect) return;
   if (!outerMenuRect) return;
-  if (!openCategory) return;
 
   const anchorParentRect = anchorEl?.parentElement?.getBoundingClientRect();
 
   const newInnerCardRefPosition = {
-    openCategory,
     left: `${anchorRect.left - (anchorParentRect?.left || 0) + outerMenuRect.width + 15}px`,
     top: '',
     bottom: '',
@@ -347,33 +338,4 @@ const getInnerCardRefPositions = (
     newInnerCardRefPosition.bottom = '';
   }
   return newInnerCardRefPosition;
-};
-
-const updateFilterResults = (
-  filterOptions: OptionCategory[],
-  searchQuery: string,
-) => {
-  const flatMapWithParent = filterOptions.flatMap((category) => [
-    { ...category, parent: undefined },
-    ...category.options.map((o) => ({ ...o, parent: category })),
-  ]);
-  const groupsByCategory = Object.values(
-    _.groupBy(
-      fuzzySort(searchQuery)(flatMapWithParent, (el) => el.label),
-      (o) => o.el.parent?.value ?? o.el.value,
-    ),
-  );
-  const categories = groupsByCategory.map((g) => ({
-    parent: g.find(
-      (x) => x.el.parent === undefined,
-    ) as SortedElement<OptionCategory>,
-    children: g
-      .filter((x) => x.el.parent !== undefined)
-      .map((c) => c as SortedElement<OptionValue>),
-  }));
-  if (searchQuery === '') return categories;
-  return categories.filter(
-    (g) =>
-      g.parent.score > 0 || (g.children.length > 0 && g.children[0].score > 0),
-  );
 };

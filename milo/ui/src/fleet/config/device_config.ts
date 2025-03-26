@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { stringifyFilters } from '../components/multi_select_filter/search_param_utils/search_param_utils';
+import { stringifyFilters } from '../components/filter_dropdown/search_param_utils/search_param_utils';
 
 // this is loosely defining default columns based on b/391621656
 // Swarming labels are dynamic, but for specific views, such as FLOPS'

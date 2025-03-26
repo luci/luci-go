@@ -31,7 +31,7 @@ import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole
 import {
   FILTERS_PARAM_KEY,
   stringifyFilters,
-} from '../multi_select_filter/search_param_utils/search_param_utils';
+} from '../filter_dropdown/search_param_utils/search_param_utils';
 
 const Container = styled.div`
   padding: 16px 21px;

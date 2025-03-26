@@ -27,7 +27,7 @@ import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
-import { OptionsMenu } from '../multi_select_filter/options_menu';
+import { OptionsMenu } from '../filter_dropdown/options_menu';
 import { SearchInput } from '../search_input';
 
 import { Footer } from './footer';

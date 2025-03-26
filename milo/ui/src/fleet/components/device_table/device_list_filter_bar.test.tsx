@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ import { useEffect, useState } from 'react';
 
 import { SelectedOptions } from '@/fleet/types';
 
+import { DeviceListFilterBar } from './device_list_filter_bar';
 import { TEST_FILTER_OPTIONS } from './mock_data';
-
-import { MultiSelectFilter } from '.';
 
 const mockSelectedOptions = jest.fn();
 
@@ -37,7 +36,7 @@ const TestComponent = () => {
   }, [selectedOptions]);
 
   return (
-    <MultiSelectFilter
+    <DeviceListFilterBar
       filterOptions={TEST_FILTER_OPTIONS}
       selectedOptions={selectedOptions}
       onSelectedOptionsChange={setSelectedOptions}
@@ -108,7 +107,7 @@ const CTRL_K_KEY = {
   ctrlKey: true,
 };
 
-describe('<MultiSelectFilter />', () => {
+describe('<DeviceListFilterBar />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     mockMenuItemDomProperties();
@@ -202,6 +201,25 @@ describe('<MultiSelectFilter />', () => {
     expect(mockSelectedOptions).not.toHaveBeenLastCalledWith({
       'val-1': ['o11'],
     });
+  });
+
+  it('should clear the selection when changing the open category', () => {
+    render(<TestComponent />);
+
+    click(['Add filter', 'Option 1', 'The first option']);
+    expect(
+      within(screen.getByText('The first option').closest('li')!).getByRole(
+        'checkbox',
+      ),
+    ).toBeChecked();
+
+    click(['Option 2', 'Option 1']);
+
+    expect(
+      within(screen.getByText('The first option').closest('li')!).getByRole(
+        'checkbox',
+      ),
+    ).not.toBeChecked();
   });
 
   it('should remove a filter when clicking on the x', () => {

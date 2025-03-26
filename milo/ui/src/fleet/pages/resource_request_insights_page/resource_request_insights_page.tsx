@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import { Alert, CircularProgress } from '@mui/material';
+import {
+  Alert,
+  Checkbox,
+  CircularProgress,
+  MenuItem,
+  MenuList,
+} from '@mui/material';
 import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -26,19 +32,24 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
-import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
+import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
+import {
+  FilterCategoryData,
+  OptionComponent,
+} from '@/fleet/components/filter_dropdown/filter_dropdown';
 import {
   filtersUpdater,
   getFilters,
   GetFiltersResult,
-} from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
+} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
 import { toIsoString } from '@/fleet/utils/dates';
+import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -194,69 +205,14 @@ const getOrderByDto = (sortModel: GridSortModel) => {
   return `${getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id} ${sortColumn.sort}`;
 };
 
-// TODO(justinsuen): remove hardcoded filter categories and pull them from BQ.
-const filterOpts: OptionCategory[] = [
-  {
-    label: 'RR ID',
-    value: 'rr_id',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-  {
-    label: 'Resource Details',
-    value: 'resource_details',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-  {
-    label: 'Procurement End Date',
-    value: 'procurement_delivery_date',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-  {
-    label: 'Build Target End Date',
-    value: 'build_target_delivery_date',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-  {
-    label: 'QA Target End Date',
-    value: 'qa_delivery_date',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-  {
-    label: 'Config Target End Date',
-    value: 'config_target_delivery_date',
-    options: [
-      {
-        label: 'filter 1',
-        value: 'filter value 1',
-      },
-    ],
-  },
-];
+interface ResourceRequestInsightsOptionComponentProps {
+  onSelectedOptionsChange: (x: SelectedOptions) => void;
+}
+interface RriFilterOption {
+  label: string;
+  value: string;
+  optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
+}
 
 export const ResourceRequestListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -272,6 +228,87 @@ export const ResourceRequestListPage = () => {
   const [selectedOptions, setSelectedOptions] = useState<GetFiltersResult>(
     getFilters(searchParams),
   );
+
+  const isSelected = (category: string, value: string) => {
+    if (!selectedOptions.filters) return false;
+    if (!selectedOptions.filters[category]) return false;
+    return selectedOptions.filters[category].includes(value);
+  };
+
+  const flipOption = (category: string, value: string) => {
+    let newSelectedOptions = selectedOptions.filters;
+
+    if (!newSelectedOptions) {
+      newSelectedOptions = { [category]: [value] };
+    } else {
+      if (isSelected(category, value)) {
+        newSelectedOptions[category] = newSelectedOptions[category].filter(
+          (v) => v !== value,
+        );
+      } else {
+        newSelectedOptions[category] = [
+          ...(newSelectedOptions[category] ?? []),
+          value,
+        ];
+      }
+    }
+
+    onSelectedOptionsChange(newSelectedOptions);
+  };
+
+  const filterOpts: RriFilterOption[] = [
+    {
+      label: 'RR ID',
+      value: 'rr_id',
+      optionsComponent: () => (
+        <>
+          <MenuList>
+            {['filter 1', 'filter 2', 'filter 3'].map((filterName) => (
+              <MenuItem
+                key={filterName}
+                selected={isSelected('rr_id', filterName)}
+                onClick={() => flipOption('rr_id', filterName)}
+              >
+                <Checkbox
+                  sx={{
+                    padding: 0,
+                    marginRight: '13px',
+                  }}
+                  size="small"
+                  checked={isSelected('rr_id', filterName)}
+                  tabIndex={-1}
+                />
+                {filterName}
+              </MenuItem>
+            ))}
+          </MenuList>
+        </>
+      ),
+    },
+    {
+      label: 'Resource Details',
+      value: 'resource_details',
+      optionsComponent: () => <h1>Resource Details</h1>,
+    },
+  ];
+
+  const getFilterCategoryDatas =
+    (): FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] => {
+      return filterOpts.map((option) => {
+        return {
+          label: option.label,
+          value: option.value,
+          getSearchScore: (searchQuery: string) => {
+            const [score, matches] = fuzzySubstring(searchQuery, option.label);
+            return { score: score, matches: matches };
+          },
+          optionsComponent: option.optionsComponent,
+          optionsComponentProps: {
+            onSelectedOptionsChange: onSelectedOptionsChange,
+          },
+        };
+      });
+    };
 
   const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
     setSelectedOptions({ filters: newSelectedOptions, error: undefined });
@@ -336,11 +373,10 @@ export const ResourceRequestListPage = () => {
           borderRadius: 4,
         }}
       >
-        <MultiSelectFilter
-          filterOptions={filterOpts}
-          selectedOptions={selectedOptions.filters}
-          onSelectedOptionsChange={onSelectedOptionsChange}
-          isLoading={false}
+        <FilterButton
+          filterOptions={getFilterCategoryDatas()}
+          onApply={() => {}}
+          isLoading={query.isLoading}
         />
       </div>
 
