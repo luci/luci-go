@@ -20,7 +20,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -29,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -55,6 +55,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/auth_service/impl/servers/oauth"
 	"go.chromium.org/luci/auth_service/impl/servers/replicas"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/services/frontend/subscription"
 
 	// Ensure registration of validation rules.
@@ -258,6 +259,18 @@ func (m *prpcCookieAuth) Authenticate(ctx context.Context, req auth.RequestMetad
 	return nil, nil, nil // skip this method
 }
 
+// getIntegratedUI gets the URL to an integrated UI for Auth Service.
+func getIntegratedUI(ctx context.Context) string {
+	cfg, err := settingscfg.Get(ctx)
+	if err != nil {
+		// Non-fatal; just log the error.
+		err = errors.Annotate(err, "error getting settings.cfg").Err()
+		logging.Errorf(ctx, err.Error())
+		return ""
+	}
+	return cfg.IntegratedUiUrl
+}
+
 func prepareTemplates(opts *server.Options) *templates.Bundle {
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(os.DirFS("templates")),
@@ -277,11 +290,12 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 				return nil, err
 			}
 			return templates.Args{
-				"AppVersion": opts.ImageVersion(),
-				"User":       auth.CurrentUser(ctx),
-				"IsAdmin":    isAdmin,
-				"LogoutURL":  logoutURL,
-				"XSRFToken":  token,
+				"AppVersion":   opts.ImageVersion(),
+				"User":         auth.CurrentUser(ctx),
+				"IsAdmin":      isAdmin,
+				"LogoutURL":    logoutURL,
+				"XSRFToken":    token,
+				"IntegratedUI": getIntegratedUI(ctx),
 			}, nil
 		},
 	}

@@ -52,6 +52,9 @@ message SettingsCfg {
 
   // Whether exporting to BQ is enabled.
   bool enable_bq_export = 3;
+
+  // URL for an integrated UI for Auth Service.
+  string integrated_ui_url = 4;
 }
 
 // Configuration of groups imported from external sources.

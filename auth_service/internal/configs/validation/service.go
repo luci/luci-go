@@ -125,6 +125,25 @@ func validateSecurityCfg(ctx *validation.Context, configSet, path string, conten
 	return nil
 }
 
+func validateSettingsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := configspb.SettingsCfg{}
+	ctx.Enter("validating settings.cfg")
+	defer ctx.Exit()
+
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+	}
+
+	// Ensure the integrated UI URL starts with `https://` if it's specified.
+	uiTarget := cfg.IntegratedUiUrl
+	if uiTarget != "" && !strings.HasPrefix(uiTarget, "https://") {
+		ctx.Error(errors.New("Integrated UI URL must start with https://"))
+	}
+
+	return nil
+}
+
 func validateImportsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := configspb.GroupImporterConfig{}

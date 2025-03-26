@@ -290,6 +290,51 @@ func TestSecurityConfigValidation(t *testing.T) {
 	})
 }
 
+func TestSettingsConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("validate settings.cfg", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		vctx := &validation.Context{Context: ctx}
+		path := "settings.cfg"
+		configSet := ""
+
+		t.Run("loading bad proto", func(t *ftt.Test) {
+			content := []byte(` bad: "config" `)
+			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
+		})
+
+		t.Run("integrated UI URL is validated", func(t *ftt.Test) {
+			t.Run("empty is valid", func(t *ftt.Test) {
+				content := []byte(`
+					enable_bq_export: false
+				`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+			})
+
+			t.Run("non-https URL is invalid", func(t *ftt.Test) {
+				content := []byte(`
+					enable_bq_export: false
+					integrated_ui_url: "http://test.luci.ui"
+				`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("must start with https"))
+			})
+
+			t.Run("https URL is valid", func(t *ftt.Test) {
+				content := []byte(`
+					enable_bq_export: false
+					integrated_ui_url: "https://test.luci.ui"
+				`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+			})
+		})
+	})
+}
+
 func TestImportsConfigValidation(t *testing.T) {
 	t.Parallel()
 

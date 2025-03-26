@@ -33,6 +33,7 @@ func TestConfigContext(t *testing.T) {
 	settingsCfg := &configspb.SettingsCfg{
 		EnableTsMonitoring: true,
 		AuthDbGsPath:       "chrome-infra-auth-test.appspot.com/auth-db",
+		IntegratedUiUrl:    "https://luci.test.app",
 	}
 
 	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
