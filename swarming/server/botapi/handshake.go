@@ -232,7 +232,10 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 		botConfigName = "bot_config.py"
 	}
 
-	// Initialize a new session.
+	// Initialize a new session. Note that we do not populate RBEEffectiveBotID
+	// here since at this point we don't know it yet (the bot hasn't sent
+	// all dimensions yet). We'll populate it in the very first /bot/poll that
+	// happens soon after the handshake (after the bot collects all dimensions).
 	session, err := botsession.Marshal(botsession.Create(botsession.SessionParameters{
 		SessionID:    sessionID,
 		BotID:        botID,

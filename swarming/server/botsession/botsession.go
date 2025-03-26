@@ -16,6 +16,7 @@
 package botsession
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -99,6 +100,8 @@ type SessionParameters struct {
 	BotGroup *cfg.BotGroup
 	// RBEConfig is the matching bot RBE config as looked up from pools.cfg.
 	RBEConfig cfg.RBEConfig
+	// RBEEffectiveBotID is the derived bot ID to use to communicate with RBE.
+	RBEEffectiveBotID string
 	// ServerConfig is the config instance used to look up BotGroup and RBEConfig.
 	ServerConfig *cfg.Config
 	// DebugInfo to put into the session proto.
@@ -112,26 +115,56 @@ type SessionParameters struct {
 // Assumes all parameters have been validated already.
 func Create(params SessionParameters) *internalspb.Session {
 	return &internalspb.Session{
-		BotId:     params.BotID,
-		SessionId: params.SessionID,
-		Expiry:    timestamppb.New(params.Now.Add(Expiry)),
-		DebugInfo: params.DebugInfo,
-		BotConfig: &internalspb.BotConfig{
-			// Use default expiry here as well in a new session. It will be updated
-			// to a larger value before we launch a task to make sure the captured
-			// config can survive as long as the task (but not much longer). This will
-			// be needed to allow the task to complete even if the bot is removed from
-			// the config.
-			Expiry:               timestamppb.New(params.Now.Add(Expiry)),
-			DebugInfo:            params.DebugInfo,
-			BotAuth:              params.BotGroup.Auth,
-			SystemServiceAccount: params.BotGroup.SystemServiceAccount,
-			LogsCloudProject:     params.BotGroup.LogsCloudProject,
-			RbeInstance:          params.RBEConfig.Instance,
-		},
+		BotId:               params.BotID,
+		SessionId:           params.SessionID,
+		Expiry:              timestamppb.New(params.Now.Add(Expiry)),
+		DebugInfo:           params.DebugInfo,
+		BotConfig:           botConfigPb(&params),
 		HandshakeConfigHash: handshakeConfigHash(params.BotGroup),
 		RbeBotSessionId:     "", // will be populate later when the bot opens RBE session
 		LastSeenConfig:      timestamppb.New(params.ServerConfig.VersionInfo.Fetched),
+	}
+}
+
+// Update updates the session by refreshing the config stored inside of it.
+//
+// This doesn't touch set-once fields of the session (like SessionId and
+// HandshakeConfigHash and few others).
+func Update(s *internalspb.Session, params SessionParameters) *internalspb.Session {
+	s.Expiry = timestamppb.New(params.Now.Add(Expiry))
+	s.DebugInfo = params.DebugInfo
+	s.BotConfig = botConfigPb(&params)
+	s.LastSeenConfig = timestamppb.New(params.ServerConfig.VersionInfo.Fetched)
+	return s
+}
+
+// IsHandshakeConfigStale returns true if the bot needs to restart to pick up
+// new handshake config.
+//
+// Handshake configs are config values that affect the bot's behavior in some
+// global way (like custom bot hooks). The bot picks them up once, when it
+// starts.
+func IsHandshakeConfigStale(s *internalspb.Session, group *cfg.BotGroup) bool {
+	return !bytes.Equal(s.HandshakeConfigHash, handshakeConfigHash(group))
+}
+
+// botConfigPb prepares *internalspb.BotConfig when creating or updating the
+// session.
+func botConfigPb(params *SessionParameters) *internalspb.BotConfig {
+	return &internalspb.BotConfig{
+		// Use default expiry when refreshing the bot config. It will be updated
+		// to a larger value before we launch a task to make sure the captured
+		// config can survive as long as the task (but not much longer). This will
+		// be needed to allow the task to complete even if the bot is removed from
+		// the config.
+		Expiry:                     timestamppb.New(params.Now.Add(Expiry)),
+		DebugInfo:                  params.DebugInfo,
+		BotAuth:                    params.BotGroup.Auth,
+		SystemServiceAccount:       params.BotGroup.SystemServiceAccount,
+		LogsCloudProject:           params.BotGroup.LogsCloudProject,
+		RbeInstance:                params.RBEConfig.Instance,
+		RbeEffectiveBotId:          params.RBEEffectiveBotID,
+		RbeEffectiveBotIdDimension: params.RBEConfig.EffectiveBotIDDimension,
 	}
 }
 
@@ -141,7 +174,7 @@ func Create(params SessionParameters) *internalspb.Session {
 // The hash of these parameters is capture in /handshake handler and put into
 // the session token. If a /poll handler notices the current hash doesn't match
 // the hash in the session, it will ask the bot to restart to pick up new
-// parameters.
+// parameters (see IsHandshakeConfigStale).
 //
 // This function is tightly coupled to what /handshake returns to the bot and
 // to how bot uses these values.
