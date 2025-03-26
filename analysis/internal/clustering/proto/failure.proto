@@ -182,7 +182,10 @@ message Failure {
   // Information about the test variant-branch the result is from.
   TestVariantBranch test_variant_branch = 32;
 
-  // Next ID: 33.
+  // The ID this test previously used, if any.
+  string previous_test_id = 33;
+
+  // Next ID: 34.
 }
 
 // Statistics about the (test,variant,ref) the verdict is from.

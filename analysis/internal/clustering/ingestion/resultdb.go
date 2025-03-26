@@ -142,6 +142,7 @@ func failureFromResult(tr *rdbpb.TestResult, tv TestVerdict, opts Options) *cpb.
 		Sources:                       tv.Sources,
 		BuildGardenerRotations:        opts.BuildGardenerRotations,
 		TestVariantBranch:             tv.TestVariantBranch,
+		PreviousTestId:                tv.Verdict.TestMetadata.GetPreviousTestId(),
 	}
 
 	// Copy the result to avoid the result aliasing any of the protos used as input.

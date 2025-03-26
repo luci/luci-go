@@ -206,6 +206,7 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		IsTestRunBlocked:              failure.IsTestRunBlocked,
 		BuildGardenerRotations:        failure.BuildGardenerRotations,
 		TestVariantBranch:             testVariantBranch(failure.TestVariantBranch),
+		PreviousTestId:                failure.PreviousTestId,
 	}
 	if failure.Sources != nil {
 		entry.Sources = failure.Sources

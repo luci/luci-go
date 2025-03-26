@@ -107,10 +107,12 @@ func TestIngest(t *testing.T) {
 			}
 		}
 
-		// This rule should match failures used in this test.
-		rule := rules.NewRule(100).WithProject(opts.Project).WithRuleDefinition(`reason LIKE "Failure reason%"`).Build()
+		// These rules are used to match failures in this test.
+		ruleOnReason := rules.NewRule(100).WithProject(opts.Project).WithRuleDefinition(`reason LIKE "Failure reason%"`).Build()
+		ruleOnTestID := rules.NewRule(101).WithProject(opts.Project).WithRuleDefinition(`test LIKE "%NeedleTest%"`).Build()
 		err := rules.SetForTesting(ctx, t, []*rules.Entry{
-			rule,
+			ruleOnReason,
+			ruleOnTestID,
 		})
 		assert.Loosely(t, err, should.BeNil)
 
@@ -142,7 +144,7 @@ func TestIngest(t *testing.T) {
 			testnameCF := expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTestRun, resultNum)
 			setTestNameClustered(cfg, testnameCF)
 			ruleCF := expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTestRun, resultNum)
-			setRuleClustered(ruleCF, rule)
+			setRuleClustered(ruleCF, ruleOnReason)
 			expectedCFs := []*bqpb.ClusteredFailureRow{regexpCF, testnameCF, ruleCF}
 
 			t.Run(`Unexpected failure`, func(t *ftt.Test) {
@@ -296,7 +298,27 @@ func TestIngest(t *testing.T) {
 				testIngestion(tvs, expectedCFs)
 				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
 			})
+			t.Run(`Failure without test metadata`, func(t *ftt.Test) {
+				// Confirm nothing blows up due to assuming this is always set.
+				tv.Verdict.TestMetadata = nil
 
+				testIngestion(tvs, expectedCFs)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
+			})
+			t.Run(`Failure with prior test ID`, func(t *ftt.Test) {
+				// Test setting the previous test ID triggers matching an additional rule.
+				tv.Verdict.TestMetadata.PreviousTestId = "MyNeedleTest"
+
+				additionalRuleCF := expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTestRun, resultNum)
+				setRuleClustered(additionalRuleCF, ruleOnTestID)
+				expectedCFs = append(expectedCFs, additionalRuleCF)
+
+				for _, cf := range expectedCFs {
+					cf.PreviousTestId = "MyNeedleTest"
+				}
+				testIngestion(tvs, expectedCFs)
+				assert.Loosely(t, len(chunkStore.Contents), should.Equal(1))
+			})
 			t.Run(`Failure with bug component metadata`, func(t *ftt.Test) {
 				t.Run(`With monorail bug system`, func(t *ftt.Test) {
 					tv.Verdict.TestMetadata.BugComponent = &rdbpb.BugComponent{
@@ -435,7 +457,7 @@ func TestIngest(t *testing.T) {
 					testnameCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
 					setTestNameClustered(cfg, testnameCF)
 					ruleCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
-					setRuleClustered(ruleCF, rule)
+					setRuleClustered(ruleCF, ruleOnReason)
 					testRunExp = append(testRunExp, regexpCF, testnameCF, ruleCF)
 				}
 				expectedCFsByTestRun = append(expectedCFsByTestRun, testRunExp)
@@ -486,7 +508,7 @@ func TestIngest(t *testing.T) {
 						testnameCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
 						setTestNameClustered(cfg, testnameCF)
 						ruleCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
-						setRuleClustered(ruleCF, rule)
+						setRuleClustered(ruleCF, ruleOnReason)
 						expectedCFs = append(expectedCFs, regexpCF, testnameCF, ruleCF)
 					}
 				}

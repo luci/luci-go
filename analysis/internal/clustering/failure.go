@@ -36,7 +36,8 @@ type Failure struct {
 // a LUCI Analysis failure proto.
 func FailureFromProto(f *cpb.Failure) *Failure {
 	result := &Failure{
-		TestID: f.TestId,
+		TestID:         f.TestId,
+		PreviousTestID: f.PreviousTestId,
 	}
 	if f.FailureReason != nil {
 		result.Reason = proto.Clone(f.FailureReason).(*pb.FailureReason)

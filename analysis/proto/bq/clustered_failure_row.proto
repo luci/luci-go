@@ -26,7 +26,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // ClusteredFailureRow represents a row in a BigQuery table for a clustered
 // test failure.
-// Next ID: 46.
+// Next ID: 47.
 message ClusteredFailureRow {
   // The LUCI project that the test failure belongs to.
   string project = 39;
@@ -159,10 +159,11 @@ message ClusteredFailureRow {
   // This is the flat-form encoding of the structured test variant ID above,
   // excluding information about the specific way of running test (e.g. build configuration,
   // CPU architecture). Such information is captured separately in the `variant` field below.
-  //
-  // See TestIdentifier for details how a structured test identifier is converted
-  // to flat test ID.
   string test_id = 12;
+
+  // The previous ID used by this test, if any.
+  // This comes from test_metadata.previous_test_id.
+  string previous_test_id = 46;
 
   // Key-value pairs describing one specific way of running the test,
   // e.g. build configuration, CPU architecture, OS.
