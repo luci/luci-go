@@ -17,6 +17,7 @@ package botapi
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"net"
 	"strings"
 	"testing"
@@ -27,7 +28,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -459,9 +462,17 @@ func TestPollResponse(t *testing.T) {
 
 			resp, err := srv.pollResponse(ctx, req, &PollResponse{
 				Cmd: PollRBE,
+				RBE: &BotRBEParams{
+					Instance: "some-instance",
+				},
 			})
 			assert.NoErr(t, err)
-			assert.That(t, resp, should.Match(botsrv.Response(&PollResponse{Cmd: PollRBE})))
+			assert.That(t, resp, should.Match(botsrv.Response(&PollResponse{
+				Cmd: PollRBE,
+				RBE: &BotRBEParams{
+					Instance: "some-instance",
+				},
+			})))
 
 			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
 				BotID:         testBotID,
@@ -487,7 +498,12 @@ func TestPollResponse(t *testing.T) {
 			req := fakePollRequest()
 			req.state = botstate.Dict{JSON: []byte(`{"rbe_idle": false}`)}
 
-			_, err := srv.pollResponse(ctx, req, &PollResponse{Cmd: PollRBE})
+			_, err := srv.pollResponse(ctx, req, &PollResponse{
+				Cmd: PollRBE,
+				RBE: &BotRBEParams{
+					Instance: "some-instance",
+				},
+			})
 			assert.NoErr(t, err)
 			assert.That(t, lastUpdate.EventType, should.Equal(model.BotEventPolling))
 		})
@@ -556,9 +572,407 @@ func TestPollResponse(t *testing.T) {
 		t.Run("SubmitUpdate error", func(t *ftt.Test) {
 			updateErr = errors.New("boom")
 
-			_, err := srv.pollResponse(ctx, fakePollRequest(), &PollResponse{Cmd: PollRBE})
+			_, err := srv.pollResponse(ctx, fakePollRequest(), &PollResponse{
+				Cmd: PollRBE,
+				RBE: &BotRBEParams{
+					Instance: "some-instance",
+				},
+			})
 			assert.That(t, status.Code(err), should.Equal(codes.Internal))
 			assert.That(t, err, should.ErrLike("failed to update bot info: boom"))
+		})
+	})
+}
+
+func TestPoll(t *testing.T) {
+	t.Parallel()
+
+	const (
+		testBotID       = "test-bot"
+		testBotPool     = "test-pool"
+		testSessionID   = "session-id"
+		testRBEInstance = "test-rbe-instance"
+		testBotIdent    = "user:bot@example.com"
+		testBotIP       = "192.0.2.1"
+	)
+
+	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx, tc := testclock.UseTime(ctx, testTime)
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       testBotIdent,
+			PeerIPOverride: net.ParseIP(testBotIP),
+		})
+
+		secret := hmactoken.NewStaticSecret(secrets.Secret{
+			Active: []byte("secret"),
+		})
+
+		mockedConf := func(rbeInstance string, extraDims ...string) *cfg.Provider {
+			conf := cfgtest.NewMockedConfigs()
+			conf.MockBotPackage("stable", map[string]string{"version": "stable"})
+			conf.MockBot(testBotID, testBotPool, extraDims...)
+			conf.MockPool(testBotPool, "proj:realm").RbeMigration = &configpb.Pool_RBEMigration{
+				RbeInstance:    rbeInstance,
+				RbeModePercent: 100,
+				BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+					{
+						Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+						Percent: 100,
+					},
+				},
+			}
+			return cfgtest.MockConfigs(ctx, conf)
+		}
+
+		conf := mockedConf(testRBEInstance)
+		stableVersion := conf.Cached(ctx).VersionInfo.StableBot.Digest
+
+		var lastUpdate *model.BotInfoUpdate
+		srv := BotAPIServer{
+			cfg:        conf,
+			hmacSecret: secret,
+			version:    "server-ver",
+			authorizeBot: func(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
+				// Authorization errors are tested in TestProcessPoll.
+				return nil
+			},
+			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+				lastUpdate = u
+				return nil
+			},
+		}
+
+		fakeSession := func(rbeBotSessionId string) *internalspb.Session {
+			cfg, err := srv.cfg.Latest(ctx)
+			if err != nil {
+				panic(err)
+			}
+			rbeConf, err := cfg.RBEConfig(testBotID)
+			if err != nil {
+				panic(err)
+			}
+			pb := botsession.Create(botsession.SessionParameters{
+				SessionID:    testSessionID,
+				BotID:        testBotID,
+				BotGroup:     cfg.BotGroup(testBotID),
+				RBEConfig:    rbeConf,
+				ServerConfig: cfg,
+				DebugInfo:    botsession.DebugInfo(ctx, srv.version),
+				Now:          clock.Now(ctx),
+			})
+			pb.RbeBotSessionId = rbeBotSessionId
+			pb.LastSeenConfig = timestamppb.New(clock.Now(ctx).Add(-10 * time.Minute))
+			return pb
+		}
+
+		encodeSession := func(pb *internalspb.Session) []byte {
+			blob, err := botsession.Marshal(pb, secret)
+			if err != nil {
+				panic(err)
+			}
+			return blob
+		}
+
+		decodeSession := func(blob []byte) *internalspb.Session {
+			pb, err := botsession.Unmarshal(blob, secret)
+			if err != nil {
+				panic(err)
+			}
+			return pb
+		}
+
+		call := func(req *PollRequest) *PollResponse {
+			resp, err := srv.Poll(ctx, req, nil)
+			assert.NoErr(t, err) // errors are tested in TestProcessPoll and TestPollResponse
+			return resp.(*PollResponse)
+		}
+
+		t.Run("OK: nothing changing", func(t *ftt.Test) {
+			session := fakeSession("some-rbe-session-id")
+
+			resp := call(&PollRequest{
+				Session: encodeSession(session),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+					"dim":  {"val"},
+				},
+				State:   botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				Version: stableVersion,
+			})
+
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollRBE,
+				Session: resp.Session,
+				RBE: &BotRBEParams{
+					Instance: testRBEInstance,
+				},
+			}))
+
+			assert.That(t, decodeSession(resp.Session), should.Match(&internalspb.Session{
+				BotId:     session.BotId,
+				SessionId: session.SessionId,
+				Expiry:    timestamppb.New(testTime.Add(botsession.Expiry)), // updated
+				DebugInfo: &internalspb.DebugInfo{
+					Created:         timestamppb.New(testTime),
+					SwarmingVersion: "server-ver",
+					RequestId:       "00000000000000000000000000000000",
+				},
+				BotConfig: &internalspb.BotConfig{
+					Expiry: timestamppb.New(testTime.Add(botsession.Expiry)), // updated
+					DebugInfo: &internalspb.DebugInfo{
+						Created:         timestamppb.New(testTime),
+						SwarmingVersion: "server-ver",
+						RequestId:       "00000000000000000000000000000000",
+					},
+					BotAuth:     session.BotConfig.BotAuth,
+					RbeInstance: testRBEInstance,
+				},
+				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
+				RbeBotSessionId:     "some-rbe-session-id",       // preserved
+				LastSeenConfig:      timestamppb.New(testTime),   // updated
+			}))
+
+			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+				BotID:              testBotID,
+				EventType:          model.BotEventPolling,
+				Dimensions:         []string{"dim:val", "id:test-bot", "pool:test-pool"},
+				BotGroupDimensions: map[string][]string{"pool": {"test-pool"}},
+				State:              &botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				CallInfo: &model.BotEventCallInfo{
+					SessionID:       testSessionID,
+					Version:         stableVersion,
+					ExternalIP:      testBotIP,
+					AuthenticatedAs: testBotIdent,
+				},
+				HealthInfo:         &model.BotHealthInfo{},
+				TaskInfo:           &model.BotEventTaskInfo{},
+				EffectiveBotIDInfo: &model.RBEEffectiveBotIDInfo{},
+			}))
+		})
+
+		t.Run("OK: non-handshake config changes", func(t *ftt.Test) {
+			session := fakeSession("some-rbe-session-id")
+
+			tc.Add(time.Minute)
+			srv.cfg = mockedConf("another-instance")
+
+			resp := call(&PollRequest{
+				Session: encodeSession(session),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				Version: stableVersion,
+			})
+
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollRBE,
+				Session: resp.Session,
+				RBE: &BotRBEParams{
+					Instance: "another-instance",
+				},
+			}))
+
+			now := clock.Now(ctx)
+			assert.That(t, decodeSession(resp.Session), should.Match(&internalspb.Session{
+				BotId:     session.BotId,
+				SessionId: session.SessionId,
+				Expiry:    timestamppb.New(now.Add(botsession.Expiry)), // updated
+				DebugInfo: &internalspb.DebugInfo{
+					Created:         timestamppb.New(now),
+					SwarmingVersion: "server-ver",
+					RequestId:       "00000000000000000000000000000000",
+				},
+				BotConfig: &internalspb.BotConfig{
+					Expiry: timestamppb.New(now.Add(botsession.Expiry)), // updated
+					DebugInfo: &internalspb.DebugInfo{
+						Created:         timestamppb.New(now),
+						SwarmingVersion: "server-ver",
+						RequestId:       "00000000000000000000000000000000",
+					},
+					BotAuth:     session.BotConfig.BotAuth,
+					RbeInstance: "another-instance", // updated
+				},
+				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
+				RbeBotSessionId:     "some-rbe-session-id",       // preserved
+				LastSeenConfig:      timestamppb.New(now),        // updated
+			}))
+		})
+
+		t.Run("OK: handshake config changes", func(t *ftt.Test) {
+			session := fakeSession("some-rbe-session-id")
+
+			tc.Add(time.Minute)
+			srv.cfg = mockedConf("another-instance", "extra:1")
+
+			resp := call(&PollRequest{
+				Session: encodeSession(session),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				Version: stableVersion,
+			})
+
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollBotRestart,
+				Session: resp.Session,
+				Message: "Restarting to pick up new bots.cfg config",
+			}))
+
+			now := clock.Now(ctx)
+			assert.That(t, decodeSession(resp.Session), should.Match(&internalspb.Session{
+				BotId:     session.BotId,
+				SessionId: session.SessionId,
+				Expiry:    timestamppb.New(now.Add(botsession.Expiry)), // updated
+				DebugInfo: &internalspb.DebugInfo{
+					Created:         timestamppb.New(now),
+					SwarmingVersion: "server-ver",
+					RequestId:       "00000000000000000000000000000000",
+				},
+				BotConfig: &internalspb.BotConfig{
+					Expiry: timestamppb.New(now.Add(botsession.Expiry)), // updated
+					DebugInfo: &internalspb.DebugInfo{
+						Created:         timestamppb.New(now),
+						SwarmingVersion: "server-ver",
+						RequestId:       "00000000000000000000000000000000",
+					},
+					BotAuth:     session.BotConfig.BotAuth,
+					RbeInstance: "another-instance", // updated
+				},
+				HandshakeConfigHash: session.HandshakeConfigHash, // unchanged
+				RbeBotSessionId:     "some-rbe-session-id",       // preserved
+				LastSeenConfig:      timestamppb.New(now),        // updated
+			}))
+		})
+
+		t.Run("Self-update, healthy session", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Session: encodeSession(fakeSession("some-rbe-session-id")),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				State:   botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				Version: "not-stable",
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollUpdate,
+				Version: stableVersion,
+			}))
+		})
+
+		t.Run("Self-update, missing session", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				State:   botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				Version: "not-stable",
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollUpdate,
+				Version: stableVersion,
+			}))
+		})
+
+		t.Run("Self-update, bad dimensions", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Dimensions: map[string][]string{
+					"id":        {testBotID},
+					"pool":      {testBotPool},
+					" bad key ": {"val"},
+				},
+				State:   botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				Version: "not-stable",
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollUpdate,
+				Version: stableVersion,
+			}))
+			assert.That(t, lastUpdate.EventType, should.Equal(model.BotEventUpdate))
+			assert.That(t, lastUpdate.HealthInfo.Quarantined, should.NotEqual(""))
+		})
+
+		t.Run("Expired session", func(t *ftt.Test) {
+			session := fakeSession("some-rbe-session-id")
+			tc.Add(botsession.Expiry + time.Minute)
+
+			resp := call(&PollRequest{
+				Session: encodeSession(session),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				Version: stableVersion,
+			})
+
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:     PollBotRestart,
+				Message: "Bot session expired",
+			}))
+		})
+
+		t.Run("Missing session token in up-to-date bot", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				Version: stableVersion,
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:      PollSleep,
+				Duration: resp.Duration,
+			}))
+			assert.That(t, lastUpdate.EventType, should.Equal(model.BotEventSleep))
+			assert.That(t, lastUpdate.HealthInfo.Quarantined, should.Equal("no session token"))
+		})
+
+		t.Run("Bot self-quarantine", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Session: encodeSession(fakeSession("some-rbe-session-id")),
+				Dimensions: map[string][]string{
+					"id":          {testBotID},
+					"pool":        {testBotPool},
+					"quarantined": {"blew up"},
+				},
+				Version: stableVersion,
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:      PollSleep,
+				Session:  resp.Session,
+				Duration: resp.Duration,
+			}))
+			assert.That(t, lastUpdate.EventType, should.Equal(model.BotEventSleep))
+			assert.That(t, lastUpdate.HealthInfo.Quarantined, should.Equal("blew up"))
+		})
+
+		t.Run("Bot maintenance", func(t *ftt.Test) {
+			resp := call(&PollRequest{
+				Session: encodeSession(fakeSession("some-rbe-session-id")),
+				Dimensions: map[string][]string{
+					"id":   {testBotID},
+					"pool": {testBotPool},
+				},
+				State: botstate.Dict{JSON: []byte(`{
+					"maintenance": "busy"
+				}`)},
+				Version: stableVersion,
+			})
+			assert.That(t, resp, should.Match(&PollResponse{
+				Cmd:      PollSleep,
+				Session:  resp.Session,
+				Duration: resp.Duration,
+			}))
+			assert.That(t, lastUpdate.EventType, should.Equal(model.BotEventSleep))
+			assert.That(t, lastUpdate.HealthInfo.Maintenance, should.Equal("busy"))
 		})
 	})
 }

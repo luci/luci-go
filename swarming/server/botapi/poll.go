@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -132,8 +134,95 @@ func (srv *BotAPIServer) Poll(ctx context.Context, body *PollRequest, _ *botsrv.
 	if err != nil {
 		return nil, err
 	}
-	_ = pr
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+
+	// Ask outdated bots to self-update if necessary. Note we do that even for
+	// "broken" requests and requests without a session token. Presumably updating
+	// the bot will fix it.
+	if pr.version != "" {
+		channel, botArchive := pr.conf.BotChannel(pr.botID)
+		if pr.version != botArchive.Digest {
+			logging.Infof(ctx, "Using release channel %q", channel)
+			return srv.pollResponse(ctx, pr, &PollResponse{
+				Cmd:     PollUpdate,
+				Version: botArchive.Digest,
+			})
+		}
+	}
+
+	// Need a valid session to proceed.
+	if pr.session == nil {
+		if pr.sessionBroken {
+			// The bot sent some session token, but it was invalid (likely expired).
+			// Ask the bot to restart to get a new session.
+			return srv.pollResponse(ctx, pr, &PollResponse{
+				Cmd:     PollBotRestart,
+				Message: "Bot session expired",
+			})
+		}
+		// The bot didn't send a session token at all, even though it runs the
+		// most recent version. Something is badly broken. Quarantine it and ask to
+		// sleep for a relatively long time (since it is unlikely the problem will
+		// fix itself quickly).
+		pr.validationErr(ctx, errors.Reason("no session token").Err())
+		return srv.pollResponse(ctx, pr, &PollResponse{
+			Cmd:      PollSleep,
+			Duration: randomDuration(ctx, 5*time.Minute, 10*time.Minute),
+		})
+	}
+
+	// Update the session, in particular BotConfig embedded there.
+	sessionToken, err := botsession.Marshal(botsession.Update(pr.session, botsession.SessionParameters{
+		BotGroup:          pr.group,
+		RBEConfig:         pr.rbeConf,
+		RBEEffectiveBotID: pr.rbeEffectiveBotID(),
+		ServerConfig:      pr.conf,
+		DebugInfo:         botsession.DebugInfo(ctx, srv.version),
+		Now:               clock.Now(ctx),
+	}), srv.hmacSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
+	}
+
+	// Ask the bot to restart to pick up new configs consumed only during the
+	// handshake (like the bot hooks or custom server-assigned dimensions), if
+	// they have changed since the bot created the session.
+	if botsession.IsHandshakeConfigStale(pr.session, pr.group) {
+		return srv.pollResponse(ctx, pr, &PollResponse{
+			Cmd:     PollBotRestart,
+			Session: sessionToken,
+			Message: "Restarting to pick up new bots.cfg config",
+		})
+	}
+
+	// If the bot is quarantined or in maintenance, ask it to sleep.
+	switch healthInfo, err := pr.calculateHealthInfo(); {
+	case err != nil:
+		return nil, err
+	case healthInfo.Quarantined != "":
+		// Sleep longer, quarantined bots are usually broken for a long time and
+		// there's no need to hammer the server.
+		return srv.pollResponse(ctx, pr, &PollResponse{
+			Cmd:      PollSleep,
+			Session:  sessionToken,
+			Duration: randomDuration(ctx, time.Minute, 4*time.Minute),
+		})
+	case pr.healthInfo.Maintenance != "":
+		// Sleep less, maintenance is expected and should fix itself quickly.
+		return srv.pollResponse(ctx, pr, &PollResponse{
+			Cmd:      PollSleep,
+			Session:  sessionToken,
+			Duration: randomDuration(ctx, 10*time.Second, time.Minute),
+		})
+	}
+
+	// The bot is totally healthy. Tell it to open or maintain the RBE session.
+	return srv.pollResponse(ctx, pr, &PollResponse{
+		Cmd:     PollRBE,
+		Session: sessionToken,
+		RBE: &BotRBEParams{
+			Instance: pr.rbeConf.Instance,
+		},
+	})
 }
 
 // pollRequest contains information extracted from the poll request.
@@ -194,6 +283,15 @@ func (pr *pollRequest) calculateHealthInfo() (*model.BotHealthInfo, error) {
 	return pr.healthInfo, nil
 }
 
+// rbeEffectiveBotID returns the RBE effective bot ID to put into the session.
+func (pr *pollRequest) rbeEffectiveBotID() string {
+	if pr.effectiveBotID == nil {
+		// Don't change it if we failed to calculate the new value.
+		return pr.session.BotConfig.RbeEffectiveBotId
+	}
+	return pr.effectiveBotID.RBEEffectiveBotID
+}
+
 // processPoll parses poll arguments, does validation and authorization.
 //
 // If the request is authorized, but has invalid dimensions or state, returns
@@ -210,7 +308,7 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		var err error
 		session, err = botsession.CheckSessionToken(body.Session, srv.hmacSecret, clock.Now(ctx))
 		if err != nil {
-			logging.Warningf(ctx, "Bad session token: %s", err)
+			logging.Warningf(ctx, "Bad session token: %s", status.Convert(err).Message())
 			if session != nil {
 				botsession.LogSession(ctx, session)
 			}
@@ -315,10 +413,10 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		errs = append(errs, errors.Reason("unsupported RBE mode %s", rbeConf.Mode).Err())
 	}
 
-	// Derive the effective bot ID to use in RBE sessions. This fails if there's
-	// no effective bot ID dimensions or it has more than one value. Note need to
-	// use `dims` here (not body.Dimensions) to make sure we pick up
-	// server-enforced dimensions applied to it.
+	// Derive the effective bot ID to use in RBE sessions. This fails if the
+	// effective bot ID dimension has more than one value. Note need to use `dims`
+	// here (not body.Dimensions) to make sure we pick up server-enforced
+	// dimensions applied to it.
 	//
 	// Do not change the current effective bot ID if dimensions are broken or
 	// a new one can't be derived.
@@ -368,16 +466,24 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 	var ev model.BotEventType
 	switch resp.Cmd {
 	case PollRBE:
+		if effectiveID := pr.rbeEffectiveBotID(); effectiveID != "" {
+			logging.Infof(ctx, "Asking %q to run RBE session at %q with bot ID %q", pr.botID, resp.RBE.Instance, effectiveID)
+		} else {
+			logging.Infof(ctx, "Asking %q to run RBE session at %q", pr.botID, resp.RBE.Instance)
+		}
 		if pr.state.MustReadBool("rbe_idle") {
 			ev = model.BotEventIdle
 		} else {
 			ev = model.BotEventPolling
 		}
 	case PollSleep:
+		logging.Infof(ctx, "Asking %q to sleep for %.1f sec", pr.botID, resp.Duration)
 		ev = model.BotEventSleep
 	case PollUpdate:
+		logging.Infof(ctx, "Asking %q to update: %s => %s", pr.botID, pr.version, resp.Version)
 		ev = model.BotEventUpdate
 	case PollBotRestart:
+		logging.Infof(ctx, "Asking %q to restart: %s", pr.botID, resp.Message)
 		ev = model.BotEventRestart
 	default:
 		panic(fmt.Sprintf("unknown resp.Cmd %s", resp.Cmd))
@@ -388,6 +494,12 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 	healthInfo, err := pr.calculateHealthInfo()
 	if err != nil {
 		return nil, err
+	}
+	switch {
+	case healthInfo.Quarantined != "":
+		logging.Warningf(ctx, "The bot %q is quarantined: %s", pr.botID, healthInfo.Quarantined)
+	case healthInfo.Maintenance != "":
+		logging.Infof(ctx, "The bot %q is in maintenance: %s", pr.botID, healthInfo.Maintenance)
 	}
 
 	var botState *botstate.Dict
@@ -443,4 +555,13 @@ func deriveRBEEffectiveBotID(dims []string, effectiveDimKey string) (string, err
 		return "", nil
 	}
 	return model.RBEEffectiveBotID(pool, effectiveDimKey, effectiveDim), nil
+}
+
+// randomDuration returns a random duration in the given range.
+//
+// Returns it as a float number of seconds.
+func randomDuration(ctx context.Context, min, max time.Duration) float64 {
+	dt := mathrand.Int63n(ctx, int64(max)-int64(min))
+	dur := min + time.Duration(dt)
+	return dur.Seconds()
 }

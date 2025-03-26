@@ -38,6 +38,8 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/handshake"
     service: default-go
+  - url: "*/swarming/api/v1/bot/poll"
+    service: default-go
   - url: "*/swarming/api/v1/bot/event"
     service: default-go
   - url: "*/swarming/api/v1/bot/oauth_token"
