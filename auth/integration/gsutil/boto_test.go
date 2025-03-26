@@ -97,6 +97,18 @@ provider_token_uri = http://127.0.0.1/token_uri
 			existingBlock.WriteRune('\n')
 			existingBlock.WriteString("gs_oauth2_refresh_token = zzz")
 			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("[GSUtil]")
+			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("software_update_check_period = 100")
+			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("json_api_version = 1.2.3")
+			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("parallel_process_count = 100")
+			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("[OAuth2]")
+			existingBlock.WriteRune('\n')
+			existingBlock.WriteString("provider_label = Some label")
+			existingBlock.WriteRune('\n')
 			existingBlock.WriteString("[Boto]")
 			existingBlock.WriteRune('\n')
 			existingBlock.WriteString("# some comment")
@@ -108,9 +120,6 @@ provider_token_uri = http://127.0.0.1/token_uri
 			existingBlock.WriteRune('\n')
 			existingBlock.WriteString("ca_certificates_file = /path/cert.crt")
 			existingBlock.WriteRune('\n')
-			existingBlock.WriteString("[OAuth2]")
-			existingBlock.WriteRune('\n')
-			existingBlock.WriteString("provider_label = Some label")
 			_, err = existing.Write(existingBlock.Bytes())
 			assert.Loosely(c, err, should.BeNil)
 
@@ -123,6 +132,8 @@ provider_token_uri = http://127.0.0.1/token_uri
 [GSUtil]
 software_update_check_period = 0
 state_dir = %s
+json_api_version = 1.2.3
+parallel_process_count = 100
 
 [Boto]
 proxy = 1.2.3.4
