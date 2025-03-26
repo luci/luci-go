@@ -32,6 +32,13 @@ import (
 	"go.chromium.org/luci/starlark/builtins"
 )
 
+const (
+	// Name of the main package used by tests.
+	mainPkg = "test_main"
+	// Name of the stdlib package used by tests.
+	stdlibPkg = "stdlib"
+)
+
 // deindent finds first non-empty and non-whitespace line and subtracts its
 // indentation from all lines.
 func deindent(s string) string {
@@ -136,10 +143,11 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 		PreExec:     p.preExec,
 		PostExec:    p.postExec,
 		Packages: map[string]Loader{
-			MainPkg:   deindentLoader(p.scripts),
-			StdlibPkg: deindentLoader(p.stdlib),
+			mainPkg:   deindentLoader(p.scripts),
+			stdlibPkg: deindentLoader(p.stdlib),
 			"custom":  p.custom,
 		},
+		MainPackage: mainPkg,
 		Logger: func(file string, line int, message string) {
 			logs = append(logs, fmt.Sprintf("[%s:%d] %s", file, line, message))
 		},
@@ -147,13 +155,15 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 		ForbidExec: p.forbidExec,
 	}
 
-	if err = intr.Init(ctx); err != nil {
+	// Load builtins if the test actually defined them.
+	err = intr.LoadBuiltins(ctx, stdlibPkg, "builtins.star")
+	if err != nil && err != ErrNoModule {
 		return
 	}
 
 	if _, ok := p.scripts["main.star"]; ok {
 		var dict starlark.StringDict
-		dict, err = intr.ExecModule(ctx, MainPkg, "main.star")
+		dict, err = intr.ExecModule(ctx, mainPkg, "main.star")
 		if err == nil {
 			keys = make([]string, 0, len(dict))
 			for k := range dict {

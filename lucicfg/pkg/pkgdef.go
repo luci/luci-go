@@ -193,12 +193,13 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 
 		Packages: map[string]interpreter.Loader{
 			// Loader with PACKAGE.star itself (and only it!).
-			interpreter.MainPkg: interpreter.MemoryLoader(map[string]string{
+			"pkgmain": interpreter.MemoryLoader(map[string]string{
 				PackageScript: string(body),
 			}),
-			// Minimal stdlib implementing APIs accessible to PACKAGE.star.
-			interpreter.StdlibPkg: interpreter.FSLoader(pkgFS),
+			// Minimal library implementing APIs accessible to PACKAGE.star.
+			"pkglib": interpreter.FSLoader(pkgFS),
 		},
+		MainPackage: "pkgmain",
 
 		// Allow printf-debugging.
 		Logger: func(file string, line int, message string) {
@@ -213,8 +214,8 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 	}
 
 	// Load builtins.star, and then execute the PACKAGE.star script.
-	if err = intr.Init(ctx); err == nil {
-		_, err = intr.ExecModule(ctx, interpreter.MainPkg, PackageScript)
+	if err = intr.LoadBuiltins(ctx, "pkglib", "builtins.star"); err == nil {
+		_, err = intr.ExecModule(ctx, "pkgmain", PackageScript)
 	}
 	if err != nil {
 		return nil, err
@@ -225,6 +226,12 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 	}
 
 	return &state.def, nil
+}
+
+// IsReservedPackageName returns true if the given package is reserved and not
+// allowed to appear inside pkg.declare(...) definition.
+func IsReservedPackageName(name string) bool {
+	return name == LegacyPackageNamePlaceholder || name == "@stdlib" || name == "@proto"
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -254,14 +261,12 @@ func cleanPath(p string) string {
 
 // declNative registers all __native__.<name> functions.
 func (s *state) declNative(native starlark.StringDict) {
-	builtinsStar := fmt.Sprintf("@%s//builtins.star", interpreter.StdlibPkg)
-
 	decl := func(name string, requiredDeclareFirst bool, nativeFn func(ctx context.Context, call nativeCall) (starlark.Value, error)) {
 		native[name] = starlark.NewBuiltin(name, func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 			// Forbid calling __native__.* directly from PACKAGE.star scripts, only
 			// wrappers in pkg/builtins.star can use this API, since they implement
 			// important extra validation checks that Go code assumes.
-			if frame := th.CallFrame(1); frame.Pos.Filename() != builtinsStar {
+			if frame := th.CallFrame(1); frame.Pos.Filename() != "@pkglib//builtins.star" {
 				return nil, errors.New("forbidden direct call to __native__ API")
 			}
 			if requiredDeclareFirst && !s.declareCalled {
@@ -318,6 +323,9 @@ func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, e
 	s.def.Name = name.GoString()
 	if err := ValidateName(s.def.Name); err != nil {
 		return nil, errors.Annotate(err, "bad package name %q", s.def.Name).Err()
+	}
+	if IsReservedPackageName(s.def.Name) {
+		return nil, errors.Reason("bad package name %q: reserved", s.def.Name).Err()
 	}
 
 	var err error

@@ -720,7 +720,7 @@ lucicfg.current_module()
 Returns the location of a module being currently executed.
 
 This is the module being processed by a current load(...) or [exec(...)](#exec)
-statement. It has no relation to the module that holds the top-level stack
+statement. It has no relation to the module that holds the most recent stack
 frame. For example, if a currently loading module `A` calls a function in
 a module `B` and this function calls [lucicfg.current_module(...)](#lucicfg.current-module), the result
 would be the module `A`, even though the call goes through code in the

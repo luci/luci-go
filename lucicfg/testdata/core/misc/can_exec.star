@@ -8,11 +8,11 @@ lucicfg.emit(
 # Expect configs:
 #
 # === from-exec
-# struct(package = "__main__", path = "misc/support/execed.star")
+# struct(package = "lucicfg/tests/core", path = "misc/support/execed.star")
 # ===
 #
 # === from-top
-# struct(package = "__main__", path = "misc/can_exec.star")
+# struct(package = "lucicfg/tests/core", path = "misc/can_exec.star")
 # ===
 #
 # === project.cfg

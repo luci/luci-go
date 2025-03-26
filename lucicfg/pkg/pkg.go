@@ -34,7 +34,7 @@ import (
 const PackageScript = "PACKAGE.star"
 
 // LegacyPackageNamePlaceholder is used as package name of legacy packages.
-const LegacyPackageNamePlaceholder = "@legacy-unknown"
+const LegacyPackageNamePlaceholder = "@__main__"
 
 // Entry is a main package plus an entry point executable file in it.
 //

@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,8 +35,15 @@ func TestPkg(t *testing.T) {
 
 	gotExpectationErrors := false
 	for _, dir := range dirs {
+		// Git + OSX have tendency to leave "empty" directories behind since they
+		// end up containing .DS_Store (recursively). Ignore directories without
+		// PACKAGE.star.
+		path := filepath.Join("testdata", "pkg", dir.Name())
+		if _, err := os.Stat(filepath.Join(path, "PACKAGE.star")); errors.Is(err, os.ErrNotExist) {
+			continue
+		}
 		t.Run(dir.Name(), func(t *testing.T) {
-			if ok := runPkgTest(t, filepath.Join("testdata", "pkg", dir.Name())); !ok {
+			if ok := runPkgTest(t, path); !ok {
 				gotExpectationErrors = true
 			}
 		})

@@ -392,10 +392,10 @@ Error: invalid call of non-function (NoneType)`))
 				"exec2.star": `print("hi")`,
 			},
 			preExec: func(th *starlark.Thread, module ModuleKey) {
-				hooks = append(hooks, fmt.Sprintf("pre %s", module))
+				hooks = append(hooks, fmt.Sprintf("pre %s", module.Friendly(th)))
 			},
 			postExec: func(th *starlark.Thread, module ModuleKey) {
-				hooks = append(hooks, fmt.Sprintf("post %s", module))
+				hooks = append(hooks, fmt.Sprintf("post %s", module.Friendly(th)))
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
@@ -420,10 +420,10 @@ Error: invalid call of non-function (NoneType)`))
 				"exec2.star": `BOOOM`,
 			},
 			preExec: func(th *starlark.Thread, module ModuleKey) {
-				hooks = append(hooks, fmt.Sprintf("pre %s", module))
+				hooks = append(hooks, fmt.Sprintf("pre %s", module.Friendly(th)))
 			},
 			postExec: func(th *starlark.Thread, module ModuleKey) {
-				hooks = append(hooks, fmt.Sprintf("post %s", module))
+				hooks = append(hooks, fmt.Sprintf("post %s", module.Friendly(th)))
 			},
 		})
 		assert.Loosely(t, err, should.NotBeNil)
@@ -456,10 +456,10 @@ Error: invalid call of non-function (NoneType)`))
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, visited, should.Match([]ModuleKey{
-			{MainPkg, "main.star"},
-			{MainPkg, "a.star"},
-			{MainPkg, "b.star"},
-			{MainPkg, "c.star"},
+			{mainPkg, "main.star"},
+			{mainPkg, "a.star"},
+			{mainPkg, "b.star"},
+			{mainPkg, "c.star"},
 		}))
 	})
 

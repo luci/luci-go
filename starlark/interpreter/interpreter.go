@@ -33,36 +33,15 @@
 // Modules within a single package can refer to each other (in 'load' and
 // 'exec') using their relative or absolute (if start with "//") paths.
 //
-// Packages also have identifiers, though they are local to the interpreter
-// (e.g. not defined anywhere in the package itself). For that reason they are
-// called "package aliases".
+// Packages also have names which can be used to reference files across packages
+// (in both 'load' and 'exec'). In particular modules from one package may refer
+// to modules from another package by using the following syntax:
 //
-// Modules from one package may refer to modules from another package by using
-// the following syntax:
+//	load("@<package name>//<path within the package>", ...)
 //
-//	load("@<package alias>//<path within the package>", ...)
-//
-// Presently the mapping between a package alias (e.g. 'stdlib') and package's
-// source code (a collection of *.star files under a single root) is static and
-// supplied by Go code that uses the interpreter. This may change in the future
-// to allow loading packages dynamically, e.g. over the network.
-//
-// # Special packages
-//
-// There are two special package aliases recognized natively by the interpreter:
-// '__main__' and 'stdlib'.
-//
-// '__main__' is a conventional name of the package with top level user-supplied
-// code. When printing module paths in stack traces and error message,
-// "@__main__//<path>" are shown as simply "//<path>" to avoid confusing users
-// who don't know what "@<alias>//" might mean. There's no other special
-// handling.
-//
-// Module '@stdlib//builtins.star' (if present) is loaded before any other code.
-// All its exported symbols that do not start with '_' are made available in the
-// global namespace of all other modules (except ones loaded by
-// '@stdlib//builtins.star' itself). This allows to implement in Starlark
-// built-in global functions exposed by the interpreter.
+// The mapping between a package name and package's source code (a collection of
+// *.star files under a single root) is static and supplied by the Go code that
+// uses the interpreter via Packages map.
 //
 // Exec'ing modules
 //
@@ -76,7 +55,7 @@
 // as scripts (via 'exec' or ExecModule), but not both. Attempting to load
 // a module that was previous exec'ed (and vice versa) is an error.
 //
-// Consequently, each Starlark thread created by the nterpreter is either
+// Consequently, each Starlark thread created by the interpreter is either
 // executing some 'load' or some 'exec'. This distinction is available to
 // builtins through GetThreadKind function. Some builtins may check it. For
 // example, a builtin that mutates a global state may return an error when it is
@@ -96,9 +75,10 @@
 //
 // In addition to 'exec' builtin implemented by the interpreter itself, users
 // of the interpreter can also supply arbitrary "predeclared" symbols they want
-// to be available in the global scope of all modules. Predeclared symbols and
-// '@stdlib//builtins.star' module explained above, are the primary mechanisms
-// of making the interpreter do something useful.
+// to be available in the global scope of all modules. They can either be
+// declared directly using Predeclared dict (useful for builtins implemented
+// natively by Go code) or via LoadBuiltins call (useful for builtins that are
+// themselves implemented in Starlark).
 package interpreter
 
 import (
@@ -139,13 +119,6 @@ const (
 	// ThreadExecing indicates a thread that is evaluating a module referred to by
 	// some exec(...) statement.
 	ThreadExecing
-)
-
-const (
-	// MainPkg is an alias of the package with user-supplied code.
-	MainPkg = "__main__"
-	// StdlibPkg is an alias of the package with the standard library.
-	StdlibPkg = "stdlib"
 )
 
 const (
@@ -194,7 +167,7 @@ func GetThreadKind(th *starlark.Thread) ThreadKind {
 // GetThreadModuleKey returns a ModuleKey with the location of the module being
 // processed by a current load(...) or exec(...) statement.
 //
-// It has no relation to the module that holds the top-level stack frame. For
+// It has no relation to the module that holds the latest stack frame. For
 // example, if a currently loading module 'A' calls a function in module 'B' and
 // this function calls GetThreadModuleKey, it will see module 'A' as the result,
 // even though the call goes through code in module 'B'.
@@ -210,7 +183,7 @@ func GetThreadModuleKey(th *starlark.Thread) *ModuleKey {
 
 // Loader knows how to load modules of some concrete package.
 //
-// It takes the starlark thread context and a module path relative to the
+// It takes the Starlark thread context and a module path relative to the
 // package and returns either module's dict (e.g. for go native modules) or
 // module's source code, to be interpreted.
 //
@@ -220,24 +193,35 @@ func GetThreadModuleKey(th *starlark.Thread) *ModuleKey {
 // allowing efficient use of string Go constants.
 type Loader func(ctx context.Context, path string) (dict starlark.StringDict, src string, err error)
 
-// Interpreter knows how to execute starlark modules that can load or execute
-// other starlark modules.
+// Interpreter knows how to execute Starlark modules that can load or execute
+// other Starlark modules.
+//
+// Interpreter's public fields should not be mutated once the Interpreter is
+// in use (i.e. after the first call to any of its methods).
 type Interpreter struct {
 	// Predeclared is a dict with predeclared symbols that are available globally.
 	//
-	// They are available when loading stdlib and when executing user modules. Can
-	// be used to extend the interpreter with native Go functions.
+	// They are available when loading builtins and when executing user modules.
+	// Can be used to extend the interpreter with native Go functions.
 	Predeclared starlark.StringDict
 
-	// Packages is a mapping from a package alias to a loader with package code.
+	// Packages is a mapping from a package name to a loader with package code.
 	//
-	// Users of Interpreter are expected to supply a loader for at least __main__
-	// package.
+	// All Starlark code will be loaded exclusively through these loaders.
 	Packages map[string]Loader
+
+	// MainPackage optionally designates a package with main code.
+	//
+	// The only effect is that stack traces will reference modules from this
+	// package using short "//<path>" form instead of the fully-qualified standard
+	// "@<pkg>//<path>" form (to make them more readable).
+	//
+	// Has no other effect.
+	MainPackage string
 
 	// Logger is called by Starlark's print(...) function.
 	//
-	// The callback takes the position in the starlark source code where
+	// The callback takes the position in the Starlark source code where
 	// print(...) was called and the message it received.
 	//
 	// The default implementation just prints the message to stderr.
@@ -255,7 +239,7 @@ type Interpreter struct {
 	// executing a script.
 	//
 	// 'load' calls do not trigger PreExec/PostExec hooks.
-	PreExec func(th *starlark.Thread, module ModuleKey)
+	PreExec func(th *starlark.Thread, key ModuleKey)
 
 	// PostExec is called after finishing running code through some 'exec' or
 	// ExecModule.
@@ -265,7 +249,7 @@ type Interpreter struct {
 	// 'exec'-ed script calls 'exec' itself).
 	//
 	// 'load' calls do not trigger PreExec/PostExec hooks.
-	PostExec func(th *starlark.Thread, module ModuleKey)
+	PostExec func(th *starlark.Thread, key ModuleKey)
 
 	// ForbidLoad, if set, disables load(...) builtin.
 	//
@@ -299,23 +283,31 @@ func DefaultFileOptions() *syntax.FileOptions {
 
 // ModuleKey is a key of a module within a cache of loaded modules.
 //
-// It identifies a package and a file within the package.
+// It identifies a package and a file within the package. Expected to be used
+// as a map key (i.e. will never have hidden internal structure).
 type ModuleKey struct {
-	Package string // a package name, e.g. "stdlib"
+	Package string // a package name, e.g. "pkg"
 	Path    string // path within the package, e.g. "abc/script.star"
 }
 
-// String returns a fully-qualified module name to use in error messages.
-//
-// If is either "@pkg//path" or just "//path" if pkg is "__main__". We omit the
-// name of the top-level package with user-supplied code ("__main__") to avoid
-// confusing users who are oblivious of packages.
+// String returns the fully-qualified module name as "@pkg//path".
 func (key ModuleKey) String() string {
-	pkg := ""
-	if key.Package != MainPkg {
-		pkg = "@" + key.Package
+	return fmt.Sprintf("@%s//%s", key.Package, key.Path)
+}
+
+// Friendly returns a user-friendly module name.
+//
+// It is like String, but skips the "@pkg" part if this is the main package
+// associated with the interpreter that launched the given thread. If 'th' is
+// nil or it is not associated with an interpreter, returns the fully-qualified
+// module name as "@pkg//path".
+func (key ModuleKey) Friendly(th *starlark.Thread) string {
+	if th != nil {
+		if intr := th.Local(threadIntrKey); intr != nil {
+			return intr.(*Interpreter).moduleKeyToString(key)
+		}
 	}
-	return pkg + "//" + key.Path
+	return key.String()
 }
 
 // MakeModuleKey takes '[@pkg]//<path>' or '<path>', parses and normalizes it.
@@ -326,8 +318,12 @@ func (key ModuleKey) String() string {
 // (since they interpret them anyway).
 //
 // 'th' is used to get the name of the currently executing package and a path to
-// the currently executing module within it. It is required if 'ref' is not
-// given as an absolute path (i.e. does NOT look like '@pkg//path').
+// the currently executing module within it. It is the module being load-ed or
+// exec-ed by this thread.
+//
+// The thread is required if 'ref' is not given as a fully-qualified module name
+// (i.e. does NOT look like '@pkg//path'). Using relative module paths without
+// passing 'th' will result in an error.
 func MakeModuleKey(th *starlark.Thread, ref string) (key ModuleKey, err error) {
 	defer func() {
 		if err == nil && (strings.HasPrefix(key.Path, "../") || key.Path == "..") {
@@ -367,7 +363,7 @@ func MakeModuleKey(th *starlark.Thread, ref string) (key ModuleKey, err error) {
 
 	if hasPkg {
 		if key.Package = ref[1:idx]; key.Package == "" {
-			err = errors.New("a package alias can't be empty")
+			err = errors.New("a package name can't be empty")
 			return
 		}
 	}
@@ -384,55 +380,69 @@ func MakeModuleKey(th *starlark.Thread, ref string) (key ModuleKey, err error) {
 	return
 }
 
-// loadedModule represents an executed starlark module.
+// loadedModule represents an executed Starlark module.
 type loadedModule struct {
 	dict starlark.StringDict // global dict of the module after we executed it
 	err  error               // non-nil if this module could not be loaded
 }
 
-// Init initializes the interpreter and loads '@stdlib//builtins.star'.
+// ensureInitialized initializes the interpreter if it wasn't initialized yet.
 //
-// Registers whatever was passed via Predeclared plus 'exec'. Then loads
-// '@stdlib//builtins.star', which may define more symbols or override already
-// defined ones. Whatever symbols not starting with '_' end up in the global
-// dict of '@stdlib//builtins.star' module will become available as global
-// symbols in all modules.
-//
-// The context ends up available to builtins through Context(...).
-func (intr *Interpreter) Init(ctx context.Context) error {
+// Registers whatever was passed via Predeclared plus 'exec' as global symbols
+// available to all modules loaded through the interpreter.
+func (intr *Interpreter) ensureInitialized() {
+	if intr.modules != nil {
+		return // already initialized
+	}
 	intr.modules = map[ModuleKey]*loadedModule{}
 	intr.execed = map[ModuleKey]struct{}{}
-
 	intr.globals = make(starlark.StringDict, len(intr.Predeclared)+1)
 	for k, v := range intr.Predeclared {
 		intr.globals[k] = v
 	}
 	intr.globals["exec"] = intr.execBuiltin()
+}
 
-	// Load the stdlib, if any.
-	top, err := intr.LoadModule(ctx, StdlibPkg, "builtins.star")
-	if err != nil && err != ErrNoModule && err != ErrNoPackage {
+// LoadBuiltins loads the given module and appends all its exported symbols
+// (symbols that do not start with "_") to the list of global symbols available
+// in the global scope to all subsequently loaded modules.
+//
+// Overriding existing global symbols is not allowed and will result in
+// an error.
+//
+// The context ends up available to builtins executed as part of this load
+// operation through Context(...).
+func (intr *Interpreter) LoadBuiltins(ctx context.Context, pkg, path string) error {
+	intr.ensureInitialized()
+	top, err := intr.LoadModule(ctx, pkg, path)
+	if err != nil {
 		return err
 	}
 	for k, v := range top {
 		if !strings.HasPrefix(k, "_") {
+			if _, exist := intr.globals[k]; exist {
+				return fmt.Errorf("builtin %q from %s is overriding an existing builtin",
+					k, intr.moduleKeyToString(ModuleKey{Package: pkg, Path: path}))
+			}
 			intr.globals[k] = v
 		}
 	}
 	return nil
 }
 
-// LoadModule finds and loads a starlark module, returning its dict.
+// LoadModule finds and loads a Starlark module, returning its dict.
 //
-// This is similar to load(...) statement: caches the result of the execution.
-// Modules are always loaded only once.
+// This is similar to load(...) statement, i.e. it caches the result of
+// the execution: modules are always loaded only once.
 //
-// 'pkg' is a package alias, it will be used to lookup the package loader in
+// 'pkg' is a package name, it will be used to lookup the package loader in
 // intr.Packages. 'path' is a module path (without leading '//') within
 // the package.
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
+	intr.ensureInitialized()
+
 	key, err := MakeModuleKey(nil, fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
@@ -465,16 +475,19 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 	return m.dict, m.err
 }
 
-// ExecModule finds and executes a starlark module, returning its dict.
+// ExecModule finds and executes a Starlark module, returning its dict.
 //
-// This is similar to exec(...) statement: always executes the module.
+// This is similar to exec(...) statement: it executes the module, but only if
+// it wasn't already loaded or executed before.
 //
-// 'pkg' is a package alias, it will be used to lookup the package loader in
+// 'pkg' is a package name, it will be used to lookup the package loader in
 // intr.Packages. 'path' is a module path (without leading '//') within
 // the package.
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
+	intr.ensureInitialized()
+
 	key, err := MakeModuleKey(nil, fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
@@ -516,6 +529,8 @@ func (intr *Interpreter) Visited() []ModuleKey {
 // this function. Other threads don't have enough context to resolve paths
 // correctly.
 func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, error) {
+	intr.ensureInitialized()
+
 	if kind := GetThreadKind(th); kind != ThreadLoading && kind != ThreadExecing {
 		return "", errors.New("wrong kind of thread (not enough information to " +
 			"resolve the file reference), only threads that do 'load' and 'exec' can call this function")
@@ -536,7 +551,7 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 		if err == ErrNoModule {
 			err = fmt.Errorf("no such file")
 		}
-		return "", fmt.Errorf("cannot load %s: %s", target, err)
+		return "", fmt.Errorf("cannot load %s: %w", intr.moduleKeyToString(target), err)
 	}
 	return src, nil
 }
@@ -552,6 +567,7 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 // LoadModule or ExecModule to load top-level Starlark code instead. Note that
 // load(...) statements are forbidden inside Starlark functions anyway.
 func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
+	intr.ensureInitialized()
 	th := &starlark.Thread{
 		Print: func(th *starlark.Thread, msg string) {
 			position := th.CallFrame(1).Pos
@@ -569,6 +585,16 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 		intr.ThreadModifier(th)
 	}
 	return th
+}
+
+// moduleKeyToString converts ModuleKey to a user-friendly string.
+//
+// See comment for MainPackage.
+func (intr *Interpreter) moduleKeyToString(key ModuleKey) string {
+	if intr.MainPackage != "" && key.Package == intr.MainPackage {
+		return "//" + key.Path
+	}
+	return key.String()
 }
 
 // execBuiltin returns exec(...) builtin symbol.
@@ -611,7 +637,7 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 			if evalErr, ok := err.(*starlark.EvalError); ok {
 				return nil, fmt.Errorf("exec %s failed: %s", mod, evalErr.Backtrace())
 			}
-			return nil, fmt.Errorf("cannot exec %s: %s", mod, err)
+			return nil, fmt.Errorf("cannot exec %s: %w", mod, err)
 		}
 
 		return starlarkstruct.FromStringDict(starlark.String("execed"), dict), nil
@@ -683,11 +709,11 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 	// Execute the module. It may 'load' or 'exec' other modules inside, which
 	// will either call LoadModule or ExecModule.
 	//
-	// Use user-friendly module name (with omitted "@__main__") for error messages
-	// and stack traces to avoid confusing the user.
+	// Use user-friendly module name (with omitted main package name) for error
+	// messages and stack traces to make them more readable.
 	opts := intr.Options
 	if opts == nil {
 		opts = DefaultFileOptions()
 	}
-	return starlark.ExecFileOptions(opts, th, key.String(), src, intr.globals)
+	return starlark.ExecFileOptions(opts, th, intr.moduleKeyToString(key), src, intr.globals)
 }

@@ -168,6 +168,7 @@ func TestLoadDefinition(t *testing.T) {
 			{"None", `missing required field "name"`},
 			{"123", `bad "name": got int, want string`},
 			{`"zzz"`, `bad package name "zzz": must start with @`},
+			{`"@stdlib"`, `bad package name "@stdlib": reserved`},
 		}
 		for _, cs := range cases {
 			_, err := call(fmt.Sprintf(`pkg.declare(name = %s, lucicfg = "1.2.3")`, cs.val))

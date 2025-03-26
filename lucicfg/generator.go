@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io/fs"
 	"sort"
+	"strings"
 
 	"go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
@@ -40,6 +41,9 @@ import (
 	"go.chromium.org/luci/lucicfg/pkg"
 	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
+
+// stdlibPkg is the lucicfg package with the hardcoded stdlib.
+const stdlibPkg = "stdlib"
 
 // Inputs define all inputs for the config generator.
 type Inputs struct {
@@ -101,14 +105,6 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		pkgLintChecks = pkgLintChecksTup
 	}
 
-	// Propagate the package name to Starlark if this is a non-legacy package.
-	// This eventually ends up in generated project.cfg, allowing to track rollout
-	// of PACKAGE.star across LUCI project configs.
-	mainPkgName := in.Entry.Package
-	if mainPkgName == pkg.LegacyPackageNamePlaceholder {
-		mainPkgName = ""
-	}
-
 	// All available symbols implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
@@ -126,7 +122,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			"version":        versionTuple(ver),
 			"entry_point":    starlark.String(in.Entry.Script),
 			"main_pkg_path":  starlark.String(in.Entry.Path),
-			"main_pkg_name":  starlark.String(mainPkgName),
+			"main_pkg_name":  starlark.String(in.Entry.Package),
 			"var_flags":      asFrozenDict(in.Vars),
 			"running_tests":  starlark.Bool(in.testThreadModifier != nil),
 			"testing_tweaks": internal.GetTestingTweaks(ctx).ToStruct(),
@@ -149,11 +145,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		predeclared[k] = v
 	}
 
-	// Expose @stdlib and __main__ package. They have no externally observable
-	// state of their own, but they call low-level __native__.* functions that
-	// manipulate 'state' by getting it through the context.
+	// Expose the hardcoded @stdlib.
 	pkgs := embeddedPackages()
-	pkgs[interpreter.MainPkg] = in.Entry.Main
 
 	// Create a proto loader, hook up load("@proto//<path>", ...) to load proto
 	// modules through it. See ThreadModifier below where it is set as default in
@@ -168,14 +161,25 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		return starlark.StringDict{mod.Name: mod}, "", nil
 	}
 
-	// Add all dependencies last to verify they do not clobber predeclared ones.
+	// Convert "@main" (as used in PACKAGE.star) to "main" for Packages map.
+	mainPkg, found := strings.CutPrefix(in.Entry.Package, "@")
+	if !found {
+		panic(fmt.Sprintf("unexpected main package name %q, missing @", in.Entry.Package))
+	}
+
+	// Add the main package and all its dependencies last to verify they do not
+	// clobber predeclared packages.
 	var depErr errors.MultiError
-	for dep, loader := range in.Entry.Deps {
+	addDep := func(dep string, loader interpreter.Loader) {
 		if pkgs[dep] != nil {
 			depErr = append(depErr, errors.Reason("dependency %q clashes with a predeclared dependency", dep).Err())
 		} else {
 			pkgs[dep] = loader
 		}
+	}
+	addDep(mainPkg, in.Entry.Main)
+	for dep, loader := range in.Entry.Deps {
+		addDep(dep, loader)
 	}
 	if len(depErr) != 0 {
 		return nil, depErr
@@ -189,6 +193,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	intr := interpreter.Interpreter{
 		Predeclared: predeclared,
 		Packages:    pkgs,
+		MainPackage: mainPkg,
 
 		PreExec:  func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.OpenScope(th) },
 		PostExec: func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.CloseScope(th) },
@@ -211,8 +216,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 	// Load builtins.star, and then execute the user-supplied script.
 	var err error
-	if err = intr.Init(ctx); err == nil {
-		_, err = intr.ExecModule(ctx, interpreter.MainPkg, in.Entry.Script)
+	if err = intr.LoadBuiltins(ctx, stdlibPkg, "builtins.star"); err == nil {
+		_, err = intr.ExecModule(ctx, mainPkg, in.Entry.Script)
 	}
 	if err != nil {
 		if f := failures.LatestFailure(); f != nil {
@@ -252,7 +257,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 	// Discover what main package modules we actually executed.
 	for _, key := range intr.Visited() {
-		if key.Package == interpreter.MainPkg {
+		if key.Package == mainPkg {
 			state.Visited = append(state.Visited, key.Path)
 		}
 	}
@@ -267,7 +272,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 // are loadable via load("@stdlib//<path>", ...).
 func embeddedPackages() map[string]interpreter.Loader {
 	out := make(map[string]interpreter.Loader, 1)
-	for _, pkg := range []string{"stdlib"} {
+	for _, pkg := range []string{stdlibPkg} {
 		sub, err := fs.Sub(embedded.Content, pkg)
 		if err != nil {
 			panic(fmt.Sprintf("%q is not embedded", pkg))

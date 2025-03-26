@@ -284,29 +284,25 @@ func checkExpectedErrs(t *testing.T, err error, expectErrExct, expectErrLike str
 	t.Helper()
 
 	allErrs := strings.Builder{}
-	var skip bool
-	errors.Walk(err, func(err error) bool {
-		if skip {
-			skip = false
-			return true
-		}
 
+	errors.Walk(err, func(err error) bool {
 		if bt, ok := err.(errs.Backtracable); ok {
 			allErrs.WriteString(bt.Backtrace())
-			// We need to skip Unwrap from starlark.EvalError to avoid logging the
-			// same error twice.
-			_, skip = err.(*starlark.EvalError)
-		} else {
-			switch err := err.(type) {
-			case errors.MultiError:
-				return true
-			case errors.Wrapped:
-				if err.Unwrap() != nil {
-					return true
-				}
-			}
-			allErrs.WriteString(err.Error())
+			allErrs.WriteString("\n\n")
+			// Do not recurse into starlark.EvalError to avoid logging the same error
+			// twice.
+			_, evalErr := err.(*starlark.EvalError)
+			return !evalErr
 		}
+		switch err := err.(type) {
+		case interface{ Unwrap() []error }:
+			return true
+		case interface{ Unwrap() error }:
+			if err.Unwrap() != nil {
+				return true
+			}
+		}
+		allErrs.WriteString(err.Error())
 		allErrs.WriteString("\n\n")
 		return true
 	})
