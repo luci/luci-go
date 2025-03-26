@@ -109,26 +109,26 @@ export function LookupPage() {
   return (
     <ThemeProvider theme={theme}>
       <Paper className="lookup-container-paper">
-        <Alert severity="warning">
-          <AlertTitle>
-            Integration of LUCI Auth Service here is under construction.
-          </AlertTitle>
-          Only group editing is supported. Please visit{' '}
-          <a
-            href={`https://${SETTINGS.authService.host}/auth/groups`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Auth Service
-          </a>{' '}
-          for other functionality. Please provide{' '}
+        <Alert severity="info">
+          <AlertTitle> You are using the new UI for Auth Service.</AlertTitle>
+          If there is additional functionality you would like supported, file a
+          bug using the{' '}
           <a
             href="https://b.corp.google.com/issues/new?component=1435307&template=2026255"
             target="_blank"
             rel="noreferrer"
           >
-            feedback.
-          </a>
+            feedback link
+          </a>{' '}
+          and use the{' '}
+          <a
+            href={`https://${SETTINGS.authService.host}/auth/groups`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            previous UI
+          </a>{' '}
+          in the meantime.
         </Alert>
         <Box sx={{ p: 5 }}>
           <FormControl fullWidth>
