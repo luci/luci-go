@@ -1,4 +1,4 @@
-# Make non-overlapping sticky elements.
+# Make non-overlapping sticky elements
 
 When you attempt to make a sticky element in `<body />` using CSS
 `position: sticky`, you will find that your element gets overlapped by the top

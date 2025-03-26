@@ -1,10 +1,10 @@
 # Adding a new host to LUCI UI
 
 LUCI UI provides a minimal number of endpoints itself, for most services the UI
-directly calls another host from the users browser.
+directly calls the other service's host from the browser.
 
-Although the URLs for these hosts could be hardcoded, for simplicity of using
-different configurations in local, dev and prod environments, these host URLs
+Although the URLs for these hosts could be hardcoded, to simplify using
+different configurations in local, dev, and prod environments, these hosts URLs
 are made configurable.
 
 If you want to add a new host, you should add it to the existing configuration
@@ -17,23 +17,24 @@ Bisection) and copy with appropriate modifications.
 
 All paths are relative to the luci/milo directory.
 
- * `proto/config/settings.proto` is the definition of the config format.
- * `ui/src/@types/globals.d.ts` defines the types used for typescript
-    compilation.
- * `httpservice/settings_js_file.go` is an RPC handler that serves the settings
-    to the browser.
- * `ui/dev_utils/settings_js_utils.ts` imports the settings from environment
-    variables into the local dev server.
- * `ui/src/testing_tools/setup_after_env.ts` imports the settings from
-    environment variables into the test environment.
- * `ui/.env.development` defines the default values for the environment
-    variables in the local development environment. This file is committed and
-    shared by all developers.
- * `ui/.env.development.local` overrides the values defined in
+* `proto/config/settings.proto` is the definition of the config format.
+* `ui/src/@types/globals.d.ts` defines the types used for typescript
+   compilation.
+* `httpservice/settings_js_file.go` is an RPC handler that serves the settings
+   to the browser.
+* `ui/dev_utils/settings_js_utils.ts` imports the settings from environment
+   variables into the local dev server.
+* `ui/src/testing_tools/setup_after_env.ts` imports the settings from
+   environment variables into the test environment.
+* `ui/.env.development` defines the default values for the environment
+   variables in the local development environment. This file is committed and
+   shared by all developers.
+* `ui/.env.development.local` overrides the values defined in
    `ui/.env.development`. This file is gitignored. Useful for pointing requests
-    to a custom host.
+   to a custom host.
 
 ### <mark>Important:</mark>
+
 Due to [push-on-green](http://go/luci-ui-push-on-green), you should land the
 code changes above and the config changes in the following section, push them
 to prod, **before** you use the newly added host anywhere in the codebase.
@@ -57,7 +58,7 @@ You need to modify one of the following two files to add the configuration.
 They are both instances of the `settings.proto` file from the luci/milo
 directory.
 
- * Dev - `data/config/configs/luci-milo-dev/settings.cfg`
- * Prod - `data/config/configs/luci-milo/settings.cfg`
+* Dev - `data/config/configs/luci-milo-dev/settings.cfg`
+* Prod - `data/config/configs/luci-milo/settings.cfg`
 
 [Example CL](https://chrome-internal-review.googlesource.com/c/infradata/config/+/6909955/2/configs/luci-milo/settings.cfg)

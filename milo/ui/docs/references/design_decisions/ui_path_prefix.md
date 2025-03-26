@@ -1,4 +1,4 @@
-# Add /ui/ path prefix to all UI routes.
+# Add /ui/ path prefix to all UI routes
 
 The `/ui/` prefix was added to address the route conflict between the new
 Build/Result UI and the old Build UI when we were re-building the go-template

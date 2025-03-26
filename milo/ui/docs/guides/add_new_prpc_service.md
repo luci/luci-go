@@ -17,7 +17,9 @@ You will need to regenerate the proto bindings any time your UI code needs to us
 You can find the generated proto files in `ui/src/proto`.
 
 ## Trouble shooting
-### Unable to find a dependency proto file (File not found).
+
+### Unable to find a dependency proto file (File not found)
+
 This happens when the proto files you added to the list imports files from a
 location not known to the code generator.
 

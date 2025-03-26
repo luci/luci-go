@@ -7,13 +7,16 @@ authentication. Check [go/milo-cookie-based-authentication](http://go/milo-cooki
 for details.
 
 ## Making authenticated requests
+
 ### pRPC
+
 If you are making a pRPC request, typically you can just use the
 `usePrpcServiceClient` hook. It will take care of user session management,
 auth token injection, etc for you. See [here](./make_prpc_queries.md) for
 details.
 
 ### Non-pRPC
+
 If you are making a non-pRPC request, you can obtain the auth token using
 the `useGetAccessToken` and the `useGetIdToken` hooks from
 `@/common/components/auth_state_provider`.
@@ -21,6 +24,7 @@ the `useGetAccessToken` and the `useGetIdToken` hooks from
 Check the documentation on those hooks for details.
 
 ## Check whether user has certain permission
+
 This will be useful if you need to render something base on the permission the
 user has (e.g. a retry build button).
 

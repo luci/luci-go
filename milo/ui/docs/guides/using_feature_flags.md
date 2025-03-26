@@ -35,6 +35,7 @@ does not have backend support, which introduces some limitations:
     trackingBug: '123455',
   });
   ```
+
   for more information about this function please check [feature flags context](../../src/common/feature_flags/context.ts).
 
 * **Recommended**: centralize the feature flag creation function call in a single file and reuse the object.

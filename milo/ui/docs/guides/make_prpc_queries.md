@@ -6,16 +6,20 @@ Self link: [go/luci-ui-rpc-tutorial](http://go/luci-ui-rpc-tutorial)
 solution for making pRPC queries.
 
 It provides the following:
- * Designed to work with code-generated pRPC client and react-query.
- * Takes care of user session management, auth token injection, cache key generation.
- * Provides support for automatic request batching.
+
+* Designed to work with code-generated pRPC client and react-query.
+* Takes care of user session management, auth token injection, cache key generation.
+* Provides support for automatic request batching.
 
 ## Prerequisite: generate proto bindings
+
 If you want to send pRPC queries to a new service, follow
 [this instruction](./add_new_prpc_service.md) to set up a new service.
 
 ## Basic code examples
-### Declare a client (optional).
+
+### Declare a client (optional)
+
 Add a hook to construct the client.
 This is typically placed in a `@/<domain>/hooks/prpc_clients.ts` package.
 `<domain>` is typically a related business domain (e.g. `builds` for
@@ -35,7 +39,8 @@ function useBuildsClient() {
 }
 ```
 
-### Make a pRPC request without react-query.
+### Make a pRPC request without react-query
+
 The client constructed by `usePrpcServiceClient` can be used as a regular
 client without react-query. e.g. `client.SearchBuilds(...)` will work as
 expected.
@@ -63,19 +68,21 @@ function MyComponent() {
 }
 ```
 
-### Make a pRPC request with react-query.
+### Make a pRPC request with react-query
+
 `usePrpcServiceClient` a client decorated with methods that helps with
 react-query integration. The `client.<Method>.query` helper method takes the
 same parameters as the function it attaches to, and returns a ReactQuery option
 with `queryKey` and `queryFn` populated.
 
 The `queryKey` includes:
- * the user's identity.
- * the host of the service.
- * the name of the service.
- * additional headers being passed to the service.
- * the name of the RPC method.
- * the serialized request object.
+
+* the user's identity.
+* the host of the service.
+* the name of the service.
+* additional headers being passed to the service.
+* the name of the RPC method.
+* the serialized request object.
 
 Note that auth token is not included in the `queryKey`. i.e. Refreshing auth
 token will not cause the query to be invalidated as long as the user's identity
@@ -97,7 +104,8 @@ function MyComponent() {
 }
 ```
 
-### Customize the pRPC react-query.
+### Customize the pRPC react-query
+
 Because `.query` simply returns a ReactQuery option, you can easily add more
 options or override options using the object spread syntax
 (`{...defaultValues, props: 'customized-value'}`). Check
@@ -122,7 +130,8 @@ function MyComponent() {
 }
 ```
 
-### Infuse the response data type with business knowledge.
+### Infuse the response data type with business knowledge
+
 When you use `client.<Method>.query`, the type of `query.data` is inferred from
 the return type of the RPC method. However, we may know more about the type of
 the response than what's defined in a proto file.
@@ -138,8 +147,8 @@ where the data is sourced and does not need to be repeated in many places.
 // reusable.
 interface OutputBuild extends Build {
   // In the generated binding, `Build.builder` is nullable. But we know it
-  // cannot be `null`/`undefined` as long as `builder` is not excluded by the
-  // field mask.
+  // cannot be `null`/`undefined` as long as `builder` is included in the
+  // field masks.
   readonly builder: BuilderID;
 }
 
@@ -172,14 +181,15 @@ function MyComponent() {
 }
 ```
 
-### Make a paginated pRPC request with react-query.
+### Make a paginated pRPC request with react-query
+
 In addition to `queryKey` and `queryFn`, `.queryPaged` also populates the
 `getNextPageParam`. It assumes the RPC uses the AIP-158 pagination. i.e. The
 request message must take a `pageToken` field while the response message must
 have a `nextPageToken` field. This makes it suitable to be used with
 `useInfiniteQuery`.
 
-Note that you does not necessarily need to use `useInfiniteQuery` to implement
+Note that you do not need to use `useInfiniteQuery` to implement
 pagination. See
 [the react-query doc](https://tanstack.com/query/v4/docs/framework/react/guides/paginated-queries)
 for details.
@@ -200,7 +210,8 @@ function MyComponent() {
 }
 ```
 
-### Make pRPC query with additional headers.
+### Make pRPC query with additional headers
+
 Sometimes it's useful to pass additional gRPC metadata through headers.
 
 Note that critical headers (`accept`, `content-type`, `authorization`) will not
@@ -216,7 +227,8 @@ function useBuildsClient(additionalHeaders: HeadersInit) {
 }
 ```
 
-### Make pRPC query using ID tokens instead of access tokens.
+### Make pRPC query using ID tokens instead of access tokens
+
 Most LUCI services use access token to authenticate pRPC requests. In case you
 need to call a services that uses the ID token, you can specify
 `initUseGetAuthToken`.
@@ -234,20 +246,23 @@ function useBuildsClient() {
 ```
 
 ## Advanced code examples
-### Automatically batch pRPC queries together.
+
+### Automatically batch pRPC queries together
+
 In some cases you may have many individual components that need to query a
 service. The service provides a batch endpoint. In theory, you can send a batch
 request at the parent component and distribute the query results to the child
 components. However, there are some challenges in doing so:
- * It might be difficult for the parent component to know the exact queries
-   required by the child components. This is especially true when filtering and
-   list virtualization are used.
- * When the list of displayed child component changes slightly (e.g. one more
-   child component is displayed), a new batch query needs to be sent. We will
-   not be able to reuse the cache of the previous batch query even though the
-   two batch queries largely overlaps.
- * Having the parent component query everything may make the parent component
-   tightly couple with the child component.
+
+* It might be difficult for the parent component to know the exact queries
+  required by the child components. This is especially true when filtering and
+  list virtualization are used.
+* When the list of displayed child component changes slightly (e.g. one more
+  child component is displayed), a new batch query needs to be sent. We will
+  not be able to reuse the cache of the previous batch query even though the
+  two batch queries largely overlaps.
+* Having the parent component query everything may make the parent component
+  tightly couple with the child component.
 
 To overcome these challenges, you can use a client implementation that can
 automatically batch requests together (see `@/proto_utils/batched_clients/*`).
@@ -303,19 +318,23 @@ function BuilderRow({builder}: BuilderRowProps) {
 ```
 
 #### Why my requests are not batched together?
+
 This can due to a number of reasons. It usually depends on the batch client
 implementation. The following sections assumes a typical,
 `@/generic_libs/tools/batched_fn` based batch client implementation is used.
 
-##### The batch `ClientImpl` decided that the requests should not be batches together.
+##### The batch `ClientImpl` decided that the requests should not be batches together
+
 This typically happens when
+
 1. the request size is too large (e.g.
 `buildbucket.v2.Builds.Batch` allows up to 200 requests to be batched together).
 2. the requests are not eligible for batching (e.g.
 `luci.resultdb.v1.ResultDB.BatchGetTestVariants` can only query data from one
 invocation at a time).
 
-##### The requests are not made in time for batching.
+##### The requests are not made in time for batching
+
 A batch client cannot wait indefinitely to collect requests. To reduce query
 latency, usually a batch client will only wait a very short period of time
 before sending out the requests. By default, a batch client will send out
@@ -340,7 +359,8 @@ function MyComponent() {
 }
 ```
 
-##### The RPC requests were sent to different batch `ClientImpl` object instances.
+##### The RPC requests were sent to different batch `ClientImpl` object instances
+
 The batch `ClientImpl` usually needs to use an internal state to keep track of
 the list of queries made by the caller. Therefore, it usually can only batch
 calls made to the same `ClientImpl` object instance.
@@ -423,32 +443,35 @@ function ComponentC() {
 }
 ```
 
-### Manage queries for a virtualized list.
+### Manage queries for a virtualized list
+
 This is not specific to pRPC queries.
 
 If you are
- * building a [virtualized](https://www.kirupa.com/hodgepodge/ui_virtualization.htm)
-   list, and
- * the RPC backing the list uses an offset to query a list of items.
+
+* building a [virtualized](https://www.kirupa.com/hodgepodge/ui_virtualization.htm)
+  list, and
+* the RPC backing the list uses an offset to query a list of items.
 
 Then `@/generic_libs/hooks/virtualized_query` can help you manage queries
 efficiently.
 
 `@/generic_libs/hooks/virtualized_query` works by partitioning a query into
 chunks.
- * Each individual chunk can be queried from the service without hitting a
-   page size limit.
- * Only query the chunks that are currently required (i.e. visible on the
-   screen).
- * The chunks are queried in parallel to reduce query latency.
- * Each chunk can be cached separately so invalidating one chunk does not
-   invalidate other chunks.
- * The chunks are aligned. Updating the item index domain will only cause some
-   chunks to be updated. (e.g. index `[2, 16)` is divided into `[2, 5)`,
-   `[5, 10)`,  `[10, 15)`, `[15, 16)`. Updating the index domain to `[1, 17)`
-   will result in chunks `[1, 5)`, `[5, 10)`, `[10, 15)`, `[15, 17)`. Only the
-   first and last chunk requires an update. All the chunks in-between can reuse
-   their query cache).
+
+* Each individual chunk can be queried from the service without hitting a
+  page size limit.
+* Only query the chunks that are currently required (i.e. visible on the
+  screen).
+* The chunks are queried in parallel to reduce query latency.
+* Each chunk can be cached separately so invalidating one chunk does not
+  invalidate other chunks.
+* The chunks are aligned. Updating the item index domain will only cause some
+  chunks to be updated. (e.g. index `[2, 16)` is divided into `[2, 5)`,
+  `[5, 10)`,  `[10, 15)`, `[15, 16)`. Updating the index domain to `[1, 17)`
+  will result in chunks `[1, 5)`, `[5, 10)`, `[10, 15)`, `[15, 17)`. Only the
+  first and last chunk requires an update. All the chunks in-between can reuse
+  their query cache).
 
 `@/generic_libs/hooks/virtualized_query` only handles query partitioning and
 active partition selection. The actual query is entirely managed by

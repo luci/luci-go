@@ -2,14 +2,15 @@
 
 There are some modules that can help you implement a paginated view in LUCI UI.
 
-## Simple page token based pages.
+## Simple page token based pages
 
 You can use the `@/common/components/param_pager` module.
 
 It manages the following automatically:
- * page token/size updates.
- * synchronization between page token/size and URL search params.
- * (in-memory) prev page token tracking.
+
+* page token/size updates.
+* synchronization between page token/size and URL search params.
+* (in-memory) prev page token tracking.
 
 See [here](../../src/common/components/params_pager/doc.md) for details.
 
