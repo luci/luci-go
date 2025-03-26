@@ -55,13 +55,9 @@ describe('routes', () => {
       // Ensure the regex is not rejecting everything.
       expect(regex.test('/ui/fleet/labs/devices')).toBeTruthy();
 
-      // Unmatched route.
-      expect(regex.test('/ui/fleet/cannot-found-this-route-here')).toBeFalsy();
-
-      // Unmatched lab route.
-      expect(
-        regex.test('/ui/fleet/labs/cannot-found-this-route-here'),
-      ).toBeFalsy();
+      // /fleet implements its own 404 page so non-existing URL requests should
+      // be matched to 404.
+      expect(regex.test('/ui/fleet/cannot-found-this-route-here')).toBeTruthy();
     });
 
     it('swarming', () => {

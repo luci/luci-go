@@ -68,6 +68,10 @@ export const fleetRoutes: RouteObject[] = [
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
         ],
       },
+      {
+        path: '*',
+        lazy: () => import('@/fleet/pages/not_found_page'),
+      },
     ],
   },
   // Prototype of a new unified UI for fleet management.
