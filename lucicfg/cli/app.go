@@ -54,6 +54,10 @@ func Main(params base.Parameters, args []string) int {
 
 // GetApplication returns lucicfg cli.Application.
 func GetApplication(params base.Parameters) *cli.Application {
+	defaultCacheDir, err := lucicfg.DefaultCacheDir()
+	if err != nil {
+		defaultCacheDir = "" // we'll crash later if attempting to use it
+	}
 	return &cli.Application{
 		Name:  "lucicfg",
 		Title: "LUCI config generator (" + lucicfg.UserAgent + ")",
@@ -81,6 +85,14 @@ func GetApplication(params base.Parameters) *cli.Application {
 			subcommands.Section("Misc\n"),
 			subcommands.CmdHelp,
 			versioncli.CmdVersion(lucicfg.UserAgent),
+		},
+
+		EnvVars: map[string]subcommands.EnvVarDefinition{
+			lucicfg.CacheEnvVar: {
+				Advanced:  true,
+				ShortDesc: "A directory with temporary files used to speed up lucicfg execution",
+				Default:   defaultCacheDir,
+			},
 		},
 	}
 }

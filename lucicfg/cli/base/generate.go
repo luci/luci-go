@@ -106,6 +106,13 @@ You may also optionally set +x flag on it, but this is not required.
 		overrides = append(overrides, override)
 	}
 
+	// TODO: Use Cache to construct a pkg.RepoManager that knows how to fetch
+	// remote repos into that cache.
+	cache := lucicfg.OpenCache(ctx)
+	if _, err := cache.Subdir("remote"); err != nil {
+		return nil, err
+	}
+
 	// Load the main package with dependencies from disk.
 	entry, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
 		Error: errors.New("remote packages aren't implemented yet"),
