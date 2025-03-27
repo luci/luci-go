@@ -52,11 +52,11 @@ type Cache struct {
 // directory exists, the Cache will write a new subdirectory for each ForRepo
 // call with a unique url.
 func New(cacheRoot string) (*Cache, error) {
-	if cleaned := filepath.Clean(cacheRoot); cacheRoot != cleaned {
-		return nil, fmt.Errorf("cacheRoot is not clean: %q (cleaned=%q)", cacheRoot, cleaned)
-	}
 	if !filepath.IsAbs(cacheRoot) {
 		return nil, fmt.Errorf("cacheRoot is not absolute: %q", cacheRoot)
+	}
+	if cleaned := filepath.Clean(cacheRoot); cacheRoot != cleaned {
+		return nil, fmt.Errorf("cacheRoot is not clean: %q (cleaned=%q)", cacheRoot, cleaned)
 	}
 	return &Cache{cacheRoot: cacheRoot}, os.MkdirAll(cacheRoot, 0777)
 }

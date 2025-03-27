@@ -1,0 +1,17 @@
+From 2ee3f86c1b7f56cf8f9341b7d03064645ec99913 Mon Sep 17 00:00:00 2001
+From: Exemplar Exemplaris <exemplar@example.com>
+Date: Wed, 26 Mar 2025 09:44:53 -0700
+Subject: [PATCH] Add an unrelated file
+
+---
+ unrelated_file | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 unrelated_file
+
+diff --git a/unrelated_file b/unrelated_file
+new file mode 100644
+index 0000000..c166d3d
+--- /dev/null
++++ b/unrelated_file
+@@ -0,0 +1 @@
++This file is completely unrelated, and is outside of subdir.

@@ -1,0 +1,40 @@
+From 90eb749377df38ad4a3d4622ca083cafac45364c Mon Sep 17 00:00:00 2001
+From: Exemplar Exemplaris <exemplar@example.com>
+Date: Wed, 26 Mar 2025 09:52:06 -0700
+Subject: [PATCH] add another builder
+
+---
+ subdir/builders.json                | 3 ++-
+ subdir/generated/cr-buildbucket.cfg | 9 +++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/subdir/builders.json b/subdir/builders.json
+index 3fb6dcc..330ecef 100644
+--- a/subdir/builders.json
++++ b/subdir/builders.json
+@@ -1,3 +1,4 @@
+ [
+-  "example-builder"
++  "example-builder",
++  "another-builder"
+ ]
+diff --git a/subdir/generated/cr-buildbucket.cfg b/subdir/generated/cr-buildbucket.cfg
+index de2c151..0553149 100644
+--- a/subdir/generated/cr-buildbucket.cfg
++++ b/subdir/generated/cr-buildbucket.cfg
+@@ -7,6 +7,15 @@
+ buckets {
+   name: "example-bucket"
+   swarming {
++    builders {
++      name: "another-builder"
++      swarming_host: "chromium-swarm.appspot.com"
++      exe {
++        cipd_package: "pkg/which/does/not/exist"
++        cipd_version: "refs/heads/main"
++      }
++      properties: '{}'
++    }
+     builders {
+       name: "example-builder"
+       swarming_host: "chromium-swarm.appspot.com"

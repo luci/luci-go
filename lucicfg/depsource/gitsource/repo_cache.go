@@ -20,7 +20,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 	"sync"
 
 	"go.chromium.org/luci/common/exec"
@@ -106,14 +108,14 @@ func (c *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
 	versionKey := fmt.Sprintf("%s.gitsourceVersion", cb.section)
 	versionStr := cb.hash()
 
-	val, err := c.gitOutput(ctx, "config", "get", versionKey)
+	val, err := c.gitOutput(ctx, "config", versionKey)
 	if err == nil {
 		if string(val[:len(val)-1]) == versionStr {
 			return nil // present and correct version
 		}
 		// need to reset
 		if len(val) > 0 {
-			if err := c.git(ctx, "config", "remove-section", cb.section); err != nil {
+			if err := c.git(ctx, "config", "--remove-section", cb.section); err != nil {
 				return err
 			}
 		}
@@ -124,11 +126,11 @@ func (c *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
 	}
 
 	for key, value := range cb.config {
-		if err := c.git(ctx, "config", "set", fmt.Sprintf("%s.%s", cb.section, key), value); err != nil {
+		if err := c.git(ctx, "config", fmt.Sprintf("%s.%s", cb.section, key), value); err != nil {
 			return err
 		}
 	}
-	return c.git(ctx, "config", "set", versionKey, versionStr)
+	return c.git(ctx, "config", versionKey, versionStr)
 }
 
 type configBlock struct {
@@ -138,9 +140,15 @@ type configBlock struct {
 
 func (c configBlock) hash() string {
 	h := sha1.New()
-	fmt.Fprintln(h, "section", c.section)
-	for key, val := range c.config {
-		fmt.Fprintln(h, key, val)
+	_, err := fmt.Fprintf(h, "section %q\n", c.section)
+	if err != nil {
+		panic(err)
+	}
+	for _, key := range slices.Sorted(maps.Keys(c.config)) {
+		_, err := fmt.Fprintf(h, "%q %q\n", key, c.config[key])
+		if err != nil {
+			panic(err)
+		}
 	}
 	return hex.EncodeToString(h.Sum(nil))
 }
@@ -148,11 +156,8 @@ func (c configBlock) hash() string {
 func filterCode(err error, codes ...int) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		ec := exitErr.ExitCode()
-		for _, code := range codes {
-			if ec == code {
-				return nil
-			}
+		if slices.Contains(codes, exitErr.ExitCode()) {
+			return nil
 		}
 	}
 	return err
