@@ -88,19 +88,23 @@ type MockInvocation struct {
 // through (run as normal).
 type CreateMockInvocation func(mc *MockCriteria, proc **os.Process) (*MockInvocation, error)
 
-var mockCreator func(context.Context) (mocker CreateMockInvocation, chatty bool)
+type MockFactory func(ctx context.Context, strict bool) (mocker CreateMockInvocation, chatty bool)
+
+var mockCreator MockFactory
+var mockStrict bool
 var mockCreatorOnce sync.Once
 
 // EnableMockingForThisProcess is called from execmock to install the mocker service here.
-func EnableMockingForThisProcess(mcFactory func(context.Context) (mocker CreateMockInvocation, chatty bool)) {
+func EnableMockingForThisProcess(mcFactory MockFactory, strict bool) {
 	alreadySet := true
 	mockCreatorOnce.Do(func() {
 		alreadySet = false
+		mockStrict = strict
 		mockCreator = mcFactory
 	})
 
 	if mockCreator == nil {
-		panic("EnableMockingForThisProcess called after MockingEnabled()")
+		panic("EnableMockingForThisProcess called after execmock.Init(ctx)")
 	}
 
 	if alreadySet {
@@ -120,7 +124,19 @@ func GetMockCreator(ctx context.Context) (mocker CreateMockInvocation, chatty bo
 		mockCreator = nil
 	})
 	if mockCreator != nil {
-		mocker, chatty = mockCreator(ctx)
+		mocker, chatty = mockCreator(ctx, mockStrict)
 	}
 	return
+}
+
+// MockingEnabled returns true iff mocking is enabled for the current process.
+//
+// This behaves similarly to GetMockCreator in that calling it will permanently
+// cause mocking to be disabled for this process if it wasn't setup prior to
+// this.
+func MockingEnabled() bool {
+	mockCreatorOnce.Do(func() {
+		mockCreator = nil
+	})
+	return mockCreator != nil
 }

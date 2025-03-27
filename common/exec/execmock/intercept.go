@@ -44,12 +44,18 @@ const (
 // Intercept must be called from TestMain like:
 //
 //	func TestMain(m *testing.M) {
-//		execmock.Intercept()
+//		execmock.Intercept(false)
 //		os.Exit(m.Run())
 //	}
 //
 // If process flags have not yet been parsed, this will call flag.Parse().
-func Intercept() {
+//
+// If strict is `true`, it requires that 100% of luci/common/exec uses consume
+// a context which was prepared with execmock.Init.
+//
+// If strict is `false`, luci/common/exec uses with a context without any mock
+// information will be passed-through to the real execution.
+func Intercept(strict bool) {
 	runnerMu.Lock()
 	runnerRegistryMutable = false
 	registry := runnerRegistry
@@ -138,6 +144,6 @@ func Intercept() {
 	}
 
 	// This is the real `go test` invocation.
-	execmockctx.EnableMockingForThisProcess(getMocker)
+	execmockctx.EnableMockingForThisProcess(getMocker, strict)
 	startServer()
 }

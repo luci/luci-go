@@ -95,12 +95,15 @@ func addMockEntry[Out any](ctx context.Context, f filter, i *execmockserver.Invo
 	return u
 }
 
-func getMocker(ctx context.Context) (mocker execmockctx.CreateMockInvocation, chatty bool) {
+func getMocker(ctx context.Context, strict bool) (mocker execmockctx.CreateMockInvocation, chatty bool) {
 	state := getState(ctx)
 	if state == nil {
-		return func(mc *execmockctx.MockCriteria, proc **os.Process) (*execmockctx.MockInvocation, error) {
-			return nil, errors.Annotate(execmockctx.ErrNoMatchingMock, "execmock.Init not called on context").Err()
-		}, false
+		if strict {
+			return func(mc *execmockctx.MockCriteria, proc **os.Process) (*execmockctx.MockInvocation, error) {
+				return nil, errors.Annotate(execmockctx.ErrNoMatchingMock, "execmock.Init not called on context").Err()
+			}, false
+		}
+		return nil, false
 	}
 	return state.createMockInvocation, state.chatty
 }
@@ -208,9 +211,13 @@ func mustGetState(ctx context.Context) *mockState {
 // of your RunnerFunctions.
 //
 // Panics if `ctx` has already been initialized for execmock.
+// Panics if you forgot to call execmock.Intercept.
 func Init(ctx context.Context) context.Context {
 	if getState(ctx) != nil {
 		panic(errors.New("execmock.Init: called twice on the same context"))
+	}
+	if !execmockctx.MockingEnabled() {
+		panic(errors.New("execmock.Init: called without running execmock.Intercept in TestMain"))
 	}
 	return context.WithValue(ctx, &stateCtxKey, &mockState{
 		chatty: testing.Verbose(),
