@@ -23,4 +23,8 @@ export const authRoutes: RouteObject[] = [
     path: 'groups/*',
     lazy: () => import('@/authdb/pages/groups_page'),
   },
+  {
+    path: 'lookup',
+    lazy: () => import('@/authdb/pages/lookup_page'),
+  },
 ];

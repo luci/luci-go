@@ -250,11 +250,18 @@ function generateAuthServiceSection(email: string | undefined): SidebarSection {
   // External users cannot see auth service, so only link it for Googlers.
   const showAuthService = /@google\.com$/.test(email || '');
   if (showAuthService) {
-    pages.push({
-      page: UiPage.AuthServiceGroups,
-      url: '/ui/auth/groups',
-      icon: <GroupsIcon />,
-    });
+    pages.push(
+      {
+        page: UiPage.AuthServiceGroups,
+        url: '/ui/auth/groups',
+        icon: <GroupsIcon />,
+      },
+      {
+        page: UiPage.AuthServiceLookup,
+        url: '/ui/auth/lookup',
+        icon: <SearchIcon />,
+      },
+    );
   }
   return {
     title: 'Admin',

@@ -58,7 +58,7 @@ describe('generateSidebarSections', () => {
     ]);
   });
 
-  it('should generate groups link when googler is logged in', () => {
+  it('should generate groups & lookup link when googler is logged in', () => {
     const sidebarItems = generateSidebarSections(
       undefined,
       undefined,
@@ -82,6 +82,11 @@ describe('generateSidebarSections', () => {
             page: UiPage.AuthServiceGroups,
             url: '/ui/auth/groups',
             icon: <GroupsIcon />,
+          },
+          {
+            page: UiPage.AuthServiceLookup,
+            url: '/ui/auth/lookup',
+            icon: <SearchIcon />,
           },
         ],
       },
