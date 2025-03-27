@@ -21,17 +21,34 @@ import (
 	"testing"
 	"unicode"
 
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(fileset.Set{}))
+}
 
 func TestLoadDefinition(t *testing.T) {
 	t.Parallel()
 
 	call := func(body string) (*Definition, error) {
 		return LoadDefinition(context.Background(), []byte(deindent(body)), fakeLoaderValidator{})
+	}
+
+	fileSet := func(pats []string) *fileset.Set {
+		s, err := fileset.New(pats)
+		if err != nil {
+			panic(err)
+		}
+		return s
 	}
 
 	t.Run("Works", func(t *testing.T) {
@@ -105,7 +122,8 @@ func TestLoadDefinition(t *testing.T) {
 					Paths: []string{"noop"},
 				},
 			},
-			Resources: []string{"a", "b", "c"},
+			Resources:    []string{"a", "b", "c"},
+			ResourcesSet: fileSet([]string{"a", "b", "c"}),
 			Deps: []*DepDecl{
 				{
 					Name:      "@local-1",

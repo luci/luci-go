@@ -23,13 +23,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.starlark.net/starlark"
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 
-	"go.chromium.org/luci/lucicfg/fileset"
 	"go.chromium.org/luci/lucicfg/internal"
 	"go.chromium.org/luci/lucicfg/pkg/mvs"
 )
@@ -148,11 +146,6 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 		return nil, err
 	}
 
-	resourceSet, err := fileset.New(def.Resources)
-	if err != nil {
-		return nil, err
-	}
-
 	var basePath string
 	if d.Path != "." {
 		basePath = d.Path + "/"
@@ -169,36 +162,21 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 		// Ignore errors here. They will be rediscovered and bubble up more
 		// naturally when these files are fetched for real (if this ever happens,
 		// if not - even better).
-		yes, _ := resourceSet.Contains(rel)
+		yes, _ := def.ResourcesSet.Contains(rel)
 		return yes
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	code, err := d.Repo.Loader(ctx, d.Version, d.Path, d.Package, def.ResourcesSet)
+	if err != nil {
+		return nil, err
+	}
 	return &Dep{
 		Package: d.Package,
 		Min:     def.MinLucicfgVersion,
-		Code: func(ctx context.Context, rel string) (starlark.StringDict, string, error) {
-			if !strings.HasSuffix(rel, ".star") {
-				switch loadable, err := resourceSet.Contains(rel); {
-				case err != nil:
-					return nil, "", errors.Annotate(err, "checking %q against pkg.resources(...) patterns in %q", rel, d.Package).Err()
-				case !loadable:
-					return nil, "", errors.Reason(
-						"this non-starlark file is not declared as a resource in "+
-							"pkg.resources(...) in PACKAGE.star of %q and cannot be loaded", d.Package).Err()
-				}
-			}
-			blob, err := d.Repo.Fetch(ctx, d.Version, path.Join(d.Path, rel))
-			if err != nil {
-				if errors.Is(err, ErrFileNotInRepo) {
-					return nil, "", interpreter.ErrNoModule
-				}
-				return nil, "", err
-			}
-			return nil, string(blob), nil
-		},
+		Code:    code,
 	}, nil
 }
 

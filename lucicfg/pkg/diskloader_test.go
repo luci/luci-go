@@ -20,6 +20,8 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 func TestDiskPackageLoader(t *testing.T) {
@@ -40,7 +42,10 @@ func TestDiskPackageLoader(t *testing.T) {
 		"wrong/res.bin":        "zzz",
 	})
 
-	loader, err := diskPackageLoader(tmp, []string{"**/*.txt"})
+	resources, err := fileset.New([]string{"**/*.txt"})
+	assert.NoErr(t, err)
+
+	loader, err := diskPackageLoader(tmp, "@pkg", resources, syncStatCache())
 	assert.NoErr(t, err)
 
 	good := []struct {
@@ -67,7 +72,7 @@ func TestDiskPackageLoader(t *testing.T) {
 		{"../file.star", "outside the package root"},
 		{"bad/4.star", `directory "bad" belongs to a different (nested) package and files from it cannot be loaded directly`},
 		{"bad/as/well/5.star", `directory "bad/as/well" belongs to a different (nested) package and files from it cannot be loaded directly`},
-		{"wrong/res.bin", "this non-starlark file is not declared as a resource in pkg.resources(...) in PACKAGE.star and cannot be loaded"},
+		{"wrong/res.bin", `this non-starlark file is not declared as a resource in pkg.resources(...) in PACKAGE.star of "@pkg" and cannot be loaded`},
 		{"missing.star", `no such module`},
 	}
 	for _, cs := range bad {

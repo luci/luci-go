@@ -24,6 +24,8 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 func TestEntryOnDisk(t *testing.T) {
@@ -312,6 +314,7 @@ func TestPackageOnDisk(t *testing.T) {
 		assert.That(t, pkg.Definition, should.Match(&Definition{
 			Name:              "@some/pkg",
 			MinLucicfgVersion: LucicfgVersion{1, 2, 3},
+			ResourcesSet:      &fileset.Set{},
 		}))
 	})
 

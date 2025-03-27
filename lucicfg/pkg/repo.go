@@ -26,6 +26,9 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/starlark/interpreter"
+
+	"go.chromium.org/luci/lucicfg/fileset"
 )
 
 // PinnedVersion is a version placeholder that is used only by the root package
@@ -107,8 +110,10 @@ type Repo interface {
 	PickMostRecent(ctx context.Context, vers []string) (string, error)
 	// Prefetch asks the repo to prefetch files matching the filter.
 	Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error
-	// Fetch fetches the file at some revision. May return ErrFileNotInRepo.
+	// Fetch fetches a single file at some revision. May return ErrFileNotInRepo.
 	Fetch(ctx context.Context, rev, path string) ([]byte, error)
+	// Loader returns a loader with package files under the given directory.
+	Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error)
 	// LoaderValidator returns a validator of PACKAGE.star, if available.
 	LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error)
 }
@@ -156,6 +161,9 @@ type LocalDiskRepo struct {
 	Root string
 	// Key is the RepoKey this repository is known as.
 	Key RepoKey
+
+	once      sync.Once
+	statCache *statCache
 }
 
 // RepoKey is a part of Repo interface.
@@ -198,6 +206,15 @@ func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, er
 	default:
 		return blob, nil
 	}
+}
+
+// Loader is a part of Repo interface.
+func (r *LocalDiskRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
+	if rev != PinnedVersion {
+		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+	}
+	r.once.Do(func() { r.statCache = syncStatCache() })
+	return diskPackageLoader(filepath.Join(r.Root, filepath.FromSlash(pkgDir)), pkgName, resources, r.statCache)
 }
 
 // LoaderValidator is a part of Repo interface.
@@ -351,5 +368,28 @@ func (r *TestRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) 
 
 // LoaderValidator is a part of Repo interface.
 func (r *TestRepo) LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error) {
+	// There's no validation currently when fetching remote PACKAGE.star.
 	return nil, nil
+}
+
+// Loader is a part of Repo interface.
+func (r *TestRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
+	dir, err := r.verDir(rev)
+	if err != nil {
+		return nil, err
+	}
+	// Note TestRepo mimics a remote repository, not the local disk. For that
+	// reason we use a loader that is oblivious of any local disk details (i.e. we
+	// purposefully do not reuse diskPackageLoader here).
+	return GenericLoader(GenericLoaderParams{
+		Package:   pkgName,
+		Resources: resources,
+		Fetch: func(ctx context.Context, path string) ([]byte, error) {
+			blob, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(pkgDir), filepath.FromSlash(path)))
+			if errors.Is(err, os.ErrNotExist) {
+				return nil, interpreter.ErrNoModule
+			}
+			return blob, err
+		},
+	}), nil
 }

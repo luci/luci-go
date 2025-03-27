@@ -142,11 +142,10 @@ func TestDiscoverDeps(t *testing.T) {
 		_, _, err = local1(ctx, "unknown.star")
 		assert.That(t, err, should.Equal(interpreter.ErrNoModule))
 
-		// CAN directly read files from the nested packages. Strictly speaking this
-		// is wrong, but preventing it may be non-trivial, so we allow it for now.
-		_, src, err = local1(ctx, "deeper/file.star")
-		assert.NoErr(t, err)
-		assert.That(t, src, should.Equal("Works"))
+		// Can't directly read files from the nested packages as long as the
+		// package is local.
+		_, _, err = local1(ctx, "deeper/file.star")
+		assert.That(t, err, should.ErrLike(`directory "deeper" belongs to a different (nested) package and files from it cannot be loaded directly by "@local-1"`))
 	})
 
 	t.Run("Local only: missing dep", func(t *testing.T) {

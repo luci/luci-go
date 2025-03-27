@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 
+	"go.chromium.org/luci/lucicfg/fileset"
 	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
 
@@ -69,6 +70,8 @@ type Definition struct {
 	FmtRules []*FmtRule
 	// Resources are all declared resource patterns (positive and negative).
 	Resources []string
+	// ResourceSet is a parsed Resources fileset.
+	ResourcesSet *fileset.Set
 	// Deps are declared dependencies (validated only syntactically).
 	Deps []*DepDecl
 }
@@ -230,6 +233,11 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 
 	if !state.declareCalled {
 		return nil, errors.Reason("PACKAGE.star must call pkg.declare(...)").Err()
+	}
+
+	state.def.ResourcesSet, err = fileset.New(state.def.Resources)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad pkg.resources(...)").Err()
 	}
 
 	return &state.def, nil

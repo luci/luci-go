@@ -148,16 +148,29 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		}, nil
 	}
 
+	// Path to the package relative to the repository root.
+	repoPath := filepath.ToSlash(rel)
+
+	// Construct a trivial Repo implementation that just fetches files directly
+	// from disk. Since we don't really know what this local repo represents (it
+	// may not even exists as a remote repo, e.g. for new packages being
+	// developed), use a special magical RepoKey for it. See also a comment for
+	// PinnedVersion for more details on special status of root-local packages.
+	localRepo := &LocalDiskRepo{
+		Root: repoRoot,
+		Key:  RepoKey{Root: true},
+	}
+
 	// Load the package definition from PACKAGE.star.
 	pkgBody, err := os.ReadFile(pkgScript)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
+		return nil, errors.Annotate(err, "reading %s", cwdRel(pkgScript)).Err()
 	}
-	def, err := LoadDefinition(ctx, pkgBody, &diskLoaderValidator{
-		pkgRoot:   pkgRoot,
-		repoRoot:  repoRoot,
-		statCache: statCache,
-	})
+	validator, err := localRepo.LoaderValidator(ctx, PinnedVersion, repoPath)
+	if err != nil {
+		return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+	}
+	def, err := LoadDefinition(ctx, pkgBody, validator)
 	if err != nil {
 		return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 	}
@@ -178,18 +191,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		}
 	}
 
-	// Construct a trivial Repo implementation that just fetches files directly
-	// from disk. Since we don't really know what this local repo represents (it
-	// may not even exists as a remote repo, e.g. for new packages being
-	// developed), use a special magical RepoKey for it. See also a comment for
-	// PinnedVersion for more details on special status of root-local packages.
-	localRepo := &LocalDiskRepo{
-		Root: repoRoot,
-		Key:  RepoKey{Root: true},
-	}
-
 	// Load transitive closure of all dependencies.
-	repoPath := filepath.ToSlash(rel)
 	deps, err := discoverDeps(ctx, &DepContext{
 		Package: def.Name,
 		Version: PinnedVersion,
@@ -226,7 +228,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		})
 	}
 
-	code, err := diskPackageLoader(pkgRoot, def.Resources)
+	code, err := localRepo.Loader(ctx, PinnedVersion, repoPath, def.Name, def.ResourcesSet)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +291,10 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 		if err != nil {
 			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 		}
-		code, err := diskPackageLoader(abs, def.Resources)
+		code, err := (&LocalDiskRepo{
+			Root: abs,
+			Key:  RepoKey{Root: true},
+		}).Loader(ctx, PinnedVersion, ".", def.Name, def.ResourcesSet)
 		if err != nil {
 			return nil, err
 		}
