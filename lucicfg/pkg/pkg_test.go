@@ -184,6 +184,89 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.That(t, err, should.ErrLike(
 			`main.star is not declared as a pkg.entrypoint(...) in PACKAGE.star and thus cannot be executed. Available entrypoints: [another1.star another2.star]`))
 	})
+
+	t.Run("Local dependency outside of the repo root", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			"a/.git/config": `# Denotes repo root`,
+			"a/pkg/PACKAGE.star": `
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
+				pkg.depend(
+					name = "@local",
+					source = pkg.source.local(
+						path = "../../b",
+					)
+				)
+				pkg.entrypoint("main.star")
+			`,
+			"a/pkg/main.star": `print("Hi")`,
+			"b/PACKAGE.star": `
+				pkg.declare(name = "@local", lucicfg = "1.2.3")
+			`,
+		})
+
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/pkg/main.star"), nil)
+		assert.That(t, err, should.ErrLike(
+			`bad dependency on "@local": a local dependency must not point outside of the repository it is declared in`))
+	})
+
+	t.Run("Local dependency inside a git submodule", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			".git/config": `# Denotes repo root`,
+			"pkg/PACKAGE.star": `
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
+				pkg.depend(
+					name = "@local",
+					source = pkg.source.local(
+						path = "../submod",
+					)
+				)
+				pkg.entrypoint("main.star")
+			`,
+			"pkg/main.star":      `print("Hi")`,
+			"submod/.git/config": `# Denotes a submodule root`,
+			"submod/PACKAGE.star": `
+				pkg.declare(name = "@local", lucicfg = "1.2.3")
+			`,
+		})
+
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil)
+		assert.That(t, err, should.ErrLike(
+			`bad dependency on "@local": a local dependency should not reside in a git submodule`))
+	})
+
+	t.Run("Transitive local dependency inside a git submodule", func(t *testing.T) {
+		tmp := prepDisk(t, map[string]string{
+			".git/config": `# Denotes repo root`,
+			"pkg/PACKAGE.star": `
+				pkg.declare(name = "@some/pkg", lucicfg = "1.2.3")
+				pkg.depend(
+					name = "@local-1",
+					source = pkg.source.local(
+						path = "../dep",
+					)
+				)
+				pkg.entrypoint("main.star")
+			`,
+			"pkg/main.star": `print("Hi")`,
+			"dep/PACKAGE.star": `
+				pkg.declare(name = "@local-1", lucicfg = "1.2.3")
+				pkg.depend(
+					name = "@local-2",
+					source = pkg.source.local(
+						path = "../submod",
+					)
+				)
+			`,
+			"submod/.git/config": `# Denotes a submodule root`,
+			"submod/PACKAGE.star": `
+				pkg.declare(name = "@local-2", lucicfg = "1.2.3")
+			`,
+		})
+
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil)
+		assert.That(t, err, should.ErrLike(
+			`bad dependency on "@local-2": a local dependency should not reside in a git submodule`))
+	})
 }
 
 func TestPackageOnDisk(t *testing.T) {

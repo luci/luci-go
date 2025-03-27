@@ -144,6 +144,8 @@ type DepDecl struct {
 type LoaderValidator interface {
 	// ValidateEntrypoint returns an error if the given entrypoint is missing.
 	ValidateEntrypoint(ctx context.Context, entrypoint string) error
+	// ValidateDepDecl returns an error if the dependency declaration is bad.
+	ValidateDepDecl(ctx context.Context, decl *DepDecl) error
 }
 
 // NoopLoaderValidator implements LoaderValidator by doing nothing.
@@ -153,6 +155,11 @@ type NoopLoaderValidator struct{}
 
 // ValidateEntrypoint implements LoaderValidator interface.
 func (NoopLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint string) error {
+	return nil
+}
+
+// ValidateDepDecl implements LoaderValidator interface.
+func (NoopLoaderValidator) ValidateDepDecl(ctx context.Context, decl *DepDecl) error {
 	return nil
 }
 
@@ -479,6 +486,10 @@ func (s *state) depend(ctx context.Context, call nativeCall) (starlark.Value, er
 	})
 	if dup != -1 {
 		return nil, errors.Reason("dependency on %q was already declared at\n%s", dep.Name, s.def.Deps[dup].Stack).Err()
+	}
+
+	if err := s.val.ValidateDepDecl(ctx, &dep); err != nil {
+		return nil, errors.Annotate(err, "bad dependency on %q", dep.Name).Err()
 	}
 
 	s.def.Deps = append(s.def.Deps, &dep)

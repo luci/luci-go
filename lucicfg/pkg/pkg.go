@@ -92,54 +92,48 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		return nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
 	}
 
-	var def *Definition
+	statCache := unsyncStatCache()
 
 	// Find PACKAGE.star indicating the root of the package.
 	var found bool
+	var pkgScript string
 	scriptDir, main := filepath.Split(abs)
-	root, found, err := findRoot(scriptDir, PackageScript, nil)
+	pkgRoot, found, err := findRoot(scriptDir, PackageScript, "", statCache)
 	if err != nil {
 		return nil, errors.Annotate(err, "searching for %s", PackageScript).Err()
 	}
 	if found {
-		main, err = filepath.Rel(root, abs)
+		main, err = filepath.Rel(pkgRoot, abs)
 		if err != nil {
-			return nil, errors.Annotate(err, "getting relative path from %s to %s", root, abs).Err()
+			return nil, errors.Annotate(err, "getting relative path from %s to %s", pkgRoot, abs).Err()
 		}
-		pkgScript := filepath.Join(root, PackageScript)
-		pkgBody, err := os.ReadFile(pkgScript)
-		if err != nil {
-			return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
-		}
-		def, err = LoadDefinition(ctx, pkgBody, &diskLoaderValidator{root: root})
-		if err != nil {
-			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
-		}
+		pkgScript = filepath.Join(pkgRoot, PackageScript)
 	} else {
 		// Fallback to the pre-PACKAGE.star behavior where entry point scripts were
 		// assumed to be at the root of the main package.
-		root = scriptDir
+		pkgRoot = scriptDir
 	}
 
 	// Drop trailing "/" from the root path.
-	root = filepath.Clean(root)
+	pkgRoot = filepath.Clean(pkgRoot)
 
 	// Calculate path from the repo root to the package root. This is needed by
 	// some lucicfg introspection functionality (these paths end up in
-	// project.cfg).
-	repoRoot, _, err := findRoot(root, "", nil)
+	// project.cfg) and when loading local dependencies (to verify they are indeed
+	// local).
+	repoRoot, _, err := findRoot(pkgRoot, "", "", statCache)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not determine the repository or volume root of %q", abs).Err()
 	}
-	rel, err := filepath.Rel(repoRoot, root)
+	rel, err := filepath.Rel(repoRoot, pkgRoot)
 	if err != nil {
-		return nil, errors.Annotate(err, "calculating path of %q relative to %q", root, repoRoot).Err()
+		return nil, errors.Annotate(err, "calculating path of %q relative to %q", pkgRoot, repoRoot).Err()
 	}
 	script := filepath.ToSlash(main)
 
 	// If no PACKAGE.star, return minimal package for compatibility with old code.
-	if def == nil {
-		code := interpreter.FileSystemLoader(root)
+	if pkgScript == "" {
+		code := interpreter.FileSystemLoader(pkgRoot)
 		return &Entry{
 			Main:    code,
 			Package: LegacyPackageNamePlaceholder,
@@ -147,11 +141,25 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 			Script:  script,
 			Local: &Local{
 				Code:       code,
-				DiskPath:   root,
+				DiskPath:   pkgRoot,
 				Definition: legacyDefinition(),
-				Formatter:  legacyFormatter(root),
+				Formatter:  legacyFormatter(pkgRoot),
 			},
 		}, nil
+	}
+
+	// Load the package definition from PACKAGE.star.
+	pkgBody, err := os.ReadFile(pkgScript)
+	if err != nil {
+		return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
+	}
+	def, err := LoadDefinition(ctx, pkgBody, &diskLoaderValidator{
+		pkgRoot:   pkgRoot,
+		repoRoot:  repoRoot,
+		statCache: statCache,
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 	}
 
 	// Verify the entry point is known.
@@ -218,7 +226,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		})
 	}
 
-	code, err := diskPackageLoader(root, def.Resources)
+	code, err := diskPackageLoader(pkgRoot, def.Resources)
 	if err != nil {
 		return nil, err
 	}
@@ -231,9 +239,9 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		LucicfgVersionConstraints: constraints,
 		Local: &Local{
 			Code:       code,
-			DiskPath:   root,
+			DiskPath:   pkgRoot,
 			Definition: def,
-			Formatter:  legacyCompatibleFormatter(root, def.FmtRules),
+			Formatter:  legacyCompatibleFormatter(pkgRoot, def.FmtRules),
 		},
 	}, nil
 }
@@ -256,7 +264,7 @@ type Local struct {
 // PackageOnDisk loads a local package from a directory on disk.
 //
 // This is similar to EntryOnDisk, except it doesn't fetch (or validate) any
-// dependencies and doesn't require an entry point.
+// dependencies and doesn't require (nor validates) an entry point.
 //
 // This is used for local "fmt" and "lint" checks that don't care about external
 // dependencies and do not actually run any Starlark code (but they still need
@@ -277,7 +285,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	pkgScript := filepath.Join(abs, PackageScript)
 	switch body, err := os.ReadFile(pkgScript); {
 	case err == nil:
-		def, err := LoadDefinition(ctx, body, &diskLoaderValidator{root: abs})
+		def, err := LoadDefinition(ctx, body, NoopLoaderValidator{})
 		if err != nil {
 			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 		}
@@ -326,23 +334,5 @@ func legacyDefinition() *Definition {
 	return &Definition{
 		Name:      LegacyPackageNamePlaceholder,
 		Resources: []string{"**/*"},
-	}
-}
-
-type diskLoaderValidator struct {
-	root string
-}
-
-func (d *diskLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint string) error {
-	switch info, err := os.Stat(filepath.Join(d.root, filepath.FromSlash(entrypoint))); {
-	case err == nil:
-		if !info.Mode().IsRegular() {
-			return errors.Reason("not a regular file").Err()
-		}
-		return nil
-	case errors.Is(err, os.ErrNotExist):
-		return errors.Reason("no such file in the package").Err()
-	default:
-		return err
 	}
 }

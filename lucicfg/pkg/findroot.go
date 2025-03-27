@@ -29,10 +29,18 @@ var repoSentinel = []string{".git", ".citc"}
 //
 // If given a markerFile, will stop searching if finds a directory that contains
 // this file, returning (dir path, true, nil) in that case.
-func findRoot(dir, markerFile string, cache *statCache) (string, bool, error) {
+//
+// If given a stopDir, will also stop when reaching this directory, returning
+// (stopDir, false, nil) if it happens.
+func findRoot(dir, markerFile, stopDir string, cache *statCache) (string, bool, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return "", false, err
+	}
+	if stopDir != "" {
+		if stopDir, err = filepath.Abs(stopDir); err != nil {
+			return "", false, err
+		}
 	}
 
 	if cache == nil {
@@ -60,6 +68,10 @@ func findRoot(dir, markerFile string, cache *statCache) (string, bool, error) {
 				// Some file system error (likely no access).
 				return "", false, err
 			}
+		}
+
+		if stopDir != "" && dir == stopDir {
+			return stopDir, false, nil // hit the stop directory
 		}
 
 		up := filepath.Dir(dir)

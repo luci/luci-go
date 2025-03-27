@@ -73,7 +73,14 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 				if err != nil {
 					return nil, err
 				}
-				return LoadDefinition(ctx, blob, NoopLoaderValidator{})
+				validator, err := d.Repo.LoaderValidator(ctx, d.Version, d.Path)
+				if err != nil {
+					return nil, err
+				}
+				if validator == nil {
+					validator = NoopLoaderValidator{}
+				}
+				return LoadDefinition(ctx, blob, validator)
 			}()
 		})
 		if d.err != nil {

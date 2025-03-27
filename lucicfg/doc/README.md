@@ -4421,7 +4421,7 @@ of the package. It is validated as part of `lucicfg validate` call.
 #### Arguments {#pkg.depend-args}
 
 * **name**: the name of the depended package. Required.
-* **source**: a pkg.source.ref struct as produced by [pkg.source.googlesource(...)](#pkg.source.googlesource), [pkg.source.submodule(...)](#pkg.source.submodule) or [pkg.source.local(...)](#pkg.source.local). Required.
+* **source**: a pkg.source.ref struct as produced by [pkg.source.googlesource(...)](#pkg.source.googlesource) or [pkg.source.local(...)](#pkg.source.local). Required.
 
 
 
@@ -4504,37 +4504,6 @@ Defines a reference to package source stored in a googlesource.com repo.
 
 
 #### Returns  {#pkg.source.googlesource-returns}
-
-A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
-
-
-
-### pkg.source.submodule {#pkg.source.submodule}
-
-```python
-pkg.source.submodule(path)
-```
-
-
-
-Builds a reference to package source by reading a git submodule.
-
-Works relative to the repository of the package that declared the
-dependency (aka "the current package repository").
-
-Constructs [pkg.source.googlesource(...)](#pkg.source.googlesource) by reading the checked in
-`.gitmodules` file of the current package repository to figure out the host,
-the repo, the ref and the minimum version of the dependency identified by
-the given path.
-
-Recursive submodules are not supported.
-
-#### Arguments {#pkg.source.submodule-args}
-
-* **path**: a relative path from the current package directory to the directory with the target dependency (i.e. the directory that contains PACKAGE.star file). This directory must be within some git submodule path. Required.
-
-
-#### Returns  {#pkg.source.submodule-returns}
 
 A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 

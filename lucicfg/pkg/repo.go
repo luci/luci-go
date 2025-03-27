@@ -109,6 +109,8 @@ type Repo interface {
 	Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error
 	// Fetch fetches the file at some revision. May return ErrFileNotInRepo.
 	Fetch(ctx context.Context, rev, path string) ([]byte, error)
+	// LoaderValidator returns a validator of PACKAGE.star, if available.
+	LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error)
 }
 
 // ErroringRepoManager implements RepoManager by returning errors.
@@ -196,6 +198,18 @@ func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, er
 	default:
 		return blob, nil
 	}
+}
+
+// LoaderValidator is a part of Repo interface.
+func (r *LocalDiskRepo) LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error) {
+	if rev != PinnedVersion {
+		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+	}
+	return &diskLoaderValidator{
+		pkgRoot:   filepath.Join(r.Root, filepath.FromSlash(pkgDir)),
+		repoRoot:  r.Root,
+		statCache: syncStatCache(),
+	}, nil
 }
 
 // TestRepoManager is used in tests as a mock for remote repositories.
@@ -333,4 +347,9 @@ func (r *TestRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) 
 	default:
 		return blob, nil
 	}
+}
+
+// LoaderValidator is a part of Repo interface.
+func (r *TestRepo) LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error) {
+	return nil, nil
 }

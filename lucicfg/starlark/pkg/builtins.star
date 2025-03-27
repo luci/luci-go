@@ -85,8 +85,7 @@ def _depend(*, name, source):
     Args:
       name: the name of the depended package. Required.
       source: a pkg.source.ref struct as produced by
-        pkg.source.googlesource(...), pkg.source.submodule(...) or
-        pkg.source.local(...). Required.
+        pkg.source.googlesource(...) or pkg.source.local(...). Required.
     """
     __native__.depend(
         __native__.stacktrace(1),
@@ -157,31 +156,6 @@ def _googlesource(*, host, repo, ref, path, revision):
         revision = _validate_string("revision", revision),
     )
 
-def _submodule(path):
-    """Builds a reference to package source by reading a git submodule.
-
-    Works relative to the repository of the package that declared the
-    dependency (aka "the current package repository").
-
-    Constructs pkg.source.googlesource(...) by reading the checked in
-    `.gitmodules` file of the current package repository to figure out the host,
-    the repo, the ref and the minimum version of the dependency identified by
-    the given path.
-
-    Recursive submodules are not supported.
-
-    Args:
-      path: a relative path from the current package directory to the
-        directory with the target dependency (i.e. the directory that contains
-        PACKAGE.star file). This directory must be within some git submodule
-        path. Required.
-
-    Returns:
-      A pkg.source.ref struct that can be passed to pkg.depend(...).
-    """
-    _unused(path)
-    fail("not implemented")
-
 def _local(path):
     """Builds a reference to package source stored in the current repository.
 
@@ -250,9 +224,6 @@ def _fmt_rules(*, paths, function_args_sort = None):
         function_args_sort = _validate_str_list("function_args_sort", function_args_sort)
     __native__.fmt_rules(__native__.stacktrace(1), paths, function_args_sort)
 
-def _unused(*args):  # @unused
-    """Used exclusively to shut up `unused-variable` lint."""
-
 pkg = struct(
     declare = _declare,
     depend = _depend,
@@ -260,7 +231,6 @@ pkg = struct(
     entrypoint = _entrypoint,
     source = struct(
         googlesource = _googlesource,
-        submodule = _submodule,
         local = _local,
     ),
     options = struct(

@@ -91,7 +91,7 @@ type diskLoaderState struct {
 }
 
 func (l *diskLoaderState) checkDirectoryVisible(rel string) error {
-	switch pkgRoot, found, err := findRoot(filepath.Join(l.root, rel), PackageScript, l.cache); {
+	switch pkgRoot, found, err := findRoot(filepath.Join(l.root, rel), PackageScript, "", l.cache); {
 	case err != nil:
 		return err
 	case !found:
@@ -104,4 +104,50 @@ func (l *diskLoaderState) checkDirectoryVisible(rel string) error {
 	default:
 		return errors.Reason("directory %q belongs to a different (nested) package and files from it cannot be loaded directly", filepath.ToSlash(rel)).Err()
 	}
+}
+
+// diskLoaderValidator implements LoaderValidator using files on disk.
+type diskLoaderValidator struct {
+	pkgRoot   string     // absolute path to the package root
+	repoRoot  string     // absolute path to the package repository root
+	statCache *statCache // to dedup os.Stat calls
+}
+
+func (d *diskLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint string) error {
+	switch info, err := os.Stat(filepath.Join(d.pkgRoot, filepath.FromSlash(entrypoint))); {
+	case err == nil:
+		if !info.Mode().IsRegular() {
+			return errors.Reason("not a regular file").Err()
+		}
+		return nil
+	case errors.Is(err, os.ErrNotExist):
+		return errors.Reason("no such file in the package").Err()
+	default:
+		return err
+	}
+}
+
+func (d *diskLoaderValidator) ValidateDepDecl(ctx context.Context, dep *DepDecl) error {
+	if dep.LocalPath == "" {
+		return nil // can only verify local dependencies here
+	}
+
+	depAbs := filepath.Join(d.pkgRoot, filepath.FromSlash(dep.LocalPath))
+
+	// Verify it is not outside of the d.repoRoot.
+	switch depRepoRel, err := filepath.Rel(d.repoRoot, depAbs); {
+	case err != nil:
+		return errors.Annotate(err, "unexpected error checking the local dependency").Err()
+	case depRepoRel == ".." || strings.HasPrefix(depRepoRel, ".."+string(filepath.Separator)):
+		return errors.Reason("a local dependency must not point outside of the repository it is declared in").Err()
+	}
+
+	// Verify it is not in a submodule.
+	switch depRepoRoot, _, err := findRoot(depAbs, "", d.repoRoot, d.statCache); {
+	case err != nil:
+		return errors.Annotate(err, "unexpected error checking the local dependency").Err()
+	case depRepoRoot != d.repoRoot:
+		return errors.Reason("a local dependency should not reside in a git submodule").Err()
+	}
+	return nil
 }

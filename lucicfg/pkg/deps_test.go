@@ -263,7 +263,7 @@ func TestDiscoverDeps(t *testing.T) {
 			},
 		})
 		// TODO: Add more context to the error.
-		assert.That(t, err, should.ErrLike(`local dependency on "@local-2" points to a path outside the repository: "../.."`))
+		assert.That(t, err, should.ErrLike(`bad dependency on "@local-2": a local dependency must not point outside of the repository it is declared in`))
 	})
 
 	t.Run("Remote: prefetch + loader OK", func(t *testing.T) {

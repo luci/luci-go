@@ -29,7 +29,7 @@ func TestFindRoot(t *testing.T) {
 
 	t.Run("Finds git", func(t *testing.T) {
 		// This should find luci-go.git repository root.
-		luciRoot, foundMarker, err := findRoot(".", "", nil)
+		luciRoot, foundMarker, err := findRoot(".", "", "", nil)
 		assert.NoErr(t, err)
 		assert.That(t, filepath.IsAbs(luciRoot), should.BeTrue)
 		assert.That(t, foundMarker, should.BeFalse)
@@ -42,7 +42,7 @@ func TestFindRoot(t *testing.T) {
 
 	t.Run("Finds volume root", func(t *testing.T) {
 		// Assume the temp dir is outside of any repositories.
-		volumeRoot, foundMarker, err := findRoot(os.TempDir(), "", nil)
+		volumeRoot, foundMarker, err := findRoot(os.TempDir(), "", "", nil)
 		assert.NoErr(t, err)
 		assert.That(t, foundMarker, should.BeFalse)
 		if runtime.GOOS == "windows" {
@@ -53,21 +53,46 @@ func TestFindRoot(t *testing.T) {
 		}
 	})
 
-	t.Run("Find the marker file", func(t *testing.T) {
+	t.Run("Finds the marker file", func(t *testing.T) {
 		tmp := t.TempDir()
 		deep := filepath.Join(tmp, "a/b/c")
 		assert.NoErr(t, os.MkdirAll(deep, 0750))
 		assert.NoErr(t, os.MkdirAll(filepath.Join(tmp, ".git"), 0750))
 		assert.NoErr(t, os.WriteFile(filepath.Join(tmp, "marker"), nil, 0666))
 
-		root, foundMarker, err := findRoot(deep, "marker", nil)
+		root, foundMarker, err := findRoot(deep, "marker", "", nil)
 		assert.NoErr(t, err)
 		assert.That(t, foundMarker, should.BeTrue)
 		assert.That(t, root, should.Equal(tmp))
 
-		root, foundMarker, err = findRoot(deep, "another_marker", nil)
+		root, foundMarker, err = findRoot(deep, "another_marker", "", nil)
 		assert.NoErr(t, err)
 		assert.That(t, foundMarker, should.BeFalse)
 		assert.That(t, root, should.Equal(tmp))
+	})
+
+	t.Run("Finds the stop directory", func(t *testing.T) {
+		tmp := t.TempDir()
+		deep := filepath.Join(tmp, "a/b/c")
+		assert.NoErr(t, os.MkdirAll(deep, 0750))
+		stopDir := filepath.Join(tmp, "a")
+
+		dir, foundMarker, err := findRoot(deep, "", stopDir, nil)
+		assert.NoErr(t, err)
+		assert.That(t, dir, should.Equal(stopDir))
+		assert.That(t, foundMarker, should.BeFalse)
+	})
+
+	t.Run("Finds the stop directory with marker", func(t *testing.T) {
+		tmp := t.TempDir()
+		deep := filepath.Join(tmp, "a/b/c")
+		assert.NoErr(t, os.MkdirAll(deep, 0750))
+		stopDir := filepath.Join(tmp, "a")
+		assert.NoErr(t, os.WriteFile(filepath.Join(stopDir, "marker"), nil, 0666))
+
+		dir, foundMarker, err := findRoot(deep, "marker", stopDir, nil)
+		assert.NoErr(t, err)
+		assert.That(t, dir, should.Equal(stopDir))
+		assert.That(t, foundMarker, should.BeTrue)
 	})
 }
