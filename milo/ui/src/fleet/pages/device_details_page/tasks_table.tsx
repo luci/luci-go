@@ -22,6 +22,7 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
@@ -205,19 +206,22 @@ export const Tasks = ({
       headerName: 'Task',
       flex: 2,
       renderCell: (params) => {
+        const buildUrl = extractBuildUrlFromTagData(
+          taskMap.get(params.id.toString())?.tags || [],
+          DEVICE_TASKS_MILO_HOST,
+        );
+
         return (
-          <>
-            <a
-              href={extractBuildUrlFromTagData(
-                taskMap.get(`${params.id}`)?.tags || [],
-                DEVICE_TASKS_MILO_HOST,
-              )}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {params.value}
-            </a>
-          </>
+          <a
+            href={
+              buildUrl ??
+              getSwarmingTaskURL(DEVICE_TASKS_MILO_HOST, params.id.toString())
+            }
+            target="_blank"
+            rel="noreferrer"
+          >
+            {params.value}
+          </a>
         );
       },
     },
