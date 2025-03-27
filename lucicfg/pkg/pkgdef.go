@@ -76,6 +76,19 @@ type Definition struct {
 	Deps []*DepDecl
 }
 
+// DirectDeps returns a sorted list of packages the package directly depends on.
+func (d *Definition) DirectDeps() []string {
+	if len(d.Deps) == 0 {
+		return nil
+	}
+	deps := make([]string, len(d.Deps))
+	for i, dep := range d.Deps {
+		deps[i] = dep.Name
+	}
+	slices.Sort(deps)
+	return deps
+}
+
 // FmtRule represents a registered pkg.options.fmt_rule(...), see its doc.
 type FmtRule struct {
 	// Stack is where this rule was declared, if known.

@@ -251,6 +251,19 @@ type Interpreter struct {
 	// 'load' calls do not trigger PreExec/PostExec hooks.
 	PostExec func(th *starlark.Thread, key ModuleKey)
 
+	// CheckVisible, if not nil, defines what modules a module can load or exec.
+	//
+	// It is called before every load(...) or exec(...) statement, receiving the
+	// ModuleKey of the module that calls load/exec (aka "loader") and the
+	// ModuleKey of the module being loaded/executed (aka "loaded").
+	//
+	// If it returns an error, the load/exec statement will fail instead of
+	// loading/executing the module.
+	//
+	// Doesn't affect direct calls to LoadModule, LoadBuiltins or ExecModule
+	// (but affects loads and execs they may do in Starlark code).
+	CheckVisible func(th *starlark.Thread, loader, loaded ModuleKey) error
+
 	// ForbidLoad, if set, disables load(...) builtin.
 	//
 	// Attempting to call load(...) will result in a failure with the message
@@ -619,11 +632,22 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		}
 
 		// See also th.Load in runModule.
-		key, err := MakeModuleKey(th, mod)
+		target, err := MakeModuleKey(th, mod)
 		if err != nil {
 			return nil, err
 		}
-		dict, err := intr.ExecModule(Context(th), key.Package, key.Path)
+
+		if intr.CheckVisible != nil {
+			cur := GetThreadModuleKey(th)
+			if cur == nil {
+				panic("a ThreadExecing thread always has a current module set")
+			}
+			if err := intr.CheckVisible(th, *cur, target); err != nil {
+				return nil, fmt.Errorf("cannot exec %s: %w", mod, err)
+			}
+		}
+
+		dict, err := intr.ExecModule(Context(th), target.Package, target.Path)
 		if err != nil {
 			// Starlark stringifies errors using Error(). For EvalError, Error()
 			// string is just a root cause, it does not include the backtrace where
@@ -671,14 +695,19 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 	// intr.modules and ctx.
 	th := intr.Thread(ctx)
 	th.Load = func(th *starlark.Thread, module string) (starlark.StringDict, error) {
-		key, err := MakeModuleKey(th, module)
+		target, err := MakeModuleKey(th, module)
 		if err != nil {
 			return nil, err
 		}
 		if intr.ForbidLoad != "" {
 			return nil, fmt.Errorf("%s", intr.ForbidLoad)
 		}
-		dict, err := intr.LoadModule(ctx, key.Package, key.Path)
+		if intr.CheckVisible != nil {
+			if err := intr.CheckVisible(th, key, target); err != nil {
+				return nil, err
+			}
+		}
+		dict, err := intr.LoadModule(ctx, target.Package, target.Path)
 		// See comment in execBuiltin about why we extract EvalError backtrace into
 		// new error.
 		if evalErr, ok := err.(*starlark.EvalError); ok {

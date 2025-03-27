@@ -49,6 +49,8 @@ type Entry struct {
 	Main interpreter.Loader
 	// Deps contains the code of all dependencies at resolved versions.
 	Deps map[string]interpreter.Loader
+	// DepGraph maps a package name to a list of its direct dependencies.
+	DepGraph map[string][]string
 	// Package is the name of the package being executed from its PACKAGE.star.
 	Package string
 	// Path is a slash-separate path from the repo root to the package root.
@@ -201,10 +203,11 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	if pkgScript == "" {
 		code := interpreter.FileSystemLoader(pkgRoot)
 		return &Entry{
-			Main:    code,
-			Package: LegacyPackageNamePlaceholder,
-			Path:    filepath.ToSlash(rel),
-			Script:  script,
+			Main:     code,
+			DepGraph: map[string][]string{LegacyPackageNamePlaceholder: nil},
+			Package:  LegacyPackageNamePlaceholder,
+			Path:     filepath.ToSlash(rel),
+			Script:   script,
 			Local: &Local{
 				Code:       code,
 				DiskPath:   pkgRoot,
@@ -300,12 +303,16 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 			Main:    true,
 		},
 	}
+	depGraph := map[string][]string{
+		def.Name: def.DirectDeps(),
+	}
 	for _, dep := range deps {
 		name, ok := strings.CutPrefix(dep.Package, "@")
 		if !ok {
 			panic(fmt.Sprintf("unexpected package name %q", dep.Package))
 		}
 		depsLoaders[name] = dep.Code
+		depGraph[dep.Package] = dep.DirectDeps
 		constraints = append(constraints, LucicfgVersionConstraint{
 			Min:     dep.Min,
 			Package: dep.Package,
@@ -319,6 +326,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	return &Entry{
 		Main:                      code,
 		Deps:                      depsLoaders,
+		DepGraph:                  depGraph,
 		Package:                   def.Name,
 		Path:                      repoPath,
 		Script:                    script,

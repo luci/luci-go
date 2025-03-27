@@ -42,8 +42,12 @@ import (
 	embedded "go.chromium.org/luci/lucicfg/starlark"
 )
 
-// stdlibPkg is the lucicfg package with the hardcoded stdlib.
-const stdlibPkg = "stdlib"
+const (
+	// stdlibPkg is the lucicfg package with the hardcoded stdlib.
+	stdlibPkg = "stdlib"
+	// protoPkg is the lucicfg package with default protobuf loader.
+	protoPkg = "proto"
+)
 
 // Inputs define all inputs for the config generator.
 type Inputs struct {
@@ -153,7 +157,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// the thread. This exposes it to Starlark code, so it can register descriptor
 	// sets in it.
 	ploader := starlarkproto.NewLoader()
-	pkgs["proto"] = func(_ context.Context, path string) (dict starlark.StringDict, _ string, err error) {
+	pkgs[protoPkg] = func(_ context.Context, path string) (dict starlark.StringDict, _ string, err error) {
 		mod, err := ploader.Module(path)
 		if err != nil {
 			return nil, "", err
@@ -191,9 +195,10 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// Execute the config script in this environment. Return errors unwrapped so
 	// that callers can sniff out various sorts of Starlark errors.
 	intr := interpreter.Interpreter{
-		Predeclared: predeclared,
-		Packages:    pkgs,
-		MainPackage: mainPkg,
+		Predeclared:  predeclared,
+		Packages:     pkgs,
+		MainPackage:  mainPkg,
+		CheckVisible: visibilityCheck(in.Entry.DepGraph),
 
 		PreExec:  func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.OpenScope(th) },
 		PostExec: func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.CloseScope(th) },
@@ -280,6 +285,42 @@ func embeddedPackages() map[string]interpreter.Loader {
 		out[pkg] = interpreter.FSLoader(sub)
 	}
 	return out
+}
+
+func visibilityCheck(depGraph map[string][]string) func(*starlark.Thread, interpreter.ModuleKey, interpreter.ModuleKey) error {
+	type edge struct{ src, dst string }
+	visMap := map[edge]struct{}{}
+
+	decl := func(src, dst string) {
+		if !strings.HasPrefix(src, "@") {
+			panic(src)
+		}
+		if !strings.HasPrefix(dst, "@") {
+			panic(dst)
+		}
+		visMap[edge{src[1:], dst[1:]}] = struct{}{}
+	}
+
+	stdlib := "@" + stdlibPkg
+	proto := "@" + protoPkg
+
+	decl(stdlib, proto)
+	for pkg, deps := range depGraph {
+		decl(pkg, stdlib)
+		decl(pkg, proto)
+		for _, dep := range deps {
+			decl(pkg, dep)
+		}
+	}
+
+	return func(_ *starlark.Thread, loader, loaded interpreter.ModuleKey) error {
+		if loader.Package != loaded.Package {
+			if _, ok := visMap[edge{loader.Package, loaded.Package}]; !ok {
+				return errors.Reason("@%s doesn't directly depend on @%s in its PACKAGE.star", loader.Package, loaded.Package).Err()
+			}
+		}
+		return nil
+	}
 }
 
 // asFrozenDict converts a map to a frozen Starlark dict.

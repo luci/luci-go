@@ -108,14 +108,16 @@ func TestDiscoverDeps(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, deps, should.Match([]*Dep{
 			{
-				Package: "@local-1",
-				Min:     [3]int{1, 2, 4},
-				Code:    deps[0].Code,
+				Package:    "@local-1",
+				Min:        [3]int{1, 2, 4},
+				Code:       deps[0].Code,
+				DirectDeps: []string{"@local-2", "@local-3"},
 			},
 			{
-				Package: "@local-2",
-				Min:     [3]int{1, 2, 5},
-				Code:    deps[1].Code,
+				Package:    "@local-2",
+				Min:        [3]int{1, 2, 5},
+				Code:       deps[1].Code,
+				DirectDeps: []string{"@local-1", "@local-3"},
 			},
 			{
 				Package: "@local-3",

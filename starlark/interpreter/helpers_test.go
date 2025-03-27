@@ -117,9 +117,10 @@ type intrParams struct {
 	// package 'custom' is used by tests for Loaders.
 	custom Loader
 
-	predeclared starlark.StringDict
-	preExec     func(th *starlark.Thread, module ModuleKey)
-	postExec    func(th *starlark.Thread, module ModuleKey)
+	predeclared  starlark.StringDict
+	preExec      func(th *starlark.Thread, module ModuleKey)
+	postExec     func(th *starlark.Thread, module ModuleKey)
+	checkVisible func(th *starlark.Thread, loader, loaded ModuleKey) error
 
 	forbidLoad string
 	forbidExec string
@@ -151,8 +152,9 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 		Logger: func(file string, line int, message string) {
 			logs = append(logs, fmt.Sprintf("[%s:%d] %s", file, line, message))
 		},
-		ForbidLoad: p.forbidLoad,
-		ForbidExec: p.forbidExec,
+		ForbidLoad:   p.forbidLoad,
+		ForbidExec:   p.forbidExec,
+		CheckVisible: p.checkVisible,
 	}
 
 	// Load builtins if the test actually defined them.

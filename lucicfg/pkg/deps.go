@@ -184,9 +184,10 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 		return nil, err
 	}
 	return &Dep{
-		Package: d.Package,
-		Min:     def.MinLucicfgVersion,
-		Code:    code,
+		Package:    d.Package,
+		Min:        def.MinLucicfgVersion,
+		Code:       code,
+		DirectDeps: def.DirectDeps(),
 	}, nil
 }
 
@@ -198,6 +199,8 @@ type Dep struct {
 	Min LucicfgVersion
 	// Code is the loader with the package code.
 	Code interpreter.Loader
+	// DirectDeps are direct dependencies of this package as "@name" strings.
+	DirectDeps []string
 }
 
 // pkgVer is a package version together with the repository it is relative to.

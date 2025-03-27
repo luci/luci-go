@@ -16,12 +16,12 @@ package interpreter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	"go.starlark.net/starlark"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -32,7 +32,7 @@ func TestMakeModuleKey(t *testing.T) {
 	th := &starlark.Thread{}
 	th.SetLocal(threadModKey, ModuleKey{"cur_pkg", "dir/cur.star"})
 
-	ftt.Run("Works", t, func(t *ftt.Test) {
+	t.Run("Works", func(t *testing.T) {
 		k, err := MakeModuleKey(th, "//some/mod")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, k, should.Match(ModuleKey{"cur_pkg", "some/mod"}))
@@ -59,7 +59,7 @@ func TestMakeModuleKey(t *testing.T) {
 		assert.Loosely(t, k, should.Match(ModuleKey{"pkg", "some/mod"}))
 	})
 
-	ftt.Run("Fails", t, func(t *ftt.Test) {
+	t.Run("Fails", func(t *testing.T) {
 		_, err := MakeModuleKey(th, "@//mod")
 		assert.Loosely(t, err, should.NotBeNil)
 
@@ -82,7 +82,7 @@ func TestMakeModuleKey(t *testing.T) {
 func TestInterpreter(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Stdlib scripts can load each other", t, func(t *ftt.Test) {
+	t.Run("Stdlib scripts can load each other", func(t *testing.T) {
 		keys, logs, err := runIntr(intrParams{
 			stdlib: map[string]string{
 				"builtins.star": `
@@ -101,7 +101,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, logs, should.Match([]string{"[//main.star:1] loaded_sym_val exported_sym_val"}))
 	})
 
-	ftt.Run("User scripts can load each other and stdlib scripts", t, func(t *ftt.Test) {
+	t.Run("User scripts can load each other and stdlib scripts", func(t *testing.T) {
 		keys, _, err := runIntr(intrParams{
 			stdlib: map[string]string{
 				"lib.star": `lib_sym = True`,
@@ -125,7 +125,7 @@ func TestInterpreter(t *testing.T) {
 		}))
 	})
 
-	ftt.Run("Missing module", t, func(t *ftt.Test) {
+	t.Run("Missing module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("//some.star", "some")`,
@@ -134,7 +134,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, err, should.ErrLike(`cannot load //some.star: no such module`))
 	})
 
-	ftt.Run("Missing package", t, func(t *ftt.Test) {
+	t.Run("Missing package", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("@pkg//some.star", "some")`,
@@ -143,7 +143,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, err, should.ErrLike(`cannot load @pkg//some.star: no such package`))
 	})
 
-	ftt.Run("Malformed module reference", t, func(t *ftt.Test) {
+	t.Run("Malformed module reference", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("@@", "some")`,
@@ -152,7 +152,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, err, should.ErrLike(`cannot load @@: a module path should be either '//<path>', '<path>' or '@<package>//<path>'`))
 	})
 
-	ftt.Run("Double dot module reference", t, func(t *ftt.Test) {
+	t.Run("Double dot module reference", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("../some.star", "some")`,
@@ -161,7 +161,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, err, should.ErrLike(`cannot load ../some.star: outside the package root`))
 	})
 
-	ftt.Run("Predeclared are exposed to stdlib and user scripts", t, func(t *ftt.Test) {
+	t.Run("Predeclared are exposed to stdlib and user scripts", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			predeclared: starlark.StringDict{
 				"imported_sym": starlark.MakeInt(123),
@@ -180,7 +180,7 @@ func TestInterpreter(t *testing.T) {
 		}))
 	})
 
-	ftt.Run("Predeclared can access the context", t, func(t *ftt.Test) {
+	t.Run("Predeclared can access the context", func(t *testing.T) {
 		fromCtx := ""
 		type key struct{}
 		_, _, err := runIntr(intrParams{
@@ -199,7 +199,7 @@ func TestInterpreter(t *testing.T) {
 		assert.Loosely(t, fromCtx, should.Equal("ctx value"))
 	})
 
-	ftt.Run("Modules are loaded only once", t, func(t *ftt.Test) {
+	t.Run("Modules are loaded only once", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `
@@ -223,7 +223,7 @@ func TestInterpreter(t *testing.T) {
 		}))
 	})
 
-	ftt.Run("Module cycles are caught", t, func(t *ftt.Test) {
+	t.Run("Module cycles are caught", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("//mod1.star", "a")`,
@@ -240,7 +240,7 @@ Error: cannot load //mod2.star: Traceback (most recent call last):
 Error: cannot load //mod1.star: cycle in the module dependency graph`))
 	})
 
-	ftt.Run("Error in loaded module", t, func(t *ftt.Test) {
+	t.Run("Error in loaded module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("//mod.star", "z")`,
@@ -259,7 +259,7 @@ Error: cannot load //mod.star: Traceback (most recent call last):
 Error: invalid call of non-function (NoneType)`))
 	})
 
-	ftt.Run("Exec works", t, func(t *ftt.Test) {
+	t.Run("Exec works", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `
@@ -280,7 +280,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("Exec using relative path", t, func(t *ftt.Test) {
+	t.Run("Exec using relative path", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star":  `exec("//sub/1.star")`,
@@ -294,7 +294,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("Exec into another package", t, func(t *ftt.Test) {
+	t.Run("Exec into another package", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `exec("@stdlib//exec1.star")`,
@@ -310,7 +310,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("Error in execed module", t, func(t *ftt.Test) {
+	t.Run("Error in execed module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `
@@ -334,7 +334,7 @@ Error in exec: exec //exec.star failed: Traceback (most recent call last):
 Error: invalid call of non-function (NoneType)`))
 	})
 
-	ftt.Run("Exec cycle", t, func(t *ftt.Test) {
+	t.Run("Exec cycle", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star":  `exec("//exec1.star")`,
@@ -345,7 +345,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike(`the module has already been executed, 'exec'-ing same code twice is forbidden`))
 	})
 
-	ftt.Run("Trying to exec loaded module", t, func(t *ftt.Test) {
+	t.Run("Trying to exec loaded module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `
@@ -358,7 +358,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("cannot exec //mod.star: the module has been loaded before and therefore is not executable"))
 	})
 
-	ftt.Run("Trying load execed module", t, func(t *ftt.Test) {
+	t.Run("Trying load execed module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `
@@ -371,7 +371,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("cannot load //mod.star: the module has been exec'ed before and therefore is not loadable"))
 	})
 
-	ftt.Run("Trying to exec from loading module", t, func(t *ftt.Test) {
+	t.Run("Trying to exec from loading module", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("//mod.star", "z")`,
@@ -381,7 +381,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("exec //zzz.star: forbidden in this context, only exec'ed scripts can exec other scripts"))
 	})
 
-	ftt.Run("PreExec/PostExec hooks on success", t, func(t *ftt.Test) {
+	t.Run("PreExec/PostExec hooks on success", func(t *testing.T) {
 		var hooks []string
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
@@ -409,7 +409,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("PreExec/PostExec hooks on errors", t, func(t *ftt.Test) {
+	t.Run("PreExec/PostExec hooks on errors", func(t *testing.T) {
 		var hooks []string
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
@@ -437,7 +437,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("Collects list of visited modules", t, func(t *ftt.Test) {
+	t.Run("Collects list of visited modules", func(t *testing.T) {
 		var visited []ModuleKey
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
@@ -468,7 +468,7 @@ Error: invalid call of non-function (NoneType)`))
 		return starlark.String(src), err
 	})
 
-	ftt.Run("LoadSource works with abs paths", t, func(t *ftt.Test) {
+	t.Run("LoadSource works with abs paths", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
 			scripts: map[string]string{
@@ -493,7 +493,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("LoadSource works with rel paths", t, func(t *ftt.Test) {
+	t.Run("LoadSource works with rel paths", func(t *testing.T) {
 		_, logs, err := runIntr(intrParams{
 			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
 			scripts: map[string]string{
@@ -525,7 +525,7 @@ Error: invalid call of non-function (NoneType)`))
 		}))
 	})
 
-	ftt.Run("LoadSource handles missing files", t, func(t *ftt.Test) {
+	t.Run("LoadSource handles missing files", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
 			scripts: map[string]string{
@@ -535,7 +535,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("cannot load //data1.txt: no such file"))
 	})
 
-	ftt.Run("LoadSource handles go modules", t, func(t *ftt.Test) {
+	t.Run("LoadSource handles go modules", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			predeclared: starlark.StringDict{"load_src": loadSrcBuiltin},
 			scripts: map[string]string{
@@ -548,7 +548,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("cannot load @custom//something.txt: it is a native Go module"))
 	})
 
-	ftt.Run("ForbidLoad works", t, func(t *ftt.Test) {
+	t.Run("ForbidLoad works", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			forbidLoad: "boooo",
 			scripts: map[string]string{
@@ -558,7 +558,7 @@ Error: invalid call of non-function (NoneType)`))
 		assert.Loosely(t, err, should.ErrLike("cannot load //mod.star: boooo"))
 	})
 
-	ftt.Run("ForbidExec works", t, func(t *ftt.Test) {
+	t.Run("ForbidExec works", func(t *testing.T) {
 		_, _, err := runIntr(intrParams{
 			forbidExec: "boooo",
 			scripts: map[string]string{
@@ -566,5 +566,68 @@ Error: invalid call of non-function (NoneType)`))
 			},
 		})
 		assert.Loosely(t, err, should.ErrLike("cannot exec //mod.star: boooo"))
+	})
+
+	t.Run("CheckVisible: pass", func(t *testing.T) {
+		var checks []string
+		_, _, err := runIntr(intrParams{
+			stdlib: map[string]string{
+				"lib.star": `loaded_sym = True`,
+			},
+			scripts: map[string]string{
+				"main.star": `
+					load("loaded.star", _loaded_sym1="loaded_sym")
+					exec("execed.star")
+					load("@stdlib//lib.star", _loaded_sym2="loaded_sym")
+				`,
+				"loaded.star": `loaded_sym = True`,
+				"execed.star": `
+					load("loaded.star", _loaded_sym1="loaded_sym")
+					load("@stdlib//lib.star", _loaded_sym2="loaded_sym")
+				`,
+			},
+			checkVisible: func(_ *starlark.Thread, loader, loaded ModuleKey) error {
+				checks = append(checks, fmt.Sprintf("%s -> %s", loader, loaded))
+				return nil
+			},
+		})
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, checks, should.Match([]string{
+			"@test_main//main.star -> @test_main//loaded.star",
+			"@test_main//main.star -> @test_main//execed.star",
+			"@test_main//execed.star -> @test_main//loaded.star",
+			"@test_main//execed.star -> @stdlib//lib.star",
+			"@test_main//main.star -> @stdlib//lib.star",
+		}))
+	})
+
+	t.Run("CheckVisible: deny load", func(t *testing.T) {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					load("loaded.star", _loaded_sym1="loaded_sym")
+				`,
+				"loaded.star": `will never be used`,
+			},
+			checkVisible: func(_ *starlark.Thread, loader, loaded ModuleKey) error {
+				return errors.New("boo")
+			},
+		})
+		assert.Loosely(t, err, should.ErrLike("cannot load loaded.star: boo"))
+	})
+
+	t.Run("CheckVisible: deny exec", func(t *testing.T) {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `
+					exec("execed.star")
+				`,
+				"execed.star": `will never be used`,
+			},
+			checkVisible: func(_ *starlark.Thread, loader, loaded ModuleKey) error {
+				return errors.New("boo")
+			},
+		})
+		assert.Loosely(t, err, should.ErrLike("cannot exec execed.star: boo"))
 	})
 }

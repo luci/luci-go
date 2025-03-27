@@ -148,6 +148,13 @@ func TestEntryOnDisk(t *testing.T) {
 			{Min: LucicfgVersion{1, 2, 5}, Package: "@remote/a"},
 			{Min: LucicfgVersion{1, 2, 6}, Package: "@remote/b"},
 		}))
+
+		assert.That(t, entry.DepGraph, should.Match(map[string][]string{
+			"@local":    {"@remote/a"},
+			"@remote/a": {"@remote/b"},
+			"@remote/b": nil,
+			"@some/pkg": {"@local"},
+		}))
 	})
 
 	t.Run("Borked PACKAGE.star", func(t *testing.T) {
