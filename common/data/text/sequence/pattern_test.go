@@ -154,6 +154,23 @@ func TestPatternIn(t *testing.T) {
 
 				assert.Loosely(t, m("foo", "...", "bar").In(
 					"foo", "narp"), should.BeFalse)
+
+				assert.Loosely(t, m("foo", "...").In(
+					"foo", "narp"), should.BeTrue)
+
+				assert.Loosely(t, m("...").In(
+					"foo", "narp"), should.BeTrue)
+
+				assert.Loosely(t, m("...").In(), should.BeTrue)
+
+				assert.Loosely(t, m("^", "foo", "...").In(
+					"narp", "foo"), should.BeFalse)
+
+				assert.Loosely(t, m("...", "narp").In(
+					"foo", "narp"), should.BeTrue)
+
+				assert.Loosely(t, m("...", "florp").In(
+					"foo", "narp"), should.BeFalse)
 			})
 
 			t.Run(`respects Edges`, func(t *ftt.Test) {
@@ -171,7 +188,6 @@ func TestPatternIn(t *testing.T) {
 
 				assert.Loosely(t, m("foo", "...", "bar", "$").In(
 					"a", "foo", "narp", "bar", "stuff"), should.BeFalse)
-
 			})
 		})
 

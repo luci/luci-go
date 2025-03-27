@@ -103,18 +103,27 @@ func (p Pattern) In(seq ...string) bool {
 					return false
 				}
 
-				// If this is Ellipsis we consume it, and try matching the rest of the
-				// matchers against the rest of the sequence at every offset.
 				if matcher == Ellipsis {
-					for startIdx := seqOffset + numMatched; startIdx < len(seq)-minSlots[matcherIdx+1]; startIdx++ {
-						if cachedMatchesSeq(matcherIdx+1, startIdx) {
+					matcherIdx++ // consume Ellipsis
+
+					// If there are no more matchers in p, this means the Ellipsis was terminal, and
+					// thus we always match any other tokens.
+					if matcherIdx == len(p) {
+						return true
+					}
+
+					// otherwise and try matching the rest of the pattern against the rest
+					// of the sequence at every offset.
+					for startIdx := seqOffset + numMatched; startIdx < len(seq)-minSlots[matcherIdx]; startIdx++ {
+						if cachedMatchesSeq(matcherIdx, startIdx) {
 							return true
 						}
 					}
+
 					return false
 				}
 
-				if !matcher.Matches(seq[seqIdx+numMatched]) {
+				if toMatchIdx := seqIdx + numMatched; toMatchIdx >= len(seq) || !matcher.Matches(seq[toMatchIdx]) {
 					matches = false
 					break
 				}
