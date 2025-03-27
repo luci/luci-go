@@ -51,6 +51,7 @@ import {
   getWrongColumnsFromParams,
   useWarnings,
 } from './helpers';
+import { useDeviceDimensions } from './use_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -82,7 +83,7 @@ export const DeviceListPage = () => {
     : stringifyFilters(selectedOptions.filters);
 
   const client = useFleetConsoleClient();
-  const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
+  const dimensionsQuery = useDeviceDimensions();
   const countQuery = useQuery({
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({

@@ -27,6 +27,7 @@ import {
   Sticky,
 } from '@/generic_libs/components/queued_sticky';
 
+import { LocalStoragePersistClientProvider } from '../context';
 import { theme } from '../theme/theme';
 
 import { Header } from './header';
@@ -49,31 +50,36 @@ export const FleetLayout = () => {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <ScrollingBase>
-        <Helmet titleTemplate="%s | Fleet Console" defaultTitle="Fleet Console">
-          <link rel="icon" href={bassFavicon} />
-        </Helmet>
-        <Sticky
-          top
-          sx={{ gridArea: 'header', zIndex: (theme) => theme.zIndex.appBar }}
-        >
-          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        </Sticky>
-        <Sticky
-          left
-          sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
-        >
-          <Sidebar open={sidebarOpen} />
-        </Sticky>
-        <Sticky top sx={{ gridArea: 'footer' }}>
-          <PrivacyFooter />
-        </Sticky>
-        <StickyOffset component="main" sx={{ gridArea: 'main' }}>
-          <Outlet />
-        </StickyOffset>
-        <CookieConsentBar />
-      </ScrollingBase>
-    </ThemeProvider>
+    <LocalStoragePersistClientProvider>
+      <ThemeProvider theme={theme}>
+        <ScrollingBase>
+          <Helmet
+            titleTemplate="%s | Fleet Console"
+            defaultTitle="Fleet Console"
+          >
+            <link rel="icon" href={bassFavicon} />
+          </Helmet>
+          <Sticky
+            top
+            sx={{ gridArea: 'header', zIndex: (theme) => theme.zIndex.appBar }}
+          >
+            <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+          </Sticky>
+          <Sticky
+            left
+            sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
+          >
+            <Sidebar open={sidebarOpen} />
+          </Sticky>
+          <Sticky top sx={{ gridArea: 'footer' }}>
+            <PrivacyFooter />
+          </Sticky>
+          <StickyOffset component="main" sx={{ gridArea: 'main' }}>
+            <Outlet />
+          </StickyOffset>
+          <CookieConsentBar />
+        </ScrollingBase>
+      </ThemeProvider>
+    </LocalStoragePersistClientProvider>
   );
 };
