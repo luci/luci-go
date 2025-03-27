@@ -97,7 +97,7 @@ func (gr *generateRun) Run(a subcommands.Application, args []string, env subcomm
 
 func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
 	meta := gr.DefaultMeta()
-	state, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars)
+	state, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars, gr.RepoOverrides)
 	if err != nil {
 		return nil, err
 	}

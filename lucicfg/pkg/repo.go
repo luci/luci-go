@@ -63,6 +63,15 @@ import (
 // comparable revision.
 const PinnedVersion = "@pinned"
 
+// OverriddenVersion is a version placeholder that is used as versions of
+// packages overridden using RepoOverride local overrides.
+//
+// It exists for similar reasons as "@pinned". One major difference is that
+// we allow (non-overridden) remote dependencies to depend on overridden
+// packages. In that case version requirements will be completely ignored and
+// the overridden (local) version will always be used.
+const OverriddenVersion = "@overridden"
+
 // ErrFileNotInRepo is wrapped and returned by Repo.Fetch if the requested file
 // is not in the repository.
 var ErrFileNotInRepo = errors.New("no such file")
@@ -106,6 +115,8 @@ type RepoManager interface {
 type Repo interface {
 	// RepoKey identifies this particular repository.
 	RepoKey() RepoKey
+	// IsOverride is true if this is a local override repo.
+	IsOverride() bool
 	// PickMostRecent returns the most recent version from the given list.
 	PickMostRecent(ctx context.Context, vers []string) (string, error)
 	// Prefetch asks the repo to prefetch files matching the filter.
@@ -153,14 +164,16 @@ func (rm *PreconfiguredRepoManager) Repo(ctx context.Context, repoKey RepoKey) (
 
 // LocalDiskRepo implements Repo by fetching files from the local disk.
 //
-// It always expects to see "@pinned" as a revision in all calls. Attempting to
-// compare "@pinned" to anything else is an error (see the PinnedVersion comment
-// for details).
+// It always expects to see the given Version ("@pinned" or "@overridden") as
+// a revision in all calls. Attempting to compare this version to anything else
+// is an error (see the PinnedVersion comment for details).
 type LocalDiskRepo struct {
 	// Root is an absolute native path to the repository checkout on disk.
 	Root string
 	// Key is the RepoKey this repository is known as.
 	Key RepoKey
+	// Version is either PinnedVersion or OverriddenVersion.
+	Version string
 
 	once      sync.Once
 	statCache *statCache
@@ -171,23 +184,28 @@ func (r *LocalDiskRepo) RepoKey() RepoKey {
 	return r.Key
 }
 
+// IsOverride is a part of Repo interface.
+func (r *LocalDiskRepo) IsOverride() bool {
+	return r.Version == OverriddenVersion
+}
+
 // PickMostRecent is a part of Repo interface.
 func (r *LocalDiskRepo) PickMostRecent(ctx context.Context, vers []string) (string, error) {
 	var remote []string
 	for _, ver := range vers {
-		if ver != PinnedVersion {
+		if ver != r.Version {
 			remote = append(remote, ver)
 		}
 	}
 	if len(remote) == 0 {
-		return PinnedVersion, nil
+		return r.Version, nil
 	}
 	return "", errors.Reason("local disk repo was unexpectedly asked to compare remote revisions: %v", remote).Err()
 }
 
 // Prefetch is a part of Repo interface.
 func (r *LocalDiskRepo) Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error {
-	if rev != PinnedVersion {
+	if rev != r.Version {
 		return errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
 	}
 	return nil
@@ -195,7 +213,7 @@ func (r *LocalDiskRepo) Prefetch(ctx context.Context, rev string, pathFilter fun
 
 // Fetch is a part of Repo interface.
 func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) {
-	if rev != PinnedVersion {
+	if rev != r.Version {
 		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
 	}
 	switch blob, err := os.ReadFile(filepath.Join(r.Root, filepath.FromSlash(path))); {
@@ -210,7 +228,7 @@ func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, er
 
 // Loader is a part of Repo interface.
 func (r *LocalDiskRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
-	if rev != PinnedVersion {
+	if rev != r.Version {
 		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
 	}
 	r.once.Do(func() { r.statCache = syncStatCache() })
@@ -219,7 +237,7 @@ func (r *LocalDiskRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string,
 
 // LoaderValidator is a part of Repo interface.
 func (r *LocalDiskRepo) LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error) {
-	if rev != PinnedVersion {
+	if rev != r.Version {
 		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
 	}
 	return &diskLoaderValidator{
@@ -309,6 +327,11 @@ func (r *TestRepo) Prefetched() []string {
 // RepoKey is a part of Repo interface.
 func (r *TestRepo) RepoKey() RepoKey {
 	return r.Key
+}
+
+// IsOverride is a part of Repo interface.
+func (r *TestRepo) IsOverride() bool {
+	return false
 }
 
 // PickMostRecent is a part of Repo interface.

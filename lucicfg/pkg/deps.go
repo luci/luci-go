@@ -125,9 +125,19 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 	if err != nil {
 		return nil, errors.Annotate(err, "dependency on %q", decl.Name).Err()
 	}
+
+	// If this repository is a local override, ignore the actually requested
+	// remote revision of the dependency. We always pick the override. This also
+	// guarantees PickMostRecent call later is never confused, since it will see
+	// only one revision.
+	revision := decl.Revision
+	if repo.IsOverride() {
+		revision = OverriddenVersion
+	}
+
 	return &DepContext{
 		Package:     decl.Name,
-		Version:     decl.Revision,
+		Version:     revision,
 		Repo:        repo,
 		Path:        decl.Path,
 		RepoManager: d.RepoManager,

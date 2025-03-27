@@ -20,8 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"go.chromium.org/luci/common/logging"
 
@@ -41,7 +43,11 @@ import (
 //
 // 'vars' are a collection of k=v pairs passed via CLI flags as `-var k=v`. They
 // are used to pre-set lucicfg.var(..., exposed_as=<k>) variables.
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string) (*lucicfg.State, error) {
+//
+// 'repoOverrides' are a collection of k=v pairs passed via CLI flags as
+// `-repo-overrides k=v`. They are used to setup local overrides of remote
+// dependencies
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string) (*lucicfg.State, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return nil, err
@@ -90,10 +96,20 @@ You may also optionally set +x flag on it, but this is not required.
 
 	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
 
+	// Convert stringy repoOverrides into a structured form.
+	var overrides []*pkg.RepoOverride
+	for _, repo := range slices.Sorted(maps.Keys(repoOverrides)) {
+		override, err := pkg.RepoOverrideFromSpec(repo, repoOverrides[repo])
+		if err != nil {
+			return nil, NewCLIError("bad -repo-override %s=%s: %s", repo, repoOverrides[repo], err)
+		}
+		overrides = append(overrides, override)
+	}
+
 	// Load the main package with dependencies from disk.
 	entry, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
 		Error: errors.New("remote packages aren't implemented yet"),
-	})
+	}, overrides)
 	if err != nil {
 		return nil, err
 	}

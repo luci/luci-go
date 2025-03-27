@@ -507,8 +507,9 @@ func TestVersionResolution(t *testing.T) {
 
 func prepRepos(t *testing.T, local map[string]string, remote map[string]string) (RepoManager, *LocalDiskRepo) {
 	localRepo := &LocalDiskRepo{
-		Root: prepDisk(t, local),
-		Key:  RepoKey{Root: true},
+		Root:    prepDisk(t, local),
+		Key:     RepoKey{Root: true},
+		Version: PinnedVersion,
 	}
 	return &PreconfiguredRepoManager{
 		Repos: []Repo{localRepo},

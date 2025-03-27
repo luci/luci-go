@@ -15,10 +15,12 @@
 package lucicfg
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -65,6 +67,9 @@ func runPkgTest(t *testing.T, dir string) bool {
 	// Note: avoid t.Parallel() because we want the test to finish synchronously
 	// in TestPkg to check gotExpectationErrors.
 
+	dir, err := filepath.Abs(dir)
+	assert.NoErr(t, err)
+
 	main := filepath.Join(dir, "main.star")
 	ctx := context.Background()
 
@@ -86,8 +91,23 @@ func runPkgTest(t *testing.T, dir string) bool {
 		repoMgr = &pkg.TestRepoManager{Root: depsDir}
 	}
 
+	var overrides []*pkg.RepoOverride
+	if entries, err := os.ReadDir(filepath.Join(dir, "overrides")); err == nil {
+		for _, repoEntry := range entries {
+			overrides = append(overrides, &pkg.RepoOverride{
+				Host:      "test-host",
+				Repo:      repoEntry.Name(),
+				Ref:       "test-ref",
+				LocalRoot: filepath.Join(dir, "overrides", repoEntry.Name()),
+			})
+		}
+		slices.SortFunc(overrides, func(a, b *pkg.RepoOverride) int {
+			return cmp.Compare(a.Repo, b.Repo)
+		})
+	}
+
 	var state *State
-	entry, err := pkg.EntryOnDisk(ctx, main, repoMgr)
+	entry, err := pkg.EntryOnDisk(ctx, main, repoMgr, overrides)
 
 	// Verify formatter is initialized..
 	if err == nil && entry.Local.Formatter != nil {

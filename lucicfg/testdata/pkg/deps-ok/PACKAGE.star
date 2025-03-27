@@ -12,9 +12,9 @@ pkg.depend(
 pkg.depend(
     name = "@lucicfg/remote",
     source = pkg.source.googlesource(
-        host = "ignored-in-tests",
+        host = "test-host",
         repo = "repo",
-        ref = "ignored-in-tests",
+        ref = "test-ref",
         path = ".",
         revision = "v1",  # will be unused, since @lucicfg/local wants v2
     )

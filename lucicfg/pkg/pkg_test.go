@@ -16,6 +16,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b/c")))
 
@@ -82,7 +83,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b")))
 
@@ -132,7 +133,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr)
+		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 
 		assert.That(t, slices.Sorted(maps.Keys(entry.Deps)), should.Match([]string{
@@ -154,7 +155,7 @@ func TestEntryOnDisk(t *testing.T) {
 			".git/config":  `# Denotes repo root`,
 			"PACKAGE.star": ``,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
 
@@ -166,7 +167,7 @@ func TestEntryOnDisk(t *testing.T) {
 				pkg.entrypoint("missing.star")
 			`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"), repoMgr)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(`entry point "missing.star": no such file in the package`))
 	})
 
@@ -182,7 +183,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"another1.star": `print("Hi")`,
 			"another2.star": `print("Hi")`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(
 			`main.star is not declared as a pkg.entrypoint(...) in PACKAGE.star and thus cannot be executed. Available entrypoints: [another1.star another2.star]`))
 	})
@@ -206,7 +207,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/pkg/main.star"), nil)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local": a local dependency must not point outside of the repository it is declared in`))
 	})
@@ -231,7 +232,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local": a local dependency should not reside in a git submodule`))
 	})
@@ -265,7 +266,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil)
+		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local-2": a local dependency should not reside in a git submodule`))
 	})
@@ -325,6 +326,38 @@ func TestPackageOnDisk(t *testing.T) {
 		_, err := PackageOnDisk(ctx, tmp)
 		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
+}
+
+func TestRepoOverrideFromSpec(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		spec string
+		out  string
+		err  string
+	}{
+		{"https://host.example.com/repo/+/refs/heads/main", "host:repo:refs/heads/main", ""},
+		{"host.example.com/repo/+/refs/heads/main", "host:repo:refs/heads/main", ""},
+		{"host.example.com/repo", "host:repo:refs/heads/main", ""},
+		{"host/repo", "host:repo:refs/heads/main", ""},
+
+		{"", "", "doesn't look like a repository URL"},
+		{"host", "", "doesn't look like a repository URL"},
+		{"host/", "", "doesn't look like a repository URL"},
+		{"host/+/refs/heads/main", "", "doesn't look like a repository URL"},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.spec, func(t *testing.T) {
+			out, err := RepoOverrideFromSpec(cs.spec, ".")
+			if cs.err != "" {
+				assert.That(t, err, should.ErrLike(cs.err))
+			} else {
+				assert.NoErr(t, err)
+				assert.That(t, fmt.Sprintf("%s:%s:%s", out.Host, out.Repo, out.Ref), should.Equal(cs.out))
+			}
+		})
+	}
 }
 
 func prepDisk(t *testing.T, files map[string]string) string {

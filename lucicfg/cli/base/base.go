@@ -71,8 +71,9 @@ type Parameters struct {
 type Subcommand struct {
 	subcommands.CommandRunBase
 
-	Meta lucicfg.Meta        // meta config settable via CLI flags
-	Vars stringmapflag.Value // all `-var k=v` flags
+	Meta          lucicfg.Meta        // meta config settable via CLI flags
+	Vars          stringmapflag.Value // all `-var k=v` flags
+	RepoOverrides stringmapflag.Value // all `-repo-override k=v` flags
 
 	params     *Parameters    // whatever was passed to Init
 	logConfig  logging.Config // for -log-level, used by ModifyContext
@@ -111,7 +112,7 @@ func (c *Subcommand) DefaultMeta() lucicfg.Meta {
 	}
 }
 
-// AddGeneratorFlags registers c.Meta and c.Vars in the FlagSet.
+// AddGeneratorFlags registers flags affecting code generation.
 //
 // Used by subcommands that end up executing Starlark.
 func (c *Subcommand) AddGeneratorFlags() {
@@ -121,6 +122,9 @@ func (c *Subcommand) AddGeneratorFlags() {
 	c.Meta.AddFlags(&c.Flags)
 	c.Flags.Var(&c.Vars, "var",
 		"A `k=v` pair setting a value of some lucicfg.var(expose_as=...) variable, can be used multiple times (to set multiple vars).")
+	c.Flags.Var(&c.RepoOverrides, "repo-override",
+		"A `repo=path` pair that declares that dependencies that normally reside in the given repository should be fetched from its local checkout at the given path instead. "+
+			"Example: `chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main=../luci-go`.")
 }
 
 // CheckArgs checks command line args.

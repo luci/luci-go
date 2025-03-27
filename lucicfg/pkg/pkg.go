@@ -18,6 +18,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -67,6 +68,71 @@ type LucicfgVersionConstraint struct {
 	Main    bool           // true if this is the main package (i.e. contains the entry point)
 }
 
+// RepoOverride can be used to override a remote repository with a local one for
+// the scenario of locally developing packages from different repos that depend
+// on one another.
+//
+// Overrides work on repository level to simplify dealing with local
+// dependencies of overridden packages: when overriding a whole repository all
+// such dependencies are overridden as well and there's no ambiguity with what
+// their version to use.
+//
+// The expected workflow is that there's a local git checkout of the remote repo
+// with some local changes that needs to be tested against a root package in
+// another git checkout.
+type RepoOverride struct {
+	// Host is a googlesource host of the repository to override.
+	Host string
+	// Repo is the repository name on the host to override.
+	Repo string
+	// Ref is a git ref in the repository to override.
+	Ref string
+	// LocalRoot is an absolute native path to the local repository checkout.
+	LocalRoot string
+}
+
+// RepoOverrideFromSpec creates a RepoOverride from the given spec.
+//
+// Will verify the local root directory actually exists and looks like
+// a repository root.
+//
+// Expected format of the spec is: "[protocol://]host[.domain]/repo/[+/ref]".
+// We'll extract Host, Repo and Ref from it, discarding all the rest.
+func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
+	if !strings.Contains(spec, "://") {
+		spec = "https://" + spec
+	}
+	u, err := url.Parse(spec)
+	if err != nil || u.Host == "" || u.Path == "" {
+		return nil, errors.New("the repo spec doesn't look like a repository URL")
+	}
+	host, _, _ := strings.Cut(u.Host, ".")
+	repo, ref, _ := strings.Cut(u.Path, "/+/")
+	repo = strings.TrimPrefix(repo, "/")
+	if repo == "" {
+		return nil, errors.New("the repo spec doesn't look like a repository URL")
+	}
+	if ref == "" {
+		ref = "refs/heads/main"
+	}
+	abs, err := filepath.Abs(localRoot)
+	if err != nil {
+		return nil, err
+	}
+	switch stat, err := os.Stat(abs); {
+	case err != nil:
+		return nil, err
+	case !stat.IsDir():
+		return nil, errors.Reason("%s is not a directory", localRoot).Err()
+	}
+	return &RepoOverride{
+		Host:      host,
+		Repo:      repo,
+		Ref:       ref,
+		LocalRoot: abs,
+	}, nil
+}
+
 // EntryOnDisk loads the entry point based on a Starlark file on disk.
 //
 // It searches for the closest (up the tree) PACKAGE.star file to find the
@@ -86,7 +152,7 @@ type LucicfgVersionConstraint struct {
 // Returns the loaded entry point with Local populated.
 //
 // The returned error may be backtracable.
-func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry, error) {
+func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, overrides []*RepoOverride) (*Entry, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
@@ -157,8 +223,9 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 	// developed), use a special magical RepoKey for it. See also a comment for
 	// PinnedVersion for more details on special status of root-local packages.
 	localRepo := &LocalDiskRepo{
-		Root: repoRoot,
-		Key:  RepoKey{Root: true},
+		Root:    repoRoot,
+		Key:     RepoKey{Root: true},
+		Version: PinnedVersion,
 	}
 
 	// Load the package definition from PACKAGE.star.
@@ -191,6 +258,23 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		}
 	}
 
+	// Inject local repositories acting as overrides. Note that discoverDeps(...)
+	// is aware that some Repos are overrides and will slightly tweak how it does
+	// version selection (to guarantee an overridden package is always "the most
+	// recent" version).
+	overriddenRepos := make([]Repo, len(overrides))
+	for i, override := range overrides {
+		overriddenRepos[i] = &LocalDiskRepo{
+			Root: override.LocalRoot,
+			Key: RepoKey{
+				Host: override.Host,
+				Repo: override.Repo,
+				Ref:  override.Ref,
+			},
+			Version: OverriddenVersion,
+		}
+	}
+
 	// Load transitive closure of all dependencies.
 	deps, err := discoverDeps(ctx, &DepContext{
 		Package: def.Name,
@@ -198,7 +282,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager) (*Entry,
 		Repo:    localRepo,
 		Path:    repoPath,
 		RepoManager: &PreconfiguredRepoManager{
-			Repos: []Repo{localRepo},
+			Repos: append([]Repo{localRepo}, overriddenRepos...),
 			Other: remotes,
 		},
 		Known: def,
@@ -292,8 +376,9 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 		}
 		code, err := (&LocalDiskRepo{
-			Root: abs,
-			Key:  RepoKey{Root: true},
+			Root:    abs,
+			Key:     RepoKey{Root: true},
+			Version: PinnedVersion,
 		}).Loader(ctx, PinnedVersion, ".", def.Name, def.ResourcesSet)
 		if err != nil {
 			return nil, err
