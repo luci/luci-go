@@ -74,7 +74,7 @@ const useTabs = (): [TabValue | undefined, (newValue: TabValue) => void] => {
 
   useEffect(() => {
     if (!selectedTab) {
-      setSelectedTab(TabValue.TASKS);
+      setSelectedTab(TabValue.SCHEDULING);
     }
   }, [selectedTab, setSelectedTab]);
 
