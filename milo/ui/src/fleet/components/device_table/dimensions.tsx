@@ -160,6 +160,11 @@ export const CROS_DIMENSION_OVERRIDES: Dimension = {
   'label-managed_dut': {
     renderCell: renderCellWithLink(generateDutNameRedirectURL),
   },
+  'label-servo_usb_state': {
+    renderCell: renderCellWithLink((value) =>
+      getSwarmingStateDocLinkForLabel(`${value}-2`),
+    ),
+  },
 };
 
 /**
