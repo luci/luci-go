@@ -93,8 +93,9 @@ var (
 
 // Some known Google API OAuth scopes.
 const (
-	OAuthScopeEmail = "https://www.googleapis.com/auth/userinfo.email"
-	OAuthScopeIAM   = "https://www.googleapis.com/auth/iam"
+	OAuthScopeEmail  = "https://www.googleapis.com/auth/userinfo.email"
+	OAuthScopeIAM    = "https://www.googleapis.com/auth/iam"
+	OAuthScopeReAuth = "https://www.googleapis.com/auth/accounts.reauth"
 )
 
 const (
