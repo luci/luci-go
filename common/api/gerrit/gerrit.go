@@ -71,6 +71,7 @@ type Change struct {
 	Reviewers              Reviewers               `json:"reviewers"`
 	RevertOf               int                     `json:"revert_of"`
 	CurrentRevision        string                  `json:"current_revision"`
+	CurrentRevisionNumber  int                     `json:"current_revision_number"`
 	WorkInProgress         bool                    `json:"work_in_progress,omitempty"`
 	CherryPickOfChange     int                     `json:"cherry_pick_of_change"`
 	CherryPickOfPatchset   int                     `json:"cherry_pick_of_patch_set"`
@@ -84,12 +85,13 @@ type Change struct {
 // ChangeMessageInfo contains information about a message attached to a change:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
 type ChangeMessageInfo struct {
-	ID         string      `json:"id"`
-	Author     AccountInfo `json:"author,omitempty"`
-	RealAuthor AccountInfo `json:"real_author,omitempty"`
-	Date       Timestamp   `json:"date"`
-	Message    string      `json:"message"`
-	Tag        string      `json:"tag,omitempty"`
+	ID             string      `json:"id"`
+	Author         AccountInfo `json:"author,omitempty"`
+	RealAuthor     AccountInfo `json:"real_author,omitempty"`
+	Date           Timestamp   `json:"date"`
+	Message        string      `json:"message"`
+	Tag            string      `json:"tag,omitempty"`
+	RevisionNumber int         `json:"_revision_number"`
 }
 
 // LabelInfo contains information about a label on a change, always
