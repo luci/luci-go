@@ -30,18 +30,27 @@ import (
 )
 
 type RepoCache struct {
-	// path/to/<Cache.repoRoot>/<sha256(remoteUrl)
+	// path/to/<Cache.repoRoot>/<sha256(remoteUrl)>
 	repoRoot string
 
 	// map ref -> resolved
 	lsRemoteCache map[string]string
 	lsRemoteMu    sync.RWMutex
 
-	// batchProc is a `git --no-lazy-fetch cat-file --batch` process. Interacting with this via
-	// batchProcStdin/batchProcStdout needs to hold batchProcMu until the entire
-	// response has been consumed from batchProcStdout.
-	//batchProc     batchProc
-	//batchProcLazy batchProc
+	// batchProc will reject missing blobs, batchProcLazy will attempt to fetch
+	// them lazily if missing.
+	batchProc     batchProc
+	batchProcLazy batchProc
+}
+
+// Shutdown terminates long-running processes which may be associated with this
+// RepoCache.
+//
+// It is safe to use RepoCache after calling Shutdown (but these long-running
+// processes may be brought back up again)
+func (r *RepoCache) Shutdown() {
+	r.batchProc.shutdown()
+	r.batchProcLazy.shutdown()
 }
 
 func newRepoCache(repoRoot string) (*RepoCache, error) {
@@ -51,9 +60,9 @@ func newRepoCache(repoRoot string) (*RepoCache, error) {
 		return nil, fmt.Errorf("making root dir: %w", err)
 	}
 
-	//ret.batchProc.mkCmd = ret.mkGitCmd
-	//ret.batchProcLazy.mkCmd = ret.mkGitCmd
-	//ret.batchProcLazy.lazy = true
+	ret.batchProc.mkCmd = ret.mkGitCmd
+	ret.batchProcLazy.mkCmd = ret.mkGitCmd
+	ret.batchProcLazy.lazy = true
 	return ret, nil
 }
 

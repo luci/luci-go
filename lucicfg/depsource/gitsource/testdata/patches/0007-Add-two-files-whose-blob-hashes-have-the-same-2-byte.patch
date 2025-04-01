@@ -1,0 +1,28 @@
+From ba5f5f958d0c29033c262df7a8507aa9df47f337 Mon Sep 17 00:00:00 2001
+From: Exemplar Exemplaris <exemplar@example.com>
+Date: Wed, 26 Mar 2025 15:27:56 -0700
+Subject: [PATCH] Add two files whose blob hashes have the same 2 byte prefix.
+
+---
+ collision1 | 2 ++
+ collision2 | 1 +
+ 2 files changed, 3 insertions(+)
+ create mode 100644 collision1
+ create mode 100644 collision2
+
+diff --git a/collision1 b/collision1
+new file mode 100644
+index 0000000..6371c00
+--- /dev/null
++++ b/collision1
+@@ -0,0 +1,2 @@
++this is a file whose sha1 starts with the same 2 bytes as
++the collision2 file.
+diff --git a/collision2 b/collision2
+new file mode 100644
+index 0000000..637172b
+--- /dev/null
++++ b/collision2
+@@ -0,0 +1 @@
++22b3f523f8b0b8a8
+\ No newline at end of file

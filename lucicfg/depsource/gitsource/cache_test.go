@@ -66,7 +66,7 @@ func TestCache(t *testing.T) {
 func TestCacheForRepo(t *testing.T) {
 	t.Parallel()
 
-	tempRepo := mkRepo(t)
+	tempRepo := mkRepoRaw(t)
 
 	t.Run("ok", func(t *testing.T) {
 		sharedCacheDir := t.TempDir()

@@ -16,14 +16,33 @@ package gitsource
 
 import (
 	"context"
+	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/exec/execmock"
 	"go.chromium.org/luci/common/git/testrepo"
 	"go.chromium.org/luci/common/testing/truth/assert"
 )
 
-func mkRepo(t testing.TB) string {
+func mkRepoRaw(t testing.TB) string {
 	ret, err := testrepo.ToGit(context.Background(), "testdata", t.TempDir(), false)
 	assert.NoErr(t, err)
 	return ret
+}
+
+func mkRepo(t *testing.T) *RepoCache {
+	cache, err := New(t.TempDir())
+	assert.NoErr(t, err)
+
+	ret, err := cache.ForRepo(context.Background(), mkRepoRaw(t))
+	assert.NoErr(t, err)
+
+	t.Cleanup(ret.Shutdown)
+
+	return ret
+}
+
+func TestMain(m *testing.M) {
+	execmock.Intercept(false)
+	os.Exit(m.Run())
 }
