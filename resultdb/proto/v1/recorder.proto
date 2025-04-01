@@ -297,10 +297,17 @@ message BatchCreateTestExonerationsResponse {
 
 // A request message for CreateArtifactRequest.
 message CreateArtifactRequest {
-  // Name of the parent resource where the artifact will be created.
+
+  // Name of the parent invocation, see Invocation.name.
   //
-  // For invocation-level artifacts, it is the invocation name.
-  // For test-result-level artifacts, it is the TestResult name.
+  // To create test result-level artifacts, set test_id_structured and result_id on
+  // the Artifact. Otherwise, to create invocation-level artifacts, leave
+  // test_id_structured and result_id blank.
+  //
+  // Legacy uploaders can also use the name format:
+  // invocations/{INVOCATION_ID}/tests/{URL_ENCODED_TEST_ID}/results/{RESULT_ID}
+  // to create test result-level artifacts (in this case, test_id_structured and
+  // result_id MUST be left blank on the Artifact).
   string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Artifact to upload.
@@ -311,11 +318,17 @@ message CreateArtifactRequest {
 }
 
 // A request message for BatchCreateArtifactsRequest.
+// Next ID: 4.
 message BatchCreateArtifactsRequest {
+  // Required. Name of the parent invocation, see Invocation.name.
+  // Can only be empty for legacy uploaders which specify requests[i].parent.
+  string parent = 3 [ (google.api.field_behavior) = REQUIRED ];
+
   // Requests to create Artifacts.
   // The sum of the content lengths MUST be <= 10MiB.
-  // The parents of all the requests must be derived from the same invocation.
-  //
+  // requests[i].parent MUST be either empty or equal to parent in this
+  // message.
+  // For legacy uploader requests[i].parent MUST be derived from the same invocation.
   // Up to 500 requests.
   repeated CreateArtifactRequest requests = 2;
 }

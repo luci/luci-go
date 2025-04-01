@@ -71,77 +71,190 @@ func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
 }
 
 func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
-	newArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
+	newLegacyArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
 		return &pb.CreateArtifactRequest{
 			Parent:   parent,
 			Artifact: &pb.Artifact{ArtifactId: artID, ContentType: contentType},
 		}
 	}
 
+	newTestArtReq := func(artifactID string) *pb.CreateArtifactRequest {
+		return &pb.CreateArtifactRequest{
+			Artifact: &pb.Artifact{
+				TestIdStructured: &pb.TestIdentifierBase{
+					ModuleName:   "module",
+					ModuleScheme: "junit",
+					CoarseName:   "coarse",
+					FineName:     "fine",
+					CaseName:     "case",
+				},
+				ResultId:    "resultid",
+				ArtifactId:  artifactID,
+				ContentType: "image/png",
+			},
+		}
+	}
+
+	newInvArtReq := func(artifactID string) *pb.CreateArtifactRequest {
+		return &pb.CreateArtifactRequest{
+			Parent: "invocations/abc",
+			Artifact: &pb.Artifact{
+				ArtifactId:  artifactID,
+				ContentType: "text/plain",
+			},
+		}
+	}
+
 	ftt.Run("newArtifactCreationRequestsFromProto", t, func(t *ftt.Test) {
-		bReq := &pb.BatchCreateArtifactsRequest{}
-		invArt := newArtReq("invocations/inv1", "art1", "text/html")
-		trArt := newArtReq("invocations/inv1/tests/t1/results/r1", "art2", "image/png")
-
+		bReq := &pb.BatchCreateArtifactsRequest{Parent: "invocations/abc"}
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
 		t.Run("successes", func(t *ftt.Test) {
-			bReq.Requests = append(bReq.Requests, invArt)
-			bReq.Requests = append(bReq.Requests, trArt)
-			invID, arts, err := parseBatchCreateArtifactsRequest(bReq)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, invID, should.Equal(invocations.ID("inv1")))
-			assert.Loosely(t, len(arts), should.Equal(len(bReq.Requests)))
+			t.Run("use the legacy parent format", func(t *ftt.Test) {
+				invArt := newLegacyArtReq("invocations/inv1", "art1", "text/html")
+				trArt := newLegacyArtReq("invocations/inv1/tests/t1/results/r1", "art2", "image/png")
+				bReq.Requests = append(bReq.Requests, invArt)
+				bReq.Requests = append(bReq.Requests, trArt)
+				bReq.Parent = ""
+				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, invID, should.Equal(invocations.ID("inv1")))
+				assert.Loosely(t, len(arts), should.Equal(len(bReq.Requests)))
 
-			// invocation-level artifact
-			assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
-			assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
-			assert.Loosely(t, arts[0].contentType, should.Equal("text/html"))
+				// invocation-level artifact
+				assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
+				assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
+				assert.Loosely(t, arts[0].contentType, should.Equal("text/html"))
 
-			// test-result-level artifact
-			assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
-			assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID("t1", "r1")))
-			assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
+				// test-result-level artifact
+				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
+				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID("t1", "r1")))
+				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
+			})
+
+			t.Run("use the top-level parent field", func(t *ftt.Test) {
+				bReq.Requests = append(bReq.Requests, newInvArtReq("art1"))
+				bReq.Requests = append(bReq.Requests, newTestArtReq("art2"))
+
+				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, invID, should.Equal(invocations.ID("abc")))
+				assert.Loosely(t, len(arts), should.Equal(2))
+
+				// invocation-level artifact
+				assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
+				assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
+				assert.Loosely(t, arts[0].contentType, should.Equal("text/plain"))
+
+				// test-result-level artifact
+				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
+				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID(":module!junit:coarse:fine#case", "resultid")))
+				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
+			})
+		})
+
+		t.Run("neither of nested parent nor top level parent is specified", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			bReq.Requests = append(bReq.Requests, r)
+			bReq.Parent = ""
+			r.Parent = ""
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("requests[0]: parent: unspecified"))
+		})
+
+		t.Run("Different nested parent and top level parent", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Parent = "invocations/inv"
+			bReq.Requests = append(bReq.Requests, r)
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("only one parent is allowed: \"invocations/abc\", \"invocations/inv\""))
+		})
+
+		t.Run("Use legacy parent format and test_id_structured are specified", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Parent = "invocations/abc/tests/testid/results/123"
+			bReq.Requests = append(bReq.Requests, r)
+			bReq.Parent = ""
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("test_id_structured must not be specified if parent is a test result name (legacy format)"))
+		})
+
+		t.Run("No top level parent and test_id_structured is specified", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Parent = "invocations/abc"
+			bReq.Requests = append(bReq.Requests, r)
+			bReq.Parent = ""
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("test_id_structured or result_id must not be specified if top-level invocation is not set (legacy uploader)"))
+		})
+
+		t.Run("test_id_structured not specified with result_id specified", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Artifact.TestIdStructured = nil
+			bReq.Requests = append(bReq.Requests, r)
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("test_id_structured is required if result_id is specified"))
+		})
+
+		t.Run("result_id not specified with test_id_structured specified", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Artifact.ResultId = ""
+			bReq.Requests = append(bReq.Requests, r)
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike("result_id is required if test_id_structured is specified"))
 		})
 
 		t.Run("mismatched size_bytes", func(t *ftt.Test) {
+			trArt := newTestArtReq("art1")
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 123
 			trArt.Artifact.Contents = make([]byte, 10249)
-			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.ErrLike(`sizeBytes and contents are specified but don't match`))
 		})
 
 		t.Run("ignored size_bytes", func(t *ftt.Test) {
+			trArt := newTestArtReq("art1")
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 0
 			trArt.Artifact.Contents = make([]byte, 10249)
-			_, arts, err := parseBatchCreateArtifactsRequest(bReq)
+			_, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, arts[0].size, should.Equal(10249))
 		})
 
 		t.Run("contents and gcs_uri both specified", func(t *ftt.Test) {
+			trArt := newTestArtReq("art1")
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 0
 			trArt.Artifact.Contents = make([]byte, 10249)
 			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
-			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.ErrLike(`only one of contents and gcs_uri can be given`))
 		})
 
 		t.Run("sum() of artifact.Contents is too big", func(t *ftt.Test) {
 			for i := 0; i < 11; i++ {
-				req := newArtReq("invocations/inv1", fmt.Sprintf("art%d", i), "text/html")
+				req := newTestArtReq(fmt.Sprintf("art%d", i))
 				req.Artifact.Contents = make([]byte, 1024*1024)
 				bReq.Requests = append(bReq.Requests, req)
 			}
-			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.ErrLike("the total size of artifact contents exceeded"))
 		})
 
-		t.Run("if more than one invocations", func(t *ftt.Test) {
-			bReq.Requests = append(bReq.Requests, newArtReq("invocations/inv1", "art1", "text/html"))
-			bReq.Requests = append(bReq.Requests, newArtReq("invocations/inv2", "art1", "text/html"))
-			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+		t.Run("if more than one invocations - legacy", func(t *ftt.Test) {
+			bReq.Requests = append(bReq.Requests, newLegacyArtReq("invocations/inv1", "art1", "text/html"))
+			bReq.Requests = append(bReq.Requests, newLegacyArtReq("invocations/inv2", "art1", "text/html"))
+			bReq.Parent = ""
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.ErrLike(`only one invocation is allowed: "inv1", "inv2"`))
 		})
 	})
@@ -163,29 +276,44 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			Identity: "user:test@test.com",
 		})
 
-		err = config.SetServiceConfigForTesting(ctx, &configpb.Config{
-			BqArtifactExportConfig: &configpb.BqArtifactExportConfig{
-				Enabled:       true,
-				ExportPercent: 100,
-			},
-		})
-		assert.Loosely(t, err, should.BeNil)
+		serviceCfg := config.CreatePlaceHolderServiceConfig()
+		serviceCfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
+			Enabled:       true,
+			ExportPercent: 100,
+		}
+		err = config.SetServiceConfigForTesting(ctx, serviceCfg)
+		assert.NoErr(t, err)
 
 		casClient := &fakeRBEClient{}
 		recorder := newTestRecorderServerWithClients(casClient)
-		bReq := &pb.BatchCreateArtifactsRequest{}
+		bReq := &pb.BatchCreateArtifactsRequest{
+			Parent: "invocations/inv",
+		}
 
-		appendArtReq := func(aID, content, cType, parent string, testStatus pb.TestStatus) {
+		appendArtReq := func(aID, content, cType, caseName, resultID string, testStatus pb.TestStatus) {
+			var testID *pb.TestIdentifierBase
+			if caseName != "" {
+				testID = &pb.TestIdentifierBase{
+					ModuleName:   "module",
+					ModuleScheme: "junit",
+					CoarseName:   "coarse",
+					FineName:     "fine",
+					CaseName:     caseName,
+				}
+			}
 			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-				Parent: parent,
 				Artifact: &pb.Artifact{
-					ArtifactId: aID, Contents: []byte(content), ContentType: cType, TestStatus: testStatus,
+					TestIdStructured: testID,
+					ResultId:         resultID,
+					ArtifactId:       aID,
+					Contents:         []byte(content),
+					ContentType:      cType,
+					TestStatus:       testStatus,
 				},
 			})
 		}
 		appendGcsArtReq := func(aID string, cSize int64, cType string, gcsURI string) {
 			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-				Parent: "invocations/inv",
 				Artifact: &pb.Artifact{
 					ArtifactId: aID, SizeBytes: cSize, ContentType: cType, GcsUri: gcsURI,
 				},
@@ -257,11 +385,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				"CreateTime": time.Unix(10000, 0),
 			}))
 
-			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
-			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv/tests/test_id/results/0", pb.TestStatus_PASS)
+			appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art2", "c1ntent", "text/richtext", "test_id", "0", pb.TestStatus_PASS)
 			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
 			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
-			appendArtReq("art5", "c5ntent", "text/richtext", "invocations/inv/tests/test_id_1/results/0", pb.TestStatus_FAIL)
+			appendArtReq("art5", "c5ntent", "text/richtext", "test_id_1", "0", pb.TestStatus_FAIL)
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
@@ -276,7 +404,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						SizeBytes:   7,
 					},
 					{
-						Name:        "invocations/inv/tests/test_id/results/0/artifacts/art2",
+						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id/results/0/artifacts/art2",
+						TestIdStructured: &pb.TestIdentifierBase{
+							ModuleName: "module", ModuleScheme: "junit", CoarseName: "coarse", FineName: "fine", CaseName: "test_id",
+						},
+						TestId:      ":module!junit:coarse:fine#test_id",
+						ResultId:    "0",
 						ArtifactId:  "art2",
 						ContentType: "text/richtext",
 						SizeBytes:   7,
@@ -294,7 +427,12 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						SizeBytes:   500,
 					},
 					{
-						Name:        "invocations/inv/tests/test_id_1/results/0/artifacts/art5",
+						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id_1/results/0/artifacts/art5",
+						TestIdStructured: &pb.TestIdentifierBase{
+							ModuleName: "module", ModuleScheme: "junit", CoarseName: "coarse", FineName: "fine", CaseName: "test_id_1",
+						},
+						TestId:      ":module!junit:coarse:fine#test_id_1",
+						ResultId:    "0",
 						ArtifactId:  "art5",
 						ContentType: "text/richtext",
 						SizeBytes:   7,
@@ -335,13 +473,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			assert.Loosely(t, cType, should.Equal("text/plain"))
 			assert.Loosely(t, gcsURI, should.BeEmpty)
 
-			size, hash, cType, gcsURI = fetchState("tr/test_id/0", "art2")
+			size, hash, cType, gcsURI = fetchState("tr/:module!junit:coarse:fine#test_id/0", "art2")
 			assert.Loosely(t, size, should.Equal(int64(len("c1ntent"))))
 			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c1ntent"))))
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
 			assert.Loosely(t, gcsURI, should.BeEmpty)
 
-			size, hash, cType, gcsURI = fetchState("tr/test_id_1/0", "art5")
+			size, hash, cType, gcsURI = fetchState("tr/:module!junit:coarse:fine#test_id_1/0", "art5")
 			assert.Loosely(t, size, should.Equal(int64(len("c5ntent"))))
 			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c5ntent"))))
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
@@ -365,8 +503,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 		t.Run("BatchUpdateBlobs fails", func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
-			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art2", "c1ntent", "text/richtext", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 
 			t.Run("Partly", func(t *ftt.Test) {
 				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
@@ -391,7 +529,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 
 		t.Run("Token", func(t *ftt.Test) {
-			appendArtReq("art1", "", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art1", "", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			t.Run("Missing", func(t *ftt.Test) {
@@ -413,7 +551,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			t.Run("Finalized invocation", func(t *ftt.Test) {
 				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
-				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 				assert.Loosely(t, err, should.ErrLike(`invocations/inv is not active`))
@@ -441,7 +579,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
-				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{}))
@@ -454,7 +592,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", art),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
@@ -479,7 +617,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", gcsArt),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 				assert.Loosely(t, err, should.ErrLike("exists w/ different storage scheme"))
@@ -490,7 +628,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 				assert.Loosely(t, err, should.ErrLike("exists w/ different GCS URI"))
 
-				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))

@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -30,7 +31,7 @@ option java_multiple_files = true;
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 11.
+// Next id: 15.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -42,7 +43,34 @@ message Artifact {
   // https://golang.org/pkg/net/url/#PathEscape (see also https://aip.dev/122),
   // and ARTIFACT_ID is documented below.
   // Examples: "screenshot.png", "traces/a.txt".
-  string name = 1;
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // The structured test identifier. Uniquely identifies the test that was run, excluding variant.
+  //
+  // This field is only populated for test-result-level artifacts.
+  // MUST set if result_id is set.
+  // MUST NOT set for legacy uploader where test id should be specified in the parent.
+  TestIdentifierBase test_id_structured = 12 [(google.api.field_behavior) = IMMUTABLE];
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  // Regex: ^[[::print::]]{1,512}$
+  //
+  // This is the flat-form encoding of the test_id_structured above,
+  // only populated for test-result-level artifacts.
+  // See TestIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
+  //
+  // Output only.
+  string test_id = 13 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+
+
+  // This field is only populated for test-result-level artifacts.
+  // MUST set if test_id_structured is set.
+  // MUST NOT set for legacy uploader where result id should be specified in the parent.
+  string result_id = 14 [(google.api.field_behavior) = IMMUTABLE];
 
   // A local identifier of the artifact, unique within the parent resource.
   // MAY have slashes, but MUST NOT start with a slash.
