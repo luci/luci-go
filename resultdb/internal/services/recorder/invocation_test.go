@@ -97,7 +97,7 @@ func TestReadInvocation(t *testing.T) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 
-			inv, err := invocations.Read(ctx, "inv")
+			inv, err := invocations.Read(ctx, "inv", invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			return inv
 		}

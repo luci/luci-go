@@ -47,7 +47,7 @@ func TestShouldMarkSubmitted(t *testing.T) {
 				}),
 			)...)
 
-			inv, err := invocations.Read(span.Single(ctx), "a")
+			inv, err := invocations.Read(span.Single(ctx), "a", invocations.ExcludeExtendedProperties)
 			assert.Loosely(t, err, should.BeNil)
 
 			err = shouldMarkSubmitted(inv)
@@ -61,7 +61,7 @@ func TestShouldMarkSubmitted(t *testing.T) {
 				}),
 			)...)
 
-			inv, err := invocations.Read(span.Single(ctx), "a")
+			inv, err := invocations.Read(span.Single(ctx), "a", invocations.ExcludeExtendedProperties)
 			assert.Loosely(t, err, should.BeNil)
 
 			err = shouldMarkSubmitted(inv)
@@ -69,7 +69,7 @@ func TestShouldMarkSubmitted(t *testing.T) {
 		})
 
 		t.Run(`Non existent invocation`, func(t *ftt.Test) {
-			_, err := invocations.Read(span.Single(ctx), "a")
+			_, err := invocations.Read(span.Single(ctx), "a", invocations.ExcludeExtendedProperties)
 			assert.Loosely(t, err, should.ErrLike(`invocations/a not found`))
 		})
 	})
@@ -177,7 +177,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZED, nil),
 			)...)
 
-			_, err := invocations.Read(span.Single(ctx), "a")
+			_, err := invocations.Read(span.Single(ctx), "a", invocations.ExcludeExtendedProperties)
 			assert.Loosely(t, err, should.BeNil)
 
 			err = tryMarkInvocationSubmitted(ctx, invocations.ID("a"))

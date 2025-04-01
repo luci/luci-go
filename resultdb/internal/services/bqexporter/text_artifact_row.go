@@ -174,7 +174,7 @@ type artifact struct {
 }
 
 func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
-	exportedInv, err := invocations.Read(ctx, exportedID)
+	exportedInv, err := invocations.Read(ctx, exportedID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return errors.Annotate(err, "error reading exported invocation").Err()
 	}
@@ -203,7 +203,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			WithRBECASHash:      true,
 		}
 
-		invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
+		invs, err := invocations.ReadBatch(ctx, q.InvocationIDs, invocations.ExcludeExtendedProperties)
 		if err != nil {
 			return err
 		}

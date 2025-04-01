@@ -65,7 +65,7 @@ func (s *resultDBServer) GetInstruction(ctx context.Context, req *pb.GetInstruct
 }
 
 func fetchInstruction(ctx context.Context, invID invocations.ID, instructionID string) (*pb.Instruction, error) {
-	inv, err := invocations.Read(ctx, invID)
+	inv, err := invocations.Read(ctx, invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return nil, err
 	}

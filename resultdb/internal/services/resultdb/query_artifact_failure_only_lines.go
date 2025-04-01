@@ -58,7 +58,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 		return nil, appstatus.BadRequest(fmt.Errorf("only test artifacts are supported, %s is an invocation level artifact", request.Parent))
 	}
 
-	invocation, err := invocations.Read(ctx, invocations.ID(invID))
+	invocation, err := invocations.Read(ctx, invocations.ID(invID), invocations.ExcludeExtendedProperties)
 
 	if err != nil {
 		return nil, errors.Annotate(err, "reading invocation").Err()

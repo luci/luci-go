@@ -55,7 +55,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 		return nil, errors.Annotate(err, "parse artifact name").Err()
 	}
 
-	invocation, err := invocations.Read(ctx, invocations.ID(invID))
+	invocation, err := invocations.Read(ctx, invocations.ID(invID), invocations.ExcludeExtendedProperties)
 
 	if err != nil {
 		return nil, errors.Annotate(err, "reading invocation").Err()

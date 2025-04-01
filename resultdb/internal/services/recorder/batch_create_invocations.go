@@ -227,7 +227,7 @@ func getCreatedInvocationsAndUpdateTokens(ctx context.Context, idSet invocations
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	invMap, err := invocations.ReadBatch(ctx, idSet)
+	invMap, err := invocations.ReadBatch(ctx, idSet, invocations.AllFields)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -819,7 +819,7 @@ func TestCreateInvocation(t *testing.T) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 
-			inv, err = invocations.Read(ctx, "u-inv")
+			inv, err = invocations.Read(ctx, "u-inv", invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv, should.Match(expected))
 

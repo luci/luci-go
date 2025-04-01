@@ -95,7 +95,7 @@ func init() {
 // Marking an invocation submitted also updates the Baselines table with new
 // baselines.
 func tryMarkInvocationSubmitted(ctx context.Context, invID invocations.ID) error {
-	inv, err := invocations.Read(span.Single(ctx), invID)
+	inv, err := invocations.Read(span.Single(ctx), invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return errors.Annotate(err, "read invocation").Err()
 	}

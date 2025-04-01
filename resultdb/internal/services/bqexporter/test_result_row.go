@@ -177,7 +177,7 @@ func (b *bqExporter) queryTestResults(
 		Mask:          testresults.AllFields,
 	}
 
-	invs, err := invocations.ReadBatch(ctx, invocationIds)
+	invs, err := invocations.ReadBatch(ctx, invocationIds, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	exported, err := invocations.Read(ctx, invID)
+	exported, err := invocations.Read(ctx, invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return err
 	}

@@ -265,7 +265,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	}
 
 	// Get the invocation.
-	inv, err := invocations.Read(span.Single(ctx), invID)
+	inv, err := invocations.Read(span.Single(ctx), invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return errors.Annotate(err, "error reading exported invocation").Err()
 	}

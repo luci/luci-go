@@ -343,11 +343,11 @@ func TestBatchCreateInvocations(t *testing.T) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 
-			inv, err := invocations.Read(ctx, "u-batch-inv")
+			inv, err := invocations.Read(ctx, "u-batch-inv", invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv, should.Match(expected))
 
-			inv2, err := invocations.Read(ctx, "u-batch-inv2")
+			inv2, err := invocations.Read(ctx, "u-batch-inv2", invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv2, should.Match(expected2))
 

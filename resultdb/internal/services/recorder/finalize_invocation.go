@@ -58,7 +58,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	var ret *pb.Invocation
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		inv, err := invocations.Read(ctx, invID)
+		inv, err := invocations.Read(ctx, invID, invocations.ExcludeExtendedProperties)
 		if err != nil {
 			return err
 		}

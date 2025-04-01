@@ -65,7 +65,7 @@ func (b *bqExporter) exportInvocationToBigQuery(ctx context.Context, invID invoc
 	// Get the invocation to be exported
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
-	inv, err := invocations.Read(ctx, invID)
+	inv, err := invocations.Read(ctx, invID, invocations.AllFields)
 	if err != nil {
 		return errors.Annotate(err, "error reading invocation").Err()
 	}

@@ -88,7 +88,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			finalizeTime := inv.FinalizeStartTime
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
-			inv, err = invocations.Read(span.Single(ctx), "inv")
+			inv, err = invocations.Read(span.Single(ctx), "inv", invocations.ExcludeExtendedProperties)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
 			assert.Loosely(t, inv.FinalizeStartTime, should.Match(finalizeTime))

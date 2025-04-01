@@ -16,6 +16,8 @@ package invocations
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 	"go.opentelemetry.io/otel/attribute"
@@ -57,37 +59,62 @@ func ReadColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	}
 }
 
-func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation) error) error {
+type ReadMask int
+
+const (
+	// Read all invocation properties.
+	AllFields ReadMask = iota
+	// Read all invocation fields, except extended properties. As it's max size,
+	// i.e. pbutil.MaxSizeInvocationExtendedProperties will be increased, when
+	// reading a large IDSet, the total size may be too big to fit into memory.
+	// So we want to exclude this field in certain cases.
+	ExcludeExtendedProperties
+)
+
+func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv *pb.Invocation) error) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	st := spanner.NewStatement(`
+	// Determine if extended properties should be included
+	includeExtendedProperties := true
+	if mask == ExcludeExtendedProperties {
+		includeExtendedProperties = false
+	}
+
+	baseCols := []string{
+		"i.InvocationId",
+		"i.State",
+		"i.CreatedBy",
+		"i.CreateTime",
+		"i.FinalizeStartTime",
+		"i.FinalizeTime",
+		"i.Deadline",
+		"i.Tags",
+		"i.IsExportRoot",
+		"i.BigQueryExports",
+		"ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId)",
+		"i.ProducerResource",
+		"i.Realm",
+		"i.Properties",
+		"i.Sources",
+		"i.InheritSources",
+		"i.IsSourceSpecFinal",
+		"i.BaselineId",
+		"i.Instructions",
+		"i.TestResultVariantUnion",
+	}
+
+	if includeExtendedProperties {
+		baseCols = append(baseCols, "i.ExtendedProperties")
+	}
+
+	st := spanner.NewStatement(fmt.Sprintf(`
 		SELECT
-		 i.InvocationId,
-		 i.State,
-		 i.CreatedBy,
-		 i.CreateTime,
-		 i.FinalizeStartTime,
-		 i.FinalizeTime,
-		 i.Deadline,
-		 i.Tags,
-		 i.IsExportRoot,
-		 i.BigQueryExports,
-		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
-		 i.ProducerResource,
-		 i.Realm,
-		 i.Properties,
-		 i.Sources,
-		 i.InheritSources,
-		 i.IsSourceSpecFinal,
-		 i.BaselineId,
-		 i.Instructions,
-		 i.TestResultVariantUnion,
-		 i.ExtendedProperties,
+		 %s
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
-	`)
+	`, strings.Join(baseCols, ",")))
 	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"invIDs": ids,
 	})
@@ -110,7 +137,9 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			instructions       spanutil.Compressed
 			extendedProperties spanutil.Compressed
 		)
-		err := b.FromSpanner(row, &id,
+
+		dest := []any{
+			&id,
 			&inv.State,
 			&createdBy,
 			&inv.CreateTime,
@@ -130,8 +159,12 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&baselineID,
 			&instructions,
 			&inv.TestResultVariantUnion,
-			&extendedProperties,
-		)
+		}
+		if includeExtendedProperties {
+			dest = append(dest, &extendedProperties)
+		}
+
+		err := b.FromSpanner(row, dest...)
 		if err != nil {
 			return err
 		}
@@ -180,12 +213,12 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			inv.Instructions = instructionutil.InstructionsWithNames(inv.Instructions, string(id))
 		}
 
-		// Deserialize from luci.resultdb.internal.invocations.ExtendedProperties
-		// and assign the wrapped map to invocation.ExtendedProperties
-		if len(extendedProperties) > 0 {
+		// Conditionally process ExtendedProperties.
+		// Only process if the mask included it AND data was non-empty.
+		if includeExtendedProperties && len(extendedProperties) > 0 {
 			internalExtendedProperties := &invocationspb.ExtendedProperties{}
 			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
-				return err
+				return errors.Annotate(err, "failed to unmarshal ExtendedProperties for invocation %q", id).Err()
 			}
 			inv.ExtendedProperties = internalExtendedProperties.ExtendedProperties
 		}
@@ -197,9 +230,9 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 // Read reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, id ID) (*pb.Invocation, error) {
+func Read(ctx context.Context, id ID, mask ReadMask) (*pb.Invocation, error) {
 	var ret *pb.Invocation
-	err := readMulti(ctx, NewIDSet(id), func(id ID, inv *pb.Invocation) error {
+	err := readMulti(ctx, NewIDSet(id), mask, func(id ID, inv *pb.Invocation) error {
 		ret = inv
 		return nil
 	})
@@ -216,9 +249,9 @@ func Read(ctx context.Context, id ID) (*pb.Invocation, error) {
 
 // ReadBatch reads multiple invocations from Spanner.
 // If any of them are not found, returns an error.
-func ReadBatch(ctx context.Context, ids IDSet) (map[ID]*pb.Invocation, error) {
+func ReadBatch(ctx context.Context, ids IDSet, mask ReadMask) (map[ID]*pb.Invocation, error) {
 	ret := make(map[ID]*pb.Invocation, len(ids))
-	err := readMulti(ctx, ids, func(id ID, inv *pb.Invocation) error {
+	err := readMulti(ctx, ids, mask, func(id ID, inv *pb.Invocation) error {
 		if _, ok := ret[id]; ok {
 			panic("query is incorrect; it returned duplicated invocation IDs")
 		}

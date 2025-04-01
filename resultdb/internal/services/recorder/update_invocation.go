@@ -266,7 +266,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 	var ret *pb.Invocation
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		var err error
-		if ret, err = invocations.Read(ctx, invID); err != nil {
+		if ret, err = invocations.Read(ctx, invID, invocations.AllFields); err != nil {
 			return err
 		}
 		// Perform validation and permission checks in the same transaction

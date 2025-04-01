@@ -57,5 +57,5 @@ func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocation
 		return nil, appstatus.BadRequest(err)
 	}
 
-	return invocations.Read(ctx, invocations.MustParseName(in.Name))
+	return invocations.Read(ctx, invocations.MustParseName(in.Name), invocations.AllFields)
 }

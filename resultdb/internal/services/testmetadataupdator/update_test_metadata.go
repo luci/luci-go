@@ -56,7 +56,7 @@ func init() {
 // updateTestMetadata update the TestMetadata table with test results in the given invocation
 // and invocations that inherit its commit source information.
 func updateTestMetadata(ctx context.Context, invID invocations.ID) error {
-	inv, err := invocations.Read(span.Single(ctx), invID)
+	inv, err := invocations.Read(span.Single(ctx), invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
 		return err
 	}
