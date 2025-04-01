@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColumnVisibilityModel } from '@mui/x-data-grid';
-
-export function getVisibilityModel(
-  allColumns: string[],
-  visibileColums: string[],
-): GridColumnVisibilityModel {
-  return allColumns.reduce(
-    (acc, val) => ({
-      ...acc,
-      [val]: visibileColums.includes(val),
-    }),
-    {},
-  );
-}
+export const COLUMNS_LOCAL_STORAGE_KEY = 'fleet-console-devices-columns';

@@ -15,11 +15,18 @@
 import { Button, Divider } from '@mui/material';
 
 export type FooterProps = {
-  onCancelClick?: (event: object) => void;
-  onApplyClick?: (event: object) => void;
+  footerButtons?: ('cancel' | 'apply' | 'reset')[];
+  onCancelClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onApplyClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-export function Footer({ onCancelClick, onApplyClick }: FooterProps) {
+export function Footer({
+  footerButtons = ['apply', 'cancel'],
+  onResetClick,
+  onCancelClick,
+  onApplyClick,
+}: FooterProps) {
   return (
     <div>
       <Divider
@@ -32,22 +39,32 @@ export function Footer({ onCancelClick, onApplyClick }: FooterProps) {
         css={{
           display: 'flex',
           gap: 12,
-          padding: '6px 30px 6px 30px',
+          padding: '6px 30px',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexDirection: 'row-reverse',
         }}
       >
-        <Button disableElevation onClick={onCancelClick} tabIndex={-1}>
-          Cancel
-        </Button>
-        <Button
-          disableElevation
-          variant="contained"
-          onClick={onApplyClick}
-          tabIndex={-1}
-        >
-          Apply
-        </Button>
+        {footerButtons.includes('apply') && (
+          <Button
+            disableElevation
+            variant="contained"
+            onClick={onApplyClick}
+            tabIndex={-1}
+          >
+            Apply
+          </Button>
+        )}
+        {footerButtons.includes('cancel') && (
+          <Button disableElevation onClick={onCancelClick} tabIndex={-1}>
+            Cancel
+          </Button>
+        )}
+        {footerButtons.includes('reset') && (
+          <Button disableElevation onClick={onResetClick} tabIndex={-1}>
+            Reset to default
+          </Button>
+        )}
       </div>
     </div>
   );

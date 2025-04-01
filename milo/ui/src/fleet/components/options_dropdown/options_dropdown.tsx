@@ -21,7 +21,7 @@ import {
   PopoverOrigin,
   Skeleton,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -41,11 +41,12 @@ type OptionsDropdownProps = MenuProps & {
   onSelectedOptionsChange?: (newSelectedOptions: SelectedOptions) => void;
   anchorOrigin?: PopoverOrigin | undefined;
   highlightedCharacters?: Record<string, number[]>;
-  disableFooter?: boolean;
   enableSearchInput?: boolean;
   onFlipOption?: (value: string) => void;
   maxHeight?: number;
   isLoading?: boolean;
+  onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
+  footerButtons?: ('reset' | 'cancel' | 'apply')[];
 };
 
 function MenuSkeleton({
@@ -59,7 +60,6 @@ function MenuSkeleton({
 }) {
   return (
     <Box key="menu-container-skeleton">
-      {' '}
       <MenuList
         sx={{
           overflowY: 'auto',
@@ -143,24 +143,22 @@ export function OptionsDropdown({
   },
   onKeyDown,
   highlightedCharacters,
-  disableFooter = false,
   enableSearchInput = false,
   onFlipOption,
   maxHeight = 200,
   isLoading,
+  onResetClick,
+  footerButtons = ['apply', 'cancel'],
   ...menuProps
 }: OptionsDropdownProps) {
+  // Only used if the footer is enabled
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState(selectedOptions);
 
-  useEffect(() => {
-    if (open) {
-      setTempSelectedOptions(selectedOptions);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   const flipOption = (o2Value: string) => {
+    if (onFlipOption) onFlipOption(o2Value);
+    if (!footerButtons || footerButtons.length === 0) return;
+
     const currentValues = tempSelectedOptions[option.value] ?? [];
 
     const newValues = currentValues.includes(o2Value)
@@ -171,8 +169,6 @@ export function OptionsDropdown({
       ...(tempSelectedOptions ?? {}),
       [option.value]: newValues,
     });
-
-    if (onFlipOption) onFlipOption(o2Value);
   };
 
   const resetTempOptions = () => setTempSelectedOptions(selectedOptions);
@@ -243,64 +239,79 @@ export function OptionsDropdown({
 
         if (onKeyDown) onKeyDown(e);
       }}
+      sx={{
+        zIndex: 1401, // luci's cookie_consent_bar is 14000
+      }}
       MenuListProps={{
         sx: {
-          padding: '8px 0',
+          paddingTop: '8px',
+          paddingBottom: 0,
         },
       }}
       {...menuProps}
     >
-      {enableSearchInput && (
-        <SearchInput
-          searchInput={searchInput}
-          searchQuery={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.currentTarget.value);
-          }}
-        />
-      )}
-      {isLoading ? (
-        <MenuSkeleton
-          itemCount={Math.min(options.length, 30)}
-          maxHeight={maxHeight}
-          disableFooter={disableFooter}
-        />
-      ) : (
-        [
-          <div
-            css={{
-              maxHeight: maxHeight,
-              overflow: 'hidden',
-              width: 300,
-            }}
-            tabIndex={-1}
-            key="options-menu-container"
-          >
-            <OptionsMenu
-              elements={options.map((o) => ({
-                el: o,
-                matches:
-                  (highlightedCharactersWrapper &&
-                    highlightedCharactersWrapper[o.value]) ??
-                  [],
-                score: 0,
-              }))}
-              selectedElements={new Set(tempSelectedOptions[option.value])}
-              flipOption={flipOption}
-            />
-          </div>,
-          !disableFooter && (
-            <Footer
-              onCancelClick={(e) => {
-                if (onClose) onClose(e, 'escapeKeyDown');
-                resetTempOptions();
+      <div css={{ width: 300 }}>
+        {enableSearchInput && (
+          <div css={{ flexGrow: 1 }}>
+            <SearchInput
+              searchInput={searchInput}
+              searchQuery={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.currentTarget.value);
               }}
-              onApplyClick={confirmTempOptions}
-              key="options-menu-footer"
             />
-          ),
-        ]
-      )}
+          </div>
+        )}
+        {isLoading ? (
+          <MenuSkeleton
+            itemCount={Math.min(options.length, 30)}
+            maxHeight={maxHeight}
+            disableFooter={!footerButtons || footerButtons.length === 0}
+          />
+        ) : (
+          <>
+            <div
+              css={{
+                maxHeight: maxHeight,
+                overflow: 'hidden',
+              }}
+              tabIndex={-1}
+              key="options-menu-container"
+            >
+              <OptionsMenu
+                elements={options.map((o) => ({
+                  el: o,
+                  matches:
+                    (highlightedCharactersWrapper &&
+                      highlightedCharactersWrapper[o.value]) ??
+                    [],
+                  score: 0,
+                }))}
+                selectedElements={
+                  new Set(
+                    footerButtons?.includes('apply')
+                      ? tempSelectedOptions[option.value]
+                      : selectedOptions[option.value],
+                  )
+                }
+                flipOption={flipOption}
+              />
+            </div>
+            {footerButtons && footerButtons.length > 0 && (
+              <Footer
+                footerButtons={footerButtons}
+                onCancelClick={(e) => {
+                  if (onClose) onClose(e, 'escapeKeyDown');
+                  resetTempOptions();
+                }}
+                onApplyClick={confirmTempOptions}
+                onResetClick={onResetClick}
+                key="options-menu-footer"
+              />
+            )}
+          </>
+        )}
+      </div>
     </Menu>
   );
 }

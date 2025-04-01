@@ -30,6 +30,7 @@ import {
 } from '@/common/components/params_pager';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -45,7 +46,8 @@ import {
 } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
-import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
+import { getVisibilityModel } from './search_param_utils';
+import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -77,11 +79,6 @@ const getRow = (device: Device) =>
       ],
     ),
   ]);
-
-function getVisibleColumnIds(params: URLSearchParams) {
-  const visibleColumns = params.getAll(COLUMNS_PARAM_KEY);
-  return visibleColumns.length === 0 ? DEFAULT_DEVICE_COLUMNS : visibleColumns;
-}
 
 const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
   if (sortModel.length !== 1) {
@@ -122,6 +119,12 @@ export function DeviceTable({
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [, setOrderByParam] = useOrderByParam();
 
+  const [visibleColumns, setVisibleColumns] = useParamsAndLocalStorage(
+    COLUMNS_PARAM_KEY,
+    COLUMNS_LOCAL_STORAGE_KEY,
+    DEFAULT_DEVICE_COLUMNS,
+  );
+
   // See: https://mui.com/x/react-data-grid/row-selection/#controlled-row-selection
   const [rowSelectionModel, setRowSelectionModel] =
     useState<GridRowSelectionModel>([]);
@@ -136,28 +139,16 @@ export function DeviceTable({
   };
 
   const columns = useMemo(() => {
-    return orderColumns(
-      getColumns(columnIds),
-      getVisibleColumnIds(searchParams),
-    );
-  }, [columnIds, searchParams]);
-
-  const defaultColumnVisibilityModel = columns.reduce(
-    (visibilityModel, column) => ({
-      ...visibilityModel,
-      [column.field]: DEFAULT_DEVICE_COLUMNS.includes(column.field),
-    }),
-    {} as GridColumnVisibilityModel,
-  );
+    return orderColumns(getColumns(columnIds), visibleColumns);
+  }, [columnIds, visibleColumns]);
 
   const onColumnVisibilityModelChange = (
     newColumnVisibilityModel: GridColumnVisibilityModel,
   ) => {
-    setSearchParams(
-      visibleColumnsUpdater(
-        newColumnVisibilityModel,
-        defaultColumnVisibilityModel,
-      ),
+    setVisibleColumns(
+      Object.entries(newColumnVisibilityModel)
+        .filter(([_key, val]) => val)
+        .map(([key, _val]) => key),
     );
   };
 
@@ -202,11 +193,7 @@ export function DeviceTable({
         page: getCurrentPageIndex(pagerCtx),
         pageSize: getPageSize(pagerCtx, searchParams),
       }}
-      columnVisibilityModel={getVisibleColumns(
-        searchParams,
-        defaultColumnVisibilityModel,
-        columns,
-      )}
+      columnVisibilityModel={getVisibilityModel(columnIds, visibleColumns)}
       onColumnVisibilityModelChange={onColumnVisibilityModelChange}
       rows={rows}
       columns={columns}

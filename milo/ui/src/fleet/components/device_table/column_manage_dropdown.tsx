@@ -18,9 +18,12 @@ import {
   useGridApiContext,
 } from '@mui/x-data-grid';
 
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { OptionsDropdown } from '../options_dropdown';
+
+import { getVisibilityModel } from './search_param_utils';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
@@ -78,11 +81,19 @@ export function ColumnsManageDropDown({
         vertical: 'bottom',
         horizontal: 'center',
       }}
-      disableFooter={true}
       enableSearchInput={true}
       onFlipOption={toggleColumn}
       maxHeight={500}
       isLoading={isLoading}
+      onResetClick={() =>
+        apiRef.current?.setColumnVisibilityModel(
+          getVisibilityModel(
+            columns.options.map((c) => c.value),
+            DEFAULT_DEVICE_COLUMNS,
+          ),
+        )
+      }
+      footerButtons={['reset']}
     />
   );
 }
