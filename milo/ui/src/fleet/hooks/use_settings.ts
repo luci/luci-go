@@ -12,5 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const COLUMNS_LOCAL_STORAGE_KEY = 'fleet-console-devices-columns';
-export const SETTINGS_LOCAL_STORAGE_KEY = 'fleet-console-settings';
+import { GridDensity } from '@mui/x-data-grid';
+import { useLocalStorage } from 'react-use';
+
+import { SETTINGS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+
+export interface Settings {
+  table: {
+    density: GridDensity;
+  };
+}
+
+export const defaultSettings: Settings = {
+  table: {
+    density: 'compact',
+  },
+};
+
+export function useSettings(): [Settings, (value: Settings) => void] {
+  const [settings, setSettings] = useLocalStorage<Settings>(
+    SETTINGS_LOCAL_STORAGE_KEY,
+    defaultSettings,
+  );
+
+  return [settings || defaultSettings, setSettings];
+}

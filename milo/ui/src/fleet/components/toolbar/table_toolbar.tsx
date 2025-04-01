@@ -14,44 +14,18 @@
 
 import { Box } from '@mui/material';
 import {
-  GridRowModel,
   GridToolbarContainer,
   GridToolbarDensitySelector,
-  GridToolbarExport,
 } from '@mui/x-data-grid';
 
-import { RunAutorepair } from '../actions/autorepair/run_autorepair';
-
-import { ColumnsButton } from './columns_button';
-
-export interface FleetToolbarProps {
-  selectedRows: GridRowModel[];
-  isLoadingColumns?: boolean;
-}
-
 /**
- * Custom data table toolbar styled for Fleet's expected usage.
+ * Generic data table toolbar styled for Fleet's expected usage.
  */
-export function FleetToolbar({
-  selectedRows = [],
-  isLoadingColumns,
-}: FleetToolbarProps) {
-  const selectedDuts = selectedRows.map((row) => ({
-    name: `${row.dut_name}`,
-    state: row.dut_state,
-  }));
-
+export function TableToolbar() {
   return (
     <GridToolbarContainer>
-      {selectedRows.length ? (
-        <RunAutorepair selectedDuts={selectedDuts} />
-      ) : (
-        <></>
-      )}
-      <GridToolbarExport printOptions={{ disableToolbarButton: true }} />
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
-      <ColumnsButton isLoading={isLoadingColumns} />
     </GridToolbarContainer>
   );
 }

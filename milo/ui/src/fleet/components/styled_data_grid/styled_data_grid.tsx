@@ -13,17 +13,37 @@
 // limitations under the License.
 
 import { colors } from '@mui/material';
-import { DataGrid, DataGridProps, gridClasses } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  DataGridProps,
+  gridClasses,
+  GridDensity,
+} from '@mui/x-data-grid';
+
+import { useSettings } from '@/fleet/hooks/use_settings';
+
+import { TableToolbar } from '../toolbar/table_toolbar';
 
 export const StyledGrid = ({ sx, ...props }: DataGridProps) => {
+  const [settings, setSettings] = useSettings();
+
+  if (!props.slots?.toolbar) {
+    props.slots = props.slots ?? {};
+    props.slots.toolbar = TableToolbar;
+  }
+
   return (
     <DataGrid
+      density={settings.table.density}
+      onDensityChange={(density: GridDensity) => {
+        settings.table.density = density;
+        setSettings(settings);
+      }}
+      columnHeaderHeight={settings.table.density === 'compact' ? 75 : 56}
       sx={{
         border: 'none',
         [`& .${gridClasses.columnHeader}`]: {
           backgroundColor: colors.grey[100],
-          height: 'unset !important',
-          minHeight: 56,
         },
         [`& .${gridClasses.columnSeparator}`]: {
           color: colors.grey[400],
