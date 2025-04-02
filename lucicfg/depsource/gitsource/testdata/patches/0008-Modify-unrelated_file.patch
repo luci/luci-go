@@ -1,0 +1,21 @@
+From d8866ecdfe6c8022a2a83048c0a7b466357b0303 Mon Sep 17 00:00:00 2001
+From: Exemplar Exemplaris <exemplar@example.com>
+Date: Tue, 1 Apr 2025 15:10:05 -0700
+Subject: [PATCH] Modify unrelated_file
+
+This is a commit message body.
+
+Weird-Footer: 100
+Weird-Footer: 200
+Other-Footer: Cool beans!
+---
+ unrelated_file | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/unrelated_file b/unrelated_file
+index c166d3d..366cd2c 100644
+--- a/unrelated_file
++++ b/unrelated_file
+@@ -1 +1 @@
+-This file is completely unrelated, and is outside of subdir.
++This file is pretty unrelated, and is definitely outside of subdir.
