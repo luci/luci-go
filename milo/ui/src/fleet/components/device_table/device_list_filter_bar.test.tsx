@@ -246,7 +246,7 @@ describe('<DeviceListFilterBar />', () => {
     it('should be able to select options with keyboard', async () => {
       render(<TestComponent />);
 
-      screen.getByText('Add filter').parentElement!.focus();
+      act(() => screen.getByText('Add filter').parentElement!.focus());
       keyDown(ENTER_KEY);
       expect(document.activeElement).toContainHTML('search');
 
@@ -285,7 +285,7 @@ describe('<DeviceListFilterBar />', () => {
       });
     });
 
-    it('should clear the search on backspace', () => {
+    it('should clear the search on backspace', async () => {
       render(<TestComponent />);
       act(() => screen.getByText('Add filter').click());
 
@@ -295,9 +295,11 @@ describe('<DeviceListFilterBar />', () => {
       fireEvent.change(search, { target: { value: searchQuery } });
       expect(search).toHaveValue(searchQuery);
 
-      fireEvent.keyDown(screen.getAllByRole('menuitem')[0], BACKSPACE_KEY);
-      expect(search).toHaveValue('');
-      expect(search).toHaveFocus();
+      await act(async () =>
+        fireEvent.keyDown(screen.getAllByRole('menu')[0], BACKSPACE_KEY),
+      );
+      expect(screen.getByPlaceholderText('search')).toHaveFocus();
+      expect(screen.getByPlaceholderText('search')).toHaveValue('');
     });
 
     it('should focus on search when typing', () => {
@@ -315,23 +317,26 @@ describe('<DeviceListFilterBar />', () => {
       render(<TestComponent />);
       act(() => screen.getByText('Add filter').click());
 
-      screen.getByText('Option 1').focus();
-
-      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
-      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
+      act(() => fireEvent.keyDown(document.activeElement!, CTRL_J_KEY));
+      act(() => fireEvent.keyDown(document.activeElement!, CTRL_J_KEY));
+      // fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
       expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
       expect(document.activeElement).toContainHTML('Option 1');
 
-      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
+      act(() => fireEvent.keyDown(document.activeElement!, CTRL_J_KEY));
       expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
       expect(document.activeElement).toContainHTML('Option 2');
 
-      fireEvent.keyDown(document.activeElement!, CTRL_K_KEY);
+      act(() => fireEvent.keyDown(document.activeElement!, CTRL_K_KEY));
       expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
       expect(document.activeElement).toContainHTML('Option 1');
 
-      fireEvent.keyDown(document.activeElement!, CTRL_K_KEY);
-      fireEvent.keyDown(document.activeElement!, SPACE_KEY);
+      act(() => fireEvent.keyDown(document.activeElement!, CTRL_K_KEY));
+      expect(document.activeElement!).toContainElement(
+        screen.getByPlaceholderText('search'),
+      );
+
+      act(() => fireEvent.keyDown(document.activeElement!, SPACE_KEY));
       expect(screen.getByPlaceholderText('search')).toHaveFocus();
     });
   });

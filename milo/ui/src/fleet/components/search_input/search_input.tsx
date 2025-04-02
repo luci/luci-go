@@ -43,6 +43,7 @@ export function SearchInput({
           searchInput.current?.focus();
         }
       }}
+      id="search"
     >
       <TextField
         inputRef={searchInput}

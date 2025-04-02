@@ -25,7 +25,9 @@ export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
 export function keyboardUpDownHandler(e: React.KeyboardEvent) {
   const target = e.target as HTMLElement;
   const parent = target.parentElement;
-  const siblings = Array.from(parent?.children || []);
+  const siblings = Array.from(parent?.children || []).filter(
+    (el) => el.nodeName === 'LI' || el.id === 'search',
+  );
 
   let nextSibling: HTMLElement | undefined;
   let prevSibling: HTMLElement | undefined;

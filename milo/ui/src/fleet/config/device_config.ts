@@ -35,11 +35,11 @@ export const DEFAULT_DEVICE_COLUMNS: string[] = [
 // Define a list of device filters commonly used by FLOPS to show in the
 // filter options for the device.
 export const COMMON_DEVICE_FILTERS: string[] = [
-  'dut_state',
-  'label-board',
-  'label-model',
-  'label-pool',
-  'label-phase',
+  'labels.dut_state',
+  'labels.label-board',
+  'labels.label-model',
+  'labels.label-pool',
+  'labels.label-phase',
 ];
 
 /**

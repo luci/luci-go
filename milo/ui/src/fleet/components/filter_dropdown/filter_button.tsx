@@ -25,10 +25,12 @@ export function FilterButton<T>({
   filterOptions,
   isLoading,
   onApply,
+  commonOptions,
 }: {
   filterOptions: FilterCategoryData<T>[];
   isLoading?: boolean;
   onApply: () => void;
+  commonOptions?: string[];
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -46,6 +48,7 @@ export function FilterButton<T>({
         setAnchorEL={setAnchorEL}
         isLoading={isLoading}
         onApply={onApply}
+        commonOptions={commonOptions}
       />
     </>
   );

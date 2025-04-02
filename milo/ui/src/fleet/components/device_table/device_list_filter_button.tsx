@@ -15,6 +15,7 @@
 import { MenuList } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort, fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 
@@ -87,6 +88,7 @@ export function DeviceListFilterButton({
       onApply={() => {
         onSelectedOptionsChange(tempSelectedOptions);
       }}
+      commonOptions={COMMON_DEVICE_FILTERS}
     />
   );
 }

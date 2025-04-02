@@ -18,12 +18,15 @@ import {
   Backdrop,
   Box,
   Card,
+  Divider,
   MenuItem,
   MenuList,
   Skeleton,
+  Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { colors } from '@/fleet/theme/colors';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
@@ -55,6 +58,7 @@ interface FilterDropdownProps<T> {
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
   isLoading?: boolean;
+  commonOptions?: string[];
 }
 
 // TODO: b/406242608 Cover this with tests. We could probably split the device_list_filter_bar tests to be shared for this component
@@ -64,6 +68,7 @@ export function FilterDropdown<T>({
   anchorEl,
   setAnchorEL,
   isLoading,
+  commonOptions,
 }: FilterDropdownProps<T>) {
   const [openCategory, setOpenCategory] = useState<
     { value: string; anchor: HTMLElement } | undefined
@@ -107,6 +112,14 @@ export function FilterDropdown<T>({
     })
     .filter((a) => searchQuery === '' || a.score > 0)
     .sort((a, b) => b.score - a.score);
+
+  const otherFilterResults = commonOptions
+    ? filterResults.filter((option) => !commonOptions.includes(option.el.value))
+    : filterResults;
+
+  const commonFilterResults =
+    commonOptions &&
+    filterResults?.filter((option) => commonOptions.includes(option.el.value));
 
   const handleRandomTextInput: (e: React.KeyboardEvent<HTMLElement>) => void = (
     e: React.KeyboardEvent<HTMLElement>,
@@ -169,6 +182,47 @@ export function FilterDropdown<T>({
     );
   };
 
+  const renderOption = (searchResult: SortedElement<FilterCategoryData<T>>) => {
+    const parent = searchResult;
+    const parentMatches = parent.matches;
+
+    return (
+      <MenuItem
+        onClick={(event) => {
+          // The onClick fires also when closing the menu
+          if (openCategory?.value !== parent.el.value) {
+            setOpenCategory({
+              value: parent.el.value,
+              anchor: event.currentTarget,
+            });
+          } else {
+            setOpenCategory(undefined);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') {
+            e.currentTarget.click();
+          }
+        }}
+        key={`item-${parent.el.value}`}
+        disableRipple
+        selected={openCategory?.value === parent.el.value}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          minHeight: 'auto',
+        }}
+      >
+        <HighlightCharacter variant="body2" highlightIndexes={parentMatches}>
+          {parent.el.label}
+        </HighlightCharacter>
+        <ArrowRightIcon />
+      </MenuItem>
+    );
+  };
+
   return (
     <>
       <Backdrop
@@ -196,7 +250,7 @@ export function FilterDropdown<T>({
           <MenuList
             sx={{
               minWidth: 200,
-              maxHeight: 300,
+              maxHeight: 400,
               overflow: 'auto',
             }}
             onKeyDown={(e) => {
@@ -242,49 +296,41 @@ export function FilterDropdown<T>({
               </Box>
             ) : (
               [
-                filterResults.map((searchResult) => {
-                  const parent = searchResult;
-                  const parentMatches = parent.matches;
-
-                  return (
-                    <MenuItem
-                      onClick={(event) => {
-                        // The onClick fires also when closing the menu
-                        if (openCategory?.value !== parent.el.value) {
-                          setOpenCategory({
-                            value: parent.el.value,
-                            anchor: event.currentTarget,
-                          });
-                        } else {
-                          setOpenCategory(undefined);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'ArrowRight') {
-                          e.currentTarget.click();
-                        }
-                      }}
-                      key={`item-${parent.el.value}`}
-                      disableRipple
-                      selected={openCategory?.value === parent.el.value}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        minHeight: 'auto',
-                      }}
-                    >
-                      <HighlightCharacter
-                        variant="body2"
-                        highlightIndexes={parentMatches}
-                      >
-                        {parent.el.label}
-                      </HighlightCharacter>
-                      <ArrowRightIcon />
-                    </MenuItem>
-                  );
-                }),
+                commonFilterResults && [
+                  <Typography
+                    tabIndex={-1}
+                    variant="caption"
+                    color={colors.grey[700]}
+                    fontStyle="italic"
+                    sx={{
+                      paddingLeft: '16px',
+                      marginTop: '10px',
+                      display: 'block',
+                    }}
+                    key="common_filters_title"
+                  >
+                    Common filters
+                  </Typography>,
+                  commonFilterResults?.map(renderOption),
+                  <Divider
+                    sx={{
+                      backgroundColor: 'transparent',
+                    }}
+                    key="common_filters_divider"
+                  />,
+                  <Typography
+                    variant="caption"
+                    color={colors.grey[700]}
+                    fontStyle="italic"
+                    sx={{
+                      margin: '16px',
+                    }}
+                    key="other_filters_title"
+                  >
+                    Other filters
+                  </Typography>,
+                ],
+                otherFilterResults.map(renderOption),
               ]
             )}
           </MenuList>
