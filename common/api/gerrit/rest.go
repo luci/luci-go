@@ -508,6 +508,19 @@ func (c *client) GetMetaDiff(ctx context.Context, req *gerritpb.GetMetaDiffReque
 	return resp.ToProto()
 }
 
+func (c *client) CheckRapt(ctx context.Context, req *gerritpb.CheckRaptRequest, opts ...grpc.CallOption) (*gerritpb.CheckRaptResponse, error) {
+	var resp gerritpb.CheckRaptResponse
+	path := fmt.Sprintf("/projects/%s/check.rapt", url.PathEscape(req.GetProject()))
+	var v url.Values
+	if req.GetRef() != "" {
+		v.Add("ref", url.QueryEscape(req.GetRef()))
+	}
+	if _, err := c.call(ctx, "GET", path, v, nil, &resp, opts); err != nil {
+		return nil, errors.Annotate(err, "check rapt").Err()
+	}
+	return &resp, nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 // If data is nil, request will be made without a body.
 //

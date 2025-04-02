@@ -46,6 +46,8 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#list-account-emails
   rpc ListAccountEmails(ListAccountEmailsRequest) returns (ListAccountEmailsResponse);
 
+  // Check the RAPT requirement status for the user.
+  rpc CheckRapt(CheckRaptRequest) returns (CheckRaptResponse);
 
   /////////////////////////////////////////////////////////////////////////////
   //                            Change read-only RPCs.
@@ -1528,6 +1530,16 @@ message ListAccountEmailsRequest {
 
 message ListAccountEmailsResponse {
   repeated EmailInfo emails = 1;
+}
+
+message CheckRaptRequest {
+  string project = 1;
+  string ref = 2;
+}
+
+message CheckRaptResponse {
+  bool has_valid_rapt = 1;
+  bool rapt_required = 2;
 }
 
 message GetPureRevertRequest {

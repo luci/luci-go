@@ -172,3 +172,7 @@ func (f *FakeClient) AbandonChange(ctx context.Context, in *gerritpb.AbandonChan
 func (f *FakeClient) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
 	panic("not implemented")
 }
+
+func (f *FakeClient) CheckRapt(ctx context.Context, in *gerritpb.CheckRaptRequest, opts ...grpc.CallOption) (*gerritpb.CheckRaptResponse, error) {
+	panic("not implemented")
+}

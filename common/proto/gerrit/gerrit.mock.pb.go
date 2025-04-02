@@ -136,6 +136,26 @@ func (mr *MockGerritClientMockRecorder) ChangeEditPublish(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritClient)(nil).ChangeEditPublish), varargs...)
 }
 
+// CheckRapt mocks base method.
+func (m *MockGerritClient) CheckRapt(ctx context.Context, in *CheckRaptRequest, opts ...grpc.CallOption) (*CheckRaptResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CheckRapt", varargs...)
+	ret0, _ := ret[0].(*CheckRaptResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckRapt indicates an expected call of CheckRapt.
+func (mr *MockGerritClientMockRecorder) CheckRapt(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRapt", reflect.TypeOf((*MockGerritClient)(nil).CheckRapt), varargs...)
+}
+
 // CreateChange mocks base method.
 func (m *MockGerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	m.ctrl.T.Helper()
@@ -592,6 +612,21 @@ func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeE
 func (mr *MockGerritServerMockRecorder) ChangeEditPublish(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritServer)(nil).ChangeEditPublish), arg0, arg1)
+}
+
+// CheckRapt mocks base method.
+func (m *MockGerritServer) CheckRapt(arg0 context.Context, arg1 *CheckRaptRequest) (*CheckRaptResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckRapt", arg0, arg1)
+	ret0, _ := ret[0].(*CheckRaptResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckRapt indicates an expected call of CheckRapt.
+func (mr *MockGerritServerMockRecorder) CheckRapt(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRapt", reflect.TypeOf((*MockGerritServer)(nil).CheckRapt), arg0, arg1)
 }
 
 // CreateChange mocks base method.
