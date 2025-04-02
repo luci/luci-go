@@ -64,7 +64,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	including := invocations.MustParseName(in.IncludingInvocation)
 	add := invocations.MustParseNames(in.AddInvocations)
 
-	err := mutateInvocation(ctx, including, func(ctx context.Context) error {
+	_, err := mutateInvocation(ctx, including, func(ctx context.Context) error {
 		// To include invocation A into invocation B, in addition to checking the
 		// update token for B in mutateInvocation below, verify that the caller has
 		// permission 'resultdb.invocation.include' on A's realm.

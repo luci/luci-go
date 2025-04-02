@@ -116,7 +116,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	}
 
 	var realm string
-	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	_, err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {

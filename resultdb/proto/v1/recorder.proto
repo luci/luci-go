@@ -156,6 +156,13 @@ message BatchCreateInvocationsResponse {
 message UpdateInvocationRequest {
   // Invocation to update.
   // If updating tags, the existing tags will be replaced with the new ones.
+  //
+  // If the state of the invocation is set to FINALIZING (with correct update_mask),
+  // this will trigger the finalization process of the invocation.
+  //
+  // This is useful for the cases when we want the update and the finalization
+  // to happen in the same transaction to prevent update-update race. This will
+  // guarantee eventual consistency.
   Invocation invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The list of fields to be updated.

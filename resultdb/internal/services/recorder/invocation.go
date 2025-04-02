@@ -78,17 +78,16 @@ func validateInvocationToken(ctx context.Context, token string, invID invocation
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
-func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Context) error) error {
-	var retErr error
-
+// Return the commit timestamp if succeeded and error if any.
+func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Context) error) (time.Time, error) {
 	token, err := extractUpdateToken(ctx)
 	if err != nil {
-		return err
+		return time.Time{}, err
 	}
 	if err := validateInvocationToken(ctx, token, id); err != nil {
-		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		return time.Time{}, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		state, err := invocations.ReadState(ctx, id)
 		switch {
 		case err != nil:
@@ -102,9 +101,9 @@ func mutateInvocation(ctx context.Context, id invocations.ID, f func(context.Con
 	})
 
 	if err != nil {
-		retErr = err
+		return time.Time{}, err
 	}
-	return retErr
+	return commitTimestamp, nil
 }
 
 func extractUpdateToken(ctx context.Context) (string, error) {

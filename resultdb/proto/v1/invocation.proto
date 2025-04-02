@@ -70,7 +70,12 @@ message Invocation {
   // At creation time this can be set to FINALIZING e.g. if this invocation is
   // a simple wrapper of another and will itself not be modified.
   //
-  // Otherwise this is an output only field.
+  // When updating invocation, this can be set to FINALIZING. If set, this will trigger
+  // the finalization process of the invocation. This is useful for the cases when
+  // we want the update and the finalization to happen in the same transaction to
+  // prevent update-update race. This will guarantee eventual consistency.
+  //
+  // In other cases this is an output only field.
   State state = 2;
 
   // When the invocation was created.

@@ -240,6 +240,13 @@ type UpdateInvocationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Invocation to update.
 	// If updating tags, the existing tags will be replaced with the new ones.
+	//
+	// If the state of the invocation is set to FINALIZING (with correct update_mask),
+	// this will trigger the finalization process of the invocation.
+	//
+	// This is useful for the cases when we want the update and the finalization
+	// to happen in the same transaction to prevent update-update race. This will
+	// guarantee eventual consistency.
 	Invocation *Invocation `protobuf:"bytes,1,opt,name=invocation,proto3" json:"invocation,omitempty"`
 	// The list of fields to be updated.
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`

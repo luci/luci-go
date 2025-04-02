@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -138,6 +140,14 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "tags":
 			if err := pbutil.ValidateStringPairs(req.Invocation.GetTags()); err != nil {
 				return errors.Annotate(err, "invocation: tags").Err()
+			}
+
+		case "state":
+			// If "state" is set, we only allow "FINALIZING" or "ACTIVE" state.
+			// Setting to "FINALIZING" will trigger the finalization process.
+			// Setting to "ACTIVE" is a no-op.
+			if req.Invocation.State != pb.Invocation_FINALIZING && req.Invocation.State != pb.Invocation_ACTIVE {
+				return errors.Reason("invocation: state: must be FINALIZING or ACTIVE").Err()
 			}
 
 		default:
@@ -262,9 +272,11 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 	}
 
 	invID := invocations.MustParseName(in.Invocation.Name)
+	var shouldFinalizeInvocation bool
 
 	var ret *pb.Invocation
-	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	commitTimestamp, err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+		shouldFinalizeInvocation = false
 		var err error
 		if ret, err = invocations.Read(ctx, invID, invocations.AllFields); err != nil {
 			return err
@@ -404,17 +416,31 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 					ExtendedProperties: ret.ExtendedProperties,
 				}
 				values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
-
+			case "state":
+				// In the case of ACTIVE, it should be a No-op.
+				if in.Invocation.State == pb.Invocation_FINALIZING {
+					shouldFinalizeInvocation = true
+					values["State"] = pb.Invocation_FINALIZING
+					ret.State = pb.Invocation_FINALIZING
+					values["FinalizeStartTime"] = spanner.CommitTimestamp
+				}
 			default:
 				panic("impossible")
 			}
 		}
 
 		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", values))
+		if shouldFinalizeInvocation {
+			tasks.StartInvocationFinalization(ctx, invID, false)
+		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+	if shouldFinalizeInvocation {
+		ret.FinalizeStartTime = timestamppb.New(commitTimestamp)
 	}
 	return ret, nil
 }

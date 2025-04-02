@@ -41,9 +41,10 @@ func TestMutateInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		mayMutate := func(id invocations.ID) error {
-			return mutateInvocation(ctx, id, func(ctx context.Context) error {
+			_, err := mutateInvocation(ctx, id, func(ctx context.Context) error {
 				return nil
 			})
+			return err
 		}
 
 		t.Run("no token", func(t *ftt.Test) {

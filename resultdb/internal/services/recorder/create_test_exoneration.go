@@ -127,7 +127,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	invID := invocations.MustParseName(in.Invocation)
 
 	ret, mutation := insertTestExoneration(ctx, invID, in.RequestId, 0, in.TestExoneration)
-	err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	_, err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, mutation)
 		return nil
 	})

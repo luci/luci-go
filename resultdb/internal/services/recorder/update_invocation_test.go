@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
@@ -37,12 +38,14 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -288,6 +291,26 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				request.Invocation.Realm = "blah"
 				err := validateUpdateInvocationRequest(request, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name "blah"`))
+			})
+		})
+
+		t.Run(`state`, func(t *ftt.Test) {
+			request.UpdateMask.Paths = []string{"state"}
+
+			t.Run(`valid finalizing`, func(t *ftt.Test) {
+				request.Invocation.State = pb.Invocation_FINALIZING
+				err := validateUpdateInvocationRequest(request, now)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`valid active`, func(t *ftt.Test) {
+				request.Invocation.State = pb.Invocation_ACTIVE
+				err := validateUpdateInvocationRequest(request, now)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`invalid`, func(t *ftt.Test) {
+				request.Invocation.State = pb.Invocation_FINALIZED
+				err := validateUpdateInvocationRequest(request, now)
+				assert.Loosely(t, err, should.ErrLike(`invocation: state: must be FINALIZING or ACTIVE`))
 			})
 		})
 
@@ -617,7 +640,7 @@ func createTestBigQueryExportConfig() *pb.BigQueryExport {
 func TestUpdateInvocation(t *testing.T) {
 	ftt.Run(`TestUpdateInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		ctx, _ = tq.TestingContext(ctx, nil)
+		ctx, sched := tq.TestingContext(ctx, nil)
 		start := clock.Now(ctx).UTC()
 
 		recorder := newTestRecorderServer()
@@ -791,6 +814,38 @@ func TestUpdateInvocation(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, inv.Realm, should.Equal("testproject:newrealm"))
 				assert.Loosely(t, inv.BaselineId, should.Equal("existing-baseline"))
+			})
+		})
+
+		t.Run("state", func(t *ftt.Test) {
+			doInsert()
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:  "invocations/inv",
+					State: pb.Invocation_FINALIZING,
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
+			}
+
+			t.Run(`valid`, func(t *ftt.Test) {
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+				assert.Loosely(t, inv.FinalizeStartTime, should.NotBeNil)
+				finalizeTime := inv.FinalizeStartTime
+
+				// Read the invocation from Spanner to confirm it's really FINALIZING.
+				inv, err = invocations.Read(span.Single(ctx), "inv", invocations.ExcludeExtendedProperties)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+				assert.Loosely(t, inv.FinalizeStartTime, should.Match(finalizeTime))
+
+				// Enqueued the finalization task.
+				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
+					&taskspb.RunExportNotifications{InvocationId: "inv"},
+					&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
+				}))
+
 			})
 		})
 
@@ -1041,7 +1096,7 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 
 			updateMask := &field_mask.FieldMask{
-				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "instructions", "tags"},
+				Paths: []string{"deadline", "bigquery_exports", "properties", "is_source_spec_final", "source_spec", "baseline_id", "realm", "instructions", "tags", "state"},
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
@@ -1059,6 +1114,7 @@ func TestUpdateInvocation(t *testing.T) {
 					Tags: []*pb.StringPair{
 						{Key: "key", Value: "value"},
 					},
+					State: pb.Invocation_FINALIZING,
 				},
 				UpdateMask: updateMask,
 			}
@@ -1082,9 +1138,10 @@ func TestUpdateInvocation(t *testing.T) {
 				Tags: []*pb.StringPair{
 					{Key: "key", Value: "value"},
 				},
+				State: pb.Invocation_FINALIZING,
 			}
 			assert.Loosely(t, inv.Name, should.Equal(expected.Name))
-			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_ACTIVE))
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
 			assert.Loosely(t, inv.Deadline, should.Match(expected.Deadline))
 			assert.Loosely(t, inv.Properties, should.Match(expected.Properties))
 			assert.Loosely(t, inv.SourceSpec, should.Match(expected.SourceSpec))
@@ -1115,6 +1172,7 @@ func TestUpdateInvocation(t *testing.T) {
 				"Realm":             &actual.Realm,
 				"Instructions":      &compressedInstructions,
 				"Tags":              &actual.Tags,
+				"State":             &actual.State,
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)
