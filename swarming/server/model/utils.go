@@ -223,3 +223,31 @@ func MapToStringListPair(p map[string][]string, keySorting bool) []*apipb.String
 	}
 	return slp
 }
+
+// TaskStateString converts apipb.TaskState to a string.
+func TaskStateString(state apipb.TaskState) string {
+	switch state {
+	case apipb.TaskState_RUNNING:
+		return "Running"
+	case apipb.TaskState_PENDING:
+		return "Pending"
+	case apipb.TaskState_EXPIRED:
+		return "Expired"
+	case apipb.TaskState_TIMED_OUT:
+		return "Execution timed out"
+	case apipb.TaskState_BOT_DIED:
+		return "Bot died"
+	case apipb.TaskState_CANCELED:
+		return "User canceled"
+	case apipb.TaskState_COMPLETED:
+		return "Completed"
+	case apipb.TaskState_KILLED:
+		return "Killed"
+	case apipb.TaskState_NO_RESOURCE:
+		return "No resource available"
+	case apipb.TaskState_CLIENT_ERROR:
+		return "Client error"
+	default:
+		return ""
+	}
+}

@@ -107,6 +107,33 @@ var (
 		field.Bool("deduped"),         // whether the job was deduped or not.
 	)
 
+	JobsCompleted = metric.NewCounter(
+		"jobs/completed",
+		"Number of completed jobs.",
+		nil,
+		field.String("spec_name"),     // name of a job specification.
+		field.String("project_id"),    // e.g. "chromium".
+		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
+		field.String("pool"),          // e.g. "Chrome".
+		field.String("rbe"),           // RBE instance of the task or literal "none".
+		field.String("result"),        // "success", "failure" or "infra_failure"
+		field.String("status"),        // one of the end states, see model.TaskStateString().
+	)
+
+	JobsDuration = metric.NewCumulativeDistribution(
+		"jobs/durations",
+		"Cycle times of completed jobs, in seconds.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		schedulingLatencyBucketer,
+		field.String("spec_name"),     // name of a job specification.
+		field.String("project_id"),    // e.g. "chromium".
+		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
+		field.String("pool"),          // e.g. "Chrome".
+		field.String("rbe"),           // RBE instance of the task or literal "none".
+		field.String("result"),        // "success", "failure" or "infra_failure"
+
+	)
+
 	BotsPerState = metric.NewInt(
 		"swarming/rbe_migration/bots",
 		"Number of Swarming bots per RBE migration state.",

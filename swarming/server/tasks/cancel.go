@@ -132,6 +132,9 @@ func (c *Cancellation) Run(ctx context.Context) (bool, bool, error) {
 
 	if stateChanged {
 		onTaskStatusChangeSchedulerLatency(ctx, c.TaskResultSummary)
+		if !c.TaskResultSummary.IsActive() {
+			onTaskCompleted(ctx, c.TaskResultSummary)
+		}
 	}
 
 	return canceled, wasRunning, nil

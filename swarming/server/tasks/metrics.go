@@ -37,7 +37,7 @@ func onTaskStatusChangeSchedulerLatency(ctx context.Context, trs *model.TaskResu
 		ctx, float64(latency.Milliseconds()),
 		fields.Pool,
 		fields.SpecName,
-		trs.State.String(),
+		model.TaskStateString(trs.State),
 		fields.DeviceType,
 	)
 }
@@ -67,4 +67,41 @@ func onTaskToRunConsumed(ctx context.Context, ttr *model.TaskToRun, trs *model.T
 		fields.Pool,
 		fields.RBE,
 	)
+}
+
+func onTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
+	fields := trs.MetricFields(false)
+	status := model.TaskStateString(trs.State)
+	var result string
+	switch {
+	case trs.InternalFailure:
+		result = "infra_failure"
+	case trs.Failure:
+		result = "failure"
+	default:
+		result = "success"
+	}
+
+	metrics.JobsCompleted.Add(
+		ctx, 1,
+		fields.SpecName,
+		fields.ProjectID,
+		fields.SubprojectID,
+		fields.Pool,
+		fields.RBE,
+		result,
+		status,
+	)
+
+	if trs.DurationSecs.IsSet() {
+		metrics.JobsDuration.Add(
+			ctx, trs.DurationSecs.Get()*1000,
+			fields.SpecName,
+			fields.ProjectID,
+			fields.SubprojectID,
+			fields.Pool,
+			fields.RBE,
+			result,
+		)
+	}
 }

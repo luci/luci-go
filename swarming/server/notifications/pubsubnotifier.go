@@ -169,7 +169,7 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 	}
 	pool := strpair.ParseMap(t.Tags).Get("pool")
 	httpCode := grpcutil.CodeStatus(status.Code(err))
-	status := t.State.String()
+	status := model.TaskStateString(t.State)
 	logging.Debugf(ctx, "Updating TsMon pubsub metric with latency: %dms, httpCode: %d, status: %s, pool: %s", latency, httpCode, status, pool)
 	metrics.TaskStatusChangePubsubLatency.Add(ctx, float64(latency), pool, status, httpCode)
 

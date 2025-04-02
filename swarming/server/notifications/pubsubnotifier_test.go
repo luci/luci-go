@@ -87,7 +87,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
 			assert.Loosely(t, err, should.ErrLike(`failed to publish the msg to projects/foo/topics/swarming-updates`))
 			assert.Loosely(t, err, should.ErrLike("NotFound"))
-			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 404)
+			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", model.TaskStateString(psTask.State), 404)
 			assert.Loosely(t, pushedTsmonData.Count(), should.Equal(1))
 			assert.Loosely(t, pushedTsmonData.Sum(), should.AlmostEqual(float64(100)))
 		})
@@ -105,7 +105,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 				TaskID:   "task_id_0",
 				Userdata: "user_data",
 			}))
-			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", psTask.State.String(), 200)
+			pushedTsmonData := metrics.TaskStatusChangePubsubLatency.Get(ctx, "", model.TaskStateString(psTask.State), 200)
 			assert.Loosely(t, pushedTsmonData.Count(), should.Equal(1))
 			assert.Loosely(t, pushedTsmonData.Sum(), should.AlmostEqual(float64(100)))
 		})

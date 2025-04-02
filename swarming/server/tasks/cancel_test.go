@@ -145,8 +145,13 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, ttr.IsReapable(), should.BeFalse)
 			assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
 			assert.Loosely(t, lt.PopTask("pubsub-go"), should.Equal("65aba3a3e6b99310"))
-			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, []any{"test_pool", "spec_name", "CANCELED", "wobblyeye"})
+			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, []any{"test_pool", "spec_name", "User canceled", "wobblyeye"})
 			assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(float64(2*time.Hour.Milliseconds())))
+			val = globalStore.Get(ctx, metrics.JobsCompleted, []any{"spec_name", "", "", "test_pool", "none", "success", "User canceled"})
+			assert.Loosely(t, val, should.Equal(1))
+			// Canceled task doesn't have duration.
+			val = globalStore.Get(ctx, metrics.JobsDuration, []any{"spec_name", "", "", "test_pool", "none", "success"})
+			assert.That(t, val, should.BeNil)
 		})
 
 		t.Run("cancel running task", func(t *ftt.Test) {
