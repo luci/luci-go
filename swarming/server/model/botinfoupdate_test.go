@@ -404,7 +404,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			// Finishes the task and becomes idle.
 			submit(BotEventTaskCompleted, "completed", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, testState1, &BotEventTaskInfo{})
+			submit(BotEventIdle, "idle", nil, testState1)
 
 			botInfo, events = check()
 
@@ -435,7 +435,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				TaskFlags: TaskFlagTermination,
 			})
 			tickOneSec()
-			submit(BotEventTaskCompleted, "done", nil, testState1, &BotEventTaskInfo{})
+			submit(BotEventTaskCompleted, "done", nil, testState1)
 			tickOneSec()
 			submit(BotEventShutdown, "dead", nil, testState1)
 			tickOneSec()

@@ -247,6 +247,7 @@ func TestClaim(t *testing.T) {
 		t.Run("Claim txn OK", func(t *ftt.Test) {
 			var botInfoUpdate *model.BotInfoUpdate
 			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				u.PanicIfInvalid()
 				botInfoUpdate = u
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					proceed, err := u.Prepare(ctx, &model.BotInfo{
@@ -327,6 +328,7 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Claim txn unavailable", func(t *ftt.Test) {
 			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				u.PanicIfInvalid()
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					proceed, err := u.Prepare(ctx, &model.BotInfo{
 						Key: model.BotInfoKey(ctx, u.BotID),
@@ -366,6 +368,7 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Claim txn already claimed", func(t *ftt.Test) {
 			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+				u.PanicIfInvalid()
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					proceed, err := u.Prepare(ctx, &model.BotInfo{
 						Key: model.BotInfoKey(ctx, u.BotID),

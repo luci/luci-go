@@ -63,6 +63,40 @@ const (
 	BotEventTaskUpdate    BotEventType = "task_update"
 )
 
+// TaskChangeAspect is how a bot event changes TaskID assigned to the bot.
+type TaskChangeAspect int
+
+const (
+	TaskChangeSet   = 0 // the event sets a new TaskID
+	TaskChangeReset = 1 // the event resets the TaskID if it is set
+	TaskChangeNone  = 2 // the event doesn't change TaskID in any way
+)
+
+// TaskChangeAspects defines how events change TaskID assigned to the bot when
+// they happen.
+//
+// See BotInfoUpdate for more details.
+var TaskChangeAspects = map[BotEventType]TaskChangeAspect{
+	BotEventConnected:     TaskChangeReset, // a connecting bot is not running tasks
+	BotEventError:         TaskChangeNone,  // bot errors can be reported at any state
+	BotEventIdle:          TaskChangeReset, // an idle bot is not running tasks
+	BotEventLog:           TaskChangeNone,  // bot logs can be reported at any state
+	BotEventMissing:       TaskChangeNone,  // see TODO
+	BotEventDeleted:       TaskChangeReset, // a deleted bot is not running tasks
+	BotEventPolling:       TaskChangeReset, // a polling bot is not running tasks
+	BotEventRebooting:     TaskChangeReset, // a rebooting bot is not running tasks
+	BotEventShutdown:      TaskChangeReset, // a terminating bot is not running tasks
+	BotEventTerminate:     TaskChangeSet,   // the bot is picking up a termination task
+	BotEventRestart:       TaskChangeReset, // a restarting bot is not running tasks
+	BotEventSleep:         TaskChangeReset, // a quarantined bot is not running tasks
+	BotEventTask:          TaskChangeSet,   // the bot is picking up a regular task
+	BotEventUpdate:        TaskChangeReset, // a self-updating bot is not running tasks
+	BotEventTaskCompleted: TaskChangeReset, // the bot has just finished the task
+	BotEventTaskError:     TaskChangeReset, // the bot has just finished the task
+	BotEventTaskKilled:    TaskChangeReset, // the bot has just finished the task
+	BotEventTaskUpdate:    TaskChangeNone,  // the bot is busy working on the task
+}
+
 // BotStateEnum is used to represent state of the bot in datastore.
 //
 // See comment for BotCommon.Composite. Individual values should not leak in any
@@ -324,7 +358,7 @@ type LastTaskDetails struct {
 	TaskName string `gae:"task_name,noindex"`
 	// TaskFlags hold aspects of the task, see TaskFlag*.
 	TaskFlags TaskFlags `gae:"task_flags,noindex"`
-	// FinishedDue is an event that caused this task to finish.
+	// FinishedDue is an event that caused this task to finish or be abandoned.
 	FinishedDue BotEventType `gae:"finished_due,noindex"`
 }
 

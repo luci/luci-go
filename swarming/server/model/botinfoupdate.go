@@ -101,7 +101,8 @@ var idleBotEvents = map[BotEventType]bool{
 
 // Events indicating that the bot process is gone for good.
 //
-// The bot will move into "idle" state as soon as these events are reported.
+// The bot will move into "idle" state as soon as these events are reported. Any
+// task still associated with the bot will be moved into BOT_DIED state.
 var stoppedBotEvents = map[BotEventType]bool{
 	BotEventShutdown: true,
 	BotEventMissing:  true,
@@ -117,6 +118,19 @@ var loggingBotEvents = map[BotEventType]bool{
 	BotEventLog:       true,
 }
 
+// Events that indicate the bot has finished the task (successfully or not).
+// If TaskID gets reset by any other event, it means the bot has abandoned the
+// task (aka "bot died").
+//
+// All BotInfo updates that report these events **must** be a part of
+// a transaction that also moves the task to a finished state. Use Prepare
+// callback to set it up.
+var taskCompletionEvents = map[BotEventType]bool{
+	BotEventTaskCompleted: true,
+	BotEventTaskError:     true,
+	BotEventTaskKilled:    true,
+}
+
 // BotInfoUpdate is a change to BotInfo that may also create a BotEvent.
 //
 // Submitting BotInfoUpdate is the only valid way to change or delete BotInfo
@@ -124,6 +138,13 @@ var loggingBotEvents = map[BotEventType]bool{
 //
 // All events other than BotEventDeleted may create BotInfo, if it is missing.
 // BotEventDeleted will delete it (if it is present).
+//
+// The value of TaskInfo field is tightly coupled to the event kind. Some events
+// are expected to set new TaskID (by passing a populated TaskInfo), some are
+// resetting it (and should not be passing TaskInfo), and some are leaving it
+// untouched (and they should also not be passing TaskInfo).
+//
+// See TaskChangeAspects for how events are split into these categories.
 type BotInfoUpdate struct {
 	// BotID is the ID of the bot being updated.
 	//
@@ -207,10 +228,12 @@ type BotInfoUpdate struct {
 
 	// TaskInfo is information about the task assigned to the bot.
 	//
-	// If nil, the current values won't be touched.
+	// If TaskChangeAspects[EventType] is TaskChangeSet, it must be populated and
+	// have non-empty TaskID. Otherwise it should be nil.
 	//
-	// If a pointer to an empty struct, the current values will be reset. This is
-	// used when the bot becomes idle.
+	// When it is nil, if TaskChangeAspects[EventType] is TaskChangeReset, the
+	// task ID assigned to the bot will be reset. Otherwise it will be left
+	// untouched.
 	TaskInfo *BotEventTaskInfo
 
 	// EffectiveBotIDInfo can be used to change the bot ID in RBE sessions.
@@ -304,6 +327,39 @@ type SubmittedBotInfoUpdate struct {
 	entitiesToDelete []any
 }
 
+// PanicIfInvalid panics if this BotInfoUpdate violates the contract documented
+// in BotInfoUpdate comments.
+//
+// This can only happen in presence of bugs. Intended to be called from tests
+// that mock out BotInfoUpdate.Submit().
+func (u *BotInfoUpdate) PanicIfInvalid() {
+	aspect, found := TaskChangeAspects[u.EventType]
+	if !found {
+		panic(fmt.Sprintf("unrecognized event %s", u.EventType))
+	}
+	if aspect == TaskChangeSet {
+		if u.TaskInfo == nil {
+			panic(fmt.Sprintf("event %s is missing TaskInfo", u.EventType))
+		}
+		if u.TaskInfo.TaskID == "" {
+			panic(fmt.Sprintf("event %s is missing TaskID in TaskInfo", u.EventType))
+		}
+	} else {
+		if u.TaskInfo != nil {
+			panic(fmt.Sprintf("event %s is unexpectedly passing TaskInfo ", u.EventType))
+		}
+	}
+
+	if len(u.Dimensions) != 0 {
+		if !slices.IsSorted(u.Dimensions) {
+			panic("Dimensions must be sorted")
+		}
+		if _, found := slices.BinarySearch(u.Dimensions, "id:"+u.BotID); !found {
+			panic(fmt.Sprintf("id:<BotID> dimension is missing or incorrect in %v", u.Dimensions))
+		}
+	}
+}
+
 // Submit runs a transaction that applies this update to the BotInfo entity
 // currently stored in the datastore, potentially also recording it as a new
 // BotEvent entity.
@@ -350,14 +406,7 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 //
 // Returns datastore errors. All errors are transient.
 func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, error) {
-	if len(u.Dimensions) != 0 {
-		if !slices.IsSorted(u.Dimensions) {
-			panic("Dimensions must be sorted")
-		}
-		if _, found := slices.BinarySearch(u.Dimensions, "id:"+u.BotID); !found {
-			panic(fmt.Sprintf("id:<BotID> dimension is missing or incorrect in %v", u.Dimensions))
-		}
-	}
+	u.PanicIfInvalid()
 
 	now := clock.Now(ctx).UTC()
 	key := BotInfoKey(ctx, u.BotID)
@@ -468,20 +517,41 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 		current.Quarantined = u.HealthInfo.Quarantined != ""
 	}
 
-	// Update the task assigned to the bot (or reset it if TaskInfo is an empty
-	// struct).
-	if u.TaskInfo != nil {
-		if u.TaskInfo.TaskID == "" && current.TaskID != "" {
+	// Update the task assigned to the bot (perhaps by resetting it).
+	var completedTaskID string
+	if taskChange := TaskChangeAspects[u.EventType]; taskChange != TaskChangeNone {
+		if current.TaskID != "" {
+			// The bot is either switching to idle state (if taskChange is
+			// TaskChangeReset) or it is abandoning the current task and starting
+			// another one. Either way the current task is done.
 			current.LastFinishedTask = LastTaskDetails{
 				TaskID:      current.TaskID,
 				TaskName:    current.TaskName,
 				TaskFlags:   current.TaskFlags,
 				FinishedDue: u.EventType,
 			}
+			if taskCompletionEvents[u.EventType] {
+				completedTaskID = current.TaskID
+			}
 		}
-		current.TaskID = u.TaskInfo.TaskID
-		current.TaskName = u.TaskInfo.TaskName
-		current.TaskFlags = u.TaskInfo.TaskFlags
+		switch taskChange {
+		case TaskChangeSet:
+			current.TaskID = u.TaskInfo.TaskID
+			current.TaskName = u.TaskInfo.TaskName
+			current.TaskFlags = u.TaskInfo.TaskFlags
+		case TaskChangeReset:
+			current.TaskID = ""
+			current.TaskName = ""
+			current.TaskFlags = 0
+		}
+	}
+
+	// Store the current task ID in the BotEvent, unless this is a task completion
+	// event. In that case it makes more sense to store the ID of the just
+	// completed task (since current.TaskID is "" already).
+	eventTaskID := current.TaskID
+	if completedTaskID != "" {
+		eventTaskID = completedTaskID
 	}
 
 	// Update TerminationTaskID if the bot was shutdown by a termination task.
@@ -582,7 +652,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 				Version:         current.Version,
 				Quarantined:     current.Quarantined,
 				Maintenance:     current.Maintenance,
-				TaskID:          current.TaskID,
+				TaskID:          eventTaskID,
 				LastSeen:        current.LastSeen,
 				IdleSince:       current.IdleSince,
 				ExpireAt:        now.Add(oldBotEventsCutOff),

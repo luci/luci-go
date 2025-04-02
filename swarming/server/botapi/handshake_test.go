@@ -110,6 +110,7 @@ func TestHandshake(t *testing.T) {
 		}
 		var latestUpdate *model.BotInfoUpdate
 		srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+			u.PanicIfInvalid()
 			latestUpdate = u
 			return nil
 		}
@@ -194,7 +195,6 @@ func TestHandshake(t *testing.T) {
 					AuthenticatedAs: botIdent,
 				},
 				HealthInfo: &model.BotHealthInfo{},
-				TaskInfo:   &model.BotEventTaskInfo{},
 			}))
 		})
 
@@ -246,7 +246,6 @@ func TestHandshake(t *testing.T) {
 					AuthenticatedAs: botIdent,
 				},
 				HealthInfo: &model.BotHealthInfo{},
-				TaskInfo:   &model.BotEventTaskInfo{},
 			}))
 		})
 
@@ -293,7 +292,6 @@ func TestHandshake(t *testing.T) {
 				HealthInfo: &model.BotHealthInfo{
 					Quarantined: "Boom",
 				},
-				TaskInfo: &model.BotEventTaskInfo{},
 			}))
 		})
 

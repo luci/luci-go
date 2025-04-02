@@ -520,7 +520,6 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 			Version:   pr.version,
 		}),
 		HealthInfo:         healthInfo,
-		TaskInfo:           &model.BotEventTaskInfo{}, // not running tasks in /bot/poll
 		EffectiveBotIDInfo: pr.effectiveBotID,
 	}
 	if err := srv.submitUpdate(ctx, update); err != nil {

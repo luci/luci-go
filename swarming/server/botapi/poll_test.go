@@ -426,6 +426,7 @@ func TestPollResponse(t *testing.T) {
 		var updateErr error
 		srv := BotAPIServer{
 			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+				u.PanicIfInvalid()
 				lastUpdate = u
 				return updateErr
 			},
@@ -490,7 +491,6 @@ func TestPollResponse(t *testing.T) {
 					AuthenticatedAs: testBotIdent,
 				},
 				HealthInfo: &model.BotHealthInfo{},
-				TaskInfo:   &model.BotEventTaskInfo{},
 			}))
 		})
 
@@ -535,7 +535,6 @@ func TestPollResponse(t *testing.T) {
 				HealthInfo: &model.BotHealthInfo{
 					Quarantined: "boom",
 				},
-				TaskInfo: &model.BotEventTaskInfo{},
 			}))
 		})
 
@@ -565,7 +564,6 @@ func TestPollResponse(t *testing.T) {
 				HealthInfo: &model.BotHealthInfo{
 					Quarantined: "boom",
 				},
-				TaskInfo: &model.BotEventTaskInfo{},
 			}))
 		})
 
@@ -641,6 +639,7 @@ func TestPoll(t *testing.T) {
 				return nil
 			},
 			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+				u.PanicIfInvalid()
 				lastUpdate = u
 				return nil
 			},
@@ -750,7 +749,6 @@ func TestPoll(t *testing.T) {
 					AuthenticatedAs: testBotIdent,
 				},
 				HealthInfo:         &model.BotHealthInfo{},
-				TaskInfo:           &model.BotEventTaskInfo{},
 				EffectiveBotIDInfo: &model.RBEEffectiveBotIDInfo{},
 			}))
 		})

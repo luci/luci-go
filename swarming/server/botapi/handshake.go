@@ -268,7 +268,6 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 			Version:   body.Version,
 		}),
 		HealthInfo: &healthInfo,
-		TaskInfo:   &model.BotEventTaskInfo{}, // intentionally empty, not running a task
 	}
 	if err := srv.submitUpdate(ctx, update); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update bot info: %s", err)
