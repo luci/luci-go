@@ -133,7 +133,31 @@ func TestReportTestResults(t *testing.T) {
 			cfg.ModuleName = ""
 			cfg.ModuleScheme = legacyScheme()
 
-			t.Run("without ServerConfig.TestIDPrefix", func(t *ftt.Test) {
+			expectedTR.TestId = "this is testID"
+			expectedTR.TestIdStructured = nil
+
+			t.Run("with shortening enabled", func(t *ftt.Test) {
+				cfg.ShortenIDs = true
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				t.Run("short ID", func(t *ftt.Test) {
+					tr.TestId = strings.Repeat("a", 100)
+					expectedTR.TestId = strings.Repeat("a", 100)
+					checkResults()
+				})
+				t.Run("long ID, no prefix", func(t *ftt.Test) {
+					tr.TestId = strings.Repeat("a", 400)
+					expectedTR.TestId = strings.Repeat("a", 333) + "~abd5e54be3f59d8e"
+					checkResults()
+				})
+				t.Run("long ID, with prefix", func(t *ftt.Test) {
+					cfg.TestIDPrefix = "myprefix:"
+					tr.TestId = strings.Repeat("a", 400)
+					expectedTR.TestId = "myprefix:" + strings.Repeat("a", 333) + "~abd5e54be3f59d8e"
+					checkResults()
+				})
+			})
+			t.Run("without test ID prefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = ""
 				assert.Loosely(t, cfg.Validate(), should.BeNil)
 
@@ -158,7 +182,7 @@ func TestReportTestResults(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike(`test_id: module_scheme: expected test scheme "legacy" but got scheme "myscheme"`))
 				})
 			})
-			t.Run("with ServerConfig.TestIDPrefix", func(t *ftt.Test) {
+			t.Run("with Test ID Prefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
 				assert.Loosely(t, cfg.Validate(), should.BeNil)
 
@@ -166,6 +190,14 @@ func TestReportTestResults(t *testing.T) {
 				expectedTR.TestId = "ninja://foo/bar/HelloWorld.TestA"
 				expectedTR.TestIdStructured = nil
 
+				t.Run("with empty test ID", func(t *ftt.Test) {
+					// This is allowed as the TestIDPrefix is set.
+					tr.TestId = ""
+					expectedTR.TestId = "ninja://foo/bar/"
+					expectedTR.TestIdStructured = nil
+
+					checkResults()
+				})
 				t.Run("with structured test ID uploaded in addition to legacy ID", func(t *ftt.Test) {
 					tr.TestIdStructured = &sinkpb.TestIdentifier{
 						CoarseName:         "coarse_name",
@@ -214,6 +246,24 @@ func TestReportTestResults(t *testing.T) {
 				FineName:     "fine_name",
 				CaseName:     "component1:component2",
 			}
+
+			t.Run("with shortening enabled", func(t *ftt.Test) {
+				cfg.ShortenIDs = true
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				t.Run("short ID", func(t *ftt.Test) {
+					checkResults()
+				})
+				t.Run("long ID", func(t *ftt.Test) {
+					tr.TestIdStructured.CoarseName = strings.Repeat("a", 400)
+					tr.TestIdStructured.FineName = strings.Repeat("b", 400)
+					tr.TestIdStructured.CaseNameComponents = []string{strings.Repeat("c", 400)}
+					expectedTR.TestIdStructured.CoarseName = strings.Repeat("a", 157) + "~abd5e54be3f59d8e"
+					expectedTR.TestIdStructured.FineName = strings.Repeat("b", 70) + "~bc38c1c9ebc1d0b2"
+					expectedTR.TestIdStructured.CaseName = strings.Repeat("c", 70) + "~cb11f55cb6f1cc7d"
+					checkResults()
+				})
+			})
 			t.Run("without ServerConfig.variant", func(t *ftt.Test) {
 				cfg.Variant = nil
 				expectedTR.TestIdStructured.ModuleVariant = nil

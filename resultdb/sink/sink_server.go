@@ -163,12 +163,12 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			}
 		}
 
-		// partialTestID is a partial test ID uploaded by the client, for use in error messages.
-		var partialTestID string
+		// clientTestID is a partial test ID uploaded by the client, for use in error messages.
+		var clientTestID string
 		if tr.TestIdStructured != nil {
-			partialTestID = fmt.Sprintf("%s:%s#%s", tr.TestIdStructured.CoarseName, tr.TestIdStructured.FineName, strings.Join(tr.TestIdStructured.CaseNameComponents, ":"))
+			clientTestID = fmt.Sprintf("%s:%s#%s", tr.TestIdStructured.CoarseName, tr.TestIdStructured.FineName, strings.Join(tr.TestIdStructured.CaseNameComponents, ":"))
 		} else {
-			partialTestID = tr.TestId
+			clientTestID = tr.TestId
 		}
 
 		// The system-clock of GCE machines may get updated by ntp while a test is running.
@@ -178,15 +178,37 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		if duration := tr.GetDuration(); duration != nil && s.cfg.CoerceNegativeDuration {
 			// If a negative duration was reported, remove the duration.
 			if d := duration.AsDuration(); d < 0 {
-				logging.Warningf(ctx, "Test result for %q has a negative duration(%s); coercing it to 0", partialTestID, d)
+				logging.Warningf(ctx, "Test result for %q has a negative duration(%s); coercing it to 0", clientTestID, d)
 				tr.Duration = zeroDuration
+			}
+		}
+
+		if s.cfg.ShortenIDs {
+			// Target 350 bytes for shortened IDs. This leaves ~150 bytes for the
+			// module name + scheme or test ID prefix.
+			if tr.TestIdStructured != nil {
+				shortenedID, err := shortenStructuredID(tr.TestIdStructured, 350)
+				if err != nil {
+					logging.Warningf(ctx, "Test result for %q is invalid (shortening ID): %s", clientTestID, err)
+					return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: test_id_structured: %s", i, err)
+				}
+				tr.TestIdStructured = shortenedID
+			}
+			if tr.TestId != "" {
+				shortenedID, err := shortenTestID(tr.TestId, 350)
+				if err != nil {
+					logging.Warningf(ctx, "Test result for %q is invalid (shortening ID): %s", clientTestID, err)
+					return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: test_id: %s", i, err)
+				}
+				tr.TestId = shortenedID
 			}
 		}
 
 		// Validation pass 1: test result before merging with prefixes/variant keys/
 		// tags provided for by server configuration.
-		if err := validateTestResult(now, tr); err != nil {
-			logging.Warningf(ctx, "Test result for %q is invalid: %s", partialTestID, err)
+		usingStructuredID := s.cfg.ModuleName != ""
+		if err := validateTestResult(now, tr, usingStructuredID); err != nil {
+			logging.Warningf(ctx, "Test result for %q is invalid: %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: %s", i, err)
 		}
 
@@ -205,7 +227,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return s.cfg.ModuleScheme.Validate(b)
 		}
 		if err := pbutil.ValidateTestResult(now, validateToScheme, rdbtr); err != nil {
-			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", partialTestID, err)
+			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
 
@@ -346,9 +368,10 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 		}
 		rdbtr.TestIdStructured = testID
 	} else {
-		if tr.TestId == "" {
-			return nil, errors.Reason("test_id: must be specified as resultsink is not configured to upload structured test IDs").Err()
+		if tr.TestId == "" && cfg.TestIDPrefix == "" {
+			return nil, errors.Reason("test_id: must be specified as resultsink is not configured to upload structured test IDs and no test ID prefix specified").Err()
 		}
+		// tr.TestId may be blank for some uploaders relying on the cfg.TestIDPrefix being set.
 
 		// Upload legacy test ID.
 		rdbtr.TestId = cfg.TestIDPrefix + tr.TestId

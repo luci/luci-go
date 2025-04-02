@@ -80,7 +80,7 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 	if testID == "" {
 		return BaseTestIdentifier{}, validate.Unspecified()
 	}
-	if err := validateUTF8Printable(testID, 512, validationModeLoose); err != nil {
+	if err := ValidateUTF8Printable(testID, 512, ValidationModeLoose); err != nil {
 		return BaseTestIdentifier{}, err
 	}
 
@@ -450,13 +450,13 @@ func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 	}
 
 	// Coarse name and fine name
-	if err := validateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
+	if err := ValidateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
 		return errors.Annotate(err, "coarse_name").Err()
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
 		return errors.Annotate(err, "coarse_name").Err()
 	}
-	if err := validateUTF8PrintableStrict(id.FineName, 300); err != nil {
+	if err := ValidateUTF8PrintableStrict(id.FineName, 300); err != nil {
 		return errors.Annotate(err, "fine_name").Err()
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
@@ -485,7 +485,7 @@ func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 		if strings.HasPrefix(id.CaseName, ":") {
 			return errors.Reason("case_name: must not start with ':' for tests in the %q module", LegacyModuleName).Err()
 		}
-		if err := validateUTF8Printable(id.CaseName, 512, validationModeLoose); err != nil {
+		if err := ValidateUTF8Printable(id.CaseName, 512, ValidationModeLoose); err != nil {
 			return errors.Annotate(err, "case_name").Err()
 		}
 		// This is a lightweight version of validateCaseNameNotReserved for legacy tests
@@ -495,7 +495,7 @@ func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 		}
 	} else {
 		// Additional validation for natively structured test identifiers.
-		if err := validateUTF8PrintableStrict(id.CaseName, 512); err != nil {
+		if err := ValidateUTF8PrintableStrict(id.CaseName, 512); err != nil {
 			return errors.Annotate(err, "case_name").Err()
 		}
 		if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
@@ -516,7 +516,7 @@ func ValidateModuleName(name string) error {
 	if name == "" {
 		return errors.Reason("unspecified").Err()
 	}
-	if err := validateUTF8PrintableStrict(name, 300); err != nil {
+	if err := ValidateUTF8PrintableStrict(name, 300); err != nil {
 		return err
 	}
 	return nil
@@ -529,7 +529,7 @@ func ValidateModuleScheme(scheme string, isLegacyModule bool) error {
 	if scheme == "" {
 		return errors.Reason("unspecified").Err()
 	}
-	if err := validateUTF8PrintableStrict(scheme, 20); err != nil {
+	if err := ValidateUTF8PrintableStrict(scheme, 20); err != nil {
 		return err
 	}
 	if !schemeRE.MatchString(scheme) {
@@ -695,23 +695,23 @@ func sizeEscapedTestIDComponent(s string, isCaseName bool) int {
 type validationMode int
 
 const (
-	// validationModeStrict does not allow the unicode replacement character U+FFFD.
-	validationModeStrict validationMode = iota
-	// validationModeLoose allows the unicode replacement character U+FFFD. This
+	// ValidationModeStrict does not allow the unicode replacement character U+FFFD.
+	ValidationModeStrict validationMode = iota
+	// ValidationModeLoose allows the unicode replacement character U+FFFD. This
 	// should be used for legacy-form test IDs.
-	validationModeLoose
+	ValidationModeLoose
 )
 
 // validateUTF8Printable validates that a string is valid UTF-8, in Normal form C,
 // consists only for printable runes, and does not contain the unicode replacement
 // character (U+FFFD).
-func validateUTF8PrintableStrict(text string, maxLength int) error {
-	return validateUTF8Printable(text, maxLength, validationModeStrict)
+func ValidateUTF8PrintableStrict(text string, maxLength int) error {
+	return ValidateUTF8Printable(text, maxLength, ValidationModeStrict)
 }
 
-// validateUTF8Printable validates that a string is valid UTF-8, in Normal form C,
+// ValidateUTF8Printable validates that a string is valid UTF-8, in Normal form C,
 // and consists only for printable runes.
-func validateUTF8Printable(text string, maxLength int, mode validationMode) error {
+func ValidateUTF8Printable(text string, maxLength int, mode validationMode) error {
 	if len(text) > maxLength {
 		return errors.Reason("longer than %v bytes", maxLength).Err()
 	}
@@ -725,7 +725,7 @@ func validateUTF8Printable(text string, maxLength int, mode validationMode) erro
 		if !unicode.IsPrint(rune) {
 			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
 		}
-		if mode == validationModeStrict && rune == utf8.RuneError {
+		if mode == ValidationModeStrict && rune == utf8.RuneError {
 			return fmt.Errorf("unicode replacement character (U+FFFD) at byte index %d", i)
 		}
 	}

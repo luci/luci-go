@@ -172,6 +172,10 @@ type ServerConfig struct {
 	// ExonerateUnexpectedPass is a flag to control if an unexpected pass should
 	// be exonerated.
 	ExonerateUnexpectedPass bool
+
+	// ShortenIDs controls whether test IDs should be automatically truncated by
+	// result sink at upload time.
+	ShortenIDs bool
 }
 
 // Validate validates all the config fields.

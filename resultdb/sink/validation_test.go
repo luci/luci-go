@@ -34,10 +34,11 @@ func TestValidateTestResult(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`ValidateTestResult`, t, func(t *ftt.Test) {
 		tr := validTestResult(t)
+		usingStructuredID := true
 
 		t.Run(`TestLocation`, func(t *ftt.Test) {
 			tr.TestMetadata.Location.FileName = ""
-			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+			err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
 			assert.Loosely(t, err, should.ErrLike("test_metadata: location: file_name: unspecified"))
 		})
 
@@ -49,7 +50,7 @@ func TestValidateTestResult(t *testing.T) {
 					FileName: "//file",
 				},
 			}
-			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+			err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
@@ -65,7 +66,7 @@ func TestValidateTestResult(t *testing.T) {
 						}),
 					},
 				}
-				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -75,7 +76,7 @@ func TestValidateTestResult(t *testing.T) {
 						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeTestResultProperties)),
 					},
 				}
-				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
 				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})

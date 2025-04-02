@@ -215,6 +215,16 @@ func cmdStream(p Params) *subcommands.Command {
 				{buildbucket bucket}:{buildbucket builder name}.
 				For example, 'try:linux-rel'.
 			`))
+			r.Flags.BoolVar(&r.shortenIDs, "shorten-ids", false, text.Doc(`
+				Set this option to shorten uploaded test IDs to 350 bytes
+				before being combined with the test ID prefix / module name.
+
+				Warning: shortened test IDs will no longer match the ID
+				reported by the source test harness, which may ability to
+				inject IDs into commands (e.g. for reproduction instructions).
+				Before resorting to this option, prefer to shorten the
+				test IDs declared in source code instead.
+			`))
 			return r
 		},
 	}
@@ -313,6 +323,7 @@ type streamRun struct {
 	sources                  sources
 	baselineID               string
 	instructionFile          string
+	shortenIDs               bool
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -543,6 +554,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string, scheme *schem
 		LocationTags:            locationTags,
 		TestLocationBase:        r.testTestLocationBase,
 		ExonerateUnexpectedPass: r.exonerateUnexpectedPass,
+		ShortenIDs:              r.shortenIDs,
 	}
 	return sink.Run(ctx, cfg, func(ctx context.Context, cfg sink.ServerConfig) error {
 		exported, err := lucictx.Export(ctx)

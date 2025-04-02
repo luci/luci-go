@@ -31,20 +31,21 @@ import (
 //
 // Note: This will not pick up all errors on results uploaded to ResultDB,
 // but it will pick up a significant set.
-func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
+func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID bool) (err error) {
 	if msg == nil {
 		return errors.Reason("unspecified").Err()
 	}
 
 	// If the flat test ID field is present, validate it.
+	// Note: Some clients report empty test ID (for suites that have only one result),
+	// expecting a valid test ID to come from concatenation with a test prefix.
 	if msg.TestId != "" {
 		if err := pbutil.ValidateTestID(msg.TestId); err != nil {
 			return errors.Annotate(err, "test_id").Err()
 		}
 	}
 	// If structured test ID is present, validate it.
-	// Also, if the flat test ID is missing
-	if msg.TestId == "" || msg.TestIdStructured != nil {
+	if msg.TestIdStructured != nil || usingStructuredID {
 		if msg.TestIdStructured == nil {
 			return errors.Reason("test_id_structured: unspecified").Err()
 		}
