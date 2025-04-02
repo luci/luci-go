@@ -192,13 +192,9 @@ func (b *batchProc) catFile(ctx context.Context, request string) (kind ObjectKin
 		// if we're returning an error, which could indicate a partial read.
 		defer func() {
 			defer close(readDone)
-			if err == nil {
-				// make sure this goroutine can observe ctx.Err()
-				select {
-				case <-ctx.Done():
-					err = ctx.Err()
-				default:
-				}
+			// to limit raciness, if context is done, always use that cause.
+			if cause := context.Cause(ctx); cause != nil {
+				err = cause
 			}
 			if err != nil {
 				b.shutdownLocked()
