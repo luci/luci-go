@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/oscompat"
 )
 
 const (
@@ -194,7 +195,7 @@ func (c *DiskTokenCache) readCacheFile(path string) (*cacheFile, error) {
 	// for the file to be closed). For some reason, omitting FILE_SHARE_DELETE
 	// flag causes random sharing violation errors when opening the file for
 	// reading.
-	f, err := openSharedDelete(path)
+	f, err := oscompat.OpenSharedDelete(path)
 	switch {
 	case os.IsNotExist(err):
 		return &cacheFile{}, nil
