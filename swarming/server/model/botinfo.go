@@ -81,7 +81,7 @@ var TaskChangeAspects = map[BotEventType]TaskChangeAspect{
 	BotEventError:         TaskChangeNone,  // bot errors can be reported at any state
 	BotEventIdle:          TaskChangeReset, // an idle bot is not running tasks
 	BotEventLog:           TaskChangeNone,  // bot logs can be reported at any state
-	BotEventMissing:       TaskChangeNone,  // see TODO
+	BotEventMissing:       TaskChangeNone,  // see BotInfo.LastAbandonedTask
 	BotEventDeleted:       TaskChangeReset, // a deleted bot is not running tasks
 	BotEventPolling:       TaskChangeReset, // a polling bot is not running tasks
 	BotEventRebooting:     TaskChangeReset, // a rebooting bot is not running tasks
@@ -323,6 +323,26 @@ type BotInfo struct {
 	// Updated only after finishing a task. Starting a task doesn't change this.
 	// Gets reset when bot reconnects (calls the handshake handler).
 	LastFinishedTask LastTaskDetails `gae:"last_finished_task,noindex"`
+
+	// LastAbandonedTask is the task ID the bot died on last.
+	//
+	// This is a packed TaskRunResult key, i.e. the same format as TaskID.
+	//
+	// If this field is set, then this task was already notified that it should
+	// move into BOT_DIED state. It changes whenever the bot unexpectedly stops
+	// working on a task (either by dying or unexpectedly reopening a new
+	// session).
+	//
+	// For backward API compatibility, if a bot dies midway though a task, it
+	// should not reset BotInfo.TaskID. That way dead bots are listed along with
+	// the tasks they are died on in the bot listing UI and API.
+	//
+	// When such a bot reconnects, BotInfo.TaskID field is cleared. We should
+	// notify the task that the bot has died as soon as it did, not when it
+	// reconnects, and we need to notify the task only once. That's the reason why
+	// we need a separate LastAbandonedTask field instead of just sending
+	// notifications whenever TaskID changes.
+	LastAbandonedTask string `gae:"last_abandoned_task,noindex"`
 
 	// TerminationTaskID is set if the bot was gracefully shutdown in response to
 	// a TerminateBot request.

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
@@ -321,6 +322,9 @@ type SubmittedBotInfoUpdate struct {
 	// Set only if the event was actually recorded.
 	BotEvent *BotEvent
 
+	// AbandonedTaskID is set if this task was abandoned in reaction to the event.
+	AbandonedTaskID string
+
 	// entitiesToPut is a list of entities to put in the transaction.
 	entitiesToPut []any
 	// entitiesToDelete is a list of entities to delete in the transaction.
@@ -385,6 +389,10 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 			if err := datastore.Delete(ctx, submitted.entitiesToDelete...); err != nil {
 				return err
 			}
+		}
+		if submitted.AbandonedTaskID != "" {
+			// TODO: Actually move the task into BOT_DIED state.
+			logging.Warningf(ctx, "Abandoning %q", submitted.AbandonedTaskID)
 		}
 		return err
 	}, &datastore.TransactionOptions{
@@ -476,16 +484,18 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// the cost of updating it is negligible.
 	current.ExpireAt = now.Add(oldBotInfoCutoff)
 
+	// Any additional human readable messages to store in the event.
+	var extraMessages []string
+
 	// Detect if dimensions has changed to know if we must emit an event even if
 	// the event type is not otherwise interesting. Most often this code path is
 	// hit when an idle bot is dynamically changing its dimensions.
 	dimensionsChanged := false
-	effectiveBotIDChange := ""
 	if len(u.Dimensions) != 0 {
 		dimensionsChanged = !slices.Equal(current.Dimensions, u.Dimensions)
 		current.Dimensions = u.Dimensions
 		if u.EffectiveBotIDInfo != nil && current.RBEEffectiveBotID != u.EffectiveBotIDInfo.RBEEffectiveBotID {
-			effectiveBotIDChange = fmt.Sprintf("RBE effective bot ID: %q => %q", current.RBEEffectiveBotID, u.EffectiveBotIDInfo.RBEEffectiveBotID)
+			extraMessages = append(extraMessages, fmt.Sprintf("RBE effective bot ID: %q => %q", current.RBEEffectiveBotID, u.EffectiveBotIDInfo.RBEEffectiveBotID))
 			current.RBEEffectiveBotID = u.EffectiveBotIDInfo.RBEEffectiveBotID
 		}
 	}
@@ -517,6 +527,14 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 		current.Quarantined = u.HealthInfo.Quarantined != ""
 	}
 
+	// We need to abandon the task on BotEventMissing (and similar) even though
+	// they may not be changing TaskID. See BotInfo.LastAbandonedTask for details
+	// why.
+	var abandonedTaskID string
+	if stoppedBotEvents[u.EventType] {
+		abandonedTaskID = current.TaskID
+	}
+
 	// Update the task assigned to the bot (perhaps by resetting it).
 	var completedTaskID string
 	if taskChange := TaskChangeAspects[u.EventType]; taskChange != TaskChangeNone {
@@ -531,7 +549,14 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 				FinishedDue: u.EventType,
 			}
 			if taskCompletionEvents[u.EventType] {
+				// A properly completed task ID. Will be reported in the corresponding
+				// completion event.
 				completedTaskID = current.TaskID
+			} else {
+				// If the assigned task was changed unexpectedly, we need to abandon it.
+				// Most commonly this would be a bot reconnecting after an unexpected
+				// reboot.
+				abandonedTaskID = current.TaskID
 			}
 		}
 		switch taskChange {
@@ -552,6 +577,23 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	eventTaskID := current.TaskID
 	if completedTaskID != "" {
 		eventTaskID = completedTaskID
+	}
+
+	// As another special case, if BotEventMissing or similar "terminal" events
+	// caused a task to be abandoned, put the task ID with the event as well.
+	// We don't do that in case abandonedTaskID was discovered due to e.g.
+	// unexpected BotEventConnected. It would be weird to associate such events
+	// with a task.
+	if stoppedBotEvents[u.EventType] {
+		eventTaskID = abandonedTaskID
+	}
+
+	// Make sure to notify the abandoned task at most once.
+	if abandonedTaskID != "" && current.LastAbandonedTask != abandonedTaskID {
+		current.LastAbandonedTask = abandonedTaskID
+		extraMessages = append(extraMessages, fmt.Sprintf("Abandoned %s", abandonedTaskID))
+	} else {
+		abandonedTaskID = ""
 	}
 
 	// Update TerminationTaskID if the bot was shutdown by a termination task.
@@ -634,7 +676,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// Store BotEvent only if it looks interesting enough. Otherwise we'll have
 	// tons and tons of BotEventIdle events.
 	var eventToPut *BotEvent
-	if !frequentEvents[u.EventType] || dimensionsChanged || effectiveBotIDChange != "" || compositeChanged {
+	if !frequentEvents[u.EventType] || dimensionsChanged || compositeChanged || len(extraMessages) != 0 {
 		eventToPut = &BotEvent{
 			// Note: this key means the entity ID will be auto-generated when the
 			// transaction is committed. We don't expose BotEvent entity IDs anywhere.
@@ -642,7 +684,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, BotRootKey(ctx, u.BotID)),
 			Timestamp:  now,
 			EventType:  u.EventType,
-			Message:    u.eventMessage(effectiveBotIDChange),
+			Message:    u.eventMessage(extraMessages),
 			Dimensions: current.Dimensions,
 			BotCommon: BotCommon{
 				State:           current.State,
@@ -664,6 +706,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	return &SubmittedBotInfoUpdate{
 		BotInfo:          current,
 		BotEvent:         eventToPut,
+		AbandonedTaskID:  abandonedTaskID,
 		entitiesToPut:    toPut,
 		entitiesToDelete: toDelete,
 	}, nil
@@ -691,17 +734,20 @@ func (u *BotInfoUpdate) fullEventDedupKey() string {
 }
 
 // eventMessage is the final event message to store.
-func (u *BotInfoUpdate) eventMessage(fallback string) string {
+func (u *BotInfoUpdate) eventMessage(extra []string) string {
+	// Note: we pick one "most interesting" message here instead of joining them
+	// all together because very often they are all the same or convey the same
+	// information.
+	var messages []string
 	switch {
 	case u.EventMessage != "":
-		return u.EventMessage
+		messages = append(messages, u.EventMessage)
 	case u.HealthInfo != nil && u.HealthInfo.Maintenance != "":
-		return u.HealthInfo.Maintenance
+		messages = append(messages, u.HealthInfo.Maintenance)
 	case u.HealthInfo != nil && u.HealthInfo.Quarantined != "":
-		return u.HealthInfo.Quarantined
-	default:
-		return fallback
+		messages = append(messages, u.HealthInfo.Quarantined)
 	}
+	return strings.Join(append(messages, extra...), "\n")
 }
 
 // reportBotInfoTxn updates botInfoTxnCount metric.

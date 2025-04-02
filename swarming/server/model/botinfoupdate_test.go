@@ -426,6 +426,77 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, events[3].TaskID, should.Equal(""))        // bot_idle
 		})
 
+		t.Run("Connect => Task => Missing => Connect", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1)
+			tickOneSec()
+			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			tickOneSec()
+			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			tickOneSec()
+			submit(BotEventMissing, "missing", nil, testState1)
+			tickOneSec()
+
+			info, events := check()
+
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"request_task",
+				"bot_missing Abandoned task-id",
+			}))
+
+			// Actually retained TaskID.
+			assert.That(t, info.TaskID, should.Equal("task-id"))
+
+			submit(BotEventConnected, "connect", nil, testState1)
+			tickOneSec()
+
+			info, events = check()
+
+			// Reset TaskID, but no new "Abandoned ..." event emitted.
+			assert.That(t, info.TaskID, should.Equal(""))
+			assert.That(t, summary(events[3:]), should.Match([]string{
+				"bot_connected",
+			}))
+		})
+
+		t.Run("Connect => Task => Connect", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1)
+			tickOneSec()
+			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			tickOneSec()
+			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			tickOneSec()
+			submit(BotEventConnected, "connect", nil, testState1)
+			tickOneSec()
+
+			_, events := check()
+
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"request_task",
+				"bot_connected Abandoned task-id",
+			}))
+		})
+
+		t.Run("Connect => Task => Deleted", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1)
+			tickOneSec()
+			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			tickOneSec()
+			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			tickOneSec()
+			submit(BotEventDeleted, "delete", nil, testState1)
+			tickOneSec()
+
+			_, events := check()
+
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"request_task",
+				"bot_deleted Abandoned task-id",
+			}))
+		})
+
 		t.Run("Connect => TerminateBot => Connect => Missing", func(t *ftt.Test) {
 			submit(BotEventConnected, "connect-1", nil, testState1)
 			tickOneSec()
