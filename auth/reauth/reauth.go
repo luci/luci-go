@@ -42,6 +42,17 @@ type RAPT struct {
 // The HTTP client should be authenticated with the ReAuth scope.
 // This should always be assumed to require user interaction.
 func GetRAPT(ctx context.Context, c *http.Client) (*RAPT, error) {
+	return getRAPT(ctx, c, challengeHandlers(reAuthOrigin))
+}
+
+// getRAPT performs a ReAuth flow and returns the proof token.
+//
+// The HTTP client should be authenticated with the ReAuth scope.
+// This should always be assumed to require user interaction.
+//
+// Takes a map of [challengeHandlers], for handling ReAuth challenges,
+// naturally.
+func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler) (*RAPT, error) {
 	logging.Debugf(ctx, "Starting ReAuth session...")
 	sr, err := startSession(ctx, c)
 	if err != nil {
@@ -68,7 +79,7 @@ func GetRAPT(ctx context.Context, c *http.Client) (*RAPT, error) {
 		if !ok {
 			return nil, errors.Reason("GetRAPT: no ready challenges").Err()
 		}
-		h, ok := challengeHandlers(reAuthOrigin)[ch.ChallengeType]
+		h, ok := h[ch.ChallengeType]
 		if !ok {
 			return nil, errors.Reason("GetRAPT: unsupported challenge type %q", ch.ChallengeType).Err()
 		}
