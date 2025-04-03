@@ -25,7 +25,10 @@ import {
 } from 'jest-message-util';
 
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/sink/proto/v1/test_result.pb';
+import {
+  TestIdentifier,
+  TestResult,
+} from '@/proto/go.chromium.org/luci/resultdb/sink/proto/v1/test_result.pb';
 
 const STATUS_EXPECTANCY_MAP = Object.freeze({
   passed: true,
@@ -56,6 +59,28 @@ export interface ToSinkResultContext {
   readonly stackTraceOpts: StackTraceOptions;
 }
 
+function prepareTestIdStructured(
+  testPath: string,
+  testCaseParts: string[],
+): TestIdentifier {
+  const lastIndex = testPath.lastIndexOf('/');
+  let coarseName: string;
+  let fineName: string;
+  if (lastIndex !== -1) {
+    coarseName = testPath.slice(0, lastIndex) + '/';
+    fineName = testPath.slice(lastIndex + 1);
+  } else {
+    coarseName = '/';
+    fineName = testPath;
+  }
+
+  return TestIdentifier.fromPartial({
+    coarseName,
+    fineName,
+    caseNameComponents: testCaseParts,
+  });
+}
+
 /**
  * Converts a Jest test result to a Result Sink test result.
  */
@@ -64,20 +89,24 @@ export async function toSinkResult(
   testCaseResult: TestCaseResult,
   ctx: ToSinkResultContext,
 ): Promise<TestResult> {
-  const testName = [
+  const testCaseParts = [
     ...testCaseResult.ancestorTitles,
     testCaseResult.title,
-  ].join(ctx.delimiter);
-  const repoPath = path.join(
-    ctx.directory,
-    test.path.slice(test.context.config.rootDir.length + 1),
-  );
+  ];
+  const testName = testCaseParts.join(ctx.delimiter);
+
+  // The test path relative to the directory we are executing from.
+  const testPath = test.path.slice(test.context.config.rootDir.length + 1);
+
+  // The test path from the repository root.
+  const repoPath = path.join(ctx.directory, testPath);
   let testId = ctx.repo + ctx.delimiter + repoPath + ctx.delimiter + testName;
   if (testId.length >= 512) {
     const hash = createHash('sha256').update(testId).digest('hex');
     const maxLen = 512 - hash.length - 1; // -1 for the delimiter
     testId = testId.substring(0, maxLen) + ctx.delimiter + hash;
   }
+
   const failureMessages = testCaseResult.failureMessages
     .map((msg) => {
       const msgAndStack = separateMessageFromStack(msg);
@@ -98,6 +127,7 @@ export async function toSinkResult(
 
   return TestResult.fromPartial({
     testId: testId,
+    testIdStructured: prepareTestIdStructured(testPath, testCaseParts),
     expected: STATUS_EXPECTANCY_MAP[testCaseResult.status],
     status: STATUS_MAP[testCaseResult.status],
     // Minify the HTML. This helps but not by a lot. If we want better

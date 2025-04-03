@@ -45,6 +45,11 @@ describe('toSinkResult', () => {
       TestResult.fromPartial({
         testId:
           'example.googlesource.com/repo > path/to/directory/path/to/test/file.test.ts > test suite > child test suite > test title',
+        testIdStructured: {
+          coarseName: 'path/to/test/',
+          fineName: 'file.test.ts',
+          caseNameComponents: ['test suite', 'child test suite', 'test title'],
+        },
         expected: true,
         status: TestStatus.PASS,
         duration: {
@@ -83,6 +88,11 @@ describe('toSinkResult', () => {
       TestResult.fromPartial({
         testId:
           'example.googlesource.com/repo > path/to/directory/path/to/test/file.test.ts > test suite > child test suite > test title',
+        testIdStructured: {
+          coarseName: 'path/to/test/',
+          fineName: 'file.test.ts',
+          caseNameComponents: ['test suite', 'child test suite', 'test title'],
+        },
         expected: false,
         status: TestStatus.FAIL,
         summaryHtml: result.summaryHtml,
