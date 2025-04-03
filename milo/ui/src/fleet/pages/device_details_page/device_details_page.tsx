@@ -24,6 +24,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
+import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -212,6 +213,9 @@ export const DeviceDetailsPage = () => {
               width: '100%',
               paddingLeft: '72px',
               marginBottom: '32px',
+              display: 'flex',
+              flexDirection: 'row',
+              gap: '8px',
             }}
           >
             <RunAutorepair
@@ -222,6 +226,7 @@ export const DeviceDetailsPage = () => {
                 },
               ]}
             />
+            <SshTip deviceId={id} />
           </div>
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
