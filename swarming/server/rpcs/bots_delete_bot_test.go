@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func TestDeleteBot(t *testing.T) {
@@ -82,9 +83,11 @@ func TestDeleteBot(t *testing.T) {
 	}
 	_ = datastore.Put(ctx, aliveBot)
 
+	tasksLC := &tasks.LifecycleTasksForTests{}
+
 	call := func(botID string) (*apipb.DeleteResponse, error) {
 		ctx := MockRequestState(ctx, state)
-		return (&BotsServer{}).DeleteBot(ctx, &apipb.BotRequest{
+		return (&BotsServer{TaskLifecycleTasks: tasksLC}).DeleteBot(ctx, &apipb.BotRequest{
 			BotId: botID,
 		})
 	}

@@ -23,10 +23,11 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // DeleteBot implements the corresponding RPC method.
-func (*BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*apipb.DeleteResponse, error) {
+func (srv *BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*apipb.DeleteResponse, error) {
 	if req.BotId == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "bot_id is required")
 	}
@@ -38,7 +39,15 @@ func (*BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*apipb
 		BotID:     req.BotId,
 		EventType: model.BotEventDeleted,
 	}
-	switch info, err := update.Submit(ctx); {
+	info, err := update.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+		return &tasks.AbandonOp{
+			BotID:          botID,
+			TaskID:         taskID,
+			LifecycleTasks: srv.TaskLifecycleTasks,
+			ServerVersion:  srv.ServerVersion,
+		}
+	})
+	switch {
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "datastore error deleting the bot")
 	case info.BotInfo == nil:

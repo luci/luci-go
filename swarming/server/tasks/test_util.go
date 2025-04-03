@@ -32,6 +32,10 @@ type LifecycleTasksForTests struct {
 	fakeTaskQueue map[string][]string
 }
 
+func (lt *LifecycleTasksForTests) ShouldAbandonTasks() bool {
+	return true
+}
+
 // EnqueueBatchCancel enqueues a tq task to cancel tasks in batch.
 func (lt *LifecycleTasksForTests) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
 	sort.Strings(batch)

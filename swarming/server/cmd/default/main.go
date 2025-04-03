@@ -86,6 +86,11 @@ func main() {
 		"",
 		"Service account email of the Buildbucket service. Used to authorize calls to TaskBackend gRPC service.",
 	)
+	allowAbandoningTasks := flag.Bool(
+		"allow-abandoning-tasks",
+		false,
+		"If set, enable new path for abandoning tasks in reaction to BotInfo events.",
+	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		tokenSecret, err := hmactoken.NewRotatingSecret(srv.Context, *hmacSecret)
@@ -113,7 +118,8 @@ func main() {
 
 		// Handlers for TQ tasks involved in task lifecycle.
 		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
-			Dispatcher: &tq.Default,
+			Dispatcher:           &tq.Default,
+			AllowAbandoningTasks: *allowAbandoningTasks,
 		}
 		taskLifeCycle.RegisterTQTasks()
 
@@ -249,7 +255,11 @@ func main() {
 		}))
 
 		// Register gRPC server implementations.
-		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
+		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{
+			BotQuerySplitMode:  model.SplitOptimally,
+			TaskLifecycleTasks: taskLifeCycle,
+			ServerVersion:      srv.Options.ImageVersion(),
+		})
 
 		tasksServer := &rpcs.TasksServer{
 			TaskQuerySplitMode:    model.SplitOptimally,

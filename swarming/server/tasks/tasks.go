@@ -35,13 +35,20 @@ type LifecycleTasks interface {
 	enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
 	enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error
 	sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error
+
+	// ShouldAbandonTasks returns false if the Go code should not be abandoning
+	// tasks when the bot dies (and it should be done from Python side instead).
+	//
+	// This is a temporary hack to avoid breaking chromeos-swarming.
+	ShouldAbandonTasks() bool
 }
 
 type LifecycleTasksViaTQ struct {
-	Dispatcher *tq.Dispatcher
+	Dispatcher           *tq.Dispatcher
+	AllowAbandoningTasks bool
 }
 
-// RegisterTQTasks regusters TQ tasks for task lifecycle management.
+// RegisterTQTasks registers TQ tasks for task lifecycle management.
 func (l *LifecycleTasksViaTQ) RegisterTQTasks() {
 	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
 		ID:        "cancel-children-tasks-go",
@@ -97,6 +104,10 @@ func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskR
 
 func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
 	return notifications.SendOnTaskUpdate(ctx, tr, trs)
+}
+
+func (l *LifecycleTasksViaTQ) ShouldAbandonTasks() bool {
+	return l.AllowAbandoningTasks
 }
 
 // TaskWriteOp is used to perform datastore writes on a task throughout its lifecycle.

@@ -76,6 +76,10 @@ type BotsServer struct {
 	BotQuerySplitMode model.SplitMode
 	// BotsDimensionsCache caches aggregated bot dimensions sets.
 	BotsDimensionsCache model.BotsDimensionsCache
+	// TaskLifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+	TaskLifecycleTasks tasks.LifecycleTasks
+	// ServerVersion is the version of the executing binary.
+	ServerVersion string
 }
 
 // TasksServer implements Tasks gRPC service.
@@ -87,16 +91,12 @@ type TasksServer struct {
 
 	// TaskQuerySplitMode controls how "finely" to split TaskResultSummary queries.
 	TaskQuerySplitMode model.SplitMode
-
 	// TaskLifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
 	TaskLifecycleTasks tasks.LifecycleTasks
-
 	// ServerVersion is the version of the executing binary.
 	ServerVersion string
-
 	// SwarmingProject is the Cloud project of the Swarming service, e.g. "chromium-swarm".
 	SwarmingProject string
-
 	// ResultDBClientFactory can create a client to interact with ResultDB Recorder.
 	ResultDBClientFactory resultdb.RecorderFactory
 }

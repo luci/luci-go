@@ -100,7 +100,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				TaskInfo:           taskInfo,
 				EffectiveBotIDInfo: effectiveIDInfo,
 			}
-			submitted, err := update.Submit(ctx)
+			submitted, err := update.Submit(ctx, nil)
 			assert.NoErr(t, err)
 			return submitted
 		}
@@ -584,7 +584,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					return false, nil
 				},
 			}
-			submitted, err := update.Submit(ctx)
+			submitted, err := update.Submit(ctx, nil)
 			assert.NoErr(t, err)
 			assert.Loosely(t, submitted, should.BeNil)
 			assert.That(t, saw, should.Match([]*BotInfo{nil}))
@@ -606,7 +606,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					return false, nil
 				},
 			}
-			submitted, err := update.Submit(ctx)
+			submitted, err := update.Submit(ctx, nil)
 			assert.NoErr(t, err)
 			assert.Loosely(t, submitted, should.BeNil)
 			assert.Loosely(t, saw, should.HaveLength(1))

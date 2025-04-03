@@ -331,6 +331,17 @@ type SubmittedBotInfoUpdate struct {
 	entitiesToDelete []any
 }
 
+// AbandonedTaskFinalizer is used to finalized the state of an abandoned task.
+//
+// It is used inside BotInfo transactions when it is detected the bot has
+// abandoned the task it was running.
+type AbandonedTaskFinalizer interface {
+	// AbandonTxn runs the transactional logic to finalize the abandoned task.
+	AbandonTxn(ctx context.Context) error
+	// Finished is called once the transaction lands to report metrics.
+	Finished(ctx context.Context)
+}
+
 // PanicIfInvalid panics if this BotInfoUpdate violates the contract documented
 // in BotInfoUpdate comments.
 //
@@ -368,14 +379,21 @@ func (u *BotInfoUpdate) PanicIfInvalid() {
 // currently stored in the datastore, potentially also recording it as a new
 // BotEvent entity.
 //
+// If as part of this update a task was abandoned, uses the callback to
+// construct AbandonedTaskFinalizer to record this. It is usually implemented
+// via &tasks.AbandonOp{...}, but it is kept as an interface to decouple tasks
+// and bots update logic.
+//
 // If the update was skipped by the Prepare callback, returns (nil, nil).
 //
 // Returns datastore errors. All such errors are transient.
-func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, error) {
+func (u *BotInfoUpdate) Submit(ctx context.Context, finalizerCb func(botID, taskID string) AbandonedTaskFinalizer) (*SubmittedBotInfoUpdate, error) {
 	var submitted *SubmittedBotInfoUpdate
 	var attempt int
+	var finalizer AbandonedTaskFinalizer
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		attempt++
+		finalizer = nil
 		var err error
 		if submitted, err = u.execute(ctx); err != nil {
 			return err
@@ -390,9 +408,11 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 				return err
 			}
 		}
-		if submitted.AbandonedTaskID != "" {
-			// TODO: Actually move the task into BOT_DIED state.
-			logging.Warningf(ctx, "Abandoning %q", submitted.AbandonedTaskID)
+		if submitted.AbandonedTaskID != "" && finalizerCb != nil {
+			finalizer = finalizerCb(u.BotID, submitted.AbandonedTaskID)
+			if err := finalizer.AbandonTxn(ctx); err != nil {
+				return err
+			}
 		}
 		return err
 	}, &datastore.TransactionOptions{
@@ -402,6 +422,9 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 	u.reportBotInfoTxn(ctx, attempt, err)
 	switch {
 	case err == nil:
+		if finalizer != nil {
+			finalizer.Finished(ctx)
+		}
 		return submitted, nil
 	case errors.Is(err, errSkippedUpdate):
 		return nil, nil

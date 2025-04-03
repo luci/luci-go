@@ -26,13 +26,19 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // DeadBotDetector is a BotVisitor that recognizes bots that haven't been seen
-// for a while and moves them into "DEAD" state.
+// for a while and moves them into "DEAD" state, terminating whatever tasks
+// they were running with "BOT_DIED" status.
 type DeadBotDetector struct {
 	// BotDeathTimeout is how long a bot must be away before being declared dead.
 	BotDeathTimeout time.Duration
+	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+	LifecycleTasks tasks.LifecycleTasks
+	// ServerVersion is the current Swarming server version.
+	ServerVersion string
 
 	// The goroutine group executing the transactions.
 	eg *errgroup.Group
@@ -67,7 +73,14 @@ func (r *DeadBotDetector) Prepare(ctx context.Context, shards int, lastRun time.
 	r.eg.SetLimit(1024 / shards) // 1024 goroutines total across all shards
 	if r.submitUpdate == nil {
 		r.submitUpdate = func(ctx context.Context, update *model.BotInfoUpdate) (*model.SubmittedBotInfoUpdate, error) {
-			return update.Submit(ctx)
+			return update.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+				return &tasks.AbandonOp{
+					BotID:          botID,
+					TaskID:         taskID,
+					LifecycleTasks: r.LifecycleTasks,
+					ServerVersion:  r.ServerVersion,
+				}
+			})
 		}
 	}
 }

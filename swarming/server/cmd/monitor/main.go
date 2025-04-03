@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -23,18 +24,29 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gaememcache"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/tq"
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/scan"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func main() {
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		gaememcache.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
 	}
+
+	allowAbandoningTasks := flag.Bool(
+		"allow-abandoning-tasks",
+		false,
+		"If set, enable new path for abandoning tasks in reaction to BotInfo events.",
+	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		var mon monitor.Monitor
@@ -56,6 +68,12 @@ func main() {
 			return err
 		}
 
+		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
+			Dispatcher:           &tq.Default,
+			AllowAbandoningTasks: *allowAbandoningTasks,
+		}
+		taskLifeCycle.RegisterTQTasks()
+
 		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
 			conf, err := cfg.Latest(ctx)
 			if err != nil {
@@ -69,6 +87,8 @@ func main() {
 				},
 				&scan.DeadBotDetector{
 					BotDeathTimeout: time.Duration(conf.Settings().BotDeathTimeoutSecs) * time.Second,
+					LifecycleTasks:  taskLifeCycle,
+					ServerVersion:   srv.Options.ImageVersion(),
 				},
 				&scan.BotsDimensionsAggregator{},
 				&scan.NamedCachesAggregator{},

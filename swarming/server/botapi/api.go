@@ -69,7 +69,14 @@ func NewBotAPIServer(cfg *cfg.Provider, lifecycleTasks tasks.LifecycleTasks, sec
 		botCodeCache:   lru.New[string, []byte](2), // two versions: canary + stable
 		authorizeBot:   botsrv.AuthorizeBot,
 		submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
-			_, err := u.Submit(ctx)
+			_, err := u.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+				return &tasks.AbandonOp{
+					BotID:          botID,
+					TaskID:         taskID,
+					LifecycleTasks: lifecycleTasks,
+					ServerVersion:  version,
+				}
+			})
 			return err
 		},
 		taskWriteOp:       &tasks.TaskWriteOpProd{},
