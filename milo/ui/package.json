@@ -40,6 +40,7 @@
     "@tanstack/react-query": "^4.36.1",
     "@tanstack/react-query-persist-client": "^4.36.1",
     "@tanstack/react-virtual": "^3.11.3",
+    "@toolpad/core": "^0.9.0",
     "ansi-to-html": "^0.7.2",
     "codemirror": "^5.65.18",
     "copy-to-clipboard": "^3.3.3",

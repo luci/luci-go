@@ -18,6 +18,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from '@testing-library/react';
 
 import {
@@ -31,6 +32,7 @@ import {
   Device,
   DeviceState,
   DeviceType,
+  ExportDevicesToCSVRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -187,6 +189,25 @@ function TestComponent({
   );
 }
 
+jest.mock('@toolpad/core/useNotifications', () => ({
+  useNotifications: () => ({
+    show: jest.fn(),
+  }),
+}));
+
+const mockFleetConsoleClient = {
+  ExportDevicesToCSV: {
+    query: jest.fn().mockReturnValue({
+      queryKey: ['todos'],
+      queryFn: jest.fn(),
+    }),
+  },
+};
+
+jest.mock('@/fleet/hooks/prpc_clients', () => ({
+  useFleetConsoleClient: () => mockFleetConsoleClient,
+}));
+
 const getTableVisibleColumns = () => {
   const grid = screen.getByRole('grid');
   grid.focus();
@@ -235,6 +256,17 @@ const changePageSize = async (size: number) => {
   await act(async () => fireEvent.click(newSizeOption));
 };
 
+const openExportMenu = async () => {
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Export' })),
+  );
+};
+
+const selectNthRow = async (index: number) => {
+  const checkBox = within(getNthRow(index)!).getByLabelText('Select row');
+  await act(async () => fireEvent.click(checkBox));
+};
+
 describe('<DeviceTable />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -242,6 +274,7 @@ describe('<DeviceTable />', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.clearAllMocks();
     cleanup();
   });
 
@@ -400,5 +433,116 @@ describe('<DeviceTable />', () => {
 
     expect(getPageRowCount()).toBe(5);
     expect(screen.getByText('1-5 of 13')).toBeInTheDocument();
+  });
+
+  it('should have export csv buttons properly set up', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    await openExportMenu();
+
+    expect(
+      screen.getByRole('menuitem', {
+        name: 'Export all (CSV)',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', {
+        name: 'Export current page (CSV)',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query,
+    ).toHaveBeenCalledTimes(2);
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query.mock.calls[0][0],
+    ).toEqual(
+      ExportDevicesToCSVRequest.fromPartial({
+        columns: [
+          { name: 'id', displayName: 'ID' },
+          { name: 'dut_id', displayName: 'Dut ID' },
+          { name: 'state', displayName: 'Lease state' },
+        ],
+        orderBy: '',
+        filter: '',
+        ids: undefined,
+      }),
+    );
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query.mock.calls[1][0],
+    ).toEqual(
+      ExportDevicesToCSVRequest.fromPartial({
+        columns: [
+          { name: 'id', displayName: 'ID' },
+          { name: 'dut_id', displayName: 'Dut ID' },
+          { name: 'state', displayName: 'Lease state' },
+        ],
+        orderBy: '',
+        filter: '',
+        ids: ['1', '2', '3', '4', '5'],
+      }),
+    );
+  });
+
+  it('should enable export selected csv if any row is selected and export only visible columns', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['?c=id&c=dut_id'] }}
+      >
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    await selectNthRow(4);
+    await openExportMenu();
+
+    expect(
+      screen.getByRole('menuitem', {
+        name: 'Export all (CSV)',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', {
+        name: 'Export selected (CSV)',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query,
+    ).toHaveBeenCalledTimes(2);
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query.mock.calls[0][0],
+    ).toEqual(
+      ExportDevicesToCSVRequest.fromPartial({
+        columns: [
+          { name: 'id', displayName: 'ID' },
+          { name: 'dut_id', displayName: 'Dut ID' },
+        ],
+        orderBy: '',
+        filter: '',
+        ids: undefined,
+      }),
+    );
+    expect(
+      mockFleetConsoleClient.ExportDevicesToCSV.query.mock.calls[1][0],
+    ).toEqual(
+      ExportDevicesToCSVRequest.fromPartial({
+        columns: [
+          { name: 'id', displayName: 'ID' },
+          { name: 'dut_id', displayName: 'Dut ID' },
+        ],
+        orderBy: '',
+        filter: '',
+        ids: ['5'],
+      }),
+    );
   });
 });

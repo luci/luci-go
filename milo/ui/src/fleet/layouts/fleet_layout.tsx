@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { ThemeProvider, styled } from '@mui/material';
+import { NotificationsProvider } from '@toolpad/core/useNotifications';
 import { Helmet } from 'react-helmet';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
@@ -51,35 +52,46 @@ export const FleetLayout = () => {
 
   return (
     <LocalStoragePersistClientProvider>
-      <ThemeProvider theme={theme}>
-        <ScrollingBase>
-          <Helmet
-            titleTemplate="%s | Fleet Console"
-            defaultTitle="Fleet Console"
-          >
-            <link rel="icon" href={bassFavicon} />
-          </Helmet>
-          <Sticky
-            top
-            sx={{ gridArea: 'header', zIndex: (theme) => theme.zIndex.appBar }}
-          >
-            <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-          </Sticky>
-          <Sticky
-            left
-            sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
-          >
-            <Sidebar open={sidebarOpen} />
-          </Sticky>
-          <Sticky top sx={{ gridArea: 'footer' }}>
-            <PrivacyFooter />
-          </Sticky>
-          <StickyOffset component="main" sx={{ gridArea: 'main' }}>
-            <Outlet />
-          </StickyOffset>
-          <CookieConsentBar />
-        </ScrollingBase>
-      </ThemeProvider>
+      <NotificationsProvider>
+        <ThemeProvider theme={theme}>
+          <ScrollingBase>
+            <Helmet
+              titleTemplate="%s | Fleet Console"
+              defaultTitle="Fleet Console"
+            >
+              <link rel="icon" href={bassFavicon} />
+            </Helmet>
+            <Sticky
+              top
+              sx={{
+                gridArea: 'header',
+                zIndex: (theme) => theme.zIndex.appBar,
+              }}
+            >
+              <Header
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+            </Sticky>
+            <Sticky
+              left
+              sx={{
+                gridArea: 'sidebar',
+                zIndex: (theme) => theme.zIndex.drawer,
+              }}
+            >
+              <Sidebar open={sidebarOpen} />
+            </Sticky>
+            <Sticky top sx={{ gridArea: 'footer' }}>
+              <PrivacyFooter />
+            </Sticky>
+            <StickyOffset component="main" sx={{ gridArea: 'main' }}>
+              <Outlet />
+            </StickyOffset>
+            <CookieConsentBar />
+          </ScrollingBase>
+        </ThemeProvider>
+      </NotificationsProvider>
     </LocalStoragePersistClientProvider>
   );
 };

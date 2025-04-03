@@ -17,12 +17,12 @@ import {
   GridRowModel,
   GridToolbarContainer,
   GridToolbarDensitySelector,
-  GridToolbarExport,
 } from '@mui/x-data-grid';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 
 import { ColumnsButton } from './columns_button';
+import { ExportButton } from './export_button';
 
 export interface FleetToolbarProps {
   selectedRows: GridRowModel[];
@@ -48,7 +48,7 @@ export function FleetToolbar({
       ) : (
         <></>
       )}
-      <GridToolbarExport printOptions={{ disableToolbarButton: true }} />
+      <ExportButton selectedRowIds={selectedRows.map((row) => `${row.id}`)} />
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
       <ColumnsButton isLoading={isLoadingColumns} />
