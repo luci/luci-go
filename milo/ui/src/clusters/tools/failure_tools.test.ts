@@ -285,7 +285,7 @@ describe.each<ExtractorTestCase>([
     shouldExtractIngestedInvocationId: true,
     shouldExtractPresubmitRunId: false,
   },
-])('Extractors with %j', (tc: ExtractorTestCase) => {
+])('Extractors (test case %#)', (tc: ExtractorTestCase) => {
   it('should return ids in only the cases expected by failure type and impact filter.', () => {
     const ingestedInvocationIds = rejectedIngestedInvocationIdsExtractor(
       impactFilterNamed(tc.filter),

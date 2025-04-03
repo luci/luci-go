@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createHash } from 'node:crypto';
 import * as path from 'node:path';
 
 import { Test, TestCaseResult } from '@jest/reporters';
@@ -100,13 +99,7 @@ export async function toSinkResult(
 
   // The test path from the repository root.
   const repoPath = path.join(ctx.directory, testPath);
-  let testId = ctx.repo + ctx.delimiter + repoPath + ctx.delimiter + testName;
-  if (testId.length >= 512) {
-    const hash = createHash('sha256').update(testId).digest('hex');
-    const maxLen = 512 - hash.length - 1; // -1 for the delimiter
-    testId = testId.substring(0, maxLen) + ctx.delimiter + hash;
-  }
-
+  const testId = ctx.repo + ctx.delimiter + repoPath + ctx.delimiter + testName;
   const failureMessages = testCaseResult.failureMessages
     .map((msg) => {
       const msgAndStack = separateMessageFromStack(msg);

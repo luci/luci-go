@@ -82,7 +82,7 @@ describe('Lexer', () => {
       '"valid unicode \\u12ab"',
       '\\', // Invalid escape sequence
       '"unclosed string with incomplete escape sequence \\',
-    ])('input: %s', (input) => {
+    ])('case %#', (input) => {
       const lexer = new Lexer(input);
       const tokens = lexer.getAllTokens();
       expect(tokens).toMatchSnapshot();

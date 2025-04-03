@@ -90,7 +90,7 @@ const justParseCases: [SelectedOptions, string][] = [
 describe('multi_select_search_param_utils', () => {
   describe('stringifyFilters', () => {
     it.each(sharedTestCases.concat(justStringifyCases))(
-      'stringifyFilters(%o)',
+      'test case %#',
       (input, expectedOutput) => {
         expect(stringifyFilters(input)).toBe(expectedOutput);
       },
@@ -99,7 +99,7 @@ describe('multi_select_search_param_utils', () => {
 
   describe('parseFilters', () => {
     it.each(sharedTestCases.concat(justParseCases))(
-      'parseFilters(%s)',
+      'test case %#',
       (expectedOutput, input) => {
         const realOutput = parseFilters(input).filters;
 
