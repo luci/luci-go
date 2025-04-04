@@ -247,10 +247,10 @@ type pollRequest struct {
 	conf  *cfg.Config   // the config snapshot used to authorize the bot
 	group *cfg.BotGroup // the group the bot belongs to
 
-	rbeConf        cfg.RBEConfig                // the matching RBEConfig
+	rbeConf        cfg.RBEConfig                  // the matching RBEConfig
 	effectiveBotID *botinfo.RBEEffectiveBotIDInfo // derived from dimensions and rbeConf
 
-	quarantined []string             // values of "quarantined" dimension (set even if `dims` are nil)
+	quarantined []string            // values of "quarantined" dimension (set even if `dims` are nil)
 	healthInfo  *botinfo.HealthInfo // populated lazily in calculateHealthInfo()
 }
 
@@ -513,6 +513,7 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 		EventType:          ev,
 		EventDedupKey:      pr.requestUUID,
 		EventMessage:       resp.Message,
+		TasksManager:       srv.tasksManager,
 		Dimensions:         pr.dims, // will be nil if the request is broken, meaning do not update dims in BotInfo
 		BotGroupDimensions: pr.group.Dimensions,
 		State:              botState,

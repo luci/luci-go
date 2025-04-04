@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 func TestCancelTask(t *testing.T) {
@@ -40,11 +41,16 @@ func TestCancelTask(t *testing.T) {
 
 	ftt.Run("CancelTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		ctx, tqt := tqtasks.TestingContext(ctx)
+
+		srv := &TasksServer{
+			TasksManager: tasks.NewManager(tqt.Tasks, "swarming", "version", nil, false),
+		}
+
 		state := NewMockedRequestState()
 		state.MockPerm("project:visible-realm", acls.PermTasksCancel)
 		ctx = MockRequestState(ctx, state)
-		lt := tasks.MockTQTasks()
-		srv := TasksServer{TaskLifecycleTasks: lt}
+
 		taskID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
 		assert.NoErr(t, err)
@@ -59,12 +65,12 @@ func TestCancelTask(t *testing.T) {
 
 		t.Run("empty taskID", func(t *ftt.Test) {
 			_, err := call(ctx, "", false)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("task request not exist", func(t *ftt.Test) {
 			_, err := call(ctx, taskID, false)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("acl check fails", func(t *ftt.Test) {
@@ -84,7 +90,7 @@ func TestCancelTask(t *testing.T) {
 				},
 			)
 			_, err = call(ctx, taskID, false)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("cancel", func(t *ftt.Test) {
@@ -108,7 +114,7 @@ func TestCancelTask(t *testing.T) {
 			t.Run("fail", func(t *ftt.Test) {
 				// No TaskResultSummary entity.
 				_, err = call(ctx, taskID, false)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+				assert.That(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 
 			t.Run("pass", func(t *ftt.Test) {
@@ -131,10 +137,10 @@ func TestCancelTask(t *testing.T) {
 				_ = datastore.Put(ctx, trs, ttr)
 				rsp, err := call(ctx, taskID, false)
 				assert.NoErr(t, err)
-				assert.Loosely(t, rsp.Canceled, should.BeTrue)
-				assert.Loosely(t, rsp.WasRunning, should.BeFalse)
-				assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
-				assert.Loosely(t, lt.PopTask("pubsub-go"), should.Match(taskID))
+				assert.That(t, rsp.Canceled, should.BeTrue)
+				assert.That(t, rsp.WasRunning, should.BeFalse)
+				assert.That(t, tqt.Pending(tqt.CancelRBE), should.Match([]string{"rbe-instance/reservation"}))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
 			})
 		})
 	})

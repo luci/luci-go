@@ -83,32 +83,41 @@ func TestDeleteBot(t *testing.T) {
 	}
 	_ = datastore.Put(ctx, aliveBot)
 
-	tasksLC := &tasks.LifecycleTasksForTests{}
-
-	call := func(botID string) (*apipb.DeleteResponse, error) {
+	call := func(botID string, abandonedTaskID string) (*apipb.DeleteResponse, error) {
 		ctx := MockRequestState(ctx, state)
-		return (&BotsServer{TaskLifecycleTasks: tasksLC}).DeleteBot(ctx, &apipb.BotRequest{
+		srv := &BotsServer{
+			TasksManager: &tasks.MockedManager{
+				AbandonTxnMock: func(_ context.Context, op *tasks.AbandonOp) (*tasks.AbandonOpOutcome, error) {
+					assert.That(t, op, should.Match(&tasks.AbandonOp{
+						BotID:  botID,
+						TaskID: abandonedTaskID,
+					}))
+					return &tasks.AbandonOpOutcome{}, nil
+				},
+			},
+		}
+		return srv.DeleteBot(ctx, &apipb.BotRequest{
 			BotId: botID,
 		})
 	}
 
 	ftt.Run("Bad bot ID", t, func(t *ftt.Test) {
-		_, err := call("")
+		_, err := call("", "")
 		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("No permissions", t, func(t *ftt.Test) {
-		_, err := call(hiddenBotID)
+		_, err := call(hiddenBotID, "")
 		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Bot not found", t, func(t *ftt.Test) {
-		_, err := call(notFoundBotID)
+		_, err := call(notFoundBotID, "")
 		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 	})
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
-		rps, err := call(aliveBotID)
+		rps, err := call(aliveBotID, "task-id")
 		assert.NoErr(t, err)
 		assert.Loosely(t, rps, should.Match(&apipb.DeleteResponse{Deleted: true}))
 		err = datastore.Get(ctx, aliveBot)

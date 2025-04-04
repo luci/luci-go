@@ -115,7 +115,7 @@ func (srv *TaskBackend) CancelTasks(ctx context.Context, req *bbpb.CancelTasksRe
 	}
 
 	// Finally enqueue a cloud task to cancel the active build tasks in batch asynchronously.
-	if err = srv.TasksServer.TaskLifecycleTasks.EnqueueBatchCancel(ctx, activeTasks, true, "TaskBackend.CancelTasks", 0); err != nil {
+	if err = srv.TasksServer.TasksManager.EnqueueBatchCancel(ctx, activeTasks, true, "TaskBackend.CancelTasks", 0); err != nil {
 		logging.Errorf(ctx, "Error enqueuing BatchCancelTask: %s", err)
 		return nil, status.Errorf(codes.Internal, "failed to cancel tasks")
 	}

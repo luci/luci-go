@@ -36,10 +36,8 @@ import (
 type DeadBotDetector struct {
 	// BotDeathTimeout is how long a bot must be away before being declared dead.
 	BotDeathTimeout time.Duration
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks tasks.LifecycleTasks
-	// ServerVersion is the current Swarming server version.
-	ServerVersion string
+	// TasksManager is used to change state of tasks.
+	TasksManager tasks.Manager
 
 	// The goroutine group executing the transactions.
 	eg *errgroup.Group
@@ -74,14 +72,7 @@ func (r *DeadBotDetector) Prepare(ctx context.Context, shards int, lastRun time.
 	r.eg.SetLimit(1024 / shards) // 1024 goroutines total across all shards
 	if r.submitUpdate == nil {
 		r.submitUpdate = func(ctx context.Context, update *botinfo.Update) (*botinfo.SubmittedUpdate, error) {
-			return update.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
-				return &tasks.AbandonOp{
-					BotID:          botID,
-					TaskID:         taskID,
-					LifecycleTasks: r.LifecycleTasks,
-					ServerVersion:  r.ServerVersion,
-				}
-			})
+			return update.Submit(ctx)
 		}
 	}
 }
@@ -119,8 +110,9 @@ func (r *DeadBotDetector) shouldMarkAsDead(ctx context.Context, bot *model.BotIn
 // markAsDead runs a transaction to mark the bot as dead, logging the outcome.
 func (r *DeadBotDetector) markAsDead(ctx context.Context, botID string) error {
 	update := &botinfo.Update{
-		BotID:     botID,
-		EventType: model.BotEventMissing,
+		BotID:        botID,
+		EventType:    model.BotEventMissing,
+		TasksManager: r.TasksManager,
 		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
 			return bot != nil && r.shouldMarkAsDead(ctx, bot), nil
 		},

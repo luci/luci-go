@@ -340,16 +340,6 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		return nil, status.Errorf(codes.Internal, "datastore error fetching task details")
 	}
 
-	// This will drive the task side of the claim transaction. Updated inside
-	// the BotInfo transaction callback below.
-	claimOp := &tasks.ClaimOp{
-		Request:        details.req,
-		TaskToRunKey:   ttr.Key,
-		ClaimID:        claimID,
-		LifecycleTasks: srv.lifecycleTasks,
-		ServerVersion:  srv.version,
-	}
-
 	eventType := model.BotEventTask
 	if details.req.IsTerminate() {
 		eventType = model.BotEventTerminate
@@ -358,20 +348,24 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	// Transactionally claim the task and assign it to the bot. The transaction
 	// happens as part of the botinfo.Update operation that assigns the task ID
 	// to the bot.
-	var outcome *tasks.ClaimTxnOutcome
+	var outcome *tasks.ClaimOpOutcome
 	update := &botinfo.Update{
 		BotID:         r.Session.BotId,
 		EventType:     eventType,
 		EventDedupKey: body.ClaimID,
+		TasksManager:  srv.tasksManager,
 		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
 			if bot == nil {
 				return false, errors.Reason("unexpectedly missing BotInfo entity").Err()
 			}
-			outcome, err = srv.taskWriteOp.ClaimTxn(ctx, claimOp, &tasks.BotDetails{
-				Dimensions:       r.Dimensions.ToMap(),
-				Version:          bot.Version,
-				LogsCloudProject: r.Session.BotConfig.LogsCloudProject,
-				IdleSince:        bot.IdleSince.Get(),
+			outcome, err = srv.tasksManager.ClaimTxn(ctx, &tasks.ClaimOp{
+				Request:             details.req,
+				TaskToRunKey:        ttr.Key,
+				ClaimID:             claimID,
+				BotDimensions:       r.Dimensions.ToMap(),
+				BotVersion:          bot.Version,
+				BotLogsCloudProject: r.Session.BotConfig.LogsCloudProject,
+				BotIdleSince:        bot.IdleSince.Get(),
 			})
 			proceed = err == nil && outcome.Claimed
 			return
@@ -389,7 +383,6 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	if err := srv.submitUpdate(ctx, update); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to claim the task: %s", err)
 	}
-	srv.taskWriteOp.FinishClaimOp(ctx, claimOp, outcome)
 
 	if outcome.Unavailable != "" {
 		return srv.claimSkipped(ctx, ttr, outcome.Unavailable)

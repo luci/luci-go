@@ -157,16 +157,12 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest, 
 	if req.RequestUuid != "" {
 		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
 	}
-	creation := &tasks.Creation{
-		RequestID:             requestID,
-		Request:               ents.request,
-		SecretBytes:           ents.secretBytes,
-		BuildTask:             bt,
-		ServerVersion:         srv.ServerVersion,
-		Config:                state.Config,
-		SwarmingProject:       srv.SwarmingProject,
-		LifecycleTasks:        srv.TaskLifecycleTasks,
-		ResultDBClientFactory: srv.ResultDBClientFactory,
+	creationOp := &tasks.CreationOp{
+		RequestID:   requestID,
+		Request:     ents.request,
+		SecretBytes: ents.secretBytes,
+		BuildTask:   bt,
+		Config:      state.Config,
 	}
 
 	// Create the task in a loop to retry on task ID collisions.
@@ -174,7 +170,7 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest, 
 	attempts := 0
 	for {
 		attempts++
-		res, err = creation.Run(ctx)
+		res, err = srv.TasksManager.CreateTask(ctx, creationOp)
 		if !errors.Is(err, tasks.ErrAlreadyExists) {
 			break
 		}

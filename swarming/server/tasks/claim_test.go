@@ -31,6 +31,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 func init() {
@@ -59,8 +60,9 @@ func TestClaimOp(t *testing.T) {
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, testTime)
+		ctx, tqt := tqtasks.TestingContext(ctx)
 
-		lcTasks := MockTQTasks()
+		mgr := NewManager(tqt.Tasks, "swarming-proj", "cur-version", nil, false)
 
 		taskID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
@@ -121,29 +123,26 @@ func TestClaimOp(t *testing.T) {
 			return ttr.Key
 		}
 
-		bot := &BotDetails{
-			Dimensions: map[string][]string{
+		claimOp := &ClaimOp{
+			Request: req,
+			ClaimID: "bot:claim-id",
+			BotDimensions: map[string][]string{
 				"id":   {"bot-id"},
 				"pool": {"some-pool"},
 				"os":   {"Linux", "Ubuntu"},
 			},
-			Version:          "bot-version",
-			LogsCloudProject: "bot-logs",
-			IdleSince:        testTime.Add(-time.Hour),
+			BotVersion:          "bot-version",
+			BotLogsCloudProject: "bot-logs",
+			BotIdleSince:        testTime.Add(-time.Hour),
 		}
 
-		run := func(ttrKey *datastore.Key) *ClaimTxnOutcome {
-			op := &ClaimOp{
-				Request:        req,
-				TaskToRunKey:   ttrKey,
-				ClaimID:        "bot:claim-id",
-				ServerVersion:  "cur-version",
-				LifecycleTasks: lcTasks,
-			}
-			var outcome *ClaimTxnOutcome
+		run := func(ttrKey *datastore.Key) *ClaimOpOutcome {
+			var outcome *ClaimOpOutcome
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				op := *claimOp
+				op.TaskToRunKey = ttrKey
 				var err error
-				outcome, err = op.ClaimTxn(ctx, bot)
+				outcome, err = mgr.ClaimTxn(ctx, &op)
 				return err
 			}, nil)
 			assert.NoErr(t, err)
@@ -154,8 +153,8 @@ func TestClaimOp(t *testing.T) {
 			ttrKey := createTTR(nil)
 			outcome := run(ttrKey)
 			assert.That(t, outcome.Claimed, should.BeTrue)
-			assert.That(t, lcTasks.PeekTasks("pubsub-go"), should.Match([]string{taskID}))
-			assert.That(t, lcTasks.PeekTasks("buildbucket-notify-go"), should.Match([]string{taskID}))
+			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
+			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string{taskID}))
 
 			trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, reqKey)}
 			assert.NoErr(t, datastore.Get(ctx, trr))
@@ -170,10 +169,10 @@ func TestClaimOp(t *testing.T) {
 				TaskResultCommon: model.TaskResultCommon{
 					State:               apipb.TaskState_RUNNING,
 					Modified:            testTime,
-					BotVersion:          bot.Version,
-					BotDimensions:       bot.Dimensions,
-					BotIdleSince:        datastore.NewUnindexedOptional(bot.IdleSince),
-					BotLogsCloudProject: bot.LogsCloudProject,
+					BotVersion:          claimOp.BotVersion,
+					BotDimensions:       claimOp.BotDimensions,
+					BotIdleSince:        datastore.NewUnindexedOptional(claimOp.BotIdleSince),
+					BotLogsCloudProject: claimOp.BotLogsCloudProject,
 					ServerVersions:      []string{"cur-version"},
 					CurrentTaskSlice:    1,
 					Started:             datastore.NewIndexedNullable(testTime),
@@ -195,10 +194,10 @@ func TestClaimOp(t *testing.T) {
 				TaskResultCommon: model.TaskResultCommon{
 					State:               apipb.TaskState_RUNNING,
 					Modified:            testTime,
-					BotVersion:          bot.Version,
-					BotDimensions:       bot.Dimensions,
-					BotIdleSince:        datastore.NewUnindexedOptional(bot.IdleSince),
-					BotLogsCloudProject: bot.LogsCloudProject,
+					BotVersion:          claimOp.BotVersion,
+					BotDimensions:       claimOp.BotDimensions,
+					BotIdleSince:        datastore.NewUnindexedOptional(claimOp.BotIdleSince),
+					BotLogsCloudProject: claimOp.BotLogsCloudProject,
 					ServerVersions:      []string{"cur-version", "prev-version"},
 					CurrentTaskSlice:    1,
 					Started:             datastore.NewIndexedNullable(testTime),
@@ -224,8 +223,8 @@ func TestClaimOp(t *testing.T) {
 			outcome := run(model.TaskToRunKey(ctx, reqKey, 1, model.TaskToRunID(1)))
 			assert.That(t, outcome.Claimed, should.BeFalse)
 			assert.That(t, outcome.Unavailable, should.Equal("No such task"))
-			assert.That(t, lcTasks.PeekTasks("pubsub-go"), should.Match([]string(nil)))
-			assert.That(t, lcTasks.PeekTasks("buildbucket-notify-go"), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
 		})
 
 		t.Run("Expired TTR", func(t *ftt.Test) {
@@ -233,8 +232,8 @@ func TestClaimOp(t *testing.T) {
 			outcome := run(createTTR(&emptyClaimID))
 			assert.That(t, outcome.Claimed, should.BeFalse)
 			assert.That(t, outcome.Unavailable, should.Equal("The task slice has expired"))
-			assert.That(t, lcTasks.PeekTasks("pubsub-go"), should.Match([]string(nil)))
-			assert.That(t, lcTasks.PeekTasks("buildbucket-notify-go"), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
 		})
 
 		t.Run("Already claimed by us", func(t *ftt.Test) {
@@ -242,8 +241,8 @@ func TestClaimOp(t *testing.T) {
 			outcome := run(createTTR(&existingClaimID))
 			assert.That(t, outcome.Claimed, should.BeFalse)
 			assert.That(t, outcome.Unavailable, should.Equal(""))
-			assert.That(t, lcTasks.PeekTasks("pubsub-go"), should.Match([]string(nil)))
-			assert.That(t, lcTasks.PeekTasks("buildbucket-notify-go"), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
 		})
 
 		t.Run("Already claimed by someone else", func(t *ftt.Test) {
@@ -251,8 +250,8 @@ func TestClaimOp(t *testing.T) {
 			outcome := run(createTTR(&existingClaimID))
 			assert.That(t, outcome.Claimed, should.BeFalse)
 			assert.That(t, outcome.Unavailable, should.Equal(`Already claimed by "bot:another-claim-id"`))
-			assert.That(t, lcTasks.PeekTasks("pubsub-go"), should.Match([]string(nil)))
-			assert.That(t, lcTasks.PeekTasks("buildbucket-notify-go"), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string(nil)))
+			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string(nil)))
 		})
 	})
 }

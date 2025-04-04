@@ -208,7 +208,5 @@ func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdate
 		IOTimeout:        body.IOTimeout,
 		Output:           body.Output,
 		OutputChunkStart: body.OutputChunkStart,
-		LifecycleTasks:   srv.lifecycleTasks,
-		ServerVersion:    srv.version,
 	}, nil
 }

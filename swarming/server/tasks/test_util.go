@@ -16,122 +16,53 @@ package tasks
 
 import (
 	"context"
-	"fmt"
-	"sort"
-	"sync"
 
-	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/swarming/server/cfg"
-	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
-// LifecycleTasksForTests mocks tq tasks for task lifecycle management, only used for tests.
-type LifecycleTasksForTests struct {
-	m             sync.Mutex
-	fakeTaskQueue map[string][]string
-}
-
-func (lt *LifecycleTasksForTests) ShouldAbandonTasks() bool {
-	return true
-}
-
-// EnqueueBatchCancel enqueues a tq task to cancel tasks in batch.
-func (lt *LifecycleTasksForTests) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
-	sort.Strings(batch)
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	lt.fakeTaskQueue["cancel-tasks-go"] = append(lt.fakeTaskQueue["cancel-tasks-go"], fmt.Sprintf("%q, purpose: %s, retry # %d", batch, purpose, retries))
-	return nil
-}
-
-func (lt *LifecycleTasksForTests) enqueueChildCancellation(ctx context.Context, taskID string) error {
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	lt.fakeTaskQueue["cancel-children-tasks-go"] = append(lt.fakeTaskQueue["cancel-children-tasks-go"], taskID)
-	return nil
-}
-
-func (lt *LifecycleTasksForTests) enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	lt.fakeTaskQueue["rbe-cancel"] = append(lt.fakeTaskQueue["rbe-cancel"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
-	return nil
-}
-
-func (lt *LifecycleTasksForTests) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, _ *cfg.Config) error {
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	lt.fakeTaskQueue["rbe-new"] = append(lt.fakeTaskQueue["rbe-new"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
-	return nil
-}
-
-func (lt *LifecycleTasksForTests) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
-	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
-	if tr.PubSubTopic == "fail-the-task" {
-		return errors.New("sorry, was told to fail it")
-	}
-
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	if tr.PubSubTopic != "" {
-		lt.fakeTaskQueue["pubsub-go"] = append(lt.fakeTaskQueue["pubsub-go"], taskID)
-	}
-	if tr.HasBuildTask {
-		lt.fakeTaskQueue["buildbucket-notify-go"] = append(lt.fakeTaskQueue["buildbucket-notify-go"], taskID)
-	}
-
-	return nil
-}
-
-// PeekTasks returns all the tasks in the queue without popping them.
-func (lt *LifecycleTasksForTests) PeekTasks(queue string) []string {
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	return append([]string(nil), lt.fakeTaskQueue[queue]...)
-}
-
-// PopTask pops a task from the queue.
-func (lt *LifecycleTasksForTests) PopTask(queue string) string {
-	res := lt.PopNTasks(queue, 1)
-	if len(res) != 1 {
-		return ""
-	}
-	return res[0]
-}
-
-// PopNTasks pops n tasks from the queue.
+// MockedManager is used exclusively in tests.
 //
-// If there are fewer than n tasks in the queue, just pop all of them.
-func (lt *LifecycleTasksForTests) PopNTasks(qName string, n int) (res []string) {
-	lt.m.Lock()
-	defer lt.m.Unlock()
-	l := len(lt.fakeTaskQueue[qName])
-	if n >= l {
-		n = l
+// It just forward the calls to the corresponding callbacks that are expected
+// to be populated by tests.
+type MockedManager struct {
+	CreateTaskMock         func(context.Context, *CreationOp) (*CreatedTask, error)
+	EnqueueBatchCancelMock func(context.Context, []string, bool, string, int32) error
+	ClaimTxnMock           func(context.Context, *ClaimOp) (*ClaimOpOutcome, error)
+	AbandonTxnMock         func(context.Context, *AbandonOp) (*AbandonOpOutcome, error)
+	CancelTxnMock          func(context.Context, *CancelOp) (*CancelOpOutcome, error)
+}
+
+func (m *MockedManager) CreateTask(ctx context.Context, op *CreationOp) (*CreatedTask, error) {
+	if datastore.CurrentTransaction(ctx) != nil {
+		panic("must not be in a transaction")
 	}
-	res = lt.fakeTaskQueue[qName][:n]
-	lt.fakeTaskQueue[qName] = lt.fakeTaskQueue[qName][n:]
-	return
+	return m.CreateTaskMock(ctx, op)
 }
 
-// MockTQTasks returns TestTQTasks with mocked tq functions for managing a task's lifecycle.
-func MockTQTasks() *LifecycleTasksForTests {
-	return &LifecycleTasksForTests{
-		fakeTaskQueue: make(map[string][]string, 5),
+func (m *MockedManager) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
+	if datastore.CurrentTransaction(ctx) != nil {
+		panic("must not be in a transaction")
 	}
+	return m.EnqueueBatchCancelMock(ctx, batch, killRunning, purpose, retries)
 }
 
-// TaskWriteOpForTests mocks TaskWriteOp, only used for tests.
-type TaskWriteOpForTests struct {
-	MockedClaimTxn      func(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error)
-	MockedFinishClaimOp func(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome)
+func (m *MockedManager) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcome, error) {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic("must be in a transaction")
+	}
+	return m.ClaimTxnMock(ctx, op)
 }
 
-func (t *TaskWriteOpForTests) ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error) {
-	return t.MockedClaimTxn(ctx, op, bot)
+func (m *MockedManager) AbandonTxn(ctx context.Context, op *AbandonOp) (*AbandonOpOutcome, error) {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic("must be in a transaction")
+	}
+	return m.AbandonTxnMock(ctx, op)
 }
 
-func (t *TaskWriteOpForTests) FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome) {
-	t.MockedFinishClaimOp(ctx, op, outcome)
+func (m *MockedManager) CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error) {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic("must be in a transaction")
+	}
+	return m.CancelTxnMock(ctx, op)
 }

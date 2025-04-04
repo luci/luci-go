@@ -264,6 +264,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 		State:              &body.State,
 		EventType:          model.BotEventConnected,
 		EventDedupKey:      sessionID,
+		TasksManager:       srv.tasksManager,
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: sessionID,
 			Version:   body.Version,

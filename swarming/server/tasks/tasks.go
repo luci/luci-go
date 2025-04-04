@@ -21,109 +21,68 @@ import (
 
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/swarming/server/cfg"
-	"go.chromium.org/luci/swarming/server/model"
-	"go.chromium.org/luci/swarming/server/notifications"
-	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tasks/taskspb"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
-// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-type LifecycleTasks interface {
-	EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error
-	enqueueChildCancellation(ctx context.Context, taskID string) error
-	enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
-	enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error
-	sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error
-
-	// ShouldAbandonTasks returns false if the Go code should not be abandoning
-	// tasks when the bot dies (and it should be done from Python side instead).
+// Manager exposes various methods to change state of tasks.
+//
+// Other server subsystems (in particular related to Bots API) use Manager to
+// change state of tasks. This allows all task-related interactions to be mocked
+// out in tests (see MockedManager).
+//
+// Assumes the context has go.chromium.org/luci/gae/filter/txndefer filter
+// installed. It is used to schedule best-effort post-transaction work (like
+// reporting metrics).
+type Manager interface {
+	// CreateTask creates and stores all the entities for a new task.
 	//
-	// This is a temporary hack to avoid breaking chromeos-swarming.
-	ShouldAbandonTasks() bool
+	// If a task ID collision happens, a special error `ErrAlreadyExists` will be
+	// returned so the server could retry creating the entities.
+	CreateTask(ctx context.Context, op *CreationOp) (*CreatedTask, error)
+
+	// EnqueueBatchCancel enqueues a TQ task to cancel a batch of Swarming tasks.
+	EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error
+
+	// ClaimTxn runs the transactional logic to mark the task slice as claimed.
+	ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcome, error)
+	// AbandonTxn runs the transactional logic to finalize the abandoned task.
+	AbandonTxn(ctx context.Context, op *AbandonOp) (*AbandonOpOutcome, error)
+	// CancelTxn runs the transactional logic to cancel a single task.
+	CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error)
 }
 
-type LifecycleTasksViaTQ struct {
-	Dispatcher           *tq.Dispatcher
-	AllowAbandoningTasks bool
+// managerImpl is the "production" implementation of Manager.
+//
+// It mutates the datastore for real. All operations are implemented in separate
+// *.go files.
+type managerImpl struct {
+	disp                 *tq.Dispatcher
+	serverProject        string
+	serverVersion        string
+	rdb                  resultdb.RecorderFactory
+	allowAbandoningTasks bool
+
+	testingPostCancelTxn func(reqID string) error // used in test to inject failures
 }
 
-// RegisterTQTasks registers TQ tasks for task lifecycle management.
-func (l *LifecycleTasksViaTQ) RegisterTQTasks() {
-	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
-		ID:        "cancel-children-tasks-go",
-		Kind:      tq.Transactional,
-		Prototype: (*taskspb.CancelChildrenTask)(nil),
-		Queue:     "cancel-children-tasks-go", // to replace "cancel-children-tasks" taskqueue in Py.
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskspb.CancelChildrenTask)
-			cc := &childCancellation{
-				parentID:       t.TaskId,
-				batchSize:      300,
-				lifecycleTasks: l,
-			}
-			return cc.queryToCancel(ctx)
-		},
+// NewManager constructs a production implementation of Manager.
+//
+// It also registers its TQ tasks.
+func NewManager(tasks *tqtasks.Tasks, serverProject, serverVersion string, rdb resultdb.RecorderFactory, allowAbandoningTasks bool) Manager {
+	m := &managerImpl{
+		disp:                 tasks.TQ,
+		serverProject:        serverProject,
+		serverVersion:        serverVersion,
+		rdb:                  rdb,
+		allowAbandoningTasks: allowAbandoningTasks,
+	}
+	tasks.CancelChildren.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return m.queryToCancel(ctx, 300, payload.(*taskspb.CancelChildrenTask))
 	})
-	l.Dispatcher.RegisterTaskClass(tq.TaskClass{
-		ID:        "cancel-tasks-go",
-		Kind:      tq.NonTransactional,
-		Prototype: (*taskspb.BatchCancelTask)(nil),
-		Queue:     "cancel-tasks-go", // to replace "cancel-tasks" taskqueue in Py.
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskspb.BatchCancelTask)
-			bc := &batchCancellation{
-				tasks:          t.Tasks,
-				killRunning:    t.KillRunning,
-				workers:        64,
-				retries:        t.Retries,
-				purpose:        t.Purpose,
-				lifecycleTasks: l,
-			}
-			return bc.run(ctx)
-		},
+	tasks.BatchCancel.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return m.runBatchCancellation(ctx, 64, payload.(*taskspb.BatchCancelTask))
 	})
-}
-
-// EnqueueBatchCancel enqueues a tq task to cancel tasks in batch.
-func (l *LifecycleTasksViaTQ) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
-	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.BatchCancelTask{Tasks: batch, KillRunning: killRunning, Retries: retries, Purpose: purpose}})
-}
-
-func (l *LifecycleTasksViaTQ) enqueueChildCancellation(ctx context.Context, taskID string) error {
-	return tq.AddTask(ctx, &tq.Task{Payload: &taskspb.CancelChildrenTask{TaskId: taskID}})
-}
-
-func (l *LifecycleTasksViaTQ) enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-	return rbe.EnqueueCancel(ctx, tr, ttr)
-}
-
-func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error {
-	return rbe.EnqueueNew(ctx, tr, ttr, cfg)
-}
-
-func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
-	return notifications.SendOnTaskUpdate(ctx, tr, trs)
-}
-
-func (l *LifecycleTasksViaTQ) ShouldAbandonTasks() bool {
-	return l.AllowAbandoningTasks
-}
-
-// TaskWriteOp is used to perform datastore writes on a task throughout its lifecycle.
-type TaskWriteOp interface {
-	// ClaimTxn calls op.ClaimTxn, but it can be mocked in tests.
-	ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error)
-	// FinishClaimOp calls op.Finish, but it can be mocked in tests.
-	FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome)
-}
-
-type TaskWriteOpProd struct{}
-
-func (t *TaskWriteOpProd) ClaimTxn(ctx context.Context, op *ClaimOp, bot *BotDetails) (*ClaimTxnOutcome, error) {
-	return op.ClaimTxn(ctx, bot)
-}
-
-func (t *TaskWriteOpProd) FinishClaimOp(ctx context.Context, op *ClaimOp, outcome *ClaimTxnOutcome) {
-	op.Finished(ctx, outcome)
+	return m
 }

@@ -55,9 +55,4 @@ type UpdateOp struct {
 	Output []byte
 	// OutputChunkStart is the index of output in the stdout stream.
 	OutputChunkStart int64
-
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks LifecycleTasks
-	// ServerVersion is the current Swarming server version.
-	ServerVersion string
 }

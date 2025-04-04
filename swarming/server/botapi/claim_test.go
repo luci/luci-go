@@ -265,16 +265,10 @@ func TestClaim(t *testing.T) {
 			}
 
 			var claimOp *tasks.ClaimOp
-			var botDetails *tasks.BotDetails
-
-			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
-				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
+			srv.tasksManager = &tasks.MockedManager{
+				ClaimTxnMock: func(ctx context.Context, op *tasks.ClaimOp) (*tasks.ClaimOpOutcome, error) {
 					claimOp = op
-					botDetails = bot
-					return &tasks.ClaimTxnOutcome{Claimed: true}, nil
-				},
-				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-					assert.That(t, outcome.Claimed, should.BeTrue)
+					return &tasks.ClaimOpOutcome{Claimed: true}, nil
 				},
 			}
 
@@ -294,6 +288,7 @@ func TestClaim(t *testing.T) {
 				Manifest: resp.Manifest,
 			}))
 
+			botInfoUpdate.TasksManager = nil // non-comparable
 			assert.That(t, botInfoUpdate, should.Match(&botinfo.Update{
 				BotID:         "bot-id",
 				EventType:     model.BotEventTask,
@@ -313,17 +308,13 @@ func TestClaim(t *testing.T) {
 			}))
 
 			assert.That(t, claimOp, should.Match(&tasks.ClaimOp{
-				Request:       req,
-				TaskToRunKey:  ttr.Key,
-				ClaimID:       "bot-id:new-claim-id",
-				ServerVersion: "server-ver",
-			}))
-
-			assert.That(t, botDetails, should.Match(&tasks.BotDetails{
-				Dimensions:       model.BotDimensions{"id": {"bot-id"}, "pool": {"bot-pool"}},
-				Version:          "bot-version",
-				LogsCloudProject: "logs-cloud-project",
-				IdleSince:        idleSince,
+				Request:             req,
+				TaskToRunKey:        ttr.Key,
+				ClaimID:             "bot-id:new-claim-id",
+				BotDimensions:       model.BotDimensions{"id": {"bot-id"}, "pool": {"bot-pool"}},
+				BotVersion:          "bot-version",
+				BotLogsCloudProject: "logs-cloud-project",
+				BotIdleSince:        idleSince,
 			}))
 		})
 
@@ -344,12 +335,9 @@ func TestClaim(t *testing.T) {
 				}, nil)
 			}
 
-			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
-				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-					return &tasks.ClaimTxnOutcome{Unavailable: "unavailable"}, nil
-				},
-				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-					assert.That(t, outcome.Claimed, should.BeFalse)
+			srv.tasksManager = &tasks.MockedManager{
+				ClaimTxnMock: func(ctx context.Context, op *tasks.ClaimOp) (*tasks.ClaimOpOutcome, error) {
+					return &tasks.ClaimOpOutcome{Unavailable: "unavailable"}, nil
 				},
 			}
 
@@ -384,12 +372,9 @@ func TestClaim(t *testing.T) {
 				}, nil)
 			}
 
-			srv.taskWriteOp = &tasks.TaskWriteOpForTests{
-				MockedClaimTxn: func(ctx context.Context, op *tasks.ClaimOp, bot *tasks.BotDetails) (*tasks.ClaimTxnOutcome, error) {
-					return &tasks.ClaimTxnOutcome{}, nil
-				},
-				MockedFinishClaimOp: func(ctx context.Context, op *tasks.ClaimOp, outcome *tasks.ClaimTxnOutcome) {
-					assert.That(t, outcome.Claimed, should.BeFalse)
+			srv.tasksManager = &tasks.MockedManager{
+				ClaimTxnMock: func(ctx context.Context, op *tasks.ClaimOp) (*tasks.ClaimOpOutcome, error) {
+					return &tasks.ClaimOpOutcome{}, nil
 				},
 			}
 

@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/resultdb"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 func TestCreation(t *testing.T) {
@@ -54,9 +55,11 @@ func TestCreation(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = cryptorand.MockForTest(ctx, 0)
-		lt := MockTQTasks()
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		globalStore := tsmon.Store(ctx)
+
+		ctx, tqt := tqtasks.TestingContext(ctx)
+		mgr := NewManager(tqt.Tasks, "swarming", "v2", nil, false).(*managerImpl)
 
 		t.Run("duplicate_with_request_id", func(t *ftt.Test) {
 			t.Run("error_fetching_result", func(t *ftt.Test) {
@@ -66,10 +69,9 @@ func TestCreation(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, tri))
 
-				s := &Creation{
+				_, err := mgr.CreateTask(ctx, &CreationOp{
 					RequestID: "bad_task_id",
-				}
-				_, err := s.Run(ctx)
+				})
 				assert.That(t, err, should.ErrLike("unexpectedly invalid task_id not_a_task_id"))
 			})
 			t.Run("missing_entity", func(t *ftt.Test) {
@@ -85,10 +87,9 @@ func TestCreation(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, tr, tri))
 
-				c := &Creation{
+				_, err = mgr.CreateTask(ctx, &CreationOp{
 					RequestID: "exist",
-				}
-				_, err = c.Run(ctx)
+				})
 				assert.That(t, err, should.ErrLike("no such task"))
 			})
 			t.Run("found_duplicate", func(t *ftt.Test) {
@@ -110,10 +111,9 @@ func TestCreation(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
 
-				c := &Creation{
+				res, err := mgr.CreateTask(ctx, &CreationOp{
 					RequestID: "exist",
-				}
-				res, err := c.Run(ctx)
+				})
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.Result.ToProto(), should.Match(trs.ToProto()))
@@ -141,11 +141,10 @@ func TestCreation(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, tr, trs, bt, tri))
 
-				c := &Creation{
+				res, err := mgr.CreateTask(ctx, &CreationOp{
 					RequestID: "exist",
 					BuildTask: &model.BuildTask{},
-				}
-				res, err := c.Run(ctx)
+				})
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.Result.ToProto(), should.Match(trs.ToProto()))
@@ -208,7 +207,7 @@ func TestCreation(t *testing.T) {
 				}
 				assert.That(t, datastore.Put(ctx, tr, trs, secrets), should.ErrLike(nil))
 
-				c := Creation{
+				res, err := mgr.CreateTask(ctx, &CreationOp{
 					Request: &model.TaskRequest{
 						TaskSlices: []model.TaskSlice{
 							{
@@ -235,12 +234,9 @@ func TestCreation(t *testing.T) {
 					SecretBytes: &model.SecretBytes{
 						SecretBytes: []byte("secret"),
 					},
-					ServerVersion:  "v2",
-					Config:         cfg,
-					LifecycleTasks: lt,
-				}
+					Config: cfg,
+				})
 
-				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
 				trs = res.Result
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
@@ -257,7 +253,9 @@ func TestCreation(t *testing.T) {
 				}
 				err = datastore.Get(ctx, newSecret)
 				assert.That(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
-				assert.That(t, lt.PopTask("pubsub-go"), should.Equal("2cbe1fa55012fa10"))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{
+					"2cbe1fa55012fa10",
+				}))
 
 				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"spec", "project", "subproject", "pool", "rbe-instance", true})
 				assert.Loosely(t, val, should.Equal(1))
@@ -285,9 +283,9 @@ func TestCreation(t *testing.T) {
 				inv := &rdbpb.Invocation{
 					Name: "invocations/task-example.appspot.com-65aba3a3e6b99311",
 				}
-				mcf := resultdb.NewMockRecorderClientFactory(nil, inv, nil, "token for 65aba3a3e6b99311")
+				mgr.rdb = resultdb.NewMockRecorderClientFactory(nil, inv, nil, "token for 65aba3a3e6b99311")
 
-				c := Creation{
+				res, err := mgr.CreateTask(ctx, &CreationOp{
 					Request: &model.TaskRequest{
 						TaskSlices: []model.TaskSlice{
 							{
@@ -304,20 +302,17 @@ func TestCreation(t *testing.T) {
 							"buildername:builder",
 						},
 					},
-					ServerVersion:         "v1",
-					Config:                cfg,
-					LifecycleTasks:        lt,
-					SwarmingProject:       "swarming",
-					ResultDBClientFactory: mcf,
-				}
+					Config: cfg,
+				})
 
-				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
 				trs = res.Result
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
-				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
+				assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
+					"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+				}))
 				// No PubSub notification.
-				assert.That(t, lt.PopTask("pubsub-go"), should.Equal(""))
+				assert.Loosely(t, tqt.Pending(tqt.PubSubNotify), should.HaveLength(0))
 				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"builder", "", "", "", "none", false})
 				assert.Loosely(t, val, should.Equal(1))
 			})
@@ -331,7 +326,7 @@ func TestCreation(t *testing.T) {
 			}
 			assert.That(t, datastore.Put(ctx, tr1), should.ErrLike(nil))
 
-			c := &Creation{
+			_, err := mgr.CreateTask(ctx, &CreationOp{
 				Request: &model.TaskRequest{
 					TaskSlices: []model.TaskSlice{
 						{
@@ -343,8 +338,7 @@ func TestCreation(t *testing.T) {
 						},
 					},
 				},
-			}
-			_, err := c.Run(ctx)
+			})
 			assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 		})
 
@@ -354,8 +348,9 @@ func TestCreation(t *testing.T) {
 			realm := "project:realm"
 			deadline := testclock.TestRecentTimeUTC.Add(3600 * time.Second)
 
-			prepCreation := func(cfg *cfg.Config, mcf resultdb.RecorderFactory) *Creation {
-				return &Creation{
+			createTask := func(ctx context.Context, cfg *cfg.Config, mcf resultdb.RecorderFactory) (*CreatedTask, error) {
+				mgr.rdb = mcf
+				return mgr.CreateTask(ctx, &CreationOp{
 					Request: &model.TaskRequest{
 						TaskSlices: []model.TaskSlice{
 							{
@@ -375,10 +370,8 @@ func TestCreation(t *testing.T) {
 						Realm:   realm,
 						Created: testclock.TestRecentTimeUTC,
 					},
-					ResultDBClientFactory: mcf,
-					Config:                cfg,
-					LifecycleTasks:        lt,
-				}
+					Config: cfg,
+				})
 			}
 
 			req := &rdbpb.CreateInvocationRequest{
@@ -397,8 +390,7 @@ func TestCreation(t *testing.T) {
 				p := cfgtest.MockConfigs(ctx, mockCfg)
 				cfg := p.Cached(ctx)
 				mcf := resultdb.NewMockRecorderClientFactory(nil, nil, nil, "")
-				c := prepCreation(cfg, mcf)
-				_, err := c.Run(ctx)
+				_, err := createTask(ctx, cfg, mcf)
 				assert.That(t, err, should.ErrLike("ResultDB integration is not configured"))
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			})
@@ -424,16 +416,14 @@ func TestCreation(t *testing.T) {
 				t.Run("failed", func(t *ftt.Test) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.PermissionDenied, "boom"), "")
-					c := prepCreation(cfg, mcf)
-					_, err := c.Run(ctx)
+					_, err := createTask(ctx, cfg, mcf)
 					assert.That(t, err, should.ErrLike("error creating ResultDB invocation"))
 				})
 
 				t.Run("already_exists", func(t *ftt.Test) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.AlreadyExists, "invocation already exists"), "")
-					c := prepCreation(cfg, mcf)
-					_, err := c.Run(ctx)
+					_, err := createTask(ctx, cfg, mcf)
 					assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 				})
 
@@ -444,8 +434,7 @@ func TestCreation(t *testing.T) {
 					}
 					mcf := resultdb.NewMockRecorderClientFactory(req, inv,
 						nil, token)
-					c := prepCreation(cfg, mcf)
-					res, err := c.Run(ctx)
+					res, err := createTask(ctx, cfg, mcf)
 					assert.NoErr(t, err)
 					trs := res.Result
 					assert.Loosely(t, trs, should.NotBeNil)
@@ -494,10 +483,8 @@ func TestCreation(t *testing.T) {
 				RBEInstance: "rbe-instance",
 				PubSubTopic: "pubsub-topic",
 			}
-			c := &Creation{
-				Request:         newTR,
-				LifecycleTasks:  lt,
-				SwarmingProject: "swarming",
+			res, err := mgr.CreateTask(ctx, &CreationOp{
+				Request: newTR,
 				BuildTask: &model.BuildTask{
 					BuildID:          "12345",
 					BuildbucketHost:  "bb.example.com",
@@ -506,8 +493,7 @@ func TestCreation(t *testing.T) {
 					UpdateID:         now.UnixNano(),
 				},
 				Config: cfg,
-			}
-			res, err := c.Run(ctx)
+			})
 			assert.NoErr(t, err)
 			trs := res.Result
 			assert.Loosely(t, trs, should.NotBeNil)
@@ -540,7 +526,9 @@ func TestCreation(t *testing.T) {
 			}
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
-			assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
+			assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
+				"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+			}))
 		})
 	})
 }

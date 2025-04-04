@@ -24,47 +24,47 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/notifications"
+	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
 
 const maxBatchCancellationRetries = 10
 
 var taskUnknownTag = errtag.Make("unknown task", true)
 
-// Cancellation contains information to cancel a task.
-type Cancellation struct {
-	TaskID string
-
-	// TaskRequest and TaskResultSummary are required in RunInTxn.
-	TaskRequest       *model.TaskRequest
+// CancelOp is an operation of canceling of a single task.
+type CancelOp struct {
+	// TaskRequest is the task being canceled.
+	TaskRequest *model.TaskRequest
+	// TaskResultSummary is the current task state or nil if wasn't fetched yet.
 	TaskResultSummary *model.TaskResultSummary
-
-	// Whether to kill the task if it has started running.
+	// KillRunning it true to kill the task even if it has started running.
 	KillRunning bool
-	// ID of the bot the task should run on. Can only be specified if
-	// KillRunning is true.
+	// BotID is the bot the task is expected to be running on right now.
 	BotID string
-
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks LifecycleTasks
 }
 
-func (c *Cancellation) validate() error {
-	if c.TaskID == "" {
-		return errors.New("no task id specified for cancellation")
-	}
-
-	if c.BotID != "" && !c.KillRunning {
-		return errors.New("can only specify bot id in cancellation if can kill a running task")
-	}
-
-	return nil
+// CancelOpOutcome is returned by CancelTxn.
+type CancelOpOutcome struct {
+	// Canceled is true if the task is now being canceled or was just canceled.
+	Canceled bool
+	// WasRunning is true if the task was already running when it was canceled.
+	WasRunning bool
 }
 
-// Run cancels a task if possible.
+// taskID converts TaskRequest key to the task ID for logs.
+func (op *CancelOp) taskID() string {
+	return model.RequestKeyToTaskID(op.TaskRequest.Key, model.AsRequest)
+}
+
+// CancelTxn runs the transactional logic to cancel a single task.
 //
 // Ensures that the associated TaskToRun is canceled (when PENDING) and
 // updates the TaskResultSummary/TaskRunResult accordingly.
@@ -74,105 +74,74 @@ func (c *Cancellation) validate() error {
 // their state (in TaskRunResult and TaskResultSummary) is not changed yet.
 //
 // Warning: ACL check must have been done before.
-//
-// Returns
-// * a bool for whether the task has started the cancellation process as requested,
-// * a bool for whether the task was running when being canceled,
-// * an err for errors to cancel the task.
-func (c *Cancellation) Run(ctx context.Context) (bool, bool, error) {
-	if err := c.validate(); err != nil {
-		return false, false, err
-	}
-	trKey, err := model.TaskIDToRequestKey(ctx, c.TaskID)
-	if err != nil {
-		return false, false, err
-	}
-
-	if c.TaskRequest == nil {
-		c.TaskRequest, err = model.FetchTaskRequest(ctx, trKey)
-		switch {
+func (m *managerImpl) CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error) {
+	trs := op.TaskResultSummary
+	if trs == nil {
+		trs = &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, op.TaskRequest.Key),
+		}
+		switch err := datastore.Get(ctx, trs); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return false, false, errors.Annotate(err, "missing TaskRequest for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			return nil, errors.Annotate(err, "missing TaskResultSummary for task %s", op.taskID()).Tag(taskUnknownTag).Err()
 		case err != nil:
-			return false, false, errors.Annotate(err, "datastore error fetching TaskRequest for task %s", c.TaskID).Err()
-		}
-	} else {
-		if !c.TaskRequest.Key.Equal(trKey) {
-			return false, false, errors.Reason("mismatched TaskID %s and TaskRequest with id %s", c.TaskID, model.RequestKeyToTaskID(c.TaskRequest.Key, model.AsRequest)).Err()
+			return nil, errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", op.taskID()).Err()
 		}
 	}
 
-	var stateChanged, canceled, wasRunning bool
+	origState := trs.State
+	wasRunning := origState == apipb.TaskState_RUNNING
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		c.TaskResultSummary = &model.TaskResultSummary{
-			Key: model.TaskResultSummaryKey(ctx, trKey),
-		}
-		switch err := datastore.Get(ctx, c.TaskResultSummary); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return errors.Annotate(err, "missing TaskResultSummary for task %s", c.TaskID).Tag(taskUnknownTag).Err()
-		case err != nil:
-			return errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", c.TaskID).Err()
-		}
-
-		origState := c.TaskResultSummary.State
-		wasRunning = origState == apipb.TaskState_RUNNING
-		canceled, err = c.RunInTxn(ctx)
-		if err != nil {
-			return err
-		}
-
-		stateChanged = c.TaskResultSummary.State != origState
-		return nil
-	}, nil)
-
+	canceled, err := m.runCancelTxn(ctx, op, trs)
 	if err != nil {
-		return false, false, err
+		return nil, err
 	}
 
-	if stateChanged {
-		onTaskStatusChangeSchedulerLatency(ctx, c.TaskResultSummary)
-		if !c.TaskResultSummary.IsActive() {
-			onTaskCompleted(ctx, c.TaskResultSummary)
-		}
+	if trs.State != origState {
+		txndefer.Defer(ctx, func(ctx context.Context) {
+			onTaskStatusChangeSchedulerLatency(ctx, trs)
+			if !trs.IsActive() {
+				onTaskCompleted(ctx, trs)
+			}
+		})
 	}
 
-	return canceled, wasRunning, nil
+	return &CancelOpOutcome{
+		Canceled:   canceled,
+		WasRunning: wasRunning,
+	}, nil
 }
 
-// RunInTxn updates entities of the task to cancel and enqueues the cloud tasks
-// to cancel its children and send notifications.
+// EnqueueBatchCancel enqueues a TQ task to cancel a batch of Swarming tasks.
+func (m *managerImpl) EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error {
+	return m.disp.AddTask(ctx, &tq.Task{
+		Payload: &taskspb.BatchCancelTask{
+			Tasks:       batch,
+			KillRunning: killRunning,
+			Retries:     retries,
+			Purpose:     purpose,
+		},
+	})
+}
+
+// runCancelTxn updates entities of the task to cancel and enqueues the cloud
+// tasks to cancel its children and send notifications.
 //
-// Mutates c.TaskResultSummary in place.
-//
-// Must run in a transaction.
+// Mutates `trs` in place.
 //
 // Returns
 // * a bool for whether the task has started the cancellation process as requested,
 // * an err for errors to cancel the task.
-func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
-	if datastore.CurrentTransaction(ctx) == nil {
-		panic("cancel.RunInTxn must run in a transaction")
-	}
-
-	if err := c.validate(); err != nil {
-		return false, err
-	}
-	if c.TaskRequest == nil || c.TaskResultSummary == nil {
-		return false, errors.Reason("missing entities when cancelling %s", c.TaskID).Err()
-	}
-
-	tr := c.TaskRequest
-	trs := c.TaskResultSummary
+func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model.TaskResultSummary) (bool, error) {
+	tr := op.TaskRequest
 	wasRunning := trs.State == apipb.TaskState_RUNNING
 	switch {
 	case !trs.IsActive():
 		// Finished tasks can't be canceled.
 		return false, nil
-	case wasRunning && !c.KillRunning:
+	case wasRunning && !op.KillRunning:
 		return false, nil
-	case wasRunning && c.BotID != "" && c.BotID != trs.BotID.Get():
-		logging.Debugf(ctx, "request to cancel task %s on bot %s, got bot %s instead", c.TaskID, c.BotID, trs.BotID.Get())
+	case wasRunning && op.BotID != "" && op.BotID != trs.BotID.Get():
+		logging.Debugf(ctx, "request to cancel task %s on bot %s, got bot %s instead", op.taskID(), op.BotID, trs.BotID.Get())
 		return false, nil
 	}
 
@@ -189,20 +158,20 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		// Update TaskToRun.
 		toRunKey, err := model.TaskRequestToToRunKey(ctx, tr, int(trs.CurrentTaskSlice))
 		if err != nil {
-			return errors.Annotate(err, "failed to get the TaskToRun key for task %s", c.TaskID).Err()
+			return errors.Annotate(err, "failed to get the TaskToRun key for task %s", op.taskID()).Err()
 		}
 		toRun := &model.TaskToRun{Key: toRunKey}
 		switch err = datastore.Get(ctx, toRun); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return errors.Annotate(err, "missing TaskToRun for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			return errors.Annotate(err, "missing TaskToRun for task %s", op.taskID()).Tag(taskUnknownTag).Err()
 		case err != nil:
-			return errors.Annotate(err, "datastore error fetching TaskToRun for task %s", c.TaskID).Err()
+			return errors.Annotate(err, "datastore error fetching TaskToRun for task %s", op.taskID()).Err()
 		}
 
 		toRun.Consume("")
 		toPut = append(toPut, toRun)
 
-		return c.LifecycleTasks.enqueueRBECancel(ctx, tr, toRun)
+		return rbe.EnqueueCancel(ctx, m.disp, tr, toRun)
 	}
 
 	cancelRunning := func() error {
@@ -214,9 +183,9 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, tr.Key)}
 		switch err := datastore.Get(ctx, trr); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return errors.Annotate(err, "missing TaskRunResult for task %s", c.TaskID).Tag(taskUnknownTag).Err()
+			return errors.Annotate(err, "missing TaskRunResult for task %s", op.taskID()).Tag(taskUnknownTag).Err()
 		case err != nil:
-			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", c.TaskID).Err()
+			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", op.taskID()).Err()
 		}
 		if trr.Killing {
 			// The task has started cancellation. Skip.
@@ -229,7 +198,11 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		trr.Modified = now
 		toPut = append(toPut, trr)
 
-		return c.LifecycleTasks.enqueueChildCancellation(ctx, c.TaskID)
+		return m.disp.AddTask(ctx, &tq.Task{
+			Payload: &taskspb.CancelChildrenTask{
+				TaskId: op.taskID(),
+			},
+		})
 	}
 
 	if wasRunning {
@@ -246,43 +219,31 @@ func (c *Cancellation) RunInTxn(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 	if putErr := datastore.Put(ctx, toPut...); putErr != nil {
-		return false, errors.Annotate(putErr, "datastore error saving entities for canceling task %s", c.TaskID).Err()
+		return false, errors.Annotate(putErr, "datastore error saving entities for canceling task %s", op.taskID()).Err()
 	}
 
-	if err := c.LifecycleTasks.sendOnTaskUpdate(ctx, tr, trs); err != nil {
-		return false, errors.Annotate(err, "failed to enqueue pubsub notification cloud tasks for canceling task %s", c.TaskID).Err()
+	if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
+		return false, errors.Annotate(err, "failed to enqueue pubsub notification cloud tasks for canceling task %s", op.taskID()).Err()
 	}
+
+	if m.testingPostCancelTxn != nil {
+		if err := m.testingPostCancelTxn(op.taskID()); err != nil {
+			return false, err
+		}
+	}
+
 	return true, nil
 }
 
-type childCancellation struct {
-	parentID string
-
-	// How many child tasks to fetch before sending them to a BatchCancelTask to
-	// cancel.
-	batchSize int
-
-	lifecycleTasks LifecycleTasks
-}
-
-func (cc *childCancellation) validate() error {
-	if cc.parentID == "" {
-		return errors.New("parent_id is required")
-	}
-	if cc.batchSize == 0 {
-		return errors.New("batch size is required")
-	}
-	return nil
-}
-
-// queryToCancel handles CancelChildrenTask.
-// It queries the active children of a task then enqueue one or more BatchCancelTask
-// tasks to cancel the active children.
-func (cc *childCancellation) queryToCancel(ctx context.Context) error {
-	if err := cc.validate(); err != nil {
-		return err
-	}
-	return cc.getChildTaskResultSummaries(ctx, func(children []*model.TaskResultSummary, batchNum int) error {
+// queryToCancel handles CancelChildrenTask TQ task.
+//
+// It queries the active children of a task then enqueue one or more
+// BatchCancelTask tasks to cancel the active children.
+//
+// batchSize is how many child tasks to fetch before sending them to
+// a BatchCancelTask to cancel.
+func (m *managerImpl) queryToCancel(ctx context.Context, batchSize int, t *taskspb.CancelChildrenTask) error {
+	return getChildTaskResultSummaries(ctx, t.TaskId, batchSize, func(children []*model.TaskResultSummary, batchNum int) error {
 		toCancel := make([]string, 0, len(children))
 		for _, child := range children {
 			if !child.IsActive() {
@@ -293,15 +254,14 @@ func (cc *childCancellation) queryToCancel(ctx context.Context) error {
 		if len(toCancel) == 0 {
 			return nil
 		}
-
-		return cc.lifecycleTasks.EnqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", cc.parentID, batchNum), 0)
+		return m.EnqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", t.TaskId, batchNum), 0)
 	})
 }
 
-func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, sendToCancel func([]*model.TaskResultSummary, int) error) error {
-	childReqKeys, err := cc.getChildTaskRequestKeys(ctx)
+func getChildTaskResultSummaries(ctx context.Context, parentID string, batchSize int, sendToCancel func([]*model.TaskResultSummary, int) error) error {
+	childReqKeys, err := getChildTaskRequestKeys(ctx, parentID)
 	if err != nil {
-		return errors.Annotate(err, "failed to get child request keys for parent %s", cc.parentID).Err()
+		return errors.Annotate(err, "failed to get child request keys for parent %s", parentID).Err()
 	}
 	if len(childReqKeys) == 0 {
 		return nil
@@ -317,10 +277,10 @@ func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, se
 	i := 0
 	for len(toGet) != 0 {
 		var batch []*model.TaskResultSummary
-		size := min(cc.batchSize, len(toGet))
+		size := min(batchSize, len(toGet))
 		batch, toGet = toGet[:size], toGet[size:]
 		if err := datastore.Get(ctx, batch); err != nil {
-			return errors.Annotate(err, "failed to get child result summary for parent %s", cc.parentID).Err()
+			return errors.Annotate(err, "failed to get child result summary for parent %s", parentID).Err()
 		}
 		if err := sendToCancel(batch, i); err != nil {
 			return err
@@ -331,8 +291,8 @@ func (cc *childCancellation) getChildTaskResultSummaries(ctx context.Context, se
 	return nil
 }
 
-func (cc *childCancellation) getChildTaskRequestKeys(ctx context.Context) ([]*datastore.Key, error) {
-	parentReqKey, err := model.TaskIDToRequestKey(ctx, cc.parentID)
+func getChildTaskRequestKeys(ctx context.Context, parentID string) ([]*datastore.Key, error) {
+	parentReqKey, err := model.TaskIDToRequestKey(ctx, parentID)
 	if err != nil {
 		return nil, err
 	}
@@ -344,46 +304,27 @@ func (cc *childCancellation) getChildTaskRequestKeys(ctx context.Context) ([]*da
 	return children, err
 }
 
-type batchCancellation struct {
-	tasks       []string
-	killRunning bool
-	purpose     string
-	retries     int32
-
-	workers int
-
-	lifecycleTasks LifecycleTasks
-}
-
-func (bc *batchCancellation) run(ctx context.Context) error {
-	if len(bc.tasks) == 0 {
+func (m *managerImpl) runBatchCancellation(ctx context.Context, workers int, bct *taskspb.BatchCancelTask) error {
+	if len(bct.Tasks) == 0 {
 		return errors.New("no tasks specified for cancellation")
 	}
-	if bc.workers <= 0 {
-		return errors.New("must specify a positive number of workers")
-	}
-	if bc.retries > 0 {
-		logging.Infof(ctx, "Retry # %d for %s", bc.retries, bc.purpose)
+	if bct.Retries > 0 {
+		logging.Infof(ctx, "Retry # %d for %s", bct.Retries, bct.Purpose)
 	}
 
-	merr := make(errors.MultiError, len(bc.tasks))
+	merr := make(errors.MultiError, len(bct.Tasks))
 	eg, _ := errgroup.WithContext(ctx)
-	eg.SetLimit(bc.workers)
-	for i, t := range bc.tasks {
-		i := i
-		t := t
+	eg.SetLimit(workers)
+	for i, t := range bct.Tasks {
+		reqKey, err := model.TaskIDToRequestKey(ctx, t)
+		if err != nil {
+			merr[i] = errors.Annotate(err, "bad task ID %q, skipping the task", t).Tag(taskUnknownTag).Err()
+			continue
+		}
 		eg.Go(func() error {
-			c := &Cancellation{
-				TaskID:         t,
-				KillRunning:    bc.killRunning,
-				LifecycleTasks: bc.lifecycleTasks,
-			}
-			_, wasRunning, err := c.Run(ctx)
-			if err == nil {
-				logging.Infof(ctx, "Task %s canceled: was running: %v", t, wasRunning)
-			} else {
-				merr[i] = err
+			if err := m.cancelOneTask(ctx, reqKey, bct.KillRunning); err != nil {
 				logging.Errorf(ctx, "Cancel %s failed: %s", t, err)
+				merr[i] = errors.Annotate(err, "task %s", t).Err()
 			}
 			return nil
 		})
@@ -393,7 +334,7 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 	_ = eg.Wait()
 
 	// Enqueue a new task to retry the failed ones.
-	toRetry := make([]string, 0, len(bc.tasks))
+	toRetry := make([]string, 0, len(bct.Tasks))
 	for i, err := range merr {
 		if err == nil {
 			continue
@@ -401,15 +342,44 @@ func (bc *batchCancellation) run(ctx context.Context) error {
 		if taskUnknownTag.In(err) {
 			continue
 		}
-		toRetry = append(toRetry, bc.tasks[i])
+		toRetry = append(toRetry, bct.Tasks[i])
 	}
 
 	if len(toRetry) == 0 {
 		return nil
 	}
-	if bc.retries >= maxBatchCancellationRetries {
-		logging.Errorf(ctx, "%s has retried %d times, give up", bc.purpose, bc.retries)
+	if bct.Retries >= maxBatchCancellationRetries {
+		logging.Errorf(ctx, "%s has retried %d times, give up", bct.Purpose, bct.Retries)
 		return nil
 	}
-	return bc.lifecycleTasks.EnqueueBatchCancel(ctx, toRetry, bc.killRunning, bc.purpose, bc.retries+1)
+	return m.EnqueueBatchCancel(ctx, toRetry, bct.KillRunning, bct.Purpose, bct.Retries+1)
+}
+
+func (m *managerImpl) cancelOneTask(ctx context.Context, reqKey *datastore.Key, killRunning bool) error {
+	taskReq, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return errors.Annotate(err, "missing TaskRequest").Tag(taskUnknownTag).Err()
+	case err != nil:
+		return errors.Annotate(err, "datastore error fetching TaskRequest").Err()
+	}
+
+	var outcome *CancelOpOutcome
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		outcome, err = m.CancelTxn(ctx, &CancelOp{
+			TaskRequest: taskReq,
+			KillRunning: killRunning,
+		})
+		return err
+	}, nil)
+
+	if err != nil {
+		return err
+	}
+
+	logging.Infof(ctx, "Task %s canceled: was running: %v",
+		model.RequestKeyToTaskID(reqKey, model.AsRequest),
+		outcome.WasRunning,
+	)
+	return nil
 }

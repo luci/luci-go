@@ -46,9 +46,7 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
-
-	// Enable datastore transactional tasks support.
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 const (
@@ -80,12 +78,13 @@ var ErrBadReservation = errors.New("the reservation cannot be submitted")
 type ReservationServer struct {
 	rbe           remoteworkers.ReservationsClient
 	internals     internalspb.InternalsClient
+	disp          *tq.Dispatcher // initialized in RegisterTQTasks
 	serverProject string
 	serverVersion string
 	cfg           *cfg.Provider
 
 	// enqueueNew is usually EnqueueNew, but it can be mocked in tests.
-	enqueueNew func(context.Context, *model.TaskRequest, *model.TaskToRun, *cfg.Config) error
+	enqueueNew func(context.Context, *tq.Dispatcher, *model.TaskRequest, *model.TaskToRun, *cfg.Config) error
 }
 
 // NewReservationServer creates a new reservation server given an RBE client
@@ -102,24 +101,13 @@ func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, inte
 }
 
 // RegisterTQTasks registers task queue handlers.
-func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
-	disp.RegisterTaskClass(tq.TaskClass{
-		ID:        "rbe-enqueue",
-		Prototype: &internalspb.EnqueueRBETask{},
-		Kind:      tq.Transactional,
-		Queue:     "rbe-enqueue",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			return s.handleEnqueueRBETask(ctx, payload.(*internalspb.EnqueueRBETask))
-		},
+func (s *ReservationServer) RegisterTQTasks(tasks *tqtasks.Tasks) {
+	s.disp = tasks.TQ
+	tasks.EnqueueRBE.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return s.handleEnqueueRBETask(ctx, payload.(*internalspb.EnqueueRBETask))
 	})
-	disp.RegisterTaskClass(tq.TaskClass{
-		ID:        "rbe-cancel",
-		Prototype: &internalspb.CancelRBETask{},
-		Kind:      tq.Transactional,
-		Queue:     "rbe-cancel",
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			return s.handleCancelRBETask(ctx, payload.(*internalspb.CancelRBETask))
-		},
+	tasks.CancelRBE.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return s.handleCancelRBETask(ctx, payload.(*internalspb.CancelRBETask))
 	})
 }
 
@@ -536,7 +524,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		if err := datastore.Put(tctx, ttr); err != nil {
 			return errors.Annotate(err, "failed to store TaskToRun").Err()
 		}
-		return s.enqueueNew(tctx, tr, ttr, s.cfg.Cached(ctx))
+		return s.enqueueNew(tctx, s.disp, tr, ttr, s.cfg.Cached(ctx))
 	}, nil)
 
 	if err != nil {
@@ -606,8 +594,8 @@ func prettyProto(msg proto.Message) string {
 
 // EnqueueCancel enqueues a `rbe-cancel` task to cancel RBE reservation of
 // a task.
-func EnqueueCancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
-	return tq.AddTask(ctx, &tq.Task{
+func EnqueueCancel(ctx context.Context, disp *tq.Dispatcher, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	return disp.AddTask(ctx, &tq.Task{
 		Payload: &internalspb.CancelRBETask{
 			RbeInstance:   tr.RBEInstance,
 			ReservationId: ttr.RBEReservation,
@@ -621,7 +609,7 @@ func EnqueueCancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskTo
 
 // EnqueueNew enqueues a `rbe-enqueue` task to create RBE reservation for
 // a task.
-func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error {
+func EnqueueNew(ctx context.Context, disp *tq.Dispatcher, tr *model.TaskRequest, ttr *model.TaskToRun, cfg *cfg.Config) error {
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	sliceIndex := ttr.TaskSliceIndex()
 	s := tr.TaskSlices[sliceIndex]
@@ -638,7 +626,7 @@ func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun
 	timeout := s.Properties.ExecutionTimeoutSecs + s.Properties.GracePeriodSecs + 30
 
 	logging.Infof(ctx, "RBE: enqueuing task to launch %s", ttr.RBEReservation)
-	return tq.AddTask(ctx, &tq.Task{
+	return disp.AddTask(ctx, &tq.Task{
 		Title: fmt.Sprintf("%s-%d-%d", taskID, sliceIndex, ttr.RetryCount),
 		Payload: &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{

@@ -34,14 +34,16 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/notifications"
+	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/resultdb"
 )
 
 // ErrAlreadyExists is a special error to return when task ID collision happens.
 var ErrAlreadyExists = errors.New("task already exists")
 
-// Creation contains information to create a new task.
-type Creation struct {
+// CreationOp contains information to create a new task.
+type CreationOp struct {
 	// RequestID is used to make new task request idempotent.
 	RequestID string
 
@@ -52,20 +54,8 @@ type Creation struct {
 	// BuildTask is the BuildTask entity.
 	BuildTask *model.BuildTask
 
-	// SwarmingProject is the Cloud project of the Swarming service, e.g. "chromium-swarm".
-	SwarmingProject string
-
-	// ServerVersion is the version of the executing binary.
-	ServerVersion string
-
-	// ResultDBClientFactory can create a client to interact with ResultDB Recorder.
-	ResultDBClientFactory resultdb.RecorderFactory
-
 	// Config is a snapshot of the server configuration.
 	Config *cfg.Config
-
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks LifecycleTasks
 }
 
 // CreatedTask contains entities for the new task that are updated and saved.
@@ -79,7 +69,7 @@ type CreatedTask struct {
 	Result *model.TaskResultSummary
 }
 
-// Run creates and stores all the entities to create a new task.
+// CreateTask creates and stores all the entities to create a new task.
 //
 // The number of entities created is ~5: TaskRequest, TaskToRunShard and
 // TaskResultSummary and (optionally) SecretBytes and BuildTask. They are in
@@ -89,7 +79,7 @@ type CreatedTask struct {
 //
 // If task ID collision happens, a special error `ErrAlreadyExists` will be
 // returned so the server could retry creating the entities.
-func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
+func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTask, error) {
 	res, err := c.dedupByRequestID(ctx)
 	switch {
 	case err != nil:
@@ -119,7 +109,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	tr.TxnUUID = uuid.New().String()
 	now := clock.Now(ctx)
-	trs := model.NewTaskResultSummary(ctx, tr, c.ServerVersion, now)
+	trs := model.NewTaskResultSummary(ctx, tr, m.serverVersion, now)
 	if sb != nil {
 		sb.Key = model.SecretBytesKey(ctx, tr.Key)
 	}
@@ -148,7 +138,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 			return nil, err
 		}
 		if dupResult != nil {
-			c.copyDuplicateTask(ctx, trs, dupResult, i)
+			c.copyDuplicateTask(ctx, trs, dupResult, i, m.serverVersion)
 			// There's not much to do as the task will not run, previous
 			// results are returned. We still need to store the TaskRequest
 			// and TaskResultSummary.
@@ -183,7 +173,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 		// to missing bots, there will be a ping pong game between Swarming and
 		// RBE skipping them.
 		trs.CurrentTaskSlice = 0
-		ttr, err = model.NewTaskToRun(ctx, c.SwarmingProject, tr, int(trs.CurrentTaskSlice))
+		ttr, err = model.NewTaskToRun(ctx, m.serverProject, tr, int(trs.CurrentTaskSlice))
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +184,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 			if resultdbHost == "" {
 				return nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
 			}
-			invName, rdbUpdateToken, err := c.createResultDBInvocation(ctx, resultdbHost, tr, taskRunID)
+			invName, rdbUpdateToken, err := c.createResultDBInvocation(ctx, resultdbHost, tr, taskRunID, m.rdb)
 			switch {
 			case status.Code(err) == codes.AlreadyExists:
 				// Task ID collision causes ResultDB CreateInvocation failure.
@@ -268,7 +258,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 
 		if ttr != nil {
 			toPut = append(toPut, ttr)
-			if err := c.LifecycleTasks.enqueueRBENew(ctx, tr, ttr, c.Config); err != nil {
+			if err := rbe.EnqueueNew(ctx, m.disp, tr, ttr, c.Config); err != nil {
 				return err
 			}
 		}
@@ -279,7 +269,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 		}
 
 		if trs.State != apipb.TaskState_PENDING {
-			if err := c.LifecycleTasks.sendOnTaskUpdate(ctx, tr, trs); err != nil {
+			if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
 				return errors.Annotate(err,
 					"failed to enqueue pubsub notification cloud tasks for creating task %s", taskID).Err()
 			}
@@ -303,7 +293,7 @@ func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
 	}, nil
 }
 
-func (c *Creation) dedupByRequestID(ctx context.Context) (*CreatedTask, error) {
+func (c *CreationOp) dedupByRequestID(ctx context.Context) (*CreatedTask, error) {
 	if c.RequestID == "" {
 		return nil, nil
 	}
@@ -352,7 +342,7 @@ func (c *Creation) dedupByRequestID(ctx context.Context) (*CreatedTask, error) {
 // findDuplicateTask finds a previously run task that can be reused.
 //
 // See TaskResultSummary.PropertiesHash on what tasks are reusable.
-func (c *Creation) findDuplicateTask(ctx context.Context, propertiesHash []byte) (*model.TaskResultSummary, error) {
+func (c *CreationOp) findDuplicateTask(ctx context.Context, propertiesHash []byte) (*model.TaskResultSummary, error) {
 	logging.Infof(ctx, "Look for duplicate task with properties_hash %s", hex.EncodeToString(propertiesHash))
 	var results []*model.TaskResultSummary
 	q := model.TaskResultSummaryQuery().
@@ -378,7 +368,7 @@ func (c *Creation) findDuplicateTask(ctx context.Context, propertiesHash []byte)
 }
 
 // copyDuplicateTask copies the selected attributes of entity dup into new.
-func (c *Creation) copyDuplicateTask(ctx context.Context, new, dup *model.TaskResultSummary, curSlice int) {
+func (c *CreationOp) copyDuplicateTask(ctx context.Context, new, dup *model.TaskResultSummary, curSlice int, serverVersion string) {
 	// Copy from dup.
 	new.State = dup.State
 	new.BotVersion = dup.BotVersion
@@ -404,7 +394,7 @@ func (c *Creation) copyDuplicateTask(ctx context.Context, new, dup *model.TaskRe
 	new.DedupedFrom = dup.TaskRunID()
 	new.CostSavedUSD = dup.CostUSD
 	serverVersions := stringset.NewFromSlice(dup.ServerVersions...)
-	serverVersions.Add(c.ServerVersion)
+	serverVersions.Add(serverVersion)
 	new.ServerVersions = serverVersions.ToSlice()
 	sort.Strings(new.ServerVersions)
 
@@ -416,10 +406,10 @@ func (c *Creation) copyDuplicateTask(ctx context.Context, new, dup *model.TaskRe
 	// new is a duplication of dup, so its PropertiesHash should remain empty.
 }
 
-func (c *Creation) createResultDBInvocation(ctx context.Context, resultdbHost string, tr *model.TaskRequest, taskRunID string) (string, string, error) {
+func (c *CreationOp) createResultDBInvocation(ctx context.Context, resultdbHost string, tr *model.TaskRequest, taskRunID string, rdb resultdb.RecorderFactory) (string, string, error) {
 	realm := tr.Realm
 	project, _ := realms.Split(realm)
-	recorder, err := c.ResultDBClientFactory.MakeClient(ctx, resultdbHost, project)
+	recorder, err := rdb.MakeClient(ctx, resultdbHost, project)
 	if err != nil {
 		return "", "", err
 	}

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/model"
-	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // DeleteBot implements the corresponding RPC method.
@@ -37,18 +36,11 @@ func (srv *BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*a
 		return nil, res.ToGrpcErr()
 	}
 	update := &botinfo.Update{
-		BotID:     req.BotId,
-		EventType: model.BotEventDeleted,
+		BotID:        req.BotId,
+		EventType:    model.BotEventDeleted,
+		TasksManager: srv.TasksManager,
 	}
-	info, err := update.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
-		return &tasks.AbandonOp{
-			BotID:          botID,
-			TaskID:         taskID,
-			LifecycleTasks: srv.TaskLifecycleTasks,
-			ServerVersion:  srv.ServerVersion,
-		}
-	})
-	switch {
+	switch info, err := update.Submit(ctx); {
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "datastore error deleting the bot")
 	case info.BotInfo == nil:

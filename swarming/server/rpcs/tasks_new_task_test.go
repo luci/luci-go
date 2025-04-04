@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tasks"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 	"go.chromium.org/luci/swarming/server/validate"
 )
 
@@ -1677,285 +1678,285 @@ func mockNewTaskRequestState() *MockedRequestState {
 func TestNewTask(t *testing.T) {
 	t.Parallel()
 
-	ctx := memory.Use(context.Background())
-	srv := TasksServer{
-		SwarmingProject:    "swarming",
-		TaskLifecycleTasks: tasks.MockTQTasks(),
-	}
-	state := mockNewTaskRequestState()
-	ftt.Run("perm_check_failures", t, func(t *ftt.Test) {
-		t.Run("pool_not_exist", func(t *ftt.Test) {
-			ctx = MockRequestState(ctx, state)
-			req := simpliestValidRequest("unknown-pool")
-			_, err := srv.NewTask(ctx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("swarming.pools.createTask"))
-		})
-		t.Run("pool_perm_check_fails", func(t *ftt.Test) {
-			state := state.SetCaller(identity.AnonymousIdentity)
-			_, err := srv.NewTask(MockRequestState(ctx, state), simpliestValidRequest("pool"))
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("swarming.pools.createTask"))
-		})
-
-		t.Run("create_in_realm_fails", func(t *ftt.Test) {
-			state := state.SetCaller(identity.Identity("user:new@example.com"))
-			state.MockPerm("project:visible-pool-realm", acls.PermPoolsCreateTask)
-			state.MockPerm("project:visible-pool2-realm", acls.PermPoolsCreateTask)
-			ctx = MockRequestState(ctx, state)
-			t.Run("no_task_realm", func(t *ftt.Test) {
-				req := simpliestValidRequest("visible-pool2")
-				_, err := srv.NewTask(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-			})
-			t.Run("task_realm", func(t *ftt.Test) {
-				req := simpliestValidRequest("visible-pool")
-				req.Realm = "project:visible-task-realm"
-				_, err := srv.NewTask(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.That(t, err, should.ErrLike("swarming.tasks.createInRealm"))
-			})
-			t.Run("default_task_realm", func(t *ftt.Test) {
-				req := simpliestValidRequest("visible-pool")
-				_, err := srv.NewTask(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.That(t, req.Realm, should.Equal("project:visible-task-realm"))
-				assert.That(t, err, should.ErrLike("swarming.tasks.createInRealm"))
-			})
-		})
-
-		t.Run("service_account_check_fails", func(t *ftt.Test) {
-			ctx = MockRequestState(ctx, state)
-			req := simpliestValidRequest("visible-pool")
-			req.ServiceAccount = "unknown@account.com"
-			_, err := srv.NewTask(ctx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("swarming.tasks.actAs"))
-		})
-	})
-
-	ftt.Run("evaluate_only", t, func(t *ftt.Test) {
-		ctx = MockRequestState(ctx, state)
-		now := testclock.TestRecentTimeUTC
-		ctx, _ = testclock.UseTime(ctx, now)
-		req := simpliestValidRequest("visible-pool")
-		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
-		req.EvaluateOnly = true
-		res, err := srv.NewTask(ctx, req)
-		assert.NoErr(t, err)
-		assert.That(t, res.TaskId, should.Equal(""))
-		var empty *apipb.TaskResultResponse
-		assert.That(t, res.TaskResult, should.Match(empty))
-		props := &apipb.TaskProperties{
-			ExecutionTimeoutSecs: 300,
-			Command:              []string{"command", "arg"},
-			Dimensions: []*apipb.StringPair{
-				{
-					Key:   "pool",
-					Value: "visible-pool",
-				},
-			},
-			CipdInput: &apipb.CipdInput{
-				Server: cfgtest.MockedCIPDServer,
-				ClientPackage: &apipb.CipdPackage{
-					PackageName: "client/pkg",
-					Version:     "latest",
-				},
-			},
-		}
-		expected := &apipb.TaskRequestResponse{
-			Name:                 "new",
-			Priority:             40,
-			ExpirationSecs:       300,
-			BotPingToleranceSecs: 1200,
-			Properties:           props,
-			Tags: []string{
-				"authenticated:user:test@example.com",
-				"pool:visible-pool",
-				"priority:40",
-				"realm:project:visible-task-realm",
-				"service_account:none",
-				"swarming.pool.task_template:none",
-				fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
-				"user:none",
-			},
-			CreatedTs:      timestamppb.New(now),
-			Authenticated:  string(DefaultFakeCaller),
-			ServiceAccount: "none",
-			Realm:          "project:visible-task-realm",
-			Resultdb:       &apipb.ResultDBCfg{},
-			TaskSlices: []*apipb.TaskSlice{
-				{
-					ExpirationSecs: 300,
-					Properties:     props,
-				},
-			},
-		}
-		assert.That(t, res.Request, should.Match(expected))
-	})
-
-	ftt.Run("dedup_by_task_request_id", t, func(t *ftt.Test) {
-		ctx = MockRequestState(ctx, state)
-
-		id := "65aba3a3e6b99310"
-		reqKey, err := model.TaskIDToRequestKey(ctx, id)
-		assert.NoErr(t, err)
-		tr := &model.TaskRequest{
-			Key: reqKey,
-		}
-		trs := &model.TaskResultSummary{
-			Key: model.TaskResultSummaryKey(ctx, reqKey),
-			TaskResultCommon: model.TaskResultCommon{
-				State: apipb.TaskState_COMPLETED,
-			},
-		}
-		tri := &model.TaskRequestID{
-			Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
-			TaskID: id,
-		}
-		assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
-
-		req := simpliestValidRequest("visible-pool")
-		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
-		req.RequestUuid = "request-id"
-
-		res, err := srv.NewTask(ctx, req)
-		assert.NoErr(t, err)
-		assert.That(t, res.TaskId, should.Equal(id))
-		assert.That(t, res.TaskResult, should.Match(trs.ToProto()))
-	})
-
-	ftt.Run("retry_on_id_collision", t, func(t *ftt.Test) {
-		ctx, _ := testclock.UseTime(ctx, time.Date(2020, time.January, 1, 2, 3, 4, 0, time.UTC))
-		ctx = MockRequestState(ctx, state)
-		ctx = cryptorand.MockForTest(ctx, 0)
-		ctx = memlogger.Use(ctx)
-		logs := logging.Get(ctx).(*memlogger.MemLogger)
-
-		id := "4977a91bc012fa10"
-		reqKey, err := model.TaskIDToRequestKey(ctx, id)
-		assert.NoErr(t, err)
-		tr := &model.TaskRequest{
-			Key: reqKey,
-		}
-		trs := &model.TaskResultSummary{
-			Key: model.TaskResultSummaryKey(ctx, reqKey),
-			TaskResultCommon: model.TaskResultCommon{
-				State: apipb.TaskState_COMPLETED,
-			},
-		}
-		assert.NoErr(t, datastore.Put(ctx, tr, trs))
-
-		req := simpliestValidRequest("visible-pool")
-		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
-
-		res, err := srv.NewTask(ctx, req)
-		assert.NoErr(t, err)
-		assert.That(t, res.TaskId, should.NotEqual(id))
-		assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
-			logging.Info, "Created the task after 2 attempts"))
-	})
-
-	ftt.Run("OK-simple", t, func(t *ftt.Test) {
-		ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
-		ctx = MockRequestState(ctx, state)
-		ctx = cryptorand.MockForTest(ctx, 0)
-
-		req := simpliestValidRequest("visible-pool")
-		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
-
-		_, err := srv.NewTask(ctx, req)
-		assert.NoErr(t, err)
-	})
-
-	ftt.Run("OK-full", t, func(t *ftt.Test) {
-		ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
-
-		state := NewMockedRequestState()
-		visiblePool := state.Configs.MockPool("visible-pool", "project:visible-pool-realm")
-		visiblePool.DefaultTaskRealm = "project:visible-task-realm"
-		visiblePool.RbeMigration = &configpb.Pool_RBEMigration{
-			RbeInstance:    "rbe-instance",
-			RbeModePercent: int32(100),
-			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
-				{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 100},
-			},
-		}
-		state.MockPerm("project:visible-pool-realm", acls.PermPoolsCreateTask)
-		state.MockPerm("project:visible-task-realm", acls.PermTasksCreateInRealm)
-		state.MockPermWithIdentity("project:visible-task-realm",
-			identity.Identity("user:sa@account.com"), acls.PermTasksActAs)
-		state.Configs.Settings.Resultdb = &configpb.ResultDBSettings{
-			Server: "https://rdbhost.example.com",
-		}
-		ctx = MockRequestState(ctx, state)
-		ctx = cryptorand.MockForTest(ctx, 0)
-
-		pID := "60b2ed0a43023111"
-		pTR := taskRequest(ctx, pID)
-		pTRS := taskResult(ctx, pID, apipb.TaskState_RUNNING)
-		assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
-
-		req := &apipb.NewTaskRequest{
-			Name:                 "new",
-			ParentTaskId:         "60b2ed0a43023111",
-			Priority:             30,
-			User:                 "user",
-			ServiceAccount:       "bot",
-			PubsubTopic:          "projects/project/topics/topic",
-			PubsubAuthToken:      "token",
-			PubsubUserdata:       "userdata",
-			BotPingToleranceSecs: 300,
-			Realm:                "project:visible-task-realm",
-			Tags: []string{
-				"k1:v1",
-				"k2:v2",
-			},
-			TaskSlices: []*apipb.TaskSlice{
-				fullSlice("visible-pool", []byte("this is a secret")),
-			},
-			Resultdb: &apipb.ResultDBCfg{
-				Enable: true,
-			},
-			PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
-		}
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx, tqt := tqtasks.TestingContext(ctx)
 
 		inv := &rdbpb.Invocation{
 			Name: "invocations/task-swarming.appspot.com-6e386bafc02af911",
 		}
 		token := "token for 6e386bafc02af911"
-		lt := tasks.MockTQTasks()
-		srv := TasksServer{
-			SwarmingProject:       "swarming",
-			ResultDBClientFactory: resultdb.NewMockRecorderClientFactory(nil, inv, nil, token),
-			ServerVersion:         "version",
-			TaskLifecycleTasks:    lt,
+		srv := &TasksServer{
+			TasksManager: tasks.NewManager(tqt.Tasks, "swarming", "version",
+				resultdb.NewMockRecorderClientFactory(nil, inv, nil, token), false),
 		}
 
-		res, err := srv.NewTask(ctx, req)
-		assert.NoErr(t, err)
-		assert.Loosely(t, res.TaskResult, should.NotBeNil)
-		assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-6e386bafc02af910-0-0"))
-	})
+		state := mockNewTaskRequestState()
 
-	ftt.Run("Fail", t, func(t *ftt.Test) {
-		ctx = MockRequestState(ctx, state)
+		t.Run("perm_check_failures", func(t *ftt.Test) {
+			t.Run("pool_not_exist", func(t *ftt.Test) {
+				ctx = MockRequestState(ctx, state)
+				req := simpliestValidRequest("unknown-pool")
+				_, err := srv.NewTask(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike("swarming.pools.createTask"))
+			})
+			t.Run("pool_perm_check_fails", func(t *ftt.Test) {
+				state := state.SetCaller(identity.AnonymousIdentity)
+				_, err := srv.NewTask(MockRequestState(ctx, state), simpliestValidRequest("pool"))
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike("swarming.pools.createTask"))
+			})
 
-		// TaskRequestID exists without TaskResultSummary.
-		id := "65aba3a3e6b00000"
-		tri := &model.TaskRequestID{
-			Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
-			TaskID: id,
-		}
-		assert.NoErr(t, datastore.Put(ctx, tri))
+			t.Run("create_in_realm_fails", func(t *ftt.Test) {
+				state := state.SetCaller(identity.Identity("user:new@example.com"))
+				state.MockPerm("project:visible-pool-realm", acls.PermPoolsCreateTask)
+				state.MockPerm("project:visible-pool2-realm", acls.PermPoolsCreateTask)
+				ctx = MockRequestState(ctx, state)
+				t.Run("no_task_realm", func(t *ftt.Test) {
+					req := simpliestValidRequest("visible-pool2")
+					_, err := srv.NewTask(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				})
+				t.Run("task_realm", func(t *ftt.Test) {
+					req := simpliestValidRequest("visible-pool")
+					req.Realm = "project:visible-task-realm"
+					_, err := srv.NewTask(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike("swarming.tasks.createInRealm"))
+				})
+				t.Run("default_task_realm", func(t *ftt.Test) {
+					req := simpliestValidRequest("visible-pool")
+					_, err := srv.NewTask(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, req.Realm, should.Equal("project:visible-task-realm"))
+					assert.That(t, err, should.ErrLike("swarming.tasks.createInRealm"))
+				})
+			})
 
-		req := simpliestValidRequest("visible-pool")
-		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
-		req.RequestUuid = "request-id"
+			t.Run("service_account_check_fails", func(t *ftt.Test) {
+				ctx = MockRequestState(ctx, state)
+				req := simpliestValidRequest("visible-pool")
+				req.ServiceAccount = "unknown@account.com"
+				_, err := srv.NewTask(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike("swarming.tasks.actAs"))
+			})
+		})
 
-		res, err := srv.NewTask(ctx, req)
-		assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-		assert.Loosely(t, res, should.BeNil)
+		t.Run("evaluate_only", func(t *ftt.Test) {
+			ctx = MockRequestState(ctx, state)
+			now := testclock.TestRecentTimeUTC
+			ctx, _ = testclock.UseTime(ctx, now)
+			req := simpliestValidRequest("visible-pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+			req.EvaluateOnly = true
+			res, err := srv.NewTask(ctx, req)
+			assert.NoErr(t, err)
+			assert.That(t, res.TaskId, should.Equal(""))
+			var empty *apipb.TaskResultResponse
+			assert.That(t, res.TaskResult, should.Match(empty))
+			props := &apipb.TaskProperties{
+				ExecutionTimeoutSecs: 300,
+				Command:              []string{"command", "arg"},
+				Dimensions: []*apipb.StringPair{
+					{
+						Key:   "pool",
+						Value: "visible-pool",
+					},
+				},
+				CipdInput: &apipb.CipdInput{
+					Server: cfgtest.MockedCIPDServer,
+					ClientPackage: &apipb.CipdPackage{
+						PackageName: "client/pkg",
+						Version:     "latest",
+					},
+				},
+			}
+			expected := &apipb.TaskRequestResponse{
+				Name:                 "new",
+				Priority:             40,
+				ExpirationSecs:       300,
+				BotPingToleranceSecs: 1200,
+				Properties:           props,
+				Tags: []string{
+					"authenticated:user:test@example.com",
+					"pool:visible-pool",
+					"priority:40",
+					"realm:project:visible-task-realm",
+					"service_account:none",
+					"swarming.pool.task_template:none",
+					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+					"user:none",
+				},
+				CreatedTs:      timestamppb.New(now),
+				Authenticated:  string(DefaultFakeCaller),
+				ServiceAccount: "none",
+				Realm:          "project:visible-task-realm",
+				Resultdb:       &apipb.ResultDBCfg{},
+				TaskSlices: []*apipb.TaskSlice{
+					{
+						ExpirationSecs: 300,
+						Properties:     props,
+					},
+				},
+			}
+			assert.That(t, res.Request, should.Match(expected))
+		})
+
+		t.Run("dedup_by_task_request_id", func(t *ftt.Test) {
+			ctx = MockRequestState(ctx, state)
+
+			id := "65aba3a3e6b99310"
+			reqKey, err := model.TaskIDToRequestKey(ctx, id)
+			assert.NoErr(t, err)
+			tr := &model.TaskRequest{
+				Key: reqKey,
+			}
+			trs := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: model.TaskResultCommon{
+					State: apipb.TaskState_COMPLETED,
+				},
+			}
+			tri := &model.TaskRequestID{
+				Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
+				TaskID: id,
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
+
+			req := simpliestValidRequest("visible-pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+			req.RequestUuid = "request-id"
+
+			res, err := srv.NewTask(ctx, req)
+			assert.NoErr(t, err)
+			assert.That(t, res.TaskId, should.Equal(id))
+			assert.That(t, res.TaskResult, should.Match(trs.ToProto()))
+		})
+
+		t.Run("retry_on_id_collision", func(t *ftt.Test) {
+			ctx, _ := testclock.UseTime(ctx, time.Date(2020, time.January, 1, 2, 3, 4, 0, time.UTC))
+			ctx = MockRequestState(ctx, state)
+			ctx = cryptorand.MockForTest(ctx, 0)
+			ctx = memlogger.Use(ctx)
+			logs := logging.Get(ctx).(*memlogger.MemLogger)
+
+			id := "4977a91bc012fa10"
+			reqKey, err := model.TaskIDToRequestKey(ctx, id)
+			assert.NoErr(t, err)
+			tr := &model.TaskRequest{
+				Key: reqKey,
+			}
+			trs := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: model.TaskResultCommon{
+					State: apipb.TaskState_COMPLETED,
+				},
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr, trs))
+
+			req := simpliestValidRequest("visible-pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+
+			res, err := srv.NewTask(ctx, req)
+			assert.NoErr(t, err)
+			assert.That(t, res.TaskId, should.NotEqual(id))
+			assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+				logging.Info, "Created the task after 2 attempts"))
+		})
+
+		t.Run("OK-simple", func(t *ftt.Test) {
+			ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
+			ctx = MockRequestState(ctx, state)
+			ctx = cryptorand.MockForTest(ctx, 0)
+
+			req := simpliestValidRequest("visible-pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+
+			_, err := srv.NewTask(ctx, req)
+			assert.NoErr(t, err)
+		})
+
+		t.Run("OK-full", func(t *ftt.Test) {
+			ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
+
+			state := NewMockedRequestState()
+			visiblePool := state.Configs.MockPool("visible-pool", "project:visible-pool-realm")
+			visiblePool.DefaultTaskRealm = "project:visible-task-realm"
+			visiblePool.RbeMigration = &configpb.Pool_RBEMigration{
+				RbeInstance:    "rbe-instance",
+				RbeModePercent: int32(100),
+				BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 100},
+				},
+			}
+			state.MockPerm("project:visible-pool-realm", acls.PermPoolsCreateTask)
+			state.MockPerm("project:visible-task-realm", acls.PermTasksCreateInRealm)
+			state.MockPermWithIdentity("project:visible-task-realm",
+				identity.Identity("user:sa@account.com"), acls.PermTasksActAs)
+			state.Configs.Settings.Resultdb = &configpb.ResultDBSettings{
+				Server: "https://rdbhost.example.com",
+			}
+			ctx = MockRequestState(ctx, state)
+			ctx = cryptorand.MockForTest(ctx, 0)
+
+			pID := "60b2ed0a43023111"
+			pTR := taskRequest(ctx, pID)
+			pTRS := taskResult(ctx, pID, apipb.TaskState_RUNNING)
+			assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
+
+			req := &apipb.NewTaskRequest{
+				Name:                 "new",
+				ParentTaskId:         "60b2ed0a43023111",
+				Priority:             30,
+				User:                 "user",
+				ServiceAccount:       "bot",
+				PubsubTopic:          "projects/project/topics/topic",
+				PubsubAuthToken:      "token",
+				PubsubUserdata:       "userdata",
+				BotPingToleranceSecs: 300,
+				Realm:                "project:visible-task-realm",
+				Tags: []string{
+					"k1:v1",
+					"k2:v2",
+				},
+				TaskSlices: []*apipb.TaskSlice{
+					fullSlice("visible-pool", []byte("this is a secret")),
+				},
+				Resultdb: &apipb.ResultDBCfg{
+					Enable: true,
+				},
+				PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
+			}
+
+			res, err := srv.NewTask(ctx, req)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.TaskResult, should.NotBeNil)
+			assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
+				"rbe-instance/swarming-6e386bafc012fa10-0-0",
+			}))
+		})
+
+		t.Run("Fail", func(t *ftt.Test) {
+			ctx = MockRequestState(ctx, state)
+
+			// TaskRequestID exists without TaskResultSummary.
+			id := "65aba3a3e6b00000"
+			tri := &model.TaskRequestID{
+				Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
+				TaskID: id,
+			}
+			assert.NoErr(t, datastore.Put(ctx, tri))
+
+			req := simpliestValidRequest("visible-pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+			req.RequestUuid = "request-id"
+
+			res, err := srv.NewTask(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, res, should.BeNil)
+		})
 	})
 }
 

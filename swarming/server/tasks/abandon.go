@@ -26,22 +26,18 @@ type AbandonOp struct {
 	BotID string
 	// TaskID is the task that is being abandoned.
 	TaskID string
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks LifecycleTasks
-	// ServerVersion is the current Swarming server version.
-	ServerVersion string
+}
+
+// AbandonOpOutcome is returned by AbandonTxn.
+type AbandonOpOutcome struct {
+	// Nothing for now.
 }
 
 // AbandonTxn runs the transactional logic to finalize the abandoned task.
-func (op *AbandonOp) AbandonTxn(ctx context.Context) error {
-	if !op.LifecycleTasks.ShouldAbandonTasks() {
-		return nil
+func (m *managerImpl) AbandonTxn(ctx context.Context, op *AbandonOp) (*AbandonOpOutcome, error) {
+	if !m.allowAbandoningTasks {
+		return nil, nil
 	}
 	// TODO
-	return nil
-}
-
-// Finished is called once the transaction lands to report metrics etc.
-func (op *AbandonOp) Finished(ctx context.Context) {
-	// TODO
+	return nil, nil
 }

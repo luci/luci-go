@@ -38,8 +38,8 @@ import (
 type BotAPIServer struct {
 	// cfg is the server config.
 	cfg *cfg.Provider
-	// lifecycleTasks is used to emit tasks related to task's lifecycle.
-	lifecycleTasks tasks.LifecycleTasks
+	// tasksManager is used to change state of tasks.
+	tasksManager tasks.Manager
 	// hmacSecret is used to generate new session tokens.
 	hmacSecret *hmactoken.Secret
 	// project is the Swarming Cloud Project name.
@@ -52,34 +52,27 @@ type BotAPIServer struct {
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
 	// submitUpdate calls u.Submit, but it can be mocked in tests.
 	submitUpdate func(ctx context.Context, u *botinfo.Update) error
-	// taskWriteOp is used to perform datastore writes on a task throughout its lifecycle.
-	taskWriteOp tasks.TaskWriteOp
 	// tokenServerClient produces a Token Server client, can be mocked in tests.
 	tokenServerClient func(ctx context.Context, realm string) (minterpb.TokenMinterClient, error)
 }
 
 // NewBotAPIServer constructs a new BotAPIServer.
-func NewBotAPIServer(cfg *cfg.Provider, lifecycleTasks tasks.LifecycleTasks, secret *hmactoken.Secret, project, version string) *BotAPIServer {
+func NewBotAPIServer(cfg *cfg.Provider, tasksManager tasks.Manager, secret *hmactoken.Secret, project, version string) *BotAPIServer {
 	return &BotAPIServer{
-		cfg:            cfg,
-		lifecycleTasks: lifecycleTasks,
-		hmacSecret:     secret,
-		project:        project,
-		version:        version,
-		botCodeCache:   lru.New[string, []byte](2), // two versions: canary + stable
-		authorizeBot:   botsrv.AuthorizeBot,
+		cfg:          cfg,
+		tasksManager: tasksManager,
+		hmacSecret:   secret,
+		project:      project,
+		version:      version,
+		botCodeCache: lru.New[string, []byte](2), // two versions: canary + stable
+		authorizeBot: botsrv.AuthorizeBot,
 		submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
-			_, err := u.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
-				return &tasks.AbandonOp{
-					BotID:          botID,
-					TaskID:         taskID,
-					LifecycleTasks: lifecycleTasks,
-					ServerVersion:  version,
-				}
-			})
+			if u.TasksManager != tasksManager {
+				panic("u.TasksManager isn't populated")
+			}
+			_, err := u.Submit(ctx)
 			return err
 		},
-		taskWriteOp:       &tasks.TaskWriteOpProd{},
 		tokenServerClient: tokenServerClient, // see tokens.go
 	}
 }

@@ -30,8 +30,10 @@ import (
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/scan"
 	"go.chromium.org/luci/swarming/server/tasks"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 func main() {
@@ -68,11 +70,13 @@ func main() {
 			return err
 		}
 
-		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
-			Dispatcher:           &tq.Default,
-			AllowAbandoningTasks: *allowAbandoningTasks,
-		}
-		taskLifeCycle.RegisterTQTasks()
+		tasksManager := tasks.NewManager(
+			tqtasks.Register(&tq.Default),
+			srv.Options.CloudProject,
+			srv.Options.ImageVersion(),
+			resultdb.NewRecorderFactory(srv.Options.CloudProject),
+			*allowAbandoningTasks,
+		)
 
 		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
 			conf, err := cfg.Latest(ctx)
@@ -87,8 +91,7 @@ func main() {
 				},
 				&scan.DeadBotDetector{
 					BotDeathTimeout: time.Duration(conf.Settings().BotDeathTimeoutSecs) * time.Second,
-					LifecycleTasks:  taskLifeCycle,
-					ServerVersion:   srv.Options.ImageVersion(),
+					TasksManager:    tasksManager,
 				},
 				&scan.BotsDimensionsAggregator{},
 				&scan.NamedCachesAggregator{},

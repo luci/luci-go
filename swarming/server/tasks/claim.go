@@ -23,17 +23,15 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/notifications"
 )
 
 // ClaimOp represents an operation of a bot claiming a pending task.
-//
-// It has 2 parts: the transactional part and the post-transaction follow up.
-// The actual transaction happens as part of the BotInfo update, see
-// botapi/claim.go.
 type ClaimOp struct {
 	// Request is the TaskRequest the slice of which is being claimed.
 	Request *model.TaskRequest
@@ -41,49 +39,27 @@ type ClaimOp struct {
 	TaskToRunKey *datastore.Key
 	// ClaimID is the identifier of the claim for idempotency.
 	ClaimID string
-	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
-	LifecycleTasks LifecycleTasks
-	// ServerVersion is the current Swarming server version.
-	ServerVersion string
+	// BotDimensions is the full set of bot dimensions.
+	BotDimensions model.BotDimensions
+	// BotVersion is the version of the claiming bot.
+	BotVersion string
+	// BotLogsCloudProject is where the bot keep its Cloud Logging logs.
+	BotLogsCloudProject string
+	// BotIdleSince is when this bot finished its previous task.
+	BotIdleSince time.Time
 }
 
-// BotDetails are details of the claiming bot relevant for the claim operation.
-type BotDetails struct {
-	// Dimensions is the full set of bot dimensions.
-	Dimensions model.BotDimensions
-	// Version is the version of the claiming bot.
-	Version string
-	// LogsCloudProject is where the bot keep its Cloud Logging logs.
-	LogsCloudProject string
-	// IdleSince is when this bot finished its previous task.
-	IdleSince time.Time
-}
-
-// ClaimTxnOutcome is returned by ClaimTxn.
-type ClaimTxnOutcome struct {
+// ClaimOpOutcome is returned by ClaimTxn.
+type ClaimOpOutcome struct {
 	Unavailable string // a reason if the task to run can't be claimed
 	Claimed     bool   // true if claimed, false if was already claimed with the same ID
-
-	// The stored TaskResultSummary, if any.
-	trs *model.TaskResultSummary
-	// The consumed TaskToRun, if any.
-	ttr *model.TaskToRun
-	// When the transaction callback was running.
-	txnTime time.Time
 }
 
 // ClaimTxn is called inside a transaction to mark the task slice as claimed.
-//
-// This updates all necessary task entities to indicate the task is running now.
-// It returns an ClaimTxnOutcome which then should be passed to Finished call
-// after the transaction to do any post-transaction followups, like reporting
-// metrics.
-//
-// May be retried a bunch of times in case the transaction is retried.
-func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutcome, error) {
-	botID := bot.Dimensions.BotID()
+func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcome, error) {
+	botID := op.BotDimensions.BotID()
 	if botID == "" {
-		panic(fmt.Sprintf("no bot ID in dimensions %q", bot.Dimensions))
+		panic(fmt.Sprintf("no bot ID in dimensions %q", op.BotDimensions))
 	}
 
 	ttr := &model.TaskToRun{Key: op.TaskToRunKey}
@@ -91,7 +67,7 @@ func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutc
 	switch err := datastore.Get(ctx, ttr, trs); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		// This happens if at least one entity is missing.
-		return &ClaimTxnOutcome{Unavailable: "No such task"}, nil
+		return &ClaimOpOutcome{Unavailable: "No such task"}, nil
 	case err != nil:
 		return nil, errors.Annotate(err, "fetching task entities").Err()
 	}
@@ -100,12 +76,12 @@ func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutc
 	if !ttr.IsReapable() {
 		switch existing := ttr.ClaimID.Get(); {
 		case existing == "":
-			return &ClaimTxnOutcome{Unavailable: "The task slice has expired"}, nil
+			return &ClaimOpOutcome{Unavailable: "The task slice has expired"}, nil
 		case existing != op.ClaimID:
-			return &ClaimTxnOutcome{Unavailable: fmt.Sprintf("Already claimed by %q", existing)}, nil
+			return &ClaimOpOutcome{Unavailable: fmt.Sprintf("Already claimed by %q", existing)}, nil
 		default:
 			// This task is already claimed by us.
-			return &ClaimTxnOutcome{Claimed: false}, nil
+			return &ClaimOpOutcome{Claimed: false}, nil
 		}
 	}
 
@@ -116,13 +92,13 @@ func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutc
 	}
 
 	now := clock.Now(ctx).UTC()
-	idleSince := bot.IdleSince
+	idleSince := op.BotIdleSince
 	if idleSince.IsZero() {
 		idleSince = now
 	}
 
 	trsServerVers := stringset.NewFromSlice(trs.ServerVersions...)
-	trsServerVers.Add(op.ServerVersion)
+	trsServerVers.Add(m.serverVersion)
 
 	// Create TaskRunResult representing a running task assigned to a bot.
 	run := &model.TaskRunResult{
@@ -136,11 +112,11 @@ func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutc
 		TaskResultCommon: model.TaskResultCommon{
 			State:               apipb.TaskState_RUNNING,
 			Modified:            now,
-			BotVersion:          bot.Version,
-			BotDimensions:       bot.Dimensions,
+			BotVersion:          op.BotVersion,
+			BotDimensions:       op.BotDimensions,
 			BotIdleSince:        datastore.NewUnindexedOptional(idleSince),
-			BotLogsCloudProject: bot.LogsCloudProject,
-			ServerVersions:      []string{op.ServerVersion},
+			BotLogsCloudProject: op.BotLogsCloudProject,
+			ServerVersions:      []string{m.serverVersion},
 			CurrentTaskSlice:    int64(ttr.TaskSliceIndex()),
 			Started:             datastore.NewIndexedNullable(now),
 			ResultDBInfo:        trs.ResultDBInfo,
@@ -165,23 +141,16 @@ func (op *ClaimOp) ClaimTxn(ctx context.Context, bot *BotDetails) (*ClaimTxnOutc
 		return nil, errors.Annotate(err, "storing task entities").Err()
 	}
 	// Emit PubSub notification indicating the task is running now.
-	if err := op.LifecycleTasks.sendOnTaskUpdate(ctx, op.Request, trs); err != nil {
+	if err := notifications.SendOnTaskUpdate(ctx, m.disp, op.Request, trs); err != nil {
 		return nil, errors.Annotate(err, "sending task updates").Err()
 	}
 
-	// Store some state for reporting metrics in Finished.
-	return &ClaimTxnOutcome{
-		Claimed: true,
-		trs:     trs,
-		ttr:     ttr,
-		txnTime: now,
-	}, nil
-}
+	// Report metrics in case the transaction actually lands.
+	txndefer.Defer(ctx, func(ctx context.Context) {
+		onTaskStatusChangeSchedulerLatency(ctx, trs)
+		onTaskToRunConsumed(ctx, ttr, trs, now)
+	})
 
-// Finished is called after ClaimTxn transaction lands.
-func (op *ClaimOp) Finished(ctx context.Context, outcome *ClaimTxnOutcome) {
-	if outcome.Claimed {
-		onTaskStatusChangeSchedulerLatency(ctx, outcome.trs)
-		onTaskToRunConsumed(ctx, outcome.ttr, outcome.trs, outcome.txnTime)
-	}
+	// Store some state for reporting metrics in Finished.
+	return &ClaimOpOutcome{Claimed: true}, nil
 }

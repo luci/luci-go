@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func init() {
@@ -89,8 +90,13 @@ func TestBotInfoUpdate(t *testing.T) {
 				},
 				EventType:     ev,
 				EventDedupKey: dedupKey,
-				Dimensions:    dims,
-				State:         state,
+				TasksManager: &tasks.MockedManager{
+					AbandonTxnMock: func(context.Context, *tasks.AbandonOp) (*tasks.AbandonOpOutcome, error) {
+						return &tasks.AbandonOpOutcome{}, nil
+					},
+				},
+				Dimensions: dims,
+				State:      state,
 				CallInfo: &CallInfo{
 					SessionID:       "session-id",
 					Version:         "version",
@@ -101,7 +107,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				TaskInfo:           taskInfo,
 				EffectiveBotIDInfo: effectiveIDInfo,
 			}
-			submitted, err := update.Submit(ctx, nil)
+			submitted, err := update.Submit(ctx)
 			assert.NoErr(t, err)
 			return submitted
 		}
@@ -585,7 +591,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					return false, nil
 				},
 			}
-			submitted, err := update.Submit(ctx, nil)
+			submitted, err := update.Submit(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, submitted, should.BeNil)
 			assert.That(t, saw, should.Match([]*model.BotInfo{nil}))
@@ -607,7 +613,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					return false, nil
 				},
 			}
-			submitted, err := update.Submit(ctx, nil)
+			submitted, err := update.Submit(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, submitted, should.BeNil)
 			assert.Loosely(t, saw, should.HaveLength(1))

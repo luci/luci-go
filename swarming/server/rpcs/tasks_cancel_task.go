@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
@@ -38,17 +39,21 @@ func (srv *TasksServer) CancelTask(ctx context.Context, req *apipb.TaskCancelReq
 		return nil, res.ToGrpcErr()
 	}
 
-	can := &tasks.Cancellation{
-		TaskID:         req.TaskId,
-		KillRunning:    req.KillRunning,
-		TaskRequest:    taskRequest,
-		LifecycleTasks: srv.TaskLifecycleTasks,
-	}
+	var outcome *tasks.CancelOpOutcome
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		outcome, err = srv.TasksManager.CancelTxn(ctx, &tasks.CancelOp{
+			TaskRequest: taskRequest,
+			KillRunning: req.KillRunning,
+		})
+		return err
+	}, nil)
 
-	canceled, wasRuning, err := can.Run(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "Error canceling task %s: %s", req.TaskId, err)
 		return nil, status.Errorf(codes.Internal, "internal error canceling the task")
 	}
-	return &apipb.CancelResponse{Canceled: canceled, WasRunning: wasRuning}, nil
+	return &apipb.CancelResponse{
+		Canceled:   outcome.Canceled,
+		WasRunning: outcome.WasRunning,
+	}, nil
 }

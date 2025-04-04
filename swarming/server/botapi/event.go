@@ -122,6 +122,7 @@ func (srv *BotAPIServer) Event(ctx context.Context, body *EventRequest, r *botsr
 		EventType:     body.Event,
 		EventDedupKey: body.RequestUUID,
 		EventMessage:  body.Message,
+		TasksManager:  srv.tasksManager,
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,
 			Version:   body.Version,

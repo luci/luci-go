@@ -88,7 +88,7 @@ func (srv *TasksServer) CancelTasks(ctx context.Context, req *apipb.TasksCancelR
 	}
 
 	if len(toCancel) > 0 {
-		if err = srv.TaskLifecycleTasks.EnqueueBatchCancel(ctx, toCancel, req.KillRunning, "CancelTasks", 0); err != nil {
+		if err = srv.TasksManager.EnqueueBatchCancel(ctx, toCancel, req.KillRunning, "CancelTasks", 0); err != nil {
 			logging.Errorf(ctx, "Error enqueuing BatchCancelTask: %s", err)
 			return nil, status.Errorf(codes.Internal, "failed to cancel tasks")
 		}

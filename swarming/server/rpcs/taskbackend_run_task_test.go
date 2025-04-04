@@ -39,6 +39,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/tasks"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
 func TestTaskBackendRunTask(t *testing.T) {
@@ -47,15 +48,17 @@ func TestTaskBackendRunTask(t *testing.T) {
 	ctx := memory.Use(context.Background())
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
-	lt := tasks.MockTQTasks()
+	ctx, tqt := tqtasks.TestingContext(ctx)
 
 	srv := &TaskBackend{
 		BuildbucketTarget:       "swarming://target",
 		BuildbucketAccount:      "ignored-in-the-test",
 		DisableBuildbucketCheck: true,
+		StatusPageLink: func(taskID string) string {
+			return "http://fake.example.com/" + taskID
+		},
 		TasksServer: &TasksServer{
-			TaskLifecycleTasks: lt,
-			SwarmingProject:    "swarming",
+			TasksManager: tasks.NewManager(tqt.Tasks, "swarming", "version", nil, false),
 		},
 	}
 
@@ -196,7 +199,7 @@ func TestTaskBackendRunTask(t *testing.T) {
 						Id:     "2cbe1fa55012fa10",
 						Target: srv.BuildbucketTarget,
 					},
-					Link:     "https://swarming.appspot.com/task?id=2cbe1fa55012fa10",
+					Link:     "http://fake.example.com/2cbe1fa55012fa10",
 					Status:   bbpb.Status_SCHEDULED,
 					UpdateId: now.UnixNano(),
 					Details: &structpb.Struct{

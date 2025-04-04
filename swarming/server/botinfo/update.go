@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 var botInfoTxnCount = metric.NewCounter(
@@ -170,6 +171,9 @@ type Update struct {
 	//
 	// It will show up in the UI as the description of the event.
 	EventMessage string
+
+	// TasksManager is used to abandon tasks if the bot is detected as dead.
+	TasksManager tasks.Manager
 
 	// Prepare is an optional callback called in the transaction after fetching
 	// the BotInfo entity, but before applying the update.
@@ -381,21 +385,14 @@ func (u *Update) PanicIfInvalid() {
 // currently stored in the datastore, potentially also recording it as a new
 // BotEvent entity.
 //
-// If as part of this update a task was abandoned, uses the callback to
-// construct AbandonedTaskFinalizer to record this. It is usually implemented
-// via &tasks.AbandonOp{...}, but it is kept as an interface to decouple tasks
-// and bots update logic.
-//
 // If the update was skipped by the Prepare callback, returns (nil, nil).
 //
 // Returns datastore errors. All such errors are transient.
-func (u *Update) Submit(ctx context.Context, finalizerCb func(botID, taskID string) AbandonedTaskFinalizer) (*SubmittedUpdate, error) {
+func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 	var submitted *SubmittedUpdate
 	var attempt int
-	var finalizer AbandonedTaskFinalizer
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		attempt++
-		finalizer = nil
 		var err error
 		if submitted, err = u.execute(ctx); err != nil {
 			return err
@@ -410,9 +407,12 @@ func (u *Update) Submit(ctx context.Context, finalizerCb func(botID, taskID stri
 				return err
 			}
 		}
-		if submitted.AbandonedTaskID != "" && finalizerCb != nil {
-			finalizer = finalizerCb(u.BotID, submitted.AbandonedTaskID)
-			if err := finalizer.AbandonTxn(ctx); err != nil {
+		if submitted.AbandonedTaskID != "" {
+			_, err := u.TasksManager.AbandonTxn(ctx, &tasks.AbandonOp{
+				BotID:  u.BotID,
+				TaskID: submitted.AbandonedTaskID,
+			})
+			if err != nil {
 				return err
 			}
 		}
@@ -424,9 +424,6 @@ func (u *Update) Submit(ctx context.Context, finalizerCb func(botID, taskID stri
 	u.reportBotInfoTxn(ctx, attempt, err)
 	switch {
 	case err == nil:
-		if finalizer != nil {
-			finalizer.Finished(ctx)
-		}
 		return submitted, nil
 	case errors.Is(err, errSkippedUpdate):
 		return nil, nil

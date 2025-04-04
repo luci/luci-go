@@ -68,7 +68,7 @@ func (srv *TaskBackend) RunTask(ctx context.Context, req *bbpb.RunTaskRequest) (
 		return nil, err
 	}
 
-	return srv.convertNewTaskToRunTaskResponse(ctx, res), nil
+	return srv.convertNewTaskToRunTaskResponse(res), nil
 }
 
 func (srv *TaskBackend) validateRunTaskRequest(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb.SwarmingTaskBackendConfig) error {
@@ -236,7 +236,7 @@ func computeDimsByExp(req *bbpb.RunTaskRequest) (map[time.Duration][]*apipb.Stri
 	return dimsByExp, exps, nil
 }
 
-func (srv *TaskBackend) convertNewTaskToRunTaskResponse(ctx context.Context, res *tasks.CreatedTask) *bbpb.RunTaskResponse {
+func (srv *TaskBackend) convertNewTaskToRunTaskResponse(res *tasks.CreatedTask) *bbpb.RunTaskResponse {
 	taskID := model.RequestKeyToTaskID(res.Result.TaskRequestKey(), model.AsRequest)
 
 	var task *bbpb.Task
@@ -253,7 +253,7 @@ func (srv *TaskBackend) convertNewTaskToRunTaskResponse(ctx context.Context, res
 			},
 		}
 	}
-	task.Link = fmt.Sprintf("https://%s.appspot.com/task?id=%s", srv.TasksServer.SwarmingProject, taskID)
+	task.Link = srv.StatusPageLink(taskID)
 	return &bbpb.RunTaskResponse{
 		Task: task,
 	}

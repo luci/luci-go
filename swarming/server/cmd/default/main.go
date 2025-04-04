@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/tasks"
+	"go.chromium.org/luci/swarming/server/tqtasks"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -116,12 +117,19 @@ func main() {
 		}
 		srv.RunInBackground("swarming.config", cfg.RefreshPeriodically)
 
-		// Handlers for TQ tasks involved in task lifecycle.
-		taskLifeCycle := &tasks.LifecycleTasksViaTQ{
-			Dispatcher:           &tq.Default,
-			AllowAbandoningTasks: *allowAbandoningTasks,
-		}
-		taskLifeCycle.RegisterTQTasks()
+		// A collection of TQ task handlers used to communicate between server
+		// components.
+		tqt := tqtasks.Register(&tq.Default)
+
+		// Can mutate state of tasks and also registers TQ handlers involved in that
+		// process.
+		tasksManager := tasks.NewManager(
+			tqt,
+			srv.Options.CloudProject,
+			srv.Options.ImageVersion(),
+			resultdb.NewRecorderFactory(srv.Options.CloudProject),
+			*allowAbandoningTasks,
+		)
 
 		// A reverse proxy that sends a portion of requests to the Python server.
 		// Proxied requests have "/python/..." prepended in the URL to make them
@@ -146,7 +154,7 @@ func main() {
 		// A server that can authenticate bot API calls and route them to Python.
 		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, knownBotProvider, srv.Options.CloudProject, tokenSecret)
 		// A server that actually handles core Bot API calls.
-		botAPI := botapi.NewBotAPIServer(cfg, taskLifeCycle, tokenSecret, srv.Options.CloudProject, srv.Options.ImageVersion())
+		botAPI := botapi.NewBotAPIServer(cfg, tasksManager, tokenSecret, srv.Options.CloudProject, srv.Options.ImageVersion())
 
 		// A minimal handler used by bots to test network connectivity. Install it
 		// directly into the root router because we purposefully do not want to do
@@ -191,7 +199,7 @@ func main() {
 			return err
 		}
 		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.CloudProject, srv.Options.ImageVersion(), cfg)
-		rbeReservations.RegisterTQTasks(&tq.Default)
+		rbeReservations.RegisterTQTasks(tqt)
 		rbeReservations.RegisterPSHandlers(&pubsub.Default)
 
 		// Handlers for TQ tasks for sending PubSub messages.
@@ -199,7 +207,7 @@ func main() {
 		if err != nil {
 			return errors.Annotate(err, "failed to initialize the PubSubNotifier").Err()
 		}
-		pubSubNotifier.RegisterTQTasks(&tq.Default)
+		pubSubNotifier.RegisterTQTasks(tqt)
 		srv.RegisterCleanup(func(context.Context) {
 			pubSubNotifier.Stop()
 		})
@@ -256,17 +264,13 @@ func main() {
 
 		// Register gRPC server implementations.
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{
-			BotQuerySplitMode:  model.SplitOptimally,
-			TaskLifecycleTasks: taskLifeCycle,
-			ServerVersion:      srv.Options.ImageVersion(),
+			BotQuerySplitMode: model.SplitOptimally,
+			TasksManager:      tasksManager,
 		})
 
 		tasksServer := &rpcs.TasksServer{
-			TaskQuerySplitMode:    model.SplitOptimally,
-			TaskLifecycleTasks:    taskLifeCycle,
-			ServerVersion:         srv.Options.ImageVersion(),
-			SwarmingProject:       srv.Options.CloudProject,
-			ResultDBClientFactory: resultdb.NewRecorderFactory(srv.Options.CloudProject),
+			TaskQuerySplitMode: model.SplitOptimally,
+			TasksManager:       tasksManager,
 		}
 		apipb.RegisterTasksServer(srv, tasksServer)
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
@@ -276,7 +280,10 @@ func main() {
 			BuildbucketTarget:       fmt.Sprintf("swarming://%s", srv.Options.CloudProject),
 			BuildbucketAccount:      *buildbucketServiceAccount,
 			DisableBuildbucketCheck: !srv.Options.Prod,
-			TasksServer:             tasksServer,
+			StatusPageLink: func(taskID string) string {
+				return fmt.Sprintf("https://%s.appspot.com/task?id=%s", srv.Options.CloudProject, taskID)
+			},
+			TasksServer: tasksServer,
 		})
 
 		srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
