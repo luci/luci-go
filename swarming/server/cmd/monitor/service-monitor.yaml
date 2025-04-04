@@ -10,6 +10,7 @@ inbound_services:
 # It maps the app ID being deployed to values of vars used below.
 luci_gae_vars:
   chromium-swarm-dev:
+    ALLOW_ABANDONING_TASKS: "yes"
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
@@ -19,3 +20,4 @@ entrypoint: >
   -ts-mon-account ${TS_MON_ACCOUNT}
   -ds-connection-pool-size 8
   -cloud-error-reporting
+  -allow-abandoning-tasks ${ALLOW_ABANDONING_TASKS}

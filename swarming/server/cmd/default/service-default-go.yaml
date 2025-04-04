@@ -17,6 +17,7 @@ inbound_services:
 # It maps the app ID being deployed to values of vars used below.
 luci_gae_vars:
   chromium-swarm-dev:
+    ALLOW_ABANDONING_TASKS: "yes"
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     BUILDBUCKET_SERVICE_ACCOUNT: cr-buildbucket-dev@appspot.gserviceaccount.com
     CONFIG_SERVICE_HOST: config.luci.app
@@ -42,3 +43,4 @@ entrypoint: >
   -ts-mon-account ${TS_MON_ACCOUNT}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -cloud-error-reporting
+  -allow-abandoning-tasks ${ALLOW_ABANDONING_TASKS}

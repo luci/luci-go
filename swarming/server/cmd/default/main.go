@@ -87,10 +87,10 @@ func main() {
 		"",
 		"Service account email of the Buildbucket service. Used to authorize calls to TaskBackend gRPC service.",
 	)
-	allowAbandoningTasks := flag.Bool(
+	allowAbandoningTasks := flag.String(
 		"allow-abandoning-tasks",
-		false,
-		"If set, enable new path for abandoning tasks in reaction to BotInfo events.",
+		"no",
+		"If set to \"yes\", enable new code path for abandoning tasks in reaction to BotInfo events.",
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -128,7 +128,7 @@ func main() {
 			srv.Options.CloudProject,
 			srv.Options.ImageVersion(),
 			resultdb.NewRecorderFactory(srv.Options.CloudProject),
-			*allowAbandoningTasks,
+			*allowAbandoningTasks == "yes",
 		)
 
 		// A reverse proxy that sends a portion of requests to the Python server.
