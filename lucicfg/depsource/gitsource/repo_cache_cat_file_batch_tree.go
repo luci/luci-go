@@ -20,11 +20,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"path"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -32,11 +31,12 @@ import (
 )
 
 type treeEntry struct {
+	name string
 	mode int64
 	kind ObjectKind
 	hash string
 }
-type tree map[string]treeEntry
+type tree []treeEntry
 
 func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree, error) {
 	kind, data, err := b.catFile(ctx, fmt.Sprintf("%s:%s", commit, path))
@@ -47,13 +47,13 @@ func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree,
 		return nil, fmt.Errorf("not a tree: %s", kind)
 	}
 
-	ret := make(tree)
+	var ret tree
 
 	// parse the tree
 	reader := bufio.NewReader(bytes.NewReader(data))
 	for {
 		modeName, err := reader.ReadBytes(0)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -87,43 +87,47 @@ func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree,
 			kind = BlobKind
 		}
 
-		ret[nameStr] = treeEntry{mode, kind, hex.EncodeToString(hash)}
+		ret = append(ret, treeEntry{nameStr, mode, kind, hex.EncodeToString(hash)})
 	}
 
 	return ret, nil
 }
 
-func (b *batchProc) catFileTreeRecursive(ctx context.Context, commit, repoRelPath string) (tree, error) {
-	ret := make(tree)
+func (b *batchProc) catFileTreeWalk(ctx context.Context, commit, repoRelPath string, loopCheck stringset.Set, cb func(repoRelPath string, dirContent tree) (skipIdxes map[int]struct{}, err error)) error {
+	tree, err := b.catFileTree(ctx, commit, repoRelPath)
+	if err != nil {
+		return fmt.Errorf("catFileTreeWalk: %s:%s: catFileTree returned error: %w", commit, repoRelPath, err)
+	}
 
-	treeHashes := stringset.New(10)
-	toProcess := []string{repoRelPath}
-	for len(toProcess) > 0 {
-		item := toProcess[0]
-		toProcess = toProcess[1:]
+	skipIdxs, err := cb(repoRelPath, tree)
+	if err != nil {
+		return fmt.Errorf("catFileTreeWalk: %s:%s: callback returned error: %w", commit, repoRelPath, err)
+	}
 
-		tree, err := b.catFileTree(ctx, commit, item)
-		if err != nil {
-			return nil, err
+	var subLoopCheck stringset.Set
+	for i, entry := range tree {
+		if _, has := skipIdxs[i]; has {
+			continue
 		}
-
-		for _, name := range slices.Sorted(maps.Keys(tree)) {
-			key := path.Join(item, name)
-			if strings.Contains(name, "/") {
-				return nil, fmt.Errorf("git tree %s:%s - entry %q contains /", commit, item, name)
+		if entry.kind == TreeKind {
+			if strings.Contains(entry.name, "/") {
+				return fmt.Errorf("catFileTreeWalk: %s:%s: entry %q contains /", commit, repoRelPath, entry.name)
 			}
-
-			entry := tree[name]
-			ret[key] = entry
-			if entry.kind == TreeKind {
-				if treeHashes.Has(entry.hash) {
-					return nil, fmt.Errorf("git tree %s:%s - entry %q is recursive on %q", commit, item, name, entry.hash)
-				}
-				treeHashes.Add(entry.hash)
-				toProcess = append(toProcess, key)
+			if loopCheck.Has(entry.hash) {
+				return fmt.Errorf("catFileTreeWalk: %s:%s: entry %q is recursive on %q", commit, repoRelPath, entry.name, entry.hash)
 			}
+			if subLoopCheck == nil {
+				subLoopCheck = stringset.New(1)
+			} else {
+				subLoopCheck = loopCheck.Dup()
+			}
+			subLoopCheck.Add(entry.hash)
+			if err := b.catFileTreeWalk(ctx, commit, path.Join(repoRelPath, entry.name), subLoopCheck, cb); err != nil {
+				return err
+			}
+			subLoopCheck.Del(entry.hash)
 		}
 	}
 
-	return ret, nil
+	return nil
 }

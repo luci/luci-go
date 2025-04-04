@@ -56,10 +56,10 @@ func TestCatFileBatchLazy(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		t.Parallel()
 
-		repo := mkRepo(t)
+		repo := mkRepo(t, "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 
 		// This picks an arbitrary commit/file to pull through the cache.
-		kind, dat, err := repo.batchProcLazy.catFile(
+		kind, dat, err := repo.batchProc.catFile(
 			context.Background(), "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 		assert.NoErr(t, err)
 
@@ -75,7 +75,7 @@ func TestCatFileBatchLazy(t *testing.T) {
 
 		repo := mkRepo(t)
 
-		_, _, err := repo.batchProcLazy.catFile(
+		_, _, err := repo.batchProc.catFile(
 			context.Background(), "deadbeef82d36767c5399c936e6356782cc4:noexist")
 		assert.ErrIsLike(t, err, "object is missing")
 	})
@@ -83,63 +83,70 @@ func TestCatFileBatchLazy(t *testing.T) {
 	t.Run("ambiguous", func(t *testing.T) {
 		t.Parallel()
 
-		repo := mkRepo(t)
+		objs := []string{
+			"6371c00ed96239f955ecdb11c96fcd578eff821d",
+			"637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96",
+		}
+
+		repo := mkRepo(t, objs...)
 
 		// there are two actual objects whose hashes start with `6371`
-		kind, _, err := repo.batchProcLazy.catFile(
-			context.Background(), "6371c00ed96239f955ecdb11c96fcd578eff821d")
+		kind, _, err := repo.batchProc.catFile(context.Background(), objs[0])
 		assert.NoErr(t, err)
 		assert.That(t, kind, should.Equal(BlobKind))
 
-		kind, _, err = repo.batchProcLazy.catFile(
-			context.Background(), "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96")
+		kind, _, err = repo.batchProc.catFile(context.Background(), objs[1])
 		assert.NoErr(t, err)
 		assert.That(t, kind, should.Equal(BlobKind))
 
-		_, _, err = repo.batchProcLazy.catFile(
+		_, _, err = repo.batchProc.catFile(
 			context.Background(), "6371")
 		assert.ErrIsLike(t, err, "ambiguous")
 
-		t.Run("non-lazy", func(t *testing.T) {
-			t.Parallel()
+	})
 
-			// can pull blob we know about
-			kind, dat, err := repo.batchProc.catFile(
-				context.Background(), "6371c00ed96239f955ecdb11c96fcd578eff821d")
-			assert.NoErr(t, err)
-			check.That(t, kind, should.Equal(BlobKind))
-			check.Loosely(t, dat, should.HaveLength(79))
+	t.Run("missing", func(t *testing.T) {
+		t.Parallel()
 
-			// but we immediately fail to pull another blob which exists, but we
-			// haven't pulled in yet.
-			_, _, err = repo.batchProc.catFile(
-				context.Background(), "73bd1be998e9effd633fd2fc4428f8081b231fb6")
-			assert.ErrIsLike(t, err, "missing")
-		})
+		obj := "6371c00ed96239f955ecdb11c96fcd578eff821d"
+
+		repo := mkRepo(t, obj)
+
+		// can get blob we know about
+		kind, dat, err := repo.batchProc.catFile(context.Background(), obj)
+		assert.NoErr(t, err)
+		check.That(t, kind, should.Equal(BlobKind))
+		check.Loosely(t, dat, should.HaveLength(79))
+
+		// but we immediately fail to pull another blob which exists, but we
+		// haven't pulled in yet.
+		_, _, err = repo.batchProc.catFile(
+			context.Background(), "73bd1be998e9effd633fd2fc4428f8081b231fb6")
+		assert.ErrIsLike(t, err, "missing")
 	})
 
 	t.Run("canceled", func(t *testing.T) {
 		t.Parallel()
 
-		repo := mkRepo(t)
+		target := "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star"
+
+		repo := mkRepo(t, target)
 
 		cause := fmt.Errorf("I am a banana")
 
 		ctx, cancel := context.WithCancelCause(context.Background())
 		cancel(cause)
 
-		_, _, err := repo.batchProcLazy.catFile(
-			ctx, "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
+		_, _, err := repo.batchProc.catFile(ctx, target)
 		assert.ErrIsLike(t, err, cause)
 
 		// even though catFile set up a subprocess, it's nil again after
 		// cancellation.
-		assert.Loosely(t, repo.batchProcLazy.cmd, should.BeNil)
+		assert.Loosely(t, repo.batchProc.cmd, should.BeNil)
 
 		// we can still use repo.batchProcLazy after cancelation, it will just make
 		// a new subprocess.
-		kind, dat, err := repo.batchProcLazy.catFile(
-			context.Background(), "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
+		kind, dat, err := repo.batchProc.catFile(context.Background(), target)
 		assert.NoErr(t, err)
 		assert.That(t, kind, should.Equal(BlobKind))
 		assert.Loosely(t, dat, should.HaveLength(123))
@@ -148,22 +155,24 @@ func TestCatFileBatchLazy(t *testing.T) {
 	t.Run("injected error gets shutdown", func(t *testing.T) {
 		t.Parallel()
 
-		repo := mkRepo(t)
+		target := "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star"
+
+		repo := mkRepo(t, target)
 
 		ctx := execmock.Init(context.Background())
 		errHits := catFileBreakAfterOne.WithArgs("git", "--git-dir", "...", "cat-file").Mock(ctx)
 
-		kind, dat, err := repo.batchProcLazy.catFile(
+		kind, dat, err := repo.batchProc.catFile(
 			ctx, "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 		assert.NoErr(t, err)
 		assert.That(t, kind, should.Equal(BlobKind))
 		assert.Loosely(t, dat, should.HaveLength(123))
-		assert.Loosely(t, repo.batchProcLazy.cmd, should.NotBeNil)
+		assert.Loosely(t, repo.batchProc.cmd, should.NotBeNil)
 
-		_, _, err = repo.batchProcLazy.catFile(
+		_, _, err = repo.batchProc.catFile(
 			ctx, "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 		assert.ErrIsLike(t, err, io.EOF)
-		assert.Loosely(t, repo.batchProcLazy.cmd, should.BeNil)
+		assert.Loosely(t, repo.batchProc.cmd, should.BeNil)
 
 		assert.Loosely(t, errHits.Snapshot(), should.HaveLength(1))
 	})

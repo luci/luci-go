@@ -47,7 +47,7 @@ func parseUserTime(value string) (user string, ts time.Time) {
 		return
 	}
 
-	unixTs, err := strconv.ParseInt(groups[2], 10, 64)
+	unixTS, err := strconv.ParseInt(groups[2], 10, 64)
 	if err != nil {
 		user = value
 		return
@@ -60,7 +60,7 @@ func parseUserTime(value string) (user string, ts time.Time) {
 	}
 
 	user = groups[1]
-	ts = time.Unix(unixTs, 0).In(tLoc.Location())
+	ts = time.Unix(unixTS, 0).In(tLoc.Location())
 	return
 }
 

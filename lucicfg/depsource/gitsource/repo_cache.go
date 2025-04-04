@@ -23,7 +23,6 @@ import (
 	"maps"
 	"os"
 	"slices"
-	"sync"
 
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
@@ -33,14 +32,8 @@ type RepoCache struct {
 	// path/to/<Cache.repoRoot>/<sha256(remoteUrl)>
 	repoRoot string
 
-	// map ref -> resolved
-	lsRemoteCache map[string]string
-	lsRemoteMu    sync.RWMutex
-
-	// batchProc will reject missing blobs, batchProcLazy will attempt to fetch
-	// them lazily if missing.
-	batchProc     batchProc
-	batchProcLazy batchProc
+	// batchProc will reject missing blobs
+	batchProc batchProc
 }
 
 // Shutdown terminates long-running processes which may be associated with this
@@ -50,7 +43,6 @@ type RepoCache struct {
 // processes may be brought back up again)
 func (r *RepoCache) Shutdown() {
 	r.batchProc.shutdown()
-	r.batchProcLazy.shutdown()
 }
 
 func newRepoCache(repoRoot string) (*RepoCache, error) {
@@ -61,20 +53,22 @@ func newRepoCache(repoRoot string) (*RepoCache, error) {
 	}
 
 	ret.batchProc.mkCmd = ret.mkGitCmd
-	ret.batchProcLazy.mkCmd = ret.mkGitCmd
-	ret.batchProcLazy.lazy = true
 	return ret, nil
 }
 
-func (c *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
-	fullArgs := append([]string{"--git-dir"}, c.repoRoot)
+func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
+	fullArgs := append([]string{"--git-dir"}, r.repoRoot)
 	fullArgs = append(fullArgs, args...)
 	ret := exec.CommandContext(ctx, "git", fullArgs...)
-	logging.Infof(ctx, "running: %s", ret)
+	logging.Debugf(ctx, "running: %s", ret)
+	if logging.GetLevel(ctx) <= logging.Debug {
+		ret.Stdout = os.Stdout
+		ret.Stderr = os.Stderr
+	}
 	return ret
 }
 
-func (c *RepoCache) fixCmdErr(cmd *exec.Cmd, err error) error {
+func (r *RepoCache) fixCmdErr(cmd *exec.Cmd, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -82,64 +76,54 @@ func (c *RepoCache) fixCmdErr(cmd *exec.Cmd, err error) error {
 }
 
 // git runs the command, returning an error unless the command succeeded.
-func (c *RepoCache) git(ctx context.Context, args ...string) error {
-	cmd := c.mkGitCmd(ctx, args)
-	return c.fixCmdErr(cmd, cmd.Run())
+func (r *RepoCache) git(ctx context.Context, args ...string) error {
+	cmd := r.mkGitCmd(ctx, args)
+	return r.fixCmdErr(cmd, cmd.Run())
 }
 
 // gitOutput returns the stdout from this git command
-func (c *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, error) {
-	cmd := c.mkGitCmd(ctx, args)
+func (r *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, error) {
+	cmd := r.mkGitCmd(ctx, args)
+	cmd.Stdout = nil
 	out, err := cmd.Output()
-	return out, c.fixCmdErr(cmd, err)
+	return out, r.fixCmdErr(cmd, err)
 }
 
-// gitTest returns:
-//
-//   - (true, nil) if the command succeeded
-//   - (false, nil) if the command ran but returned a non-zero exit code.
-//   - (false, err) if the command failed to run or ran abnormally.
-func (c *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
-	cmd := c.mkGitCmd(ctx, args)
-	err := cmd.Run()
-	if err == nil {
-		return true, nil
-	}
-
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		err = nil
-	}
-	return false, c.fixCmdErr(cmd, err)
+// gitCombinedOutput returns the stdout from this git command
+func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]byte, error) {
+	cmd := r.mkGitCmd(ctx, args)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	out, err := cmd.CombinedOutput()
+	return out, r.fixCmdErr(cmd, err)
 }
 
-func (c *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
+func (r *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
 	versionKey := fmt.Sprintf("%s.gitsourceVersion", cb.section)
 	versionStr := cb.hash()
 
-	val, err := c.gitOutput(ctx, "config", versionKey)
+	val, err := r.gitOutput(ctx, "config", versionKey)
 	if err == nil {
 		if string(val[:len(val)-1]) == versionStr {
 			return nil // present and correct version
 		}
 		// need to reset
 		if len(val) > 0 {
-			if err := c.git(ctx, "config", "--remove-section", cb.section); err != nil {
+			if err := r.git(ctx, "config", "--remove-section", cb.section); err != nil {
 				return err
 			}
 		}
 	} else if err := filterCode(err, 1); err != nil {
 		return err
-	} else {
-		// missing
 	}
+	// missing
 
 	for key, value := range cb.config {
-		if err := c.git(ctx, "config", fmt.Sprintf("%s.%s", cb.section, key), value); err != nil {
+		if err := r.git(ctx, "config", fmt.Sprintf("%s.%s", cb.section, key), value); err != nil {
 			return err
 		}
 	}
-	return c.git(ctx, "config", versionKey, versionStr)
+	return r.git(ctx, "config", versionKey, versionStr)
 }
 
 type configBlock struct {
@@ -147,14 +131,14 @@ type configBlock struct {
 	config  map[string]string
 }
 
-func (c configBlock) hash() string {
+func (r configBlock) hash() string {
 	h := sha1.New()
-	_, err := fmt.Fprintf(h, "section %q\n", c.section)
+	_, err := fmt.Fprintf(h, "section %q\n", r.section)
 	if err != nil {
 		panic(err)
 	}
-	for _, key := range slices.Sorted(maps.Keys(c.config)) {
-		_, err := fmt.Fprintf(h, "%q %q\n", key, c.config[key])
+	for _, key := range slices.Sorted(maps.Keys(r.config)) {
+		_, err := fmt.Fprintf(h, "%q %q\n", key, r.config[key])
 		if err != nil {
 			panic(err)
 		}

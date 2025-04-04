@@ -24,11 +24,6 @@ import (
 )
 
 func TestCommitParse(t *testing.T) {
-	type tcase struct {
-		commitMessage string
-		expected      Commit
-	}
-
 	ctx := context.Background()
 
 	run := func(message []string, expect Commit) func(t *testing.T) {
@@ -86,10 +81,11 @@ func TestCommitParse(t *testing.T) {
 func TestCommitParseActual(t *testing.T) {
 	t.Parallel()
 
-	repo := mkRepo(t)
+	commit := "9c350ff8eeacef414a4baa5d68098e61b2d51a51"
 
-	cmt, err := repo.batchProcLazy.catFileCommit(
-		context.Background(), "9c350ff8eeacef414a4baa5d68098e61b2d51a51")
+	repo := mkRepo(t, commit)
+
+	cmt, err := repo.batchProc.catFileCommit(context.Background(), commit)
 	assert.NoErr(t, err)
 
 	assert.That(t, cmt.Author, should.Equal("Exemplar Exemplaris <exemplar@example.com>"))

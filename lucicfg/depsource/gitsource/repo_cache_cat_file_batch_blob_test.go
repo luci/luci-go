@@ -16,6 +16,7 @@ package gitsource
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -25,9 +26,12 @@ import (
 func TestCatFileBatchBlob(t *testing.T) {
 	t.Parallel()
 
-	repo := mkRepo(t)
+	commit := "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f"
+	file := "unrelated_file"
 
-	dat, err := repo.batchProcLazy.catFileBlob(context.Background(), "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "unrelated_file")
+	repo := mkRepo(t, fmt.Sprintf("%s:%s", commit, file))
+
+	dat, err := repo.batchProc.catFileBlob(context.Background(), commit, file)
 	assert.NoErr(t, err)
 	assert.That(t, dat, should.Match([]byte("This file is completely unrelated, and is outside of subdir.\n")))
 }

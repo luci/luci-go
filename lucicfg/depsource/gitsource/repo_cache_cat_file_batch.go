@@ -17,7 +17,6 @@ package gitsource
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -28,15 +27,11 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-var errMissingObject = errors.New("object is missing")
-
 type batchProc struct {
 	// mkCmd is kind of a weird circular dependency with RepoCache - this is the
 	// case because currently batchProc can (theoretically) recover from a crash
 	// of `git cat-file --batch` and recreate the command.
 	mkCmd func(ctx context.Context, args []string) *exec.Cmd
-
-	lazy bool
 
 	mu     sync.Mutex
 	cmd    *exec.Cmd
@@ -77,7 +72,7 @@ func parseCatFileResponse(stdout *bufio.Reader) (kind ObjectKind, data []byte, e
 	// next, check the end of the status line. This will tell us if we are in an
 	// error condition of some kind.
 	if strings.HasSuffix(status, " missing") {
-		err = errMissingObject
+		err = ErrMissingObject
 		return
 	}
 	if strings.HasSuffix(status, " ambiguous") {
@@ -122,13 +117,8 @@ func parseCatFileResponse(stdout *bufio.Reader) (kind ObjectKind, data []byte, e
 
 func (b *batchProc) ensureCatFileBatchProcLocked(ctx context.Context) error {
 	if b.cmd == nil {
-		var args []string
-		if b.lazy {
-			args = []string{"cat-file", "--batch", "-Z", "--follow-symlinks"}
-		} else {
-			args = []string{"--no-lazy-fetch", "cat-file", "--batch", "-Z", "--follow-symlinks"}
-		}
-		b.cmd = b.mkCmd(context.WithoutCancel(ctx), args)
+		b.cmd = b.mkCmd(context.WithoutCancel(ctx), []string{"--no-lazy-fetch", "cat-file", "--batch", "-Z", "--follow-symlinks"})
+		b.cmd.Stdout = nil // may be set by mkCmd
 
 		var err error
 		b.stdin, err = b.cmd.StdinPipe()
@@ -226,7 +216,7 @@ func (b *batchProc) catFile(ctx context.Context, request string) (kind ObjectKin
 		//   * close readDone (no effect)
 		//   * wait for shutdownerDone (already done)
 		//   * release b.mu
-		logging.Infof(ctx, "catFile (lazy:%t) %s", b.lazy, request)
+		logging.Debugf(ctx, "catFile %s", request)
 		_, err = fmt.Fprintf(stdin, "%s\x00", request)
 		if err != nil {
 			if ctx.Err() != nil {

@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/exec/execmock"
 	"go.chromium.org/luci/common/git/testrepo"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 )
 
@@ -30,14 +31,17 @@ func mkRepoRaw(t testing.TB) string {
 	return ret
 }
 
-func mkRepo(t *testing.T) *RepoCache {
+func mkRepo(t *testing.T, prefetch ...string) *RepoCache {
+	t.Helper()
+
 	cache, err := New(t.TempDir())
-	assert.NoErr(t, err)
+	assert.NoErr(t, err, truth.LineContext())
 
 	ret, err := cache.ForRepo(context.Background(), mkRepoRaw(t))
-	assert.NoErr(t, err)
+	assert.NoErr(t, err, truth.LineContext())
 
 	t.Cleanup(ret.Shutdown)
+	assert.NoErr(t, ret.prefetchMultiple(context.Background(), prefetch), truth.LineContext())
 
 	return ret
 }
