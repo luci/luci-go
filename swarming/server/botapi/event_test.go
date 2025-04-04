@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
@@ -47,9 +48,9 @@ func TestEvent(t *testing.T) {
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		var lastUpdate *model.BotInfoUpdate
+		var lastUpdate *botinfo.Update
 		srv := BotAPIServer{
-			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				lastUpdate = u
 				return nil
@@ -72,10 +73,10 @@ func TestEvent(t *testing.T) {
 		t.Run("OK minimal", func(t *ftt.Test) {
 			_, err := srv.Event(ctx, &EventRequest{Event: model.BotEventRebooting}, srvReq)
 			assert.NoErr(t, err)
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID:     botID,
 				EventType: model.BotEventRebooting,
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       sessionID,
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
@@ -94,7 +95,7 @@ func TestEvent(t *testing.T) {
 				Version: "bot-version",
 			}, srvReq)
 			assert.NoErr(t, err)
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
 				State: &botstate.Dict{JSON: []byte(`{
 					"state": "abc"
@@ -102,13 +103,13 @@ func TestEvent(t *testing.T) {
 				EventType:     model.BotEventError,
 				EventDedupKey: "request-uuid",
 				EventMessage:  "Boom",
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       sessionID,
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 					Version:         "bot-version",
 				},
-				HealthInfo: &model.BotHealthInfo{},
+				HealthInfo: &botinfo.HealthInfo{},
 			}))
 		})
 
@@ -122,7 +123,7 @@ func TestEvent(t *testing.T) {
 				}`)},
 			}, srvReq)
 			assert.NoErr(t, err)
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
 				State: &botstate.Dict{JSON: []byte(`{
 					"quarantined": "quarantine msg",
@@ -130,12 +131,12 @@ func TestEvent(t *testing.T) {
 				}`)},
 				EventType:    model.BotEventError,
 				EventMessage: "Boom",
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       sessionID,
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{
+				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "quarantine msg",
 					Maintenance: "maintenance msg",
 				},

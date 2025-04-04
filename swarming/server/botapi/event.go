@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
@@ -105,7 +106,7 @@ func (srv *BotAPIServer) Event(ctx context.Context, body *EventRequest, r *botsr
 	// If the request has the state populated, derive the health info based on it.
 	// Otherwise do not change the state or the health status of the bot.
 	var botState *botstate.Dict
-	var botHealth *model.BotHealthInfo
+	var botHealth *botinfo.HealthInfo
 	if !body.State.IsEmpty() {
 		health, state, err := updateBotHealthInfo(body.State, r.Dimensions.DimensionValues(botstate.QuarantinedKey), nil)
 		if err != nil {
@@ -115,13 +116,13 @@ func (srv *BotAPIServer) Event(ctx context.Context, body *EventRequest, r *botsr
 		botHealth = &health
 	}
 
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:         r.Session.BotId,
 		State:         botState,
 		EventType:     body.Event,
 		EventDedupKey: body.RequestUUID,
 		EventMessage:  body.Message,
-		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,
 			Version:   body.Version,
 		}),

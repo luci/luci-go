@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -355,10 +356,10 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 	}
 
 	// Transactionally claim the task and assign it to the bot. The transaction
-	// happens as part of the BotInfoUpdate operation that assigns the task ID
+	// happens as part of the botinfo.Update operation that assigns the task ID
 	// to the bot.
 	var outcome *tasks.ClaimTxnOutcome
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:         r.Session.BotId,
 		EventType:     eventType,
 		EventDedupKey: body.ClaimID,
@@ -376,10 +377,10 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 			return
 		},
 		State: state,
-		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,
 		}),
-		TaskInfo: &model.BotEventTaskInfo{
+		TaskInfo: &botinfo.TaskInfo{
 			TaskID:    model.RequestKeyToTaskID(reqKey, model.AsRunResult),
 			TaskName:  details.req.Name,
 			TaskFlags: details.req.TaskFlags(),

@@ -37,6 +37,7 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -245,8 +246,8 @@ func TestClaim(t *testing.T) {
 		})
 
 		t.Run("Claim txn OK", func(t *ftt.Test) {
-			var botInfoUpdate *model.BotInfoUpdate
-			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+			var botInfoUpdate *botinfo.Update
+			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				botInfoUpdate = u
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -293,18 +294,18 @@ func TestClaim(t *testing.T) {
 				Manifest: resp.Manifest,
 			}))
 
-			assert.That(t, botInfoUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, botInfoUpdate, should.Match(&botinfo.Update{
 				BotID:         "bot-id",
 				EventType:     model.BotEventTask,
 				EventDedupKey: "new-claim-id",
 				Prepare:       botInfoUpdate.Prepare,
 				State:         &botstate.Dict{JSON: []byte(`{"some": "state"}`)},
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       "session-id",
 					ExternalIP:      "127.0.0.1",
 					AuthenticatedAs: "bot:bot-id",
 				},
-				TaskInfo: &model.BotEventTaskInfo{
+				TaskInfo: &botinfo.TaskInfo{
 					TaskID:    runID,
 					TaskName:  "task-name",
 					TaskFlags: 0,
@@ -327,7 +328,7 @@ func TestClaim(t *testing.T) {
 		})
 
 		t.Run("Claim txn unavailable", func(t *ftt.Test) {
-			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					proceed, err := u.Prepare(ctx, &model.BotInfo{
@@ -367,7 +368,7 @@ func TestClaim(t *testing.T) {
 		})
 
 		t.Run("Claim txn already claimed", func(t *ftt.Test) {
-			srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					proceed, err := u.Prepare(ctx, &model.BotInfo{

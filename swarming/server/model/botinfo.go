@@ -75,7 +75,7 @@ const (
 // TaskChangeAspects defines how events change TaskID assigned to the bot when
 // they happen.
 //
-// See BotInfoUpdate for more details.
+// See botinfo.Update for more details.
 var TaskChangeAspects = map[BotEventType]TaskChangeAspect{
 	BotEventConnected:     TaskChangeReset, // a connecting bot is not running tasks
 	BotEventError:         TaskChangeNone,  // bot errors can be reported at any state

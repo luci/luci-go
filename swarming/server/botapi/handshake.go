@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -215,7 +216,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// request. This also updates the quarantine message in the state if
 	// necessary (e.g. there were validation errors). This will result in the bot
 	// being placed in a quarantine, with these errors visible in the bot UI.
-	var healthInfo model.BotHealthInfo
+	var healthInfo botinfo.HealthInfo
 	healthInfo, body.State, err = updateBotHealthInfo(body.State, body.Dimensions[botstate.QuarantinedKey], errs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
@@ -257,13 +258,13 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// BotGroup field) will be stored in BotInfo. If the bot is reconnecting after
 	// a restart, its dimensions won't be changed. To help in debugging issues,
 	// these initial dimensions are placed into the state instead (see above).
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:              botID,
 		BotGroupDimensions: botGroup.Dimensions,
 		State:              &body.State,
 		EventType:          model.BotEventConnected,
 		EventDedupKey:      sessionID,
-		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: sessionID,
 			Version:   body.Version,
 		}),

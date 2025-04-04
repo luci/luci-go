@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package botinfo
 
 import (
 	"context"
@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/botstate"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 func init() {
@@ -54,18 +55,18 @@ func TestBotInfoUpdate(t *testing.T) {
 
 		tickOneSec := func() { tc.Add(time.Second) }
 
-		submit := func(ev BotEventType, dedupKey string, dims []string, state *botstate.Dict, diffs ...any) *SubmittedBotInfoUpdate {
-			var healthInfo *BotHealthInfo
-			var taskInfo *BotEventTaskInfo
+		submit := func(ev model.BotEventType, dedupKey string, dims []string, state *botstate.Dict, diffs ...any) *SubmittedUpdate {
+			var healthInfo *HealthInfo
+			var taskInfo *TaskInfo
 			var effectiveIDInfo *RBEEffectiveBotIDInfo
 			for _, diff := range diffs {
 				switch val := diff.(type) {
-				case *BotHealthInfo:
+				case *HealthInfo:
 					if healthInfo != nil {
 						panic("healthInfo given twice")
 					}
 					healthInfo = val
-				case *BotEventTaskInfo:
+				case *TaskInfo:
 					if taskInfo != nil {
 						panic("taskInfo given twice")
 					}
@@ -80,7 +81,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				}
 			}
 
-			update := BotInfoUpdate{
+			update := Update{
 				BotID: "bot-id",
 				BotGroupDimensions: map[string][]string{
 					"pool":      {"a", "b"},
@@ -90,7 +91,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				EventDedupKey: dedupKey,
 				Dimensions:    dims,
 				State:         state,
-				CallInfo: &BotEventCallInfo{
+				CallInfo: &CallInfo{
 					SessionID:       "session-id",
 					Version:         "version",
 					ExternalIP:      "external-ip",
@@ -105,9 +106,9 @@ func TestBotInfoUpdate(t *testing.T) {
 			return submitted
 		}
 
-		check := func() (*BotInfo, []*BotEvent) {
-			info := &BotInfo{Key: BotInfoKey(ctx, "bot-id")}
-			events := []*BotEvent{}
+		check := func() (*model.BotInfo, []*model.BotEvent) {
+			info := &model.BotInfo{Key: model.BotInfoKey(ctx, "bot-id")}
+			events := []*model.BotEvent{}
 			q := datastore.NewQuery("BotEvent").Ancestor(info.Key.Root()).Order("ts")
 			err := datastore.Get(ctx, info)
 			if errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -119,7 +120,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			return info, events
 		}
 
-		summary := func(ev []*BotEvent) []string {
+		summary := func(ev []*model.BotEvent) []string {
 			var out []string
 			for _, e := range ev {
 				parts := []string{string(e.EventType)}
@@ -135,11 +136,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		testState2 := &botstate.Dict{JSON: []byte(`{"some-state": 2}`)}
 
 		t.Run("New BotInfo entity", func(t *ftt.Test) {
-			submit(BotEventConnected, "event-id", nil, testState1)
+			submit(model.BotEventConnected, "event-id", nil, testState1)
 
 			botInfo, events := check()
 
-			assert.That(t, botInfo, should.Match(&BotInfo{
+			assert.That(t, botInfo, should.Match(&model.BotInfo{
 				Key: botInfo.Key,
 				Dimensions: []string{
 					"id:bot-id",
@@ -147,15 +148,15 @@ func TestBotInfoUpdate(t *testing.T) {
 					"pool:b",
 					"something:c",
 				},
-				Composite: []BotStateEnum{
-					BotStateNotInMaintenance,
-					BotStateAlive,
-					BotStateHealthy,
-					BotStateBusy,
+				Composite: []model.BotStateEnum{
+					model.BotStateNotInMaintenance,
+					model.BotStateAlive,
+					model.BotStateHealthy,
+					model.BotStateBusy,
 				},
 				FirstSeen:         testTime,
 				LastEventDedupKey: "bot_connected:event-id",
-				BotCommon: BotCommon{
+				BotCommon: model.BotCommon{
 					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					SessionID:       "session-id",
 					ExternalIP:      "external-ip",
@@ -167,17 +168,17 @@ func TestBotInfoUpdate(t *testing.T) {
 			}))
 
 			assert.That(t, len(events), should.Equal(1))
-			assert.That(t, events[0], should.Match(&BotEvent{
+			assert.That(t, events[0], should.Match(&model.BotEvent{
 				Key:       events[0].Key,
 				Timestamp: testTime,
-				EventType: BotEventConnected,
+				EventType: model.BotEventConnected,
 				Dimensions: []string{
 					"id:bot-id",
 					"pool:a",
 					"pool:b",
 					"something:c",
 				},
-				BotCommon: BotCommon{
+				BotCommon: model.BotCommon{
 					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					SessionID:       "session-id",
 					ExternalIP:      "external-ip",
@@ -190,13 +191,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1)
+			submit(model.BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2) // not recorded as "not interesting"
+			submit(model.BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2) // not recorded as "not interesting"
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2) // complete ignored as a dup
+			submit(model.BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2) // complete ignored as a dup
 
 			botInfo, events := check()
 
@@ -210,11 +211,11 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, botInfo.LastSeen, should.Match(datastore.NewUnindexedOptional(testTime.Add(2*time.Second))))
 			assert.That(t, botInfo.IdleSince, should.Match(datastore.NewUnindexedOptional(testTime.Add(time.Second))))
 			assert.That(t, botInfo.State, should.Match(*testState2))
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateAlive,
-				BotStateHealthy,
-				BotStateIdle,
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateIdle,
 			}))
 
 			// Even though "idle-2" was not recorded as BotEvent, it is still stored
@@ -223,9 +224,9 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle (no state)", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, nil) // do not pass state
+			submit(model.BotEventIdle, "idle", nil, nil) // do not pass state
 
 			botInfo, events := check()
 
@@ -237,8 +238,8 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => delete => delete", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
-			submitted := submit(BotEventDeleted, "deleted-1", nil, nil)
+			submit(model.BotEventConnected, "connect", nil, testState1)
+			submitted := submit(model.BotEventDeleted, "deleted-1", nil, nil)
 			assert.Loosely(t, submitted.BotInfo, should.NotBeNil)
 
 			botInfo, events := check()
@@ -248,7 +249,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_deleted",
 			}))
 
-			submitted = submit(BotEventDeleted, "deleted-2", nil, nil)
+			submitted = submit(model.BotEventDeleted, "deleted-2", nil, nil)
 			assert.Loosely(t, submitted.BotInfo, should.BeNil)
 
 			botInfo, events = check()
@@ -260,11 +261,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Dimension change", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1)
+			submit(model.BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:2", "id:bot-id"}, testState1)
+			submit(model.BotEventIdle, "idle-2", []string{"dim:2", "id:bot-id"}, testState1)
 
 			botInfo, events := check()
 
@@ -280,11 +281,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Maintenance", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", nil, testState1)
+			submit(model.BotEventIdle, "idle-1", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", nil, testState1, &BotHealthInfo{Maintenance: "boom"})
+			submit(model.BotEventIdle, "idle-2", nil, testState1, &HealthInfo{Maintenance: "boom"})
 
 			botInfo, events := check()
 
@@ -294,20 +295,20 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle boom",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateInMaintenance,
-				BotStateAlive,
-				BotStateHealthy,
-				BotStateBusy, // implied by being in maintenance
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateBusy, // implied by being in maintenance
 			}))
 		})
 
 		t.Run("Connect => Idle => Quarantine", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", nil, testState1)
+			submit(model.BotEventIdle, "idle-1", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", nil, testState1, &BotHealthInfo{Quarantined: "boom"})
+			submit(model.BotEventIdle, "idle-2", nil, testState1, &HealthInfo{Quarantined: "boom"})
 
 			botInfo, events := check()
 
@@ -317,20 +318,20 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle boom",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateAlive,
-				BotStateQuarantined,
-				BotStateBusy, // implied by being in quarantine
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateQuarantined,
+				model.BotStateBusy, // implied by being in quarantine
 			}))
 		})
 
 		t.Run("Connect => Idle => Dead", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, testState1)
+			submit(model.BotEventIdle, "idle", nil, testState1)
 			tickOneSec()
-			submit(BotEventMissing, "missing", nil, testState1)
+			submit(model.BotEventMissing, "missing", nil, testState1)
 
 			botInfo, events := check()
 
@@ -340,22 +341,22 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_missing",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateDead,
-				BotStateHealthy,
-				BotStateIdle,
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateDead,
+				model.BotStateHealthy,
+				model.BotStateIdle,
 			}))
 		})
 
 		t.Run("Connect => Idle => Dead => Logging", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, testState1)
+			submit(model.BotEventIdle, "idle", nil, testState1)
 			tickOneSec()
-			submit(BotEventMissing, "missing", nil, testState1)
+			submit(model.BotEventMissing, "missing", nil, testState1)
 			tickOneSec()
-			submit(BotEventError, "error", nil, testState1)
+			submit(model.BotEventError, "error", nil, testState1)
 
 			botInfo, events := check()
 
@@ -366,22 +367,22 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_error",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateDead, // still dead
-				BotStateHealthy,
-				BotStateIdle, // still idle
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateDead, // still dead
+				model.BotStateHealthy,
+				model.BotStateIdle, // still idle
 			}))
 		})
 
 		t.Run("Connect => Task => Task update => Idle", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-1", nil, testState1)
+			submit(model.BotEventTaskUpdate, "update-1", nil, testState1)
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
 
 			botInfo, events := check()
@@ -391,20 +392,20 @@ func TestBotInfoUpdate(t *testing.T) {
 				"request_task",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateAlive,
-				BotStateHealthy,
-				BotStateBusy,
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateBusy,
 			}))
 			assert.That(t, botInfo.TaskID, should.Equal("task-id"))
 			assert.That(t, botInfo.TaskName, should.Equal("task-name"))
 			assert.That(t, events[1].TaskID, should.Equal("task-id"))
 
 			// Finishes the task and becomes idle.
-			submit(BotEventTaskCompleted, "completed", nil, testState1)
+			submit(model.BotEventTaskCompleted, "completed", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, testState1)
+			submit(model.BotEventIdle, "idle", nil, testState1)
 
 			botInfo, events = check()
 
@@ -413,11 +414,11 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateAlive,
-				BotStateHealthy,
-				BotStateIdle,
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateIdle,
 			}))
 			assert.That(t, botInfo.TaskID, should.Equal(""))
 			assert.That(t, botInfo.TaskName, should.Equal(""))
@@ -427,13 +428,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Task => Missing => Connect", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
-			submit(BotEventMissing, "missing", nil, testState1)
+			submit(model.BotEventMissing, "missing", nil, testState1)
 			tickOneSec()
 
 			info, events := check()
@@ -447,7 +448,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			// Actually retained TaskID.
 			assert.That(t, info.TaskID, should.Equal("task-id"))
 
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
 
 			info, events = check()
@@ -460,13 +461,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Task => Connect", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
 
 			_, events := check()
@@ -479,13 +480,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Task => Deleted", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventTask, "task", nil, testState1, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-2", nil, testState1)
+			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
-			submit(BotEventDeleted, "delete", nil, testState1)
+			submit(model.BotEventDeleted, "delete", nil, testState1)
 			tickOneSec()
 
 			_, events := check()
@@ -498,17 +499,17 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => TerminateBot => Connect => Missing", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect-1", nil, testState1)
+			submit(model.BotEventConnected, "connect-1", nil, testState1)
 			tickOneSec()
-			submit(BotEventTerminate, "terminate", nil, testState1, &BotEventTaskInfo{
+			submit(model.BotEventTerminate, "terminate", nil, testState1, &TaskInfo{
 				TaskID:    "task-id",
 				TaskName:  "task-name",
-				TaskFlags: TaskFlagTermination,
+				TaskFlags: model.TaskFlagTermination,
 			})
 			tickOneSec()
-			submit(BotEventTaskCompleted, "done", nil, testState1)
+			submit(model.BotEventTaskCompleted, "done", nil, testState1)
 			tickOneSec()
-			submit(BotEventShutdown, "dead", nil, testState1)
+			submit(model.BotEventShutdown, "dead", nil, testState1)
 			tickOneSec()
 
 			botInfo, events := check()
@@ -520,33 +521,33 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_shutdown",
 			}))
 
-			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateDead,
-				BotStateHealthy,
-				BotStateIdle,
+			assert.That(t, botInfo.Composite, should.Match([]model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateDead,
+				model.BotStateHealthy,
+				model.BotStateIdle,
 			}))
 			assert.That(t, botInfo.TaskID, should.Equal(""))
 			assert.That(t, botInfo.TaskName, should.Equal(""))
-			assert.That(t, botInfo.TaskFlags, should.Equal(TaskFlags(0)))
-			assert.That(t, botInfo.LastFinishedTask, should.Equal(LastTaskDetails{
+			assert.That(t, botInfo.TaskFlags, should.Equal(model.TaskFlags(0)))
+			assert.That(t, botInfo.LastFinishedTask, should.Equal(model.LastTaskDetails{
 				TaskID:      "task-id",
 				TaskName:    "task-name",
-				TaskFlags:   TaskFlagTermination,
-				FinishedDue: BotEventTaskCompleted,
+				TaskFlags:   model.TaskFlagTermination,
+				FinishedDue: model.BotEventTaskCompleted,
 			}))
 			assert.That(t, botInfo.TerminationTaskID, should.Equal("task-id"))
 
 			// When it connects again, TerminationTaskID gets unset.
-			submit(BotEventConnected, "connect-2", nil, testState1)
+			submit(model.BotEventConnected, "connect-2", nil, testState1)
 			tickOneSec()
 
 			botInfo, _ = check()
-			assert.That(t, botInfo.LastFinishedTask, should.Equal(LastTaskDetails{}))
+			assert.That(t, botInfo.LastFinishedTask, should.Equal(model.LastTaskDetails{}))
 			assert.That(t, botInfo.TerminationTaskID, should.Equal(""))
 
 			// When it does ungracefully, TerminationTaskID is still unset.
-			submit(BotEventMissing, "missing", nil, testState1)
+			submit(model.BotEventMissing, "missing", nil, testState1)
 			tickOneSec()
 
 			botInfo, _ = check()
@@ -554,11 +555,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Effective bot ID change", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:a", "id:bot-id"}, testState1)
+			submit(model.BotEventIdle, "idle-1", []string{"dim:a", "id:bot-id"}, testState1)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:a", "id:bot-id"}, testState1, &RBEEffectiveBotIDInfo{
+			submit(model.BotEventIdle, "idle-2", []string{"dim:a", "id:bot-id"}, testState1, &RBEEffectiveBotIDInfo{
 				RBEEffectiveBotID: "effective-id",
 			})
 
@@ -575,11 +576,11 @@ func TestBotInfoUpdate(t *testing.T) {
 
 		t.Run("Prepare + initial update", func(t *ftt.Test) {
 			// The callback sees `nil` if there's no BotInfo yet.
-			var saw []*BotInfo
-			update := BotInfoUpdate{
+			var saw []*model.BotInfo
+			update := Update{
 				BotID:     "bot-id",
-				EventType: BotEventConnected,
-				Prepare: func(ctx context.Context, bot *BotInfo) (proceed bool, err error) {
+				EventType: model.BotEventConnected,
+				Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
 					saw = append(saw, bot)
 					return false, nil
 				},
@@ -587,21 +588,21 @@ func TestBotInfoUpdate(t *testing.T) {
 			submitted, err := update.Submit(ctx, nil)
 			assert.NoErr(t, err)
 			assert.Loosely(t, submitted, should.BeNil)
-			assert.That(t, saw, should.Match([]*BotInfo{nil}))
+			assert.That(t, saw, should.Match([]*model.BotInfo{nil}))
 
 			// The entity is still actually missing.
-			info := &BotInfo{Key: BotInfoKey(ctx, "bot-id")}
+			info := &model.BotInfo{Key: model.BotInfoKey(ctx, "bot-id")}
 			assert.That(t, datastore.Get(ctx, info), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
 		t.Run("Prepare + normal update", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, testState1)
+			submit(model.BotEventConnected, "connect", nil, testState1)
 
-			var saw []*BotInfo
-			update := BotInfoUpdate{
+			var saw []*model.BotInfo
+			update := Update{
 				BotID:     "bot-id",
-				EventType: BotEventIdle,
-				Prepare: func(ctx context.Context, bot *BotInfo) (proceed bool, err error) {
+				EventType: model.BotEventIdle,
+				Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
 					saw = append(saw, bot)
 					return false, nil
 				},

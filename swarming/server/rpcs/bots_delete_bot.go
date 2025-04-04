@@ -22,6 +22,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
@@ -35,11 +36,11 @@ func (srv *BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*a
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:     req.BotId,
 		EventType: model.BotEventDeleted,
 	}
-	info, err := update.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+	info, err := update.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
 		return &tasks.AbandonOp{
 			BotID:          botID,
 			TaskID:         taskID,

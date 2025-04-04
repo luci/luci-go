@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
-	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/botinfo"
 )
 
 func TestDeadBotDetector(t *testing.T) {
@@ -44,14 +44,14 @@ func TestDeadBotDetector(t *testing.T) {
 	detector := &DeadBotDetector{
 		BotDeathTimeout: 10 * time.Second,
 
-		submitUpdate: func(ctx context.Context, update *model.BotInfoUpdate) (*model.SubmittedBotInfoUpdate, error) {
+		submitUpdate: func(ctx context.Context, update *botinfo.Update) (*botinfo.SubmittedUpdate, error) {
 			l.Lock()
 			attempted = append(attempted, update.BotID)
 			l.Unlock()
 			if update.BotID == "will-fail-to-become-dead" {
 				return nil, errors.Reason("boo").Err()
 			}
-			return &model.SubmittedBotInfoUpdate{}, nil
+			return &botinfo.SubmittedUpdate{}, nil
 		},
 	}
 

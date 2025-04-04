@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+// Package botinfo allows to mutate BotInfo entities.
+package botinfo
 
 import (
 	"context"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/botstate"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 var botInfoTxnCount = metric.NewCounter(
@@ -61,25 +63,25 @@ const (
 //
 // They are recorded only if something noteworthy happens at the same time
 // (e.g. the bot is changing its dimensions).
-var frequentEvents = map[BotEventType]bool{
-	BotEventIdle:       true,
-	BotEventPolling:    true,
-	BotEventSleep:      true,
-	BotEventTaskUpdate: true,
+var frequentEvents = map[model.BotEventType]bool{
+	model.BotEventIdle:       true,
+	model.BotEventPolling:    true,
+	model.BotEventSleep:      true,
+	model.BotEventTaskUpdate: true,
 }
 
 // Events that may result in creation of new BotInfo entities (i.e. a new bot
 // appearing). Most often this will just be BotEventConnected, but other events
 // are theoretically possible too in case the bot was deleted while it was
 // still running.
-var healthyBotEvents = map[BotEventType]bool{
-	BotEventConnected: true,
-	BotEventIdle:      true,
-	BotEventPolling:   true,
-	BotEventRestart:   true,
-	BotEventSleep:     true,
-	BotEventTask:      true,
-	BotEventUpdate:    true,
+var healthyBotEvents = map[model.BotEventType]bool{
+	model.BotEventConnected: true,
+	model.BotEventIdle:      true,
+	model.BotEventPolling:   true,
+	model.BotEventRestart:   true,
+	model.BotEventSleep:     true,
+	model.BotEventTask:      true,
+	model.BotEventUpdate:    true,
 }
 
 // Events indicating that the bot is idle (not running any tasks, waits for new
@@ -95,28 +97,28 @@ var healthyBotEvents = map[BotEventType]bool{
 //
 // BotEventSleep is for when Swarming itself instructs the bot to stop fetching
 // RBE tasks and just sleep instead.
-var idleBotEvents = map[BotEventType]bool{
-	BotEventIdle:  true,
-	BotEventSleep: true,
+var idleBotEvents = map[model.BotEventType]bool{
+	model.BotEventIdle:  true,
+	model.BotEventSleep: true,
 }
 
 // Events indicating that the bot process is gone for good.
 //
 // The bot will move into "idle" state as soon as these events are reported. Any
 // task still associated with the bot will be moved into BOT_DIED state.
-var stoppedBotEvents = map[BotEventType]bool{
-	BotEventShutdown: true,
-	BotEventMissing:  true,
-	BotEventDeleted:  true,
+var stoppedBotEvents = map[model.BotEventType]bool{
+	model.BotEventShutdown: true,
+	model.BotEventMissing:  true,
+	model.BotEventDeleted:  true,
 }
 
 // Events that happen when the bot just wants to log some information.
 //
 // They do not affect idleness status of the bot.
-var loggingBotEvents = map[BotEventType]bool{
-	BotEventConnected: true, // preserve the previous idleness status on reconnect
-	BotEventError:     true,
-	BotEventLog:       true,
+var loggingBotEvents = map[model.BotEventType]bool{
+	model.BotEventConnected: true, // preserve the previous idleness status on reconnect
+	model.BotEventError:     true,
+	model.BotEventLog:       true,
 }
 
 // Events that indicate the bot has finished the task (successfully or not).
@@ -126,15 +128,15 @@ var loggingBotEvents = map[BotEventType]bool{
 // All BotInfo updates that report these events **must** be a part of
 // a transaction that also moves the task to a finished state. Use Prepare
 // callback to set it up.
-var taskCompletionEvents = map[BotEventType]bool{
-	BotEventTaskCompleted: true,
-	BotEventTaskError:     true,
-	BotEventTaskKilled:    true,
+var taskCompletionEvents = map[model.BotEventType]bool{
+	model.BotEventTaskCompleted: true,
+	model.BotEventTaskError:     true,
+	model.BotEventTaskKilled:    true,
 }
 
-// BotInfoUpdate is a change to BotInfo that may also create a BotEvent.
+// Update is a change to BotInfo that may also create a BotEvent.
 //
-// Submitting BotInfoUpdate is the only valid way to change or delete BotInfo
+// Submitting Update is the only valid way to change or delete BotInfo
 // entities.
 //
 // All events other than BotEventDeleted may create BotInfo, if it is missing.
@@ -146,7 +148,7 @@ var taskCompletionEvents = map[BotEventType]bool{
 // untouched (and they should also not be passing TaskInfo).
 //
 // See TaskChangeAspects for how events are split into these categories.
-type BotInfoUpdate struct {
+type Update struct {
 	// BotID is the ID of the bot being updated.
 	//
 	// Required.
@@ -155,7 +157,7 @@ type BotInfoUpdate struct {
 	// EventType is what event is causing this BotInfo update to be recorded.
 	//
 	// Required.
-	EventType BotEventType
+	EventType model.BotEventType
 
 	// EventDedupKey is an optional string used to skip duplicate events.
 	//
@@ -182,7 +184,7 @@ type BotInfoUpdate struct {
 	// all transactional work done by the callback (if any) rolled back.
 	//
 	// Returning an error aborts the update as well, with the error propagated.
-	Prepare func(ctx context.Context, bot *BotInfo) (proceed bool, err error)
+	Prepare func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error)
 
 	// Dimensions is a sorted list of dimensions to assign to the bot.
 	//
@@ -217,7 +219,7 @@ type BotInfoUpdate struct {
 	//
 	// Additionally, every update that has this field will bump bot's LastSeen
 	// timestamp (other updates wont, since they are made by the server).
-	CallInfo *BotEventCallInfo
+	CallInfo *CallInfo
 
 	// HealthInfo is bot's health status to assign to the bot in the datastore.
 	//
@@ -225,7 +227,7 @@ type BotInfoUpdate struct {
 	//
 	// This is usually derived from the dimensions and state as reported by the
 	// bot.
-	HealthInfo *BotHealthInfo
+	HealthInfo *HealthInfo
 
 	// TaskInfo is information about the task assigned to the bot.
 	//
@@ -235,7 +237,7 @@ type BotInfoUpdate struct {
 	// When it is nil, if TaskChangeAspects[EventType] is TaskChangeReset, the
 	// task ID assigned to the bot will be reset. Otherwise it will be left
 	// untouched.
-	TaskInfo *BotEventTaskInfo
+	TaskInfo *TaskInfo
 
 	// EffectiveBotIDInfo can be used to change the bot ID in RBE sessions.
 	//
@@ -248,11 +250,11 @@ type BotInfoUpdate struct {
 	EffectiveBotIDInfo *RBEEffectiveBotIDInfo
 }
 
-// BotEventCallInfo is information describing the bot API call.
+// CallInfo is information describing the bot API call.
 //
 // It is present only if the bot is actually calling the server and absent for
 // all server-generated events.
-type BotEventCallInfo struct {
+type CallInfo struct {
 	// SessionID is the ID of the current bot session.
 	SessionID string
 	// Version of the bot code the bot is running, if known.
@@ -263,11 +265,11 @@ type BotEventCallInfo struct {
 	AuthenticatedAs identity.Identity
 }
 
-// BotHealthInfo is health status of a bot.
+// HealthInfo is health status of a bot.
 //
 // It is usually extracted from dimensions and the state as reported by the bot.
 // If any of the fields are set, the bot won't be picking up any tasks.
-type BotHealthInfo struct {
+type HealthInfo struct {
 	// Quarantined is a quarantine message if the bot is in quarantine.
 	//
 	// A bot can report itself as being in quarantine if it can't run tasks
@@ -286,14 +288,14 @@ type BotHealthInfo struct {
 	Maintenance string
 }
 
-// BotEventTaskInfo is information about the task assigned to the bot.
-type BotEventTaskInfo struct {
+// TaskInfo is information about the task assigned to the bot.
+type TaskInfo struct {
 	// TaskID is the packed TaskRunResult key of the task assigned to the bot.
 	TaskID string
 	// TaskName matches TaskRequest.Name of the task identified by TaskID.
 	TaskName string
 	// TaskFlags hold aspects of the task, see TaskFlag*.
-	TaskFlags TaskFlags
+	TaskFlags model.TaskFlags
 }
 
 // RBEEffectiveBotIDInfo carries the bot ID to use in RBE sessions.
@@ -304,8 +306,8 @@ type RBEEffectiveBotIDInfo struct {
 	RBEEffectiveBotID string
 }
 
-// SubmittedBotInfoUpdate is details about a submitted bot info update.
-type SubmittedBotInfoUpdate struct {
+// SubmittedUpdate is details about a submitted bot info update.
+type SubmittedUpdate struct {
 	// BotInfo is the BotInfo entity with an update applied to it.
 	//
 	// It either an updated BotInfo or an existing one if the update is not
@@ -315,12 +317,12 @@ type SubmittedBotInfoUpdate struct {
 	// the datastore after the update. For BotEventDeleted, there's no BotInfo in
 	// the datastore anymore and this is just a snapshot of the just deleted
 	// BotInfo. It can be nil if there were no BotInfo to begin with.
-	BotInfo *BotInfo
+	BotInfo *model.BotInfo
 
 	// BotEvent is the BotEvent entity stored in the datastore.
 	//
 	// Set only if the event was actually recorded.
-	BotEvent *BotEvent
+	BotEvent *model.BotEvent
 
 	// AbandonedTaskID is set if this task was abandoned in reaction to the event.
 	AbandonedTaskID string
@@ -342,17 +344,17 @@ type AbandonedTaskFinalizer interface {
 	Finished(ctx context.Context)
 }
 
-// PanicIfInvalid panics if this BotInfoUpdate violates the contract documented
-// in BotInfoUpdate comments.
+// PanicIfInvalid panics if this update violates the contract documented in
+// Update comments.
 //
 // This can only happen in presence of bugs. Intended to be called from tests
-// that mock out BotInfoUpdate.Submit().
-func (u *BotInfoUpdate) PanicIfInvalid() {
-	aspect, found := TaskChangeAspects[u.EventType]
+// that mock out Update.Submit().
+func (u *Update) PanicIfInvalid() {
+	aspect, found := model.TaskChangeAspects[u.EventType]
 	if !found {
 		panic(fmt.Sprintf("unrecognized event %s", u.EventType))
 	}
-	if aspect == TaskChangeSet {
+	if aspect == model.TaskChangeSet {
 		if u.TaskInfo == nil {
 			panic(fmt.Sprintf("event %s is missing TaskInfo", u.EventType))
 		}
@@ -387,8 +389,8 @@ func (u *BotInfoUpdate) PanicIfInvalid() {
 // If the update was skipped by the Prepare callback, returns (nil, nil).
 //
 // Returns datastore errors. All such errors are transient.
-func (u *BotInfoUpdate) Submit(ctx context.Context, finalizerCb func(botID, taskID string) AbandonedTaskFinalizer) (*SubmittedBotInfoUpdate, error) {
-	var submitted *SubmittedBotInfoUpdate
+func (u *Update) Submit(ctx context.Context, finalizerCb func(botID, taskID string) AbandonedTaskFinalizer) (*SubmittedUpdate, error) {
+	var submitted *SubmittedUpdate
 	var attempt int
 	var finalizer AbandonedTaskFinalizer
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -436,14 +438,14 @@ func (u *BotInfoUpdate) Submit(ctx context.Context, finalizerCb func(botID, task
 // execute prepares entities to apply this update.
 //
 // Returns datastore errors. All errors are transient.
-func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, error) {
+func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	u.PanicIfInvalid()
 
 	now := clock.Now(ctx).UTC()
-	key := BotInfoKey(ctx, u.BotID)
+	key := model.BotInfoKey(ctx, u.BotID)
 
 	// Get the current BotInfo (if any) to update it.
-	current := &BotInfo{Key: key}
+	current := &model.BotInfo{Key: key}
 	switch err := datastore.Get(ctx, current); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		current = nil
@@ -462,8 +464,8 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	}
 
 	// Do nothing if deleting an already absent BotInfo.
-	if u.EventType == BotEventDeleted && current == nil {
-		return &SubmittedBotInfoUpdate{
+	if u.EventType == model.BotEventDeleted && current == nil {
+		return &SubmittedUpdate{
 			BotInfo: nil, // indication that the bot was already gone
 		}, nil
 	}
@@ -471,15 +473,15 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// If this is a first update ever, prepopulate dimensions based on the config.
 	storeBotInfo := true
 	if current == nil {
-		current = &BotInfo{
+		current = &model.BotInfo{
 			Key:        key,
 			Dimensions: u.connectingBotDims(),
 			FirstSeen:  now,
-			Composite: []BotStateEnum{
-				BotStateNotInMaintenance,
-				BotStateAlive,
-				BotStateHealthy,
-				BotStateIdle,
+			Composite: []model.BotStateEnum{
+				model.BotStateNotInMaintenance,
+				model.BotStateAlive,
+				model.BotStateHealthy,
+				model.BotStateIdle,
 			},
 		}
 		// Create BotInfo only if this event indicates the bot is actually alive.
@@ -496,7 +498,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	eventDedupKey := u.fullEventDedupKey()
 	if eventDedupKey != "" && current.LastEventDedupKey == eventDedupKey {
 		logging.Warningf(ctx, "Skipping BotInfo update, event has been recorded already: %s", eventDedupKey)
-		return &SubmittedBotInfoUpdate{
+		return &SubmittedUpdate{
 			BotInfo: current,
 		}, nil
 	}
@@ -560,12 +562,12 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 
 	// Update the task assigned to the bot (perhaps by resetting it).
 	var completedTaskID string
-	if taskChange := TaskChangeAspects[u.EventType]; taskChange != TaskChangeNone {
+	if taskChange := model.TaskChangeAspects[u.EventType]; taskChange != model.TaskChangeNone {
 		if current.TaskID != "" {
 			// The bot is either switching to idle state (if taskChange is
 			// TaskChangeReset) or it is abandoning the current task and starting
 			// another one. Either way the current task is done.
-			current.LastFinishedTask = LastTaskDetails{
+			current.LastFinishedTask = model.LastTaskDetails{
 				TaskID:      current.TaskID,
 				TaskName:    current.TaskName,
 				TaskFlags:   current.TaskFlags,
@@ -583,11 +585,11 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 			}
 		}
 		switch taskChange {
-		case TaskChangeSet:
+		case model.TaskChangeSet:
 			current.TaskID = u.TaskInfo.TaskID
 			current.TaskName = u.TaskInfo.TaskName
 			current.TaskFlags = u.TaskInfo.TaskFlags
-		case TaskChangeReset:
+		case model.TaskChangeReset:
 			current.TaskID = ""
 			current.TaskName = ""
 			current.TaskFlags = 0
@@ -620,7 +622,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	}
 
 	// Update TerminationTaskID if the bot was shutdown by a termination task.
-	if u.EventType == BotEventShutdown && current.LastFinishedTask.TaskFlags&TaskFlagTermination != 0 {
+	if u.EventType == model.BotEventShutdown && current.LastFinishedTask.TaskFlags&model.TaskFlagTermination != 0 {
 		current.TerminationTaskID = current.LastFinishedTask.TaskID
 	} else {
 		current.TerminationTaskID = ""
@@ -630,8 +632,8 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// bot reconnects after a graceful termination, but then immediately
 	// terminates again ungracefully, we won't mistakenly have TerminationTaskID
 	// set.
-	if u.EventType == BotEventConnected {
-		current.LastFinishedTask = LastTaskDetails{}
+	if u.EventType == model.BotEventConnected {
+		current.LastFinishedTask = model.LastTaskDetails{}
 		current.TerminationTaskID = ""
 	}
 
@@ -666,17 +668,17 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	}
 
 	// Recalculate the new indexed state of the bot.
-	pick := func(b bool, yes, no BotStateEnum) BotStateEnum {
+	pick := func(b bool, yes, no model.BotStateEnum) model.BotStateEnum {
 		if b {
 			return yes
 		}
 		return no
 	}
-	composite := []BotStateEnum{
-		pick(current.Maintenance != "", BotStateInMaintenance, BotStateNotInMaintenance),
-		pick(dead, BotStateDead, BotStateAlive),
-		pick(current.Quarantined, BotStateQuarantined, BotStateHealthy),
-		pick(current.IdleSince.IsSet(), BotStateIdle, BotStateBusy),
+	composite := []model.BotStateEnum{
+		pick(current.Maintenance != "", model.BotStateInMaintenance, model.BotStateNotInMaintenance),
+		pick(dead, model.BotStateDead, model.BotStateAlive),
+		pick(current.Quarantined, model.BotStateQuarantined, model.BotStateHealthy),
+		pick(current.IdleSince.IsSet(), model.BotStateIdle, model.BotStateBusy),
 	}
 
 	// Detect if the bot state has changed. This indicates this event is
@@ -687,7 +689,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	var toPut []any
 	var toDelete []any
 
-	if u.EventType == BotEventDeleted {
+	if u.EventType == model.BotEventDeleted {
 		toDelete = append(toDelete, current)
 	} else {
 		// See comment above regarding storeBotInfo.
@@ -698,18 +700,18 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 
 	// Store BotEvent only if it looks interesting enough. Otherwise we'll have
 	// tons and tons of BotEventIdle events.
-	var eventToPut *BotEvent
+	var eventToPut *model.BotEvent
 	if !frequentEvents[u.EventType] || dimensionsChanged || compositeChanged || len(extraMessages) != 0 {
-		eventToPut = &BotEvent{
+		eventToPut = &model.BotEvent{
 			// Note: this key means the entity ID will be auto-generated when the
 			// transaction is committed. We don't expose BotEvent entity IDs anywhere.
 			// This auto-generated key is used mostly due to historical reasons.
-			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, BotRootKey(ctx, u.BotID)),
+			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, model.BotRootKey(ctx, u.BotID)),
 			Timestamp:  now,
 			EventType:  u.EventType,
 			Message:    u.eventMessage(extraMessages),
 			Dimensions: current.Dimensions,
-			BotCommon: BotCommon{
+			BotCommon: model.BotCommon{
 				State:           current.State,
 				SessionID:       current.SessionID,
 				ExternalIP:      current.ExternalIP,
@@ -726,7 +728,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 		toPut = append(toPut, eventToPut)
 	}
 
-	return &SubmittedBotInfoUpdate{
+	return &SubmittedUpdate{
 		BotInfo:          current,
 		BotEvent:         eventToPut,
 		AbandonedTaskID:  abandonedTaskID,
@@ -736,7 +738,7 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 }
 
 // connectingBotDims is a list of dimensions for a bot seen for the first time.
-func (u *BotInfoUpdate) connectingBotDims() []string {
+func (u *Update) connectingBotDims() []string {
 	dims := make([]string, 0, 1+len(u.BotGroupDimensions))
 	dims = append(dims, "id:"+u.BotID)
 	for key, vals := range u.BotGroupDimensions {
@@ -749,7 +751,7 @@ func (u *BotInfoUpdate) connectingBotDims() []string {
 }
 
 // fullEventDedupKey is the full event ID to store in BotInfo.LastEvent.
-func (u *BotInfoUpdate) fullEventDedupKey() string {
+func (u *Update) fullEventDedupKey() string {
 	if u.EventDedupKey == "" {
 		return ""
 	}
@@ -757,7 +759,7 @@ func (u *BotInfoUpdate) fullEventDedupKey() string {
 }
 
 // eventMessage is the final event message to store.
-func (u *BotInfoUpdate) eventMessage(extra []string) string {
+func (u *Update) eventMessage(extra []string) string {
 	// Note: we pick one "most interesting" message here instead of joining them
 	// all together because very often they are all the same or convey the same
 	// information.
@@ -776,7 +778,7 @@ func (u *BotInfoUpdate) eventMessage(extra []string) string {
 // reportBotInfoTxn updates botInfoTxnCount metric.
 //
 // Also logs errors or excessive retries.
-func (u *BotInfoUpdate) reportBotInfoTxn(ctx context.Context, attempt int, err error) {
+func (u *Update) reportBotInfoTxn(ctx context.Context, attempt int, err error) {
 	var outcome string
 	switch {
 	case err == nil:

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
@@ -45,8 +46,8 @@ type DeadBotDetector struct {
 	// Set to true it at least one transaction failed (all failures are logged).
 	failed atomic.Bool
 
-	// submitUpdate is usually BotInfoUpdate.Submit, but can be mocked in tests.
-	submitUpdate func(ctx context.Context, update *model.BotInfoUpdate) (*model.SubmittedBotInfoUpdate, error)
+	// submitUpdate is usually botinfo.Update.Submit, but can be mocked in tests.
+	submitUpdate func(ctx context.Context, update *botinfo.Update) (*botinfo.SubmittedUpdate, error)
 }
 
 var _ BotVisitor = (*DeadBotDetector)(nil)
@@ -72,8 +73,8 @@ func (r *DeadBotDetector) Prepare(ctx context.Context, shards int, lastRun time.
 	r.eg, _ = errgroup.WithContext(ctx)
 	r.eg.SetLimit(1024 / shards) // 1024 goroutines total across all shards
 	if r.submitUpdate == nil {
-		r.submitUpdate = func(ctx context.Context, update *model.BotInfoUpdate) (*model.SubmittedBotInfoUpdate, error) {
-			return update.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+		r.submitUpdate = func(ctx context.Context, update *botinfo.Update) (*botinfo.SubmittedUpdate, error) {
+			return update.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
 				return &tasks.AbandonOp{
 					BotID:          botID,
 					TaskID:         taskID,
@@ -117,7 +118,7 @@ func (r *DeadBotDetector) shouldMarkAsDead(ctx context.Context, bot *model.BotIn
 
 // markAsDead runs a transaction to mark the bot as dead, logging the outcome.
 func (r *DeadBotDetector) markAsDead(ctx context.Context, botID string) error {
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:     botID,
 		EventType: model.BotEventMissing,
 		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {

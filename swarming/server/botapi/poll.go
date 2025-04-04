@@ -32,6 +32,7 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -247,10 +248,10 @@ type pollRequest struct {
 	group *cfg.BotGroup // the group the bot belongs to
 
 	rbeConf        cfg.RBEConfig                // the matching RBEConfig
-	effectiveBotID *model.RBEEffectiveBotIDInfo // derived from dimensions and rbeConf
+	effectiveBotID *botinfo.RBEEffectiveBotIDInfo // derived from dimensions and rbeConf
 
 	quarantined []string             // values of "quarantined" dimension (set even if `dims` are nil)
-	healthInfo  *model.BotHealthInfo // populated lazily in calculateHealthInfo()
+	healthInfo  *botinfo.HealthInfo // populated lazily in calculateHealthInfo()
 }
 
 // validationErr logs the error and appends it to the list of validation errors.
@@ -271,7 +272,7 @@ func (pr *pollRequest) validationErr(ctx context.Context, err error) {
 // validation errors.
 //
 // Returns an internal gRPC error if the state dict can't be updated.
-func (pr *pollRequest) calculateHealthInfo() (*model.BotHealthInfo, error) {
+func (pr *pollRequest) calculateHealthInfo() (*botinfo.HealthInfo, error) {
 	if pr.healthInfo == nil {
 		healthInfo, state, err := updateBotHealthInfo(pr.state, pr.quarantined, pr.errs)
 		if err != nil {
@@ -420,16 +421,16 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 	//
 	// Do not change the current effective bot ID if dimensions are broken or
 	// a new one can't be derived.
-	var effectiveBotID *model.RBEEffectiveBotIDInfo
+	var effectiveBotID *botinfo.RBEEffectiveBotIDInfo
 	if len(dims) != 0 {
 		if rbeConf.EffectiveBotIDDimension == "" {
-			effectiveBotID = &model.RBEEffectiveBotIDInfo{} // use default bot ID
+			effectiveBotID = &botinfo.RBEEffectiveBotIDInfo{} // use default bot ID
 		} else {
 			rbeEffectiveBotID, err := deriveRBEEffectiveBotID(dims, rbeConf.EffectiveBotIDDimension)
 			if err != nil {
 				errs = append(errs, errors.Annotate(err, "RBE effective bot ID").Err())
 			} else {
-				effectiveBotID = &model.RBEEffectiveBotIDInfo{
+				effectiveBotID = &botinfo.RBEEffectiveBotIDInfo{
 					RBEEffectiveBotID: rbeEffectiveBotID,
 				}
 			}
@@ -507,7 +508,7 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 		botState = &pr.state
 	}
 
-	update := &model.BotInfoUpdate{
+	update := &botinfo.Update{
 		BotID:              pr.botID,
 		EventType:          ev,
 		EventDedupKey:      pr.requestUUID,
@@ -515,7 +516,7 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 		Dimensions:         pr.dims, // will be nil if the request is broken, meaning do not update dims in BotInfo
 		BotGroupDimensions: pr.group.Dimensions,
 		State:              botState,
-		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: pr.session.GetSessionId(),
 			Version:   pr.version,
 		}),

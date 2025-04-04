@@ -42,6 +42,7 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -194,7 +195,7 @@ func TestProcessPoll(t *testing.T) {
 					Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
 					Instance: testRBEInstance,
 				},
-				effectiveBotID: &model.RBEEffectiveBotIDInfo{},
+				effectiveBotID: &botinfo.RBEEffectiveBotIDInfo{},
 				quarantined:    []string{"boom"},
 			}))
 		})
@@ -211,7 +212,7 @@ func TestProcessPoll(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, req.errs, should.HaveLength(0))
 			assert.That(t, req.botID, should.Equal(testEffectiveBotID))
-			assert.That(t, req.effectiveBotID, should.Match(&model.RBEEffectiveBotIDInfo{
+			assert.That(t, req.effectiveBotID, should.Match(&botinfo.RBEEffectiveBotIDInfo{
 				RBEEffectiveBotID: "test-pool-effective:bot-effective-id:effective-val",
 			}))
 		})
@@ -253,7 +254,7 @@ func TestProcessPoll(t *testing.T) {
 			})
 			assert.NoErr(t, err)
 			assert.Loosely(t, req.errs, should.HaveLength(0))
-			assert.That(t, req.effectiveBotID, should.Match(&model.RBEEffectiveBotIDInfo{}))
+			assert.That(t, req.effectiveBotID, should.Match(&botinfo.RBEEffectiveBotIDInfo{}))
 		})
 
 		t.Run("Bad dimensions", func(t *ftt.Test) {
@@ -422,10 +423,10 @@ func TestPollResponse(t *testing.T) {
 			PeerIPOverride: net.ParseIP(testBotIP),
 		})
 
-		var lastUpdate *model.BotInfoUpdate
+		var lastUpdate *botinfo.Update
 		var updateErr error
 		srv := BotAPIServer{
-			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				lastUpdate = u
 				return updateErr
@@ -475,7 +476,7 @@ func TestPollResponse(t *testing.T) {
 				},
 			})))
 
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID:         testBotID,
 				EventType:     model.BotEventIdle,
 				EventDedupKey: testRequestUUID,
@@ -484,13 +485,13 @@ func TestPollResponse(t *testing.T) {
 					"pool": {testBotPool},
 				},
 				State: &botstate.Dict{JSON: []byte(`{"rbe_idle": true}`)},
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{},
+				HealthInfo: &botinfo.HealthInfo{},
 			}))
 		})
 
@@ -517,7 +518,7 @@ func TestPollResponse(t *testing.T) {
 			_, err := srv.pollResponse(ctx, req, &PollResponse{Cmd: PollSleep})
 			assert.NoErr(t, err)
 
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID:         testBotID,
 				EventType:     model.BotEventSleep,
 				EventDedupKey: testRequestUUID,
@@ -526,13 +527,13 @@ func TestPollResponse(t *testing.T) {
 					"pool": {testBotPool},
 				},
 				State: &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{
+				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "boom",
 				},
 			}))
@@ -546,7 +547,7 @@ func TestPollResponse(t *testing.T) {
 			_, err := srv.pollResponse(ctx, req, &PollResponse{Cmd: PollSleep})
 			assert.NoErr(t, err)
 
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID:         testBotID,
 				EventType:     model.BotEventSleep,
 				EventDedupKey: testRequestUUID,
@@ -555,13 +556,13 @@ func TestPollResponse(t *testing.T) {
 					"pool": {testBotPool},
 				},
 				State: &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{
+				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "boom",
 				},
 			}))
@@ -629,7 +630,7 @@ func TestPoll(t *testing.T) {
 		conf := mockedConf(testRBEInstance)
 		stableVersion := conf.Cached(ctx).VersionInfo.StableBot.Digest
 
-		var lastUpdate *model.BotInfoUpdate
+		var lastUpdate *botinfo.Update
 		srv := BotAPIServer{
 			cfg:        conf,
 			hmacSecret: secret,
@@ -638,7 +639,7 @@ func TestPoll(t *testing.T) {
 				// Authorization errors are tested in TestProcessPoll.
 				return nil
 			},
-			submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
 				u.PanicIfInvalid()
 				lastUpdate = u
 				return nil
@@ -736,20 +737,20 @@ func TestPoll(t *testing.T) {
 				LastSeenConfig:      timestamppb.New(testTime),   // updated
 			}))
 
-			assert.That(t, lastUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
 				BotID:              testBotID,
 				EventType:          model.BotEventPolling,
 				Dimensions:         []string{"dim:val", "id:test-bot", "pool:test-pool"},
 				BotGroupDimensions: map[string][]string{"pool": {"test-pool"}},
 				State:              &botstate.Dict{JSON: []byte(`{"key": "val"}`)},
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         stableVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
 				},
-				HealthInfo:         &model.BotHealthInfo{},
-				EffectiveBotIDInfo: &model.RBEEffectiveBotIDInfo{},
+				HealthInfo:         &botinfo.HealthInfo{},
+				EffectiveBotIDInfo: &botinfo.RBEEffectiveBotIDInfo{},
 			}))
 		})
 

@@ -24,10 +24,10 @@ import (
 	minterpb "go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
-	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
 
@@ -51,7 +51,7 @@ type BotAPIServer struct {
 	// authorizeBot is botsrv.AuthorizeBot, but it can be mocked in tests.
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
 	// submitUpdate calls u.Submit, but it can be mocked in tests.
-	submitUpdate func(ctx context.Context, u *model.BotInfoUpdate) error
+	submitUpdate func(ctx context.Context, u *botinfo.Update) error
 	// taskWriteOp is used to perform datastore writes on a task throughout its lifecycle.
 	taskWriteOp tasks.TaskWriteOp
 	// tokenServerClient produces a Token Server client, can be mocked in tests.
@@ -68,8 +68,8 @@ func NewBotAPIServer(cfg *cfg.Provider, lifecycleTasks tasks.LifecycleTasks, sec
 		version:        version,
 		botCodeCache:   lru.New[string, []byte](2), // two versions: canary + stable
 		authorizeBot:   botsrv.AuthorizeBot,
-		submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
-			_, err := u.Submit(ctx, func(botID, taskID string) model.AbandonedTaskFinalizer {
+		submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
+			_, err := u.Submit(ctx, func(botID, taskID string) botinfo.AbandonedTaskFinalizer {
 				return &tasks.AbandonOp{
 					BotID:          botID,
 					TaskID:         taskID,

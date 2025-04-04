@@ -38,6 +38,7 @@ import (
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/botstate"
@@ -108,8 +109,8 @@ func TestHandshake(t *testing.T) {
 			}
 			return errors.Reason("denied").Err()
 		}
-		var latestUpdate *model.BotInfoUpdate
-		srv.submitUpdate = func(ctx context.Context, u *model.BotInfoUpdate) error {
+		var latestUpdate *botinfo.Update
+		srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
 			u.PanicIfInvalid()
 			latestUpdate = u
 			return nil
@@ -170,7 +171,7 @@ func TestHandshake(t *testing.T) {
 				LastSeenConfig:      timestamppb.New(testTime),
 			}))
 
-			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
 				BotGroupDimensions: map[string][]string{
 					"pool":  {botPool},
@@ -188,13 +189,13 @@ func TestHandshake(t *testing.T) {
 				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "reported-session-id",
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       "reported-session-id",
 					Version:         "reported-bot-version",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{},
+				HealthInfo: &botinfo.HealthInfo{},
 			}))
 		})
 
@@ -224,7 +225,7 @@ func TestHandshake(t *testing.T) {
 				},
 			}))
 
-			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
 				BotGroupDimensions: map[string][]string{
 					"pool":  {botPool},
@@ -240,12 +241,12 @@ func TestHandshake(t *testing.T) {
 				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "autogen-2338085100000-7828158075477027098",
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       "autogen-2338085100000-7828158075477027098",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{},
+				HealthInfo: &botinfo.HealthInfo{},
 			}))
 		})
 
@@ -265,7 +266,7 @@ func TestHandshake(t *testing.T) {
 			})
 			assert.NoErr(t, err)
 
-			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
+			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
 				BotGroupDimensions: map[string][]string{
 					"pool":  {botPool},
@@ -284,12 +285,12 @@ func TestHandshake(t *testing.T) {
 				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "reported-session-id",
-				CallInfo: &model.BotEventCallInfo{
+				CallInfo: &botinfo.CallInfo{
 					SessionID:       "reported-session-id",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
-				HealthInfo: &model.BotHealthInfo{
+				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "Boom",
 				},
 			}))
@@ -361,7 +362,7 @@ bad state dict: invalid character 'o' in literal null (expecting 'u')`))
 				SessionID: "reported-session-id",
 			})
 			assert.NoErr(t, err)
-			assert.That(t, latestUpdate.HealthInfo, should.Match(&model.BotHealthInfo{
+			assert.That(t, latestUpdate.HealthInfo, should.Match(&botinfo.HealthInfo{
 				Quarantined: `conflicting RBE config: bot pools are configured with conflicting RBE instances: ["another-instance" "some-instance"]`,
 			}))
 		})

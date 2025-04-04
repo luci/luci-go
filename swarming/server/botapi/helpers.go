@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
@@ -49,9 +50,9 @@ func peekBotID(dims map[string][]string) (string, error) {
 	return botID, nil
 }
 
-// botCallInfo populates fields of BotEventCallInfo based on the state in the
+// botCallInfo populates fields of botinfo.CallInfo based on the state in the
 // context.
-func botCallInfo(ctx context.Context, info *model.BotEventCallInfo) *model.BotEventCallInfo {
+func botCallInfo(ctx context.Context, info *botinfo.CallInfo) *botinfo.CallInfo {
 	state := auth.GetState(ctx)
 	info.ExternalIP = state.PeerIP().String()
 	info.AuthenticatedAs = state.PeerIdentity()
@@ -66,7 +67,7 @@ func botCallInfo(ctx context.Context, info *model.BotEventCallInfo) *model.BotEv
 // state dict to indicate that.
 //
 // Returns the extracted health info and the updated state dict.
-func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs errors.MultiError) (model.BotHealthInfo, botstate.Dict, error) {
+func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs errors.MultiError) (botinfo.HealthInfo, botstate.Dict, error) {
 	// First read the quarantine message from the state.
 	var msg string
 	var val any
@@ -100,7 +101,7 @@ func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs erro
 	}
 	msg = strings.Join(lines, "\n")
 
-	healthInfo := model.BotHealthInfo{
+	healthInfo := botinfo.HealthInfo{
 		Quarantined: msg,
 		Maintenance: state.MustReadString(botstate.MaintenanceKey),
 	}
