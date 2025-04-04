@@ -97,6 +97,9 @@ serverInjectedVars.SETTINGS = Object.freeze({
   fleetConsole: {
     host: assertNonNullable(process.env['VITE_FLEET_CONSOLE_HOST']),
   },
+  ufs: {
+    host: assertNonNullable(process.env['VITE_UFS_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

@@ -62,6 +62,7 @@ func (s *HTTPService) settingsJSHandler(c *router.Context) error {
 		},
 		LuciSourceIndex: settings.LuciSourceIndex,
 		FleetConsole:    settings.FleetConsole,
+		Ufs:             settings.Ufs,
 	}
 
 	header := c.Writer.Header()

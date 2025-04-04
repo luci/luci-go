@@ -93,6 +93,9 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     fleetConsole: {
       host: assertNonNullable(env['VITE_FLEET_CONSOLE_HOST']),
     },
+    ufs: {
+      host: assertNonNullable(env['VITE_UFS_HOST']),
+    },
   };
 
   const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(

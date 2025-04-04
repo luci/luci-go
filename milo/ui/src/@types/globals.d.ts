@@ -91,6 +91,9 @@ declare const SETTINGS: {
   readonly fleetConsole: {
     readonly host: string;
   };
+  readonly ufs: {
+    readonly host: string;
+  };
 };
 
 /**

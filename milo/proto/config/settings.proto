@@ -152,4 +152,10 @@ message Settings {
     string host = 1;
   }
   FleetConsole fleet_console = 16;
+
+  message UFS {
+    // host is the hostname of the UFS instance we're pointing to (eg. staging.ufs.api.cr.dev).
+    string host = 1;
+  }
+  UFS ufs = 17;
 }
