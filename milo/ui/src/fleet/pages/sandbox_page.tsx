@@ -15,22 +15,15 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import {
-  FleetClientImpl,
-  ListMachinesRequest,
-} from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
+import { ListMachinesRequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
+import { useUfsClient } from '../hooks/prpc_clients';
 import { FleetHelmet } from '../layouts/fleet_helmet';
 
 const SandboxPage = () => {
   // See go/luci-ui-rpc-tutorial for more info on how to make pRPC requests.
-  const ufsClient = usePrpcServiceClient({
-    host: 'staging.ufs.api.cr.dev',
-    ClientImpl: FleetClientImpl,
-    additionalHeaders: { namespace: 'os' },
-  });
+  const ufsClient = useUfsClient();
 
   const machines = useQuery({
     ...ufsClient.ListMachines.query(
@@ -46,7 +39,7 @@ const SandboxPage = () => {
       Welcome. This is a sandbox page with experiments and tools for developers
       of the Fleet Console to use for testing the functionality of the Fleet
       Console UI.
-      <h2>Sample: UFS-dev ListMachinesRequest</h2>
+      <h2>Sample: UFS ListMachinesRequest</h2>
       <pre style={{ maxHeight: '300px', maxWidth: '100%', overflow: 'scroll' }}>
         {JSON.stringify(machines, null, 2)}
       </pre>

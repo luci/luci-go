@@ -14,8 +14,6 @@
 
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Button, Paper, Tooltip } from '@mui/material';
-import Grid from '@mui/material/Grid2';
-import Item from '@mui/material/Grid2';
 import { Box } from '@mui/system';
 
 interface CodeSnippetProps {
@@ -32,34 +30,31 @@ export default function CodeSnippet({
   };
 
   return (
-    <Paper elevation={0} variant="outlined">
-      <Grid
-        container
-        direction="row"
-        justifyContent="flex-end"
-        alignItems="center"
-      >
-        <Grid size={11}>
-          <Item>
-            <Box sx={{ p: '20px' }}>
-              <code>{displayText ?? copyText}</code>
-            </Box>
-          </Item>
-        </Grid>
-        <Grid size={1}>
-          <Item>
-            <Tooltip title="Copy to clipboard">
-              <Button
-                onClick={handleCopy}
-                sx={{ minWidth: '30px' }}
-                aria-label="Copy to clipboard"
-              >
-                <ContentCopyIcon sx={{ height: '20px' }} />
-              </Button>
-            </Tooltip>
-          </Item>
-        </Grid>
-      </Grid>
+    <Paper
+      elevation={0}
+      variant="outlined"
+      css={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        flexDirection: 'row',
+      }}
+    >
+      <Box sx={{ p: '20px' }}>
+        <code>{displayText ?? copyText}</code>
+      </Box>
+      <Box sx={{ flexGrow: 1 }} />
+      <Box css={{ marginRight: '8px' }}>
+        <Tooltip title="Copy to clipboard">
+          <Button
+            onClick={handleCopy}
+            sx={{ minWidth: '30px' }}
+            aria-label="Copy to clipboard"
+          >
+            <ContentCopyIcon sx={{ height: '20px' }} />
+          </Button>
+        </Tooltip>
+      </Box>
     </Paper>
   );
 }

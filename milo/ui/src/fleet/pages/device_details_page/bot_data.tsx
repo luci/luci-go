@@ -14,11 +14,12 @@
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import { Alert, Box, Button, Typography } from '@mui/material';
-import { EditorConfiguration, ModeSpec } from 'codemirror';
+import { EditorConfiguration } from 'codemirror';
 import { useRef } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
+import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
@@ -33,15 +34,7 @@ export const BotData = ({
   dutId: string;
   swarmingHost?: string;
 }) => {
-  const editorOptions = useRef<EditorConfiguration>({
-    mode: { name: 'javascript', json: true } as ModeSpec<{ json: boolean }>,
-    readOnly: true,
-    matchBrackets: true,
-    lineWrapping: true,
-    foldGutter: true,
-    lineNumbers: true,
-    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-  });
+  const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
   const client = useBotsClient(swarmingHost);
   const botData = useBot(client, dutId);
 

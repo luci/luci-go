@@ -34,6 +34,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { BotData } from './bot_data';
+import { InventoryData } from './inventory_data';
 import { SchedulingData } from './scheduling_data_table';
 import { Tasks } from './tasks_table';
 import { useDeviceData } from './use_device_data';
@@ -42,6 +43,7 @@ enum TabValue {
   TASKS = 'tasks',
   BOT_INFO = 'bot-info',
   SCHEDULING = 'scheduling',
+  INVENTORY_DATA = 'inventory',
 }
 
 const parseTabValue = (tabString: string | null): TabValue | undefined => {
@@ -232,8 +234,9 @@ export const DeviceDetailsPage = () => {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
                 <Tab label="Tasks" value={TabValue.TASKS} />
-                <Tab label="Bot Info" value={TabValue.BOT_INFO} />
                 <Tab label="Scheduling labels" value={TabValue.SCHEDULING} />
+                <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
+                <Tab label="Bot info" value={TabValue.BOT_INFO} />
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
@@ -245,6 +248,12 @@ export const DeviceDetailsPage = () => {
                 <Tasks dutId={dutId} />
               )}
             </TabPanel>
+            <TabPanel value={TabValue.INVENTORY_DATA}>
+              <InventoryData hostname={id} />
+            </TabPanel>
+            <TabPanel value={TabValue.SCHEDULING}>
+              <SchedulingData device={device} />
+            </TabPanel>
             <TabPanel value={TabValue.BOT_INFO}>
               {dutId === '' ? (
                 <Alert severity="warning">
@@ -253,9 +262,6 @@ export const DeviceDetailsPage = () => {
               ) : (
                 <BotData dutId={dutId} />
               )}
-            </TabPanel>
-            <TabPanel value={TabValue.SCHEDULING}>
-              <SchedulingData device={device} />
             </TabPanel>
           </TabContext>
         </>

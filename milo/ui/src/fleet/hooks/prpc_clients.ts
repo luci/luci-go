@@ -15,6 +15,7 @@
 import { TokenType } from '@/common/components/auth_state_provider';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { FleetConsoleClientImpl } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { FleetClientImpl } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 export function useFleetConsoleClient() {
   return usePrpcServiceClient({
@@ -22,5 +23,16 @@ export function useFleetConsoleClient() {
     tokenType: TokenType.Id,
     insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
     ClientImpl: FleetConsoleClientImpl,
+  });
+}
+
+export function useUfsClient() {
+  return usePrpcServiceClient({
+    // TODO: b/408235610 - Replace with `host: SETTINGS.ufs.host,` once ready.
+    host: 'ufs.api.cr.dev',
+    insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
+    ClientImpl: FleetClientImpl,
+    // Namespace is needed to call UFS.
+    additionalHeaders: { namespace: 'os' },
   });
 }
