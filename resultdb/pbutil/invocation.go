@@ -32,8 +32,8 @@ const (
 	invocationIDPattern                       = `[a-z][a-z0-9_\-:.]{0,99}`
 	invocationExtendedPropertyKeyPattern      = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
 	invocationExtendedPropertyTypeNamePattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
-	MaxSizeInvocationExtendedPropertyValue    = 40 * 1024  // 40 KB
-	MaxSizeInvocationExtendedProperties       = 200 * 1024 // 200 KB
+	MaxSizeInvocationExtendedPropertyValue    = 512 * 1024      // 512 KB
+	MaxSizeInvocationExtendedProperties       = 2 * 1024 * 1024 // 2 MB
 )
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)

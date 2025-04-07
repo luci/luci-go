@@ -265,9 +265,9 @@ message Invocation {
   //
   // Each key is limited to 63 characters matching
   // ^[a-z]([a-z0-9_]{0,61}[a-z0-9])?$.
-  // The size of each value is limited to <= 20,000 bytes.
+  // The size of each value is limited to <= 512 KB.
   // The total size of the map (as measured by proto.Size())
-  // is limited to <= 100,000 bytes.
+  // is limited to <= 2 MB.
   //
   // The following paths can be used for field masks:
   // * "extended_properties" to target the whole extended_properties,
