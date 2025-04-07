@@ -276,6 +276,9 @@ export function FilterDropdown<T>({
                 setSearchQuery(e.currentTarget.value);
               }}
               key="search-input"
+              sx={{
+                marginBottom: '10px',
+              }}
             />
             {isLoading ? (
               <Box
@@ -297,38 +300,46 @@ export function FilterDropdown<T>({
             ) : (
               [
                 commonFilterResults && [
-                  <Typography
-                    tabIndex={-1}
-                    variant="caption"
-                    color={colors.grey[700]}
-                    fontStyle="italic"
-                    sx={{
-                      paddingLeft: '16px',
-                      marginTop: '10px',
-                      display: 'block',
-                    }}
-                    key="common_filters_title"
-                  >
-                    Common filters
-                  </Typography>,
+                  commonFilterResults.length > 0 && (
+                    <Typography
+                      tabIndex={-1}
+                      variant="caption"
+                      color={colors.grey[700]}
+                      fontStyle="italic"
+                      sx={{
+                        paddingLeft: '16px',
+                        display: 'block',
+                      }}
+                      key="common_filters_title"
+                    >
+                      Common filters
+                    </Typography>
+                  ),
                   commonFilterResults?.map(renderOption),
-                  <Divider
-                    sx={{
-                      backgroundColor: 'transparent',
-                    }}
-                    key="common_filters_divider"
-                  />,
-                  <Typography
-                    variant="caption"
-                    color={colors.grey[700]}
-                    fontStyle="italic"
-                    sx={{
-                      margin: '16px',
-                    }}
-                    key="other_filters_title"
-                  >
-                    Other filters
-                  </Typography>,
+
+                  otherFilterResults.length > 0 &&
+                    commonFilterResults.length > 0 && (
+                      <Divider
+                        sx={{
+                          backgroundColor: 'transparent',
+                        }}
+                        key="common_filters_divider"
+                      />
+                    ),
+
+                  otherFilterResults.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color={colors.grey[700]}
+                      fontStyle="italic"
+                      sx={{
+                        margin: '16px',
+                      }}
+                      key="other_filters_title"
+                    >
+                      Other filters
+                    </Typography>
+                  ),
                 ],
                 otherFilterResults.map(renderOption),
               ]
