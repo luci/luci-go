@@ -24,8 +24,10 @@ import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_variant.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_verdict.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -110,6 +112,8 @@ service ResultDB {
 
   // Retrieves test verdicts from an invocation, recursively.
   // Supports invocation inclusions.
+  // TODO(meiring): Update guidance usage to prefer QueryTestVerdicts
+  // for use cases where staleness is acceptable once we stablise that RPC.
   rpc QueryTestVariants(QueryTestVariantsRequest) returns (QueryTestVariantsResponse) {};
 
   // Retrieves test variants from a single invocation, matching the specified
@@ -129,6 +133,25 @@ service ResultDB {
   // If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
   // the chain will stop and the rpc will return whatever it has found so far.
   rpc QueryInstruction(QueryInstructionRequest) returns (QueryInstructionResponse) {};
+
+  // UNSTABLE (until launched): This RPC is in development and API may change without notice.
+  //
+  // Retrieves test aggregations for a single root invocation.
+  //
+  // Unlike QueryTestResults and QueryTestVariants which are guaranteed to read all test results
+  // uploaded to Recorder service up to the time of query, this RPC only guarantees eventual
+  // consistency (i.e. there may be a lag). Once an invocation is finalized, data is
+  // guaranteed to be consistent.
+  rpc QueryTestAggregations(QueryTestAggregationsRequest) returns (QueryTestAggregationsResponse) {};
+
+  // UNSTABLE (until launched): This RPC is in development and API may change without notice.
+  // Retrieves test verdicts for a single root invocation.
+  //
+  // Unlike QueryTestResults and QueryTestVariants which are guaranteed to read all test results
+  // uploaded to Recorder service up to the time of query, this RPC only guarantees eventual
+  // consistency (i.e. there may be a lag). Once an invocation is finalized, data is
+  // guaranteed to be consistent.
+  rpc QueryTestVerdicts(QueryTestVerdictsRequest) returns (QueryTestVerdictsResponse) {};
 
   // == Artifacts =============================================================
 
@@ -1158,4 +1181,114 @@ message IDMatcher {
     // The id should exactly equal to this string.
     string exact_equal = 2;
   }
+}
+
+// A request message for QueryTestAggregations RPC.
+// Next ID: 6.
+message QueryTestAggregationsRequest {
+  // The root invocation to retrieve aggregates for.
+  // Format: invocations/{INVOCATION_ID}.
+  // N.B. Specifying an invocation that is not an export root will yield an
+  // INVALID_ARGUMENT error.
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The level of aggregate to return.
+  // All values except CASE are supported. For CASE-level aggregations,
+  // see QueryTestVerdicts instead.
+  AggregationLevel aggregation_level = 2;
+
+  // The test prefix for which to return aggregates.
+  //
+  // The test prefix must not be more precise than the requested aggregation_level.
+  // For example, if the requested aggregation_level is COARSE, you may not
+  // use a test_id_prefix with an aggregation_level of FINE.
+  //
+  // Example #1: To obtain coarse-level aggregates in a module:
+  // - set the requested aggregation_level to COARSE.
+  // - set the test_prefix_filter.aggregation_level to MODULE, and
+  // - test_prefix_filter.id to the Test ID prefix of that module.
+  //
+  // Example #2: To obtain the invocation-level aggregate:
+  // - set the requested aggregation_level to INVOCATION.
+  // - leave the test_prefix_filter unset, or set it to
+  //   test_id_prefix.aggregation_level to INVOCATION.
+  TestIdentifierPrefix test_prefix_filter = 3;
+
+  // The maximum number of items to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 1000 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 4;
+
+  // A page token, received from a previous `QueryTestAggregations` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestAggregationsRequest` must
+  // match the call that provided the page token.
+  string page_token = 5;
+}
+
+// A response message for QueryTestAggregations RPC.
+// Next ID: 3.
+message QueryTestAggregationsResponse {
+  // The test aggregations.
+  // Results are sorted by structured test identifier, lexicographically over the tuple
+  // (module_name, module_variant_hash, module_scheme, coarse_name, fine_name, case_name).
+  //
+  // Note: When querying invocations that are not yet finalized, aggregations
+  // may be incomplete.
+  repeated TestAggregation aggregations = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// A request message for QueryTestVerdicts RPC.
+// Next ID: 5.
+message QueryTestVerdictsRequest {
+  // The root invocation to retrieve test verdicts for.
+  // Format: invocations/{INVOCATION_ID}.
+  // N.B. Specifying an invocation that is not an export root will yield an
+  // INVALID_ARGUMENT error.
+  string invocation = 1;
+
+  // The test prefix for which to return aggregates.
+  //
+  // The test prefix may have:
+  // - No fields set, to return all aggregates in the invocation.
+  // - Only module set, to return all aggregates within a module.
+  // - Module and coarse name set, to return aggregates with a coarse-level aggregation.
+  // - Module, coarse name and fine name set, to return aggregates within a fine-level aggregation.
+  //
+  // The test prefix should not be more precise than the requested aggregation_level.
+  // For example, if asking for a coarse-level aggregation, do not include a fine name in the
+  // test prefix filter.
+  TestIdentifierPrefix test_prefix_filter = 2;
+
+  // The maximum number of items to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 1000 items will be returned.
+  // The maximum value is 10000; values above 10000 will be coerced to 10000.
+  int32 page_size = 3;
+
+  // A page token, received from a previous `QueryTestVerdicts` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestVerdictsRequest` must
+  // match the call that provided the page token.
+  string page_token = 4;
+}
+
+// A response message for QueryTestVerdicts RPC.
+// Next ID: 3.
+message QueryTestVerdictsResponse {
+  // The test verdicts.
+  // Results are sorted by structured test identifier, lexicographically over the tuple
+  // (module_name, module_scheme, module_variant_hash, coarse_name, fine_name, case_name).
+  repeated TestVerdict test_verdicts = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
 }

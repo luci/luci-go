@@ -464,6 +464,26 @@ func (mr *MockResultDBClientMockRecorder) QueryRunTestVerdicts(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRunTestVerdicts", reflect.TypeOf((*MockResultDBClient)(nil).QueryRunTestVerdicts), varargs...)
 }
 
+// QueryTestAggregations mocks base method.
+func (m *MockResultDBClient) QueryTestAggregations(ctx context.Context, in *QueryTestAggregationsRequest, opts ...grpc.CallOption) (*QueryTestAggregationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestAggregations", varargs...)
+	ret0, _ := ret[0].(*QueryTestAggregationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestAggregations indicates an expected call of QueryTestAggregations.
+func (mr *MockResultDBClientMockRecorder) QueryTestAggregations(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestAggregations", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestAggregations), varargs...)
+}
+
 // QueryTestExonerations mocks base method.
 func (m *MockResultDBClient) QueryTestExonerations(ctx context.Context, in *QueryTestExonerationsRequest, opts ...grpc.CallOption) (*QueryTestExonerationsResponse, error) {
 	m.ctrl.T.Helper()
@@ -602,6 +622,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestVariants(ctx, in interface{},
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestVariants), varargs...)
+}
+
+// QueryTestVerdicts mocks base method.
+func (m *MockResultDBClient) QueryTestVerdicts(ctx context.Context, in *QueryTestVerdictsRequest, opts ...grpc.CallOption) (*QueryTestVerdictsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestVerdicts", varargs...)
+	ret0, _ := ret[0].(*QueryTestVerdictsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestVerdicts indicates an expected call of QueryTestVerdicts.
+func (mr *MockResultDBClientMockRecorder) QueryTestVerdicts(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVerdicts", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestVerdicts), varargs...)
 }
 
 // MockResultDBServer is a mock of ResultDBServer interface.
@@ -897,6 +937,21 @@ func (mr *MockResultDBServerMockRecorder) QueryRunTestVerdicts(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRunTestVerdicts", reflect.TypeOf((*MockResultDBServer)(nil).QueryRunTestVerdicts), arg0, arg1)
 }
 
+// QueryTestAggregations mocks base method.
+func (m *MockResultDBServer) QueryTestAggregations(arg0 context.Context, arg1 *QueryTestAggregationsRequest) (*QueryTestAggregationsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestAggregations", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestAggregationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestAggregations indicates an expected call of QueryTestAggregations.
+func (mr *MockResultDBServerMockRecorder) QueryTestAggregations(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestAggregations", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestAggregations), arg0, arg1)
+}
+
 // QueryTestExonerations mocks base method.
 func (m *MockResultDBServer) QueryTestExonerations(arg0 context.Context, arg1 *QueryTestExonerationsRequest) (*QueryTestExonerationsResponse, error) {
 	m.ctrl.T.Helper()
@@ -1000,4 +1055,19 @@ func (m *MockResultDBServer) QueryTestVariants(arg0 context.Context, arg1 *Query
 func (mr *MockResultDBServerMockRecorder) QueryTestVariants(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestVariants), arg0, arg1)
+}
+
+// QueryTestVerdicts mocks base method.
+func (m *MockResultDBServer) QueryTestVerdicts(arg0 context.Context, arg1 *QueryTestVerdictsRequest) (*QueryTestVerdictsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestVerdicts", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestVerdictsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestVerdicts indicates an expected call of QueryTestVerdicts.
+func (mr *MockResultDBServerMockRecorder) QueryTestVerdicts(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVerdicts", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestVerdicts), arg0, arg1)
 }

@@ -271,6 +271,46 @@ message TestIdentifier {
   string case_name = 7;
 }
 
+// TestIdentifierPrefix represents a prefix of a structured test id.
+//
+// For the purposes of this message, all module_* fields are considered one
+// logical field and must be set together.
+//
+// Compared to the TestIdentifier message, this message tracks which
+// parts of the prefix is present. This is necessary, as:
+//
+// module_name: "//bazel_path:my_target"
+// module_variant: [...]
+// module_scheme: "myscheme"
+// (module prefix)
+//
+// differs semantically from
+//
+// module_name: "//bazel_path:my_target"
+// module_variant: [...]
+// module_scheme: "myscheme"
+// coarse_name: ""
+// (coarse name prefix)
+//
+// As the former represents a module-level aggregate and the latter a coarse-name
+// aggregate for coarse name "".
+message TestIdentifierPrefix {
+  // The aggregation level represented by the prefix.
+  AggregationLevel level = 1;
+
+  // The test identifier. This may have only some fields set, based on the
+  // selected aggregation level.
+  // If an AggregationLevel of Invocation is set, identifier must be unset or all its fields must be empty.
+  // If an AggregationLevel of Module is set, all module fields must be set.
+  // If an AggregationLevel of Coarse is set, all module fields and the coarse_name field must be set.
+  // If an AggregationLevel of Fine is set, all module fields, and the coarse_name and fine_name fields must be set.
+  // If an AggregationLevel of Case is set, all fields must be set.
+  //
+  // In case of coarse_name and fine_name, as empty ("") is a valid value, the fields
+  // are taken to be set according to the set AggregationLevel.
+  TestIdentifier id = 2;
+}
+
 // TestIdentifierBase represent a structured test id message without variant information.
 // See luci.resultdb.v1.TestIdentifier for the full message structured test id message.
 message TestIdentifierBase {
@@ -391,4 +431,27 @@ message GitilesRef {
   // Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
   // Not the branch name, use "refs/heads/branch"
   string ref = 3;
+}
+
+// AggregationLevel defines the levels that test verdicts can be
+// aggregated to.
+enum AggregationLevel {
+  // Aggregation level not specified. Do not use.
+  AGGREGATION_LEVEL_UNSPECIFIED = 0;
+  // Aggregate to the invocation level. This means all test results
+  // in an invocation.
+  INVOCATION = 1;
+  // Aggregate to the module level. This means all test results
+  // sharing the same module_name, module_variant and module_scheme.
+  MODULE = 2;
+  // Aggregate to the coarse name level.
+  // This means all test results sharing the same module and coarse_name.
+  COARSE = 3;
+  // Aggregate to the fine name level.
+  // This means all test results sharing the same module, coarse_name,
+  // and fine_name.
+  FINE = 4;
+  // Aggregate to the test case (test verdict) level.
+  // This means all test results sharing the same test identifier.
+  CASE = 5;
 }

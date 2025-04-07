@@ -98,6 +98,9 @@ message TestResultBundle {
 }
 
 // Status of a test variant.
+// References to test statuses in the description refer to legacy
+// status values, not status_v2.
+// DEPRECATED: Use luci.resultdb.v1.TestVerdict.Status instead.
 enum TestVariantStatus {
   // a test variant must not have this status.
   // This is only used when filtering variants.

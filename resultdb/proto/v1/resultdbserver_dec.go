@@ -295,6 +295,40 @@ func (s *DecoratedResultDB) QueryInstruction(ctx context.Context, req *QueryInst
 	return
 }
 
+func (s *DecoratedResultDB) QueryTestAggregations(ctx context.Context, req *QueryTestAggregationsRequest) (rsp *QueryTestAggregationsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestAggregations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestAggregations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestAggregations", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryTestVerdicts(ctx context.Context, req *QueryTestVerdictsRequest) (rsp *QueryTestVerdictsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestVerdicts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestVerdicts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestVerdicts", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetArtifact(ctx context.Context, req *GetArtifactRequest) (rsp *Artifact, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

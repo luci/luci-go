@@ -151,7 +151,7 @@ message Invocation {
   //
   // N.B. Export roots do not affect legacy BigQuery exports configured by the
   // BigQueryExports field.
-  bool is_export_root = 21;
+  bool is_export_root = 21 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // bigquery_exports indicates what BigQuery table(s) that results in this
   // invocation should export to.
