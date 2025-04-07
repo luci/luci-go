@@ -98,6 +98,25 @@ func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]by
 	return out, r.fixCmdErr(cmd, err)
 }
 
+// gitTest returns:
+//
+//   - (true, nil) if the command succeeded
+//   - (false, nil) if the command ran but returned a non-zero exit code.
+//   - (false, err) if the command failed to run or ran abnormally.
+func (r *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
+	cmd := r.mkGitCmd(ctx, args)
+	err := cmd.Run()
+	if err == nil {
+		return true, nil
+	}
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		err = nil
+	}
+	return false, r.fixCmdErr(cmd, err)
+}
+
 func (r *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
 	versionKey := fmt.Sprintf("%s.gitsourceVersion", cb.section)
 	versionStr := cb.hash()

@@ -171,7 +171,7 @@ func ToGit(ctx context.Context, baseDir, destPath string, overwrite bool) (path 
 		}
 	}
 	// directory exists and is empty
-	if err = git(ctx, destPath, "init").Run(); err == nil {
+	if err = git(ctx, destPath, "init", "-b", "main").Run(); err == nil {
 		if err = git(ctx, destPath, "config", "user.email", UserEmail).Run(); err == nil {
 			if err = git(ctx, destPath, "config", "user.name", UserName).Run(); err == nil {
 				var patches []os.DirEntry

@@ -28,6 +28,7 @@ import (
 )
 
 type Commit struct {
+	ID            string
 	Tree          string
 	Parents       []string
 	Author        string
@@ -36,6 +37,13 @@ type Commit struct {
 	CommitterTime time.Time
 	MessageLines  []string
 	Trailers      map[string][]string
+}
+
+func (c *Commit) OldestTime() time.Time {
+	if c.CommitterTime.Before(c.AuthorTime) {
+		return c.CommitterTime
+	}
+	return c.AuthorTime
 }
 
 var userTimeRe = regexp.MustCompile(`^(.*) (\d+) ([+-]\d+)$`)
@@ -164,7 +172,7 @@ func (c *Commit) parse(ctx context.Context, lines []string) (err error) {
 	return nil
 }
 
-func (b *batchProc) catFileCommit(ctx context.Context, commit string) (ret Commit, err error) {
+func (b *batchProc) catFileCommit(ctx context.Context, commit string) (ret *Commit, err error) {
 	kind, data, err := b.catFile(ctx, commit)
 	if err != nil {
 		return
@@ -173,6 +181,8 @@ func (b *batchProc) catFileCommit(ctx context.Context, commit string) (ret Commi
 		err = fmt.Errorf("catFileCommit(%q): expected %s got %s", commit, CommitKind, kind)
 		return
 	}
+	ret = &Commit{}
+	ret.ID = commit
 	err = ret.parse(ctx, strings.Split(string(data), "\n"))
 	return
 }

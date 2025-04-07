@@ -37,7 +37,7 @@ func isObjID(objName []byte) bool {
 // fetched locally.
 //
 // If they are already locally present, this is a fast noop.
-func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string) error {
+func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string, extraFlags ...string) error {
 	if len(objectNames) == 0 {
 		return nil
 	}
@@ -135,9 +135,12 @@ func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string) 
 	if len(toFetch) > 0 {
 		// now fire off a single fetch to pull all of these hashes in.
 		logging.Debugf(ctx, "bulk fetching %d objects\n", fetchCount)
-		cmd = r.mkGitCmd(ctx, []string{
+		args := []string{
 			"-c", "fetch.negotiationAlgorithm=noop",
-			"fetch", "origin", "--no-tags", "--no-write-fetch-head", "--stdin"})
+			"fetch", "origin", "--no-tags", "--no-write-fetch-head",
+			"--stdin"}
+		args = append(args, extraFlags...)
+		cmd = r.mkGitCmd(ctx, args)
 		cmd.Stdin = bytes.NewReader(toFetch)
 		if err := cmd.Run(); err != nil {
 			return err

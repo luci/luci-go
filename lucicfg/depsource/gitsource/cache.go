@@ -99,7 +99,7 @@ func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
 		return nil, err
 	}
 
-	if err := ret.git(ctx, "init", "--bare"); err != nil {
+	if err := ret.git(ctx, "init", "-b", "main", "--bare"); err != nil {
 		return nil, fmt.Errorf("failed to init repoRoot %q: %w", ret.repoRoot, err)
 	}
 
