@@ -260,10 +260,12 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		return nil, state.errors
 	}
 
-	// Discover what main package modules we actually executed.
+	// Discover what main package modules we actually executed. This is used to
+	// know what to lint in legacy mode (without PACKAGE.star), since in that mode
+	// it is not trivial to know what files are part of the package.
 	for _, key := range intr.Visited() {
 		if key.Package == mainPkg {
-			state.Visited = append(state.Visited, key.Path)
+			state.visited = append(state.visited, key.Path)
 		}
 	}
 

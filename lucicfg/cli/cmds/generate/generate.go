@@ -189,9 +189,14 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 	// Optionally validate via RPC and apply linters. This is slow, thus off by
 	// default.
 	if gr.validate {
+		var source []string
+		source, err = state.SourcesToLint()
+		if err != nil {
+			return result, err
+		}
 		result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
 			Loader:        state.Inputs.Entry.Main,
-			Source:        state.Visited,
+			Source:        source,
 			Output:        output,
 			Meta:          meta,
 			Root:          state.Inputs.Entry.Local.DiskPath,

@@ -80,6 +80,14 @@ func (s *ScanResult) RelFiles() []string {
 //
 // Does not attempt to interpret PACKAGE.star (use PackageOnDisk for that).
 func ScanForRoots(paths []string) ([]*ScanResult, error) {
+	return scanForRoots(paths, "")
+}
+
+// scanForRoots implements ScanForRoots.
+//
+// It allows to supply a "stop directory" that limits searches for package roots
+// to it (instead of the repository root).
+func scanForRoots(paths []string, stopDir string) ([]*ScanResult, error) {
 	results := []*ScanResult{}              // all discovered roots
 	perDirRoots := map[string]*ScanResult{} // abs dir path => closest root
 	allRoots := map[string]*ScanResult{}    // abs root path => *ScanResult for it
@@ -92,7 +100,7 @@ func ScanForRoots(paths []string) ([]*ScanResult, error) {
 			return found, nil
 		}
 
-		root, marker, err := findAnyRoot(dir, cache)
+		root, marker, err := findAnyRoot(dir, stopDir, cache)
 		if err != nil {
 			return nil, err
 		}
@@ -138,24 +146,24 @@ func ScanForRoots(paths []string) ([]*ScanResult, error) {
 }
 
 // findAnyRoot finds either a root with PACKAGE.star or a legacy config or
-// a repo root.
+// the stopDir, or a repo root.
 //
 // `marker` is either "PACKAGE.star" or ".lucicfgfmtrc" or "" depending on what
 // kind of root was found.
-func findAnyRoot(dir string, cache *statCache) (root, marker string, err error) {
-	switch root, found, err := findRoot(dir, PackageScript, "", cache); {
+func findAnyRoot(dir, stopDir string, cache *statCache) (root, marker string, err error) {
+	switch root, found, err := findRoot(dir, PackageScript, stopDir, cache); {
 	case err != nil:
 		return "", "", err
 	case found:
 		return root, PackageScript, nil
 	}
-	switch root, found, err := findRoot(dir, legacyConfig, "", cache); {
+	switch root, found, err := findRoot(dir, legacyConfig, stopDir, cache); {
 	case err != nil:
 		return "", "", err
 	case found:
 		return root, legacyConfig, nil
 	default:
-		return root, "", nil // repo root
+		return root, "", nil // stopDir or repo root
 	}
 }
 

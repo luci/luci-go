@@ -430,6 +430,29 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	}
 }
 
+// Sources is a sorted list of all *.star files in the main package.
+//
+// Paths are slash-separated and relative to the package root (i.e. ready to be
+// passed to the interpreter.Loader).
+func (l *Local) Sources() ([]string, error) {
+	// Here we know l.DiskPath is a package root (perhaps of a legacy package).
+	// By passing it as a stop dir to scanForRoots we make sure all "orphan" files
+	// that don't otherwise belong to a (nested) package, will end up attributed
+	// to l.DiskPath root (NOT the repository root, as would happen without
+	// a stop directory). This is important for enumerating files in a legacy
+	// package.
+	res, err := scanForRoots([]string{l.DiskPath}, l.DiskPath)
+	if err != nil {
+		return nil, err
+	}
+	for _, root := range res {
+		if root.Root == l.DiskPath {
+			return root.RelFiles(), nil
+		}
+	}
+	return nil, errors.Reason("unexpectedly found no *.star files in %q", l.DiskPath).Err()
+}
+
 // cwdRel converts the given path to be relative to the current working
 // directory, if possible.
 //

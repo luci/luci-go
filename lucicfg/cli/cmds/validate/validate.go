@@ -252,9 +252,14 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
+	var source []string
+	source, err = state.SourcesToLint()
+	if err != nil {
+		return result, err
+	}
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
 		Loader:        state.Inputs.Entry.Main,
-		Source:        state.Visited,
+		Source:        source,
 		Output:        output,
 		Meta:          meta,
 		Root:          state.Inputs.Entry.Local.DiskPath,

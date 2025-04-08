@@ -73,6 +73,12 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.That(t, entry.Script, should.Equal("main.star"))
 		assert.Loosely(t, entry.LucicfgVersionConstraints, should.HaveLength(0))
 
+		sources, err := entry.Local.Sources()
+		assert.NoErr(t, err)
+		assert.That(t, sources, should.Match([]string{
+			"main.star",
+		}))
+
 		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{
 			Packages: []*lockfilepb.Lockfile_Package{
 				{
@@ -111,6 +117,13 @@ func TestEntryOnDisk(t *testing.T) {
 				Package: "@some/pkg",
 				Main:    true,
 			},
+		}))
+
+		sources, err := entry.Local.Sources()
+		assert.NoErr(t, err)
+		assert.That(t, sources, should.Match([]string{
+			"PACKAGE.star",
+			"c/main.star",
 		}))
 
 		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{
@@ -175,6 +188,14 @@ func TestEntryOnDisk(t *testing.T) {
 			"@remote/a": {"@remote/b"},
 			"@remote/b": nil,
 			"@some/pkg": {"@local"},
+		}))
+
+		// Doesn't report the nested package as part of the main package.
+		sources, err := entry.Local.Sources()
+		assert.NoErr(t, err)
+		assert.That(t, sources, should.Match([]string{
+			"PACKAGE.star",
+			"c/main.star",
 		}))
 
 		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{

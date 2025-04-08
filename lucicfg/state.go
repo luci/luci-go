@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/lucicfg/errs"
 	"go.chromium.org/luci/lucicfg/graph"
+	"go.chromium.org/luci/lucicfg/pkg"
 	"go.chromium.org/luci/lucicfg/vars"
 )
 
@@ -42,11 +43,11 @@ import (
 // All Starlark code is executed sequentially in a single goroutine, thus the
 // state is not protected by any mutexes.
 type State struct {
-	Inputs  Inputs   // all inputs, exactly as passed to Generate.
-	Output  Output   // all generated config files, populated at the end
-	Meta    Meta     // lucicfg parameters, settable through Starlark
-	Visited []string // visited Starlark modules from the main package in Inputs
+	Inputs Inputs // all inputs, exactly as passed to Generate.
+	Output Output // all generated config files, populated at the end
+	Meta   Meta   // lucicfg parameters, settable through Starlark
 
+	visited     []string          // visited Starlark modules from the main package in Inputs
 	vars        vars.Vars         // holds state of lucicfg.var() variables
 	seq         sequences         // holds state for __native__.sequence_next()
 	experiments experiments       // holds the set of registered/enabled experiments
@@ -60,6 +61,22 @@ type State struct {
 	interner   stringInterner // a general purpose string interner used by other guts
 	files      fileCache      // cache of files read from disk, see io.go
 	protos     protoCache     // cache of deserialized protos, see protos.go
+}
+
+// SourcesToLint is a list of paths in the main package to run the linter on.
+//
+// Returns an error if executing a remote package. Linting is a purely local
+// operation.
+func (s *State) SourcesToLint() ([]string, error) {
+	if s.Inputs.Entry.Local == nil {
+		return nil, errors.Reason("cannot lint remote packages").Err()
+	}
+	if s.Inputs.Entry.Package == pkg.LegacyPackageNamePlaceholder {
+		// Legacy mode lints only files that were executed for backward
+		// compatibility with how it used to work.
+		return s.visited, nil
+	}
+	return s.Inputs.Entry.Local.Sources()
 }
 
 // NewState initializes the state.
