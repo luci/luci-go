@@ -28,8 +28,16 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
+	"go.chromium.org/luci/lucicfg/lockfilepb"
 	"go.chromium.org/luci/lucicfg/pkg"
 )
+
+// Generated is the result of lucicfg execution.
+type Generated struct {
+	Package  *pkg.Local           // the main package that was executed
+	State    *lucicfg.State       // the final state of the generator, including all outputs
+	Lockfile *lockfilepb.Lockfile // the lockfile with all dependencies
+}
 
 // GenerateConfigs executes the Starlark script and assembles final values for
 // meta config.
@@ -47,7 +55,7 @@ import (
 // 'repoOverrides' are a collection of k=v pairs passed via CLI flags as
 // `-repo-overrides k=v`. They are used to setup local overrides of remote
 // dependencies
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string) (*lucicfg.State, error) {
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string) (*Generated, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return nil, err
@@ -114,12 +122,15 @@ You may also optionally set +x flag on it, but this is not required.
 	}
 
 	// Load the main package with dependencies from disk.
-	entry, _, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
+	entry, lockfile, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
 		Error: errors.New("remote packages aren't implemented yet"),
 	}, overrides)
 	if err != nil {
 		return nil, err
 	}
+
+	// Log all dependencies into the verbose log.
+	pkg.LogLockfileDeps(ctx, lockfile)
 
 	// Generate everything, storing the result in memory.
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
@@ -158,7 +169,12 @@ You may also optionally set +x flag on it, but this is not required.
 		}
 	}
 
-	return state, nil
+	lockfile.Lucicfg = lucicfg.Version
+	return &Generated{
+		Package:  entry.Local,
+		State:    state,
+		Lockfile: lockfile,
+	}, nil
 }
 
 func startsWithShebang(r io.Reader) (bool, error) {

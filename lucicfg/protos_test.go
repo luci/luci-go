@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/starlark/starlarkproto"
+
+	"go.chromium.org/luci/lucicfg/internal"
 )
 
 // testMessageType represents testproto.Msg from misc/support/test.proto as
@@ -115,7 +117,7 @@ func TestProtos(t *testing.T) {
 		assert.Loosely(t, doc, should.Equal("https://example.com/proto-doc")) // see misc/support/test.proto
 	})
 
-	ftt.Run("semanticallyEqual: true", t, func(t *ftt.Test) {
+	ftt.Run("SemanticProtoEqual: true", t, func(t *ftt.Test) {
 		msg1 := testMessageProto(`
 			i: 123
 			nested: {
@@ -142,10 +144,10 @@ func TestProtos(t *testing.T) {
 				s: "ignore 2"
 			}
 		`)
-		assert.Loosely(t, semanticallyEqual(msg1, msg2), should.BeTrue)
+		assert.Loosely(t, internal.SemanticProtoEqual(msg1, msg2), should.BeTrue)
 	})
 
-	ftt.Run("semanticallyEqual: false", t, func(t *ftt.Test) {
+	ftt.Run("SemanticProtoEqual: false", t, func(t *ftt.Test) {
 		msg1 := testMessageProto(`
 			i: 123
 			nested: {
@@ -172,6 +174,6 @@ func TestProtos(t *testing.T) {
 				s: "ignore 2"
 			}
 		`)
-		assert.Loosely(t, semanticallyEqual(msg1, msg2), should.BeFalse)
+		assert.Loosely(t, internal.SemanticProtoEqual(msg1, msg2), should.BeFalse)
 	})
 }

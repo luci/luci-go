@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	"go.chromium.org/luci/lucicfg/fileset"
+	"go.chromium.org/luci/lucicfg/internal"
 )
 
 // Output is an in-memory representation of all generated output files.
@@ -165,7 +166,7 @@ func (m *MessageDatum) Compare(other []byte) (CompareResult, error) {
 	}
 
 	// Compare them semantically as protos.
-	if semanticallyEqual(m.pmsg, otherpb) {
+	if internal.SemanticProtoEqual(m.pmsg, otherpb) {
 		return SemanticallyEqual, nil
 	}
 	return Different, nil

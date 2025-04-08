@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
 	"go.chromium.org/luci/lucicfg/fileset"
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 // Cmd is 'generate' subcommand.
@@ -85,6 +86,13 @@ type generateResult struct {
 	Unchanged []string `json:"unchanged,omitempty"`
 	// Deleted is a list of config files deleted from disk due to staleness.
 	Deleted []string `json:"deleted,omitempty"`
+
+	// LockfileState is what happened to the PACKAGE.lock.
+	//
+	// "CHANGED", "UNCHANGED" or "" (if the lockfile was completely ignored e.g.
+	// because "-repo-override" was used or this is a legacy package without
+	// a lockfile).
+	LockfileState string `json:"lockfile_state,omitempty"`
 }
 
 func (gr *generateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -97,10 +105,12 @@ func (gr *generateRun) Run(a subcommands.Application, args []string, env subcomm
 
 func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
 	meta := gr.DefaultMeta()
-	state, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars, gr.RepoOverrides)
+	gen, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars, gr.RepoOverrides)
 	if err != nil {
 		return nil, err
 	}
+
+	state := gen.State
 	output := state.Output
 
 	result := &generateResult{Meta: &meta}
@@ -153,6 +163,26 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		result.Changed, result.Unchanged, err = output.Write(meta.ConfigDir, gr.force)
 		if err != nil {
 			return result, err
+		}
+		// Update the lockfile if it has changed.
+		switch {
+		case pkg.IsLockfileOverridden(gen.Lockfile):
+			logging.Warningf(ctx, "Leaving %s untouched since this run uses -repo-override", pkg.LockfileName)
+		case gen.Package.Definition.Name == pkg.LegacyPackageNamePlaceholder:
+			// This is a legacy package without PACKAGE.star. Silently do nothing.
+		default:
+			fresh, err := pkg.CheckLockfileStaleness(gen.Package.DiskPath, gen.Lockfile, !gr.force)
+			switch {
+			case err != nil:
+				return result, err
+			case fresh:
+				result.LockfileState = "UNCHANGED"
+			default:
+				result.LockfileState = "CHANGED"
+				if err := pkg.WriteLockfile(gen.Package.DiskPath, gen.Lockfile); err != nil {
+					return result, err
+				}
+			}
 		}
 	}
 

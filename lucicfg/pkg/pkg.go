@@ -31,11 +31,14 @@ import (
 	"go.chromium.org/luci/lucicfg/lockfilepb"
 )
 
-// PackageScript is a name of the script with the package definition.
-const PackageScript = "PACKAGE.star"
-
-// LegacyPackageNamePlaceholder is used as package name of legacy packages.
-const LegacyPackageNamePlaceholder = "@__main__"
+const (
+	// PackageScript is a name of the script with the package definition.
+	PackageScript = "PACKAGE.star"
+	// LockfileName is the name of the lockfile (sibling of PACKAGE.star).
+	LockfileName = "PACKAGE.lock"
+	// LegacyPackageNamePlaceholder is used as package name of legacy packages.
+	LegacyPackageNamePlaceholder = "@__main__"
+)
 
 // Entry is a main package plus an entry point executable file in it.
 //

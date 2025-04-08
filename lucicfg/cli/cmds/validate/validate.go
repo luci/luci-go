@@ -25,11 +25,13 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/cli/base"
 	"go.chromium.org/luci/lucicfg/fileset"
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 // Cmd is 'validate' subcommand.
@@ -97,6 +99,13 @@ type validateResult struct {
 	// When non-empty, means invocation of "lucicfg generate ..." will either
 	// update or delete all these files.
 	Stale []string `json:"stale,omitempty"`
+
+	// LockfileState is what state the PACKAGE.lock is in.
+	//
+	// "CHANGED", "UNCHANGED" or "" (if the lockfile was completely ignored e.g.
+	// because "-repo-override" was used or this is a legacy package without
+	// a lockfile).
+	LockfileState string `json:"lockfile_state,omitempty"`
 }
 
 func (vr *validateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -164,10 +173,12 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	}
 
 	meta := vr.DefaultMeta()
-	state, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides)
+	gen, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides)
 	if err != nil {
 		return nil, err
 	}
+
+	state := gen.State
 	output := state.Output
 
 	result := &validateResult{Meta: &meta}
@@ -215,6 +226,27 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		// what's on disk.
 		if err := output.Read(meta.ConfigDir); err != nil {
 			return result, err
+		}
+	}
+
+	// Make sure the lockfile on disk is up-to-date.
+	switch {
+	case pkg.IsLockfileOverridden(gen.Lockfile):
+		logging.Warningf(ctx, "Leaving %s untouched since this run uses -repo-override", pkg.LockfileName)
+	case gen.Package.Definition.Name == pkg.LegacyPackageNamePlaceholder:
+		// This is a legacy package without PACKAGE.star. Silently do nothing.
+	default:
+		fresh, err := pkg.CheckLockfileStaleness(gen.Package.DiskPath, gen.Lockfile, !vr.strict)
+		switch {
+		case err != nil:
+			return result, err
+		case fresh:
+			result.LockfileState = "UNCHANGED"
+		default:
+			result.LockfileState = "CHANGED"
+			return result, fmt.Errorf(
+				"the PACKAGE.lock file on disk is stale.\n"+
+					"  Run `lucicfg generate %q` to update it.", path)
 		}
 	}
 
