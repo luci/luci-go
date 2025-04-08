@@ -183,6 +183,13 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 
 	result := &validateResult{Meta: &meta}
 
+	var regenCmdHint string
+	if vr.strict {
+		regenCmdHint = fmt.Sprintf("lucicfg generate -force %q", path)
+	} else {
+		regenCmdHint = fmt.Sprintf("lucicfg generate %q", path)
+	}
+
 	if meta.ConfigDir != "-" {
 		// Find files that are present on disk, but no longer in the output.
 		trackedSet, err := fileset.New(meta.TrackedFiles)
@@ -216,8 +223,8 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		if len(result.Stale) != 0 {
 			return result, fmt.Errorf(
 				"the following files need to be regenerated: %s.\n"+
-					"  Run `lucicfg generate %q` to update them.",
-				strings.Join(result.Stale, ", "), path)
+					"  Run `%s` to update them.",
+				strings.Join(result.Stale, ", "), regenCmdHint)
 		}
 
 		// We want to make sure the *exact* files we have on disk pass the server
@@ -246,7 +253,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 			result.LockfileState = "CHANGED"
 			return result, fmt.Errorf(
 				"the PACKAGE.lock file on disk is stale.\n"+
-					"  Run `lucicfg generate %q` to update it.", path)
+					"  Run `%s` to update it.", regenCmdHint)
 		}
 	}
 
