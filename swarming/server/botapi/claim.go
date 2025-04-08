@@ -354,9 +354,9 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		EventType:     eventType,
 		EventDedupKey: body.ClaimID,
 		TasksManager:  srv.tasksManager,
-		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
+		Prepare: func(ctx context.Context, bot *model.BotInfo) (*botinfo.PrepareOutcome, error) {
 			if bot == nil {
-				return false, errors.Reason("unexpectedly missing BotInfo entity").Err()
+				return nil, errors.Reason("unexpectedly missing BotInfo entity").Err()
 			}
 			outcome, err = srv.tasksManager.ClaimTxn(ctx, &tasks.ClaimOp{
 				Request:             details.req,
@@ -367,8 +367,13 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 				BotLogsCloudProject: r.Session.BotConfig.LogsCloudProject,
 				BotIdleSince:        bot.IdleSince.Get(),
 			})
-			proceed = err == nil && outcome.Claimed
-			return
+
+			if err != nil {
+				return nil, err
+			}
+			return &botinfo.PrepareOutcome{
+				Proceed: outcome.Claimed,
+			}, nil
 		},
 		State: state,
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{

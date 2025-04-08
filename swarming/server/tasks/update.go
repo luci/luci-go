@@ -16,14 +16,11 @@ package tasks
 
 import (
 	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/swarming/server/model"
 )
 
 // UpdateOp represents an operation of a bot updating the task it's running.
 //
-// The actual transaction happens as part of the BotInfo update, see
-// botapi/task_update.go.
+// The update is not suppose to complete a task. Use CompleteTxn for that.
 type UpdateOp struct {
 	// TaskRequest entity key.
 	RequestKey *datastore.Key
@@ -31,26 +28,9 @@ type UpdateOp struct {
 	// ID of the bot sending the task update.
 	BotID string
 
-	// Performance stats reported by the bot.
-	PerformanceStats *model.PerformanceStats
-
 	// Updates of the ask.
-	// Canceled is a bool on whether the task has been canceled at set up stage.
-	Canceled bool
-	// CASOutputRoot is the digest of the output root uploaded to RBE-CAS.
-	CASOutputRoot model.CASReference
-	// CIPDPins is resolved versions of all the CIPD packages used in the task.
-	CIPDPins model.CIPDInput
 	// CostUSD is an approximate bot time cost spent executing this task.
 	CostUSD float64
-	// Duration is the time spent in seconds for this task, excluding overheads.
-	Duration *float64
-	// ExitCode is the task process exit code for tasks in COMPLETED state.
-	ExitCode *int64
-	// HardTimeout is a bool on whether a hard timeout occurred.
-	HardTimeout bool
-	// IOTimeout is a bool on whether an I/O timeout occurred.
-	IOTimeout bool
 	// Output is the data to append to the stdout content for the task.
 	Output []byte
 	// OutputChunkStart is the index of output in the stdout stream.

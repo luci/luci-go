@@ -17,14 +17,30 @@ package botapi
 import (
 	"context"
 	"testing"
+	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
+	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func TestProcessTaskUpdate(t *testing.T) {
@@ -126,7 +142,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 				r := &botsrv.Request{
 					CurrentTaskID: taskIDInBot,
 				}
-				_, err := srv.processTaskUpdate(ctx, tc.req, r)
+				_, err := validateTaskUpdateRequest(ctx, tc.req, r)
 				assert.That(t, err, should.ErrLike(tc.err))
 			})
 		}
@@ -149,7 +165,6 @@ func TestProcessTaskUpdate(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, model.RequestKeyToTaskID(update.RequestKey, model.AsRunResult), should.Equal(taskID))
 		assert.That(t, update.Output, should.Match([]byte("output")))
-		assert.Loosely(t, update.PerformanceStats, should.BeNil)
 	})
 	t.Run("process_completed_task", func(t *testing.T) {
 		zerof := 0.0
@@ -231,7 +246,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 			},
 		}
 
-		update, err := srv.processTaskUpdate(ctx, req, &botsrv.Request{
+		complete, err := srv.processTaskCompletion(ctx, req, &botsrv.Request{
 			CurrentTaskID: taskID,
 			Session: &internalspb.Session{
 				BotId:     "some-bot",
@@ -239,8 +254,155 @@ func TestProcessTaskUpdate(t *testing.T) {
 			},
 		})
 		assert.NoErr(t, err)
-		assert.That(t, model.RequestKeyToTaskID(update.RequestKey, model.AsRunResult), should.Equal(taskID))
-		assert.That(t, update.Output, should.Match([]byte("output")))
-		assert.That(t, update.PerformanceStats, should.Match(perfStats))
+		assert.That(t, model.RequestKeyToTaskID(complete.RequestKey, model.AsRunResult), should.Equal(taskID))
+		assert.That(t, complete.Output, should.Match([]byte("output")))
+		assert.That(t, complete.PerformanceStats, should.Match(perfStats))
+	})
+
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
+		now := time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+		ctx := memory.Use(context.Background())
+		ctx, _ = testclock.UseTime(ctx, now)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+
+		secret := hmactoken.NewStaticSecret(secrets.Secret{
+			Active: []byte("secret"),
+		})
+
+		srv := BotAPIServer{
+			cfg:        cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs()),
+			hmacSecret: secret,
+			version:    "server-ver",
+		}
+
+		botID := "bot-id"
+		taskID := "65aba3a3e6b99200"
+		runID := "65aba3a3e6b99201"
+
+		call := func(req *TaskUpdateRequest) (*TaskUpdateResponse, error) {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "bot:bot-id",
+			})
+
+			resp, err := srv.TaskUpdate(ctx, req, &botsrv.Request{
+				Session: &internalspb.Session{
+					BotId: botID,
+					BotConfig: &internalspb.BotConfig{
+						LogsCloudProject: "logs-cloud-project",
+					},
+					SessionId: "session-id",
+				},
+				CurrentTaskID: taskID,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return resp.(*TaskUpdateResponse), nil
+		}
+
+		t.Run("completeTask", func(t *ftt.Test) {
+			submit := func(outcome *tasks.CompleteTxnOutcome, err error, proceed bool) {
+				srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
+					return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						res, err := u.Prepare(ctx, &model.BotInfo{
+							Key: model.BotInfoKey(ctx, u.BotID),
+						})
+						if res != nil {
+							assert.That(t, res.Proceed, should.Equal(proceed))
+							assert.That(t, res.EventType, should.Equal(outcome.BotEventType))
+
+						}
+						return err
+					}, nil)
+
+				}
+
+				srv.tasksManager = &tasks.MockedManager{
+					CompleteTxnMock: func(ctx context.Context, op *tasks.CompleteOp) (*tasks.CompleteTxnOutcome, error) {
+						return outcome, err
+					},
+				}
+			}
+			t.Run("normal-completion", func(t *ftt.Test) {
+				submit(&tasks.CompleteTxnOutcome{Updated: true, BotEventType: model.BotEventTaskCompleted}, nil, true)
+				req := &TaskUpdateRequest{
+					TaskID:      taskID,
+					ExitCode:    int64Ptr(1),
+					Duration:    float64Ptr(3600),
+					BotOverhead: float64Ptr(100),
+				}
+				resp, err := call(req)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeFalse)
+			})
+			t.Run("task-canceled", func(t *ftt.Test) {
+				submit(&tasks.CompleteTxnOutcome{Updated: true, BotEventType: model.BotEventTaskCompleted}, nil, true)
+				req := &TaskUpdateRequest{
+					TaskID:   taskID,
+					Canceled: true,
+				}
+				resp, err := call(req)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeFalse)
+			})
+
+			t.Run("task-killed", func(t *ftt.Test) {
+				submit(&tasks.CompleteTxnOutcome{Updated: true, BotEventType: model.BotEventTaskKilled}, nil, true)
+				req := &TaskUpdateRequest{
+					TaskID:      taskID,
+					ExitCode:    int64Ptr(1),
+					Duration:    float64Ptr(3600),
+					BotOverhead: float64Ptr(100),
+				}
+				resp, err := call(req)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeFalse)
+			})
+
+			t.Run("failed_to_complete", func(t *ftt.Test) {
+				submit(nil, status.Errorf(codes.InvalidArgument, "task %q is not running by bot %q", runID, botID), false)
+				req := &TaskUpdateRequest{
+					TaskID:      taskID,
+					ExitCode:    int64Ptr(1),
+					Duration:    float64Ptr(3600),
+					BotOverhead: float64Ptr(100),
+				}
+				_, err := call(req)
+				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is not running by bot "bot-id"`))
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			})
+
+			t.Run("task-has-completed", func(t *ftt.Test) {
+				submit(nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", runID), false)
+				req := &TaskUpdateRequest{
+					TaskID:      taskID,
+					HardTimeout: true,
+				}
+				_, err := call(req)
+				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
+				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			})
+
+			t.Run("retry_on_normal_completion", func(t *ftt.Test) {
+				submit(&tasks.CompleteTxnOutcome{Updated: false}, nil, false)
+				req := &TaskUpdateRequest{
+					TaskID:      taskID,
+					ExitCode:    int64Ptr(1),
+					Duration:    float64Ptr(3600),
+					BotOverhead: float64Ptr(100),
+				}
+				resp, err := call(req)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeFalse)
+			})
+		})
 	})
 }
+
+func int64Ptr(i int64) *int64 { return &i }
+
+func float64Ptr(f float64) *float64 { return &f }

@@ -248,10 +248,10 @@ func TestClaim(t *testing.T) {
 		t.Run("Claim txn OK", func(t *ftt.Test) {
 			var botInfoUpdate *botinfo.Update
 			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				botInfoUpdate = u
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					proceed, err := u.Prepare(ctx, &model.BotInfo{
+					res, err := u.Prepare(ctx, &model.BotInfo{
 						Key: model.BotInfoKey(ctx, u.BotID),
 						BotCommon: model.BotCommon{
 							Version:   "bot-version",
@@ -259,7 +259,7 @@ func TestClaim(t *testing.T) {
 						},
 					})
 					assert.NoErr(t, err)
-					assert.That(t, proceed, should.BeTrue)
+					assert.That(t, res.Proceed, should.BeTrue)
 					return nil
 				}, nil)
 			}
@@ -320,9 +320,9 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Claim txn unavailable", func(t *ftt.Test) {
 			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					proceed, err := u.Prepare(ctx, &model.BotInfo{
+					res, err := u.Prepare(ctx, &model.BotInfo{
 						Key: model.BotInfoKey(ctx, u.BotID),
 						BotCommon: model.BotCommon{
 							Version:   "bot-version",
@@ -330,7 +330,7 @@ func TestClaim(t *testing.T) {
 						},
 					})
 					assert.NoErr(t, err)
-					assert.That(t, proceed, should.BeFalse)
+					assert.That(t, res.Proceed, should.BeFalse)
 					return nil
 				}, nil)
 			}
@@ -357,9 +357,9 @@ func TestClaim(t *testing.T) {
 
 		t.Run("Claim txn already claimed", func(t *ftt.Test) {
 			srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					proceed, err := u.Prepare(ctx, &model.BotInfo{
+					res, err := u.Prepare(ctx, &model.BotInfo{
 						Key: model.BotInfoKey(ctx, u.BotID),
 						BotCommon: model.BotCommon{
 							Version:   "bot-version",
@@ -367,7 +367,7 @@ func TestClaim(t *testing.T) {
 						},
 					})
 					assert.NoErr(t, err)
-					assert.That(t, proceed, should.BeFalse)
+					assert.That(t, res.Proceed, should.BeFalse)
 					return nil
 				}, nil)
 			}

@@ -51,6 +51,8 @@ type Manager interface {
 	AbandonTxn(ctx context.Context, op *AbandonOp) (*AbandonOpOutcome, error)
 	// CancelTxn runs the transactional logic to cancel a single task.
 	CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error)
+	// CompleteTxn runs the transactional logic to complete a single task.
+	CompleteTxn(ctx context.Context, op *CompleteOp) (*CompleteTxnOutcome, error)
 }
 
 // managerImpl is the "production" implementation of Manager.

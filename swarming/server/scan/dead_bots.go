@@ -113,8 +113,10 @@ func (r *DeadBotDetector) markAsDead(ctx context.Context, botID string) error {
 		BotID:        botID,
 		EventType:    model.BotEventMissing,
 		TasksManager: r.TasksManager,
-		Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
-			return bot != nil && r.shouldMarkAsDead(ctx, bot), nil
+		Prepare: func(ctx context.Context, bot *model.BotInfo) (*botinfo.PrepareOutcome, error) {
+			return &botinfo.PrepareOutcome{
+				Proceed: bot != nil && r.shouldMarkAsDead(ctx, bot),
+			}, nil
 		},
 	}
 	submitted, err := r.submitUpdate(ctx, update)

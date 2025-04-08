@@ -51,7 +51,7 @@ func TestEvent(t *testing.T) {
 		var lastUpdate *botinfo.Update
 		srv := BotAPIServer{
 			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				lastUpdate = u
 				return nil
 			},

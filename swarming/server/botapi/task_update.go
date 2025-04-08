@@ -19,7 +19,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botinfo"
+	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
@@ -135,19 +142,130 @@ type TaskUpdateResponse struct {
 //
 // Called by bots to report the tasks they are running to server.
 func (srv *BotAPIServer) TaskUpdate(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (botsrv.Response, error) {
-	updateOp, err := srv.processTaskUpdate(ctx, body, r)
+	if isTaskCompletion(body) {
+		return srv.completeTask(ctx, body, r)
+	}
+
+	return srv.updateTask(ctx, body, r)
+}
+
+func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*TaskUpdateResponse, error) {
+	taskUpdate, err := srv.processTaskUpdate(ctx, body, r)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = updateOp
+	_ = taskUpdate
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.UpdateOp, error) {
+	reqKey, err := validateTaskUpdateRequest(ctx, body, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tasks.UpdateOp{
+		RequestKey:       reqKey,
+		BotID:            r.Session.BotId,
+		Output:           body.Output,
+		OutputChunkStart: body.OutputChunkStart,
+	}, nil
+}
+
+func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*TaskUpdateResponse, error) {
+	taskCompletion, err := srv.processTaskCompletion(ctx, body, r)
+	if err != nil {
+		return nil, err
+	}
+
+	update := &botinfo.Update{
+		BotID:         r.Session.BotId,
+		EventDedupKey: body.RequestUUID,
+		Prepare: func(ctx context.Context, _ *model.BotInfo) (*botinfo.PrepareOutcome, error) {
+			outcome, err := srv.tasksManager.CompleteTxn(ctx, taskCompletion)
+			if err != nil {
+				return nil, err
+			}
+			return &botinfo.PrepareOutcome{Proceed: outcome.Updated, EventType: outcome.BotEventType}, nil
+
+		},
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
+			SessionID: r.Session.SessionId,
+		}),
+	}
+
+	if err := srv.submitUpdate(ctx, update); err != nil {
+		if status.Code(err) != codes.Unknown {
+			return nil, err
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update the task: %s", err)
+	}
+
+	session, err := srv.updateBotSession(ctx, r.Session)
+	if err != nil {
+		return nil, err
+	}
+	return &TaskUpdateResponse{OK: true, Session: session}, nil
 }
 
 // processTaskUpdate validates body and prepares the parameters to perform the task update.
 //
-// When success, returns the prepared tasks.UpdateOp. Otherwise return a grpc error.
-func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.UpdateOp, error) {
+// When success, returns the prepared tasks.UpdateOp (for output updates) or
+// tasks.CompleteOp (for task completion). Otherwise return a grpc error.
+func (srv *BotAPIServer) processTaskCompletion(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.CompleteOp, error) {
+	reqKey, err := validateTaskUpdateRequest(ctx, body, r)
+	if err != nil {
+		return nil, err
+	}
+
+	var perfStats *model.PerformanceStats
+	if body.BotOverhead != nil {
+		perfStats = &model.PerformanceStats{
+			BotOverheadSecs:      *body.BotOverhead,
+			CacheTrim:            body.CacheTrimStats,
+			PackageInstallation:  body.CIPDStats,
+			NamedCachesInstall:   body.NamedCachesStats.Install,
+			NamedCachesUninstall: body.NamedCachesStats.Uninstall,
+			Cleanup:              body.CleanupStats,
+			IsolatedDownload:     body.IsolatedStats.Download,
+			IsolatedUpload:       body.IsolatedStats.Upload,
+		}
+	}
+
+	return &tasks.CompleteOp{
+		RequestKey:       reqKey,
+		BotID:            r.Session.BotId,
+		PerformanceStats: perfStats,
+		Canceled:         body.Canceled,
+		CASOutputRoot:    body.CASOutputRoot,
+		CIPDPins:         body.CIPDPins,
+		CostUSD:          body.CostUSD,
+		Duration:         body.Duration,
+		ExitCode:         body.ExitCode,
+		HardTimeout:      body.HardTimeout,
+		IOTimeout:        body.IOTimeout,
+		Output:           body.Output,
+		OutputChunkStart: body.OutputChunkStart,
+	}, nil
+}
+
+// Bump the session expiry.
+func (srv *BotAPIServer) updateBotSession(ctx context.Context, session *internalspb.Session) ([]byte, error) {
+	session.DebugInfo = botsession.DebugInfo(ctx, srv.version)
+	session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
+	newSession, err := botsession.Marshal(session, srv.hmacSecret)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "fail to marshal session proto: %s", err)
+	}
+	return newSession, nil
+}
+
+func isTaskCompletion(body *TaskUpdateRequest) bool {
+	return body.ExitCode != nil || body.Canceled || body.HardTimeout || body.IOTimeout
+}
+
+func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*datastore.Key, error) {
 	if body.TaskID == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "task ID is required")
 	}
@@ -179,34 +297,5 @@ func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdate
 			"expected to have both duration and bot overhead or neither, got duration %v, bot overhead %v",
 			body.Duration, body.BotOverhead)
 	}
-
-	var perfStats *model.PerformanceStats
-	if body.BotOverhead != nil {
-		perfStats = &model.PerformanceStats{
-			BotOverheadSecs:      *body.BotOverhead,
-			CacheTrim:            body.CacheTrimStats,
-			PackageInstallation:  body.CIPDStats,
-			NamedCachesInstall:   body.NamedCachesStats.Install,
-			NamedCachesUninstall: body.NamedCachesStats.Uninstall,
-			Cleanup:              body.CleanupStats,
-			IsolatedDownload:     body.IsolatedStats.Download,
-			IsolatedUpload:       body.IsolatedStats.Upload,
-		}
-	}
-
-	return &tasks.UpdateOp{
-		RequestKey:       reqKey,
-		BotID:            r.Session.BotId,
-		PerformanceStats: perfStats,
-		Canceled:         body.Canceled,
-		CASOutputRoot:    body.CASOutputRoot,
-		CIPDPins:         body.CIPDPins,
-		CostUSD:          body.CostUSD,
-		Duration:         body.Duration,
-		ExitCode:         body.ExitCode,
-		HardTimeout:      body.HardTimeout,
-		IOTimeout:        body.IOTimeout,
-		Output:           body.Output,
-		OutputChunkStart: body.OutputChunkStart,
-	}, nil
+	return reqKey, nil
 }

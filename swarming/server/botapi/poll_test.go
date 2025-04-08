@@ -427,7 +427,7 @@ func TestPollResponse(t *testing.T) {
 		var updateErr error
 		srv := BotAPIServer{
 			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				lastUpdate = u
 				return updateErr
 			},
@@ -640,7 +640,7 @@ func TestPoll(t *testing.T) {
 				return nil
 			},
 			submitUpdate: func(ctx context.Context, u *botinfo.Update) error {
-				u.PanicIfInvalid()
+				u.PanicIfInvalid(u.EventType, false)
 				lastUpdate = u
 				return nil
 			},

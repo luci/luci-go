@@ -586,9 +586,11 @@ func TestBotInfoUpdate(t *testing.T) {
 			update := Update{
 				BotID:     "bot-id",
 				EventType: model.BotEventConnected,
-				Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
+				Prepare: func(ctx context.Context, bot *model.BotInfo) (*PrepareOutcome, error) {
 					saw = append(saw, bot)
-					return false, nil
+					return &PrepareOutcome{
+						Proceed: false,
+					}, nil
 				},
 			}
 			submitted, err := update.Submit(ctx)
@@ -608,9 +610,11 @@ func TestBotInfoUpdate(t *testing.T) {
 			update := Update{
 				BotID:     "bot-id",
 				EventType: model.BotEventIdle,
-				Prepare: func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error) {
+				Prepare: func(ctx context.Context, bot *model.BotInfo) (*PrepareOutcome, error) {
 					saw = append(saw, bot)
-					return false, nil
+					return &PrepareOutcome{
+						Proceed: false,
+					}, nil
 				},
 			}
 			submitted, err := update.Submit(ctx)

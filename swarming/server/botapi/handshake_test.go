@@ -111,7 +111,7 @@ func TestHandshake(t *testing.T) {
 		}
 		var latestUpdate *botinfo.Update
 		srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
-			u.PanicIfInvalid()
+			u.PanicIfInvalid(u.EventType, false)
 			latestUpdate = u
 			return nil
 		}

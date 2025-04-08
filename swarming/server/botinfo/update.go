@@ -157,7 +157,7 @@ type Update struct {
 
 	// EventType is what event is causing this BotInfo update to be recorded.
 	//
-	// Required.
+	// Required, unless it depends on Prepare to decide.
 	EventType model.BotEventType
 
 	// EventDedupKey is an optional string used to skip duplicate events.
@@ -184,11 +184,12 @@ type Update struct {
 	//
 	// If this is the first update for this bot, `bot` will be nil.
 	//
-	// If the callback returns false, this update will be silently skipped and
-	// all transactional work done by the callback (if any) rolled back.
+	// If PrepareOutcome.Proceed set to false, this update will be silently
+	// skipped and all transactional work done by the callback (if any) rolled
+	// back.
 	//
 	// Returning an error aborts the update as well, with the error propagated.
-	Prepare func(ctx context.Context, bot *model.BotInfo) (proceed bool, err error)
+	Prepare func(ctx context.Context, bot *model.BotInfo) (*PrepareOutcome, error)
 
 	// Dimensions is a sorted list of dimensions to assign to the bot.
 	//
@@ -252,6 +253,15 @@ type Update struct {
 	// but the actual ID is empty, the RBE session will just use BotID as its
 	// bot ID.
 	EffectiveBotIDInfo *RBEEffectiveBotIDInfo
+}
+
+// PrepareOutcome is the result of the Prepare callback.
+type PrepareOutcome struct {
+	// Proceed is true if botinfo update should proceed after Prepare.
+	Proceed bool
+	// EventType is what event is causing this BotInfo update to be recorded
+	// based on Prepare result.
+	EventType model.BotEventType
 }
 
 // CallInfo is information describing the bot API call.
@@ -335,6 +345,8 @@ type SubmittedUpdate struct {
 	entitiesToPut []any
 	// entitiesToDelete is a list of entities to delete in the transaction.
 	entitiesToDelete []any
+	// Event type of this submitted update.
+	eventType model.BotEventType
 }
 
 // AbandonedTaskFinalizer is used to finalized the state of an abandoned task.
@@ -353,30 +365,33 @@ type AbandonedTaskFinalizer interface {
 //
 // This can only happen in presence of bugs. Intended to be called from tests
 // that mock out Update.Submit().
-func (u *Update) PanicIfInvalid() {
-	aspect, found := model.TaskChangeAspects[u.EventType]
-	if !found {
-		panic(fmt.Sprintf("unrecognized event %s", u.EventType))
-	}
-	if aspect == model.TaskChangeSet {
-		if u.TaskInfo == nil {
-			panic(fmt.Sprintf("event %s is missing TaskInfo", u.EventType))
-		}
-		if u.TaskInfo.TaskID == "" {
-			panic(fmt.Sprintf("event %s is missing TaskID in TaskInfo", u.EventType))
-		}
-	} else {
-		if u.TaskInfo != nil {
-			panic(fmt.Sprintf("event %s is unexpectedly passing TaskInfo ", u.EventType))
-		}
-	}
-
+func (u *Update) PanicIfInvalid(eventType model.BotEventType, allowEmptyEventType bool) {
 	if len(u.Dimensions) != 0 {
 		if !slices.IsSorted(u.Dimensions) {
 			panic("Dimensions must be sorted")
 		}
 		if _, found := slices.BinarySearch(u.Dimensions, "id:"+u.BotID); !found {
 			panic(fmt.Sprintf("id:<BotID> dimension is missing or incorrect in %v", u.Dimensions))
+		}
+	}
+
+	if eventType == "" && allowEmptyEventType {
+		return
+	}
+	aspect, found := model.TaskChangeAspects[eventType]
+	if !found {
+		panic(fmt.Sprintf("unrecognized event %s", eventType))
+	}
+	if aspect == model.TaskChangeSet {
+		if u.TaskInfo == nil {
+			panic(fmt.Sprintf("event %s is missing TaskInfo", eventType))
+		}
+		if u.TaskInfo.TaskID == "" {
+			panic(fmt.Sprintf("event %s is missing TaskID in TaskInfo", eventType))
+		}
+	} else {
+		if u.TaskInfo != nil {
+			panic(fmt.Sprintf("event %s is unexpectedly passing TaskInfo ", eventType))
 		}
 	}
 }
@@ -421,7 +436,13 @@ func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 		Attempts:            maxTxnAttempts,
 		AllocateIDsOnCommit: true, // avoid unnecessary call to AllocateIDs RPC
 	})
-	u.reportBotInfoTxn(ctx, attempt, err)
+	var eventType model.BotEventType
+	if submitted != nil {
+		eventType = submitted.eventType
+	} else {
+		eventType = u.EventType
+	}
+	u.reportBotInfoTxn(ctx, eventType, attempt, err)
 	switch {
 	case err == nil:
 		return submitted, nil
@@ -436,7 +457,7 @@ func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 //
 // Returns datastore errors. All errors are transient.
 func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
-	u.PanicIfInvalid()
+	u.PanicIfInvalid(u.EventType, true)
 
 	now := clock.Now(ctx).UTC()
 	key := model.BotInfoKey(ctx, u.BotID)
@@ -450,20 +471,29 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 		return nil, errors.Annotate(err, "fetching current BotInfo").Err()
 	}
 
+	eventType := u.EventType
 	// Do any extra transactional work and detect if we should proceed.
 	if u.Prepare != nil {
-		switch proceed, err := u.Prepare(ctx, current); {
+		prepareOutcome, err := u.Prepare(ctx, current)
+		switch {
 		case err != nil:
 			return nil, errors.Annotate(err, "in Prepare callback").Err()
-		case !proceed:
+		case !prepareOutcome.Proceed:
 			return nil, errSkippedUpdate
+		}
+
+		if eventType == "" && prepareOutcome.EventType != "" {
+			eventType = prepareOutcome.EventType
 		}
 	}
 
+	u.PanicIfInvalid(eventType, false)
+
 	// Do nothing if deleting an already absent BotInfo.
-	if u.EventType == model.BotEventDeleted && current == nil {
+	if eventType == model.BotEventDeleted && current == nil {
 		return &SubmittedUpdate{
-			BotInfo: nil, // indication that the bot was already gone
+			BotInfo:   nil, // indication that the bot was already gone
+			eventType: eventType,
 		}, nil
 	}
 
@@ -485,18 +515,19 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 		// This check exists to workaround race conditions when deleting bots (e.g.
 		// when a dead bot suddenly comes back to life just to report that it has
 		// failed a task and is terminating now).
-		storeBotInfo = healthyBotEvents[u.EventType]
+		storeBotInfo = healthyBotEvents[eventType]
 		if !storeBotInfo {
-			logging.Warningf(ctx, "No BotInfo for %s when storing %s", u.BotID, u.EventType)
+			logging.Warningf(ctx, "No BotInfo for %s when storing %s", u.BotID, eventType)
 		}
 	}
 
 	// Do nothing if this event has been processed already.
-	eventDedupKey := u.fullEventDedupKey()
+	eventDedupKey := u.fullEventDedupKey(eventType)
 	if eventDedupKey != "" && current.LastEventDedupKey == eventDedupKey {
 		logging.Warningf(ctx, "Skipping BotInfo update, event has been recorded already: %s", eventDedupKey)
 		return &SubmittedUpdate{
-			BotInfo: current,
+			BotInfo:   current,
+			eventType: eventType,
 		}, nil
 	}
 	current.LastEventDedupKey = eventDedupKey
@@ -553,13 +584,13 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	// they may not be changing TaskID. See BotInfo.LastAbandonedTask for details
 	// why.
 	var abandonedTaskID string
-	if stoppedBotEvents[u.EventType] {
+	if stoppedBotEvents[eventType] {
 		abandonedTaskID = current.TaskID
 	}
 
 	// Update the task assigned to the bot (perhaps by resetting it).
 	var completedTaskID string
-	if taskChange := model.TaskChangeAspects[u.EventType]; taskChange != model.TaskChangeNone {
+	if taskChange := model.TaskChangeAspects[eventType]; taskChange != model.TaskChangeNone {
 		if current.TaskID != "" {
 			// The bot is either switching to idle state (if taskChange is
 			// TaskChangeReset) or it is abandoning the current task and starting
@@ -568,9 +599,9 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 				TaskID:      current.TaskID,
 				TaskName:    current.TaskName,
 				TaskFlags:   current.TaskFlags,
-				FinishedDue: u.EventType,
+				FinishedDue: eventType,
 			}
-			if taskCompletionEvents[u.EventType] {
+			if taskCompletionEvents[eventType] {
 				// A properly completed task ID. Will be reported in the corresponding
 				// completion event.
 				completedTaskID = current.TaskID
@@ -606,7 +637,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	// We don't do that in case abandonedTaskID was discovered due to e.g.
 	// unexpected BotEventConnected. It would be weird to associate such events
 	// with a task.
-	if stoppedBotEvents[u.EventType] {
+	if stoppedBotEvents[eventType] {
 		eventTaskID = abandonedTaskID
 	}
 
@@ -619,7 +650,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	}
 
 	// Update TerminationTaskID if the bot was shutdown by a termination task.
-	if u.EventType == model.BotEventShutdown && current.LastFinishedTask.TaskFlags&model.TaskFlagTermination != 0 {
+	if eventType == model.BotEventShutdown && current.LastFinishedTask.TaskFlags&model.TaskFlagTermination != 0 {
 		current.TerminationTaskID = current.LastFinishedTask.TaskID
 	} else {
 		current.TerminationTaskID = ""
@@ -629,7 +660,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	// bot reconnects after a graceful termination, but then immediately
 	// terminates again ungracefully, we won't mistakenly have TerminationTaskID
 	// set.
-	if u.EventType == model.BotEventConnected {
+	if eventType == model.BotEventConnected {
 		current.LastFinishedTask = model.LastTaskDetails{}
 		current.TerminationTaskID = ""
 	}
@@ -641,9 +672,9 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	//
 	// Logging events can happen for idle or busy bots. They do not affect
 	// idleness state of a bot.
-	if !loggingBotEvents[u.EventType] {
-		idle := stoppedBotEvents[u.EventType] ||
-			(idleBotEvents[u.EventType] && !current.Quarantined && current.Maintenance == "")
+	if !loggingBotEvents[eventType] {
+		idle := stoppedBotEvents[eventType] ||
+			(idleBotEvents[eventType] && !current.Quarantined && current.Maintenance == "")
 		if idle {
 			if !current.IdleSince.IsSet() {
 				current.IdleSince = datastore.NewUnindexedOptional(now)
@@ -658,9 +689,9 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	// state, whatever it is.
 	dead := current.IsDead()
 	switch {
-	case healthyBotEvents[u.EventType]:
+	case healthyBotEvents[eventType]:
 		dead = false
-	case stoppedBotEvents[u.EventType]:
+	case stoppedBotEvents[eventType]:
 		dead = true
 	}
 
@@ -686,7 +717,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	var toPut []any
 	var toDelete []any
 
-	if u.EventType == model.BotEventDeleted {
+	if eventType == model.BotEventDeleted {
 		toDelete = append(toDelete, current)
 	} else {
 		// See comment above regarding storeBotInfo.
@@ -698,14 +729,14 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	// Store BotEvent only if it looks interesting enough. Otherwise we'll have
 	// tons and tons of BotEventIdle events.
 	var eventToPut *model.BotEvent
-	if !frequentEvents[u.EventType] || dimensionsChanged || compositeChanged || len(extraMessages) != 0 {
+	if !frequentEvents[eventType] || dimensionsChanged || compositeChanged || len(extraMessages) != 0 {
 		eventToPut = &model.BotEvent{
 			// Note: this key means the entity ID will be auto-generated when the
 			// transaction is committed. We don't expose BotEvent entity IDs anywhere.
 			// This auto-generated key is used mostly due to historical reasons.
 			Key:        datastore.NewKey(ctx, "BotEvent", "", 0, model.BotRootKey(ctx, u.BotID)),
 			Timestamp:  now,
-			EventType:  u.EventType,
+			EventType:  eventType,
 			Message:    u.eventMessage(extraMessages),
 			Dimensions: current.Dimensions,
 			BotCommon: model.BotCommon{
@@ -731,6 +762,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 		AbandonedTaskID:  abandonedTaskID,
 		entitiesToPut:    toPut,
 		entitiesToDelete: toDelete,
+		eventType:        eventType,
 	}, nil
 }
 
@@ -748,11 +780,11 @@ func (u *Update) connectingBotDims() []string {
 }
 
 // fullEventDedupKey is the full event ID to store in BotInfo.LastEvent.
-func (u *Update) fullEventDedupKey() string {
+func (u *Update) fullEventDedupKey(eventType model.BotEventType) string {
 	if u.EventDedupKey == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s:%s", u.EventType, u.EventDedupKey)
+	return fmt.Sprintf("%s:%s", eventType, u.EventDedupKey)
 }
 
 // eventMessage is the final event message to store.
@@ -775,7 +807,7 @@ func (u *Update) eventMessage(extra []string) string {
 // reportBotInfoTxn updates botInfoTxnCount metric.
 //
 // Also logs errors or excessive retries.
-func (u *Update) reportBotInfoTxn(ctx context.Context, attempt int, err error) {
+func (u *Update) reportBotInfoTxn(ctx context.Context, eventType model.BotEventType, attempt int, err error) {
 	var outcome string
 	switch {
 	case err == nil:
@@ -791,12 +823,17 @@ func (u *Update) reportBotInfoTxn(ctx context.Context, attempt int, err error) {
 	default:
 		outcome = "other"
 	}
-	botInfoTxnCount.Add(ctx, 1, string(u.EventType), outcome, min(attempt, maxTxnAttempts))
+
+	eventTypeStr := string(eventType)
+	if eventTypeStr == "" {
+		eventTypeStr = "unknown"
+	}
+	botInfoTxnCount.Add(ctx, 1, eventTypeStr, outcome, min(attempt, maxTxnAttempts))
 	if err != nil {
 		if !errors.Is(err, errSkippedUpdate) {
-			logging.Errorf(ctx, "Failed to submit %s after %d attempt(s): %s", u.EventType, attempt, err)
+			logging.Errorf(ctx, "Failed to submit %s after %d attempt(s): %s", eventType, attempt, err)
 		}
 	} else if attempt > 3 {
-		logging.Warningf(ctx, "Submitted %s after %d attempt(s)", u.EventType, attempt)
+		logging.Warningf(ctx, "Submitted %s after %d attempt(s)", eventType, attempt)
 	}
 }
