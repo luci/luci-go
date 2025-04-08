@@ -14,8 +14,10 @@
 
 import styled from '@emotion/styled';
 import { Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
 
 const Container = styled.div`
@@ -26,9 +28,21 @@ const Container = styled.div`
 `;
 
 export function RriSummaryHeader() {
+  const client = useFleetConsoleClient();
+
+  const { data, isLoading, isError } = useQuery(
+    client.CountResourceRequests.query({
+      filter: '', // TODO: b/396079336 add filtering
+    }),
+  );
+
+  if (isError) {
+    return <Typography variant="h4">Error</Typography>; // TODO: b/397421370 improve this
+  }
+
   return (
     <Container>
-      <Typography variant="h4">My Requests</Typography>
+      <Typography variant="h4">All Requests</Typography>
       <div css={{ marginTop: 24 }}>
         <Typography variant="subhead1">Task status</Typography>
         <div
@@ -38,12 +52,42 @@ export function RriSummaryHeader() {
             marginTop: 5,
           }}
         >
-          <SingleMetric name="In Progress" value={7} total={9} />
-          <SingleMetric name="Completed" value={2} total={9} />
-          <SingleMetric name="Material Sourcing" value={2} total={9} />
-          <SingleMetric name="Build" value={2} total={9} />
-          <SingleMetric name="QA" value={1} total={9} />
-          <SingleMetric name="Config" value={1} total={9} />
+          <SingleMetric
+            name="In Progress"
+            value={data?.inProgress}
+            total={data?.total}
+            loading={isLoading}
+          />
+          <SingleMetric
+            name="Completed"
+            value={data?.completed}
+            total={data?.total}
+            loading={isLoading}
+          />
+          <SingleMetric
+            name="Material Sourcing"
+            value={data?.materialSourcing}
+            total={data?.total}
+            loading={isLoading}
+          />
+          <SingleMetric
+            name="Build"
+            value={data?.build}
+            total={data?.total}
+            loading={isLoading}
+          />
+          <SingleMetric
+            name="QA"
+            value={data?.qa}
+            total={data?.total}
+            loading={isLoading}
+          />
+          <SingleMetric
+            name="Config"
+            value={data?.config}
+            total={data?.total}
+            loading={isLoading}
+          />
         </div>
       </div>
     </Container>
