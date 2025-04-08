@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -27,7 +29,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
 	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
@@ -49,12 +50,12 @@ func TestACLsWork(t *testing.T) {
 				return multiError(err.(*validation.Error).Errors)
 			}
 
-			valid := configpb.Settings_SourceAcls{
+			valid := &configpb.Settings_SourceAcls{
 				Hosts:    []string{"a.googlesource.com"},
 				Projects: []string{"https://b.googlesource.com/c"},
 				Readers:  []string{"group:g", "user@example.com"},
 			}
-			assert.Loosely(t, validate(&valid), should.BeNil)
+			assert.Loosely(t, validate(valid), should.BeNil)
 
 			mustError(&configpb.Settings_SourceAcls{}).with(
 				t,
@@ -63,9 +64,9 @@ func TestACLsWork(t *testing.T) {
 			)
 
 			t.Run("readers", func(t *ftt.Test) {
-				mod := valid
+				mod := proto.Clone(valid).(*configpb.Settings_SourceAcls)
 				mod.Readers = []string{"bad:kind", "group:", "user", "group:a", "group:a"}
-				mustError(&mod).with(
+				mustError(mod).with(
 					t,
 					`invalid readers "bad:kind"`,
 					`invalid readers "group:": needs a group name`,
@@ -84,7 +85,7 @@ func TestACLsWork(t *testing.T) {
 					},
 					Readers: []string{"group:a"},
 				}
-				mustError(&valid, &second).with(
+				mustError(valid, &second).with(
 					t,
 					`host "a.googlesource.com"): has already been defined in source_acl #0`,
 					`isn't at *.googlesource.com`,
@@ -106,7 +107,7 @@ func TestACLsWork(t *testing.T) {
 					},
 					Readers: []string{"group:b"},
 				}
-				mustError(&valid, &second).with(
+				mustError(valid, &second).with(
 					t,
 					`redundant because already covered by its host in the same source_acls block`,
 					`project "not-repo.googlesource.com"): should not be just a host`,
