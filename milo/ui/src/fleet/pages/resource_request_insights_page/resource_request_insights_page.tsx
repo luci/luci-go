@@ -57,6 +57,8 @@ import {
   ResourceRequest_Status,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { RriSummaryHeader } from './rri_summary_header';
+
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
 
@@ -362,6 +364,7 @@ export const ResourceRequestListPage = () => {
 
   return (
     <Container>
+      <RriSummaryHeader />
       <div
         css={{
           marginTop: 24,

@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import styled from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Button, Skeleton, Typography } from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 import { UseQueryResult } from '@tanstack/react-query';
-import { ReactElement } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { colors } from '@/fleet/theme/colors';
-import { theme } from '@/fleet/theme/theme';
 import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { addOrUpdateQueryParam } from '@/fleet/utils/search_param';
@@ -31,14 +27,8 @@ import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole
 import {
   FILTERS_PARAM_KEY,
   stringifyFilters,
-} from '../filter_dropdown/search_param_utils/search_param_utils';
-
-const Container = styled.div`
-  padding: 16px 21px;
-  gap: 28;
-  border: 1px solid ${colors.grey[300]};
-  border-radius: 4;
-`;
+} from '../../components/filter_dropdown/search_param_utils/search_param_utils';
+import { SingleMetric } from '../../components/summary_header/single_metric';
 
 const HAS_RIGHT_SIBLING_STYLES = {
   borderRight: `1px solid ${colors.grey[300]}`,
@@ -206,92 +196,16 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
   };
 
   return (
-    <Container>
+    <div
+      css={{
+        padding: '16px 21px',
+        gap: 28,
+        border: `1px solid ${colors.grey[300]}`,
+        borderRadius: 4,
+      }}
+    >
       <Typography variant="h4">Main metrics</Typography>
       <div css={{ marginTop: 24 }}>{getContent()}</div>
-    </Container>
-  );
-}
-
-type SingleMetricProps = {
-  name: string;
-  value?: number;
-  total?: number;
-  Icon?: ReactElement;
-  filterUrl?: string;
-  loading?: boolean;
-};
-
-export function SingleMetric({
-  name,
-  value,
-  total,
-  Icon,
-  filterUrl,
-  loading,
-}: SingleMetricProps) {
-  const navigate = useNavigate();
-  const percentage = total && typeof value !== 'undefined' ? value / total : -1;
-
-  const renderPercent = () => {
-    if (percentage < 0) return <></>;
-    return loading ? (
-      <Skeleton width={16} height={18} />
-    ) : (
-      <Typography variant="caption" color={colors.grey[700]}>
-        {percentage.toLocaleString(undefined, {
-          style: 'percent',
-          maximumFractionDigits: 1,
-          minimumFractionDigits: 0,
-        })}
-      </Typography>
-    );
-  };
-
-  const content = (
-    <>
-      <Typography variant="body2">{name}</Typography>
-      <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        {Icon && Icon}
-        {loading ? (
-          <Skeleton variant="text" width={34} height={36} />
-        ) : (
-          <>
-            <Typography variant="h3">{value || 0}</Typography>
-            {total ? (
-              <Typography
-                variant="caption"
-                sx={{ textWrap: 'nowrap' }}
-              >{` / ${total}`}</Typography>
-            ) : (
-              <></>
-            )}
-          </>
-        )}
-      </div>
-      {renderPercent()}
-    </>
-  );
-
-  return (
-    <>
-      {filterUrl && (
-        <Button
-          variant="text"
-          sx={{
-            marginRight: 'auto',
-            display: 'block',
-            textAlign: 'left',
-            color: theme.palette.text.primary,
-          }}
-          onClick={() => {
-            navigate(filterUrl);
-          }}
-        >
-          {content}
-        </Button>
-      )}
-      {!filterUrl && <div css={{ marginRight: 'auto' }}>{content}</div>}
-    </>
+    </div>
   );
 }

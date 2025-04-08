@@ -32,12 +32,12 @@ import {
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { MainMetrics } from '@/fleet/components/main_metrics';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { MainMetrics } from '@/fleet/pages/device_list_page/main_metrics';
 import { SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
