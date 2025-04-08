@@ -106,21 +106,35 @@ func TestDiscoverDeps(t *testing.T) {
 		})
 
 		assert.NoErr(t, err)
+
+		// Check Repo separately, since they aren't directly comparable.
+		for _, dep := range deps {
+			assert.That(t, dep.Repo.RepoKey().Root, should.BeTrue)
+			dep.Repo = nil
+		}
+
 		assert.That(t, deps, should.Match([]*Dep{
 			{
 				Package:    "@local-1",
+				Version:    PinnedVersion,
+				Path:       "local",
 				Min:        [3]int{1, 2, 4},
 				Code:       deps[0].Code,
 				DirectDeps: []string{"@local-2", "@local-3"},
+				Resources:  []string{"**/*.cfg"},
 			},
 			{
 				Package:    "@local-2",
+				Version:    PinnedVersion,
+				Path:       "local/deeper",
 				Min:        [3]int{1, 2, 5},
 				Code:       deps[1].Code,
 				DirectDeps: []string{"@local-1", "@local-3"},
 			},
 			{
 				Package: "@local-3",
+				Version: PinnedVersion,
+				Path:    "outside",
 				Min:     [3]int{1, 2, 6},
 				Code:    deps[2].Code,
 			},
@@ -313,17 +327,17 @@ func TestDiscoverDeps(t *testing.T) {
 				Deps: []*DepDecl{
 					{
 						Name:     "@remote-1",
-						Host:     "ignored-in-test",
+						Host:     "host",
 						Repo:     "repo",
-						Ref:      "ignored-in-test",
+						Ref:      "ref",
 						Path:     ".",
 						Revision: "v1",
 					},
 					{
 						Name:     "@remote-2",
-						Host:     "ignored-in-test",
+						Host:     "host",
 						Repo:     "repo",
-						Ref:      "ignored-in-test",
+						Ref:      "ref",
 						Path:     "deep",
 						Revision: "v2",
 					},
@@ -332,16 +346,34 @@ func TestDiscoverDeps(t *testing.T) {
 		})
 
 		assert.NoErr(t, err)
+
+		// Check Repo separately, since they aren't directly comparable.
+		var specs []string
+		for _, dep := range deps {
+			specs = append(specs, dep.Repo.RepoKey().Spec())
+			dep.Repo = nil
+		}
+		assert.That(t, specs, should.Match([]string{
+			"https://host.googlesource.com/repo/+/ref",
+			"https://host.googlesource.com/repo/+/ref",
+		}))
+
 		assert.That(t, deps, should.Match([]*Dep{
 			{
-				Package: "@remote-1",
-				Min:     [3]int{1, 2, 4},
-				Code:    deps[0].Code,
+				Package:   "@remote-1",
+				Version:   "v1",
+				Path:      ".",
+				Min:       [3]int{1, 2, 4},
+				Code:      deps[0].Code,
+				Resources: []string{"**/*.cfg"},
 			},
 			{
-				Package: "@remote-2",
-				Min:     [3]int{1, 2, 5},
-				Code:    deps[1].Code,
+				Package:   "@remote-2",
+				Version:   "v2",
+				Path:      "deep",
+				Min:       [3]int{1, 2, 5},
+				Code:      deps[1].Code,
+				Resources: []string{"**/*.cfg"},
 			},
 		}))
 
@@ -365,9 +397,9 @@ func TestDiscoverDeps(t *testing.T) {
 
 		// Prefetched correct files.
 		repo, err := repos.Repo(ctx, RepoKey{
-			Host: "ignored-in-test",
+			Host: "host",
 			Repo: "repo",
-			Ref:  "ignored-in-test",
+			Ref:  "ref",
 		})
 		assert.NoErr(t, err)
 		assert.That(t, repo.(*TestRepo).Prefetched(), should.Match([]string{

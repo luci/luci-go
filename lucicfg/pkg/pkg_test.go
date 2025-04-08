@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/lucicfg/fileset"
+	"go.chromium.org/luci/lucicfg/lockfilepb"
 )
 
 func TestEntryOnDisk(t *testing.T) {
@@ -59,7 +60,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
+		entry, lockfile, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b/c")))
 
@@ -71,6 +72,16 @@ func TestEntryOnDisk(t *testing.T) {
 		assert.That(t, entry.Path, should.Equal("a/b/c"))
 		assert.That(t, entry.Script, should.Equal("main.star"))
 		assert.Loosely(t, entry.LucicfgVersionConstraints, should.HaveLength(0))
+
+		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{
+			Packages: []*lockfilepb.Lockfile_Package{
+				{
+					Name:        "@__main__",
+					Resources:   []string{"**/*"},
+					Entrypoints: []string{"main.star"},
+				},
+			},
+		}))
 	})
 
 	t.Run("Loads PACKAGE.star", func(t *testing.T) {
@@ -83,7 +94,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"a/b/c/main.star": `print("Hi")`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
+		entry, lockfile, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 		assert.That(t, entry.Local.DiskPath, should.Equal(filepath.Join(tmp, "a/b")))
 
@@ -99,6 +110,16 @@ func TestEntryOnDisk(t *testing.T) {
 				Min:     LucicfgVersion{1, 2, 3},
 				Package: "@some/pkg",
 				Main:    true,
+			},
+		}))
+
+		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{
+			Packages: []*lockfilepb.Lockfile_Package{
+				{
+					Name:        "@some/pkg",
+					Lucicfg:     "1.2.3",
+					Entrypoints: []string{"c/main.star"},
+				},
 			},
 		}))
 	})
@@ -133,7 +154,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		entry, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
+		entry, lockfile, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/b/c/main.star"), repoMgr, nil)
 		assert.NoErr(t, err)
 
 		assert.That(t, slices.Sorted(maps.Keys(entry.Deps)), should.Match([]string{
@@ -155,6 +176,45 @@ func TestEntryOnDisk(t *testing.T) {
 			"@remote/b": nil,
 			"@some/pkg": {"@local"},
 		}))
+
+		assert.That(t, lockfile, should.Match(&lockfilepb.Lockfile{
+			Packages: []*lockfilepb.Lockfile_Package{
+				{
+					Name:        "@some/pkg",
+					Lucicfg:     "1.2.3",
+					Deps:        []string{"@local"},
+					Entrypoints: []string{"c/main.star"},
+				},
+				{
+					Name: "@local",
+					Source: &lockfilepb.Lockfile_Package_Source{
+						Path: "../dep",
+					},
+					Lucicfg: "1.2.4",
+					Deps:    []string{"@remote/a"},
+				},
+				{
+					Name: "@remote/a",
+					Source: &lockfilepb.Lockfile_Package_Source{
+						Repo:     "https://ignored-in-test.googlesource.com/remote/+/ignored-in-test",
+						Revision: "v1",
+						Path:     "a",
+					},
+					Lucicfg:   "1.2.5",
+					Deps:      []string{"@remote/b"},
+					Resources: []string{"**/*.cfg"},
+				},
+				{
+					Name: "@remote/b",
+					Source: &lockfilepb.Lockfile_Package_Source{
+						Repo:     "https://ignored-in-test.googlesource.com/remote/+/ignored-in-test",
+						Revision: "v1",
+						Path:     "b",
+					},
+					Lucicfg: "1.2.6",
+				},
+			},
+		}))
 	})
 
 	t.Run("Borked PACKAGE.star", func(t *testing.T) {
@@ -162,7 +222,7 @@ func TestEntryOnDisk(t *testing.T) {
 			".git/config":  `# Denotes repo root`,
 			"PACKAGE.star": ``,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(`PACKAGE.star must call pkg.declare(...)`))
 	})
 
@@ -174,7 +234,7 @@ func TestEntryOnDisk(t *testing.T) {
 				pkg.entrypoint("missing.star")
 			`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"), repoMgr, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "missing.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(`entry point "missing.star": no such file in the package`))
 	})
 
@@ -190,7 +250,7 @@ func TestEntryOnDisk(t *testing.T) {
 			"another1.star": `print("Hi")`,
 			"another2.star": `print("Hi")`,
 		})
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "main.star"), repoMgr, nil)
 		assert.That(t, err, should.ErrLike(
 			`main.star is not declared as a pkg.entrypoint(...) in PACKAGE.star and thus cannot be executed. Available entrypoints: [another1.star another2.star]`))
 	})
@@ -214,7 +274,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/pkg/main.star"), nil, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "a/pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local": a local dependency must not point outside of the repository it is declared in`))
 	})
@@ -239,7 +299,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local": a local dependency should not reside in a git submodule`))
 	})
@@ -273,7 +333,7 @@ func TestEntryOnDisk(t *testing.T) {
 			`,
 		})
 
-		_, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
+		_, _, err := EntryOnDisk(ctx, filepath.Join(tmp, "pkg/main.star"), nil, nil)
 		assert.That(t, err, should.ErrLike(
 			`bad dependency on "@local-2": a local dependency should not reside in a git submodule`))
 	})
@@ -345,13 +405,13 @@ func TestRepoOverrideFromSpec(t *testing.T) {
 	}{
 		{"https://host.example.com/repo/+/refs/heads/main", "host:repo:refs/heads/main", ""},
 		{"host.example.com/repo/+/refs/heads/main", "host:repo:refs/heads/main", ""},
-		{"host.example.com/repo", "host:repo:refs/heads/main", ""},
-		{"host/repo", "host:repo:refs/heads/main", ""},
+		{"host/repo/+/refs/heads/main", "host:repo:refs/heads/main", ""},
 
 		{"", "", "doesn't look like a repository URL"},
 		{"host", "", "doesn't look like a repository URL"},
 		{"host/", "", "doesn't look like a repository URL"},
 		{"host/+/refs/heads/main", "", "doesn't look like a repository URL"},
+		{"host/repo", "", "the repo spec is missing a ref"},
 	}
 
 	for _, cs := range cases {

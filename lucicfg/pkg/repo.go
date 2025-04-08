@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -97,7 +98,43 @@ func (k RepoKey) String() string {
 	if k.Root {
 		return "the root package repository"
 	}
+	return k.Spec()
+}
+
+// Spec constructs a canonical spec string as appearing in the lockfile.
+func (k RepoKey) Spec() string {
+	if k.Root {
+		return "@root" // this should never actually appear in the lockfile
+	}
 	return fmt.Sprintf("https://%s.googlesource.com/%s/+/%s", k.Host, k.Repo, k.Ref)
+}
+
+// RepoKeyFromSpec reconstructs RepoKey from its spec.
+func RepoKeyFromSpec(spec string) (RepoKey, error) {
+	if spec == "@root" {
+		return RepoKey{Root: true}, nil
+	}
+	if !strings.Contains(spec, "://") {
+		spec = "https://" + spec
+	}
+	u, err := url.Parse(spec)
+	if err != nil || u.Host == "" || u.Path == "" {
+		return RepoKey{}, errors.New("the repo spec doesn't look like a repository URL")
+	}
+	host, _, _ := strings.Cut(u.Host, ".")
+	repo, ref, _ := strings.Cut(u.Path, "/+/")
+	repo = strings.TrimPrefix(repo, "/")
+	if repo == "" {
+		return RepoKey{}, errors.New("the repo spec doesn't look like a repository URL")
+	}
+	if ref == "" {
+		return RepoKey{}, errors.New("the repo spec is missing a ref")
+	}
+	return RepoKey{
+		Host: host,
+		Repo: repo,
+		Ref:  ref,
+	}, nil
 }
 
 // RepoManager knows how to work with repositories to fetch package files.

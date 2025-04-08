@@ -114,7 +114,7 @@ You may also optionally set +x flag on it, but this is not required.
 	}
 
 	// Load the main package with dependencies from disk.
-	entry, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
+	entry, _, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
 		Error: errors.New("remote packages aren't implemented yet"),
 	}, overrides)
 	if err != nil {

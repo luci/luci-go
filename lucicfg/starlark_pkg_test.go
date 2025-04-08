@@ -107,7 +107,7 @@ func runPkgTest(t *testing.T, dir string) bool {
 	}
 
 	var state *State
-	entry, err := pkg.EntryOnDisk(ctx, main, repoMgr, overrides)
+	entry, _, err := pkg.EntryOnDisk(ctx, main, repoMgr, overrides)
 
 	// Verify formatter is initialized..
 	if err == nil && entry.Local.Formatter != nil {

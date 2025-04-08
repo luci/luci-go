@@ -185,9 +185,13 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 	}
 	return &Dep{
 		Package:    d.Package,
+		Version:    d.Version,
+		Repo:       d.Repo,
+		Path:       d.Path,
 		Min:        def.MinLucicfgVersion,
 		Code:       code,
 		DirectDeps: def.DirectDeps(),
+		Resources:  slices.Sorted(slices.Values(def.Resources)),
 	}, nil
 }
 
@@ -195,12 +199,20 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 type Dep struct {
 	// Package is the package name as a "@name" string.
 	Package string
+	// Version is the package version string (or "@pinned" or "@overridden").
+	Version string
+	// Repo is the repository the package resides in.
+	Repo Repo
+	// Path is a slash-separated path to the package within the repository.
+	Path string
 	// Min is the minimum required lucicfg version.
 	Min LucicfgVersion
 	// Code is the loader with the package code.
 	Code interpreter.Loader
 	// DirectDeps are direct dependencies of this package as "@name" strings.
 	DirectDeps []string
+	// Resources is a sorted list of resource file patterns.
+	Resources []string
 }
 
 // pkgVer is a package version together with the repository it is relative to.
@@ -371,7 +383,7 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 	}
 
 	// Chop off the root (it is always first). Sort the rest by the package name
-	// (the order doesn't really matter, just makes the result deterministic).
+	// (this eventually defines how packages are ordered in the lockfile).
 	depsList = depsList[1:]
 	slices.SortFunc(depsList, func(a, b mvs.Package[pkgVer]) int {
 		return cmp.Compare(a.Package, b.Package)

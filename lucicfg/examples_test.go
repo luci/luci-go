@@ -48,7 +48,7 @@ func TestExamples(t *testing.T) {
 }
 
 func runExample(script string) error {
-	entry, err := pkg.EntryOnDisk(context.Background(), script, nil, nil)
+	entry, _, err := pkg.EntryOnDisk(context.Background(), script, nil, nil)
 	if err != nil {
 		return err
 	}

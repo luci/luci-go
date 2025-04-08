@@ -18,7 +18,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -29,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/internal"
+	"go.chromium.org/luci/lucicfg/lockfilepb"
 )
 
 // PackageScript is a name of the script with the package definition.
@@ -101,21 +101,12 @@ type RepoOverride struct {
 // Expected format of the spec is: "[protocol://]host[.domain]/repo/[+/ref]".
 // We'll extract Host, Repo and Ref from it, discarding all the rest.
 func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
-	if !strings.Contains(spec, "://") {
-		spec = "https://" + spec
-	}
-	u, err := url.Parse(spec)
-	if err != nil || u.Host == "" || u.Path == "" {
-		return nil, errors.New("the repo spec doesn't look like a repository URL")
-	}
-	host, _, _ := strings.Cut(u.Host, ".")
-	repo, ref, _ := strings.Cut(u.Path, "/+/")
-	repo = strings.TrimPrefix(repo, "/")
-	if repo == "" {
-		return nil, errors.New("the repo spec doesn't look like a repository URL")
-	}
-	if ref == "" {
-		ref = "refs/heads/main"
+	repoKey, err := RepoKeyFromSpec(spec)
+	switch {
+	case err != nil:
+		return nil, err
+	case repoKey.Root:
+		return nil, errors.Reason("%q cannot be overridden", spec).Err()
 	}
 	abs, err := filepath.Abs(localRoot)
 	if err != nil {
@@ -128,9 +119,9 @@ func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
 		return nil, errors.Reason("%s is not a directory", localRoot).Err()
 	}
 	return &RepoOverride{
-		Host:      host,
-		Repo:      repo,
-		Ref:       ref,
+		Host:      repoKey.Host,
+		Repo:      repoKey.Repo,
+		Ref:       repoKey.Ref,
 		LocalRoot: abs,
 	}, nil
 }
@@ -151,13 +142,16 @@ func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
 //
 // Local dependencies are always supported.
 //
-// Returns the loaded entry point with Local populated.
+// Returns the loaded entry point with Local populated and the Lockfile
+// generated during the traversal. This lockfile encodes all the same
+// information as contained in the returned Entry and it can be used to
+// reconstruct Entry later without redoing the traversal.
 //
 // The returned error may be backtracable.
-func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, overrides []*RepoOverride) (*Entry, error) {
+func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, overrides []*RepoOverride) (*Entry, *lockfilepb.Lockfile, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
+		return nil, nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
 	}
 
 	statCache := unsyncStatCache()
@@ -168,12 +162,12 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	scriptDir, main := filepath.Split(abs)
 	pkgRoot, found, err := findRoot(scriptDir, PackageScript, "", statCache)
 	if err != nil {
-		return nil, errors.Annotate(err, "searching for %s", PackageScript).Err()
+		return nil, nil, errors.Annotate(err, "searching for %s", PackageScript).Err()
 	}
 	if found {
 		main, err = filepath.Rel(pkgRoot, abs)
 		if err != nil {
-			return nil, errors.Annotate(err, "getting relative path from %s to %s", pkgRoot, abs).Err()
+			return nil, nil, errors.Annotate(err, "getting relative path from %s to %s", pkgRoot, abs).Err()
 		}
 		pkgScript = filepath.Join(pkgRoot, PackageScript)
 	} else {
@@ -191,11 +185,11 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	// local).
 	repoRoot, _, err := findRoot(pkgRoot, "", "", statCache)
 	if err != nil {
-		return nil, errors.Annotate(err, "could not determine the repository or volume root of %q", abs).Err()
+		return nil, nil, errors.Annotate(err, "could not determine the repository or volume root of %q", abs).Err()
 	}
 	rel, err := filepath.Rel(repoRoot, pkgRoot)
 	if err != nil {
-		return nil, errors.Annotate(err, "calculating path of %q relative to %q", pkgRoot, repoRoot).Err()
+		return nil, nil, errors.Annotate(err, "calculating path of %q relative to %q", pkgRoot, repoRoot).Err()
 	}
 	script := filepath.ToSlash(main)
 
@@ -214,7 +208,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 				Definition: legacyDefinition(),
 				Formatter:  legacyFormatter(pkgRoot),
 			},
-		}, nil
+		}, legacyLockfile(script), nil
 	}
 
 	// Path to the package relative to the repository root.
@@ -234,21 +228,21 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	// Load the package definition from PACKAGE.star.
 	pkgBody, err := os.ReadFile(pkgScript)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Annotate(err, "reading %s", cwdRel(pkgScript)).Err()
 	}
 	validator, err := localRepo.LoaderValidator(ctx, PinnedVersion, repoPath)
 	if err != nil {
-		return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 	}
 	def, err := LoadDefinition(ctx, pkgBody, validator)
 	if err != nil {
-		return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
 	}
 
 	// Verify the entry point is known.
 	if !internal.GetTestingTweaks(ctx).SkipEntrypointCheck {
 		if !slices.Contains(def.Entrypoints, script) {
-			return nil, errors.Reason(
+			return nil, nil, errors.Reason(
 				"%s is not declared as a pkg.entrypoint(...) in %s and "+
 					"thus cannot be executed. Available entrypoints: %v",
 				script, PackageScript, def.Entrypoints).Err()
@@ -291,7 +285,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 		Known: def,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Convert them to a form suitable for Entry.
@@ -319,9 +313,30 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 		})
 	}
 
+	lockfile := &lockfilepb.Lockfile{
+		Packages: []*lockfilepb.Lockfile_Package{
+			{
+				Name:        def.Name,
+				Deps:        def.DirectDeps(),
+				Lucicfg:     def.MinLucicfgVersion.String(),
+				Resources:   slices.Sorted(slices.Values(def.Resources)),
+				Entrypoints: slices.Sorted(slices.Values(def.Entrypoints)),
+			},
+		},
+	}
+	for _, dep := range deps {
+		lockfile.Packages = append(lockfile.Packages, &lockfilepb.Lockfile_Package{
+			Name:      dep.Package,
+			Source:    lockfilePkgSource(localRepo, repoPath, dep.Repo, dep.Path, dep.Version),
+			Deps:      dep.DirectDeps,
+			Lucicfg:   dep.Min.String(),
+			Resources: dep.Resources,
+		})
+	}
+
 	code, err := localRepo.Loader(ctx, PinnedVersion, repoPath, def.Name, def.ResourcesSet)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return &Entry{
 		Main:                      code,
@@ -337,7 +352,7 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 			Definition: def,
 			Formatter:  legacyCompatibleFormatter(pkgRoot, def.FmtRules),
 		},
-	}, nil
+	}, lockfile, nil
 }
 
 // Local represents some local package without any of its dependencies.
@@ -428,9 +443,50 @@ func cwdRel(abs string) string {
 	return rel
 }
 
+// legacyDefinition represents PACKAGE.star for legacy packages without it.
 func legacyDefinition() *Definition {
 	return &Definition{
 		Name:      LegacyPackageNamePlaceholder,
 		Resources: []string{"**/*"},
+	}
+}
+
+// legacyLockfile is a lockfile for legacy packages without PACKAGE.star.
+func legacyLockfile(entrypoint string) *lockfilepb.Lockfile {
+	return &lockfilepb.Lockfile{
+		Packages: []*lockfilepb.Lockfile_Package{
+			{
+				Name:        LegacyPackageNamePlaceholder,
+				Entrypoints: []string{entrypoint},
+				Resources:   []string{"**/*"},
+			},
+		},
+	}
+}
+
+// lockfilePkgSource generates a lockfile source spec for a dependency.
+//
+// It takes:
+//  1. Repo representing the main package (the one for which we generate
+//     the lockfile) and a path to the main package within it.
+//  2. Repo that holds the dependency with a path within it to this dependency.
+//  3. The version of the dependency.
+func lockfilePkgSource(mainRepo Repo, mainPath string, depRepo Repo, depPath string, version string) *lockfilepb.Lockfile_Package_Source {
+	if mainRepo == depRepo {
+		rel, err := internal.RelRepoPath(mainPath, depPath)
+		if err != nil {
+			panic(fmt.Sprintf("impossible in-repo paths %q and %q: %s", mainPath, depPath, err))
+		}
+		if !strings.HasPrefix(rel, "../") {
+			rel = "./" + rel
+		}
+		return &lockfilepb.Lockfile_Package_Source{
+			Path: rel,
+		}
+	}
+	return &lockfilepb.Lockfile_Package_Source{
+		Repo:     depRepo.RepoKey().Spec(),
+		Revision: version, // this will be OverriddenVersion when using overrides
+		Path:     depPath,
 	}
 }
