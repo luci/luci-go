@@ -204,7 +204,15 @@ const getOrderByDto = (sortModel: GridSortModel) => {
     return `${DEFAULT_SORT_COLUMN.id}`;
   }
   const sortColumn = sortModel[0];
-  return `${getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id} ${sortColumn.sort}`;
+
+  const sortColumnKey =
+    getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id;
+
+  if (sortColumn.sort === 'asc') {
+    return sortColumnKey;
+  }
+
+  return `${sortColumnKey} desc`;
 };
 
 interface ResourceRequestInsightsOptionComponentProps {
