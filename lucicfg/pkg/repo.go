@@ -17,7 +17,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -109,6 +108,21 @@ func (k RepoKey) Spec() string {
 	return fmt.Sprintf("https://%s.googlesource.com/%s/+/%s", k.Host, k.Repo, k.Ref)
 }
 
+// IsRemote is true if this RepoKey is a fully populated remote repo key.
+func (k RepoKey) IsRemote() bool {
+	return !k.Root && k.Host != "" && k.Repo != "" && k.Ref != ""
+}
+
+// RepoURL constructs a canonical repository URL (without the ref).
+//
+// Panics when used with a non-remote RepoKey.
+func (k RepoKey) RepoURL() string {
+	if !k.IsRemote() {
+		panic(fmt.Sprintf("not a valid remote RepoKey: %s", k))
+	}
+	return fmt.Sprintf("https://%s.googlesource.com/%s", k.Host, k.Repo)
+}
+
 // RepoKeyFromSpec reconstructs RepoKey from its spec.
 func RepoKeyFromSpec(spec string) (RepoKey, error) {
 	if spec == "@root" {
@@ -156,11 +170,9 @@ type Repo interface {
 	IsOverride() bool
 	// PickMostRecent returns the most recent version from the given list.
 	PickMostRecent(ctx context.Context, vers []string) (string, error)
-	// Prefetch asks the repo to prefetch files matching the filter.
-	Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error
 	// Fetch fetches a single file at some revision. May return ErrFileNotInRepo.
 	Fetch(ctx context.Context, rev, path string) ([]byte, error)
-	// Loader returns a loader with package files under the given directory.
+	// Loader fetches package files and returns a loader with them.
 	Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error)
 	// LoaderValidator returns a validator of PACKAGE.star, if available.
 	LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error)
@@ -238,14 +250,6 @@ func (r *LocalDiskRepo) PickMostRecent(ctx context.Context, vers []string) (stri
 		return r.Version, nil
 	}
 	return "", errors.Reason("local disk repo was unexpectedly asked to compare remote revisions: %v", remote).Err()
-}
-
-// Prefetch is a part of Repo interface.
-func (r *LocalDiskRepo) Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error {
-	if rev != r.Version {
-		return errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
-	}
-	return nil
 }
 
 // Fetch is a part of Repo interface.
@@ -327,9 +331,6 @@ type TestRepo struct {
 	Path string
 	// Key is the corresponding RepoKey.
 	Key RepoKey
-
-	m          sync.Mutex
-	prefetched []string
 }
 
 func parseTestVer(v string) (int, bool) {
@@ -350,15 +351,6 @@ func (r *TestRepo) verDir(v string) (string, error) {
 		return "", errors.Annotate(err, "test repo %s doesn have version %q", r.Key, v).Err()
 	}
 	return d, nil
-}
-
-// Prefetched returns a list of prefetched files.
-//
-// Each entry is "vN/<path>" string.
-func (r *TestRepo) Prefetched() []string {
-	r.m.Lock()
-	defer r.m.Unlock()
-	return slices.Clone(r.prefetched)
 }
 
 // RepoKey is a part of Repo interface.
@@ -382,32 +374,6 @@ func (r *TestRepo) PickMostRecent(ctx context.Context, vers []string) (string, e
 		nums = append(nums, val)
 	}
 	return fmt.Sprintf("v%d", slices.Max(nums)), nil
-}
-
-// Prefetch is a part of Repo interface.
-func (r *TestRepo) Prefetch(ctx context.Context, rev string, pathFilter func(p string) bool) error {
-	dir, err := r.verDir(rev)
-	if err != nil {
-		return err
-	}
-	r.m.Lock()
-	defer r.m.Unlock()
-	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || !d.Type().IsRegular() {
-			return err
-		}
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-		rel = filepath.ToSlash(rel)
-		if pathFilter(rel) {
-			r.prefetched = append(r.prefetched, fmt.Sprintf("%s/%s", rev, rel))
-		}
-		return nil
-	})
-	slices.Sort(r.prefetched)
-	return err
 }
 
 // Fetch is a part of Repo interface.

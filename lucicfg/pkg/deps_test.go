@@ -281,7 +281,7 @@ func TestDiscoverDeps(t *testing.T) {
 		assert.That(t, err, should.ErrLike(`bad dependency on "@local-2": a local dependency must not point outside of the repository it is declared in`))
 	})
 
-	t.Run("Remote: prefetch + loader OK", func(t *testing.T) {
+	t.Run("Remote: loader OK", func(t *testing.T) {
 		repos, local := prepRepos(t,
 			nil,
 			map[string]string{
@@ -394,26 +394,6 @@ func TestDiscoverDeps(t *testing.T) {
 		// Can't read missing files.
 		_, _, err = remote1(ctx, "unknown.star")
 		assert.That(t, err, should.Equal(interpreter.ErrNoModule))
-
-		// Prefetched correct files.
-		repo, err := repos.Repo(ctx, RepoKey{
-			Host: "host",
-			Repo: "repo",
-			Ref:  "ref",
-		})
-		assert.NoErr(t, err)
-		assert.That(t, repo.(*TestRepo).Prefetched(), should.Match([]string{
-			"v1/PACKAGE.star",
-			"v1/deeper/another.cfg",
-			"v1/deeper/another.star",
-			"v1/file.cfg",
-			"v1/file.star",
-			"v2/deep/PACKAGE.star",
-			"v2/deep/deeper/another.cfg",
-			"v2/deep/deeper/another.star",
-			"v2/deep/file.cfg",
-			"v2/deep/file.star",
-		}))
 	})
 }
 

@@ -21,8 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 )
 
@@ -127,4 +129,15 @@ func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
 	}
 	c.repos[url] = ret
 	return ret, nil
+}
+
+// Shutdown terminates long-running processes which may be associated with this
+// Cache.
+func (c *Cache) Shutdown() {
+	c.reposMu.RLock()
+	caches := slices.Collect(maps.Values(c.repos))
+	c.reposMu.RUnlock()
+	for _, c := range caches {
+		c.Shutdown()
+	}
 }

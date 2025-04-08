@@ -17,7 +17,6 @@ package base
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -114,17 +113,15 @@ You may also optionally set +x flag on it, but this is not required.
 		overrides = append(overrides, override)
 	}
 
-	// TODO: Use Cache to construct a pkg.RepoManager that knows how to fetch
-	// remote repos into that cache.
-	cache := lucicfg.OpenCache(ctx)
-	if _, err := cache.Subdir("remote"); err != nil {
-		return nil, err
+	// Knows how to fetch remote git repositories that contain dependencies.
+	remote := &pkg.RemoteRepoManager{
+		DiskCache:    lucicfg.OpenCache(ctx),
+		DiskCacheDir: "remote",
 	}
+	defer remote.Shutdown()
 
 	// Load the main package with dependencies from disk.
-	entry, lockfile, err := pkg.EntryOnDisk(ctx, abs, &pkg.ErroringRepoManager{
-		Error: errors.New("remote packages aren't implemented yet"),
-	}, overrides)
+	entry, lockfile, err := pkg.EntryOnDisk(ctx, abs, remote, overrides)
 	if err != nil {
 		return nil, err
 	}

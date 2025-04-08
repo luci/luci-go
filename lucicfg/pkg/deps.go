@@ -155,30 +155,6 @@ func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var basePath string
-	if d.Path != "." {
-		basePath = d.Path + "/"
-	}
-
-	err = d.Repo.Prefetch(ctx, d.Version, func(p string) bool {
-		rel, ok := strings.CutPrefix(p, basePath)
-		if !ok || rel == "" {
-			return false // outside of the package directory
-		}
-		if strings.HasSuffix(rel, ".star") {
-			return true // want all Starlark files unconditionally
-		}
-		// Ignore errors here. They will be rediscovered and bubble up more
-		// naturally when these files are fetched for real (if this ever happens,
-		// if not - even better).
-		yes, _ := def.ResourcesSet.Contains(rel)
-		return yes
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	code, err := d.Repo.Loader(ctx, d.Version, d.Path, d.Package, def.ResourcesSet)
 	if err != nil {
 		return nil, err
