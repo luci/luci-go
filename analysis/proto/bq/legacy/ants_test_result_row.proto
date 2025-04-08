@@ -1,0 +1,291 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq.legacy;
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
+
+// AntsTestResultRow represents a row in a BigQuery table for an AnTS test result.
+// Next ID: 28.
+message AntsTestResultRow {
+  // Enum that defines the type of the Android build.
+  enum BuildType {
+    BUILD_TYPE_UNSPECIFIED = 0;
+    SUBMITTED = 1;
+    PENDING = 2;
+    EXTERNAL = 3;
+    // For Mainline train build.
+    TRAIN = 4;
+    // For local build.
+    LOCAL = 5;
+  }
+
+  // The possible statuses that a TestResult can report.
+  enum TestStatus {
+    TEST_STATUS_UNSPECIFIED = 0;
+    // The test passed.
+    PASS = 1;
+    // The test failed.
+    FAIL = 2;
+    // The test result should be ignored. For example, see http://junit.sourceforge.net/javadoc/org/junit/Ignore.html.
+    IGNORED = 3;
+    // The test result had an assumption which failed. For example, see http://junit.sourceforge.net/javadoc/org/junit/Assume.html.
+    ASSUMPTION_FAILURE = 4;
+    // There was an error while running the test.
+    TEST_ERROR = 5;
+    // The test was skipped. When the test was skipped the reason should be available in the skipped_reason field.
+    TEST_SKIPPED = 6;
+  }
+
+  // Error type, to better distinguish different causes of errors.
+  enum ErrorType {
+    ERROR_TYPE_UNSPECIFIED = 0;
+    // The test in progress was the reason for the failure.
+    TEST_FAILURE = 1;
+    // A timeout condition on the operation in progress occurred.
+    TIMEOUT = 2;
+    // The test in progress was cancelled.
+    TEST_CANCELLED = 3;
+    // A failure attributed to something not functioning properly.
+    INFRA_ERROR = 4;
+    // System under test crashed and caused the test to fail.
+    SYSTEM_UNDER_TEST_CRASHED = 5;
+    // The test was expected to run but did not.
+    NOT_EXECUTED = 6;
+    // System under test became unavailable and never came back available again.
+    LOST_SYSTEM_UNDER_TEST = 7;
+    // Represent an error caused by an unmet dependency that the current infra depends on. For example: Unfound resources,
+    // Device error, Hardware issue (lab host, device wear), Underlying tools
+    DEPENDENCY_ISSUE = 8;
+    // Represent an error caused by the input from the end user. For example: Unexpected option combination, Configuration error, Bad flags
+    CUSTOMER_ISSUE = 9;
+  }
+
+  // The level of aggregation.
+  enum AggregationLevel {
+    AGGREGATION_LEVEL_UNSPECIFIED = 0;
+    // All test results for an Invocation.
+    INVOCATION = 1;
+    // Test results for a module. This considers the module name and parameters in the `TestIdentifier` message.
+    MODULE = 2;
+    // Test results for a test package. This considers the module and all results sharing the same package from `test_class`
+    // field in the `TestIdentifier` message. This is the string before the last "." in that field.
+    PACKAGE = 3;
+    // Test results for a test class. This considers the module and all results sharing the same `test_class` in the `TestIdentifier` message.
+    CLASS = 4;
+    // Test results for a method. This is currently not being generated.
+    METHOD = 5;
+  }
+
+  // Possible reasons why a test result was skipped and did not run.
+  // Next ID: 2
+  enum ReasonType {
+    REASON_UNSPECIFIED = 0;
+    REASON_DEMOTION = 1;
+  }
+
+  // The type of the build.
+  BuildType build_type = 1;
+
+  // The ID of the build.
+  string build_id = 2;
+
+  // The provider of the build.
+  string build_provider = 3;
+
+  // The branch of the build.
+  string branch = 4;
+
+  // The target of the build.
+  string build_target = 5;
+
+  // The ID of the test result.
+  string test_result_id = 6;
+
+  // The ID of the work unit.
+  string work_unit_id = 7;
+
+  // The ID of the invocation.
+  string invocation_id = 8;
+
+  // A TestIdentifier describes how to identify a TestResult within an Invocaiton. This includes a hierarchy for where a TestResult is located.
+  // Modules are identified by the module name and parameters. Different modules can have the same name but the paramereters must be different.
+  // Next ID: 10
+  message TestIdentifier {
+    // Name of the module this test belongs to.
+    string module = 1;
+
+    // Parameters for the test module.
+    repeated StringPair module_parameters = 2;
+
+    // SHA256 hash of module_parameters used for cache and lookups. This is generated by the server and not exposed to the API.
+    string module_parameters_hash = 3;
+
+    // The name for a group of tests that are logically grouped together. Typically in the format of <package name>.<class name>.
+    string test_class = 4;
+
+    // The corresponding class name part of the test_class field.
+    string class_name = 5;
+
+    // The corresponding package name part of the test_class field.
+    string package_name = 6;
+
+    // The name of the test that is the smallest test execution unit.
+    string method = 7;
+  }
+
+  // A generic key-value property definition.
+  // Next ID: 3
+  message StringPair {
+    // The name of the key-value pair.
+    string name = 1;
+    // The value of the key-value pair.
+    string value = 2;
+  }
+
+  // The debug information for a WorkUnit or TestResult.
+  // Next ID: 8
+  message DebugInfo {
+    // The error message.
+    string error_message = 1;
+
+    // The stack trace.
+    string trace = 2;
+
+    // Error type, to better distinguish different causes of errors.
+    ErrorType error_type = 3;
+
+    // Describing the current phase of the tests lifecycle.
+    string phase_in_progress = 4;
+
+    // Identifier of the error (error code style. For example: OUT_OF_QUOTA)
+    string error_name = 5;
+
+    // The error code associated with the error name. (Where error code groupings are defined by leading numbers,
+    // similar to HTTP's error code) TODO(b/160875067): Link the official documentation of error code categories
+    // See go/invocation-error-classification-v2 for more details
+    int64 error_code = 6;
+
+    // Class that generated the error (origin of the error). For example: the fully qualified java class name that created and threw the exception.
+    string error_origin = 7;
+  }
+
+  // The timing of a particular Invocation, WorkUnit, or TestResult.
+  // Next ID: 4
+  message Timing {
+    // The time the resource started running. This is in UTC Epoch time.
+    int64 creation_timestamp = 1;
+
+    // Indicates the time when the operation finished. This is in UTC Epoch time.
+    int64 complete_timestamp = 2;
+
+    // The corresponding month in yyyy-MM of creation_timestamp.
+    string creation_month = 3;
+  }
+
+  // The aggregation details for an aggregated TestResult. Next ID: 4
+  message AggregationDetail {
+    // The level of aggregation.
+    AggregationLevel aggregation_level = 1;
+
+    // Aggregated results for the number of test results with each status.
+    repeated StatusAggregation status_aggregation = 2;
+
+    // Module level errors. Only set for invocation level aggregates.
+    int64 module_errors = 3;
+  }
+
+  message StatusAggregation {
+    // The test status.
+    TestStatus status = 1;
+
+    // The number of tests matching the aggregation.
+    int64 num = 2;
+  }
+
+  // A TestDefinition describes how to identify an Invocation. Next ID: 3
+  message Test {
+    // The name used to identify the set of tests being executed.
+    string name = 1;
+
+    // A list of properties the scheduler uses to differentiate between configurations with the same name.
+    // For example 'cluster_id' and 'run_target' for ATP (http://go/consistent-test-identifiers).
+    repeated StringPair properties = 2;
+  }
+
+  // Message explaining why a test was skipped. Next ID: 5
+  message SkippedReason {
+    // Possible reasons why a test result was skipped and did not run.
+    ReasonType reason_type = 1;
+
+    // Should describe what condition caused the test to be skipped.
+    string trigger = 2;
+
+    // A message providing any other details about why a test was skipped.
+    string reason_message = 3;
+
+    // Buganizer id for the issue that caused the tests to be skipped, if available.
+    string bug_id = 4;
+  }
+
+  // The test identifier.
+  TestIdentifier test_identifier = 9;
+
+  // The status of the test.
+  TestStatus test_status = 10;
+
+  // The debug information.
+  DebugInfo debug_info = 11;
+
+  // The timing information.
+  Timing timing = 13;
+
+  // The properties of the test result.
+  repeated StringPair properties = 14;
+
+  int32 attempt_number = 15;
+
+  int32 run_number = 16;
+
+  // The aggregation detail for an aggregated test result.
+  AggregationDetail aggregation_detail = 17;
+
+  // The hash of the test identifier.
+  string test_identifier_hash = 18;
+
+  // The id of the test identifier.
+  string test_identifier_id = 19;
+
+  // The id of the test definition.
+  string test_definition_id = 20;
+
+  // The number of flaky test cases.
+  int64 flaky_test_cases = 21;
+
+  // The id of the parent test identifier.
+  string parent_test_identifier_id = 22;
+
+  // The test definition.
+  Test test = 23;
+
+  int32 flaky_modules = 24;
+
+  // The skipped reason.
+  SkippedReason skipped_reason = 25;
+
+  // The hour of the test result.
+  string hour = 26;
+}
