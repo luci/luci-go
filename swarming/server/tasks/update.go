@@ -15,7 +15,14 @@
 package tasks
 
 import (
+	"context"
+	"time"
+
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 // UpdateOp represents an operation of a bot updating the task it's running.
@@ -35,4 +42,53 @@ type UpdateOp struct {
 	Output []byte
 	// OutputChunkStart is the index of output in the stdout stream.
 	OutputChunkStart int64
+
+	trr *model.TaskRunResult
+	trs *model.TaskResultSummary
+	now time.Time
+}
+
+// runUpdateTxn performs the shared updates on task result entities for both
+// task update and completion.
+//
+// Updates op.trr and op.trs in place, and return the new/updated TaskOutputChunk.
+// updateTxn performs the shared updates on task result entities for both
+// task update and completion.
+//
+// Updates op.trr and op.trs in place, and return the new/updated TaskOutputChunk.
+func (m *managerImpl) runUpdateTxn(ctx context.Context, op *UpdateOp) ([]*model.TaskOutputChunk, error) {
+	trr := op.trr
+	trs := op.trs
+
+	trr.Modified = op.now
+	trr.CostUSD = max(trr.CostUSD, op.CostUSD)
+	trr.ServerVersions = addServerVersion(trr.ServerVersions, m.serverVersion)
+
+	trs.Modified = op.now
+	trs.CostUSD = trr.CostUSD
+	trs.ServerVersions = addServerVersion(trs.ServerVersions, m.serverVersion)
+
+	if len(op.Output) == 0 {
+		return nil, nil
+	}
+
+	outputChunks, stdoutChunks, err := op.updateOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	trr.StdoutChunks = stdoutChunks
+	trs.StdoutChunks = stdoutChunks
+
+	return outputChunks, nil
+}
+
+func (op *UpdateOp) updateOutput(ctx context.Context) ([]*model.TaskOutputChunk, int64, error) {
+	return nil, 0, errors.New("not implemented yet")
+}
+
+func addServerVersion(versions []string, newVersion string) []string {
+	versionSet := stringset.NewFromSlice(versions...)
+	versionSet.Add(newVersion)
+	return versionSet.ToSortedSlice()
 }
