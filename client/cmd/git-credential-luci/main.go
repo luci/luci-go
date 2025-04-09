@@ -17,8 +17,8 @@
 // The protocol used for communication between Git and the credential helper
 // is documented in:
 //
-// https://www.kernel.org/pub/software/scm/git/docs/technical/api-credentials.html#_credential_helpers
-// https://www.kernel.org/pub/software/scm/git/docs/git-credential.html
+// https://git-scm.com/docs/gitcredentials
+// https://git-scm.com/docs/git-credential
 package main
 
 import (
@@ -123,6 +123,26 @@ func main() {
 			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
 			os.Exit(1)
 		}
+	case "info":
+		// This is not part of the Git credential helper
+		// specification, but it is provided for convenience.
+		//
+		// This prints some info about the active credentials,
+		// using a format similar to the Git credential
+		// protocol, but with custom keys.
+		//
+		// This is intended for consumption by tools to
+		// report more useful errors.
+		//
+		// Output keys:
+		//
+		//  - email
+		email, err := a.GetEmail()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cannot get email: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("email=%s\n", email)
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the
