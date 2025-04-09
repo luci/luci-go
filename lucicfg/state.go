@@ -193,8 +193,8 @@ func init() {
 	})
 
 	// current_module returns a tuple (package, path) with current module info
-	// or fails if unknown (i.e. the thread is running callback done from a native
-	// code).
+	// or fails if unknown (i.e. the thread is running a callback called from
+	// native code).
 	declNative("current_module", func(call nativeCall) (starlark.Value, error) {
 		if err := call.unpack(0); err != nil {
 			return nil, err
@@ -204,7 +204,7 @@ func init() {
 			return nil, fmt.Errorf(
 				"current_module: no information about the current module in the thread locals")
 		}
-		return starlark.Tuple{starlark.String(mod.Package), starlark.String(mod.Path)}, nil
+		return starlark.Tuple{starlark.String("@" + mod.Package), starlark.String(mod.Path)}, nil
 	})
 
 	// clear_state() wipes the state of the generator, for tests.

@@ -11,5 +11,5 @@ _ = io.read_file("res.cfg")
 def say_hi():
   lucicfg.emit(
       dest = "load.cfg",
-      data = io.read_file("@%s//res.cfg" % _pkg)
+      data = io.read_file("%s//res.cfg" % _pkg)
   )

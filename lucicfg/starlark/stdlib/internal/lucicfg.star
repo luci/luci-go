@@ -54,6 +54,7 @@ def _check_version(min, message = None):
     min_ver = strutil.parse_version(min)
     if (__native__.pkg_min_lucicfg and
         min_ver != __native__.pkg_min_lucicfg and
+        _current_module().package == __native__.main_pkg_name and
         not __native__.testing_tweaks.skip_package_compat_checks):
         fail(
             ("Version passed to lucicfg.check_version (which is %r) should match the " +
@@ -148,6 +149,7 @@ def _config(
     if lint_checks != None:
         if (__native__.pkg_lint_checks != None and
             __native__.pkg_lint_checks != tuple(lint_checks) and
+            _current_module().package == __native__.main_pkg_name and
             not __native__.testing_tweaks.skip_package_compat_checks):
             fail(
                 ("Lint checks set via lucicfg.config(...) (which are %s) " +
@@ -258,6 +260,14 @@ def _current_module():
       A `struct(package='...', path='...')` with the location of the module.
     """
     pkg, path = __native__.current_module()
+
+    # Backward compatibility for pre-PACKAGE.star packages. This couples the
+    # rollout of this breaking API change (addition of "@" before package names)
+    # to the rollout of PACKAGE.star (which already breaks this function anyway
+    # by returning the package name from PACKAGE.star instead of "__main__").
+    if pkg == "@__main__":
+        pkg = "__main__"
+
     return struct(package = pkg, path = path)
 
 # A constructor for lucicfg.var structs.
