@@ -16,14 +16,43 @@ package reauth
 
 import (
 	"context"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 func challengeHandlers(facetID string) map[string]challengeHandler {
-	return map[string]challengeHandler{}
+	return map[string]challengeHandler{
+		"SECURITY_KEY": chainHandler{
+			handlers: []challengeHandler{},
+		},
+	}
 }
 
 // A challengeHandler handles a Reauth challenge.
 type challengeHandler interface {
 	IsAvailable() bool
-	Handle(context.Context, challenge) (proposalReply, error)
+	Handle(context.Context, challenge) (*proposalReply, error)
+}
+
+type chainHandler struct {
+	handlers []challengeHandler
+}
+
+func (h chainHandler) IsAvailable() bool {
+	for _, h := range h.handlers {
+		if h.IsAvailable() {
+			return true
+		}
+	}
+	return false
+}
+
+func (h chainHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
+	for _, h := range h.handlers {
+		if !h.IsAvailable() {
+			continue
+		}
+		return h.Handle(ctx, c)
+	}
+	return nil, errors.Reason("chainHandler: no handlers reported available").Err()
 }
