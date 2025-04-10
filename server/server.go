@@ -205,6 +205,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
+	"go.uber.org/automaxprocs/maxprocs"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
@@ -1116,6 +1117,14 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	default:
 		// On k8s log pod IPs too, this is useful when debugging k8s routing.
 		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
+	}
+
+	// Automatically sets GOMAXPROCS to match the Linux container CPU quota.
+	_, err = maxprocs.Set(maxprocs.Logger(func(f string, args ...any) {
+		logging.Infof(srv.Context, f, args...)
+	}))
+	if err != nil {
+		logging.Warningf(srv.Context, "maxprocs: Failed to adjust GOMAXPROCS: %s", err)
 	}
 
 	// Log enabled experiments, warn if some of them are unknown now.
