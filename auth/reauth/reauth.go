@@ -59,6 +59,7 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 		return nil, errors.Annotate(err, "GetRAPT").Err()
 	}
 	for range runChallengeLimit {
+		logging.Debugf(ctx, "ReAuth sessions status: %q", sr.Status)
 		switch r := sr.RejectionReason; r {
 		case "REAUTH_REJECTION_REASON_UNSPECIFIED", "":
 		default:
