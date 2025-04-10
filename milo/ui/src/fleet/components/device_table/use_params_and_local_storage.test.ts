@@ -70,6 +70,7 @@ describe('useParamsAndLocalStorage', () => {
         'c',
         ['potato'],
         setSearchParams,
+        ['default'],
       );
 
       expect(setSearchParams).not.toHaveBeenCalled();
@@ -81,6 +82,19 @@ describe('useParamsAndLocalStorage', () => {
         'c',
         undefined,
         setSearchParams,
+        ['default'],
+      );
+
+      expect(setSearchParams).not.toHaveBeenCalled();
+    });
+    it('Should not do anything if local storage are set to the default', () => {
+      const setSearchParams = jest.fn();
+      synchSearchParamToLocalStorage(
+        new URLSearchParams([['c', 'col1']]),
+        'c',
+        ['default'],
+        setSearchParams,
+        ['default'],
       );
 
       expect(setSearchParams).not.toHaveBeenCalled();
@@ -92,6 +106,7 @@ describe('useParamsAndLocalStorage', () => {
         'c',
         ['potato'],
         setSearchParams,
+        ['default'],
       );
 
       expect(setSearchParams).toHaveBeenCalledWith(
@@ -105,6 +120,7 @@ describe('useParamsAndLocalStorage', () => {
         'c',
         ['potato'],
         setSearchParams,
+        ['default'],
       );
 
       expect(setSearchParams).toHaveBeenCalledWith(

@@ -30,7 +30,7 @@ export const useParamsAndLocalStorage = (
   defaultValue: string[],
 ): [string[], (new_value: string[]) => void] => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [localStorage, setLocalStorage] =
+  const [localStorage, setLocalStorage, clearLocalStorage] =
     useLocalStorage<string[]>(localStorageKey);
 
   // We also keep an internal state, this allows us to return this to the user
@@ -49,8 +49,15 @@ export const useParamsAndLocalStorage = (
         searchParamsKey,
         localStorage,
         setSearchParams,
+        defaultValue,
       ),
-    [localStorage, searchParams, searchParamsKey, setSearchParams],
+    [
+      defaultValue,
+      localStorage,
+      searchParams,
+      searchParamsKey,
+      setSearchParams,
+    ],
   );
 
   const setter = (newList: string[]) => {
@@ -62,7 +69,9 @@ export const useParamsAndLocalStorage = (
       searchParamsKey,
       defaultValue,
     );
-    setLocalStorage(newState.localStorage);
+    if (newState.localStorage === undefined) clearLocalStorage();
+    else setLocalStorage(newState.localStorage);
+
     setSearchParams(newState.searchParams);
   };
 
@@ -91,17 +100,19 @@ export const synchSearchParamToLocalStorage = (
   searchParamsKey: string,
   localStorage: string[] | undefined,
   setSearchParams: SetURLSearchParams,
+  defaultValue: string[],
 ) => {
   const searchParamValues = searchParams.getAll(searchParamsKey);
   if (searchParamValues && searchParamValues.length > 0) return;
+  if (!localStorage || localStorage.length === 0) return;
 
-  if (localStorage && localStorage.length > 0) {
-    const newSearchParams = new URLSearchParams(searchParams);
-    for (const el of localStorage) {
-      newSearchParams.append(searchParamsKey, el);
-    }
-    setSearchParams(newSearchParams);
+  if (_.isEqual(_.sortBy(localStorage), _.sortBy(defaultValue))) return;
+
+  const newSearchParams = new URLSearchParams(searchParams);
+  for (const el of localStorage) {
+    newSearchParams.append(searchParamsKey, el);
   }
+  setSearchParams(newSearchParams);
 };
 
 export const getNewStates = (
