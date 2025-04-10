@@ -42,6 +42,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
+	antsexporter "go.chromium.org/luci/analysis/internal/ants/testresults/exporter"
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
@@ -132,6 +133,8 @@ type verdictIngester struct {
 	verdictExporter *testverdicts.Exporter
 	// testVariantBranchExporter is use to export change point analysis results.
 	testVariantBranchExporter *tvbexporter.Exporter
+	// antsTestResultExporter is used to export android test result in AnTS format.
+	antsTestResultExporter *antsexporter.Exporter
 }
 
 var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
@@ -189,11 +192,23 @@ func RegisterTaskHandler(srv *server.Server) error {
 		}
 	})
 
+	antsBQClient, err := antsexporter.NewClient(ctx, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := antsBQClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up AnTS BQ exporter client: %s", err)
+		}
+	})
+
 	analysis := analysis.NewClusteringHandler(cf)
 	ri := &verdictIngester{
 		clustering:                ingestion.New(chunkStore, analysis),
 		verdictExporter:           testverdicts.NewExporter(verdictClient),
 		testVariantBranchExporter: tvbexporter.NewExporter(tvbBQClient),
+		antsTestResultExporter:    antsexporter.NewExporter(antsBQClient),
 	}
 	verdictHandler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestTestVerdicts)
@@ -342,6 +357,11 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp.TestVariants, sources, inv, payload)
 	if err != nil {
 		return errors.Annotate(err, "export verdicts").Err()
+	}
+
+	err = ingestForAnTSTestResultExport(ctx, i.antsTestResultExporter, rsp.TestVariants, inv, payload)
+	if err != nil {
+		return errors.Annotate(err, "ants test results export").Err()
 	}
 
 	if nextPageToken == "" {
@@ -588,6 +608,27 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 		SourcesByID: sources,
 	}
 	err = verdictExporter.Export(ctx, testVariants, exportOptions)
+	if err != nil {
+		return errors.Annotate(err, "export").Err()
+	}
+	return nil
+}
+
+func ingestForAnTSTestResultExport(ctx context.Context, antsExporter *antsexporter.Exporter,
+	testVariants []*rdbpb.TestVariant, inv *rdbpb.Invocation, payload *taskspb.IngestTestVerdicts) (err error) {
+
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForAnTSTestResultExport")
+	defer func() { tracing.End(s, err) }()
+
+	// only export Android project.
+	if payload.Project != "android" {
+		return nil
+	}
+	// Export test verdicts.
+	exportOptions := antsexporter.ExportOptions{
+		Invocation: inv,
+	}
+	err = antsExporter.Export(ctx, testVariants, exportOptions)
 	if err != nil {
 		return errors.Annotate(err, "export").Err()
 	}

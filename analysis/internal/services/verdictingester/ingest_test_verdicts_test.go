@@ -45,6 +45,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
+	antsExporter "go.chromium.org/luci/analysis/internal/ants/testresults/exporter"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/changepoints"
@@ -65,6 +66,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	bqpblegacy "go.chromium.org/luci/analysis/proto/bq/legacy"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
@@ -111,10 +113,12 @@ func TestIngestTestVerdicts(t *testing.T) {
 		testVerdicts := testverdicts.NewFakeClient()
 		tvBQExporterClient := bqexporter.NewFakeClient()
 		analysis := analysis.NewClusteringHandler(clusteredFailures)
+		antsClient := antsExporter.NewFakeClient()
 		ri := &verdictIngester{
 			clustering:                ingestion.New(chunkStore, analysis),
 			verdictExporter:           testverdicts.NewExporter(testVerdicts),
 			testVariantBranchExporter: bqexporter.NewExporter(tvBQExporterClient),
+			antsTestResultExporter:    antsExporter.NewExporter(antsClient),
 		}
 
 		t.Run(`partition time`, func(t *ftt.Test) {
@@ -162,6 +166,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 					Name:         testInvocation,
 					Realm:        testRealm,
 					IsExportRoot: true,
+					FinalizeTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
 				}
 				for _, modifier := range modifiers {
 					modifier(invRes)
@@ -322,6 +327,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, false)
 
+				verifyAnTSExport(t, antsClient, false)
+
 				// Changepoint analysis should not be updated.
 				// In this pipeline, invocations with changelists are ingested
 				// only if the presubmit run was full and succeeded (leading
@@ -351,6 +358,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
+				verifyAnTSExport(t, antsClient, false)
 			})
 			t.Run(`Last task`, func(t *ftt.Test) {
 				payload.TaskIndex = 10
@@ -376,6 +384,24 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
+				verifyAnTSExport(t, antsClient, false)
+			})
+
+			t.Run(`Export to AnTS table`, func(t *ftt.Test) {
+				payload.Build = nil
+				payload.PresubmitRun = nil
+				payload.Project = "android"
+
+				setupGetInvocationMock()
+				setupQueryTestVariantsMock()
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestVerdicts(ctx, payload)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Verify
+				verifyAnTSExport(t, antsClient, true)
 			})
 
 			t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
@@ -410,6 +436,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
+				verifyAnTSExport(t, antsClient, false)
 			})
 			t.Run(`No project config`, func(t *ftt.Test) {
 				// If no project config exists, results should be ingested into
@@ -435,6 +462,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// Test verdicts exported.
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
+				verifyAnTSExport(t, antsClient, false)
 			})
 			t.Run(`Invocation is not an export root`, func(t *ftt.Test) {
 				setupGetInvocationMock(func(i *rdbpb.Invocation) {
@@ -1631,4 +1659,312 @@ func removeCheckpointForProcess(cs []checkpoints.Checkpoint, processID string) [
 		}
 	}
 	return result
+}
+
+func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExport bool) {
+	t.Helper()
+	actualRows := client.Insertions
+	var expectedRows []*bqpblegacy.AntsTestResultRow
+	if shouldExport {
+		expectedRows = []*bqpblegacy.AntsTestResultRow{
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_consistent_failure",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				DebugInfo: &bqpblegacy.AntsTestResultRow_DebugInfo{
+					ErrorMessage: "abc.def(123): unexpected nil-deference",
+				},
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1267401600, // 2010-03-01 00:00:00 UTC
+					CompleteTimestamp: 1267401603, // Start + 3s
+					CreationMonth:     "2010-03",  // From StartTime
+				},
+				TestId:         ":module!junit:package:class#test_consistent_failure",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_expected",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1272672000, // 2010-05-01 00:00:00 UTC
+					CompleteTimestamp: 1272672005, // Start + 5s
+					CreationMonth:     "2010-05",
+				},
+				TestId:         ":module!junit:package:class#test_expected",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_filtering_event",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1265068800, // 2010-02-02 00:00:00 UTC
+					CompleteTimestamp: 1265068800, // Start + 0s
+					CreationMonth:     "2010-02",
+				},
+				TestId:         ":module!junit:package:class#test_filtering_event",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_from_luci_bisection",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 0,         // StartTime is nil in input
+					CompleteTimestamp: 0,         // Start + 0s
+					CreationMonth:     "1970-01", // Default from zero time
+				},
+				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+					{Name: "is_luci_bisection", Value: "true"},
+				},
+				TestId:         ":module!junit:package:class#test_from_luci_bisection",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_has_unexpected",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1264982410, // 2010-02-01 00:00:10 UTC
+					CompleteTimestamp: 1264982410, // Start + 0s
+					CreationMonth:     "2010-02",
+				},
+				TestId:         ":module!junit:package:class#test_has_unexpected",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "two",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_has_unexpected",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1264982420, // 2010-02-01 00:00:20 UTC
+					CompleteTimestamp: 1264982420, // Start + 0s
+					CreationMonth:     "2010-02",
+				},
+				TestId:         ":module!junit:package:class#test_has_unexpected",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_known_flake",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1264982400, // 2010-02-01 00:00:00 UTC
+					CompleteTimestamp: 1264982402, // Start + 2s
+					CreationMonth:     "2010-02",
+				},
+				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+					{Name: "os", Value: "Mac"},
+					{Name: "monorail_component", Value: "Monorail>Component"},
+				},
+				TestId:         ":module!junit:package:class#test_known_flake",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_new_failure",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1262304000, // 2010-01-01 00:00:00 UTC
+					CompleteTimestamp: 1262304001, // Start + 1s
+					CreationMonth:     "2010-01",
+				},
+				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+					{Name: "random_tag", Value: "random_tag_value"},
+					{Name: "public_buganizer_component", Value: "951951951"},
+				},
+				TestId:         ":module!junit:package:class#test_new_failure",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "two",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_new_flake",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1262304020, // 2010-01-01 00:00:20 UTC
+					CompleteTimestamp: 1262304031, // Start + 11s
+					CreationMonth:     "2010-01",
+				},
+				TestId:         ":module!junit:package:class#test_new_flake",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_new_flake",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1262304010, // 2010-01-01 00:00:10 UTC
+					CompleteTimestamp: 1262304020, // Start + 10s
+					CreationMonth:     "2010-01",
+				},
+				TestId:         ":module!junit:package:class#test_new_flake",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "three",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_new_flake",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1262304015, // 2010-01-01 00:00:15 UTC
+					CompleteTimestamp: 1262304027, // Start + 12s
+					CreationMonth:     "2010-01",
+				},
+				TestId:         ":module!junit:package:class#test_new_flake",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_no_new_results",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1270080000, // 2010-04-01 00:00:00 UTC
+					CompleteTimestamp: 1270080004, // Start + 4s
+					CreationMonth:     "2010-04",
+				},
+				TestId:         ":module!junit:package:class#test_no_new_results",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_skip",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 1265068800, // 2010-02-02 00:00:00 UTC
+					CompleteTimestamp: 1265068800, // Start + 0s
+					CreationMonth:     "2010-02",
+				},
+				TestId:         ":module!junit:package:class#test_skip",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				TestResultId: "one",
+				InvocationId: invocationID,
+				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:      "module",
+					TestClass:   "package.class",
+					ClassName:   "class",
+					PackageName: "package",
+					Method:      "test_unexpected_pass",
+				},
+				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+					CreationTimestamp: 0,         // StartTime is nil in input
+					CompleteTimestamp: 0,         // Start + 0s
+					CreationMonth:     "1970-01", // Default from zero time
+				},
+				TestId:         ":module!junit:package:class#test_unexpected_pass",
+				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				InsertTime:     timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+		}
+		assert.Loosely(t, actualRows, should.HaveLength(len(expectedRows)), truth.LineContext())
+		for i, row := range actualRows {
+			assert.Loosely(t, row, should.Match(expectedRows[i]), truth.LineContext())
+		}
+	}
 }
