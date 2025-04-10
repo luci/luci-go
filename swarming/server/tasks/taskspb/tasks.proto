@@ -31,3 +31,10 @@ message CleanupOldTasks {
   repeated string task_ids = 1;
   int32 retries = 2;
 }
+
+// Used to finalize a task when it completes. Including:
+// * cancel the task's active children
+// * finalize the task's ResultDB Invocation
+message FinalizeTask {
+  string task_id = 1;
+}

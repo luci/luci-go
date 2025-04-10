@@ -170,6 +170,13 @@ func TestProcessTaskUpdate(t *testing.T) {
 		zerof := 0.0
 		var zero int64 = 0
 
+		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+		assert.NoErr(t, err)
+		tr := &model.TaskRequest{
+			Key: reqKey,
+		}
+		assert.NoErr(t, datastore.Put(ctx, tr))
+
 		req := &TaskUpdateRequest{
 			TaskID:      taskID,
 			BotOverhead: &zerof,
@@ -254,7 +261,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 			},
 		})
 		assert.NoErr(t, err)
-		assert.That(t, model.RequestKeyToTaskID(complete.RequestKey, model.AsRunResult), should.Equal(taskID))
+		assert.That(t, model.RequestKeyToTaskID(complete.Request.Key, model.AsRunResult), should.Equal(taskID))
 		assert.That(t, complete.Output, should.Match([]byte("output")))
 		assert.That(t, complete.PerformanceStats, should.Match(perfStats))
 	})
@@ -301,6 +308,13 @@ func TestProcessTaskUpdate(t *testing.T) {
 		}
 
 		t.Run("completeTask", func(t *ftt.Test) {
+			reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+			assert.NoErr(t, err)
+			tr := &model.TaskRequest{
+				Key: reqKey,
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr))
+
 			submit := func(outcome *tasks.CompleteTxnOutcome, err error, proceed bool) {
 				srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
 					return datastore.RunInTransaction(ctx, func(ctx context.Context) error {

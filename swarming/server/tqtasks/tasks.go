@@ -48,6 +48,7 @@ type Tasks struct {
 	// Tasks implemented by tasks.Manager.
 	CancelChildren tq.TaskClassRef
 	BatchCancel    tq.TaskClassRef
+	FinalizeTask   tq.TaskClassRef
 }
 
 // Register registers all task classes in the dispatcher.
@@ -98,6 +99,13 @@ func Register(disp *tq.Dispatcher) *Tasks {
 			Kind:      tq.NonTransactional,
 			Prototype: (*taskspb.BatchCancelTask)(nil),
 			Queue:     "cancel-tasks-go", // to replace "cancel-tasks" taskqueue in Py.
+		}),
+
+		FinalizeTask: disp.RegisterTaskClass(tq.TaskClass{
+			ID:        "finalize-task",
+			Kind:      tq.Transactional,
+			Prototype: (*taskspb.FinalizeTask)(nil),
+			Queue:     "finalize-task",
 		}),
 	}
 }

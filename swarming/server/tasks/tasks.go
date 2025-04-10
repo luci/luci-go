@@ -81,10 +81,18 @@ func NewManager(tasks *tqtasks.Tasks, serverProject, serverVersion string, rdb r
 		allowAbandoningTasks: allowAbandoningTasks,
 	}
 	tasks.CancelChildren.AttachHandler(func(ctx context.Context, payload proto.Message) error {
-		return m.queryToCancel(ctx, 300, payload.(*taskspb.CancelChildrenTask))
+		t := payload.(*taskspb.CancelChildrenTask)
+		return m.queryToCancel(ctx, 300, t.TaskId)
 	})
 	tasks.BatchCancel.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		return m.runBatchCancellation(ctx, 64, payload.(*taskspb.BatchCancelTask))
+	})
+	tasks.FinalizeTask.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		t := payload.(*taskspb.FinalizeTask)
+		if err := m.finalizeResultDBInvocation(ctx, t.TaskId); err != nil {
+			return err
+		}
+		return m.queryToCancel(ctx, 300, t.TaskId)
 	})
 	return m
 }

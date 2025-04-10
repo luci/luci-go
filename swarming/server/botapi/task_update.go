@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
@@ -218,6 +219,13 @@ func (srv *BotAPIServer) processTaskCompletion(ctx context.Context, body *TaskUp
 	if err != nil {
 		return nil, err
 	}
+	tr, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "task %q not found", body.TaskID)
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", body.TaskID, err)
+	}
 
 	var perfStats *model.PerformanceStats
 	if body.BotOverhead != nil {
@@ -234,7 +242,7 @@ func (srv *BotAPIServer) processTaskCompletion(ctx context.Context, body *TaskUp
 	}
 
 	return &tasks.CompleteOp{
-		RequestKey:       reqKey,
+		Request:          tr,
 		BotID:            r.Session.BotId,
 		PerformanceStats: perfStats,
 		Canceled:         body.Canceled,

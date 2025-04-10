@@ -98,6 +98,8 @@ func taskPayloadToStr(m proto.Message) string {
 		return m.TaskId
 	case *notificationspb.BuildbucketNotifyTask:
 		return m.TaskId
+	case *taskspb.FinalizeTask:
+		return m.TaskId
 	default:
 		return fmt.Sprintf("unexpected type %T", m)
 	}

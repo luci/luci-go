@@ -24,8 +24,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tq"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -39,8 +41,8 @@ import (
 // The actual transaction happens as part of the BotInfo update, see
 // botapi/task_update.go.
 type CompleteOp struct {
-	// TaskRequest entity key.
-	RequestKey *datastore.Key
+	// Request is the TaskRequest entity for the task to complete.
+	Request *model.TaskRequest
 
 	// BotID is ID of the bot completing the task.
 	BotID string
@@ -86,11 +88,12 @@ type CompleteTxnOutcome struct {
 
 // CompleteTxn updates the task and marks it as completed.
 func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*CompleteTxnOutcome, error) {
-	taskID := model.RequestKeyToTaskID(op.RequestKey, model.AsRunResult)
-	tr := &model.TaskRequest{Key: op.RequestKey}
-	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, op.RequestKey)}
-	trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, op.RequestKey)}
-	switch err := datastore.Get(ctx, tr, trs, trr); {
+	tr := op.Request
+	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)
+
+	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, tr.Key)}
+	trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, tr.Key)}
+	switch err := datastore.Get(ctx, trs, trr); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "task %q not found", taskID)
 	case err != nil:
@@ -140,7 +143,7 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 
 	// Some common updates, e.g. output, cost, modified timestamp, server versions.
 	commonUpdates := &UpdateOp{
-		RequestKey:       op.RequestKey,
+		RequestKey:       tr.Key,
 		BotID:            op.BotID,
 		CostUSD:          op.CostUSD,
 		Output:           op.Output,
@@ -183,7 +186,7 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 	if op.PerformanceStats != nil {
 		perfStatsV := *op.PerformanceStats
 		perfStats := &perfStatsV
-		perfStats.Key = model.PerformanceStatsKey(ctx, op.RequestKey)
+		perfStats.Key = model.PerformanceStatsKey(ctx, tr.Key)
 		toPut = append(toPut, perfStats)
 	}
 
@@ -210,19 +213,16 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		return nil, status.Errorf(codes.Internal, "failed to create resultdb client")
 	}
 
-	// Cancel Child tasks
+	// Cancel Child tasks and finalize ResultDB invocation
 	err = m.disp.AddTask(ctx, &tq.Task{
-		Payload: &taskspb.CancelChildrenTask{
+		Payload: &taskspb.FinalizeTask{
 			TaskId: taskID,
 		},
 	})
 	if err != nil {
-		logging.Errorf(ctx, "failed to enqueue child cancellation task for completing %q: %s", taskID, err)
-		return nil, status.Errorf(codes.Internal, "failed to enqueue child cancellation task for completing %q", taskID)
+		logging.Errorf(ctx, "failed to enqueue finalization task for completing %q: %s", taskID, err)
+		return nil, status.Errorf(codes.Internal, "failed to enqueue finalization task for completing %q", taskID)
 	}
-
-	// Finalize ResultDB invocation
-	// TODO: enqueue a tq task for this.
 
 	// Report metrics in case the transaction actually lands.
 	txndefer.Defer(ctx, func(ctx context.Context) {
@@ -267,4 +267,39 @@ func calculateBotEventType(taskState apipb.TaskState) (model.BotEventType, error
 	default:
 		return "", errors.Reason("unexpected task state %s", taskState.String()).Err()
 	}
+}
+
+func (m *managerImpl) finalizeResultDBInvocation(ctx context.Context, taskID string) error {
+	reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		return err
+	}
+
+	tr, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return errors.Annotate(err, "task %q not found", taskID).Tag(tq.Fatal).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to get task %q", taskID).Tag(transient.Tag).Err()
+	}
+	if tr.ResultDBUpdateToken == "" {
+		return nil
+	}
+
+	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+	switch err := datastore.Get(ctx, trs); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return errors.Annotate(err, "task %q not found", taskID).Tag(tq.Fatal).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to get task %q", taskID).Tag(transient.Tag).Err()
+	}
+	if trs.ResultDBInfo.Hostname == "" {
+		return errors.Reason("task result %q misses resultdb info", taskID).Tag(tq.Fatal).Err()
+	}
+	project, _ := realms.Split(trs.RequestRealm)
+	client, err := m.rdb.MakeClient(ctx, trs.ResultDBInfo.Hostname, project)
+	if err != nil {
+		return errors.Annotate(err, "failed to create resultdb client").Tag(transient.Tag).Err()
+	}
+	return client.FinalizeInvocation(ctx, trs.ResultDBInfo.Invocation, tr.ResultDBUpdateToken)
 }

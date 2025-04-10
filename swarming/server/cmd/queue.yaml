@@ -46,6 +46,12 @@ queue:
   rate: 500/s
   target: default-go
 
+# /internal/tasks/t/finalize-task.
+- name: finalize-task
+  target: default-go
+  bucket_size: 100
+  rate: 500/s
+
 # /internal/taskqueue/important/task_queues/update-bot-matches
 - name: update-bot-matches
   bucket_size: 100

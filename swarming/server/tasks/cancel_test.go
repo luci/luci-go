@@ -237,9 +237,7 @@ func TestCancelChildren(t *testing.T) {
 		assert.NoErr(t, err)
 
 		t.Run("task has no children", func(t *ftt.Test) {
-			assert.NoErr(t, mgr.queryToCancel(ctx, 300, &taskspb.CancelChildrenTask{
-				TaskId: pID,
-			}))
+			assert.NoErr(t, mgr.queryToCancel(ctx, 300, pID))
 			assert.Loosely(t, tqt.Pending(tqt.BatchCancel), should.HaveLength(0))
 		})
 
@@ -258,9 +256,7 @@ func TestCancelChildren(t *testing.T) {
 				},
 			}
 			assert.NoErr(t, datastore.Put(ctx, childReq, childRes))
-			assert.NoErr(t, mgr.queryToCancel(ctx, 300, &taskspb.CancelChildrenTask{
-				TaskId: pID,
-			}))
+			assert.NoErr(t, mgr.queryToCancel(ctx, 300, pID))
 			assert.Loosely(t, tqt.Pending(tqt.BatchCancel), should.HaveLength(0))
 		})
 
@@ -285,18 +281,14 @@ func TestCancelChildren(t *testing.T) {
 			}
 
 			t.Run("one task for all children", func(t *ftt.Test) {
-				assert.NoErr(t, mgr.queryToCancel(ctx, 300, &taskspb.CancelChildrenTask{
-					TaskId: pID,
-				}))
+				assert.NoErr(t, mgr.queryToCancel(ctx, 300, pID))
 				assert.Loosely(t, tqt.Pending(tqt.BatchCancel), should.Match([]string{
 					`["65aba3a3e6b99100" "65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`,
 				}))
 			})
 
 			t.Run("multiple tasks", func(t *ftt.Test) {
-				assert.NoErr(t, mgr.queryToCancel(ctx, 2, &taskspb.CancelChildrenTask{
-					TaskId: pID,
-				}))
+				assert.NoErr(t, mgr.queryToCancel(ctx, 2, pID))
 				assert.Loosely(t, tqt.Pending(tqt.BatchCancel), should.Match([]string{
 					`["65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`,
 					`["65aba3a3e6b99100"], purpose: cancel children for 65aba3a3e6b99310 batch 1, retry # 0`,

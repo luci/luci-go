@@ -28,9 +28,11 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tqtasks"
 )
 
@@ -95,17 +97,19 @@ func TestCompleteOp(t *testing.T) {
 
 		t.Run("task_missing", func(t *ftt.Test) {
 			op := &CompleteOp{
-				RequestKey: reqKey,
+				Request: &model.TaskRequest{
+					Key: reqKey,
+				},
 			}
 			_, err := mgr.CompleteTxn(ctx, op)
 			assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" not found`))
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 		t.Run("task_get_update_from_wrong_bot", func(t *ftt.Test) {
-			createTaskEntities(apipb.TaskState_RUNNING)
+			ents := createTaskEntities(apipb.TaskState_RUNNING)
 			op := &CompleteOp{
-				RequestKey: reqKey,
-				BotID:      "bot2",
+				Request: ents.tr,
+				BotID:   "bot2",
 			}
 			_, err := mgr.CompleteTxn(ctx, op)
 			assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is not running by bot "bot2"`))
@@ -113,10 +117,10 @@ func TestCompleteOp(t *testing.T) {
 		})
 
 		t.Run("task_not_to_complete", func(t *ftt.Test) {
-			createTaskEntities(apipb.TaskState_RUNNING)
+			ents := createTaskEntities(apipb.TaskState_RUNNING)
 			op := &CompleteOp{
-				RequestKey: reqKey,
-				BotID:      "bot1",
+				Request: ents.tr,
+				BotID:   "bot1",
 			}
 			_, err := mgr.CompleteTxn(ctx, op)
 			assert.That(t, err, should.ErrLike(`expect to complete task "65aba3a3e6b99201", not only update`))
@@ -131,10 +135,10 @@ func TestCompleteOp(t *testing.T) {
 				ents.trs.DurationSecs.Set(duration)
 				assert.NoErr(t, datastore.Put(ctx, ents.trs))
 				op := &CompleteOp{
-					RequestKey: reqKey,
-					BotID:      "bot1",
-					ExitCode:   &exitcode,
-					Duration:   &duration,
+					Request:  ents.tr,
+					BotID:    "bot1",
+					ExitCode: &exitcode,
+					Duration: &duration,
 				}
 				outcome, err := mgr.CompleteTxn(ctx, op)
 				assert.NoErr(t, err)
@@ -148,7 +152,7 @@ func TestCompleteOp(t *testing.T) {
 				ents.trs.DurationSecs.Set(duration)
 				assert.NoErr(t, datastore.Put(ctx, ents.trs))
 				op := &CompleteOp{
-					RequestKey:  reqKey,
+					Request:     ents.tr,
 					BotID:       "bot1",
 					HardTimeout: true,
 				}
@@ -165,10 +169,10 @@ func TestCompleteOp(t *testing.T) {
 				ents.trs.DurationSecs.Set(duration)
 				assert.NoErr(t, datastore.Put(ctx, ents.trs))
 				op := &CompleteOp{
-					RequestKey: reqKey,
-					BotID:      "bot1",
-					ExitCode:   &anotherExitCode,
-					Duration:   &duration,
+					Request:  ents.tr,
+					BotID:    "bot1",
+					ExitCode: &anotherExitCode,
+					Duration: &duration,
 				}
 				_, err := mgr.CompleteTxn(ctx, op)
 				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
@@ -183,7 +187,7 @@ func TestCompleteOp(t *testing.T) {
 				ents.trs.DurationSecs.Set(duration)
 				assert.NoErr(t, datastore.Put(ctx, ents.trs))
 				op := &CompleteOp{
-					RequestKey:  reqKey,
+					Request:     ents.tr,
 					BotID:       "bot1",
 					HardTimeout: true,
 				}
@@ -204,7 +208,7 @@ func TestCompleteOp(t *testing.T) {
 		}
 
 		t.Run("OK-complete", func(t *ftt.Test) {
-			createTaskEntities(apipb.TaskState_RUNNING)
+			ents := createTaskEntities(apipb.TaskState_RUNNING)
 			var exitcode int64 = 1
 			var duration float64 = 3600
 			perfStats := &model.PerformanceStats{
@@ -244,7 +248,7 @@ func TestCompleteOp(t *testing.T) {
 				}},
 			}
 			op := &CompleteOp{
-				RequestKey:       reqKey,
+				Request:          ents.tr,
 				BotID:            "bot1",
 				ExitCode:         &exitcode,
 				Duration:         &duration,
@@ -276,7 +280,7 @@ func TestCompleteOp(t *testing.T) {
 				Key: model.TaskRunResultKey(ctx, reqKey),
 			}
 			savedPerfStats := &model.PerformanceStats{
-				Key: model.PerformanceStatsKey(ctx, op.RequestKey),
+				Key: model.PerformanceStatsKey(ctx, reqKey),
 			}
 			assert.NoErr(t, datastore.Get(ctx, trr, savedPerfStats))
 
@@ -291,7 +295,7 @@ func TestCompleteOp(t *testing.T) {
 			assert.That(t, saved, should.Match(expected))
 
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
-			assert.That(t, tqt.Pending(tqt.CancelChildren), should.Match([]string{runID}))
+			assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
 		})
 
 		t.Run("OK-complete-build-task", func(t *ftt.Test) {
@@ -303,10 +307,10 @@ func TestCompleteOp(t *testing.T) {
 			var duration float64 = 3600
 
 			op := &CompleteOp{
-				RequestKey: reqKey,
-				BotID:      "bot1",
-				ExitCode:   &exitcode,
-				Duration:   &duration,
+				Request:  ents.tr,
+				BotID:    "bot1",
+				ExitCode: &exitcode,
+				Duration: &duration,
 			}
 			outcome, err := run(op)
 			assert.NoErr(t, err)
@@ -322,16 +326,16 @@ func TestCompleteOp(t *testing.T) {
 			assert.That(t, trs.Modified, should.Match(now))
 			assert.That(t, trs.Completed.Get(), should.Match(now))
 
-			assert.That(t, tqt.Pending(tqt.CancelChildren), should.Match([]string{runID}))
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
 			assert.That(t, tqt.Pending(tqt.BuildbucketNotify), should.Match([]string{taskID}))
+			assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
 		})
 
 		t.Run("OK-timeout", func(t *ftt.Test) {
 			ents := createTaskEntities(apipb.TaskState_RUNNING)
 
 			op := &CompleteOp{
-				RequestKey:  reqKey,
+				Request:     ents.tr,
 				BotID:       "bot1",
 				HardTimeout: true,
 			}
@@ -354,9 +358,9 @@ func TestCompleteOp(t *testing.T) {
 				ents.trr.Killing = true
 				assert.NoErr(t, datastore.Put(ctx, ents.trr))
 				op := &CompleteOp{
-					RequestKey: reqKey,
-					BotID:      "bot1",
-					Canceled:   true,
+					Request:  ents.tr,
+					BotID:    "bot1",
+					Canceled: true,
 				}
 				outcome, err := run(op)
 				assert.NoErr(t, err)
@@ -382,10 +386,10 @@ func TestCompleteOp(t *testing.T) {
 				var exitcode int64 = -9
 				var duration float64 = 3600
 				op := &CompleteOp{
-					RequestKey: reqKey,
-					BotID:      "bot1",
-					ExitCode:   &exitcode,
-					Duration:   &duration,
+					Request:  ents.tr,
+					BotID:    "bot1",
+					ExitCode: &exitcode,
+					Duration: &duration,
 				}
 				outcome, err := run(op)
 				assert.NoErr(t, err)
@@ -409,9 +413,9 @@ func TestCompleteOp(t *testing.T) {
 				ents.trr.Killing = true
 				assert.NoErr(t, datastore.Put(ctx, ents.trr))
 				op := &CompleteOp{
-					RequestKey: reqKey,
-					BotID:      "bot1",
-					IOTimeout:  true,
+					Request:   ents.tr,
+					BotID:     "bot1",
+					IOTimeout: true,
 				}
 				outcome, err := run(op)
 				assert.NoErr(t, err)
@@ -431,5 +435,69 @@ func TestCompleteOp(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestFinalizeInvocation(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx, tqt := tqtasks.TestingContext(ctx)
+
+		taskID := "65aba3a3e6b99200"
+		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+		assert.NoErr(t, err)
+
+		token := "token for 65aba3a3e6b99201"
+
+		mgr := NewManager(tqt.Tasks, "swarming-proj", "cur-version", nil, false).(*managerImpl)
+
+		t.Run("task_not_have_invocation", func(t *ftt.Test) {
+			tr := &model.TaskRequest{
+				Key: reqKey,
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr))
+			assert.NoErr(t, mgr.finalizeResultDBInvocation(ctx, taskID))
+		})
+
+		t.Run("request_and_result_mismatch", func(t *ftt.Test) {
+			tr := &model.TaskRequest{
+				Key:                 reqKey,
+				ResultDBUpdateToken: token,
+			}
+			trs := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, reqKey),
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr, trs))
+			assert.That(t, mgr.finalizeResultDBInvocation(ctx, taskID), should.ErrLike(`task result "65aba3a3e6b99200" misses resultdb info`))
+		})
+
+		t.Run("OK", func(t *ftt.Test) {
+			tr := &model.TaskRequest{
+				Key:                 reqKey,
+				ResultDBUpdateToken: token,
+			}
+			invName := "invocations/task-example.appspot.com-65aba3a3e6b99201"
+
+			trs := &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: model.TaskResultCommon{
+					ResultDBInfo: model.ResultDBInfo{
+						Hostname:   "host",
+						Invocation: invName,
+					},
+				},
+				RequestRealm: "project:realm",
+			}
+			assert.NoErr(t, datastore.Put(ctx, tr, trs))
+
+			inv := &rdbpb.Invocation{
+				Name: invName,
+			}
+			rdb := resultdb.NewMockRecorderClientFactory(nil, inv, nil, token)
+			mgr.rdb = rdb
+			assert.NoErr(t, mgr.finalizeResultDBInvocation(ctx, taskID))
+		})
 	})
 }

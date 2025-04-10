@@ -171,6 +171,8 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 		toRun.Consume("")
 		toPut = append(toPut, toRun)
 
+		// TODO: enqueue FinalizeTask after the code handling code is released.
+
 		return rbe.EnqueueCancel(ctx, m.disp, tr, toRun)
 	}
 
@@ -242,8 +244,8 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 //
 // batchSize is how many child tasks to fetch before sending them to
 // a BatchCancelTask to cancel.
-func (m *managerImpl) queryToCancel(ctx context.Context, batchSize int, t *taskspb.CancelChildrenTask) error {
-	return getChildTaskResultSummaries(ctx, t.TaskId, batchSize, func(children []*model.TaskResultSummary, batchNum int) error {
+func (m *managerImpl) queryToCancel(ctx context.Context, batchSize int, taskID string) error {
+	return getChildTaskResultSummaries(ctx, taskID, batchSize, func(children []*model.TaskResultSummary, batchNum int) error {
 		toCancel := make([]string, 0, len(children))
 		for _, child := range children {
 			if !child.IsActive() {
@@ -254,7 +256,7 @@ func (m *managerImpl) queryToCancel(ctx context.Context, batchSize int, t *tasks
 		if len(toCancel) == 0 {
 			return nil
 		}
-		return m.EnqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", t.TaskId, batchNum), 0)
+		return m.EnqueueBatchCancel(ctx, toCancel, true, fmt.Sprintf("cancel children for %s batch %d", taskID, batchNum), 0)
 	})
 }
 
