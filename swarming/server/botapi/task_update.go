@@ -16,6 +16,7 @@ package botapi
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
@@ -32,6 +34,8 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
+
+const botLastSeenUpdateInterval = 20 * time.Second
 
 // TaskUpdateRequest is sent by the bot.
 type TaskUpdateRequest struct {
@@ -156,8 +160,51 @@ func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest
 		return nil, err
 	}
 
-	_ = taskUpdate
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	var outcome *tasks.UpdateTxnOutcome
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		outcome, err = srv.tasksManager.UpdateTxn(ctx, taskUpdate)
+		return err
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	session, err := srv.updateBotSession(ctx, r.Session)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &TaskUpdateResponse{
+		OK:       true,
+		MustStop: outcome.MustStop,
+		Session:  session,
+	}
+
+	// Periodically update the bot's LastSeen.
+	now := clock.Now(ctx).UTC()
+	if now.Sub(r.BotLastSeen) < botLastSeenUpdateInterval {
+		// LastSeen is fresh enough. Skip botinfo.Update.
+		return resp, nil
+	}
+
+	update := &botinfo.Update{
+		BotID:         r.Session.BotId,
+		EventDedupKey: body.RequestUUID,
+		EventType:     model.BotEventTaskUpdate,
+		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
+			SessionID: r.Session.SessionId,
+		}),
+	}
+
+	if err := srv.submitUpdate(ctx, update); err != nil {
+		if status.Code(err) != codes.Unknown {
+			return nil, err
+		}
+		logging.Errorf(ctx, "failed to update bot info: %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to update bot info %q", r.Session.BotId)
+	}
+
+	return resp, nil
 }
 
 func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.UpdateOp, error) {

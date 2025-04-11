@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,6 +57,7 @@ type Request struct {
 	Session       *internalspb.Session // the bot session from the session token
 	Dimensions    BotDimensions        // bot's "k:v" dimensions as stored in the datastore
 	CurrentTaskID string               // the TaskRunResult key of the current task as store in the datastore
+	BotLastSeen   time.Time            // the last time the server recorded to be contacted by the bot
 }
 
 // BotDimensions is a sorted list of bot's "k:v" dimensions.
@@ -103,6 +105,9 @@ type KnownBotInfo struct {
 	Dimensions BotDimensions
 	// CurrentTaskID is the TaskRunResult key of the current task on the bot.
 	CurrentTaskID string
+	// LastSeen is the last time the server recorded to be contacted by the
+	// bot, if ever.
+	LastSeen time.Time
 }
 
 // KnownBotProvider knows how to return information about existing bots.
@@ -282,6 +287,7 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			Session:       session,
 			Dimensions:    knownBot.Dimensions,
 			CurrentTaskID: knownBot.CurrentTaskID,
+			BotLastSeen:   knownBot.LastSeen,
 		})
 		if err != nil {
 			writeErr(err, req, wrt, RB(body), session)

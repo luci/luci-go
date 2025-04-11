@@ -286,7 +286,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 		taskID := "65aba3a3e6b99200"
 		runID := "65aba3a3e6b99201"
 
-		call := func(req *TaskUpdateRequest) (*TaskUpdateResponse, error) {
+		call := func(req *TaskUpdateRequest, botLastSeen time.Time) (*TaskUpdateResponse, error) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "bot:bot-id",
 			})
@@ -300,6 +300,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					SessionId: "session-id",
 				},
 				CurrentTaskID: taskID,
+				BotLastSeen:   botLastSeen,
 			})
 			if err != nil {
 				return nil, err
@@ -345,7 +346,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					Duration:    float64Ptr(3600),
 					BotOverhead: float64Ptr(100),
 				}
-				resp, err := call(req)
+				resp, err := call(req, now.Add(-time.Second))
 				assert.NoErr(t, err)
 				assert.That(t, resp.OK, should.BeTrue)
 				assert.That(t, resp.MustStop, should.BeFalse)
@@ -356,7 +357,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					TaskID:   taskID,
 					Canceled: true,
 				}
-				resp, err := call(req)
+				resp, err := call(req, now.Add(-time.Second))
 				assert.NoErr(t, err)
 				assert.That(t, resp.OK, should.BeTrue)
 				assert.That(t, resp.MustStop, should.BeFalse)
@@ -370,7 +371,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					Duration:    float64Ptr(3600),
 					BotOverhead: float64Ptr(100),
 				}
-				resp, err := call(req)
+				resp, err := call(req, now.Add(-time.Second))
 				assert.NoErr(t, err)
 				assert.That(t, resp.OK, should.BeTrue)
 				assert.That(t, resp.MustStop, should.BeFalse)
@@ -384,7 +385,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					Duration:    float64Ptr(3600),
 					BotOverhead: float64Ptr(100),
 				}
-				_, err := call(req)
+				_, err := call(req, now.Add(-time.Second))
 				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is not running by bot "bot-id"`))
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
@@ -395,7 +396,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 					TaskID:      taskID,
 					HardTimeout: true,
 				}
-				_, err := call(req)
+				_, err := call(req, now.Add(-time.Second))
 				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			})
@@ -408,10 +409,87 @@ func TestProcessTaskUpdate(t *testing.T) {
 					Duration:    float64Ptr(3600),
 					BotOverhead: float64Ptr(100),
 				}
-				resp, err := call(req)
+				resp, err := call(req, now.Add(-time.Second))
 				assert.NoErr(t, err)
 				assert.That(t, resp.OK, should.BeTrue)
 				assert.That(t, resp.MustStop, should.BeFalse)
+			})
+		})
+
+		t.Run("updateTask", func(t *ftt.Test) {
+			updateTask := func(outcome *tasks.UpdateTxnOutcome, err error) {
+				srv.tasksManager = &tasks.MockedManager{
+					UpdateTxnMock: func(ctx context.Context, op *tasks.UpdateOp) (*tasks.UpdateTxnOutcome, error) {
+						return outcome, err
+					},
+				}
+			}
+
+			t.Run("fail_to_update_task", func(t *ftt.Test) {
+				updateTask(nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", runID))
+				req := &TaskUpdateRequest{
+					TaskID: taskID,
+				}
+				_, err := call(req, now.Add(-time.Second))
+				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
+				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			})
+			t.Run("OK_update_bot_last_seen", func(t *ftt.Test) {
+				updateTask(&tasks.UpdateTxnOutcome{MustStop: false}, nil)
+				srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {
+					return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						botInfo := &model.BotInfo{
+							Key: model.BotInfoKey(ctx, u.BotID),
+						}
+						assert.NoErr(t, datastore.Get(ctx, botInfo))
+						botInfo.LastSeen.Set(now)
+						assert.NoErr(t, datastore.Put(ctx, botInfo))
+						return nil
+					}, nil)
+
+				}
+
+				lastSeen := now.Add(-time.Minute)
+				botInfo := &model.BotInfo{
+					Key: model.BotInfoKey(ctx, botID),
+					BotCommon: model.BotCommon{
+						LastSeen: datastore.NewUnindexedOptional(lastSeen),
+					},
+				}
+				assert.NoErr(t, datastore.Put(ctx, botInfo))
+				req := &TaskUpdateRequest{
+					TaskID: taskID,
+				}
+				resp, err := call(req, lastSeen)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeFalse)
+
+				assert.NoErr(t, datastore.Get(ctx, botInfo))
+				assert.That(t, botInfo.LastSeen.Get(), should.Match(now))
+			})
+
+			t.Run("OK_skip_update_bot_last_seen", func(t *ftt.Test) {
+				updateTask(&tasks.UpdateTxnOutcome{MustStop: true}, nil)
+				// srv.submitUpdate is not called.
+				lastSeen := now.Add(-10 * time.Second)
+				botInfo := &model.BotInfo{
+					Key: model.BotInfoKey(ctx, botID),
+					BotCommon: model.BotCommon{
+						LastSeen: datastore.NewUnindexedOptional(lastSeen),
+					},
+				}
+				assert.NoErr(t, datastore.Put(ctx, botInfo))
+				req := &TaskUpdateRequest{
+					TaskID: taskID,
+				}
+				resp, err := call(req, lastSeen)
+				assert.NoErr(t, err)
+				assert.That(t, resp.OK, should.BeTrue)
+				assert.That(t, resp.MustStop, should.BeTrue)
+
+				assert.NoErr(t, datastore.Get(ctx, botInfo))
+				assert.That(t, botInfo.LastSeen.Get(), should.Match(lastSeen))
 			})
 		})
 	})

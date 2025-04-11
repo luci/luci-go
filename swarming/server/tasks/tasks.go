@@ -53,6 +53,11 @@ type Manager interface {
 	CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error)
 	// CompleteTxn runs the transactional logic to complete a single task.
 	CompleteTxn(ctx context.Context, op *CompleteOp) (*CompleteTxnOutcome, error)
+	// UpdateTxn runs the transactional logic to update a single task.
+	//
+	// It is used to perform updates like reporting stdout, or cost, etc.
+	// The update is not suppose to complete a task. Use CompleteTxn for that.
+	UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOutcome, error)
 }
 
 // managerImpl is the "production" implementation of Manager.

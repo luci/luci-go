@@ -221,7 +221,12 @@ type BotCommon struct {
 	// TaskResultSummary ID", i.e. end in 0. This complicates joining BQ tables.
 	TaskID string `gae:"task_id,noindex"`
 
-	// LastSeen is the last time the bot contacted the server, if ever.
+	// LastSeen is the last time the server recorded to be contacted by the
+	// bot, if ever.
+	//
+	// Usually the server updates LastSeen every time it get contacted by the bot.
+	// Except bot/task_update, where the server may skip updating LastSeen if
+	// it's too close to the previous one.
 	//
 	// Note that it is unindexed to avoid hotspotting the datastore, see
 	// https://chromium.googlesource.com/infra/luci/luci-py/+/4e9aecba

@@ -18,11 +18,15 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/model"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // UpdateOp represents an operation of a bot updating the task it's running.
@@ -46,6 +50,58 @@ type UpdateOp struct {
 	trr *model.TaskRunResult
 	trs *model.TaskResultSummary
 	now time.Time
+}
+
+type UpdateTxnOutcome struct {
+	// Whether the bot should stop running the task.
+	MustStop bool
+}
+
+// UpdateTxn runs the transactional logic to update a single task.
+//
+// It is used to perform updates like reporting stdout, or cost, etc.
+// The update is not suppose to complete a task. Use CompleteTxn for that.
+func (m *managerImpl) UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOutcome, error) {
+	taskID := model.RequestKeyToTaskID(op.RequestKey, model.AsRunResult)
+	trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, op.RequestKey)}
+	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, op.RequestKey)}
+	switch err := datastore.Get(ctx, trr, trs); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "task %q not found", taskID)
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", taskID, err)
+	}
+
+	if trr.BotID != op.BotID {
+		return nil, status.Errorf(codes.InvalidArgument, "task %q is not running by bot %q", taskID, op.BotID)
+	}
+
+	if !trs.IsActive() {
+		// It's possible that the task is already abandoned (i.e. the task has
+		// completed with BOT_DIED or KILLED states). Inform the bot to stop
+		// running it.
+		logging.Debugf(ctx, "task %q is already completed with state %s", taskID, trs.State)
+		return &UpdateTxnOutcome{MustStop: true}, nil
+	}
+
+	toPut := []any{trr, trs}
+	op.trr = trr
+	op.trs = trs
+	op.now = clock.Now(ctx).UTC()
+
+	outputChunks, err := m.runUpdateTxn(ctx, op)
+	if err != nil {
+		logging.Errorf(ctx, "failed to update task %q: %s", taskID, err)
+		return nil, status.Errorf(codes.Internal, "failed to update task %q", taskID)
+	}
+	for _, oc := range outputChunks {
+		toPut = append(toPut, oc)
+	}
+	if err := datastore.Put(ctx, toPut...); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update task %q: %s", taskID, err)
+	}
+
+	return &UpdateTxnOutcome{MustStop: trr.Killing}, nil
 }
 
 // runUpdateTxn performs the shared updates on task result entities for both
