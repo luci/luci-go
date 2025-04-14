@@ -88,6 +88,16 @@ that can be found in the LICENSE file. -->
         </div>
       </nav>
       {{end}}
+      {{if .IntegratedUI }}
+      <div class="alert alert-primary alert-dismissible fade show my-4" role="alert">
+        Auth Service has a new UI.
+        <a class="alert-link" href="{{ .IntegratedUI }}" target="_blank">
+          Try it out here!
+        </a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        </button>
+      </div>
+      {{end}}
       <div class="container-md px-0 my-4">
         <div class="d-flex flex-column justify-content-center">{{template "content" .}}</div>
       </div>
