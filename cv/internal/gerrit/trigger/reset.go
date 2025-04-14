@@ -459,13 +459,14 @@ func (c *change) removeVote(ctx context.Context, accountID int64, mode run.Mode)
 
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
-			Number:     c.Number,
-			Project:    c.Project,
-			RevisionId: c.Revision,
-			Labels:     c.votesToRemove[accountID],
-			Tag:        mode.GerritMessageTag(),
-			Notify:     gerritpb.Notify_NOTIFY_NONE,
-			OnBehalfOf: accountID,
+			Number:                           c.Number,
+			Project:                          c.Project,
+			RevisionId:                       c.Revision,
+			Labels:                           c.votesToRemove[accountID],
+			Tag:                              mode.GerritMessageTag(),
+			Notify:                           gerritpb.Notify_NOTIFY_NONE,
+			OnBehalfOf:                       accountID,
+			IgnoreAutomaticAttentionSetRules: true,
 		}, opt)
 		switch grpcutil.Code(gerritErr) {
 		case codes.NotFound:
