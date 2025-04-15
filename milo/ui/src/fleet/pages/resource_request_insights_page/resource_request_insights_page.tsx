@@ -13,16 +13,10 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import {
-  Alert,
-  Checkbox,
-  CircularProgress,
-  MenuItem,
-  MenuList,
-} from '@mui/material';
+import { Alert, CircularProgress } from '@mui/material';
 import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -37,17 +31,11 @@ import {
   FilterCategoryData,
   OptionComponent,
 } from '@/fleet/components/filter_dropdown/filter_dropdown';
-import {
-  filtersUpdater,
-  getFilters,
-  GetFiltersResult,
-} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { SelectedOptions } from '@/fleet/types';
 import { toIsoString } from '@/fleet/utils/dates';
 import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -57,7 +45,9 @@ import {
   ResourceRequest_Status,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { DateFilter } from './date_filter';
 import { RriSummaryHeader } from './rri_summary_header';
+import { Filters, useRriFilters } from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -175,6 +165,7 @@ const getOrderByParamFromSortModel = (sortModel: GridSortModel) => {
   if (sortModel.length !== 1) {
     return '';
   }
+
   const sortColumn = sortModel[0];
   if (sortColumn.sort === 'asc') {
     return sortColumn.field;
@@ -215,14 +206,35 @@ const getOrderByDto = (sortModel: GridSortModel) => {
   return `${sortColumnKey} desc`;
 };
 
-interface ResourceRequestInsightsOptionComponentProps {
-  onSelectedOptionsChange: (x: SelectedOptions) => void;
+export interface ResourceRequestInsightsOptionComponentProps {
+  option: RriFilterOption;
+  filters: Filters;
+  onFiltersChange: (x: Filters) => void;
+  onClose: () => void;
 }
 interface RriFilterOption {
   label: string;
   value: string;
   optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
 }
+
+const filterOpts: RriFilterOption[] = [
+  {
+    label: 'RR ID',
+    value: 'rr_id',
+    optionsComponent: () => <h1>RR ID</h1>,
+  },
+  {
+    label: 'Resource Details',
+    value: 'resource_details',
+    optionsComponent: () => <h1>Resource Details</h1>,
+  },
+  {
+    label: 'Material Sourcing Target Delivery Date',
+    value: 'material_sourcing_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+];
 
 export const ResourceRequestListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -234,95 +246,35 @@ export const ResourceRequestListPage = () => {
 
   const sortModel = getSortModelFromOrderByParam(orderByParam);
 
-  // Hardcoding filter options
-  const [selectedOptions, setSelectedOptions] = useState<GetFiltersResult>(
-    getFilters(searchParams),
-  );
+  const [filters, aipString, setFilters] = useRriFilters();
 
-  const isSelected = (category: string, value: string) => {
-    if (!selectedOptions.filters) return false;
-    if (!selectedOptions.filters[category]) return false;
-    return selectedOptions.filters[category].includes(value);
-  };
+  const [currentFilters, setCurrentFilters] = useState<Filters>(filters);
 
-  const flipOption = (category: string, value: string) => {
-    let newSelectedOptions = selectedOptions.filters;
+  const clearSelections = useCallback(() => {
+    setCurrentFilters(filters);
+  }, [setCurrentFilters, filters]);
 
-    if (!newSelectedOptions) {
-      newSelectedOptions = { [category]: [value] };
-    } else {
-      if (isSelected(category, value)) {
-        newSelectedOptions[category] = newSelectedOptions[category].filter(
-          (v) => v !== value,
-        );
-      } else {
-        newSelectedOptions[category] = [
-          ...(newSelectedOptions[category] ?? []),
-          value,
-        ];
-      }
-    }
+  const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
+    filterOpts.map((option) => {
+      return {
+        label: option.label,
+        value: option.value,
+        getSearchScore: (searchQuery: string) => {
+          const [score, matches] = fuzzySubstring(searchQuery, option.label);
+          return { score: score, matches: matches };
+        },
+        optionsComponent: option.optionsComponent,
+        optionsComponentProps: {
+          option: option,
+          filters: currentFilters,
+          onFiltersChange: setCurrentFilters,
+          onClose: clearSelections,
+        },
+      };
+    });
 
-    onSelectedOptionsChange(newSelectedOptions);
-  };
-
-  const filterOpts: RriFilterOption[] = [
-    {
-      label: 'RR ID',
-      value: 'rr_id',
-      optionsComponent: () => (
-        <>
-          <MenuList>
-            {['filter 1', 'filter 2', 'filter 3'].map((filterName) => (
-              <MenuItem
-                key={filterName}
-                selected={isSelected('rr_id', filterName)}
-                onClick={() => flipOption('rr_id', filterName)}
-              >
-                <Checkbox
-                  sx={{
-                    padding: 0,
-                    marginRight: '13px',
-                  }}
-                  size="small"
-                  checked={isSelected('rr_id', filterName)}
-                  tabIndex={-1}
-                />
-                {filterName}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </>
-      ),
-    },
-    {
-      label: 'Resource Details',
-      value: 'resource_details',
-      optionsComponent: () => <h1>Resource Details</h1>,
-    },
-  ];
-
-  const getFilterCategoryDatas =
-    (): FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] => {
-      return filterOpts.map((option) => {
-        return {
-          label: option.label,
-          value: option.value,
-          getSearchScore: (searchQuery: string) => {
-            const [score, matches] = fuzzySubstring(searchQuery, option.label);
-            return { score: score, matches: matches };
-          },
-          optionsComponent: option.optionsComponent,
-          optionsComponentProps: {
-            onSelectedOptionsChange: onSelectedOptionsChange,
-          },
-        };
-      });
-    };
-
-  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    setSelectedOptions({ filters: newSelectedOptions, error: undefined });
-    setSearchParams(filtersUpdater(newSelectedOptions));
+  const onApplyFilters = () => {
+    setFilters(currentFilters);
 
     // Clear out all the page tokens when the filter changes.
     // An AIP-158 page token is only valid for the filter
@@ -339,14 +291,14 @@ export const ResourceRequestListPage = () => {
 
   const query = useQuery(
     client.ListResourceRequests.query({
-      filter: '', // TODO: b/396079336 add filtering
+      filter: aipString, // TODO: b/396079336 add filtering
       orderBy: getOrderByDto(sortModel),
       pageSize: pagerCtx.options.defaultPageSize,
       pageToken: getPageToken(pagerCtx, searchParams),
     }),
   );
 
-  if (selectedOptions.error || query.isError) {
+  if (query.isError) {
     return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
   }
 
@@ -385,8 +337,8 @@ export const ResourceRequestListPage = () => {
         }}
       >
         <FilterButton
-          filterOptions={getFilterCategoryDatas()}
-          onApply={() => {}}
+          filterOptions={filterCategoryDatas}
+          onApply={onApplyFilters}
           isLoading={query.isLoading}
         />
       </div>
