@@ -49,7 +49,9 @@ func (*metricsServer) ListForProject(ctx context.Context, req *pb.ListProjectMet
 	result := &pb.ListProjectMetricsResponse{}
 	for _, m := range metrics.ComputedMetrics {
 		projectMetric := m.AdaptToProject(project, cfg.Config.Metrics)
-		result.Metrics = append(result.Metrics, toProjectMetricPB(projectMetric))
+		if projectMetric.Config.ShowInMetricsSelector {
+			result.Metrics = append(result.Metrics, toProjectMetricPB(projectMetric))
+		}
 	}
 	return result, nil
 }

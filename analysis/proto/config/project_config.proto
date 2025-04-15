@@ -102,6 +102,10 @@ message Metrics {
     // followed by the metric with second highest sort priority,
     // and so on.
     optional int32 sort_priority = 3;
+
+    // Controls whether the metric should be shown in the metrics
+    // selector in the LUCI MILO UI.
+    optional bool show_in_metrics_selector = 4;
   }
 
   // Overrides to the default metrics configuration for a project.

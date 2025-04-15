@@ -42,8 +42,9 @@ var (
 		HumanReadableName: "User Cls Failed Presubmit",
 		Description:       "The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in a cluster.",
 		DefaultConfig: Configuration{
-			SortPriority: 400,
-			IsDefault:    true,
+			SortPriority:          400,
+			IsDefault:             true,
+			ShowInMetricsSelector: true,
 		},
 		// Human presubmit full-runs failed due to a failure in the cluster.
 		//
@@ -71,8 +72,9 @@ var (
 		HumanReadableName: "Presubmit-blocking Verdicts Exonerated",
 		Description:       "The number of presubmit-blocking test verdicts which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree.",
 		DefaultConfig: Configuration{
-			SortPriority: 500,
-			IsDefault:    true,
+			SortPriority:          500,
+			IsDefault:             true,
+			ShowInMetricsSelector: true,
 		},
 
 		// Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
@@ -92,7 +94,8 @@ var (
 		HumanReadableName: "Test Runs Failed",
 		Description:       "The number of distinct test runs (i.e. swarming tasks or builds) failed due to failures in a cluster.",
 		DefaultConfig: Configuration{
-			SortPriority: 200,
+			SortPriority:          200,
+			ShowInMetricsSelector: true,
 		},
 		FilterSQL: `f.is_test_run_blocked`,
 		CountSQL:  `f.test_run_id`,
@@ -107,8 +110,9 @@ var (
 		HumanReadableName: "Test Results Failed",
 		Description:       "The total number of test results in a cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
 		DefaultConfig: Configuration{
-			SortPriority: 100,
-			IsDefault:    true,
+			SortPriority:          100,
+			IsDefault:             true,
+			ShowInMetricsSelector: true,
 		},
 	}.Build()
 
@@ -121,7 +125,8 @@ var (
 			"(i.e. all attempts of a test variant within a single swarming task failed) because of flaky test variants. " +
 			" To be considered flaky, the test variant must have seen at least one flaky verdict on the same branch in the last 24 hours.",
 		DefaultConfig: Configuration{
-			SortPriority: 300,
+			SortPriority:          300,
+			ShowInMetricsSelector: true,
 		},
 		// Criteria:
 		// - The test result's build is part of a gardener rotation, and
@@ -143,7 +148,8 @@ var (
 		Description: "The number of failures in this cluster that has filtered test runs being attributed to them," +
 			" which means those failures caused some tests to be filtered out in the test scheduler.",
 		DefaultConfig: Configuration{
-			SortPriority: 350,
+			SortPriority:          350,
+			ShowInMetricsSelector: true,
 		},
 		RequireAttrs: true,
 		FilterSQL:    "attrs.attributed_filtered_run_count > 0",
@@ -153,9 +159,10 @@ var (
 	BuildsWithFlakesInPresubmit = metricBuilder{
 		ID:                "builds-with-flakes-in-presubmit",
 		HumanReadableName: "Builds with Flakes in Presubmit",
-		Description: "The total number of builds with at least one flaky test verdict in presubmit, due to this cluster.",
+		Description:       "The total number of builds with at least one flaky test verdict in presubmit, due to this cluster.",
 		DefaultConfig: Configuration{
-			SortPriority: 250,
+			SortPriority:          250,
+			ShowInMetricsSelector: false,
 		},
 		// Criteria:
 		// - A test fails and then passes upon retry in the same invocation
@@ -274,6 +281,9 @@ type Configuration struct {
 
 	// IsDefault indicates whether this metric is shown by default in the UI.
 	IsDefault bool
+
+	// ShowInMetricsSelector indicates whether this metric will be shown in the metrics selector in the LUCI milo UI.
+	ShowInMetricsSelector bool
 }
 
 // BaseDefinition represents the built-in definition of a metric.
@@ -358,6 +368,9 @@ func (m BaseDefinition) AdaptToProject(project string, cfg *configpb.Metrics) De
 		}
 		if overrides.SortPriority != nil {
 			config.SortPriority = int(*overrides.SortPriority)
+		}
+		if overrides.ShowInMetricsSelector != nil {
+			config.ShowInMetricsSelector = *overrides.ShowInMetricsSelector
 		}
 	}
 	return Definition{

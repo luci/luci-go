@@ -14,4 +14,4 @@
 
 package configpb
 
-//go:generate cproto
+//go:generate cproto -use-grpc-plugin

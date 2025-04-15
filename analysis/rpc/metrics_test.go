@@ -140,6 +140,84 @@ func TestMetrics(t *testing.T) {
 				assert.Loosely(t, clsFailedPresubmitMetric.IsDefault, should.BeFalse)
 				assert.Loosely(t, clsFailedPresubmitMetric.SortPriority, should.Equal(1000))
 			})
+
+			t.Run("Metrics can be shown and hidden by default", func(t *ftt.Test) {
+				response, err := server.ListForProject(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				validateResponse(response)
+
+				// Assert the metric BuildsWithFlakesInPresubmit is not present.
+				var buildsWithFlakesInPresubmit *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.BuildsWithFlakesInPresubmit.ID.String() {
+						buildsWithFlakesInPresubmit = metric
+					}
+				}
+				assert.Loosely(t, buildsWithFlakesInPresubmit, should.BeNil)
+				// Assert the metric HumanClsFailedPresubmit is present.
+				var clsFailedPresubmitMetric *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.HumanClsFailedPresubmit.ID.String() {
+						clsFailedPresubmitMetric = metric
+					}
+				}
+				assert.Loosely(t, clsFailedPresubmitMetric, should.NotBeNil)
+			})
+
+			t.Run("Configuration can be used to hide a metric", func(t *ftt.Test) {
+				// Pick some metric that is shown by default and hide it.
+				assert.Loosely(t, metrics.HumanClsFailedPresubmit.DefaultConfig.ShowInMetricsSelector, should.BeTrue)
+				projectCfg.Metrics.Overrides[0] = &configpb.Metrics_MetricOverride{
+					MetricId:              metrics.HumanClsFailedPresubmit.ID.String(),
+					IsDefault:             proto.Bool(false),
+					SortPriority:          proto.Int32(1000),
+					ShowInMetricsSelector: proto.Bool(false),
+				}
+				configs["testproject"] = projectCfg
+				// Save the config.
+				err := config.SetTestProjectConfig(ctx, configs)
+				assert.Loosely(t, err, should.BeNil)
+
+				response, err := server.ListForProject(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				validateResponse(response)
+
+				// Assert the metric HumanClsFailedPresubmit is no longer present.
+				var clsFailedPresubmitMetric *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.HumanClsFailedPresubmit.ID.String() {
+						clsFailedPresubmitMetric = metric
+					}
+				}
+				assert.Loosely(t, clsFailedPresubmitMetric, should.BeNil)
+			})
+
+			t.Run("Configuration can be used to show a metric", func(t *ftt.Test) {
+				// Pick some metric that is hidden by default and show it.
+				assert.Loosely(t, metrics.HumanClsFailedPresubmit.DefaultConfig.ShowInMetricsSelector, should.BeTrue)
+				projectCfg.Metrics.Overrides[0] = &configpb.Metrics_MetricOverride{
+					MetricId:              metrics.BuildsWithFlakesInPresubmit.ID.String(),
+					ShowInMetricsSelector: proto.Bool(true),
+				}
+				configs["testproject"] = projectCfg
+				// Save the config.
+				err := config.SetTestProjectConfig(ctx, configs)
+				assert.Loosely(t, err, should.BeNil)
+
+				response, err := server.ListForProject(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				validateResponse(response)
+
+				// Assert the metric BuildsWithFlakesInPresubmit is present.
+				var buildsWithFlakesInPresubmit *pb.ProjectMetric
+				for _, metric := range response.Metrics {
+					if metric.MetricId == metrics.BuildsWithFlakesInPresubmit.ID.String() {
+						buildsWithFlakesInPresubmit = metric
+					}
+				}
+				assert.Loosely(t, buildsWithFlakesInPresubmit, should.NotBeNil)
+			})
+
 			t.Run("No project config", func(t *ftt.Test) {
 				configs := make(map[string]*configpb.ProjectConfig)
 				err := config.SetTestProjectConfig(ctx, configs)
