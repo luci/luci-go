@@ -17,21 +17,15 @@ package jobcreate
 import (
 	"context"
 	"net/http"
-	"path"
 	"sort"
-	"strconv"
-	"strings"
 
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 
 	"go.chromium.org/luci/led/job"
@@ -83,8 +77,7 @@ func setPriority(build *bbpb.Build, priorityDiff int) {
 // given NewTaskRequest.
 //
 // If the task's first slice looks like either a bbagent or kitchen-based
-// Buildbucket task, the returned Definition will have the `buildbucket`
-// field populated, otherwise the `swarming` field will be populated.
+// Buildbucket task, returns an error; otherwise the `swarming` field will be populated.
 func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, extraTags []string, authClient *http.Client) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
@@ -94,37 +87,8 @@ func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name,
 	name = "led: " + name
 
 	switch detectMode(r) {
-	case "bbagent":
-		bb := &job.Buildbucket{}
-		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
-		// TODO(crbug.com/1219018): use bbCommonFromTaskRequest only in the long
-		// bbagent arg case.
-		// Discussion: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3511002/comments/0daf496b_2c8ba5a2
-		bbCommonFromTaskRequest(bb, r)
-		cmd := r.TaskSlices[0].Properties.Command
-		switch {
-		case len(cmd) == 2:
-			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
-			bb.UpdateBuildFromBbagentArgs()
-		case bld != nil:
-			bb.BbagentArgs = bbagentArgsFromBuild(bld)
-		default:
-			bb.BbagentArgs, err = getBbagentArgsFromCMD(ctx, cmd, authClient)
-			bb.UpdateBuildFromBbagentArgs()
-		}
-
-		// This check is only here because of bbCommonFromTaskRequest.
-		// TODO(crbug.com/1219018): remove this check after bbCommonFromTaskRequest
-		// is only used for long bbagent arg case.
-		if bb.BbagentDownloadCIPDPkgs() {
-			bb.CipdPackages = nil
-		}
-
-	case "kitchen":
-		bb := &job.Buildbucket{LegacyKitchen: true}
-		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
-		bbCommonFromTaskRequest(bb, r)
-		err = ks.FromSwarmingV2(ctx, r, bb)
+	case "bbagent", "kitchen":
+		return nil, errors.New(`"led get-swarm" has stopped supporting Buildbucket builds. Use "led get-builder" or "led get-build" instead.`)
 
 	case "raw":
 		// non-Buildbucket Swarming task
@@ -135,68 +99,6 @@ func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name,
 
 	default:
 		panic("impossible")
-	}
-
-	if bb := ret.GetBuildbucket(); err == nil && bb != nil {
-		bb.Name = name
-		bb.FinalBuildProtoPath = "build.proto.json"
-
-		// set all buildbucket type tasks to experimental by default.
-		bb.BbagentArgs.Build.Input.Experimental = true
-
-		setPriority(bb.BbagentArgs.Build, priorityDiff)
-
-		// clear fields which don't make sense
-		bb.BbagentArgs.Build.CanceledBy = ""
-		bb.BbagentArgs.Build.CreatedBy = ""
-		bb.BbagentArgs.Build.CreateTime = nil
-		bb.BbagentArgs.Build.Id = 0
-		bb.BbagentArgs.Build.Infra.Buildbucket.Hostname = ""
-		bb.BbagentArgs.Build.Infra.Buildbucket.RequestedProperties = nil
-		bb.BbagentArgs.Build.Infra.Logdog.Prefix = ""
-		bb.BbagentArgs.Build.Infra.Swarming.TaskId = ""
-		bb.BbagentArgs.Build.Number = 0
-		bb.BbagentArgs.Build.Status = 0
-		bb.BbagentArgs.Build.UpdateTime = nil
-
-		bb.BbagentArgs.Build.Tags = nil
-		if len(extraTags) > 0 {
-			tags := make([]*bbpb.StringPair, 0, len(extraTags))
-			for _, tag := range extraTags {
-				k, v := strpair.Parse(tag)
-				tags = append(tags, &bbpb.StringPair{
-					Key:   k,
-					Value: v,
-				})
-			}
-			sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
-			bb.BbagentArgs.Build.Tags = tags
-		}
-
-		// drop the executable path; it's canonically represented by
-		// out.BBAgentArgs.PayloadPath and out.BBAgentArgs.Build.Exe.
-		if exePath := bb.BbagentArgs.ExecutablePath; exePath != "" {
-			// convert to new mode
-			payload, arg := path.Split(exePath)
-			bb.BbagentArgs.ExecutablePath = ""
-			bb.UpdatePayloadPath(strings.TrimSuffix(payload, "/"))
-			bb.BbagentArgs.Build.Exe.Cmd = []string{arg}
-		}
-
-		if !bb.BbagentDownloadCIPDPkgs() {
-			dropRecipePackage(&bb.CipdPackages, bb.PayloadPath())
-		}
-
-		props := bb.BbagentArgs.GetBuild().GetInput().GetProperties()
-		// everything in here is reflected elsewhere in the Build and will be
-		// re-synthesized by kitchen support or the recipe engine itself, depending
-		// on the final kitchen/bbagent execution mode.
-		delete(props.GetFields(), "$recipe_engine/runtime")
-
-		// drop legacy recipe fields
-		if recipe := bb.BbagentArgs.Build.Infra.Recipe; recipe != nil {
-			bb.BbagentArgs.Build.Infra.Recipe = nil
-		}
 	}
 
 	// ensure isolate/rbe-cas source consistency
@@ -216,34 +118,6 @@ func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name,
 
 	if ret.GetSwarming() != nil {
 		ret.GetSwarming().CasUserPayload = casUserPayload
-	}
-	if ret.GetBuildbucket() != nil {
-		// `led get-builder` is still using swarmingbucket.get_task_def, so
-		// we need to fill in the data to ret.GetBuildbucket() for its builds.
-		// TODO(crbug.com/1345722): remove this after we migrate away from
-		// swarmingbucket.get_task_def.
-		payloadPath := ret.GetBuildbucket().BbagentArgs.PayloadPath
-		updates := &bbpb.BuildInfra_Buildbucket_Agent{
-			Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
-				Data: map[string]*bbpb.InputDataRef{
-					payloadPath: {
-						DataType: &bbpb.InputDataRef_Cas{
-							Cas: &bbpb.InputDataRef_CAS{
-								CasInstance: casUserPayload.GetCasInstance(),
-								Digest: &bbpb.InputDataRef_CAS_Digest{
-									Hash:      casUserPayload.GetDigest().GetHash(),
-									SizeBytes: casUserPayload.GetDigest().GetSizeBytes(),
-								},
-							},
-						},
-					},
-				},
-			},
-			Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
-				payloadPath: bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-			},
-		}
-		ret.GetBuildbucket().UpdateBuildbucketAgent(updates)
 	}
 
 	return ret, err
@@ -269,68 +143,6 @@ func populateCasPayload(cas *swarmingpb.CASReference, cir *swarmingpb.CASReferen
 	}
 
 	return nil
-}
-
-func getBbagentArgsFromCMD(ctx context.Context, cmd []string, authClient *http.Client) (*bbpb.BBAgentArgs, error) {
-	var hostname string
-	var bID int64
-	for i, s := range cmd {
-		switch {
-		case s == "-host" && i < len(cmd)-1:
-			hostname = cmd[i+1]
-		case s == "-build-id" && i < len(cmd)-1:
-			var err error
-			if bID, err = strconv.ParseInt(cmd[i+1], 10, 64); err != nil {
-				return nil, errors.Annotate(err, "cmd -build-id").Err()
-			}
-		}
-	}
-	if hostname == "" && bID == 0 {
-		// This could happen if the cmd was for a led build like
-		// `bbagent${EXECUTABLE_SUFFIX} --output ${ISOLATED_OUTDIR}/build.proto.json <encoded bbinput>`
-		return bbinput.Parse(cmd[len(cmd)-1])
-	}
-	if hostname == "" {
-		return nil, errors.New("host is required in cmd")
-	}
-	if bID == 0 {
-		return nil, errors.New("build-id is required in cmd")
-	}
-	bbclient := bbpb.NewBuildsPRPCClient(&prpc.Client{
-		C:    authClient,
-		Host: hostname,
-	})
-	bld, err := bbclient.GetBuild(ctx, &bbpb.GetBuildRequest{
-		Id: bID,
-		Mask: &bbpb.BuildMask{
-			Fields: &fieldmaskpb.FieldMask{
-				Paths: []string{
-					"builder",
-					"infra",
-					"input",
-					"scheduling_timeout",
-					"execution_timeout",
-					"grace_period",
-					"exe",
-					"tags",
-				},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	return bbagentArgsFromBuild(bld), nil
-}
-
-// TODO(crbug.com/1098551): Invert this and make led use the build proto directly.
-func bbagentArgsFromBuild(bld *bbpb.Build) *bbpb.BBAgentArgs {
-	return &bbpb.BBAgentArgs{
-		PayloadPath:            bld.Infra.Bbagent.PayloadPath,
-		CacheDir:               bld.Infra.Bbagent.CacheDir,
-		KnownPublicGerritHosts: bld.Infra.Buildbucket.KnownPublicGerritHosts,
-		Build:                  bld,
-	}
 }
 
 // FromBuild generates a new job.Definition using the provided Build.

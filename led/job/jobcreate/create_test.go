@@ -22,12 +22,9 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"google.golang.org/protobuf/types/known/durationpb"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -102,87 +99,5 @@ func TestCreateSwarmRaw(t *testing.T) {
 			assert.Loosely(t, jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), should.BeNil)
 			assert.Loosely(t, jd.GetSwarming().GetTask().GetResultdb().GetEnable(), should.BeTrue)
 		})
-	})
-}
-
-func TestCreateBBagent(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run(`consume bbagent buildbucket swarming task with RBE-CAS prop`, t, func(t *ftt.Test) {
-		jd := readTestFixture(t, "bbagent_cas")
-
-		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
-		assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("chromium-swarm-dev.appspot.com"))
-		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
-	})
-
-	ftt.Run(`consume bbagent buildbucket swarming task with build`, t, func(t *ftt.Test) {
-		bld := &bbpb.Build{
-			Builder: &bbpb.BuilderID{
-				Project: "project",
-				Bucket:  "bucket",
-				Builder: "builder",
-			},
-			Infra: &bbpb.BuildInfra{
-				Bbagent: &bbpb.BuildInfra_BBAgent{
-					PayloadPath:            "path",
-					CacheDir:               "dir",
-					KnownPublicGerritHosts: []string{"host"},
-				},
-				Swarming: &bbpb.BuildInfra_Swarming{
-					Priority: 25,
-				},
-				Buildbucket: &bbpb.BuildInfra_Buildbucket{
-					KnownPublicGerritHosts: []string{"host"},
-				},
-				Logdog: &bbpb.BuildInfra_LogDog{},
-			},
-			Input:             &bbpb.Build_Input{},
-			Exe:               &bbpb.Executable{},
-			SchedulingTimeout: durationpb.New(time.Hour),
-			ExecutionTimeout:  durationpb.New(2 * time.Hour),
-			GracePeriod:       durationpb.New(time.Minute),
-			Tags: []*bbpb.StringPair{
-				{
-					Key:   "k",
-					Value: "v",
-				},
-			},
-		}
-		data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", "bbagent_cas"))
-		assert.Loosely(t, err, should.BeNil)
-
-		req := &swarmingpb.NewTaskRequest{}
-		assert.Loosely(t, json.NewDecoder(bytes.NewReader(data)).Decode(req), should.BeNil)
-		req.TaskSlices[0].Properties.Command = []string{
-			"bbagent${EXECUTABLE_SUFFIX}",
-			"-host",
-			"cr-buildbucket.appspot.com",
-			"-build-id",
-			"123"}
-
-		jd, err := FromNewTaskRequest(
-			context.Background(), req,
-			"test_name", "swarming.example.com",
-			job.NoKitchenSupport(), 10, bld, []string{"k:v"}, nil)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, jd, should.NotBeNil)
-
-		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
-		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
-		assert.Loosely(t, jd.GetBuildbucket().BbagentArgs, should.Match(&bbpb.BBAgentArgs{
-			PayloadPath:            bld.Infra.Bbagent.PayloadPath,
-			CacheDir:               bld.Infra.Bbagent.CacheDir,
-			KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,
-			Build:                  bld,
-		}))
-	})
-
-	ftt.Run(`consume bbagent buildbucket swarming task led job`, t, func(t *ftt.Test) {
-		jd := readTestFixture(t, "bbagent_led")
-
-		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
-		assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("chromium-swarm-dev.appspot.com"))
-		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
 	})
 }
