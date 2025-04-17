@@ -16,7 +16,7 @@ import styled from '@emotion/styled';
 import { Alert, CircularProgress } from '@mui/material';
 import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -47,7 +47,7 @@ import {
 
 import { DateFilter } from './date_filter';
 import { RriSummaryHeader } from './rri_summary_header';
-import { Filters, useRriFilters } from './use_rri_filters';
+import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -78,7 +78,7 @@ const mapFulfillmentStatus = (
   }
 };
 
-const columns: ColumnDescriptor[] = [
+const columns = [
   {
     id: 'rr_id',
     gridColDef: {
@@ -152,7 +152,9 @@ const columns: ColumnDescriptor[] = [
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.configEndDate),
   },
-] as const;
+] as const satisfies readonly ColumnDescriptor[];
+
+export type ResourceRequestColumnKey = (typeof columns)[number]['id'];
 
 const DEFAULT_SORT_COLUMN: ColumnDescriptor =
   columns.find((c) => c.id === 'rr_id') ?? columns[0];
@@ -208,33 +210,43 @@ const getOrderByDto = (sortModel: GridSortModel) => {
 
 export interface ResourceRequestInsightsOptionComponentProps {
   option: RriFilterOption;
-  filters: Filters;
-  onFiltersChange: (x: Filters) => void;
+  filters: RriFilters | undefined;
+  onFiltersChange: (x: RriFilters) => void;
   onClose: () => void;
 }
 interface RriFilterOption {
   label: string;
-  value: string;
+  value: RriFilterKey;
   optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
 }
 
-const filterOpts: RriFilterOption[] = [
+const filterOpts = [
   {
     label: 'RR ID',
     value: 'rr_id',
     optionsComponent: () => <h1>RR ID</h1>,
   },
   {
-    label: 'Resource Details',
-    value: 'resource_details',
-    optionsComponent: () => <h1>Resource Details</h1>,
-  },
-  {
     label: 'Material Sourcing Target Delivery Date',
     value: 'material_sourcing_target_delivery_date',
     optionsComponent: DateFilter,
   },
-];
+  {
+    label: 'Build Target Delivery Date',
+    value: 'build_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+  {
+    label: 'QA Target Delivery Date',
+    value: 'qa_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+  {
+    label: 'Config Target Delivery Date',
+    value: 'config_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+] as const satisfies readonly RriFilterOption[];
 
 export const ResourceRequestListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -248,7 +260,11 @@ export const ResourceRequestListPage = () => {
 
   const [filters, aipString, setFilters] = useRriFilters();
 
-  const [currentFilters, setCurrentFilters] = useState<Filters>(filters);
+  const [currentFilters, setCurrentFilters] = useState<RriFilters | undefined>(
+    filters,
+  );
+
+  useEffect(() => setCurrentFilters(filters), [filters]);
 
   const clearSelections = useCallback(() => {
     setCurrentFilters(filters);
@@ -270,7 +286,7 @@ export const ResourceRequestListPage = () => {
           onFiltersChange: setCurrentFilters,
           onClose: clearSelections,
         },
-      };
+      } satisfies FilterCategoryData<ResourceRequestInsightsOptionComponentProps>;
     });
 
   const onApplyFilters = () => {

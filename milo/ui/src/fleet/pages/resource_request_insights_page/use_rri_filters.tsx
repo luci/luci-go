@@ -18,9 +18,11 @@ import { toIsoString } from '@/fleet/utils/dates';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
+import { ResourceRequestColumnKey } from './resource_request_insights_page';
+
 const FILTERS_PARAM_KEY = 'filters';
 
-type DateFilter = {
+export type DateFilterData = {
   min?: DateOnly;
   max?: DateOnly;
 };
@@ -28,18 +30,23 @@ type DateFilter = {
 const filterDescriptors = {
   rr_id: 'string',
   material_sourcing_target_delivery_date: 'date-range',
-} as const;
+  build_target_delivery_date: 'date-range',
+  qa_target_delivery_date: 'date-range',
+  config_target_delivery_date: 'date-range',
+} as const satisfies Partial<
+  Record<ResourceRequestColumnKey, 'string' | 'date-range'>
+>;
 
-type FilterKey = keyof typeof filterDescriptors;
+export type RriFilterKey = keyof typeof filterDescriptors;
 
-type MapDescriptorToType<T extends string> = T extends 'string'
-  ? string
-  : T extends 'date-range'
-    ? DateFilter
-    : never;
+type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
+  string: string;
+  'string-array': string[];
+  'date-range': DateFilterData;
+}[T];
 
-export type Filters = {
-  [K in FilterKey]?: MapDescriptorToType<(typeof filterDescriptors)[K]>;
+export type RriFilters = {
+  [K in RriFilterKey]?: MapDescriptorToType<(typeof filterDescriptors)[K]>;
 };
 
 const parseDateOnly = (
@@ -56,10 +63,28 @@ const parseDateOnly = (
   } as DateOnly;
 };
 
-const getFiltersFromSearchParam = (searchParams: URLSearchParams): Filters => {
+const parseDateOnlyFromUrl = (
+  filterDict: Record<string, string>,
+  key: RriFilterKey,
+): DateFilterData | undefined => {
+  const min = parseDateOnly(filterDict[`${key}_min`]);
+  const max = parseDateOnly(filterDict[`${key}_max`]);
+
+  if (!min && !max) {
+    return undefined;
+  }
+  return {
+    min: min,
+    max: max,
+  };
+};
+
+const getFiltersFromSearchParam = (
+  searchParams: URLSearchParams,
+): RriFilters | undefined => {
   const paramValue = searchParams.get(FILTERS_PARAM_KEY);
   if (paramValue === null) {
-    return { material_sourcing_target_delivery_date: {} };
+    return undefined;
   }
   const rec = paramValue.split(' ').reduce(
     (acc, part) => {
@@ -73,30 +98,37 @@ const getFiltersFromSearchParam = (searchParams: URLSearchParams): Filters => {
     {} as Record<string, string>,
   );
 
-  const filters: Filters = {
-    rr_id: rec.rr_id,
-    material_sourcing_target_delivery_date: {
-      min:
-        parseDateOnly(rec.material_sourcing_target_delivery_date_min) ??
-        undefined,
-      max:
-        parseDateOnly(rec.material_sourcing_target_delivery_date_max) ??
-        undefined,
-    },
-  };
-  return filters;
+  return {
+    rr_id: undefined, // TODO: apply when rr_id filter is implemented
+    material_sourcing_target_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'material_sourcing_target_delivery_date',
+    ),
+    build_target_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'build_target_delivery_date',
+    ),
+    qa_target_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'qa_target_delivery_date',
+    ),
+    config_target_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'config_target_delivery_date',
+    ),
+  } satisfies Record<RriFilterKey, unknown>;
 };
 
-const filtersToUrlString = (filters: Filters): string => {
+const filtersToUrlString = (filters: RriFilters): string => {
   const parts: string[] = [];
-  for (const key of Object.keys(filterDescriptors) as FilterKey[]) {
+  for (const key of Object.keys(filterDescriptors) as RriFilterKey[]) {
     if (!(key in filters)) {
       continue;
     }
 
     const type = filterDescriptors[key];
     if (type === 'date-range') {
-      const filter = filters[key] as DateFilter;
+      const filter = filters[key] as DateFilterData;
       if (filter.min) {
         parts.push(`${key}_min=${toIsoString(filter.min)}`);
       }
@@ -114,9 +146,9 @@ const filtersToUrlString = (filters: Filters): string => {
   return parts.join(' ');
 };
 
-const filtersToAip = (filters: Filters): string => {
+const filtersToAip = (filters: RriFilters): string => {
   const parts: string[] = [];
-  for (const key of Object.keys(filterDescriptors) as FilterKey[]) {
+  for (const key of Object.keys(filterDescriptors) as RriFilterKey[]) {
     if (!(key in filters)) {
       continue;
     }
@@ -124,7 +156,10 @@ const filtersToAip = (filters: Filters): string => {
     const type = filterDescriptors[key];
 
     if (type === 'date-range') {
-      const filter = filters[key] as DateFilter;
+      const filter = filters[key] as DateFilterData | undefined;
+      if (!filter) {
+        continue;
+      }
       if (filter.min) {
         parts.push(
           `${key} > ${toIsoString(filter.min)}`, // TODO: replace with GTE
@@ -137,7 +172,10 @@ const filtersToAip = (filters: Filters): string => {
       }
     }
     if (type === 'string') {
-      const filter = filters[key] as string;
+      const filter = filters[key] as string | undefined;
+      if (!filter) {
+        continue;
+      }
       if (filter) {
         parts.push(`${key} = ${filter}`);
       }
@@ -146,10 +184,13 @@ const filtersToAip = (filters: Filters): string => {
   return parts.join(' AND ');
 };
 
-function filtersUpdater(newFilters: Filters) {
+function filtersUpdater(newFilters: RriFilters | undefined) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
-    if (Object.keys(newFilters).length === 0) {
+    if (
+      !newFilters ||
+      Object.values(newFilters).filter((x) => x).length === 0
+    ) {
       searchParams.delete(FILTERS_PARAM_KEY);
     } else {
       searchParams.set(FILTERS_PARAM_KEY, filtersToUrlString(newFilters));
@@ -166,11 +207,11 @@ export const useRriFilters = () => {
     [searchParams],
   );
 
-  const setFilters = (newSelectedOptions: Filters) => {
-    setSearchParams(filtersUpdater(newSelectedOptions));
+  const setFilters = (newFilters: RriFilters | undefined) => {
+    setSearchParams(filtersUpdater(newFilters));
   };
 
-  const aipString = filtersToAip(filters);
+  const aipString = filters ? filtersToAip(filters) : '';
 
   return [filters, aipString, setFilters] as const;
 };

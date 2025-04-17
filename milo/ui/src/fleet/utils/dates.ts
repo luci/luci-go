@@ -23,6 +23,34 @@ export const toIsoString = (dateOnly: DateOnly | undefined): string => {
   return `${dateOnly.year}-${String(dateOnly.month).padStart(2, '0')}-${String(dateOnly.day).padStart(2, '0')}`;
 };
 
+export const toLuxonDateTime = (
+  dateOnly: DateOnly | undefined,
+): DateTime | undefined => {
+  if (!dateOnly) {
+    return undefined;
+  }
+
+  return DateTime.fromObject({
+    year: dateOnly.year,
+    month: dateOnly.month,
+    day: dateOnly.day,
+  });
+};
+
+export const fromLuxonDateTime = (
+  dateTime: DateTime | null | undefined,
+): DateOnly | undefined => {
+  if (!dateTime) {
+    return undefined;
+  }
+
+  return {
+    year: dateTime.year,
+    month: dateTime.month,
+    day: dateTime.day,
+  };
+};
+
 export const prettyDateTime = (dt: string | undefined): string => {
   if (!dt) {
     return '';
