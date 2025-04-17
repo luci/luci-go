@@ -376,14 +376,15 @@ const getInnerCardRefPositions = (
 ) => {
   const anchorRect = anchorEl?.getBoundingClientRect();
   const outerMenuRect = anchorElInner?.getBoundingClientRect();
+  const outerMenuParentWidth =
+    anchorElInner?.parentElement?.getBoundingClientRect().width;
 
-  if (!anchorRect) return;
-  if (!outerMenuRect) return;
+  if (!anchorRect || !outerMenuRect || !outerMenuParentWidth) return;
 
   const anchorParentRect = anchorEl?.parentElement?.getBoundingClientRect();
 
   const newInnerCardRefPosition = {
-    left: `${anchorRect.left - (anchorParentRect?.left || 0) + outerMenuRect.width + 15}px`,
+    left: `${anchorRect.left - (anchorParentRect?.left || 0) + outerMenuParentWidth}px`,
     top: '',
     bottom: '',
   };
