@@ -423,7 +423,7 @@ export function TextAutocomplete<T>({
             <OptionsDropdown
               className="options-dropdown"
               sx={{
-                boxShadow: focused || showingOptions ? 10 : 0,
+                boxShadow: focused || showingOptions ? 2 : 0,
                 top: `-${height}px`,
                 paddingTop: `${height - 2}px`,
               }}
