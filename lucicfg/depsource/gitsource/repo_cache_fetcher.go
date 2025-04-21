@@ -50,6 +50,8 @@ import (
 //
 // Returns ErrMissingObject if `commit` or `commit:pkgRoot` are unknown.
 func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, prefetch func(kind ObjectKind, pkgRelPath string) bool) (*GitFetcher, error) {
+	ctx = r.prepDebugContext(ctx)
+
 	if r.repoRoot == "" {
 		return nil, errors.New("gitsource.RepoCache must be constructed with gitsource.New")
 	}
@@ -110,7 +112,9 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 			switch entry.kind {
 			case BlobKind:
 				if ok {
-					logging.Debugf(ctx, "prefetching %s - %s", entryPath, entry.hash)
+					if r.debugLogs {
+						logging.Debugf(ctx, "prefetching %s - %s", entryPath, entry.hash)
+					}
 					ret.allowedBlobPaths.Add(pkgRelPath)
 					hashes = append(hashes, entry.hash)
 				}

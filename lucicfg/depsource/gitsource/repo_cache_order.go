@@ -25,6 +25,8 @@ func (r *RepoCache) isAncestor(ctx context.Context, a, b string) (bool, error) {
 }
 
 func (r *RepoCache) Order(ctx context.Context, ref string, commits []string) ([]string, error) {
+	ctx = r.prepDebugContext(ctx)
+
 	if err := r.prefetchMultiple(ctx, commits, "--filter=blob:none", "--depth=1"); err != nil {
 		return nil, err
 	}

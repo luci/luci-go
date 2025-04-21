@@ -34,7 +34,7 @@ func mkRepoRaw(t testing.TB) string {
 func mkRepo(t *testing.T, prefetch ...string) *RepoCache {
 	t.Helper()
 
-	cache, err := New(t.TempDir())
+	cache, err := New(t.TempDir(), testing.Verbose())
 	assert.NoErr(t, err, truth.LineContext())
 
 	ret, err := cache.ForRepo(context.Background(), mkRepoRaw(t))

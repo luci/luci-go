@@ -134,7 +134,9 @@ func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string, 
 
 	if len(toFetch) > 0 {
 		// now fire off a single fetch to pull all of these hashes in.
-		logging.Debugf(ctx, "bulk fetching %d objects\n", fetchCount)
+		if r.debugLogs {
+			logging.Debugf(ctx, "bulk fetching %d objects\n", fetchCount)
+		}
 		args := []string{
 			"-c", "fetch.negotiationAlgorithm=noop",
 			"fetch", "origin", "--no-tags", "--no-write-fetch-head",

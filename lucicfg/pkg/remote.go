@@ -93,7 +93,7 @@ func (r *RemoteRepoManager) init() error {
 			if err != nil {
 				return err
 			}
-			cache, err := gitsource.New(dir)
+			cache, err := gitsource.New(dir, false) // TODO: Allow opt-in for debug logs.
 			if err != nil {
 				return err
 			}

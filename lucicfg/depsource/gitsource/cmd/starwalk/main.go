@@ -54,6 +54,7 @@ var (
 	pkgRoot      = flag.String("pkg-root", "", "(required) The root directory of the lucicfg package.")
 	entrypoint   = flag.String("tree", "", "(required) Path to star-file entrypoint.")
 	output       = flag.String("output", "", "(required) Path to the output. Output must be empty or not exist.")
+	verbose      = flag.Bool("verbose", false, "(optional) turn on verbose logs.")
 	orderCommits stringlistflag.Flag
 )
 
@@ -188,7 +189,7 @@ func main() {
 	ctx = gologger.StdConfig.Use(ctx)
 	ctx = logging.SetLevel(ctx, logging.Debug)
 
-	cache := must(gitsource.New(must(filepath.Abs(*cacheRoot))))
+	cache := must(gitsource.New(must(filepath.Abs(*cacheRoot)), *verbose))
 	repo := must(cache.ForRepo(ctx, *remoteUrl))
 
 	if len(orderCommits) > 0 {

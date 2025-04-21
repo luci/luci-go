@@ -35,6 +35,8 @@ var _ depsource.Fetcher = (*GitFetcher)(nil)
 //
 // Returns ErrObjectNotPrefetched if the object wasn't prefetched.
 func (g *GitFetcher) Read(ctx context.Context, pkgRelPath string) ([]byte, error) {
+	ctx = g.r.prepDebugContext(ctx)
+
 	if cleaned := path.Clean(pkgRelPath); pkgRelPath != cleaned {
 		return nil, fmt.Errorf("pkgRelPath is not clean: %q (cleaned=%q)", pkgRelPath, cleaned)
 	}

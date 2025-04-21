@@ -38,6 +38,8 @@ func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byt
 // This IS a cached operation, however it may be as slow as fetching many files
 // via [RepoCache.Fetcher]'s prefetch function.
 func (r *RepoCache) ReadSingleFile(ctx context.Context, commit, path string) ([]byte, error) {
+	ctx = r.prepDebugContext(ctx)
+
 	// notably, this does NOT have --no-lazy-fetch.
 	output, err := r.gitCombinedOutput(ctx, "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
 	if err == nil {

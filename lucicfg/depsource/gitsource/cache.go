@@ -26,6 +26,8 @@ import (
 	"path/filepath"
 	"slices"
 	"sync"
+
+	"go.chromium.org/luci/common/logging"
 )
 
 // Cache maintains all state related to an on-disk cache for one or more
@@ -43,6 +45,7 @@ import (
 // separated.
 type Cache struct {
 	cacheRoot string
+	debugLogs bool
 
 	repos   map[string]*RepoCache
 	reposMu sync.RWMutex
@@ -53,14 +56,29 @@ type Cache struct {
 // `cacheRoot` should be a possibly empty (possibly missing) directory. If the
 // directory exists, the Cache will write a new subdirectory for each ForRepo
 // call with a unique url.
-func New(cacheRoot string) (*Cache, error) {
+//
+// If `debugLogs` is true, the Cache and related objects will produce fairly
+// prodigious debugging logs via luci logging.Debugf and directly to
+// stderr for internal git commands. Otherwise, the Cache and related
+// objects won't log at all.
+func New(cacheRoot string, debugLogs bool) (*Cache, error) {
 	if !filepath.IsAbs(cacheRoot) {
 		return nil, fmt.Errorf("cacheRoot is not absolute: %q", cacheRoot)
 	}
 	if cleaned := filepath.Clean(cacheRoot); cacheRoot != cleaned {
 		return nil, fmt.Errorf("cacheRoot is not clean: %q (cleaned=%q)", cacheRoot, cleaned)
 	}
-	return &Cache{cacheRoot: cacheRoot}, os.MkdirAll(cacheRoot, 0777)
+	return &Cache{
+		cacheRoot: cacheRoot,
+		debugLogs: debugLogs,
+	}, os.MkdirAll(cacheRoot, 0777)
+}
+
+func (c *Cache) prepDebugContext(ctx context.Context) context.Context {
+	if c.debugLogs {
+		return ctx
+	}
+	return logging.SetLevel(ctx, logging.Info)
 }
 
 // ForRepo returns a repo-specific cache object which allows you to create new
@@ -75,6 +93,8 @@ func New(cacheRoot string) (*Cache, error) {
 // Calling ForRepo multiple times with the same `url` will return an identical
 // *RepoCache.
 func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
+	ctx = c.prepDebugContext(ctx)
+
 	if c.cacheRoot == "" {
 		return nil, errors.New("gitsource.Cache must be constructed with gitsource.New")
 	}
@@ -96,7 +116,7 @@ func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
 	io.WriteString(h, url)
 	id := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 
-	ret, err := newRepoCache(filepath.Join(c.cacheRoot, id))
+	ret, err := newRepoCache(filepath.Join(c.cacheRoot, id), c.debugLogs)
 	if err != nil {
 		return nil, err
 	}

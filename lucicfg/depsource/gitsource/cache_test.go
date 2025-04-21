@@ -35,7 +35,7 @@ func TestCache(t *testing.T) {
 		tdir := t.TempDir()
 		cachePath := filepath.Join(tdir, "cache")
 
-		_, err := New(cachePath)
+		_, err := New(cachePath, testing.Verbose())
 		assert.NoErr(t, err)
 
 		finfo, err := os.Stat(cachePath)
@@ -46,7 +46,7 @@ func TestCache(t *testing.T) {
 	t.Run("not abs", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := New("hello")
+		_, err := New("hello", testing.Verbose())
 		assert.ErrIsLike(t, err, "not absolute")
 	})
 
@@ -58,7 +58,7 @@ func TestCache(t *testing.T) {
 			pth = "c:" + pth
 		}
 
-		_, err := New(pth)
+		_, err := New(pth, testing.Verbose())
 		assert.ErrIsLike(t, err, "not clean")
 	})
 }
@@ -71,7 +71,7 @@ func TestCacheForRepo(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		sharedCacheDir := t.TempDir()
 
-		cache, err := New(sharedCacheDir)
+		cache, err := New(sharedCacheDir, testing.Verbose())
 		assert.NoErr(t, err)
 
 		ctx := context.Background()
@@ -92,7 +92,7 @@ func TestCacheForRepo(t *testing.T) {
 		})
 
 		t.Run("second cache, existing repo", func(t *testing.T) {
-			cache2, err := New(sharedCacheDir)
+			cache2, err := New(sharedCacheDir, testing.Verbose())
 			assert.NoErr(t, err)
 
 			repo2, err := cache2.ForRepo(ctx, tempRepo)

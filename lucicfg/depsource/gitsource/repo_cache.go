@@ -32,6 +32,8 @@ type RepoCache struct {
 	// path/to/<Cache.repoRoot>/<sha256(remoteUrl)>
 	repoRoot string
 
+	debugLogs bool
+
 	// batchProc will reject missing blobs
 	batchProc batchProc
 }
@@ -45,8 +47,8 @@ func (r *RepoCache) Shutdown() {
 	r.batchProc.shutdown()
 }
 
-func newRepoCache(repoRoot string) (*RepoCache, error) {
-	ret := &RepoCache{repoRoot: repoRoot}
+func newRepoCache(repoRoot string, debugLogs bool) (*RepoCache, error) {
+	ret := &RepoCache{repoRoot: repoRoot, debugLogs: debugLogs}
 
 	if err := os.MkdirAll(ret.repoRoot, 0777); err != nil {
 		return nil, fmt.Errorf("making root dir: %w", err)
@@ -56,13 +58,21 @@ func newRepoCache(repoRoot string) (*RepoCache, error) {
 	return ret, nil
 }
 
+// prepDebugContext increases the logging level to Info if debugLogs is false.
+func (r *RepoCache) prepDebugContext(ctx context.Context) context.Context {
+	if r.debugLogs {
+		return ctx
+	}
+	return logging.SetLevel(ctx, logging.Info)
+}
+
 func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
 	fullArgs := append([]string{"--git-dir"}, r.repoRoot)
 	fullArgs = append(fullArgs, args...)
 	ret := exec.CommandContext(ctx, "git", fullArgs...)
-	logging.Debugf(ctx, "running: %s", ret)
-	if logging.GetLevel(ctx) <= logging.Debug {
-		ret.Stdout = os.Stdout
+	if r.debugLogs {
+		logging.Debugf(ctx, "running: %s", ret)
+		ret.Stdout = os.Stderr
 		ret.Stderr = os.Stderr
 	}
 	return ret
