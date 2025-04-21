@@ -48,6 +48,8 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/claim"
     service: default-go
+  - url: "*/swarming/api/v1/bot/server_ping"
+    service: default-go
 
   # Serve global config validation using Go.
   - url: "*/prpc/config.Consumer/*"
