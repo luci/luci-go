@@ -16,8 +16,6 @@ package pkg
 
 import (
 	"context"
-	"io"
-	"path"
 	"strings"
 	"sync"
 
@@ -115,29 +113,8 @@ type remoteRepoImpl struct {
 
 // Fetch implements Repo.
 func (r *remoteRepoImpl) Fetch(ctx context.Context, rev string, repoPath string) ([]byte, error) {
-	dir, file := path.Split(repoPath)
-	dir = path.Clean(dir)
-	file = path.Clean(file)
-
-	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, dir, func(kind gitsource.ObjectKind, pkgRelPath string) bool {
-		return kind == gitsource.BlobKind && pkgRelPath == file
-	})
-	switch {
-	case errors.Is(err, gitsource.ErrMissingObject):
-		return nil, errors.Reason("%s doesn't not contain %q", r.repoKey, rev).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath).Err()
-	}
-
-	switch reader, err := fetcher.Read(ctx, file); {
-	case errors.Is(err, gitsource.ErrObjectNotPrefetched):
-		return nil, ErrFileNotInRepo
-	case err != nil:
-		return nil, errors.Annotate(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath).Err()
-	default:
-		defer func() { _ = reader.Close() }()
-		return io.ReadAll(reader)
-	}
+	dat, err := r.repoCache.ReadSingleFile(ctx, rev, repoPath)
+	return dat, errors.Annotate(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath).Err()
 }
 
 // IsOverride implements Repo.
@@ -178,8 +155,7 @@ func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, 
 			case err != nil:
 				return nil, err
 			default:
-				defer func() { _ = r.Close() }()
-				return io.ReadAll(r)
+				return r, nil
 			}
 		},
 	}), nil

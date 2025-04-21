@@ -16,7 +16,6 @@ package gitsource
 
 import (
 	"context"
-	"io"
 	"strings"
 	"testing"
 
@@ -87,13 +86,9 @@ func TestReadPrefetch(t *testing.T) {
 	_, _, err = repo.batchProc.catFile(context.Background(), "fa70b1cd267f69a7a6ea237364ae3b71907b5005")
 	assert.NoErr(t, err)
 
-	reader, err := fetcher.Read(context.Background(), "PACKAGE.star")
+	dat, err := fetcher.Read(context.Background(), "PACKAGE.star")
 	assert.NoErr(t, err)
-	defer reader.Close()
-
-	allDat, err := io.ReadAll(reader)
-	assert.NoErr(t, err)
-	assert.Loosely(t, allDat, should.HaveLength(123))
+	assert.Loosely(t, dat, should.HaveLength(123))
 }
 
 func TestReadPrefetchMissingBlob(t *testing.T) {

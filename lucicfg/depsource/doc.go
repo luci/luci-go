@@ -18,7 +18,6 @@ package depsource
 
 import (
 	"context"
-	"io"
 )
 
 // Fetcher describes the core depsource API.
@@ -34,5 +33,5 @@ import (
 //   - [go.chromium.org/luci/lucicfg/depsource/filesource] - Manages fetching of
 //     local file data.
 type Fetcher interface {
-	Read(ctx context.Context, pkgRelPath string) (io.ReadCloser, error)
+	Read(ctx context.Context, pkgRelPath string) ([]byte, error)
 }

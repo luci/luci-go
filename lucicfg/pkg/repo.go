@@ -72,10 +72,6 @@ const PinnedVersion = "@pinned"
 // the overridden (local) version will always be used.
 const OverriddenVersion = "@overridden"
 
-// ErrFileNotInRepo is wrapped and returned by Repo.Fetch if the requested file
-// is not in the repository.
-var ErrFileNotInRepo = errors.New("no such file")
-
 // RepoKey identifies a repository.
 //
 // It is either a remote repository or a local root package repository (which
@@ -170,7 +166,7 @@ type Repo interface {
 	IsOverride() bool
 	// PickMostRecent returns the most recent version from the given list.
 	PickMostRecent(ctx context.Context, vers []string) (string, error)
-	// Fetch fetches a single file at some revision. May return ErrFileNotInRepo.
+	// Fetch fetches a single file at some revision.
 	Fetch(ctx context.Context, rev, path string) ([]byte, error)
 	// Loader fetches package files and returns a loader with them.
 	Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error)
@@ -257,14 +253,11 @@ func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, er
 	if rev != r.Version {
 		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
 	}
-	switch blob, err := os.ReadFile(filepath.Join(r.Root, filepath.FromSlash(path))); {
-	case errors.Is(err, os.ErrNotExist):
-		return nil, errors.Annotate(ErrFileNotInRepo, "local file: %s", path).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "local file %s", path).Err()
-	default:
-		return blob, nil
+	blob, err := os.ReadFile(filepath.Join(r.Root, filepath.FromSlash(path)))
+	if err != nil {
+		return nil, errors.Annotate(err, "local file: %s", path).Err()
 	}
+	return blob, nil
 }
 
 // Loader is a part of Repo interface.
@@ -382,14 +375,11 @@ func (r *TestRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	switch blob, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path))); {
-	case errors.Is(err, os.ErrNotExist):
-		return nil, errors.Annotate(ErrFileNotInRepo, "repository file: %s", path).Err()
-	case err != nil:
+	blob, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
+	if err != nil {
 		return nil, errors.Annotate(err, "repository file %s", path).Err()
-	default:
-		return blob, nil
 	}
+	return blob, nil
 }
 
 // LoaderValidator is a part of Repo interface.

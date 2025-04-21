@@ -17,6 +17,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"slices"
 	"strings"
@@ -202,7 +203,8 @@ func TestDiscoverDeps(t *testing.T) {
 			},
 		})
 		// TODO: Add more context to the error.
-		assert.That(t, err, should.ErrLike("local file: local/missing/PACKAGE.star: no such file"))
+		assert.That(t, err, should.ErrLike("local file: local/missing/PACKAGE.star"))
+		assert.That(t, err, should.ErrLike(os.ErrNotExist))
 	})
 
 	t.Run("Local only: loading wrong package", func(t *testing.T) {

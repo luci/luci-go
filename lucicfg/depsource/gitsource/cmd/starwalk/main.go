@@ -24,7 +24,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -226,7 +225,7 @@ func main() {
 		processed.Add(item)
 		logging.Debugf(ctx, "processing: %q", item)
 
-		data := must(io.ReadAll(must(fetcher.Read(ctx, item))))
+		data := must(fetcher.Read(ctx, item))
 		outPath := filepath.Join(*output, item)
 		if err := os.MkdirAll(filepath.Dir(outPath), 0777); err != nil {
 			panic(err)

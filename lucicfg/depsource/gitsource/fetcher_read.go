@@ -15,22 +15,26 @@
 package gitsource
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"path"
+
+	"go.chromium.org/luci/lucicfg/depsource"
 )
 
-var ErrMissingObject = errors.New("object is missing")
-var ErrObjectNotPrefetched = errors.New("object was not prefeched")
+var (
+	ErrMissingCommit       = errors.New("commit is missing")
+	ErrMissingObject       = errors.New("object is missing")
+	ErrObjectNotPrefetched = errors.New("object was not prefeched")
+)
 
-// Read implements depsource.Fetcher, and returns a reader over the bytes of the
-// blob indicated by pkgRelPath.
+var _ depsource.Fetcher = (*GitFetcher)(nil)
+
+// Read returns the bytes of the blob indicated by pkgRelPath.
 //
 // Returns ErrObjectNotPrefetched if the object wasn't prefetched.
-func (g *GitFetcher) Read(ctx context.Context, pkgRelPath string) (io.ReadCloser, error) {
+func (g *GitFetcher) Read(ctx context.Context, pkgRelPath string) ([]byte, error) {
 	if cleaned := path.Clean(pkgRelPath); pkgRelPath != cleaned {
 		return nil, fmt.Errorf("pkgRelPath is not clean: %q (cleaned=%q)", pkgRelPath, cleaned)
 	}
@@ -42,5 +46,5 @@ func (g *GitFetcher) Read(ctx context.Context, pkgRelPath string) (io.ReadCloser
 	if err != nil {
 		return nil, err
 	}
-	return io.NopCloser(bytes.NewReader(data)), nil
+	return data, nil
 }

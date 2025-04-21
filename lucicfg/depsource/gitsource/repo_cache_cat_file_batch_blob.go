@@ -15,6 +15,7 @@
 package gitsource
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 )
@@ -28,4 +29,24 @@ func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byt
 		return nil, fmt.Errorf("not a blob: %s", kind)
 	}
 	return data, nil
+}
+
+// ReadSingleFile will read a single blob `commit:path`.
+//
+// Note that `path` is relative to the commit root.
+//
+// This IS a cached operation, however it may be as slow as fetching many files
+// via [RepoCache.Fetcher]'s prefetch function.
+func (r *RepoCache) ReadSingleFile(ctx context.Context, commit, path string) ([]byte, error) {
+	// notably, this does NOT have --no-lazy-fetch.
+	output, err := r.gitCombinedOutput(ctx, "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
+	if err == nil {
+		return output, nil
+	}
+	if bytes.Contains(output, []byte("not our ref")) {
+		err = ErrMissingCommit
+	} else if bytes.Contains(output, []byte("does not exist")) {
+		err = ErrMissingObject
+	}
+	return nil, err
 }

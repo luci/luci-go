@@ -35,3 +35,19 @@ func TestCatFileBatchBlob(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.That(t, dat, should.Match([]byte("This file is completely unrelated, and is outside of subdir.\n")))
 }
+
+func TestReadSingleFile(t *testing.T) {
+	t.Parallel()
+
+	repo := mkRepo(t)
+
+	dat, err := repo.ReadSingleFile(context.Background(), "ba5f5f958d0c29033c262df7a8507aa9df47f337", "subdir/PACKAGE.star")
+	assert.NoErr(t, err)
+	assert.Loosely(t, dat, should.HaveLength(177))
+
+	_, err = repo.ReadSingleFile(context.Background(), "ba5f5f958d0c29033c262df7a8507aa9df47f337", "I/do/not/exist")
+	assert.ErrIsLike(t, err, ErrMissingObject)
+
+	_, err = repo.ReadSingleFile(context.Background(), "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "I/do/not/exist")
+	assert.ErrIsLike(t, err, ErrMissingCommit)
+}
