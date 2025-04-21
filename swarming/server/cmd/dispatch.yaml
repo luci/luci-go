@@ -2,8 +2,6 @@ dispatch:
   # Serve RPC Explorer using Go.
   - url: "*/rpcexplorer/*"
     service: default-go
-  - url: "*/prpc/discovery.Discovery/*"
-    service: default-go
 
   # Serve Swarming RBE endpoints using Go.
   - url: "*/swarming/api/v1/bot/rbe/*"
@@ -21,14 +19,12 @@ dispatch:
   - url: "*/auth/openid/*"
     service: default-go
 
+  #  APIs served via Python.
+  - url: "*/prpc/swarming.internals.rbe.Internals/*"
+    service: default
+
   # APIs served via Go (perhaps proxying to Python).
-  - url: "*/prpc/swarming.v2.Bots/*"
-    service: default-go
-  - url: "*/prpc/swarming.v2.Tasks/*"
-    service: default-go
-  - url: "*/prpc/swarming.v2.Swarming/*"
-    service: default-go
-  - url: "*/prpc/buildbucket.v2.TaskBackend/*"
+  - url: "*/prpc/*"
     service: default-go
 
   # Bot APIs served via Go (perhaps proxying to Python).
@@ -49,8 +45,4 @@ dispatch:
   - url: "*/swarming/api/v1/bot/claim"
     service: default-go
   - url: "*/swarming/api/v1/bot/server_ping"
-    service: default-go
-
-  # Serve global config validation using Go.
-  - url: "*/prpc/config.Consumer/*"
     service: default-go
