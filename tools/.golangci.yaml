@@ -18,12 +18,10 @@ issues:
   max-same-issues: 0
 
 formatters:
-  enable:
-    - gci
-  settings:
-    # https://golangci-lint.run/usage/formatters/#gci
+  # https://golangci-lint.run/usage/formatters/#gci
+  gci:
     custom-order: true
-    gci:
+    sections:
       # All standard packages.
       - standard
       # All packages that didn't fit other categories, usually third party.
