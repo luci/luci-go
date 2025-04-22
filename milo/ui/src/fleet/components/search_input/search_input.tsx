@@ -26,6 +26,7 @@ export function SearchInput({
   searchInput,
   searchQuery,
   onChange,
+  style,
   ...textFieldProps
 }: SearchInputProps) {
   return (
@@ -37,6 +38,7 @@ export function SearchInput({
         alignItems: 'center',
         gap: 15,
         padding: '0 10px',
+        ...style,
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

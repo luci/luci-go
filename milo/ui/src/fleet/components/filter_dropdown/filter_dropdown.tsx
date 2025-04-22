@@ -252,6 +252,7 @@ export function FilterDropdown<T>({
               minWidth: 200,
               maxHeight: 400,
               overflow: 'auto',
+              paddingTop: 0,
             }}
             onKeyDown={(e) => {
               keyboardUpDownHandler(e);
@@ -276,8 +277,13 @@ export function FilterDropdown<T>({
                 setSearchQuery(e.currentTarget.value);
               }}
               key="search-input"
-              sx={{
+              style={{
+                paddingTop: 8,
                 marginBottom: '10px',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: colors.white,
+                zIndex: 1,
               }}
             />
             {isLoading ? (
