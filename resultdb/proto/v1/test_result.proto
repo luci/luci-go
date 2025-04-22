@@ -37,7 +37,7 @@ option java_multiple_files = true;
 // This message does not specify the test id.
 // It should be available in the message that embeds this message.
 //
-// Next id: 17.
+// Next id: 23.
 message TestResult {
   reserved 11;  // test_location
 
@@ -90,6 +90,8 @@ message TestResult {
   // Output only. (Except for legacy uploaders.)
   Variant variant = 4 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
+  // DEPRECATED: Replaced by `status_v2` enum.
+  //
   // Whether the result of test case execution is expected.
   // In a typical Chromium CL, 99%+ of test results are expected.
   // Users are typically interested only in the unexpected results.
@@ -99,9 +101,99 @@ message TestResult {
   // with the expected one(s) and this field is the result of the comparison.
   bool expected = 5 [(google.api.field_behavior) = IMMUTABLE];
 
+  // DEPRECATED: Replaced by `status_v2` enum.
+  //
   // Machine-readable status of the test case.
   // MUST NOT be STATUS_UNSPECIFIED.
   TestStatus status = 6 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The machine-readable test result statuses (v2).
+  //
+  // These high-level categories are further refined:
+  // - for failing tests, by the failure_reason.kind.
+  // - for skipped tests, by the skipped_reason.kind.
+  //
+  // Web test users: Refer to framework_extensions.web_tests for the original
+  // test status reported by the web test harness. The status in this
+  // field is the logical test status, not the original status. E.g. for
+  // an expected failure, we record PASSED, not FAILED.
+  enum Status {
+    // Status was not specified. Do not use.
+    STATUS_UNSPECIFIED = 0;
+
+    // The test case has passed.
+    PASSED = 1;
+
+    // The test case has failed.
+    // Suggests that the code under test is incorrect, but it is also possible
+    // that the test is incorrect or it is a flake.
+    //
+    // If a test failed to complete due to an error that is not the fault of
+    // this test's content, use the status EXECUTION_ERRORED (for errors specific
+    // to this test) or PRECLUDED (for errors at a higher-level) instead.
+    //
+    // If you specify this status, you must also populate the failure_reason.kind field.
+    FAILED = 2;
+
+    // The test case did not, *and should not*, run to completion in this
+    // configuration.
+    //
+    // For example:
+    // - The test is disabled in code
+    // - The test assumptions are not met (e.g. JUnit assumption failure
+    //   or Tast test hardware dependency unmet)
+    // - The test was not stable enough to in presubmit right now.
+    //
+    // If a test was not run or not run to completion due to an error, use the
+    // status EXECUTION_ERRORED (for test-level errors) or PRECLUDED
+    // (for higher-level errors) instead.
+    //
+    // If you specify this status, you must also populate the skipped_reason field.
+    SKIPPED = 3;
+
+    // The test did not run to completion, because an infrastructure error
+    // precluded it from doing so.
+    //
+    // Infrastructure here is broadly defined, to mean "not the content
+    // of this test".
+    //
+    // For example:
+    // - The test ran, but the result file could not be parsed.
+    // - A file this test depends on could not be downloaded.
+    //
+    // Sometimes it is ambiguous whether test content is at fault or not.
+    // For example, loss of SSH connection during the test could be because
+    // the test caused a kernel panic or because of a flaky ethernet adapter.
+    // Judgement is required. If unsure, use EXECUTION_ERRORED status instead
+    // of FAIL to avoid falsely inflating the flakiness rate of a test.
+    //
+    // Results with this status should be ignored when calculating the flake
+    // and failure rates of the test.
+    //
+    // Currently, there is no dedicated 'reason' field for this status;
+    // please just include a suitable description in the result `summary_html`.
+    EXECUTION_ERRORED = 4;
+
+    // The test did not run to completion, because its execution is precluded
+    // by an error at a higher-level. For example, a work unit-level timeout.
+    //
+    // If you report this status, you must report an error on the containing
+    // work unit. If this restriction is changed in future to allow preclusion
+    // by other sources (e.g. a class fixture failed to setup so the tests in
+    // using it could not run), a preclusion reason field will be added to
+    // capture this.
+    //
+    // Results with this status should be ignored when calculating the flake
+    // and failure rates of the test.
+    //
+    // Currently, there is no dedicated 'reason' field for this status; please
+    // include a suitable description in the result `summary_html`.
+    PRECLUDED = 5;
+  }
+
+  // Machine-readable status of the test case (v2).
+  // MUST NOT be STATUS_UNSPECIFIED.
+  Status status_v2 = 20;
 
   // Human-readable explanation of the result, in HTML.
   // MUST be sanitized before rendering in the browser.
@@ -144,7 +236,9 @@ message TestResult {
   // Information about the test at the time of its execution.
   TestMetadata test_metadata = 13;
 
-  // Information about the test failure. Only present if the test failed.
+  // Information about the test failure.
+  //
+  // MUST be set (and only set) when status_v2 is FAILED.
   FailureReason failure_reason = 14;
 
   // Arbitrary JSON object that contains structured, domain-specific properties
@@ -169,12 +263,143 @@ message TestResult {
   // Output only.
   bool is_masked = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
 
+  // Deprecated: Replaced by skipped_reason message.
   // Reasoning behind a test skip, in machine-readable form.
   // Used to assist downstream analyses, such as automatic bug-filing.
   // MUST not be set unless status is SKIP.
   SkipReason skip_reason = 18;
+
+  // Reason why a test was skipped.
+  // The contents of this message should help the user answer:
+  // Why was my test skipped? What can I do to stop it being skipped?
+  //
+  // MUST be set (and only set) when status_v2 is SKIPPED.
+  SkippedReason skipped_reason = 21;
+
+  // Test results framwork-specific data model elements.
+  FrameworkExtensions framework_extensions = 22;
 }
 
+// SkippedReason helps a developer answer the questions:
+// - Why was this test skipped?
+// - How do I stop it being skipped?
+message SkippedReason {
+  // Provides structured explanation for why a test was skipped.
+  // It must be populated when the status is SKIP.
+  // Open to extension.
+  enum Kind {
+    // Skipped reason was not specified. Do not use this value.
+    KIND_UNSPECIFIED = 0;
+
+    // Skipped by an annotation at the test declaration site.
+    //
+    // This includes:
+    // - JUnit4 @Ignore,
+    // - JUnit5 @Disabled, @DisabledIf/For/On... @EnabledIf/For/On...
+    //   annotations.
+    // - GoogleTest DISABLED_ text prefix.
+    // - Tast test skips from the declared software or hardware
+    //   dependencies being unsatisfied at runtime.
+    // and similar statically defined annotations at the test
+    // declaration site.
+    DISABLED_AT_DECLARATION = 1;
+
+    // Test body began to run but determined the test should
+    // not finish. For example, the test did not detect a valid
+    // environment meeting the test assumptions.
+    //
+    // This covers:
+    // - a JUnit4 or JUnit5 assumption failure in the body of a test,
+    //   from Assume.assumeThat(...) and similar methods.
+    // - Use of the GTEST_SKIP() macro within the body of a test.
+    // - Golang's t.Skip(...) in the body of a test.
+    SKIPPED_BY_TEST_BODY = 2;
+
+    // Used to indicate the test was skipped due to presubmit demotion
+    // (e.g. because the test was too flaky).
+    //
+    // You must specify a human-readable detail message if you use this status.
+    // Please explain the criteria that was met and how the user should get the
+    // test undemoted or reference a link that explains more.
+    DEMOTED = 3;
+
+    // The test was skipped by some other reason.
+    //
+    // This includes:
+    // - Blink web tests disabled in an expectation file.
+    //
+    // You must specify a human-readable detail message if you use this status.
+    OTHER = 4;
+  }
+  Kind kind = 1;
+
+  // A human-readable message providing more context or details about why the
+  // test was skipped. Limited to 1024 bytes of printable UTF-8.
+  //
+  // Required for skip kinds DEMOTED and OTHER, optional otherwise.
+  //
+  // For DISABLED_AT_DECLARATION, useful information would be:
+  // - For Tast, the Tast-provided skip reason (detailing the declared
+  //   hardware/software dependencies that were unmet).
+  //
+  // For SKIPPED_BY_TEST_BODY, useful information would be:
+  // - For JUnit, the JUnit assumption failure that led to the skip.
+  // - For GoogleTest, the file and line where the GTEST_SKIP() macro was
+  //   invoked and the message passed to it.
+  //
+  // For DEMOTED and OTHER, the criteria that led to the skip
+  // and how the user might get the test running again.
+  string reason_message = 2;
+}
+
+// Additional information about the test result in source test
+// framework-specific format. Data fields may be added here
+// before there is sufficient examples to create a standardised
+// representation, or to support bespoke harness-specific features.
+message FrameworkExtensions {
+  // The test status produced by the blink web test harness.
+  // This field supports web test rebaselining.
+  WebTest web_test = 1;
+}
+
+// Web Platform Test specific result data.
+message WebTest {
+  // An enumeration of web test status values.
+  enum Status {
+    // Status was not specified.
+    // Not to be used in actual test results; serves as a default value for an
+    // unset field.
+    STATUS_UNSPECIFIED = 0;
+
+    // The test case has passed.
+    PASS = 1;
+
+    // The test case has failed.
+    FAIL = 2;
+
+    // The test case has crashed during execution.
+    CRASH = 3;
+
+    // The test timed out.
+    TIMEOUT = 4;
+
+    // The test case did not execute.
+    SKIP = 5;
+  }
+
+  // Whether the test produced the expected result. Failed results may be
+  // expected and passed results unexpected, depending on if we expected
+  // the implementation (e.g. Blink) to conform with the web platform feature
+  // at this time.
+  // See https://chromium.googlesource.com/chromium/src/+/HEAD/docs/testing/web_test_expectations.md.
+  // See https://web-platform-tests.org/tools/wptrunner/docs/expectation.html.
+  bool is_expected = 1;
+
+  // The status of the test result.
+  Status status = 2;
+}
+
+// DEPRECATED: Use TestResult.Status instead.
 // Machine-readable status of a test result.
 enum TestStatus {
   // Status was not specified.
@@ -209,6 +434,7 @@ enum TestStatus {
   SKIP = 5;
 }
 
+// DEPRECATED: Use SkippedReason.Kind instead.
 // Machine-readable reason that a test execution was skipped.
 // Only reasons actually used are listed here, if you need a new reason
 // please add it here and send a CL to the OWNERS.

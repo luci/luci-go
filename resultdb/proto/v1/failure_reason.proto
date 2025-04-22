@@ -25,17 +25,34 @@ option java_multiple_files = true;
 // similar failures together.
 // For example, this will contain assertion failure messages and stack traces.
 message FailureReason {
-  // The error message that ultimately caused the test to fail. This should
-  // only be the error message and should not include any stack traces.
-  // An example would be the message from an Exception in a Java test.
-  // In the case that a test failed due to multiple expectation failures, any
-  // immediately fatal failure should be chosen, or otherwise the first
-  // expectation failure.
-  // If this field is empty, other fields (including those from the TestResult)
-  // may be used to cluster the failure instead.
+  // Kind defines the general category of the failure.
+  // Open to extension.
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // The test failed in an ordinary way (not captured by another status).
+    // Includes:
+    // - GoogleTest and JUnit assertion failures.
+    // - Golang *testing.T .Fail(), .Fatal(...) calls.
+    // - Web platform tests that did not produce the expected result,
+    //   for example, an unexpected pass or fail.
+    ORDINARY = 1;
+
+    // The test process crashed.
+    CRASH = 2;
+
+    // The test timed out.
+    TIMEOUT = 3;
+  }
+
+  // The general category of the failure. Required.
+  Kind kind = 4;
+
+  // The error message that ultimately caused the test to fail.
+  // Equal to errors[0].message, or blank if errors is unset.
   //
-  // The size of the message must be equal to or smaller than 1024 bytes in
-  // UTF-8.
+  // Output only. (For backwards compatibility, some clients are still
+  // allowed to set this, but new clients should set the errors field
+  // directly.)
   string primary_error_message = 1;
 
   // Error represents a problem that caused a test to fail, such as a crash
@@ -56,13 +73,10 @@ message FailureReason {
   //
   // If there is more than one error (e.g. due to multiple expectation failures),
   // a stable sorting should be used. A recommended form of stable sorting is:
-  // - Fatal errors (errors that cause the test to terminate immediately first,
+  // - Fatal errors (errors that cause the test to terminate immediately first),
   //   then
   // - Within fatal/non-fatal errors, sort by chronological order
   //   (earliest error first).
-  //
-  // Where this field is populated, errors[0].message shall match
-  // primary_error_message.
   //
   // The total combined size of all errors (as measured by proto.Size()) must
   // not exceed 3,172 bytes.
