@@ -18,23 +18,28 @@ issues:
   max-same-issues: 0
 
 formatters:
-  # https://golangci-lint.run/usage/linters/#gci
-  gci:
-    # Reorder import sections based on how they are ordered in `sections`.
-    custom-order: true
-    sections:
-      # All standard packages.
-      - standard
-      # All packages that didn't fit other categories, usually third party.
-      - default
-      # All other luci-go imports.
-      - prefix(go.chromium.org/luci)
-      # Imports from the local package tree.
-      - prefix(go.chromium.org/luci/tree_status)
-      # All blank (import "_" ...) imports.
-      - blank
-      # All dot (import ".' ...") imports.
-      - dot
+  enable:
+    - gci
+
+  settings:
+    # https://golangci-lint.run/usage/linters/#gci
+    gci:
+      # Reorder import sections based on how they are ordered in `sections`.
+      custom-order: true
+      sections:
+        # All standard packages.
+        - standard
+        # All packages that didn't fit other categories, usually third party.
+        - default
+        # All other luci-go imports.
+        - prefix(go.chromium.org/luci)
+        # Imports from the local package tree.
+        - prefix(go.chromium.org/luci/tree_status)
+        # All blank (import "_" ...) imports.
+        - blank
+        # All dot (import ".' ...") imports.
+        - dot
+
   exclusions:
     generated: lax
     paths:

@@ -18,20 +18,25 @@ issues:
   max-same-issues: 0
 
 formatters:
-  # https://golangci-lint.run/usage/formatters/#gci
-  gci:
-    custom-order: true
-    sections:
-      # All standard packages.
-      - standard
-      # All packages that didn't fit other categories, usually third party.
-      - default
-      # All luci-go imports.
-      - prefix(go.chromium.org/luci)
-      # All blank (import "_" ...) imports.
-      - blank
-      # All dot (import ".' ...") imports.
-      - dot
+  enable:
+    - gci
+
+  settings:
+    # https://golangci-lint.run/usage/formatters/#gci
+    gci:
+      custom-order: true
+      sections:
+        # All standard packages.
+        - standard
+        # All packages that didn't fit other categories, usually third party.
+        - default
+        # All luci-go imports.
+        - prefix(go.chromium.org/luci)
+        # All blank (import "_" ...) imports.
+        - blank
+        # All dot (import ".' ...") imports.
+        - dot
+
   exclusions:
     generated: lax
     paths:
