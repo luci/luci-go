@@ -27,7 +27,7 @@ export type DateFilterData = {
   max?: DateOnly;
 };
 
-const filterDescriptors = {
+export const filterDescriptors = {
   rr_id: 'string',
   material_sourcing_target_delivery_date: 'date-range',
   build_target_delivery_date: 'date-range',
@@ -128,11 +128,11 @@ const filtersToUrlString = (filters: RriFilters): string => {
 
     const type = filterDescriptors[key];
     if (type === 'date-range') {
-      const filter = filters[key] as DateFilterData;
-      if (filter.min) {
+      const filter = filters[key] as DateFilterData | undefined;
+      if (filter?.min) {
         parts.push(`${key}_min=${toIsoString(filter.min)}`);
       }
-      if (filter.max) {
+      if (filter?.max) {
         parts.push(`${key}_max=${toIsoString(filter.max)}`);
       }
     }

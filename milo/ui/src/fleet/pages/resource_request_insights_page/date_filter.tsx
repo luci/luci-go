@@ -12,6 +12,7 @@
 // limitations under the License.
 
 import { DatePicker } from '@mui/x-date-pickers';
+import { DateTime } from 'luxon';
 import { useEffect } from 'react';
 
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
@@ -19,6 +20,40 @@ import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 
 import { ResourceRequestInsightsOptionComponentProps } from './resource_request_insights_page';
 import { DateFilterData } from './use_rri_filters';
+
+interface CustomDatePickerProps {
+  label: string;
+  value: DateTime<true> | null;
+  onChange: (date: DateTime<true> | null) => void;
+}
+
+const CustomDatePicker = ({
+  label,
+  value,
+  onChange,
+}: CustomDatePickerProps) => {
+  return (
+    <div css={{ flex: 1 }}>
+      <DatePicker
+        label={label}
+        value={value}
+        onChange={onChange}
+        slotProps={{
+          field: {
+            clearable: true,
+          },
+          popper: {
+            sx: {
+              // if zIndex is not set it defaults to 1300, which is lower than the rest of the page and causes problems.
+              // it happened in nested menus (specifically selected chip component), where this is rendered below another menu
+              zIndex: 1500,
+            },
+          },
+        }}
+      />
+    </div>
+  );
+};
 
 export const DateFilter = ({
   optionComponentProps: { onFiltersChange, onClose, filters, option },
@@ -52,40 +87,26 @@ export const DateFilter = ({
         padding: '12px 8px',
       }}
     >
-      <div css={{ flex: 1 }}>
-        <DatePicker
-          label="From"
-          value={toLuxonDateTime(dateFilterData?.min) || null}
-          onChange={(date) => {
-            updateFilter({
-              min: fromLuxonDateTime(date),
-              max: dateFilterData?.max,
-            });
-          }}
-          slotProps={{
-            field: {
-              clearable: true,
-            },
-          }}
-        />
-      </div>
-      <div css={{ flex: 1 }}>
-        <DatePicker
-          label="To"
-          value={toLuxonDateTime(dateFilterData?.max) || null}
-          onChange={(date) => {
-            updateFilter({
-              min: dateFilterData?.min,
-              max: fromLuxonDateTime(date),
-            });
-          }}
-          slotProps={{
-            field: {
-              clearable: true,
-            },
-          }}
-        />
-      </div>
+      <CustomDatePicker
+        label={'From'}
+        value={toLuxonDateTime(dateFilterData?.min) || null}
+        onChange={(date) => {
+          updateFilter({
+            min: fromLuxonDateTime(date),
+            max: dateFilterData?.max,
+          });
+        }}
+      />
+      <CustomDatePicker
+        label={'To'}
+        value={toLuxonDateTime(dateFilterData?.max) || null}
+        onChange={(date) => {
+          updateFilter({
+            min: dateFilterData?.min,
+            max: fromLuxonDateTime(date),
+          });
+        }}
+      />
     </div>
   );
 };

@@ -26,6 +26,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
+import { CustomSelectedChip } from '@/fleet/components/filter_dropdown/custom_selected_chip';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
 import {
   FilterCategoryData,
@@ -47,10 +48,18 @@ import {
 
 import { DateFilter } from './date_filter';
 import { RriSummaryHeader } from './rri_summary_header';
-import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
+import {
+  DateFilterData,
+  filterDescriptors,
+  RriFilterKey,
+  RriFilters,
+  useRriFilters,
+} from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
+
+const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
 
 const Container = styled.div`
   margin: 24px;
@@ -307,7 +316,7 @@ export const ResourceRequestListPage = () => {
 
   const query = useQuery(
     client.ListResourceRequests.query({
-      filter: aipString, // TODO: b/396079336 add filtering
+      filter: aipString,
       orderBy: getOrderByDto(sortModel),
       pageSize: pagerCtx.options.defaultPageSize,
       pageToken: getPageToken(pagerCtx, searchParams),
@@ -338,26 +347,103 @@ export const ResourceRequestListPage = () => {
     },
   );
 
-  return (
-    <Container>
-      <RriSummaryHeader />
+  const getSelectedFilterLabel = (
+    filterKey: RriFilterKey,
+    filterValue: string | DateFilterData,
+  ): string => {
+    let label: string | undefined = filterOpts.find(
+      (opt) => opt.value === filterKey,
+    )?.label;
+
+    if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
+      label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
+      label += '...';
+    }
+
+    if (filterDescriptors[filterKey] === 'date-range') {
+      const date = filterValue as DateFilterData;
+
+      if (!date.min && !date.max) {
+        return '';
+      }
+      if (!date.min) {
+        return `${label}: before ${toIsoString(date.max)}`;
+      }
+      if (!date.max) {
+        return `${label}: after ${toIsoString(date.min)}`;
+      }
+      if (date.min && date.max) {
+        return `${label}: ${toIsoString(date.min)} - ${toIsoString(date.max)}`;
+      }
+    }
+    if (filterDescriptors[filterKey] === 'string') {
+      return `${label}: ${filterValue}`;
+    }
+    return `${label}: error`;
+  };
+
+  const getFilterBar = () => {
+    return (
       <div
         css={{
           marginTop: 24,
           width: '100%',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           alignItems: 'center',
-          gap: 28,
+          gap: 8,
           borderRadius: 4,
         }}
       >
+        {(
+          Object.entries(filters ?? {}) as [
+            RriFilterKey,
+            string | DateFilterData,
+          ][]
+        ).map(
+          ([filterKey, filterValue]) =>
+            filterValue && (
+              <CustomSelectedChip
+                key={filterKey}
+                dropdownContent={
+                  <DateFilter
+                    searchQuery={''}
+                    optionComponentProps={{
+                      filters: currentFilters,
+                      onClose: clearSelections,
+                      onFiltersChange: setCurrentFilters,
+                      option: filterOpts.find(
+                        (opt) => opt.value === filterKey,
+                      )!,
+                    }}
+                  />
+                }
+                label={getSelectedFilterLabel(filterKey, filterValue)}
+                onApply={() => {
+                  onApplyFilters();
+                }}
+                onDelete={() => {
+                  setFilters({
+                    ...currentFilters,
+                    [filterKey]: undefined,
+                  });
+                }}
+              />
+            ),
+        )}
         <FilterButton
           filterOptions={filterCategoryDatas}
           onApply={onApplyFilters}
           isLoading={query.isLoading}
         />
       </div>
+    );
+  };
+
+  return (
+    <Container>
+      <RriSummaryHeader />
+      {getFilterBar()}
 
       {/* TODO: this piece of code is similar to data_table.tsx and could probably be separated to a shared component */}
       <div
