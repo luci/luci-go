@@ -42,12 +42,12 @@ func TestWalk(t *testing.T) {
 
 		t.Run(`Will fully traverse a wrapped MultiError.`, func(t *ftt.Test) {
 			Walk(MultiError{nil, testWrap(New("sup")), nil}, walkFn)
-			assert.Loosely(t, count, should.Equal(3))
+			assert.Loosely(t, count, should.Equal(4))
 		})
 
 		t.Run(`Will unwrap a Wrapped error.`, func(t *ftt.Test) {
 			Walk(testWrap(New("sup")), walkFn)
-			assert.Loosely(t, count, should.Equal(2))
+			assert.Loosely(t, count, should.Equal(3))
 		})
 
 		t.Run(`Will short-circuit if the walk function returns false.`, func(t *ftt.Test) {

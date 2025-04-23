@@ -34,11 +34,11 @@ import (
 	"go.chromium.org/luci/server/tq"
 )
 
+var errRetryTag = errtag.Make("this error should be retried", true)
+var errIgnoreTag = errtag.Make("this error should be ignored", true)
+
 func TestTQifyError(t *testing.T) {
 	t.Parallel()
-
-	errRetryTag := errtag.Make("this error should be retried", true)
-	errIgnoreTag := errtag.Make("this error should be ignored", true)
 
 	ftt.Run("TQify works", t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())

@@ -96,24 +96,35 @@ func (m mergeableCollectedValues) flatten() CollectedValues {
 	return ret
 }
 
-// String renders the CollectedValues to a multi-line string.
+// String renders the CollectedValues to a single multi-line string with no
+// prefix and no trailing newline.
+//
+// See note on [CollectedValues.Format].
+func (c CollectedValues) String() string {
+	return strings.Join(c.Format(""), "\n")
+}
+
+// Format renders the CollectedValues to an array of lines.
+//
+// `prefix` will be inserted verbatim before each line.
+//
+// Each line will have one `TagKey.String(): value` and will not include
+// a newline.
 //
 // NOTE: If multiple TagKey's were created with the same description text, it is
 // possible to see the same descriptive string on the left hand side multiple
 // times. This probably indicates that there is a bug in the program (possibly
 // due to copy/pasting a [MakeTag] invocation, or using MakeTag in a way where the
 // output is not correctly reused across the process).
-func (c CollectedValues) String() string {
-	bld := strings.Builder{}
-	keys := slices.Collect(maps.Keys(c))
-	slices.SortFunc(keys, func(a, b TagKey) int {
+func (c CollectedValues) Format(prefix string) []string {
+	keys := slices.SortedFunc(maps.Keys(c), func(a, b TagKey) int {
 		return cmp.Compare(*a.unique, *b.unique)
 	})
-	for _, k := range keys {
-		fmt.Fprintf(&bld, "%s: %#v\n", k, c[k])
+	ret := make([]string, len(c))
+	for i, k := range keys {
+		ret[i] = fmt.Sprintf("%s%q: %#v", prefix, k, c[k])
 	}
-	// TrimSpace to remove trailing \n
-	return strings.TrimSpace(bld.String())
+	return ret
 }
 
 // Collect scans the error for all known tag keys and returns a map of tag

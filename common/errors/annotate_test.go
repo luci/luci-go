@@ -15,18 +15,16 @@
 package errors
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/errors/errtag"
+	"go.chromium.org/luci/common/errors/errtag/stacktag"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -52,83 +50,36 @@ func (e emptyWrapper) Unwrap() error {
 	return nil
 }
 
-func FixForTest(stack string) []string {
-	lines := strings.Split(stack, "\n")
-	for i, l := range lines {
-		switch {
-		case strings.HasPrefix(l, "goroutine"):
-			l = "GOROUTINE LINE"
-		case strings.HasPrefix(l, "..."):
-			l = fixSkip.ReplaceAllLiteralString(l, "skipped SOME frames")
-		}
-		l = fixNum.ReplaceAllLiteralString(l, "#?")
-		if strings.HasPrefix(l, "#? testing/") || strings.HasPrefix(l, "#? ./_testmain.go") {
-			l = fixTestingLine.ReplaceAllString(l, "$1:XXX")
-		}
-		l = fixSelfLN.ReplaceAllString(l, "$1:XX")
-		lines[i] = l
-	}
-	return lines
+type customTagValue struct {
+	Field int
 }
+
+var customTag = errtag.Make("custom tag", customTagValue{})
 
 func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Test annotation struct", t, func(t *ftt.Test) {
 		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy").Err()
-		ae := e.(*annotatedError)
 
 		t.Run("annotation can render itself for public usage", func(t *ftt.Test) {
-			assert.Loosely(t, ae.Error(), should.Equal(`20 some error: "stringy": bad thing`))
+			assert.Loosely(t, e.Error(), should.Equal(`20 some error: "stringy": bad thing`))
 		})
 
 		t.Run("annotation can render itself", func(t *ftt.Test) {
-			lines := FixForTest(RenderStack(e, excludedPkgs...))
+			e = transient.Tag.Apply(stacktag.Tag.ApplyValue(e, "I am a stack"))
+			e = customTag.ApplyValue(e, customTagValue{42})
+			lines := RenderStack(e, excludedPkgs...)
 
-			assert.Loosely(t, lines, should.Match([]string{
-				`original error: bad thing`,
+			assert.That(t, lines, should.Match(strings.Join([]string{
+				`20 some error: "stringy": bad thing`,
 				``,
-				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
-				`  reason: 20 some error: "stringy"`,
+				`errtags:`,
+				`  "custom tag": errors.customTagValue{Field:42}`,
+				`  "error is transient": true`,
 				``,
-				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
-				``,
-				`#? testing/testing.go:XXX - testing.tRunner()`,
-				`... skipped SOME frames in pkg "runtime"...`,
-			}))
-		})
-
-		t.Run("can render whole stack", func(t *ftt.Test) {
-			e = Annotate(e, "outer frame %s", "outer").Err()
-			lines := FixForTest(RenderStack(e, excludedPkgs...))
-
-			expectedLines := []string{
-				`original error: bad thing`,
-				``,
-				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
-				`  annotation #0:`,
-				`    reason: outer frame outer`,
-				`  annotation #1:`,
-				`    reason: 20 some error: "stringy"`,
-				``,
-				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
-				``,
-				`#? testing/testing.go:XXX - testing.tRunner()`,
-				`... skipped SOME frames in pkg "runtime"...`,
-			}
-			assert.That(t, lines, should.Match(expectedLines))
-
-			t.Run("via Log", func(t *ftt.Test) {
-				ctx := memlogger.Use(context.Background())
-				Log(ctx, e, excludedPkgs...)
-				ml := logging.Get(ctx).(*memlogger.MemLogger)
-				msgs := ml.Messages()
-				assert.Loosely(t, msgs, should.HaveLength(1))
-				lines := FixForTest(msgs[0].Msg + "\n\n" + msgs[0].StackTrace.Textual)
-				assert.Loosely(t, lines, should.Match(expectedLines))
-			})
+				`I am a stack`,
+			}, "\n")))
 		})
 
 		t.Run(`can render external errors with Unwrap and no inner error`, func(t *ftt.Test) {
@@ -138,75 +89,5 @@ func TestAnnotation(t *testing.T) {
 		t.Run(`can render external errors with Unwrap`, func(t *ftt.Test) {
 			assert.That(t, RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Match("outer: inner"))
 		})
-
-		t.Run(`can render external errors using Unwrap when Annotated`, func(t *ftt.Test) {
-			e := Annotate(fmt.Errorf("outer: %w", fmt.Errorf("inner")), "annotate").Err()
-			lines := FixForTest(RenderStack(e, excludedPkgs...))
-
-			expectedLines := []string{
-				`original error: outer: inner`,
-				``,
-				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1.6()`,
-				`  reason: annotate`,
-				``,
-				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
-				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
-				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
-				``,
-				`#? testing/testing.go:XXX - testing.tRunner()`,
-				`... skipped SOME frames in pkg "runtime"...`,
-			}
-			assert.That(t, lines, should.Match(expectedLines))
-		})
 	})
-}
-
-func inner(fn func(chan<- error)) error {
-	if fn == nil {
-		return Reason("hello").Err()
-	}
-
-	errCh := make(chan error)
-	go fn(errCh)
-	return Annotate(<-errCh, "wrapped").Err()
-}
-
-func outer(fn func(chan<- error)) error {
-	return inner(fn)
-}
-
-func TestAnnotateGoStack(t *testing.T) {
-	err := outer(func(c chan<- error) {
-		c <- outer(nil)
-	})
-
-	stack := RenderGoStack(err, false, "runtime")
-	lines := strings.Split(stack, "\n")
-	assert.Loosely(t, lines, should.HaveLength(16))
-
-	toFind := []string{
-		"inner()",
-		"outer()",
-		"TestAnnotateGoStack.func1()",
-		"inner()",
-		"outer()",
-		"TestAnnotateGoStack()",
-		"testing.tRunner()",
-	}
-	for _, line := range lines {
-		if strings.Contains(line, toFind[0]) {
-			toFind = toFind[1:]
-		}
-
-		if len(toFind) == 0 {
-			break
-		}
-	}
-
-	if !check.Loosely(t, toFind, should.BeEmpty, truth.Explain(
-		"Stack trace order seems to be incorrect.")) {
-		t.Log(stack)
-	}
 }

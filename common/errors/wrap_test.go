@@ -59,7 +59,7 @@ func TestWrapped(t *testing.T) {
 		})
 
 		t.Run(`A non-wrapped error.`, func(t *ftt.Test) {
-			err := New("test error")
+			err := Unwrap(New("test error")) // to drop the stack
 
 			t.Run(`Unwraps to itself.`, func(t *ftt.Test) {
 				assert.Loosely(t, Unwrap(err), should.Equal(err))

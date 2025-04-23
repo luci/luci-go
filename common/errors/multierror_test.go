@@ -36,9 +36,7 @@ func TestMultiError(t *testing.T) {
 		annotated := Annotate(inner, "annotated err").Err()
 		var me error = MultiError{annotated, fmt.Errorf("bob")}
 		assert.That(t, me, should.ErrLikeError(inner))
-		var aErr *annotatedError
-		assert.That(t, errors.As(me, &aErr), should.BeTrue)
-		assert.That(t, error(aErr), should.ErrLikeString("annotated err"))
+		assert.That(t, me, should.ErrLikeString("annotated err"))
 	})
 }
 

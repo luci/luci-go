@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	_ "crypto/sha1"
 )
 
 func testCache(t testing.TB, c *Cache) HexDigests {

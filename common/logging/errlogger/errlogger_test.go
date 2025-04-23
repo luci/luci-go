@@ -115,7 +115,7 @@ func TestErrLogger(t *testing.T) {
 
 		errors.Log(ctx, errors.Reason("Error reason").Err())
 
-		assert.That(t, lastReport.Message, should.Equal("original error: Error reason"))
+		assert.That(t, lastReport.Message, should.Equal("error: Error reason"))
 		assert.That(t, lastReport.Stack, should.MatchRegexp(`errlogger_test.go\:116`))
 	})
 }

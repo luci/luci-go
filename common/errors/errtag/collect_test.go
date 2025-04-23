@@ -57,8 +57,8 @@ func TestCollect(t *testing.T) {
 		t.Run(`format`, func(t *testing.T) {
 			assert.That(t, collection.String(), should.Match(strings.Join(
 				[]string{
-					`boolish: true`,
-					`stringy: "nerple"`,
+					`"boolish": true`,
+					`"stringy": "nerple"`,
 				},
 				"\n",
 			)))
