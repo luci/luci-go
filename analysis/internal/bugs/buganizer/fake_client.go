@@ -35,6 +35,10 @@ import (
 // fake client will return false.
 const ComponentWithNoAccess = 999999
 
+// ComponentIDWithArchived is a componentID for which GetComponent will return
+// that the component is archived and for which CreateIssue will fail.
+const ComponentWithIsArchivedSet = 999998
+
 // FakeClient is an implementation of ClientWrapperInterface that fakes the
 // actions performed using an in-memory store.
 type FakeClient struct {
@@ -78,6 +82,7 @@ func (fic *FakeClient) GetComponent(ctx context.Context, in *issuetracker.GetCom
 		AccessLimit: &issuetracker.AccessLimit{
 			AccessLevel: accessLevel,
 		},
+		IsArchived: in.ComponentId == ComponentWithIsArchivedSet,
 	}, nil
 }
 
@@ -97,6 +102,13 @@ func (fic *FakeClient) CreateIssue(ctx context.Context, in *issuetracker.CreateI
 	if in.Issue.IssueId != 0 {
 		return nil, errors.New("cannot set IssueId in CreateIssue requests")
 	}
+	if in.Issue.IssueState.ComponentId == ComponentWithNoAccess {
+		return nil, errors.New("no access to component")
+	}
+	if in.Issue.IssueState.ComponentId == ComponentWithIsArchivedSet {
+		return nil, errors.New("component is archived")
+	}
+
 	// Copy the request to make sure the proto we store
 	// does not alias the request.
 	issue := proto.Clone(in.Issue).(*issuetracker.Issue)

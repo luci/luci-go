@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
 package issuetracker
 
 import (
-	"google.golang.org/api/iterator"
-
 	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
+	"google.golang.org/api/iterator"
 )
 
 // IssueCommentIterator manages a stream of *issuetrackerpb.IssueComment.
@@ -40,7 +39,7 @@ type IssueCommentIterator struct {
 	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.IssueComment, nextPageToken string, err error)
 }
 
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
+// PageInfo supports pagination. See the [google.golang.org/api/iterator] package for details.
 func (it *IssueCommentIterator) PageInfo() *iterator.PageInfo {
 	return it.pageInfo
 }
@@ -87,7 +86,7 @@ type IssueIterator struct {
 	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.Issue, nextPageToken string, err error)
 }
 
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
+// PageInfo supports pagination. See the [google.golang.org/api/iterator] package for details.
 func (it *IssueIterator) PageInfo() *iterator.PageInfo {
 	return it.pageInfo
 }
@@ -134,7 +133,7 @@ type IssueUpdateIterator struct {
 	InternalFetch func(pageSize int, pageToken string) (results []*issuetrackerpb.IssueUpdate, nextPageToken string, err error)
 }
 
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
+// PageInfo supports pagination. See the [google.golang.org/api/iterator] package for details.
 func (it *IssueUpdateIterator) PageInfo() *iterator.PageInfo {
 	return it.pageInfo
 }

@@ -275,7 +275,6 @@ func TestBugManager(t *testing.T) {
 
 			t.Run("With provided component id without permission", func(t *ftt.Test) {
 				createRequest.BuganizerComponent = ComponentWithNoAccess
-				// TODO: Mock permission call to fail.
 				response := bm.Create(ctx, createRequest)
 				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 					ID: "1",
@@ -289,7 +288,28 @@ func TestBugManager(t *testing.T) {
 				assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(buganizerCfg.DefaultComponent.Id))
 				// No permission to component should appear in comments.
 				assert.Loosely(t, len(issue.Comments), should.Equal(3))
+				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring("LUCI Analysis does not have permissions to that component"))
 				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring(strconv.Itoa(ComponentWithNoAccess)))
+				assert.Loosely(t, issue.Comments[2].Comment, should.HavePrefix("Policy ID: policy-a"))
+			})
+
+			t.Run("With provided component id that is archived", func(t *ftt.Test) {
+				createRequest.BuganizerComponent = ComponentWithIsArchivedSet
+				response := bm.Create(ctx, createRequest)
+				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
+					ID: "1",
+					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{
+						"policy-a": {},
+					},
+				}))
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
+				issue := fakeStore.Issues[1]
+				// Should have fallback component ID because no permission to wanted component.
+				assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(buganizerCfg.DefaultComponent.Id))
+				// Component archived comment should appear in comments.
+				assert.Loosely(t, len(issue.Comments), should.Equal(3))
+				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring("because that component is archived"))
+				assert.Loosely(t, issue.Comments[1].Comment, should.ContainSubstring(strconv.Itoa(ComponentWithIsArchivedSet)))
 				assert.Loosely(t, issue.Comments[2].Comment, should.HavePrefix("Policy ID: policy-a"))
 			})
 

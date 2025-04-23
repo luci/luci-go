@@ -152,21 +152,37 @@ func (rg *RequestGenerator) linkToRuleComment(ruleID string) string {
 	return fmt.Sprintf(bugs.LinkTemplate, ruleLink)
 }
 
-// noPermissionComment returns a comment that explains why a bug was filed in
-// the fallback component incorrectly.
+// componentFallbackComment returns a comment that explains that a bug
+// was filed in the fallback component.
 //
 // issueId is the Buganizer issueId.
-func (rg *RequestGenerator) noPermissionComment(componentID int64) string {
-	return fmt.Sprintf(bugs.NoPermissionTemplate, componentID)
+func (rg *RequestGenerator) componentFallbackComment(componentID int64, reason ComponentFallbackReason) string {
+	switch reason {
+	case FallbackReason_NoPermission:
+		return fmt.Sprintf(bugs.NoPermissionTemplate, componentID)
+	case FallbackReason_ComponentArchived:
+		return fmt.Sprintf(bugs.ComponentArchivedTemplate, componentID)
+	default:
+		panic(fmt.Sprintf("invalid fallback reason: %v", reason))
+	}
 }
 
-// PrepareNoPermissionComment prepares a request that adds links to LUCI Analysis to
-// a Buganizer bug.
-func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int64) *issuetracker.CreateIssueCommentRequest {
+type ComponentFallbackReason int
+
+const (
+	FallbackReason_None ComponentFallbackReason = iota
+	FallbackReason_NoPermission
+	FallbackReason_ComponentArchived
+)
+
+// PrepareComponentFallbackComment prepares a request that adds a comment
+// explaining why LUCI Analysis did not use the originally requested bug
+// filing component but used the fallback component instead.
+func (rg *RequestGenerator) PrepareComponentFallbackComment(issueID, componentID int64, reason ComponentFallbackReason) *issuetracker.CreateIssueCommentRequest {
 	return &issuetracker.CreateIssueCommentRequest{
 		IssueId: issueID,
 		Comment: &issuetracker.IssueComment{
-			Comment: rg.noPermissionComment(componentID),
+			Comment: rg.componentFallbackComment(componentID, reason),
 		},
 	}
 }

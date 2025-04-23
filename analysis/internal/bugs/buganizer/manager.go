@@ -140,21 +140,33 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	componentID := bm.defaultComponent.Id
 	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
+
+	fallbackReason := FallbackReason_None
+
 	// Use wanted component if not in test mode.
 	if buganizerTestMode == nil || !buganizerTestMode.(bool) {
 		if wantedComponentID != componentID && wantedComponentID > 0 {
 			componentChecker := NewComponentAccessChecker(bm.client, bm.selfEmail)
 
-			permissions, err := componentChecker.CheckAccess(ctx, wantedComponentID)
+			access, err := componentChecker.CheckAccess(ctx, wantedComponentID)
 			if err != nil {
-				response.Error = errors.Annotate(err, "check permissions to create Buganizer issue").Err()
+				response.Error = errors.Annotate(err, "check access to create Buganizer issue").Err()
 				return response
 			}
-			if permissions.Appender && permissions.IssueDefaultsAppender {
+			if !access.Appender || !access.IssueDefaultsAppender {
+				fallbackReason = FallbackReason_NoPermission
+			} else if access.IsArchived {
+				fallbackReason = FallbackReason_ComponentArchived
+			} else {
 				componentID = createRequest.BuganizerComponent
 			}
 		}
+	} else {
+		// In the staging environment, the wanted components do not exist. Treat
+		// this as a no permission error.
+		fallbackReason = FallbackReason_NoPermission
 	}
+
 	component, err := bm.client.GetComponent(ctx, &issuetracker.GetComponentRequest{ComponentId: componentID})
 	if err != nil {
 		response.Error = errors.Annotate(err, "get Buganizer component").Err()
@@ -184,8 +196,8 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	// A bug was filed.
 	response.ID = strconv.Itoa(int(issueID))
 
-	if wantedComponentID > 0 && wantedComponentID != componentID {
-		commentRequest := bm.requestGenerator.PrepareNoPermissionComment(issueID, wantedComponentID)
+	if fallbackReason != FallbackReason_None {
+		commentRequest := bm.requestGenerator.PrepareComponentFallbackComment(issueID, wantedComponentID, fallbackReason)
 		if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
 			response.Error = errors.Annotate(err, "create issue link comment").Err()
 			return response

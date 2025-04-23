@@ -23,14 +23,16 @@ import (
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
-// ComponentPermissions contains the results of checking the permissions of a
-// Buganizer component.
+// ComponentPermissions contains the results of checking buganizer component access.
 type ComponentPermissions struct {
 	// Appender is permission to create issues in this component.
 	Appender bool
 	// IssueDefaultsAppender is permission to add comments to issues in
 	// this component.
 	IssueDefaultsAppender bool
+	// IsArchived returns whether the component is archived. Issues cannot be created
+	// in archived components.
+	IsArchived bool
 }
 
 // NewComponentAccessChecker initialises a new component access checker.
@@ -64,6 +66,14 @@ func (c *ComponentAccessChecker) CheckAccess(ctx context.Context, componentID in
 	if err != nil {
 		return ComponentPermissions{}, err
 	}
+	// If we don't have append permission, no point trying to read the component to determine
+	// if it has been archived. We might not have permission to see it.
+	if result.Appender && result.IssueDefaultsAppender {
+		result.IsArchived, err = c.checkIsArchived(ctx, componentID)
+		if err != nil {
+			return ComponentPermissions{}, err
+		}
+	}
 	return result, nil
 }
 
@@ -86,4 +96,15 @@ func (c *ComponentAccessChecker) checkSinglePermission(ctx context.Context, comp
 		return false, err
 	}
 	return access.HasAccess, nil
+}
+
+func (c *ComponentAccessChecker) checkIsArchived(ctx context.Context, componentID int64) (bool, error) {
+	component, err := c.client.GetComponent(ctx, &issuetracker.GetComponentRequest{
+		ComponentId: componentID,
+	})
+	if err != nil {
+		logging.Errorf(ctx, "error when reading component %v to determine if it is archived: %s", componentID, err)
+		return false, err
+	}
+	return component.IsArchived, nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
 	"time"
 
 	gax "github.com/googleapis/gax-go/v2"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
@@ -65,9 +64,11 @@ func defaultGRPCClientOptions() []option.ClientOption {
 	return []option.ClientOption{
 		internaloption.WithDefaultEndpoint("placeholder-issuetracker-c2p.googleapis.com:443"),
 		internaloption.WithDefaultMTLSEndpoint("placeholder-issuetracker-c2p.mtls.googleapis.com:443"),
+		internaloption.WithDefaultUniverseDomain("googleapis.com"),
 		internaloption.WithDefaultAudience("https://placeholder-issuetracker-c2p.googleapis.com/"),
 		internaloption.WithDefaultScopes(DefaultAuthScopes()...),
 		internaloption.EnableJwtWithScope(),
+		internaloption.EnableNewAuthLibrary(),
 		option.WithGRPCDialOption(grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(math.MaxInt32))),
 	}
@@ -428,6 +429,8 @@ type gRPCClient struct {
 
 	// The x-goog-* metadata to be sent with each request.
 	xGoogHeaders []string
+
+	logger *slog.Logger
 }
 
 // NewClient creates a new issue tracker client based on gRPC.
@@ -454,6 +457,7 @@ func NewClient(ctx context.Context, opts ...option.ClientOption) (*Client, error
 		connPool:    connPool,
 		client:      issuetrackerpb.NewIssueTrackerClient(connPool),
 		CallOptions: &client.CallOptions,
+		logger:      internaloption.GetLogger(opts),
 	}
 	c.setGoogleClientInfo()
 
@@ -476,7 +480,9 @@ func (c *gRPCClient) Connection() *grpc.ClientConn {
 func (c *gRPCClient) setGoogleClientInfo(keyval ...string) {
 	kv := append([]string{"gl-go", gax.GoVersion}, keyval...)
 	kv = append(kv, "gapic", getVersionClient(), "gax", gax.Version, "grpc", grpc.Version)
-	c.xGoogHeaders = []string{"x-goog-api-client", gax.XGoogHeader(kv...)}
+	c.xGoogHeaders = []string{
+		"x-goog-api-client", gax.XGoogHeader(kv...),
+	}
 }
 
 // Close closes the connection to the API service. The user should invoke this when
@@ -498,6 +504,8 @@ type restClient struct {
 
 	// Points back to the CallOptions field of the containing Client
 	CallOptions **CallOptions
+
+	logger *slog.Logger
 }
 
 // NewRESTClient creates a new issue tracker rest client.
@@ -515,6 +523,7 @@ func NewRESTClient(ctx context.Context, opts ...option.ClientOption) (*Client, e
 		endpoint:    endpoint,
 		httpClient:  httpClient,
 		CallOptions: &callOpts,
+		logger:      internaloption.GetLogger(opts),
 	}
 	c.setGoogleClientInfo()
 
@@ -525,8 +534,10 @@ func defaultRESTClientOptions() []option.ClientOption {
 	return []option.ClientOption{
 		internaloption.WithDefaultEndpoint("https://placeholder-issuetracker-c2p.googleapis.com"),
 		internaloption.WithDefaultMTLSEndpoint("https://placeholder-issuetracker-c2p.mtls.googleapis.com"),
+		internaloption.WithDefaultUniverseDomain("googleapis.com"),
 		internaloption.WithDefaultAudience("https://placeholder-issuetracker-c2p.googleapis.com/"),
 		internaloption.WithDefaultScopes(DefaultAuthScopes()...),
+		internaloption.EnableNewAuthLibrary(),
 	}
 }
 
@@ -536,7 +547,9 @@ func defaultRESTClientOptions() []option.ClientOption {
 func (c *restClient) setGoogleClientInfo(keyval ...string) {
 	kv := append([]string{"gl-go", gax.GoVersion}, keyval...)
 	kv = append(kv, "gapic", getVersionClient(), "gax", gax.Version, "rest", "UNKNOWN")
-	c.xGoogHeaders = []string{"x-goog-api-client", gax.XGoogHeader(kv...)}
+	c.xGoogHeaders = []string{
+		"x-goog-api-client", gax.XGoogHeader(kv...),
+	}
 }
 
 // Close closes the connection to the API service. The user should invoke this when
@@ -562,7 +575,7 @@ func (c *gRPCClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 	var resp *issuetrackerpb.Component
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.GetComponent(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.GetComponent, req, settings.GRPC, c.logger, "GetComponent")
 		return err
 	}, opts...)
 	if err != nil {
@@ -588,7 +601,7 @@ func (c *gRPCClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			var err error
-			resp, err = c.client.ListIssues(ctx, req, settings.GRPC...)
+			resp, err = executeRPC(ctx, c.client.ListIssues, req, settings.GRPC, c.logger, "ListIssues")
 			return err
 		}, opts...)
 		if err != nil {
@@ -620,7 +633,7 @@ func (c *gRPCClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.Bat
 	var resp *issuetrackerpb.BatchGetIssuesResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.BatchGetIssues(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.BatchGetIssues, req, settings.GRPC, c.logger, "BatchGetIssues")
 		return err
 	}, opts...)
 	if err != nil {
@@ -638,7 +651,7 @@ func (c *gRPCClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueR
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.GetIssue(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.GetIssue, req, settings.GRPC, c.logger, "GetIssue")
 		return err
 	}, opts...)
 	if err != nil {
@@ -653,7 +666,7 @@ func (c *gRPCClient) CreateIssue(ctx context.Context, req *issuetrackerpb.Create
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.CreateIssue(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.CreateIssue, req, settings.GRPC, c.logger, "CreateIssue")
 		return err
 	}, opts...)
 	if err != nil {
@@ -671,7 +684,7 @@ func (c *gRPCClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.Modify
 	var resp *issuetrackerpb.Issue
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.ModifyIssue(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.ModifyIssue, req, settings.GRPC, c.logger, "ModifyIssue")
 		return err
 	}, opts...)
 	if err != nil {
@@ -689,7 +702,7 @@ func (c *gRPCClient) CreateIssueRelationship(ctx context.Context, req *issuetrac
 	var resp *issuetrackerpb.IssueRelationship
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.CreateIssueRelationship(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.CreateIssueRelationship, req, settings.GRPC, c.logger, "CreateIssueRelationship")
 		return err
 	}, opts...)
 	if err != nil {
@@ -707,7 +720,7 @@ func (c *gRPCClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 	var resp *issuetrackerpb.ListIssueRelationshipsResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.ListIssueRelationships(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.ListIssueRelationships, req, settings.GRPC, c.logger, "ListIssueRelationships")
 		return err
 	}, opts...)
 	if err != nil {
@@ -736,7 +749,7 @@ func (c *gRPCClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.L
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			var err error
-			resp, err = c.client.ListIssueUpdates(ctx, req, settings.GRPC...)
+			resp, err = executeRPC(ctx, c.client.ListIssueUpdates, req, settings.GRPC, c.logger, "ListIssueUpdates")
 			return err
 		}, opts...)
 		if err != nil {
@@ -771,7 +784,7 @@ func (c *gRPCClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 	var resp *issuetrackerpb.IssueComment
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.CreateIssueComment(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.CreateIssueComment, req, settings.GRPC, c.logger, "CreateIssueComment")
 		return err
 	}, opts...)
 	if err != nil {
@@ -800,7 +813,7 @@ func (c *gRPCClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			var err error
-			resp, err = c.client.ListIssueComments(ctx, req, settings.GRPC...)
+			resp, err = executeRPC(ctx, c.client.ListIssueComments, req, settings.GRPC, c.logger, "ListIssueComments")
 			return err
 		}, opts...)
 		if err != nil {
@@ -835,7 +848,7 @@ func (c *gRPCClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb
 	var resp *issuetrackerpb.IssueComment
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.UpdateIssueComment(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.UpdateIssueComment, req, settings.GRPC, c.logger, "UpdateIssueComment")
 		return err
 	}, opts...)
 	if err != nil {
@@ -853,7 +866,7 @@ func (c *gRPCClient) ListAttachments(ctx context.Context, req *issuetrackerpb.Li
 	var resp *issuetrackerpb.ListAttachmentsResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.ListAttachments(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.ListAttachments, req, settings.GRPC, c.logger, "ListAttachments")
 		return err
 	}, opts...)
 	if err != nil {
@@ -871,7 +884,7 @@ func (c *gRPCClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb
 	var resp *issuetrackerpb.HotlistEntry
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.CreateHotlistEntry(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.CreateHotlistEntry, req, settings.GRPC, c.logger, "CreateHotlistEntry")
 		return err
 	}, opts...)
 	if err != nil {
@@ -888,7 +901,7 @@ func (c *gRPCClient) DeleteHotlistEntry(ctx context.Context, req *issuetrackerpb
 	opts = append((*c.CallOptions).DeleteHotlistEntry[0:len((*c.CallOptions).DeleteHotlistEntry):len((*c.CallOptions).DeleteHotlistEntry)], opts...)
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		_, err = c.client.DeleteHotlistEntry(ctx, req, settings.GRPC...)
+		_, err = executeRPC(ctx, c.client.DeleteHotlistEntry, req, settings.GRPC, c.logger, "DeleteHotlistEntry")
 		return err
 	}, opts...)
 	return err
@@ -900,7 +913,7 @@ func (c *gRPCClient) GetAutomationAccess(ctx context.Context, req *issuetrackerp
 	var resp *issuetrackerpb.GetAutomationAccessResponse
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.client.GetAutomationAccess(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.client.GetAutomationAccess, req, settings.GRPC, c.logger, "GetAutomationAccess")
 		return err
 	}, opts...)
 	if err != nil {
@@ -937,17 +950,7 @@ func (c *restClient) GetComponent(ctx context.Context, req *issuetrackerpb.GetCo
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "GetComponent")
 		if err != nil {
 			return err
 		}
@@ -1021,21 +1024,10 @@ func (c *restClient) ListIssues(ctx context.Context, req *issuetrackerpb.ListIss
 			}
 			httpReq.Header = headers
 
-			httpRsp, err := c.httpClient.Do(httpReq)
+			buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "ListIssues")
 			if err != nil {
 				return err
 			}
-			defer httpRsp.Body.Close()
-
-			if err = googleapi.CheckResponse(httpRsp); err != nil {
-				return err
-			}
-
-			buf, err := io.ReadAll(httpRsp.Body)
-			if err != nil {
-				return err
-			}
-
 			if err := unm.Unmarshal(buf, resp); err != nil {
 				return err
 			}
@@ -1108,17 +1100,7 @@ func (c *restClient) BatchGetIssues(ctx context.Context, req *issuetrackerpb.Bat
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "BatchGetIssues")
 		if err != nil {
 			return err
 		}
@@ -1173,17 +1155,7 @@ func (c *restClient) GetIssue(ctx context.Context, req *issuetrackerpb.GetIssueR
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "GetIssue")
 		if err != nil {
 			return err
 		}
@@ -1242,17 +1214,7 @@ func (c *restClient) CreateIssue(ctx context.Context, req *issuetrackerpb.Create
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "CreateIssue")
 		if err != nil {
 			return err
 		}
@@ -1304,17 +1266,7 @@ func (c *restClient) ModifyIssue(ctx context.Context, req *issuetrackerpb.Modify
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "ModifyIssue")
 		if err != nil {
 			return err
 		}
@@ -1376,17 +1328,7 @@ func (c *restClient) CreateIssueRelationship(ctx context.Context, req *issuetrac
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "CreateIssueRelationship")
 		if err != nil {
 			return err
 		}
@@ -1451,17 +1393,7 @@ func (c *restClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "ListIssueRelationships")
 		if err != nil {
 			return err
 		}
@@ -1529,21 +1461,10 @@ func (c *restClient) ListIssueUpdates(ctx context.Context, req *issuetrackerpb.L
 			}
 			httpReq.Header = headers
 
-			httpRsp, err := c.httpClient.Do(httpReq)
+			buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "ListIssueUpdates")
 			if err != nil {
 				return err
 			}
-			defer httpRsp.Body.Close()
-
-			if err = googleapi.CheckResponse(httpRsp); err != nil {
-				return err
-			}
-
-			buf, err := io.ReadAll(httpRsp.Body)
-			if err != nil {
-				return err
-			}
-
 			if err := unm.Unmarshal(buf, resp); err != nil {
 				return err
 			}
@@ -1615,17 +1536,7 @@ func (c *restClient) CreateIssueComment(ctx context.Context, req *issuetrackerpb
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "CreateIssueComment")
 		if err != nil {
 			return err
 		}
@@ -1692,21 +1603,10 @@ func (c *restClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 			}
 			httpReq.Header = headers
 
-			httpRsp, err := c.httpClient.Do(httpReq)
+			buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "ListIssueComments")
 			if err != nil {
 				return err
 			}
-			defer httpRsp.Body.Close()
-
-			if err = googleapi.CheckResponse(httpRsp); err != nil {
-				return err
-			}
-
-			buf, err := io.ReadAll(httpRsp.Body)
-			if err != nil {
-				return err
-			}
-
 			if err := unm.Unmarshal(buf, resp); err != nil {
 				return err
 			}
@@ -1773,17 +1673,7 @@ func (c *restClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "UpdateIssueComment")
 		if err != nil {
 			return err
 		}
@@ -1828,17 +1718,7 @@ func (c *restClient) ListAttachments(ctx context.Context, req *issuetrackerpb.Li
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "ListAttachments")
 		if err != nil {
 			return err
 		}
@@ -1891,17 +1771,7 @@ func (c *restClient) CreateHotlistEntry(ctx context.Context, req *issuetrackerpb
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, jsonReq, "CreateHotlistEntry")
 		if err != nil {
 			return err
 		}
@@ -1945,15 +1815,8 @@ func (c *restClient) DeleteHotlistEntry(ctx context.Context, req *issuetrackerpb
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		// Returns nil if there is no error, otherwise wraps
-		// the response code and body into a non-nil error
-		return googleapi.CheckResponse(httpRsp)
+		_, err = executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "DeleteHotlistEntry")
+		return err
 	}, opts...)
 }
 
@@ -1999,17 +1862,7 @@ func (c *restClient) GetAutomationAccess(ctx context.Context, req *issuetrackerp
 		httpReq = httpReq.WithContext(ctx)
 		httpReq.Header = headers
 
-		httpRsp, err := c.httpClient.Do(httpReq)
-		if err != nil {
-			return err
-		}
-		defer httpRsp.Body.Close()
-
-		if err = googleapi.CheckResponse(httpRsp); err != nil {
-			return err
-		}
-
-		buf, err := io.ReadAll(httpRsp.Body)
+		buf, err := executeHTTPRequest(ctx, c.httpClient, httpReq, c.logger, nil, "GetAutomationAccess")
 		if err != nil {
 			return err
 		}

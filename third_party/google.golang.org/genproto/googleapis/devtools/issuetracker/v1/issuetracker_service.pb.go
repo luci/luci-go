@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	reflect "reflect"
 	sync "sync"
 
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,8 +27,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
-
-	_ "google.golang.org/genproto/googleapis/api/annotations"
 )
 
 const (
@@ -157,11 +156,9 @@ type GetComponentRequest struct {
 
 func (x *GetComponentRequest) Reset() {
 	*x = GetComponentRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetComponentRequest) String() string {
@@ -172,7 +169,7 @@ func (*GetComponentRequest) ProtoMessage() {}
 
 func (x *GetComponentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -237,6 +234,7 @@ type ListIssuesRequest struct {
 	//   - descendant_count
 	//   - deletion_time
 	//   - duplicate_count
+	//   - escalation_owner
 	//   - found_in_versions
 	//   - in_prod
 	//   - issue_id
@@ -272,11 +270,9 @@ type ListIssuesRequest struct {
 
 func (x *ListIssuesRequest) Reset() {
 	*x = ListIssuesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssuesRequest) String() string {
@@ -287,7 +283,7 @@ func (*ListIssuesRequest) ProtoMessage() {}
 
 func (x *ListIssuesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -360,11 +356,9 @@ type ListIssuesResponse struct {
 
 func (x *ListIssuesResponse) Reset() {
 	*x = ListIssuesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssuesResponse) String() string {
@@ -375,7 +369,7 @@ func (*ListIssuesResponse) ProtoMessage() {}
 
 func (x *ListIssuesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -427,11 +421,9 @@ type BatchGetIssuesRequest struct {
 
 func (x *BatchGetIssuesRequest) Reset() {
 	*x = BatchGetIssuesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *BatchGetIssuesRequest) String() string {
@@ -442,7 +434,7 @@ func (*BatchGetIssuesRequest) ProtoMessage() {}
 
 func (x *BatchGetIssuesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -490,11 +482,9 @@ type BatchGetIssuesResponse struct {
 
 func (x *BatchGetIssuesResponse) Reset() {
 	*x = BatchGetIssuesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *BatchGetIssuesResponse) String() string {
@@ -505,7 +495,7 @@ func (*BatchGetIssuesResponse) ProtoMessage() {}
 
 func (x *BatchGetIssuesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -543,11 +533,9 @@ type GetIssueRequest struct {
 
 func (x *GetIssueRequest) Reset() {
 	*x = GetIssueRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetIssueRequest) String() string {
@@ -558,7 +546,7 @@ func (*GetIssueRequest) ProtoMessage() {}
 
 func (x *GetIssueRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -631,11 +619,9 @@ type CreateIssueRequest struct {
 
 func (x *CreateIssueRequest) Reset() {
 	*x = CreateIssueRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateIssueRequest) String() string {
@@ -646,7 +632,7 @@ func (*CreateIssueRequest) ProtoMessage() {}
 
 func (x *CreateIssueRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -708,11 +694,9 @@ type ModifyIssueRequest struct {
 
 func (x *ModifyIssueRequest) Reset() {
 	*x = ModifyIssueRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ModifyIssueRequest) String() string {
@@ -723,7 +707,7 @@ func (*ModifyIssueRequest) ProtoMessage() {}
 
 func (x *ModifyIssueRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -791,18 +775,16 @@ type CreateIssueRelationshipRequest struct {
 	// Type of the relationship to create.
 	RelationshipType IssueRelationshipType `protobuf:"varint,2,opt,name=relationship_type,json=relationshipType,proto3,enum=google.devtools.issuetracker.v1.IssueRelationshipType" json:"relationship_type,omitempty"`
 	// Issue relationship to create. The target issue is inserted after
-	// the issue specified by previous_target_issue_id. To insert to the top,
-	// leave previous_target_issue_id as 0.
+	// the issue specified by after_issue_id. To insert to the top, leave
+	// after_issue_id as 0.
 	IssueRelationship *IssueRelationship `protobuf:"bytes,3,opt,name=issue_relationship,json=issueRelationship,proto3" json:"issue_relationship,omitempty"`
 }
 
 func (x *CreateIssueRelationshipRequest) Reset() {
 	*x = CreateIssueRelationshipRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateIssueRelationshipRequest) String() string {
@@ -813,7 +795,7 @@ func (*CreateIssueRelationshipRequest) ProtoMessage() {}
 
 func (x *CreateIssueRelationshipRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -873,11 +855,9 @@ type ListIssueRelationshipsRequest struct {
 
 func (x *ListIssueRelationshipsRequest) Reset() {
 	*x = ListIssueRelationshipsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueRelationshipsRequest) String() string {
@@ -888,7 +868,7 @@ func (*ListIssueRelationshipsRequest) ProtoMessage() {}
 
 func (x *ListIssueRelationshipsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -952,11 +932,9 @@ type ListIssueRelationshipsResponse struct {
 
 func (x *ListIssueRelationshipsResponse) Reset() {
 	*x = ListIssueRelationshipsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueRelationshipsResponse) String() string {
@@ -967,7 +945,7 @@ func (*ListIssueRelationshipsResponse) ProtoMessage() {}
 
 func (x *ListIssueRelationshipsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1010,11 +988,9 @@ type ListIssueUpdatesRequest struct {
 
 func (x *ListIssueUpdatesRequest) Reset() {
 	*x = ListIssueUpdatesRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueUpdatesRequest) String() string {
@@ -1025,7 +1001,7 @@ func (*ListIssueUpdatesRequest) ProtoMessage() {}
 
 func (x *ListIssueUpdatesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1091,11 +1067,9 @@ type ListIssueUpdatesResponse struct {
 
 func (x *ListIssueUpdatesResponse) Reset() {
 	*x = ListIssueUpdatesResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueUpdatesResponse) String() string {
@@ -1106,7 +1080,7 @@ func (*ListIssueUpdatesResponse) ProtoMessage() {}
 
 func (x *ListIssueUpdatesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1163,11 +1137,9 @@ type ListIssueCommentsRequest struct {
 
 func (x *ListIssueCommentsRequest) Reset() {
 	*x = ListIssueCommentsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueCommentsRequest) String() string {
@@ -1178,7 +1150,7 @@ func (*ListIssueCommentsRequest) ProtoMessage() {}
 
 func (x *ListIssueCommentsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1244,11 +1216,9 @@ type ListIssueCommentsResponse struct {
 
 func (x *ListIssueCommentsResponse) Reset() {
 	*x = ListIssueCommentsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListIssueCommentsResponse) String() string {
@@ -1259,7 +1229,7 @@ func (*ListIssueCommentsResponse) ProtoMessage() {}
 
 func (x *ListIssueCommentsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1311,11 +1281,9 @@ type UpdateIssueCommentRequest struct {
 
 func (x *UpdateIssueCommentRequest) Reset() {
 	*x = UpdateIssueCommentRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *UpdateIssueCommentRequest) String() string {
@@ -1326,7 +1294,7 @@ func (*UpdateIssueCommentRequest) ProtoMessage() {}
 
 func (x *UpdateIssueCommentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1379,11 +1347,9 @@ type CreateIssueCommentRequest struct {
 
 func (x *CreateIssueCommentRequest) Reset() {
 	*x = CreateIssueCommentRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateIssueCommentRequest) String() string {
@@ -1394,7 +1360,7 @@ func (*CreateIssueCommentRequest) ProtoMessage() {}
 
 func (x *CreateIssueCommentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1442,11 +1408,9 @@ type ListAttachmentsRequest struct {
 
 func (x *ListAttachmentsRequest) Reset() {
 	*x = ListAttachmentsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListAttachmentsRequest) String() string {
@@ -1457,7 +1421,7 @@ func (*ListAttachmentsRequest) ProtoMessage() {}
 
 func (x *ListAttachmentsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1491,11 +1455,9 @@ type ListAttachmentsResponse struct {
 
 func (x *ListAttachmentsResponse) Reset() {
 	*x = ListAttachmentsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *ListAttachmentsResponse) String() string {
@@ -1506,7 +1468,7 @@ func (*ListAttachmentsResponse) ProtoMessage() {}
 
 func (x *ListAttachmentsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1545,11 +1507,9 @@ type CreateHotlistEntryRequest struct {
 
 func (x *CreateHotlistEntryRequest) Reset() {
 	*x = CreateHotlistEntryRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateHotlistEntryRequest) String() string {
@@ -1560,7 +1520,7 @@ func (*CreateHotlistEntryRequest) ProtoMessage() {}
 
 func (x *CreateHotlistEntryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1604,11 +1564,9 @@ type DeleteHotlistEntryRequest struct {
 
 func (x *DeleteHotlistEntryRequest) Reset() {
 	*x = DeleteHotlistEntryRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *DeleteHotlistEntryRequest) String() string {
@@ -1619,7 +1577,7 @@ func (*DeleteHotlistEntryRequest) ProtoMessage() {}
 
 func (x *DeleteHotlistEntryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1669,11 +1627,9 @@ type GetAutomationAccessRequest struct {
 
 func (x *GetAutomationAccessRequest) Reset() {
 	*x = GetAutomationAccessRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetAutomationAccessRequest) String() string {
@@ -1684,7 +1640,7 @@ func (*GetAutomationAccessRequest) ProtoMessage() {}
 
 func (x *GetAutomationAccessRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1732,11 +1688,9 @@ type GetAutomationAccessResponse struct {
 
 func (x *GetAutomationAccessResponse) Reset() {
 	*x = GetAutomationAccessResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[22]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *GetAutomationAccessResponse) String() string {
@@ -1747,7 +1701,7 @@ func (*GetAutomationAccessResponse) ProtoMessage() {}
 
 func (x *GetAutomationAccessResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[22]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -1775,9 +1729,9 @@ type CreateIssueRequest_TemplateOptions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Whether to apply a template to the newly-created issue. Always true for
-	// end users who are not granted EDIT permission on the issue. Otherwise,
-	// default is false.
+	// Whether to apply a template to the newly-created issue. If not set, no
+	// template is applied. When set, template_id template is used, or the
+	// default template of the compoment if template_id is not set.
 	ApplyTemplate bool `protobuf:"varint,1,opt,name=apply_template,json=applyTemplate,proto3" json:"apply_template,omitempty"`
 	// The template ID to apply to this issue. To use the component's default
 	// template, leave unset.
@@ -1786,11 +1740,9 @@ type CreateIssueRequest_TemplateOptions struct {
 
 func (x *CreateIssueRequest_TemplateOptions) Reset() {
 	*x = CreateIssueRequest_TemplateOptions{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[23]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
+	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
 }
 
 func (x *CreateIssueRequest_TemplateOptions) String() string {
@@ -1801,7 +1753,7 @@ func (*CreateIssueRequest_TemplateOptions) ProtoMessage() {}
 
 func (x *CreateIssueRequest_TemplateOptions) ProtoReflect() protoreflect.Message {
 	mi := &file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[23]
-	if protoimpl.UnsafeEnabled && x != nil {
+	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
 			ms.StoreMessageInfo(mi)
@@ -2334,7 +2286,7 @@ func file_google_devtools_issuetracker_v1_issuetracker_service_proto_rawDescGZIP
 
 var file_google_devtools_issuetracker_v1_issuetracker_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
-var file_google_devtools_issuetracker_v1_issuetracker_service_proto_goTypes = []interface{}{
+var file_google_devtools_issuetracker_v1_issuetracker_service_proto_goTypes = []any{
 	(IssueView)(0),                             // 0: google.devtools.issuetracker.v1.IssueView
 	(IssueCommentView)(0),                      // 1: google.devtools.issuetracker.v1.IssueCommentView
 	(*GetComponentRequest)(nil),                // 2: google.devtools.issuetracker.v1.GetComponentRequest
@@ -2452,296 +2404,6 @@ func file_google_devtools_issuetracker_v1_issuetracker_service_proto_init() {
 		return
 	}
 	file_google_devtools_issuetracker_v1_issuetracker_proto_init()
-	if !protoimpl.UnsafeEnabled {
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetComponentRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssuesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssuesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchGetIssuesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchGetIssuesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetIssueRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateIssueRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ModifyIssueRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateIssueRelationshipRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueRelationshipsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueRelationshipsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueUpdatesRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueUpdatesResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueCommentsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListIssueCommentsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateIssueCommentRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateIssueCommentRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAttachmentsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAttachmentsResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateHotlistEntryRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteHotlistEntryRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetAutomationAccessRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetAutomationAccessResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_google_devtools_issuetracker_v1_issuetracker_service_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateIssueRequest_TemplateOptions); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
