@@ -41,10 +41,8 @@ var taskUnknownTag = errtag.Make("unknown task", true)
 
 // CancelOp is an operation of canceling of a single task.
 type CancelOp struct {
-	// TaskRequest is the task being canceled.
-	TaskRequest *model.TaskRequest
-	// TaskResultSummary is the current task state or nil if wasn't fetched yet.
-	TaskResultSummary *model.TaskResultSummary
+	// Request is the task being canceled.
+	Request *model.TaskRequest
 	// KillRunning it true to kill the task even if it has started running.
 	KillRunning bool
 	// BotID is the bot the task is expected to be running on right now.
@@ -61,7 +59,7 @@ type CancelOpOutcome struct {
 
 // taskID converts TaskRequest key to the task ID for logs.
 func (op *CancelOp) taskID() string {
-	return model.RequestKeyToTaskID(op.TaskRequest.Key, model.AsRequest)
+	return model.RequestKeyToTaskID(op.Request.Key, model.AsRequest)
 }
 
 // CancelTxn runs the transactional logic to cancel a single task.
@@ -75,17 +73,14 @@ func (op *CancelOp) taskID() string {
 //
 // Warning: ACL check must have been done before.
 func (m *managerImpl) CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error) {
-	trs := op.TaskResultSummary
-	if trs == nil {
-		trs = &model.TaskResultSummary{
-			Key: model.TaskResultSummaryKey(ctx, op.TaskRequest.Key),
-		}
-		switch err := datastore.Get(ctx, trs); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return nil, errors.Annotate(err, "missing TaskResultSummary for task %s", op.taskID()).Tag(taskUnknownTag).Err()
-		case err != nil:
-			return nil, errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", op.taskID()).Err()
-		}
+	trs := &model.TaskResultSummary{
+		Key: model.TaskResultSummaryKey(ctx, op.Request.Key),
+	}
+	switch err := datastore.Get(ctx, trs); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, errors.Annotate(err, "missing TaskResultSummary for task %s", op.taskID()).Tag(taskUnknownTag).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", op.taskID()).Err()
 	}
 
 	origState := trs.State
@@ -132,7 +127,7 @@ func (m *managerImpl) EnqueueBatchCancel(ctx context.Context, batch []string, ki
 // * a bool for whether the task has started the cancellation process as requested,
 // * an err for errors to cancel the task.
 func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model.TaskResultSummary) (bool, error) {
-	tr := op.TaskRequest
+	tr := op.Request
 	wasRunning := trs.State == apipb.TaskState_RUNNING
 	switch {
 	case !trs.IsActive():
@@ -379,7 +374,7 @@ func (m *managerImpl) cancelOneTask(ctx context.Context, reqKey *datastore.Key, 
 	var outcome *CancelOpOutcome
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		outcome, err = m.CancelTxn(ctx, &CancelOp{
-			TaskRequest: taskReq,
+			Request:     taskReq,
 			KillRunning: killRunning,
 		})
 		return err

@@ -94,14 +94,14 @@ func TestCancel(t *testing.T) {
 		}
 
 		t.Run("failed to get some entity", func(t *ftt.Test) {
-			_, err := run(&CancelOp{TaskRequest: tr})
+			_, err := run(&CancelOp{Request: tr})
 			assert.Loosely(t, err, should.ErrLike("missing TaskResultSummary for task 65aba3a3e6b99310"))
 		})
 
 		t.Run("cancel ended task", func(t *ftt.Test) {
 			trs.State = apipb.TaskState_COMPLETED
 			assert.NoErr(t, datastore.Put(ctx, trs))
-			outcome, err := run(&CancelOp{TaskRequest: tr})
+			outcome, err := run(&CancelOp{Request: tr})
 			assert.NoErr(t, err)
 			assert.That(t, outcome, should.Match(&CancelOpOutcome{
 				Canceled:   false,
@@ -120,7 +120,7 @@ func TestCancel(t *testing.T) {
 				RBEReservation: "reservation",
 			}
 			assert.NoErr(t, datastore.Put(ctx, trs, ttr))
-			outcome, err := run(&CancelOp{TaskRequest: tr})
+			outcome, err := run(&CancelOp{Request: tr})
 			assert.NoErr(t, err)
 			assert.That(t, outcome, should.Match(&CancelOpOutcome{
 				Canceled:   true,
@@ -149,7 +149,7 @@ func TestCancel(t *testing.T) {
 			assert.NoErr(t, datastore.Put(ctx, trs))
 
 			t.Run("don't kill running", func(t *ftt.Test) {
-				outcome, err := run(&CancelOp{TaskRequest: tr})
+				outcome, err := run(&CancelOp{Request: tr})
 				assert.NoErr(t, err)
 				assert.That(t, outcome, should.Match(&CancelOpOutcome{
 					Canceled:   false,
@@ -158,7 +158,7 @@ func TestCancel(t *testing.T) {
 			})
 
 			t.Run("wrong bot id", func(t *ftt.Test) {
-				outcome, err := run(&CancelOp{TaskRequest: tr, BotID: "bot"})
+				outcome, err := run(&CancelOp{Request: tr, BotID: "bot"})
 				assert.NoErr(t, err)
 				assert.That(t, outcome, should.Match(&CancelOpOutcome{
 					Canceled:   false,
@@ -177,7 +177,7 @@ func TestCancel(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, trr))
 
-				outcome, err := run(&CancelOp{TaskRequest: tr, KillRunning: true})
+				outcome, err := run(&CancelOp{Request: tr, KillRunning: true})
 				assert.NoErr(t, err)
 				assert.That(t, outcome, should.Match(&CancelOpOutcome{
 					Canceled:   true,
@@ -207,7 +207,7 @@ func TestCancel(t *testing.T) {
 				trs.Modified = previousModified
 				assert.NoErr(t, datastore.Put(ctx, trr, trs))
 
-				outcome, err := run(&CancelOp{TaskRequest: tr, KillRunning: true})
+				outcome, err := run(&CancelOp{Request: tr, KillRunning: true})
 				assert.NoErr(t, err)
 				assert.That(t, outcome, should.Match(&CancelOpOutcome{
 					Canceled:   false,

@@ -42,7 +42,7 @@ func (srv *TasksServer) CancelTask(ctx context.Context, req *apipb.TaskCancelReq
 	var outcome *tasks.CancelOpOutcome
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		outcome, err = srv.TasksManager.CancelTxn(ctx, &tasks.CancelOp{
-			TaskRequest: taskRequest,
+			Request:     taskRequest,
 			KillRunning: req.KillRunning,
 		})
 		return err
