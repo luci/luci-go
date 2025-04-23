@@ -166,30 +166,7 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest, 
 	}
 
 	// Create the task in a loop to retry on task ID collisions.
-	var res *tasks.CreatedTask
-	attempts := 0
-	for {
-		attempts++
-		res, err = srv.TasksManager.CreateTask(ctx, creationOp)
-		if !errors.Is(err, tasks.ErrAlreadyExists) {
-			break
-		}
-	}
-
-	if err != nil {
-		if status.Code(err) == codes.Unknown {
-			logging.Errorf(ctx, "Failed to create task: %s", err)
-			return nil, status.Errorf(codes.Internal, "failed to create task")
-		} else {
-			return nil, err
-		}
-	}
-
-	if attempts > 1 {
-		logging.Infof(ctx, "Created the task after %d attempts", attempts)
-	}
-
-	return res, nil
+	return createTaskWithRetry(ctx, creationOp, srv.TasksManager)
 }
 
 // findPool finds the pool in the request.
@@ -674,13 +651,7 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 	if user == "" {
 		user = "none"
 	}
-	autoTags := []string{
-		fmt.Sprintf("priority:%d", tr.Priority),
-		fmt.Sprintf("realm:%s", tr.Realm),
-		fmt.Sprintf("service_account:%s", tr.ServiceAccount),
-		fmt.Sprintf("user:%s", user),
-		fmt.Sprintf("authenticated:%s", tr.Authenticated),
-	}
+	autoTags := genAutoTags(tr, user)
 	if req.ParentTaskId != "" {
 		autoTags = append(autoTags, fmt.Sprintf("parent_task_id:%s", req.ParentTaskId))
 	}
@@ -879,6 +850,21 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 	return props, tags
 }
 
+func genAutoTags(tr *model.TaskRequest, user string) []string {
+	realm := tr.Realm
+	if realm == "" {
+		realm = "none"
+	}
+
+	return []string{
+		fmt.Sprintf("priority:%d", tr.Priority),
+		fmt.Sprintf("realm:%s", realm),
+		fmt.Sprintf("service_account:%s", tr.ServiceAccount),
+		fmt.Sprintf("user:%s", user),
+		fmt.Sprintf("authenticated:%s", tr.Authenticated),
+	}
+}
+
 func selectTaskTemplate(ctx context.Context, state *RequestState, pool string, poolTaskTemplate apipb.NewTaskRequest_PoolTaskTemplateField) (*configpb.TaskTemplate, []string) {
 	poolCfg := state.Config.Pool(pool)
 	if poolCfg == nil {
@@ -1068,4 +1054,32 @@ func applyRBE(ctx context.Context, tr *model.TaskRequest, state *RequestState, p
 	} else {
 		tr.Tags = append(tr.Tags, "rbe:none")
 	}
+}
+
+// createTaskWithRetry creates the task in a loop to retry on task ID collisions.
+func createTaskWithRetry(ctx context.Context, creationOp *tasks.CreationOp, taskManager tasks.Manager) (*tasks.CreatedTask, error) {
+	var res *tasks.CreatedTask
+	var err error
+	attempts := 0
+	for {
+		attempts++
+		res, err = taskManager.CreateTask(ctx, creationOp)
+		if !errors.Is(err, tasks.ErrAlreadyExists) {
+			break
+		}
+	}
+
+	if err != nil {
+		if status.Code(err) == codes.Unknown {
+			logging.Errorf(ctx, "Failed to create task: %s", err)
+			return nil, status.Errorf(codes.Internal, "failed to create task")
+		} else {
+			return nil, err
+		}
+	}
+
+	if attempts > 1 {
+		logging.Infof(ctx, "Created the task after %d attempts", attempts)
+	}
+	return res, nil
 }

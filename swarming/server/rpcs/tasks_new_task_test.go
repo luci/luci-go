@@ -1504,7 +1504,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 					"authenticated:user:test@example.com",
 					"pool:pool",
 					"priority:40",
-					"realm:",
+					"realm:none",
 					"service_account:none",
 					"swarming.pool.task_template:prod",
 					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),

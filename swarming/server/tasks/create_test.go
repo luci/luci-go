@@ -530,6 +530,107 @@ func TestCreation(t *testing.T) {
 				"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
 			}))
 		})
+
+		t.Run("OK_termination_task", func(t *ftt.Test) {
+			mockCfg := &cfgtest.MockedConfigs{
+				Pools: &configpb.PoolsCfg{
+					Pool: []*configpb.Pool{
+						{
+							Name:  []string{"pool"},
+							Realm: "project:realm",
+							RbeMigration: &configpb.Pool_RBEMigration{
+								RbeInstance: "rbe-instance",
+								BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+									{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+								},
+								EffectiveBotIdDimension: "dut_id",
+							},
+						},
+					},
+				},
+				Bots: &configpb.BotsCfg{
+					TrustedDimensions: []string{"pool"},
+					BotGroup: []*configpb.BotGroup{
+						{
+							BotId: []string{"bot-0"},
+							Auth: []*configpb.BotAuth{
+								{RequireLuciMachineToken: true},
+							},
+							Dimensions: []string{
+								"pool:pool",
+							},
+						},
+					},
+				},
+			}
+			p := cfgtest.MockConfigs(ctx, mockCfg)
+			cfg := p.Cached(ctx)
+			now := time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+			newTR := &model.TaskRequest{
+				Created:     now,
+				Name:        "Terminate bot-0",
+				Priority:    0,
+				Expiration:  now.Add(5 * 24 * time.Hour),
+				RBEInstance: "rbe-instance",
+				ManualTags: []string{
+					"swarming.terminate:1",
+					"rbe:rbe-instance",
+				},
+				TaskSlices: []model.TaskSlice{
+					{
+						ExpirationSecs: 5 * 24 * 60 * 60,
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"id": []string{"bot-0"},
+							},
+						},
+					},
+				},
+				Tags: []string{
+					"id:bot-0",
+					"rbe:rbe-instance",
+					"swarming.terminate:1",
+				},
+			}
+			res, err := mgr.CreateTask(ctx, &CreationOp{
+				Request: newTR,
+				Config:  cfg,
+			})
+			assert.NoErr(t, err)
+			trs := res.Result
+			assert.Loosely(t, trs, should.NotBeNil)
+			assert.That(
+				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
+				should.Equal("2cbe1fa55012fa10"))
+			assert.That(t, trs.Tags, should.Match([]string{
+				"id:bot-0",
+				"rbe:rbe-instance",
+				"swarming.terminate:1",
+			}))
+
+			updatedTR := res.Request
+			updatedTRProto := updatedTR.ToProto()
+			assert.That(t, updatedTRProto.TaskId, should.Equal(trs.ToProto().TaskId))
+
+			tr := &model.TaskRequest{
+				Key: trs.TaskRequestKey(),
+			}
+
+			assert.NoErr(t, datastore.Get(ctx, tr))
+			assert.That(t, updatedTRProto, should.Match(tr.ToProto()))
+			assert.That(t, tr.IsTerminate(), should.BeTrue)
+
+			ttrKey, err := model.TaskRequestToToRunKey(ctx, tr, 0)
+			assert.NoErr(t, err)
+			ttr := &model.TaskToRun{
+				Key: ttrKey,
+			}
+			assert.NoErr(t, datastore.Get(ctx, ttr))
+			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
+			assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
+				"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+			}))
+		})
 	})
 }
 

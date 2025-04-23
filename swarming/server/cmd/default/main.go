@@ -219,9 +219,6 @@ func main() {
 		// duration of the development. To avoid accidentally leaking stuff due to
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
-			// Protect WIP or unimplemented Swarming APIs.
-			"/swarming.v2.Bots/TerminateBot": devAPIAccessGroup,
-
 			// Fully implemented APIs allowed to receive external traffic.
 			"/swarming.v2.Bots/CountBots":                 rpcacl.All,
 			"/swarming.v2.Bots/DeleteBot":                 rpcacl.All,
@@ -230,6 +227,7 @@ func main() {
 			"/swarming.v2.Bots/ListBotEvents":             rpcacl.All,
 			"/swarming.v2.Bots/ListBots":                  rpcacl.All,
 			"/swarming.v2.Bots/ListBotTasks":              rpcacl.All,
+			"/swarming.v2.Bots/TerminateBot":              rpcacl.All,
 			"/swarming.v2.Tasks/CancelTask":               rpcacl.All,
 			"/swarming.v2.Tasks/CancelTasks":              rpcacl.All,
 			"/swarming.v2.Tasks/GetResult":                rpcacl.All,
