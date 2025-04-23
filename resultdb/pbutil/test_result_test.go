@@ -295,25 +295,89 @@ func TestValidateTestResult(t *testing.T) {
 			})
 		})
 		t.Run("Status", func(t *ftt.Test) {
+			msg.Status = pb.TestStatus_PASS
+			msg.Expected = true
+			msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, validateTR(msg), should.BeNil)
+			})
 			t.Run("with invalid Status", func(t *ftt.Test) {
 				msg.Status = pb.TestStatus(len(pb.TestStatus_name) + 1)
 				assert.Loosely(t, validateTR(msg), should.ErrLike("status: invalid value"))
 			})
-			t.Run("with STATUS_UNSPECIFIED", func(t *ftt.Test) {
+			t.Run("unspecified", func(t *ftt.Test) {
 				msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
-				assert.Loosely(t, validateTR(msg), should.ErrLike("status: cannot be STATUS_UNSPECIFIED"))
+				// Error message is on status_v2 rather than status as neither was specified,
+				// and status is deprecated.
+				assert.Loosely(t, validateTR(msg), should.ErrLike("status_v2: cannot be STATUS_UNSPECIFIED"))
+			})
+		})
+		t.Run("Status V2", func(t *ftt.Test) {
+			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			msg.Expected = false
+			msg.StatusV2 = pb.TestResult_PASSED
+
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, validateTR(msg), should.BeNil)
+			})
+			t.Run("with invalid Status", func(t *ftt.Test) {
+				msg.StatusV2 = pb.TestResult_Status(len(pb.TestResult_Status_name) + 1)
+				assert.Loosely(t, validateTR(msg), should.ErrLike("status_v2: invalid value"))
+			})
+			t.Run("unspecified", func(t *ftt.Test) {
+				msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+				assert.Loosely(t, validateTR(msg), should.ErrLike("status_v2: cannot be STATUS_UNSPECIFIED"))
+			})
+			t.Run("both status v1 and v2 specified", func(t *ftt.Test) {
+				msg.Status = pb.TestStatus_PASS
+				assert.Loosely(t, validateTR(msg), should.ErrLike("status: must not specify at same time as status_v2; specify status_v2 only"))
+			})
+			t.Run("both expected and v2 specified", func(t *ftt.Test) {
+				msg.Expected = true
+				assert.Loosely(t, validateTR(msg), should.ErrLike("expected: must not specify at same time as status_v2; specify status_v2 only"))
 			})
 		})
 		t.Run("Skip Reason", func(t *ftt.Test) {
-			t.Run("valid", func(t *ftt.Test) {
+			t.Run("With legacy status", func(t *ftt.Test) {
+				msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
 				msg.Status = pb.TestStatus_SKIP
-				msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-				assert.Loosely(t, validateTR(msg), should.BeNil)
+				msg.Expected = true
+
+				t.Run("with skip reason is valid", func(t *ftt.Test) {
+					msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("without skip reason is valid", func(t *ftt.Test) {
+					msg.SkipReason = pb.SkipReason_SKIP_REASON_UNSPECIFIED
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("with skip reason but not skip status", func(t *ftt.Test) {
+					msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+					msg.Status = pb.TestStatus_ABORT
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP"))
+				})
 			})
-			t.Run("with skip reason but not skip status", func(t *ftt.Test) {
-				msg.Status = pb.TestStatus_ABORT
-				msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-				assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP"))
+			t.Run("With status_v2", func(t *ftt.Test) {
+				msg.StatusV2 = pb.TestResult_SKIPPED
+				msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+				msg.Expected = false
+
+				// Required because we specified a StatusV2 of Skipped.
+				msg.SkippedReason = &pb.SkippedReason{
+					Kind: pb.SkippedReason_DISABLED_AT_DECLARATION,
+				}
+
+				// This field is deprecated in favour of SkippedReason, so we want
+				// to discourage further adoption.
+				t.Run("no skip reason is valid", func(t *ftt.Test) {
+					msg.SkipReason = pb.SkipReason_SKIP_REASON_UNSPECIFIED
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("with skip reason is invalid", func(t *ftt.Test) {
+					msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: must not be set in conjuction with status_v2; set skipped_reason.kind instead"))
+				})
 			})
 		})
 		t.Run("StartTime and Duration", func(t *ftt.Test) {
@@ -591,82 +655,243 @@ func TestValidateTestResult(t *testing.T) {
 			})
 		})
 		t.Run("Failure reason", func(t *ftt.Test) {
+			msg.StatusV2 = pb.TestResult_FAILED // Must be failed.
+			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			msg.Expected = false
+
 			errorMessage1 := "error1"
 			errorMessage2 := "error2"
 			longErrorMessage := strings.Repeat("a very long error message", 100)
-			t.Run("valid failure reason", func(t *ftt.Test) {
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: errorMessage1,
-					Errors: []*pb.FailureReason_Error{
-						{Message: errorMessage1},
-						{Message: errorMessage2},
-					},
-					TruncatedErrorsCount: 0,
-				}
+			msg.FailureReason = &pb.FailureReason{
+				Kind: pb.FailureReason_ORDINARY,
+				Errors: []*pb.FailureReason_Error{
+					{Message: errorMessage1},
+					{Message: errorMessage2},
+				},
+				TruncatedErrorsCount: 0,
+			}
+
+			t.Run("valid", func(t *ftt.Test) {
 				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
+			t.Run("must be empty for non-failed results", func(t *ftt.Test) {
+				msg.StatusV2 = pb.TestResult_EXECUTION_ERRORED
+				assert.Loosely(t, validateTR(msg), should.ErrLike("failure_reason: must not be set when status_v2 is not FAILED"))
 
-			t.Run("primary_error_message exceeds the maximum limit", func(t *ftt.Test) {
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: longErrorMessage,
-				}
-				assert.Loosely(t, validateTR(msg), should.ErrLike("primary_error_message: "+
-					"exceeds the maximum"))
+				msg.FailureReason = nil
+				assert.Loosely(t, validateTR(msg), should.BeNil)
+			})
+			t.Run("must not be empty for failed results", func(t *ftt.Test) {
+				msg.FailureReason = nil
+				assert.Loosely(t, validateTR(msg), should.ErrLike("failure_reason: must be set when status_v2 is FAILED"))
+			})
+			t.Run("primary_error_message must not be set", func(t *ftt.Test) {
+				// For results using status_v2, this is an OUTPUT_ONLY field.
+				msg.FailureReason.PrimaryErrorMessage = errorMessage1
+				assert.Loosely(t, validateTR(msg), should.ErrLike("primary_error_message: must not be set when status_v2 is set; set errors instead"))
 			})
 
-			t.Run("one of the error messages exceeds the maximum limit", func(t *ftt.Test) {
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: errorMessage1,
-					Errors: []*pb.FailureReason_Error{
+			t.Run("with legacy status", func(t *ftt.Test) {
+				msg.Status = pb.TestStatus_SKIP // Can be anything
+				msg.Expected = true             // Can be anything
+				msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+				msg.FailureReason.Kind = pb.FailureReason_KIND_UNSPECIFIED
+
+				t.Run("valid", func(t *ftt.Test) {
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+
+				t.Run("kind specified is invalid", func(t *ftt.Test) {
+					msg.FailureReason.Kind = pb.FailureReason_ORDINARY
+					assert.Loosely(t, validateTR(msg), should.ErrLike("failure_reason: kind: please migrate to using status_v2 if you want to set this field"))
+				})
+
+				// Primary error message is normally OUTPUT_ONLY and is only
+				// allowed for input on legacy results.
+				t.Run("only primary error message set", func(t *ftt.Test) {
+					msg.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage:  errorMessage1,
+						TruncatedErrorsCount: 0,
+					}
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("errors and primary error message set, matching", func(t *ftt.Test) {
+					msg.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: errorMessage1,
+						Errors: []*pb.FailureReason_Error{
+							{Message: errorMessage1},
+							{Message: errorMessage2},
+						},
+						TruncatedErrorsCount: 0,
+					}
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("the first error doesn't match primary_error_message", func(t *ftt.Test) {
+					msg.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: errorMessage1,
+						Errors: []*pb.FailureReason_Error{
+							{Message: errorMessage2},
+						},
+						TruncatedErrorsCount: 0,
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike(
+						"errors[0]: message: must match primary_error_message"))
+				})
+				t.Run("primary_error_message exceeds the maximum limit", func(t *ftt.Test) {
+					msg.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: longErrorMessage,
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike("primary_error_message: "+
+						"exceeds the maximum"))
+				})
+			})
+			t.Run("kind", func(t *ftt.Test) {
+				t.Run("kind unspecified is invalid", func(t *ftt.Test) {
+					msg.FailureReason.Kind = pb.FailureReason_KIND_UNSPECIFIED
+					assert.Loosely(t, validateTR(msg), should.ErrLike("failure_reason: kind: unspecified"))
+				})
+				t.Run("unrecognised value is invalid", func(t *ftt.Test) {
+					msg.FailureReason.Kind = pb.FailureReason_Kind(len(pb.FailureReason_Kind_name))
+					assert.Loosely(t, validateTR(msg), should.ErrLike("failure_reason: kind: invalid value 4"))
+				})
+			})
+			t.Run("errors", func(t *ftt.Test) {
+				t.Run("one of the error messages exceeds the maximum limit", func(t *ftt.Test) {
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
 						{Message: errorMessage1},
 						{Message: longErrorMessage},
-					},
-					TruncatedErrorsCount: 0,
-				}
-				assert.Loosely(t, validateTR(msg), should.ErrLike(
-					"errors[1]: message: exceeds the maximum size of 1024 "+
-						"bytes"))
-			})
-
-			t.Run("the first error doesn't match primary_error_message", func(t *ftt.Test) {
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: errorMessage1,
-					Errors: []*pb.FailureReason_Error{
-						{Message: errorMessage2},
-					},
-					TruncatedErrorsCount: 0,
-				}
-				assert.Loosely(t, validateTR(msg), should.ErrLike(
-					"errors[0]: message: must match primary_error_message"))
-			})
-
-			t.Run("the total size of the errors list exceeds the limit", func(t *ftt.Test) {
-				maxErrorMessage := strings.Repeat(".", 1024)
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: maxErrorMessage,
-					Errors: []*pb.FailureReason_Error{
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike(
+						"errors[1]: message: exceeds the maximum size of 1024 "+
+							"bytes"))
+				})
+				t.Run("the total size of the errors list exceeds the limit", func(t *ftt.Test) {
+					maxErrorMessage := strings.Repeat(".", 1024)
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
 						{Message: maxErrorMessage},
 						{Message: maxErrorMessage},
 						{Message: maxErrorMessage},
 						{Message: maxErrorMessage},
-					},
-					TruncatedErrorsCount: 1,
-				}
-				assert.Loosely(t, validateTR(msg), should.ErrLike(
-					"errors: exceeds the maximum total size of 3172 bytes"))
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike(
+						"errors: exceeds the maximum total size of 3172 bytes"))
+				})
+				t.Run("invalid UTF-8 error message", func(t *ftt.Test) {
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
+						{Message: "some test.\xFF"},
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike("errors[0]: message: is not valid UTF-8"))
+				})
+				t.Run("empty error message", func(t *ftt.Test) {
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
+						{Message: ""},
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike("errors[0]: message: unspecified"))
+				})
 			})
 
 			t.Run("invalid truncated error count", func(t *ftt.Test) {
-				msg.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: errorMessage1,
-					Errors: []*pb.FailureReason_Error{
-						{Message: errorMessage1},
-						{Message: errorMessage2},
-					},
-					TruncatedErrorsCount: -1,
-				}
+				msg.FailureReason.TruncatedErrorsCount = -1
 				assert.Loosely(t, validateTR(msg), should.ErrLike("truncated_errors_count: "+
 					"must be non-negative"))
+			})
+		})
+		t.Run("Skipped reason", func(t *ftt.Test) {
+			msg.SkippedReason = &pb.SkippedReason{
+				Kind:          pb.SkippedReason_SKIPPED_BY_TEST_BODY,
+				ReasonMessage: "sid_unittest.cc(183): Platform does not support DeriveCapabilitySidsFromName function.",
+			}
+			// Skipped reason requires status to be set via Status V2.
+			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			msg.Expected = false
+			msg.StatusV2 = pb.TestResult_SKIPPED
+
+			t.Run("must be set for skipped status", func(t *ftt.Test) {
+				msg.SkippedReason = nil
+
+				assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: must be set when status_v2 is SKIPPED"))
+			})
+			t.Run("may not be set with status v1", func(t *ftt.Test) {
+				msg.Status = pb.TestStatus_SKIP
+				msg.Expected = true
+				msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+
+				assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: please migrate to using status_v2 if you want to set this field"))
+			})
+
+			t.Run("kind", func(t *ftt.Test) {
+				t.Run("may not be unspecified", func(t *ftt.Test) {
+					msg.SkippedReason.Kind = pb.SkippedReason_KIND_UNSPECIFIED
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: kind: cannot be KIND_UNSPECIFIED"))
+				})
+				t.Run("unrecognised value is invalid", func(t *ftt.Test) {
+					msg.SkippedReason.Kind = pb.SkippedReason_Kind(len(pb.SkippedReason_Kind_name))
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: kind: invalid value 5"))
+				})
+			})
+			t.Run("reason message", func(t *ftt.Test) {
+				t.Run("valid", func(t *ftt.Test) {
+					msg.SkippedReason.ReasonMessage = "sid_unittest.cc(183): Platform does not support DeriveCapabilitySidsFromName function."
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("may be empty for some statuses", func(t *ftt.Test) {
+					msg.SkippedReason.Kind = pb.SkippedReason_DISABLED_AT_DECLARATION
+					msg.SkippedReason.ReasonMessage = ""
+				})
+				t.Run("invalid UTF-8", func(t *ftt.Test) {
+					msg.SkippedReason.ReasonMessage = "some test.\x00"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: non-printable rune '\\x00' at byte index 10"))
+				})
+				t.Run("too long", func(t *ftt.Test) {
+					msg.SkippedReason.ReasonMessage = strings.Repeat("a", 1025)
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: longer than 1024 bytes"))
+				})
+				t.Run("required for OTHER", func(t *ftt.Test) {
+					msg.SkippedReason.Kind = pb.SkippedReason_OTHER
+					msg.SkippedReason.ReasonMessage = ""
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: must be set when skipped reason kind is OTHER"))
+				})
+				t.Run("required for DEMOTED", func(t *ftt.Test) {
+					msg.SkippedReason.Kind = pb.SkippedReason_DEMOTED
+					msg.SkippedReason.ReasonMessage = ""
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: must be set when skipped reason kind is DEMOTED"))
+				})
+			})
+		})
+		t.Run("Framework extensions", func(t *ftt.Test) {
+			msg.FrameworkExtensions = &pb.FrameworkExtensions{}
+			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			msg.Expected = false
+			msg.StatusV2 = pb.TestResult_PASSED
+
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, validateTR(msg), should.BeNil)
+			})
+			t.Run("may not be set with status v1", func(t *ftt.Test) {
+				msg.Status = pb.TestStatus_PASS
+				msg.Expected = true
+				msg.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+
+				assert.Loosely(t, validateTR(msg), should.ErrLike("framework_extensions: please migrate to using status_v2 if you want to set this field"))
+			})
+			t.Run("web test", func(t *ftt.Test) {
+				msg.FrameworkExtensions.WebTest = &pb.WebTest{
+					Status: pb.WebTest_PASS,
+				}
+
+				t.Run("valid", func(t *ftt.Test) {
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("status", func(t *ftt.Test) {
+					t.Run("unspecified", func(t *ftt.Test) {
+						msg.FrameworkExtensions.WebTest.Status = pb.WebTest_STATUS_UNSPECIFIED
+						assert.Loosely(t, validateTR(msg), should.ErrLike("framework_extensions: web_test: status: cannot be STATUS_UNSPECIFIED"))
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						msg.FrameworkExtensions.WebTest.Status = pb.WebTest_Status(len(pb.WebTest_Status_name))
+						assert.Loosely(t, validateTR(msg), should.ErrLike("framework_extensions: web_test: status: invalid value"))
+					})
+				})
 			})
 		})
 	})
@@ -685,8 +910,7 @@ func validTestResult(now time.Time) *pb.TestResult {
 			FineName:      "ValidationTests",
 			CaseName:      "FooBar",
 		},
-		Expected:    true,
-		Status:      pb.TestStatus_PASS,
+		StatusV2:    pb.TestResult_PASSED,
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
 		Duration:    durationpb.New(time.Minute),

@@ -87,7 +87,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		}
 	}
 	if msg.FailureReason != nil {
-		if err := pbutil.ValidateFailureReason(msg.FailureReason); err != nil {
+		if err := pbutil.ValidateFailureReason(msg.FailureReason, false); err != nil {
 			return errors.Annotate(err, "failure_reason").Err()
 		}
 	}

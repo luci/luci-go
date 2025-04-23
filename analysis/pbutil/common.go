@@ -295,7 +295,7 @@ func ValidateFailureReason(fr *pb.FailureReason) error {
 	rdbfr := &rdbpb.FailureReason{
 		PrimaryErrorMessage: fr.PrimaryErrorMessage,
 	}
-	return pbutil.ValidateFailureReason(rdbfr)
+	return pbutil.ValidateFailureReason(rdbfr, false)
 }
 
 func ValidateSourceRef(ref *pb.SourceRef) error {
