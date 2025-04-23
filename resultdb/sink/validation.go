@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/pbutil"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -66,8 +67,17 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 	if err := pbutil.ValidateResultID(msg.ResultId); err != nil {
 		return errors.Annotate(err, "result_id").Err()
 	}
-	if err := pbutil.ValidateTestResultStatus(msg.Status); err != nil {
-		return errors.Annotate(err, "status").Err()
+	// This performs lightweight validation of status fields. A more comprehensive
+	// validation is performed by ResultSink later using pbutil.ValidateTestResult.
+	if msg.Status == resultpb.TestStatus_STATUS_UNSPECIFIED || msg.StatusV2 != resultpb.TestResult_STATUS_UNSPECIFIED {
+		if err := pbutil.ValidateTestResultStatusV2(msg.StatusV2); err != nil {
+			return errors.Annotate(err, "status_v2").Err()
+		}
+	}
+	if msg.Status != resultpb.TestStatus_STATUS_UNSPECIFIED {
+		if err := pbutil.ValidateTestResultStatus(msg.Status); err != nil {
+			return errors.Annotate(err, "status").Err()
+		}
 	}
 	if err := pbutil.ValidateSummaryHTML(msg.SummaryHtml); err != nil {
 		return errors.Annotate(err, "summary_html").Err()
@@ -87,13 +97,24 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		}
 	}
 	if msg.FailureReason != nil {
-		if err := pbutil.ValidateFailureReason(msg.FailureReason, false); err != nil {
+		useStrictValidation := msg.StatusV2 != resultpb.TestResult_STATUS_UNSPECIFIED
+		if err := pbutil.ValidateFailureReason(msg.FailureReason, useStrictValidation); err != nil {
 			return errors.Annotate(err, "failure_reason").Err()
 		}
 	}
 	if msg.Properties != nil {
 		if err := pbutil.ValidateTestResultProperties(msg.Properties); err != nil {
 			return errors.Annotate(err, "properties").Err()
+		}
+	}
+	if msg.SkippedReason != nil {
+		if err := pbutil.ValidateSkippedReason(msg.SkippedReason); err != nil {
+			return errors.Annotate(err, "skipped_reason").Err()
+		}
+	}
+	if msg.FrameworkExtensions != nil {
+		if err := pbutil.ValidateFrameworkExtensions(msg.FrameworkExtensions); err != nil {
+			return errors.Annotate(err, "framework_extensions").Err()
 		}
 	}
 	return nil

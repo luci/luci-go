@@ -29,6 +29,7 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // A local equivalent of luci.resultdb.v1.TestResult message
 // in ../../../proto/v1/test_result.proto.
 // See its comments for details.
+// Next ID: 17.
 message TestResult {
   reserved 10; // test_location
   reserved "test_location";
@@ -41,11 +42,12 @@ message TestResult {
   // will be used. Otherwise, test_id will be used.
   TestIdentifier test_id_structured = 15;
 
+  // DEPRECATED: set test_id_structured instead.
   // Equivalent of luci.resultdb.v1.TestResult.test_id.
-  // Deprecated: new uploaders should set test_id_structured only.
   //
   // To facilitate migrating from legacy test IDs to structured IDs,
-  // existing test harnesses should keep setting this field.
+  // existing test harnesses setting this field should keep setting
+  // this field.
   // When structured IDs are used, if this ID is set and -previous-test-id-prefix
   // is passed to ResultSink the combination will populate into
   // test_metadata.previous_test_id.
@@ -56,11 +58,16 @@ message TestResult {
   // If omitted, a random, unique ID is generated..
   string result_id = 2;
 
+  // DEPRECATED: use status_v2 instead.
   // Equivalent of luci.resultdb.v1.TestResult.expected.
   bool expected = 3;
 
+  // DEPRECATED: use status_v2 instead.
   // Equivalent of luci.resultdb.v1.TestResult.status.
   luci.resultdb.v1.TestStatus status = 4;
+
+  // Equivalent of luci.resultdb.v1.TestResult.status_v2.
+  luci.resultdb.v1.TestResult.Status status_v2 = 16;
 
   // Equivalent of luci.resultdb.v1.TestResult.summary_html.
   string summary_html = 5;
@@ -79,18 +86,18 @@ message TestResult {
   map<string, Artifact> artifacts = 9;
 
   // Equivalent of luci.resultdb.v1.TestResult.test_metadata.
-  // Note: do not set previous_test_id. It will be ignored.
+  // Do not set previous_test_id. It will be ignored by ResultSink.
   luci.resultdb.v1.TestMetadata test_metadata = 11;
 
   // Equivalent of luci.resultdb.v1.TestResult.failure_reason.
   luci.resultdb.v1.FailureReason failure_reason = 12;
 
+  // DEPRECATED: pass the module-level variant to rdb stream. If there is further
+  // variant information at the test case level, encode it into the test ID.
   // Equivalent of luci.resultdb.v1.TestResult.variant.
   // The variant for all test cases should be passed by command line args to rdb
   // stream, however you can override or add to the variant on a per test case
   // basis using this field.
-  // Deprecated: pass the module-level variant to rdb stream. If there is further
-  // variant information at the test case level, encode it into the test ID.
   luci.resultdb.v1.Variant variant = 13;
 
   // Arbitrary JSON object that contains structured, domain-specific properties
@@ -98,6 +105,14 @@ message TestResult {
   //
   // The serialized size must be <= 8 KB.
   google.protobuf.Struct properties = 14;
+
+  // The reason why a test was skipped.
+  // Equivalent of luci.resultdb.v1.TestResult.skipped_reason.
+  luci.resultdb.v1.SkippedReason skipped_reason = 21;
+
+  // Test results framework-specific data model elements.
+  // Equivalent of luci.resultdb.v1.TestResult.framework_extensions.
+  luci.resultdb.v1.FrameworkExtensions framework_extensions = 22;
 }
 
 

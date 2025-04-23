@@ -78,15 +78,18 @@ func TestReportTestResults(t *testing.T) {
 				FineName:     "fine_name",
 				CaseName:     "component1:component2",
 			},
-			ResultId:      tr.ResultId,
-			Expected:      tr.Expected,
-			Status:        tr.Status,
-			SummaryHtml:   tr.SummaryHtml,
-			StartTime:     tr.StartTime,
-			Duration:      tr.Duration,
-			Tags:          tr.Tags,
-			TestMetadata:  tr.TestMetadata,
-			FailureReason: tr.FailureReason,
+			ResultId:            tr.ResultId,
+			Expected:            tr.Expected,
+			Status:              tr.Status,
+			StatusV2:            tr.StatusV2,
+			SummaryHtml:         tr.SummaryHtml,
+			StartTime:           tr.StartTime,
+			Duration:            tr.Duration,
+			Tags:                tr.Tags,
+			TestMetadata:        tr.TestMetadata,
+			FailureReason:       tr.FailureReason,
+			SkippedReason:       tr.SkippedReason,
+			FrameworkExtensions: tr.FrameworkExtensions,
 		}).(*pb.TestResult)
 
 		checkResults := func() {
@@ -376,51 +379,100 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		t.Run("failure reason", func(t *ftt.Test) {
+			t.Run("legacy result", func(t *ftt.Test) {
+				// For legacy results (using status_v1), upload of failure reasons
+				// via the primary error message field was the norm.
+				// The failure reason could be specified on any result, including
+				// passing and skipped results. And the message could be omitted
+				// for failures.
+				tr.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+				tr.Status = pb.TestStatus_PASS
+				tr.Expected = true
+
+				t.Run("specified", func(t *ftt.Test) {
+					tr.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: "Example failure reason.",
+					}
+					expectedTR.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: "Example failure reason.",
+					}
+					checkResults()
+				})
+				t.Run("primary_error_message too long", func(t *ftt.Test) {
+					var b strings.Builder
+					// Make a string that exceeds the 1024-byte length limit
+					// (when encoded as UTF-8).
+					for i := 0; i < 1025; i++ {
+						b.WriteRune('.')
+					}
+					tr.FailureReason = &pb.FailureReason{
+						PrimaryErrorMessage: b.String(),
+					}
+
+					sink, err := newSinkServer(ctx, cfg)
+					assert.Loosely(t, err, should.BeNil)
+
+					req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+					_, err = sink.ReportTestResults(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(
+						"failure_reason: primary_error_message: exceeds the"+
+							" maximum size of 1024 bytes"))
+				})
+				t.Run("nil", func(t *ftt.Test) {
+					tr.FailureReason = nil
+					expectedTR.FailureReason = nil
+					checkResults()
+				})
+			})
+
+			tr.StatusV2 = pb.TestResult_FAILED
+			tr.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			tr.Expected = false
+
+			expectedTR.StatusV2 = pb.TestResult_FAILED
+			expectedTR.Status = pb.TestStatus_STATUS_UNSPECIFIED
+			expectedTR.Expected = false
+
+			tr.FailureReason = &pb.FailureReason{
+				Kind: pb.FailureReason_ORDINARY,
+				Errors: []*pb.FailureReason_Error{
+					{Message: "Example failure reason."},
+					{Message: "Example failure reason2."},
+				},
+				TruncatedErrorsCount: 0,
+			}
+			expectedTR.FailureReason = &pb.FailureReason{
+				Kind: pb.FailureReason_ORDINARY,
+				Errors: []*pb.FailureReason_Error{
+					{Message: "Example failure reason."},
+					{Message: "Example failure reason2."},
+				},
+				TruncatedErrorsCount: 0,
+			}
+
 			t.Run("specified", func(t *ftt.Test) {
-				tr.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: "Example failure reason.",
-					Errors: []*pb.FailureReason_Error{
-						{Message: "Example failure reason."},
-						{Message: "Example failure reason2."},
-					},
-					TruncatedErrorsCount: 0,
-				}
-				expectedTR.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: "Example failure reason.",
-					Errors: []*pb.FailureReason_Error{
-						{Message: "Example failure reason."},
-						{Message: "Example failure reason2."},
-					},
-					TruncatedErrorsCount: 0,
-				}
 				checkResults()
 			})
-
-			t.Run("nil", func(t *ftt.Test) {
-				tr.FailureReason = nil
-				expectedTR.FailureReason = nil
-				checkResults()
-			})
-
-			t.Run("primary_error_message too long", func(t *ftt.Test) {
-				var b strings.Builder
-				// Make a string that exceeds the 1024-byte length limit
-				// (when encoded as UTF-8).
-				for i := 0; i < 1025; i++ {
-					b.WriteRune('.')
-				}
-				tr.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: b.String(),
-				}
+			t.Run("kind unspecified", func(t *ftt.Test) {
+				tr.FailureReason.Kind = pb.FailureReason_KIND_UNSPECIFIED
 
 				sink, err := newSinkServer(ctx, cfg)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				assert.Loosely(t, err, should.ErrLike(
-					"failure_reason: primary_error_message: exceeds the"+
-						" maximum size of 1024 bytes"))
+				assert.Loosely(t, err, should.ErrLike("failure_reason: kind: unspecified"))
+			})
+			t.Run("unspecified for failures", func(t *ftt.Test) {
+				tr.FailureReason = nil
+				expectedTR.FailureReason = nil
+
+				sink, err := newSinkServer(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+
+				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+				_, err = sink.ReportTestResults(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("failure_reason: must be set when status_v2 is FAILED"))
 			})
 
 			t.Run("error_messages too long", func(t *ftt.Test) {
@@ -431,7 +483,7 @@ func TestReportTestResults(t *testing.T) {
 					b.WriteRune('.')
 				}
 				tr.FailureReason = &pb.FailureReason{
-					PrimaryErrorMessage: "Example failure reason.",
+					Kind: pb.FailureReason_CRASH,
 					Errors: []*pb.FailureReason_Error{
 						{Message: "Example failure reason."},
 						{Message: b.String()},

@@ -341,16 +341,19 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 	pbutil.SortStringPairs(tags)
 
 	rdbtr := &pb.TestResult{
-		ResultId:      tr.ResultId,
-		Expected:      tr.Expected,
-		Status:        tr.Status,
-		SummaryHtml:   tr.SummaryHtml,
-		StartTime:     tr.StartTime,
-		Duration:      tr.Duration,
-		Tags:          tags,
-		TestMetadata:  tr.TestMetadata,
-		FailureReason: tr.GetFailureReason(),
-		Properties:    tr.GetProperties(),
+		ResultId:            tr.ResultId,
+		Expected:            tr.Expected,
+		Status:              tr.Status,
+		StatusV2:            tr.StatusV2,
+		SummaryHtml:         tr.SummaryHtml,
+		StartTime:           tr.StartTime,
+		Duration:            tr.Duration,
+		Tags:                tags,
+		TestMetadata:        tr.TestMetadata,
+		FailureReason:       tr.FailureReason,
+		Properties:          tr.Properties,
+		SkippedReason:       tr.SkippedReason,
+		FrameworkExtensions: tr.FrameworkExtensions,
 	}
 	if cfg.ModuleName != "" {
 		if tr.TestIdStructured == nil {
