@@ -134,6 +134,7 @@ func TestCancel(t *testing.T) {
 			assert.Loosely(t, ttr.IsReapable(), should.BeFalse)
 			assert.Loosely(t, tqt.Pending(tqt.CancelRBE), should.Match([]string{"rbe-instance/reservation"}))
 			assert.Loosely(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{"65aba3a3e6b99310"}))
+			assert.Loosely(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{"65aba3a3e6b99310"}))
 			val := globalStore.Get(ctx, metrics.TaskStatusChangeSchedulerLatency, []any{"test_pool", "spec_name", "User canceled", "wobblyeye"})
 			assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(float64(2*time.Hour.Milliseconds())))
 			val = globalStore.Get(ctx, metrics.JobsCompleted, []any{"spec_name", "", "", "test_pool", "none", "success", "User canceled"})

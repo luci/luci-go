@@ -171,7 +171,17 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 		toRun.Consume("")
 		toPut = append(toPut, toRun)
 
-		// TODO: enqueue FinalizeTask after the code handling code is released.
+		// Finalize ResultDB invocation
+		// The pending task should not have any children yet, so child task
+		// cancellation in FinalizeTask is no-op.
+		err = m.disp.AddTask(ctx, &tq.Task{
+			Payload: &taskspb.FinalizeTask{
+				TaskId: op.taskID(),
+			},
+		})
+		if err != nil {
+			return errors.Annotate(err, "failed to enqueue finalization task for cancelling %s", op.taskID()).Err()
+		}
 
 		return rbe.EnqueueCancel(ctx, m.disp, tr, toRun)
 	}
