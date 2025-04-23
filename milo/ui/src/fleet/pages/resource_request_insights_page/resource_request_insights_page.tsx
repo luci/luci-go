@@ -48,6 +48,7 @@ import {
 
 import { DateFilter } from './date_filter';
 import { RriSummaryHeader } from './rri_summary_header';
+import { RriTextFilter } from './rri_text_filter';
 import {
   DateFilterData,
   filterDescriptors,
@@ -222,7 +223,9 @@ export interface ResourceRequestInsightsOptionComponentProps {
   filters: RriFilters | undefined;
   onFiltersChange: (x: RriFilters) => void;
   onClose: () => void;
+  onApply: () => void;
 }
+
 interface RriFilterOption {
   label: string;
   value: RriFilterKey;
@@ -233,7 +236,7 @@ const filterOpts = [
   {
     label: 'RR ID',
     value: 'rr_id',
-    optionsComponent: () => <h1>RR ID</h1>,
+    optionsComponent: RriTextFilter,
   },
   {
     label: 'Material Sourcing Target Delivery Date',
@@ -279,6 +282,15 @@ export const ResourceRequestListPage = () => {
     setCurrentFilters(filters);
   }, [setCurrentFilters, filters]);
 
+  const onApplyFilters = () => {
+    setFilters(currentFilters);
+
+    // Clear out all the page tokens when the filter changes.
+    // An AIP-158 page token is only valid for the filter
+    // option that generated it.
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  };
+
   const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
     filterOpts.map((option) => {
       return {
@@ -291,21 +303,13 @@ export const ResourceRequestListPage = () => {
         optionsComponent: option.optionsComponent,
         optionsComponentProps: {
           option: option,
+          onApply: onApplyFilters,
           filters: currentFilters,
           onFiltersChange: setCurrentFilters,
           onClose: clearSelections,
         },
       } satisfies FilterCategoryData<ResourceRequestInsightsOptionComponentProps>;
     });
-
-  const onApplyFilters = () => {
-    setFilters(currentFilters);
-
-    // Clear out all the page tokens when the filter changes.
-    // An AIP-158 page token is only valid for the filter
-    // option that generated it.
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  };
 
   const handleSortModelChange = (newSortModel: GridSortModel) => {
     updateOrderByParam(getOrderByParamFromSortModel(newSortModel));
@@ -382,6 +386,28 @@ export const ResourceRequestListPage = () => {
     return `${label}: error`;
   };
 
+  const getSelectedChipDropdownContent = (filterKey: RriFilterKey) => {
+    const filterOption = filterOpts.find((opt) => opt.value === filterKey);
+    if (!filterOption) {
+      return undefined;
+    }
+
+    const OptionComponent = filterOption.optionsComponent;
+
+    return (
+      <OptionComponent
+        searchQuery={''}
+        optionComponentProps={{
+          filters: currentFilters,
+          onClose: clearSelections,
+          onFiltersChange: setCurrentFilters,
+          option: filterOpts.find((opt) => opt.value === filterKey)!,
+          onApply: onApplyFilters,
+        }}
+      />
+    );
+  };
+
   const getFilterBar = () => {
     return (
       <div
@@ -405,19 +431,7 @@ export const ResourceRequestListPage = () => {
             filterValue && (
               <CustomSelectedChip
                 key={filterKey}
-                dropdownContent={
-                  <DateFilter
-                    searchQuery={''}
-                    optionComponentProps={{
-                      filters: currentFilters,
-                      onClose: clearSelections,
-                      onFiltersChange: setCurrentFilters,
-                      option: filterOpts.find(
-                        (opt) => opt.value === filterKey,
-                      )!,
-                    }}
-                  />
-                }
+                dropdownContent={getSelectedChipDropdownContent(filterKey)}
                 label={getSelectedFilterLabel(filterKey, filterValue)}
                 onApply={() => {
                   onApplyFilters();

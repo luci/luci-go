@@ -99,7 +99,7 @@ const getFiltersFromSearchParam = (
   );
 
   return {
-    rr_id: undefined, // TODO: apply when rr_id filter is implemented
+    rr_id: rec['rr_id'],
     material_sourcing_target_delivery_date: parseDateOnlyFromUrl(
       rec,
       'material_sourcing_target_delivery_date',
@@ -137,9 +137,9 @@ const filtersToUrlString = (filters: RriFilters): string => {
       }
     }
     if (type === 'string') {
-      const filter = filters[key] as string;
+      const filter = filters[key] as string | undefined;
       if (filter) {
-        parts.push(`${key} = ${filter}`);
+        parts.push(`${key}=${filter}`);
       }
     }
   }
