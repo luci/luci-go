@@ -16,7 +16,7 @@ import { Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import { Fragment, useState } from 'react';
 
@@ -43,13 +43,7 @@ export function VerdictInfo() {
   }
 
   return (
-    <Grid
-      item
-      container
-      columnGap={1}
-      alignItems="center"
-      sx={{ ml: 0.5, mb: 0.5 }}
-    >
+    <Grid container columnGap={1} alignItems="center" sx={{ ml: 0.5, mb: 0.5 }}>
       {verdict.variant && (
         <>
           <Typography fontSize="0.9rem">

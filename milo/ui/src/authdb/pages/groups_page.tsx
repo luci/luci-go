@@ -17,7 +17,7 @@ import '../components/groups.css';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import { createRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
@@ -86,8 +86,7 @@ export function GroupsPage() {
       </Alert>
       <Grid container className="groups-container">
         <Grid
-          item
-          xs={4}
+          size={{ xs: 4 }}
           className="container-left"
           sx={{
             display: 'flex',
@@ -98,8 +97,7 @@ export function GroupsPage() {
           <GroupsList selectedGroup={groupName} ref={listRef} />
         </Grid>
         <Grid
-          item
-          xs={8}
+          size={{ xs: 8 }}
           className="container-right"
           sx={{ display: 'flex', flexDirection: 'column' }}
         >

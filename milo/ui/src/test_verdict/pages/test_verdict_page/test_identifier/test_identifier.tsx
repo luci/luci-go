@@ -18,7 +18,7 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import ReportIcon from '@mui/icons-material/Report';
 import WarningIcon from '@mui/icons-material/Warning';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { upperFirst } from 'lodash-es';
 
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
@@ -54,10 +54,9 @@ export function TestIdentifier() {
   const { status, testId } = useTestVerdict();
 
   return (
-    <Grid item container rowGap={1}>
+    <Grid container rowGap={1}>
       <CLInfo />
       <Grid
-        item
         container
         columnGap={1}
         alignItems="center"

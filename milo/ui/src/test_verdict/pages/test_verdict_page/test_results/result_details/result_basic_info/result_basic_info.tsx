@@ -17,7 +17,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { Fragment, useState } from 'react';
@@ -94,13 +94,12 @@ export function ResultBasicInfo() {
       onChange={() => setExpanded(!expanded)}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Grid item container columnGap={1} alignItems="center">
+        <Grid container columnGap={1} alignItems="center">
           {expanded || !result.failureReason ? (
             <Typography>Details</Typography>
           ) : (
             <Grid
               className="failure-bg"
-              item
               sx={{
                 p: 1,
               }}
@@ -112,7 +111,7 @@ export function ResultBasicInfo() {
       </AccordionSummary>
       <AccordionDetails>
         <Grid container rowGap={1}>
-          <Grid item container columnGap={1} alignItems="center">
+          <Grid container columnGap={1} alignItems="center">
             {result.duration && (
               <DurationBadge duration={parseProtoDuration(result.duration)} />
             )}
@@ -136,8 +135,8 @@ export function ResultBasicInfo() {
             )}
           </Grid>
           {result.failureReason && (
-            <Grid item container columnGap={1} alignItems="center">
-              <Grid item>
+            <Grid container columnGap={1} alignItems="center">
+              <Grid>
                 Failure reason&nbsp;
                 {reasonCluster && project && (
                   <Link
@@ -151,7 +150,6 @@ export function ResultBasicInfo() {
               </Grid>
               <Grid
                 className="failure-bg"
-                item
                 sx={{
                   p: 1,
                 }}
@@ -161,14 +159,14 @@ export function ResultBasicInfo() {
             </Grid>
           )}
           {result.summaryHtml && (
-            <Grid item container rowGap={1} direction="column">
-              <Grid item>Summary:</Grid>
-              <Grid item>
+            <Grid container rowGap={1} direction="column">
+              <Grid>Summary:</Grid>
+              <Grid>
                 <TestResultSummary testResult={result} />
               </Grid>
             </Grid>
           )}
-          <Grid container item>
+          <Grid container>
             {(testhausLogs || stainlessLogs) && (
               <LogsArtifacts
                 testhausLogs={testhausLogs}
@@ -177,7 +175,7 @@ export function ResultBasicInfo() {
             )}
           </Grid>
           {uniqueBugs && uniqueBugs.length > 0 && (
-            <Grid item container columnGap={1}>
+            <Grid container columnGap={1}>
               Related bugs:
               {uniqueBugs.map((bug, i) => (
                 <Fragment key={bug.id}>

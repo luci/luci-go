@@ -17,7 +17,7 @@ import { TextField } from '@mui/material';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'react-use';
@@ -133,9 +133,8 @@ function ArtifactsAccordion({
       </AccordionSummary>
       <AccordionDetails>
         <Grid
-          item
           container
-          xs={10}
+          size={{ xs: 10 }}
           sx={{
             py: 2,
           }}
@@ -155,7 +154,7 @@ function ArtifactsAccordion({
         >
           <Grid container direction="column" rowSpacing="5">
             {filteredLinkArtifacts.map((artifact) => (
-              <Grid item key={artifact.artifactId}>
+              <Grid key={artifact.artifactId}>
                 <ArtifactLink artifact={artifact} />
               </Grid>
             ))}

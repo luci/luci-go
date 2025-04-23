@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Divider } from '@mui/material';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
 import { upperFirst } from 'lodash-es';

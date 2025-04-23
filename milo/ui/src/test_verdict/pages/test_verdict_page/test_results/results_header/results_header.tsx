@@ -18,7 +18,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DoNotDisturbIcon from '@mui/icons-material/DoNotDisturb';
 import DoNotDisturbOnTotalSilenceIcon from '@mui/icons-material/DoNotDisturbOnTotalSilence';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
@@ -87,7 +87,6 @@ export function ResultsHeader() {
   }
   return (
     <Grid
-      item
       sx={{ borderBottom: 1, borderColor: 'divider' }}
       alignItems="center"
       flexGrow="1"

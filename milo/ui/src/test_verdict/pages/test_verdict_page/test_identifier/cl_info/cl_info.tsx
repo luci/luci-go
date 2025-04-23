@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
@@ -30,7 +30,6 @@ export function CLInfo() {
   return (
     <>
       <Grid
-        item
         container
         columnGap={1}
         sx={{
@@ -49,7 +48,7 @@ export function CLInfo() {
                 title={
                   <Grid container rowGap={1} padding={1}>
                     {sources.changelists.map((changelist, i) => (
-                      <Grid item key={changelist.change}>
+                      <Grid key={changelist.change}>
                         {i > 0 && (
                           <li>
                             <ChangelistLink changelist={changelist} />

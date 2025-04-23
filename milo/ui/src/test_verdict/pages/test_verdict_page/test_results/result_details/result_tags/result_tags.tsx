@@ -16,7 +16,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -58,7 +58,7 @@ export function ResultTags() {
       </AccordionSummary>
       <AccordionDetails>
         <Grid container>
-          <Grid item xs={2}>
+          <Grid size={{ xs: 2 }}>
             <Table size="small">
               <TableBody>
                 {tags.map((entry, i) => (

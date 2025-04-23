@@ -15,7 +15,7 @@
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Collapse, Divider, IconButton } from '@mui/material';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useEffect } from 'react';
 
 import {
@@ -64,7 +64,6 @@ function TopPanel() {
     <>
       <Collapse in={topPanelExpanded}>
         <Grid
-          item
           container
           flexDirection="column"
           sx={{
