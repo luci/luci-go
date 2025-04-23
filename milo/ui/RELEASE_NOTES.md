@@ -46,6 +46,11 @@ release tag numbers.
 
 <!-- Add new changes here. See the instruction above for more details. -->
 
+<!-- __RELEASE__: 6 -->
+## 2025-04-23
+The app bar now follows the Google Material 3 style guide.
+This is our first step towrrds moving all of our styles and design language to GM3.
+
 <!-- __RELEASE__: 5 -->
 ## 2023-11-07
  [LUCI Analysis](https://luci-analysis.appspot.com) is now using problem-based bug management.

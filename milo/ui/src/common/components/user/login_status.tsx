@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import styled from '@emotion/styled';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { IconButton } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
@@ -21,7 +21,27 @@ import Typography from '@mui/material/Typography';
 import { useLocation } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { StyledIconButton } from '@/common/components/gm3_styled_components';
 import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
+
+const StyledLoginButton = styled(Button)({
+  color: 'var(--gm3-color-on-surface-variant)',
+  textTransform: 'none',
+  fontSize: '14px',
+  fontWeight: 500,
+});
+
+const StyledUserEmail = styled(Typography)({
+  color: 'var(--gm3-color-on-surface-variant)',
+  fontSize: '14px',
+  lineHeight: '28px',
+  whiteSpace: 'nowrap',
+});
+
+const StyledUserAvatar = styled(Avatar)({
+  width: 32,
+  height: 32,
+});
 
 export interface LoginStatusProps {
   readonly identity?: string;
@@ -34,30 +54,31 @@ export const LoginStatus = ({ identity, email, picture }: LoginStatusProps) => {
 
   if (!identity || identity === ANONYMOUS_IDENTITY) {
     return (
-      <Button
-        variant="text"
-        sx={{ color: 'white' }}
+      <StyledLoginButton
         href={getLoginUrl(location.pathname + location.search + location.hash)}
       >
         Login
-      </Button>
+      </StyledLoginButton>
     );
   }
-
   return (
     <>
-      <Typography sx={{ ml: 1 }}>{email}</Typography>
-      <Avatar aria-label="avatar" sx={{ mx: 1 }} alt={email} src={picture} />
+      <StyledUserEmail>{email}</StyledUserEmail>
+      <StyledUserAvatar
+        sx={{ mx: 1 }}
+        aria-label="avatar"
+        alt={email || 'User Avatar'}
+        src={picture}
+      />
       <Tooltip title="Logout">
-        <IconButton
+        <StyledIconButton
           aria-label="Logout button"
-          color="inherit"
           href={getLogoutUrl(
             location.pathname + location.search + location.hash,
           )}
         >
           <LogoutIcon />
-        </IconButton>
+        </StyledIconButton>
       </Tooltip>
     </>
   );

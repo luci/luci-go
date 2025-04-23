@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import { StyledIconButton } from '@/common/components/gm3_styled_components';
 import {
   FeatureFlag,
   useAvailableFlags,
@@ -59,7 +60,7 @@ export function AvailableFlags() {
 
   return (
     <>
-      <IconButton
+      <StyledIconButton
         onClick={handleClickOpen}
         color="inherit"
         role="button"
@@ -72,7 +73,7 @@ export function AvailableFlags() {
         disabled={availableFlags.size === 0}
       >
         <ScienceIcon />
-      </IconButton>
+      </StyledIconButton>
       <Dialog
         onClose={handleClose}
         aria-labelledby="feature flags dialog"

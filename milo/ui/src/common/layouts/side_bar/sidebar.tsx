@@ -23,12 +23,12 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
-import Toolbar from '@mui/material/Toolbar';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { StyledToolbar } from '@/common/components/gm3_styled_components';
 import { useActivePageId, useProjectCtx } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
@@ -100,7 +100,7 @@ export const Sidebar = ({ open }: Props) => {
       open={open}
       role="complementary"
     >
-      <Toolbar variant="dense" />
+      <StyledToolbar variant="dense" />
       <List sx={{ mb: '40px', pt: 0 }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>

@@ -65,4 +65,35 @@ html {
 
   /* These colors are for LUCI Bisection */
   --suspect-found-color: #5468ce;
+
+  /* GM3 colors */
+  /**
+   * Surface: The background color for raised or contained components
+   * like Paper, Card, AppBar, Dialog, Menu, Accordion headers/content, etc.
+   * Used as the canvas for content within these components.
+   */
+   --gm3-color-surface: #FFFFFF;
+
+   /**
+    * Outline Variant: A subtle border or divider color.
+    * Used for decorative separation, component boundaries without strong emphasis.
+    * E.g., Card/Paper borders, Accordion borders, Table dividers, TextField outlines.
+    */
+   --gm3-color-outline-variant: #DADCE0;
+
+   /**
+    * On Surface Variant: Color for medium-emphasis elements appearing ON the 'surface'.
+    * Used for secondary text, standard/less-important icons.
+    * Should contrast sufficiently with --gm3-color-surface.
+    * E.g., Body text, input labels, default icon color (menu, settings), text buttons.
+    */
+   --gm3-color-on-surface-variant: #5F6368;
+
+   /**
+    * On Surface: Color for high-emphasis elements appearing ON the 'surface'.
+    * Used for primary text content, important icons needing more weight.
+    * Should offer slightly higher contrast with --gm3-color-surface than the 'variant'.
+    * E.g., Component titles, emphasized icons.
+    */
+   --gm3-color-on-surface: #444746;
 }

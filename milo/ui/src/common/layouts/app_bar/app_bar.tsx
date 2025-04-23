@@ -14,9 +14,9 @@
 
 import { Box, styled } from '@mui/material';
 import MuiAppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { StyledToolbar } from '@/common/components/gm3_styled_components';
 import { LoginStatus } from '@/common/components/user';
 
 import { AppDetails } from './app_details';
@@ -30,6 +30,14 @@ const ItemGroup = styled(Box)`
   position: sticky;
 `;
 
+const StyledMuiAppBar = styled(MuiAppBar)(() => ({
+  background: 'var(--gm3-color-surface)', // Changed from #FFFFFF
+  color: 'var(--gm3-color-on-surface-variant)',
+  height: '64px',
+  boxShadow: 'none',
+  borderBottom: '1px solid var(--gm3-color-outline-variant)',
+}));
+
 interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
@@ -39,7 +47,7 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
   const authState = useAuthState();
 
   return (
-    <MuiAppBar
+    <StyledMuiAppBar
       // Use static so the element occupies space so we can calculate its
       // height by measuring its parent. The height will be used to calculate
       // how much offset the next sticky item needs to avoid overlapping.
@@ -47,16 +55,20 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
       // The sticky behavior of the App bar is implemented by the parent.
       position="static"
     >
-      <Toolbar variant="dense">
+      <StyledToolbar variant="dense">
         {/* AppBar can grow wider than the viewport. Divide the items into left
          ** group and right group and make them sticky to ensure they always
          ** stay at the same place.
          */}
-        <ItemGroup sx={{ left: 'calc(var(--accumulated-left) + 25px)' }}>
+        <ItemGroup
+          sx={{ left: 'calc(var(--accumulated-left) + 25px)', gap: 2 }}
+        >
           <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
         </ItemGroup>
         <Box sx={{ flexGrow: 1 }}></Box>
-        <ItemGroup sx={{ right: 'calc(var(--accumulated-right) + 30px)' }}>
+        <ItemGroup
+          sx={{ right: 'calc(var(--accumulated-right) + 30px)', gap: 1 }}
+        >
           <AvailableFlags />
           <FeedbackButton />
           <AppMenu />
@@ -66,7 +78,7 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
             picture={authState.picture}
           />
         </ItemGroup>
-      </Toolbar>
-    </MuiAppBar>
+      </StyledToolbar>
+    </StyledMuiAppBar>
   );
 };

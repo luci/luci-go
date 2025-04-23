@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Feedback } from '@mui/icons-material';
-
-import { StyledIconButton } from '@/common/components/gm3_styled_components';
-import { genFeedbackUrl } from '@/common/tools/utils';
-
-export function FeedbackButton() {
-  return (
-    <StyledIconButton
-      onClick={() => window.open(genFeedbackUrl())}
-      role="button"
-      aria-label="Send feedback"
-      title="Send feedback"
-    >
-      <Feedback />
-    </StyledIconButton>
-  );
-}
+export * from './gm3_styled_components';

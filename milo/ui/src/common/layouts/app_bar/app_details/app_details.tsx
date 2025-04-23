@@ -15,11 +15,14 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from '@mui/material';
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
+import {
+  StyledIconButton,
+  StyledVerticalDivider,
+  StyledAppBarText,
+  StyledAppBarLink,
+} from '@/common/components/gm3_styled_components';
 import { useActivePageId, useProjectCtx } from '@/common/components/page_meta';
 import { getProjectURLPath } from '@/common/tools/url_utils';
 
@@ -35,67 +38,82 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
   const project = useProjectCtx();
   return (
     <>
-      <IconButton
-        size="large"
-        edge="start"
-        color="inherit"
+      <StyledIconButton
         aria-label="menu"
-        sx={{ mr: 2 }}
         onClick={() => handleSidebarChanged(!open)}
+        edge={false}
+        size="medium"
       >
         <MenuIcon />
-      </IconButton>
+      </StyledIconButton>
       <Box
         sx={{
-          display: {
-            md: 'flex',
-          },
+          display: { md: 'flex' },
           mr: 1,
           width: '2.5rem',
+          alignItems: 'center',
         }}
       >
-        <Link component={RouterLink} to="/ui/">
+        <Link
+          component={RouterLink}
+          to="/ui/"
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
           <img
-            style={{ width: '100%' }}
+            style={{ width: '100%', display: 'block' }}
             alt="logo"
             id="luci-icon"
             src="https://storage.googleapis.com/chrome-infra/lucy-small.png"
           />
         </Link>
       </Box>
-      <Box sx={{ display: 'flex' }}>
-        <Link
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <StyledAppBarLink
           component={RouterLink}
           to="/ui/"
           underline="none"
-          variant="h6"
-          sx={{ pr: 2, color: 'inherit' }}
+          sx={{ pr: 2 }}
         >
           LUCI
-        </Link>
+        </StyledAppBarLink>
         {project && (
           <>
-            <Divider flexItem orientation="vertical" sx={{ mr: 2 }} />
-            <Link
+            <StyledVerticalDivider
+              flexItem
+              orientation="vertical"
+              sx={{ ml: 2, mr: 2 }}
+            />
+            <StyledAppBarLink
               component={RouterLink}
               to={getProjectURLPath(project)}
               // Make it obvious that this link is clickable during the
               // transition phase of redesigned build page top bar.
               // We can decide whether we want to keep this style later.
               underline="always"
-              variant="h6"
-              sx={{ pr: 2, color: 'inherit', textDecorationColor: 'inherit' }}
+              sx={{
+                pr: 2,
+                textDecorationColor: 'currentColor',
+                '&:hover': {},
+              }}
             >
               {project}
-            </Link>
+            </StyledAppBarLink>
           </>
         )}
-        {activePage && (
+        {activePage && PAGE_LABEL_MAP[activePage] && (
           <>
-            <Divider flexItem orientation="vertical" sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ pr: 2 }}>
+            <StyledVerticalDivider
+              flexItem
+              orientation="vertical"
+              sx={{ ml: 2, mr: 2 }} // Apply margins via sx
+            />
+            {/* Use StyledAppBarText for plain text Page Title */}
+            <StyledAppBarText
+              component="div"
+              sx={{ pr: 2 }} // Keep sx for spacing
+            >
               {PAGE_LABEL_MAP[activePage]}
-            </Typography>
+            </StyledAppBarText>
           </>
         )}
       </Box>
