@@ -348,11 +348,10 @@ func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *
 			body.Duration, body.ExitCode)
 	}
 
-	if (body.Duration == nil) != (body.BotOverhead == nil) {
+	if body.BotOverhead != nil && body.Duration == nil {
 		return nil, status.Errorf(
 			codes.InvalidArgument,
-			"expected to have both duration and bot overhead or neither, got duration %v, bot overhead %v",
-			body.Duration, body.BotOverhead)
+			"duration must be set when bot overhead is set")
 	}
 	return tr, nil
 }

@@ -121,21 +121,12 @@ func TestProcessTaskUpdate(t *testing.T) {
 				err: `expected to have both duration and exit code or neither`,
 			},
 			{
-				name: "missing_duration_for_performance_stats",
+				name: "missing_duration_for_bot_overhead",
 				req: &TaskUpdateRequest{
 					TaskID:      taskID,
 					BotOverhead: &positive,
 				},
-				err: `expected to have both duration and bot overhead or neither`,
-			},
-			{
-				name: "missing_performance_stats_for_duration",
-				req: &TaskUpdateRequest{
-					TaskID:   taskID,
-					Duration: &positive,
-					ExitCode: &zero,
-				},
-				err: `expected to have both duration and bot overhead or neither`,
+				err: `duration must be set when bot overhead is set`,
 			},
 		}
 
