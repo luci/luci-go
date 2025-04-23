@@ -50,6 +50,12 @@ func TestProcessTaskUpdate(t *testing.T) {
 	srv := BotAPIServer{}
 
 	taskID := "65aba3a3e6b99201"
+	reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+	assert.NoErr(t, err)
+	tr := &model.TaskRequest{
+		Key: reqKey,
+	}
+	assert.NoErr(t, datastore.Put(ctx, tr))
 
 	t.Run("Validation", func(t *testing.T) {
 		negative := -1.0
@@ -163,7 +169,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 			},
 		})
 		assert.NoErr(t, err)
-		assert.That(t, model.RequestKeyToTaskID(update.RequestKey, model.AsRunResult), should.Equal(taskID))
+		assert.That(t, model.RequestKeyToTaskID(update.Request.Key, model.AsRunResult), should.Equal(taskID))
 		assert.That(t, update.Output, should.Match([]byte("output")))
 	})
 	t.Run("process_completed_task", func(t *testing.T) {
@@ -285,6 +291,12 @@ func TestProcessTaskUpdate(t *testing.T) {
 		botID := "bot-id"
 		taskID := "65aba3a3e6b99200"
 		runID := "65aba3a3e6b99201"
+		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+		assert.NoErr(t, err)
+		tr := &model.TaskRequest{
+			Key: reqKey,
+		}
+		assert.NoErr(t, datastore.Put(ctx, tr))
 
 		call := func(req *TaskUpdateRequest, botLastSeen time.Time) (*TaskUpdateResponse, error) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{

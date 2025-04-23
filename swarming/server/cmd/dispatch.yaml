@@ -46,3 +46,5 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/server_ping"
     service: default-go
+  - url: "*/swarming/api/v1/bot/task_update*"
+    service: default-go

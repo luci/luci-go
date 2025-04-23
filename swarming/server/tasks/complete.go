@@ -143,7 +143,7 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 
 	// Some common updates, e.g. output, cost, modified timestamp, server versions.
 	commonUpdates := &UpdateOp{
-		RequestKey:       tr.Key,
+		Request:          tr,
 		BotID:            op.BotID,
 		CostUSD:          op.CostUSD,
 		Output:           op.Output,

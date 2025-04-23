@@ -208,13 +208,13 @@ func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest
 }
 
 func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.UpdateOp, error) {
-	reqKey, err := validateTaskUpdateRequest(ctx, body, r)
+	tr, err := validateTaskUpdateRequest(ctx, body, r)
 	if err != nil {
 		return nil, err
 	}
 
 	return &tasks.UpdateOp{
-		RequestKey:       reqKey,
+		Request:          tr,
 		BotID:            r.Session.BotId,
 		Output:           body.Output,
 		OutputChunkStart: body.OutputChunkStart,
@@ -262,16 +262,9 @@ func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateReque
 // When success, returns the prepared tasks.UpdateOp (for output updates) or
 // tasks.CompleteOp (for task completion). Otherwise return a grpc error.
 func (srv *BotAPIServer) processTaskCompletion(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*tasks.CompleteOp, error) {
-	reqKey, err := validateTaskUpdateRequest(ctx, body, r)
+	tr, err := validateTaskUpdateRequest(ctx, body, r)
 	if err != nil {
 		return nil, err
-	}
-	tr, err := model.FetchTaskRequest(ctx, reqKey)
-	switch {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, status.Errorf(codes.NotFound, "task %q not found", body.TaskID)
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", body.TaskID, err)
 	}
 
 	var perfStats *model.PerformanceStats
@@ -320,7 +313,7 @@ func isTaskCompletion(body *TaskUpdateRequest) bool {
 	return body.ExitCode != nil || body.Canceled || body.HardTimeout || body.IOTimeout
 }
 
-func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*datastore.Key, error) {
+func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*model.TaskRequest, error) {
 	if body.TaskID == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "task ID is required")
 	}
@@ -332,6 +325,13 @@ func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *
 		// This should never happen, the task ID is the same as the one from
 		// datastore, which should have been validated.
 		return nil, status.Errorf(codes.FailedPrecondition, "invalid task ID %q", body.TaskID)
+	}
+	tr, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "task %q not found", body.TaskID)
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", body.TaskID, err)
 	}
 	if body.CostUSD < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "negative cost %f", body.CostUSD)
@@ -352,5 +352,5 @@ func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *
 			"expected to have both duration and bot overhead or neither, got duration %v, bot overhead %v",
 			body.Duration, body.BotOverhead)
 	}
-	return reqKey, nil
+	return tr, nil
 }
