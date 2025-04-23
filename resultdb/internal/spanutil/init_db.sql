@@ -265,8 +265,11 @@ CREATE TABLE TestResults (
   -- MUST be either NULL or True, to keep null-filtered index below thin.
   IsUnexpected BOOL,
 
-  -- Test status, see TestStatus in test_result.proto.
+  -- Test status, see `status` in test_result.proto.
   Status INT64 NOT NULL,
+
+  -- Test status V2, see `status_v2` in test_result.proto.
+  StatusV2 INT64,
 
   -- Compressed summary of the test result for humans, in HTML.
   -- See span.Compressed type for details of compression.
@@ -285,11 +288,13 @@ CREATE TABLE TestResults (
   -- Compressed metadata for the test case.
   -- For example original test name, test location, etc.
   -- See TestResult.test_metadata for details.
+  -- See span.Compressed type for details of compression.
   TestMetadata BYTES(MAX),
 
-  -- In the case of a failure, information on how the test failed.
+  -- Compressed information on how the test failed.
   -- For example error messages, stack traces, etc.
-  -- See TestResult.failure_reason for details.
+  -- See `failure_reason` in test_results.proto for details.
+  -- See span.Compressed type for details of compression.
   FailureReason BYTES(MAX),
 
   -- A serialized then compressed google.protobuf.Struct that stores structured,
@@ -302,6 +307,16 @@ CREATE TABLE TestResults (
   -- Skip reason 0 (SKIP_REASON_UNSPECIFIED) is mapped to NULL.
   -- MUST be NULL unless status is SKIP.
   SkipReason INT64,
+
+  -- Compressed information about why a test was skipped.
+  -- See `skipped_reason` in test_results.proto for details.
+  -- See span.Compressed type for details of compression.
+  SkippedReason BYTES(MAX),
+
+  -- Compressed test framework-specific data elements.
+  -- See `framework_extensions` in test_results.proto for details.
+  -- See spanutil.Compressed type for details of compression.
+  FrameworkExtensions BYTES(MAX),
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
