@@ -191,6 +191,7 @@ func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest
 		BotID:         r.Session.BotId,
 		EventDedupKey: body.RequestUUID,
 		EventType:     model.BotEventTaskUpdate,
+		TasksManager:  srv.tasksManager,
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,
 		}),
@@ -230,6 +231,7 @@ func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateReque
 	update := &botinfo.Update{
 		BotID:         r.Session.BotId,
 		EventDedupKey: body.RequestUUID,
+		TasksManager:  srv.tasksManager,
 		Prepare: func(ctx context.Context, _ *model.BotInfo) (*botinfo.PrepareOutcome, error) {
 			outcome, err := srv.tasksManager.CompleteTxn(ctx, taskCompletion)
 			if err != nil {
