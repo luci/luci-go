@@ -24,6 +24,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -35,11 +37,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 
@@ -809,7 +813,7 @@ func TestExtractBuild(t *testing.T) {
 			assert.Loosely(t, b, should.BeNil)
 		})
 
-		t.Run("success but need addition GetBuild call", func(t *ftt.Test) {
+		t.Run("with need for additional GetBuild call", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			props := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -862,19 +866,40 @@ func TestExtractBuild(t *testing.T) {
 				},
 				Steps: steps,
 			}
-			mc.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(largeFields, nil).AnyTimes()
 
-			b, err := extractBuild(ctx, pubsubMsg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
-			assert.Loosely(t, b.Builder, should.Match(originalBuild.Builder))
-			assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_SUCCESS))
-			assert.Loosely(t, b.Infra, should.Match(originalBuild.Infra))
-			assert.Loosely(t, b.Input, should.Match(originalBuild.Input))
-			assert.Loosely(t, b.Output, should.Match(originalBuild.Output))
-			assert.Loosely(t, b.Steps, should.Match(originalBuild.Steps))
-			assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
-			assert.Loosely(t, b.EmailNotify, should.Match([]EmailNotify{{Email: "abc@gmail.com"}}))
+			t.Run("success", func(t *ftt.Test) {
+				mc.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(largeFields, nil).AnyTimes()
+
+				b, err := extractBuild(ctx, pubsubMsg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
+				assert.Loosely(t, b.Builder, should.Match(originalBuild.Builder))
+				assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_SUCCESS))
+				assert.Loosely(t, b.Infra, should.Match(originalBuild.Infra))
+				assert.Loosely(t, b.Input, should.Match(originalBuild.Input))
+				assert.Loosely(t, b.Output, should.Match(originalBuild.Output))
+				assert.Loosely(t, b.Steps, should.Match(originalBuild.Steps))
+				assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
+				assert.Loosely(t, b.EmailNotify, should.Match([]EmailNotify{{Email: "abc@gmail.com"}}))
+			})
+			t.Run("response too large", func(t *ftt.Test) {
+				st := status.New(codes.Unavailable, "the response size exceeds the client limit")
+				st, err := st.WithDetails(&prpcpb.ErrorDetails{
+					Error: &prpcpb.ErrorDetails_ResponseTooBig{
+						ResponseTooBig: &prpcpb.ResponseTooBig{
+							ResponseSize:  222222,
+							ResponseLimit: 111111,
+						},
+					},
+				})
+				assert.NoErr(t, err)
+
+				mc.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, st.Err()).AnyTimes()
+
+				_, err = extractBuild(ctx, pubsubMsg)
+				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+			})
 		})
 	})
 }

@@ -517,7 +517,11 @@ func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV
 		},
 	})
 	if err != nil {
-		err = grpcutil.WrapIfTransient(err)
+		// Errors like "the response size 62054011 exceeds the client limit 33521664" should not
+		// be treated as transient regardless of status code.
+		if prpc.ProtocolErrorDetails(err).GetResponseTooBig() == nil {
+			err = grpcutil.WrapIfTransient(err)
+		}
 		err = errors.Annotate(err, "could not fetch large fields for buildbucket build %d", bID).Err()
 		return err
 	}
