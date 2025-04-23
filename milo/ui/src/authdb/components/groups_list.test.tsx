@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
+import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { createMockGroup } from '@/authdb/testing_tools/mocks/group_mock';
 import {
@@ -29,7 +30,7 @@ describe('<GroupsList />', () => {
     fetchMock.mockClear();
     fetchMock.reset();
   });
-  test('if groups list are displayed', async () => {
+  test('if list of groups is displayed', async () => {
     const mockGroups = [
       createMockGroup('123'),
       createMockGroup('124'),
@@ -39,7 +40,11 @@ describe('<GroupsList />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsList selectedGroup="123" />
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 500, itemHeight: 100 }}
+        >
+          <GroupsList selectedGroup="123" />
+        </VirtuosoMockContext.Provider>
       </FakeContextProvider>,
     );
 

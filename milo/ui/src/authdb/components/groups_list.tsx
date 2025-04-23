@@ -170,7 +170,6 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
             ref={virtuosoRef}
             style={{ height: '100%' }}
             totalCount={groups.length}
-            initialItemCount={3}
             rangeChanged={setVisibleRange}
             initialTopMostItemIndex={getIndexToSelect()}
             itemContent={(index) => {
