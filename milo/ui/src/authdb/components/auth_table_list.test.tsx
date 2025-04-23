@@ -15,40 +15,39 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { stripPrefix } from '@/authdb/common/helpers';
+import { AuthTableList } from '@/authdb/components/auth_table_list';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { GroupsFormListReadonly } from './groups_form_list_readonly';
-
-describe('<GroupsFormList readonly/>', () => {
+describe('<AuthTableList />', () => {
   const mockGroup = createMockGroupIndividual('123', false, true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormListReadonly
-          name="Members"
-          initialItems={mockGroup.members as string[]}
-        />
+        <AuthTableList name="Members" items={mockGroup.members as string[]} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form-list-readonly');
+    await screen.findByTestId('auth-table-list');
   });
+
+  test('shows field name', async () => {
+    expect(screen.getByText('Members')).toBeInTheDocument();
+  });
+
   test('does not show add button', async () => {
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).toBeNull();
   });
 
   test('does not show remove button on hover', async () => {
-    const editedMembers = mockGroup.members.map((member) =>
+    const members = mockGroup.members.map((member) =>
       stripPrefix('user', member),
     );
     // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${editedMembers[i]}`);
+      const row = screen.getByTestId(`item-row-${members[i]}`);
       fireEvent.mouseEnter(row);
-      expect(
-        screen.queryByTestId(`remove-button-${editedMembers[i]}`),
-      ).toBeNull();
+      expect(screen.queryByTestId(`remove-button-${members[i]}`)).toBeNull();
     }
   });
 });

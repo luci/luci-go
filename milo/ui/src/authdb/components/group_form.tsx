@@ -35,12 +35,12 @@ import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { nameRe, stripPrefix } from '@/authdb/common/helpers';
+import { AuthTableList } from '@/authdb/components/auth_table_list';
 import { GroupLink } from '@/authdb/components/group_link';
 import {
   GroupsFormList,
   FormListElement,
 } from '@/authdb/components/groups_form_list';
-import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import {
@@ -406,7 +406,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
         {isExternal ? (
           <>
             {callerCanViewMembers ? (
-              <GroupsFormListReadonly name="Members" initialItems={members} />
+              <AuthTableList name="Members" items={members} />
             ) : (
               <Typography variant="h6" sx={{ p: 1.5 }}>
                 {' '}
@@ -480,21 +480,15 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
             ) : (
               <>
                 {callerCanViewMembers ? (
-                  <GroupsFormListReadonly
-                    name="Members"
-                    initialItems={members}
-                  />
+                  <AuthTableList name="Members" items={members} />
                 ) : (
                   <Typography variant="h6" sx={{ p: '16px' }}>
                     {' '}
                     {numRedacted} members redacted
                   </Typography>
                 )}
-                <GroupsFormListReadonly name="Globs" initialItems={globs} />
-                <GroupsFormListReadonly
-                  name="Subgroups"
-                  initialItems={subgroups}
-                />
+                <AuthTableList name="Globs" items={globs} />
+                <AuthTableList name="Subgroups" items={subgroups} />
                 <Typography
                   variant="caption"
                   sx={{ p: '16px' }}
