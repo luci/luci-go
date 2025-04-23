@@ -61,35 +61,38 @@ type DepContext struct {
 // Can do network calls and be slow on the first call. Subsequent calls are
 // fast (they just return the cached value).
 func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
-	var def *Definition
 	if d.Known != nil {
-		def = d.Known
-	} else {
-		d.once.Do(func() {
-			d.def, d.err = func() (*Definition, error) {
-				blob, err := d.Repo.Fetch(ctx, d.Version, path.Join(d.Path, PackageScript))
-				if err != nil {
-					return nil, err
-				}
-				validator, err := d.Repo.LoaderValidator(ctx, d.Version, d.Path)
-				if err != nil {
-					return nil, err
-				}
-				if validator == nil {
-					validator = NoopLoaderValidator{}
-				}
-				return LoadDefinition(ctx, blob, validator)
-			}()
-		})
-		if d.err != nil {
-			return nil, d.err
+		if d.Known.Name != d.Package {
+			return nil, errors.Reason("expected to find package %q, but found %q instead", d.Package, d.Known.Name).Err()
 		}
-		def = d.def
+		return d.Known, nil
 	}
-	if def.Name != d.Package {
-		return nil, errors.Reason("expected to find package %q, but found %q instead", d.Package, def.Name).Err()
-	}
-	return def, nil
+
+	d.once.Do(func() {
+		d.def, d.err = func() (def *Definition, err error) {
+			blob, err := d.Repo.Fetch(ctx, d.Version, path.Join(d.Path, PackageScript))
+			if err != nil {
+				return nil, err
+			}
+			validator, err := d.Repo.LoaderValidator(ctx, d.Version, d.Path)
+			if err != nil {
+				return nil, err
+			}
+			if validator == nil {
+				validator = NoopLoaderValidator{}
+			}
+			def, err = LoadDefinition(ctx, blob, validator)
+			if err != nil {
+				return nil, err
+			}
+			if def.Name != d.Package {
+				return nil, errors.Reason("expected to find package %q, but found %q instead", d.Package, def.Name).Err()
+			}
+			return def, nil
+		}()
+	})
+
+	return d.def, d.err
 }
 
 // Follow builds a *DepContext representing a direct dependency.
@@ -220,15 +223,40 @@ func msvPkg(dep *DepContext) mvs.Package[pkgVer] {
 	}
 }
 
+// despGraph holds the graph of dependencies.
+type despGraph struct {
+	graph   *mvs.Graph[pkgVer, *edgeMeta]
+	root    *DepContext
+	visited internal.SyncWriteMap[mvs.Package[pkgVer], *DepContext]
+}
+
 // discoverDeps finds all transitive dependencies of the root package.
 //
 // The returned list excludes the root itself.
 func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
-	graph := mvs.NewGraph[pkgVer, *edgeMeta](msvPkg(root))
+	// Populate the graph with all transitive dependencies across all versions.
+	dg := &despGraph{
+		graph: mvs.NewGraph[pkgVer, *edgeMeta](msvPkg(root)),
+		root:  root,
+	}
+	if err := traverseDeps(ctx, dg); err != nil {
+		return nil, err
+	}
 
-	// All successfully visited *DepContext (with their *Definition).
-	var visited internal.SyncWriteMap[mvs.Package[pkgVer], *DepContext]
+	// Get all observed versions of all packages and for each package select the
+	// most recent version based on the ordering implemented by the corresponding
+	// Repo.
+	depsList, err := resolveVersions(ctx, dg)
+	if err != nil {
+		return nil, err
+	}
 
+	// Construct final loaders.
+	return prefetchDeps(ctx, dg, depsList)
+}
+
+// traverseDeps populates the graph by traversing pkg.depend(...) edges.
+func traverseDeps(ctx context.Context, dg *despGraph) error {
 	wq, wqctx := internal.NewWorkQueue[*DepContext](ctx)
 	wq.Launch(func(src *DepContext) error {
 		// Load the package definition (this can be slow).
@@ -256,32 +284,34 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 
 		// Declare edges and enqueue work to explore never seen before packages.
 		srcMsvPkg := msvPkg(src)
-		for _, unexplored := range graph.Require(srcMsvPkg, deps) {
+		for _, unexplored := range dg.graph.Require(srcMsvPkg, deps) {
 			wq.Submit(unexplored.Meta.dst)
 		}
 
 		// Successfully processed this dependency.
-		visited.Put(srcMsvPkg, src)
+		dg.visited.Put(srcMsvPkg, src)
 		return nil
 	})
 
 	// Chew on the graph from the root, transitively loading all dependencies.
-	wq.Submit(root)
+	wq.Submit(dg.root)
 	if err := wq.Wait(); err != nil {
-		return nil, err
+		return err
 	}
-	if !graph.Finalize() {
+	if !dg.graph.Finalize() {
 		panic("somehow the graph has unexplored nodes")
 	}
+	return nil
+}
 
-	// Get all observed versions of all packages and for each package select the
-	// most recent version based on the ordering implemented by the corresponding
-	// Repo. This is potentially slow, so do it in parallel.
+// resolveVersions runs MVS algorithms on the populated graph.
+func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer], error) {
 	var selected internal.SyncWriteMap[string, pkgVer]
 	eg, ectx := errgroup.WithContext(ctx)
-	for _, pkg := range graph.Packages() {
+
+	for _, pkg := range dg.graph.Packages() {
 		eg.Go(func() error {
-			vers := graph.Versions(pkg)
+			vers := dg.graph.Versions(pkg)
 			if len(vers) == 0 {
 				panic("impossible")
 			}
@@ -310,6 +340,15 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 				).Err()
 			}
 
+			// Don't bother hitting PickMostRecent if there's only one version.
+			if len(strVers) == 1 {
+				selected.Put(pkg, pkgVer{
+					ver:  strVers[0],
+					repo: repoKey,
+				})
+				return nil
+			}
+
 			// Note that all string versions will be different, since mvs.Graph
 			// deduplicates completely identical pkgVer values and we already verified
 			// all pkgVer have identical pkgVer.repo field, so all version strings
@@ -318,7 +357,7 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 			slices.Sort(strVers)
 
 			// Ask the repository to find the most recent version.
-			repo, err := root.RepoManager.Repo(ectx, repoKey)
+			repo, err := dg.root.RepoManager.Repo(ectx, repoKey)
 			if err != nil {
 				return errors.Annotate(err, "examining %q", pkg).Err()
 			}
@@ -343,7 +382,7 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 	// Traverse the graph from the root, following selected versions. Keep only
 	// dependencies that were actually visited. It is possible some packages are
 	// no longer referenced if we use the selected versions of dependencies.
-	err := graph.Traverse(func(cur mvs.Package[pkgVer], edges []mvs.Dep[pkgVer, *edgeMeta]) ([]mvs.Package[pkgVer], error) {
+	err := dg.graph.Traverse(func(cur mvs.Package[pkgVer], edges []mvs.Dep[pkgVer, *edgeMeta]) ([]mvs.Package[pkgVer], error) {
 		depsList = append(depsList, cur)
 		var visit []mvs.Package[pkgVer]
 		for _, edge := range edges {
@@ -365,19 +404,24 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 		return cmp.Compare(a.Package, b.Package)
 	})
 
-	// Construct final loaders. This does prefetching and can be slow. Do it in
-	// parallel.
+	return depsList, nil
+}
+
+// prefetchDeps prefetches all dependencies at their resolved versions.
+func prefetchDeps(ctx context.Context, gr *despGraph, depsList []mvs.Package[pkgVer]) ([]*Dep, error) {
 	out := make([]*Dep, len(depsList))
-	eg, ectx = errgroup.WithContext(ctx)
+	eg, ectx := errgroup.WithContext(ctx)
+
 	for i, dep := range depsList {
 		eg.Go(func() error {
 			var err error
-			out[i], err = visited.Get(dep).PrefetchDep(ectx)
+			out[i], err = gr.visited.Get(dep).PrefetchDep(ectx)
 			return err
 		})
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
+
 	return out, nil
 }
