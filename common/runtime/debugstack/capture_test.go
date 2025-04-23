@@ -23,7 +23,7 @@ import (
 
 func recurse(N, skip int) string {
 	if N == 0 {
-		return Capture(skip)
+		return Capture(skip).String()
 	}
 	return recurse(N-1, skip)
 }

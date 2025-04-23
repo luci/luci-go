@@ -23,8 +23,10 @@ import (
 //
 // A skip value of 0 means that the caller of Capture will be the top
 // frame.
-func Capture(skip int) string {
+//
+// This can be converted to a string stacktrace with [Trace.String].
+func Capture(skip int) Trace {
 	return Parse(debug.Stack()).Filter(CompileRules(
 		Rule{ApplyTo: StackFrameKind, DropN: 2 + skip},
-	), false).String()
+	), false)
 }

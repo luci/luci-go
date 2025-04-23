@@ -28,7 +28,7 @@ var (
 	btag    = errtag.Make("boolish", true)
 	otag    = errtag.Make("other bool", false)
 	stag    = errtag.Make("stringy", "defaultValue")
-	stagAdd = errtag.MakeWithMerge[string]("stringy (add)", "defaultValue", func(vals []*string) *string {
+	stagAdd = errtag.MakeWithMerge("stringy (add)", "defaultValue", func(vals []*string) *string {
 		ret := ""
 		for _, val := range vals {
 			ret += *val
@@ -77,7 +77,7 @@ func TestErrTag(t *testing.T) {
 		})
 
 		t.Run(`apply with luci errors library New`, func(t *testing.T) {
-			err := luci_errors.New("bare", btag)
+			err := btag.Apply(luci_errors.New("bare"))
 			assert.That(t, btag.In(err), should.BeTrue)
 			assert.That(t, btag.ValueOrDefault(err), should.BeTrue)
 		})
