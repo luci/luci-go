@@ -126,9 +126,7 @@ type pluginHandler struct {
 func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
 	logging.Debugf(ctx, "Starting pluginHandler.Handle")
 	defer logging.Debugf(ctx, "Exiting pluginHandler.Handle")
-	if id := c.SecurityKey.AppID; id != reauthAppID {
-		return nil, errors.Reason("pluginHandler: bad AppId %q", id).Err()
-	}
+	logging.Debugf(ctx, "Got AppID %q", c.SecurityKey.AppID)
 	dc := c.SecurityKey.DeviceChallenges
 	if len(dc) == 0 {
 		return nil, errors.Reason("pluginHandler: no device challenges available").Err()

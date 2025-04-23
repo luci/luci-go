@@ -20,11 +20,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-const (
-	// reauthAppID is the canonical AppID for ReAuth.  Reject other values as it may be MITM.
-	reauthAppID = "https://www.gstatic.com/securitykey/a/google.com/origins.json"
-)
-
 func challengeHandlers(facetID string) map[string]challengeHandler {
 	return map[string]challengeHandler{
 		"SECURITY_KEY": chainHandler{
