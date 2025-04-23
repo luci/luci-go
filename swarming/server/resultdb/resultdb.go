@@ -126,9 +126,9 @@ func (recorder *RecorderClient) CreateInvocation(ctx context.Context, taskID, re
 }
 
 // FinalizeInvocation finalized the ResultDB invocation for the task.
-func (recorder *RecorderClient) FinalizeInvocation(ctx context.Context, taskID string, updateToken string) error {
+func (recorder *RecorderClient) FinalizeInvocation(ctx context.Context, invName string, updateToken string) error {
 	req := &rdbpb.FinalizeInvocationRequest{
-		Name: InvocationName(recorder.swarmingProject, taskID),
+		Name: invName,
 	}
 	ctx = metadata.AppendToOutgoingContext(ctx, rdbpb.UpdateTokenMetadataKey, updateToken)
 	_, err := recorder.client.FinalizeInvocation(ctx, req)

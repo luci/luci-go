@@ -95,7 +95,7 @@ func TestRecorderClient(t *testing.T) {
 			}
 			inv := &rdbpb.Invocation{}
 			recorder := newMockedRecorder(ctx, req, inv, nil, updateToken)
-			assert.NoErr(t, recorder.FinalizeInvocation(ctx, taskID, updateToken))
+			assert.NoErr(t, recorder.FinalizeInvocation(ctx, invName, updateToken))
 		})
 
 		t.Run("fail", func(t *ftt.Test) {
@@ -105,7 +105,7 @@ func TestRecorderClient(t *testing.T) {
 			}
 			recorder := newMockedRecorder(
 				ctx, req, nil, status.Errorf(codes.Internal, "internal"), "")
-			err := recorder.FinalizeInvocation(ctx, taskID, updateToken)
+			err := recorder.FinalizeInvocation(ctx, invName, updateToken)
 			assert.That(t, err, should.ErrLike("internal"))
 		})
 	})
