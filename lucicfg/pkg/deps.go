@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg/internal"
+	"go.chromium.org/luci/lucicfg/internal/ui"
 	"go.chromium.org/luci/lucicfg/pkg/mvs"
 )
 
@@ -50,6 +51,8 @@ type DepContext struct {
 	RepoManager RepoManager
 	// Known is the package definition if known in advance (e.g. the root).
 	Known *Definition
+	// Activity to set as the current when loading the package definition.
+	Activity *ui.Activity
 
 	once sync.Once
 	def  *Definition
@@ -70,7 +73,18 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 
 	d.once.Do(func() {
 		d.def, d.err = func() (def *Definition, err error) {
-			blob, err := d.Repo.Fetch(ctx, d.Version, path.Join(d.Path, PackageScript))
+			scriptPath := path.Join(d.Path, PackageScript)
+			if d.Activity != nil {
+				ctx = ui.ActivityStart(ctx, d.Activity, "fetching %s", scriptPath)
+				defer func() {
+					if err == nil {
+						ui.ActivityDone(ctx, "fetched %s", scriptPath)
+					} else {
+						ui.ActivityError(ctx, "%s: %s", scriptPath, err)
+					}
+				}()
+			}
+			blob, err := d.Repo.Fetch(ctx, d.Version, scriptPath)
 			if err != nil {
 				return nil, err
 			}
@@ -257,6 +271,9 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 
 // traverseDeps populates the graph by traversing pkg.depend(...) edges.
 func traverseDeps(ctx context.Context, dg *despGraph) error {
+	ctx, done := ui.NewActivityGroup(ctx, "Traversing dependencies")
+	defer done()
+
 	wq, wqctx := internal.NewWorkQueue[*DepContext](ctx)
 	wq.Launch(func(src *DepContext) error {
 		// Load the package definition (this can be slow).
@@ -285,7 +302,14 @@ func traverseDeps(ctx context.Context, dg *despGraph) error {
 		// Declare edges and enqueue work to explore never seen before packages.
 		srcMsvPkg := msvPkg(src)
 		for _, unexplored := range dg.graph.Require(srcMsvPkg, deps) {
-			wq.Submit(unexplored.Meta.dst)
+			// Pre-register activities now to make sure they show up in the UI in
+			// deterministic order.
+			depCtx := unexplored.Meta.dst
+			depCtx.Activity = ui.NewActivity(ctx, ui.ActivityInfo{
+				Package: depCtx.Package,
+				Version: depCtx.Version,
+			})
+			wq.Submit(depCtx)
 		}
 
 		// Successfully processed this dependency.
@@ -306,11 +330,27 @@ func traverseDeps(ctx context.Context, dg *despGraph) error {
 
 // resolveVersions runs MVS algorithms on the populated graph.
 func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer], error) {
+	ctx, done := ui.NewActivityGroup(ctx, "Resolving versions")
+	defer done()
+
 	var selected internal.SyncWriteMap[string, pkgVer]
 	eg, ectx := errgroup.WithContext(ctx)
 
 	for _, pkg := range dg.graph.Packages() {
-		eg.Go(func() error {
+		activity := ui.NewActivity(ectx, ui.ActivityInfo{
+			Package: pkg,
+		})
+
+		eg.Go(func() (err error) {
+			ctx := ui.ActivityStart(ectx, activity, "resolving")
+			defer func() {
+				if err == nil {
+					ui.ActivityDone(ctx, "done")
+				} else {
+					ui.ActivityError(ctx, "%s", err)
+				}
+			}()
+
 			vers := dg.graph.Versions(pkg)
 			if len(vers) == 0 {
 				panic("impossible")
@@ -357,11 +397,11 @@ func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer],
 			slices.Sort(strVers)
 
 			// Ask the repository to find the most recent version.
-			repo, err := dg.root.RepoManager.Repo(ectx, repoKey)
+			repo, err := dg.root.RepoManager.Repo(ctx, repoKey)
 			if err != nil {
 				return errors.Annotate(err, "examining %q", pkg).Err()
 			}
-			mostRecent, err := repo.PickMostRecent(ectx, strVers)
+			mostRecent, err := repo.PickMostRecent(ctx, strVers)
 			if err != nil {
 				return errors.Annotate(err, "determining the most recent version of %q", pkg).Err()
 			}
@@ -409,14 +449,29 @@ func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer],
 
 // prefetchDeps prefetches all dependencies at their resolved versions.
 func prefetchDeps(ctx context.Context, gr *despGraph, depsList []mvs.Package[pkgVer]) ([]*Dep, error) {
+	ctx, done := ui.NewActivityGroup(ctx, "Fetching dependencies")
+	defer done()
+
 	out := make([]*Dep, len(depsList))
 	eg, ectx := errgroup.WithContext(ctx)
 
 	for i, dep := range depsList {
-		eg.Go(func() error {
-			var err error
-			out[i], err = gr.visited.Get(dep).PrefetchDep(ectx)
-			return err
+		activity := ui.NewActivity(ectx, ui.ActivityInfo{
+			Package: dep.Package,
+			Version: dep.Version.ver,
+		})
+
+		eg.Go(func() (err error) {
+			ctx := ui.ActivityStart(ectx, activity, "fetching")
+			defer func() {
+				if err == nil {
+					ui.ActivityDone(ctx, "")
+				} else {
+					ui.ActivityError(ctx, "%s", err)
+				}
+			}()
+			out[i], err = gr.visited.Get(dep).PrefetchDep(ctx)
+			return
 		})
 	}
 	if err := eg.Wait(); err != nil {

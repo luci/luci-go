@@ -33,9 +33,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/terminal"
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/errs"
+	"go.chromium.org/luci/lucicfg/internal/ui"
 )
 
 // CommandLineError is used to tag errors related to command line arguments.
@@ -83,7 +85,10 @@ type Subcommand struct {
 
 // ModifyContext implements cli.ContextModificator.
 func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
-	return c.logConfig.Set(ctx)
+	return ui.WithConfig(c.logConfig.Set(ctx), ui.Config{
+		Fancy: c.logConfig.Level == logging.Info && terminal.IsTerminal(int(os.Stderr.Fd())),
+		Term:  os.Stderr,
+	})
 }
 
 // Init registers common flags.
