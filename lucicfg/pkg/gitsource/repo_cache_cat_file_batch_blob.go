@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
+	"go.chromium.org/luci/common/logging"
 )
 
 func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byte, error) {
@@ -45,10 +47,16 @@ func (r *RepoCache) ReadSingleFile(ctx context.Context, commit, path string) ([]
 	if err == nil {
 		return output, nil
 	}
-	if bytes.Contains(output, []byte("not our ref")) {
-		err = ErrMissingCommit
-	} else if bytes.Contains(output, []byte("does not exist")) {
-		err = ErrMissingObject
+	if r.debugLogs {
+		logging.Debugf(ctx, "failed git call output:\n%s", output)
+	}
+	switch {
+	case bytes.Contains(output, []byte("not our ref")):
+		return nil, ErrMissingCommit
+	case bytes.Contains(output, []byte("does not exist")):
+		return nil, ErrMissingObject
+	case bytes.Contains(output, []byte("exists on disk, but not in")):
+		return nil, ErrMissingObject
 	}
 	return nil, err
 }

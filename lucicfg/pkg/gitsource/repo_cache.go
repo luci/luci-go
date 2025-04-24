@@ -78,9 +78,14 @@ func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
 	return ret
 }
 
-func (r *RepoCache) fixCmdErr(cmd *exec.Cmd, err error) error {
+func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error) error {
 	if err == nil {
 		return nil
+	}
+	// Prefer the context error to avoid confusing "signal: killed" errors when
+	// the context is canceled.
+	if ctx.Err() != nil {
+		err = ctx.Err()
 	}
 	return fmt.Errorf("running %s: %w", cmd, err)
 }
@@ -88,7 +93,7 @@ func (r *RepoCache) fixCmdErr(cmd *exec.Cmd, err error) error {
 // git runs the command, returning an error unless the command succeeded.
 func (r *RepoCache) git(ctx context.Context, args ...string) error {
 	cmd := r.mkGitCmd(ctx, args)
-	return r.fixCmdErr(cmd, cmd.Run())
+	return r.fixCmdErr(ctx, cmd, cmd.Run())
 }
 
 // gitOutput returns the stdout from this git command
@@ -96,7 +101,7 @@ func (r *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, erro
 	cmd := r.mkGitCmd(ctx, args)
 	cmd.Stdout = nil
 	out, err := cmd.Output()
-	return out, r.fixCmdErr(cmd, err)
+	return out, r.fixCmdErr(ctx, cmd, err)
 }
 
 // gitCombinedOutput returns the stdout from this git command
@@ -105,7 +110,7 @@ func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]by
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	out, err := cmd.CombinedOutput()
-	return out, r.fixCmdErr(cmd, err)
+	return out, r.fixCmdErr(ctx, cmd, err)
 }
 
 // gitTest returns:
@@ -124,7 +129,7 @@ func (r *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
 	if errors.As(err, &exitErr) {
 		err = nil
 	}
-	return false, r.fixCmdErr(cmd, err)
+	return false, r.fixCmdErr(ctx, cmd, err)
 }
 
 func (r *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
