@@ -42,6 +42,7 @@ export type DateFilterData = {
 export const filterDescriptors = {
   rr_id: 'string',
   fulfillment_status: 'multi-select',
+  expected_eta: 'date-range',
   material_sourcing_target_delivery_date: 'date-range',
   build_target_delivery_date: 'date-range',
   qa_target_delivery_date: 'date-range',
@@ -62,7 +63,7 @@ export type RriFilters = {
   [K in RriFilterKey]?: MapDescriptorToType<(typeof filterDescriptors)[K]>;
 };
 
-interface RriFilterOption {
+export interface RriFilterOption {
   label: string;
   value: RriFilterKey;
   getChildrenSearchScore?: (searchQuery: string) => number;
@@ -91,6 +92,11 @@ export const filterOpts = [
     optionsComponent: FulfillmentStatusFilter,
   },
   {
+    label: 'Expected ETA',
+    value: 'expected_eta',
+    optionsComponent: DateFilter,
+  },
+  {
     label: 'Material Sourcing Target Delivery Date',
     value: 'material_sourcing_target_delivery_date',
     optionsComponent: DateFilter,
@@ -110,7 +116,7 @@ export const filterOpts = [
     value: 'config_target_delivery_date',
     optionsComponent: DateFilter,
   },
-] as RriFilterOption[];
+] as const satisfies readonly RriFilterOption[];
 
 const parseDateOnly = (
   param: string | null | undefined,
@@ -163,6 +169,7 @@ const getFiltersFromSearchParam = (
 
   return {
     rr_id: rec['rr_id'],
+    expected_eta: parseDateOnlyFromUrl(rec, 'expected_eta'),
     material_sourcing_target_delivery_date: parseDateOnlyFromUrl(
       rec,
       'material_sourcing_target_delivery_date',
@@ -320,6 +327,7 @@ export const useRriFilters = () => {
         .map((value) => fulfillmentStatusDisplayValueMap[value])
         .join(', ');
     },
+    expected_eta: (v) => mapDateFilterToSelectedChipLabel(v as DateFilterData),
     material_sourcing_target_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
     build_target_delivery_date: (v) =>

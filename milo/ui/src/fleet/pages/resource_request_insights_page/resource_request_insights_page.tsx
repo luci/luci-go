@@ -49,6 +49,7 @@ import {
   filterOpts,
   ResourceRequestInsightsOptionComponentProps,
   RriFilterKey,
+  RriFilterOption,
   RriFilters,
   useRriFilters,
 } from './use_rri_filters';
@@ -240,8 +241,9 @@ export const ResourceRequestListPage = () => {
         label: option.label,
         value: option.value,
         getSearchScore: (searchQuery: string) => {
-          const childrenScore = option.getChildrenSearchScore
-            ? option.getChildrenSearchScore(searchQuery)
+          const typedOption = option as RriFilterOption;
+          const childrenScore = typedOption.getChildrenSearchScore
+            ? typedOption.getChildrenSearchScore(searchQuery)
             : 0;
           const [score, matches] = fuzzySubstring(searchQuery, option.label);
           return { score: Math.max(score, childrenScore), matches: matches };
