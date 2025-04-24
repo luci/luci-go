@@ -30,21 +30,5 @@ dispatch:
   # Bot APIs served via Go (perhaps proxying to Python).
   - url: "*/bot_code*"
     service: default-go
-  - url: "*/swarming/api/v1/bot/bot_code*"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/handshake"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/poll"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/event"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/oauth_token"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/id_token"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/claim"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/server_ping"
-    service: default-go
-  - url: "*/swarming/api/v1/bot/task_update*"
+  - url: "*/swarming/api/v1/bot/*"
     service: default-go

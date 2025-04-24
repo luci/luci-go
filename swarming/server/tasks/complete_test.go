@@ -500,6 +500,74 @@ func TestCompleteOp(t *testing.T) {
 			})
 		})
 
+		t.Run("task_error", func(t *ftt.Test) {
+			t.Run("client_error", func(t *ftt.Test) {
+				ents := createTaskEntities(apipb.TaskState_RUNNING)
+				assert.NoErr(t, datastore.Put(ctx, ents.trr))
+				op := &CompleteOp{
+					Request: ents.tr,
+					BotID:   "bot1",
+					ClientError: &ClientError{
+						MissingCAS: []model.CASReference{
+							{
+								CASInstance: "instance",
+								Digest: model.CASDigest{
+									Hash:      "hash",
+									SizeBytes: int64(3),
+								},
+							},
+						},
+						MissingCIPD: []model.CIPDPackage{
+							{
+								PackageName: "package",
+								Version:     "version",
+								Path:        "path",
+							},
+						},
+					},
+				}
+				outcome, err := run(op)
+				assert.NoErr(t, err)
+				assert.That(t, outcome.Updated, should.BeTrue)
+				assert.Loosely(t, outcome.BotEventType, should.Equal(""))
+
+				trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+				assert.NoErr(t, datastore.Get(ctx, trs))
+				assert.That(t, trs.ExitCode.Get(), should.Equal(int64(-1)))
+				assert.That(t, trs.DurationSecs.Get(), should.Equal(now.Sub(ents.trr.Started.Get()).Seconds()))
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_CLIENT_ERROR))
+				assert.That(t, trs.InternalFailure, should.BeTrue)
+				assert.That(t, trs.Abandoned.Get(), should.Match(now))
+				assert.That(t, trs.MissingCAS, should.Match(op.ClientError.MissingCAS))
+				assert.That(t, trs.MissingCIPD, should.Match(op.ClientError.MissingCIPD))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
+				assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
+			})
+
+			t.Run("task_error", func(t *ftt.Test) {
+				ents := createTaskEntities(apipb.TaskState_RUNNING)
+				assert.NoErr(t, datastore.Put(ctx, ents.trr))
+				op := &CompleteOp{
+					Request:   ents.tr,
+					BotID:     "bot1",
+					TaskError: true,
+				}
+				outcome, err := run(op)
+				assert.NoErr(t, err)
+				assert.That(t, outcome.Updated, should.BeTrue)
+				assert.Loosely(t, outcome.BotEventType, should.Equal(""))
+
+				trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+				assert.NoErr(t, datastore.Get(ctx, trs))
+				assert.That(t, trs.ExitCode.Get(), should.Equal(int64(-1)))
+				assert.That(t, trs.DurationSecs.Get(), should.Equal(now.Sub(ents.trr.Started.Get()).Seconds()))
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_BOT_DIED))
+				assert.That(t, trs.InternalFailure, should.BeTrue)
+				assert.That(t, trs.Abandoned.Get(), should.Match(now))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
+				assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
+			})
+		})
 	})
 }
 

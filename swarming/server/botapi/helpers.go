@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/swarming/server/botinfo"
@@ -126,4 +127,33 @@ func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs erro
 		})
 	}
 	return healthInfo, state, err
+}
+
+// validateTaskID validates the provided taskID.
+//
+// It checks
+// * The correctness of the taskID;
+// * If it's the current task ID the bot is associated with;
+// * Whether there's a TaskRequest entity saved for the taskID.
+func validateTaskID(ctx context.Context, taskID, botTaskID string) (*model.TaskRequest, error) {
+	if taskID == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "task ID is required")
+	}
+	if botTaskID != taskID {
+		return nil, status.Errorf(codes.InvalidArgument, "wrong task ID %q: the bot is not executing this task", taskID)
+	}
+	reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+	if err != nil {
+		// This should never happen, the task ID is the same as the one from
+		// datastore, which should have been validated.
+		return nil, status.Errorf(codes.FailedPrecondition, "invalid task ID %q", taskID)
+	}
+	tr, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "task %q not found", taskID)
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", taskID, err)
+	}
+	return tr, nil
 }

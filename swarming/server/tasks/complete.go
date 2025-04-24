@@ -73,6 +73,22 @@ type CompleteOp struct {
 	Output []byte
 	// OutputChunkStart is the index of output in the stdout stream.
 	OutputChunkStart int64
+	// TaskError is a bool on whether the bot abandons the task when reporting
+	// a task error.
+	// It is essentially the same as `Abaondoned`. But it is not controlled by
+	// m.allowAbandoningTasks.
+	// TODO: merge it with Abandoned after removing m.allowAbandoningTasks.
+	TaskError bool
+	// ClientError is the client errors.
+	ClientError *ClientError
+}
+
+// ClientError is the client errors.
+type ClientError struct {
+	// MissingCAS is the missing CAS digests in CLIENT_ERROR state.
+	MissingCAS []model.CASReference `json:"missing_cas,omitempty"`
+	// MissingCIPD is the missing CIPD packages in CLIENT_ERROR state.
+	MissingCIPD []model.CIPDPackage `json:"missing_cipd,omitempty"`
 }
 
 type CompleteTxnOutcome struct {
@@ -172,6 +188,8 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		trr.ExitCode.Set(*op.ExitCode)
 		trr.Failure = *op.ExitCode != 0
 	}
+
+	// Handle special completion cases.
 	if newState == apipb.TaskState_TIMED_OUT {
 		setExitCodeAndDurationFallbacks(trr, now)
 		trr.Failure = true
@@ -181,13 +199,22 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		trr.ExitCode.Unset()
 		trr.DurationSecs.Unset()
 	}
-	if op.Abandoned {
+	if op.Abandoned || op.TaskError {
 		setExitCodeAndDurationFallbacks(trr, now)
 		trr.InternalFailure = true
 		// Set Abandoned timestamp only if the task ends with "BOT_DIED".
 		// If the task is abandoned during cancellation, its Abandoned timestamp
 		// has been set when cancellation happened.
 		if newState == apipb.TaskState_BOT_DIED {
+			trr.Abandoned = datastore.NewIndexedNullable(now)
+		}
+	}
+	if op.ClientError != nil {
+		setExitCodeAndDurationFallbacks(trr, now)
+		trr.MissingCAS = op.ClientError.MissingCAS
+		trr.MissingCIPD = op.ClientError.MissingCIPD
+		trr.InternalFailure = true
+		if newState == apipb.TaskState_CLIENT_ERROR {
 			trr.Abandoned = datastore.NewIndexedNullable(now)
 		}
 	}
@@ -215,7 +242,7 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 	}
 
 	var botEventType model.BotEventType
-	if !op.Abandoned {
+	if !op.Abandoned && !op.TaskError && op.ClientError == nil {
 		// No need to calculate BotEventType for abandoning a task.
 		botEventType, err = calculateBotEventType(trs.State)
 		if err != nil {
@@ -253,14 +280,16 @@ func (op *CompleteOp) calculateState(trr *model.TaskRunResult) apipb.TaskState {
 	switch {
 	case op.Canceled:
 		return apipb.TaskState_CANCELED
-	case trr.Killing && op.Abandoned:
-		return apipb.TaskState_KILLED
-	case op.Abandoned:
-		return apipb.TaskState_BOT_DIED
-	case trr.Killing && op.ExitCode != nil:
-		return apipb.TaskState_KILLED
 	case op.HardTimeout || op.IOTimeout:
 		return apipb.TaskState_TIMED_OUT
+	case trr.Killing:
+		// trr.Killing almost always sets the state to `KILLED`, except when
+		// the task is also timed out.
+		return apipb.TaskState_KILLED
+	case op.ClientError != nil:
+		return apipb.TaskState_CLIENT_ERROR
+	case op.Abandoned, op.TaskError:
+		return apipb.TaskState_BOT_DIED
 	case op.ExitCode != nil:
 		return apipb.TaskState_COMPLETED
 	default:

@@ -326,7 +326,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 							Key: model.BotInfoKey(ctx, u.BotID),
 						})
 						if res != nil {
-							assert.That(t, res.Proceed, should.Equal(proceed))
+							assert.That(t, res.Proceed, should.BeTrue)
 							assert.That(t, res.EventType, should.Equal(outcome.BotEventType))
 
 						}

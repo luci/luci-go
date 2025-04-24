@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -237,7 +236,7 @@ func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateReque
 			if err != nil {
 				return nil, err
 			}
-			return &botinfo.PrepareOutcome{Proceed: outcome.Updated, EventType: outcome.BotEventType}, nil
+			return &botinfo.PrepareOutcome{Proceed: true, EventType: outcome.BotEventType}, nil
 
 		},
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
@@ -316,25 +315,11 @@ func isTaskCompletion(body *TaskUpdateRequest) bool {
 }
 
 func validateTaskUpdateRequest(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*model.TaskRequest, error) {
-	if body.TaskID == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "task ID is required")
-	}
-	if r.CurrentTaskID != body.TaskID {
-		return nil, status.Errorf(codes.InvalidArgument, "wrong task ID %q: the bot is not executing this task", body.TaskID)
-	}
-	reqKey, err := model.TaskIDToRequestKey(ctx, body.TaskID)
+	tr, err := validateTaskID(ctx, body.TaskID, r.CurrentTaskID)
 	if err != nil {
-		// This should never happen, the task ID is the same as the one from
-		// datastore, which should have been validated.
-		return nil, status.Errorf(codes.FailedPrecondition, "invalid task ID %q", body.TaskID)
+		return nil, err
 	}
-	tr, err := model.FetchTaskRequest(ctx, reqKey)
-	switch {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, status.Errorf(codes.NotFound, "task %q not found", body.TaskID)
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "failed to get task %q: %s", body.TaskID, err)
-	}
+
 	if body.CostUSD < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "negative cost %f", body.CostUSD)
 	}
