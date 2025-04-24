@@ -50,7 +50,7 @@ func TestCompleteOp(t *testing.T) {
 		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
 		assert.NoErr(t, err)
 
-		mgr := NewManager(tqt.Tasks, "swarming-proj", "cur-version", nil, false)
+		mgr := NewManager(tqt.Tasks, "swarming-proj", "cur-version", nil, true).(*managerImpl)
 
 		type entities struct {
 			tr  *model.TaskRequest
@@ -174,9 +174,9 @@ func TestCompleteOp(t *testing.T) {
 					ExitCode: &anotherExitCode,
 					Duration: &duration,
 				}
-				_, err := mgr.CompleteTxn(ctx, op)
-				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
-				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				res, err := mgr.CompleteTxn(ctx, op)
+				assert.That(t, res.Updated, should.BeFalse)
+				assert.NoErr(t, err)
 			})
 
 			t.Run("different_end_state", func(t *ftt.Test) {
@@ -191,9 +191,9 @@ func TestCompleteOp(t *testing.T) {
 					BotID:       "bot1",
 					HardTimeout: true,
 				}
-				_, err := mgr.CompleteTxn(ctx, op)
-				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
-				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				res, err := mgr.CompleteTxn(ctx, op)
+				assert.That(t, res.Updated, should.BeFalse)
+				assert.NoErr(t, err)
 			})
 		})
 
@@ -432,6 +432,71 @@ func TestCompleteOp(t *testing.T) {
 				trr := ents.trr
 				assert.NoErr(t, datastore.Get(ctx, trr))
 				assert.That(t, trr.Killing, should.BeFalse)
+			})
+		})
+
+		t.Run("abandon", func(t *ftt.Test) {
+			t.Run("normal_abandon", func(t *ftt.Test) {
+				ents := createTaskEntities(apipb.TaskState_RUNNING)
+				assert.NoErr(t, datastore.Put(ctx, ents.trr))
+				op := &CompleteOp{
+					Request:   ents.tr,
+					BotID:     "bot1",
+					Abandoned: true,
+				}
+				outcome, err := run(op)
+				assert.NoErr(t, err)
+				assert.That(t, outcome.Updated, should.BeTrue)
+				assert.Loosely(t, outcome.BotEventType, should.Equal(""))
+
+				trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+				assert.NoErr(t, datastore.Get(ctx, trs))
+				assert.That(t, trs.ExitCode.Get(), should.Equal(int64(-1)))
+				assert.That(t, trs.DurationSecs.Get(), should.Equal(now.Sub(ents.trr.Started.Get()).Seconds()))
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_BOT_DIED))
+				assert.That(t, trs.InternalFailure, should.BeTrue)
+				assert.That(t, trs.Abandoned.Get(), should.Match(now))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
+				assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
+			})
+
+			t.Run("abandon_during_cancellation", func(t *ftt.Test) {
+				ents := createTaskEntities(apipb.TaskState_RUNNING)
+				ents.trr.Killing = true
+				ents.trr.Abandoned = datastore.NewIndexedNullable(now.Add(-time.Minute))
+				ents.trs.Abandoned = datastore.NewIndexedNullable(now.Add(-time.Minute))
+				assert.NoErr(t, datastore.Put(ctx, ents.trr, ents.trs))
+				op := &CompleteOp{
+					Request:   ents.tr,
+					BotID:     "bot1",
+					Abandoned: true,
+				}
+				outcome, err := run(op)
+				assert.NoErr(t, err)
+				assert.That(t, outcome.Updated, should.BeTrue)
+				assert.Loosely(t, outcome.BotEventType, should.Equal(""))
+
+				trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+				assert.NoErr(t, datastore.Get(ctx, trs))
+				assert.That(t, trs.ExitCode.Get(), should.Equal(int64(-1)))
+				assert.That(t, trs.DurationSecs.Get(), should.Equal(now.Sub(ents.trr.Started.Get()).Seconds()))
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_KILLED))
+				assert.That(t, trs.InternalFailure, should.BeTrue)
+				assert.That(t, trs.Abandoned.Get(), should.Match(now.Add(-time.Minute)))
+				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
+				assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
+			})
+
+			t.Run("skip_abandon_since_not_allowed", func(t *ftt.Test) {
+				mgr.allowAbandoningTasks = false
+				op := &CompleteOp{
+					Request:   nil,
+					BotID:     "bot1",
+					Abandoned: true,
+				}
+				outcome, err := run(op)
+				assert.NoErr(t, err)
+				assert.That(t, outcome.Updated, should.BeFalse)
 			})
 		})
 

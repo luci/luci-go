@@ -53,8 +53,8 @@ type CompleteOp struct {
 	// Updates of the ask.
 	// Canceled is a bool on whether the task has been canceled at set up stage.
 	Canceled bool
-	// TODO: add fields to handle other type of task completion, e.g. abandon a task.
-
+	// Abandoned is a bool on whether the task has been abandoned.
+	Abandoned bool
 	// CASOutputRoot is the digest of the output root uploaded to RBE-CAS.
 	CASOutputRoot model.CASReference
 	// CIPDPins is resolved versions of all the CIPD packages used in the task.
@@ -88,6 +88,10 @@ type CompleteTxnOutcome struct {
 
 // CompleteTxn updates the task and marks it as completed.
 func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*CompleteTxnOutcome, error) {
+	if op.Abandoned && !m.allowAbandoningTasks {
+		return &CompleteTxnOutcome{Updated: false}, nil
+	}
+
 	tr := op.Request
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)
 
@@ -115,7 +119,6 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 				ctx,
 				"cannot complete task %q with state %s, because it is already completed with state %s",
 				taskID, newState, trs.State)
-			return nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", taskID)
 		}
 		if op.ExitCode != nil {
 			if trs.ExitCode.IsSet() && trs.ExitCode.Get() != *op.ExitCode {
@@ -123,17 +126,17 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 					ctx,
 					"cannot complete task %q with exit_code %d, because it is already completed with exit_code %d",
 					taskID, op.ExitCode, trs.ExitCode.Get())
-				return nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", taskID)
 			}
 			if trs.DurationSecs.IsSet() && op.Duration != nil && trs.DurationSecs.Get() != *op.Duration {
 				logging.Errorf(
 					ctx,
 					"cannot complete task %q with duration %f, because it is already completed with duration %f",
 					taskID, *op.Duration, trs.DurationSecs.Get())
-				return nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", taskID)
 			}
 		}
-		// No mismatch found, should be a retry.
+		// The task has completed, cannot make any updates to it.
+		// If any of the above checks fails, there's no way for the caller to
+		// handle them, so return no error.
 		return &CompleteTxnOutcome{Updated: false}, nil
 	}
 
@@ -178,6 +181,16 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		trr.ExitCode.Unset()
 		trr.DurationSecs.Unset()
 	}
+	if op.Abandoned {
+		setExitCodeAndDurationFallbacks(trr, now)
+		trr.InternalFailure = true
+		// Set Abandoned timestamp only if the task ends with "BOT_DIED".
+		// If the task is abandoned during cancellation, its Abandoned timestamp
+		// has been set when cancellation happened.
+		if newState == apipb.TaskState_BOT_DIED {
+			trr.Abandoned = datastore.NewIndexedNullable(now)
+		}
+	}
 
 	trr.CASOutputRoot = op.CASOutputRoot
 	trr.CIPDPins = op.CIPDPins
@@ -201,10 +214,14 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		return nil, status.Errorf(codes.Internal, "failed to save task %q: %s", taskID, err)
 	}
 
-	botEventType, err := calculateBotEventType(trs.State)
-	if err != nil {
-		logging.Errorf(ctx, "failed to calculate bot event type for completing %q: %s", taskID, err)
-		return nil, status.Errorf(codes.Internal, "failed to calculate bot event type for completing %q", taskID)
+	var botEventType model.BotEventType
+	if !op.Abandoned {
+		// No need to calculate BotEventType for abandoning a task.
+		botEventType, err = calculateBotEventType(trs.State)
+		if err != nil {
+			logging.Errorf(ctx, "failed to calculate bot event type for completing %q: %s", taskID, err)
+			return nil, status.Errorf(codes.Internal, "failed to calculate bot event type for completing %q", taskID)
+		}
 	}
 
 	// PubSub notification and update BuildTask
@@ -236,6 +253,10 @@ func (op *CompleteOp) calculateState(trr *model.TaskRunResult) apipb.TaskState {
 	switch {
 	case op.Canceled:
 		return apipb.TaskState_CANCELED
+	case trr.Killing && op.Abandoned:
+		return apipb.TaskState_KILLED
+	case op.Abandoned:
+		return apipb.TaskState_BOT_DIED
 	case trr.Killing && op.ExitCode != nil:
 		return apipb.TaskState_KILLED
 	case op.HardTimeout || op.IOTimeout:

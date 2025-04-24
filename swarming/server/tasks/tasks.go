@@ -47,8 +47,6 @@ type Manager interface {
 
 	// ClaimTxn runs the transactional logic to mark the task slice as claimed.
 	ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcome, error)
-	// AbandonTxn runs the transactional logic to finalize the abandoned task.
-	AbandonTxn(ctx context.Context, op *AbandonOp) (*AbandonOpOutcome, error)
 	// CancelTxn runs the transactional logic to cancel a single task.
 	CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOutcome, error)
 	// CompleteTxn runs the transactional logic to complete a single task.

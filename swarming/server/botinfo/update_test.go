@@ -91,8 +91,8 @@ func TestBotInfoUpdate(t *testing.T) {
 				EventType:     ev,
 				EventDedupKey: dedupKey,
 				TasksManager: &tasks.MockedManager{
-					AbandonTxnMock: func(context.Context, *tasks.AbandonOp) (*tasks.AbandonOpOutcome, error) {
-						return &tasks.AbandonOpOutcome{}, nil
+					CompleteTxnMock: func(context.Context, *tasks.CompleteOp) (*tasks.CompleteTxnOutcome, error) {
+						return &tasks.CompleteTxnOutcome{}, nil
 					},
 				},
 				Dimensions: dims,
@@ -384,7 +384,7 @@ func TestBotInfoUpdate(t *testing.T) {
 		t.Run("Connect => Task => Task update => Idle", func(t *ftt.Test) {
 			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "65aba3a3e6b99200", TaskName: "task-name"})
 			tickOneSec()
 			submit(model.BotEventTaskUpdate, "update-1", nil, testState1)
 			tickOneSec()
@@ -404,9 +404,9 @@ func TestBotInfoUpdate(t *testing.T) {
 				model.BotStateHealthy,
 				model.BotStateBusy,
 			}))
-			assert.That(t, botInfo.TaskID, should.Equal("task-id"))
+			assert.That(t, botInfo.TaskID, should.Equal("65aba3a3e6b99200"))
 			assert.That(t, botInfo.TaskName, should.Equal("task-name"))
-			assert.That(t, events[1].TaskID, should.Equal("task-id"))
+			assert.That(t, events[1].TaskID, should.Equal("65aba3a3e6b99200"))
 
 			// Finishes the task and becomes idle.
 			submit(model.BotEventTaskCompleted, "completed", nil, testState1)
@@ -429,14 +429,14 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, botInfo.TaskID, should.Equal(""))
 			assert.That(t, botInfo.TaskName, should.Equal(""))
 
-			assert.That(t, events[2].TaskID, should.Equal("task-id")) // task_completed
-			assert.That(t, events[3].TaskID, should.Equal(""))        // bot_idle
+			assert.That(t, events[2].TaskID, should.Equal("65aba3a3e6b99200")) // task_completed
+			assert.That(t, events[3].TaskID, should.Equal(""))                 // bot_idle
 		})
 
 		t.Run("Connect => Task => Missing => Connect", func(t *ftt.Test) {
 			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "65aba3a3e6b99200", TaskName: "task-name"})
 			tickOneSec()
 			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
@@ -448,11 +448,11 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, summary(events), should.Match([]string{
 				"bot_connected",
 				"request_task",
-				"bot_missing Abandoned task-id",
+				"bot_missing Abandoned 65aba3a3e6b99200",
 			}))
 
 			// Actually retained TaskID.
-			assert.That(t, info.TaskID, should.Equal("task-id"))
+			assert.That(t, info.TaskID, should.Equal("65aba3a3e6b99200"))
 
 			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
@@ -469,7 +469,7 @@ func TestBotInfoUpdate(t *testing.T) {
 		t.Run("Connect => Task => Connect", func(t *ftt.Test) {
 			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "65aba3a3e6b99200", TaskName: "task-name"})
 			tickOneSec()
 			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
@@ -481,14 +481,14 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, summary(events), should.Match([]string{
 				"bot_connected",
 				"request_task",
-				"bot_connected Abandoned task-id",
+				"bot_connected Abandoned 65aba3a3e6b99200",
 			}))
 		})
 
 		t.Run("Connect => Task => Deleted", func(t *ftt.Test) {
 			submit(model.BotEventConnected, "connect", nil, testState1)
 			tickOneSec()
-			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(model.BotEventTask, "task", nil, testState1, &TaskInfo{TaskID: "65aba3a3e6b99200", TaskName: "task-name"})
 			tickOneSec()
 			submit(model.BotEventTaskUpdate, "update-2", nil, testState1)
 			tickOneSec()
@@ -500,7 +500,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, summary(events), should.Match([]string{
 				"bot_connected",
 				"request_task",
-				"bot_deleted Abandoned task-id",
+				"bot_deleted Abandoned 65aba3a3e6b99200",
 			}))
 		})
 
@@ -508,7 +508,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			submit(model.BotEventConnected, "connect-1", nil, testState1)
 			tickOneSec()
 			submit(model.BotEventTerminate, "terminate", nil, testState1, &TaskInfo{
-				TaskID:    "task-id",
+				TaskID:    "65aba3a3e6b99200",
 				TaskName:  "task-name",
 				TaskFlags: model.TaskFlagTermination,
 			})
@@ -537,12 +537,12 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, botInfo.TaskName, should.Equal(""))
 			assert.That(t, botInfo.TaskFlags, should.Equal(model.TaskFlags(0)))
 			assert.That(t, botInfo.LastFinishedTask, should.Equal(model.LastTaskDetails{
-				TaskID:      "task-id",
+				TaskID:      "65aba3a3e6b99200",
 				TaskName:    "task-name",
 				TaskFlags:   model.TaskFlagTermination,
 				FinishedDue: model.BotEventTaskCompleted,
 			}))
-			assert.That(t, botInfo.TerminationTaskID, should.Equal("task-id"))
+			assert.That(t, botInfo.TerminationTaskID, should.Equal("65aba3a3e6b99200"))
 
 			// When it connects again, TerminationTaskID gets unset.
 			submit(model.BotEventConnected, "connect-2", nil, testState1)

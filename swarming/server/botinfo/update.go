@@ -349,17 +349,6 @@ type SubmittedUpdate struct {
 	eventType model.BotEventType
 }
 
-// AbandonedTaskFinalizer is used to finalized the state of an abandoned task.
-//
-// It is used inside BotInfo transactions when it is detected the bot has
-// abandoned the task it was running.
-type AbandonedTaskFinalizer interface {
-	// AbandonTxn runs the transactional logic to finalize the abandoned task.
-	AbandonTxn(ctx context.Context) error
-	// Finished is called once the transaction lands to report metrics.
-	Finished(ctx context.Context)
-}
-
 // PanicIfInvalid panics if this update violates the contract documented in
 // Update comments.
 //
@@ -423,13 +412,27 @@ func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 			}
 		}
 		if submitted.AbandonedTaskID != "" {
-			_, err := u.TasksManager.AbandonTxn(ctx, &tasks.AbandonOp{
-				BotID:  u.BotID,
-				TaskID: submitted.AbandonedTaskID,
-			})
+			reqKey, err := model.TaskIDToRequestKey(ctx, submitted.AbandonedTaskID)
 			if err != nil {
-				return err
+				// This should never happen: we take this ID from inside BotInfo
+				// entity, where it was already validated.
+				return errors.Annotate(err, "bad abandoned task ID").Err()
 			}
+			tr, err := model.FetchTaskRequest(ctx, reqKey)
+			switch {
+			case errors.Is(err, datastore.ErrNoSuchEntity):
+				// Task not found, log it and move on.
+				logging.Errorf(ctx, "Abandoned task %q not found", submitted.AbandonedTaskID)
+				return nil
+			case err != nil:
+				return errors.Annotate(err, "failed to get abandoned task %q", submitted.AbandonedTaskID).Err()
+			}
+			_, err = u.TasksManager.CompleteTxn(ctx, &tasks.CompleteOp{
+				BotID:     u.BotID,
+				Request:   tr,
+				Abandoned: true,
+			})
+			return err
 		}
 		return err
 	}, &datastore.TransactionOptions{
