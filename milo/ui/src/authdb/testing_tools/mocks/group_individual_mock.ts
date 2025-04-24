@@ -25,7 +25,7 @@ export function createMockGroupIndividual(
     name: name,
     description: 'testDescription',
     members: callerCanViewMembers
-      ? ['user:member1@email.com', 'user:member2@email.com']
+      ? ['user:member1@email.com', 'user:anothermember@email.com']
       : [],
     globs: ['user:*@email.com'],
     nested: ['subgroup1', 'subgroup2'],

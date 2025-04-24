@@ -48,6 +48,22 @@ describe('<GroupsFormList editable/>', () => {
     expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
   });
 
+  test('displays items in alphabetical order', async () => {
+    const editedMembers = mockGroup.members.map((member) =>
+      stripPrefix('user', member),
+    );
+
+    editedMembers.sort();
+    const elems = screen.getAllByRole('listitem');
+    // Check each member is displayed.
+    for (let i = 0; i < editedMembers.length; i++) {
+      expect(elems[i]).toHaveTextContent(editedMembers[i]);
+    }
+
+    // Check no remove button exists on readonly.
+    expect(screen.queryAllByTestId('remove-button')).toHaveLength(0);
+  });
+
   test('shows removed members confirm dialog', async () => {
     const editedMembers = mockGroup.members.map((member) =>
       stripPrefix('user', member),

@@ -101,6 +101,8 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         stripPrefix('user', member),
       );
     }
+    // Display items alphabetically.
+    initialValues.sort();
     // The initial form items which reflect the items currently in auth service backend.
     const [savedValues, setSavedValues] = useState<string[]>(initialValues);
     // The current edited item list, including removed & added items.
@@ -142,7 +144,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       },
       changeItems: (newValues: string[]) => {
         if (!valuesEqual(newValues, savedValues)) {
-          setItems(asItems(newValues));
+          setItems(asItems(newValues.sort()));
           setSavedValues(newValues);
         }
       },
@@ -333,6 +335,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                       sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
                       className="item-row"
                       data-testid={`item-row-${item.value}`}
+                      role="listitem"
                     >
                       <TableCell
                         sx={{ p: 0, pt: '1px' }}
