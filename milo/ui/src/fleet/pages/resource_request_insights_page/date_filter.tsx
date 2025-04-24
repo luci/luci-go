@@ -18,8 +18,10 @@ import { useEffect } from 'react';
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 
-import { ResourceRequestInsightsOptionComponentProps } from './resource_request_insights_page';
-import { DateFilterData } from './use_rri_filters';
+import {
+  DateFilterData,
+  ResourceRequestInsightsOptionComponentProps,
+} from './use_rri_filters';
 
 interface CustomDatePickerProps {
   label: string;

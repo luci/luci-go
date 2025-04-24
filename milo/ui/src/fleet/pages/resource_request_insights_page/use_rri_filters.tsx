@@ -14,13 +14,25 @@
 
 import { useMemo } from 'react';
 
+import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { toIsoString } from '@/fleet/utils/dates';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
+import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { DateFilter } from './date_filter';
+import {
+  fulfillmentStatusDisplayValueMap,
+  getFulfillmentStatusScoredOptions,
+} from './fulfillment_status';
+import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { ResourceRequestColumnKey } from './resource_request_insights_page';
+import { RriTextFilter } from './rri_text_filter';
 
 const FILTERS_PARAM_KEY = 'filters';
+const FILTER_SEPARATOR = '&';
+
+const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
 
 export type DateFilterData = {
   min?: DateOnly;
@@ -29,25 +41,76 @@ export type DateFilterData = {
 
 export const filterDescriptors = {
   rr_id: 'string',
+  fulfillment_status: 'multi-select',
   material_sourcing_target_delivery_date: 'date-range',
   build_target_delivery_date: 'date-range',
   qa_target_delivery_date: 'date-range',
   config_target_delivery_date: 'date-range',
 } as const satisfies Partial<
-  Record<ResourceRequestColumnKey, 'string' | 'date-range'>
+  Record<ResourceRequestColumnKey, 'string' | 'multi-select' | 'date-range'>
 >;
 
 export type RriFilterKey = keyof typeof filterDescriptors;
 
 type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
   string: string;
-  'string-array': string[];
+  'multi-select': string[];
   'date-range': DateFilterData;
 }[T];
 
 export type RriFilters = {
   [K in RriFilterKey]?: MapDescriptorToType<(typeof filterDescriptors)[K]>;
 };
+
+interface RriFilterOption {
+  label: string;
+  value: RriFilterKey;
+  getChildrenSearchScore?: (searchQuery: string) => number;
+  optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
+}
+
+export interface ResourceRequestInsightsOptionComponentProps {
+  option: RriFilterOption;
+  filters: RriFilters | undefined;
+  onFiltersChange: (x: RriFilters) => void;
+  onClose: () => void;
+  onApply: () => void;
+}
+
+export const filterOpts = [
+  {
+    label: 'RR ID',
+    value: 'rr_id',
+    optionsComponent: RriTextFilter,
+  },
+  {
+    label: 'Fulfillment Status',
+    value: 'fulfillment_status',
+    getChildrenSearchScore: (searchQuery: string) =>
+      getFulfillmentStatusScoredOptions(searchQuery)[0].score,
+    optionsComponent: FulfillmentStatusFilter,
+  },
+  {
+    label: 'Material Sourcing Target Delivery Date',
+    value: 'material_sourcing_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+  {
+    label: 'Build Target Delivery Date',
+    value: 'build_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+  {
+    label: 'QA Target Delivery Date',
+    value: 'qa_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+  {
+    label: 'Config Target Delivery Date',
+    value: 'config_target_delivery_date',
+    optionsComponent: DateFilter,
+  },
+] as RriFilterOption[];
 
 const parseDateOnly = (
   param: string | null | undefined,
@@ -86,7 +149,7 @@ const getFiltersFromSearchParam = (
   if (paramValue === null) {
     return undefined;
   }
-  const rec = paramValue.split(' ').reduce(
+  const rec = paramValue.split(FILTER_SEPARATOR).reduce(
     (acc, part) => {
       const kv = part
         .trim()
@@ -116,6 +179,7 @@ const getFiltersFromSearchParam = (
       rec,
       'config_target_delivery_date',
     ),
+    fulfillment_status: rec['fulfillment_status']?.split(','),
   } satisfies Record<RriFilterKey, unknown>;
 };
 
@@ -142,8 +206,14 @@ const filtersToUrlString = (filters: RriFilters): string => {
         parts.push(`${key}=${filter}`);
       }
     }
+    if (type === 'multi-select') {
+      const values = filters[key] as string[] | undefined;
+      if (values) {
+        parts.push(`${key}=${values.join(',')}`);
+      }
+    }
   }
-  return parts.join(' ');
+  return parts.join(FILTER_SEPARATOR);
 };
 
 const filtersToAip = (filters: RriFilters): string => {
@@ -180,6 +250,17 @@ const filtersToAip = (filters: RriFilters): string => {
         parts.push(`${key} = ${filter}`);
       }
     }
+    if (type === 'multi-select') {
+      const values = filters[key] as string[] | undefined;
+      if (!values || values.length === 0) {
+        continue;
+      }
+      if (values) {
+        parts.push(
+          '(' + values.map((v) => `${key} = "${v}"`).join(' OR ') + ')',
+        );
+      }
+    }
   }
   return parts.join(' AND ');
 };
@@ -199,6 +280,24 @@ function filtersUpdater(newFilters: RriFilters | undefined) {
   };
 }
 
+const mapDateFilterToSelectedChipLabel = (
+  dateFilterData: DateFilterData,
+): string => {
+  if (!dateFilterData.min && !dateFilterData.max) {
+    return '';
+  }
+  if (!dateFilterData.min) {
+    return `before ${toIsoString(dateFilterData.max)}`;
+  }
+  if (!dateFilterData.max) {
+    return `after ${toIsoString(dateFilterData.min)}`;
+  }
+  if (dateFilterData.min && dateFilterData.max) {
+    return `${toIsoString(dateFilterData.min)} - ${toIsoString(dateFilterData.max)}`;
+  }
+  return '';
+};
+
 export const useRriFilters = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
@@ -213,5 +312,42 @@ export const useRriFilters = () => {
 
   const aipString = filters ? filtersToAip(filters) : '';
 
-  return [filters, aipString, setFilters] as const;
+  const selectedFilterLabelMap = {
+    rr_id: (v) => v as string,
+    fulfillment_status: (v) => {
+      const values = v as (keyof typeof ResourceRequest_Status)[];
+      return values
+        .map((value) => fulfillmentStatusDisplayValueMap[value])
+        .join(', ');
+    },
+    material_sourcing_target_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    build_target_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    qa_target_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    config_target_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
+  } as const satisfies Record<
+    RriFilterKey,
+    (filterValue: RriFilters[RriFilterKey]) => string
+  >;
+
+  const getSelectedFilterLabel = (
+    filterKey: RriFilterKey,
+    filterValue: RriFilters[RriFilterKey],
+  ): string => {
+    let label: string | undefined = filterOpts.find(
+      (opt) => opt.value === filterKey,
+    )?.label;
+
+    if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
+      label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
+      label += '...';
+    }
+
+    return `${label}: ${selectedFilterLabelMap[filterKey](filterValue)}`;
+  };
+
+  return [filters, aipString, setFilters, getSelectedFilterLabel] as const;
 };

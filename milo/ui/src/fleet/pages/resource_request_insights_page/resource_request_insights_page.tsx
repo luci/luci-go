@@ -28,10 +28,7 @@ import {
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import { CustomSelectedChip } from '@/fleet/components/filter_dropdown/custom_selected_chip';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
-import {
-  FilterCategoryData,
-  OptionComponent,
-} from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -46,12 +43,11 @@ import {
   ResourceRequest_Status,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DateFilter } from './date_filter';
+import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
 import { RriSummaryHeader } from './rri_summary_header';
-import { RriTextFilter } from './rri_text_filter';
 import {
-  DateFilterData,
-  filterDescriptors,
+  filterOpts,
+  ResourceRequestInsightsOptionComponentProps,
   RriFilterKey,
   RriFilters,
   useRriFilters,
@@ -59,8 +55,6 @@ import {
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
-
-const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
 
 const Container = styled.div`
   margin: 24px;
@@ -71,22 +65,6 @@ interface ColumnDescriptor {
   gridColDef: GridColDef;
   valueGetter: (rr: ResourceRequest) => string;
 }
-
-const mapFulfillmentStatus = (
-  fulfillmentStatus: ResourceRequest_Status | undefined,
-): string => {
-  if (fulfillmentStatus === undefined) return '';
-  switch (fulfillmentStatus) {
-    case ResourceRequest_Status.NOT_STARTED:
-      return 'Not Started';
-    case ResourceRequest_Status.IN_PROGRESS:
-      return 'In Progress';
-    case ResourceRequest_Status.COMPLETED:
-      return 'Completed';
-    default:
-      return '';
-  }
-};
 
 const columns = [
   {
@@ -124,7 +102,13 @@ const columns = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) =>
-      mapFulfillmentStatus(rr.fulfillmentStatus),
+      rr.fulfillmentStatus !== undefined
+        ? fulfillmentStatusDisplayValueMap[
+            ResourceRequest_Status[
+              rr.fulfillmentStatus
+            ] as keyof typeof ResourceRequest_Status
+          ]
+        : '',
   },
   {
     id: 'material_sourcing_target_delivery_date',
@@ -218,48 +202,6 @@ const getOrderByDto = (sortModel: GridSortModel) => {
   return `${sortColumnKey} desc`;
 };
 
-export interface ResourceRequestInsightsOptionComponentProps {
-  option: RriFilterOption;
-  filters: RriFilters | undefined;
-  onFiltersChange: (x: RriFilters) => void;
-  onClose: () => void;
-  onApply: () => void;
-}
-
-interface RriFilterOption {
-  label: string;
-  value: RriFilterKey;
-  optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
-}
-
-const filterOpts = [
-  {
-    label: 'RR ID',
-    value: 'rr_id',
-    optionsComponent: RriTextFilter,
-  },
-  {
-    label: 'Material Sourcing Target Delivery Date',
-    value: 'material_sourcing_target_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    label: 'Build Target Delivery Date',
-    value: 'build_target_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    label: 'QA Target Delivery Date',
-    value: 'qa_target_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    label: 'Config Target Delivery Date',
-    value: 'config_target_delivery_date',
-    optionsComponent: DateFilter,
-  },
-] as const satisfies readonly RriFilterOption[];
-
 export const ResourceRequestListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam, updateOrderByParam] = useOrderByParam();
@@ -270,7 +212,8 @@ export const ResourceRequestListPage = () => {
 
   const sortModel = getSortModelFromOrderByParam(orderByParam);
 
-  const [filters, aipString, setFilters] = useRriFilters();
+  const [filters, aipString, setFilters, getSelectedFilterLabel] =
+    useRriFilters();
 
   const [currentFilters, setCurrentFilters] = useState<RriFilters | undefined>(
     filters,
@@ -297,8 +240,11 @@ export const ResourceRequestListPage = () => {
         label: option.label,
         value: option.value,
         getSearchScore: (searchQuery: string) => {
+          const childrenScore = option.getChildrenSearchScore
+            ? option.getChildrenSearchScore(searchQuery)
+            : 0;
           const [score, matches] = fuzzySubstring(searchQuery, option.label);
-          return { score: score, matches: matches };
+          return { score: Math.max(score, childrenScore), matches: matches };
         },
         optionsComponent: option.optionsComponent,
         optionsComponentProps: {
@@ -351,41 +297,6 @@ export const ResourceRequestListPage = () => {
     },
   );
 
-  const getSelectedFilterLabel = (
-    filterKey: RriFilterKey,
-    filterValue: string | DateFilterData,
-  ): string => {
-    let label: string | undefined = filterOpts.find(
-      (opt) => opt.value === filterKey,
-    )?.label;
-
-    if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
-      label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
-      label += '...';
-    }
-
-    if (filterDescriptors[filterKey] === 'date-range') {
-      const date = filterValue as DateFilterData;
-
-      if (!date.min && !date.max) {
-        return '';
-      }
-      if (!date.min) {
-        return `${label}: before ${toIsoString(date.max)}`;
-      }
-      if (!date.max) {
-        return `${label}: after ${toIsoString(date.min)}`;
-      }
-      if (date.min && date.max) {
-        return `${label}: ${toIsoString(date.min)} - ${toIsoString(date.max)}`;
-      }
-    }
-    if (filterDescriptors[filterKey] === 'string') {
-      return `${label}: ${filterValue}`;
-    }
-    return `${label}: error`;
-  };
-
   const getSelectedChipDropdownContent = (filterKey: RriFilterKey) => {
     const filterOption = filterOpts.find((opt) => opt.value === filterKey);
     if (!filterOption) {
@@ -424,7 +335,7 @@ export const ResourceRequestListPage = () => {
         {(
           Object.entries(filters ?? {}) as [
             RriFilterKey,
-            string | DateFilterData,
+            RriFilters[RriFilterKey],
           ][]
         ).map(
           ([filterKey, filterValue]) =>

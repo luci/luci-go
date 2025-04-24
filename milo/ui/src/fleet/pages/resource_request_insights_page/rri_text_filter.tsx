@@ -17,7 +17,7 @@ import { useEffect } from 'react';
 
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
 
-import { ResourceRequestInsightsOptionComponentProps } from './resource_request_insights_page';
+import { ResourceRequestInsightsOptionComponentProps } from './use_rri_filters';
 
 export function RriTextFilter({
   optionComponentProps: { filters, onClose, onFiltersChange, option, onApply },
