@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/lucicfg/internal"
 	"go.chromium.org/luci/lucicfg/internal/ui"
+	"go.chromium.org/luci/lucicfg/pkg/gitsource"
 	"go.chromium.org/luci/lucicfg/pkg/mvs"
 )
 
@@ -80,7 +81,7 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 					if err == nil {
 						ui.ActivityDone(ctx, "")
 					} else {
-						ui.ActivityError(ctx, "%s", err)
+						ui.ActivityError(ctx, "%s", errorForActivity(err, scriptPath))
 					}
 				}()
 			}
@@ -347,7 +348,7 @@ func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer],
 				if err == nil {
 					ui.ActivityDone(ctx, "done")
 				} else {
-					ui.ActivityError(ctx, "%s", err)
+					ui.ActivityError(ctx, "%s", errorForActivity(err, ""))
 				}
 			}()
 
@@ -467,7 +468,7 @@ func prefetchDeps(ctx context.Context, gr *despGraph, depsList []mvs.Package[pkg
 				if err == nil {
 					ui.ActivityDone(ctx, "")
 				} else {
-					ui.ActivityError(ctx, "%s", err)
+					ui.ActivityError(ctx, "%s", errorForActivity(err, ""))
 				}
 			}()
 			out[i], err = gr.visited.Get(dep).PrefetchDep(ctx)
@@ -479,4 +480,28 @@ func prefetchDeps(ctx context.Context, gr *despGraph, depsList []mvs.Package[pkg
 	}
 
 	return out, nil
+}
+
+// errorForActivity extracts the most relevant error message to display in the
+// activities UI.
+func errorForActivity(err error, path string) string {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return "canceled"
+	case errors.Is(err, gitsource.ErrMissingCommit):
+		return "no such commit"
+	case errors.Is(err, gitsource.ErrMissingObject):
+		return fmt.Sprintf("%s: no such file in the commit or no such commit", path)
+	}
+
+	// Shed any wrappers around git errors, they duplicate information already
+	// present in activities UI (like the repo and commit being worked on). Full
+	// errors are displayed in the log at the end of the failed run. Activities UI
+	// shows only the root cause.
+	var gitErr *gitsource.GitError
+	if errors.As(err, &gitErr) {
+		return fmt.Sprintf("git: %s", gitErr.Err)
+	}
+
+	return err.Error()
 }

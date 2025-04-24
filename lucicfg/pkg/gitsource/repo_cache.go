@@ -38,6 +38,23 @@ type RepoCache struct {
 	batchProc batchProc
 }
 
+// GitError indicate a failed git execution (often with unknown root cause).
+type GitError struct {
+	Err     error  // the wrapped error from the exec.Command or context.Context
+	CmdLine string // the command line with failed call
+	Output  []byte // the capture output if it was captured (either stdout or combined)
+}
+
+// Error implements error interface.
+func (e *GitError) Error() string {
+	return fmt.Sprintf("running %s: %s", e.CmdLine, e.Err)
+}
+
+// Unwrap allows to traverse this error.
+func (e *GitError) Unwrap() error {
+	return e.Err
+}
+
 // Shutdown terminates long-running processes which may be associated with this
 // RepoCache.
 //
@@ -78,7 +95,7 @@ func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
 	return ret
 }
 
-func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error) error {
+func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error, out []byte) error {
 	if err == nil {
 		return nil
 	}
@@ -87,13 +104,17 @@ func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error) err
 	if ctx.Err() != nil {
 		err = ctx.Err()
 	}
-	return fmt.Errorf("running %s: %w", cmd, err)
+	return &GitError{
+		Err:     err,
+		CmdLine: cmd.String(),
+		Output:  out,
+	}
 }
 
 // git runs the command, returning an error unless the command succeeded.
 func (r *RepoCache) git(ctx context.Context, args ...string) error {
 	cmd := r.mkGitCmd(ctx, args)
-	return r.fixCmdErr(ctx, cmd, cmd.Run())
+	return r.fixCmdErr(ctx, cmd, cmd.Run(), nil)
 }
 
 // gitOutput returns the stdout from this git command
@@ -101,7 +122,7 @@ func (r *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, erro
 	cmd := r.mkGitCmd(ctx, args)
 	cmd.Stdout = nil
 	out, err := cmd.Output()
-	return out, r.fixCmdErr(ctx, cmd, err)
+	return out, r.fixCmdErr(ctx, cmd, err, out)
 }
 
 // gitCombinedOutput returns the stdout from this git command
@@ -110,7 +131,7 @@ func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]by
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	out, err := cmd.CombinedOutput()
-	return out, r.fixCmdErr(ctx, cmd, err)
+	return out, r.fixCmdErr(ctx, cmd, err, out)
 }
 
 // gitTest returns:
@@ -129,7 +150,7 @@ func (r *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
 	if errors.As(err, &exitErr) {
 		err = nil
 	}
-	return false, r.fixCmdErr(ctx, cmd, err)
+	return false, r.fixCmdErr(ctx, cmd, err, nil)
 }
 
 func (r *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
