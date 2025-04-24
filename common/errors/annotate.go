@@ -66,6 +66,8 @@ func (a *Annotator) Err() error {
 	for _, wrapper := range a.wrappers {
 		ret = wrapper.Apply(ret)
 	}
+	// The 1 is because this is a helper function we don't want to see in the
+	// captured trace.
 	ret = stacktag.Capture(ret, 1)
 	return ret
 }
@@ -202,5 +204,16 @@ func New(msg string, wrappers ...ErrorWrapper) error {
 	for _, wrapper := range wrappers {
 		ret = wrapper.Apply(ret)
 	}
+	// The 1 is because this is a helper function we don't want to see in the
+	// captured trace.
 	return stacktag.Capture(ret, 1)
+}
+
+// Fmt is an API-compatible version of the standard fmt.Errorf function, except
+// that it captures the stack, but ONLY if this is not used at init()-time. This
+// is to avoid module level errors having a mostly-useless stack attached.
+func Fmt(format string, a ...any) error {
+	// The 1 is because this is a helper function we don't want to see in the
+	// captured trace.
+	return stacktag.Capture(fmt.Errorf(format, a...), 1)
 }
