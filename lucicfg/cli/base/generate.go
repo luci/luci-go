@@ -54,7 +54,7 @@ type Generated struct {
 // 'repoOverrides' are a collection of k=v pairs passed via CLI flags as
 // `-repo-overrides k=v`. They are used to setup local overrides of remote
 // dependencies
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string) (*Generated, error) {
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string, repoOpts pkg.RemoteRepoManagerOptions) (*Generated, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return nil, err
@@ -117,6 +117,7 @@ You may also optionally set +x flag on it, but this is not required.
 	remote := &pkg.RemoteRepoManager{
 		DiskCache:    lucicfg.OpenCache(ctx),
 		DiskCacheDir: "remote",
+		Options:      repoOpts,
 	}
 	defer remote.Shutdown()
 

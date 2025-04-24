@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/sync/semaphore"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 
@@ -29,13 +31,21 @@ import (
 // RemoteRepoManager implements RepoManager that knows how to work with remote
 // git repositories using a local disk cache.
 type RemoteRepoManager struct {
-	DiskCache    DiskCache // usually implemented by lucicfg.Cache
-	DiskCacheDir string    // a root directory inside of DiskCache to use
+	DiskCache    DiskCache                // usually implemented by lucicfg.Cache
+	DiskCacheDir string                   // a root directory inside of DiskCache to use
+	Options      RemoteRepoManagerOptions // git related tweaks
 
 	m     sync.Mutex
 	err   error
 	cache *gitsource.Cache
 	repos map[RepoKey]*remoteRepoImpl
+	sem   *semaphore.Weighted
+}
+
+// RemoteRepoManagerOptions are populated based on CLI flags.
+type RemoteRepoManagerOptions struct {
+	GitDebug       bool // if true, emit verbose git logs
+	GitConcurrency int  // if >0, run at most given number of git fetches at once
 }
 
 // DiskCache is a subset of lucicfg.Cache used by RemoteRepoManager
@@ -65,7 +75,7 @@ func (r *RemoteRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, er
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	if err := r.init(); err != nil {
+	if err := r.initLocked(); err != nil {
 		return nil, err
 	}
 	if repo := r.repos[repoKey]; repo != nil {
@@ -80,25 +90,29 @@ func (r *RemoteRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, er
 	repo := &remoteRepoImpl{
 		repoKey:   repoKey,
 		repoCache: repoCache,
+		sem:       r.sem,
 	}
 	r.repos[repoKey] = repo
 	return repo, nil
 }
 
 // init lazy-initializes RemoteRepoManager.
-func (r *RemoteRepoManager) init() error {
-	if r.err == nil {
+func (r *RemoteRepoManager) initLocked() error {
+	if r.err == nil && r.cache == nil {
 		r.err = func() error {
 			dir, err := r.DiskCache.Subdir(r.DiskCacheDir)
 			if err != nil {
 				return err
 			}
-			cache, err := gitsource.New(dir, false) // TODO: Allow opt-in for debug logs.
+			cache, err := gitsource.New(dir, r.Options.GitDebug)
 			if err != nil {
 				return err
 			}
 			r.cache = cache
 			r.repos = make(map[RepoKey]*remoteRepoImpl, 1)
+			if r.Options.GitConcurrency > 0 {
+				r.sem = semaphore.NewWeighted(int64(r.Options.GitConcurrency))
+			}
 			return nil
 		}()
 	}
@@ -109,10 +123,22 @@ func (r *RemoteRepoManager) init() error {
 type remoteRepoImpl struct {
 	repoKey   RepoKey
 	repoCache *gitsource.RepoCache
+	sem       *semaphore.Weighted
+}
+
+func (r *remoteRepoImpl) acquireFetchConcurrencySlot(ctx context.Context) (done func()) {
+	if r.sem == nil {
+		return func() {}
+	}
+	if err := r.sem.Acquire(ctx, 1); err != nil {
+		return func() {}
+	}
+	return func() { r.sem.Release(1) }
 }
 
 // Fetch implements Repo.
 func (r *remoteRepoImpl) Fetch(ctx context.Context, rev string, repoPath string) ([]byte, error) {
+	defer r.acquireFetchConcurrencySlot(ctx)()
 	dat, err := r.repoCache.ReadSingleFile(ctx, rev, repoPath)
 	return dat, errors.Annotate(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath).Err()
 }
@@ -124,6 +150,8 @@ func (r *remoteRepoImpl) IsOverride() bool {
 
 // Loader implements Repo.
 func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
+	defer r.acquireFetchConcurrencySlot(ctx)()
+
 	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, pkgDir, func(kind gitsource.ObjectKind, pkgRelPath string) bool {
 		if kind == gitsource.TreeKind {
 			return true
@@ -149,6 +177,8 @@ func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, 
 		Package:   pkgName,
 		Resources: resources,
 		Fetch: func(ctx context.Context, path string) ([]byte, error) {
+			// Note: these are assumed to be local ops at this point and they do not
+			// require acquireFetchConcurrencySlot.
 			switch r, err := fetcher.Read(ctx, path); {
 			case errors.Is(err, gitsource.ErrObjectNotPrefetched):
 				return nil, interpreter.ErrNoModule
@@ -171,6 +201,9 @@ func (r *remoteRepoImpl) PickMostRecent(ctx context.Context, vers []string) (str
 	if len(vers) == 1 {
 		return vers[0], nil
 	}
+
+	defer r.acquireFetchConcurrencySlot(ctx)()
+
 	ordered, err := r.repoCache.Order(ctx, r.repoKey.Ref, vers)
 	if err != nil {
 		return "", err

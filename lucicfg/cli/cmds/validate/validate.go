@@ -173,7 +173,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	}
 
 	meta := vr.DefaultMeta()
-	gen, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides)
+	gen, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides, vr.RepoOptions)
 	if err != nil {
 		return nil, err
 	}

@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/errs"
 	"go.chromium.org/luci/lucicfg/internal/ui"
+	"go.chromium.org/luci/lucicfg/pkg"
 )
 
 // CommandLineError is used to tag errors related to command line arguments.
@@ -73,9 +74,10 @@ type Parameters struct {
 type Subcommand struct {
 	subcommands.CommandRunBase
 
-	Meta          lucicfg.Meta        // meta config settable via CLI flags
-	Vars          stringmapflag.Value // all `-var k=v` flags
-	RepoOverrides stringmapflag.Value // all `-repo-override k=v` flags
+	Meta          lucicfg.Meta                 // meta config settable via CLI flags
+	Vars          stringmapflag.Value          // all `-var k=v` flags
+	RepoOverrides stringmapflag.Value          // all `-repo-override k=v` flags
+	RepoOptions   pkg.RemoteRepoManagerOptions // `-git-debug` and `-git-concurrency` flags
 
 	params     *Parameters    // whatever was passed to Init
 	logConfig  logging.Config // for -log-level, used by ModifyContext
@@ -85,6 +87,9 @@ type Subcommand struct {
 
 // ModifyContext implements cli.ContextModificator.
 func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
+	if c.RepoOptions.GitDebug {
+		c.logConfig.Level = logging.Debug
+	}
 	return ui.WithConfig(c.logConfig.Set(ctx), ui.Config{
 		Fancy: c.logConfig.Level == logging.Info && terminal.IsTerminal(int(os.Stderr.Fd())),
 		Term:  os.Stderr,
@@ -130,6 +135,8 @@ func (c *Subcommand) AddGeneratorFlags() {
 	c.Flags.Var(&c.RepoOverrides, "repo-override",
 		"A `repo=path` pair that declares that dependencies that normally reside in the given repository should be fetched from its local checkout at the given path instead. "+
 			"Example: `chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main=../luci-go`.")
+	c.Flags.BoolVar(&c.RepoOptions.GitDebug, "git-debug", false, "Emit logs of git calls done to fetch dependencies, implies -log-level=debug.")
+	c.Flags.IntVar(&c.RepoOptions.GitConcurrency, "git-concurrency", 0, "If positive, limits how many concurrent git fetches are allowed.")
 }
 
 // CheckArgs checks command line args.
