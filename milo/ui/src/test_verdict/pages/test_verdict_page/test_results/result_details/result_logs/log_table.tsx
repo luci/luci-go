@@ -24,7 +24,7 @@ import {
   LogsTableEntry,
   SortOrder,
   VirtualizedTable,
-} from '@/common/components/log-viewer';
+} from '@/common/components/log_viewer';
 import { Timestamp } from '@/common/components/timestamp';
 import { NUMERIC_TIME_FORMAT_WITH_MS } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';

@@ -21,7 +21,7 @@ import {
   LogsTreeNode,
   ObjectNode,
   VirtualTree,
-} from '@/common/components/log-viewer';
+} from '@/common/components/log_viewer';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 
