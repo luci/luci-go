@@ -25,7 +25,7 @@ import (
 	"io"
 	"strings"
 
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucicfg/internal/ui"
 )
 
 func isObjID(objName []byte) bool {
@@ -134,8 +134,10 @@ func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string, 
 
 	if len(toFetch) > 0 {
 		// now fire off a single fetch to pull all of these hashes in.
-		if r.debugLogs {
-			logging.Debugf(ctx, "bulk fetching %d objects\n", fetchCount)
+		if fetchCount == 1 {
+			ui.ActivityProgress(ctx, "fetching 1 object")
+		} else {
+			ui.ActivityProgress(ctx, "fetching %d objects", fetchCount)
 		}
 		args := []string{
 			"-c", "fetch.negotiationAlgorithm=noop",

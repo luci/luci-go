@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg/depsource"
+	"go.chromium.org/luci/lucicfg/internal/ui"
 )
 
 // Fetcher returns a new GitFetcher pinned to the given ref, commit, and
@@ -66,6 +67,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 			return nil, err
 		}
 		// Fetch it
+		ui.ActivityProgress(ctx, "fetching the commit")
 		output, err := r.gitCombinedOutput(ctx, "fetch", "--depth", "1", "origin", commit)
 		if err != nil {
 			// If the remote doesn't understand what we want to fetch, return
@@ -102,6 +104,8 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 		// account for slash
 		trimOffset++
 	}
+
+	ui.ActivityProgress(ctx, "finding missing objects")
 	err = r.batchProc.catFileTreeWalk(ctx, commit, pkgRoot, nil, func(repoRelPath string, dirContent tree) (map[int]struct{}, error) {
 		var skips map[int]struct{}
 

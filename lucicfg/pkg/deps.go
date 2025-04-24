@@ -78,9 +78,9 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 				ctx = ui.ActivityStart(ctx, d.Activity, "fetching %s", scriptPath)
 				defer func() {
 					if err == nil {
-						ui.ActivityDone(ctx, "fetched %s", scriptPath)
+						ui.ActivityDone(ctx, "")
 					} else {
-						ui.ActivityError(ctx, "%s: %s", scriptPath, err)
+						ui.ActivityError(ctx, "%s", err)
 					}
 				}()
 			}
