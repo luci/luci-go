@@ -55,8 +55,6 @@ func (r *RepoCache) ReadSingleFile(ctx context.Context, commit, path string) ([]
 		return nil, ErrMissingCommit
 	case bytes.Contains(output, []byte("does not exist")):
 		return nil, ErrMissingObject
-	case bytes.Contains(output, []byte("exists on disk, but not in")):
-		return nil, ErrMissingObject
 	}
 	return nil, err
 }

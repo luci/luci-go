@@ -15,6 +15,7 @@
 package gitsource
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
@@ -47,6 +48,9 @@ type GitError struct {
 
 // Error implements error interface.
 func (e *GitError) Error() string {
+	if trimmed := bytes.TrimSpace(e.Output); len(trimmed) > 0 {
+		return fmt.Sprintf("running %s: %s:\n%s", e.CmdLine, e.Err, trimmed)
+	}
 	return fmt.Sprintf("running %s: %s", e.CmdLine, e.Err)
 }
 
