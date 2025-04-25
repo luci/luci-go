@@ -220,13 +220,6 @@ func (v pkgVer) String() string {
 	return v.ver
 }
 
-// edgeMeta is used as a mvs.Dep.Meta value.
-type edgeMeta struct {
-	src *DepContext // the context of the package that declares the dependency
-	dcl *DepDecl    // the declaration of the dependency
-	dst *DepContext // the context of the dependency itself
-}
-
 // msvPkg converts a *DepContext to a msv.Package.
 func msvPkg(dep *DepContext) mvs.Package[pkgVer] {
 	return mvs.Package[pkgVer]{
@@ -238,9 +231,9 @@ func msvPkg(dep *DepContext) mvs.Package[pkgVer] {
 	}
 }
 
-// despGraph holds the graph of dependencies.
-type despGraph struct {
-	graph   *mvs.Graph[pkgVer, *edgeMeta]
+// depsGraph holds the graph of dependencies.
+type depsGraph struct {
+	graph   *mvs.Graph[pkgVer]
 	root    *DepContext
 	visited internal.SyncWriteMap[mvs.Package[pkgVer], *DepContext]
 }
@@ -250,8 +243,8 @@ type despGraph struct {
 // The returned list excludes the root itself.
 func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 	// Populate the graph with all transitive dependencies across all versions.
-	dg := &despGraph{
-		graph: mvs.NewGraph[pkgVer, *edgeMeta](msvPkg(root)),
+	dg := &depsGraph{
+		graph: mvs.NewGraph[pkgVer](msvPkg(root)),
 		root:  root,
 	}
 	if err := traverseDeps(ctx, dg); err != nil {
@@ -271,7 +264,7 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 }
 
 // traverseDeps populates the graph by traversing pkg.depend(...) edges.
-func traverseDeps(ctx context.Context, dg *despGraph) error {
+func traverseDeps(ctx context.Context, dg *depsGraph) error {
 	ctx, done := ui.NewActivityGroup(ctx, "Traversing dependencies")
 	defer done()
 
@@ -284,28 +277,23 @@ func traverseDeps(ctx context.Context, dg *despGraph) error {
 		}
 
 		// Construct all edges to other packages.
-		deps := make([]mvs.Dep[pkgVer, *edgeMeta], len(pkgDef.Deps))
+		edges := make([]mvs.Package[pkgVer], len(pkgDef.Deps))
+		ctxs := make(map[mvs.Package[pkgVer]]*DepContext, len(pkgDef.Deps))
 		for i, dcl := range pkgDef.Deps {
 			dst, err := src.Follow(wqctx, dcl)
 			if err != nil {
 				return err
 			}
-			deps[i] = mvs.Dep[pkgVer, *edgeMeta]{
-				Package: msvPkg(dst),
-				Meta: &edgeMeta{
-					src: src,
-					dcl: dcl,
-					dst: dst,
-				},
-			}
+			edges[i] = msvPkg(dst)
+			ctxs[edges[i]] = dst
 		}
 
 		// Declare edges and enqueue work to explore never seen before packages.
 		srcMsvPkg := msvPkg(src)
-		for _, unexplored := range dg.graph.Require(srcMsvPkg, deps) {
+		for _, depPkg := range dg.graph.Require(srcMsvPkg, edges) {
 			// Pre-register activities now to make sure they show up in the UI in
 			// deterministic order.
-			depCtx := unexplored.Meta.dst
+			depCtx := ctxs[depPkg]
 			depCtx.Activity = ui.NewActivity(ctx, ui.ActivityInfo{
 				Package: depCtx.Package,
 				Version: depCtx.Version,
@@ -330,7 +318,7 @@ func traverseDeps(ctx context.Context, dg *despGraph) error {
 }
 
 // resolveVersions runs MVS algorithms on the populated graph.
-func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer], error) {
+func resolveVersions(ctx context.Context, dg *depsGraph) ([]mvs.Package[pkgVer], error) {
 	ctx, done := ui.NewActivityGroup(ctx, "Resolving versions")
 	defer done()
 
@@ -423,13 +411,13 @@ func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer],
 	// Traverse the graph from the root, following selected versions. Keep only
 	// dependencies that were actually visited. It is possible some packages are
 	// no longer referenced if we use the selected versions of dependencies.
-	err := dg.graph.Traverse(func(cur mvs.Package[pkgVer], edges []mvs.Dep[pkgVer, *edgeMeta]) ([]mvs.Package[pkgVer], error) {
+	err := dg.graph.Traverse(func(cur mvs.Package[pkgVer], edges []mvs.Package[pkgVer]) ([]mvs.Package[pkgVer], error) {
 		depsList = append(depsList, cur)
 		var visit []mvs.Package[pkgVer]
 		for _, edge := range edges {
 			visit = append(visit, mvs.Package[pkgVer]{
-				Package: edge.Package.Package,
-				Version: selected.Get(edge.Package.Package),
+				Package: edge.Package,
+				Version: selected.Get(edge.Package),
 			})
 		}
 		return visit, nil
@@ -449,7 +437,7 @@ func resolveVersions(ctx context.Context, dg *despGraph) ([]mvs.Package[pkgVer],
 }
 
 // prefetchDeps prefetches all dependencies at their resolved versions.
-func prefetchDeps(ctx context.Context, gr *despGraph, depsList []mvs.Package[pkgVer]) ([]*Dep, error) {
+func prefetchDeps(ctx context.Context, gr *depsGraph, depsList []mvs.Package[pkgVer]) ([]*Dep, error) {
 	ctx, done := ui.NewActivityGroup(ctx, "Fetching dependencies")
 	defer done()
 

@@ -34,9 +34,8 @@ type StringVer string
 
 func (v StringVer) String() string { return string(v) }
 
-type StringGraph = Graph[StringVer, string]
+type StringGraph = Graph[StringVer]
 type StringPackage = Package[StringVer]
-type StringDep = Dep[StringVer, string]
 
 func TestGraph(t *testing.T) {
 	t.Parallel()
@@ -71,13 +70,13 @@ func TestGraph(t *testing.T) {
 	t.Run("Traverse along edges", func(t *testing.T) {
 		var visited []string
 
-		err := g.Traverse(func(n StringPackage, edges []StringDep) ([]StringPackage, error) {
+		err := g.Traverse(func(n StringPackage, edges []StringPackage) ([]StringPackage, error) {
 			visited = append(visited, fmt.Sprintf("%s%s", n.Package, n.Version))
 			assert.That(t, edges, should.Match(deps[n]))
 			if len(edges) == 0 {
 				return nil, nil
 			}
-			return []StringPackage{edges[0].Package}, nil
+			return []StringPackage{edges[0]}, nil
 		})
 
 		assert.NoErr(t, err)
@@ -89,14 +88,14 @@ func TestGraph(t *testing.T) {
 	t.Run("Traverse hopping", func(t *testing.T) {
 		var visited []string
 
-		err := g.Traverse(func(n StringPackage, edges []StringDep) ([]StringPackage, error) {
+		err := g.Traverse(func(n StringPackage, edges []StringPackage) ([]StringPackage, error) {
 			visited = append(visited, fmt.Sprintf("%s%s", n.Package, n.Version))
 			var next []StringPackage
 			for _, edge := range edges {
 				// Pick the largest available version.
-				vers := sortedVers(edge.Package.Package)
+				vers := sortedVers(edge.Package)
 				next = append(next, StringPackage{
-					Package: edge.Package.Package,
+					Package: edge.Package,
 					Version: StringVer(vers[len(vers)-1]),
 				})
 			}
@@ -114,7 +113,7 @@ func TestGraph(t *testing.T) {
 
 		boomErr := errors.New("BOOM")
 
-		err := g.Traverse(func(n StringPackage, edges []StringDep) ([]StringPackage, error) {
+		err := g.Traverse(func(n StringPackage, edges []StringPackage) ([]StringPackage, error) {
 			visited = append(visited, fmt.Sprintf("%s%s", n.Package, n.Version))
 			if len(edges) == 0 {
 				return nil, nil
@@ -122,7 +121,7 @@ func TestGraph(t *testing.T) {
 			if len(visited) == 4 {
 				return nil, boomErr
 			}
-			return []StringPackage{edges[0].Package}, nil
+			return []StringPackage{edges[0]}, nil
 		})
 
 		assert.That(t, err, should.Equal(boomErr))
@@ -134,7 +133,7 @@ func TestGraph(t *testing.T) {
 	t.Run("Traverse unknown node", func(t *testing.T) {
 		var visited []string
 
-		err := g.Traverse(func(n StringPackage, edges []StringDep) ([]StringPackage, error) {
+		err := g.Traverse(func(n StringPackage, edges []StringPackage) ([]StringPackage, error) {
 			visited = append(visited, fmt.Sprintf("%s%s", n.Package, n.Version))
 			if len(edges) == 0 {
 				return nil, nil
@@ -142,12 +141,12 @@ func TestGraph(t *testing.T) {
 			if len(visited) == 4 {
 				return []StringPackage{
 					{
-						Package: edges[0].Package.Package,
+						Package: edges[0].Package,
 						Version: "9",
 					},
 				}, nil
 			}
-			return []StringPackage{edges[0].Package}, nil
+			return []StringPackage{edges[0]}, nil
 		})
 
 		assert.That(t, err, should.ErrLike(`"C, rev 2" attempts to visit non-existing node "C, rev 9"`))
@@ -157,7 +156,7 @@ func TestGraph(t *testing.T) {
 	})
 }
 
-func buildGraph(t *testing.T, spec string) (*StringGraph, map[StringPackage][]StringDep) {
+func buildGraph(t *testing.T, spec string) (*StringGraph, map[StringPackage][]StringPackage) {
 	t.Helper()
 
 	root, deps := parseDeps(spec)
@@ -165,14 +164,14 @@ func buildGraph(t *testing.T, spec string) (*StringGraph, map[StringPackage][]St
 	// Feed all `deps` to the graph. Usually they will be fetched lazily right
 	// during the traversal. Here we also feed it concurrently, but mostly just
 	// to hit the relevant code paths and to tickle the race detector.
-	g := NewGraph[StringVer, string](root)
+	g := NewGraph[StringVer](root)
 	wq, _ := internal.NewWorkQueue[StringPackage](context.Background())
 	wq.Launch(func(pkg StringPackage) error {
 		if _, ok := deps[pkg]; !ok {
 			panic(fmt.Sprintf("asked to visit unexpected package %s", pkg))
 		}
 		for _, next := range g.Require(pkg, deps[pkg]) {
-			wq.Submit(next.Package)
+			wq.Submit(next)
 		}
 		return nil
 	})
@@ -182,7 +181,7 @@ func buildGraph(t *testing.T, spec string) (*StringGraph, map[StringPackage][]St
 	return g, deps
 }
 
-func parseDeps(spec string) (root StringPackage, deps map[StringPackage][]StringDep) {
+func parseDeps(spec string) (root StringPackage, deps map[StringPackage][]StringPackage) {
 	pkg := func(spec string) StringPackage {
 		spec = strings.TrimSpace(spec)
 		return StringPackage{
@@ -191,7 +190,7 @@ func parseDeps(spec string) (root StringPackage, deps map[StringPackage][]String
 		}
 	}
 
-	deps = map[StringPackage][]StringDep{}
+	deps = map[StringPackage][]StringPackage{}
 
 	first := true
 	for _, line := range strings.Split(spec, "\n") {
@@ -210,14 +209,10 @@ func parseDeps(spec string) (root StringPackage, deps map[StringPackage][]String
 			first = false
 		}
 
-		var edges []StringDep
+		var edges []StringPackage
 		if depsSpec != "" {
 			for _, depSpec := range strings.Split(depsSpec, " ") {
-				depPkg := pkg(depSpec)
-				edges = append(edges, StringDep{
-					Package: depPkg,
-					Meta:    fmt.Sprintf("%s->%s", srcSpec, depSpec),
-				})
+				edges = append(edges, pkg(depSpec))
 			}
 		}
 		deps[srcPkg] = edges

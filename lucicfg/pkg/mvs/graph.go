@@ -52,22 +52,11 @@ func (p Package[V]) String() string {
 	return fmt.Sprintf("%s, rev %s", p.Package, p.Version)
 }
 
-// Dep is a direct dependency on some other package.
-//
-// It is an annotated graph edge. Carries arbitrary metadata with it.
-type Dep[V Version, M any] struct {
-	Package Package[V] // the package being dependent on
-	Meta    M          // arbitrary metadata associated with the edge
-}
-
 // Graph contains a full dependency graph across all versions of dependencies.
 //
 // Nodes of the graph are (Name, Version) tuples (see Package struct). Once the
 // graph is built, we'll examine it to select most recent versions of all
 // packages as the final version set.
-//
-// Edges of the graph are represented by Dep struct. They can be annotated with
-// arbitrary metadata (e.g. how this edge was discovered).
 //
 // Cycles are permitted.
 //
@@ -79,24 +68,24 @@ type Dep[V Version, M any] struct {
 // finalized via Finalize call. A finalized graph can be examined and traversed.
 //
 // All methods can be called concurrently.
-type Graph[V Version, M any] struct {
+type Graph[V Version] struct {
 	m         sync.Mutex
-	root      Package[V]                 // the root package
-	pkgs      map[string]map[V]struct{}  // package name => the set of its observed versions
-	deps      map[Package[V]][]Dep[V, M] // package version => its direct dependencies
-	explored  map[Package[V]]bool        // package version => true if already explored it
-	finalized atomic.Bool                // true if mutations are forbidden already
+	root      Package[V]                  // the root package
+	pkgs      map[string]map[V]struct{}   // package name => the set of its observed versions
+	deps      map[Package[V]][]Package[V] // package version => its direct dependencies
+	explored  map[Package[V]]bool         // package version => true if already explored it
+	finalized atomic.Bool                 // true if mutations are forbidden already
 }
 
 // NewGraph creates a new graph, seeding it with the given root package.
 //
 // The root is initially in unexplored state (i.e. you'll need to call Require
 // for it).
-func NewGraph[V Version, M any](root Package[V]) *Graph[V, M] {
-	return &Graph[V, M]{
+func NewGraph[V Version](root Package[V]) *Graph[V] {
+	return &Graph[V]{
 		root:     root,
 		pkgs:     make(map[string]map[V]struct{}, 1),
-		deps:     make(map[Package[V]][]Dep[V, M], 1),
+		deps:     make(map[Package[V]][]Package[V], 1),
 		explored: map[Package[V]]bool{root: false},
 	}
 }
@@ -112,7 +101,7 @@ func NewGraph[V Version, M any](root Package[V]) *Graph[V, M] {
 //
 // Panics if `pkg` is not in the graph or if it was already explored. Also
 // panics if the graph was finalized already.
-func (g *Graph[V, M]) Require(pkg Package[V], deps []Dep[V, M]) []Dep[V, M] {
+func (g *Graph[V]) Require(pkg Package[V], deps []Package[V]) []Package[V] {
 	g.m.Lock()
 	defer g.m.Unlock()
 
@@ -131,13 +120,13 @@ func (g *Graph[V, M]) Require(pkg Package[V], deps []Dep[V, M]) []Dep[V, M] {
 	g.deps[pkg] = slices.Clip(deps)
 	g.explored[pkg] = true
 
-	var explore []Dep[V, M]
+	var explore []Package[V]
 	for _, dep := range deps {
-		if _, seen := g.explored[dep.Package]; seen {
+		if _, seen := g.explored[dep]; seen {
 			continue
 		}
 		// New node, make it unexplored.
-		g.explored[dep.Package] = false
+		g.explored[dep] = false
 		explore = append(explore, dep)
 	}
 	return explore
@@ -147,7 +136,7 @@ func (g *Graph[V, M]) Require(pkg Package[V], deps []Dep[V, M]) []Dep[V, M] {
 // modifications of the graph.
 //
 // Returns true if all nodes are explored or false if some were left unexplored.
-func (g *Graph[V, M]) Finalize() bool {
+func (g *Graph[V]) Finalize() bool {
 	g.m.Lock()
 	defer g.m.Unlock()
 	for _, yes := range g.explored {
@@ -164,7 +153,7 @@ func (g *Graph[V, M]) Finalize() bool {
 // They are sorted lexicographically.
 //
 // The graph must be finalized already.
-func (g *Graph[V, M]) Packages() []string {
+func (g *Graph[V]) Packages() []string {
 	g.panicNonFinalized()
 	return slices.Sorted(maps.Keys(g.pkgs))
 }
@@ -174,7 +163,7 @@ func (g *Graph[V, M]) Packages() []string {
 // They are returned in some arbitrary non-deterministic order.
 //
 // The graph must be finalized already.
-func (g *Graph[V, M]) Versions(pkg string) []V {
+func (g *Graph[V]) Versions(pkg string) []V {
 	g.panicNonFinalized()
 	return slices.Collect(maps.Keys(g.pkgs[pkg]))
 }
@@ -188,7 +177,7 @@ func (g *Graph[V, M]) Versions(pkg string) []V {
 // some point. The traversal happens in the depth-first order.
 //
 // The graph must be finalized already.
-func (g *Graph[V, M]) Traverse(v func(node Package[V], edges []Dep[V, M]) ([]Package[V], error)) error {
+func (g *Graph[V]) Traverse(v func(node Package[V], edges []Package[V]) ([]Package[V], error)) error {
 	g.panicNonFinalized()
 
 	visited := make(map[Package[V]]struct{})
@@ -231,7 +220,7 @@ func (g *Graph[V, M]) Traverse(v func(node Package[V], edges []Dep[V, M]) ([]Pac
 }
 
 // panicNonFinalized panics if the graph is not finalized yet.
-func (g *Graph[V, M]) panicNonFinalized() {
+func (g *Graph[V]) panicNonFinalized() {
 	if !g.finalized.Load() {
 		panic("the graph is not finalized")
 	}
@@ -240,7 +229,7 @@ func (g *Graph[V, M]) panicNonFinalized() {
 // observeVersionLocked puts the version into g.pkgs.
 //
 // Called under the lock.
-func (g *Graph[V, M]) observeVersionLocked(pkg Package[V]) {
+func (g *Graph[V]) observeVersionLocked(pkg Package[V]) {
 	cur := g.pkgs[pkg.Package]
 	if cur == nil {
 		cur = make(map[V]struct{}, 1)
