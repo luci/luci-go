@@ -31,7 +31,6 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
-	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/tasks/taskspb"
 )
 
@@ -178,7 +177,7 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 			return errors.Annotate(err, "failed to enqueue finalization task for cancelling %s", op.taskID()).Err()
 		}
 
-		return rbe.EnqueueCancel(ctx, m.disp, tr, toRun)
+		return EnqueueRBECancel(ctx, m.disp, tr, toRun)
 	}
 
 	cancelRunning := func() error {

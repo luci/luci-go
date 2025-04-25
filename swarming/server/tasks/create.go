@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
-	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/resultdb"
 )
 
@@ -258,7 +257,7 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 
 		if ttr != nil {
 			toPut = append(toPut, ttr)
-			if err := rbe.EnqueueNew(ctx, m.disp, tr, ttr, c.Config); err != nil {
+			if err := EnqueueRBENew(ctx, m.disp, tr, ttr, c.Config); err != nil {
 				return err
 			}
 		}
