@@ -14,6 +14,7 @@
 
 import { useMemo } from 'react';
 
+import { filterOptionPlaceholder } from '@/fleet/pages/device_list_page/helpers';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { SelectedChip } from '../filter_dropdown/selected_chip';
@@ -75,13 +76,14 @@ export const DeviceListFilterBar = ({
           onSelectedOptionsChange({ id: [optionId] })
         }
       />
-      {sortedFilterOptions.map(
-        (option, idx) =>
-          option.options?.some((o2) =>
-            selectedOptions[option.value]?.includes(o2.value),
-          ) && (
+      {Object.entries(selectedOptions).map(
+        ([optionKey, optionValues], idx) =>
+          optionValues?.length > 0 && (
             <SelectedChip
-              option={option}
+              option={
+                filterOptions.find((x) => x.value === optionKey) ??
+                filterOptionPlaceholder(optionKey, optionValues)
+              }
               key={`selected-chip-${idx}`}
               selectedOptions={selectedOptions}
               onSelectedOptionsChange={onSelectedOptionsChange}

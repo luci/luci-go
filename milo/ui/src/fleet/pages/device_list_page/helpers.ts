@@ -78,18 +78,23 @@ export const filterOptionsPlaceholder = (
   selectedOptions: SelectedOptions,
 ): OptionCategory[] => {
   return Object.entries(selectedOptions)
-    .map(([key, values]) => {
-      const value = key;
-      key = key.replace('labels.', '');
-      return {
-        label: COLUMN_OVERRIDES[key]?.displayName || key,
-        value: value,
-        options: values.map((value) => {
-          return { label: value, value: value };
-        }),
-      } as OptionCategory;
-    })
+    .map(([key, values]) => filterOptionPlaceholder(key, values))
     .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
+};
+
+export const filterOptionPlaceholder = (
+  key: string,
+  values: string[],
+): OptionCategory => {
+  const value = key;
+  key = key.replace('labels.', '');
+  return {
+    label: COLUMN_OVERRIDES[key]?.displayName || key,
+    value: value,
+    options: values.map((value) => {
+      return { label: value, value: value };
+    }),
+  };
 };
 
 export const getWrongColumnsFromParams = (

@@ -46,7 +46,7 @@ export function SelectedChip({
                 textOverflow: 'ellipsis',
               }}
             >
-              {`${selectedOptions[option.value].length} | [ ${option.label} ]: ${option?.options
+              {`${selectedOptions[option.value]?.length ?? 0} | [ ${option.label} ]: ${option?.options
                 ?.filter((o2) =>
                   selectedOptions[option.value]?.includes(o2.value),
                 )
