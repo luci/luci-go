@@ -48,6 +48,20 @@ func TestTaskError(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, now)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
+		botID := "bot-id"
+		taskID := "65aba3a3e6b99200"
+		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
+		assert.NoErr(t, err)
+
+		tr := &model.TaskRequest{
+			Key: reqKey,
+		}
+		assert.NoErr(t, datastore.Put(ctx, tr))
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "bot:bot-id",
+		})
+
 		secret := hmactoken.NewStaticSecret(secrets.Secret{
 			Active: []byte("secret"),
 		})
@@ -66,56 +80,61 @@ func TestTaskError(t *testing.T) {
 					return err
 				}, nil)
 			},
-			tasksManager: &tasks.MockedManager{
+		}
+		call := func(req *TaskErrorRequest, clientError *tasks.ClientError) {
+			srv.tasksManager = &tasks.MockedManager{
 				CompleteTxnMock: func(ctx context.Context, op *tasks.CompleteOp) (*tasks.CompleteTxnOutcome, error) {
-					clientError := &tasks.ClientError{
-						MissingCAS: []model.CASReference{
-							{
-								CASInstance: "instance",
-								Digest: model.CASDigest{
-									Hash:      "hash",
-									SizeBytes: int64(3),
-								},
-							},
-						},
-						MissingCIPD: []model.CIPDPackage{
-							{
-								PackageName: "package",
-								Version:     "version",
-								Path:        "path",
-							},
-						},
-					}
 					assert.That(t, op.ClientError, should.Match(clientError))
 					return &tasks.CompleteTxnOutcome{
 						Updated: true,
 					}, nil
 				},
-			},
+			}
+
+			resp, err := srv.TaskError(ctx, req, &botsrv.Request{
+				Session: &internalspb.Session{
+					BotId: botID,
+					BotConfig: &internalspb.BotConfig{
+						LogsCloudProject: "logs-cloud-project",
+					},
+					SessionId: "session-id",
+				},
+				CurrentTaskID: taskID,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.NotBeNil)
+
 		}
 
-		botID := "bot-id"
-		taskID := "65aba3a3e6b99200"
-		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
-		assert.NoErr(t, err)
+		t.Run("with_client_error", func(t *ftt.Test) {
+			req := &TaskErrorRequest{
+				TaskID:  taskID,
+				Message: "boom",
+				ClientError: &ClientError{
+					MissingCAS: []CASReference{
+						{
+							Instance: "instance",
+							Digest:   "hash/3",
+						},
+					},
+					MissingCIPD: []model.CIPDPackage{
+						{
+							PackageName: "package",
+							Version:     "version",
+							Path:        "path",
+						},
+					},
+				},
+			}
 
-		tr := &model.TaskRequest{
-			Key: reqKey,
-		}
-		assert.NoErr(t, datastore.Put(ctx, tr))
-
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "bot:bot-id",
-		})
-
-		req := &TaskErrorRequest{
-			TaskID:  taskID,
-			Message: "boom",
-			ClientError: &ClientError{
-				MissingCAS: []CASReference{
+			clientError := &tasks.ClientError{
+				MissingCAS: []model.CASReference{
 					{
-						Instance: "instance",
-						Digest:   "hash/3",
+						CASInstance: "instance",
+						Digest: model.CASDigest{
+							Hash:      "hash",
+							SizeBytes: int64(3),
+						},
 					},
 				},
 				MissingCIPD: []model.CIPDPackage{
@@ -125,20 +144,22 @@ func TestTaskError(t *testing.T) {
 						Path:        "path",
 					},
 				},
-			},
-		}
+			}
 
-		resp, err := srv.TaskError(ctx, req, &botsrv.Request{
-			Session: &internalspb.Session{
-				BotId: botID,
-				BotConfig: &internalspb.BotConfig{
-					LogsCloudProject: "logs-cloud-project",
-				},
-				SessionId: "session-id",
-			},
-			CurrentTaskID: taskID,
+			call(req, clientError)
 		})
-		assert.NoErr(t, err)
-		assert.Loosely(t, resp, should.NotBeNil)
+
+		t.Run("with_empty_client_error", func(t *ftt.Test) {
+			req := &TaskErrorRequest{
+				TaskID:  taskID,
+				Message: "boom",
+				ClientError: &ClientError{
+					MissingCAS:  []CASReference{},
+					MissingCIPD: []model.CIPDPackage{},
+				},
+			}
+
+			call(req, nil)
+		})
 	})
 }

@@ -22,8 +22,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/logging"
-
 	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/model"
@@ -100,8 +98,11 @@ func (srv *BotAPIServer) TaskError(ctx context.Context, body *TaskErrorRequest, 
 	}
 
 	var clientError *tasks.ClientError
-	if body.ClientError != nil {
-		logging.Debugf(ctx, "received client error: %+v", *body.ClientError)
+	// Bot sends empty lists as missing_cas and missing_cipd when they are
+	// actually None (http://shortn/_SMQs8Oh1KX).
+	// TODO(b/355013586): Change bot code to actually omit client error if both
+	// missing_cas and missing_cipd are none.
+	if body.ClientError != nil && (len(body.ClientError.MissingCAS) > 0 || len(body.ClientError.MissingCIPD) > 0) {
 		clientError = &tasks.ClientError{
 			MissingCIPD: body.ClientError.MissingCIPD,
 		}
@@ -125,7 +126,6 @@ func (srv *BotAPIServer) TaskError(ctx context.Context, body *TaskErrorRequest, 
 				}
 			}
 		}
-		logging.Debugf(ctx, "converted client error: %+v", *clientError)
 	}
 
 	taskCompletion := &tasks.CompleteOp{
