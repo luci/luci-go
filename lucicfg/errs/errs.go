@@ -39,6 +39,16 @@ type Backtracable interface {
 	Backtrace() string
 }
 
+// WithExtraContext is an error that has some extra context attached to it.
+//
+// This context is rendered after the original error message.
+type WithExtraContext interface {
+	error
+
+	// ExtraContext will be rendered after the error message.
+	ExtraContext() string
+}
+
 var (
 	_ Backtracable = (*starlark.EvalError)(nil)
 	_ Backtracable = (*builtins.Failure)(nil)
@@ -101,6 +111,7 @@ func collect(err error, in []string) (out []string) {
 		return
 	}
 
+	var errMsg string
 	var bterr Backtracable
 	if errors.As(err, &bterr) {
 		// E.g. "boom".
@@ -110,24 +121,36 @@ func collect(err error, in []string) (out []string) {
 		// E.g. "context1: context2: boom".
 		fullErr := err.Error()
 
-		// If there's no backtrace, just use the full annotated error message.
 		if withTrace == rootCause {
-			out = append(out, fmt.Sprintf("Error: %s", fullErr))
-			return
-		}
-
-		// If there's a backtrace, use it report the root cause error. Chop off the
-		// root cause error from the `fullErr`. What remains (if anything) is the
-		// context string "context1: context2".
-		errCtx, cut := strings.CutSuffix(fullErr, ": "+rootCause)
-		if cut && errCtx != "" {
-			out = append(out, fmt.Sprintf("Error: %s:\n%s", errCtx, withTrace))
+			// If there's no backtrace, just use the full annotated error message.
+			errMsg = fmt.Sprintf("Error: %s", fullErr)
 		} else {
-			out = append(out, withTrace)
+			// If there's a backtrace, use it report the root cause error. Chop off
+			// the root cause error from the `fullErr`. What remains (if anything) is
+			// the context string "context1: context2".
+			errCtx, cut := strings.CutSuffix(fullErr, ": "+rootCause)
+			if cut && errCtx != "" {
+				errMsg = fmt.Sprintf("Error: %s:\n%s", errCtx, withTrace)
+			} else {
+				errMsg = withTrace
+			}
 		}
-		return
+	} else {
+		errMsg = fmt.Sprintf("Error: %s", err)
 	}
 
-	out = append(out, fmt.Sprintf("Error: %s", err))
+	// Fish out an extra context from anywhere under `err` (not necessary the
+	// same error as Backtracable).
+	extraCtx := ""
+	var extraCtxErr WithExtraContext
+	if errors.As(err, &extraCtxErr) {
+		extraCtx = extraCtxErr.ExtraContext()
+	}
+
+	if extraCtx == "" {
+		out = append(out, errMsg)
+	} else {
+		out = append(out, fmt.Sprintf("%s\n%s", errMsg, extraCtx))
+	}
 	return
 }

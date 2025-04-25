@@ -48,6 +48,8 @@ type DepContext struct {
 	Repo Repo
 	// Path is a slash-separated path to the package within the repository.
 	Path string
+	// Parent is what package introduced this dependency.
+	Parent *DepContext
 	// RepoManager knows how to access repositories with other dependencies.
 	RepoManager RepoManager
 	// Known is the package definition if known in advance (e.g. the root).
@@ -60,6 +62,41 @@ type DepContext struct {
 	err  error
 }
 
+// DepError is an error happened when processing a particular DepContext.
+type DepError struct {
+	Err error       // the actual error
+	Dep *DepContext // where it happened
+}
+
+// Error implements error interface.
+func (e *DepError) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap allows to traverse this error.
+func (e *DepError) Unwrap() error {
+	return e.Err
+}
+
+// ExtraContext implements errs.WithExtraContext.
+func (e *DepError) ExtraContext() string {
+	var out strings.Builder
+	out.WriteString("\nHappened when evaluating\n")
+	cur := e.Dep
+	for cur != nil {
+		rev := ""
+		if cur.Version != PinnedVersion && cur.Version != OverriddenVersion {
+			rev = fmt.Sprintf(" (rev %s)", cur.Version)
+		}
+		_, _ = fmt.Fprintf(&out, "  package %q at %q of %s%s", cur.Package, cur.Path, cur.Repo.RepoKey(), rev)
+		cur = cur.Parent
+		if cur != nil {
+			out.WriteString("\nimported by\n")
+		}
+	}
+	return out.String()
+}
+
 // Definition lazily loads the package definition.
 //
 // Can do network calls and be slow on the first call. Subsequent calls are
@@ -67,7 +104,10 @@ type DepContext struct {
 func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 	if d.Known != nil {
 		if d.Known.Name != d.Package {
-			return nil, errors.Reason("expected to find package %q, but found %q instead", d.Package, d.Known.Name).Err()
+			return nil, &DepError{
+				Err: errors.Reason("expected to find package %q, but found %q instead", d.Package, d.Known.Name).Err(),
+				Dep: d,
+			}
 		}
 		return d.Known, nil
 	}
@@ -107,7 +147,14 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 		}()
 	})
 
-	return d.def, d.err
+	if d.err != nil {
+		return nil, &DepError{
+			Err: d.err,
+			Dep: d,
+		}
+	}
+
+	return d.def, nil
 }
 
 // Follow builds a *DepContext representing a direct dependency.
@@ -122,13 +169,17 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 	if decl.LocalPath != "" {
 		repoPath := path.Join(d.Path, decl.LocalPath)
 		if repoPath == ".." || strings.HasPrefix(repoPath, "../") {
-			return nil, errors.Reason("local dependency on %q points to a path outside the repository: %q", decl.Name, decl.LocalPath).Err()
+			return nil, &DepError{
+				Err: errors.Reason("local dependency on %q points to a path outside the repository: %q", decl.Name, decl.LocalPath).Err(),
+				Dep: d,
+			}
 		}
 		return &DepContext{
 			Package:     decl.Name,
 			Version:     d.Version,
 			Repo:        d.Repo,
 			Path:        repoPath,
+			Parent:      d,
 			RepoManager: d.RepoManager,
 		}, nil
 	}
@@ -141,7 +192,10 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 		Ref:  decl.Ref,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "dependency on %q", decl.Name).Err()
+		return nil, &DepError{
+			Err: errors.Annotate(err, "dependency on %q", decl.Name).Err(),
+			Dep: d,
+		}
 	}
 
 	// If this repository is a local override, ignore the actually requested
@@ -158,6 +212,7 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 		Version:     revision,
 		Repo:        repo,
 		Path:        decl.Path,
+		Parent:      d,
 		RepoManager: d.RepoManager,
 	}, nil
 }
@@ -171,11 +226,14 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 func (d *DepContext) PrefetchDep(ctx context.Context) (*Dep, error) {
 	def, err := d.Definition(ctx)
 	if err != nil {
-		return nil, err
+		return nil, err // already a *DepError
 	}
 	code, err := d.Repo.Loader(ctx, d.Version, d.Path, d.Package, def.ResourcesSet)
 	if err != nil {
-		return nil, err
+		return nil, &DepError{
+			Err: err,
+			Dep: d,
+		}
 	}
 	return &Dep{
 		Package:    d.Package,
