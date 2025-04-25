@@ -141,6 +141,27 @@ export const DeviceListPage = () => {
     searchParams,
     setSearchParams,
   ]);
+
+  useEffect(() => {
+    if (selectedOptions.error) return;
+    if (!dimensionsQuery.isSuccess) return;
+
+    const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
+      (filterKey) =>
+        !dimensionsQuery.data.labels[filterKey.replace('labels.', '')] &&
+        !dimensionsQuery.data.baseDimensions[filterKey],
+    );
+    if (missingParamsFilters.length === 0) return;
+    addWarning(
+      'The following filters are not available: ' +
+        missingParamsFilters?.join(', '),
+    );
+    for (const key of missingParamsFilters) {
+      delete selectedOptions.filters[key];
+    }
+    setSearchParams(filtersUpdater(selectedOptions.filters));
+  }, [addWarning, dimensionsQuery, selectedOptions, setSearchParams]);
+
   useEffect(() => {
     if (!selectedOptions.error) return;
     addWarning('Invalid filters');
@@ -153,21 +174,20 @@ export const DeviceListPage = () => {
         margin: '24px',
       }}
     >
-      {warnings.length > 0 &&
-        warnings.map((message, i) => (
-          <Alert
-            key={message}
-            sx={{
-              position: 'fixed',
-              top: 64 + 10 + 55 * i,
-              right: 10,
-              zIndex: 10_000,
-            }}
-            severity="warning"
-          >
-            {message}
-          </Alert>
-        ))}
+      {warnings.map((message, i) => (
+        <Alert
+          key={message}
+          sx={{
+            position: 'fixed',
+            top: 64 + 10 + 55 * i,
+            right: 10,
+            zIndex: 10_000,
+          }}
+          severity="warning"
+        >
+          {message}
+        </Alert>
+      ))}
       <MainMetrics
         countQuery={countQuery}
         selectedFilters={selectedOptions.filters}
