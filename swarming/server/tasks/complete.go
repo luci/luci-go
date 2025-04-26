@@ -251,10 +251,20 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		}
 	}
 
+	if err := m.onTaskComplete(ctx, taskID, tr, trs); err != nil {
+		return nil, err
+	}
+
+	return &CompleteTxnOutcome{Updated: true, BotEventType: botEventType}, nil
+}
+
+// onTaskComplete handles post task completion processes.
+func (m *managerImpl) onTaskComplete(ctx context.Context, taskID string, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
 	// PubSub notification and update BuildTask
-	if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
+	err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs)
+	if err != nil {
 		logging.Errorf(ctx, "failed to enqueue pubsub notification tasks for completing %q: %s", taskID, err)
-		return nil, status.Errorf(codes.Internal, "failed to create resultdb client")
+		return status.Errorf(codes.Internal, "failed to create resultdb client")
 	}
 
 	// Cancel Child tasks and finalize ResultDB invocation
@@ -265,15 +275,14 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 	})
 	if err != nil {
 		logging.Errorf(ctx, "failed to enqueue finalization task for completing %q: %s", taskID, err)
-		return nil, status.Errorf(codes.Internal, "failed to enqueue finalization task for completing %q", taskID)
+		return status.Errorf(codes.Internal, "failed to enqueue finalization task for completing %q", taskID)
 	}
 
 	// Report metrics in case the transaction actually lands.
 	txndefer.Defer(ctx, func(ctx context.Context) {
-		onTaskCompleted(ctx, trs)
+		reportOnTaskCompleted(ctx, trs)
 	})
-
-	return &CompleteTxnOutcome{Updated: true, BotEventType: botEventType}, nil
+	return nil
 }
 
 func (op *CompleteOp) calculateState(trr *model.TaskRunResult) apipb.TaskState {

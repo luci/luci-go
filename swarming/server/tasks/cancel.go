@@ -94,7 +94,7 @@ func (m *managerImpl) CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOut
 		txndefer.Defer(ctx, func(ctx context.Context) {
 			onTaskStatusChangeSchedulerLatency(ctx, trs)
 			if !trs.IsActive() {
-				onTaskCompleted(ctx, trs)
+				reportOnTaskCompleted(ctx, trs)
 			}
 		})
 	}

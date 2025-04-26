@@ -69,7 +69,7 @@ func onTaskToRunConsumed(ctx context.Context, ttr *model.TaskToRun, trs *model.T
 	)
 }
 
-func onTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
+func reportOnTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
 	fields := trs.MetricFields(false)
 	status := model.TaskStateString(trs.State)
 	var result string

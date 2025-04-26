@@ -56,6 +56,8 @@ type Manager interface {
 	// It is used to perform updates like reporting stdout, or cost, etc.
 	// The update is not suppose to complete a task. Use CompleteTxn for that.
 	UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOutcome, error)
+	// ExpireSliceTxn runs the transactional logic to mark the task slice as expired.
+	ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) error
 }
 
 // managerImpl is the "production" implementation of Manager.
