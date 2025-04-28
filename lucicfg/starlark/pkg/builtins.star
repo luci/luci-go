@@ -130,7 +130,7 @@ def _resources(patterns):
         of the positive globs and none of the negative globs. If a pattern
         starts with `**/`, the rest of it is applied to the base name of the
         file (not the whole path). If only negative globs are given, a single
-        positive `**/*` glob is implied as well.
+        positive `**/*` glob is implied as well. Required.
     """
     __native__.resources(_validate_str_list("patterns", patterns))
 
@@ -142,7 +142,7 @@ def _entrypoint(path):
     point scripts can be executed.
 
     Args:
-      path: a path to a Starlark file relative to the package root.
+      path: a path to a Starlark file relative to the package root. Required.
     """
     __native__.entrypoint(_validate_path("path", path))
 
@@ -212,9 +212,9 @@ def _lint_checks(checks):
         a base and it can be one of `none`, `default` or `all`. The following
         entries either add checks to the set (`+<name>`) or remove them
         (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting)
-        for more info. Default is `['none']` for now.
+        for more info. Required.
     """
-    __native__.lint_checks(_validate_str_list("checks", checks) or ("none",))
+    __native__.lint_checks(_validate_str_list("checks", checks))
 
 def _fmt_rules(*, paths, function_args_sort = None):
     """Adds a formatting rule set that applies to some paths in the package.

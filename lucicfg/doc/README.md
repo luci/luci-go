@@ -4557,7 +4557,7 @@ generic git operations (like comparing revisions).
 ### pkg.resources {#pkg.resources}
 
 ```python
-pkg.resources(patterns = None)
+pkg.resources(patterns)
 ```
 
 
@@ -4574,7 +4574,7 @@ Can be called multiple times. Works additively.
 
 #### Arguments {#pkg.resources-args}
 
-* **patterns**: a list of glob patterns that define a subset of non-Starlark files under the package directory. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file is considered to be a resource file if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, a single positive `**/*` glob is implied as well.
+* **patterns**: a list of glob patterns that define a subset of non-Starlark files under the package directory. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file is considered to be a resource file if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, a single positive `**/*` glob is implied as well. Required.
 
 
 
@@ -4582,7 +4582,7 @@ Can be called multiple times. Works additively.
 ### pkg.entrypoint {#pkg.entrypoint}
 
 ```python
-pkg.entrypoint(path = None)
+pkg.entrypoint(path)
 ```
 
 
@@ -4595,7 +4595,7 @@ point scripts can be executed.
 
 #### Arguments {#pkg.entrypoint-args}
 
-* **path**: a path to a Starlark file relative to the package root.
+* **path**: a path to a Starlark file relative to the package root. Required.
 
 
 
@@ -4678,7 +4678,7 @@ A pkg.source.ref struct that can be passed to [pkg.depend(...)](#pkg.depend).
 ### pkg.options.lint_checks {#pkg.options.lint-checks}
 
 ```python
-pkg.options.lint_checks(checks = None)
+pkg.options.lint_checks(checks)
 ```
 
 
@@ -4689,7 +4689,7 @@ Can be called at most once.
 
 #### Arguments {#pkg.options.lint-checks-args}
 
-* **checks**: a list of linter checks to apply in `lucicfg validate` and `lucicfg lint`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Default is `['none']` for now.
+* **checks**: a list of linter checks to apply in `lucicfg validate` and `lucicfg lint`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Required.
 
 
 
