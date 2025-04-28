@@ -56,7 +56,6 @@ const ShortDuration = 3 * time.Millisecond
 // five levels, which should be enough in practice.
 //
 // See b:354772098 for more information.
-//
 const MaxTestLength = 50
 
 // Convey is a replacement for legacy Convey. Subconveys need a T argument, however.

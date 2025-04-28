@@ -77,9 +77,9 @@ func TestFetchServiceInfo(t *testing.T) {
 			ctx = caching.WithEmptyProcessCache(ctx)
 			info3, err := FetchServiceInfo(ctx, testURL)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, info3, should.NotEqual(info1))    // a new deserialized object
+			assert.Loosely(t, info3, should.NotEqual(info1)) // a new deserialized object
 			assert.Loosely(t, info3, should.Match(expected)) // still has the correct value
-			assert.Loosely(t, calls, should.Equal(1))           // no new calls
+			assert.Loosely(t, calls, should.Equal(1))        // no new calls
 		})
 
 		t.Run("Error", func(t *ftt.Test) {

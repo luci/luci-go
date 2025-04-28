@@ -27,8 +27,8 @@
 //
 // It understands the following flags:
 //
-//  -sqldb-password-secret
-//  -sqldb-connection-url
+//	-sqldb-password-secret
+//	-sqldb-connection-url
 //
 // Note that the driver is implied by the scheme of the URL. This is to allow you to talk to
 // "postgres://username@localhost:5000/dbname" using "pgx://username@localhost:5000/dbname".
@@ -41,5 +41,4 @@
 // do it. There is a path forward, though, if we need to add this in the future without breaking backwards
 // compatibility.  That is to have the concept of a "main" database, specified in some way which will use the current
 // API, but also some additional functions for accessing a DB connection by a string name.
-//
 package sqldb

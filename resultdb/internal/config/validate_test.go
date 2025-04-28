@@ -281,16 +281,16 @@ func TestServiceConfigValidator(t *testing.T) {
 				})
 				t.Run("Invalid (no starting ^)", func(t *ftt.Test) {
 					scheme.Coarse.ValidationRegexp = "a$"
-					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): pattern must start and end with ^ and $`))
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): pattern must start and end with ^ and $`))
 				})
 				t.Run("Invalid (no ending $)", func(t *ftt.Test) {
 					scheme.Coarse.ValidationRegexp = "^a"
-					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): pattern must start and end with ^ and $`))
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): pattern must start and end with ^ and $`))
 				})
 
 				t.Run("Invalid (does not compile)", func(t *ftt.Test) {
 					scheme.Coarse.ValidationRegexp = "^[$"
-					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+ path + `): could not compile pattern: error parsing regexp: missing closing ]: `))
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): could not compile pattern: error parsing regexp: missing closing ]: `))
 				})
 			})
 		})

@@ -117,6 +117,7 @@ func (AggregationLevel) EnumDescriptor() ([]byte, []int) {
 // A test case with a specific variant definition is called test variant.
 //
 // Guidelines for variant definition design:
+//
 //   - This rule guides what keys MUST be present in the definition.
 //     A single expected result of a given test variant is enough to consider it
 //     passing (potentially flakily). If it is important to differentiate across
