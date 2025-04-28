@@ -25,7 +25,9 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg/internal"
@@ -85,7 +87,7 @@ func (e *DepError) ExtraContext() string {
 	cur := e.Dep
 	for cur != nil {
 		rev := ""
-		if cur.Version != PinnedVersion && cur.Version != OverriddenVersion {
+		if IsRemoteVersion(cur.Version) {
 			rev = fmt.Sprintf(" (rev %s)", cur.Version)
 		}
 		_, _ = fmt.Fprintf(&out, "  package %q at %q of %s%s", cur.Package, cur.Path, cur.Repo.RepoKey(), rev)
@@ -299,7 +301,15 @@ type depsGraph struct {
 // discoverDeps finds all transitive dependencies of the root package.
 //
 // The returned list excludes the root itself.
-func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
+func discoverDeps(ctx context.Context, root *DepContext) (deps []*Dep, err error) {
+	start := clock.Now(ctx)
+	defer func() {
+		// Log only if really did something or failed to do something.
+		if len(deps) != 0 || err != nil {
+			logging.Infof(ctx, "Processed dependencies in %.1fs", clock.Since(ctx, start).Seconds())
+		}
+	}()
+
 	// Populate the graph with all transitive dependencies across all versions.
 	dg := &depsGraph{
 		graph: mvs.NewGraph[pkgVer](msvPkg(root)),
@@ -323,7 +333,7 @@ func discoverDeps(ctx context.Context, root *DepContext) ([]*Dep, error) {
 
 // traverseDeps populates the graph by traversing pkg.depend(...) edges.
 func traverseDeps(ctx context.Context, dg *depsGraph) error {
-	ctx, done := ui.NewActivityGroup(ctx, "Traversing dependencies")
+	ctx, done := ui.NewActivityGroup(ctx, "Traversing remote dependencies")
 	defer done()
 
 	wq, wqctx := internal.NewWorkQueue[*DepContext](ctx)
@@ -350,12 +360,15 @@ func traverseDeps(ctx context.Context, dg *depsGraph) error {
 		srcMsvPkg := msvPkg(src)
 		for _, depPkg := range dg.graph.Require(srcMsvPkg, edges) {
 			// Pre-register activities now to make sure they show up in the UI in
-			// deterministic order.
+			// deterministic order. Omit local dependencies from the UI, they are
+			// fetched "instantly" and not worth showing.
 			depCtx := ctxs[depPkg]
-			depCtx.Activity = ui.NewActivity(ctx, ui.ActivityInfo{
-				Package: depCtx.Package,
-				Version: depCtx.Version,
-			})
+			if IsRemoteVersion(depCtx.Version) {
+				depCtx.Activity = ui.NewActivity(ctx, ui.ActivityInfo{
+					Package: depCtx.Package,
+					Version: depCtx.Version,
+				})
+			}
 			wq.Submit(depCtx)
 		}
 
@@ -377,78 +390,59 @@ func traverseDeps(ctx context.Context, dg *depsGraph) error {
 
 // resolveVersions runs MVS algorithms on the populated graph.
 func resolveVersions(ctx context.Context, dg *depsGraph) ([]mvs.Package[pkgVer], error) {
-	ctx, done := ui.NewActivityGroup(ctx, "Resolving versions")
+	ctx, done := ui.NewActivityGroup(ctx, "Selecting versions to fetch")
 	defer done()
 
 	var selected internal.SyncWriteMap[string, pkgVer]
 	eg, ectx := errgroup.WithContext(ctx)
 
 	for _, pkg := range dg.graph.Packages() {
+		vers := dg.graph.Versions(pkg)
+		if len(vers) == 0 {
+			panic("impossible")
+		}
+
+		// If there's only one version, there's nothing to resolve, pick it right
+		// away (skipping the activities UI). On an error we'll proceed and report
+		// this error inside the activity, where it will be handled appropriately
+		// (showing in the UI and aborting the errgroup).
+		repoKey, strVers, conflictErr := collectVersions(vers)
+		if conflictErr == nil && len(strVers) == 1 {
+			selected.Put(pkg, pkgVer{
+				ver:  strVers[0],
+				repo: repoKey,
+			})
+			continue
+		}
+
 		activity := ui.NewActivity(ectx, ui.ActivityInfo{
 			Package: pkg,
 		})
 
 		eg.Go(func() (err error) {
+			var mostRecent string
+
 			ctx := ui.ActivityStart(ectx, activity, "resolving")
 			defer func() {
 				if err == nil {
-					ui.ActivityDone(ctx, "done")
+					ui.ActivityDone(ctx, "%s", mostRecent)
 				} else {
 					ui.ActivityError(ctx, "%s", errorForActivity(err, ""))
 				}
 			}()
 
-			vers := dg.graph.Versions(pkg)
-			if len(vers) == 0 {
-				panic("impossible")
+			// Report the repo conflict error though the activity to abort
+			// the errgroup.
+			if conflictErr != nil {
+				return errors.Annotate(conflictErr, "examining %q", pkg).Err()
 			}
-
-			// Check all versions agree on the package repository. In particular
-			// this will bark if a root-local "@pinned" package is also imported as
-			// a remote package. Also collect actual version strings to compare them
-			// to one another later.
-			var repoKey RepoKey
-			strVers := make([]string, 0, len(vers))
-			seenRepoKeys := make(map[RepoKey]struct{}, 1)
-			for _, ver := range vers {
-				strVers = append(strVers, ver.ver)
-				seenRepoKeys[ver.repo] = struct{}{}
-				repoKey = ver.repo
-			}
-			if len(seenRepoKeys) != 1 {
-				var report []string
-				for key := range seenRepoKeys {
-					report = append(report, key.String())
-				}
-				slices.Sort(report)
-				return errors.Reason(
-					"package %q is imported from multiple different repositories:\n%s",
-					pkg, strings.Join(report, "\n"),
-				).Err()
-			}
-
-			// Don't bother hitting PickMostRecent if there's only one version.
-			if len(strVers) == 1 {
-				selected.Put(pkg, pkgVer{
-					ver:  strVers[0],
-					repo: repoKey,
-				})
-				return nil
-			}
-
-			// Note that all string versions will be different, since mvs.Graph
-			// deduplicates completely identical pkgVer values and we already verified
-			// all pkgVer have identical pkgVer.repo field, so all version strings
-			// must be different then). Sort them lexicographically just to remove
-			// any non-determinism from calls to repo.PickMostRecent.
-			slices.Sort(strVers)
 
 			// Ask the repository to find the most recent version.
 			repo, err := dg.root.RepoManager.Repo(ctx, repoKey)
 			if err != nil {
 				return errors.Annotate(err, "examining %q", pkg).Err()
 			}
-			mostRecent, err := repo.PickMostRecent(ctx, strVers)
+			mostRecent, err = repo.PickMostRecent(ctx, strVers)
 			if err != nil {
 				return errors.Annotate(err, "determining the most recent version of %q", pkg).Err()
 			}
@@ -496,27 +490,33 @@ func resolveVersions(ctx context.Context, dg *depsGraph) ([]mvs.Package[pkgVer],
 
 // prefetchDeps prefetches all dependencies at their resolved versions.
 func prefetchDeps(ctx context.Context, gr *depsGraph, depsList []mvs.Package[pkgVer]) ([]*Dep, error) {
-	ctx, done := ui.NewActivityGroup(ctx, "Fetching dependencies")
+	ctx, done := ui.NewActivityGroup(ctx, "Fetching remote dependencies")
 	defer done()
 
 	out := make([]*Dep, len(depsList))
 	eg, ectx := errgroup.WithContext(ctx)
 
 	for i, dep := range depsList {
-		activity := ui.NewActivity(ectx, ui.ActivityInfo{
-			Package: dep.Package,
-			Version: dep.Version.ver,
-		})
+		var activity *ui.Activity
+		if IsRemoteVersion(dep.Version.ver) {
+			activity = ui.NewActivity(ectx, ui.ActivityInfo{
+				Package: dep.Package,
+				Version: dep.Version.ver,
+			})
+		}
 
 		eg.Go(func() (err error) {
-			ctx := ui.ActivityStart(ectx, activity, "fetching")
-			defer func() {
-				if err == nil {
-					ui.ActivityDone(ctx, "")
-				} else {
-					ui.ActivityError(ctx, "%s", errorForActivity(err, ""))
-				}
-			}()
+			ctx := ectx
+			if activity != nil {
+				ctx = ui.ActivityStart(ectx, activity, "fetching")
+				defer func() {
+					if err == nil {
+						ui.ActivityDone(ctx, "")
+					} else {
+						ui.ActivityError(ctx, "%s", errorForActivity(err, ""))
+					}
+				}()
+			}
 			out[i], err = gr.visited.Get(dep).PrefetchDep(ctx)
 			return
 		})
@@ -526,6 +526,48 @@ func prefetchDeps(ctx context.Context, gr *depsGraph, depsList []mvs.Package[pkg
 	}
 
 	return out, nil
+}
+
+type conflictErr struct {
+	conflictingRepos []string
+}
+
+func (e *conflictErr) Error() string {
+	return fmt.Sprintf(
+		"the package is imported from multiple different repositories:\n%s",
+		strings.Join(e.conflictingRepos, "\n"),
+	)
+}
+
+// collectVersions returns an alphabetically sorted list of version strings.
+//
+// It also checks all versions agree on the package repository, returning this
+// repository as well. In particular this will bark if a root-local "@pinned"
+// package is also imported as a remote package.
+func collectVersions(vers []pkgVer) (repoKey RepoKey, strVers []string, err error) {
+	strVers = make([]string, 0, len(vers))
+	seenRepoKeys := make(map[RepoKey]struct{}, 1)
+	for _, ver := range vers {
+		strVers = append(strVers, ver.ver)
+		seenRepoKeys[ver.repo] = struct{}{}
+		repoKey = ver.repo
+	}
+	if len(seenRepoKeys) != 1 {
+		var report []string
+		for key := range seenRepoKeys {
+			report = append(report, key.String())
+		}
+		slices.Sort(report)
+		err = &conflictErr{conflictingRepos: report}
+	} else {
+		// Note that all string versions will be different, since mvs.Graph
+		// deduplicates completely identical pkgVer values and we already verified
+		// all pkgVer have identical pkgVer.repo field, so all version strings
+		// must be different then). Sort them lexicographically just to remove
+		// any non-determinism from calls to repo.PickMostRecent.
+		slices.Sort(strVers)
+	}
+	return
 }
 
 // errorForActivity extracts the most relevant error message to display in the
@@ -538,6 +580,13 @@ func errorForActivity(err error, path string) string {
 		return "no such commit"
 	case errors.Is(err, gitsource.ErrMissingObject):
 		return fmt.Sprintf("%s: no such file in the commit or no such commit", path)
+	}
+
+	// The conflict error is too verbose, shorten it. It will be reported in full
+	// it the final error log.
+	var confErr *conflictErr
+	if errors.As(err, &confErr) {
+		return "conflict"
 	}
 
 	// Shed any wrappers around git errors, they duplicate information already

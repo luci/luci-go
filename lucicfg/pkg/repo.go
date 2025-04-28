@@ -72,6 +72,11 @@ const PinnedVersion = "@pinned"
 // the overridden (local) version will always be used.
 const OverriddenVersion = "@overridden"
 
+// IsRemoteVersion is true for versions that point to remote packages.
+func IsRemoteVersion(ver string) bool {
+	return ver != PinnedVersion && ver != OverriddenVersion
+}
+
 // RepoKey identifies a repository.
 //
 // It is either a remote repository or a local root package repository (which

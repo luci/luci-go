@@ -506,7 +506,7 @@ func TestVersionResolution(t *testing.T) {
 			a1@remote1:
 			a2@remote2:
 		`)
-		assert.That(t, err, should.ErrLike(`package "@a" is imported from multiple different repositories`))
+		assert.That(t, err, should.ErrLike(`examining "@a": the package is imported from multiple different repositories`))
 	})
 
 	t.Run("Remote package referencing back local package", func(t *testing.T) {
@@ -515,7 +515,7 @@ func TestVersionResolution(t *testing.T) {
 			a1@remote: b1@local
 			b1@local:
 		`)
-		assert.That(t, err, should.ErrLike(`package "@b" is imported from multiple different repositories`))
+		assert.That(t, err, should.ErrLike(`examining "@b": the package is imported from multiple different repositories`))
 	})
 }
 

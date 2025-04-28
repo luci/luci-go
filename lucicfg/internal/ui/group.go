@@ -318,7 +318,7 @@ func renderToLine(a *Activity, advance bool, maxPkgLen, termWidth int) string {
 	writeString(padRight(a.info.Package, maxPkgLen))
 	if a.info.Version != "" {
 		writeSymbols(' ')
-		writeString(a.info.Version)
+		writeString(padRight(a.info.Version, 40))
 	}
 	if a.message != "" {
 		writeSymbols(' ')
