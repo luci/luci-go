@@ -743,6 +743,61 @@ func TestNormalizeScopes(t *testing.T) {
 	})
 }
 
+func TestMetadata(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Test pack and unpack", t, func(t *ftt.Test) {
+		provider := &fakeTokenProvider{
+			interactive: false,
+		}
+		auth, ctx := newAuth(InteractiveLogin, provider, nil, "")
+		cacheToken(auth, provider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      future,
+			},
+		})
+
+		err := auth.PackTokenMetadata(ctx, "nahi", "teri")
+		assert.Loosely(t, err, should.BeNil)
+
+		var got string
+		err = auth.UnpackTokenMetadata("nahi", &got)
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, got, should.Equal("teri"))
+	})
+
+	ftt.Run("Test survives refresh", t, func(t *ftt.Test) {
+		provider := &fakeTokenProvider{
+			interactive: false,
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{AccessToken: "refreshed", Expiry: now.Add(2 * time.Hour)},
+			},
+		}
+		auth, ctx := newAuth(InteractiveLogin, provider, nil, "")
+		cacheToken(auth, provider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      now.Add(time.Hour),
+			},
+		})
+
+		err := auth.PackTokenMetadata(ctx, "nahi", "teri")
+		assert.Loosely(t, err, should.BeNil)
+
+		// cached token expires
+		clock.Get(ctx).(testclock.TestClock).Add(80 * time.Minute)
+		tok, err := auth.GetAccessToken(time.Minute)
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, tok.AccessToken, should.Equal("refreshed"))
+
+		var got string
+		err = auth.UnpackTokenMetadata("nahi", &got)
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, got, should.Equal("teri"))
+	})
+}
+
 func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
 	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))

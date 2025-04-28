@@ -18,6 +18,7 @@ package internal
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"reflect"
 	"strings"
 	"sync"
@@ -82,8 +83,9 @@ var (
 type Token struct {
 	oauth2.Token
 
-	IDToken string // an ID token derived directly from the access token or NoIDToken
-	Email   string // an email or NoEmail or empty string (aka UnknownEmail)
+	IDToken  string                     // an ID token derived directly from the access token or NoIDToken
+	Email    string                     // an email or NoEmail or empty string (aka UnknownEmail)
+	Metadata map[string]json.RawMessage // arbitrary metadata associated with the refresh token
 }
 
 // TokenProvider knows how to mint new tokens or refresh existing ones.

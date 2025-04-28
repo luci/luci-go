@@ -33,6 +33,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"slices"
@@ -740,6 +741,42 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 	}
 
 	return &tok.Token, nil
+}
+
+// UnpackTokenMetadata unpacks keyed metadata from the token.
+//
+// The value is unpacked from JSON into the val parameter, which
+// should be a pointer.
+func (a *Authenticator) UnpackTokenMetadata(key string, val any) error {
+	tok, err := a.currentToken()
+	if err != nil {
+		return errors.Annotate(err, "unpack token metadata").Err()
+	}
+	enc, ok := tok.Metadata[key]
+	if !ok {
+		return errors.Fmt("unpack token metadata: no value for key %v", key)
+	}
+	if err := json.Unmarshal(enc, val); err != nil {
+		return errors.Annotate(err, "unpack metadata").Err()
+	}
+	return nil
+}
+
+// PackTokenMetadata packs keyed metadata into the token.
+//
+// The value is packed as JSON.
+func (a *Authenticator) PackTokenMetadata(ctx context.Context, key string, val any) error {
+	_, err := a.currentToken()
+	if err != nil {
+		return errors.Annotate(err, "pack token metadata").Err()
+	}
+	a.lock.Lock()
+	err = a.authToken.packMetadata(ctx, key, val)
+	a.lock.Unlock()
+	if err != nil {
+		return errors.Annotate(err, "pack token metadata").Err()
+	}
+	return nil
 }
 
 // GetEmail returns an email associated with the credentials.
@@ -1487,7 +1524,32 @@ func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, b
 		tok, err = t.provider.RefreshToken(ctx, prev, base)
 		return err
 	}, retry.LogCallback(ctx, "token-refresh"))
+	if tok != nil {
+		tok.Metadata = prev.Metadata
+	}
 	return
+}
+
+func (t *tokenWithProvider) packMetadata(ctx context.Context, key string, val any) error {
+	if t.token == nil {
+		return errors.New("pack metadata: missing token")
+	}
+	if t.token.Metadata == nil {
+		t.token.Metadata = make(map[string]json.RawMessage)
+	}
+	enc, err := json.Marshal(val)
+	if err != nil {
+		return errors.Annotate(err, "pack metadata").Err()
+	}
+	t.token.Metadata[key] = json.RawMessage(enc)
+	ckey, err := t.provider.CacheKey(ctx)
+	if err != nil {
+		return errors.Annotate(err, "pack metadata").Err()
+	}
+	if err := t.cache.PutToken(ckey, t.token); err != nil {
+		return errors.Annotate(err, "pack metadata").Err()
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

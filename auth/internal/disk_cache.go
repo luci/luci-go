@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -96,6 +95,7 @@ type cacheFileEntry struct {
 	token      oauth2.Token
 	idToken    string
 	email      string
+	metadata   map[string]json.RawMessage
 	lastUpdate time.Time
 
 	extra map[string]*json.RawMessage
@@ -112,6 +112,7 @@ func (e *cacheFileEntry) structure() []keyPtr {
 		{"token", &e.token},
 		{"id_token", &e.idToken},
 		{"email", &e.email},
+		{"metadata", &e.metadata},
 		{"last_update", &e.lastUpdate},
 	}
 }
@@ -151,6 +152,10 @@ func (e *cacheFileEntry) MarshalJSON() ([]byte, error) {
 
 	first := true
 	for _, kv := range fields {
+		if kv.key == "metadata" && len(*(kv.ptr.(*map[string]json.RawMessage))) == 0 {
+			// Skip empty metadata
+			continue
+		}
 		if !first {
 			out.WriteString(",")
 		}
@@ -243,7 +248,7 @@ func (c *DiskTokenCache) writeCacheFile(path string, cache *cacheFile) error {
 		logging.WithError(err).Warningf(c.Context, "Failed to mkdir token cache dir")
 		// carry on, TempFile will fail too.
 	}
-	tmp, err := ioutil.TempFile(c.SecretsDir, "tokens.json.*")
+	tmp, err := os.CreateTemp(c.SecretsDir, "tokens.json.*")
 	if err != nil {
 		return err
 	}
@@ -396,9 +401,10 @@ func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
 	for _, entry := range cache.Cache {
 		if equalCacheKeys(&entry.key, key) {
 			return &Token{
-				Token:   entry.token,
-				IDToken: entry.idToken,
-				Email:   entry.email,
+				Token:    entry.token,
+				IDToken:  entry.idToken,
+				Email:    entry.email,
+				Metadata: entry.metadata,
 			}, nil
 		}
 	}
@@ -417,6 +423,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 				entry.token = token
 				entry.idToken = tok.IDToken
 				entry.email = tok.Email
+				entry.metadata = tok.Metadata
 				entry.lastUpdate = now
 				return true
 			}
@@ -426,6 +433,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
 			token:      token,
 			idToken:    tok.IDToken,
 			email:      tok.Email,
+			metadata:   tok.Metadata,
 			lastUpdate: now,
 		})
 		return true

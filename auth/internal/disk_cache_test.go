@@ -16,7 +16,7 @@ package internal
 
 import (
 	"context"
-	"io/ioutil"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,11 +34,7 @@ import (
 func TestDiskTokenCache(t *testing.T) {
 	t.Parallel()
 
-	tmp, err := ioutil.TempDir("", "disk_token_cache")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := t.TempDir()
 
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC.Local())
@@ -348,5 +344,28 @@ func TestDiskTokenCache(t *testing.T) {
 		tok, err = cache.GetToken(&CacheKey{Key: "b"})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, tok, should.BeNil)
+	})
+
+	ftt.Run("metadata round trip", t, func(t *ftt.Test) {
+		cache := &DiskTokenCache{
+			Context:    ctx,
+			SecretsDir: tmp,
+		}
+
+		err := cache.PutToken(&CacheKey{Key: "a"}, &Token{
+			Token: oauth2.Token{
+				AccessToken: "abc",
+				Expiry:      clock.Now(ctx),
+			},
+			Metadata: map[string]json.RawMessage{
+				"nahi": json.RawMessage(`"teri"`),
+			},
+		})
+		assert.Loosely(t, err, should.BeNil)
+		tok, err := cache.GetToken(&CacheKey{Key: "a"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.Metadata, should.Match(map[string]json.RawMessage{
+			"nahi": json.RawMessage(`"teri"`),
+		}))
 	})
 }
