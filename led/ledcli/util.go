@@ -93,7 +93,10 @@ func readJobDefinition(ctx context.Context) (*job.Definition, error) {
 		err = <-readErr
 	}
 
-	return jd, errors.Annotate(err, "decoding job Definition").Err()
+	if err != nil {
+		err = errors.Annotate(err, "decoding job Definition").Err()
+	}
+	return jd, err
 }
 
 func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args []string, env subcommands.Env) int {

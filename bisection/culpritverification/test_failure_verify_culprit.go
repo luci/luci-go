@@ -43,8 +43,11 @@ func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVer
 
 	// Retrieves suspect.
 	suspect, err := datastoreutil.GetSuspectForTestAnalysis(ctx, tfa)
-	if err != nil || suspect == nil {
+	if err != nil {
 		return errors.Annotate(err, "couldn't get suspect").Err()
+	}
+	if suspect == nil {
+		return errors.New("couldn't get suspect: <unknown reason>")
 	}
 
 	return verifyTestFailureSuspect(ctx, tfa, suspect)

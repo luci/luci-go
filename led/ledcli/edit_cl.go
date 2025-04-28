@@ -221,11 +221,14 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 	}
 
 	c.gerritChange, err = parseCrChangeListURL(positionals[0], gerritResolver(ctx, authClient))
-	return errors.Annotate(
-		err,
-		"invalid URL_TO_CHANGESET. If you see `Invalid authentication "+
-			"credentials. Please generate a new identifier` in the error "+
-			"message, run `led auth-login` again.").Err()
+	if err != nil {
+		return errors.Annotate(
+			err,
+			"invalid URL_TO_CHANGESET. If you see `Invalid authentication "+
+				"credentials. Please generate a new identifier` in the error "+
+				"message, run `led auth-login` again.").Err()
+	}
+	return nil
 }
 
 func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {

@@ -326,7 +326,10 @@ func readLuciexeFakeBuild(filename string) (*bbpb.Build, error) {
 	}
 	ret := &bbpb.Build{}
 	err = json.Unmarshal(data, ret)
-	return ret, errors.Annotate(err, "decoding *Build from %s=%s", luciexeFakeVar, filename).Err()
+	if err != nil {
+		err = errors.Annotate(err, "decoding *Build from %s=%s", luciexeFakeVar, filename).Err()
+	}
+	return ret, err
 }
 
 func parseArgs(args []string) (output, wd string, help bool) {

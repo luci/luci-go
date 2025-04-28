@@ -631,7 +631,10 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 		StateDir:          ac.gsutilState,
 		GCEServiceAccount: botoGCEAccount, // may be "" in anonymous mode
 	})
-	return errors.Annotate(err, "failed to setup .boto for %q account", ac.ID).Err()
+	if err != nil {
+		return errors.Annotate(err, "failed to setup .boto for %q account", ac.ID).Err()
+	}
+	return nil
 }
 
 func (ac *Context) setupFirebaseAuth(ctx context.Context) error {

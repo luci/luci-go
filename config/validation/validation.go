@@ -159,6 +159,10 @@ func (v *Context) HasPendingWarnings() bool {
 }
 
 func (v *Context) record(severity Severity, err error) {
+	if err == nil {
+		return
+	}
+
 	ctx := ""
 	if v.file != "" {
 		ctx = fmt.Sprintf("in %q", v.file)

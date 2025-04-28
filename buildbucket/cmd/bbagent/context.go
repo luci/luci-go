@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
 
@@ -100,7 +99,9 @@ func setLocalAuth(ctx context.Context) context.Context {
 		ExposeSystemAccount: true,
 	}
 	err := authCtx.Launch(ctx, "")
-	check(ctx, errors.Annotate(err, "failed launch the local LUCI auth context").Err())
+	if err != nil {
+		check(ctx, err, "failed launch the local LUCI auth context")
+	}
 	defer authCtx.Close(ctx)
 
 	// Switch the default auth in the context to the one we just setup.

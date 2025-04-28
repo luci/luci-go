@@ -298,7 +298,7 @@ func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery
 	if err != nil {
 		return errors.Annotate(err, "waiting for stale row purge to complete").Err()
 	}
-	if js.Err() != nil {
+	if err := js.Err(); err != nil {
 		return errors.Annotate(err, "purge stale rows failed").Err()
 	}
 	return nil

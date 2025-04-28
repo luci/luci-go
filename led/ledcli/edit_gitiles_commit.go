@@ -74,11 +74,17 @@ func (c *cmdGitilesCommit) jobInput() bool                  { return true }
 func (c *cmdGitilesCommit) positionalRange() (min, max int) { return 1, 1 }
 
 func annotateURLErr(err error) error {
-	return errors.Annotate(err, "invalid URL_TO_GITILES_COMMIT").Err()
+	if err != nil {
+		return errors.Annotate(err, "invalid URL_TO_GITILES_COMMIT").Err()
+	}
+	return nil
 }
 
 func annotateRefCmdErr(err error) error {
-	return errors.Annotate(err, "invalid `-ref` flag").Err()
+	if err != nil {
+		return errors.Annotate(err, "invalid `-ref` flag").Err()
+	}
+	return nil
 }
 
 func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {

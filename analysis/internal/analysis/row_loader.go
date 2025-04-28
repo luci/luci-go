@@ -140,7 +140,7 @@ func (r *rowLoader) Int64s(fieldName string) []int64 {
 	result := make([]int64, 0, len(rows))
 	for i, row := range rows {
 		if row == nil {
-			r.reportError(errors.Annotate(err, "field %s index %v is NULL, expected non-null integer", fieldName, i).Err())
+			r.reportError(errors.Reason("field %s index %v is NULL, expected non-null integer", fieldName, i).Err())
 			return nil
 		}
 		result = append(result, row.(int64))
@@ -198,7 +198,7 @@ func (r *rowLoader) Strings(fieldName string) []string {
 	result := make([]string, 0, len(rows))
 	for i, row := range rows {
 		if row == nil {
-			r.reportError(errors.Annotate(err, "field %s index %v is NULL, expected non-null string", fieldName, i).Err())
+			r.reportError(errors.Reason("field %s index %v is NULL, expected non-null string", fieldName, i).Err())
 			return nil
 		}
 		result = append(result, row.(string))

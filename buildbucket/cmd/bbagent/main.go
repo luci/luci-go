@@ -33,6 +33,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -112,7 +113,9 @@ func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBui
 	for {
 		select {
 		case err := <-si.invokeErr:
-			checkReport(ctx, c, errors.Annotate(err, "could not invoke luciexe").Err())
+			if err != nil {
+				checkReport(ctx, c, err, "could not invoke luciexe")
+			}
 		case err := <-si.dispatcherErrCh:
 			if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
 				si.shutdownCh.close()
@@ -128,33 +131,42 @@ func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBui
 	}
 }
 
-func check(ctx context.Context, err error) {
+func check(ctx context.Context, err error, format string, args ...any) {
 	if err != nil {
-		logging.Errorf(ctx, err.Error())
-		os.Exit(1)
+		die(ctx, format+": %w", append(slices.Clip(args), err))
 	}
 }
 
+func die(ctx context.Context, format string, args ...any) {
+	logging.Errorf(ctx, format, args...)
+	os.Exit(1)
+}
+
 // checkReport logs errors, tries to report them to buildbucket, then exits
-func checkReport(ctx context.Context, c clientInput, err error) {
+func checkReport(ctx context.Context, c clientInput, err error, format string, args ...any) {
 	if err != nil {
-		logging.Errorf(ctx, err.Error())
-		if _, bbErr := c.bbclient.UpdateBuild(
-			ctx,
-			&bbpb.UpdateBuildRequest{
-				Build: &bbpb.Build{
-					Id: c.input.Build.Id,
-					Output: &bbpb.Build_Output{
-						Status:          bbpb.Status_INFRA_FAILURE,
-						SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
-					},
-				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status", "build.output.summary_markdown"}},
-			}); bbErr != nil {
-			logging.Errorf(ctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
-		}
-		os.Exit(1)
+		dieReport(ctx, c, format+": %w", append(slices.Clip(args), err)...)
 	}
+}
+
+// dieReport logs errors, tries to report them to buildbucket, then exits
+func dieReport(ctx context.Context, c clientInput, format string, args ...any) {
+	logging.Errorf(ctx, format, args...)
+	if _, bbErr := c.bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id: c.input.Build.Id,
+				Output: &bbpb.Build_Output{
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: fmt.Sprintf("fatal error in startup: "+format, args...),
+				},
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status", "build.output.summary_markdown"}},
+		}); bbErr != nil {
+		logging.Errorf(ctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
+	}
+	os.Exit(1)
 }
 
 func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
@@ -181,9 +193,9 @@ func parseBbAgentArgs(ctx context.Context, arg string, bbagentCtx *bbpb.Buildbuc
 	// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 	logging.Debugf(ctx, "parsing BBAgentArgs")
 	input, err := bbinput.Parse(arg)
-	check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
+	check(ctx, err, "could not unmarshal BBAgentArgs")
 	bbclient, err := newBuildsClient(ctx, bbagentCtx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
-	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
+	check(ctx, err, "could not connect to Buildbucket")
 	return clientInput{bbclient, input}
 }
 
@@ -201,7 +213,7 @@ func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskI
 func retrieveTaskIDFromContext(ctx context.Context) string {
 	swarmingCtx := lucictx.GetSwarming(ctx)
 	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || swarmingCtx.Task.GetTaskId() == "" {
-		check(ctx, fmt.Errorf("incomplete swarming context: %+v", swarmingCtx))
+		die(ctx, "incomplete swarming context: %+v", swarmingCtx)
 	}
 	return swarmingCtx.Task.TaskId
 }
@@ -216,7 +228,7 @@ func retrieveTaskIDFromContext(ctx context.Context) string {
 func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bbagentCtx *bbpb.BuildbucketAgentContext) clientInput {
 	logging.Debugf(ctx, "fetching build %d", *buildID)
 	bbclient, err := newBuildsClient(ctx, bbagentCtx, *hostname, defaultRetryStrategy)
-	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
+	check(ctx, err, "could not connect to Buildbucket")
 
 	var build *bbpb.Build
 	if bbagentCtx.TaskId == "" {
@@ -240,7 +252,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 					AllFields: true,
 				},
 			})
-		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
+		check(ctx, err, "failed to fetch build")
 	} else {
 		var res *bbpb.StartBuildResponse
 		res, err = startBuild(ctx, bbclient, *buildID, bbagentCtx.TaskId)
@@ -249,7 +261,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 			logging.Infof(ctx, err.Error())
 			os.Exit(0)
 		}
-		check(ctx, errors.Annotate(err, "failed to start build").Err())
+		check(ctx, err, "failed to start build")
 		build = res.Build
 		bbagentCtx.Secrets.BuildToken = res.UpdateBuildToken
 	}
@@ -371,7 +383,7 @@ func downloadInputs(ctx context.Context, cwd, cacheBase string, c clientInput) i
 	// Most likely happens in `led get-build` process where it creates from an old build
 	// before new Agent field was there. This new feature shouldn't work for those builds.
 	if c.input.Build.Infra.Buildbucket.Agent == nil {
-		checkReport(ctx, c, errors.New("Cannot enable downloading cipd pkgs feature; Build Agent field is not set"))
+		dieReport(ctx, c, "Cannot enable downloading cipd pkgs feature; Build Agent field is not set")
 	}
 
 	agent := c.input.Build.Infra.Buildbucket.Agent
@@ -502,12 +514,12 @@ func processExeArgs(ctx context.Context, c clientInput) []string {
 
 		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
 			absPath, err := filepath.Abs(exeArgs[0])
-			checkReport(ctx, c, errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
+			checkReport(ctx, c, err, "absoluting wrapper path: %q", exeArgs[0])
 			exeArgs[0] = absPath
 		}
 
 		cmdPath, err := exec.LookPath(exeArgs[0])
-		checkReport(ctx, c, errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
+		checkReport(ctx, c, err, "wrapper not found: %q", exeArgs[0])
 		exeArgs[0] = cmdPath
 	}
 
@@ -525,7 +537,7 @@ func processExeArgs(ctx context.Context, c clientInput) []string {
 		}
 	}
 	exePath, err := processCmd(payloadPath, exeCmd)
-	checkReport(ctx, c, err)
+	checkReport(ctx, c, err, "processExeArgs")
 	exeArgs = append(exeArgs, exePath)
 	exeArgs = append(exeArgs, c.input.Build.Exe.Cmd[1:]...)
 
@@ -609,9 +621,7 @@ func mainImpl() int {
 	var err error
 
 	bbagentCtx, err := getBuildbucketAgentContext(ctx, *contextFile)
-	if err != nil {
-		check(ctx, errors.Annotate(err, "BbagentContext could not be created").Err())
-	}
+	check(ctx, err, "BbagentContext could not be created")
 
 	switch {
 	case len(args) == 1:
@@ -619,7 +629,7 @@ func mainImpl() int {
 	case *hostname != "" && *buildID > 0:
 		bbclientInput = parseHostBuildID(ctx, hostname, buildID, bbagentCtx)
 	default:
-		check(ctx, errors.Reason("-host and -build-id are required").Err())
+		die(ctx, "-host and -build-id are required")
 	}
 
 	// The build has been canceled, bail out early.
@@ -632,7 +642,7 @@ func mainImpl() int {
 	ctx = setRealmContext(ctx, bbclientInput.input)
 
 	logdogOutput, err := mkLogdogOutput(ctx, bbclientInput.input.Build.Infra.Logdog)
-	check(ctx, errors.Annotate(err, "could not create logdog output").Err())
+	check(ctx, err, "could not create logdog output")
 
 	var (
 		cctx   context.Context
@@ -665,7 +675,7 @@ func mainImpl() int {
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.output.status"}},
 				Mask:       readMask,
 			})
-		check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
+		check(ctx, err, "failed to report status STARTED to Buildbucket")
 
 		// The build has been canceled, bail out early.
 		if updatedBuild.CancelTime != nil {
@@ -706,13 +716,13 @@ func mainImpl() int {
 		ExeAuth:      host.DefaultExeAuth("bbagent", bbclientInput.input.KnownPublicGerritHosts),
 	}
 	cwd, err := os.Getwd()
-	checkReport(ctx, bbclientInput, errors.Annotate(err, "getting cwd").Err())
+	checkReport(ctx, bbclientInput, err, "getting cwd")
 	opts.BaseDir = filepath.Join(cwd, "x")
 
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
 	}).MarshalToString(bbclientInput.input)
-	checkReport(ctx, bbclientInput, errors.Annotate(err, "marshalling input args").Err())
+	checkReport(ctx, bbclientInput, err, "marshalling input args")
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	// Downloading cipd packages if any.
@@ -739,12 +749,10 @@ func mainImpl() int {
 	// been updated with a build token from the response of the StartBuild call.
 	bbclientForDispatcher, err := newBuildsClientWithSecrets(
 		cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil }, bbagentCtx.Secrets)
-	if err != nil {
-		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not connect to Buildbucket").Err())
-	}
+	checkReport(ctx, bbclientInput, err, "could not connect to Buildbucket")
 	buildsCh, err := dispatcher.NewChannel[*bbpb.Build](
 		cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, bbclientInput.input.Build.Id, canceledBuildCh))
-	checkReport(ctx, bbclientInput, errors.Annotate(err, "could not create builds dispatcher channel").Err())
+	checkReport(ctx, bbclientInput, err, "could not create builds dispatcher channel")
 	defer buildsCh.CloseAndDrain(cctx)
 
 	shutdownCh := newCloseOnceCh()
@@ -799,9 +807,7 @@ func mainImpl() int {
 		logging.Infof(ctx, fmt.Sprintf("Final build status from subprocess: %s", build.Status.String()))
 		statusDetails = build.StatusDetails
 	})
-	if err != nil {
-		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not start luciexe host environment").Err())
-	}
+	checkReport(ctx, bbclientInput, err, "could not start luciexe host environment")
 
 	var (
 		finalBuild                *bbpb.Build = proto.Clone(bbclientInput.input.Build).(*bbpb.Build)

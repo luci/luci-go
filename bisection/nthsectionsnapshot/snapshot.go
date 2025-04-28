@@ -319,7 +319,7 @@ func (snapshot *Snapshot) FindNextSingleCommitToRun() (string, error) {
 		return "", nil
 	}
 	if len(commits) != 1 {
-		return "", errors.Annotate(err, "expect only 1 commits to rerun. Got %d", len(commits)).Err()
+		return "", errors.Reason("expect only 1 commits to rerun. Got %d", len(commits)).Err()
 	}
 	return commits[0], nil
 

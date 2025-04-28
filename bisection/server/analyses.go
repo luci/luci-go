@@ -542,7 +542,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		return nil, nil
 	}
 	if nsa.BlameList == nil {
-		return nil, errors.Annotate(err, "couldn't find blamelist").Err()
+		return nil, errors.New("couldn't find blamelist")
 	}
 	result := &pb.NthSectionAnalysisResult{
 		Status:    nsa.Status,

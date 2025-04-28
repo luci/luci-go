@@ -73,7 +73,9 @@ func ParseProperties(props *structpb.Struct, outputs map[string]any) error {
 			err = json.NewDecoder(&jsonBuf).Decode(x)
 		}
 
-		ret.Assign(idx, errors.Annotate(err, "unmarshalling %q", field).Err())
+		if err != nil {
+			ret.Assign(idx, errors.Annotate(err, "unmarshalling %q", field).Err())
+		}
 	}
 
 	return ret.Get()

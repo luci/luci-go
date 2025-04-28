@@ -217,7 +217,9 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 		}()
 
 		err := s.cmd.Wait()
-		s.err.MaybeAdd(errors.Annotate(err, "waiting for luciexe").Err())
+		if err != nil {
+			s.err = append(s.err, errors.Annotate(err, "waiting for luciexe").Err())
+		}
 
 		// Even if the Wait fails (e.g. process returns non-0 exit code, or other
 		// issue), still try to read the build output.
