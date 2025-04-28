@@ -30,8 +30,8 @@ deps=(
   cloud.google.com/go/bigquery@latest
   cloud.google.com/go/bigtable@latest
   cloud.google.com/go/cloudtasks@latest
-  cloud.google.com/go/compute@latest
   cloud.google.com/go/compute/metadata@latest
+  cloud.google.com/go/compute@latest
   cloud.google.com/go/datastore@latest
   cloud.google.com/go/errorreporting@latest
   cloud.google.com/go/iam@latest
@@ -42,19 +42,21 @@ deps=(
   cloud.google.com/go/secretmanager@latest
   cloud.google.com/go/spanner@latest
   cloud.google.com/go/storage@latest
+  github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace@latest
+  github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator@latest
+  github.com/Microsoft/go-winio@latest
   github.com/alicebob/miniredis/v2@latest
   github.com/danjacques/gofslock@latest
   github.com/dustin/go-humanize@latest
   github.com/envoyproxy/protoc-gen-validate@latest
   github.com/go-git/go-git/v5@latest
+  github.com/goccy/go-yaml@latest
   github.com/golang/protobuf@latest
   github.com/gomodule/redigo@latest
   github.com/google/go-cmp@latest
   github.com/google/tink/go@latest
   github.com/google/uuid@latest
   github.com/googleapis/gax-go/v2@latest
-  github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace@latest
-  github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator@latest
   github.com/gorhill/cronexpr@latest
   github.com/jordan-wright/email@latest
   github.com/julienschmidt/httprouter@latest
@@ -63,7 +65,6 @@ deps=(
   github.com/maruel/subcommands@latest
   github.com/mattn/go-tty@latest
   github.com/mgutz/ansi@latest
-  github.com/Microsoft/go-winio@latest
   github.com/op/go-logging@latest
   github.com/pmezard/go-difflib@latest
   github.com/protocolbuffers/txtpbfmt@latest
@@ -74,10 +75,10 @@ deps=(
   go.opentelemetry.io/contrib/detectors/gcp@latest
   go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc@latest
   go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@latest
-  go.opentelemetry.io/otel/sdk@latest
-  go.opentelemetry.io/otel/trace@latest
   go.opentelemetry.io/otel/metric@latest
   go.opentelemetry.io/otel/sdk/metric@latest
+  go.opentelemetry.io/otel/sdk@latest
+  go.opentelemetry.io/otel/trace@latest
   go.opentelemetry.io/otel@latest
   go.starlark.net@latest
   golang.org/x/crypto@latest
@@ -90,14 +91,13 @@ deps=(
   golang.org/x/tools@latest
   google.golang.org/api@latest
   google.golang.org/appengine@latest
-  google.golang.org/genproto@latest
   google.golang.org/genproto/googleapis/api@latest
   google.golang.org/genproto/googleapis/bytestream@latest
   google.golang.org/genproto/googleapis/rpc@latest
+  google.golang.org/genproto@latest
   google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
   google.golang.org/grpc@latest
   google.golang.org/protobuf@latest
-  gopkg.in/yaml.v2@latest
 
   # Pinned versions must be updated last, since if something is updated after
   # them, they can be bumped as dependencies. By updating them last, we'll

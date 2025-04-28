@@ -49,6 +49,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/go-git/go-git/v5 v5.13.2
+	github.com/goccy/go-yaml v1.11.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gomodule/redigo v1.9.2
@@ -105,7 +106,6 @@ require (
 	google.golang.org/grpc v1.70.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 	google.golang.org/protobuf v1.36.5
-	gopkg.in/yaml.v2 v2.4.0
 	honnef.co/go/tools v0.1.3
 )
 
@@ -136,6 +136,7 @@ require (
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.13.1 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect

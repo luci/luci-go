@@ -20,14 +20,12 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
-	"gopkg.in/yaml.v2"
 
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
-
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/cli/base"
 	"go.chromium.org/luci/lucicfg/cli/cmds/fmt"
@@ -38,9 +36,6 @@ import (
 
 // Main runs the lucicfg CLI.
 func Main(params base.Parameters, args []string) int {
-	// We prefer not to wrap lines in generated YAML.
-	yaml.FutureLineWrap()
-
 	// A hack to allow '#!/usr/bin/env lucicfg'. On Linux the shebang line can
 	// have at most two arguments, so we can't use '#!/usr/bin/env lucicfg gen'.
 	if len(args) == 1 {

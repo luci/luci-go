@@ -12,8 +12,8 @@ def test_json_to_yaml():
     test = lambda i, o: assert.eq(strutil.json_to_yaml(i), o)
     test("", "null\n")
     test('"abc"', "abc\n")
-    test('"abc: def"', "'abc: def'\n")
-    test("123.0", "123\n")
+    test('"abc: def"', "\"abc: def\"\n")
+    test("123.0", "123.0\n")
     test("{}", "{}\n")
     test('{"abc": {"def": [1, "2", null, 3]}, "zzz": []}', """abc:
   def:

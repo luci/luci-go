@@ -24,8 +24,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
-
+	"github.com/goccy/go-yaml"
 	log "go.chromium.org/luci/common/logging"
 )
 

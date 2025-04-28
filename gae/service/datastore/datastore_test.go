@@ -1802,7 +1802,7 @@ func TestParseIndexYAML(t *testing.T) {
 indexes:
 
 - kind: Cat
-  ancestor: no
+  ancestor: false
   properties:
   - name: name
   - name: age
@@ -1816,7 +1816,7 @@ indexes:
     direction: desc
 
 - kind: Store
-  ancestor: yes
+  ancestor: true
   properties:
   - name: business
     direction: asc

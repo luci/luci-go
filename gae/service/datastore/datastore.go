@@ -22,7 +22,7 @@ import (
 	"runtime"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 // ParseIndexYAML parses the contents of a index YAML file into a list of

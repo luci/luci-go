@@ -422,7 +422,7 @@ var queryExecutionTests = []qExTest{
 					assert.Loosely(t, ds.Run(c, q, func(ds.Key) {}), should.ErrLike(strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
-						"  ancestor: yes",
+						"  ancestor: true",
 						"  properties:",
 						"  - name: Val",
 					}, "\n")))

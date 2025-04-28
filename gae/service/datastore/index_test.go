@@ -21,11 +21,10 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.in/yaml.v2"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"github.com/goccy/go-yaml"
 )
 
 var indexDefinitionTests = []struct {
@@ -72,7 +71,7 @@ var indexDefinitionTests = []struct {
 		str:      "C:Kind|A/prop/-other",
 		yaml: []string{
 			"- kind: Kind",
-			"  ancestor: yes",
+			"  ancestor: true",
 			"  properties:",
 			"  - name: prop",
 			"  - name: other",

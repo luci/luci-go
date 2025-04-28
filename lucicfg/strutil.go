@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"go.starlark.net/starlark"
-	"gopkg.in/yaml.v2"
 
 	"go.chromium.org/luci/common/data/text/intsetexpr"
+	"github.com/goccy/go-yaml"
 )
 
 // See //internal/strutil.star for where these functions are referenced.

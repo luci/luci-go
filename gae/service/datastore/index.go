@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/goccy/go-yaml"
 )
 
 // IndexColumn represents a sort order for a single entity field.
@@ -313,7 +313,7 @@ func (id *IndexDefinition) YAMLString() (string, error) {
 
 	ws(fmt.Sprintf("- kind: %s", id.Kind), 0)
 	if id.Ancestor {
-		ws("ancestor: yes", 1)
+		ws("ancestor: true", 1)
 	}
 	ws("properties:", 1)
 	for _, o := range id.SortBy {
