@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-//go:build !appengine
-// +build !appengine
+//
+//go:build !windows
+// +build !windows
 
 package terminal
 
 import (
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/xo/terminfo"
 )
 
-// IsTerminal is just forwarded to "golang.org/x/crypto/ssh/terminal".IsTerminal
-var IsTerminal = terminal.IsTerminal
+func enableImpl(int) (*Caps, func()) {
+	supportsCursor := false
+	if ti, err := terminfo.LoadFromEnv(); err == nil {
+		supportsCursor = ti.Strings[terminfo.CursorDown] != nil && ti.Strings[terminfo.CursorUp] != nil
+	}
+	return &Caps{SupportsCursor: supportsCursor}, func() {}
+}

@@ -25,6 +25,8 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
+
+	"go.chromium.org/luci/common/system/terminal"
 )
 
 var (
@@ -34,7 +36,7 @@ var (
 
 // Config lives in the context and defines how activities are displayed.
 type Config struct {
-	Fancy bool     // if true, use fancy terminal output instead of plain logging
+	Fancy bool     // if true, allow fancy terminal output instead of plain logging
 	Term  *os.File // a terminal for fancy output (unused if Fancy == false)
 }
 
@@ -72,10 +74,18 @@ type activityGroup struct {
 func NewActivityGroup(ctx context.Context, title string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 
-	// If no fancy UI is needed, just do nothing. NewActivity(...) etc will
-	// recognize this as the non-fancy mode and will regress to simple logging.
+	// If no fancy UI is needed or the output doesn't support necessary terminal
+	// escape sequences, just do nothing. NewActivity(...) etc will recognize this
+	// as the non-fancy mode and will regress to simple logging.
 	cfg, _ := ctx.Value(&configCtxKey).(Config)
 	if !cfg.Fancy {
+		return ctx, cancel
+	}
+	caps, termDone := terminal.Enable(cfg.Term)
+	if caps == nil || !caps.SupportsCursor {
+		if termDone != nil {
+			termDone()
+		}
 		return ctx, cancel
 	}
 
@@ -90,6 +100,7 @@ func NewActivityGroup(ctx context.Context, title string) (context.Context, conte
 
 	return ctx, func() {
 		group.stop()
+		termDone()
 		cancel()
 	}
 }

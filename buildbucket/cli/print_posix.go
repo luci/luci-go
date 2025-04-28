@@ -20,9 +20,9 @@ package cli
 import (
 	"os"
 
-	"go.chromium.org/luci/common/system/terminal"
+	"golang.org/x/term"
 )
 
 func shouldDisableColors() bool {
-	return !terminal.IsTerminal(int(os.Stdout.Fd()))
+	return !term.IsTerminal(int(os.Stdout.Fd()))
 }

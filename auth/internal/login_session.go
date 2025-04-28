@@ -29,6 +29,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/term"
 
 	"go.chromium.org/luci/auth/loginsessionspb"
 	"go.chromium.org/luci/common/clock"
@@ -92,7 +93,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		return nil, errors.Reason("interactive login flow is forbidden on bots").Err()
 	}
 	// Check if stdout is really a terminal a real user can interact with.
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return nil, errors.Reason("interactive login flow requires the stdout to be attached to a terminal").Err()
 	}
 
@@ -135,12 +136,9 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		return nil, errors.Annotate(err, "failed to create the login session").Err()
 	}
 
-	useFancyUI, doneUI := EnableVirtualTerminal()
-	if !useFancyUI {
-		// TODO(crbug/chromium/1411203): Support mode without virtual terminal.
-		logging.Warningf(ctx, "Virtual terminal is not enabled.")
-	} else {
-		defer doneUI()
+	termCaps, doneTerm := terminal.Enable(os.Stdout)
+	if doneTerm != nil {
+		defer doneTerm()
 	}
 
 	fmt.Printf(
@@ -148,7 +146,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		session.LoginFlowUrl,
 	)
 
-	animationCtrl := startAnimation(ctx)
+	animationCtrl := startAnimation(ctx, termCaps != nil && termCaps.SupportsCursor)
 	defer animationCtrl("", 0)
 	animationCtrl(session.ConfirmationCode, session.ConfirmationCodeRefresh.AsDuration())
 
@@ -351,7 +349,7 @@ func smartAnimator() *smartTerminal {
 // Returns a function that can be used to control the animation. Passing it
 // a non-empty string would replace the confirmation code. Passing it an empty
 // string would stop the animation.
-func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
+func startAnimation(ctx context.Context, fancyUI bool) (ctrl func(string, time.Duration)) {
 	spinCh := make(chan codeAndExp)
 	done := false
 
@@ -360,9 +358,10 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 
 	fmt.Printf("When asked, use this confirmation code (it refreshes with time):\n\n")
 	var a animator
-	a = dumbAnimator()
-	if !IsDumbTerminal() {
+	if fancyUI {
 		a = smartAnimator()
+	} else {
+		a = dumbAnimator()
 	}
 
 	prevCode := ""

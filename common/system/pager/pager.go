@@ -24,8 +24,9 @@ import (
 	"os/exec"
 	"os/signal"
 
+	"golang.org/x/term"
+
 	"go.chromium.org/luci/common/system/exitcode"
-	"go.chromium.org/luci/common/system/terminal"
 )
 
 func done(err error) int {
@@ -57,7 +58,7 @@ func done(err error) int {
 //		})
 //	}
 func Main(ctx context.Context, fn func(ctx context.Context, out io.WriteCloser) int) int {
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		return fn(ctx, os.Stdout)
 	}
 

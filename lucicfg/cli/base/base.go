@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/system/terminal"
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/errs"
@@ -91,7 +90,7 @@ func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
 		c.logConfig.Level = logging.Debug
 	}
 	return ui.WithConfig(c.logConfig.Set(ctx), ui.Config{
-		Fancy: c.logConfig.Level == logging.Info && terminal.IsTerminal(int(os.Stderr.Fd())),
+		Fancy: c.logConfig.Level == logging.Info,
 		Term:  os.Stderr,
 	})
 }

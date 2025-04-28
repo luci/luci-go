@@ -22,11 +22,11 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/term"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/swarming/client/swarming"
 
 	"go.chromium.org/luci/led/job"
@@ -164,7 +164,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 				}
 
 				logging.Infof(ctx, "LUCI UI: https://%s/b/%d", miloHost, build.Id)
-				if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+				if !term.IsTerminal(int(os.Stdout.Fd())) {
 					ret := &struct {
 						Buildbucket struct {
 							// The id of the launched build.
@@ -207,7 +207,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		} `json:"swarming"`
 	}{}
 
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		ret.Swarming.TaskID = meta.TaskId
 		ret.Swarming.Hostname = swarmingHostname
 	} else {

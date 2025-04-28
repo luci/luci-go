@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/term"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
@@ -46,7 +47,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
-	"go.chromium.org/luci/common/system/terminal"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd"
@@ -157,7 +157,7 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 	// running at a non-default logging level, use a fancy UI with progress bars.
 	// It is more human readable, but doesn't preserve details of all operations
 	// in the terminal output.
-	if !useSimpleUI && logging.GetLevel(ctx) == logging.Info && terminal.IsTerminal(int(os.Stderr.Fd())) {
+	if !useSimpleUI && logging.GetLevel(ctx) == logging.Info && term.IsTerminal(int(os.Stderr.Fd())) {
 		ctx = ui.SetImplementation(ctx, &ui.FancyImplementation{Out: os.Stderr})
 	}
 
