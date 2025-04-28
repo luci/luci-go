@@ -36,6 +36,11 @@
 
 
 
+
+
+
+
+
 [TOC]
 
 ## Overview
@@ -144,27 +149,42 @@ directory (how to do it is outside the scope of this doc).
 
 *** note
 Most of information in this section is specific to `lucicfg`, **not** a generic
-Starlark interpreter. Also this is **advanced stuff**. Its full understanding is
-not required to use `lucicfg` effectively.
+Starlark interpreter.
 ***
 
 ### Modules and packages {#modules-and-packages}
 
 Each individual Starlark file is called a module. Several modules under the same
-root directory form a package. Modules within a single package can refer to each
-other (in load(...) and [exec(...)](#exec)) using their relative or absolute (if
-start with `//`) paths. The root of the main package is taken to be a directory
-that contains the entry point script (usually `main.star`) passed to `lucicfg`,
-i.e. `main.star` itself can be referred to as `//main.star`.
+root directory form a package. The root of the package is taken to be a
+directory that contains `PACKAGE.star` file (see [Package declaration via
+PACKAGE.star](#pkg-star)) or, for legacy packages without `PACKAGE.star`,
+the directory with the entry point script (usually `main.star`) as passed
+to `lucicfg generate`.
 
+Starlark code executed via [load__(...)](#load) or [exec(...)](#exec) knows the module and
+the package it was loaded from (see [lucicfg.current_module(...)](#lucicfg.current-module)). When a module
+wants to reference other files (in [load__(...)](#load), [exec(...)](#exec) or even in
+[io.read_file(...)](#io.read-file) or similar) it can use the following syntax:
 
+* `//<path-relative-to-package-root>` for referencing files within the same
+  package as the calling module, using their absolute paths within the package.
+* `<path-relative-to-current-module>` for referencing files within the same
+  package as the calling module, using their paths relative to the calling
+  module.
+* `@<other-package>//<path-relative-to-other-package-root>` for referencing
+  files in another package, using their absolute paths within that other
+  package. The referenced package must be declared in the current's
+  package `PACKAGE.star` via [pkg.depend(...)](#pkg.depend).
 
-Modules can either be "library-like" (executed via load(...) statement) or
+(The last form also appears in paths in stack traces for Starlark files
+imported from external packages).
+
+Modules can either be "library-like" (executed via [load__(...)](#load) statement) or
 "script-like" (executed via [exec(...)](#exec) function). Library-like modules can
-load other library-like modules via load(...), but may not call
-[exec(...)](#exec). Script-like modules may use both load(...) and [exec(...)](#exec).
+load other library-like modules via [load__(...)](#load), but may not call
+[exec(...)](#exec). Script-like modules may use both [load__(...)](#load) and [exec(...)](#exec).
 
-Dicts of modules loaded via load(...) are reused, e.g. if two different
+Dicts of modules loaded via [load__(...)](#load) are reused, e.g. if two different
 scripts load the exact same module, they'll get the exact same symbols as a
 result. The loaded code always executes only once. The interpreter *may* load
 modules in parallel in the future, libraries must not rely on their loading
@@ -173,6 +193,109 @@ order and must not have side effects.
 On the other hand, modules executed via [exec(...)](#exec) are guaranteed to be
 processed sequentially, and only once. Thus 'exec'-ed scripts essentially form
 a tree, traversed exactly once in the depth first order.
+
+### Package declaration via PACKAGE.star {#pkg-star}
+
+Package name, dependencies on other packages and various package-global options
+are defined in the `PACKAGE.star` file. The location of this file also indicates
+the root directory of the package. Each Starlark file belongs to exactly one
+package (based on the closest `PACKAGE.star` file when traversing up the file
+tree).
+
+This `PACKAGE.star` file is special. It is not allowed to use [load__(...)](#load) or
+[exec(...)](#exec) statements nor other standard lucicfg functions. Instead it has
+access only to a [limited set of lucicfg APIs](#lucicfg-pkg) that are used
+specifically to declare packages (plus the Starlark standard library, for things
+like sets and structs). That way it can be loaded in a sandbox environment in
+isolation from any other Starlark files, which is necessary when traversing a
+dependency tree using "shallow" git fetches.
+
+At minimum, `PACKAGE.star` must declare the package name and the minimal version
+of the `lucicfg` interpreter the package was tested with. See
+[pkg.declare(...)](#pkg.declare) for more details.
+
+Optionally it may also declare what other packages the current package depends
+on. Each such dependency is essentially a pointer to some `PACKAGE.star` in some
+googlesource.com repository at some revision.
+
+A simple `PACKAGE.star` may look like this:
+
+```python
+"""The package definition file."""
+
+pkg.declare(
+    name = "@my-package",
+    lucicfg = "1.45.0",
+)
+
+pkg.entrypoint("main.star")
+pkg.entrypoint("dev.star")
+
+pkg.resources(["data/*"])
+
+pkg.options.lint_checks(["default"])
+
+pkg.depend(
+    name = "@shared-library",
+    # This would be:
+    #    https://some-host.googlesource.com/starlark/libs/+/refs/heads/main/shared-lib
+    # at version ed02c601dcaf10305e34cb67618b48b7e69fc401
+    source = pkg.source.googlesource(
+        host = "some-host",
+        repo = "starlark/libs",
+        ref = "refs/heads/main",
+        path = "shared-lib",
+        revision = "ed02c601dcaf10305e34cb67618b48b7e69fc401",
+    ),
+)
+```
+
+The package that contains the entry point script passed to `lucicfg generate` is
+called the main package. The only special thing about it is that its name is
+stripped from module paths in error stack traces. Otherwise it is no different
+from any other package.
+
+### Dependency version resolution {#pkg-deps}
+
+Each package name within a transitive set of dependencies of the main package
+should map to some single `(repository, git ref)` pair. This generally means
+that if a package is branched (i.e. its ref changes), it should get a new
+name (as long as it is used in the same dependency tree as its original
+version).
+
+With such organization, when traversing a transitive set of dependencies of the
+main package, we can collect a list of git commits each individual package is
+imported at (potentially though different paths in the dependency tree). All
+these commits will be on the same git ref and we can always pick the most
+recent one (per the ref's git history). The package will be imported at this
+single concrete revision. This is a variant of the
+[Minimal Version Selection](https://research.swtch.com/vgo-mvs) algorithm.
+
+Practically this means that if a package is depending on another package at some
+revision, it may end up importing the dependency at the requested or **some
+newer** revision (but never an older one). It means the public API of imported
+packages should generally be backward compatible. If a significant breaking
+change is necessary, the package should be renamed (this would also allow for
+two such packages to co-exist in the dependency tree, if really necessary).
+
+Currently `lucicfg generate` does the dependency traversal and resolution each
+time it runs, caching the git state in a directory specified by
+`LUCICFG_CACHE_DIR` env var, defaulting to the `lucicfg` directory in the OS's
+[user cache directory](https://pkg.go.dev/os#UserCacheDir). This git cache is
+sufficient to make the version resolution be fast enough. Nevertheless `lucicfg`
+maintains the result of the resolution in a special `PACKAGE.lock` JSON file.
+This file is generated as a side effect of `lucicfg generate` and validated by
+`lucicfg validate` (i.e. it behaves just like any other generated output file).
+It must be checked in into the repository with the package code.
+
+`PACKAGE.lock` file is expected to be used in some future workflows that can
+execute lucicfg scripts without having access to a git cache directory.
+
+*** note
+There's no global registry of lucicfg packages. As long as dependency trees
+do not intersect, they can theoretically use the same package name for
+completely different packages. But it is not recommended.
+***
 
 ### Rules, state representation
 
@@ -409,16 +532,15 @@ To format a single Starlark file use `lucicfg fmt path.star`. To format all
 
 There are two ways to run lint checks:
 
-  1. Per-file or directory using `lucicfg lint <path>`. What set of checks to
-     perform can be specified via `-check <set>` argument, where `<set>` is
-     a special comma-delimited string that identifies what checks to apply. See
-     below for how to construct it.
-  2. As part of `lucicfg validate <entry point>.star`. It will check only files
-     loaded while executing the entry point script. This is the recommended way.
-     The set of checks to apply can be specified via `lint_checks` argument in
-     [lucicfg.config(...)](#lucicfg.config), see below for examples. Note that **all checks (including
-     formatting checks) are disabled by default for now**. This will change in
-     the future.
+  1. Per-file or directory (recursively) using `lucicfg lint <path>`. What set
+     of checks to perform over each individual Starlark file is defined in
+     the `PACKAGE.star` of the package that contains the file (see
+     [pkg.options.lint_checks(...)](#pkg.options.lint-checks)). It can also be overridden via `-check <set>`
+     CLI argument, where `<set>` is a special comma-delimited string that
+     identifies what checks to apply. See below for how to construct it.
+  2. As part of `lucicfg validate <entry point>.star`. It will check all files
+     that belong to the package that contains the entry point script. This is
+     the recommended way.
 
 Checking that files are properly formatted is a special kind of a lint check
 called `formatting`.
@@ -428,9 +550,9 @@ called `formatting`.
 
 ### Specifying a set of linter checks to apply
 
-Both `lucicfg lint -check ...` CLI argument and `lint_checks` in [lucicfg.config(...)](#lucicfg.config)
-accept a list of strings that looks like `[<initial set>], +warn1, +warn2,
--warn3, -warn4, ... `, where
+[pkg.options.lint_checks(...)](#pkg.options.lint-checks) and `lucicfg lint -check ...` CLI argument accept a
+list of strings that looks like `[<initial set>], +warn1, +warn2, -warn3,
+-warn4, ... `, where
 
   * `<initial set>` can be one of `default`, `none` or `all` and it
     identifies a set of linter checks to use as a base:
@@ -451,45 +573,21 @@ verify formatting of Starlark files. It is part of the `default` set. Note that
 it is not a built-in buildifier check and thus it's not listed in the buildifier
 docs nor can it be disabled via `buildifier: disable=...`.
 
-[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
-
-
-### Examples {#linter-config}
-
-To apply all default checks when running `lucicfg validate` use:
+Note that **all checks (including formatting checks) are disabled by default**
+for now. Use something like this in `PACKAGE.star` to enable a common set of
+checks:
 
 ```python
-lucicfg.config(
-    ...
-    lint_checks = ["default"],
-)
+pkg.options.lint_checks(["default"])
 ```
-
-This is equivalent to running `lucicfg lint -checks default` or just
-`lucicfg lint`.
 
 To check formatting only:
 
 ```python
-lucicfg.config(
-    ...
-    lint_checks = ["none", "+formatting"],
-)
+pkg.options.lint_checks(["none", "+formatting"])
 ```
 
-This is equivalent to running `lucicfg lint -checks "none,+formatting"`.
-
-To disable some single default check (e.g. `function-docstring`) globally:
-
-```python
-lucicfg.config(
-    ...
-    lint_checks = ["-function-docstring"],
-)
-```
-
-This is equivalent to running `lucicfg lint -checks "-function-docstring"`.
-
+[buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
 
 ### Disabling checks locally
 
@@ -545,6 +643,11 @@ lucicfg.check_version(min, message = None)
 
 
 Fails if lucicfg version is below the requested minimal one.
+
+*** note
+**Deprecated.** Set the minimal version in [pkg.declare(...)](#pkg.declare) in PACKAGE.star
+instead. See [Package declaration via PACKAGE.star](#pkg-star).
+***
 
 Useful when a script depends on some lucicfg feature that may not be
 available in earlier versions. [lucicfg.check_version(...)](#lucicfg.check-version) can be used at
@@ -611,7 +714,7 @@ assigning to a variable.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
 * **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file in this case it is responsibility of the caller to make sure no stale output remains).
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do not cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.
-* **lint_checks**: a list of linter checks to apply in `lucicfg validate`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Default is `['none']` for now.
+* **lint_checks**: a list of linter checks to apply in `lucicfg validate`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Default is `['none']` for now. **Deprecated**. Use [pkg.options.lint_checks(...)](#pkg.options.lint-checks) in PACKAGE.star instead. See [Package declaration via PACKAGE.star](#pkg-star).
 
 
 
@@ -3812,10 +3915,10 @@ In addition, `lucicfg` exposes the following functions.
 
 
 
-### __load {#load}
+### load__ {#load}
 
 ```python
-__load(module, *args, **kwargs)
+load__(module, *args, **kwargs)
 ```
 
 
@@ -4335,8 +4438,15 @@ Deserialized proto message constructed via `ctor`.
 
 
 
-## (Experimental) Functions only available inside PACKAGE.star {#lucicfg-package}
+## Functions only available inside PACKAGE.star {#lucicfg-pkg}
 
+*** note
+**Experimental.** This is a new feature that may potentially change in the
+future.
+***
+
+These functions are only available when executing `PACKAGE.star` file when
+loading package declarations. See [Package declaration via PACKAGE.star](#pkg-star).
 
 
 
@@ -4352,20 +4462,28 @@ pkg.declare(name, lucicfg)
 
 Declares a lucicfg package.
 
-It sets the package import name and the required minimum version of lucicfg.
+It sets the name the package can be imported as and the minimum version of
+lucicfg interpreter required by the package.
 
-The name must start with `@`: all load statements referring to this package
-from other packages will use this name:
+The name must start with `@` and it must be a slash-separated path, where
+each path component must consists of lower case letters, numbers or the
+symbols `-` or `_`. Each path component must begin with a letter. The total
+length of the name must be less than 300 characters. This is a logical path
+and it has no relation to any file systems paths.
+
+All statements referring to this package from other packages will use
+this package name, e.g.
 
 ```
-load("@importname//path/within/the/package.star", ...)
+load("@packagename//path/within/the/package.star", ...)
 ```
 
 See [Modules and packages](#modules-and-packages) for more details.
 
 This name should be reasonably unique: it is impossible to use two
 different packages with the same name as dependencies in a single
-dependency tree (even if they are indirect dependencies).
+dependency tree (even if they are indirect dependencies). See
+[Dependency version resolution](#pkg-deps) for more details.
 
 For repos containing recipes, this should be the same value as the recipe
 repo-name for consistency, though to avoid recipe<->lucicfg entanglement,
@@ -4394,19 +4512,21 @@ pkg.depend(name, source)
 
 Declares a dependency on another lucicfg package.
 
-This essentially declares that `load("@<name>//<path>", ...)` statements
-should be resolved to files from the given source at a revision no older
-than the one specified in the [pkg.source.googlesource(...)](#pkg.source.googlesource) declaration.
+For remote packages this essentially declares that
+`load("@<name>//<path>", ...)` statements should be resolved to files from
+the given source at a revision no older than the one specified in the
+[pkg.source.googlesource(...)](#pkg.source.googlesource) declaration (i.e. this declaration puts
+a constraint on acceptable revisions of the dependency).
 
 The name must match the name declared by the dependent package itself in
 its [pkg.declare(...)](#pkg.declare) statement.
 
-Packages form a dependency DAG. All dependencies with a given name should
+Packages form a dependency graph. All dependencies with a given name should
 all be fetched from the same source (the same repo and the same ref), but
-perhaps have different minimal version constraints. The final single version
-of the dependency that will be used by all packages in the DAG is picked as
-a newest among all collected minimal version constraints (using the git
-ref's history for finding which version is newer).
+perhaps have different revision constraints. The final single version
+of the dependency that will be used by all packages in the graph is picked
+as the most recent among all collected revision constraints (using the git
+ref's history for finding which version is the most recent).
 
 The resolved versions are written into a lock file of the current package
 (`PACKAGE.lock`, which is a JSON file). This lock file is used exclusively
@@ -4414,9 +4534,17 @@ when this package is the entry point package for some lucicfg execution. In
 other words, lock files of imported dependencies have no effect on the
 dependency resolution process at all.
 
-The lock file is required to run `lucicfg generate`. It can be generated by
-`lucicfg lock` subcommand and checked in into the repository with the rest
+The lock file is generated as a side effect of running `lucicfg generate`
+subcommand and it must be checked in into the repository with the rest
 of the package. It is validated as part of `lucicfg validate` call.
+
+**NOTE**: the lock file is an optimization: it can always be
+deterministically derived from `PACKAGE.star` and the state of git
+repositories with dependencies. And in fact, as of lucicfg v1.45.0, it is
+always recalculated by `lucicfg generate` and is not actually read by
+anything yet. Nevertheless it is essential for some planned workflows that
+can fetch individual Git files by their revisions, but can't do any other
+generic git operations (like comparing revisions).
 
 #### Arguments {#pkg.depend-args}
 
@@ -4440,7 +4568,7 @@ Only these files can be read at runtime via [io.read_file(...)](#io.read-file) o
 [io.read_proto(...)](#io.read-proto).
 
 Declaring them upfront is useful when the package is used as a dependency.
-Resource files are prefetched from the package source.
+Resource files are prefetched with the rest of the package source.
 
 Can be called multiple times. Works additively.
 
@@ -4462,8 +4590,8 @@ pkg.entrypoint(path = None)
 Declares that the given Starlark file is one of the entry point scripts.
 
 Entry point scripts are scripts that can be executed (via
-`lucicfg gen <path>`) to generate some configuration file. Only entry point
-scripts can be executed.
+`lucicfg generate <path>`) to generate some configuration file. Only entry
+point scripts can be executed.
 
 #### Arguments {#pkg.entrypoint-args}
 
@@ -4517,14 +4645,19 @@ pkg.source.local(path)
 
 
 
-Builds a reference to package source stored in the current repository.
+Defines a reference to package source stored in the current repository.
 
 Works relative to the repository of the package that declared the
 dependency (aka "the current package repository").
 
 Constructs [pkg.source.googlesource(...)](#pkg.source.googlesource) by taking the source reference of
-the current package and replacing the path there to point to another
-package.
+the current package and replacing the path there. Notably, such dependency
+retains the same revision constraints as the package that imported it.
+
+If a package `X` is imported directly at revision `A`, and also as a
+transitive local dependency of some other package `Y` at revision `B`, it is
+possible the final execution would use `X` at revision `A` and `Y` at
+revision `B` (if `A` is newer than `B`).
 
 #### Arguments {#pkg.source.local-args}
 
@@ -4569,7 +4702,7 @@ pkg.options.fmt_rules(paths, function_args_sort = None)
 
 
 
-Adds a formatting rule set applying to some paths in the package.
+Adds a formatting rule set that applies to some paths in the package.
 
 When processing files, lucicfg will select a single rule set based on the
 longest matching rule's path prefix. For example, if there are two rule

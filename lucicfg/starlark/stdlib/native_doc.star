@@ -23,7 +23,7 @@ modules.
 # parse a function named 'load' :(
 #
 # @unused
-def __load(module, *args, **kwargs):
+def load__(module, *args, **kwargs):
     """Loads a Starlark module as a library (if it hasn't been loaded before).
 
     Extracts one or more values from it, and binds them to names in the current

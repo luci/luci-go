@@ -24,6 +24,11 @@ def _version():
 def _check_version(min, message = None):
     """Fails if lucicfg version is below the requested minimal one.
 
+    *** note
+    **Deprecated.** Set the minimal version in pkg.declare(...) in PACKAGE.star
+    instead. See [Package declaration via PACKAGE.star](#pkg-star).
+    ***
+
     Useful when a script depends on some lucicfg feature that may not be
     available in earlier versions. lucicfg.check_version(...) can be used at
     the start of the script to fail right away with a clean error message:
@@ -136,7 +141,9 @@ def _config(
         be one of `none`, `default` or `all`. The following entries either
         add checks to the set (`+<name>`) or remove them (`-<name>`). See
         [Formatting and linting Starlark code](#formatting-linting) for more
-        info. Default is `['none']` for now.
+        info. Default is `['none']` for now. **Deprecated**. Use
+        pkg.options.lint_checks(...) in PACKAGE.star instead. See
+        [Package declaration via PACKAGE.star](#pkg-star).
     """
     if config_service_host != None:
         __native__.set_meta("config_service_host", config_service_host)
