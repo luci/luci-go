@@ -91,3 +91,12 @@ func TestAnnotation(t *testing.T) {
 		})
 	})
 }
+
+func TestWrapIf(t *testing.T) {
+	t.Parallel()
+
+	assert.Loosely(t, WrapIf(nil, "blah"), should.BeNil)
+	base := New("base")
+	assert.Loosely(t, WrapIf(base, "blah(%d)", 100), should.ErrLike("blah(100): base"))
+	assert.Loosely(t, WrapIf(base, "blah(%d)", 100), should.ErrLike(base))
+}

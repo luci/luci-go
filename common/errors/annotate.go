@@ -212,8 +212,40 @@ func New(msg string, wrappers ...ErrorWrapper) error {
 // Fmt is an API-compatible version of the standard fmt.Errorf function, except
 // that it captures the stack, but ONLY if this is not used at init()-time. This
 // is to avoid module level errors having a mostly-useless stack attached.
-func Fmt(format string, a ...any) error {
+func Fmt(format string, args ...any) error {
 	// The 1 is because this is a helper function we don't want to see in the
 	// captured trace.
-	return stacktag.Capture(fmt.Errorf(format, a...), 1)
+	return stacktag.Capture(fmt.Errorf(format, args...), 1)
+}
+
+// WrapIf is the same as Fmt, except that:
+//
+//   - It explicitly checks that `err` is not nil. If it is, then this returns
+//     `nil`.
+//   - It adds ": %w" to format and err to args.
+//
+// This is meant to be used like:
+//
+//	return errors.WrapIf(someCall(i), "while doing someCall(%d)", i)
+//
+// Instead of:
+//
+//	if err := someCall(i); err != nil {
+//	  return errors.Fmt("while doing someCall(%d): %w", i, err)
+//	}
+//	return nil
+//
+// These two code snippets have identical behavior.
+//
+// This is convenient, but is mostly an affordance to safely convert a previous
+// `errors.Annotate` api which had this semantic.
+func WrapIf(err error, format string, args ...any) error {
+	if err == nil {
+		return nil
+	}
+	// The 1 is because this is a helper function we don't want to see in the
+	// captured trace.
+	//
+	// Clip is necessary to avoid mutating a passed-in `args`.
+	return stacktag.Capture(fmt.Errorf(format+": %w", append(slices.Clip(args), err)...), 1)
 }
