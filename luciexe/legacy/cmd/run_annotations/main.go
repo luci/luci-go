@@ -18,8 +18,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"sync"
 	"time"
 
@@ -45,9 +47,9 @@ NOTE: The original stdout/stderr log for this step is available at
 annotation.stdout/annotation.stderr log stream.
 `
 
-func check(err error) {
+func check(err error, msg string, args ...any) {
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf(msg+": %w", append(slices.Clip(args), err)))
 	}
 }
 
@@ -59,27 +61,27 @@ func main() {
 		}
 
 		cwd, err := os.Getwd()
-		check(err)
+		check(err, "Getwd")
 
 		// Start the subprocess.
 		cmd := exec.CommandContext(ctx, userArgs[0], userArgs[1:]...)
 		stdout, err := cmd.StdoutPipe()
-		check(err)
+		check(err, "StdoutPipe")
 		stderr, err := cmd.StderrPipe()
-		check(err)
+		check(err, "StderrPipe")
 		err = cmd.Start()
 		if err != nil {
-			check(errors.Annotate(err, "failed to start subprocess").Err())
+			check(err, "failed to start subprocess")
 		}
 
 		ldBootstrap, err := bootstrap.Get()
-		check(err)
+		check(err, "bootstrap.Get")
 
 		var buildMU sync.Mutex
 		sendAnnotations := func(ann *annopb.Step) {
 			latest, err := annotee.ConvertRootStep(ctx, ann)
 			if err != nil {
-				check(errors.Annotate(err, "failed to convert an annotation root step to a build").Err())
+				check(err, "failed to convert an annotation root step to a build")
 			}
 
 			buildMU.Lock()
@@ -99,7 +101,10 @@ func main() {
 			CloseSteps:             true,
 			AnnotationUpdated: func(annBytes []byte) {
 				ann := &annopb.Step{}
-				check(errors.Annotate(proto.Unmarshal(annBytes, ann), "failed to parse annotation proto").Err())
+				err := proto.Unmarshal(annBytes, ann)
+				if err != nil {
+					check(err, "failed to parse annotation proto")
+				}
 				sendAnnotations(ann)
 			},
 		})
@@ -117,7 +122,7 @@ func main() {
 		}
 		err = processor.RunStreams(streams)
 		if err != nil {
-			check(errors.Annotate(err, "failed to process annotations").Err())
+			check(err, "failed to process annotations")
 		}
 
 		// Wait for the subprocess to exit.
@@ -125,7 +130,7 @@ func main() {
 		case *exec.ExitError:
 		case nil:
 		default:
-			check(errors.Annotate(err, "failed to wait for the subprocess to exit").Err())
+			check(err, "failed to wait for the subprocess to exit")
 		}
 
 		// Send the final state.

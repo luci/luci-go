@@ -89,8 +89,12 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		case <-closeChannels:
 		}
 		err := errors.NewLazyMultiError(2)
-		err.Assign(0, errors.Annotate(launchOpts.stdout.Close(), "closing stdout").Err())
-		err.Assign(1, errors.Annotate(launchOpts.stderr.Close(), "closing stderr").Err())
+		if serr := launchOpts.stdout.Close(); serr != nil {
+			err.Assign(0, errors.Annotate(serr, "closing stdout").Err())
+		}
+		if serr := launchOpts.stderr.Close(); serr != nil {
+			err.Assign(1, errors.Annotate(serr, "closing stderr").Err())
+		}
 		allClosed <- err.Get()
 	}()
 

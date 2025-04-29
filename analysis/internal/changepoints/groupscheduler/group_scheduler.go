@@ -90,8 +90,8 @@ func purgeStaleRows(ctx context.Context, client *bigquery.Client) error {
 	if err != nil {
 		return errors.Annotate(err, "waiting for query to complete").Err()
 	}
-	if js.Err() != nil {
-		return errors.Annotate(js.Err(), "DDL query failed").Err()
+	if err := js.Err(); err != nil {
+		return errors.Annotate(err, "DDL query failed").Err()
 	}
 	return nil
 }

@@ -60,6 +60,9 @@ func restoreEnv() cleanupFn {
 	origEnv := environ.System()
 	return func() error {
 		os.Clearenv()
-		return errors.Annotate(origEnv.Iter(os.Setenv), "restoring original env").Err()
+		if err := origEnv.Iter(os.Setenv); err != nil {
+			return errors.Annotate(err, "restoring original env").Err()
+		}
+		return nil
 	}
 }

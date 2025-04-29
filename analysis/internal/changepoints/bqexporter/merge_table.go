@@ -106,8 +106,8 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 	if err != nil {
 		return errors.Annotate(err, "waiting for merging to complete").Err()
 	}
-	if js.Err() != nil {
-		return errors.Annotate(js.Err(), "merge rows failed").Err()
+	if err := js.Err(); err != nil {
+		return errors.Annotate(err, "merge rows failed").Err()
 	}
 	return nil
 }

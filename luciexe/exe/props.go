@@ -154,9 +154,9 @@ func WriteProperties(props *structpb.Struct, inputs map[string]any) error {
 			continue
 		}
 
-		ret.Assign(idx, errors.Annotate(
-			jsonpb.Unmarshal(&buf, fieldVal), "unmarshalling %q", field,
-		).Err())
+		if err = jsonpb.Unmarshal(&buf, fieldVal); err != nil {
+			ret.Assign(idx, errors.Annotate(err, "unmarshalling %q", field).Err())
+		}
 	}
 
 	return ret.Get()

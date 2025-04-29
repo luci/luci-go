@@ -174,8 +174,9 @@ func ReadBuildFile(buildFilePath string) (ret *bbpb.Build, err error) {
 		defer file.Close()
 
 		ret = &bbpb.Build{}
-		err = errors.Annotate(
-			codec.Dec(ret, file), "parsing build file %q", buildFilePath).Err()
+		if err = codec.Dec(ret, file); err != nil {
+			err = errors.Annotate(err, "parsing build file %q", buildFilePath).Err()
+		}
 	}
 	return
 }
@@ -197,8 +198,9 @@ func WriteBuildFile(buildFilePath string, build *bbpb.Build) (err error) {
 			return errors.Annotate(err, "opening build file %q", buildFilePath).Err()
 		}
 		defer file.Close()
-		err = errors.Annotate(
-			codec.Enc(build, file), "writing build file %q", buildFilePath).Err()
+		if err = codec.Enc(build, file); err != nil {
+			err = errors.Annotate(err, "writing build file %q", buildFilePath).Err()
+		}
 	}
 	return
 }

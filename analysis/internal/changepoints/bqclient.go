@@ -241,7 +241,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	}
 	it, err := job.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(js.Err(), "read changepoint rows").Err()
+		return nil, errors.Annotate(err, "read changepoint rows").Err()
 	}
 	results := []*ChangepointDetailRow{}
 	for {

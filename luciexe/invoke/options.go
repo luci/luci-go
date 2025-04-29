@@ -274,7 +274,9 @@ func (o *Options) mkdirs() (ret dirs, err error) {
 	maybeMkdir := func(out *string, dirname, friendlyName string) {
 		if err == nil {
 			*out = filepath.Join(base, dirname)
-			err = errors.Annotate(os.Mkdir(*out, 0777), "preparing %q", friendlyName).Err()
+			if err = os.Mkdir(*out, 0777); err != nil {
+				err = errors.Annotate(err, "preparing %q", friendlyName).Err()
+			}
 		}
 	}
 
