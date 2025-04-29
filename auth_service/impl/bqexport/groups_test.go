@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
@@ -59,6 +60,7 @@ func TestBQGroups(t *testing.T) {
 					},
 					Nested: []string{
 						"group-d",
+						"group-missing",
 					},
 				},
 				{
@@ -87,6 +89,7 @@ func TestBQGroups(t *testing.T) {
 				),
 				Nested: stringset.NewFromSlice(
 					"group-d",
+					"group-missing",
 				),
 				Redacted: stringset.New(0),
 			},
@@ -132,6 +135,15 @@ func TestBQGroups(t *testing.T) {
 				),
 				Nested:   stringset.New(0),
 				Redacted: stringset.New(0),
+			},
+			{
+				Name:     "group-missing",
+				Owners:   model.AdminGroup,
+				Members:  stringset.New(0),
+				Globs:    stringset.New(0),
+				Nested:   stringset.New(0),
+				Redacted: stringset.New(0),
+				Missing:  true,
 			},
 		}
 

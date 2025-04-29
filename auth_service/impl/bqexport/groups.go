@@ -17,7 +17,6 @@ package bqexport
 import (
 	"context"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -44,23 +43,20 @@ func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*graph.Expand
 	}
 	groupsGraph := graph.NewGraph(groups)
 
-	names := stringset.New(sizeHint)
+	// Get all group names, including missing groups.
+	names := groupsGraph.GroupNames()
+
+	sizeHint = len(names)
 	cache := &graph.ExpansionCache{
 		Groups: make(map[string]*graph.ExpandedGroup, sizeHint),
 	}
-	for _, group := range groups {
-		expanded, err := groupsGraph.GetExpandedGroup(ctx, group.GetName(), true, cache)
-		if err != nil {
-			err = errors.Annotate(err,
-				"failed to expand group %q", group.GetName()).Err()
-			return nil, err
-		}
-		names.Add(expanded.Name)
-	}
-
 	result := make([]*graph.ExpandedGroup, sizeHint)
-	for i, name := range names.ToSortedSlice() {
-		result[i] = cache.Groups[name]
+	for i, name := range names {
+		expanded, err := groupsGraph.GetExpandedGroup(ctx, name, true, cache)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to expand group %q", name).Err()
+		}
+		result[i] = expanded
 	}
 
 	return result, nil

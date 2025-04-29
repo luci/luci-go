@@ -18,6 +18,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"slices"
 	"sort"
 
 	"go.chromium.org/luci/auth/identity"
@@ -26,6 +27,10 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 )
+
+// Extra capacity to add to hopefully account for missing groups and reduce the
+// need for resizing.
+const sizeHintMissingGroups = 20
 
 var (
 	// ErrNoSuchGroup is returned when a group is not found in the groups graph.
@@ -56,6 +61,29 @@ type GroupNode struct {
 
 	includes []*GroupNode // groups directly included by this group.
 	included []*GroupNode // groups that directly include this group.
+
+	// Whether the corresponding AuthGroup entity is missing from the AuthDB.
+	missing bool
+}
+
+// MissingGroup can be used to represent a group which does not exist, but
+// another group references it as a nested subgroup.
+type MissingGroup struct {
+	Name string
+}
+
+func (d *MissingGroup) GetName() string        { return d.Name }
+func (d *MissingGroup) GetDescription() string { return "" }
+func (d *MissingGroup) GetOwners() string      { return model.AdminGroup }
+func (d *MissingGroup) GetMembers() []string   { return []string{} }
+func (d *MissingGroup) GetGlobs() []string     { return []string{} }
+func (d *MissingGroup) GetNested() []string    { return []string{} }
+
+func makeMissingGroupNode(name string) *GroupNode {
+	return &GroupNode{
+		group:   &MissingGroup{Name: name},
+		missing: true,
+	}
 }
 
 // initializeNodes initializes the groupNode(s) in the graph
@@ -80,11 +108,17 @@ func (g *Graph) initializeNodes(groups []model.GraphableGroup) {
 	// Populate includes and included.
 	for _, parent := range groups {
 		for _, nestedID := range parent.GetNested() {
-			if nested, ok := g.groups[nestedID]; ok {
-				parentName := parent.GetName()
-				g.groups[parentName].includes = append(g.groups[parentName].includes, nested)
-				nested.included = append(nested.included, g.groups[parentName])
+			_, ok := g.groups[nestedID]
+			if !ok {
+				// A group called `nestedID` does not exist, but is recorded as a
+				// nested subgroup of `parent`.
+				g.groups[nestedID] = makeMissingGroupNode(nestedID)
 			}
+
+			nested := g.groups[nestedID]
+			parentName := parent.GetName()
+			g.groups[parentName].includes = append(g.groups[parentName].includes, nested)
+			nested.included = append(nested.included, g.groups[parentName])
 		}
 	}
 
@@ -103,7 +137,7 @@ func (g *Graph) initializeNodes(groups []model.GraphableGroup) {
 // NewGraph creates all groupNode(s) that are available in the graph.
 func NewGraph(groups []model.GraphableGroup) *Graph {
 	graph := &Graph{
-		groups:       make(map[string]*GroupNode, len(groups)),
+		groups:       make(map[string]*GroupNode, len(groups)+sizeHintMissingGroups),
 		membersIndex: map[identity.NormalizedIdentity][]string{},
 		globsIndex:   map[identity.Glob][]string{},
 	}
@@ -123,6 +157,7 @@ type ExpandedGroup struct {
 	Redacted    stringset.Set
 	Globs       stringset.Set
 	Nested      stringset.Set
+	Missing     bool
 }
 
 // Absorb updates this ExpandedGroup's memberships to include the memberships
@@ -179,6 +214,7 @@ func (g *Graph) doExpansion(
 		Redacted:    stringset.New(0),
 		Globs:       stringset.NewFromSlice(node.group.GetGlobs()...),
 		Nested:      stringset.NewFromSlice(nested...),
+		Missing:     node.missing,
 	}
 
 	// Add direct members depending on the filter.
@@ -313,6 +349,18 @@ func (g *Graph) GetRelevantSubgraph(principal NodeKey) (*Subgraph, error) {
 	}
 
 	return subgraph, nil
+}
+
+// GroupNames returns the names of the groups in the graph in ascending order.
+// This includes groups which have been referenced as a nested subgroup but are
+// missing from Datastore.
+func (g *Graph) GroupNames() []string {
+	names := make([]string, 0, len(g.groups))
+	for name := range g.groups {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
 }
 
 // traverse adds the given group and all groups that include it to the subgraph s.

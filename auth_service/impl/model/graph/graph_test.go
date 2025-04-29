@@ -119,6 +119,9 @@ func TestGraphBuilding(t *testing.T) {
 
 		actualGraph := NewGraph(graphableGroups)
 
+		assert.Loosely(t, actualGraph.GroupNames(), should.Match(
+			[]string{"group-0", "group-1", "group-2"},
+		))
 		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group,
 			should.Match(authGroups[1], graphComp))
 		assert.Loosely(t, actualGraph.groups["group-1"].included[0].group,
@@ -127,6 +130,38 @@ func TestGraphBuilding(t *testing.T) {
 			should.Match(authGroups[0], graphComp))
 		assert.Loosely(t, actualGraph.groups["group-2"].includes[0].group,
 			should.Match(authGroups[1], graphComp))
+	})
+
+	ftt.Run("Testing nested missing group", t, func(t *ftt.Test) {
+		authGroups := []*model.AuthGroup{
+			testAuthGroup("group-0"),
+			testAuthGroup("group-1", "group-0", "group-missing"),
+			testAuthGroup("group-2", "group-1"),
+		}
+
+		graphableGroups := make([]model.GraphableGroup, len(authGroups))
+		for i, group := range authGroups {
+			graphableGroups[i] = model.GraphableGroup(group)
+		}
+
+		actualGraph := NewGraph(graphableGroups)
+
+		assert.Loosely(t, actualGraph.GroupNames(), should.Match(
+			[]string{"group-0", "group-1", "group-2", "group-missing"},
+		))
+		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group,
+			should.Match(authGroups[1], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-1"].included[0].group,
+			should.Match(authGroups[2], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-1"].includes[0].group,
+			should.Match(authGroups[0], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-1"].includes[1].group.GetName(),
+			should.Equal("group-missing"))
+		assert.Loosely(t, actualGraph.groups["group-2"].includes[0].group,
+			should.Match(authGroups[1], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-missing"].included[0].group,
+			should.Match(authGroups[1], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-missing"].includes, should.HaveLength(0))
 	})
 }
 
@@ -146,11 +181,12 @@ func TestGetExpandedGroup(t *testing.T) {
 		testGlob := "user:*@example.com"
 		testGoogleGroupA := "google/test-group-a"
 		testSysGroupA := "sys/test-group-a"
+		testMissingGroup := "group-missing"
 
 		authGroups := []*model.AuthGroup{
 			testAuthGroup(testGroup0, testUser0, testGlob),
 			testAuthGroup(testGroup1, testUser0, testUser1, testGroup0),
-			testAuthGroup(testGroup2, testGroup1, testGroup0),
+			testAuthGroup(testGroup2, testGroup1, testGroup0, testMissingGroup),
 			testAuthGroup(testGoogleGroupA, testUser0, testUser1),
 			testAuthGroup(testSysGroupA, testUser1, testGoogleGroupA),
 		}
@@ -165,6 +201,20 @@ func TestGetExpandedGroup(t *testing.T) {
 		t.Run("unknown group should return error", func(t *ftt.Test) {
 			_, err := graph.GetExpandedGroup(ctx, "unknown-group", false, nil)
 			assert.Loosely(t, errors.Is(err, ErrNoSuchGroup), should.BeTrue)
+		})
+
+		t.Run("referenced missing group can be expanded", func(t *ftt.Test) {
+			expanded, err := graph.GetExpandedGroup(ctx, testMissingGroup, false, nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expanded, should.Match(&ExpandedGroup{
+				Name:     testMissingGroup,
+				Owners:   model.AdminGroup,
+				Members:  stringset.New(0),
+				Globs:    stringset.New(0),
+				Nested:   stringset.New(0),
+				Redacted: stringset.New(0),
+				Missing:  true,
+			}))
 		})
 
 		t.Run("group with no nesting works", func(t *ftt.Test) {
@@ -201,7 +251,7 @@ func TestGetExpandedGroup(t *testing.T) {
 				Owners:   "owners-" + testGroup2,
 				Members:  stringset.NewFromSlice(testUser0, testUser1),
 				Globs:    stringset.NewFromSlice(testGlob),
-				Nested:   stringset.NewFromSlice(testGroup0, testGroup1),
+				Nested:   stringset.NewFromSlice(testGroup0, testGroup1, testMissingGroup),
 				Redacted: stringset.New(0),
 			}))
 		})

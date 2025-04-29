@@ -137,5 +137,6 @@ func toGroupRow(group *graph.ExpandedGroup,
 		Subgroups:   group.Nested.ToSortedSlice(),
 		AuthdbRev:   authDBRev,
 		ExportedAt:  ts,
+		Missing:     group.Missing,
 	}
 }
