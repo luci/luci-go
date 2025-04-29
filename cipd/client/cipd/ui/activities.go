@@ -97,6 +97,12 @@ func SetImplementation(ctx context.Context, impl Implementation) context.Context
 	return context.WithValue(ctx, &implCtxKey, impl)
 }
 
+// GetImplementation returns the current Implementation in the context.
+func GetImplementation(ctx context.Context) Implementation {
+	impl, _ := ctx.Value(&implCtxKey).(Implementation)
+	return impl
+}
+
 // NewActivity creates a new activity and sets it as current in the context.
 //
 // Does nothing if the context is already associated with an activity.

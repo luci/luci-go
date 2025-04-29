@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
@@ -150,6 +152,17 @@ func (am ActionMap) loopOrdered(cb func(subdir string, actions *Actions)) {
 //
 // If verbose is true, prints filenames of files that need a repair.
 func (am ActionMap) Log(ctx context.Context, verbose bool) {
+	am.logSummary(ctx)
+
+	// If have the fancy UI enabled, stop after logging the summary line since the
+	// detailed dump is overwhelming with large manifests. We still want it in
+	// info-level logs when not using a fancy UI though (since the log is already
+	// pretty busy in this case and dumping details doesn't make it much worse.
+	// This happens on bots that redirect stderr into a file).
+	if ui.GetImplementation(ctx) != nil && !verbose {
+		return
+	}
+
 	keys := make([]string, 0, len(am))
 	for key := range am {
 		keys = append(keys, key)
@@ -206,6 +219,47 @@ func (am ActionMap) Log(ctx context.Context, verbose bool) {
 				}
 			}
 		}
+	}
+}
+
+func (am ActionMap) logSummary(ctx context.Context) {
+	install := 0
+	update := 0
+	remove := 0
+	repair := 0
+	for _, actions := range am {
+		install += len(actions.ToInstall)
+		update += len(actions.ToUpdate)
+		remove += len(actions.ToRemove)
+		repair += len(actions.ToRepair)
+	}
+
+	var work []string
+	addWork := func(action string, count int) {
+		switch count {
+		case 0:
+			// Do not log this at all.
+		case 1:
+			work = append(work, fmt.Sprintf("%s 1 package", action))
+		default:
+			work = append(work, fmt.Sprintf("%s %d packages", action, count))
+		}
+	}
+
+	addWork("install", install)
+	addWork("update", update)
+	addWork("remove", remove)
+	addWork("repair", repair)
+
+	switch {
+	case len(work) == 0:
+		// Noop plan, log nothing. This should not really be happening.
+	case len(work) == 1:
+		// "Going to install 1 package".
+		logging.Infof(ctx, "Going to %s", work[0])
+	default:
+		// "Going to install 1 package, update 1 package and remove 1 package".
+		logging.Infof(ctx, "Going to %s and %s", strings.Join(work[:len(work)-1], ", "), work[len(work)-1])
 	}
 }
 
