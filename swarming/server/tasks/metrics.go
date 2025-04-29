@@ -95,7 +95,7 @@ func reportOnTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
 
 	if trs.DurationSecs.IsSet() {
 		metrics.JobsDuration.Add(
-			ctx, trs.DurationSecs.Get()*1000,
+			ctx, trs.DurationSecs.Get(),
 			fields.SpecName,
 			fields.ProjectID,
 			fields.SubprojectID,

@@ -25,12 +25,15 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tqtasks"
@@ -44,6 +47,8 @@ func TestCompleteOp(t *testing.T) {
 		now := time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 		ctx, tqt := tqtasks.TestingContext(ctx)
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		globalStore := tsmon.Store(ctx)
 
 		taskID := "65aba3a3e6b99200"
 		runID := "65aba3a3e6b99201"
@@ -296,6 +301,12 @@ func TestCompleteOp(t *testing.T) {
 
 			assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{taskID}))
 			assert.That(t, tqt.Pending(tqt.FinalizeTask), should.Match([]string{runID}))
+
+			val := globalStore.Get(ctx, metrics.JobsCompleted, []any{"", "", "", "", "none", "failure", "Completed"})
+			assert.Loosely(t, val, should.Equal(1))
+
+			dur := globalStore.Get(ctx, metrics.JobsDuration, []any{"", "", "", "", "none", "failure"})
+			assert.Loosely(t, dur.(*distribution.Distribution).Sum(), should.Equal(duration))
 		})
 
 		t.Run("OK-complete-build-task", func(t *ftt.Test) {

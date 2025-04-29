@@ -123,8 +123,8 @@ var (
 	JobsDuration = metric.NewCumulativeDistribution(
 		"jobs/durations",
 		"Cycle times of completed jobs, in seconds.",
-		&types.MetricMetadata{Units: types.Milliseconds},
-		schedulingLatencyBucketer,
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.GeometricBucketer(math.Pow(100, 0.05), 100),
 		field.String("spec_name"),     // name of a job specification.
 		field.String("project_id"),    // e.g. "chromium".
 		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
