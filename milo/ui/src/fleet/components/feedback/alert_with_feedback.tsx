@@ -37,7 +37,7 @@ export default function AlertWithFeedback({
       <AlertTitle>{title || 'Oops! An error occured.'}</AlertTitle>
       {children || <p>Oh no! Something didn&apos;t go as planned.</p>}
       <p>
-        If you think that shoulnd&apos;t happen, let us know, we will try our
+        If you think that shouldn&apos;t happen, let us know, we will try our
         best to fix that! Just send us your{' '}
         <Link
           href={genFeedbackUrl({
