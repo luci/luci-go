@@ -45,37 +45,38 @@ const contentType = "application/json; charset=UTF-8"
 // TODO(nodir): replace this type with
 // https://godoc.org/go.chromium.org/luci/common/proto/gerrit#ChangeInfo.
 type Change struct {
-	ChangeNumber           int                     `json:"_number"`
-	ID                     string                  `json:"id"`
-	ChangeID               string                  `json:"change_id"`
-	Project                string                  `json:"project"`
-	Branch                 string                  `json:"branch"`
-	Topic                  string                  `json:"topic"`
-	Hashtags               []string                `json:"hashtags"`
-	Subject                string                  `json:"subject"`
-	Status                 string                  `json:"status"`
-	Created                string                  `json:"created"`
-	Updated                string                  `json:"updated"`
-	Mergeable              bool                    `json:"mergeable,omitempty"`
-	Messages               []ChangeMessageInfo     `json:"messages"`
-	Submittable            bool                    `json:"submittable,omitempty"`
-	Submitted              string                  `json:"submitted"`
-	SubmitType             string                  `json:"submit_type"`
-	Insertions             int                     `json:"insertions"`
-	Deletions              int                     `json:"deletions"`
-	UnresolvedCommentCount int                     `json:"unresolved_comment_count"`
-	HasReviewStarted       bool                    `json:"has_review_started"`
-	Owner                  AccountInfo             `json:"owner"`
-	Labels                 map[string]LabelInfo    `json:"labels"`
-	Submitter              AccountInfo             `json:"submitter"`
-	Reviewers              Reviewers               `json:"reviewers"`
-	RevertOf               int                     `json:"revert_of"`
-	CurrentRevision        string                  `json:"current_revision"`
-	CurrentRevisionNumber  int                     `json:"current_revision_number"`
-	WorkInProgress         bool                    `json:"work_in_progress,omitempty"`
-	CherryPickOfChange     int                     `json:"cherry_pick_of_change"`
-	CherryPickOfPatchset   int                     `json:"cherry_pick_of_patch_set"`
-	Revisions              map[string]RevisionInfo `json:"revisions"`
+	ChangeNumber           int                           `json:"_number"`
+	ID                     string                        `json:"id"`
+	ChangeID               string                        `json:"change_id"`
+	Project                string                        `json:"project"`
+	Branch                 string                        `json:"branch"`
+	Topic                  string                        `json:"topic"`
+	Hashtags               []string                      `json:"hashtags"`
+	Subject                string                        `json:"subject"`
+	Status                 string                        `json:"status"`
+	Created                string                        `json:"created"`
+	Updated                string                        `json:"updated"`
+	Mergeable              bool                          `json:"mergeable,omitempty"`
+	Messages               []ChangeMessageInfo           `json:"messages"`
+	Submittable            bool                          `json:"submittable,omitempty"`
+	Submitted              string                        `json:"submitted"`
+	SubmitType             string                        `json:"submit_type"`
+	SubmitRequirements     []SubmitRequirementResultInfo `json:"submit_requirements,omitempty"`
+	Insertions             int                           `json:"insertions"`
+	Deletions              int                           `json:"deletions"`
+	UnresolvedCommentCount int                           `json:"unresolved_comment_count"`
+	HasReviewStarted       bool                          `json:"has_review_started"`
+	Owner                  AccountInfo                   `json:"owner"`
+	Labels                 map[string]LabelInfo          `json:"labels"`
+	Submitter              AccountInfo                   `json:"submitter"`
+	Reviewers              Reviewers                     `json:"reviewers"`
+	RevertOf               int                           `json:"revert_of"`
+	CurrentRevision        string                        `json:"current_revision"`
+	CurrentRevisionNumber  int                           `json:"current_revision_number"`
+	WorkInProgress         bool                          `json:"work_in_progress,omitempty"`
+	CherryPickOfChange     int                           `json:"cherry_pick_of_change"`
+	CherryPickOfPatchset   int                           `json:"cherry_pick_of_patch_set"`
+	Revisions              map[string]RevisionInfo       `json:"revisions"`
 	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
@@ -92,6 +93,14 @@ type ChangeMessageInfo struct {
 	Message        string      `json:"message"`
 	Tag            string      `json:"tag,omitempty"`
 	RevisionNumber int         `json:"_revision_number"`
+}
+
+// SubmitRequirementResultInfo contains the result of evaluating a submit requirement on a change:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-requirement-result-info
+type SubmitRequirementResultInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Status      string `json:"status"`
 }
 
 // LabelInfo contains information about a label on a change, always
