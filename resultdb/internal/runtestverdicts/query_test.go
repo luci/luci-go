@@ -55,7 +55,10 @@ func TestQuery(t *testing.T) {
 					Status:      pb.TestStatus_FAIL,
 					SummaryHtml: "SummaryHtml",
 					FailureReason: &pb.FailureReason{
-						PrimaryErrorMessage: "failure reason",
+						Kind: pb.FailureReason_ORDINARY,
+						Errors: []*pb.FailureReason_Error{
+							{Message: "failure reason A"},
+						},
 					},
 					TestMetadata: &pb.TestMetadata{
 						Name: "maximalfields test",
@@ -77,7 +80,7 @@ func TestQuery(t *testing.T) {
 					Status:   pb.TestStatus_PASS,
 				},
 			}),
-			insert.TestResults(t, "a", "C", nil, pb.TestStatus_SKIP, pb.TestStatus_CRASH),
+			insert.TestResultsLegacy(t, "a", "C", nil, pb.TestStatus_SKIP, pb.TestStatus_CRASH),
 			// Should not be included in results for invocation 'a' because not
 			// immediately inside invocation.
 			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
@@ -97,13 +100,17 @@ func TestQuery(t *testing.T) {
 					{
 						Result: &pb.TestResult{
 							// Unexpeted results come first.
-							Name:          "invocations/a/tests/A/results/1",
-							ResultId:      "1",
-							Duration:      &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Status:        pb.TestStatus_FAIL,
-							SummaryHtml:   "SummaryHtml",
-							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
-							Properties:    properties,
+							Name:        "invocations/a/tests/A/results/1",
+							ResultId:    "1",
+							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:      pb.TestStatus_FAIL,
+							SummaryHtml: "SummaryHtml",
+							FailureReason: &pb.FailureReason{
+								Kind:                pb.FailureReason_ORDINARY,
+								PrimaryErrorMessage: "failure reason",
+								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+							},
+							Properties: properties,
 						},
 					}, {
 						Result: &pb.TestResult{
@@ -131,7 +138,9 @@ func TestQuery(t *testing.T) {
 							Status:      pb.TestStatus_FAIL,
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
-								PrimaryErrorMessage: "failure reason",
+								Kind:                pb.FailureReason_ORDINARY,
+								PrimaryErrorMessage: "failure reason A",
+								Errors:              []*pb.FailureReason_Error{{Message: "failure reason A"}},
 							},
 							Tags:      []*pb.StringPair{{Key: "k1", Value: "v1"}, {Key: "k2", Value: "v2"}},
 							StartTime: timestamppb.New(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -179,13 +188,17 @@ func TestQuery(t *testing.T) {
 					},
 					{
 						Result: &pb.TestResult{
-							Name:          "invocations/a/tests/C/results/1",
-							ResultId:      "1",
-							Duration:      &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Status:        pb.TestStatus_CRASH,
-							SummaryHtml:   "SummaryHtml",
-							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
-							Properties:    properties,
+							Name:        "invocations/a/tests/C/results/1",
+							ResultId:    "1",
+							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:      pb.TestStatus_CRASH,
+							SummaryHtml: "SummaryHtml",
+							FailureReason: &pb.FailureReason{
+								// Legacy test result: Kind is not set.
+								PrimaryErrorMessage: "failure reason",
+								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+							},
+							Properties: properties,
 						},
 					},
 				},

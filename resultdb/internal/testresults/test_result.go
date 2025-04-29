@@ -152,13 +152,58 @@ func PopulateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
 	return proto.Unmarshal(tmd, tr.TestMetadata)
 }
 
+// PopulateFailureReason converts a stored failure reason into its external
+// proto representation.
+// This should be called on all read paths from Spanner.
 func PopulateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
 	if len(fr) == 0 {
+		tr.FailureReason = nil
 		return nil
 	}
 
-	tr.FailureReason = &pb.FailureReason{}
-	return proto.Unmarshal(fr, tr.FailureReason)
+	result := &pb.FailureReason{}
+	err := proto.Unmarshal(fr, result)
+	if err != nil {
+		return err
+	}
+
+	// TODO: This call can safely be removed from November 2026 onwards
+	// (after all data inserted prior to May 2025 has been deleted).
+	// It is necessary to handle data uploaded prior to May 2025 which
+	// was not always stored in normalised form.
+	NormaliseFailureReason(result)
+
+	// Populate output only fields.
+	PopulateFailureReasonOutputOnlyFields(result)
+
+	tr.FailureReason = result
+	return nil
+}
+
+// NormaliseFailureReason handles compatibility of legacy failure reason uploads,
+// converting them to a normalised failure reason representation for storage.
+// This also depopulates any OUTPUT_ONLY fields.
+//
+// This should be called before storing the results or
+// PopulateFailureReasonOutputOnlyFields.
+func NormaliseFailureReason(fr *pb.FailureReason) {
+	if len(fr.Errors) == 0 && fr.PrimaryErrorMessage != "" {
+		// Older results: normalise by set Errors collection from
+		// PrimaryErrorMessage.
+		fr.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
+	}
+	fr.PrimaryErrorMessage = ""
+}
+
+// PopulateFailureReasonOutputOnlyFields populates output only fields
+// for a normalised test result.
+func PopulateFailureReasonOutputOnlyFields(fr *pb.FailureReason) {
+	if len(fr.Errors) > 0 {
+		// Ppulate PrimaryErrorMessage from Errors collection.
+		fr.PrimaryErrorMessage = fr.Errors[0].Message
+	} else {
+		fr.PrimaryErrorMessage = ""
+	}
 }
 
 func PopulateProperties(tr *pb.TestResult, properties spanutil.Compressed) error {

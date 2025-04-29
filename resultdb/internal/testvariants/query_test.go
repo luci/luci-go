@@ -212,6 +212,7 @@ func TestQueryTestVariants(t *testing.T) {
 		tmdBytes, _ := proto.Marshal(tmd)
 
 		failureReason := &pb.FailureReason{
+			Kind:                pb.FailureReason_ORDINARY,
 			PrimaryErrorMessage: "primary error msg",
 			Errors: []*pb.FailureReason_Error{
 				{Message: "primary error msg"},
@@ -295,6 +296,7 @@ func TestQueryTestVariants(t *testing.T) {
 						Duration:    duration,
 						SummaryHtml: "SummaryHtml",
 						FailureReason: &pb.FailureReason{
+							Kind:                pb.FailureReason_ORDINARY,
 							PrimaryErrorMessage: "primary error msg",
 							Errors: []*pb.FailureReason_Error{
 								{Message: "primary error msg"},
@@ -746,6 +748,7 @@ func TestQueryTestVariants(t *testing.T) {
 							StartTime: startTime,
 							Duration:  duration,
 							FailureReason: &pb.FailureReason{
+								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "primary error msg",
 								Errors: []*pb.FailureReason_Error{
 									{Message: "primary error msg"},
@@ -822,6 +825,7 @@ func TestQueryTestVariants(t *testing.T) {
 							Duration:    duration,
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
+								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "primary error msg",
 								Errors: []*pb.FailureReason_Error{
 									{Message: "primary error msg"},
@@ -871,6 +875,10 @@ func TestQueryTestVariants(t *testing.T) {
 							Expected: false,
 							Status:   pb.TestStatus_FAIL,
 							FailureReason: &pb.FailureReason{
+								Kind: pb.FailureReason_ORDINARY,
+								Errors: []*pb.FailureReason_Error{
+									{Message: "failure reason"},
+								},
 								PrimaryErrorMessage: "failure reason",
 							},
 							Duration:    duration,

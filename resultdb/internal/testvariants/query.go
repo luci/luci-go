@@ -217,6 +217,23 @@ func (q *Query) decompressText(src []byte) (string, error) {
 	return string(q.decompressBuf), nil
 }
 
+// decompressFailureReason decompresses and unmarshals src to dest.FailureReason.
+// It's a noop if src is empty.
+func (q *Query) populateFailureReason(src []byte, dest *pb.TestResult) error {
+	if len(src) == 0 {
+		dest.FailureReason = nil
+		return nil
+	}
+	var err error
+	if q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf); err != nil {
+		return err
+	}
+	if err := testresults.PopulateFailureReason(dest, q.decompressBuf); err != nil {
+		return err
+	}
+	return nil
+}
+
 // decompressProto decompresses and unmarshals src to dest. It's a noop if src
 // is empty.
 func (q *Query) decompressProto(src []byte, dest proto.Message) error {
@@ -250,15 +267,10 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		return nil, err
 	}
 
-	if len(r.FailureReason) != 0 {
-		// Don't initialize FailureReason when r.FailureReason is empty so
-		// it won't produce {"failureReason": {}} when serialized to JSON.
-		tr.FailureReason = &pb.FailureReason{}
-
-		if err := q.decompressProto(r.FailureReason, tr.FailureReason); err != nil {
-			return nil, err
-		}
+	if err := q.populateFailureReason(r.FailureReason, tr); err != nil {
+		return nil, errors.Annotate(err, "failure reason").Err()
 	}
+
 	if len(r.Properties) != 0 {
 		// Don't initialize properties when r.Properties is empty so
 		// it won't produce {"Properties": {}} when serialized to JSON.

@@ -95,7 +95,7 @@ func TestQueryTestResults(t *testing.T) {
 			// The invocation c doesn't have any included invocation.
 			insert.FinalizedInvocationWithInclusions("c", map[string]any{"Realm": "testproject:testrealm"}),
 			insert.TestResults(t, "a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults(t, "b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResultsLegacy(t, "b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insert.TestResults(t, "c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS),
 		)...)
 
@@ -141,7 +141,7 @@ func TestQueryTestResults(t *testing.T) {
 
 			var expectedResults []*pb.TestResult
 			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS)...)
-			expectedResults = append(expectedResults, insert.MakeTestResults("b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResultsLegacy("b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
 			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS)...)
 			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})

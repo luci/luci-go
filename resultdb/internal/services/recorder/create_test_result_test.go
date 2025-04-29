@@ -111,6 +111,7 @@ func legacyCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cr
 		RequestId:  "request-id-123",
 
 		TestResult: &pb.TestResult{
+			// Legacy behaviour: an arbitrary/legacy test ID may be set instead of a structured test ID.
 			TestId:   testID,
 			ResultId: "result-id-0",
 			Expected: true,
@@ -135,12 +136,11 @@ func legacyCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cr
 					},
 				},
 			},
+			// Legacy behaviour: failure reason may be set for non-failing results.
 			FailureReason: &pb.FailureReason{
-				PrimaryErrorMessage: "got 1, want 0",
-				Errors: []*pb.FailureReason_Error{
-					{Message: "got 1, want 0"},
-					{Message: "got 2, want 1"},
-				},
+				// Legacy behaviour: old clients may set primary error message (before it was made output only)
+				// and omit setting teh kind.
+				PrimaryErrorMessage:  "got 1, want 0",
 				TruncatedErrorsCount: 0,
 			},
 			Properties: properties,
@@ -300,28 +300,7 @@ func TestCreateTestResult(t *testing.T) {
 				req.RequestId = ""
 				createTestResult(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
 			})
-
-			t.Run("with legacy test result", func(t *ftt.Test) {
-				req = legacyCreateTestResultRequest(clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id")
-
-				expected := proto.Clone(req.TestResult).(*pb.TestResult)
-				expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
-				expected.VariantHash = "c8643f74854d84b4"
-				expected.TestIdStructured = &pb.TestIdentifier{
-					ModuleName:   "legacy",
-					ModuleScheme: "legacy",
-					ModuleVariant: pbutil.Variant(
-						"a/b", "1",
-						"c", "2",
-					),
-					ModuleVariantHash: "c8643f74854d84b4",
-					CaseName:          "test-id",
-				}
-
-				createTestResult(req, expected, "test-id")
-			})
 		})
-
 		t.Run("fails", func(t *ftt.Test) {
 			t.Run("with an invalid request", func(t *ftt.Test) {
 				req.Invocation = "this is an invalid invocation name"
@@ -338,6 +317,56 @@ func TestCreateTestResult(t *testing.T) {
 				_, err := recorder.CreateTestResult(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
+			})
+		})
+		t.Run("with legacy-form test result", func(t *ftt.Test) {
+			req = legacyCreateTestResultRequest(clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id")
+
+			expected := proto.Clone(req.TestResult).(*pb.TestResult)
+			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
+			expected.VariantHash = "c8643f74854d84b4"
+			expected.TestIdStructured = &pb.TestIdentifier{
+				ModuleName:   "legacy",
+				ModuleScheme: "legacy",
+				ModuleVariant: pbutil.Variant(
+					"a/b", "1",
+					"c", "2",
+				),
+				ModuleVariantHash: "c8643f74854d84b4",
+				CaseName:          "test-id",
+			}
+			expected.FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+				},
+			}
+
+			t.Run("base case", func(t *ftt.Test) {
+				createTestResult(req, expected, "test-id")
+			})
+			t.Run("failure reason kind is set based on v1 status", func(t *ftt.Test) {
+				t.Run("crash", func(t *ftt.Test) {
+					req.TestResult.Status = pb.TestStatus_CRASH
+					expected.Status = pb.TestStatus_CRASH
+					expected.FailureReason.Kind = pb.FailureReason_CRASH
+
+					createTestResult(req, expected, "test-id")
+				})
+				t.Run("abort", func(t *ftt.Test) {
+					req.TestResult.Status = pb.TestStatus_ABORT
+					expected.Status = pb.TestStatus_ABORT
+					expected.FailureReason.Kind = pb.FailureReason_TIMEOUT
+
+					createTestResult(req, expected, "test-id")
+				})
+				t.Run("ordinary failure", func(t *ftt.Test) {
+					req.TestResult.Status = pb.TestStatus_FAIL
+					expected.Status = pb.TestStatus_FAIL
+					expected.FailureReason.Kind = pb.FailureReason_ORDINARY
+
+					createTestResult(req, expected, "test-id")
+				})
 			})
 		})
 	})

@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -187,6 +188,23 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		runDuration.Valid = true
 	}
 
+	// If the legacy test result status was set, duplicate it into the stored failure reason.
+	// Test result validation ensures that the FailureReason.Kind is not already set
+	// for results using legacy status.
+	if ret.Status == pb.TestStatus_FAIL || ret.Status == pb.TestStatus_ABORT || ret.Status == pb.TestStatus_CRASH {
+		if ret.FailureReason == nil {
+			ret.FailureReason = &pb.FailureReason{}
+		}
+		switch ret.Status {
+		case pb.TestStatus_FAIL:
+			ret.FailureReason.Kind = pb.FailureReason_ORDINARY
+		case pb.TestStatus_CRASH:
+			ret.FailureReason.Kind = pb.FailureReason_CRASH
+		case pb.TestStatus_ABORT:
+			ret.FailureReason.Kind = pb.FailureReason_TIMEOUT
+		}
+	}
+
 	row := map[string]any{
 		"InvocationId":    invID,
 		"TestId":          ret.TestId,
@@ -209,7 +227,13 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		row["TestMetadata"] = spanutil.Compressed(pbutil.MustMarshal(ret.TestMetadata))
 	}
 	if ret.FailureReason != nil {
+		// Normalise a test result. This handles legacy uploaders which only set
+		// PrimaryErrorMessage.
+		testresults.NormaliseFailureReason(ret.FailureReason)
 		row["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(ret.FailureReason))
+
+		// Populate output only fields after marshalling, as we don't want to store those.
+		testresults.PopulateFailureReasonOutputOnlyFields(ret.FailureReason)
 	}
 	if ret.Properties != nil {
 		row["Properties"] = spanutil.Compressed(pbutil.MustMarshal(ret.Properties))

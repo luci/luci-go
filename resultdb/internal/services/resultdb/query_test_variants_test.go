@@ -83,7 +83,7 @@ func TestQueryTestVariants(t *testing.T) {
 		)
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_FAIL),
+			insert.TestResultsLegacy(t, "inv0", "T2", nil, pb.TestStatus_FAIL),
 			insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS),
 			insert.TestResults(t, "inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
@@ -124,7 +124,7 @@ func TestQueryTestVariants(t *testing.T) {
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.TestResults(t, "inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
 			insert.TestResults(t, "inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
+			insert.TestResultsLegacy(t, "inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
 			insert.TestResults(t, "inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestStatus_FAIL),
 			insert.TestExonerations("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestExonerations("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
@@ -194,7 +194,9 @@ func TestQueryTestVariants(t *testing.T) {
 								Status:   pb.TestStatus_FAIL,
 								Duration: duration,
 								FailureReason: &pb.FailureReason{
+									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
+									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
 								IsMasked: true,
 							},
@@ -217,7 +219,9 @@ func TestQueryTestVariants(t *testing.T) {
 								Duration:    duration,
 								SummaryHtml: "SummaryHtml",
 								FailureReason: &pb.FailureReason{
+									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
+									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
 								Properties: &structpb.Struct{Fields: map[string]*structpb.Value{
 									"key": structpb.NewStringValue("value"),
@@ -252,7 +256,9 @@ func TestQueryTestVariants(t *testing.T) {
 								Status:   pb.TestStatus_FAIL,
 								Duration: duration,
 								FailureReason: &pb.FailureReason{
+									// This is a legacy result, Kind is not populated.
 									PrimaryErrorMessage: "failure reason",
+									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
 								IsMasked: true,
 							},
@@ -279,7 +285,9 @@ func TestQueryTestVariants(t *testing.T) {
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
 								FailureReason: &pb.FailureReason{
+									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
+									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
 								Duration: duration,
 								IsMasked: true,

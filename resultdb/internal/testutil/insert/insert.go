@@ -95,9 +95,14 @@ func Inclusion(including, included invocations.ID) *spanner.Mutation {
 	})
 }
 
-// TestResults returns spanner mutations to insert test results
+// TestResults returns spanner mutations to insert test results.
 func TestResults(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
 	return TestResultMessages(t, MakeTestResults(invID, testID, v, statuses...))
+}
+
+// TestResults returns spanner mutations to insert test results in legacy stored format.
+func TestResultsLegacy(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
+	return TestResultMessagesLegacy(t, MakeTestResultsLegacy(invID, testID, v, statuses...))
 }
 
 // TestResultMessages returns spanner mutations to insert test results
@@ -136,7 +141,84 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 			mutMap["TestMetadata"] = spanutil.Compressed(tmdBytes)
 		}
 		if tr.FailureReason != nil {
-			frBytes, err := proto.Marshal(tr.FailureReason)
+			fr := proto.Clone(tr.FailureReason).(*pb.FailureReason)
+			normaliseFailureReason(fr)
+			frBytes, err := proto.Marshal(fr)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			mutMap["FailureReason"] = spanutil.Compressed(frBytes)
+		}
+		if tr.Properties != nil {
+			propertiesBytes, err := proto.Marshal(tr.Properties)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			mutMap["Properties"] = spanutil.Compressed(propertiesBytes)
+		}
+
+		ms[i] = spanutil.InsertMap("TestResults", mutMap)
+	}
+	return ms
+}
+
+// normaliseFailureReason normalises a failure reason into its storage format.
+func normaliseFailureReason(fr *pb.FailureReason) {
+	if len(fr.Errors) == 0 && fr.PrimaryErrorMessage != "" {
+		// Older results: normalise by set Errors collection from
+		// PrimaryErrorMessage.
+		fr.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
+	}
+	fr.PrimaryErrorMessage = ""
+}
+
+// TestResultMessages returns spanner mutations to insert test results
+// in legacy format. This may have some data loss.
+func TestResultMessagesLegacy(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation {
+	t.Helper()
+
+	ms := make([]*spanner.Mutation, len(trs))
+	for i, tr := range trs {
+		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
+
+		mutMap := map[string]any{
+			"InvocationId":    invocations.ID(invID),
+			"TestId":          testID,
+			"ResultId":        resultID,
+			"Variant":         tr.Variant,
+			"VariantHash":     pbutil.VariantHash(tr.Variant),
+			"CommitTimestamp": spanner.CommitTimestamp,
+			"Status":          tr.Status,
+			"Tags":            tr.Tags,
+			"StartTime":       tr.StartTime,
+			"SummaryHtml":     spanutil.Compressed(tr.SummaryHtml),
+		}
+		if tr.Duration != nil {
+			mutMap["RunDurationUsec"] = spanner.NullInt64{Int64: int64(tr.Duration.Seconds)*1e6 + int64(trs[i].Duration.Nanos)/1000, Valid: true}
+		}
+		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
+			mutMap["SkipReason"] = tr.SkipReason
+		}
+		if !trs[i].Expected {
+			mutMap["IsUnexpected"] = true
+		}
+		if tr.TestMetadata != nil {
+			tmdBytes, err := proto.Marshal(tr.TestMetadata)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			mutMap["TestMetadata"] = spanutil.Compressed(tmdBytes)
+		}
+		if tr.FailureReason != nil {
+			fr := proto.Clone(tr.FailureReason).(*pb.FailureReason)
+			if len(fr.Errors) > 0 {
+				// At least until October 2026: legacy failure reasons may
+				// might not set Errors collection and instead set PrimaryErrorMessage.
+				fr.PrimaryErrorMessage = fr.Errors[0].Message
+				if len(fr.Errors) == 1 {
+					fr.Errors = nil
+				}
+			}
+			// At least until October 2026: legacy failure reasons may
+			// not have a kind set.
+			fr.Kind = pb.FailureReason_KIND_UNSPECIFIED
+
+			frBytes, err := proto.Marshal(fr)
 			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			mutMap["FailureReason"] = spanutil.Compressed(frBytes)
 		}
@@ -222,7 +304,8 @@ func MakeTestMetadataRow(project, testID, subRealm string, refHash []byte) *test
 	}
 }
 
-// MakeTestResults creates test results.
+// MakeTestResult creates test results. Test results are returned with
+// output only fields set.
 func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
@@ -232,6 +315,63 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 		if status != pb.TestStatus_PASS && status != pb.TestStatus_SKIP {
 			reason = &pb.FailureReason{
 				PrimaryErrorMessage: "failure reason",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "failure reason"},
+				},
+			}
+			if status == pb.TestStatus_FAIL {
+				reason.Kind = pb.FailureReason_ORDINARY
+			}
+			if status == pb.TestStatus_CRASH {
+				reason.Kind = pb.FailureReason_CRASH
+			}
+			if status == pb.TestStatus_ABORT {
+				reason.Kind = pb.FailureReason_TIMEOUT
+			}
+		}
+		var skipReason pb.SkipReason
+		if status == pb.TestStatus_SKIP {
+			skipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+		}
+		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, v)
+		if err != nil {
+			panic(errors.Annotate(err, "parse test variant identifier").Err())
+		}
+
+		trs[i] = &pb.TestResult{
+			Name:             pbutil.TestResultName(invID, testID, resultID),
+			TestId:           testID,
+			ResultId:         resultID,
+			TestIdStructured: tvID,
+			Variant:          v,
+			VariantHash:      pbutil.VariantHash(v),
+			Expected:         status == pb.TestStatus_PASS,
+			Status:           status,
+			Duration:         &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:      "SummaryHtml",
+			TestMetadata:     &pb.TestMetadata{Name: "testname"},
+			FailureReason:    reason,
+			Properties:       &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:       skipReason,
+		}
+	}
+	return trs
+}
+
+// MakeTestResult creates test legacy results. These results do not rely on
+// newer features. Results are returned with output only fields set.
+func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
+	trs := make([]*pb.TestResult, len(statuses))
+	for i, status := range statuses {
+		resultID := fmt.Sprintf("%d", i)
+
+		var reason *pb.FailureReason
+		if status != pb.TestStatus_PASS && status != pb.TestStatus_SKIP {
+			reason = &pb.FailureReason{
+				PrimaryErrorMessage: "failure reason",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "failure reason"},
+				},
 			}
 		}
 		var skipReason pb.SkipReason

@@ -87,6 +87,7 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
+
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, nil),
 				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),

@@ -275,44 +275,6 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 				createTestResults(req, expected, "://infra/")
 			})
-
-			t.Run("with legacy test ID", func(t *ftt.Test) {
-				req.Requests = []*pb.CreateTestResultRequest{
-					legacyCreateTestResultRequest(now, invName, "some-other-test-one"),
-					legacyCreateTestResultRequest(now, invName, "some-other-test-two"),
-				}
-				expected := make([]*pb.TestResult, 2)
-				expected[0] = proto.Clone(req.Requests[0].TestResult).(*pb.TestResult)
-				expected[0].Name = "invocations/u-build-1/tests/some-other-test-one/results/result-id-0"
-				expected[0].TestId = "some-other-test-one"
-				expected[0].TestIdStructured = &pb.TestIdentifier{
-					ModuleName:   "legacy",
-					ModuleScheme: "legacy",
-					ModuleVariant: pbutil.Variant(
-						"a/b", "1",
-						"c", "2",
-					),
-					ModuleVariantHash: "c8643f74854d84b4",
-					CaseName:          "some-other-test-one",
-				}
-				expected[0].VariantHash = pbutil.VariantHash(expected[0].Variant)
-				expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
-				expected[1].Name = "invocations/u-build-1/tests/some-other-test-two/results/result-id-0"
-				expected[1].TestId = "some-other-test-two"
-				expected[1].TestIdStructured = &pb.TestIdentifier{
-					ModuleName:   "legacy",
-					ModuleScheme: "legacy",
-					ModuleVariant: pbutil.Variant(
-						"a/b", "1",
-						"c", "2",
-					),
-					ModuleVariantHash: "c8643f74854d84b4",
-					CaseName:          "some-other-test-two",
-				}
-				expected[1].VariantHash = pbutil.VariantHash(expected[1].Variant)
-
-				createTestResults(req, expected, "some-other-test-")
-			})
 		})
 
 		t.Run("fails", func(t *ftt.Test) {
@@ -341,6 +303,66 @@ func TestBatchCreateTestResults(t *testing.T) {
 				_, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
+			})
+		})
+
+		t.Run("with legacy-form test result", func(t *ftt.Test) {
+			req.Requests = []*pb.CreateTestResultRequest{
+				legacyCreateTestResultRequest(now, invName, "some-other-test-one"),
+				legacyCreateTestResultRequest(now, invName, "some-other-test-two"),
+			}
+			expected := make([]*pb.TestResult, 2)
+			expected[0] = proto.Clone(req.Requests[0].TestResult).(*pb.TestResult)
+			expected[0].Name = "invocations/u-build-1/tests/some-other-test-one/results/result-id-0"
+			expected[0].TestId = "some-other-test-one"
+			expected[0].TestIdStructured = &pb.TestIdentifier{
+				ModuleName:   "legacy",
+				ModuleScheme: "legacy",
+				ModuleVariant: pbutil.Variant(
+					"a/b", "1",
+					"c", "2",
+				),
+				ModuleVariantHash: "c8643f74854d84b4",
+				CaseName:          "some-other-test-one",
+			}
+			expected[0].FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+				},
+			}
+			expected[0].VariantHash = pbutil.VariantHash(expected[0].Variant)
+
+			expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
+			expected[1].Name = "invocations/u-build-1/tests/some-other-test-two/results/result-id-0"
+			expected[1].TestId = "some-other-test-two"
+			expected[1].TestIdStructured = &pb.TestIdentifier{
+				ModuleName:   "legacy",
+				ModuleScheme: "legacy",
+				ModuleVariant: pbutil.Variant(
+					"a/b", "1",
+					"c", "2",
+				),
+				ModuleVariantHash: "c8643f74854d84b4",
+				CaseName:          "some-other-test-two",
+			}
+			expected[1].FailureReason = &pb.FailureReason{
+				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+				},
+			}
+			expected[1].VariantHash = pbutil.VariantHash(expected[1].Variant)
+
+			t.Run("base case", func(t *ftt.Test) {
+				createTestResults(req, expected, "some-other-test-")
+			})
+			t.Run("failure reason kind is set based on v1 status", func(t *ftt.Test) {
+				req.Requests[0].TestResult.Status = pb.TestStatus_CRASH
+				expected[0].Status = pb.TestStatus_CRASH
+				expected[0].FailureReason.Kind = pb.FailureReason_CRASH
+
+				createTestResults(req, expected, "some-other-test-")
 			})
 		})
 	})

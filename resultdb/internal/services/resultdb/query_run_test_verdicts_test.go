@@ -49,7 +49,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 			insert.FinalizedInvocationWithInclusions("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "testproject:testrealm"}),
 			insert.TestResults(t, "a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults(t, "a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
+			insert.TestResultsLegacy(t, "a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
 			insert.TestResults(t, "a", "C", nil, pb.TestStatus_PASS),
 			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
 		)...)
@@ -68,13 +68,17 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:          "invocations/a/tests/A/results/0",
-							ResultId:      "0",
-							Duration:      &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							Status:        pb.TestStatus_FAIL,
-							SummaryHtml:   "SummaryHtml",
-							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
-							Properties:    properties,
+							Name:        "invocations/a/tests/A/results/0",
+							ResultId:    "0",
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Status:      pb.TestStatus_FAIL,
+							SummaryHtml: "SummaryHtml",
+							FailureReason: &pb.FailureReason{
+								Kind:                pb.FailureReason_ORDINARY,
+								PrimaryErrorMessage: "failure reason",
+								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+							},
+							Properties: properties,
 						},
 					}, {
 						Result: &pb.TestResult{
@@ -96,13 +100,17 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:          "invocations/a/tests/B/results/1",
-							ResultId:      "1",
-							Duration:      &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Status:        pb.TestStatus_CRASH,
-							SummaryHtml:   "SummaryHtml",
-							FailureReason: &pb.FailureReason{PrimaryErrorMessage: "failure reason"},
-							Properties:    properties,
+							Name:        "invocations/a/tests/B/results/1",
+							ResultId:    "1",
+							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:      pb.TestStatus_CRASH,
+							SummaryHtml: "SummaryHtml",
+							FailureReason: &pb.FailureReason{
+								// Legacy test result: no Kind set.
+								PrimaryErrorMessage: "failure reason",
+								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+							},
+							Properties: properties,
 						},
 					},
 					{
