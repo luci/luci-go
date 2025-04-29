@@ -33,8 +33,8 @@ const (
 
 // A RAPT is a ReAuth proof token.
 type RAPT struct {
-	Token  string
-	Expiry time.Time
+	Token  string    `json:"token"`
+	Expiry time.Time `json:"expiry"`
 }
 
 // GetRAPT performs a ReAuth flow and returns the proof token.

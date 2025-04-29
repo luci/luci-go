@@ -23,7 +23,9 @@ import (
 func challengeHandlers(facetID string) map[string]challengeHandler {
 	return map[string]challengeHandler{
 		"SECURITY_KEY": chainHandler{
-			handlers: []challengeHandler{},
+			handlers: []challengeHandler{
+				newCustomSKHandler(facetID),
+			},
 		},
 	}
 }
