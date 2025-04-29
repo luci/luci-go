@@ -149,8 +149,7 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
-			assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99310" not found`))
+			assert.NoErr(t, run(ctx, op))
 		})
 
 		t.Run("Slice Already Consumed", func(t *ftt.Test) {

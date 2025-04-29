@@ -198,7 +198,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.CloudProject, srv.Options.ImageVersion(), cfg)
+		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.CloudProject, srv.Options.ImageVersion(), cfg, tasksManager)
 		rbeReservations.RegisterTQTasks(tqt)
 		rbeReservations.RegisterPSHandlers(&pubsub.Default)
 

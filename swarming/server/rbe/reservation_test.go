@@ -41,10 +41,12 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func TestReservationServer(t *testing.T) {
@@ -257,6 +259,17 @@ func TestReservationServer(t *testing.T) {
 				taskID          = "637f8e221100aa10"
 			)
 
+			config.Settings.TrafficMigration = &configpb.TrafficMigration{
+				Routes: []*configpb.TrafficMigration_Route{
+					{
+						Name:             "/prpc/swarming.internals.rbe.Internals/ExpireSlice",
+						RouteToGoPercent: int32(100),
+					},
+				},
+			}
+			p := cfgtest.MockConfigs(ctx, config)
+			srv.cfg = p
+
 			// This is checked when retrying the submission.
 			reqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
 			req := &model.TaskRequest{
@@ -272,17 +285,18 @@ func TestReservationServer(t *testing.T) {
 			taskToRunShard := (&model.TaskToRun{Key: ttrKey}).MustShardIndex()
 
 			var (
-				expireSliceReason  internalspb.ExpireSliceRequest_Reason
+				expireSliceReason  tasks.ExpireReason
 				expireSliceDetails string
 			)
-			internals.expireSlice = func(r *internalspb.ExpireSliceRequest) error {
-				assert.Loosely(t, r.TaskId, should.Equal(taskID))
-				assert.Loosely(t, r.TaskToRunShard, should.Equal(taskToRunShard))
-				assert.Loosely(t, r.TaskToRunId, should.Equal(taskToRunID))
-				assert.Loosely(t, r.Reason, should.NotEqual(internalspb.ExpireSliceRequest_REASON_UNSPECIFIED))
-				expireSliceReason = r.Reason
-				expireSliceDetails = r.Details
-				return nil
+			srv.tasksManager = &tasks.MockedManager{
+				ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) error {
+					assert.That(t, model.RequestKeyToTaskID(op.Request.Key, model.AsRequest), should.Equal(taskID))
+					assert.That(t, op.ToRunKey, should.Match(model.TaskToRunKey(ctx, op.Request.Key, taskToRunShard, taskToRunID)))
+					assert.That(t, op.Reason, should.NotEqual(tasks.ReasonUnspecified))
+					expireSliceReason = op.Reason
+					expireSliceDetails = op.Details
+					return nil
+				},
 			}
 
 			var enqueueNewErr error
@@ -336,20 +350,20 @@ func TestReservationServer(t *testing.T) {
 					rbe.reservation.Result, _ = anypb.New(result)
 				}
 				rbe.reservation.Payload, _ = anypb.New(taskPayload)
-				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
+				expireSliceReason = tasks.ReasonUnspecified
 				expireSliceDetails = ""
 				return srv.expireSliceBasedOnReservation(ctx, reservationName)
 			}
 
 			expectNoExpireSlice := func() {
-				assert.Loosely(t, expireSliceReason, should.Equal(internalspb.ExpireSliceRequest_REASON_UNSPECIFIED))
+				assert.Loosely(t, expireSliceReason, should.Equal(tasks.ReasonUnspecified))
 			}
 
 			expectNoResubmit := func() {
 				assert.Loosely(t, resubmittedTTR, should.HaveLength(0))
 			}
 
-			expectExpireSlice := func(r internalspb.ExpireSliceRequest_Reason, details string) {
+			expectExpireSlice := func(r tasks.ExpireReason, details string) {
 				expectNoResubmit()
 				assert.Loosely(t, expireSliceReason, should.Equal(r))
 				assert.Loosely(t, expireSliceDetails, should.ContainSubstring(details))
@@ -414,7 +428,7 @@ func TestReservationServer(t *testing.T) {
 					status.Errorf(codes.DeadlineExceeded, "deadline"),
 					nil,
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_EXPIRED, "deadline")
+				expectExpireSlice(tasks.Expired, "deadline")
 			})
 
 			t.Run("No resources", func(t *ftt.Test) {
@@ -425,7 +439,7 @@ func TestReservationServer(t *testing.T) {
 					status.Errorf(codes.FailedPrecondition, "no bots"),
 					nil,
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_NO_RESOURCE, "no bots")
+				expectExpireSlice(tasks.NoResource, "no bots")
 			})
 
 			t.Run("Bot internal error, first attempt", func(t *ftt.Test) {
@@ -449,7 +463,7 @@ func TestReservationServer(t *testing.T) {
 					status.Errorf(codes.DeadlineExceeded, "ignored"),
 					&internalspb.TaskResult{BotInternalError: "boom"},
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "boom")
+				expectExpireSlice(tasks.BotInternalError, "boom")
 			})
 
 			t.Run("Aborted before claimed, first attempt", func(t *ftt.Test) {
@@ -471,7 +485,7 @@ func TestReservationServer(t *testing.T) {
 					status.Errorf(codes.Aborted, "bot died"),
 					nil,
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "bot died")
+				expectExpireSlice(tasks.BotInternalError, "bot died")
 			})
 
 			t.Run("Unexpectedly successful reservations, first attempt", func(t *ftt.Test) {
@@ -493,7 +507,7 @@ func TestReservationServer(t *testing.T) {
 					nil,
 					nil,
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "unexpectedly finished")
+				expectExpireSlice(tasks.BotInternalError, "unexpectedly finished")
 			})
 
 			t.Run("Unexpectedly canceled reservations", func(t *ftt.Test) {
@@ -550,7 +564,7 @@ func TestReservationServer(t *testing.T) {
 						BotInternalError: "boom",
 					},
 				))
-				expectExpireSlice(internalspb.ExpireSliceRequest_EXPIRED, "boom: the reservation cannot be submitted")
+				expectExpireSlice(tasks.Expired, "boom: the reservation cannot be submitted")
 			})
 
 			t.Run("Transient resubmit error", func(t *ftt.Test) {

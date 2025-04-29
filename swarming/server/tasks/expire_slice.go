@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -70,7 +71,9 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 	}
 	switch err := datastore.Get(ctx, trs, ttr); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Reason("task %q not found", taskID).Err()
+		// Nothing to expire
+		logging.Warningf(ctx, "task %q not found", taskID)
+		return nil
 	case err != nil:
 		return errors.Annotate(err, "datastore error fetching task result entities for task %s", taskID).Err()
 	}

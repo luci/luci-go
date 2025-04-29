@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -81,20 +82,23 @@ type ReservationServer struct {
 	serverProject string
 	serverVersion string
 	cfg           *cfg.Provider
+	// tasksManager is used to change state of tasks.
+	tasksManager tasks.Manager
 
-	// enqueueNew is usually EnqueueNew, but it can be mocked in tests.
+	// enqueueNew is usually tasks.EnqueueRBENew, but it can be mocked in tests.
 	enqueueNew func(context.Context, *tq.Dispatcher, *model.TaskRequest, *model.TaskToRun, *cfg.Config) error
 }
 
 // NewReservationServer creates a new reservation server given an RBE client
 // connection.
-func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverProject, serverVersion string, cfg *cfg.Provider) *ReservationServer {
+func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverProject, serverVersion string, cfg *cfg.Provider, tasksManager tasks.Manager) *ReservationServer {
 	return &ReservationServer{
 		rbe:           remoteworkers.NewReservationsClient(cc),
 		internals:     internals,
 		serverProject: serverProject,
 		serverVersion: serverVersion,
 		cfg:           cfg,
+		tasksManager:  tasksManager,
 		enqueueNew:    tasks.EnqueueRBENew,
 	}
 }
@@ -454,14 +458,30 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 
 	// Tell Swarming to switch to the next slice, if necessary
 	logging.Warningf(ctx, "Expiring slice with %s: %s", reasonCode, statusErr)
-	if err := s.expireSlice(ctx, &payload, reasonCode, reservation.AssignedBotId, statusErr.Error()); err != nil {
-		return errors.Annotate(err, "failed to expire the slice").Tag(transient.Tag).Err()
-	}
-	return nil
+	return s.expireSlice(ctx, &payload, reasonCode, reservation.AssignedBotId, statusErr.Error())
 }
 
-// expireSlice calls Swarming Python's ExpireSlice RPC.
 func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID, details string) error {
+	// Use `/prpc/swarming.internals.rbe.Internals/ExpireSlice` as the pseudo
+	// route for traffic migration, even though the Go server uses
+	// tasks.ExpireSliceTxn instead of the real RPC to expire slice.
+	percent := s.cfg.Cached(ctx).RouteToGoPercent("/prpc/swarming.internals.rbe.Internals/ExpireSlice")
+	if percent != 0 && (percent == 100 || mathrand.Intn(ctx, 100) < percent) {
+		// Do not log when 100% of requests are configured to be routed to Go, this
+		// is the default end state. Just absence of this logging line is good
+		// enough indicator that requests are handled by Go.
+		if percent != 100 {
+			logging.Infof(ctx, "Routing to Go to expire slice (configured to route %d%% to Go)", percent)
+		}
+		return s.expireSliceGo(ctx, task, code, culpritRBEBotID, details)
+	}
+	logging.Infof(ctx, "Routing to Python to expire slice (configured to route %d%% to Go)", percent)
+	return s.expireSlicePy(ctx, task, code, culpritRBEBotID, details)
+}
+
+// expireSlicePy calls Swarming Python's ExpireSlice RPC.
+// TODO(b/355013802): delete after task slice expiration is fully migrated to Go.
+func (s *ReservationServer) expireSlicePy(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID, details string) error {
 	// Do not use effective bot ID in place of the real bot ID.
 	if _, _, _, ok := model.ParseRBEEffectiveBotID(culpritRBEBotID); ok {
 		culpritRBEBotID = ""
@@ -475,6 +495,58 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 		CulpritBotId:   culpritRBEBotID,
 	})
 	return err
+}
+
+// expireSliceGo calls tasksManager.ExpireSliceTxn.
+func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID, details string) error {
+	// Do not use effective bot ID in place of the real bot ID.
+	if _, _, _, ok := model.ParseRBEEffectiveBotID(culpritRBEBotID); ok {
+		culpritRBEBotID = ""
+	}
+
+	reqKey, err := model.TaskIDToRequestKey(ctx, task.TaskId)
+	if err != nil {
+		return err
+	}
+	tr, err := model.FetchTaskRequest(ctx, reqKey)
+	switch {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return errors.New("TaskRequest not found")
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
+	}
+
+	var reason tasks.ExpireReason
+	switch code {
+	case internalspb.ExpireSliceRequest_NO_RESOURCE:
+		reason = tasks.NoResource
+	case internalspb.ExpireSliceRequest_PERMISSION_DENIED:
+		reason = tasks.PermissionDenied
+	case internalspb.ExpireSliceRequest_INVALID_ARGUMENT:
+		reason = tasks.InvalidArgument
+	case internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR:
+		reason = tasks.BotInternalError
+	case internalspb.ExpireSliceRequest_EXPIRED:
+		reason = tasks.Expired
+	default:
+		panic(fmt.Sprintf("unexpected expire slice code %d", code))
+	}
+	expireOp := &tasks.ExpireSliceOp{
+		Request:      tr,
+		ToRunKey:     model.TaskToRunKey(ctx, tr.Key, task.TaskToRunShard, task.TaskToRunId),
+		Reason:       reason,
+		Details:      details,
+		CulpritBotID: culpritRBEBotID,
+		Config:       s.cfg.Cached(ctx),
+	}
+
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		return s.tasksManager.ExpireSliceTxn(ctx, expireOp)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "failed to expire slice").Tag(transient.Tag).Err()
+	}
+	return nil
 }
 
 // resubmitReservation submits a new RBE reservation for the given TaskToRun.
