@@ -229,8 +229,8 @@ func (s *Client) attributeFilteredRuns(ctx context.Context, project string) erro
 	if err != nil {
 		return errors.Annotate(err, "waiting for filtered test run attribution query to complete").Err()
 	}
-	if js.Err() != nil {
-		return errors.Annotate(js.Err(), "filtered test run attribution query failed").Err()
+	if err := js.Err(); err != nil {
+		return errors.Annotate(err, "filtered test run attribution query failed").Err()
 	}
 	return nil
 }

@@ -632,10 +632,10 @@ func validateRule(r *Entry) error {
 		return errors.Reason("rule ID: must match %s", RuleIDRe).Err()
 	}
 	if err := r.BugID.Validate(); err != nil {
-		return errors.Annotate(r.BugID.Validate(), "bug ID").Err()
+		return errors.Annotate(err, "bug ID").Err()
 	}
-	if r.SourceCluster.Validate() != nil && !r.SourceCluster.IsEmpty() {
-		return errors.Annotate(r.SourceCluster.Validate(), "source cluster ID").Err()
+	if err := r.SourceCluster.Validate(); err != nil && !r.SourceCluster.IsEmpty() {
+		return errors.Annotate(err, "source cluster ID").Err()
 	}
 	if err := ValidateRuleDefinition(r.RuleDefinition); err != nil {
 		return errors.Annotate(err, "rule definition").Err()

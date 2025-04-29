@@ -186,7 +186,7 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	code := status.Code(err)
 	if code == codes.NotFound {
 		logging.Warningf(ctx, "Parent invocation not found.")
-		return tq.Fatal.Apply(errors.Annotate(err, "read parent invocation").Err())
+		return tq.Fatal.Apply(errors.Fmt("read parent invocation: %w", err))
 	}
 	if code == codes.PermissionDenied {
 		// Invocation not found, end the task gracefully.

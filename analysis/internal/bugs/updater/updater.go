@@ -452,7 +452,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			// Capture the error, but continue processing this bug
 			// and other bugs, as partial success is possible
 			// and pending rule updates must be applied.
-			err := errors.Annotate(rsp.Error, "updating bug (%s)", bugsToUpdate[i].Bug.String()).Err()
+			err := errors.Fmt("updating bug (%s): %w", bugsToUpdate[i].Bug.String(), rsp.Error)
 			errs = append(errs, err)
 			logging.Errorf(ctx, "%s", err)
 		}
@@ -1144,7 +1144,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		// is not mutually exclusive with having filed a bug, as
 		// steps after creating the bug may have failed, and in
 		// this case a failure association rule should still be created.
-		return false, errors.Annotate(response.Error, "create issue in %v (created ID: %q)", system, response.ID).Err()
+		return false, errors.Fmt("create issue in %v (created ID: %q): %w", system, response.ID, response.Error)
 	}
 
 	return true, nil

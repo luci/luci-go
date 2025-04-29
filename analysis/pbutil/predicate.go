@@ -55,11 +55,11 @@ func ValidateVariant(vr *pb.Variant) error {
 func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	switch pr := p.Predicate.(type) {
 	case *pb.VariantPredicate_Equals:
-		return errors.Annotate(ValidateVariant(pr.Equals), "equals").Err()
+		return errors.WrapIf(ValidateVariant(pr.Equals), "equals")
 	case *pb.VariantPredicate_Contains:
-		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
+		return errors.WrapIf(ValidateVariant(pr.Contains), "contains")
 	case *pb.VariantPredicate_HashEquals:
-		return errors.Annotate(validate.SpecifiedWithRe(variantHashRe, pr.HashEquals), "hash_equals").Err()
+		return errors.WrapIf(validate.SpecifiedWithRe(variantHashRe, pr.HashEquals), "hash_equals")
 	case nil:
 		return validate.Unspecified()
 	default:

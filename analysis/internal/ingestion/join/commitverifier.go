@@ -61,7 +61,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 		logging.Warningf(ctx, "CV run %s for project %s not found (or LUCI Analysis does not have access to read it).",
 			runID, project)
 		// Treat as a permanent error.
-		return project, false, errors.Annotate(err, "failed to get run").Err()
+		return project, false, errors.WrapIf(err, "failed to get run")
 	}
 	if err != nil {
 		// Treat as transient error.

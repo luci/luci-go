@@ -215,8 +215,8 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 	if err != nil {
 		return errors.Annotate(err, "waiting for cluster summary analysis to complete").Err()
 	}
-	if js.Err() != nil {
-		return errors.Annotate(js.Err(), "cluster summary analysis failed").Err()
+	if err := js.Err(); err != nil {
+		return errors.Annotate(err, "cluster summary analysis failed").Err()
 	}
 	return nil
 }
