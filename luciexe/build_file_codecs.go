@@ -167,16 +167,16 @@ func ReadBuildFile(buildFilePath string) (ret *bbpb.Build, err error) {
 		return nil, err
 	}
 	if !codec.IsNoop() {
-		file, err := os.Open(buildFilePath)
+		var file *os.File
+		file, err = os.Open(buildFilePath)
 		if err != nil {
 			return nil, errors.Annotate(err, "opening build file %q", buildFilePath).Err()
 		}
 		defer file.Close()
 
 		ret = &bbpb.Build{}
-		if err = codec.Dec(ret, file); err != nil {
-			err = errors.Annotate(err, "parsing build file %q", buildFilePath).Err()
-		}
+		err = errors.WrapIf(
+			codec.Dec(ret, file), "parsing build file %q", buildFilePath)
 	}
 	return
 }
@@ -193,14 +193,14 @@ func WriteBuildFile(buildFilePath string, build *bbpb.Build) (err error) {
 		return err
 	}
 	if !codec.IsNoop() {
-		file, err := os.Create(buildFilePath)
+		var file *os.File
+		file, err = os.Create(buildFilePath)
 		if err != nil {
 			return errors.Annotate(err, "opening build file %q", buildFilePath).Err()
 		}
 		defer file.Close()
-		if err = codec.Enc(build, file); err != nil {
-			err = errors.Annotate(err, "writing build file %q", buildFilePath).Err()
-		}
+		err = errors.WrapIf(
+			codec.Enc(build, file), "writing build file %q", buildFilePath)
 	}
 	return
 }

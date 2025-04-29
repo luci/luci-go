@@ -183,10 +183,7 @@ func GetRerunsForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBui
 	q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuild)).Order("start_time")
 	singleReruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &singleReruns)
-	if err != nil {
-		err = errors.Annotate(err, "get reruns for rerun build %d", rerunBuild.Id).Err()
-	}
-	return singleReruns, err
+	return singleReruns, errors.WrapIf(err, "get reruns for rerun build %d", rerunBuild.Id)
 }
 
 // GetLastRerunForRerunBuild returns the last SingleRerun for a rerunBuild (based on start_time)

@@ -73,9 +73,7 @@ func ParseProperties(props *structpb.Struct, outputs map[string]any) error {
 			err = json.NewDecoder(&jsonBuf).Decode(x)
 		}
 
-		if err != nil {
-			ret.Assign(idx, errors.Annotate(err, "unmarshalling %q", field).Err())
-		}
+		ret.Assign(idx, errors.WrapIf(err, "unmarshalling %q", field))
 	}
 
 	return ret.Get()
@@ -154,9 +152,9 @@ func WriteProperties(props *structpb.Struct, inputs map[string]any) error {
 			continue
 		}
 
-		if err = jsonpb.Unmarshal(&buf, fieldVal); err != nil {
-			ret.Assign(idx, errors.Annotate(err, "unmarshalling %q", field).Err())
-		}
+		ret.Assign(idx, errors.WrapIf(
+			jsonpb.Unmarshal(&buf, fieldVal), "unmarshalling %q", field,
+		))
 	}
 
 	return ret.Get()

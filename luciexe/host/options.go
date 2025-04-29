@@ -145,10 +145,7 @@ type pathToMake struct {
 
 func (p pathToMake) create(base string) error {
 	*p.dest = filepath.Join(base, p.path)
-	if err := os.Mkdir(*p.dest, 0777); err != nil {
-		return errors.Annotate(err, "making %q dir", p.name).Err()
-	}
-	return nil
+	return errors.WrapIf(os.Mkdir(*p.dest, 0777), "making %q dir", p.name)
 }
 
 func (o *Options) initialize() (err error) {

@@ -34,8 +34,5 @@ func awaitNewline(ctx context.Context) error {
 
 	logging.Infof(ctx, "When finished, press <enter> here to isolate it.")
 	_, err = term.ReadString()
-	if err != nil {
-		return errors.Annotate(err, "reading <enter>").Err()
-	}
-	return nil
+	return errors.WrapIf(err, "reading <enter>")
 }

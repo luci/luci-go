@@ -24,11 +24,7 @@ import (
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterIn[InT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredPropertyIn[InT], err error) {
-	defer func() {
-		if err != nil {
-			err = errors.Annotate(err, "RegisterIn[%T]", *new(InT)).Err()
-		}
-	}()
+	defer func() { err = errors.WrapIf(err, "RegisterIn[%T]", *new(InT)) }()
 	inTyp := reflect.TypeFor[InT]()
 
 	o, err := loadRegOpts(namespace, opts, inTyp, nil)
@@ -49,11 +45,7 @@ func RegisterIn[InT any](r *Registry, namespace string, opts ...RegisterOption) 
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterOut[OutT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredPropertyOut[OutT], err error) {
-	defer func() {
-		if err != nil {
-			err = errors.Annotate(err, "RegisterOut[%T]", *new(OutT)).Err()
-		}
-	}()
+	defer func() { err = errors.WrapIf(err, "RegisterOut[%T]", *new(OutT)) }()
 	outTyp := reflect.TypeFor[OutT]()
 
 	o, err := loadRegOpts(namespace, opts, nil, outTyp)
@@ -75,11 +67,7 @@ func RegisterOut[OutT any](r *Registry, namespace string, opts ...RegisterOption
 //
 // Refer to package documentation for the acceptable types for T.
 func RegisterInOut[InT, OutT any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredProperty[InT, OutT], err error) {
-	defer func() {
-		if err != nil {
-			err = errors.Annotate(err, "RegisterInOut[%T, %T]", *new(InT), *new(OutT)).Err()
-		}
-	}()
+	defer func() { err = errors.WrapIf(err, "RegisterInOut[%T, %T]", *new(InT), *new(OutT)) }()
 	inTyp, outTyp := reflect.TypeFor[InT](), reflect.TypeFor[OutT]()
 
 	o, err := loadRegOpts(namespace, opts, inTyp, outTyp)
@@ -103,11 +91,7 @@ func RegisterInOut[InT, OutT any](r *Registry, namespace string, opts ...Registe
 //
 // Refer to package documentation for the acceptable types for T.
 func Register[T any](r *Registry, namespace string, opts ...RegisterOption) (ret RegisteredProperty[T, T], err error) {
-	defer func() {
-		if err != nil {
-			err = errors.Annotate(err, "Register[%T]", *new(T)).Err()
-		}
-	}()
+	defer func() { err = errors.WrapIf(err, "Register[%T]", *new(T)) }()
 	typ := reflect.TypeFor[T]()
 
 	o, err := loadRegOpts(namespace, opts, typ, typ)

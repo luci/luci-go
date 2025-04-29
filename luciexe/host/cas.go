@@ -78,10 +78,7 @@ func execCasCmd(ctx context.Context, args []string) error {
 	logging.Infof(ctx, "Running command: %s", cmd.String())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err, "Failed to run cas download").Err()
-	}
-	return nil
+	return errors.WrapIf(cmd.Run(), "Failed to run cas download")
 }
 
 func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error {

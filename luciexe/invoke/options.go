@@ -274,9 +274,7 @@ func (o *Options) mkdirs() (ret dirs, err error) {
 	maybeMkdir := func(out *string, dirname, friendlyName string) {
 		if err == nil {
 			*out = filepath.Join(base, dirname)
-			if err = os.Mkdir(*out, 0777); err != nil {
-				err = errors.Annotate(err, "preparing %q", friendlyName).Err()
-			}
+			err = errors.WrapIf(os.Mkdir(*out, 0777), "preparing %q", friendlyName)
 		}
 	}
 
@@ -304,9 +302,7 @@ func (lo *launchOptions) prepStdio(ctx context.Context) error {
 	openStream := func(name string) (ret io.WriteCloser, err error) {
 		ret, err = bs.Client.NewStream(
 			ctx, types.StreamName(name), streamclient.ForProcess())
-		if err != nil {
-			err = errors.Annotate(err, "opening %q", name).Err()
-		}
+		err = errors.WrapIf(err, "opening %q", name)
 		return
 	}
 

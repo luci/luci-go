@@ -89,12 +89,8 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		case <-closeChannels:
 		}
 		err := errors.NewLazyMultiError(2)
-		if serr := launchOpts.stdout.Close(); serr != nil {
-			err.Assign(0, errors.Annotate(serr, "closing stdout").Err())
-		}
-		if serr := launchOpts.stderr.Close(); serr != nil {
-			err.Assign(1, errors.Annotate(serr, "closing stderr").Err())
-		}
+		err.Assign(0, errors.WrapIf(launchOpts.stdout.Close(), "closing stdout"))
+		err.Assign(1, errors.WrapIf(launchOpts.stderr.Close(), "closing stderr"))
 		allClosed <- err.Get()
 	}()
 
@@ -221,9 +217,7 @@ func (s *Subprocess) Wait() (finalBuild *bbpb.Build, err error) {
 		}()
 
 		err := s.cmd.Wait()
-		if err != nil {
-			s.err = append(s.err, errors.Annotate(err, "waiting for luciexe").Err())
-		}
+		s.err.MaybeAdd(errors.WrapIf(err, "waiting for luciexe"))
 
 		// Even if the Wait fails (e.g. process returns non-0 exit code, or other
 		// issue), still try to read the build output.

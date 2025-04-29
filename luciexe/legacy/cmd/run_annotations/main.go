@@ -70,9 +70,7 @@ func main() {
 		stderr, err := cmd.StderrPipe()
 		check(err, "StderrPipe")
 		err = cmd.Start()
-		if err != nil {
-			check(err, "failed to start subprocess")
-		}
+		check(err, "failed to start subprocess")
 
 		ldBootstrap, err := bootstrap.Get()
 		check(err, "bootstrap.Get")
@@ -80,9 +78,7 @@ func main() {
 		var buildMU sync.Mutex
 		sendAnnotations := func(ann *annopb.Step) {
 			latest, err := annotee.ConvertRootStep(ctx, ann)
-			if err != nil {
-				check(err, "failed to convert an annotation root step to a build")
-			}
+			check(err, "failed to convert an annotation root step to a build")
 
 			buildMU.Lock()
 			defer buildMU.Unlock()
@@ -102,9 +98,7 @@ func main() {
 			AnnotationUpdated: func(annBytes []byte) {
 				ann := &annopb.Step{}
 				err := proto.Unmarshal(annBytes, ann)
-				if err != nil {
-					check(err, "failed to parse annotation proto")
-				}
+				check(err, "failed to parse annotation proto")
 				sendAnnotations(ann)
 			},
 		})
@@ -121,9 +115,7 @@ func main() {
 			},
 		}
 		err = processor.RunStreams(streams)
-		if err != nil {
-			check(err, "failed to process annotations")
-		}
+		check(err, "failed to process annotations")
 
 		// Wait for the subprocess to exit.
 		switch err := cmd.Wait().(type) {
