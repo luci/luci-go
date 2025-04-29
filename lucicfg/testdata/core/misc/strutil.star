@@ -23,6 +23,13 @@ def test_json_to_yaml():
   - 3
 zzz: []
 """)
+    test('{"no-auto-int": 1.0}', "no-auto-int: 1.0\n")
+    test('{"b": 1, "a": 2}', "b: 1\na: 2\n")
+    test(r'{"s": "a\nb\nc\n\nd"}', """s: |-
+  a
+  b
+  c
+""" + "  \n" + "  d\n")
 
 def test_to_yaml():
     yaml = strutil.to_yaml({"a": ["b", "c"], "d": "huge\nhuge\nhuge\nhuge"})

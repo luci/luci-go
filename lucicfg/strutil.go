@@ -19,10 +19,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/goccy/go-yaml"
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/data/text/intsetexpr"
-	"github.com/goccy/go-yaml"
 )
 
 // See //internal/strutil.star for where these functions are referenced.
@@ -49,10 +49,10 @@ func init() {
 			return nil, err
 		}
 		var buf any
-		if err := yaml.Unmarshal([]byte(json.GoString()), &buf); err != nil {
+		if err := yaml.UnmarshalWithOptions([]byte(json.GoString()), &buf, yaml.UseOrderedMap()); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal JSON as YAML: %s", err)
 		}
-		out, err := yaml.Marshal(buf)
+		out, err := yaml.MarshalWithOptions(buf, yaml.UseLiteralStyleIfMultiline(true))
 		if err != nil {
 			return nil, err
 		}
