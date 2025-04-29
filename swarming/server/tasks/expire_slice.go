@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -139,9 +140,13 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 		return err
 	}
 
+	// Report metrics in case the transaction actually lands.
+	txndefer.Defer(ctx, func(ctx context.Context) {
+		onTaskExpired(ctx, trs, ttr, string(op.Reason))
+	})
+
 	if newTTR != nil {
 		return nil
 	}
-
 	return m.onTaskComplete(ctx, taskID, op.Request, trs)
 }

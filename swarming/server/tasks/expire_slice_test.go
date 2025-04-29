@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -112,6 +113,7 @@ func TestExpireSliceTxn(t *testing.T) {
 					ServerVersions:   []string{"prev-version"},
 					CurrentTaskSlice: int64(sliceIdx),
 				},
+				RequestPriority: 20,
 			}
 
 			ttrKey, err := model.TaskRequestToToRunKey(ctx, req, sliceIdx)
@@ -200,6 +202,15 @@ func TestExpireSliceTxn(t *testing.T) {
 
 			val := globalStore.Get(ctx, metrics.JobsCompleted, []any{"spec", "", "", "pool", "none", "success", "Expired"})
 			assert.Loosely(t, val, should.Equal(1))
+
+			val = globalStore.Get(ctx, metrics.TasksExpired, []any{"spec", "", "", "pool", "none", 20})
+			assert.Loosely(t, val, should.Equal(1))
+
+			sliceExp := globalStore.Get(ctx, metrics.TaskSliceExpirationDelay, []any{"", "none", 1, "expired"})
+			assert.Loosely(t, sliceExp.(*distribution.Distribution).Sum(), should.Equal(time.Minute.Seconds()))
+
+			taskExp := globalStore.Get(ctx, metrics.TaskExpirationDelay, []any{"", "none"})
+			assert.Loosely(t, taskExp.(*distribution.Distribution).Sum(), should.Equal(time.Minute.Seconds()))
 		})
 
 		t.Run("Expire Last Slice - NoResource", func(t *ftt.Test) {
@@ -229,6 +240,16 @@ func TestExpireSliceTxn(t *testing.T) {
 
 			val := globalStore.Get(ctx, metrics.JobsCompleted, []any{"spec", "", "", "pool", "none", "success", "No resource available"})
 			assert.Loosely(t, val, should.Equal(1))
+
+			// NoResource task is not reported to metrics.TasksExpired.
+			val = globalStore.Get(ctx, metrics.TasksExpired, []any{"spec", "", "", "pool", "none", 20})
+			assert.Loosely(t, val, should.BeNil)
+
+			sliceExp := globalStore.Get(ctx, metrics.TaskSliceExpirationDelay, []any{"", "none", 1, "expired"})
+			assert.That(t, sliceExp, should.BeNil)
+
+			taskExp := globalStore.Get(ctx, metrics.TaskExpirationDelay, []any{"", "none"})
+			assert.That(t, taskExp, should.BeNil)
 		})
 
 		t.Run("Expire Last Slice - BotInternalError", func(t *ftt.Test) {
@@ -335,9 +356,18 @@ func TestExpireSliceTxn(t *testing.T) {
 			assert.Loosely(t, tqt.Pending(tqt.PubSubNotify), should.HaveLength(0)) // No notification for intermediate slice expiry
 			assert.Loosely(t, tqt.Pending(tqt.FinalizeTask), should.HaveLength(0))
 
-			// Check metrics (should not report completion)
+			// Check metrics (should not report completion and task expiration)
 			val := globalStore.Get(ctx, metrics.JobsCompleted, []any{"spec", "", "", "pool", "rbe-instance", "infra_failure", "Expired"})
 			assert.Loosely(t, val, should.BeNil)
+
+			val = globalStore.Get(ctx, metrics.TasksExpired, []any{"spec", "", "", "pool", "none", 20})
+			assert.Loosely(t, val, should.BeNil)
+
+			sliceExp := globalStore.Get(ctx, metrics.TaskSliceExpirationDelay, []any{"", "none", 0, "expired"})
+			assert.Loosely(t, sliceExp.(*distribution.Distribution).Sum(), should.Equal(11*time.Minute.Seconds()))
+
+			taskExp := globalStore.Get(ctx, metrics.TaskExpirationDelay, []any{"", "none"})
+			assert.That(t, taskExp, should.BeNil)
 		})
 	})
 }

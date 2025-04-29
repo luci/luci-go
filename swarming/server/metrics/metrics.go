@@ -173,4 +173,36 @@ var (
 		field.String("auth_method"), // e.g. "luci_token", "service_account", ...
 		field.String("condition"),   // depends on auth_method, e.g. service account email
 	)
+
+	TasksExpired = metric.NewCounter(
+		"swarming/tasks/expired",
+		"Number of expired tasks.",
+		nil,
+		field.String("spec_name"),     // name of a job specification.
+		field.String("project_id"),    // e.g. "chromium".
+		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
+		field.String("pool"),          // e.g. "Chrome".
+		field.String("rbe"),           // RBE instance of the task or literal "none".
+		field.Int("priority"),         // priority of a task.
+	)
+
+	TaskExpirationDelay = metric.NewCumulativeDistribution(
+		"swarming/tasks/expiration_delay",
+		"Delay of task expiration, in seconds.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.GeometricBucketer(math.Pow(100, 0.02), 100),
+		field.String("project_id"), // e.g. "chromium".
+		field.String("rbe"),        // RBE instance of the task or literal "none".
+	)
+
+	TaskSliceExpirationDelay = metric.NewCumulativeDistribution(
+		"swarming/tasks/slice_expiration_delay",
+		"Delay of task slice expiration, in seconds.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.FixedWidthBucketer(30, 100),
+		field.String("project_id"), // e.g. "chromium".
+		field.String("rbe"),        // RBE instance of the task or literal "none".
+		field.Int("slice_index"),
+		field.String("reason"),
+	)
 )

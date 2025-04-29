@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 )
@@ -69,6 +70,8 @@ func onTaskToRunConsumed(ctx context.Context, ttr *model.TaskToRun, trs *model.T
 	)
 }
 
+// reportOnTaskCompleted reports to JobsCompleted and JobsDuration on the
+// completed task.
 func reportOnTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
 	fields := trs.MetricFields(false)
 	status := model.TaskStateString(trs.State)
@@ -102,6 +105,43 @@ func reportOnTaskCompleted(ctx context.Context, trs *model.TaskResultSummary) {
 			fields.Pool,
 			fields.RBE,
 			result,
+		)
+	}
+}
+
+// onTaskExpired reports to task expiration metrics.
+func onTaskExpired(ctx context.Context, trs *model.TaskResultSummary, ttr *model.TaskToRun, reason string) {
+	fields := trs.MetricFields(false)
+
+	// Slice expiration.
+	if ttr.ExpirationDelay.IsSet() {
+		metrics.TaskSliceExpirationDelay.Add(
+			ctx, ttr.ExpirationDelay.Get(),
+			fields.ProjectID,
+			fields.RBE,
+			ttr.TaskSliceIndex(),
+			reason,
+		)
+	}
+
+	// Task expiration.
+	if trs.State == apipb.TaskState_EXPIRED {
+		metrics.TasksExpired.Add(
+			ctx, 1,
+			fields.SpecName,
+			fields.ProjectID,
+			fields.SubprojectID,
+			fields.Pool,
+			fields.RBE,
+			trs.RequestPriority,
+		)
+	}
+
+	if trs.ExpirationDelay.IsSet() {
+		metrics.TaskExpirationDelay.Add(
+			ctx, trs.ExpirationDelay.Get(),
+			fields.ProjectID,
+			fields.RBE,
 		)
 	}
 }
