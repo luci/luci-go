@@ -344,8 +344,16 @@ func pluginEncode(v any) ([]byte, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "pluginEncode").Err()
 	}
-	if len(body) > math.MaxUint32 {
+	// Check body length fits within 32-bit limit of the encoding.
+	// Note we cast both LHS and RHS to an int64 to avoid coercing
+	// RHS to an int (which may be only 32 bits on some platforms).
+	if int64(len(body)) > int64(math.MaxUint32) {
 		return nil, errors.Reason("pluginEncode: body too big").Err()
+	}
+	// If we are running on a platform where ints are 32 bits
+	// or less, check len(body)+4 will not overflow int.
+	if len(body) > math.MaxInt-4 {
+		return nil, errors.Reason("pluginEncode: body exceeding %v unsupported on this platform", math.MaxInt-4).Err()
 	}
 	msg := make([]byte, len(body)+4)
 	if _, err = binary.Encode(msg[:4], pluginHeaderOrder, uint32(len(body))); err != nil {
@@ -368,7 +376,7 @@ func pluginDecode(d []byte) (*pluginResponse, error) {
 	if n != 4 {
 		panic(fmt.Sprintf("read unexpected number of header bytes %d", n))
 	}
-	if int(bodyLen) != len(d)-4 {
+	if int64(bodyLen) != int64(len(d)-4) {
 		return nil, errors.Reason("pluginDecide: message declared %d length, but actual length is %d (with 4 bytes header)", bodyLen, len(d)).Err()
 	}
 	var resp pluginResponse
