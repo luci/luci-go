@@ -164,7 +164,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 			)
 
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestResult_PASSED),
 			)...)
 
 			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024, map[string]bool{})
@@ -211,7 +211,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 			)
 
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestResult_PASSED),
 			)...)
 
 			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "test project", 10_000_000, map[string]bool{})
@@ -571,7 +571,7 @@ func TestExportArtifacts(t *testing.T) {
 		)
 
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv-1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv-1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestResult_PASSED),
 		)...)
 
 		t.Run("Invocation not finalized", func(t *ftt.Test) {

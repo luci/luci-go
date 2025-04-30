@@ -101,15 +101,15 @@ func TestExportToBigQuery(t *testing.T) {
 			insert.Inclusion("a", "b"))
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
-			insert.TestResults(t, "a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "A", pbutil.Variant("k", "v"), pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			// Test results and exonerations have different variants.
-			insert.TestResults(t, "b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", "B", pbutil.Variant("k", "v"), pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			// Passing test result without exoneration.
-			insert.TestResults(t, "a", "C", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "C", nil, pb.TestResult_PASSED),
 			// Test results' parent is different from exported.
-			insert.TestResults(t, "b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", "D", pbutil.Variant("k", "v"), pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestResultMessages(t, []*pb.TestResult{
 				{

@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -78,22 +79,27 @@ func TestGetTestResult(t *testing.T) {
 		}
 
 		invID := invocations.ID("inv_0")
-		// Insert a TestResult.
-		testutil.MustApply(ctx, t,
-			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
-			spanutil.InsertMap("TestResults", map[string]any{
-				"InvocationId":    invID,
-				"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
-				"ResultId":        "result_id_within_inv_0",
-				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"IsUnexpected":    true,
-				"Status":          pb.TestStatus_FAIL,
-				"RunDurationUsec": 1234567,
-			}))
 
-		// Fetch back the TestResult.
+		testResultCells := map[string]any{
+			"InvocationId":    invID,
+			"TestId":          "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+			"ResultId":        "result_id_within_inv_0",
+			"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
+			"VariantHash":     "deadbeef",
+			"CommitTimestamp": spanner.CommitTimestamp,
+			"IsUnexpected":    true,
+			"Status":          pb.TestStatus_PASS,
+			"StatusV2":        pb.TestResult_PASSED,
+			"RunDurationUsec": 1234567,
+			"Tags":            pbutil.StringPairs("k1", "v1"),
+			"Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"stringkey": structpb.NewStringValue("stringvalue"),
+					"numberkey": structpb.NewNumberValue(123),
+				},
+			})),
+		}
+
 		expected := &pb.TestResult{
 			Name:   "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0",
 			TestId: "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
@@ -110,11 +116,27 @@ func TestGetTestResult(t *testing.T) {
 			Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
 			VariantHash: "deadbeef",
 			Expected:    false,
-			Status:      pb.TestStatus_FAIL,
+			Status:      pb.TestStatus_PASS,
+			StatusV2:    pb.TestResult_PASSED,
 			Duration:    &durpb.Duration{Seconds: 1, Nanos: 234567000},
+			Tags:        pbutil.StringPairs("k1", "v1"),
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"stringkey": structpb.NewStringValue("stringvalue"),
+					"numberkey": structpb.NewNumberValue(123),
+				},
+			},
 		}
-		test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
 
+		t.Run(`base case`, func(t *ftt.Test) {
+			// Insert a TestResult.
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				spanutil.InsertMap("TestResults", testResultCells))
+
+			// Fetch back the test result and veriyf it matches the expected.
+			test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
+		})
 		t.Run(`permission denied`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv_s", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}))
@@ -124,41 +146,104 @@ func TestGetTestResult(t *testing.T) {
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.get in realm of invocation inv_s"))
 		})
-
-		t.Run(`works with expected result`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t, spanutil.InsertMap("TestResults", map[string]any{
-				"InvocationId":    invID,
-				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				"ResultId":        "result_id_within_inv_1",
-				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"Status":          pb.TestStatus_PASS,
-				"RunDurationUsec": 1534567,
+		t.Run(`works with failed result`, func(t *ftt.Test) {
+			testResultCells["Status"] = pb.TestStatus_FAIL
+			testResultCells["StatusV2"] = pb.TestResult_FAILED
+			testResultCells["IsUnexpected"] = true
+			testResultCells["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(&pb.FailureReason{
+				Kind: pb.FailureReason_CRASH,
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+					{Message: "got 2, want 1"},
+				},
 			}))
 
-			expected := &pb.TestResult{
-				Name:   "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
-				TestId: "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				TestIdStructured: &pb.TestIdentifier{
-					ModuleName:        "legacy",
-					ModuleScheme:      "legacy",
-					ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
-					ModuleVariantHash: "68d82cb978092fc7",
-					CoarseName:        "",
-					FineName:          "",
-					CaseName:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+			expected.StatusV2 = pb.TestResult_FAILED
+			expected.Status = pb.TestStatus_FAIL
+			expected.Expected = false
+			expected.FailureReason = &pb.FailureReason{
+				Kind:                pb.FailureReason_CRASH,
+				PrimaryErrorMessage: "got 1, want 0",
+				Errors: []*pb.FailureReason_Error{
+					{Message: "got 1, want 0"},
+					{Message: "got 2, want 1"},
 				},
-				ResultId:    "result_id_within_inv_1",
-				Variant:     pbutil.Variant("k1", "v1", "k2", "v2"),
-				VariantHash: "deadbeef",
-				Expected:    true,
-				Status:      pb.TestStatus_PASS,
-				Duration:    &durpb.Duration{Seconds: 1, Nanos: 534567000},
 			}
 
-			// Fetch back the TestResult.
-			test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1", expected)
+			// Insert a TestResult.
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				spanutil.InsertMap("TestResults", testResultCells))
+
+			// Fetch back the test result and veriyf it matches the expected.
+			test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
+		})
+		t.Run(`works with skipped result`, func(t *ftt.Test) {
+			testResultCells["Status"] = pb.TestStatus_SKIP
+			testResultCells["StatusV2"] = pb.TestResult_SKIPPED
+			testResultCells["SkippedReason"] = spanutil.Compressed(pbutil.MustMarshal(&pb.SkippedReason{
+				Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+				ReasonMessage: "Test disabled by @Ignored annotation.",
+			}))
+
+			expected.Status = pb.TestStatus_SKIP
+			expected.StatusV2 = pb.TestResult_SKIPPED
+			expected.FailureReason = nil
+			expected.FrameworkExtensions = nil
+			expected.SkippedReason = &pb.SkippedReason{
+				Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+				ReasonMessage: "Test disabled by @Ignored annotation.",
+			}
+
+			// Insert a TestResult.
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				spanutil.InsertMap("TestResults", testResultCells))
+
+			// Fetch back the test result and veriyf it matches the expected.
+			test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
+		})
+		t.Run(`works with framework extensions`, func(t *ftt.Test) {
+			testResultCells["FrameworkExtensions"] = spanutil.Compressed(pbutil.MustMarshal(&pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_CRASH,
+					IsExpected: false,
+				},
+			}))
+
+			expected.FrameworkExtensions = &pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_CRASH,
+					IsExpected: false,
+				},
+			}
+
+			// Insert a TestResult.
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+				spanutil.InsertMap("TestResults", testResultCells))
+
+			// Fetch back the test result and veriyf it matches the expected.
+			test(ctx, "invocations/inv_0/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result_id_within_inv_0", expected)
+		})
+		t.Run(`works with legacy result`, func(t *ftt.Test) {
+			testResultCells["TestId"] = "ninja://chrome/test:foo_tests/BarTest.DoBaz"
+			delete(testResultCells, "StatusV2")
+			delete(testResultCells, "Properties")
+
+			expected.TestId = "ninja://chrome/test:foo_tests/BarTest.DoBaz"
+			expected.TestIdStructured = &pb.TestIdentifier{
+				ModuleName:        "legacy",
+				ModuleScheme:      "legacy",
+				ModuleVariant:     pbutil.Variant("k1", "v1", "k2", "v2"),
+				ModuleVariantHash: "68d82cb978092fc7",
+				CoarseName:        "",
+				FineName:          "",
+				CaseName:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+			}
+			// This will be fixed after a future backfill and schema change that makes StatusV2 NOT NULL.
+			expected.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+			expected.Properties = nil
 		})
 	})
 }

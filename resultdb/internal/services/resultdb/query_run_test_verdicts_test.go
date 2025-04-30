@@ -16,10 +16,12 @@ package resultdb
 
 import (
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -48,16 +50,26 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "testproject:testrealm"}),
-			insert.TestResults(t, "a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "A", nil, pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestResultsLegacy(t, "a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
-			insert.TestResults(t, "a", "C", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
+			insert.TestResults(t, "a", "C", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "b", "A", nil, pb.TestResult_FAILED),
 		)...)
 
 		srv := newTestResultDBService()
 		properties := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"key": structpb.NewStringValue("value"),
+			},
+		}
+		tags := []*pb.StringPair{
+			{Key: "k1", Value: "v1"},
+			{Key: "k2", Value: "v2"},
+		}
+		fx := &pb.FrameworkExtensions{
+			WebTest: &pb.WebTest{
+				Status:     pb.WebTest_PASS,
+				IsExpected: true,
 			},
 		}
 		expectedTestVerdicts := []*pb.RunTestVerdict{
@@ -70,25 +82,33 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 						Result: &pb.TestResult{
 							Name:        "invocations/a/tests/A/results/0",
 							ResultId:    "0",
+							StartTime:   timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
 							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							Status:      pb.TestStatus_FAIL,
+							StatusV2:    pb.TestResult_FAILED,
 							SummaryHtml: "SummaryHtml",
+							Tags:        tags,
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "failure reason",
 								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 							},
-							Properties: properties,
+							Properties:          properties,
+							FrameworkExtensions: fx,
 						},
 					}, {
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/A/results/1",
-							ResultId:    "1",
-							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Expected:    true,
-							Status:      pb.TestStatus_PASS,
-							SummaryHtml: "SummaryHtml",
-							Properties:  properties,
+							Name:                "invocations/a/tests/A/results/1",
+							ResultId:            "1",
+							StartTime:           timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:            &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Expected:            true,
+							Status:              pb.TestStatus_PASS,
+							StatusV2:            pb.TestResult_PASSED,
+							SummaryHtml:         "SummaryHtml",
+							Tags:                tags,
+							Properties:          properties,
+							FrameworkExtensions: fx,
 						},
 					},
 				},
@@ -133,13 +153,17 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/C/results/0",
-							ResultId:    "0",
-							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							Expected:    true,
-							Status:      pb.TestStatus_PASS,
-							SummaryHtml: "SummaryHtml",
-							Properties:  properties,
+							Name:                "invocations/a/tests/C/results/0",
+							ResultId:            "0",
+							StartTime:           timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:            &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Expected:            true,
+							Status:              pb.TestStatus_PASS,
+							StatusV2:            pb.TestResult_PASSED,
+							SummaryHtml:         "SummaryHtml",
+							Tags:                tags,
+							Properties:          properties,
+							FrameworkExtensions: fx,
 						},
 					},
 				},

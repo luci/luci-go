@@ -71,27 +71,34 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		ResultId: resultID,
 		Expected: true,
 	}
-
-	var maybeUnexpected spanner.NullBool
-	var micros spanner.NullInt64
-	var summaryHTML spanutil.Compressed
-	var tmd spanutil.Compressed
-	var fr spanutil.Compressed
-	var properties spanutil.Compressed
-	var skipReason spanner.NullInt64
+	var (
+		maybeUnexpected     spanner.NullBool
+		statusV2            spanner.NullInt64
+		micros              spanner.NullInt64
+		summaryHTML         spanutil.Compressed
+		tmd                 spanutil.Compressed
+		fr                  spanutil.Compressed
+		properties          spanutil.Compressed
+		skipReason          spanner.NullInt64
+		skippedReason       spanutil.Compressed
+		frameworkExtensions spanutil.Compressed
+	)
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]any{
-		"Variant":         &tr.Variant,
-		"VariantHash":     &tr.VariantHash,
-		"IsUnexpected":    &maybeUnexpected,
-		"Status":          &tr.Status,
-		"SummaryHTML":     &summaryHTML,
-		"StartTime":       &tr.StartTime,
-		"RunDurationUsec": &micros,
-		"Tags":            &tr.Tags,
-		"TestMetadata":    &tmd,
-		"FailureReason":   &fr,
-		"Properties":      &properties,
-		"SkipReason":      &skipReason,
+		"Variant":             &tr.Variant,
+		"VariantHash":         &tr.VariantHash,
+		"IsUnexpected":        &maybeUnexpected,
+		"Status":              &tr.Status,
+		"StatusV2":            &statusV2,
+		"SummaryHTML":         &summaryHTML,
+		"StartTime":           &tr.StartTime,
+		"RunDurationUsec":     &micros,
+		"Tags":                &tr.Tags,
+		"TestMetadata":        &tmd,
+		"FailureReason":       &fr,
+		"Properties":          &properties,
+		"SkipReason":          &skipReason,
+		"SkippedReason":       &skippedReason,
+		"FrameworkExtensions": &frameworkExtensions,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -108,6 +115,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 
 	tr.SummaryHtml = string(summaryHTML)
 	PopulateExpectedField(tr, maybeUnexpected)
+	PopulateStatusV2Field(tr, statusV2)
 	PopulateDurationField(tr, micros)
 	PopulateSkipReasonField(tr, skipReason)
 	if err := PopulateTestMetadata(tr, tmd); err != nil {
@@ -118,6 +126,12 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	}
 	if err := PopulateProperties(tr, properties); err != nil {
 		return nil, errors.Annotate(err, "unmarshal properties").Err()
+	}
+	if err := PopulateSkippedReason(tr, skippedReason); err != nil {
+		return nil, errors.Annotate(err, "unmarshal skipped reason").Err()
+	}
+	if err := PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
+		return nil, errors.Annotate(err, "unmarshal framework extensions").Err()
 	}
 	return tr, nil
 }
@@ -141,6 +155,14 @@ func PopulateSkipReasonField(tr *pb.TestResult, skipReason spanner.NullInt64) {
 // PopulateExpectedField populates tr.Expected from NullBool.
 func PopulateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
+}
+
+// PopulateStatusV2Field populates tr.StatusV2 from NullInt64.
+func PopulateStatusV2Field(tr *pb.TestResult, statusV2 spanner.NullInt64) {
+	tr.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+	if statusV2.Valid {
+		tr.StatusV2 = pb.TestResult_Status(statusV2.Int64)
+	}
 }
 
 func PopulateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {
@@ -213,4 +235,42 @@ func PopulateProperties(tr *pb.TestResult, properties spanutil.Compressed) error
 
 	tr.Properties = &structpb.Struct{}
 	return proto.Unmarshal(properties, tr.Properties)
+}
+
+// PopulateSkippedReason populates the skipped reason field
+// from its stored representation.
+// This should be called on all read paths from Spanner.
+func PopulateSkippedReason(tr *pb.TestResult, sr spanutil.Compressed) error {
+	if len(sr) == 0 {
+		tr.SkippedReason = nil
+		return nil
+	}
+
+	result := &pb.SkippedReason{}
+	err := proto.Unmarshal(sr, result)
+	if err != nil {
+		return err
+	}
+
+	tr.SkippedReason = result
+	return nil
+}
+
+// PopulateFrameworkExtensions populates the framework extension field
+// from its stored representation.
+// This should be called on all read paths from Spanner.
+func PopulateFrameworkExtensions(tr *pb.TestResult, sr spanutil.Compressed) error {
+	if len(sr) == 0 {
+		tr.FrameworkExtensions = nil
+		return nil
+	}
+
+	result := &pb.FrameworkExtensions{}
+	err := proto.Unmarshal(sr, result)
+	if err != nil {
+		return err
+	}
+
+	tr.FrameworkExtensions = result
+	return nil
 }

@@ -20,14 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -40,7 +37,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -153,121 +149,39 @@ func TestQueryTestVariants(t *testing.T) {
 		testutil.MustApply(ctx, t, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, t, insert.Invocation("inv3", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv0", "T5", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv0", "T1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv0", "T2", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv0", "T5", nil, pb.TestResult_FAILED),
 			insert.TestResults(t,
 				"inv0", "T6", nil,
-				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
-				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
-				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
-				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
+				pb.TestResult_PASSED, pb.TestResult_PASSED, pb.TestResult_PASSED,
+				pb.TestResult_PASSED, pb.TestResult_PASSED, pb.TestResult_PASSED,
+				pb.TestResult_PASSED, pb.TestResult_PASSED, pb.TestResult_PASSED,
+				pb.TestResult_PASSED, pb.TestResult_PASSED, pb.TestResult_PASSED,
 			),
-			insert.TestResults(t, "inv0", "T7", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv0", "T8", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv0", "T9", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "T1", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "T2", nil, pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv0", "T7", nil, pb.TestResult_SKIPPED),
+			insert.TestResults(t, "inv0", "T8", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv0", "T9", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "T1", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "T2", nil, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv1", "T3", nil, pb.TestResult_PASSED, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED),
+			insert.TestResults(t, "inv1", "T5", pbutil.Variant("a", "b"), pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestResults(t,
 				"inv1", "Ty", nil,
-				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
+				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
+				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
+				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
+				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
 			),
-			insert.TestResults(t, "inv1", "Tx", nil, pb.TestStatus_SKIP),
-			insert.TestResults(t, "inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
+			insert.TestResults(t, "inv1", "Tx", nil, pb.TestResult_EXECUTION_ERRORED, pb.TestResult_SKIPPED), // Has both expected and unexpected skips, so should produce a flaky result.
+			insert.TestResults(t, "inv1", "Tz", nil, pb.TestResult_EXECUTION_ERRORED, pb.TestResult_EXECUTION_ERRORED),
 
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insert.TestExonerations("inv2", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS),
-			insert.TestResults(t, "inv3", "Tw", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv3", "Tw", nil, pb.TestResult_PASSED),
 		)...)
-
-		// Insert an additional TestResult for comparing TestVariant.Results.Result.
-		startTime := timestamppb.New(testclock.TestRecentTimeUTC.Add(-2 * time.Minute))
-		duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
-		strPairs := pbutil.StringPairs(
-			"buildername", "blder",
-			"test_suite", "foo_unittests",
-			"test_id_prefix", "ninja://tests:tests/")
-
-		tmd := &pb.TestMetadata{
-			Name: "T4",
-			Location: &pb.TestLocation{
-				FileName: "//t4.go",
-				Line:     54,
-			},
-			BugComponent: &pb.BugComponent{
-				System: &pb.BugComponent_Monorail{
-					Monorail: &pb.MonorailComponent{
-						Project: "chromium",
-						Value:   "Component>Value",
-					},
-				},
-			},
-		}
-		tmdBytes, _ := proto.Marshal(tmd)
-
-		failureReason := &pb.FailureReason{
-			Kind:                pb.FailureReason_ORDINARY,
-			PrimaryErrorMessage: "primary error msg",
-			Errors: []*pb.FailureReason_Error{
-				{Message: "primary error msg"},
-				{Message: "primary error msg2"},
-			},
-			TruncatedErrorsCount: 0,
-		}
-		failureReasonBytes, _ := proto.Marshal(failureReason)
-		properties := &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"key": structpb.NewStringValue("value"),
-			},
-		}
-		propertiesBytes, err := proto.Marshal(properties)
-		assert.Loosely(t, err, should.BeNil)
-
-		testutil.MustApply(ctx, t,
-			spanutil.InsertMap("TestResults", map[string]any{
-				"InvocationId":    invocations.ID("inv1"),
-				"TestId":          "T4",
-				"ResultId":        "0",
-				"Variant":         pbutil.Variant("a", "b"),
-				"VariantHash":     pbutil.VariantHash(pbutil.Variant("a", "b")),
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"IsUnexpected":    true,
-				"Status":          pb.TestStatus_FAIL,
-				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
-				"StartTime":       startTime,
-				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
-				"FailureReason":   spanutil.Compressed(failureReasonBytes),
-				"Tags":            pbutil.StringPairsToStrings(strPairs...),
-				"TestMetadata":    spanutil.Compressed(tmdBytes),
-				"Properties":      spanutil.Compressed(propertiesBytes),
-			}),
-		)
-
-		// Tx has an expected skip so it should be FLAKY instead of UNEXPECTEDLY_SKIPPED.
-		testutil.MustApply(ctx, t,
-			spanutil.InsertMap("TestResults", map[string]any{
-				"InvocationId":    invocations.ID("inv1"),
-				"TestId":          "Tx",
-				"ResultId":        "1",
-				"Variant":         nil,
-				"VariantHash":     pbutil.VariantHash(nil),
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"IsUnexpected":    false,
-				"Status":          pb.TestStatus_SKIP,
-				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
-				"StartTime":       startTime,
-				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
-				"Tags":            pbutil.StringPairsToStrings(strPairs...),
-				"TestMetadata":    spanutil.Compressed(tmdBytes),
-				"SkipReason":      pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
-			}),
-		)
 
 		t.Run(`Unexpected works`, func(t *ftt.Test) {
 			page := mustFetch(q)
@@ -285,34 +199,25 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			}))
 
+			expectedT4Result := insert.MakeTestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED)
+
+			// Test metadata, test ID and variant is reported at the test variant level not the result level.
+			tmd := expectedT4Result[0].TestMetadata
+			variant := expectedT4Result[0].Variant
+			expectedT4Result[0].TestMetadata = nil
+			expectedT4Result[0].Variant = nil
+			expectedT4Result[0].TestId = ""
+			expectedT4Result[0].VariantHash = ""
+
+			// Not currently returned by the RPC.
+			expectedT4Result[0].TestIdStructured = nil
+
 			assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
 				{
-					Result: &pb.TestResult{
-						Name:        "invocations/inv1/tests/T4/results/0",
-						ResultId:    "0",
-						Expected:    false,
-						Status:      pb.TestStatus_FAIL,
-						StartTime:   startTime,
-						Duration:    duration,
-						SummaryHtml: "SummaryHtml",
-						FailureReason: &pb.FailureReason{
-							Kind:                pb.FailureReason_ORDINARY,
-							PrimaryErrorMessage: "primary error msg",
-							Errors: []*pb.FailureReason_Error{
-								{Message: "primary error msg"},
-								{Message: "primary error msg2"},
-							},
-							TruncatedErrorsCount: 0,
-						},
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"key": structpb.NewStringValue("value"),
-							},
-						},
-						Tags: strPairs,
-					},
+					Result: expectedT4Result[0],
 				},
 			}))
+			assert.Loosely(t, tvs[0].Variant, should.Match(variant))
 			assert.Loosely(t, tvs[0].TestMetadata, should.Match(tmd))
 			assert.Loosely(t, tvs[0].SourcesId, should.Equal(graph.HashSources(sources).String()))
 
@@ -411,7 +316,7 @@ func TestQueryTestVariants(t *testing.T) {
 					// Ensure the last test result (ordered by TestId, then by VariantHash)
 					// is expected, so we can verify that the tail is trimmed properly.
 					testutil.MustApply(ctx, t,
-						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestResult_PASSED)...,
 					)
 					q.PageToken = pagination.Token("EXPECTED", "", "")
 
@@ -469,19 +374,25 @@ func TestQueryTestVariants(t *testing.T) {
 								assert.Loosely(t, result.Result.FailureReason, should.NotBeNil)
 								assert.Loosely(t, result.Result.Properties, should.NotBeNil)
 							}
+							if tv.TestId == "T7" {
+								assert.Loosely(t, result.Result.SkippedReason, should.NotBeNil)
+							}
 							assert.Loosely(t, result, should.Match(&pb.TestResultBundle{
 								Result: &pb.TestResult{
-									Name:          result.Result.Name,
-									ResultId:      result.Result.ResultId,
-									Expected:      result.Result.Expected,
-									Status:        result.Result.Status,
-									SummaryHtml:   result.Result.SummaryHtml,
-									StartTime:     result.Result.StartTime,
-									Duration:      result.Result.Duration,
-									Tags:          result.Result.Tags,
-									FailureReason: result.Result.FailureReason,
-									Properties:    result.Result.Properties,
-									SkipReason:    result.Result.SkipReason,
+									Name:                result.Result.Name,
+									ResultId:            result.Result.ResultId,
+									Expected:            result.Result.Expected,
+									Status:              result.Result.Status,
+									StatusV2:            result.Result.StatusV2,
+									SummaryHtml:         result.Result.SummaryHtml,
+									StartTime:           result.Result.StartTime,
+									Duration:            result.Result.Duration,
+									Tags:                result.Result.Tags,
+									FailureReason:       result.Result.FailureReason,
+									Properties:          result.Result.Properties,
+									SkipReason:          result.Result.SkipReason,
+									SkippedReason:       result.Result.SkippedReason,
+									FrameworkExtensions: result.Result.FrameworkExtensions,
 								},
 							}))
 						}
@@ -522,7 +433,7 @@ func TestQueryTestVariants(t *testing.T) {
 					// Ensure the last test result (ordered by TestId, then by VariantHash)
 					// is expected, so we can verify that the tail is trimmed properly.
 					testutil.MustApply(ctx, t,
-						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestResult_PASSED)...,
 					)
 					q.PageToken = pagination.Token("EXPECTED", "", "")
 					page := mustFetch(q)
@@ -745,16 +656,22 @@ func TestQueryTestVariants(t *testing.T) {
 							ResultId:  "0",
 							Expected:  false,
 							Status:    pb.TestStatus_FAIL,
-							StartTime: startTime,
-							Duration:  duration,
+							StatusV2:  pb.TestResult_FAILED,
+							StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:  &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
-								PrimaryErrorMessage: "primary error msg",
+								PrimaryErrorMessage: "failure reason",
 								Errors: []*pb.FailureReason_Error{
-									{Message: "primary error msg"},
-									{Message: "primary error msg2"},
+									{Message: "failure reason"},
 								},
 								TruncatedErrorsCount: 0,
+							},
+							FrameworkExtensions: &pb.FrameworkExtensions{
+								WebTest: &pb.WebTest{
+									Status:     pb.WebTest_PASS,
+									IsExpected: true,
+								},
 							},
 							IsMasked: true,
 						},
@@ -812,7 +729,7 @@ func TestQueryTestVariants(t *testing.T) {
 				// as the user has access to unrestricted test results in inv1's realm.
 				// Thus, the test variant should also be unmasked.
 				assert.Loosely(t, tvs[0].IsMasked, should.BeFalse)
-				assert.Loosely(t, tvs[0].TestMetadata, should.Match(tmd))
+				assert.Loosely(t, tvs[0].TestMetadata, should.Match(&pb.TestMetadata{Name: "testname"}))
 				assert.Loosely(t, tvs[0].Variant, should.NotBeNil)
 				assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
 					{
@@ -821,15 +738,15 @@ func TestQueryTestVariants(t *testing.T) {
 							ResultId:    "0",
 							Expected:    false,
 							Status:      pb.TestStatus_FAIL,
-							StartTime:   startTime,
-							Duration:    duration,
+							StatusV2:    pb.TestResult_FAILED,
+							StartTime:   timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
-								PrimaryErrorMessage: "primary error msg",
+								PrimaryErrorMessage: "failure reason",
 								Errors: []*pb.FailureReason_Error{
-									{Message: "primary error msg"},
-									{Message: "primary error msg2"},
+									{Message: "failure reason"},
 								},
 								TruncatedErrorsCount: 0,
 							},
@@ -838,7 +755,16 @@ func TestQueryTestVariants(t *testing.T) {
 									"key": structpb.NewStringValue("value"),
 								},
 							},
-							Tags: strPairs,
+							Tags: []*pb.StringPair{
+								{Key: "k1", Value: "v1"},
+								{Key: "k2", Value: "v2"},
+							},
+							FrameworkExtensions: &pb.FrameworkExtensions{
+								WebTest: &pb.WebTest{
+									Status:     pb.WebTest_PASS,
+									IsExpected: true,
+								},
+							},
 						},
 					},
 				}))
@@ -860,20 +786,31 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, tvs[8].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:     "invocations/inv0/tests/T2/results/0",
-							ResultId: "0",
-							Expected: true,
-							Status:   pb.TestStatus_PASS,
-							Duration: duration,
+							Name:      "invocations/inv0/tests/T2/results/0",
+							ResultId:  "0",
+							Expected:  true,
+							Status:    pb.TestStatus_PASS,
+							StatusV2:  pb.TestResult_PASSED,
+							StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:  &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							FrameworkExtensions: &pb.FrameworkExtensions{
+								WebTest: &pb.WebTest{
+									Status:     pb.WebTest_PASS,
+									IsExpected: true,
+								},
+							},
 							IsMasked: true,
 						},
 					},
 					{
 						Result: &pb.TestResult{
-							Name:     "invocations/inv1/tests/T2/results/0",
-							ResultId: "0",
-							Expected: false,
-							Status:   pb.TestStatus_FAIL,
+							Name:      "invocations/inv1/tests/T2/results/0",
+							ResultId:  "0",
+							Expected:  false,
+							Status:    pb.TestStatus_FAIL,
+							StatusV2:  pb.TestResult_FAILED,
+							StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:  &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							FailureReason: &pb.FailureReason{
 								Kind: pb.FailureReason_ORDINARY,
 								Errors: []*pb.FailureReason_Error{
@@ -881,11 +818,20 @@ func TestQueryTestVariants(t *testing.T) {
 								},
 								PrimaryErrorMessage: "failure reason",
 							},
-							Duration:    duration,
 							SummaryHtml: "SummaryHtml",
+							Tags: []*pb.StringPair{
+								{Key: "k1", Value: "v1"},
+								{Key: "k2", Value: "v2"},
+							},
 							Properties: &structpb.Struct{Fields: map[string]*structpb.Value{
 								"key": structpb.NewStringValue("value"),
 							}},
+							FrameworkExtensions: &pb.FrameworkExtensions{
+								WebTest: &pb.WebTest{
+									Status:     pb.WebTest_PASS,
+									IsExpected: true,
+								},
+							},
 						},
 					},
 				}))

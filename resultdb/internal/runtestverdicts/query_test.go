@@ -46,49 +46,35 @@ func TestQuery(t *testing.T) {
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", map[string]any{}, "b"),
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{}),
-			insert.TestResults(t, "a", "A", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResultMessages(t, []*pb.TestResult{
-				{
-					Name:        "invocations/a/tests/B/results/maximalfields",
-					Variant:     variant,
-					Expected:    false,
-					Status:      pb.TestStatus_FAIL,
-					SummaryHtml: "SummaryHtml",
-					FailureReason: &pb.FailureReason{
-						Kind: pb.FailureReason_ORDINARY,
-						Errors: []*pb.FailureReason_Error{
-							{Message: "failure reason A"},
-						},
-					},
-					TestMetadata: &pb.TestMetadata{
-						Name: "maximalfields test",
-					},
-					Tags:      []*pb.StringPair{{Key: "k1", Value: "v1"}, {Key: "k2", Value: "v2"}},
-					StartTime: timestamppb.New(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
-					Duration:  durationpb.New(1*time.Hour + 1*time.Microsecond),
-					Properties: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"f1": structpb.NewStringValue("v1"),
-						},
-					},
-				},
-			}),
+			insert.TestResults(t, "a", "A", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+			insert.TestResults(t, "a", "B", variant, pb.TestResult_SKIPPED),
 			insert.TestResultMessages(t, []*pb.TestResult{
 				{
 					Name:     "invocations/a/tests/B/results/minimalfields",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
+					StatusV2: pb.TestResult_PASSED,
 				},
 			}),
 			insert.TestResultsLegacy(t, "a", "C", nil, pb.TestStatus_SKIP, pb.TestStatus_CRASH),
 			// Should not be included in results for invocation 'a' because not
 			// immediately inside invocation.
-			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
+			insert.TestResults(t, "b", "A", nil, pb.TestResult_FAILED),
 		)...)
 
+		tags := []*pb.StringPair{
+			{Key: "k1", Value: "v1"},
+			{Key: "k2", Value: "v2"},
+		}
 		properties := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"key": structpb.NewStringValue("value"),
+			},
+		}
+		fx := &pb.FrameworkExtensions{
+			WebTest: &pb.WebTest{
+				Status:     pb.WebTest_PASS,
+				IsExpected: true,
 			},
 		}
 		expectedTestVerdicts := []*pb.RunTestVerdict{
@@ -99,28 +85,36 @@ func TestQuery(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							// Unexpeted results come first.
+							// Unexpected results come first.
 							Name:        "invocations/a/tests/A/results/1",
 							ResultId:    "1",
+							StartTime:   timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
 							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
 							Status:      pb.TestStatus_FAIL,
+							StatusV2:    pb.TestResult_FAILED,
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "failure reason",
 								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 							},
-							Properties: properties,
+							Tags:                tags,
+							Properties:          properties,
+							FrameworkExtensions: fx,
 						},
 					}, {
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/A/results/0",
-							ResultId:    "0",
-							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							Expected:    true,
-							Status:      pb.TestStatus_PASS,
-							SummaryHtml: "SummaryHtml",
-							Properties:  properties,
+							Name:                "invocations/a/tests/A/results/0",
+							ResultId:            "0",
+							StartTime:           timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:            &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Expected:            true,
+							Status:              pb.TestStatus_PASS,
+							StatusV2:            pb.TestResult_PASSED,
+							SummaryHtml:         "SummaryHtml",
+							Tags:                tags,
+							Properties:          properties,
+							FrameworkExtensions: fx,
 						},
 					},
 				},
@@ -132,30 +126,26 @@ func TestQuery(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/B/results/maximalfields",
-							ResultId:    "maximalfields",
-							Expected:    false,
-							Status:      pb.TestStatus_FAIL,
+							Name:        "invocations/a/tests/B/results/0",
+							ResultId:    "0",
+							Expected:    true,
+							Status:      pb.TestStatus_SKIP,
+							StatusV2:    pb.TestResult_SKIPPED,
+							StartTime:   timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							SummaryHtml: "SummaryHtml",
-							FailureReason: &pb.FailureReason{
-								Kind:                pb.FailureReason_ORDINARY,
-								PrimaryErrorMessage: "failure reason A",
-								Errors:              []*pb.FailureReason_Error{{Message: "failure reason A"}},
+							Tags:        tags,
+							Properties:  properties,
+							SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+							SkippedReason: &pb.SkippedReason{
+								Kind:          pb.SkippedReason_DEMOTED,
+								ReasonMessage: "skip reason",
 							},
-							Tags:      []*pb.StringPair{{Key: "k1", Value: "v1"}, {Key: "k2", Value: "v2"}},
-							StartTime: timestamppb.New(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
-							Duration:  durationpb.New(1*time.Hour + 1*time.Microsecond),
-							Properties: &structpb.Struct{
-								Fields: map[string]*structpb.Value{
-									"f1": structpb.NewStringValue("v1"),
-								},
-							},
+							FrameworkExtensions: fx,
 						},
 					},
 				},
-				TestMetadata: &pb.TestMetadata{
-					Name: "maximalfields test",
-				},
+				TestMetadata: &pb.TestMetadata{Name: "testname"},
 			}, {
 				TestId:      "B",
 				Variant:     nil,
@@ -167,6 +157,7 @@ func TestQuery(t *testing.T) {
 							ResultId: "minimalfields",
 							Expected: true,
 							Status:   pb.TestStatus_PASS,
+							StatusV2: pb.TestResult_PASSED,
 						},
 					},
 				},
@@ -177,10 +168,11 @@ func TestQuery(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/C/results/0",
-							ResultId:    "0",
-							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							Status:      pb.TestStatus_SKIP,
+							Name:     "invocations/a/tests/C/results/0",
+							ResultId: "0",
+							Duration: &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Status:   pb.TestStatus_SKIP,
+							// Legacy result: Status V2 is not set.
 							SummaryHtml: "SummaryHtml",
 							Properties:  properties,
 							SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
@@ -188,10 +180,11 @@ func TestQuery(t *testing.T) {
 					},
 					{
 						Result: &pb.TestResult{
-							Name:        "invocations/a/tests/C/results/1",
-							ResultId:    "1",
-							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Status:      pb.TestStatus_CRASH,
+							Name:     "invocations/a/tests/C/results/1",
+							ResultId: "1",
+							Duration: &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:   pb.TestStatus_CRASH,
+							// Legacy result: Status V2 is not set.
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								// Legacy test result: Kind is not set.

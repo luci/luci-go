@@ -17,10 +17,12 @@ package resultdb
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -82,10 +84,11 @@ func TestQueryTestVariants(t *testing.T) {
 			}),
 		)
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv0", "T1", nil, pb.TestResult_FAILED),
 			insert.TestResultsLegacy(t, "inv0", "T2", nil, pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "T3", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "T4", nil, pb.TestResult_SKIPPED),
+			insert.TestResults(t, "inv1", "T1", pbutil.Variant("a", "b"), pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
 
@@ -122,10 +125,10 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}),
 		)
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestResult_FAILED),
+			insert.TestResults(t, "inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestResult_FAILED),
 			insert.TestResultsLegacy(t, "inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
-			insert.TestResults(t, "inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestResult_FAILED),
 			insert.TestExonerations("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestExonerations("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestExonerations("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
@@ -181,6 +184,16 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// Check the returned test variants are appropriately masked.
 			duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
+			tags := []*pb.StringPair{
+				{Key: "k1", Value: "v1"},
+				{Key: "k2", Value: "v2"},
+			}
+			fx := &pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_PASS,
+					IsExpected: true,
+				},
+			}
 			assert.Loosely(t, res.TestVariants, should.Match([]*pb.TestVariant{
 				{
 					TestId:      "T1002",
@@ -189,16 +202,19 @@ func TestQueryTestVariants(t *testing.T) {
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
-								Name:     "invocations/inv2/tests/T1002/results/0",
-								ResultId: "0",
-								Status:   pb.TestStatus_FAIL,
-								Duration: duration,
+								Name:      "invocations/inv2/tests/T1002/results/0",
+								ResultId:  "0",
+								Status:    pb.TestStatus_FAIL,
+								StatusV2:  pb.TestResult_FAILED,
+								StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+								Duration:  duration,
 								FailureReason: &pb.FailureReason{
 									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
 									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
-								IsMasked: true,
+								FrameworkExtensions: fx,
+								IsMasked:            true,
 							},
 						},
 					},
@@ -216,6 +232,8 @@ func TestQueryTestVariants(t *testing.T) {
 								Name:        "invocations/inv3/tests/T1003/results/0",
 								ResultId:    "0",
 								Status:      pb.TestStatus_FAIL,
+								StatusV2:    pb.TestResult_FAILED,
+								StartTime:   timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
 								Duration:    duration,
 								SummaryHtml: "SummaryHtml",
 								FailureReason: &pb.FailureReason{
@@ -223,9 +241,11 @@ func TestQueryTestVariants(t *testing.T) {
 									PrimaryErrorMessage: "failure reason",
 									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
+								Tags: tags,
 								Properties: &structpb.Struct{Fields: map[string]*structpb.Value{
 									"key": structpb.NewStringValue("value"),
 								}},
+								FrameworkExtensions: fx,
 							},
 						},
 					},
@@ -254,6 +274,7 @@ func TestQueryTestVariants(t *testing.T) {
 								Name:     "invocations/inv4/tests/T1004/results/0",
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
+								StatusV2: pb.TestResult_STATUS_UNSPECIFIED, // Legacy results currently do not have this field populated in the database.
 								Duration: duration,
 								FailureReason: &pb.FailureReason{
 									// This is a legacy result, Kind is not populated.
@@ -281,16 +302,19 @@ func TestQueryTestVariants(t *testing.T) {
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
-								Name:     "invocations/inv5/tests/T1005/results/0",
-								ResultId: "0",
-								Status:   pb.TestStatus_FAIL,
+								Name:      "invocations/inv5/tests/T1005/results/0",
+								ResultId:  "0",
+								Status:    pb.TestStatus_FAIL,
+								StatusV2:  pb.TestResult_FAILED,
+								StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+								Duration:  duration,
 								FailureReason: &pb.FailureReason{
 									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
 									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
 								},
-								Duration: duration,
-								IsMasked: true,
+								FrameworkExtensions: fx,
+								IsMasked:            true,
 							},
 						},
 					},
@@ -331,12 +355,33 @@ func TestQueryTestVariants(t *testing.T) {
 
 			expectedSources := testutil.TestSourcesWithChangelistNumbers(1)
 			expectedSourceHash := graph.HashSources(expectedSources).String()
-			for _, tv := range page.TestVariants {
+			expectedTestResults := [][]*pb.TestResult{
+				insert.MakeTestResultsLegacy("inv0", "T2", nil, pb.TestStatus_FAIL),
+				insert.MakeTestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestResult_FAILED, pb.TestResult_PASSED),
+				insert.MakeTestResults("inv0", "T1", nil, pb.TestResult_FAILED),
+			}
+
+			for i, tv := range page.TestVariants {
 				assert.Loosely(t, tv.SourcesId, should.Equal(expectedSourceHash))
+
+				expectedResults := expectedTestResults[i]
+
+				assert.Loosely(t, tv.Results, should.HaveLength(len(expectedResults)))
+				for j, result := range tv.Results {
+					// Drop expectations about fields lifted to the test variant level.
+					expectedResults[j].TestId = ""
+					expectedResults[j].TestIdStructured = nil
+					expectedResults[j].Variant = nil
+					expectedResults[j].VariantHash = ""
+					expectedResults[j].TestMetadata = nil
+
+					assert.Loosely(t, result.Result, should.Match(expectedResults[j]))
+				}
 			}
 
 			assert.Loosely(t, page.Sources, should.HaveLength(1))
 			assert.Loosely(t, page.Sources[expectedSourceHash], should.Match(expectedSources))
+
 		})
 
 		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
@@ -370,7 +415,31 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, len(res.TestVariants), should.Equal(1))
+			assert.Loosely(t, len(res.TestVariants), should.Equal(2))
+			assert.Loosely(t, getTVStrings(res.TestVariants), should.Match([]string{
+				"50/T3/e3b0c44298fc1c14",
+				"50/T4/e3b0c44298fc1c14",
+			}))
+
+			expectedTestResults := [][]*pb.TestResult{
+				insert.MakeTestResults("inv1", "T3", nil, pb.TestResult_PASSED),
+				insert.MakeTestResults("inv1", "T4", nil, pb.TestResult_SKIPPED),
+			}
+
+			for i, tv := range res.TestVariants {
+				expectedResults := expectedTestResults[i]
+				assert.Loosely(t, tv.Results, should.HaveLength(len(expectedResults)))
+				for j, result := range tv.Results {
+					// Drop expectations about fields lifted to the test variant level.
+					expectedResults[j].TestId = ""
+					expectedResults[j].TestIdStructured = nil
+					expectedResults[j].Variant = nil
+					expectedResults[j].VariantHash = ""
+					expectedResults[j].TestMetadata = nil
+
+					assert.Loosely(t, result.Result, should.Match(expectedResults[j]))
+				}
+			}
 		})
 	})
 }

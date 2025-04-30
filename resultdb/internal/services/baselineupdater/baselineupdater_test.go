@@ -148,10 +148,10 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		// fetches results for all included invs.
 		ms := make([]*spanner.Mutation, 0)
 		for i := 1; i <= 100; i++ {
-			ms = append(ms, insert.TestResults(t, "inv1", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
+			ms = append(ms, insert.TestResults(t, "inv1", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestResult_PASSED)...)
 		}
 		for i := 101; i <= 200; i++ {
-			ms = append(ms, insert.TestResults(t, "inv2", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
+			ms = append(ms, insert.TestResults(t, "inv2", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestResult_PASSED)...)
 		}
 
 		testutil.MustApply(ctx, t, testutil.CombineMutations(ms)...)
@@ -188,7 +188,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		t.Run(`Mark existing baseline test variant submitted`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv3", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults(t, "inv3", "testId200", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
+				insert.TestResults(t, "inv3", "testId200", pbutil.Variant("a", "b"), pb.TestResult_PASSED),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv3"))
@@ -211,7 +211,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		t.Run(`Mark skipped test should be skipped`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv4", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults(t, "inv4", "testId202", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
+				insert.TestResults(t, "inv4", "testId202", pbutil.Variant("a", "b"), pb.TestResult_SKIPPED),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv4"))

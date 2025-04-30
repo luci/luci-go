@@ -81,11 +81,11 @@ func TestQueryTestResults(t *testing.T) {
 
 		t.Run(`Does not fetch test results of other invocations`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "DoBaz", nil,
-				pb.TestStatus_PASS,
-				pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL,
-				pb.TestStatus_PASS,
-				pb.TestStatus_FAIL,
+				pb.TestResult_PASSED,
+				pb.TestResult_FAILED,
+				pb.TestResult_FAILED,
+				pb.TestResult_PASSED,
+				pb.TestResult_FAILED,
 			)
 
 			testutil.MustApply(ctx, t,
@@ -93,9 +93,9 @@ func TestQueryTestResults(t *testing.T) {
 				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
 			)
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "X", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
 				insert.TestResultMessages(t, expected),
-				insert.TestResults(t, "inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv2", "Y", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
 			)...)
 
 			actual, _ := mustFetch(q)
@@ -113,12 +113,12 @@ func TestQueryTestResults(t *testing.T) {
 				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 
 				testutil.MustApply(ctx, t, testutil.CombineMutations(
-					insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-					insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_PASS),
-					insert.TestResults(t, "inv1", "T1", nil, pb.TestStatus_PASS),
-					insert.TestResults(t, "inv1", "T2", nil, pb.TestStatus_FAIL),
-					insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS),
-					insert.TestResults(t, "inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv0", "T1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+					insert.TestResults(t, "inv0", "T2", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv1", "T1", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv1", "T2", nil, pb.TestResult_FAILED),
+					insert.TestResults(t, "inv1", "T3", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED),
 					insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 				)...)
 
@@ -165,14 +165,14 @@ func TestQueryTestResults(t *testing.T) {
 				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
 
 				testutil.MustApply(ctx, t, testutil.CombineMutations(
-					insert.TestResults(t, "inv0", "flaky", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-					insert.TestResults(t, "inv0", "passing", nil, pb.TestStatus_PASS),
-					insert.TestResults(t, "inv0", "F0", pbutil.Variant("a", "0"), pb.TestStatus_FAIL),
-					insert.TestResults(t, "inv0", "in_both_invocations", nil, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv0", "flaky", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+					insert.TestResults(t, "inv0", "passing", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv0", "F0", pbutil.Variant("a", "0"), pb.TestResult_FAILED),
+					insert.TestResults(t, "inv0", "in_both_invocations", nil, pb.TestResult_FAILED),
 					// Same test, but different variant.
-					insert.TestResults(t, "inv1", "F0", pbutil.Variant("a", "1"), pb.TestStatus_PASS),
-					insert.TestResults(t, "inv1", "in_both_invocations", nil, pb.TestStatus_PASS),
-					insert.TestResults(t, "inv1", "F1", nil, pb.TestStatus_FAIL, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv1", "F0", pbutil.Variant("a", "1"), pb.TestResult_PASSED),
+					insert.TestResults(t, "inv1", "in_both_invocations", nil, pb.TestResult_PASSED),
+					insert.TestResults(t, "inv1", "F1", nil, pb.TestResult_FAILED, pb.TestResult_FAILED),
 				)...)
 
 				t.Run(`Works`, func(t *ftt.Test) {
@@ -195,12 +195,12 @@ func TestQueryTestResults(t *testing.T) {
 				}),
 			)
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv0", "1-2", nil, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "1-1", nil, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2-1", nil, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2", nil, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv2", "1-2", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "1-1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv0", "1-2", nil, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "1-1", nil, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2-1", nil, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2", nil, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv2", "1-2", nil, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
@@ -227,11 +227,11 @@ func TestQueryTestResults(t *testing.T) {
 				}),
 			)
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv2", "1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv2", "1-1", v1, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
@@ -256,10 +256,10 @@ func TestQueryTestResults(t *testing.T) {
 			v11 := pbutil.Variant("k", "1", "k2", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv0", "1-2", v11, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv0", "1-2", v11, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
@@ -294,11 +294,11 @@ func TestQueryTestResults(t *testing.T) {
 
 		t.Run(`Paging`, func(t *ftt.Test) {
 			trs := insert.MakeTestResults("inv1", "DoBaz", nil,
-				pb.TestStatus_PASS,
-				pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL,
-				pb.TestStatus_PASS,
-				pb.TestStatus_FAIL,
+				pb.TestResult_PASSED,
+				pb.TestResult_FAILED,
+				pb.TestResult_FAILED,
+				pb.TestResult_PASSED,
+				pb.TestResult_FAILED,
 			)
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs)...)
 
@@ -354,7 +354,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Test metadata`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestStatus_PASS)
+			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestResult_PASSED)
 			expected[0].TestMetadata = &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{
@@ -378,7 +378,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Failure reason`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestStatus_PASS)
+			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestResult_FAILED)
 			expected[0].FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: "want true, got false",
 				Errors: []*pb.FailureReason_Error{
@@ -395,7 +395,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Properties`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "WithProperties", nil, pb.TestStatus_PASS)
+			expected := insert.MakeTestResults("inv1", "WithProperties", nil, pb.TestResult_PASSED)
 			expected[0].Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
 				"key": structpb.NewStringValue("value"),
 			}}
@@ -407,7 +407,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Skip reason`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "WithSkipReason", nil, pb.TestStatus_SKIP)
+			expected := insert.MakeTestResults("inv1", "WithSkipReason", nil, pb.TestResult_SKIPPED)
 			expected[0].SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
@@ -422,10 +422,10 @@ func TestQueryTestResults(t *testing.T) {
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
@@ -454,8 +454,8 @@ func TestQueryTestResults(t *testing.T) {
 
 			v1 := pbutil.Variant("k", "1")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv1", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv1", "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar", v1, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
@@ -523,11 +523,11 @@ func TestQueryTestResults(t *testing.T) {
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv0", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv2", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv0", "ninja://browser_tests/1-1", v1, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "ninja://browser_tests/1-1", v1, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv2", "ninja://browser_tests/1-1", v1, pb.TestResult_PASSED),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
@@ -687,6 +687,7 @@ func TestToLimitedData(t *testing.T) {
 			Variant:     variant,
 			Expected:    true,
 			Status:      pb.TestStatus_PASS,
+			StatusV2:    pb.TestResult_PASSED,
 			SummaryHtml: "SummaryHtml",
 			StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
@@ -709,6 +710,7 @@ func TestToLimitedData(t *testing.T) {
 				},
 			},
 			FailureReason: &pb.FailureReason{
+				Kind:                pb.FailureReason_CRASH,
 				PrimaryErrorMessage: "an error message",
 				Errors: []*pb.FailureReason_Error{
 					{Message: "an error message"},
@@ -721,7 +723,17 @@ func TestToLimitedData(t *testing.T) {
 					"key": structpb.NewStringValue("value"),
 				},
 			},
-			SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+			SkipReason: pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+			SkippedReason: &pb.SkippedReason{
+				Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+				ReasonMessage: "skip reason",
+			},
+			FrameworkExtensions: &pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_CRASH,
+					IsExpected: false,
+				},
+			},
 		}
 
 		expected := &pb.TestResult{
@@ -738,10 +750,12 @@ func TestToLimitedData(t *testing.T) {
 			},
 			Expected:    true,
 			Status:      pb.TestStatus_PASS,
+			StatusV2:    pb.TestResult_PASSED,
 			StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
 			VariantHash: variantHash,
 			FailureReason: &pb.FailureReason{
+				Kind:                pb.FailureReason_CRASH,
 				PrimaryErrorMessage: "an error message",
 				Errors: []*pb.FailureReason_Error{
 					{Message: "an error message"},
@@ -750,7 +764,17 @@ func TestToLimitedData(t *testing.T) {
 				TruncatedErrorsCount: 0,
 			},
 			IsMasked:   true,
-			SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
+			SkipReason: pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+			SkippedReason: &pb.SkippedReason{
+				Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+				ReasonMessage: "skip reason",
+			},
+			FrameworkExtensions: &pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_CRASH,
+					IsExpected: false,
+				},
+			},
 		}
 		t.Run(`masks fields`, func(t *ftt.Test) {
 			err := ToLimitedData(ctx, testResult)
@@ -786,14 +810,6 @@ func TestToLimitedData(t *testing.T) {
 				},
 				TruncatedErrorsCount: 0,
 			}
-
-			err := ToLimitedData(ctx, testResult)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, testResult, should.Match(expected))
-		})
-		t.Run(`mask preserves skip reason`, func(t *ftt.Test) {
-			testResult.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			expected.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 
 			err := ToLimitedData(ctx, testResult)
 			assert.Loosely(t, err, should.BeNil)

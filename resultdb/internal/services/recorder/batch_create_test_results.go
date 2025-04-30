@@ -107,7 +107,12 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	var commonPrefix string
 	varUnion := stringset.New(0)
 	for i, r := range in.Requests {
-		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		tr, mutation, err := insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		if err != nil {
+			return nil, err
+		}
+		ret.TestResults[i] = tr
+		ms[i] = mutation
 		if i == 0 {
 			commonPrefix = ret.TestResults[i].TestId
 		} else {
@@ -160,7 +165,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation, error) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
@@ -172,10 +177,14 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		ret.Variant = pbutil.VariantFromStructuredTestIdentifier(ret.TestIdStructured)
 		pbutil.PopulateStructuredTestIdentifierHashes(ret.TestIdStructured)
 	} else {
-		// Legacy test uploader.
-		// While we could use TestId and Variant to set TestVariantIdentifier,
-		// we do not return this structure to legacy clients to avoid changing
-		// API behaviour.
+		// Legacy test uploader. Populate TestIdStructured from TestId and Variant
+		// so that this RPC returns the same response as ListTestResults.
+		var err error
+		ret.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ret.TestId, ret.Variant)
+		if err != nil {
+			// This should not happen, the test identifier should already have been validated.
+			return nil, nil, errors.Annotate(err, "parse test identifier").Err()
+		}
 	}
 	ret.VariantHash = pbutil.VariantHash(ret.Variant)
 
@@ -188,20 +197,25 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		runDuration.Valid = true
 	}
 
-	// If the legacy test result status was set, duplicate it into the stored failure reason.
-	// Test result validation ensures that the FailureReason.Kind is not already set
-	// for results using legacy status.
-	if ret.Status == pb.TestStatus_FAIL || ret.Status == pb.TestStatus_ABORT || ret.Status == pb.TestStatus_CRASH {
-		if ret.FailureReason == nil {
-			ret.FailureReason = &pb.FailureReason{}
+	if ret.StatusV2 != pb.TestResult_STATUS_UNSPECIFIED {
+		// Populate v1 status from v2 status fields.
+		ret.Status, ret.Expected = statusV1FromV2(ret.StatusV2, ret.FailureReason.GetKind(), ret.FrameworkExtensions.GetWebTest())
+	} else {
+		status, failureKind, webTest := statusV2FromV1(ret.Status, ret.Expected)
+
+		// Populate v2 status fields from v1 status.
+		ret.StatusV2 = status
+		if status == pb.TestResult_FAILED {
+			if ret.FailureReason == nil {
+				ret.FailureReason = &pb.FailureReason{}
+			}
+			ret.FailureReason.Kind = failureKind
 		}
-		switch ret.Status {
-		case pb.TestStatus_FAIL:
-			ret.FailureReason.Kind = pb.FailureReason_ORDINARY
-		case pb.TestStatus_CRASH:
-			ret.FailureReason.Kind = pb.FailureReason_CRASH
-		case pb.TestStatus_ABORT:
-			ret.FailureReason.Kind = pb.FailureReason_TIMEOUT
+		if webTest != nil {
+			if ret.FrameworkExtensions == nil {
+				ret.FrameworkExtensions = &pb.FrameworkExtensions{}
+			}
+			ret.FrameworkExtensions.WebTest = webTest
 		}
 	}
 
@@ -212,8 +226,9 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"Variant":         ret.Variant,
 		"VariantHash":     ret.VariantHash,
 		"CommitTimestamp": spanner.CommitTimestamp,
-		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
+		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !ret.Expected},
 		"Status":          ret.Status,
+		"StatusV2":        ret.StatusV2,
 		"SummaryHTML":     spanutil.Compressed(ret.SummaryHtml),
 		"StartTime":       ret.StartTime,
 		"RunDurationUsec": runDuration,
@@ -227,8 +242,8 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		row["TestMetadata"] = spanutil.Compressed(pbutil.MustMarshal(ret.TestMetadata))
 	}
 	if ret.FailureReason != nil {
-		// Normalise a test result. This handles legacy uploaders which only set
-		// PrimaryErrorMessage.
+		// Normalise the failure reason. This handles legacy uploaders which only set
+		// PrimaryErrorMessage by pushing it into the Errors collection instead.
 		testresults.NormaliseFailureReason(ret.FailureReason)
 		row["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(ret.FailureReason))
 
@@ -238,8 +253,14 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	if ret.Properties != nil {
 		row["Properties"] = spanutil.Compressed(pbutil.MustMarshal(ret.Properties))
 	}
+	if ret.SkippedReason != nil {
+		row["SkippedReason"] = spanutil.Compressed(pbutil.MustMarshal(ret.SkippedReason))
+	}
+	if ret.FrameworkExtensions != nil {
+		row["FrameworkExtensions"] = spanutil.Compressed(pbutil.MustMarshal(ret.FrameworkExtensions))
+	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
-	return ret, mutation
+	return ret, mutation, nil
 }
 
 func longestCommonPrefix(str1, str2 string) string {
@@ -271,4 +292,122 @@ func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.Bas
 		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()
 	}
 	return scheme.Validate(testID)
+}
+
+// statusV1FromV2 computes a v1 status (status + expected) from v2 status fields.
+// It is used to populate v1 status for clients uploading the v2 status.
+func statusV1FromV2(status pb.TestResult_Status, kind pb.FailureReason_Kind, webTest *pb.WebTest) (oldStatus pb.TestStatus, expected bool) {
+	if webTest != nil {
+		switch webTest.Status {
+		case pb.WebTest_PASS:
+			oldStatus = pb.TestStatus_PASS
+		case pb.WebTest_FAIL:
+			oldStatus = pb.TestStatus_FAIL
+		case pb.WebTest_TIMEOUT:
+			oldStatus = pb.TestStatus_ABORT
+		case pb.WebTest_CRASH:
+			oldStatus = pb.TestStatus_CRASH
+		case pb.WebTest_SKIP:
+			oldStatus = pb.TestStatus_SKIP
+		default:
+			// Web Test Status is closed to extension so this should never happen.
+			panic(errors.Reason("unknown web test status: %v", webTest.Status).Err())
+		}
+		expected = webTest.IsExpected
+		return oldStatus, expected
+	}
+	switch status {
+	case pb.TestResult_PASSED:
+		return pb.TestStatus_PASS, true
+	case pb.TestResult_FAILED:
+		// V1 breaks out different kinds of failures into a different
+		// top level status: abort, crash, fail.
+		switch kind {
+		case pb.FailureReason_TIMEOUT:
+			return pb.TestStatus_ABORT, false
+		case pb.FailureReason_CRASH:
+			return pb.TestStatus_CRASH, false
+		default:
+			return pb.TestStatus_FAIL, false
+		}
+	case pb.TestResult_SKIPPED:
+		// Intentional skip.
+		return pb.TestStatus_SKIP, true
+	case pb.TestResult_EXECUTION_ERRORED:
+		// Unintentional skip due to some infra error.
+		return pb.TestStatus_SKIP, false
+	case pb.TestResult_PRECLUDED:
+		// Unintentional skip due to some infra error.
+		return pb.TestStatus_SKIP, false
+	default:
+		// Status v2 is closed to extension so this should never happen.
+		panic(errors.Reason("unknown status v2: %v", status).Err())
+	}
+}
+
+// statusV2FromV1 computes a v2 status from a v1 status.
+// It is used to populate v2 status for clients uploading the v1 status.
+//
+// Between statusV2FromV1 and statusV1FromV2, we require a V1 status to roundtrip
+// back to the same V1 status.
+func statusV2FromV1(oldStatus pb.TestStatus, expected bool) (status pb.TestResult_Status, kind pb.FailureReason_Kind, webTest *pb.WebTest) {
+	if oldStatus == pb.TestStatus_SKIP {
+		if expected {
+			status = pb.TestResult_SKIPPED
+		} else {
+			status = pb.TestResult_EXECUTION_ERRORED
+		}
+		return status, pb.FailureReason_KIND_UNSPECIFIED, nil
+	}
+	if expected {
+		// Expected (non-skipped) result.
+		if oldStatus != pb.TestStatus_PASS {
+			// Expected failure. This must be from a webtest.
+			switch oldStatus {
+			case pb.TestStatus_ABORT:
+				webTest = &pb.WebTest{
+					Status:     pb.WebTest_TIMEOUT,
+					IsExpected: true,
+				}
+			case pb.TestStatus_CRASH:
+				webTest = &pb.WebTest{
+					Status:     pb.WebTest_CRASH,
+					IsExpected: true,
+				}
+			case pb.TestStatus_FAIL:
+				webTest = &pb.WebTest{
+					Status:     pb.WebTest_FAIL,
+					IsExpected: true,
+				}
+			default:
+				// Status v1 is closed to extension so this should never happen.
+				panic(errors.Reason("unknown status v1: %v", oldStatus).Err())
+			}
+		}
+		return pb.TestResult_PASSED, pb.FailureReason_KIND_UNSPECIFIED, webTest
+	}
+
+	// Unexpected (non-skipped) result.
+	switch oldStatus {
+	case pb.TestStatus_ABORT:
+		kind = pb.FailureReason_TIMEOUT
+	case pb.TestStatus_CRASH:
+		kind = pb.FailureReason_CRASH
+	case pb.TestStatus_FAIL:
+		kind = pb.FailureReason_ORDINARY
+	case pb.TestStatus_PASS:
+		kind = pb.FailureReason_ORDINARY
+	default:
+		// Status v1 is closed to extension so this should never happen.
+		panic(errors.Reason("unknown status v1: %v", oldStatus).Err())
+	}
+
+	if oldStatus == pb.TestStatus_PASS {
+		// Unexpected pass. This must be from a webtest.
+		webTest = &pb.WebTest{
+			Status:     pb.WebTest_PASS,
+			IsExpected: false,
+		}
+	}
+	return pb.TestResult_FAILED, kind, webTest
 }

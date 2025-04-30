@@ -54,11 +54,14 @@ var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
 	"result_id",
 	"expected",
 	"status",
+	"status_v2",
 	"start_time",
 	"duration",
 	"variant_hash",
 	"failure_reason",
 	"skip_reason",
+	"skipped_reason",
+	"framework_extensions",
 )
 
 // limitedReasonLength is the length to which the failure reason's primary error
@@ -68,6 +71,7 @@ const limitedReasonLength = 140
 
 // defaultListMask is the default field mask to use for QueryTestResults and
 // ListTestResults requests.
+// Per RPC doc: By default, summary_html, properties and tags are excluded.
 var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"name",
 	"test_id",
@@ -77,9 +81,13 @@ var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
 	"variant_hash",
 	"expected",
 	"status",
+	"status_v2",
 	"start_time",
 	"duration",
+	"failure_reason",
 	"skip_reason",
+	"skipped_reason",
+	"framework_extensions",
 )
 
 // ListMask returns mask.Mask converted from field_mask.FieldMask.
@@ -160,6 +168,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		"Variant",
 		"IsUnexpected",
 		"Status",
+		"StatusV2",
 		"StartTime",
 		"RunDurationUsec",
 	}
@@ -186,16 +195,22 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("FailureReason", "failure_reason")
 	selectIfIncluded("Properties", "properties")
 	selectIfIncluded("SkipReason", "skip_reason")
+	selectIfIncluded("SkippedReason", "skipped_reason")
+	selectIfIncluded("FrameworkExtensions", "framework_extensions")
 
 	// Build a parser function.
+	// Keep outside function so we can reuse buffers between rows.
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
 	var properties spanutil.Compressed
+	var skippedReason spanutil.Compressed
+	var frameworkExtensions spanutil.Compressed
 	parser = func(row *spanner.Row) (*pb.TestResult, error) {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
+		var statusV2 spanner.NullInt64
 		var micros spanner.NullInt64
 		var skipReason spanner.NullInt64
 		tr := &pb.TestResult{}
@@ -207,6 +222,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
+			&statusV2,
 			&tr.StartTime,
 			&micros,
 		}
@@ -227,6 +243,10 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &properties)
 			case "SkipReason":
 				ptrs = append(ptrs, &skipReason)
+			case "SkippedReason":
+				ptrs = append(ptrs, &skippedReason)
+			case "FrameworkExtensions":
+				ptrs = append(ptrs, &frameworkExtensions)
 			default:
 				panic("impossible")
 			}
@@ -248,6 +268,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		tr.TestIdStructured = tvID
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
+		PopulateStatusV2Field(tr, statusV2)
 		PopulateDurationField(tr, micros)
 		PopulateSkipReasonField(tr, skipReason)
 		if err := PopulateTestMetadata(tr, tmd); err != nil {
@@ -258,6 +279,12 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		}
 		if err := PopulateProperties(tr, properties); err != nil {
 			return nil, errors.Annotate(err, "unmarshal properties for %s", trName).Err()
+		}
+		if err := PopulateSkippedReason(tr, skippedReason); err != nil {
+			return nil, errors.Annotate(err, "unmarshal skipped reason for %s", trName).Err()
+		}
+		if err := PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
+			return nil, errors.Annotate(err, "unmarshal framework extensions for %s", trName).Err()
 		}
 		if err := q.Mask.Trim(tr); err != nil {
 			return nil, errors.Annotate(err, "trimming fields for %s", trName).Err()

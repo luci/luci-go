@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -96,7 +97,7 @@ func Inclusion(including, included invocations.ID) *spanner.Mutation {
 }
 
 // TestResults returns spanner mutations to insert test results.
-func TestResults(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
+func TestResults(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*spanner.Mutation {
 	return TestResultMessages(t, MakeTestResults(invID, testID, v, statuses...))
 }
 
@@ -122,15 +123,13 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 			"VariantHash":     pbutil.VariantHash(tr.Variant),
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
+			"StatusV2":        tr.StatusV2,
 			"Tags":            tr.Tags,
 			"StartTime":       tr.StartTime,
 			"SummaryHtml":     spanutil.Compressed(tr.SummaryHtml),
 		}
 		if tr.Duration != nil {
 			mutMap["RunDurationUsec"] = spanner.NullInt64{Int64: int64(tr.Duration.Seconds)*1e6 + int64(trs[i].Duration.Nanos)/1000, Valid: true}
-		}
-		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
-			mutMap["SkipReason"] = tr.SkipReason
 		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
@@ -151,6 +150,19 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 			propertiesBytes, err := proto.Marshal(tr.Properties)
 			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			mutMap["Properties"] = spanutil.Compressed(propertiesBytes)
+		}
+		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
+			mutMap["SkipReason"] = tr.SkipReason
+		}
+		if tr.SkippedReason != nil {
+			skippedReasonBytes, err := proto.Marshal(tr.SkippedReason)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			mutMap["SkippedReason"] = spanutil.Compressed(skippedReasonBytes)
+		}
+		if tr.FrameworkExtensions != nil {
+			frameworkExtensionsBytes, err := proto.Marshal(tr.FrameworkExtensions)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			mutMap["FrameworkExtensions"] = spanutil.Compressed(frameworkExtensionsBytes)
 		}
 
 		ms[i] = spanutil.InsertMap("TestResults", mutMap)
@@ -306,33 +318,48 @@ func MakeTestMetadataRow(project, testID, subRealm string, refHash []byte) *test
 
 // MakeTestResult creates test results. Test results are returned with
 // output only fields set.
-func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
+func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
 
-		var reason *pb.FailureReason
-		if status != pb.TestStatus_PASS && status != pb.TestStatus_SKIP {
-			reason = &pb.FailureReason{
+		var failureReason *pb.FailureReason
+		var skipReason pb.SkipReason
+		var skippedReason *pb.SkippedReason
+		if status == pb.TestResult_FAILED {
+			failureReason = &pb.FailureReason{
+				Kind:                pb.FailureReason_ORDINARY,
 				PrimaryErrorMessage: "failure reason",
 				Errors: []*pb.FailureReason_Error{
 					{Message: "failure reason"},
 				},
 			}
-			if status == pb.TestStatus_FAIL {
-				reason.Kind = pb.FailureReason_ORDINARY
-			}
-			if status == pb.TestStatus_CRASH {
-				reason.Kind = pb.FailureReason_CRASH
-			}
-			if status == pb.TestStatus_ABORT {
-				reason.Kind = pb.FailureReason_TIMEOUT
-			}
 		}
-		var skipReason pb.SkipReason
-		if status == pb.TestStatus_SKIP {
+		if status == pb.TestResult_SKIPPED {
 			skipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
+			skippedReason = &pb.SkippedReason{
+				Kind:          pb.SkippedReason_DEMOTED,
+				ReasonMessage: "skip reason",
+			}
 		}
+
+		var legacyStatus pb.TestStatus
+		var expected bool
+		switch status {
+		case pb.TestResult_PASSED:
+			legacyStatus = pb.TestStatus_PASS
+			expected = true
+		case pb.TestResult_FAILED:
+			legacyStatus = pb.TestStatus_FAIL
+			expected = false
+		case pb.TestResult_SKIPPED:
+			legacyStatus = pb.TestStatus_SKIP
+			expected = true
+		case pb.TestResult_EXECUTION_ERRORED, pb.TestResult_PRECLUDED:
+			legacyStatus = pb.TestStatus_SKIP
+			expected = false
+		}
+
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, v)
 		if err != nil {
 			panic(errors.Annotate(err, "parse test variant identifier").Err())
@@ -345,21 +372,40 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestSta
 			TestIdStructured: tvID,
 			Variant:          v,
 			VariantHash:      pbutil.VariantHash(v),
-			Expected:         status == pb.TestStatus_PASS,
-			Status:           status,
+			Expected:         expected,
+			Status:           legacyStatus,
+			StatusV2:         status,
+			StartTime:        timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
 			Duration:         &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
 			SummaryHtml:      "SummaryHtml",
-			TestMetadata:     &pb.TestMetadata{Name: "testname"},
-			FailureReason:    reason,
-			Properties:       &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
-			SkipReason:       skipReason,
+			Tags: []*pb.StringPair{
+				{Key: "k1", Value: "v1"},
+				{Key: "k2", Value: "v2"},
+			},
+			TestMetadata:  &pb.TestMetadata{Name: "testname"},
+			FailureReason: failureReason,
+			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:    skipReason,
+			SkippedReason: skippedReason,
+			FrameworkExtensions: &pb.FrameworkExtensions{
+				WebTest: &pb.WebTest{
+					Status:     pb.WebTest_PASS,
+					IsExpected: true,
+				},
+			},
 		}
 	}
 	return trs
 }
 
-// MakeTestResult creates test legacy results. These results do not rely on
-// newer features. Results are returned with output only fields set.
+// MakeTestResult prepares legacy test results.
+//
+// The returned result represents what one would expect to read
+// back for a test result stored 18 months ago. Fields that are
+// set at upload time for new results may not be set for these results.
+//
+// These results should be passed to TestResultMessagesLegacy or
+// asserted against service responses.
 func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
@@ -392,12 +438,13 @@ func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.T
 			VariantHash:      pbutil.VariantHash(v),
 			Expected:         status == pb.TestStatus_PASS,
 			Status:           status,
-			Duration:         &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-			SummaryHtml:      "SummaryHtml",
-			TestMetadata:     &pb.TestMetadata{Name: "testname"},
-			FailureReason:    reason,
-			Properties:       &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
-			SkipReason:       skipReason,
+			// StatusV2 was added in ~May 2025 and may not be set for older results.
+			Duration:      &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:   "SummaryHtml",
+			TestMetadata:  &pb.TestMetadata{Name: "testname"},
+			FailureReason: reason,
+			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:    skipReason,
 		}
 	}
 	return trs

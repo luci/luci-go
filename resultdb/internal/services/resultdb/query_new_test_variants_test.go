@@ -302,7 +302,7 @@ func TestFindNewTests(t *testing.T) {
 					"inv0",
 					"X",
 					v,
-					pb.TestStatus_PASS,
+					pb.TestResult_PASSED,
 				),
 			)...)
 
@@ -320,7 +320,7 @@ func TestFindNewTests(t *testing.T) {
 						"inv0",
 						"Y",
 						v,
-						pb.TestStatus_PASS,
+						pb.TestResult_PASSED,
 					),
 				)...)
 
@@ -389,13 +389,13 @@ func TestE2E(t *testing.T) {
 
 		// TestResults for invocation from request
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv0", "A", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "B", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv1", "C", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv2", "D", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults(t, "inv3", "E", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv0", "A", v, pb.TestResult_FAILED, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "B", v, pb.TestResult_PASSED, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "C", v, pb.TestResult_PASSED, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv2", "D", v, pb.TestResult_PASSED, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv3", "E", v, pb.TestResult_FAILED, pb.TestResult_PASSED),
 			// This is Skipped, so F should not be in the final set.
-			insert.TestResults(t, "inv1", "F", v, pb.TestStatus_SKIP),
+			insert.TestResults(t, "inv1", "F", v, pb.TestResult_SKIPPED),
 		)...)
 
 		// BaselineTestVariants (meaning that they were run previously with a successful run)

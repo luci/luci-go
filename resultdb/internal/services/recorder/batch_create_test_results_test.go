@@ -181,12 +181,8 @@ func TestBatchCreateTestResults(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, len(response.TestResults), should.Equal(len(expectedTRs)))
-			for i, r := range req.Requests {
+			for i := range req.Requests {
 				expectedWireTR := proto.Clone(expectedTRs[i]).(*pb.TestResult)
-				if r.TestResult.TestIdStructured == nil {
-					// For legacy create requests, expect the response to omit the TestVariantIdentifier.
-					expectedWireTR.TestIdStructured = nil
-				}
 				assert.Loosely(t, response.TestResults[i], should.Match(expectedWireTR))
 
 				// double-check it with the database
@@ -221,11 +217,14 @@ func TestBatchCreateTestResults(t *testing.T) {
 		t.Run("succeeds", func(t *ftt.Test) {
 			expected := make([]*pb.TestResult, 2)
 			expected[0] = proto.Clone(req.Requests[0].TestResult).(*pb.TestResult)
+			// Populate output only fields.
 			expected[0].Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0"
 			expected[0].TestIdStructured.ModuleVariantHash = "c8643f74854d84b4"
 			expected[0].TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected[0].Variant = pbutil.Variant("a/b", "1", "c", "2")
 			expected[0].VariantHash = "c8643f74854d84b4"
+			expected[0].Status = pb.TestStatus_PASS
+			expected[0].Expected = true
 
 			expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
 			expected[1].Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-1"
@@ -233,6 +232,8 @@ func TestBatchCreateTestResults(t *testing.T) {
 			expected[1].TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected[1].Variant = pbutil.Variant("a/b", "1", "c", "2")
 			expected[1].VariantHash = "c8643f74854d84b4"
+			expected[1].Status = pb.TestStatus_PASS
+			expected[1].Expected = true
 
 			t.Run("with a request ID", func(t *ftt.Test) {
 				createTestResults(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
@@ -266,14 +267,78 @@ func TestBatchCreateTestResults(t *testing.T) {
 				req.Requests = append(req.Requests, newTr)
 
 				expectedTR := proto.Clone(newTr.TestResult).(*pb.TestResult)
+				// Populate output only fields.
 				expectedTR.Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fgtest_tests%21gtest::MySuite%23TestCase/results/result-id-2"
 				expectedTR.TestIdStructured.ModuleVariantHash = "c8643f74854d84b4"
 				expectedTR.TestId = "://infra/gtest_tests!gtest::MySuite#TestCase"
 				expectedTR.Variant = pbutil.Variant("a/b", "1", "c", "2")
 				expectedTR.VariantHash = "c8643f74854d84b4"
+				expectedTR.Status = pb.TestStatus_PASS
+				expectedTR.Expected = true
 				expected = append(expected, expectedTR)
 
 				createTestResults(req, expected, "://infra/")
+			})
+			t.Run("with failure reason", func(t *ftt.Test) {
+				req.Requests[0].TestResult.StatusV2 = pb.TestResult_FAILED
+				req.Requests[0].TestResult.FailureReason = &pb.FailureReason{
+					Kind: pb.FailureReason_CRASH,
+					Errors: []*pb.FailureReason_Error{
+						{Message: "got 1, want 0"},
+						{Message: "got 2, want 1"},
+					},
+					TruncatedErrorsCount: 0,
+				}
+
+				expected[0].StatusV2 = pb.TestResult_FAILED
+				expected[0].Expected = false
+				expected[0].Status = pb.TestStatus_CRASH
+				expected[0].FailureReason = &pb.FailureReason{
+					Kind:                pb.FailureReason_CRASH,
+					PrimaryErrorMessage: "got 1, want 0",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "got 1, want 0"},
+						{Message: "got 2, want 1"},
+					},
+					TruncatedErrorsCount: 0,
+				}
+				createTestResults(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
+			})
+			t.Run("with skipped reason", func(t *ftt.Test) {
+				req.Requests[0].TestResult.StatusV2 = pb.TestResult_SKIPPED
+				req.Requests[0].TestResult.SkippedReason = &pb.SkippedReason{
+					Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+					ReasonMessage: "An explanatory message.",
+				}
+
+				expected[0].StatusV2 = pb.TestResult_SKIPPED
+				expected[0].Status = pb.TestStatus_SKIP
+				expected[0].Expected = true
+				expected[0].SkippedReason = &pb.SkippedReason{
+					Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+					ReasonMessage: "An explanatory message.",
+				}
+				createTestResults(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
+			})
+			t.Run("with framework extensions", func(t *ftt.Test) {
+				req.Requests[0].TestResult.StatusV2 = pb.TestResult_PASSED
+				req.Requests[0].TestResult.FrameworkExtensions = &pb.FrameworkExtensions{
+					WebTest: &pb.WebTest{
+						Status:     pb.WebTest_TIMEOUT,
+						IsExpected: true,
+					},
+				}
+
+				expected[0].StatusV2 = pb.TestResult_PASSED
+				expected[0].Status = pb.TestStatus_ABORT
+				expected[0].Expected = true
+				expected[0].FrameworkExtensions = &pb.FrameworkExtensions{
+					WebTest: &pb.WebTest{
+						Status:     pb.WebTest_TIMEOUT,
+						IsExpected: true,
+					},
+				}
+				createTestResults(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
 			})
 		})
 
@@ -305,7 +370,6 @@ func TestBatchCreateTestResults(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
 			})
 		})
-
 		t.Run("with legacy-form test result", func(t *ftt.Test) {
 			req.Requests = []*pb.CreateTestResultRequest{
 				legacyCreateTestResultRequest(now, invName, "some-other-test-one"),
@@ -332,6 +396,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				},
 			}
 			expected[0].VariantHash = pbutil.VariantHash(expected[0].Variant)
+			expected[0].StatusV2 = pb.TestResult_PASSED
 
 			expected[1] = proto.Clone(req.Requests[1].TestResult).(*pb.TestResult)
 			expected[1].Name = "invocations/u-build-1/tests/some-other-test-two/results/result-id-0"
@@ -353,16 +418,75 @@ func TestBatchCreateTestResults(t *testing.T) {
 				},
 			}
 			expected[1].VariantHash = pbutil.VariantHash(expected[1].Variant)
+			expected[1].StatusV2 = pb.TestResult_PASSED
 
 			t.Run("base case", func(t *ftt.Test) {
 				createTestResults(req, expected, "some-other-test-")
 			})
-			t.Run("failure reason kind is set based on v1 status", func(t *ftt.Test) {
-				req.Requests[0].TestResult.Status = pb.TestStatus_CRASH
-				expected[0].Status = pb.TestStatus_CRASH
-				expected[0].FailureReason.Kind = pb.FailureReason_CRASH
+			t.Run("v2 status is set based on v1 status", func(t *ftt.Test) {
+				t.Run("unexpected crash", func(t *ftt.Test) {
+					req.Requests[0].TestResult.Status = pb.TestStatus_CRASH
+					req.Requests[0].TestResult.Expected = false
 
-				createTestResults(req, expected, "some-other-test-")
+					expected[0].Status = pb.TestStatus_CRASH
+					expected[0].Expected = false
+					expected[0].StatusV2 = pb.TestResult_FAILED
+					expected[0].FailureReason.Kind = pb.FailureReason_CRASH
+
+					createTestResults(req, expected, "some-other-test-")
+				})
+				t.Run("unexpected pass", func(t *ftt.Test) {
+					req.Requests[0].TestResult.Status = pb.TestStatus_PASS
+					req.Requests[0].TestResult.Expected = false
+					req.Requests[0].TestResult.FailureReason = nil
+
+					expected[0].Status = pb.TestStatus_PASS
+					expected[0].Expected = false
+					expected[0].StatusV2 = pb.TestResult_FAILED
+					expected[0].FailureReason = &pb.FailureReason{
+						Kind: pb.FailureReason_ORDINARY,
+					}
+					expected[0].FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_PASS,
+							IsExpected: false,
+						},
+					}
+					createTestResults(req, expected, "some-other-test-")
+				})
+				t.Run("expected abort", func(t *ftt.Test) {
+					req.Requests[0].TestResult.Status = pb.TestStatus_ABORT
+					req.Requests[0].TestResult.Expected = true
+
+					expected[0].Status = pb.TestStatus_ABORT
+					expected[0].Expected = true
+					expected[0].StatusV2 = pb.TestResult_PASSED
+					expected[0].FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_TIMEOUT,
+							IsExpected: true,
+						},
+					}
+					createTestResults(req, expected, "some-other-test-")
+				})
+				t.Run("expected skip", func(t *ftt.Test) {
+					req.Requests[0].TestResult.Status = pb.TestStatus_SKIP
+					req.Requests[0].TestResult.Expected = true
+
+					expected[0].Status = pb.TestStatus_SKIP
+					expected[0].Expected = true
+					expected[0].StatusV2 = pb.TestResult_SKIPPED
+					createTestResults(req, expected, "some-other-test-")
+				})
+				t.Run("unexpected skip", func(t *ftt.Test) {
+					req.Requests[0].TestResult.Status = pb.TestStatus_SKIP
+					req.Requests[0].TestResult.Expected = false
+
+					expected[0].Status = pb.TestStatus_SKIP
+					expected[0].Expected = false
+					expected[0].StatusV2 = pb.TestResult_EXECUTION_ERRORED
+					createTestResults(req, expected, "some-other-test-")
+				})
 			})
 		})
 	})
@@ -482,6 +606,32 @@ func TestValidateTestIDToScheme(t *testing.T) {
 			testID.CoarseName = ""
 			assert.Loosely(t, validateTestIDToScheme(cfg, testID), should.ErrLike("coarse_name: required, please set a Package (scheme \"junit\")"))
 		})
+	})
+}
+
+func TestStatusV1Roundtrip(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`StatusV1Roundtrip`, t, func(t *ftt.Test) {
+		for _, tc := range []struct {
+			status   pb.TestStatus
+			expected bool
+		}{
+			{pb.TestStatus_PASS, true},
+			{pb.TestStatus_PASS, false},
+			{pb.TestStatus_FAIL, true},
+			{pb.TestStatus_FAIL, false},
+			{pb.TestStatus_ABORT, true},
+			{pb.TestStatus_ABORT, false},
+			{pb.TestStatus_CRASH, false},
+			{pb.TestStatus_CRASH, false},
+			{pb.TestStatus_SKIP, true},
+			{pb.TestStatus_SKIP, false},
+		} {
+			statusV2, kind, webTest := statusV2FromV1(tc.status, tc.expected)
+			status, expected := statusV1FromV2(statusV2, kind, webTest)
+			assert.Loosely(t, status, should.Equal(tc.status))
+			assert.Loosely(t, expected, should.Equal(tc.expected))
+		}
 	})
 }
 

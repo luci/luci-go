@@ -346,9 +346,12 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
 	var properties spanutil.Compressed
+	var skippedReason spanutil.Compressed
+	var frameworkExtensions spanutil.Compressed
 	return it.Do(func(r *spanner.Row) error {
 		tr := &pb.TestResult{}
 		var isUnexpected spanner.NullBool
+		var statusV2 spanner.NullInt64
 		var durationMicros spanner.NullInt64
 		var skipReason spanner.NullInt64
 
@@ -359,6 +362,7 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			&tr.ResultId,
 			&isUnexpected,
 			&tr.Status,
+			&statusV2,
 			&summaryHTML,
 			&tr.StartTime,
 			&durationMicros,
@@ -367,6 +371,8 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			&fr,
 			&properties,
 			&skipReason,
+			&skippedReason,
+			&frameworkExtensions,
 		)
 		if err != nil {
 			return errors.Annotate(err, "unmarshal row").Err()
@@ -376,6 +382,7 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 
 		tr.Name = trName
 		testresults.PopulateExpectedField(tr, isUnexpected)
+		testresults.PopulateStatusV2Field(tr, statusV2)
 		tr.SummaryHtml = string(summaryHTML)
 		testresults.PopulateDurationField(tr, durationMicros)
 		if err := testresults.PopulateTestMetadata(tr, tmd); err != nil {
@@ -385,10 +392,15 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			return errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
 		}
 		if err := testresults.PopulateProperties(tr, properties); err != nil {
-			return errors.Annotate(err, "failed to unmarshal properties").Err()
+			return errors.Annotate(err, "unmarshal properties for %s", trName).Err()
 		}
 		testresults.PopulateSkipReasonField(tr, skipReason)
-
+		if err := testresults.PopulateSkippedReason(tr, skippedReason); err != nil {
+			return errors.Annotate(err, "unmarshal skipped reason for %s", trName).Err()
+		}
+		if err := testresults.PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
+			return errors.Annotate(err, "unmarshal framework extensions for %s", trName).Err()
+		}
 		return f(tr)
 	})
 }
@@ -413,6 +425,7 @@ const querySQL = `
 		ResultId,
 		IsUnexpected,
 		Status,
+		StatusV2,
 		SummaryHTML,
 		StartTime,
 		RunDurationUsec,
@@ -420,7 +433,9 @@ const querySQL = `
 		TestMetadata,
 		FailureReason,
 		Properties,
-		SkipReason
+		SkipReason,
+		SkippedReason,
+		FrameworkExtensions
 	FROM TestResults
 	WHERE InvocationId = @invID AND (
 		(TestId > @afterTestId) OR

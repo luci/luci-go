@@ -174,7 +174,7 @@ func TestReachable(t *testing.T) {
 				node("b", newExtraValueBuilder().withInheritSources().Build()),
 				node("c", nil),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-				insert.TestResults(t, "c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "c", "Z", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
 				insert.TestExonerations("c", "Z", nil, pb.ExonerationReason_NOT_CRITICAL),
 			)...)
 
@@ -212,7 +212,7 @@ func TestReachable(t *testing.T) {
 				node("b", newExtraValueBuilder().withInheritSources().Build(), "c"),
 				node("c", newExtraValueBuilder().withInheritSources().Build()),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-				insert.TestResults(t, "c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "c", "Z", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
 				insert.TestExonerations("c", "Z", nil, pb.ExonerationReason_NOT_CRITICAL),
 			)...)
 			expected := ReachableInvocations{
@@ -344,7 +344,7 @@ func TestReachable(t *testing.T) {
 				name := invocations.ID("b" + strconv.FormatInt(int64(i), 10))
 				childInvs = append(childInvs, name)
 				nodes = append(nodes, node(name, nil))
-				nodes = append(nodes, insert.TestResults(t, string(name), "testID", nil, pb.TestStatus_SKIP))
+				nodes = append(nodes, insert.TestResults(t, string(name), "testID", nil, pb.TestResult_SKIPPED))
 				nodes = append(nodes, insert.TestExonerations(name, "testID", nil, pb.ExonerationReason_NOT_CRITICAL))
 				nodeSet = append(nodeSet, name)
 			}

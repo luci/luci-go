@@ -190,9 +190,9 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "t0", nil, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv1", "t2", nil, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv1", "t0", nil, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv1", "t2", nil, pb.TestResult_FAILED),
 			)...)
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
@@ -222,9 +222,9 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "t0", nil, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults(t, "inv1", "t2", nil, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv1", "t0", nil, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+				insert.TestResults(t, "inv1", "t2", nil, pb.TestResult_FAILED),
 			)...)
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
@@ -247,9 +247,9 @@ func TestQuery(t *testing.T) {
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "t0", v1, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t1", v2, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t2", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t0", v1, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t1", v2, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t2", v1, pb.TestResult_PASSED),
 			)...)
 
 			q.TestResultPredicate.Variant = &pb.VariantPredicate{
@@ -280,9 +280,9 @@ func TestQuery(t *testing.T) {
 			v01 := pbutil.Variant("k0", "0", "k1", "1")
 			v10 := pbutil.Variant("k0", "1")
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
-				insert.TestResults(t, "inv1", "t0", v00, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t1", v01, pb.TestStatus_PASS),
-				insert.TestResults(t, "inv1", "t2", v10, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t0", v00, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t1", v01, pb.TestResult_PASSED),
+				insert.TestResults(t, "inv1", "t2", v10, pb.TestResult_PASSED),
 			)...)
 
 			t.Run(`Empty`, func(t *ftt.Test) {

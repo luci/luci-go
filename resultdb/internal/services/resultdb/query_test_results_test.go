@@ -94,9 +94,9 @@ func TestQueryTestResults(t *testing.T) {
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
 			insert.FinalizedInvocationWithInclusions("c", map[string]any{"Realm": "testproject:testrealm"}),
-			insert.TestResults(t, "a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", ":module!gtest::Class#A", nil, pb.TestResult_FAILED, pb.TestResult_PASSED),
 			insert.TestResultsLegacy(t, "b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insert.TestResults(t, "c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "c", ":module!gtest::Class#C", nil, pb.TestResult_PASSED),
 		)...)
 
 		srv := newTestResultDBService()
@@ -140,9 +140,9 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			var expectedResults []*pb.TestResult
-			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", nil, pb.TestResult_FAILED, pb.TestResult_PASSED)...)
 			expectedResults = append(expectedResults, insert.MakeTestResultsLegacy("b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
-			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestResult_PASSED)...)
 			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 
@@ -159,7 +159,7 @@ func TestQueryTestResults(t *testing.T) {
 			assert.Loosely(t, res.TestResults, should.HaveLength(1))
 
 			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/:module%21gtest::Class%23C/results/0"))
-			expectedResults := insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestStatus_PASS)
+			expectedResults := insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestResult_PASSED)
 			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 

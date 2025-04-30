@@ -24,7 +24,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -152,17 +151,20 @@ func (q *Query) trim(tv *pb.TestVariant) error {
 
 // tvResult matches the result STRUCT of a test variant from the query.
 type tvResult struct {
-	InvocationID    string
-	ResultID        string
-	IsUnexpected    spanner.NullBool
-	Status          int64
-	StartTime       spanner.NullTime
-	RunDurationUsec spanner.NullInt64
-	SummaryHTML     []byte
-	FailureReason   []byte
-	Tags            []string
-	Properties      []byte
-	SkipReason      spanner.NullInt64
+	InvocationID        string
+	ResultID            string
+	IsUnexpected        spanner.NullBool
+	Status              int64
+	StatusV2            spanner.NullInt64
+	StartTime           spanner.NullTime
+	RunDurationUsec     spanner.NullInt64
+	SummaryHTML         []byte
+	FailureReason       []byte
+	Tags                []string
+	Properties          []byte
+	SkipReason          spanner.NullInt64
+	SkippedReason       []byte
+	FrameworkExtensions []byte
 }
 
 // resultSelectColumns returns a list of columns needed to fetch `tvResult`s
@@ -195,6 +197,7 @@ func (q *Query) resultSelectColumns() []string {
 	}
 
 	selectIfIncluded("Status", "results.*.result.status")
+	selectIfIncluded("StatusV2", "results.*.result.status_v2")
 	selectIfIncluded("StartTime", "results.*.result.start_time")
 	selectIfIncluded("RunDurationUsec", "results.*.result.duration")
 	selectIfIncluded("SummaryHTML", "results.*.result.summary_html")
@@ -202,6 +205,8 @@ func (q *Query) resultSelectColumns() []string {
 	selectIfIncluded("Tags", "results.*.result.tags")
 	selectIfIncluded("Properties", "results.*.result.properties")
 	selectIfIncluded("SkipReason", "results.*.result.skip_reason")
+	selectIfIncluded("SkippedReason", "results.*.result.skipped_reason")
+	selectIfIncluded("FrameworkExtensions", "results.*.result.framework_extensions")
 
 	return columnSet.ToSortedSlice()
 }
@@ -217,34 +222,69 @@ func (q *Query) decompressText(src []byte) (string, error) {
 	return string(q.decompressBuf), nil
 }
 
-// decompressFailureReason decompresses and unmarshals src to dest.FailureReason.
+// populateFailureReason decompresses and unmarshals src to dest.FailureReason.
 // It's a noop if src is empty.
 func (q *Query) populateFailureReason(src []byte, dest *pb.TestResult) error {
-	if len(src) == 0 {
-		dest.FailureReason = nil
-		return nil
-	}
-	var err error
-	if q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf); err != nil {
+	decompressed, err := q.decompress(src)
+	if err != nil {
 		return err
 	}
-	if err := testresults.PopulateFailureReason(dest, q.decompressBuf); err != nil {
+	if err := testresults.PopulateFailureReason(dest, decompressed); err != nil {
 		return err
 	}
 	return nil
 }
 
-// decompressProto decompresses and unmarshals src to dest. It's a noop if src
-// is empty.
-func (q *Query) decompressProto(src []byte, dest proto.Message) error {
-	if len(src) == 0 {
-		return nil
-	}
-	var err error
-	if q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf); err != nil {
+// populateProperties decompresses and unmarshals src to dest.Properties.
+// It's a noop if src is empty.
+func (q *Query) populateProperties(src []byte, dest *pb.TestResult) error {
+	decompressed, err := q.decompress(src)
+	if err != nil {
 		return err
 	}
-	return proto.Unmarshal(q.decompressBuf, dest)
+	if err := testresults.PopulateProperties(dest, decompressed); err != nil {
+		return err
+	}
+	return nil
+}
+
+// populateSkippedReason decompresses and unmarshals src to dest.SkippedReason.
+// It's a noop if src is empty.
+func (q *Query) populateSkippedReason(src []byte, dest *pb.TestResult) error {
+	decompressed, err := q.decompress(src)
+	if err != nil {
+		return err
+	}
+	if err := testresults.PopulateSkippedReason(dest, decompressed); err != nil {
+		return err
+	}
+	return nil
+}
+
+// populateFrameworkExtensions decompresses and unmarshals src to dest.FrameworkExtensions.
+// It's a noop if src is empty.
+func (q *Query) populateFrameworkExtensions(src []byte, dest *pb.TestResult) error {
+	decompressed, err := q.decompress(src)
+	if err != nil {
+		return err
+	}
+	if err := testresults.PopulateFrameworkExtensions(dest, decompressed); err != nil {
+		return err
+	}
+	return nil
+}
+
+// decompress deecompresses src. The returned slice may be reused, so not keep
+// it between calls. Unlike spanutil.Decompress, decompressing an empty slice
+// is valid and produces another empty slice.
+func (q *Query) decompress(src []byte) ([]byte, error) {
+	if len(src) == 0 {
+		return nil, nil
+	}
+	// Re-assign to q.decompressBuf, in case the buffer was enlarged.
+	var err error
+	q.decompressBuf, err = spanutil.Decompress(src, q.decompressBuf)
+	return q.decompressBuf, err
 }
 
 func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, error) {
@@ -258,6 +298,8 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	if r.StartTime.Valid {
 		tr.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
 	}
+
+	testresults.PopulateStatusV2Field(tr, r.StatusV2)
 	testresults.PopulateExpectedField(tr, r.IsUnexpected)
 	testresults.PopulateDurationField(tr, r.RunDurationUsec)
 	testresults.PopulateSkipReasonField(tr, r.SkipReason)
@@ -270,15 +312,14 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	if err := q.populateFailureReason(r.FailureReason, tr); err != nil {
 		return nil, errors.Annotate(err, "failure reason").Err()
 	}
-
-	if len(r.Properties) != 0 {
-		// Don't initialize properties when r.Properties is empty so
-		// it won't produce {"Properties": {}} when serialized to JSON.
-		tr.Properties = &structpb.Struct{}
-
-		if err := q.decompressProto(r.Properties, tr.Properties); err != nil {
-			return nil, err
-		}
+	if err := q.populateProperties(r.Properties, tr); err != nil {
+		return nil, errors.Annotate(err, "properties").Err()
+	}
+	if err := q.populateSkippedReason(r.SkippedReason, tr); err != nil {
+		return nil, errors.Annotate(err, "skipped reason").Err()
+	}
+	if err := q.populateFrameworkExtensions(r.FrameworkExtensions, tr); err != nil {
+		return nil, errors.Annotate(err, "framework extensions").Err()
 	}
 
 	// Populate Tags.

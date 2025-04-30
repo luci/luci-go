@@ -72,12 +72,12 @@ func TestBatchGetTestVariants(t *testing.T) {
 			}),
 		)
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "i0", "test1", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
-			insert.TestResults(t, "i0", "test2", pbutil.Variant("c", "d"), pb.TestStatus_PASS),
-			insert.TestResults(t, "i0", "test3", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
-			insert.TestResults(t, "i0", "test4", pbutil.Variant("g", "h"), pb.TestStatus_SKIP),
-			insert.TestResults(t, "i1", "test1", pbutil.Variant("e", "f"), pb.TestStatus_PASS),
-			insert.TestResults(t, "i1", "test3", pbutil.Variant("c", "d"), pb.TestStatus_PASS),
+			insert.TestResults(t, "i0", "test1", pbutil.Variant("a", "b"), pb.TestResult_SKIPPED),
+			insert.TestResults(t, "i0", "test2", pbutil.Variant("c", "d"), pb.TestResult_PASSED),
+			insert.TestResults(t, "i0", "test3", pbutil.Variant("a", "b"), pb.TestResult_FAILED),
+			insert.TestResults(t, "i0", "test4", pbutil.Variant("g", "h"), pb.TestResult_EXECUTION_ERRORED),
+			insert.TestResults(t, "i1", "test1", pbutil.Variant("e", "f"), pb.TestResult_PASSED),
+			insert.TestResults(t, "i1", "test3", pbutil.Variant("c", "d"), pb.TestResult_PASSED),
 		)...)
 
 		srv := newTestResultDBService()
@@ -131,10 +131,33 @@ func TestBatchGetTestVariants(t *testing.T) {
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			}))
 
-			for _, tv := range res.TestVariants {
+			expectedResults := []*pb.TestResult{
+				insert.MakeTestResults("i0", "test3", pbutil.Variant("a", "b"), pb.TestResult_FAILED)[0],
+				insert.MakeTestResults("i0", "test4", pbutil.Variant("g", "h"), pb.TestResult_EXECUTION_ERRORED)[0],
+				insert.MakeTestResults("i0", "test1", pbutil.Variant("a", "b"), pb.TestResult_SKIPPED)[0],
+			}
+
+			for i, tv := range res.TestVariants {
 				assert.Loosely(t, tv.IsMasked, should.BeFalse)
 				assert.Loosely(t, tv.SourcesId, should.Equal(graph.HashSources(testutil.TestSources()).String()))
+
+				expectedResult := expectedResults[i]
+				assert.Loosely(t, tv.TestId, should.Equal(expectedResult.TestId))
+				assert.Loosely(t, tv.TestMetadata, should.Match(expectedResult.TestMetadata))
+				assert.Loosely(t, tv.Variant, should.Match(expectedResult.Variant))
+				assert.Loosely(t, tv.VariantHash, should.Equal(expectedResult.VariantHash))
+
+				// Drop fields which are lifted to the test variant level.
+				expectedResult.TestId = ""
+				expectedResult.TestIdStructured = nil
+				expectedResult.TestMetadata = nil
+				expectedResult.Variant = nil
+				expectedResult.VariantHash = ""
+
+				assert.Loosely(t, tv.Results, should.HaveLength(1))
+				assert.Loosely(t, tv.Results[0].Result, should.Match(expectedResult))
 			}
+
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
 			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})

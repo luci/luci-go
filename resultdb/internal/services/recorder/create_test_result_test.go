@@ -44,7 +44,7 @@ import (
 )
 
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
-func validCreateTestResultRequest(now time.Time, invName string, testVariantID *pb.TestIdentifier) *pb.CreateTestResultRequest {
+func validCreateTestResultRequest(now time.Time, invName string, testIdentifier *pb.TestIdentifier) *pb.CreateTestResultRequest {
 	properties, err := structpb.NewStruct(map[string]any{
 		"key_1": "value_1",
 		"key_2": map[string]any{
@@ -61,10 +61,9 @@ func validCreateTestResultRequest(now time.Time, invName string, testVariantID *
 		RequestId:  "request-id-123",
 
 		TestResult: &pb.TestResult{
-			TestIdStructured: testVariantID,
+			TestIdStructured: testIdentifier,
 			ResultId:         "result-id-0",
-			Expected:         true,
-			Status:           pb.TestStatus_PASS,
+			StatusV2:         pb.TestResult_PASSED,
 			TestMetadata: &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{
@@ -80,14 +79,6 @@ func validCreateTestResultRequest(now time.Time, invName string, testVariantID *
 						},
 					},
 				},
-			},
-			FailureReason: &pb.FailureReason{
-				PrimaryErrorMessage: "got 1, want 0",
-				Errors: []*pb.FailureReason_Error{
-					{Message: "got 1, want 0"},
-					{Message: "got 2, want 1"},
-				},
-				TruncatedErrorsCount: 0,
 			},
 			Properties: properties,
 		},
@@ -251,11 +242,6 @@ func TestCreateTestResult(t *testing.T) {
 
 		createTestResult := func(req *pb.CreateTestResultRequest, expected *pb.TestResult, expectedCommonPrefix string) {
 			expectedWireTR := proto.Clone(expected).(*pb.TestResult)
-			if req.TestResult.TestIdStructured == nil {
-				// For legacy create requests, expect the response to omit the TestVariantIdentifier.
-				expectedWireTR.TestIdStructured = nil
-			}
-
 			res, err := recorder.CreateTestResult(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Match(expectedWireTR))
@@ -280,11 +266,14 @@ func TestCreateTestResult(t *testing.T) {
 
 		t.Run("succeeds", func(t *ftt.Test) {
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
+			// Populate output only fields.
 			expected.Name = "invocations/u-build-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0"
 			expected.TestIdStructured.ModuleVariantHash = "5d8482c3056d8635"
 			expected.TestId = "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar"
 			expected.Variant = pbutil.Variant("key", "value")
 			expected.VariantHash = "5d8482c3056d8635"
+			expected.Status = pb.TestStatus_PASS
+			expected.Expected = true
 
 			t.Run("with a request ID", func(t *ftt.Test) {
 				createTestResult(req, expected, "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar")
@@ -323,6 +312,23 @@ func TestCreateTestResult(t *testing.T) {
 			req = legacyCreateTestResultRequest(clock.Now(ctx).UTC(), "invocations/u-build-1", "test-id")
 
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
+			// Populate inferred fields.
+			expected.TestIdStructured = &pb.TestIdentifier{
+				ModuleName:   "legacy",
+				ModuleScheme: "legacy",
+				ModuleVariant: pbutil.Variant(
+					"a/b", "1",
+					"c", "2",
+				),
+				ModuleVariantHash: "c8643f74854d84b4",
+				CaseName:          "test-id",
+			}
+			expected.StatusV2 = pb.TestResult_PASSED
+			expected.FailureReason.Errors = []*pb.FailureReason_Error{ // Errors collection set from PrimaryErrorMessage.
+				{Message: "got 1, want 0"},
+			}
+
+			// Populate output-only fields.
 			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
 			expected.VariantHash = "c8643f74854d84b4"
 			expected.TestIdStructured = &pb.TestIdentifier{
@@ -335,20 +341,19 @@ func TestCreateTestResult(t *testing.T) {
 				ModuleVariantHash: "c8643f74854d84b4",
 				CaseName:          "test-id",
 			}
-			expected.FailureReason = &pb.FailureReason{
-				PrimaryErrorMessage: "got 1, want 0",
-				Errors: []*pb.FailureReason_Error{
-					{Message: "got 1, want 0"},
-				},
-			}
 
 			t.Run("base case", func(t *ftt.Test) {
 				createTestResult(req, expected, "test-id")
 			})
 			t.Run("failure reason kind is set based on v1 status", func(t *ftt.Test) {
+				// This only applies to unexpected failures.
+				req.TestResult.Expected = false
+				expected.Expected = false
+
 				t.Run("crash", func(t *ftt.Test) {
 					req.TestResult.Status = pb.TestStatus_CRASH
 					expected.Status = pb.TestStatus_CRASH
+					expected.StatusV2 = pb.TestResult_FAILED
 					expected.FailureReason.Kind = pb.FailureReason_CRASH
 
 					createTestResult(req, expected, "test-id")
@@ -356,6 +361,7 @@ func TestCreateTestResult(t *testing.T) {
 				t.Run("abort", func(t *ftt.Test) {
 					req.TestResult.Status = pb.TestStatus_ABORT
 					expected.Status = pb.TestStatus_ABORT
+					expected.StatusV2 = pb.TestResult_FAILED
 					expected.FailureReason.Kind = pb.FailureReason_TIMEOUT
 
 					createTestResult(req, expected, "test-id")
@@ -363,7 +369,68 @@ func TestCreateTestResult(t *testing.T) {
 				t.Run("ordinary failure", func(t *ftt.Test) {
 					req.TestResult.Status = pb.TestStatus_FAIL
 					expected.Status = pb.TestStatus_FAIL
+					expected.StatusV2 = pb.TestResult_FAILED
 					expected.FailureReason.Kind = pb.FailureReason_ORDINARY
+
+					createTestResult(req, expected, "test-id")
+				})
+			})
+			t.Run("framework extensions set for expected failures and unexpected passes", func(t *ftt.Test) {
+				t.Run("expected crash", func(t *ftt.Test) {
+					req.TestResult.Expected = true
+					req.TestResult.Status = pb.TestStatus_CRASH
+					expected.Expected = true
+					expected.Status = pb.TestStatus_CRASH
+					expected.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_CRASH,
+							IsExpected: true,
+						},
+					}
+
+					createTestResult(req, expected, "test-id")
+				})
+				t.Run("expected abort", func(t *ftt.Test) {
+					req.TestResult.Expected = true
+					req.TestResult.Status = pb.TestStatus_ABORT
+					expected.Expected = true
+					expected.Status = pb.TestStatus_ABORT
+					expected.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_TIMEOUT,
+							IsExpected: true,
+						},
+					}
+
+					createTestResult(req, expected, "test-id")
+				})
+				t.Run("expected failure", func(t *ftt.Test) {
+					req.TestResult.Expected = true
+					req.TestResult.Status = pb.TestStatus_FAIL
+					expected.Expected = true
+					expected.Status = pb.TestStatus_FAIL
+					expected.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_FAIL,
+							IsExpected: true,
+						},
+					}
+
+					createTestResult(req, expected, "test-id")
+				})
+				t.Run("unexpected pass", func(t *ftt.Test) {
+					req.TestResult.Expected = false
+					req.TestResult.Status = pb.TestStatus_PASS
+					expected.Expected = false
+					expected.Status = pb.TestStatus_PASS
+					expected.StatusV2 = pb.TestResult_FAILED
+					expected.FailureReason.Kind = pb.FailureReason_ORDINARY
+					expected.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							Status:     pb.WebTest_PASS,
+							IsExpected: false,
+						},
+					}
 
 					createTestResult(req, expected, "test-id")
 				})
