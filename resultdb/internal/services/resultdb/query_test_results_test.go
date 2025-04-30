@@ -140,9 +140,9 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			var expectedResults []*pb.TestResult
-			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", nil, pb.TestResult_FAILED, pb.TestResult_PASSED)...)
-			expectedResults = append(expectedResults, insert.MakeTestResultsLegacy("b", ":module!gtest::Class#B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
-			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestResult_PASSED)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("a", ":module!gtest::Class#A", &pb.Variant{}, pb.TestResult_FAILED, pb.TestResult_PASSED)...)
+			expectedResults = append(expectedResults, insert.MakeTestResultsLegacy("b", ":module!gtest::Class#B", &pb.Variant{}, pb.TestStatus_CRASH, pb.TestStatus_PASS)...)
+			expectedResults = append(expectedResults, insert.MakeTestResults("c", ":module!gtest::Class#C", &pb.Variant{}, pb.TestResult_PASSED)...)
 			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 
@@ -159,7 +159,7 @@ func TestQueryTestResults(t *testing.T) {
 			assert.Loosely(t, res.TestResults, should.HaveLength(1))
 
 			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/:module%21gtest::Class%23C/results/0"))
-			expectedResults := insert.MakeTestResults("c", ":module!gtest::Class#C", nil, pb.TestResult_PASSED)
+			expectedResults := insert.MakeTestResults("c", ":module!gtest::Class#C", &pb.Variant{}, pb.TestResult_PASSED)
 			assert.Loosely(t, res.TestResults, should.Match(expectedResults))
 		})
 

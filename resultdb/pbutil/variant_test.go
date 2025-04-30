@@ -64,9 +64,9 @@ func TestVariantUtils(t *testing.T) {
 			)))
 		})
 
-		t.Run(`for empty list returns nil`, func(t *ftt.Test) {
+		t.Run(`for empty list returns empty variant`, func(t *ftt.Test) {
 			vr, err := VariantFromStrings([]string{})
-			assert.Loosely(t, vr, should.BeNil)
+			assert.Loosely(t, vr, should.Match(&pb.Variant{}))
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})

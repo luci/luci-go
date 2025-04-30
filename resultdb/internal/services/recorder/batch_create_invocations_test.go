@@ -325,6 +325,8 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[0].CreateTime,
+
+				TestResultVariantUnion: &pb.Variant{},
 			})
 			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
 			expected2.Instructions = instructionutil.InstructionsWithNames(expected2.Instructions, "u-batch-inv2")
@@ -335,6 +337,8 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[1].CreateTime,
+
+				TestResultVariantUnion: &pb.Variant{},
 			})
 			assert.Loosely(t, resp.Invocations[0], should.Match(expected))
 			assert.Loosely(t, resp.Invocations[1], should.Match(expected2))

@@ -165,10 +165,11 @@ func TestRead(t *testing.T) {
 				Inherit: true,
 				Sources: sources,
 			},
-			IsSourceSpecFinal:  true,
-			BaselineId:         "try:linux-rel",
-			Instructions:       instructionutil.InstructionsWithNames(instructions, "including"),
-			ExtendedProperties: extendedProperties,
+			IsSourceSpecFinal:      true,
+			BaselineId:             "try:linux-rel",
+			Instructions:           instructionutil.InstructionsWithNames(instructions, "including"),
+			ExtendedProperties:     extendedProperties,
+			TestResultVariantUnion: &pb.Variant{},
 		}))
 	})
 
@@ -191,9 +192,10 @@ func TestRead(t *testing.T) {
 				Inherit: true,
 				Sources: sources,
 			},
-			IsSourceSpecFinal: true,
-			BaselineId:        "try:linux-rel",
-			Instructions:      instructionutil.InstructionsWithNames(instructions, "including"),
+			IsSourceSpecFinal:      true,
+			BaselineId:             "try:linux-rel",
+			Instructions:           instructionutil.InstructionsWithNames(instructions, "including"),
+			TestResultVariantUnion: &pb.Variant{},
 		}))
 		// Double check the ExtendedProperties is nil
 		assert.Loosely(t, inv.ExtendedProperties, should.BeNil)

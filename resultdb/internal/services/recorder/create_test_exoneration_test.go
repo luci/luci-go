@@ -378,9 +378,9 @@ func TestCreateTestExoneration(t *testing.T) {
 				request.TestExoneration.Variant = nil
 				request.TestExoneration.VariantHash = "deadbeefdeadbeef"
 
-				expected.Variant = nil
+				expected.Variant = &pb.Variant{}
 				expected.VariantHash = "deadbeefdeadbeef"
-				expected.TestIdStructured.ModuleVariant = nil
+				expected.TestIdStructured.ModuleVariant = &pb.Variant{}
 				expected.TestIdStructured.ModuleVariantHash = "deadbeefdeadbeef"
 
 				e2eTest(request, expected, "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")

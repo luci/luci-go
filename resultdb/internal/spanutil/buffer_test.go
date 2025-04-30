@@ -82,9 +82,15 @@ func TestTypeConversion(t *testing.T) {
 		})
 		t.Run(`Empty`, func(t *ftt.Test) {
 			test(
-				(*pb.Variant)(nil),
+				&pb.Variant{},
 				[]string{},
 			)
+		})
+		t.Run(`Nil`, func(t *ftt.Test) {
+			// Nil does not roundtrip as its stored representatio is the same
+			// as the empty variant.
+			actualSPValue := ToSpanner((*pb.Variant)(nil))
+			assert.Loosely(t, actualSPValue, should.Match([]string{}))
 		})
 	})
 

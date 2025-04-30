@@ -535,6 +535,11 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		if _, ok := checkpoints[uq]; ok {
 			return nil
 		}
+		if a.TestID == "" {
+			// Ensure the variant is nil (as opposed to a set but empty variant) where
+			// the artifact is not for a test result.
+			a.TestVariant = nil
+		}
 
 		// Update tsmon metrics.
 		// Note: In case a task is retried, the metric may got double-counted.

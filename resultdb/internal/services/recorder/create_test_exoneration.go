@@ -173,6 +173,11 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		// Hash(Variant) != VariantHash and we have missing data in the database, but not
 		// much we can do about it until we fix clients away from the hash-only requests.
 		variant = body.Variant
+		if variant == nil {
+			// Prefer to return empty variant instead of nil variant to avoid ambiguities
+			// between setting an empty variant vs no variant.
+			variant = &pb.Variant{}
+		}
 
 		// Use the given variant hash, or the hash of the given variant, whichever
 		// is present. If both are present then validation guarantees they'll

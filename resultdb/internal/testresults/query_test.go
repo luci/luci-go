@@ -80,7 +80,7 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		t.Run(`Does not fetch test results of other invocations`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "DoBaz", nil,
+			expected := insert.MakeTestResults("inv1", "DoBaz", &pb.Variant{},
 				pb.TestResult_PASSED,
 				pb.TestResult_FAILED,
 				pb.TestResult_FAILED,
@@ -293,7 +293,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Paging`, func(t *ftt.Test) {
-			trs := insert.MakeTestResults("inv1", "DoBaz", nil,
+			trs := insert.MakeTestResults("inv1", "DoBaz", &pb.Variant{},
 				pb.TestResult_PASSED,
 				pb.TestResult_FAILED,
 				pb.TestResult_FAILED,
@@ -354,7 +354,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Test metadata`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestResult_PASSED)
+			expected := insert.MakeTestResults("inv1", "DoBaz", &pb.Variant{}, pb.TestResult_PASSED)
 			expected[0].TestMetadata = &pb.TestMetadata{
 				Name: "original_name",
 				Location: &pb.TestLocation{
@@ -378,7 +378,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Failure reason`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestResult_FAILED)
+			expected := insert.MakeTestResults("inv1", "DoFailureReason", &pb.Variant{}, pb.TestResult_FAILED)
 			expected[0].FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: "want true, got false",
 				Errors: []*pb.FailureReason_Error{
@@ -395,7 +395,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Properties`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "WithProperties", nil, pb.TestResult_PASSED)
+			expected := insert.MakeTestResults("inv1", "WithProperties", &pb.Variant{}, pb.TestResult_PASSED)
 			expected[0].Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
 				"key": structpb.NewStringValue("value"),
 			}}
@@ -407,7 +407,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		t.Run(`Skip reason`, func(t *ftt.Test) {
-			expected := insert.MakeTestResults("inv1", "WithSkipReason", nil, pb.TestResult_SKIPPED)
+			expected := insert.MakeTestResults("inv1", "WithSkipReason", &pb.Variant{}, pb.TestResult_SKIPPED)
 			expected[0].SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)

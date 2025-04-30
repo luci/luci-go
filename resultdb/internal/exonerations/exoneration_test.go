@@ -97,10 +97,12 @@ func TestRead(t *testing.T) {
 				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "legacy",
 					ModuleScheme:      "legacy",
+					ModuleVariant:     &pb.Variant{},
 					ModuleVariantHash: "deadbeef",
 					CaseName:          "t t",
 				},
 				ExplanationHtml: "",
+				Variant:         &pb.Variant{},
 				VariantHash:     "deadbeef",
 				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 			}))

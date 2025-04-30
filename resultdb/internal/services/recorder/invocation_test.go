@@ -113,13 +113,14 @@ func TestReadInvocation(t *testing.T) {
 
 			inv := readInv()
 			expected := &pb.Invocation{
-				Name:              "invocations/inv",
-				State:             pb.Invocation_FINALIZED,
-				CreateTime:        pbutil.MustTimestampProto(ct),
-				Deadline:          pbutil.MustTimestampProto(ct.Add(time.Hour)),
-				FinalizeStartTime: pbutil.MustTimestampProto(ct.Add(2 * time.Hour)),
-				FinalizeTime:      pbutil.MustTimestampProto(ct.Add(3 * time.Hour)),
-				Realm:             insert.TestRealm,
+				Name:                   "invocations/inv",
+				State:                  pb.Invocation_FINALIZED,
+				CreateTime:             pbutil.MustTimestampProto(ct),
+				Deadline:               pbutil.MustTimestampProto(ct.Add(time.Hour)),
+				FinalizeStartTime:      pbutil.MustTimestampProto(ct.Add(2 * time.Hour)),
+				FinalizeTime:           pbutil.MustTimestampProto(ct.Add(3 * time.Hour)),
+				Realm:                  insert.TestRealm,
+				TestResultVariantUnion: &pb.Variant{},
 			}
 			assert.Loosely(t, inv, should.Match(expected))
 

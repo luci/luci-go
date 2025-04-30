@@ -80,7 +80,7 @@ func TestQuery(t *testing.T) {
 		expectedTestVerdicts := []*pb.RunTestVerdict{
 			{
 				TestId:      "A",
-				Variant:     nil,
+				Variant:     &pb.Variant{},
 				VariantHash: "e3b0c44298fc1c14",
 				Results: []*pb.TestResultBundle{
 					{
@@ -148,7 +148,7 @@ func TestQuery(t *testing.T) {
 				TestMetadata: &pb.TestMetadata{Name: "testname"},
 			}, {
 				TestId:      "B",
-				Variant:     nil,
+				Variant:     &pb.Variant{},
 				VariantHash: "e3b0c44298fc1c14",
 				Results: []*pb.TestResultBundle{
 					{
@@ -163,7 +163,7 @@ func TestQuery(t *testing.T) {
 				},
 			}, {
 				TestId:      "C",
-				Variant:     nil,
+				Variant:     &pb.Variant{},
 				VariantHash: "e3b0c44298fc1c14",
 				Results: []*pb.TestResultBundle{
 					{

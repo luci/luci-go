@@ -81,7 +81,7 @@ func VariantToStrings(vr *pb.Variant) []string {
 // If a key appears multiple times, the last pair wins.
 func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 	if len(pairs) == 0 {
-		return nil, nil
+		return &pb.Variant{}, nil
 	}
 
 	def := make(map[string]string, len(pairs))

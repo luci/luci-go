@@ -112,8 +112,9 @@ func TestGetInvocation(t *testing.T) {
 					Sources: testutil.TestSources(),
 					Inherit: true,
 				},
-				BaselineId:         "testrealm:testbuilder",
-				ExtendedProperties: extendedProperties,
+				BaselineId:             "testrealm:testbuilder",
+				ExtendedProperties:     extendedProperties,
+				TestResultVariantUnion: &pb.Variant{},
 			}))
 		})
 

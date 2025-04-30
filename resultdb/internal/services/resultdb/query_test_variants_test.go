@@ -384,7 +384,7 @@ func TestQueryTestVariants(t *testing.T) {
 			expectedTestResults := [][]*pb.TestResult{
 				insert.MakeTestResultsLegacy("inv0", "T2", nil, pb.TestStatus_FAIL),
 				insert.MakeTestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestResult_FAILED, pb.TestResult_PASSED),
-				insert.MakeTestResults("inv0", "T1", nil, pb.TestResult_FAILED),
+				insert.MakeTestResults("inv0", "T1", &pb.Variant{}, pb.TestResult_FAILED),
 			}
 
 			for i, tv := range page.TestVariants {
@@ -448,8 +448,8 @@ func TestQueryTestVariants(t *testing.T) {
 			}))
 
 			expectedTestResults := [][]*pb.TestResult{
-				insert.MakeTestResults("inv1", "T3", nil, pb.TestResult_PASSED),
-				insert.MakeTestResults("inv1", "T4", nil, pb.TestResult_SKIPPED),
+				insert.MakeTestResults("inv1", "T3", &pb.Variant{}, pb.TestResult_PASSED),
+				insert.MakeTestResults("inv1", "T4", &pb.Variant{}, pb.TestResult_SKIPPED),
 			}
 
 			for i, tv := range res.TestVariants {

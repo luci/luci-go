@@ -811,6 +811,8 @@ func TestCreateInvocation(t *testing.T) {
 				// we use Spanner commit time, so skip the check
 				CreateTime:        inv.CreateTime,
 				FinalizeStartTime: inv.CreateTime,
+
+				TestResultVariantUnion: &pb.Variant{},
 			})
 			assert.Loosely(t, inv, should.Match(expected))
 
