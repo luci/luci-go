@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/git/creds"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -74,6 +76,20 @@ git credential-luci login
 
 ` + "\u200b\n"
 
+// reauthRequiredMsg is the message to print when a RAPT is required
+// but missing/expired.
+//
+// In most setups, Git will fallback to reading the username and
+// password, which will overwrite any preceding trailing whitespace.  Thus, we
+// add a zero width space at the end to protect the message.
+const reAuthRequiredMsg = `ReAuth is required
+
+If you are running this in a development environment, you can fix this by running:
+
+git credential-luci reauth
+
+` + "\u200b\n"
+
 func main() {
 	flag.Parse()
 
@@ -106,6 +122,35 @@ func main() {
 			}
 			os.Exit(1)
 		}
+		if os.Getenv("LUCI_ENABLE_REAUTH") != "" {
+			logging.Debugf(ctx, "ReAuth is enabled")
+			attrs, err := creds.ReadAttrs(os.Stdin)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
+			logging.Debugf(ctx, "Got attributes %+v", attrs)
+			ra := auth.NewReAuthenticator(a)
+			// TODO(ayatane): This will need to be
+			// replaced with a checker that checks whether
+			// ReAuth is needed.
+			if true {
+				if !attrs.HasAuthtypeCapability() {
+					fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
+					os.Exit(1)
+				}
+				rapt, err := ra.GetRAPT(ctx)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%v\n", err)
+					fmt.Fprint(os.Stderr, reAuthRequiredMsg)
+					os.Exit(1)
+				}
+				fmt.Printf("authtype=BearerReAuth\n")
+				fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
+				os.Exit(0)
+			}
+			// Fall through if ReAuth is not needed
+		}
 		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
 	case "erase", "logout":
@@ -118,9 +163,28 @@ func main() {
 	case "login":
 		// This is not part of the Git credential helper
 		// specification, but it is provided for convenience.
+
+		// Create a new authenticator with interactive login.
 		a = auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 		if err := a.Login(); err != nil {
 			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
+			os.Exit(1)
+		}
+		if os.Getenv("LUCI_ENABLE_REAUTH") != "" {
+			ra := auth.NewReAuthenticator(a)
+			if err := ra.RenewRAPT(ctx); err != nil {
+				fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	case "reauth":
+		if os.Getenv("LUCI_ENABLE_REAUTH") == "" {
+			fmt.Fprintf(os.Stderr, "ReAuth is not enabled (set LUCI_ENABLE_REAUTH=1 to enable)\n")
+			os.Exit(1)
+		}
+		ra := auth.NewReAuthenticator(a)
+		if err := ra.RenewRAPT(ctx); err != nil {
+			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
 			os.Exit(1)
 		}
 	case "info":
