@@ -228,14 +228,14 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *pluginRequest) (
 		}
 		if resp.Code != noError {
 			logging.Warningf(ctx, "Aborting signing plugin auth due to unknown error: %s", resp.Code)
-			return nil, errors.Annotate(resp.Code, "signing plugin auth").Err()
+			return nil, errors.Fmt("signing plugin auth: %w", resp.Code)
 		}
 		logging.Infof(ctx, "Got successful signing plugin response")
 		return resp, nil
 	cont:
 		select {
 		case <-ctx.Done():
-			return nil, errors.Annotate(ctx.Err(), "signing plugin auth").Err()
+			return nil, errors.Fmt("signing plugin auth: %w", ctx.Err())
 		case <-interval.C:
 		}
 	}

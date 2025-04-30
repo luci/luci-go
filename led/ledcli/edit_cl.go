@@ -189,11 +189,10 @@ func gerritResolver(ctx context.Context, authClient *http.Client) changeResolver
 			},
 		})
 		if status.Code(err) == codes.Unauthenticated {
-			return "", 0, errors.Annotate(err,
+			return "", 0, errors.Fmt(
 				"Gerrit host %q requires authentication and URL did not include project and/or patchset. "+
 					"Please include the project and patchset you want in your URL (patchset can be "+
-					"ignored by setting it to `0`).", host,
-			).Err()
+					"ignored by setting it to `0`): %w", host, err)
 		}
 		if err != nil {
 			return "", 0, errors.Annotate(err, "GetChange").Err()

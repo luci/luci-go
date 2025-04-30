@@ -52,7 +52,7 @@ func ProgramIsolatedTransformer(args ...string) IsolatedTransformer {
 		tProg.Stdout = os.Stderr
 		tProg.Stderr = os.Stderr
 		tProg.Dir = dir
-		return errors.Annotate(tProg.Run(), "running transform_program").Err()
+		return errors.WrapIf(tProg.Run(), "running transform_program")
 	}
 }
 

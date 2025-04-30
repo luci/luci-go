@@ -44,7 +44,7 @@ func TestCode(t *testing.T) {
 
 		t.Run("For wrapped errors", func(t *ftt.Test) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
-			errWrapped := lucierr.Annotate(errGRPCNotFound, "wrapped").Err()
+			errWrapped := lucierr.Fmt("wrapped: %w", errGRPCNotFound)
 			assert.Loosely(t, Code(errWrapped), should.Equal(codes.NotFound))
 		})
 

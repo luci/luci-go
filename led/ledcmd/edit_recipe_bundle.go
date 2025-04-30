@@ -171,7 +171,7 @@ func cmdErr(cmd *exec.Cmd, err error, reason string) error {
 	} else {
 		outErr = err.Error()
 	}
-	return errors.Annotate(err, "running %q: %s: %s", strings.Join(cmd.Args, " "), reason, outErr).Err()
+	return errors.Fmt("running %q: %s: %s: %w", strings.Join(cmd.Args, " "), reason, outErr, err)
 }
 
 func appendText(path, fmtStr string, items ...any) error {

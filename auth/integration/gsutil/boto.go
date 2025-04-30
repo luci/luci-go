@@ -156,8 +156,8 @@ func (b *Boto) readBotoConfigSections(path string) error {
 		sections[sectionFound] = buf.Bytes()
 	}
 
-	if s.Err() != nil {
-		return errors.Annotate(s.Err(), "failed to read existing .boto file at %s", path).Err()
+	if err := s.Err(); err != nil {
+		return errors.Fmt("failed to read existing .boto file at %s: %w", path, err)
 	}
 
 	for k, s := range sections {

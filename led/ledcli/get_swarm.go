@@ -69,7 +69,7 @@ func (c *cmdGetSwarm) positionalRange() (min, max int) { return 1, 1 }
 
 func (c *cmdGetSwarm) validateFlags(ctx context.Context, positionals []string, env subcommands.Env) error {
 	c.taskID = positionals[0]
-	return errors.Annotate(pingHost(c.swarmingHost), "swarming host").Err()
+	return errors.WrapIf(pingHost(c.swarmingHost), "swarming host")
 }
 
 func (c *cmdGetSwarm) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {

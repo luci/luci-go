@@ -174,7 +174,7 @@ func (v *Context) record(severity Severity, err error) {
 	}
 	// Make the file and the logical path also usable through error inspection.
 
-	err = errors.Annotate(err, "%s", ctx).Err()
+	err = errors.Fmt("%s: %w", ctx, err)
 	err = fileTag.ApplyValue(err, v.file)
 	els := slices.Clone(v.element)
 	err = elementTag.ApplyValue(err, &els)
