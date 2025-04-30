@@ -96,7 +96,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// Note that TestIdStructured.ModuleVariantHash is also output only and should
 		// also be ignored.
 
-		if err := pbutil.ValidateStructuredTestIdentifier(ex.TestIdStructured); err != nil {
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured); err != nil {
 			return errors.Annotate(err, "test_id_structured").Err()
 		}
 		// Validate the test identifier meets the requirements of the scheme.

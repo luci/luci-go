@@ -28,6 +28,11 @@ option java_multiple_files = true;
 // Represents a matching test variant with its outcomes.
 // Also known as a test verdict.
 message TestVariant {
+  // The structured test identifier.
+  //
+  // Refer to TestResult.test_id_structured for details.
+  TestIdentifier test_id_structured = 11;
+
   // A unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]{1,512}$
   //

@@ -363,8 +363,18 @@ func TestIDFromStructuredTestIdentifier(id *pb.TestIdentifier) string {
 	return EncodeTestID(ExtractBaseTestIdentifier(id))
 }
 
+// VariantFromStructuredTestIdentifier retrieves the equivalent variant for a structured test ID.
+// Only suitable test identifiers validated with ValidateStructuredTestIdentifierForStorage.
 func VariantFromStructuredTestIdentifier(id *pb.TestIdentifier) *pb.Variant {
 	return proto.Clone(id.ModuleVariant).(*pb.Variant)
+}
+
+// VariantFromStructuredTestIdentifier retrieves the equivalent variant hash for a structured test ID.
+func VariantHashFromStructuredTestIdentifier(id *pb.TestIdentifier) string {
+	if id.ModuleVariantHash != "" {
+		return id.ModuleVariantHash
+	}
+	return VariantHash(id.ModuleVariant)
 }
 
 // ParseStructuredTestIdentifierForInput constructs a test identifier from the
@@ -397,19 +407,21 @@ func ParseStructuredTestIdentifierForOutput(testID string, variant *pb.Variant) 
 	return result, nil
 }
 
-// PopulateStructuredTestIdentifierHashes computes the OUTPUT_ONLY fields on TestVariantIdentifier
-// from the client-controlled field values.
+// PopulateStructuredTestIdentifierHashes computes the variant hash field on TestVariantIdentifier.
+// It should only be called on TestIdentifiers retrieved from storage and that were validated
+// by ValidateStructuredTestIdentifierForUpload, i.e. have the variant set.
 func PopulateStructuredTestIdentifierHashes(id *pb.TestIdentifier) {
 	id.ModuleVariantHash = VariantHash(id.ModuleVariant)
 }
 
-// ValidateStructuredTestIdentifier validates a structured test identifier.
+// ValidateStructuredTestIdentifierForStorage validates a structured test identifier
+// that is being uploaded for storage.
 //
-// N.B. This does not validate the test ID against the configured schemes, but
-// this validation must only be applied at upload time. (And must not be applied
-// at other times to ensure old tests uploaded under old schemes continue to be
-// ingestable and queryable.)
-func ValidateStructuredTestIdentifier(id *pb.TestIdentifier) error {
+// N.B. This does not validate the test ID against the configured schemes; this
+// should also be applied at upload time. (And must not be applied at other times
+// to ensure old tests uploaded under old schemes continue to be ingestable and
+// queryable.)
+func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
@@ -422,15 +434,46 @@ func ValidateStructuredTestIdentifier(id *pb.TestIdentifier) error {
 		return errors.Annotate(err, "module_variant").Err()
 	}
 	if id.ModuleVariantHash != "" {
-		// Currently this is an output-only field. At some point, we might want to
-		// allow clients to set it. To make this possible without breaking compatibility,
-		// we should already start validating the values they set to make sure they are valid.
-		expectedVariantHash := VariantHash(id.ModuleVariant)
-		if id.ModuleVariantHash != expectedVariantHash {
-			return errors.Reason("module_variant_hash: expected %s to match specified variant", expectedVariantHash).Err()
-		}
+		// Technically AIPs say we shouldn't validate output only fields, but
+		// this isn't an output only field in all contexts, and this will catch
+		// errors. In addition, some methods (e.g. VariantHashFromStructuredTestIdentifier)
+		// assume the variant hash, if set, is valid.
+		return errors.Reason("module_variant_hash: do not set when uploading results, this field is output only").Err()
+	}
+	return nil
+}
+
+// ValidateStructuredTestIdentifierForQuery validates a structured test identifier
+// is suitable as an input to a query RPC.
+//
+// Unlike ValidateStructuredTestIdentifierForStorage, this method allows either
+// the ModuleVariant or ModuleVariantHash to be specified.
+func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
+	if id == nil {
+		return validate.Unspecified()
+	}
+	if err := ValidateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
+		return err
 	}
 
+	// Module variant. Note that a nil variant is valid.
+	if err := ValidateVariant(id.ModuleVariant); err != nil {
+		return errors.Annotate(err, "module_variant").Err()
+	}
+	if id.ModuleVariantHash != "" {
+		if err := ValidateVariantHash(id.ModuleVariantHash); err != nil {
+			return errors.Annotate(err, "module_variant_hash").Err()
+		}
+		if id.ModuleVariant != nil {
+			// If clients set both the hash and the variant, they should be consistent.
+			// Clients may commonly set both if they are passing back a structured test ID
+			// retrieved via another query.
+			expectedVariantHash := VariantHash(id.ModuleVariant)
+			if id.ModuleVariantHash != expectedVariantHash {
+				return errors.Reason("module_variant_hash: expected %s to match specified variant", expectedVariantHash).Err()
+			}
+		}
+	}
 	return nil
 }
 

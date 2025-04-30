@@ -204,12 +204,11 @@ func TestQueryTestVariants(t *testing.T) {
 			// Test metadata, test ID and variant is reported at the test variant level not the result level.
 			tmd := expectedT4Result[0].TestMetadata
 			variant := expectedT4Result[0].Variant
+			testIDStructured := expectedT4Result[0].TestIdStructured
 			expectedT4Result[0].TestMetadata = nil
 			expectedT4Result[0].Variant = nil
 			expectedT4Result[0].TestId = ""
 			expectedT4Result[0].VariantHash = ""
-
-			// Not currently returned by the RPC.
 			expectedT4Result[0].TestIdStructured = nil
 
 			assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
@@ -217,7 +216,9 @@ func TestQueryTestVariants(t *testing.T) {
 					Result: expectedT4Result[0],
 				},
 			}))
+			assert.Loosely(t, tvs[0].TestId, should.Equal("T4"))
 			assert.Loosely(t, tvs[0].Variant, should.Match(variant))
+			assert.Loosely(t, tvs[0].TestIdStructured, should.Match(testIDStructured))
 			assert.Loosely(t, tvs[0].TestMetadata, should.Match(tmd))
 			assert.Loosely(t, tvs[0].SourcesId, should.Equal(graph.HashSources(sources).String()))
 
@@ -352,6 +353,12 @@ func TestQueryTestVariants(t *testing.T) {
 					for _, tv := range tvs {
 						assert.Loosely(t, tv.TestId, should.NotBeEmpty)
 						assert.Loosely(t, tv.VariantHash, should.NotBeEmpty)
+						assert.Loosely(t, tv.TestIdStructured, should.NotBeNil)
+						assert.Loosely(t, tv.TestIdStructured.ModuleName, should.NotBeEmpty)
+						assert.Loosely(t, tv.TestIdStructured.ModuleScheme, should.NotBeEmpty)
+						assert.Loosely(t, tv.TestIdStructured.ModuleVariantHash, should.NotBeEmpty)
+						assert.Loosely(t, tv.TestIdStructured.CaseName, should.NotBeEmpty)
+
 						assert.That(t, tv.Status, should.NotEqual(pb.TestVariantStatus_TEST_VARIANT_STATUS_UNSPECIFIED))
 						assert.Loosely(t, tv.Results, should.NotBeEmpty)
 						assert.Loosely(t, tv.TestMetadata, should.NotBeNil)
@@ -377,6 +384,7 @@ func TestQueryTestVariants(t *testing.T) {
 							if tv.TestId == "T7" {
 								assert.Loosely(t, result.Result.SkippedReason, should.NotBeNil)
 							}
+							assert.Loosely(t, result.Result.FrameworkExtensions, should.NotBeNil)
 							assert.Loosely(t, result, should.Match(&pb.TestResultBundle{
 								Result: &pb.TestResult{
 									Name:                result.Result.Name,
@@ -410,15 +418,16 @@ func TestQueryTestVariants(t *testing.T) {
 						}
 
 						assert.Loosely(t, tv, should.Match(&pb.TestVariant{
-							TestId:       tv.TestId,
-							VariantHash:  tv.VariantHash,
-							Status:       tv.Status,
-							Results:      tv.Results,
-							Exonerations: tv.Exonerations,
-							Variant:      tv.Variant,
-							TestMetadata: tv.TestMetadata,
-							SourcesId:    tv.SourcesId,
-							Instruction:  tv.Instruction,
+							TestId:           tv.TestId,
+							VariantHash:      tv.VariantHash,
+							TestIdStructured: tv.TestIdStructured,
+							Status:           tv.Status,
+							Results:          tv.Results,
+							Exonerations:     tv.Exonerations,
+							Variant:          tv.Variant,
+							TestMetadata:     tv.TestMetadata,
+							SourcesId:        tv.SourcesId,
+							Instruction:      tv.Instruction,
 						}))
 					}
 				}
@@ -636,6 +645,7 @@ func TestQueryTestVariants(t *testing.T) {
 				for _, tv := range page.TestVariants {
 					assert.Loosely(t, tv.TestMetadata, should.BeNil)
 					assert.Loosely(t, tv.Variant, should.BeNil)
+					assert.Loosely(t, tv.TestIdStructured.ModuleVariant, should.BeNil)
 					assert.Loosely(t, tv.IsMasked, should.BeTrue)
 
 					for _, tr := range tv.Results {
@@ -731,6 +741,7 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, tvs[0].IsMasked, should.BeFalse)
 				assert.Loosely(t, tvs[0].TestMetadata, should.Match(&pb.TestMetadata{Name: "testname"}))
 				assert.Loosely(t, tvs[0].Variant, should.NotBeNil)
+				assert.Loosely(t, tvs[0].TestIdStructured.ModuleVariant, should.NotBeNil)
 				assert.Loosely(t, tvs[0].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
@@ -774,6 +785,7 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, tvs[5].IsMasked, should.BeTrue)
 				assert.Loosely(t, tvs[5].TestMetadata, should.BeNil)
 				assert.Loosely(t, tvs[5].Variant, should.BeNil)
+				assert.Loosely(t, tvs[5].TestIdStructured.ModuleVariant, should.BeNil)
 				assert.Loosely(t, len(tvs[5].Results), should.Equal(2))
 				for _, tr := range tvs[5].Results {
 					assert.Loosely(t, tr.Result.IsMasked, should.BeTrue)

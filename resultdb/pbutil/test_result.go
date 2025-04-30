@@ -115,7 +115,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		// The TestId and Variant fields are treated as output only as per
 		// the API spec and should be ignored. Instead read from the TestIdStructured field.
 
-		if err := ValidateStructuredTestIdentifier(tr.TestIdStructured); err != nil {
+		if err := ValidateStructuredTestIdentifierForStorage(tr.TestIdStructured); err != nil {
 			return errors.Annotate(err, "test_id_structured").Err()
 		}
 		if validateToScheme != nil {

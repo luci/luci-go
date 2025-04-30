@@ -196,6 +196,12 @@ func TestQueryTestVariants(t *testing.T) {
 			}
 			assert.Loosely(t, res.TestVariants, should.Match([]*pb.TestVariant{
 				{
+					TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
+						CaseName:          "T1002",
+					},
 					TestId:      "T1002",
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
 					Status:      pb.TestVariantStatus_UNEXPECTED,
@@ -222,6 +228,13 @@ func TestQueryTestVariants(t *testing.T) {
 					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
 				},
 				{
+					TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariant:     pbutil.Variant("k1", "v1"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
+						CaseName:          "T1003",
+					},
 					TestId:      "T1003",
 					Variant:     pbutil.Variant("k1", "v1"),
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
@@ -264,6 +277,13 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				},
 				{
+					TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariant:     pbutil.Variant("k2", "v2"),
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
+						CaseName:          "T1004",
+					},
 					TestId:      "T1004",
 					Variant:     pbutil.Variant("k2", "v2"),
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
@@ -296,6 +316,12 @@ func TestQueryTestVariants(t *testing.T) {
 					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(4)).String(),
 				},
 				{
+					TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k3", "v3")),
+						CaseName:          "T1005",
+					},
 					TestId:      "T1005",
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k3", "v3")),
 					Status:      pb.TestVariantStatus_EXONERATED,

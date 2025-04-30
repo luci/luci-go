@@ -470,11 +470,11 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 	})
 }
 
-func TestValidateStructuredTestIdentifier(t *testing.T) {
+func TestValidateStructuredTestIdentifierForStorage(t *testing.T) {
 	t.Parallel()
-	ftt.Run("ValidateStructuredTestIdentifier", t, func(t *ftt.Test) {
+	ftt.Run("ValidateStructuredTestIdentifierForStorage", t, func(t *ftt.Test) {
 		t.Run("Nil", func(t *ftt.Test) {
-			assert.Loosely(t, ValidateStructuredTestIdentifier(nil), should.ErrLike("unspecified"))
+			assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(nil), should.ErrLike("unspecified"))
 		})
 		id := &pb.TestIdentifier{
 			ModuleName:   "module",
@@ -490,37 +490,37 @@ func TestValidateStructuredTestIdentifier(t *testing.T) {
 		}
 
 		t.Run("Valid", func(t *ftt.Test) {
-			assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.BeNil)
+			assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
 		})
 		t.Run("Test ID Components", func(t *ftt.Test) {
-			// Validation of Test ID components is delegated to ValidateTestIdentifier which
+			// Validation of Test ID components is delegated to ValidateBaseTestIdentifier which
 			// has its own test cases above. Simply test that each field is correctly passed through
 			// to that method.
 			t.Run("Module name", func(t *ftt.Test) {
 				id.ModuleName = ""
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("module_name: unspecified"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_name: unspecified"))
 			})
 			t.Run("Module scheme", func(t *ftt.Test) {
 				id.ModuleScheme = ""
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("module_scheme: unspecified"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_scheme: unspecified"))
 			})
 			t.Run("Coarse name", func(t *ftt.Test) {
 				id.CoarseName = "\u0000"
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("coarse_name: non-printable rune '\\x00' at byte index 0"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("coarse_name: non-printable rune '\\x00' at byte index 0"))
 			})
 			t.Run("Fine name", func(t *ftt.Test) {
 				id.FineName = "\u0000"
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("fine_name: non-printable rune '\\x00' at byte index 0"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("fine_name: non-printable rune '\\x00' at byte index 0"))
 			})
 			t.Run("Case name", func(t *ftt.Test) {
 				id.CaseName = ""
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("case_name: unspecified"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("case_name: unspecified"))
 			})
 		})
 		t.Run("Module Variant", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				id.ModuleVariant = nil
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
 			})
 			t.Run("Invalid", func(t *ftt.Test) {
 				id.ModuleVariant = &pb.Variant{
@@ -528,7 +528,88 @@ func TestValidateStructuredTestIdentifier(t *testing.T) {
 						"\x00": "v",
 					},
 				}
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("module_variant: \"\\x00\":\"v\": key: does not match pattern"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant: \"\\x00\":\"v\": key: does not match pattern"))
+			})
+		})
+		t.Run("Module Variant Hash", func(t *ftt.Test) {
+			t.Run("Unset", func(t *ftt.Test) {
+				// This is valid.
+				id.ModuleVariantHash = ""
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
+			})
+			t.Run("Set", func(t *ftt.Test) {
+				// This is invalid, even though the hash matches.
+				id.ModuleVariant = &pb.Variant{
+					Def: map[string]string{
+						"k": "v",
+					},
+				}
+				id.ModuleVariantHash = "b1618cc2bf370a7c"
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant_hash: do not set when uploading results, this field is output only"))
+			})
+		})
+	})
+}
+
+func TestValidateStructuredTestIdentifierForQuery(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ValidateStructuredTestIdentifierForQuery", t, func(t *ftt.Test) {
+		t.Run("Nil", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(nil), should.ErrLike("unspecified"))
+		})
+		id := &pb.TestIdentifier{
+			ModuleName:   "module",
+			ModuleScheme: "scheme",
+			CoarseName:   "coarse",
+			FineName:     "fine",
+			CaseName:     "case",
+			ModuleVariant: &pb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+		}
+
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
+		})
+		t.Run("Test ID Components", func(t *ftt.Test) {
+			// Validation of Test ID components is delegated to ValidateBaseTestIdentifier which
+			// has its own test cases above. Simply test that each field is correctly passed through
+			// to that method.
+			t.Run("Module name", func(t *ftt.Test) {
+				id.ModuleName = ""
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_name: unspecified"))
+			})
+			t.Run("Module scheme", func(t *ftt.Test) {
+				id.ModuleScheme = ""
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_scheme: unspecified"))
+			})
+			t.Run("Coarse name", func(t *ftt.Test) {
+				id.CoarseName = "\u0000"
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("coarse_name: non-printable rune '\\x00' at byte index 0"))
+			})
+			t.Run("Fine name", func(t *ftt.Test) {
+				id.FineName = "\u0000"
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("fine_name: non-printable rune '\\x00' at byte index 0"))
+			})
+			t.Run("Case name", func(t *ftt.Test) {
+				id.CaseName = ""
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("case_name: unspecified"))
+			})
+		})
+		t.Run("Module Variant", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
+				id.ModuleVariant = nil
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				id.ModuleVariant = &pb.Variant{
+					Def: map[string]string{
+						"\x00": "v",
+					},
+				}
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_variant: \"\\x00\":\"v\": key: does not match pattern"))
 			})
 		})
 		t.Run("Module Variant Hash", func(t *ftt.Test) {
@@ -536,7 +617,7 @@ func TestValidateStructuredTestIdentifier(t *testing.T) {
 				// It is valid to leave the hash unset. It can be computed from
 				// the variant if necessary.
 				id.ModuleVariantHash = ""
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
 			})
 			t.Run("Set and matches", func(t *ftt.Test) {
 				id.ModuleVariant = &pb.Variant{
@@ -545,11 +626,17 @@ func TestValidateStructuredTestIdentifier(t *testing.T) {
 					},
 				}
 				id.ModuleVariantHash = "b1618cc2bf370a7c"
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.BeNil)
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
 			})
 			t.Run("Set and mismatches", func(t *ftt.Test) {
 				id.ModuleVariantHash = "0a0a0a0a0a0a0a0a"
-				assert.Loosely(t, ValidateStructuredTestIdentifier(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c to match specified variant"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c to match specified variant"))
+			})
+			t.Run("Both variant and hash unset", func(t *ftt.Test) {
+				// This is a special case and how one sets the nil variant.
+				id.ModuleVariant = nil
+				id.ModuleVariantHash = ""
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
 			})
 		})
 	})
@@ -728,7 +815,7 @@ func BenchmarkValidateStructuredTestIdentifier(b *testing.B) {
 		},
 	})
 	for i := 0; i < b.N; i++ {
-		err := ValidateStructuredTestIdentifier(id)
+		err := ValidateStructuredTestIdentifierForStorage(id)
 		if err != nil {
 			panic(err)
 		}

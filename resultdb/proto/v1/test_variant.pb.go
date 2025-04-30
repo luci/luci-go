@@ -116,6 +116,10 @@ func (TestVariantStatus) EnumDescriptor() ([]byte, []int) {
 // Also known as a test verdict.
 type TestVariant struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// The structured test identifier.
+	//
+	// Refer to TestResult.test_id_structured for details.
+	TestIdStructured *TestIdentifier `protobuf:"bytes,11,opt,name=test_id_structured,json=testIdStructured,proto3" json:"test_id_structured,omitempty"`
 	// A unique identifier of the test in a LUCI project.
 	// Regex: ^[[::print::]]{1,512}$
 	//
@@ -195,6 +199,13 @@ func (x *TestVariant) ProtoReflect() protoreflect.Message {
 // Deprecated: Use TestVariant.ProtoReflect.Descriptor instead.
 func (*TestVariant) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *TestVariant) GetTestIdStructured() *TestIdentifier {
+	if x != nil {
+		return x.TestIdStructured
+	}
+	return nil
 }
 
 func (x *TestVariant) GetTestId() string {
@@ -518,8 +529,13 @@ var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_rawDesc = str
 	0x38, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
 	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8e, 0x04, 0x0a, 0x0b, 0x54, 0x65,
-	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xde, 0x04, 0x0a, 0x0b, 0x54, 0x65,
+	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x4e, 0x0a, 0x12, 0x74, 0x65, 0x73,
+	0x74, 0x5f, 0x69, 0x64, 0x5f, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x75, 0x72, 0x65, 0x64, 0x18,
+	0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x49, 0x64, 0x65,
+	0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x52, 0x10, 0x74, 0x65, 0x73, 0x74, 0x49, 0x64, 0x53,
+	0x74, 0x72, 0x75, 0x63, 0x74, 0x75, 0x72, 0x65, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73,
 	0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74,
 	0x49, 0x64, 0x12, 0x33, 0x0a, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
@@ -621,28 +637,30 @@ var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_goTypes = []a
 	(*TestResultBundle)(nil),     // 3: luci.resultdb.v1.TestResultBundle
 	(*TestVariantPredicate)(nil), // 4: luci.resultdb.v1.TestVariantPredicate
 	(*RunTestVerdict)(nil),       // 5: luci.resultdb.v1.RunTestVerdict
-	(*Variant)(nil),              // 6: luci.resultdb.v1.Variant
-	(*TestExoneration)(nil),      // 7: luci.resultdb.v1.TestExoneration
-	(*TestMetadata)(nil),         // 8: luci.resultdb.v1.TestMetadata
-	(*TestResult)(nil),           // 9: luci.resultdb.v1.TestResult
+	(*TestIdentifier)(nil),       // 6: luci.resultdb.v1.TestIdentifier
+	(*Variant)(nil),              // 7: luci.resultdb.v1.Variant
+	(*TestExoneration)(nil),      // 8: luci.resultdb.v1.TestExoneration
+	(*TestMetadata)(nil),         // 9: luci.resultdb.v1.TestMetadata
+	(*TestResult)(nil),           // 10: luci.resultdb.v1.TestResult
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_depIdxs = []int32{
-	6,  // 0: luci.resultdb.v1.TestVariant.variant:type_name -> luci.resultdb.v1.Variant
-	0,  // 1: luci.resultdb.v1.TestVariant.status:type_name -> luci.resultdb.v1.TestVariantStatus
-	3,  // 2: luci.resultdb.v1.TestVariant.results:type_name -> luci.resultdb.v1.TestResultBundle
-	7,  // 3: luci.resultdb.v1.TestVariant.exonerations:type_name -> luci.resultdb.v1.TestExoneration
-	8,  // 4: luci.resultdb.v1.TestVariant.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
-	2,  // 5: luci.resultdb.v1.TestVariant.instruction:type_name -> luci.resultdb.v1.VerdictInstruction
-	9,  // 6: luci.resultdb.v1.TestResultBundle.result:type_name -> luci.resultdb.v1.TestResult
-	0,  // 7: luci.resultdb.v1.TestVariantPredicate.status:type_name -> luci.resultdb.v1.TestVariantStatus
-	6,  // 8: luci.resultdb.v1.RunTestVerdict.variant:type_name -> luci.resultdb.v1.Variant
-	3,  // 9: luci.resultdb.v1.RunTestVerdict.results:type_name -> luci.resultdb.v1.TestResultBundle
-	8,  // 10: luci.resultdb.v1.RunTestVerdict.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	6,  // 0: luci.resultdb.v1.TestVariant.test_id_structured:type_name -> luci.resultdb.v1.TestIdentifier
+	7,  // 1: luci.resultdb.v1.TestVariant.variant:type_name -> luci.resultdb.v1.Variant
+	0,  // 2: luci.resultdb.v1.TestVariant.status:type_name -> luci.resultdb.v1.TestVariantStatus
+	3,  // 3: luci.resultdb.v1.TestVariant.results:type_name -> luci.resultdb.v1.TestResultBundle
+	8,  // 4: luci.resultdb.v1.TestVariant.exonerations:type_name -> luci.resultdb.v1.TestExoneration
+	9,  // 5: luci.resultdb.v1.TestVariant.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
+	2,  // 6: luci.resultdb.v1.TestVariant.instruction:type_name -> luci.resultdb.v1.VerdictInstruction
+	10, // 7: luci.resultdb.v1.TestResultBundle.result:type_name -> luci.resultdb.v1.TestResult
+	0,  // 8: luci.resultdb.v1.TestVariantPredicate.status:type_name -> luci.resultdb.v1.TestVariantStatus
+	7,  // 9: luci.resultdb.v1.RunTestVerdict.variant:type_name -> luci.resultdb.v1.Variant
+	3,  // 10: luci.resultdb.v1.RunTestVerdict.results:type_name -> luci.resultdb.v1.TestResultBundle
+	9,  // 11: luci.resultdb.v1.RunTestVerdict.test_metadata:type_name -> luci.resultdb.v1.TestMetadata
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_test_variant_proto_init() }

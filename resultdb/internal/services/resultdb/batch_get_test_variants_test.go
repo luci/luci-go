@@ -76,6 +76,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			insert.TestResults(t, "i0", "test2", pbutil.Variant("c", "d"), pb.TestResult_PASSED),
 			insert.TestResults(t, "i0", "test3", pbutil.Variant("a", "b"), pb.TestResult_FAILED),
 			insert.TestResults(t, "i0", "test4", pbutil.Variant("g", "h"), pb.TestResult_EXECUTION_ERRORED),
+			insert.TestResults(t, "i0", "test5", pbutil.Variant(), pb.TestResult_PRECLUDED),
 			insert.TestResults(t, "i1", "test1", pbutil.Variant("e", "f"), pb.TestResult_PASSED),
 			insert.TestResults(t, "i1", "test3", pbutil.Variant("c", "d"), pb.TestResult_PASSED),
 		)...)
@@ -144,6 +145,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 				expectedResult := expectedResults[i]
 				assert.Loosely(t, tv.TestId, should.Equal(expectedResult.TestId))
 				assert.Loosely(t, tv.TestMetadata, should.Match(expectedResult.TestMetadata))
+				assert.Loosely(t, tv.TestIdStructured, should.Match(expectedResult.TestIdStructured))
 				assert.Loosely(t, tv.Variant, should.Match(expectedResult.Variant))
 				assert.Loosely(t, tv.VariantHash, should.Equal(expectedResult.VariantHash))
 
@@ -161,7 +163,48 @@ func TestBatchGetTestVariants(t *testing.T) {
 			assert.Loosely(t, res.Sources, should.HaveLength(1))
 			assert.Loosely(t, res.Sources[graph.HashSources(testutil.TestSources()).String()], should.Match(testutil.TestSources()))
 		})
+		t.Run(`Valid request with structured test IDs`, func(t *ftt.Test) {
+			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
+				Invocation: "invocations/i0",
+				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					{TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariantHash: variantHash("a", "b"),
+						CaseName:          "test1",
+					}},
+					{TestIdStructured: &pb.TestIdentifier{
+						ModuleName:    "legacy",
+						ModuleScheme:  "legacy",
+						ModuleVariant: pbutil.Variant("a", "b"),
+						CaseName:      "test3",
+					}},
+					{TestIdStructured: &pb.TestIdentifier{
+						ModuleName:        "legacy",
+						ModuleScheme:      "legacy",
+						ModuleVariant:     pbutil.Variant("g", "h"),
+						ModuleVariantHash: variantHash("g", "h"),
+						CaseName:          "test4",
+					}},
+					{TestIdStructured: &pb.TestIdentifier{
+						ModuleName:    "legacy",
+						ModuleScheme:  "legacy",
+						ModuleVariant: nil, // Request the module with the nil variant. This is a special case.
+						CaseName:      "test5",
+					}},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
 
+			// NOTE: The order isn't important here, we just don't have a
+			// matcher that does an unordered comparison.
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
+				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
+				fmt.Sprintf("20/test5/%s", variantHash()),
+				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+			}))
+		})
 		t.Run(`Valid request without included invocation`, func(t *ftt.Test) {
 			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
 				Invocation: "invocations/i1",
@@ -300,17 +343,66 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 func TestValidateBatchGetTestVariantsRequest(t *testing.T) {
 	ftt.Run(`validateBatchGetTestVariantsRequest`, t, func(t *ftt.Test) {
+		request := &pb.BatchGetTestVariantsRequest{
+			Invocation: "invocations/i0",
+			TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+				{TestId: "test1", VariantHash: variantHash("a", "b")},
+			},
+			ResultLimit: 10,
+		}
+		t.Run(`base case`, func(t *ftt.Test) {
+			err := validateBatchGetTestVariantsRequest(request)
+			assert.Loosely(t, err, should.BeNil)
+		})
 		t.Run(`negative result_limit`, func(t *ftt.Test) {
-			err := validateBatchGetTestVariantsRequest(&pb.BatchGetTestVariantsRequest{
-				Invocation: "invocations/i0",
-				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
-					{TestId: "test1", VariantHash: variantHash("a", "b")},
-				},
-				ResultLimit: -1,
-			})
+			request.ResultLimit = -1
+			err := validateBatchGetTestVariantsRequest(request)
 			assert.Loosely(t, err, should.ErrLike(`result_limit: negative`))
 		})
-
+		t.Run(`structured test ID`, func(t *ftt.Test) {
+			request.TestVariants = []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+				{TestIdStructured: &pb.TestIdentifier{
+					ModuleName:        "module",
+					ModuleScheme:      "junit",
+					ModuleVariantHash: variantHash("a", "b"),
+					CoarseName:        "package",
+					FineName:          "class",
+					CaseName:          "method",
+				}},
+			}
+			t.Run(`base case`, func(t *ftt.Test) {
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`invalid structured ID`, func(t *ftt.Test) {
+				request.TestVariants[0].TestIdStructured.ModuleName = ""
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_structured: module_name: unspecified"))
+			})
+			// It is not valid to also specify a flat test ID.
+			t.Run(`flat test ID specified`, func(t *ftt.Test) {
+				request.TestVariants[0].TestId = "blah"
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id: may not be set at same time as test_id_structured"))
+			})
+			t.Run(`flat variant hash specified`, func(t *ftt.Test) {
+				request.TestVariants[0].VariantHash = "blah"
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike("test_variants[0]: variant_hash: may not be set at same time as test_id_structured"))
+			})
+		})
+		t.Run(`flat test ID`, func(t *ftt.Test) {
+			t.Run(`test ID invalid`, func(t *ftt.Test) {
+				request.TestVariants[0].TestId = "\x00"
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id: non-printable rune"))
+			})
+			t.Run(`variant hash invalid`, func(t *ftt.Test) {
+				request.TestVariants[0].VariantHash = ""
+				err := validateBatchGetTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike("test_variants[0]: variant_hash: unspecified"))
+			})
+		})
 		t.Run(`>= 500 test variants`, func(t *ftt.Test) {
 			req := &pb.BatchGetTestVariantsRequest{
 				Invocation:   "invocations/i0",

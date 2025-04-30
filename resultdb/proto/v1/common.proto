@@ -17,7 +17,6 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/protobuf/timestamp.proto";
-import "google/api/field_behavior.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -149,7 +148,12 @@ message TestIdentifier {
 
   // Hash of the module variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
-  string module_variant_hash = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  //
+  // In result upload and download contexts, this field is OUTPUT_ONLY and will be
+  // automatically computed from the provided module_variant (do not set it yourself).
+  // When specifying the tests to query in a ResultDB (not Recorder) RPC request, this field
+  // may be specified as an alternative to module_variant.
+  string module_variant_hash = 4;
 
   // Intermediate hierarchy - coarse name.
   //

@@ -40,9 +40,26 @@ func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) err
 		return errors.Annotate(err, "invocation: %q", in.Invocation).Err()
 	}
 
-	for _, tvID := range in.TestVariants {
-		if err := pbutil.ValidateTestID(tvID.TestId); err != nil {
-			return errors.Annotate(err, "test_id: %q", tvID.TestId).Err()
+	for i, tvID := range in.TestVariants {
+		if tvID.TestIdStructured != nil {
+			if err := pbutil.ValidateStructuredTestIdentifierForQuery(tvID.TestIdStructured); err != nil {
+				return errors.Annotate(err, "test_variants[%v]: test_id_structured", i).Err()
+			}
+			if tvID.TestId != "" {
+				return errors.Reason("test_variants[%v]: test_id: may not be set at same time as test_id_structured", i).Err()
+			}
+			if tvID.VariantHash != "" {
+				return errors.Reason("test_variants[%v]: variant_hash: may not be set at same time as test_id_structured", i).Err()
+			}
+		} else if tvID.TestId != "" || tvID.VariantHash != "" {
+			if err := pbutil.ValidateTestID(tvID.TestId); err != nil {
+				return errors.Annotate(err, "test_variants[%v]: test_id", i).Err()
+			}
+			if err := pbutil.ValidateVariantHash(tvID.VariantHash); err != nil {
+				return errors.Annotate(err, "test_variants[%v]: variant_hash", i).Err()
+			}
+		} else {
+			return errors.Reason("test_variants[%v]: either test_id_structured or (test_id and variant_hash) must be set", i).Err()
 		}
 	}
 
@@ -80,8 +97,18 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	}
 	variantIDs := make(map[key]struct{}, len(in.TestVariants))
 	for i, tvID := range in.TestVariants {
-		variantIDs[key{TestID: tvID.TestId, VariantHash: tvID.VariantHash}] = struct{}{}
-		testIDs[i] = tvID.TestId
+		var testID string
+		var variantHash string
+		if tvID.TestIdStructured != nil {
+			testID = pbutil.TestIDFromStructuredTestIdentifier(tvID.TestIdStructured)
+			variantHash = pbutil.VariantHashFromStructuredTestIdentifier(tvID.TestIdStructured)
+		} else {
+			testID = tvID.TestId
+			variantHash = tvID.VariantHash
+		}
+
+		variantIDs[key{TestID: testID, VariantHash: variantHash}] = struct{}{}
+		testIDs[i] = testID
 	}
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
@@ -103,6 +130,18 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		PageToken: "",
 	}
 
+	// TODO: This is broken with respect to https://google.aip.dev/231:
+	// 1. AIP-231 says the order of results must be the same as
+	//   the request and include one message for each item in the request,
+	//   but this implementation does not guarantee correct ordering.
+	// 2. AIP-231 requires this method must fail for all resources
+	//   or succeed for all resources (no partial success). However, this method
+	//   silently succeeds even if some resources do not exist.
+	// 3. AIP-231 does not say whether requesting the same resource twice is
+	//   allowed or not. By not ruling it out in request validation, this method
+	//   has chosen to be permissive and allow it. But the implementation does
+	//   not handle it (duplicate requests should lead to duplicate responses
+	//   as per point 1).
 	tvs := make([]*pb.TestVariant, 0, len(in.TestVariants))
 	distinctSources := make(map[string]*pb.Sources)
 	for len(tvs) < len(in.TestVariants) {

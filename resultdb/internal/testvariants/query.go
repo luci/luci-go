@@ -462,6 +462,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 		// All test results and test exonerations have been masked to limited data
 		// only, so the variant definition should be masked.
 		tv.Variant = nil
+		tv.TestIdStructured.ModuleVariant = nil
 		tv.IsMasked = true
 	}
 
@@ -513,8 +514,14 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 			panic("query of test variants with unexpected results returned a test variant with only expected results.")
 		}
 
+		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(tv.TestId, tv.Variant)
+		if err != nil {
+			return errors.Annotate(err, "parsing test_id_structured for %s", tv.TestId).Err()
+		}
+		tv.TestIdStructured = testIDStructured
+
 		if err := populateTestMetadata(tv, tmd); err != nil {
-			return errors.Annotate(err, "error unmarshalling test_metadata for %s", tv.TestId).Err()
+			return errors.Annotate(err, "unmarshalling test_metadata for %s", tv.TestId).Err()
 		}
 
 		// Populate tv.Results
@@ -765,8 +772,14 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 			},
 		}
 
+		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(testId, variant)
+		if err != nil {
+			return errors.Annotate(err, "parsing test_id_structured for %s", current.TestId).Err()
+		}
+		current.TestIdStructured = testIDStructured
+
 		if err := populateTestMetadata(current, tmd); err != nil {
-			return errors.Annotate(err, "error unmarshalling test_metadata for %s", current.TestId).Err()
+			return errors.Annotate(err, "unmarshalling test_metadata for %s", current.TestId).Err()
 		}
 		if toYield != nil {
 			return yield(toYield)

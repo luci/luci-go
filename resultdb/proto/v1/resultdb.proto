@@ -708,6 +708,16 @@ message QueryRunTestVerdictsResponse {
 // A request message for BatchGetTestVariants RPC.
 message BatchGetTestVariantsRequest {
   message TestVariantIdentifier {
+    // Option 1: Structured test identifier.
+
+    // The structured test identifier. See the comment on
+    // TestResult.test_id_structured for full documentation.
+    //
+    // Either this should be specified, or both test_id and variant_hash below.
+    TestIdentifier test_id_structured = 3;
+
+    // Option 2: Flat test identifier and variant.
+
     // The unique identifier of the test in a LUCI project. See the comment on
     // TestResult.test_id for full documentation.
     string test_id = 1 [ (google.api.field_behavior) = REQUIRED ];
@@ -720,9 +730,8 @@ message BatchGetTestVariantsRequest {
   // Name of the invocation that the test variants are in.
   string invocation = 1;
 
-  // A list of test IDs and variant hashes, identifying the requested test
-  // variants. Size is limited to 500. Any request for more than 500 variants
-  // will return an error.
+  // A list of test variants to query. Size is limited to 500.
+  // Any request for more than 500 variants will return an error.
   repeated TestVariantIdentifier test_variants = 2;
 
   // The maximum number of test results to be included in a test variant.
