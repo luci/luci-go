@@ -110,6 +110,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			Project:     "proj_3",
 			TestID:      "test_id_3",
 			VariantHash: "variant_hash_3",
+			Variant:     &pb.Variant{},
 			RefHash:     []byte("refhash3"),
 			SourceRef: &pb.SourceRef{
 				System: &pb.SourceRef_Gitiles{
