@@ -13,6 +13,8 @@
 // limitations under the License.
 
 
+const INTEGRATED_UI_LOOKUP_ROOT = "/ui/auth/lookup";
+
 // Enum for kinds of principals.
 const PrincipalKind = Object.freeze({
   'PRINCIPAL_KIND_UNSPECIFIED': 0,
@@ -375,14 +377,38 @@ const onCurrentPrincipalInURLChange = (cb) => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const isGroup = (principal) => {
+  if (!principal) {
+    return false;
+  }
+  if (principal.indexOf('*') != -1) {
+    // Must be glob.
+    return false;
+  }
+  if (principal.indexOf('@') != -1 && principal.indexOf('/') == -1) {
+    // Must be email.
+    return false
+  }
+
+  return true;
+}
 
 window.onload = () => {
+  const integratedUIAlert = new common.IntegratedUIAlert('#integrated-ui-alert-container');
+  integratedUIAlert.setLink(INTEGRATED_UI_LOOKUP_ROOT);
   const searchBar = new SearchBar('#search-bar');
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const searchResults = new SearchResults('#all-results');
   const errorBox = new common.ErrorBox('#api-error-placeholder');
 
   const doSearch = (principal) => {
+    if (isGroup(principal)) {
+      integratedUIAlert.setLink(
+        common.INTEGRATED_UI_GROUPS_ROOT + "/" + principal + "?tab=ancestors");
+    } else {
+      integratedUIAlert.setLink(INTEGRATED_UI_LOOKUP_ROOT);
+    }
+
     if (!principal) {
       return;
     }

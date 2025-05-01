@@ -158,6 +158,8 @@ const getCurrentGroupInURL = () => {
 
 
 window.onload = () => {
+  const integratedUIAlert = new common.IntegratedUIAlert('#integrated-ui-alert-container');
+  integratedUIAlert.setLink(common.INTEGRATED_UI_GROUPS_ROOT);
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const groupListingSection = new common.HidableElement('#group-listing', false);
   const errorBox = new common.ErrorBox('#api-error-placeholder');
@@ -190,5 +192,8 @@ window.onload = () => {
   };
 
   const group = getCurrentGroupInURL();
+  integratedUIAlert.setLink(
+    common.INTEGRATED_UI_GROUPS_ROOT + "/" + group + "?tab=descendants"
+  )
   expandGroup(group);
 }

@@ -23,6 +23,7 @@ that can be found in the LICENSE file. -->
     <script type="text/javascript">
       api.setXSRFToken('{{.XSRFToken}}');
       api.startXSRFTokenAutoupdate();
+      common.setIntegratedUIHost('{{.IntegratedUI}}');
     </script>
   </head>
 
@@ -88,16 +89,9 @@ that can be found in the LICENSE file. -->
         </div>
       </nav>
       {{end}}
-      {{if .IntegratedUI }}
-      <div class="alert alert-primary alert-dismissible fade show my-4" role="alert">
-        Auth Service has a new UI.
-        <a class="alert-link" href="{{ .IntegratedUI }}" target="_blank">
-          Try it out here!
-        </a>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-        </button>
-      </div>
-      {{end}}
+
+      <div id="integrated-ui-alert-container"></div>
+
       <div class="container-md px-0 my-4">
         <div class="d-flex flex-column justify-content-center">{{template "content" .}}</div>
       </div>
@@ -115,6 +109,18 @@ that can be found in the LICENSE file. -->
     <script type="text/javascript">
       common.initializePage();
     </script>
+
+    <!-- Template for alert to link to integrated UI. -->
+    <template id="integrated-ui-alert-template">
+      <div class="alert alert-primary alert-dismissible show fade my-4" role="alert">
+        Auth Service has a new UI.
+        <a id="integrated-ui-link" class="alert-link" target="_blank">
+          Try it out here!
+        </a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        </button>
+      </div>
+    </template>
 
     <!-- Template for loading box, to be shown while results are fetched. -->
     <template id="loading-box-template">

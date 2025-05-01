@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+const PATTERN_GROUP_CHANGELOG = new RegExp('^AuthGroup\\$(.+)$');
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
@@ -442,6 +444,16 @@ window.onload = () => {
   let authDbRev = common.getQueryParameter('auth_db_rev');
   if (authDbRev) {
     authDbRev = parseInt(authDbRev);
+  }
+
+  if (target) {
+    // Add a link to the integrated UI if the target is an AuthGroup.
+    const groupMatch = target.match(PATTERN_GROUP_CHANGELOG);
+    if (groupMatch) {
+      const integratedUIAlert = new common.IntegratedUIAlert('#integrated-ui-alert-container');
+      integratedUIAlert.setLink(
+        common.INTEGRATED_UI_GROUPS_ROOT + "/" + groupMatch[1] + "?tab=history");
+    }
   }
 
   const changeLogContent = new ChangeLogContent(

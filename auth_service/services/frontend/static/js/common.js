@@ -104,6 +104,24 @@ class ErrorBox extends HidableElement {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Component to present an alert to link to an integrated UI.
+class IntegratedUIAlert {
+  constructor(parent) {
+    const template = document.querySelector('#integrated-ui-alert-template');
+    this.element = template.content.cloneNode(true);
+    this.link = this.element.querySelector('#integrated-ui-link');
+
+    const parentElement = document.querySelector(parent);
+    parentElement.appendChild(this.element);
+  }
+
+  setLink(relative) {
+    this.link.setAttribute('href', common.getIntegratedUIHost() + relative);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Component with centered spinner to represent loading.
 class LoadingBox {
   constructor(parent) {
@@ -234,8 +252,21 @@ var common = (function () {
     }
   };
 
+  var integratedUIHost = "";
+
+  exports.setIntegratedUIHost = (targetHost) => {
+    integratedUIHost = targetHost;
+  }
+
+  exports.getIntegratedUIHost = () => {
+    return integratedUIHost;
+  }
+
+  exports.INTEGRATED_UI_GROUPS_ROOT = "/ui/auth/groups";
+
   exports.HidableElement = HidableElement;
   exports.ErrorBox = ErrorBox;
+  exports.IntegratedUIAlert = IntegratedUIAlert;
   exports.LoadingBox = LoadingBox;
 
   return exports;

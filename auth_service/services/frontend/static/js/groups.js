@@ -941,6 +941,8 @@ const waitForResult = (cb, groupChooser, form, listErrorBox, requireFresh) => {
 
 window.onload = () => {
   // Setup global UI elements.
+  const integratedUIAlert = new common.IntegratedUIAlert('#integrated-ui-alert-container');
+  integratedUIAlert.setLink(common.INTEGRATED_UI_GROUPS_ROOT);
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const mainContent = new common.HidableElement('#main-content', false);
   const groupChooser = new GroupChooser('#group-chooser');
@@ -1002,6 +1004,8 @@ window.onload = () => {
       return;
     }
 
+    integratedUIAlert.setLink(
+      common.INTEGRATED_UI_GROUPS_ROOT + "/" + event.detail.group);
     startEditGroupFlow(event.detail.group, event.detail.success);
   });
 
@@ -1010,6 +1014,8 @@ window.onload = () => {
   if (createGroupBtn) {
     createGroupBtn.addEventListener('click', (event) => {
       setCurrentGroupInURL(NEW_GROUP_PLACEHOLDER);
+      integratedUIAlert.setLink(
+        common.INTEGRATED_UI_GROUPS_ROOT + "/" + NEW_GROUP_PLACEHOLDER);
       startNewGroupFlow();
       groupChooser.setSelection(null);
     });
