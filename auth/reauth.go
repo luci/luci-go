@@ -17,11 +17,15 @@ package auth
 import (
 	"context"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"time"
 
 	"go.chromium.org/luci/auth/reauth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 const metadataKeyRapt = "rapt"
@@ -71,7 +75,7 @@ func (a *ReAuthenticator) RenewRAPT(ctx context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "renew RAPT").Err()
 	}
-	r, err := a.getRAPT(ctx, c)
+	r, err := a.mintRAPT(ctx, c)
 	if err != nil {
 		return errors.Annotate(err, "renew RAPT").Err()
 	}
@@ -81,7 +85,46 @@ func (a *ReAuthenticator) RenewRAPT(ctx context.Context) error {
 	return nil
 }
 
-func (a *ReAuthenticator) getRAPT(ctx context.Context, c *http.Client) (*reauth.RAPT, error) {
+// Client optionally performs a login and returns http.Client.
+//
+// Compared to [Authenticator], this method attaches a RAPT, which
+// must be renewed separately with user interaction (see
+// [ReAuthenticator.RenewRAPT]).
+func (a *ReAuthenticator) Client(ctx context.Context) (*http.Client, error) {
+	c, err := a.Authenticator.Client()
+	if err != nil {
+		return nil, errors.Annotate(err, "ReAuthenticator.Client").Err()
+	}
+	if c.Jar == nil {
+		j, err := cookiejar.New(&cookiejar.Options{
+			PublicSuffixList: publicsuffix.List,
+		})
+		if err != nil {
+			panic(err)
+		}
+		c.Jar = j
+	}
+	rapt, err := a.GetRAPT(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "ReAuthenticator.Client").Err()
+	}
+	c.Jar.SetCookies(
+		&url.URL{
+			Scheme: "https",
+			Host:   "googlesource.com",
+		},
+		[]*http.Cookie{{
+			Name:   "RAPT",
+			Value:  rapt,
+			Domain: "googlesource.com",
+			Secure: true,
+			// TODO(ayatane): We should set MaxAge here, but
+			// expired RAPT and missing RAPT are identical.
+		}})
+	return c, nil
+}
+
+func (a *ReAuthenticator) mintRAPT(ctx context.Context, c *http.Client) (*reauth.RAPT, error) {
 	if a.provider != nil {
 		return a.provider(ctx, c)
 	}

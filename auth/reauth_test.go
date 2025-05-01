@@ -17,6 +17,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"golang.org/x/oauth2"
@@ -35,12 +36,6 @@ func TestRAPT(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 		}
-		raptProvider := &stubRAPTProvider{
-			rapt: &reauth.RAPT{
-				Token:  "nahinahi",
-				Expiry: future,
-			},
-		}
 		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
 		cacheToken(auth, tokenProvider, &internal.Token{
 			Token: oauth2.Token{
@@ -48,6 +43,12 @@ func TestRAPT(t *testing.T) {
 				Expiry:      future,
 			},
 		})
+		raptProvider := &stubRAPTProvider{
+			rapt: &reauth.RAPT{
+				Token:  "nahinahi",
+				Expiry: future,
+			},
+		}
 		ra := ReAuthenticator{
 			Authenticator: auth,
 			provider:      raptProvider.Get,
@@ -68,12 +69,6 @@ func TestRAPT(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 		}
-		raptProvider := &stubRAPTProvider{
-			rapt: &reauth.RAPT{
-				Token:  "nahinahi",
-				Expiry: past,
-			},
-		}
 		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
 		cacheToken(auth, tokenProvider, &internal.Token{
 			Token: oauth2.Token{
@@ -81,6 +76,12 @@ func TestRAPT(t *testing.T) {
 				Expiry:      future,
 			},
 		})
+		raptProvider := &stubRAPTProvider{
+			rapt: &reauth.RAPT{
+				Token:  "nahinahi",
+				Expiry: past,
+			},
+		}
 		ra := ReAuthenticator{
 			Authenticator: auth,
 			provider:      raptProvider.Get,
@@ -94,6 +95,44 @@ func TestRAPT(t *testing.T) {
 
 		_, err = ra.GetRAPT(ctx)
 		assert.Loosely(t, err, should.NotBeNil)
+	})
+
+	ftt.Run("Test client has rapt cookie", t, func(t *ftt.Test) {
+		tokenProvider := &fakeTokenProvider{
+			interactive: false,
+		}
+		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      future,
+			},
+		})
+		raptProvider := &stubRAPTProvider{
+			rapt: &reauth.RAPT{
+				Token:  "nahinahi",
+				Expiry: future,
+			},
+		}
+		ra := ReAuthenticator{
+			Authenticator: auth,
+			provider:      raptProvider.Get,
+		}
+		err := ra.RenewRAPT(ctx)
+		assert.Loosely(t, err, should.BeNil)
+
+		c, err := ra.Client(ctx)
+		assert.Loosely(t, err, should.BeNil)
+
+		u, err := url.Parse("https://gerrit.googlesource.com")
+		assert.Loosely(t, err, should.BeNil)
+
+		got := c.Jar.Cookies(u)
+		assert.That(t, got, should.Match([]*http.Cookie{{
+			Name:  "RAPT",
+			Value: "nahinahi",
+		}}))
+
 	})
 }
 
