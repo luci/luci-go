@@ -33,7 +33,7 @@ const V0APIAllowGroup = "service-luci-change-verifier-v0-api-users"
 //
 // Returns true if user has. False, otherwise.
 func checkRunRead(ctx context.Context, r *run.Run) (bool, error) {
-	// TODO(https://crbug.com/1233963): design & implement & test.
+	// TODO: crbug/40803184 - design & implement & test.
 	switch yes, err := checkLegacyCQStatusAccess(ctx, r.ID.LUCIProject()); {
 	case err != nil:
 		return false, err

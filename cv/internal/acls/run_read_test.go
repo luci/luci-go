@@ -112,7 +112,7 @@ func TestRunReadChecker(t *testing.T) {
 				// TODO(crbug/1233963): add a test once non-legacy ACLs are working.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:googler@example.com",
-					IdentityGroups: []string{"googlers"},
+					IdentityGroups: []string{"internal-cq-status-access"},
 				})
 				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
 				assert.NoErr(t, err)

@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	cqStatusInternalCrIAGroup = "googlers"
+	cqStatusInternalCrIAGroup = "internal-cq-status-access"
 	legacyCQStatusHostTTL     = 20 * time.Minute
 )
 
