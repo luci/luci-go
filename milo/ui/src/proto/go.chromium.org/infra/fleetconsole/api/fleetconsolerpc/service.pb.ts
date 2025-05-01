@@ -301,20 +301,22 @@ export interface ResourceRequest {
   readonly rrId: string;
   /** The details of the resource request. */
   readonly resourceDetails: string;
-  /** The procurement end date of the resource request. */
-  readonly procurementEndDate?:
-    | DateOnly
-    | undefined;
-  /** The build end date of the resource request. */
-  readonly buildEndDate?:
-    | DateOnly
-    | undefined;
-  /** The QA end date of the resource request. */
-  readonly qaEndDate?:
-    | DateOnly
-    | undefined;
-  /** The config end date of the resource request. */
-  readonly configEndDate?:
+  readonly procurementTargetStartDate?: DateOnly | undefined;
+  readonly procurementActualStartDate?: DateOnly | undefined;
+  readonly procurementTargetDeliveryDate?: DateOnly | undefined;
+  readonly procurementActualDeliveryDate?: DateOnly | undefined;
+  readonly buildTargetStartDate?: DateOnly | undefined;
+  readonly buildActualStartDate?: DateOnly | undefined;
+  readonly buildTargetDeliveryDate?: DateOnly | undefined;
+  readonly buildActualDeliveryDate?: DateOnly | undefined;
+  readonly qaTargetStartDate?: DateOnly | undefined;
+  readonly qaActualStartDate?: DateOnly | undefined;
+  readonly qaTargetDeliveryDate?: DateOnly | undefined;
+  readonly qaActualDeliveryDate?: DateOnly | undefined;
+  readonly configTargetStartDate?: DateOnly | undefined;
+  readonly configActualStartDate?: DateOnly | undefined;
+  readonly configTargetDeliveryDate?: DateOnly | undefined;
+  readonly configActualDeliveryDate?:
     | DateOnly
     | undefined;
   /** Expected ETA for the resource request. */
@@ -2655,10 +2657,22 @@ function createBaseResourceRequest(): ResourceRequest {
     name: "",
     rrId: "",
     resourceDetails: "",
-    procurementEndDate: undefined,
-    buildEndDate: undefined,
-    qaEndDate: undefined,
-    configEndDate: undefined,
+    procurementTargetStartDate: undefined,
+    procurementActualStartDate: undefined,
+    procurementTargetDeliveryDate: undefined,
+    procurementActualDeliveryDate: undefined,
+    buildTargetStartDate: undefined,
+    buildActualStartDate: undefined,
+    buildTargetDeliveryDate: undefined,
+    buildActualDeliveryDate: undefined,
+    qaTargetStartDate: undefined,
+    qaActualStartDate: undefined,
+    qaTargetDeliveryDate: undefined,
+    qaActualDeliveryDate: undefined,
+    configTargetStartDate: undefined,
+    configActualStartDate: undefined,
+    configTargetDeliveryDate: undefined,
+    configActualDeliveryDate: undefined,
     expectedEta: undefined,
     fulfillmentStatus: undefined,
   };
@@ -2675,17 +2689,53 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceDetails !== "") {
       writer.uint32(26).string(message.resourceDetails);
     }
-    if (message.procurementEndDate !== undefined) {
-      DateOnly.encode(message.procurementEndDate, writer.uint32(34).fork()).join();
+    if (message.procurementTargetStartDate !== undefined) {
+      DateOnly.encode(message.procurementTargetStartDate, writer.uint32(82).fork()).join();
     }
-    if (message.buildEndDate !== undefined) {
-      DateOnly.encode(message.buildEndDate, writer.uint32(42).fork()).join();
+    if (message.procurementActualStartDate !== undefined) {
+      DateOnly.encode(message.procurementActualStartDate, writer.uint32(90).fork()).join();
     }
-    if (message.qaEndDate !== undefined) {
-      DateOnly.encode(message.qaEndDate, writer.uint32(50).fork()).join();
+    if (message.procurementTargetDeliveryDate !== undefined) {
+      DateOnly.encode(message.procurementTargetDeliveryDate, writer.uint32(98).fork()).join();
     }
-    if (message.configEndDate !== undefined) {
-      DateOnly.encode(message.configEndDate, writer.uint32(58).fork()).join();
+    if (message.procurementActualDeliveryDate !== undefined) {
+      DateOnly.encode(message.procurementActualDeliveryDate, writer.uint32(106).fork()).join();
+    }
+    if (message.buildTargetStartDate !== undefined) {
+      DateOnly.encode(message.buildTargetStartDate, writer.uint32(114).fork()).join();
+    }
+    if (message.buildActualStartDate !== undefined) {
+      DateOnly.encode(message.buildActualStartDate, writer.uint32(122).fork()).join();
+    }
+    if (message.buildTargetDeliveryDate !== undefined) {
+      DateOnly.encode(message.buildTargetDeliveryDate, writer.uint32(130).fork()).join();
+    }
+    if (message.buildActualDeliveryDate !== undefined) {
+      DateOnly.encode(message.buildActualDeliveryDate, writer.uint32(138).fork()).join();
+    }
+    if (message.qaTargetStartDate !== undefined) {
+      DateOnly.encode(message.qaTargetStartDate, writer.uint32(146).fork()).join();
+    }
+    if (message.qaActualStartDate !== undefined) {
+      DateOnly.encode(message.qaActualStartDate, writer.uint32(154).fork()).join();
+    }
+    if (message.qaTargetDeliveryDate !== undefined) {
+      DateOnly.encode(message.qaTargetDeliveryDate, writer.uint32(162).fork()).join();
+    }
+    if (message.qaActualDeliveryDate !== undefined) {
+      DateOnly.encode(message.qaActualDeliveryDate, writer.uint32(170).fork()).join();
+    }
+    if (message.configTargetStartDate !== undefined) {
+      DateOnly.encode(message.configTargetStartDate, writer.uint32(178).fork()).join();
+    }
+    if (message.configActualStartDate !== undefined) {
+      DateOnly.encode(message.configActualStartDate, writer.uint32(186).fork()).join();
+    }
+    if (message.configTargetDeliveryDate !== undefined) {
+      DateOnly.encode(message.configTargetDeliveryDate, writer.uint32(194).fork()).join();
+    }
+    if (message.configActualDeliveryDate !== undefined) {
+      DateOnly.encode(message.configActualDeliveryDate, writer.uint32(202).fork()).join();
     }
     if (message.expectedEta !== undefined) {
       DateOnly.encode(message.expectedEta, writer.uint32(66).fork()).join();
@@ -2727,36 +2777,132 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.resourceDetails = reader.string();
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 10: {
+          if (tag !== 82) {
             break;
           }
 
-          message.procurementEndDate = DateOnly.decode(reader, reader.uint32());
+          message.procurementTargetStartDate = DateOnly.decode(reader, reader.uint32());
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
+        case 11: {
+          if (tag !== 90) {
             break;
           }
 
-          message.buildEndDate = DateOnly.decode(reader, reader.uint32());
+          message.procurementActualStartDate = DateOnly.decode(reader, reader.uint32());
           continue;
         }
-        case 6: {
-          if (tag !== 50) {
+        case 12: {
+          if (tag !== 98) {
             break;
           }
 
-          message.qaEndDate = DateOnly.decode(reader, reader.uint32());
+          message.procurementTargetDeliveryDate = DateOnly.decode(reader, reader.uint32());
           continue;
         }
-        case 7: {
-          if (tag !== 58) {
+        case 13: {
+          if (tag !== 106) {
             break;
           }
 
-          message.configEndDate = DateOnly.decode(reader, reader.uint32());
+          message.procurementActualDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.buildTargetStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.buildActualStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.buildTargetDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 17: {
+          if (tag !== 138) {
+            break;
+          }
+
+          message.buildActualDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.qaTargetStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 19: {
+          if (tag !== 154) {
+            break;
+          }
+
+          message.qaActualStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.qaTargetDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.qaActualDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.configTargetStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.configActualStartDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.configTargetDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 25: {
+          if (tag !== 202) {
+            break;
+          }
+
+          message.configActualDeliveryDate = DateOnly.decode(reader, reader.uint32());
           continue;
         }
         case 8: {
@@ -2789,10 +2935,50 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       rrId: isSet(object.rrId) ? globalThis.String(object.rrId) : "",
       resourceDetails: isSet(object.resourceDetails) ? globalThis.String(object.resourceDetails) : "",
-      procurementEndDate: isSet(object.procurementEndDate) ? DateOnly.fromJSON(object.procurementEndDate) : undefined,
-      buildEndDate: isSet(object.buildEndDate) ? DateOnly.fromJSON(object.buildEndDate) : undefined,
-      qaEndDate: isSet(object.qaEndDate) ? DateOnly.fromJSON(object.qaEndDate) : undefined,
-      configEndDate: isSet(object.configEndDate) ? DateOnly.fromJSON(object.configEndDate) : undefined,
+      procurementTargetStartDate: isSet(object.procurementTargetStartDate)
+        ? DateOnly.fromJSON(object.procurementTargetStartDate)
+        : undefined,
+      procurementActualStartDate: isSet(object.procurementActualStartDate)
+        ? DateOnly.fromJSON(object.procurementActualStartDate)
+        : undefined,
+      procurementTargetDeliveryDate: isSet(object.procurementTargetDeliveryDate)
+        ? DateOnly.fromJSON(object.procurementTargetDeliveryDate)
+        : undefined,
+      procurementActualDeliveryDate: isSet(object.procurementActualDeliveryDate)
+        ? DateOnly.fromJSON(object.procurementActualDeliveryDate)
+        : undefined,
+      buildTargetStartDate: isSet(object.buildTargetStartDate)
+        ? DateOnly.fromJSON(object.buildTargetStartDate)
+        : undefined,
+      buildActualStartDate: isSet(object.buildActualStartDate)
+        ? DateOnly.fromJSON(object.buildActualStartDate)
+        : undefined,
+      buildTargetDeliveryDate: isSet(object.buildTargetDeliveryDate)
+        ? DateOnly.fromJSON(object.buildTargetDeliveryDate)
+        : undefined,
+      buildActualDeliveryDate: isSet(object.buildActualDeliveryDate)
+        ? DateOnly.fromJSON(object.buildActualDeliveryDate)
+        : undefined,
+      qaTargetStartDate: isSet(object.qaTargetStartDate) ? DateOnly.fromJSON(object.qaTargetStartDate) : undefined,
+      qaActualStartDate: isSet(object.qaActualStartDate) ? DateOnly.fromJSON(object.qaActualStartDate) : undefined,
+      qaTargetDeliveryDate: isSet(object.qaTargetDeliveryDate)
+        ? DateOnly.fromJSON(object.qaTargetDeliveryDate)
+        : undefined,
+      qaActualDeliveryDate: isSet(object.qaActualDeliveryDate)
+        ? DateOnly.fromJSON(object.qaActualDeliveryDate)
+        : undefined,
+      configTargetStartDate: isSet(object.configTargetStartDate)
+        ? DateOnly.fromJSON(object.configTargetStartDate)
+        : undefined,
+      configActualStartDate: isSet(object.configActualStartDate)
+        ? DateOnly.fromJSON(object.configActualStartDate)
+        : undefined,
+      configTargetDeliveryDate: isSet(object.configTargetDeliveryDate)
+        ? DateOnly.fromJSON(object.configTargetDeliveryDate)
+        : undefined,
+      configActualDeliveryDate: isSet(object.configActualDeliveryDate)
+        ? DateOnly.fromJSON(object.configActualDeliveryDate)
+        : undefined,
       expectedEta: isSet(object.expectedEta) ? DateOnly.fromJSON(object.expectedEta) : undefined,
       fulfillmentStatus: isSet(object.fulfillmentStatus)
         ? resourceRequest_StatusFromJSON(object.fulfillmentStatus)
@@ -2811,17 +2997,53 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceDetails !== "") {
       obj.resourceDetails = message.resourceDetails;
     }
-    if (message.procurementEndDate !== undefined) {
-      obj.procurementEndDate = DateOnly.toJSON(message.procurementEndDate);
+    if (message.procurementTargetStartDate !== undefined) {
+      obj.procurementTargetStartDate = DateOnly.toJSON(message.procurementTargetStartDate);
     }
-    if (message.buildEndDate !== undefined) {
-      obj.buildEndDate = DateOnly.toJSON(message.buildEndDate);
+    if (message.procurementActualStartDate !== undefined) {
+      obj.procurementActualStartDate = DateOnly.toJSON(message.procurementActualStartDate);
     }
-    if (message.qaEndDate !== undefined) {
-      obj.qaEndDate = DateOnly.toJSON(message.qaEndDate);
+    if (message.procurementTargetDeliveryDate !== undefined) {
+      obj.procurementTargetDeliveryDate = DateOnly.toJSON(message.procurementTargetDeliveryDate);
     }
-    if (message.configEndDate !== undefined) {
-      obj.configEndDate = DateOnly.toJSON(message.configEndDate);
+    if (message.procurementActualDeliveryDate !== undefined) {
+      obj.procurementActualDeliveryDate = DateOnly.toJSON(message.procurementActualDeliveryDate);
+    }
+    if (message.buildTargetStartDate !== undefined) {
+      obj.buildTargetStartDate = DateOnly.toJSON(message.buildTargetStartDate);
+    }
+    if (message.buildActualStartDate !== undefined) {
+      obj.buildActualStartDate = DateOnly.toJSON(message.buildActualStartDate);
+    }
+    if (message.buildTargetDeliveryDate !== undefined) {
+      obj.buildTargetDeliveryDate = DateOnly.toJSON(message.buildTargetDeliveryDate);
+    }
+    if (message.buildActualDeliveryDate !== undefined) {
+      obj.buildActualDeliveryDate = DateOnly.toJSON(message.buildActualDeliveryDate);
+    }
+    if (message.qaTargetStartDate !== undefined) {
+      obj.qaTargetStartDate = DateOnly.toJSON(message.qaTargetStartDate);
+    }
+    if (message.qaActualStartDate !== undefined) {
+      obj.qaActualStartDate = DateOnly.toJSON(message.qaActualStartDate);
+    }
+    if (message.qaTargetDeliveryDate !== undefined) {
+      obj.qaTargetDeliveryDate = DateOnly.toJSON(message.qaTargetDeliveryDate);
+    }
+    if (message.qaActualDeliveryDate !== undefined) {
+      obj.qaActualDeliveryDate = DateOnly.toJSON(message.qaActualDeliveryDate);
+    }
+    if (message.configTargetStartDate !== undefined) {
+      obj.configTargetStartDate = DateOnly.toJSON(message.configTargetStartDate);
+    }
+    if (message.configActualStartDate !== undefined) {
+      obj.configActualStartDate = DateOnly.toJSON(message.configActualStartDate);
+    }
+    if (message.configTargetDeliveryDate !== undefined) {
+      obj.configTargetDeliveryDate = DateOnly.toJSON(message.configTargetDeliveryDate);
+    }
+    if (message.configActualDeliveryDate !== undefined) {
+      obj.configActualDeliveryDate = DateOnly.toJSON(message.configActualDeliveryDate);
     }
     if (message.expectedEta !== undefined) {
       obj.expectedEta = DateOnly.toJSON(message.expectedEta);
@@ -2840,18 +3062,64 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     message.name = object.name ?? "";
     message.rrId = object.rrId ?? "";
     message.resourceDetails = object.resourceDetails ?? "";
-    message.procurementEndDate = (object.procurementEndDate !== undefined && object.procurementEndDate !== null)
-      ? DateOnly.fromPartial(object.procurementEndDate)
+    message.procurementTargetStartDate =
+      (object.procurementTargetStartDate !== undefined && object.procurementTargetStartDate !== null)
+        ? DateOnly.fromPartial(object.procurementTargetStartDate)
+        : undefined;
+    message.procurementActualStartDate =
+      (object.procurementActualStartDate !== undefined && object.procurementActualStartDate !== null)
+        ? DateOnly.fromPartial(object.procurementActualStartDate)
+        : undefined;
+    message.procurementTargetDeliveryDate =
+      (object.procurementTargetDeliveryDate !== undefined && object.procurementTargetDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.procurementTargetDeliveryDate)
+        : undefined;
+    message.procurementActualDeliveryDate =
+      (object.procurementActualDeliveryDate !== undefined && object.procurementActualDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.procurementActualDeliveryDate)
+        : undefined;
+    message.buildTargetStartDate = (object.buildTargetStartDate !== undefined && object.buildTargetStartDate !== null)
+      ? DateOnly.fromPartial(object.buildTargetStartDate)
       : undefined;
-    message.buildEndDate = (object.buildEndDate !== undefined && object.buildEndDate !== null)
-      ? DateOnly.fromPartial(object.buildEndDate)
+    message.buildActualStartDate = (object.buildActualStartDate !== undefined && object.buildActualStartDate !== null)
+      ? DateOnly.fromPartial(object.buildActualStartDate)
       : undefined;
-    message.qaEndDate = (object.qaEndDate !== undefined && object.qaEndDate !== null)
-      ? DateOnly.fromPartial(object.qaEndDate)
+    message.buildTargetDeliveryDate =
+      (object.buildTargetDeliveryDate !== undefined && object.buildTargetDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.buildTargetDeliveryDate)
+        : undefined;
+    message.buildActualDeliveryDate =
+      (object.buildActualDeliveryDate !== undefined && object.buildActualDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.buildActualDeliveryDate)
+        : undefined;
+    message.qaTargetStartDate = (object.qaTargetStartDate !== undefined && object.qaTargetStartDate !== null)
+      ? DateOnly.fromPartial(object.qaTargetStartDate)
       : undefined;
-    message.configEndDate = (object.configEndDate !== undefined && object.configEndDate !== null)
-      ? DateOnly.fromPartial(object.configEndDate)
+    message.qaActualStartDate = (object.qaActualStartDate !== undefined && object.qaActualStartDate !== null)
+      ? DateOnly.fromPartial(object.qaActualStartDate)
       : undefined;
+    message.qaTargetDeliveryDate = (object.qaTargetDeliveryDate !== undefined && object.qaTargetDeliveryDate !== null)
+      ? DateOnly.fromPartial(object.qaTargetDeliveryDate)
+      : undefined;
+    message.qaActualDeliveryDate = (object.qaActualDeliveryDate !== undefined && object.qaActualDeliveryDate !== null)
+      ? DateOnly.fromPartial(object.qaActualDeliveryDate)
+      : undefined;
+    message.configTargetStartDate =
+      (object.configTargetStartDate !== undefined && object.configTargetStartDate !== null)
+        ? DateOnly.fromPartial(object.configTargetStartDate)
+        : undefined;
+    message.configActualStartDate =
+      (object.configActualStartDate !== undefined && object.configActualStartDate !== null)
+        ? DateOnly.fromPartial(object.configActualStartDate)
+        : undefined;
+    message.configTargetDeliveryDate =
+      (object.configTargetDeliveryDate !== undefined && object.configTargetDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.configTargetDeliveryDate)
+        : undefined;
+    message.configActualDeliveryDate =
+      (object.configActualDeliveryDate !== undefined && object.configActualDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.configActualDeliveryDate)
+        : undefined;
     message.expectedEta = (object.expectedEta !== undefined && object.expectedEta !== null)
       ? DateOnly.fromPartial(object.expectedEta)
       : undefined;

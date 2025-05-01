@@ -118,7 +118,8 @@ const columns = [
       headerName: 'Material Sourcing Target Delivery Date',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.procurementEndDate),
+    valueGetter: (rr: ResourceRequest) =>
+      toIsoString(rr.procurementActualDeliveryDate),
   },
   {
     id: 'build_target_delivery_date',
@@ -127,7 +128,8 @@ const columns = [
       headerName: 'Build Target Delivery Date',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.buildEndDate),
+    valueGetter: (rr: ResourceRequest) =>
+      toIsoString(rr.buildActualDeliveryDate),
   },
   {
     id: 'qa_target_delivery_date',
@@ -136,7 +138,7 @@ const columns = [
       headerName: 'QA Target Delivery Date',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaEndDate),
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaActualDeliveryDate),
   },
   {
     id: 'config_target_delivery_date',
@@ -145,7 +147,8 @@ const columns = [
       headerName: 'Config Target Delivery Date',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.configEndDate),
+    valueGetter: (rr: ResourceRequest) =>
+      toIsoString(rr.configActualDeliveryDate),
   },
 ] as const satisfies readonly ColumnDescriptor[];
 
