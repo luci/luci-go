@@ -653,7 +653,7 @@ CREATE TABLE TestVariantRealms (
 
   -- key:value pairs to specify the way of running the test.
   -- See also luci.resultdb.v1.TestResult.variant.
-  Variant ARRAY<STRING(MAX)>,
+  Variant ARRAY<STRING(MAX)> NOT NULL,
 
   -- Other information about the test variant, like information from tags,
   -- could be captured here. (e.g. for test ownership).
@@ -716,7 +716,7 @@ CREATE TABLE TestVariantBranch (
   RefHash BYTES(8) NOT NULL,
   -- key:value pairs in the test variant. See also Variant on the ResultDB
   -- TestResults table. Only written the first time the row is created.
-  Variant ARRAY<STRING(MAX)>,
+  Variant ARRAY<STRING(MAX)> NOT NULL,
   -- ZStandard-compressed, serialized luci.analysis.v1.SourceRef.
   -- SourceRef represents a reference in a source control system.
   -- Only written the first time the row is created.

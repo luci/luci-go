@@ -247,7 +247,7 @@ CREATE TABLE TestResults (
 
   -- key:value pairs in the test variant.
   -- See also TestResult.variant in test_result.proto.
-  Variant ARRAY<STRING(MAX)>,
+  Variant ARRAY<STRING(MAX)> NOT NULL,
 
   -- A hash of the key:variant pairs in the test variant.
   -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
