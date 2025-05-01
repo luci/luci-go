@@ -50,7 +50,7 @@ func validateGetConfig(req *pb.GetConfigRequest) error {
 			return errors.Annotate(err, "path %q", req.Path).Err()
 		}
 	}
-	return errors.Annotate(config.Set(req.ConfigSet).Validate(), "config_set %q", req.ConfigSet).Err()
+	return errors.WrapIf(config.Set(req.ConfigSet).Validate(), "config_set %q", req.ConfigSet)
 }
 
 // GetConfig handles a request to retrieve a config. Implements pb.ConfigsServer.

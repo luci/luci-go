@@ -33,7 +33,7 @@ func ValidateGitilesLocation(loc *cfgcommonpb.GitilesLocation) error {
 	case strings.HasPrefix(loc.GetPath(), "/"):
 		return errors.New("path must not start with '/'")
 	default:
-		return errors.Annotate(validateGitilesRepo(loc.GetRepo()), "repo").Err()
+		return errors.WrapIf(validateGitilesRepo(loc.GetRepo()), "repo")
 	}
 }
 

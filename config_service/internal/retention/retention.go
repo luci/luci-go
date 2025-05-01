@@ -87,7 +87,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 			}
 			workCh <- func() error {
 				err := clients.GetGsClient(ctx).Delete(ctx, f.Bucket(), f.Filename())
-				return errors.Annotate(err, "cannot delete GCS file %q", f).Err()
+				return errors.WrapIf(err, "cannot delete GCS file %q", f)
 			}
 		}
 	})

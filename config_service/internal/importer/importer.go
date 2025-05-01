@@ -152,7 +152,7 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 					Title:   fmt.Sprintf("configset/%s", cs),
 					ETA:     clock.Now(ctx).Add(common.DistributeOffset(importAllConfigsInterval, "config_set", string(cs))),
 				})
-				return errors.Annotate(err, "failed to enqueue ImportConfigs task for %q: %s", cs, err).Err()
+				return errors.WrapIf(err, "failed to enqueue ImportConfigs task for %q: %s", cs, err)
 			}
 		}
 	})
@@ -480,7 +480,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		} else {
 			metrics.RejectedCfgImportCounter.Add(ctx, 1, string(cfgSet), commit.Id, "")
 		}
-		return errors.Annotate(datastore.Put(ctx, attempt), "saving attempt").Err()
+		return errors.WrapIf(datastore.Put(ctx, attempt), "saving attempt")
 	}
 	// The rejection event rarely happen. Add by 0 to ensure the corresponding
 	// streamz counter can properly handle this metric.
