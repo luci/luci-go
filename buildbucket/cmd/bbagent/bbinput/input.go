@@ -48,7 +48,7 @@ func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 	}
 
 	ret := &bbpb.BBAgentArgs{}
-	return ret, errors.Annotate(proto.Unmarshal(decompressed, ret), "parsing proto").Err()
+	return ret, errors.WrapIf(proto.Unmarshal(decompressed, ret), "parsing proto")
 }
 
 // Encode returns base64(zlib(proto.Marshal(args))).

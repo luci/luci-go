@@ -165,7 +165,7 @@ func FinalizeInvocation(ctx context.Context, buildID int64) error {
 	}
 	switch err := datastore.Get(ctx, b, infra); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "build %d or buildInfra not found", buildID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("build %d or buildInfra not found: %w", buildID, err))
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Tag(transient.Tag).Err()
 	}

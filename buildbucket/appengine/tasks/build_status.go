@@ -43,10 +43,10 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 
 	return parallel.FanOutIn(func(tks chan<- func() error) {
 		tks <- func() error {
-			return errors.Annotate(NotifyPubSub(ctx, bld), "failed to enqueue pubsub notification task: %d", bld.ID).Err()
+			return errors.WrapIf(NotifyPubSub(ctx, bld), "failed to enqueue pubsub notification task: %d", bld.ID)
 		}
 		tks <- func() error {
-			return errors.Annotate(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID).Err()
+			return errors.WrapIf(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID)
 		}
 		tks <- func() error {
 			bldr := &model.Builder{
@@ -66,10 +66,10 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 				return err
 			}
 			if bldr.Config.GetMaxConcurrentBuilds() > 0 {
-				return errors.Annotate(CreatePopPendingBuildTask(ctx, &taskdefs.PopPendingBuildTask{
+				return errors.WrapIf(CreatePopPendingBuildTask(ctx, &taskdefs.PopPendingBuildTask{
 					BuildId:   bld.ID,
 					BuilderId: bld.Proto.Builder,
-				}, ""), "failed to enqueue pop pending build task: %d", bld.ID).Err()
+				}, ""), "failed to enqueue pop pending build task: %d", bld.ID)
 			}
 			return nil
 		}
@@ -81,7 +81,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 				}
 			}
 			if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
-				return errors.Annotate(FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: bld.ID}), "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
+				return errors.WrapIf(FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: bld.ID}), "failed to enqueue resultDB finalization task: %d", bld.ID)
 			}
 			return nil // no-op
 		}

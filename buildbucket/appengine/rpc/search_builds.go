@@ -71,7 +71,7 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 		case err != nil:
 			return errors.Annotate(err, "builder").Err()
 		case b.Bucket == "" && b.Builder != "":
-			return errors.Annotate(errors.Reason("bucket is required").Err(), "builder").Err()
+			return errors.New("builder: bucket is required")
 		}
 	}
 	for i, ch := range pr.GetGerritChanges() {

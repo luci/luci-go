@@ -214,11 +214,11 @@ func validateAgent(agent *pb.BuildInfra_Buildbucket_Agent) error {
 	var err error
 	switch {
 	case teeErr(validateAgentInput(agent.GetInput()), &err) != nil:
-		return errors.Annotate(err, "input").Err()
+		return errors.Fmt("input: %w", err)
 	case teeErr(validateAgentSource(agent.GetSource()), &err) != nil:
-		return errors.Annotate(err, "source").Err()
+		return errors.Fmt("source: %w", err)
 	case teeErr(validateAgentPurposes(agent.GetPurposes(), agent.GetInput()), &err) != nil:
-		return errors.Annotate(err, "purposes").Err()
+		return errors.Fmt("purposes: %w", err)
 	default:
 		return nil
 	}
@@ -229,15 +229,15 @@ func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket
 	bbHost := fmt.Sprintf("%s.appspot.com", info.AppID(ctx))
 	switch {
 	case teeErr(validateHostName(ib.GetHostname()), &err) != nil:
-		return errors.Annotate(err, "hostname").Err()
+		return errors.Fmt("hostname: %w", err)
 	case ib.GetHostname() != "" && ib.Hostname != bbHost:
 		return errors.Reason("incorrect hostname, want: %s, got: %s", bbHost, ib.Hostname).Err()
 	case teeErr(validateAgent(ib.GetAgent()), &err) != nil:
-		return errors.Annotate(err, "agent").Err()
+		return errors.Fmt("agent: %w", err)
 	case teeErr(validateRequestedDimensions(ib.RequestedDimensions), &err) != nil:
-		return errors.Annotate(err, "requested_dimensions").Err()
+		return errors.Fmt("requested_dimensions: %w", err)
 	case teeErr(validateProperties(ib.RequestedProperties), &err) != nil:
-		return errors.Annotate(err, "requested_properties").Err()
+		return errors.Fmt("requested_properties: %w", err)
 	}
 	for _, host := range ib.GetKnownPublicGerritHosts() {
 		if err = validateHostName(host); err != nil {
@@ -306,7 +306,7 @@ func validateDimension(dim *pb.RequestedDimension, allowEmptyValue bool) error {
 	var err error
 	switch {
 	case teeErr(validateExpirationDuration(dim.GetExpiration()), &err) != nil:
-		return errors.Annotate(err, "expiration").Err()
+		return errors.Fmt("expiration: %w", err)
 	case teeErr(validateDimensionKey(dim.GetKey()), &err) != nil:
 		return err
 	case allowEmptyValue && dim.GetValue() == "":
@@ -365,11 +365,11 @@ func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error 
 	case teeErr(config.ValidateTaskBackendTarget(globalCfg, ib.GetTask().GetId().GetTarget()), &err) != nil:
 		return err
 	case teeErr(validateBackendConfig(ib.GetConfig()), &err) != nil:
-		return errors.Annotate(err, "config").Err()
+		return errors.Fmt("config: %w", err)
 	case teeErr(validateDimensions(ib.GetTaskDimensions()), &err) != nil:
-		return errors.Annotate(err, "task_dimensions").Err()
+		return errors.Fmt("task_dimensions: %w", err)
 	case teeErr(validateCaches(ib.GetCaches()), &err) != nil:
-		return errors.Annotate(err, "caches").Err()
+		return errors.Fmt("caches: %w", err)
 	default:
 		return nil
 	}
@@ -382,13 +382,13 @@ func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
 	}
 	switch {
 	case teeErr(validateHostName(is.GetHostname()), &err) != nil:
-		return errors.Annotate(err, "hostname").Err()
+		return errors.Fmt("hostname: %w", err)
 	case is.GetPriority() < 0 || is.GetPriority() > 255:
 		return errors.Reason("priority must be in [0, 255]").Err()
 	case teeErr(validateDimensions(is.GetTaskDimensions()), &err) != nil:
-		return errors.Annotate(err, "task_dimensions").Err()
+		return errors.Fmt("task_dimensions: %w", err)
 	case teeErr(validateCaches(convertSwarmingCaches(is.GetCaches())), &err) != nil:
-		return errors.Annotate(err, "caches").Err()
+		return errors.Fmt("caches: %w", err)
 	default:
 		return nil
 	}
@@ -398,7 +398,7 @@ func validateInfraLogDog(il *pb.BuildInfra_LogDog) error {
 	var err error
 	switch {
 	case teeErr(validateHostName(il.GetHostname()), &err) != nil:
-		return errors.Annotate(err, "hostname").Err()
+		return errors.Fmt("hostname: %w", err)
 	default:
 		return nil
 	}
@@ -410,7 +410,7 @@ func validateInfraResultDB(irdb *pb.BuildInfra_ResultDB) error {
 	case irdb == nil:
 		return nil
 	case teeErr(validateHostName(irdb.GetHostname()), &err) != nil:
-		return errors.Annotate(err, "hostname").Err()
+		return errors.Fmt("hostname: %w", err)
 	default:
 		return nil
 	}
@@ -424,15 +424,15 @@ func validateInfra(ctx context.Context, infra *pb.BuildInfra) error {
 	case infra.GetBackend() != nil && infra.GetSwarming() != nil:
 		return errors.Reason("can only have one of backend or swarming in build infra. both were provided").Err()
 	case teeErr(validateInfraBackend(ctx, infra.GetBackend()), &err) != nil:
-		return errors.Annotate(err, "backend").Err()
+		return errors.Fmt("backend: %w", err)
 	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
-		return errors.Annotate(err, "swarming").Err()
+		return errors.Fmt("swarming: %w", err)
 	case teeErr(validateInfraBuildbucket(ctx, infra.GetBuildbucket()), &err) != nil:
-		return errors.Annotate(err, "buildbucket").Err()
+		return errors.Fmt("buildbucket: %w", err)
 	case teeErr(validateInfraLogDog(infra.GetLogdog()), &err) != nil:
-		return errors.Annotate(err, "logdog").Err()
+		return errors.Fmt("logdog: %w", err)
 	case teeErr(validateInfraResultDB(infra.GetResultdb()), &err) != nil:
-		return errors.Annotate(err, "resultdb").Err()
+		return errors.Fmt("resultdb: %w", err)
 	default:
 		return nil
 	}
@@ -442,11 +442,11 @@ func validateInput(wellKnownExperiments stringset.Set, in *pb.Build_Input) error
 	var err error
 	switch {
 	case teeErr(validateGerritChanges(in.GerritChanges), &err) != nil:
-		return errors.Annotate(err, "gerrit_changes").Err()
+		return errors.Fmt("gerrit_changes: %w", err)
 	case in.GetGitilesCommit() != nil && teeErr(validateCommitWithRef(in.GitilesCommit), &err) != nil:
-		return errors.Annotate(err, "gitiles_commit").Err()
+		return errors.Fmt("gitiles_commit: %w", err)
 	case in.Properties != nil && teeErr(validateProperties(in.Properties), &err) != nil:
-		return errors.Annotate(err, "properties").Err()
+		return errors.Fmt("properties: %w", err)
 	}
 	for _, expName := range in.Experiments {
 		if err := config.ValidateExperimentName(expName, wellKnownExperiments); err != nil {
@@ -462,9 +462,9 @@ func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) err
 	case exe.GetCipdPackage() == "":
 		return nil
 	case teeErr(validateCipdPackage(exe.CipdPackage, false), &err) != nil:
-		return errors.Annotate(err, "cipd_package").Err()
+		return errors.Fmt("cipd_package: %w", err)
 	case exe.GetCipdVersion() != "" && teeErr(cipdCommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
-		return errors.Annotate(err, "cipd_version").Err()
+		return errors.Fmt("cipd_version: %w", err)
 	}
 
 	// Validate exe matches with agent.
@@ -507,17 +507,17 @@ func validateBuild(ctx context.Context, wellKnownExperiments stringset.Set, b *p
 	var err error
 	switch {
 	case teeErr(protoutil.ValidateRequiredBuilderID(b.Builder), &err) != nil:
-		return errors.Annotate(err, "builder").Err()
+		return errors.Fmt("builder: %w", err)
 	case teeErr(validateExe(b.Exe, b.GetInfra().GetBuildbucket().GetAgent()), &err) != nil:
-		return errors.Annotate(err, "exe").Err()
+		return errors.Fmt("exe: %w", err)
 	case teeErr(validateInput(wellKnownExperiments, b.Input), &err) != nil:
-		return errors.Annotate(err, "input").Err()
+		return errors.Fmt("input: %w", err)
 	case teeErr(validateInfra(ctx, b.Infra), &err) != nil:
-		return errors.Annotate(err, "infra").Err()
+		return errors.Fmt("infra: %w", err)
 	case teeErr(validateBucketConstraints(ctx, b), &err) != nil:
 		return err
 	case teeErr(validateTags(b.Tags, TagNew), &err) != nil:
-		return errors.Annotate(err, "tags").Err()
+		return errors.Fmt("tags: %w", err)
 	default:
 		return nil
 	}
@@ -876,7 +876,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	// Update ancestors info.
 	p := validateParentViaToken(ctx)
 	if p.err != nil {
-		return nil, errors.Annotate(p.err, "build parent").Err()
+		return nil, errors.Fmt("build parent: %w", p.err)
 	}
 
 	if len(p.ancestors) > 0 {

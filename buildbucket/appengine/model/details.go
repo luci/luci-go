@@ -223,7 +223,7 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 		case me[0] != nil:
 			return me[0]
 		case errors.Filter(me[1], datastore.ErrNoSuchEntity) != nil:
-			return errors.Annotate(me[1], "fail to fetch first %d chunks for BuildOutputProperties", preFetchedChunkCnt).Err()
+			return errors.Fmt("fail to fetch first %d chunks for BuildOutputProperties: %w", preFetchedChunkCnt, me[1])
 		}
 	}
 

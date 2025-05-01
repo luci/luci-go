@@ -67,22 +67,22 @@ func ReportBuilderMetrics(ctx context.Context) error {
 			bldrDefinedMetrics := bldrToMetrics[protoutil.ToBuilderIDString(project, bucket, builder)]
 
 			taskC <- func() error {
-				return errors.Annotate(
+				return errors.WrapIf(
 					reportMaxAge(tctx, project, bucket, legacyBucket, builder, bldrDefinedMetrics),
 					"reportMaxAge",
-				).Err()
+				)
 			}
 			taskC <- func() error {
-				return errors.Annotate(
+				return errors.WrapIf(
 					reportBuildCount(tctx, project, bucket, legacyBucket, builder, bldrDefinedMetrics),
 					"reportBuildCount",
-				).Err()
+				)
 			}
 			taskC <- func() error {
-				return errors.Annotate(
+				return errors.WrapIf(
 					reportConsecutiveFailures(tctx, project, bucket, builder, bldrDefinedMetrics),
 					"reportConsecutiveFailures",
-				).Err()
+				)
 			}
 			return nil
 		})

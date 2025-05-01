@@ -295,7 +295,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 		return errors.Annotate(err, "bad build id").Err()
 	}
 	if subscription != req.subscription {
-		return errors.Annotate(errors.Reason("pubsub subscription %s did not match the one configured for target %s", req.subscription, target).Err(), "pubsub subscription").Err()
+		return errors.Fmt("pubsub subscription: %s did not match the one configured for target %s", req.subscription, target)
 	}
 	if err := validateBuildTaskUpdate(req.BuildTaskUpdate); err != nil {
 		return errors.Annotate(err, "invalid BuildTaskUpdate").Err()

@@ -138,14 +138,14 @@ func tryUpload(ctx context.Context, buildID int64, p *pb.Build) error {
 	}
 
 	if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
-		return errors.Annotate(err, "bad row for build %d", buildID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("bad row for build %d: %w", buildID, err))
 	}
 
 	gerr, _ := err.(*googleapi.Error)
 	if gerr != nil && gerr.Code == http.StatusRequestEntityTooLarge {
 		return errRowTooBig
 	}
-	return errors.Annotate(err, "transient error when inserting BQ for build %d", buildID).Tag(transient.Tag).Err()
+	return transient.Tag.Apply(errors.Fmt("transient error when inserting BQ for build %d: %w", buildID, err))
 }
 
 func buildIsSmallEnough(p proto.Message) bool {

@@ -882,7 +882,7 @@ func TestUpdateBuildTask(t *testing.T) {
 					},
 				}
 				body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1", "chromium-swarm-backend-v2")
-				assert.Loosely(t, UpdateBuildTask(ctx, body), should.ErrLike("pubsub subscription projects/app-id/subscriptions/chromium-swarm-backend-v2 did not match the one configured for target swarming://chromium-swarm"))
+				assert.Loosely(t, UpdateBuildTask(ctx, body), should.ErrLike("pubsub subscription: projects/app-id/subscriptions/chromium-swarm-backend-v2 did not match the one configured for target swarming://chromium-swarm"))
 			})
 		})
 		t.Run("lite mode", func(t *ftt.Test) {

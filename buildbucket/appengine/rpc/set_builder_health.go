@@ -73,7 +73,7 @@ func createErrorResponse(err error, code codes.Code) *pb.SetBuilderHealthRespons
 }
 
 func annotateErrorWithBuilder(err error, builder *pb.BuilderID) error {
-	return errors.Annotate(err, "Builder: %s/%s/%s", builder.Project, builder.Bucket, builder.Builder).Err()
+	return errors.WrapIf(err, "Builder: %s/%s/%s", builder.Project, builder.Bucket, builder.Builder)
 }
 
 var sbhrWalker = protowalk.NewWalker[*pb.SetBuilderHealthRequest](

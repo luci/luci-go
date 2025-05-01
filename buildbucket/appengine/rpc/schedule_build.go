@@ -90,9 +90,9 @@ func validateRequestedDimension(dim *pb.RequestedDimension) error {
 	case teeErr(validateDimension(dim, true), &err) != nil:
 		return err
 	case dim.Key == "caches":
-		return errors.Annotate(errors.Reason("caches may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
+		return errors.New("key: caches may only be specified in builder configs (cr-buildbucket.cfg)")
 	case dim.Key == "pool":
-		return errors.Annotate(errors.Reason("pool may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
+		return errors.New("key: pool may only be specified in builder configs (cr-buildbucket.cfg)")
 	default:
 		return nil
 	}
@@ -131,7 +131,7 @@ func validateExecutable(exe *pb.Executable) error {
 	case exe.GetCipdPackage() != "":
 		return errors.Reason("cipd_package must not be specified").Err()
 	case exe.GetCipdVersion() != "" && teeErr(cipdcommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
-		return errors.Annotate(err, "cipd_version").Err()
+		return errors.Fmt("cipd_version: %w", err)
 	default:
 		return nil
 	}
@@ -453,25 +453,25 @@ func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKno
 	case req.GetBuilder() == nil && req.GetTemplateBuildId() == 0:
 		return errors.Reason("builder or template_build_id is required").Err()
 	case req.Builder != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
-		return errors.Annotate(err, "builder").Err()
+		return errors.Fmt("builder: %w", err)
 	case teeErr(validateRequestedDimensions(req.Dimensions), &err) != nil:
-		return errors.Annotate(err, "dimensions").Err()
+		return errors.Fmt("dimensions: %w", err)
 	case teeErr(validateExecutable(req.Exe), &err) != nil:
-		return errors.Annotate(err, "exe").Err()
+		return errors.Fmt("exe: %w", err)
 	case teeErr(validateGerritChanges(req.GerritChanges), &err) != nil:
-		return errors.Annotate(err, "gerrit_changes").Err()
+		return errors.Fmt("gerrit_changes: %w", err)
 	case req.GitilesCommit != nil && teeErr(validateCommitWithRef(req.GitilesCommit), &err) != nil:
-		return errors.Annotate(err, "gitiles_commit").Err()
+		return errors.Fmt("gitiles_commit: %w", err)
 	case req.Notify != nil && teeErr(validateNotificationConfig(ctx, req.Notify), &err) != nil:
-		return errors.Annotate(err, "notify").Err()
+		return errors.Fmt("notify: %w", err)
 	case req.Priority < 0 || req.Priority > 255:
 		return errors.Reason("priority must be in [0, 255]").Err()
 	case req.Properties != nil && teeErr(validateProperties(req.Properties), &err) != nil:
-		return errors.Annotate(err, "properties").Err()
+		return errors.Fmt("properties: %w", err)
 	case parent == nil && req.CanOutliveParent != pb.Trinary_UNSET:
 		return errors.Reason("can_outlive_parent is specified without parent").Err()
 	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
-		return errors.Annotate(err, "tags").Err()
+		return errors.Fmt("tags: %w", err)
 	}
 
 	for expName := range req.Experiments {

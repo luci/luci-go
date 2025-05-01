@@ -153,11 +153,11 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 			case merr[0] == datastore.ErrNoSuchEntity:
 				return perm.NotFoundErr(ctx)
 			case merr[0] != nil:
-				return errors.Annotate(merr[0], "failed to fetch build: %d", bld.ID).Err()
+				return errors.Fmt("failed to fetch build: %d: %w", bld.ID, merr[0])
 			case merr[1] != nil && merr[1] != datastore.ErrNoSuchEntity:
-				return errors.Annotate(merr[1], "failed to fetch build infra: %d", bld.ID).Err()
+				return errors.Fmt("failed to fetch build infra: %d: %w", bld.ID, merr[1])
 			case merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity:
-				return errors.Annotate(merr[2], "failed to fetch build steps: %d", bld.ID).Err()
+				return errors.Fmt("failed to fetch build steps: %d: %w", bld.ID, merr[2])
 			case merr[2] == datastore.ErrNoSuchEntity:
 				cancelSteps = false
 			}

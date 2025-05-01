@@ -96,7 +96,7 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 	switch err := datastore.Get(ctx, bld, infra); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		return tq.Fatal.Apply(errors.Annotate(err, "build %d or buildInfra not found", buildID).Err())
+		return tq.Fatal.Apply(errors.Fmt("build %d or buildInfra not found: %w", buildID, err))
 	case err != nil:
 		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
 	}
@@ -179,9 +179,10 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	switch err := datastore.Get(ctx, bld, infra); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		if clock.Now(ctx).Sub(time.Unix(0, nt.CreatedTS*int64(time.Microsecond)).UTC()) < time.Minute {
-			return errors.Annotate(err, "Build %d or BuildInfra for task %s not found yet", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID)).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(
+				errors.Fmt("Build %d or BuildInfra for task %s not found yet: %w", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID), err))
 		}
-		return errors.Annotate(err, "Build %d or BuildInfra for task %s not found", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID)).Err()
+		return errors.Fmt("Build %d or BuildInfra for task %s not found: %w", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID), err)
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch build %d or buildInfra", nt.BuildID).Tag(transient.Tag).Err()
 	}

@@ -471,7 +471,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 				return errors.Annotate(err, "failed to enqueue CheckBuildLiveness task").Err()
 			}
 		}
-		return errors.Annotate(datastore.Put(ctx, bld, infra), "failed to save Build and BuildInfra").Err()
+		return errors.WrapIf(datastore.Put(ctx, bld, infra), "failed to save Build and BuildInfra")
 	}, nil)
 	if txErr != nil {
 		logging.Errorf(ctx, "Task failed to save: %s", taskResp.String())

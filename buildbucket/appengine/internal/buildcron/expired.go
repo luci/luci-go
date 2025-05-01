@@ -150,7 +150,7 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 			for bs := range ch {
 				bs := bs
 				workC <- func() error {
-					return errors.Annotate(expireBuilds(ctx, bs, mr), "expireBuilds").Err()
+					return errors.WrapIf(expireBuilds(ctx, bs, mr), "expireBuilds")
 				}
 			}
 		})

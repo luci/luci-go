@@ -40,7 +40,7 @@ func validateCancel(req *pb.CancelBuildRequest) error {
 	case req.SummaryMarkdown == "":
 		return errors.Reason("summary_markdown is required").Err()
 	case teeErr(validateSummaryMarkdown(req.SummaryMarkdown), &err) != nil:
-		return errors.Annotate(err, "summary_markdown").Err()
+		return errors.Fmt("summary_markdown: %w", err)
 	}
 	return nil
 }
