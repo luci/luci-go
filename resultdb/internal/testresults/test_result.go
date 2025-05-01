@@ -214,7 +214,12 @@ func NormaliseFailureReason(fr *pb.FailureReason) {
 		// PrimaryErrorMessage.
 		fr.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
 	}
-	fr.PrimaryErrorMessage = ""
+	// TODO(meiring): Uncomment this line once we are confident
+	// we will not roll back the original change. We need to
+	// keep storing PrimaryErrorMessage for a short time lest
+	// we roll back to a version of ResultDB that returns
+	// read failure reasons verbatim (without computing this field).
+	// fr.PrimaryErrorMessage = ""
 }
 
 // PopulateFailureReasonOutputOnlyFields populates output only fields
