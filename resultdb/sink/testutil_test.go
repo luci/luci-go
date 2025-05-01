@@ -62,6 +62,7 @@ func testServerConfig(addr, tk string) ServerConfig {
 		UpdateToken:              "UpdateToken-ABC",
 		ModuleName:               "module_name",
 		ModuleScheme:             testScheme("scheme"),
+		Variant:                  &pb.Variant{},
 		MaxBatchableArtifactSize: 2 * 1024 * 1024,
 	}
 }

@@ -68,8 +68,16 @@ func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate) error {
 func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	switch pr := p.Predicate.(type) {
 	case *pb.VariantPredicate_Equals:
+		if pr.Equals == nil {
+			// Legacy clients may use a nil variant to mean the empty variant.
+			return nil
+		}
 		return errors.Annotate(ValidateVariant(pr.Equals), "equals").Err()
 	case *pb.VariantPredicate_Contains:
+		if pr.Contains == nil {
+			// Legacy clients may use a nil variant to mean the empty variant.
+			return nil
+		}
 		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
 	case nil:
 		return validate.Unspecified()

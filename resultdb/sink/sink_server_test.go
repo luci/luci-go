@@ -72,11 +72,12 @@ func TestReportTestResults(t *testing.T) {
 
 		expectedTR := proto.Clone(&pb.TestResult{
 			TestIdStructured: &pb.TestIdentifier{
-				ModuleName:   "module_name",
-				ModuleScheme: "scheme",
-				CoarseName:   "coarse_name",
-				FineName:     "fine_name",
-				CaseName:     "component1:component2",
+				ModuleName:    "module_name",
+				ModuleScheme:  "scheme",
+				ModuleVariant: proto.Clone(cfg.Variant).(*pb.Variant),
+				CoarseName:    "coarse_name",
+				FineName:      "fine_name",
+				CaseName:      "component1:component2",
 			},
 			ResultId:            tr.ResultId,
 			Expected:            tr.Expected,
@@ -137,6 +138,7 @@ func TestReportTestResults(t *testing.T) {
 			cfg.ModuleScheme = legacyScheme()
 
 			expectedTR.TestId = "this is testID"
+			expectedTR.Variant = proto.Clone(cfg.Variant).(*pb.Variant)
 			expectedTR.TestIdStructured = nil
 
 			t.Run("with shortening enabled", func(t *ftt.Test) {
@@ -243,11 +245,12 @@ func TestReportTestResults(t *testing.T) {
 
 			expectedTR.TestId = ""
 			expectedTR.TestIdStructured = &pb.TestIdentifier{
-				ModuleName:   "mymodule",
-				ModuleScheme: "myscheme",
-				CoarseName:   "coarse_name",
-				FineName:     "fine_name",
-				CaseName:     "component1:component2",
+				ModuleName:    "mymodule",
+				ModuleScheme:  "myscheme",
+				ModuleVariant: proto.Clone(cfg.Variant).(*pb.Variant),
+				CoarseName:    "coarse_name",
+				FineName:      "fine_name",
+				CaseName:      "component1:component2",
 			}
 
 			t.Run("with shortening enabled", func(t *ftt.Test) {
@@ -267,9 +270,9 @@ func TestReportTestResults(t *testing.T) {
 					checkResults()
 				})
 			})
-			t.Run("without ServerConfig.variant", func(t *ftt.Test) {
-				cfg.Variant = nil
-				expectedTR.TestIdStructured.ModuleVariant = nil
+			t.Run("with empty ServerConfig.variant", func(t *ftt.Test) {
+				cfg.Variant = &pb.Variant{}
+				expectedTR.TestIdStructured.ModuleVariant = &pb.Variant{}
 				checkResults()
 			})
 			t.Run("with ServerConfig.variant", func(t *ftt.Test) {

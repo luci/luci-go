@@ -100,8 +100,11 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		if err != nil {
 			return errors.Annotate(err, "test_id").Err()
 		}
-		if err := ValidateVariant(tr.Variant); err != nil {
-			return errors.Annotate(err, "variant").Err()
+		// Some legacy clients may set no variant to denote the empty variant.
+		if tr.Variant != nil {
+			if err := ValidateVariant(tr.Variant); err != nil {
+				return errors.Annotate(err, "variant").Err()
+			}
 		}
 		if validateToScheme != nil {
 			// Validate the test identifier meets the requirements of the scheme.

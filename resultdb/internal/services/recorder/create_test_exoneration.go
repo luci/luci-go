@@ -64,8 +64,14 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		if err != nil {
 			return errors.Annotate(err, "test_id").Err()
 		}
-		if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
-			return errors.Annotate(err, "variant").Err()
+		// Legacy clients may not set Variant, or use nil to represent
+		// the empty variant. As this is ambiguous, we rely on the absence
+		// of VariantHash being set to determine if Variant was deliberately
+		// set to nil or if the Variant is simply not set.
+		if ex.Variant != nil {
+			if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
+				return errors.Annotate(err, "variant").Err()
+			}
 		}
 
 		// Some legacy clients do not set variant and only set variant_hash.

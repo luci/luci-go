@@ -520,7 +520,7 @@ func TestValidateStructuredTestIdentifierForStorage(t *testing.T) {
 		t.Run("Module Variant", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				id.ModuleVariant = nil
-				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant: unspecified"))
 			})
 			t.Run("Invalid", func(t *ftt.Test) {
 				id.ModuleVariant = &pb.Variant{
@@ -537,7 +537,7 @@ func TestValidateStructuredTestIdentifierForStorage(t *testing.T) {
 				id.ModuleVariantHash = ""
 				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
 			})
-			t.Run("Set", func(t *ftt.Test) {
+			t.Run("Set and matches", func(t *ftt.Test) {
 				// This is invalid, even though the hash matches.
 				id.ModuleVariant = &pb.Variant{
 					Def: map[string]string{
@@ -545,7 +545,17 @@ func TestValidateStructuredTestIdentifierForStorage(t *testing.T) {
 					},
 				}
 				id.ModuleVariantHash = "b1618cc2bf370a7c"
-				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant_hash: do not set when uploading results, this field is output only"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.BeNil)
+			})
+			t.Run("Set and mismatches", func(t *ftt.Test) {
+				// This is invalid, even though the hash matches.
+				id.ModuleVariant = &pb.Variant{
+					Def: map[string]string{
+						"k": "v",
+					},
+				}
+				id.ModuleVariantHash = "blah"
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c (to match module_variant) or for value to be unset"))
 			})
 		})
 	})
@@ -598,9 +608,15 @@ func TestValidateStructuredTestIdentifierForQuery(t *testing.T) {
 				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("case_name: unspecified"))
 			})
 		})
+		t.Run("Module variant and hash unset", func(t *ftt.Test) {
+			id.ModuleVariant = nil
+			id.ModuleVariantHash = ""
+			assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("at least one of module_variant and module_variant_hash must be set"))
+		})
 		t.Run("Module Variant", func(t *ftt.Test) {
-			t.Run("Empty", func(t *ftt.Test) {
+			t.Run("Empty but hash set", func(t *ftt.Test) {
 				id.ModuleVariant = nil
+				id.ModuleVariantHash = "b1618cc2bf370a7c"
 				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
 			})
 			t.Run("Invalid", func(t *ftt.Test) {
@@ -630,13 +646,7 @@ func TestValidateStructuredTestIdentifierForQuery(t *testing.T) {
 			})
 			t.Run("Set and mismatches", func(t *ftt.Test) {
 				id.ModuleVariantHash = "0a0a0a0a0a0a0a0a"
-				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c to match specified variant"))
-			})
-			t.Run("Both variant and hash unset", func(t *ftt.Test) {
-				// This is a special case and how one sets the nil variant.
-				id.ModuleVariant = nil
-				id.ModuleVariantHash = ""
-				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.BeNil)
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c (to match module_variant) or for value to be unset"))
 			})
 		})
 	})

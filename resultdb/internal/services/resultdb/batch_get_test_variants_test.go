@@ -189,7 +189,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 					{TestIdStructured: &pb.TestIdentifier{
 						ModuleName:    "legacy",
 						ModuleScheme:  "legacy",
-						ModuleVariant: nil, // Request the module with the nil variant. This is a special case.
+						ModuleVariant: &pb.Variant{},
 						CaseName:      "test5",
 					}},
 				},

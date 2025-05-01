@@ -23,6 +23,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -32,7 +33,13 @@ const EmptyJSON = "{}"
 
 // ValidateVariant returns an error if vr is invalid.
 func ValidateVariant(vr *pb.Variant) error {
-	for k, v := range vr.GetDef() {
+	if vr == nil {
+		// N.B. In some legacy contexts the nil variant may still be valid
+		// input. In those cases, ValidateVariant() should be called only
+		// on non-nil variants.
+		return validate.Unspecified()
+	}
+	for k, v := range vr.Def {
 		p := pb.StringPair{Key: k, Value: v}
 		if err := ValidateStringPair(&p); err != nil {
 			return errors.Annotate(err, "%q:%q", k, v).Err()

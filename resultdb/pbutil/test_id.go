@@ -434,11 +434,17 @@ func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 		return errors.Annotate(err, "module_variant").Err()
 	}
 	if id.ModuleVariantHash != "" {
-		// Technically AIPs say we shouldn't validate output only fields, but
-		// this isn't an output only field in all contexts, and this will catch
-		// errors. In addition, some methods (e.g. VariantHashFromStructuredTestIdentifier)
-		// assume the variant hash, if set, is valid.
-		return errors.Reason("module_variant_hash: do not set when uploading results, this field is output only").Err()
+		// If clients set both the hash and the variant, they should be consistent.
+		// Clients may set both in upload contexts if they are passing back a
+		// structured test ID retrieved via another query (e.g. creating exonerations
+		// after querying failed results).
+		//
+		// Some methods VariantHashFromStructuredTestIdentifier) expect the variant hash,
+		// if set, to be valid.
+		expectedVariantHash := VariantHash(id.ModuleVariant)
+		if id.ModuleVariantHash != expectedVariantHash {
+			return errors.Reason("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash).Err()
+		}
 	}
 	return nil
 }
@@ -456,9 +462,14 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 		return err
 	}
 
-	// Module variant. Note that a nil variant is valid.
-	if err := ValidateVariant(id.ModuleVariant); err != nil {
-		return errors.Annotate(err, "module_variant").Err()
+	// Module variant.
+	if id.ModuleVariant == nil && id.ModuleVariantHash == "" {
+		return errors.Reason("at least one of module_variant and module_variant_hash must be set").Err()
+	}
+	if id.ModuleVariant != nil {
+		if err := ValidateVariant(id.ModuleVariant); err != nil {
+			return errors.Annotate(err, "module_variant").Err()
+		}
 	}
 	if id.ModuleVariantHash != "" {
 		if err := ValidateVariantHash(id.ModuleVariantHash); err != nil {
@@ -470,7 +481,7 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 			// retrieved via another query.
 			expectedVariantHash := VariantHash(id.ModuleVariant)
 			if id.ModuleVariantHash != expectedVariantHash {
-				return errors.Reason("module_variant_hash: expected %s to match specified variant", expectedVariantHash).Err()
+				return errors.Reason("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash).Err()
 			}
 		}
 	}
