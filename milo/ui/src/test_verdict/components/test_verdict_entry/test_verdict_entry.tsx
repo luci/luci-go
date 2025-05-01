@@ -24,6 +24,7 @@ import {
 } from '@/generic_libs/components/expandable_entry';
 import { CompactClList } from '@/gitiles/components/compact_cl_list';
 import { GerritChange } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { BatchGetTestVariantsRequest_TestVariantIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { InvIdLink } from '@/test_verdict/components/inv_id_link';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -90,7 +91,12 @@ export function TestVerdictEntry({
   const { data, isLoading, isError, error } = useQuery({
     ...client.BatchGetTestVariants.query({
       invocation: 'invocations/' + invocationId,
-      testVariants: [{ testId, variantHash }],
+      testVariants: [
+        BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial({
+          testId,
+          variantHash,
+        }),
+      ],
       resultLimit: RESULT_LIMIT,
     }),
     select: (data) => data as OutputBatchGetTestVariantResponse,
