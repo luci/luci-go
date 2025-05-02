@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func TestConstructLatestViewQuery(t *testing.T) {
+func TestConstructLatestSnapshotViewQuery(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("latest_groups query constructed correctly", t, func(t *ftt.Test) {
@@ -49,7 +49,22 @@ func TestConstructLatestViewQuery(t *testing.T) {
 	)
 	`
 
-		actual, err := constructLatestViewQuery(context.Background(), "groups", "realms")
+		actual, err := constructLatestSnapshotViewQuery(context.Background(), "groups", "realms")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Equal(expected))
+	})
+}
+
+func TestConstructLatestRolesViewQuery(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("latest_roles query constructed correctly", t, func(t *ftt.Test) {
+		expected := `
+	SELECT * FROM luci_auth_service.roles
+	WHERE exported_at = (SELECT MAX(exported_at) FROM luci_auth_service.roles)
+	`
+
+		actual, err := constructLatestRolesViewQuery(context.Background())
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Equal(expected))
 	})

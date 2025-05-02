@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
@@ -49,8 +50,9 @@ const (
 	latestGroupsViewName = "latest_groups"
 	latestRealmsViewName = "latest_realms"
 
-	// Template to construct the query for a view of the latest exported data.
-	latestView = `
+	// Text to construct the query for a view of the latest exported data from
+	// an AuthDB snapshot.
+	latestSnapshotViewText = `
 	WITH these_keys AS (
 		SELECT DISTINCT {{.keyColumn}} FROM {{.datasetID}}.{{.thisTableName}}
 	),
@@ -71,10 +73,19 @@ const (
 		(SELECT MAX({{.keyColumn}}) FROM {{.datasetID}}.{{.thisTableName}})
 	)
 	`
+
+	// Roles table name, latest view name, and view query template.
+	rolesTableName      = "roles"
+	latestRolesViewName = "latest_roles"
+	latestRolesViewText = `
+	SELECT * FROM {{.datasetID}}.{{.tableName}}
+	WHERE {{.keyColumn}} = (SELECT MAX({{.keyColumn}}) FROM {{.datasetID}}.{{.tableName}})
+	`
 )
 
 var (
-	latestViewTemplate = template.Must(template.New("latest view").Parse(latestView))
+	latestSnapshotViewTemplate = template.Must(template.New("latest snapshot view").Parse(latestSnapshotViewText))
+	latestRolesViewTemplate    = template.Must(template.New("latest roles view").Parse(latestRolesViewText))
 )
 
 // Client provides methods to export authorization data to BQ.
@@ -184,38 +195,75 @@ func (client *Client) InsertRealms(ctx context.Context, rows []*bqpb.RealmRow) e
 	return writer.AppendRowsWithPendingStream(ctx, payload)
 }
 
-func constructLatestViewQuery(ctx context.Context,
-	thisTable, otherTable string) (string, error) {
-	// Construct the view query.
+// ensureRolesSchema ensures the roles table's schema has been applied.
+func (client *Client) ensureRolesSchema(ctx context.Context) error {
+	table := client.bqClient.Dataset(datasetID).Table(rolesTableName)
+	if err := schemaApplyer.EnsureTable(ctx, table, rolesTableMetadata); err != nil {
+		return errors.Annotate(err, "failed to ensure roles table and schema").Err()
+	}
+	return nil
+}
+
+// InsertRoles inserts the given roles in BQ.
+func (client *Client) InsertRoles(ctx context.Context, rows []*bqpb.RoleRow) error {
+	if err := client.ensureRolesSchema(ctx); err != nil {
+		return err
+	}
+
+	if len(rows) == 0 {
+		// Nothing to insert.
+		return nil
+	}
+
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s",
+		client.projectID, datasetID, rolesTableName)
+	writer := bq.NewWriter(client.mwClient, tableName, rolesTableSchemaDescriptor)
+
+	payload := make([]proto.Message, len(rows))
+	for i, row := range rows {
+		payload[i] = row
+	}
+
+	// Insert the roles with all-or-nothing semantics.
+	return writer.AppendRowsWithPendingStream(ctx, payload)
+}
+
+func constructViewQuery(ctx context.Context, t *template.Template, args map[string]string) (string, error) {
 	buf := bytes.Buffer{}
-	err := latestViewTemplate.Execute(&buf, map[string]string{
+	if err := t.Execute(&buf, args); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func constructLatestSnapshotViewQuery(ctx context.Context, thisTable, otherTable string) (string, error) {
+	args := map[string]string{
 		"datasetID":      datasetID,
 		"keyColumn":      latestKeyColumn,
 		"thisTableName":  thisTable,
 		"otherTableName": otherTable,
-	})
-	if err != nil {
-		return "", err
 	}
+	return constructViewQuery(ctx, latestSnapshotViewTemplate, args)
+}
 
-	return buf.String(), nil
+func constructLatestRolesViewQuery(ctx context.Context) (string, error) {
+	args := map[string]string{
+		"datasetID": datasetID,
+		"tableName": rolesTableName,
+		"keyColumn": latestKeyColumn,
+	}
+	return constructViewQuery(ctx, latestRolesViewTemplate, args)
 }
 
 func (client *Client) ensureLatestView(ctx context.Context,
-	viewName, thisTable, otherTable, version string) error {
-	viewQuery, err := constructLatestViewQuery(ctx, thisTable, otherTable)
-	if err != nil {
-		return errors.Annotate(err,
-			"failed to construct view query for %q", viewName).Err()
-	}
-
+	viewName, viewQuery, version string) error {
 	// Ensure the view to propagate schema updates.
 	metadata := &bigquery.TableMetadata{
 		ViewQuery: viewQuery,
 		Labels:    map[string]string{bq.MetadataVersionKey: version},
 	}
 	view := client.bqClient.Dataset(datasetID).Table(viewName)
-	err = bq.EnsureTable(ctx, view, metadata, bq.UpdateMetadata(),
+	err := bq.EnsureTable(ctx, view, metadata, bq.UpdateMetadata(),
 		bq.RefreshViewInterval(time.Hour))
 	if err != nil {
 		return errors.Annotate(err, "failed to ensure view %q for version %s",
@@ -233,20 +281,39 @@ func (client *Client) ensureLatestView(ctx context.Context,
 func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	// Apply the metadata for the view of the latest groups.
 	groupsViewVersion := "1"
-	err := client.ensureLatestView(
-		ctx, latestGroupsViewName, groupsTableName, realmsTableName,
-		groupsViewVersion)
+	groupsViewQuery, err := constructLatestSnapshotViewQuery(ctx, groupsTableName, realmsTableName)
+	if err != nil {
+		return errors.Annotate(err,
+			"failed to construct view query for %q", latestGroupsViewName).Err()
+	}
+	err = client.ensureLatestView(ctx, latestGroupsViewName, groupsViewQuery, groupsViewVersion)
 	if err != nil {
 		return err
 	}
 
 	// Apply the metadata for the view of the latest realms.
 	realmsViewVersion := "1"
-	err = client.ensureLatestView(
-		ctx, latestRealmsViewName, realmsTableName, groupsTableName,
-		realmsViewVersion)
+	realmsViewQuery, err := constructLatestSnapshotViewQuery(ctx, realmsTableName, groupsTableName)
+	if err != nil {
+		return errors.Annotate(err,
+			"failed to construct view query for %q", latestRealmsViewName).Err()
+	}
+	err = client.ensureLatestView(ctx, latestRealmsViewName, realmsViewQuery, realmsViewVersion)
 	if err != nil {
 		return err
+	}
+
+	// Apply the metadata for the view of the latest roles.
+	rolesViewVersion := "1"
+	rolesViewQuery, err := constructLatestRolesViewQuery(ctx)
+	if err != nil {
+		return errors.Annotate(err,
+			"failed to construct view query for %q", latestRolesViewName).Err()
+	}
+	err = client.ensureLatestView(ctx, latestRolesViewName, rolesViewQuery, rolesViewVersion)
+	if err != nil {
+		// Non-fatal; just log the error.
+		logging.Warningf(ctx, "failed ensuring view of latest roles: %s", err)
 	}
 
 	return nil

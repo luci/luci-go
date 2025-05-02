@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
@@ -36,16 +35,10 @@ import (
 func CronHandler(ctx context.Context) error {
 	logging.Infof(ctx, "attempting BQ export")
 
-	err := Run(ctx)
-	if err != nil {
-		if transient.Tag.In(err) {
-			// Return the error to signal retry.
-			return err
-		}
-
-		// Error is non-transient; log the error but do not retry.
+	if err := Run(ctx); err != nil {
 		err = errors.Annotate(err, "failed BQ export").Err()
 		logging.Errorf(ctx, err.Error())
+		return err
 	}
 
 	return nil
@@ -116,6 +109,15 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 		return errors.Annotate(err,
 			"failed to insert all realms for AuthDB rev %d at %s",
 			authDBRev, ts.String()).Err()
+	}
+
+	roles, err := collateLatestRoles(ctx, ts)
+	if err == nil {
+		err = client.InsertRoles(ctx, roles)
+	}
+	if err != nil {
+		// Non-fatal; just log the error.
+		logging.Warningf(ctx, "failed exporting latest roles: %s", err)
 	}
 
 	// Ensure the views for the latest data, to propagate schema changes.
