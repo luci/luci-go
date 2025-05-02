@@ -132,8 +132,13 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       membersRef.current?.resetToSavedValues();
       globsRef.current?.resetToSavedValues();
       subgroupsRef.current?.resetToSavedValues();
-      setDescription(savedDescription);
-      setOwners(savedOwners);
+      // If there is an error editing, maintain the user's draft changes for description and owners.
+      if (description !== savedDescription) {
+        setDescriptionMode(true);
+      }
+      if (owners !== savedOwners) {
+        setOwnersMode(true);
+      }
     },
   });
 
