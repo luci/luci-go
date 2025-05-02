@@ -39,8 +39,16 @@ const DEV_BUILDER = {
   builder: 'linux-rel-buildbucket',
 };
 
-export interface DutNameAndState {
+// Simplified type containing the minimal DUT info required for running an
+// autorepair job.
+export interface DutToRepair {
+  // Same as dut_name label. dut_name is used for 1.) the main identifier for
+  // which DUT we are referring to and 2.) populating tags shown in UIs like
+  // LUCI or read by downstream services.
   name: string;
+  // DUT ID is used to schedule a task against a particular DUT in Swarming.
+  // DUT ID is also often referred to as "asset tag".
+  dutId: string;
   state?: string;
 }
 
@@ -54,7 +62,7 @@ export interface DutNameAndState {
  * @returns A list of requests for Buildbucket's batch endpoint.
  */
 export function autorepairRequestsFromDuts(
-  duts: DutNameAndState[],
+  duts: DutToRepair[],
   sessionId: string,
   deep: boolean = false,
 ): BatchRequest_Request[] {
@@ -69,8 +77,8 @@ export function autorepairRequestsFromDuts(
       ? []
       : [
           {
-            key: 'dut_name',
-            value: `${dut.name}`,
+            key: 'dut_id',
+            value: `${dut.dutId}`,
           },
         ];
 
@@ -95,6 +103,10 @@ export function autorepairRequestsFromDuts(
           {
             key: 'dut-name',
             value: `${dut.name}`,
+          },
+          {
+            key: 'dut-id',
+            value: `${dut.dutId}`,
           },
           {
             key: 'admin-session',

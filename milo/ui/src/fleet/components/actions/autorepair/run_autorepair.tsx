@@ -24,12 +24,12 @@ import { BatchRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/bui
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
 import {
   autorepairRequestsFromDuts,
-  DutNameAndState,
+  DutToRepair,
   extractBuildIdentifiers,
 } from './shared';
 
 interface RunAutorepairProps {
-  selectedDuts: DutNameAndState[];
+  selectedDuts: DutToRepair[];
 }
 
 export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {

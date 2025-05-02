@@ -224,6 +224,11 @@ export const DeviceDetailsPage = () => {
               selectedDuts={[
                 {
                   name: id,
+                  // Confusingly, dutID, which is the asset tag of the DUT is
+                  // different from "id", which is the internal ID used within
+                  // the Fleet Console. For ChromeOS DUTs, the Fleet Console
+                  // populates the "ID" for a DUT using the DUT's hostname.
+                  dutId,
                   state: extractDutState(device),
                 },
               ]}

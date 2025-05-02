@@ -38,6 +38,7 @@ export function FleetToolbar({
 }: FleetToolbarProps) {
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.dut_name}`,
+    dutId: `${row.dut_id}`,
     state: row.dut_state,
   }));
 

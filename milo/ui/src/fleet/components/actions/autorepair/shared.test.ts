@@ -31,6 +31,7 @@ describe('autorepairRequestsFromDuts', () => {
       [
         {
           name: 'test-dut',
+          dutId: 'asset-tag',
           state: 'needs_manual_repair',
         },
       ],
@@ -52,6 +53,10 @@ describe('autorepairRequestsFromDuts', () => {
       {
         key: 'dut-name',
         value: `test-dut`,
+      },
+      {
+        key: 'dut-id',
+        value: `asset-tag`,
       },
       {
         key: 'admin-session',
@@ -81,6 +86,7 @@ describe('autorepairRequestsFromDuts', () => {
       [
         {
           name: 'test-dut',
+          dutId: 'asset-tag',
           state: 'needs_manual_repair',
         },
       ],
@@ -102,6 +108,10 @@ describe('autorepairRequestsFromDuts', () => {
       {
         key: 'dut-name',
         value: `test-dut`,
+      },
+      {
+        key: 'dut-id',
+        value: `asset-tag`,
       },
       {
         key: 'admin-session',
