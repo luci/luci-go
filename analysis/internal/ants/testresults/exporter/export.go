@@ -18,6 +18,7 @@ package exporter
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -87,16 +88,35 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertT
 		if err != nil {
 			return nil, errors.Annotate(err, "test_id_structured").Err()
 		}
+		moduleParameters := make([]*bqpb.AntsTestResultRow_StringPair, 0, len(tv.Variant.GetDef()))
+		for key, val := range tv.Variant.GetDef() {
+			// Module parameters should only contain module-abi and module-param.
+			if key == "module_abi" || key == "module_param" {
+				moduleParameters = append(moduleParameters, &bqpb.AntsTestResultRow_StringPair{
+					// AnTS keys are module-abi and module-param (dash instead of underscore).
+					Name:  strings.ReplaceAll(key, "_", "-"),
+					Value: val,
+				})
+			}
+		}
+		moduleParametersHash := ""
+		if len(moduleParameters) > 0 {
+			moduleParametersHash = hashParameters(moduleParameters)
+		}
 		testIdentifier := &bqpb.AntsTestResultRow_TestIdentifier{
-			Module: testIDStructured.ModuleName,
-			// TODO: Module parameter is a subset of module variants. Extract the module parameters from variants.
-			ModuleParameters:     nil,
-			ModuleParametersHash: "",
+			Module:               testIDStructured.ModuleName,
+			ModuleParameters:     moduleParameters,
+			ModuleParametersHash: moduleParametersHash,
 			TestClass:            fmt.Sprintf("%s.%s", testIDStructured.CoarseName, testIDStructured.FineName),
 			ClassName:            testIDStructured.FineName,
 			PackageName:          testIDStructured.CoarseName,
 			Method:               testIDStructured.CaseName,
 		}
+		testIdentifierHash, err := persistentHashTestIdentifier(testIdentifier)
+		if err != nil {
+			return nil, errors.Annotate(err, "test_identifier_hash").Err()
+		}
+
 		for _, trb := range tv.Results {
 			tr := trb.Result
 
@@ -114,16 +134,21 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertT
 			}
 			// TODO: populate more field when we have them in ResultDB.
 			results = append(results, &bqpb.AntsTestResultRow{
-				TestResultId:   tr.ResultId,
-				InvocationId:   invocationID,
-				TestIdentifier: testIdentifier,
-				TestStatus:     convertToAnTSStatus(tr.Status),
-				DebugInfo:      debugInfo,
-				Timing:         timing,
-				Properties:     convertToAnTSStringPair(tr.Tags),
-				TestId:         tv.TestId,
-				CompletionTime: opts.Invocation.FinalizeTime,
-				InsertTime:     timestamppb.New(insertTime),
+				TestResultId:       tr.ResultId,
+				InvocationId:       invocationID,
+				TestIdentifier:     testIdentifier,
+				TestStatus:         convertToAnTSStatus(tr.Status),
+				TestIdentifierHash: testIdentifierHash,
+				// TODO: populate these hashes when we have invocation data available.
+				TestIdentifierId:       "",
+				TestDefinitionId:       "",
+				ParentTestIdentifierId: "",
+				DebugInfo:              debugInfo,
+				Timing:                 timing,
+				Properties:             convertToAnTSStringPair(tr.Tags),
+				TestId:                 tv.TestId,
+				CompletionTime:         opts.Invocation.FinalizeTime,
+				InsertTime:             timestamppb.New(insertTime),
 			})
 		}
 	}

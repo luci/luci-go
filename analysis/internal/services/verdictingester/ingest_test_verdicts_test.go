@@ -1694,7 +1694,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_consistent_failure",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "439715a66ee549703a54f6ba7fc6883bb29bc6485ea04ddeace09a3675e8c188",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				DebugInfo: &bqpblegacy.AntsTestResultRow_DebugInfo{
 					ErrorMessage: "abc.def(123): unexpected nil-deference",
 				},
@@ -1717,7 +1718,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_expected",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				TestIdentifierHash: "c9b736b4fa95a9e2726cc1d54407a4b3cfef716b41932bf0b8764aa060d4cc30",
+				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1272672000, // 2010-05-01 00:00:00 UTC
 					CompleteTimestamp: 1272672005, // Start + 5s
@@ -1737,7 +1739,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_filtering_event",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
+				TestIdentifierHash: "e0c64cde6e07ab7e6056eab6904ac2dd7572955c2fa46f905df6240077821f1a",
+				TestStatus:         bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1265068800, // 2010-02-02 00:00:00 UTC
 					CompleteTimestamp: 1265068800, // Start + 0s
@@ -1757,7 +1760,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_from_luci_bisection",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				TestIdentifierHash: "7fbf857cd5260ec91627cd5b8558f57ed2079db286f75a94a73e279b777b372a",
+				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 0,         // StartTime is nil in input
 					CompleteTimestamp: 0,         // Start + 0s
@@ -1780,7 +1784,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_has_unexpected",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "02a1ce2dd211366074c1456e549acfe211c957090f2f55071c09c550c0a1e9d0",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1264982410, // 2010-02-01 00:00:10 UTC
 					CompleteTimestamp: 1264982410, // Start + 0s
@@ -1800,7 +1805,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_has_unexpected",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				TestIdentifierHash: "02a1ce2dd211366074c1456e549acfe211c957090f2f55071c09c550c0a1e9d0",
+				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1264982420, // 2010-02-01 00:00:20 UTC
 					CompleteTimestamp: 1264982420, // Start + 0s
@@ -1820,7 +1826,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_known_flake",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "f244f7948ccfb0ff95f037103d6f1d935145a7a92277e3e0e12a77f4ad344e87",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1264982400, // 2010-02-01 00:00:00 UTC
 					CompleteTimestamp: 1264982402, // Start + 2s
@@ -1844,7 +1851,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_new_failure",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "e121e340a729e3bc31f66b747e96577028c0c87a4c8c36f950a6e12b5d57bfe3",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1262304000, // 2010-01-01 00:00:00 UTC
 					CompleteTimestamp: 1262304001, // Start + 1s
@@ -1868,7 +1876,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_new_flake",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "c6b22f8616e1403c797c923d867e0ab9a970915218a2f04a58f058809aa1a180",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1262304020, // 2010-01-01 00:00:20 UTC
 					CompleteTimestamp: 1262304031, // Start + 11s
@@ -1888,7 +1897,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_new_flake",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "c6b22f8616e1403c797c923d867e0ab9a970915218a2f04a58f058809aa1a180",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1262304010, // 2010-01-01 00:00:10 UTC
 					CompleteTimestamp: 1262304020, // Start + 10s
@@ -1908,7 +1918,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_new_flake",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				TestIdentifierHash: "c6b22f8616e1403c797c923d867e0ab9a970915218a2f04a58f058809aa1a180",
+				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1262304015, // 2010-01-01 00:00:15 UTC
 					CompleteTimestamp: 1262304027, // Start + 12s
@@ -1928,7 +1939,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_no_new_results",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_FAIL,
+				TestIdentifierHash: "c7129eb417ecbf4dff711bda0ef118759b474c8acac81dfc221fdcc19aabdebd",
+				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1270080000, // 2010-04-01 00:00:00 UTC
 					CompleteTimestamp: 1270080004, // Start + 4s
@@ -1948,7 +1960,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_skip",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
+				TestIdentifierHash: "bf352f379fffe06da2f8c24ae6ddc8bac9d2d8ac18238ab25ee7771d59ff230e",
+				TestStatus:         bqpblegacy.AntsTestResultRow_TEST_SKIPPED,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 1265068800, // 2010-02-02 00:00:00 UTC
 					CompleteTimestamp: 1265068800, // Start + 0s
@@ -1968,7 +1981,8 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					PackageName: "package",
 					Method:      "test_unexpected_pass",
 				},
-				TestStatus: bqpblegacy.AntsTestResultRow_PASS,
+				TestIdentifierHash: "336d86b97fda98f485e7a94fa47e4ef03672bf3dcec192371c9eb2b4ee313ac4",
+				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.AntsTestResultRow_Timing{
 					CreationTimestamp: 0,         // StartTime is nil in input
 					CompleteTimestamp: 0,         // Start + 0s
