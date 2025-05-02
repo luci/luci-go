@@ -44,6 +44,7 @@ var originalTmd = &rdbpb.TestMetadata{
 			},
 		},
 	},
+	PreviousTestId: "previous_test_id",
 }
 
 var updatedTmd = &rdbpb.TestMetadata{
@@ -60,6 +61,15 @@ var updatedTmd = &rdbpb.TestMetadata{
 			},
 		},
 	},
+	PropertiesSchema: "myproject.MyMessage",
+	Properties: &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"string":  structpb.NewStringValue("value"),
+			"number":  structpb.NewNumberValue(123),
+			"boolean": structpb.NewBoolValue(true),
+		},
+	},
+	PreviousTestId: "another_previous_test_id",
 }
 
 var testProperties = &structpb.Struct{

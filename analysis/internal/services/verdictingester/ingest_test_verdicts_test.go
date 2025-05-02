@@ -26,6 +26,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -1069,20 +1070,34 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 		Properties: "{}",
 	}
 
-	testMetadata := &pb.TestMetadata{
+	// Proto marshalling may not be the same on all platforms,
+	// so find what we should expect on this platform.
+	tmdProperties, err := bqutil.MarshalStructPB(&structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"string":  structpb.NewStringValue("value"),
+			"number":  structpb.NewNumberValue(123),
+			"boolean": structpb.NewBoolValue(true),
+		},
+	})
+	assert.NoErr(t, err)
+
+	testMetadata := &bqpb.TestMetadata{
 		Name: "updated_name",
-		Location: &pb.TestLocation{
+		Location: &rdbpb.TestLocation{
 			Repo:     "repo",
 			FileName: "file_name",
 			Line:     456,
 		},
-		BugComponent: &pb.BugComponent{
-			System: &pb.BugComponent_IssueTracker{
-				IssueTracker: &pb.IssueTrackerComponent{
+		BugComponent: &rdbpb.BugComponent{
+			System: &rdbpb.BugComponent_IssueTracker{
+				IssueTracker: &rdbpb.IssueTrackerComponent{
 					ComponentId: 12345,
 				},
 			},
 		},
+		PropertiesSchema: "myproject.MyMessage",
+		Properties:       tmdProperties,
+		PreviousTestId:   "another_previous_test_id",
 	}
 
 	var buildbucketBuild *bqpb.TestVerdictRow_BuildbucketBuild
@@ -1150,7 +1165,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					SummaryHtml: "SummaryHTML",
 					StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
 					Duration:    3.000001,
-					FailureReason: &pb.FailureReason{
+					FailureReason: &rdbpb.FailureReason{
 						PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
 					},
 					Properties: expectedProperties,
@@ -1261,7 +1276,7 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
-					SkipReason: pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String(),
+					SkipReason: rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String(),
 					Expected:   true,
 					Properties: "{}",
 				},

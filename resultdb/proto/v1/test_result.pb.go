@@ -675,7 +675,7 @@ type TestResult struct {
 	//
 	// MUST be set (and only set) when status_v2 is SKIPPED.
 	SkippedReason *SkippedReason `protobuf:"bytes,21,opt,name=skipped_reason,json=skippedReason,proto3" json:"skipped_reason,omitempty"`
-	// Test results framwork-specific data model elements.
+	// Test result framework-specific data model elements.
 	FrameworkExtensions *FrameworkExtensions `protobuf:"bytes,22,opt,name=framework_extensions,json=frameworkExtensions,proto3" json:"framework_extensions,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache

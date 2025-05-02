@@ -36,40 +36,6 @@ func TestResultDB(t *testing.T) {
 			PrimaryErrorMessage: "Some error message.",
 		}))
 	})
-	ftt.Run("SkipReasonFromResultDB", t, func(t *ftt.Test) {
-		// Confirm LUCI Analysis handles every skip reason defined by ResultDB.
-		// This test is designed to break if ResultDB extends the set of
-		// allowed values, without a corresponding update to LUCI Analysis.
-		for _, v := range rdbpb.SkipReason_value {
-			rdbReason := rdbpb.SkipReason(v)
-
-			reason := SkipReasonFromResultDB(rdbReason)
-			if rdbReason == rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {
-				assert.Loosely(t, reason, should.Equal(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
-				continue
-			}
-			assert.Loosely(t, reason, should.NotEqual(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
-		}
-
-	})
-	ftt.Run("TestMetadataFromResultDB", t, func(t *ftt.Test) {
-		rdbTestMetadata := &rdbpb.TestMetadata{
-			Name: "name",
-			Location: &rdbpb.TestLocation{
-				Repo:     "repo",
-				FileName: "fileName",
-				Line:     123,
-			},
-		}
-		tmd := TestMetadataFromResultDB(rdbTestMetadata)
-		assert.Loosely(t, tmd, should.Match(&pb.TestMetadata{
-			Name: "name",
-			Location: &pb.TestLocation{
-				Repo:     "repo",
-				FileName: "fileName",
-				Line:     123,
-			}}))
-	})
 	ftt.Run("TestResultStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
@@ -113,38 +79,6 @@ func TestResultDB(t *testing.T) {
 			reason := ExonerationReasonFromResultDB(rdbReason)
 			assert.Loosely(t, reason, should.NotEqual(pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED))
 		}
-	})
-	ftt.Run("BugComponent from ResultDB Metadata", t, func(t *ftt.Test) {
-		t.Run("using issuetracker bug component", func(t *ftt.Test) {
-			resultDbTmd := &rdbpb.TestMetadata{
-				BugComponent: &rdbpb.BugComponent{
-					System: &rdbpb.BugComponent_IssueTracker{
-						IssueTracker: &rdbpb.IssueTrackerComponent{
-							ComponentId: 12345,
-						},
-					},
-				},
-			}
-			converted := TestMetadataFromResultDB(resultDbTmd)
-
-			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_IssueTracker).IssueTracker.ComponentId, should.Equal(12345))
-		})
-		t.Run("using monorail bug component", func(t *ftt.Test) {
-			resultDbTmd := &rdbpb.TestMetadata{
-				BugComponent: &rdbpb.BugComponent{
-					System: &rdbpb.BugComponent_Monorail{
-						Monorail: &rdbpb.MonorailComponent{
-							Project: "chrome",
-							Value:   "Blink>Data",
-						},
-					},
-				},
-			}
-			converted := TestMetadataFromResultDB(resultDbTmd)
-
-			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Project, should.Equal("chrome"))
-			assert.Loosely(t, converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, should.Equal("Blink>Data"))
-		})
 	})
 	ftt.Run("Sources to/from ResultDB", t, func(t *ftt.Test) {
 		rdbSources := &rdbpb.Sources{

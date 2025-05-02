@@ -18,12 +18,14 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
@@ -74,36 +76,53 @@ func TestExportTestResults(t *testing.T) {
 			},
 		}
 
-		originalTmd := &analysispb.TestMetadata{
+		originalTmd := &bqpb.TestMetadata{
 			Name: "original_name",
-			Location: &analysispb.TestLocation{
+			Location: &rdbpb.TestLocation{
 				Repo:     "old_repo",
 				FileName: "old_file_name",
 				Line:     567,
 			},
-			BugComponent: &analysispb.BugComponent{
-				System: &analysispb.BugComponent_Monorail{
-					Monorail: &analysispb.MonorailComponent{
+			BugComponent: &rdbpb.BugComponent{
+				System: &rdbpb.BugComponent_Monorail{
+					Monorail: &rdbpb.MonorailComponent{
 						Project: "chrome",
 						Value:   "Blink>Component",
 					},
 				},
 			},
+			Properties:     "{}",
+			PreviousTestId: "previous_test_id",
 		}
-		updatedTmd := &analysispb.TestMetadata{
+
+		// Proto marshalling may not be the same on all platforms,
+		// so find what we should expect on this platform.
+		tmdProperties, err := bqutil.MarshalStructPB(&structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"string":  structpb.NewStringValue("value"),
+				"number":  structpb.NewNumberValue(123),
+				"boolean": structpb.NewBoolValue(true),
+			},
+		})
+		assert.NoErr(t, err)
+
+		updatedTmd := &bqpb.TestMetadata{
 			Name: "updated_name",
-			Location: &analysispb.TestLocation{
+			Location: &rdbpb.TestLocation{
 				Repo:     "repo",
 				FileName: "file_name",
 				Line:     456,
 			},
-			BugComponent: &analysispb.BugComponent{
-				System: &analysispb.BugComponent_IssueTracker{
-					IssueTracker: &analysispb.IssueTrackerComponent{
+			BugComponent: &rdbpb.BugComponent{
+				System: &rdbpb.BugComponent_IssueTracker{
+					IssueTracker: &rdbpb.IssueTrackerComponent{
 						ComponentId: 12345,
 					},
 				},
 			},
+			PropertiesSchema: "myproject.MyMessage",
+			Properties:       tmdProperties,
+			PreviousTestId:   "another_previous_test_id",
 		}
 
 		// Expect the JSON serialisation format for this platform.
@@ -169,7 +188,7 @@ func TestExportTestResults(t *testing.T) {
 				Status:        analysispb.TestResultStatus_FAIL,
 				SummaryHtml:   "SummaryHTML for test_flaky/one",
 				StartTime:     timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
-				FailureReason: &analysispb.FailureReason{
+				FailureReason: &rdbpb.FailureReason{
 					PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
 				},
 				Properties:    "{}",

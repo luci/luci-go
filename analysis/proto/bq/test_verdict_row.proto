@@ -19,16 +19,18 @@ package luci.analysis.bq;
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/analysis/proto/bq/common.proto";
+import "go.chromium.org/luci/analysis/proto/bq/test_metadata.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
-import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
-import "go.chromium.org/luci/analysis/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
-// Represents a test verdict exported to BigQuery.
+// Represents a ResultDB test verdict exported to BigQuery, with
+// additional context from LUCI Analysis.
 //
 // A test verdict summarises the results for a test variant
 // (a way of running a test) in an invocation (a container of test
@@ -126,7 +128,7 @@ message TestVerdictRow {
     string id = 1;
   }
 
-  // NextId: 13
+  // NextId: 16
   message TestResult {
     // Parent contains info of the result's immediate parent invocation.
     ParentInvocationRecord parent = 1;
@@ -146,6 +148,9 @@ message TestVerdictRow {
     // Status of the test result.
     luci.analysis.v1.TestResultStatus status = 4;
 
+    // Status of the test result (v2).
+    luci.analysis.v1.TestResult.Status status_v2 = 13;
+
     // A human-readable explanation of the result, in HTML.
     // MUST be sanitized before rendering in the browser.
     string summary_html = 5;
@@ -162,13 +167,23 @@ message TestVerdictRow {
 
     // Information about failed tests.
     // e.g. the assertion failure message.
-    luci.analysis.v1.FailureReason failure_reason = 9;
+    luci.resultdb.v1.FailureReason failure_reason = 9;
 
+    // Deprecated: Replaced by skipped_reason message.
     // Reasoning behind a test skip, in machine-readable form.
-    // Only set when status is SKIP.
-    // It's the string presentation of luci.analysis.v1.SkipReason when
+    // Used to assist downstream analyses, such as automatic bug-filing.
+    // MUST not be set unless status is SKIP.
+    // It's the string presentation of luci.resultdb.v1.SkipReason when
     // specified, "" when the skip reason is unspecified.
     string skip_reason = 12;
+
+    // Reason why a test was skipped.
+    // The contents of this message should help the user answer:
+    // Why was my test skipped? What can I do to stop it being skipped?
+    luci.resultdb.v1.SkippedReason skipped_reason = 14;
+
+    // Test result framework-specific data model elements.
+    luci.resultdb.v1.FrameworkExtensions framework_extensions = 15;
 
     // Arbitrary JSON object that contains structured, domain-specific properties
     // of the test result. Stored here stringified as this is the only protocol
@@ -309,7 +324,7 @@ message TestVerdictRow {
 
   // Metadata of the test case,
   // e.g. the original test name and test location.
-  luci.analysis.v1.TestMetadata test_metadata = 14;
+  TestMetadata test_metadata = 14;
 
   // The time when the server started inserting the row into the BigQuery
   // table.

@@ -257,3 +257,84 @@ message NumericRange {
   // The inclusive upper bound included in the range.
   float upper_bound = 2;
 }
+
+// Message used to namespace test status ennum values, to avoid
+// naming conflicts with verdicts.
+message TestResult {
+  // Status of a test result (v2).
+  // It is a mirror of luci.resultdb.v1.TestResult_Status, to avoid LUCI
+  // Analysis RPC protos being coupled to RDB protos.
+  enum Status {
+    // Status was not specified. Do not use.
+    STATUS_UNSPECIFIED = 0;
+
+    // The test case has passed.
+    PASSED = 1;
+
+    // The test case has failed.
+    // Suggests that the code under test is incorrect, but it is also possible
+    // that the test is incorrect or it is a flake.
+    //
+    // If a test failed to complete due to an error that is not the fault of
+    // this test's content, use the status EXECUTION_ERRORED (for errors specific
+    // to this test) or PRECLUDED (for errors at a higher-level) instead.
+    //
+    // If you specify this status, you must also populate the failure_reason.kind field.
+    FAILED = 2;
+
+    // The test case did not, *and should not*, run to completion in this
+    // configuration.
+    //
+    // For example:
+    // - The test is disabled in code
+    // - The test assumptions are not met (e.g. JUnit assumption failure
+    //   or Tast test hardware dependency unmet)
+    // - The test was not stable enough to in presubmit right now.
+    //
+    // If a test was not run or not run to completion due to an error, use the
+    // status EXECUTION_ERRORED (for test-level errors) or PRECLUDED
+    // (for higher-level errors) instead.
+    //
+    // If you specify this status, you must also populate the skipped_reason field.
+    SKIPPED = 3;
+
+    // The test did not run to completion, because an infrastructure error
+    // precluded it from doing so.
+    //
+    // Infrastructure here is broadly defined, to mean "not the content
+    // of this test".
+    //
+    // For example:
+    // - The test ran, but the result file could not be parsed.
+    // - A file this test depends on could not be downloaded.
+    //
+    // Sometimes it is ambiguous whether test content is at fault or not.
+    // For example, loss of SSH connection during the test could be because
+    // the test caused a kernel panic or because of a flaky ethernet adapter.
+    // Judgement is required. If unsure, use EXECUTION_ERRORED status instead
+    // of FAIL to avoid falsely inflating the flakiness rate of a test.
+    //
+    // Results with this status should be ignored when calculating the flake
+    // and failure rates of the test.
+    //
+    // Currently, there is no dedicated 'reason' field for this status;
+    // please just include a suitable description in the result `summary_html`.
+    EXECUTION_ERRORED = 4;
+
+    // The test did not run to completion, because its execution is precluded
+    // by an error at a higher-level. For example, a work unit-level timeout.
+    //
+    // If you report this status, you must report an error on the containing
+    // work unit. If this restriction is changed in future to allow preclusion
+    // by other sources (e.g. a class fixture failed to setup so the tests in
+    // using it could not run), a preclusion reason field will be added to
+    // capture this.
+    //
+    // Results with this status should be ignored when calculating the flake
+    // and failure rates of the test.
+    //
+    // Currently, there is no dedicated 'reason' field for this status; please
+    // include a suitable description in the result `summary_html`.
+    PRECLUDED = 5;
+  }
+}

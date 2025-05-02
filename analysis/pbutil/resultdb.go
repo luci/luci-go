@@ -75,59 +75,6 @@ func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	}
 }
 
-// SkipReasonFromResultDB returns a LUCI Analysis SkipReason
-// corresponding to the supplied ResultDB SkipReason.
-func SkipReasonFromResultDB(sr rdbpb.SkipReason) pb.SkipReason {
-	switch sr {
-	case rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
-		return pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-	default:
-		return pb.SkipReason_SKIP_REASON_UNSPECIFIED
-	}
-}
-
-// TestMetadataFromResultDB converts a ResultDB TestMetadata to a LUCI Analysis
-// TestMetadata.
-func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
-	if rdbTmd == nil {
-		return nil
-	}
-
-	tmd := &pb.TestMetadata{
-		Name: rdbTmd.Name,
-	}
-	loc := rdbTmd.GetLocation()
-	if loc != nil {
-		tmd.Location = &pb.TestLocation{
-			Repo:     loc.Repo,
-			FileName: loc.FileName,
-			Line:     loc.Line,
-		}
-	}
-
-	bugComponent := rdbTmd.BugComponent
-	if bugComponent != nil && bugComponent.System != nil {
-		tmd.BugComponent = &pb.BugComponent{}
-		switch v := bugComponent.System.(type) {
-		case *rdbpb.BugComponent_IssueTracker:
-			tmd.BugComponent.System = &pb.BugComponent_IssueTracker{
-				IssueTracker: &pb.IssueTrackerComponent{
-					ComponentId: v.IssueTracker.ComponentId,
-				},
-			}
-		case *rdbpb.BugComponent_Monorail:
-			tmd.BugComponent.System = &pb.BugComponent_Monorail{
-				Monorail: &pb.MonorailComponent{
-					Project: v.Monorail.Project,
-					Value:   v.Monorail.Value,
-				},
-			}
-		}
-	}
-
-	return tmd
-}
-
 // TestResultStatusFromResultDB returns the LUCI Analysis test result status
 // corresponding to the given ResultDB test result status.
 func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {

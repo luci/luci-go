@@ -276,7 +276,7 @@ message TestResult {
   // MUST be set (and only set) when status_v2 is SKIPPED.
   SkippedReason skipped_reason = 21;
 
-  // Test results framwork-specific data model elements.
+  // Test result framework-specific data model elements.
   FrameworkExtensions framework_extensions = 22;
 }
 

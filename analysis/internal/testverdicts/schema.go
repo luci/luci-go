@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/bq"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -74,15 +75,17 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	// because they are defined in different files.
 	fdtid, _ := descriptor.MessageDescriptorProto(&bqpb.TestIdentifier{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
-	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
+	fdfr, _ := descriptor.MessageDescriptorProto(&rdbpb.FailureReason{})
 	fdsrc, _ := descriptor.MessageDescriptorProto(&pb.Sources{})
 	fdgc, _ := descriptor.MessageDescriptorProto(&pb.GitilesCommit{})
 	fdcl, _ := descriptor.MessageDescriptorProto(&pb.Changelist{})
-	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
-	fdtl, _ := descriptor.MessageDescriptorProto(&pb.TestLocation{})
-	fdbtc, _ := descriptor.MessageDescriptorProto(&pb.BugComponent{})
+	fdtmd, _ := descriptor.MessageDescriptorProto(&bqpb.TestMetadata{})
+	fdtl, _ := descriptor.MessageDescriptorProto(&rdbpb.TestLocation{})
+	fdbtc, _ := descriptor.MessageDescriptorProto(&rdbpb.BugComponent{})
+	fdsr, _ := descriptor.MessageDescriptorProto(&rdbpb.SkippedReason{})
+	fdfx, _ := descriptor.MessageDescriptorProto(&rdbpb.FrameworkExtensions{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{
-		fd, fdtid, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc,
+		fd, fdtid, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc, fdsr, fdfx,
 	}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }

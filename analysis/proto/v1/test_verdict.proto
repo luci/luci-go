@@ -78,22 +78,6 @@ enum TestVerdictStatus {
   EXPECTED = 50;
 }
 
-// Machine-readable reason that a test execution was skipped.
-// It is a mirror of luci.resultdb.v1.SkipReason, but the right to evolve
-// it independently is reserved.
-enum SkipReason {
-  // Skip reason was not specified.
-  // This represents an unset field which should be used for non-skip test
-  // result statuses.  It can also be used if none of the other statuses
-  // apply.
-  SKIP_REASON_UNSPECIFIED = 0;
-
-  // Disabled automatically in response to a test skipping policy that skips
-  // flaky tests.
-  // Used for ChromeOS CQ test filtering.
-  AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1;
-}
-
 message TestVerdict {
   // Unique identifier of the test.
   // This has the same value as luci.resultdb.v1.TestResult.test_id.

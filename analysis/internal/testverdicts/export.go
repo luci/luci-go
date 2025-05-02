@@ -116,11 +116,6 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
 	}
 
-	var metadata *pb.TestMetadata
-	if tv.TestMetadata != nil {
-		metadata = pbutil.TestMetadataFromResultDB(tv.TestMetadata)
-	}
-
 	var cvRun *bqpb.TestVerdictRow_ChangeVerifierRun
 	if opts.Payload.PresubmitRun != nil && opts.Payload.PresubmitRun.PresubmitRunId.System == "luci-cv" {
 		cvRun = changeVerifierRun(opts.Payload.PresubmitRun)
@@ -146,6 +141,11 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		return nil, errors.Annotate(err, "variant").Err()
 	}
 
+	tmd, err := bqutil.TestMetadata(tv.TestMetadata)
+	if err != nil {
+		return nil, errors.Annotate(err, "test_metadata").Err()
+	}
+
 	return &bqpb.TestVerdictRow{
 		Project:           project,
 		TestIdStructured:  testIDStructured,
@@ -163,7 +163,7 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		Sources:           sources,
 		SourceRef:         sourceRef,
 		SourceRefHash:     sourceRefHash,
-		TestMetadata:      metadata,
+		TestMetadata:      tmd,
 		InsertTime:        timestamppb.New(insertTime),
 	}, nil
 }
@@ -259,13 +259,12 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		// to write NULL to a NULLABLE FLOAT column.
 		Duration:      result.Duration.AsDuration().Seconds(),
 		Tags:          pbutil.StringPairFromResultDB(result.Tags),
-		FailureReason: pbutil.FailureReasonFromResultDB(result.FailureReason),
+		FailureReason: result.FailureReason,
 		Properties:    propertiesJSON,
 	}
 
-	skipReason := pbutil.SkipReasonFromResultDB(result.SkipReason)
-	if skipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
-		tr.SkipReason = skipReason.String()
+	if result.SkipReason != rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {
+		tr.SkipReason = result.SkipReason.String()
 	}
 
 	return tr, nil

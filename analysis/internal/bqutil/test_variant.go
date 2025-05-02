@@ -51,3 +51,26 @@ func StructuredTestIdentifierRDB(testID string, variant *rdbpb.Variant) (*bqpb.T
 		CaseName:          test.CaseName,
 	}, nil
 }
+
+// TestMetadata prepares a BQ TestMetadata proto corresponding to the
+// given ResultDB test metadata proto.
+func TestMetadata(rdbTmd *rdbpb.TestMetadata) (*bqpb.TestMetadata, error) {
+	if rdbTmd == nil {
+		return nil, nil
+	}
+	// StructPB type is not supported by the BigQuery Write API, so
+	// convert it to a JSON string here.
+	propertiesJSON, err := MarshalStructPB(rdbTmd.Properties)
+	if err != nil {
+		return nil, errors.Annotate(err, "marshal properties").Err()
+	}
+	tmd := &bqpb.TestMetadata{
+		Name:             rdbTmd.Name,
+		Location:         rdbTmd.Location,
+		BugComponent:     rdbTmd.BugComponent,
+		PropertiesSchema: rdbTmd.PropertiesSchema,
+		Properties:       propertiesJSON,
+		PreviousTestId:   rdbTmd.PreviousTestId,
+	}
+	return tmd, nil
+}

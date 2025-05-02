@@ -104,11 +104,6 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 	results := make([]*bqpb.TestResultRow, 0, len(verdicts)*2)
 
 	for _, tv := range verdicts {
-		var metadata *pb.TestMetadata
-		if tv.TestMetadata != nil {
-			metadata = pbutil.TestMetadataFromResultDB(tv.TestMetadata)
-		}
-
 		variant, err := bqutil.VariantJSON(tv.Variant)
 		if err != nil {
 			return nil, errors.Annotate(err, "variant").Err()
@@ -121,14 +116,18 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 
 		for _, tr := range tv.Results {
 			var skipReasonString string
-			skipReason := pbutil.SkipReasonFromResultDB(tr.Result.SkipReason)
-			if skipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
-				skipReasonString = skipReason.String()
+			if tr.Result.SkipReason != rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {
+				skipReasonString = tr.Result.SkipReason.String()
 			}
 
 			propertiesJSON, err := bqutil.MarshalStructPB(tr.Result.Properties)
 			if err != nil {
 				return nil, errors.Annotate(err, "marshal properties").Err()
+			}
+
+			tmd, err := bqutil.TestMetadata(tv.TestMetadata)
+			if err != nil {
+				return nil, errors.Annotate(err, "prepare test metadata").Err()
 			}
 
 			results = append(results, &bqpb.TestResultRow{
@@ -151,13 +150,13 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 				StartTime:     tr.Result.StartTime,
 				DurationSecs:  tr.Result.Duration.AsDuration().Seconds(),
 				Tags:          pbutil.StringPairFromResultDB(tr.Result.Tags),
-				FailureReason: pbutil.FailureReasonFromResultDB(tr.Result.FailureReason),
+				FailureReason: tr.Result.FailureReason,
 				SkipReason:    skipReasonString,
 				Properties:    propertiesJSON,
 				Sources:       sources,
 				SourceRef:     sourceRef,
 				SourceRefHash: sourceRefHash,
-				TestMetadata:  metadata,
+				TestMetadata:  tmd,
 				InsertTime:    timestamppb.New(insertTime),
 			})
 		}
