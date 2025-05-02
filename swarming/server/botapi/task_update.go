@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -133,6 +134,10 @@ type TaskUpdateResponse struct {
 	// MustStop indicates whether the bot should stop the current task.
 	MustStop bool `json:"must_stop"`
 
+	// StopReason is the reason why the task must stop.
+	// Should only be set when MustStop is true.
+	StopReason string `json:"stop_reason,omitempty"`
+
 	// OK indicates whether the update was processed successfully.
 	OK bool `json:"ok"`
 
@@ -155,6 +160,10 @@ func (srv *BotAPIServer) TaskUpdate(ctx context.Context, body *TaskUpdateRequest
 
 func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*TaskUpdateResponse, error) {
 	taskUpdate, err := srv.processTaskUpdate(ctx, body, r)
+	if errors.Is(err, wrongTaskIDErr) {
+		logging.Warningf(ctx, "The bot is not associated with this task on the server")
+		return &TaskUpdateResponse{MustStop: true, OK: false, StopReason: err.Error()}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -174,9 +183,10 @@ func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest
 	}
 
 	resp := &TaskUpdateResponse{
-		OK:       true,
-		MustStop: outcome.MustStop,
-		Session:  session,
+		OK:         true,
+		MustStop:   outcome.MustStop,
+		StopReason: outcome.StopReason,
+		Session:    session,
 	}
 
 	// Periodically update the bot's LastSeen.
@@ -200,7 +210,7 @@ func (srv *BotAPIServer) updateTask(ctx context.Context, body *TaskUpdateRequest
 		if status.Code(err) != codes.Unknown {
 			return nil, err
 		}
-		logging.Errorf(ctx, "failed to update bot info: %s", err)
+		logging.Errorf(ctx, "Failed to update bot info: %s", err)
 		return nil, status.Errorf(codes.Internal, "failed to update bot info %q", r.Session.BotId)
 	}
 
@@ -223,6 +233,10 @@ func (srv *BotAPIServer) processTaskUpdate(ctx context.Context, body *TaskUpdate
 
 func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateRequest, r *botsrv.Request) (*TaskUpdateResponse, error) {
 	taskCompletion, err := srv.processTaskCompletion(ctx, body, r)
+	if errors.Is(err, wrongTaskIDErr) {
+		logging.Warningf(ctx, "The bot is not associated with this task on the server")
+		return &TaskUpdateResponse{OK: false}, nil
+	}
 	if err != nil {
 		return nil, err
 	}

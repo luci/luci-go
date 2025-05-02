@@ -22,6 +22,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/swarming/server/botinfo"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/model"
@@ -93,6 +96,10 @@ type TaskErrorResponse struct {
 // the bot.
 func (srv *BotAPIServer) TaskError(ctx context.Context, body *TaskErrorRequest, r *botsrv.Request) (botsrv.Response, error) {
 	tr, err := validateTaskID(ctx, body.TaskID, r.CurrentTaskID)
+	if errors.Is(err, wrongTaskIDErr) {
+		logging.Warningf(ctx, "The bot is not associated with this task on the server")
+		return &TaskErrorResponse{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/swarming/server/validate"
 )
 
+var wrongTaskIDErr = errors.New("the bot is not associated with this task on the server")
+
 // peekBotID extracts bot ID from the dimensions.
 //
 // It is called early when authorizing bots (in particular ancient ones that
@@ -140,7 +142,7 @@ func validateTaskID(ctx context.Context, taskID, botTaskID string) (*model.TaskR
 		return nil, status.Errorf(codes.InvalidArgument, "task ID is required")
 	}
 	if botTaskID != taskID {
-		return nil, status.Errorf(codes.InvalidArgument, "wrong task ID %q: the bot is not executing this task", taskID)
+		return nil, wrongTaskIDErr
 	}
 	reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
 	if err != nil {

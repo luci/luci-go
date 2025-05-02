@@ -59,8 +59,11 @@ type UpdateOp struct {
 }
 
 type UpdateTxnOutcome struct {
-	// Whether the bot should stop running the task.
+	// MustStop indicates whether the bot should stop running the task.
 	MustStop bool
+
+	// StopReason is the reason why the task must stop.
+	StopReason string
 }
 
 // UpdateTxn runs the transactional logic to update a single task.
@@ -86,8 +89,8 @@ func (m *managerImpl) UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOu
 		// It's possible that the task is already abandoned (i.e. the task has
 		// completed with BOT_DIED or KILLED states). Inform the bot to stop
 		// running it.
-		logging.Debugf(ctx, "task %q is already completed with state %s", taskID, trs.State)
-		return &UpdateTxnOutcome{MustStop: true}, nil
+		logging.Debugf(ctx, "Task %q is already completed with state %s", taskID, trs.State)
+		return &UpdateTxnOutcome{MustStop: true, StopReason: "The task is already marked as completed on the server"}, nil
 	}
 
 	toPut := []any{trr, trs}
@@ -97,7 +100,7 @@ func (m *managerImpl) UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOu
 
 	outputChunks, err := m.runUpdateTxn(ctx, op)
 	if err != nil {
-		logging.Errorf(ctx, "failed to update task %q: %s", taskID, err)
+		logging.Errorf(ctx, "Failed to update task %q: %s", taskID, err)
 		return nil, status.Errorf(codes.Internal, "failed to update task %q", taskID)
 	}
 	for _, oc := range outputChunks {
@@ -113,7 +116,12 @@ func (m *managerImpl) UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxnOu
 		return nil, status.Errorf(codes.Internal, "failed to update task %q: %s", taskID, err)
 	}
 
-	return &UpdateTxnOutcome{MustStop: trr.Killing}, nil
+	stopReason := ""
+	if trr.Killing {
+		stopReason = "Killing task"
+	}
+
+	return &UpdateTxnOutcome{MustStop: trr.Killing, StopReason: stopReason}, nil
 }
 
 // runUpdateTxn performs the shared updates on task result entities for both

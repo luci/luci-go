@@ -133,20 +133,20 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		if newState != trs.State {
 			logging.Errorf(
 				ctx,
-				"cannot complete task %q with state %s, because it is already completed with state %s",
+				"Cannot complete task %q with state %s, because it is already completed with state %s",
 				taskID, newState, trs.State)
 		}
 		if op.ExitCode != nil {
 			if trs.ExitCode.IsSet() && trs.ExitCode.Get() != *op.ExitCode {
 				logging.Errorf(
 					ctx,
-					"cannot complete task %q with exit_code %d, because it is already completed with exit_code %d",
+					"Cannot complete task %q with exit_code %d, because it is already completed with exit_code %d",
 					taskID, op.ExitCode, trs.ExitCode.Get())
 			}
 			if trs.DurationSecs.IsSet() && op.Duration != nil && trs.DurationSecs.Get() != *op.Duration {
 				logging.Errorf(
 					ctx,
-					"cannot complete task %q with duration %f, because it is already completed with duration %f",
+					"Cannot complete task %q with duration %f, because it is already completed with duration %f",
 					taskID, *op.Duration, trs.DurationSecs.Get())
 			}
 		}
@@ -246,7 +246,7 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 		// No need to calculate BotEventType for abandoning a task.
 		botEventType, err = calculateBotEventType(trs.State)
 		if err != nil {
-			logging.Errorf(ctx, "failed to calculate bot event type for completing %q: %s", taskID, err)
+			logging.Errorf(ctx, "Failed to calculate bot event type for completing %q: %s", taskID, err)
 			return nil, status.Errorf(codes.Internal, "failed to calculate bot event type for completing %q", taskID)
 		}
 	}
@@ -263,7 +263,7 @@ func (m *managerImpl) onTaskComplete(ctx context.Context, taskID string, tr *mod
 	// PubSub notification and update BuildTask
 	err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs)
 	if err != nil {
-		logging.Errorf(ctx, "failed to enqueue pubsub notification tasks for completing %q: %s", taskID, err)
+		logging.Errorf(ctx, "Failed to enqueue pubsub notification tasks for completing %q: %s", taskID, err)
 		return status.Errorf(codes.Internal, "failed to create resultdb client")
 	}
 
@@ -274,7 +274,7 @@ func (m *managerImpl) onTaskComplete(ctx context.Context, taskID string, tr *mod
 		},
 	})
 	if err != nil {
-		logging.Errorf(ctx, "failed to enqueue finalization task for completing %q: %s", taskID, err)
+		logging.Errorf(ctx, "Failed to enqueue finalization task for completing %q: %s", taskID, err)
 		return status.Errorf(codes.Internal, "failed to enqueue finalization task for completing %q", taskID)
 	}
 

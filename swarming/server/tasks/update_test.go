@@ -97,6 +97,7 @@ func TestUpdateOp(t *testing.T) {
 			outcome, err := mgr.UpdateTxn(ctx, op)
 			assert.NoErr(t, err)
 			assert.That(t, outcome.MustStop, should.BeTrue)
+			assert.That(t, outcome.StopReason, should.Equal("The task is already marked as completed on the server"))
 		})
 
 		t.Run("update_task", func(t *ftt.Test) {
@@ -111,6 +112,32 @@ func TestUpdateOp(t *testing.T) {
 			outcome, err := mgr.UpdateTxn(ctx, op)
 			assert.NoErr(t, err)
 			assert.That(t, outcome.MustStop, should.BeFalse)
+
+			trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+			trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, reqKey)}
+			assert.NoErr(t, datastore.Get(ctx, trs, trr))
+			assert.That(t, trs.CostUSD, should.Equal(op.CostUSD))
+			assert.That(t, trs.ServerVersions, should.Match([]string{"cur-version", "v1", "v2"}))
+			assert.That(t, trs.StdoutChunks, should.Equal(int64(1)))
+			assert.That(t, trs.Modified, should.Match(now))
+			assert.That(t, trr.DeadAfter.Get(), should.Match(now.Add(300*time.Second)))
+		})
+
+		t.Run("task_killing", func(t *ftt.Test) {
+			ents := createTaskEntities(apipb.TaskState_RUNNING)
+			ents.trr.Killing = true
+			assert.NoErr(t, datastore.Put(ctx, ents.trr))
+			op := &UpdateOp{
+				Request:          ents.tr,
+				BotID:            "bot1",
+				CostUSD:          10,
+				Output:           bytes.Repeat([]byte("a"), 100),
+				OutputChunkStart: 0,
+			}
+			outcome, err := mgr.UpdateTxn(ctx, op)
+			assert.NoErr(t, err)
+			assert.That(t, outcome.MustStop, should.BeTrue)
+			assert.That(t, outcome.StopReason, should.Equal("Killing task"))
 
 			trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
 			trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, reqKey)}

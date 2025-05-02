@@ -74,13 +74,6 @@ func TestProcessTaskUpdate(t *testing.T) {
 				err:  "task ID is required",
 			},
 			{
-				name: "wrong_task_id",
-				req: &TaskUpdateRequest{
-					TaskID: "65aba3a3e6b99101",
-				},
-				err: `wrong task ID "65aba3a3e6b99101": the bot is not executing this task`,
-			},
-			{
 				name: "invalid_task_id",
 				req: &TaskUpdateRequest{
 					TaskID: "invalid",
@@ -143,6 +136,30 @@ func TestProcessTaskUpdate(t *testing.T) {
 				assert.That(t, err, should.ErrLike(tc.err))
 			})
 		}
+	})
+
+	t.Run("update_wrong_task_id", func(t *testing.T) {
+		req := &TaskUpdateRequest{
+			TaskID: "wrong-task-id",
+		}
+		r := &botsrv.Request{
+			CurrentTaskID: taskID,
+		}
+		res, err := srv.updateTask(ctx, req, r)
+		assert.NoErr(t, err)
+		assert.That(t, res, should.Match(&TaskUpdateResponse{MustStop: true, OK: false, StopReason: "the bot is not associated with this task on the server"}))
+	})
+
+	t.Run("complete_wrong_task_id", func(t *testing.T) {
+		req := &TaskUpdateRequest{
+			TaskID: "wrong-task-id",
+		}
+		r := &botsrv.Request{
+			CurrentTaskID: taskID,
+		}
+		res, err := srv.completeTask(ctx, req, r)
+		assert.NoErr(t, err)
+		assert.That(t, res, should.Match(&TaskUpdateResponse{OK: false}))
 	})
 
 	t.Run("process_running_task", func(t *testing.T) {
@@ -393,17 +410,6 @@ func TestProcessTaskUpdate(t *testing.T) {
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
-			t.Run("task-has-completed", func(t *ftt.Test) {
-				submit(nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", runID), false)
-				req := &TaskUpdateRequest{
-					TaskID:      taskID,
-					HardTimeout: true,
-				}
-				_, err := call(req, now.Add(-time.Second))
-				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
-				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-			})
-
 			t.Run("retry_on_normal_completion", func(t *ftt.Test) {
 				submit(&tasks.CompleteTxnOutcome{Updated: false}, nil, false)
 				req := &TaskUpdateRequest{
@@ -429,13 +435,13 @@ func TestProcessTaskUpdate(t *testing.T) {
 			}
 
 			t.Run("fail_to_update_task", func(t *ftt.Test) {
-				updateTask(nil, status.Errorf(codes.FailedPrecondition, "task %q is already completed", runID))
+				updateTask(nil, status.Errorf(codes.InvalidArgument, "task %q is not running by bot %q", runID, botID))
 				req := &TaskUpdateRequest{
 					TaskID: taskID,
 				}
 				_, err := call(req, now.Add(-time.Second))
-				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is already completed`))
-				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.That(t, err, should.ErrLike(`task "65aba3a3e6b99201" is not running by bot "bot-id"`))
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("OK_update_bot_last_seen", func(t *ftt.Test) {
 				updateTask(&tasks.UpdateTxnOutcome{MustStop: false}, nil)
@@ -473,7 +479,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 			})
 
 			t.Run("OK_skip_update_bot_last_seen", func(t *ftt.Test) {
-				updateTask(&tasks.UpdateTxnOutcome{MustStop: true}, nil)
+				updateTask(&tasks.UpdateTxnOutcome{MustStop: true, StopReason: "Killing task"}, nil)
 				// srv.submitUpdate is not called.
 				lastSeen := now.Add(-10 * time.Second)
 				botInfo := &model.BotInfo{
@@ -490,6 +496,7 @@ func TestProcessTaskUpdate(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.That(t, resp.OK, should.BeTrue)
 				assert.That(t, resp.MustStop, should.BeTrue)
+				assert.That(t, resp.StopReason, should.Equal("Killing task"))
 
 				assert.NoErr(t, datastore.Get(ctx, botInfo))
 				assert.That(t, botInfo.LastSeen.Get(), should.Match(lastSeen))
