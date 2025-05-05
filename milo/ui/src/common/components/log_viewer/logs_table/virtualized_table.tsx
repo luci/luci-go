@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Palette, Table, TableRow, useTheme } from '@mui/material';
+import { Table, TableRow, useTheme } from '@mui/material';
 import { blue, grey } from '@mui/material/colors';
 import { ReactNode, forwardRef } from 'react';
 import {
@@ -23,12 +23,6 @@ import {
 } from 'react-virtuoso';
 
 import { LogsTableEntry } from '../types';
-
-const zebraColor = (palette: Palette, index: number) => {
-  // Zebra styling
-  if (index % 2) return palette.mode === 'light' ? grey[200] : grey[700];
-  return '';
-};
 
 const LogsTableBody = forwardRef<HTMLTableSectionElement>((props, ref) => (
   <tbody {...props} ref={ref} />
@@ -98,7 +92,9 @@ export const VirtualizedTable = forwardRef<TableVirtuosoHandle | null, Props>(
           onClick={(event) => onRowClick && onRowClick(index, event)}
           sx={{
             backgroundColor:
-              getRowColor?.(item.entryId, index) ?? zebraColor(palette, index),
+              (getRowColor?.(item.entryId, index) ?? index % 2)
+                ? grey[200]
+                : grey[700],
             '&:hover': {
               backgroundColor: `${
                 palette.mode === 'light' ? blue[50] : blue[900]

@@ -297,6 +297,15 @@ export const routes: RouteObject[] = [
     ],
   },
   {
+    path: 'test-investigate',
+    children: [
+      {
+        index: true,
+        lazy: () => import('@/test_investigation/pages/test_investigate_page'),
+      },
+    ],
+  },
+  {
     path: 'fleet',
     children: fleetRoutes,
   },

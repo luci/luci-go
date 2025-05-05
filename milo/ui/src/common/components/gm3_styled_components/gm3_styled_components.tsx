@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+// Import base MUI components and props types
+import { Divider, IconButton, Link, Toolbar, Typography } from '@mui/material';
+import Paper, { PaperProps } from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
 
-// Base IconButton style
 export const StyledIconButton = styled(IconButton)(() => ({
   color: 'var(--gm3-color-on-surface-variant)',
 })) as typeof IconButton;
@@ -47,3 +44,54 @@ export const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   paddingLeft: theme.spacing(3),
   paddingRight: theme.spacing(3),
 })) as typeof Toolbar;
+
+interface StyledActionBlockProps extends PaperProps {
+  severity?: 'primary' | 'warning' | 'error' | 'success' | 'info';
+}
+export const StyledActionBlock = styled(Paper, {
+  shouldForwardProp: (prop) => prop !== 'severity',
+})<StyledActionBlockProps>(({ theme, severity = 'primary' }) => ({
+  padding: '16px',
+  borderRadius: '8px',
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  gap: '10px',
+  boxShadow: 'none',
+  ...(severity === 'primary' && {
+    background: theme.palette.gm3.primaryContainer,
+    '& .MuiSvgIcon-root': { color: theme.palette.primary.main },
+    '& .MuiTypography-root, & .MuiLink-root': {
+      color: theme.palette.primary.main,
+      fontWeight: 700,
+      fontSize: '16px',
+      lineHeight: '24px',
+      letterSpacing: '0.1px',
+    },
+  }),
+  ...(severity === 'warning' && {
+    background: theme.palette.gm3.warningContainer,
+    '& .MuiSvgIcon-root': { color: theme.palette.gm3.warningDark },
+    '& .MuiTypography-root, & .MuiLink-root': {
+      color: theme.palette.warning.main,
+      fontWeight: 700,
+      fontSize: '16px',
+      lineHeight: '24px',
+      letterSpacing: '0.1px',
+    },
+  }),
+  ...(severity === 'error' && {
+    background: theme.palette.gm3.errorContainer,
+    '& .MuiSvgIcon-root': { color: theme.palette.error.main },
+    '& .MuiTypography-root, & .MuiLink-root': {
+      color: theme.palette.error.main,
+      fontWeight: 700,
+      fontSize: '16px',
+      lineHeight: '24px',
+      letterSpacing: '0.1px',
+    },
+  }),
+  // Add 'success' and 'info' if needed
+  '& .MuiSvgIcon-root': { width: '24px', height: '24px', marginTop: '0px' },
+  '& .MuiTypography-root, & .MuiLink-root': { flexGrow: 1 },
+}));

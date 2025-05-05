@@ -70,11 +70,11 @@ declare module '@mui/material/styles' {
   }
 
   interface PaletteOptions {
-    scheduled: PaletteOptions['primary'];
-    started: PaletteOptions['primary'];
-    criticalFailure: PaletteOptions['primary'];
-    canceled: PaletteOptions['primary'];
-    dividerLine: PaletteOptions['primary'];
+    scheduled?: PaletteOptions['primary'];
+    started?: PaletteOptions['primary'];
+    criticalFailure?: PaletteOptions['primary'];
+    canceled?: PaletteOptions['primary'];
+    dividerLine?: PaletteOptions['primary'];
   }
 }
 
