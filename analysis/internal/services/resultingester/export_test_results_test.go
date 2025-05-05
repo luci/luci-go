@@ -155,6 +155,7 @@ func TestExportTestResults(t *testing.T) {
 				Expected:      true,
 				Status:        analysispb.TestResultStatus_PASS,
 				SummaryHtml:   "SummaryHTML for test_expected/one",
+				StatusV2:      analysispb.TestResult_PASSED,
 				StartTime:     timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
 				DurationSecs:  3.000001,
 				Tags:          []*analysispb.StringPair{{Key: "test-key", Value: "test-value"}},
@@ -163,7 +164,13 @@ func TestExportTestResults(t *testing.T) {
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",
 				TestMetadata:  updatedTmd,
-				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+				FrameworkExtensions: &rdbpb.FrameworkExtensions{
+					WebTest: &rdbpb.WebTest{
+						Status:     rdbpb.WebTest_PASS,
+						IsExpected: true,
+					},
+				},
+				InsertTime: timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project: "rootproject",
@@ -186,10 +193,16 @@ func TestExportTestResults(t *testing.T) {
 				ResultId:      "one",
 				Expected:      false,
 				Status:        analysispb.TestResultStatus_FAIL,
+				StatusV2:      analysispb.TestResult_FAILED,
 				SummaryHtml:   "SummaryHTML for test_flaky/one",
 				StartTime:     timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 				FailureReason: &rdbpb.FailureReason{
 					PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+					Errors: []*rdbpb.FailureReason_Error{
+						{
+							Message: "abc.def(123): unexpected nil-deference",
+						},
+					},
 				},
 				Properties:    "{}",
 				Sources:       sources,
@@ -218,6 +231,7 @@ func TestExportTestResults(t *testing.T) {
 				ResultId:      "two",
 				Expected:      true,
 				Status:        analysispb.TestResultStatus_PASS,
+				StatusV2:      analysispb.TestResult_PASSED,
 				SummaryHtml:   "SummaryHTML for test_flaky/two",
 				StartTime:     timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 				Properties:    "{}",
@@ -247,9 +261,14 @@ func TestExportTestResults(t *testing.T) {
 				ResultId:      "one",
 				Expected:      true,
 				Status:        analysispb.TestResultStatus_SKIP,
+				StatusV2:      analysispb.TestResult_SKIPPED,
 				SummaryHtml:   "SummaryHTML for test_skip/one",
 				Properties:    properties,
 				SkipReason:    "AUTOMATICALLY_DISABLED_FOR_FLAKINESS",
+				SkippedReason: &rdbpb.SkippedReason{
+					Kind:          rdbpb.SkippedReason_DISABLED_AT_DECLARATION,
+					ReasonMessage: "Test has @Ignored annotation.",
+				},
 				Sources:       sources,
 				SourceRef:     sourceRef,
 				SourceRefHash: "5d47c679cf080cb5",

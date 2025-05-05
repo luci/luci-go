@@ -107,13 +107,16 @@ var (
 			"results.*.result.result_id",
 			"results.*.result.expected",
 			"results.*.result.status",
+			"results.*.result.status_v2",
 			"results.*.result.summary_html",
 			"results.*.result.start_time",
 			"results.*.result.duration",
 			"results.*.result.tags",
 			"results.*.result.failure_reason",
 			"results.*.result.skip_reason",
+			"results.*.result.skipped_reason",
 			"results.*.result.properties",
+			"results.*.result.framework_extensions",
 		},
 	}
 

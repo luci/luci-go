@@ -179,7 +179,7 @@ func batchTestResults(input Inputs, sources testresults.Sources, outputC chan ba
 				PartitionTime:    input.PartitionTime,
 				SubRealm:         input.SubRealm,
 				IsUnexpected:     !inputTR.Result.Expected,
-				Status:           pbutil.TestResultStatusFromResultDB(inputTR.Result.Status),
+				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Result.Status),
 			}
 
 			// Convert the test result into a mutation immediately

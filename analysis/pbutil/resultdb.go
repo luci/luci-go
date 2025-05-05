@@ -75,9 +75,9 @@ func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	}
 }
 
-// TestResultStatusFromResultDB returns the LUCI Analysis test result status
+// LegacyTestStatusFromResultDB returns the LUCI Analysis test result status
 // corresponding to the given ResultDB test result status.
-func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
+func LegacyTestStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
 	switch s {
 	case rdbpb.TestStatus_ABORT:
 		return pb.TestResultStatus_ABORT
@@ -91,6 +91,25 @@ func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
 		return pb.TestResultStatus_SKIP
 	default:
 		return pb.TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED
+	}
+}
+
+// TestStatusV2FromResultDB returns the LUCI Analysis test result status
+// corresponding to the ResultDB test status.
+func TestStatusV2FromResultDB(s rdbpb.TestResult_Status) pb.TestResult_Status {
+	switch s {
+	case rdbpb.TestResult_PASSED:
+		return pb.TestResult_PASSED
+	case rdbpb.TestResult_FAILED:
+		return pb.TestResult_FAILED
+	case rdbpb.TestResult_SKIPPED:
+		return pb.TestResult_SKIPPED
+	case rdbpb.TestResult_EXECUTION_ERRORED:
+		return pb.TestResult_EXECUTION_ERRORED
+	case rdbpb.TestResult_PRECLUDED:
+		return pb.TestResult_PRECLUDED
+	default:
+		return pb.TestResult_STATUS_UNSPECIFIED
 	}
 }
 

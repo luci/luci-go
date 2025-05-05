@@ -251,16 +251,19 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		Name:        result.Name,
 		ResultId:    result.ResultId,
 		Expected:    result.Expected,
-		Status:      pbutil.TestResultStatusFromResultDB(result.Status),
+		Status:      pbutil.LegacyTestStatusFromResultDB(result.Status),
+		StatusV2:    pbutil.TestStatusV2FromResultDB(result.StatusV2),
 		SummaryHtml: result.SummaryHtml,
 		StartTime:   result.StartTime,
 		// Null durations are represented as zeroes in the export.
 		// Unfortunately, BigQuery Write API does not offer a way for us
 		// to write NULL to a NULLABLE FLOAT column.
-		Duration:      result.Duration.AsDuration().Seconds(),
-		Tags:          pbutil.StringPairFromResultDB(result.Tags),
-		FailureReason: result.FailureReason,
-		Properties:    propertiesJSON,
+		Duration:            result.Duration.AsDuration().Seconds(),
+		Tags:                pbutil.StringPairFromResultDB(result.Tags),
+		FailureReason:       result.FailureReason,
+		Properties:          propertiesJSON,
+		SkippedReason:       result.SkippedReason,
+		FrameworkExtensions: result.FrameworkExtensions,
 	}
 
 	if result.SkipReason != rdbpb.SkipReason_SKIP_REASON_UNSPECIFIED {

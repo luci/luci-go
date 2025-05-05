@@ -36,7 +36,7 @@ func TestResultDB(t *testing.T) {
 			PrimaryErrorMessage: "Some error message.",
 		}))
 	})
-	ftt.Run("TestResultStatusFromResultDB", t, func(t *ftt.Test) {
+	ftt.Run("LegacyTestStatusFromResultDB", t, func(t *ftt.Test) {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
 		// allowed values, without a corresponding update to LUCI Analysis.
@@ -46,8 +46,22 @@ func TestResultDB(t *testing.T) {
 				continue
 			}
 
-			status := TestResultStatusFromResultDB(rdbStatus)
+			status := LegacyTestStatusFromResultDB(rdbStatus)
 			assert.Loosely(t, status, should.NotEqual(pb.TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED))
+		}
+	})
+	ftt.Run("TestStatusV2FromResultDB", t, func(t *ftt.Test) {
+		// Confirm LUCI Analysis handles every test status defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.TestResult_Status_value {
+			rdbStatus := rdbpb.TestResult_Status(v)
+			if rdbStatus == rdbpb.TestResult_STATUS_UNSPECIFIED {
+				continue
+			}
+
+			status := TestStatusV2FromResultDB(rdbStatus)
+			assert.Loosely(t, status, should.NotEqual(pb.TestResult_STATUS_UNSPECIFIED))
 		}
 	})
 	ftt.Run("TestVerdictStatusFromResultDB", t, func(t *ftt.Test) {
