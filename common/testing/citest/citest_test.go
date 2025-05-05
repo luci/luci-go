@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package localonly
+package citest
 
 import (
 	"log"
@@ -35,7 +35,7 @@ func TestSkipCI(t *testing.T) {
 	t.Setenv("SWARMING_HEADLESS", "")
 
 	t.Run("try to skip this test", func(t *testing.T) {
-		Because(t, "b/1")
+		LocalOnlyBecause(t, "b/1")
 		didSkip = false
 	})
 
@@ -61,7 +61,7 @@ func TestDontSkipCI(t *testing.T) {
 	t.Setenv("SWARMING_HEADLESS", "")
 
 	t.Run("try to skip this test", func(t *testing.T) {
-		Because(t, "b/1")
+		LocalOnlyBecause(t, "b/1")
 		didSkip = false
 	})
 
@@ -69,4 +69,9 @@ func TestDontSkipCI(t *testing.T) {
 		t.Error("should not have been skipped")
 	}
 	checkRan = true
+}
+
+func TestWantIntegrationTests(t *testing.T) {
+	// Check that this doesn't panic.
+	wantIntegrationTests(t, "SWARMING_INTEGRATION_TESTS")
 }
