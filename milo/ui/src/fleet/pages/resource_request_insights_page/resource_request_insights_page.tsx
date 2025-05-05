@@ -90,7 +90,7 @@ const columns = [
     id: 'expected_eta',
     gridColDef: {
       field: 'expected_eta',
-      headerName: 'Expected ETA',
+      headerName: 'Estimated Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
@@ -112,39 +112,39 @@ const columns = [
         : '',
   },
   {
-    id: 'material_sourcing_target_delivery_date',
+    id: 'material_sourcing_actual_delivery_date',
     gridColDef: {
-      field: 'material_sourcing_target_delivery_date',
-      headerName: 'Material Sourcing Target Delivery Date',
+      field: 'material_sourcing_actual_delivery_date',
+      headerName: 'Material Sourcing Estimated Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.procurementActualDeliveryDate),
   },
   {
-    id: 'build_target_delivery_date',
+    id: 'build_actual_delivery_date',
     gridColDef: {
-      field: 'build_target_delivery_date',
-      headerName: 'Build Target Delivery Date',
+      field: 'build_actual_delivery_date',
+      headerName: 'Build Estimated Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.buildActualDeliveryDate),
   },
   {
-    id: 'qa_target_delivery_date',
+    id: 'qa_actual_delivery_date',
     gridColDef: {
-      field: 'qa_target_delivery_date',
-      headerName: 'QA Target Delivery Date',
+      field: 'qa_actual_delivery_date',
+      headerName: 'QA Estimated Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaActualDeliveryDate),
   },
   {
-    id: 'config_target_delivery_date',
+    id: 'config_actual_delivery_date',
     gridColDef: {
-      field: 'config_target_delivery_date',
-      headerName: 'Config Target Delivery Date',
+      field: 'config_actual_delivery_date',
+      headerName: 'Config Estimated Delivery Date',
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) =>

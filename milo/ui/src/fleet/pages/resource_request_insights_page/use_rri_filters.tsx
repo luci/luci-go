@@ -43,10 +43,10 @@ export const filterDescriptors = {
   rr_id: 'string',
   fulfillment_status: 'multi-select',
   expected_eta: 'date-range',
-  material_sourcing_target_delivery_date: 'date-range',
-  build_target_delivery_date: 'date-range',
-  qa_target_delivery_date: 'date-range',
-  config_target_delivery_date: 'date-range',
+  material_sourcing_actual_delivery_date: 'date-range',
+  build_actual_delivery_date: 'date-range',
+  qa_actual_delivery_date: 'date-range',
+  config_actual_delivery_date: 'date-range',
 } as const satisfies Partial<
   Record<ResourceRequestColumnKey, 'string' | 'multi-select' | 'date-range'>
 >;
@@ -97,23 +97,23 @@ export const filterOpts = [
     optionsComponent: DateFilter,
   },
   {
-    label: 'Material Sourcing Target Delivery Date',
-    value: 'material_sourcing_target_delivery_date',
+    label: 'Material Sourcing Estimated Delivery Date',
+    value: 'material_sourcing_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'Build Target Delivery Date',
-    value: 'build_target_delivery_date',
+    label: 'Build Estimated Delivery Date',
+    value: 'build_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'QA Target Delivery Date',
-    value: 'qa_target_delivery_date',
+    label: 'QA Estimated Delivery Date',
+    value: 'qa_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'Config Target Delivery Date',
-    value: 'config_target_delivery_date',
+    label: 'Config Estimated Delivery Date',
+    value: 'config_actual_delivery_date',
     optionsComponent: DateFilter,
   },
 ] as const satisfies readonly RriFilterOption[];
@@ -170,21 +170,21 @@ const getFiltersFromSearchParam = (
   return {
     rr_id: rec['rr_id'],
     expected_eta: parseDateOnlyFromUrl(rec, 'expected_eta'),
-    material_sourcing_target_delivery_date: parseDateOnlyFromUrl(
+    material_sourcing_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
-      'material_sourcing_target_delivery_date',
+      'material_sourcing_actual_delivery_date',
     ),
-    build_target_delivery_date: parseDateOnlyFromUrl(
+    build_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
-      'build_target_delivery_date',
+      'build_actual_delivery_date',
     ),
-    qa_target_delivery_date: parseDateOnlyFromUrl(
+    qa_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
-      'qa_target_delivery_date',
+      'qa_actual_delivery_date',
     ),
-    config_target_delivery_date: parseDateOnlyFromUrl(
+    config_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
-      'config_target_delivery_date',
+      'config_actual_delivery_date',
     ),
     fulfillment_status: rec['fulfillment_status']?.split(','),
   } satisfies Record<RriFilterKey, unknown>;
@@ -328,13 +328,13 @@ export const useRriFilters = () => {
         .join(', ');
     },
     expected_eta: (v) => mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    material_sourcing_target_delivery_date: (v) =>
+    material_sourcing_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    build_target_delivery_date: (v) =>
+    build_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    qa_target_delivery_date: (v) =>
+    qa_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    config_target_delivery_date: (v) =>
+    config_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
   } as const satisfies Record<
     RriFilterKey,
