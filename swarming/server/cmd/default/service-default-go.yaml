@@ -10,6 +10,32 @@ automatic_scaling:
   # Most requests do nothing waiting for RBE's UpdateBotSession to unblock.
   max_concurrent_requests: 200
 
+handlers:
+# Static content.
+- url: /([^/]+)\.(css|ico|txt)
+  static_files: static/\1.\2
+  upload: static/(.+)\.(css|ico|txt)
+  secure: always
+  http_headers:
+    Content-Security-Policy: "default-src https: 'self'"
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options: deny
+
+# Frontend.
+- url: /newres/(.+)
+  static_files: ui2/dist/\1
+  upload: ui2/dist/(.+)
+  secure: always
+  expiration: "1h"
+  application_readable: true
+  http_headers:
+    Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options: deny
+
+- url: /.*
+  script: auto
+  secure: always
+
 inbound_services:
 - warmup
 

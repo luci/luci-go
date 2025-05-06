@@ -1,0 +1,18 @@
+root: true
+env:
+  browser: true
+  es2020: true
+extends:
+  - google
+  - plugin:prettier/recommended
+  - plugin:import/errors
+  - plugin:import/warnings
+parserOptions:
+  ecmaVersion: 2020
+  sourceType: module
+rules:
+  # Ideally we want to enable jsdoc lints.
+  # But, it's too noisy with the existing code.
+  require-jsdoc: 0
+  valid-jsdoc: 0
+  prettier/prettier: error
