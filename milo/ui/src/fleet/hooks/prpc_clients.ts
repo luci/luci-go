@@ -28,8 +28,7 @@ export function useFleetConsoleClient() {
 
 export function useUfsClient() {
   return usePrpcServiceClient({
-    // TODO: b/408235610 - Replace with `host: SETTINGS.ufs.host,` once ready.
-    host: 'ufs.api.cr.dev',
+    host: SETTINGS.ufs.host,
     insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
     ClientImpl: FleetClientImpl,
     // Namespace is needed to call UFS.
