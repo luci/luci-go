@@ -1,6 +1,4 @@
 export SHELL = /bin/bash
-export PATH := $(CURDIR)/nodejs/bin:$(PATH)
-export npm_config_cache := $(CURDIR)/.npm
 
 files_no_dist := $(shell git ls-files "[^dist]*.js")
 
@@ -53,3 +51,13 @@ docs: package-lock.json
 
 install_deps:
 	npm install
+
+# Used by GAE tarball builder to build Swarming Go tarball.
+build:
+	make install_deps
+	make release
+
+# Used by luci-go frontend tester to run Swarming UI tests.
+presubmit_test:
+	make install_deps
+	make test

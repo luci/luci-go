@@ -15,7 +15,7 @@ build:
     dest: ${contextdir}/cmd/index.yaml
   - copy: ${inputsdir}/cmd/queue.yaml
     dest: ${contextdir}/cmd/queue.yaml
-  - run: ['make', 'release']
+  - run: ['make', 'build']
     cwd: ${inputsdir}/ui2
   - go_gae_bundle: ${inputsdir}/cmd/default/service-default-go.yaml
     go_gae_bundle_as_module: True
