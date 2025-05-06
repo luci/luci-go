@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/internal/typed"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
 )
 
 func TestLineContext(t *testing.T) {

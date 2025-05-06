@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 // TestResultRender tests rendering a failure.

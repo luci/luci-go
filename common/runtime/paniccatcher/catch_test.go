@@ -19,7 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCatch(t *testing.T) {
@@ -34,9 +35,7 @@ func TestCatch(t *testing.T) {
 		if pv == nil {
 			t.Fatalf("pv == nil (should not be)")
 		}
-		if diff := typed.Diff(pv.Reason, "Everybody panic!"); diff != "" {
-			t.Fatalf("pv.Reason diff: %q", diff)
-		}
+		assert.That(t, pv.Reason.(string), should.Match("Everybody panic!"))
 		if !strings.Contains(pv.Stack, "TestCatch") {
 			t.Fatalf("pv.Stack does not contain TestCatch: %q", pv.Stack)
 		}

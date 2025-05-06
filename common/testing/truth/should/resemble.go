@@ -23,7 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 // should.Match needs to keep a cache of type -> []cmp.Option for

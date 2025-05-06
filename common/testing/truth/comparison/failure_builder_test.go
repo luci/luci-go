@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 // Check that calling NewSummaryBuilder does something remotely reasonable.

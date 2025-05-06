@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 func TestSmartCmpDiff(t *testing.T) {

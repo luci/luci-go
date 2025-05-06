@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/common/testing/typed"
 )
 
 // TestFttTraversal shows you the traversal order. Note how many times "1" gets re-executed.
@@ -61,9 +60,7 @@ func TestFttTraversal(t *testing.T) {
 		})
 	})
 
-	if diff := typed.Got(items).Want(expected).Diff(); diff != "" {
-		t.Errorf("unexpected diff (-want +got): %s", diff)
-	}
+	assert.That(t, items, should.Match(expected))
 }
 
 func TestFtt(t *testing.T) {

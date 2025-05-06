@@ -19,11 +19,11 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/internal/typed"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
 )
 
 // mockTB is a mock testing.TB implementation for testing the `assert`

@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
+	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 // AddCmpDiff adds a 'Diff' finding which is type hinted to be the output of
