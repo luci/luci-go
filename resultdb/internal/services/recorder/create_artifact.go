@@ -230,7 +230,6 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 			FinishWrite: last,
 			WriteOffset: int64(bytesSent),
 		}
-		defer setSizeMetric(ctx, buf[:n], ac.contentType)
 
 		// Include the resource name only in the first request.
 		if first {

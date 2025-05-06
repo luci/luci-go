@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
@@ -517,7 +516,6 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	if err := createArtifactStates(ctx, realm, invID, artsToCreate); err != nil {
 		return nil, err
 	}
-	setSizeMetrics(ctx, artsToUpload, invID)
 
 	// Return all the artifacts to indicate that they were created.
 	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(arts))}
@@ -548,18 +546,4 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		}
 	}
 	return ret, nil
-}
-
-func setSizeMetrics(ctx context.Context, arts []*artifactCreationRequest, invID invocations.ID) {
-	for _, art := range arts {
-		setSizeMetric(ctx, art.data, art.contentType)
-	}
-}
-
-func setSizeMetric(ctx context.Context, data []byte, contentType string) {
-	compressedSize := len(spanutil.Compress(data))
-	lessThanBreakEven := compressedSize <= artifactcontent.BreakEvenSize
-	artifactcontent.ArtifactCounter.Add(ctx, 1, lessThanBreakEven, contentType)
-	artifactcontent.LogicalSizeCounter.Add(ctx, int64(len(data)), lessThanBreakEven, contentType)
-	artifactcontent.CompressedSizeCounter.Add(ctx, int64(compressedSize), lessThanBreakEven, contentType)
 }
