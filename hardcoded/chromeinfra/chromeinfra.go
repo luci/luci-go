@@ -74,10 +74,10 @@ const (
 	UFSStagingHost = "staging.ufs.api.cr.dev"
 
 	// ResultDBHost is the hostname of the production ResultDB service.
-	ResultDBHost = "results.api.cr.dev"
+	ResultDBHost = "results.api.luci.app"
 
 	// ResultDBStagingHost is the hostname of the staging ResultDB service.
-	ResultDBStagingHost = "staging.results.api.cr.dev"
+	ResultDBStagingHost = "staging.results.api.luci.app"
 
 	// TestSpannerInstance is the name of the Spanner instance used for testing.
 	TestSpannerInstance = "projects/chops-spanner-testing/instances/testing"

@@ -89,7 +89,7 @@ func (cmd *reproduceImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.work, "work", "work", "Directory to map the task input files into and execute the task. Will be cleared!")
 	fs.StringVar(&cmd.out, "out", "out", "Directory that will hold the task results. Will be cleared!")
 	fs.StringVar(&cmd.realm, "realm", "", "Realm to create invocation in if ResultDB is enabled.")
-	fs.StringVar(&cmd.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to use. e.g. 'results.api.cr.dev'.")
+	fs.StringVar(&cmd.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to use. e.g. 'results.api.luci.app'.")
 }
 
 func (cmd *reproduceImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
