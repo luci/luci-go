@@ -53,6 +53,11 @@ func ValidateInvocationName(name string) error {
 }
 
 // ParseInvocationName extracts the invocation id.
+//
+// This function returns an error if parsing fails.
+// Note: Error construction has an non-negligible CPU cost.
+// Use this when detailed error information is needed.
+// For a boolean check without error overhead, use TryParseInvocationName.
 func ParseInvocationName(name string) (id string, err error) {
 	if name == "" {
 		return "", validate.Unspecified()
@@ -63,6 +68,21 @@ func ParseInvocationName(name string) (id string, err error) {
 		return "", validate.DoesNotMatchReErr(invocationNameRe)
 	}
 	return m[1], nil
+}
+
+// TryParseInvocationName attempts to extract the invocation id from a name.
+// It returns the id and true if the name is valid, otherwise it returns
+// an empty string and false.
+func TryParseInvocationName(name string) (id string, ok bool) {
+	if name == "" {
+		return "", false
+	}
+
+	m := invocationNameRe.FindStringSubmatch(name)
+	if m == nil {
+		return "", false
+	}
+	return m[1], true
 }
 
 // InvocationName synthesizes an invocation name from an id.

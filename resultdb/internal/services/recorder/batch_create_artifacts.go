@@ -108,7 +108,9 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 	if req.Parent != "" {
 		// Parsing the parent string as an invocation name first. If this fails, attempt to parse it as a test result name.
 		// This order ensures that `testID` and `resultID` are only assigned if a valid test result parent is identified,
-		if invID, err = pbutil.ParseInvocationName(req.Parent); err != nil {
+		if invocationID, ok := pbutil.TryParseInvocationName(req.Parent); ok {
+			invID = invocationID
+		} else {
 			if invID, testID, resultID, err = pbutil.ParseTestResultName(req.Parent); err != nil {
 				return "", nil, errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
 			}

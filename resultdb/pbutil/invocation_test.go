@@ -44,6 +44,24 @@ func TestInvocationName(t *testing.T) {
 		t.Run("Format", func(t *ftt.Test) {
 			assert.Loosely(t, InvocationName("a"), should.Equal("invocations/a"))
 		})
+	})
+
+	ftt.Run("TryParseInvocationName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
+			id, ok := TryParseInvocationName("invocations/a")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, id, should.Equal("a"))
+		})
+
+		t.Run("Invalid", func(t *ftt.Test) {
+			_, ok := TryParseInvocationName("invocations/-")
+			assert.Loosely(t, ok, should.BeFalse)
+		})
+
+		t.Run("Empty", func(t *ftt.Test) {
+			_, ok := TryParseInvocationName("")
+			assert.Loosely(t, ok, should.BeFalse)
+		})
 
 	})
 }
