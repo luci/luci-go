@@ -184,6 +184,7 @@ type CacheKey struct {
 	//  * luci_ts/<account>/<host>/<realm> when using Token Server actor mode.
 	//  * luci_ctx/<digest> when using LUCIContextMethod.
 	//  * credhelper/<protocol>/<config digest> when using CredentialHelperMethod.
+	//  * adc when using GoogleADCMethod.
 	Key string `json:"key"`
 
 	// Scopes is the list of requested OAuth scopes or an ID token audience.

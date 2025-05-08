@@ -431,6 +431,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 	opts.authFlags.RegisterCredentialHelperFlags(f)
+	opts.authFlags.RegisterADCFlags(f)
 }
 
 func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {

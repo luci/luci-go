@@ -43,6 +43,7 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth/credhelperpb"
@@ -180,6 +181,47 @@ const (
 	//
 	// See Options.CredentialHelper for details.
 	CredentialHelperMethod Method = "CredentialHelperMethod"
+
+	// GoogleADCMethod indicates to use gcloud's Application Default Credentials.
+	//
+	// See https://cloud.google.com/docs/authentication/application-default-credentials.
+	//
+	// This is a non-interactive method: if ADC are missing, a error will be
+	// returned and the user would need to set them up (in particular, perhaps by
+	// running `gcloud auth application-default login`). `luci-auth login` and
+	// similar is not involved in this process at all.
+	//
+	// Supports only OAuth2 tokens. Scopes are respected only when possible (e.g.
+	// when using service account keys).
+	GoogleADCMethod Method = "GoogleADCMethod"
+)
+
+// GoogleADCPolicy controls when to use GoogleADCMethod instead of
+// UserCredentialsMethod in case the authenticator was told to pick the best
+// available method.
+type GoogleADCPolicy string
+
+const (
+	// GoogleADCNever means to never use GoogleADCMethod, even if they are
+	// available.
+	//
+	// This is the default.
+	GoogleADCNever GoogleADCPolicy = "never"
+
+	// GoogleADCAlways means to always use GoogleADCMethod instead of
+	// UserCredentialsMethod.
+	//
+	// ADC must be configured. If there are no ADC, the authenticator will return
+	// an error asking to setup ADC.
+	GoogleADCAlways GoogleADCPolicy = "always"
+
+	// GoogleADCAllow means to use ADC if they are available, but fallback to
+	// UserCredentialsMethod if they are not.
+	//
+	// It means in a completely blank state the user will be asked to login
+	// using UserCredentialsMethod (because there are no ADC). But if the user
+	// already has ADC set up, they will be used.
+	GoogleADCAllow GoogleADCPolicy = "allow"
 )
 
 // LoginMode is used as enum in NewAuthenticator function.
@@ -456,6 +498,16 @@ type Options struct {
 	// in the disk cache.
 	CredentialHelper *credhelperpb.Config
 
+	// GoogleADCPolicy controls when to use Google ADC if Method is
+	// AutoSelectMethod (which is the default).
+	//
+	// Default is GoogleADCNever for compatibility with existing tools.
+	//
+	// When using any other policy, for tools used by developers, there's a danger
+	// of creating a mess by using credentials sets up by native LUCI login flow
+	// and credentials setup via `gcloud auth application-default login`.
+	GoogleADCPolicy GoogleADCPolicy
+
 	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached.
 	//
@@ -545,6 +597,7 @@ func (opts *Options) PopulateDefaults() {
 //   - CredentialHelperMethod (if have credential helper configured).
 //   - LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
 //   - GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
+//   - GoogleADCMethod (per GoogleADCPolicy in options).
 //   - UserCredentialsMethod (if no other method applies).
 //
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
@@ -574,6 +627,18 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 	// metadata server.
 	if opts.GCEAllowAsDefault && metadata.OnGCE() {
 		return GCEMetadataMethod
+	}
+
+	// Asked to always use ADC.
+	if opts.GoogleADCPolicy == GoogleADCAlways {
+		return GoogleADCMethod
+	}
+
+	// Asked to use ADC if it is available.
+	if opts.GoogleADCPolicy == GoogleADCAllow {
+		if _, err := google.FindDefaultCredentials(ctx); err == nil {
+			return GoogleADCMethod
+		}
 	}
 
 	return UserCredentialsMethod
@@ -1083,17 +1148,22 @@ func (a *Authenticator) ensureInitialized() error {
 		a.opts.Method = SelectBestMethod(a.ctx, *a.opts)
 	}
 
-	// Validate the external credential helper options.
-	if a.opts.Method == CredentialHelperMethod {
+	// Validate options now that we picked the method.
+	switch a.opts.Method {
+	case CredentialHelperMethod:
 		switch {
 		case a.opts.CredentialHelper == nil:
 			a.err = errors.Reason("missing CredentialHelper config").Err()
 		case a.opts.UseIDTokens:
 			a.err = errors.Reason("ID tokens are currently not supported when using external credential helpers").Err()
 		}
-		if a.err != nil {
-			return a.err
+	case GoogleADCMethod:
+		if a.opts.UseIDTokens {
+			a.err = errors.Reason("ID tokens are not supported when using Application Default Credentials").Err()
 		}
+	}
+	if a.err != nil {
+		return a.err
 	}
 
 	// In Actor mode, switch the base token to have scopes required to call
@@ -1739,6 +1809,8 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 			opts.Transport)
 	case CredentialHelperMethod:
 		return newCredHelperTokenProvider(opts.CredentialHelper)
+	case GoogleADCMethod:
+		return internal.NewGoogleADCTokenProvider(ctx, scopes)
 	default:
 		return nil, errors.Reason("unrecognized authentication method: %s", opts.Method).Err()
 	}

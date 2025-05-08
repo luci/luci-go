@@ -134,6 +134,10 @@ type CommandParams struct {
 	// UseCredentialHelperFlags specifies whether to register flags related to
 	// external credential helpers.
 	UseCredentialHelperFlags bool
+
+	// UseADCFlags specifies whether to register flags related to Application
+	// Default Credentials.
+	UseADCFlags bool
 }
 
 // Flags defines command line flags related to authentication.
@@ -152,6 +156,9 @@ type Flags struct {
 
 	hasCredHelperFlags bool   // true if registered -credential-helper flag
 	credHelper         string // value of -credential-helper
+
+	hasADCFlags bool                 // true if registered -application-default-credentials
+	adcPolicy   auth.GoogleADCPolicy // value of -application-default-credentials
 }
 
 // Register adds auth related flags to a FlagSet.
@@ -191,6 +198,15 @@ func (fl *Flags) RegisterCredentialHelperFlags(f *flag.FlagSet) {
 		"A specification of an external credential helper to use for minting authentication tokens. Experimental.")
 }
 
+// RegisterADCFlags adds flags related to Application Default Credentials.
+func (fl *Flags) RegisterADCFlags(f *flag.FlagSet) {
+	fl.hasADCFlags = true
+	f.StringVar((*string)(&fl.adcPolicy), "application-default-credentials", string(auth.GoogleADCNever),
+		fmt.Sprintf("When to use Application Default Credentials instead of LUCI user authentication: %q, %q or %q.",
+			auth.GoogleADCAlways, auth.GoogleADCNever, auth.GoogleADCAllow),
+	)
+}
+
 // Options returns auth.Options populated based on parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
@@ -225,6 +241,17 @@ func (fl *Flags) Options() (auth.Options, error) {
 			return auth.Options{}, fmt.Errorf("bad -credential-helper value %q: %w", fl.credHelper, err)
 		}
 		opts.CredentialHelper = &cfg
+	}
+
+	if fl.hasADCFlags && fl.adcPolicy != "" {
+		switch fl.adcPolicy {
+		case auth.GoogleADCNever, auth.GoogleADCAlways, auth.GoogleADCAllow:
+		default:
+			return auth.Options{}, fmt.Errorf(
+				"bad -application-default-credentials value %q: allowed values are %q, %q or %q",
+				fl.adcPolicy, auth.GoogleADCNever, auth.GoogleADCAlways, auth.GoogleADCAllow)
+		}
+		opts.GoogleADCPolicy = fl.adcPolicy
 	}
 
 	return opts, nil
@@ -284,6 +311,9 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 	}
 	if c.params.UseCredentialHelperFlags {
 		c.flags.RegisterCredentialHelperFlags(&c.Flags)
+	}
+	if c.params.UseADCFlags {
+		c.flags.RegisterADCFlags(&c.Flags)
 	}
 }
 
