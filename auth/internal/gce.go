@@ -164,7 +164,7 @@ func (p *gceTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *gceTokenProvider) Lightweight() bool {
+func (p *gceTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 

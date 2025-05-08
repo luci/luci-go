@@ -882,8 +882,8 @@ func (a *Authenticator) CheckLoginRequired() error {
 // credentials, if any.
 //
 // When used with non-interactive token providers (e.g. based on service
-// accounts), just clears the cached access token, so next the next
-// authenticated call gets a fresh one.
+// accounts) proactively mints a new access token (thus checking the
+// authenticator is configured correctly).
 func (a *Authenticator) Login() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -893,13 +893,9 @@ func (a *Authenticator) Login() error {
 		return err
 	}
 
-	// Remove any cached tokens to trigger full relogin.
+	// Remove any cached tokens to trigger a full relogin.
 	if err := a.purgeCredentialsCacheLocked(); err != nil {
 		return err
-	}
-
-	if !a.baseToken.provider.RequiresInteraction() {
-		return nil // can mint the token on the fly, no need for login
 	}
 
 	// Create an initial base token. This may require interaction with a user. Do
@@ -1024,7 +1020,7 @@ func (a *Authenticator) checkInitialized() (bool, error) {
 	return false, nil
 }
 
-// ensureInitialized instantiates TokenProvider and reads token from cache.
+// ensureInitialized instantiates TokenProvider and reads cached tokens, if any.
 //
 // It is supposed to be called under the lock.
 func (a *Authenticator) ensureInitialized() error {
@@ -1096,15 +1092,13 @@ func (a *Authenticator) ensureInitialized() error {
 	}
 
 	// Initialize the token cache. Use the disk cache only if SecretsDir is given
-	// and any of the providers is not "lightweight" (so it makes sense to
-	// actually hit the disk, rather then call the provider each time new token is
-	// needed).
+	// and there's a provider that is OK with using a disk cache.
 	if a.opts.testingCache != nil {
 		a.baseToken.cache = a.opts.testingCache
 		a.authToken.cache = a.opts.testingCache
 	} else {
 		cache := internal.ProcTokenCache
-		if !a.baseToken.provider.Lightweight() || !a.authToken.provider.Lightweight() {
+		if !a.baseToken.provider.MemoryCacheOnly() || !a.authToken.provider.MemoryCacheOnly() {
 			if a.opts.SecretsDir != "" {
 				cache = &internal.DiskTokenCache{
 					Context:    a.ctx,
@@ -1114,40 +1108,27 @@ func (a *Authenticator) ensureInitialized() error {
 				logging.Warningf(a.ctx, "Disabling auth disk token cache. Not configured.")
 			}
 		}
-		// Use the disk cache only for non-lightweight providers to avoid
-		// unnecessarily leaks of tokens to the disk.
-		if a.baseToken.provider.Lightweight() {
+		if a.baseToken.provider.MemoryCacheOnly() {
 			a.baseToken.cache = internal.ProcTokenCache
 		} else {
 			a.baseToken.cache = cache
 		}
-		if a.authToken.provider.Lightweight() {
+		if a.authToken.provider.MemoryCacheOnly() {
 			a.authToken.cache = internal.ProcTokenCache
 		} else {
 			a.authToken.cache = cache
 		}
 	}
 
-	// Interactive providers need to know whether there's a cached token (to ask
-	// to run interactive login if there's none). Non-interactive providers do not
-	// care about state of the cache that much (they know how to update it
-	// themselves). So examine the cache here only when using interactive
-	// provider. Non interactive providers will do it lazily on a first
-	// refreshToken(...) call.
-	if a.baseToken.provider.RequiresInteraction() {
-		// Broken token cache is not a fatal error. So just log it and forget, a new
-		// token will be minted in Login.
-		if err := a.baseToken.fetchFromCache(a.ctx); err != nil {
+	// Fetch any existing tokens from the cache.
+	if err := a.baseToken.fetchFromCache(a.ctx); err != nil {
+		logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", err)
+	}
+	if a.authToken != a.baseToken {
+		if err := a.authToken.fetchFromCache(a.ctx); err != nil {
 			logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", err)
 		}
 	}
-
-	// Note: a.authToken.provider is either equal to a.baseToken.provider (if not
-	// using actor mode), or (when using actor mode) it doesn't require
-	// interaction (because all "acting" providers are non-interactive). So don't
-	// bother fetching 'authToken' from the cache. It will be fetched lazily on
-	// the first use.
-
 	return nil
 }
 
@@ -1213,12 +1194,14 @@ func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
 	return
 }
 
-// currentToken returns last known authentication token (or nil).
+// currentToken returns the last known authentication token (or nil).
 //
-// If the token is not loaded yet, will attempt to load it from the on-disk
-// cache. Returns nil if it's not there.
+// It may be expired already.
 //
-// It lock a.lock inside. It MUST NOT be called when a.lock is held. It will
+// If the token is not known yet, will attempt to reload it from the cache.
+// Returns nil if it's still absent.
+//
+// It acquires a.lock inside. It MUST NOT be called when a.lock is held. It will
 // lazily call 'ensureInitialized' if necessary, returning its error.
 func (a *Authenticator) currentToken() (tok *internal.Token, err error) {
 	a.lock.RLock()
@@ -1227,32 +1210,27 @@ func (a *Authenticator) currentToken() (tok *internal.Token, err error) {
 		tok = a.authToken.token
 	}
 	a.lock.RUnlock()
-	if err != nil {
-		return
-	}
 
-	if !initialized || tok == nil {
+	switch {
+	case err != nil:
+		return nil, err
+	case tok != nil:
+		return tok, nil
+	case !initialized:
 		a.lock.Lock()
 		defer a.lock.Unlock()
-
-		if !initialized {
-			if err = a.ensureInitialized(); err != nil {
-				return
-			}
-			tok = a.authToken.token
+		if err = a.ensureInitialized(); err != nil {
+			return nil, err
 		}
-
-		if tok == nil {
-			// Reading the token from cache is best effort. A broken cache is treated
-			// like a cache miss.
-			if cacheErr := a.authToken.fetchFromCache(a.ctx); cacheErr != nil {
-				logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", cacheErr)
-			}
-			tok = a.authToken.token
+		return a.authToken.token, nil
+	default:
+		a.lock.Lock()
+		defer a.lock.Unlock()
+		if cacheErr := a.authToken.fetchFromCache(a.ctx); cacheErr != nil {
+			logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", cacheErr)
 		}
+		return a.authToken.token, nil
 	}
-
-	return
 }
 
 // refreshToken compares current auth token to 'prev' and launches token refresh

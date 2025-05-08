@@ -77,13 +77,12 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, audience 
 	// ProcTokenCache variable in proc_cache.go.
 	//
 	// It is possible (though very unusual), for a single process to use multiple
-	// local auth servers (e.g. if it enters a subcontext with another "local_auth"
-	// value).
+	// local auth servers (e.g. if it enters a subcontext with another
+	// "local_auth" value).
 	//
 	// For these reasons we use a digest of localAuth parameters as a cache key.
 	// It is used only in the process-local cache, the token never ends up in
-	// the disk cache, as indicated by Lightweight() returning true (tokens from
-	// such providers aren't cached on disk by Authenticator).
+	// the disk cache, as indicated by MemoryCacheOnly() returning true.
 	blob, err := json.Marshal(localAuth)
 	if err != nil {
 		return nil, err
@@ -107,7 +106,7 @@ func (p *luciContextTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *luciContextTokenProvider) Lightweight() bool {
+func (p *luciContextTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 

@@ -74,7 +74,7 @@ func (p *loginSessionTokenProvider) RequiresInteraction() bool {
 	return true
 }
 
-func (p *loginSessionTokenProvider) Lightweight() bool {
+func (p *loginSessionTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 

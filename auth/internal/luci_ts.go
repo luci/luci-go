@@ -83,7 +83,7 @@ func (p *luciTSTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *luciTSTokenProvider) Lightweight() bool {
+func (p *luciTSTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 

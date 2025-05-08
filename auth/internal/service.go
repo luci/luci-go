@@ -77,7 +77,7 @@ func (p *serviceAccountTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *serviceAccountTokenProvider) Lightweight() bool {
+func (p *serviceAccountTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 

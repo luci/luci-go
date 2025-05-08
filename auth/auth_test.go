@@ -849,7 +849,7 @@ func (p *fakeTokenProvider) RequiresInteraction() bool {
 	return p.interactive
 }
 
-func (p *fakeTokenProvider) Lightweight() bool {
+func (p *fakeTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 

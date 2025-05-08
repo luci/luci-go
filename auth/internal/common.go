@@ -90,17 +90,16 @@ type Token struct {
 
 // TokenProvider knows how to mint new tokens or refresh existing ones.
 type TokenProvider interface {
-	// RequiresInteraction is true if provider may start user interaction
-	// in MintToken.
+	// RequiresInteraction is true if the provider may start a blocking user
+	// interaction in its MintToken implementation.
 	RequiresInteraction() bool
 
-	// Lightweight is true if MintToken is very cheap to call.
+	// MemoryCacheOnly is true if the token should be stored only in the memory
+	// cache (not in the disk cache).
 	//
-	// In this case the token is not being cached on disk (only in memory), since
-	// it's easy to get a new one each time the process starts.
-	//
-	// By avoiding the disk cache, we reduce the chance of a leak.
-	Lightweight() bool
+	// This is usually set for non-interactive providers with cheap MintToken
+	// implementation.
+	MemoryCacheOnly() bool
 
 	// Email is email associated with tokens produced by the provider, if known.
 	//

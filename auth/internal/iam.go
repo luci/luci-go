@@ -55,7 +55,7 @@ func (p *iamTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *iamTokenProvider) Lightweight() bool {
+func (p *iamTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 
