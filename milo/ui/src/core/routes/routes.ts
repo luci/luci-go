@@ -298,9 +298,11 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'test-investigate',
+    // TODO: Add child for new URL structure:
+    // inv/:inv-id/module/:module-name/scheme/:module-scheme/variant/:variant/coarse/:coarse-name/fine/:fine-name/test-id/:test-id
     children: [
       {
-        index: true,
+        path: 'invocations/:invocationId/tests/:testId/variants/:variantHash',
         lazy: () => import('@/test_investigation/pages/test_investigate_page'),
       },
     ],

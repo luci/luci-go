@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { RPM } from "../../../../../../../../chromiumos/test/lab/api/rpm.pb";
 
 export const protobufPackage = "chromiumos.test.lab.api";
 
@@ -58,7 +59,16 @@ export interface PasitHost_Device {
    * Additional power supply information for devices that provide
    * power to the DUT.
    */
-  readonly powerSupply: PasitHost_Device_PowerSupply | undefined;
+  readonly powerSupply:
+    | PasitHost_Device_PowerSupply
+    | undefined;
+  /**
+   * Optional RPM for controlling power to the device, must specify
+   * type, power_unit_hostname, power_unit_outlet for PASIT.
+   * For devices with an RPM power will be enabled/disabled by PASIT along
+   * with the device.
+   */
+  readonly rpm: RPM | undefined;
 }
 
 /** The type of device represented. */
@@ -379,7 +389,7 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
 };
 
 function createBasePasitHost_Device(): PasitHost_Device {
-  return { id: "", model: "", type: 0, powerSupply: undefined };
+  return { id: "", model: "", type: 0, powerSupply: undefined, rpm: undefined };
 }
 
 export const PasitHost_Device: MessageFns<PasitHost_Device> = {
@@ -395,6 +405,9 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
     }
     if (message.powerSupply !== undefined) {
       PasitHost_Device_PowerSupply.encode(message.powerSupply, writer.uint32(34).fork()).join();
+    }
+    if (message.rpm !== undefined) {
+      RPM.encode(message.rpm, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -438,6 +451,14 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
           message.powerSupply = PasitHost_Device_PowerSupply.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.rpm = RPM.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -453,6 +474,7 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
       model: isSet(object.model) ? globalThis.String(object.model) : "",
       type: isSet(object.type) ? pasitHost_Device_TypeFromJSON(object.type) : 0,
       powerSupply: isSet(object.powerSupply) ? PasitHost_Device_PowerSupply.fromJSON(object.powerSupply) : undefined,
+      rpm: isSet(object.rpm) ? RPM.fromJSON(object.rpm) : undefined,
     };
   },
 
@@ -470,6 +492,9 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
     if (message.powerSupply !== undefined) {
       obj.powerSupply = PasitHost_Device_PowerSupply.toJSON(message.powerSupply);
     }
+    if (message.rpm !== undefined) {
+      obj.rpm = RPM.toJSON(message.rpm);
+    }
     return obj;
   },
 
@@ -484,6 +509,7 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
     message.powerSupply = (object.powerSupply !== undefined && object.powerSupply !== null)
       ? PasitHost_Device_PowerSupply.fromPartial(object.powerSupply)
       : undefined;
+    message.rpm = (object.rpm !== undefined && object.rpm !== null) ? RPM.fromPartial(object.rpm) : undefined;
     return message;
   },
 };
