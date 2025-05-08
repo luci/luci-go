@@ -1,0 +1,60 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.auth.credhelper;
+
+option go_package = "go.chromium.org/luci/auth/credhelperpb";
+
+
+// Supported credential helper protocols.
+enum Protocol {
+  UNKNOWN = 0;
+
+  // Indicates to use a reclient-compatible helper.
+  //
+  // A reclient-compatible compatible helper expects no stdin and produces
+  // stdout that looks like this:
+  //
+  //  {
+  //    "headers": {
+  //      "Authorization": "Bearer ya29.A0..."
+  //    },
+  //    "token":"ya29.A0...",
+  //    "expiry": "Thu May  1 15:08:49 PDT 2025"
+  //  }
+  //
+  // The token and the expiry will be taken from "token" and "expiry" fields.
+  // Both these fields are required. "headers" field should either be missing or
+  // empty or contain only "Authorization" header containing the same token: any
+  // extra headers are treated as an error.
+  RECLIENT = 1;
+}
+
+
+// Config where to find a credential helper and how to run it.
+message Config {
+  // How to communicate with the credential helper, required.
+  Protocol protocol = 1;
+
+  // Path to the credential helper binary.
+  //
+  // It will be resolved via $PATH if not already absolute. Paths containing "."
+  // are not allowed.
+  string exec = 2;
+
+  // Extra command line arguments to pass to the credential helper binary.
+  repeated string args = 3;
+}

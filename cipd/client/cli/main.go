@@ -430,6 +430,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 	}
 
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
+	opts.authFlags.RegisterCredentialHelperFlags(f)
 }
 
 func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
@@ -3708,7 +3709,12 @@ func GetApplication(params Parameters) *cli.Application {
 
 			// Authentication related commands.
 			{}, // These are spacers so that the commands appear in groups.
-			authcli.SubcommandInfo(params.DefaultAuthOptions, "auth-info", true),
+			authcli.SubcommandInfoWithParams(authcli.CommandParams{
+				Name:                     "auth-info",
+				Advanced:                 true,
+				AuthOptions:              params.DefaultAuthOptions,
+				UseCredentialHelperFlags: true,
+			}),
 			authcli.SubcommandLogin(params.DefaultAuthOptions, "auth-login", false),
 			authcli.SubcommandLogout(params.DefaultAuthOptions, "auth-logout", false),
 

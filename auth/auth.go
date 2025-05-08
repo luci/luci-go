@@ -45,6 +45,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
+	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -170,6 +171,15 @@ const (
 	// See auth/integration/localauth package for the implementation of the server
 	// side of the protocol.
 	LUCIContextMethod Method = "LUCIContextMethod"
+
+	// CredentialHelperMethod indicates to use an external credential helper
+	// binary to mint access token.
+	//
+	// It can do whatever it wants to get them, it is completely up to this
+	// binary's implementation.
+	//
+	// See Options.CredentialHelper for details.
+	CredentialHelperMethod Method = "CredentialHelperMethod"
 )
 
 // LoginMode is used as enum in NewAuthenticator function.
@@ -216,6 +226,11 @@ const (
 	// When used with ServiceAccountMethod it is identical to SilentLogin, since
 	// it makes no sense to ignore invalid service account credentials when the
 	// caller is explicitly asking the authenticator to use them.
+	//
+	// Similarly when used with CredentialHelperMethod it is identical to
+	// SilentLogin as well. That way the credential helper is consulted as
+	// soon as possible, which checks it is correctly configured and it can
+	// produce valid tokens.
 	//
 	// Has the original meaning when used with GCEMetadataMethod: it instructs to
 	// skip authentication if the token returned by GCE metadata service doesn't
@@ -424,6 +439,23 @@ type Options struct {
 	// Default is conservative false.
 	GCESupportsArbitraryScopes bool
 
+	// CredentialHelper defines configuration of an external credential helper
+	// binary that will be used to get access tokens.
+	//
+	// Used only with CredentialHelperMethod method. It is up to the credential
+	// helper implementation (and/or configuration) to decide how to produce
+	// the token and what kind of the token it is precisely (e.g. what OAuth
+	// scopes it has).
+	//
+	// All credential helpers are assumed to be non-interactive, i.e. if they are
+	// unable to get a token, they exit with an error instead of asking for user
+	// input. They are all invoked with an empty stdin and their stdout and stderr
+	// is buffered until they finish running.
+	//
+	// Only OAuth access tokens are supported currently. Tokens are not cached
+	// in the disk cache.
+	CredentialHelper *credhelperpb.Config
+
 	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached.
 	//
@@ -510,6 +542,7 @@ func (opts *Options) PopulateDefaults() {
 // Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
 // It picks the first applicable method in this order:
 //   - ServiceAccountMethod (if the service account private key is configured).
+//   - CredentialHelperMethod (if have credential helper configured).
 //   - LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
 //   - GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
 //   - UserCredentialsMethod (if no other method applies).
@@ -523,6 +556,12 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 			return GCEMetadataMethod
 		}
 		return ServiceAccountMethod
+	}
+
+	// Asked to use a credential helper. If it is missing, we'll crash a bit later
+	// when actually invoking it.
+	if opts.CredentialHelper != nil {
+		return CredentialHelperMethod
 	}
 
 	// Have a local auth server and an account we are allowed to pick by default.
@@ -1044,6 +1083,19 @@ func (a *Authenticator) ensureInitialized() error {
 		a.opts.Method = SelectBestMethod(a.ctx, *a.opts)
 	}
 
+	// Validate the external credential helper options.
+	if a.opts.Method == CredentialHelperMethod {
+		switch {
+		case a.opts.CredentialHelper == nil:
+			a.err = errors.Reason("missing CredentialHelper config").Err()
+		case a.opts.UseIDTokens:
+			a.err = errors.Reason("ID tokens are currently not supported when using external credential helpers").Err()
+		}
+		if a.err != nil {
+			return a.err
+		}
+	}
+
 	// In Actor mode, switch the base token to have scopes required to call
 	// the API used to generate target auth tokens. In non-actor mode, the base
 	// token is also the target auth token, so scope it to whatever scopes were
@@ -1221,7 +1273,8 @@ func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err 
 // token provider is being used.
 //
 // See comments for OptionalLogin for more info. The gist of it: we treat
-// OptionalLogin as SilentLogin when using a service account private key.
+// OptionalLogin as SilentLogin when using a service account private key or
+// an external credential helper.
 func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
 	// a.opts.Method is modified under a lock, need to grab the lock to avoid a
 	// race. Note that a.loginMode is immutable and can be read outside the
@@ -1230,7 +1283,7 @@ func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
 	lm = a.loginMode
 	if lm == OptionalLogin {
 		a.lock.RLock()
-		if a.opts.Method == ServiceAccountMethod {
+		if a.opts.Method == ServiceAccountMethod || a.opts.Method == CredentialHelperMethod {
 			lm = SilentLogin
 		}
 		a.lock.RUnlock()
@@ -1420,10 +1473,11 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 	}
 
 	// To give a context to "Minting a new token" messages and similar below.
-	ctx = logging.SetFields(ctx, logging.Fields{
-		"key":    cacheKey.Key,
-		"scopes": strings.Join(cacheKey.Scopes, " "),
-	})
+	fields := logging.Fields{"key": cacheKey.Key}
+	if len(cacheKey.Scopes) != 0 {
+		fields["scopes"] = strings.Join(cacheKey.Scopes, " ")
+	}
+	ctx = logging.SetFields(ctx, fields)
 
 	// Check that the token still need a refresh and do it (under the lock).
 	tok, cacheIt, err := func() (*internal.Token, bool, error) {
@@ -1683,6 +1737,8 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 			scopes,
 			audience,
 			opts.Transport)
+	case CredentialHelperMethod:
+		return newCredHelperTokenProvider(opts.CredentialHelper)
 	default:
 		return nil, errors.Reason("unrecognized authentication method: %s", opts.Method).Err()
 	}

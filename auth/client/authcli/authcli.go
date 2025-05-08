@@ -95,9 +95,11 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
@@ -128,6 +130,10 @@ type CommandParams struct {
 	//
 	// This is primarily used by `luci-auth` executable.
 	UseIDTokenFlags bool
+
+	// UseCredentialHelperFlags specifies whether to register flags related to
+	// external credential helpers.
+	UseCredentialHelperFlags bool
 }
 
 // Flags defines command line flags related to authentication.
@@ -143,6 +149,9 @@ type Flags struct {
 	hasIDTokenFlags bool   // true if registered -use-id-token flag
 	useIDToken      bool   // value of -use-id-token
 	audience        string // value of -audience
+
+	hasCredHelperFlags bool   // true if registered -credential-helper flag
+	credHelper         string // value of -credential-helper
 }
 
 // Register adds auth related flags to a FlagSet.
@@ -175,6 +184,13 @@ func (fl *Flags) RegisterIDTokenFlags(f *flag.FlagSet) {
 		"An audience to put into ID tokens. Ignored when not using ID tokens.")
 }
 
+// RegisterCredentialHelperFlags adds flags related to credential helpers.
+func (fl *Flags) RegisterCredentialHelperFlags(f *flag.FlagSet) {
+	fl.hasCredHelperFlags = true
+	f.StringVar(&fl.credHelper, "credential-helper", "",
+		"A specification of an external credential helper to use for minting authentication tokens. Experimental.")
+}
+
 // Options returns auth.Options populated based on parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
@@ -198,6 +214,17 @@ func (fl *Flags) Options() (auth.Options, error) {
 	if fl.hasIDTokenFlags {
 		opts.UseIDTokens = fl.useIDToken
 		opts.Audience = fl.audience
+	}
+
+	if fl.hasCredHelperFlags && fl.credHelper != "" {
+		var cfg credhelperpb.Config
+		if err := prototext.Unmarshal([]byte(fl.credHelper), &cfg); err != nil {
+			return auth.Options{}, fmt.Errorf("bad -credential-helper value %q: %w", fl.credHelper, err)
+		}
+		if err := auth.CheckCredentialHelperConfig(&cfg); err != nil {
+			return auth.Options{}, fmt.Errorf("bad -credential-helper value %q: %w", fl.credHelper, err)
+		}
+		opts.CredentialHelper = &cfg
 	}
 
 	return opts, nil
@@ -254,6 +281,9 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 	}
 	if c.params.UseIDTokenFlags {
 		c.flags.RegisterIDTokenFlags(&c.Flags)
+	}
+	if c.params.UseCredentialHelperFlags {
+		c.flags.RegisterCredentialHelperFlags(&c.Flags)
 	}
 }
 
