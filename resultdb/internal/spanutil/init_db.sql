@@ -269,7 +269,7 @@ CREATE TABLE TestResults (
   Status INT64 NOT NULL,
 
   -- Test status V2, see `status_v2` in test_result.proto.
-  StatusV2 INT64,
+  StatusV2 INT64 NOT NULL,
 
   -- Compressed summary of the test result for humans, in HTML.
   -- See span.Compressed type for details of compression.

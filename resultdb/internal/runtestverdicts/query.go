@@ -351,7 +351,6 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 	return it.Do(func(r *spanner.Row) error {
 		tr := &pb.TestResult{}
 		var isUnexpected spanner.NullBool
-		var statusV2 spanner.NullInt64
 		var durationMicros spanner.NullInt64
 		var skipReason spanner.NullInt64
 
@@ -362,7 +361,7 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			&tr.ResultId,
 			&isUnexpected,
 			&tr.Status,
-			&statusV2,
+			&tr.StatusV2,
 			&summaryHTML,
 			&tr.StartTime,
 			&durationMicros,
@@ -382,7 +381,6 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 
 		tr.Name = trName
 		testresults.PopulateExpectedField(tr, isUnexpected)
-		testresults.PopulateStatusV2Field(tr, statusV2)
 		tr.SummaryHtml = string(summaryHTML)
 		testresults.PopulateDurationField(tr, durationMicros)
 		if err := testresults.PopulateTestMetadata(tr, tmd); err != nil {

@@ -198,6 +198,7 @@ func TestResultMessagesLegacy(t testing.TB, trs []*pb.TestResult) []*spanner.Mut
 			"VariantHash":     pbutil.VariantHash(tr.Variant),
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          tr.Status,
+			"StatusV2":        tr.StatusV2,
 			"Tags":            tr.Tags,
 			"StartTime":       tr.StartTime,
 			"SummaryHtml":     spanutil.Compressed(tr.SummaryHtml),
@@ -429,6 +430,28 @@ func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.T
 			panic(errors.Annotate(err, "parse test variant identifier").Err())
 		}
 
+		expected := status == pb.TestStatus_PASS
+
+		// This implements the backfill applied to legacy data in b/410660296#comment22.
+		var statusV2 pb.TestResult_Status
+		if expected {
+			if status == pb.TestStatus_SKIP {
+				// Expected skip.
+				statusV2 = pb.TestResult_SKIPPED
+			} else {
+				// Expected pass, fail, crash, abort.
+				statusV2 = pb.TestResult_PASSED
+			}
+		} else {
+			if status == pb.TestStatus_SKIP {
+				// Unexpected skip.
+				statusV2 = pb.TestResult_EXECUTION_ERRORED
+			} else {
+				// Unexpected pass, fail, crash, abort.
+				statusV2 = pb.TestResult_FAILED
+			}
+		}
+
 		trs[i] = &pb.TestResult{
 			Name:             pbutil.TestResultName(invID, testID, resultID),
 			TestId:           testID,
@@ -438,13 +461,13 @@ func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.T
 			VariantHash:      pbutil.VariantHash(v),
 			Expected:         status == pb.TestStatus_PASS,
 			Status:           status,
-			// StatusV2 was added in ~May 2025 and may not be set for older results.
-			Duration:      &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-			SummaryHtml:   "SummaryHtml",
-			TestMetadata:  &pb.TestMetadata{Name: "testname"},
-			FailureReason: reason,
-			Properties:    &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
-			SkipReason:    skipReason,
+			StatusV2:         statusV2,
+			Duration:         &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			SummaryHtml:      "SummaryHtml",
+			TestMetadata:     &pb.TestMetadata{Name: "testname"},
+			FailureReason:    reason,
+			Properties:       &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "value"}}}},
+			SkipReason:       skipReason,
 		}
 	}
 	return trs

@@ -155,7 +155,7 @@ type tvResult struct {
 	ResultID            string
 	IsUnexpected        spanner.NullBool
 	Status              int64
-	StatusV2            spanner.NullInt64
+	StatusV2            int64
 	StartTime           spanner.NullTime
 	RunDurationUsec     spanner.NullInt64
 	SummaryHTML         []byte
@@ -291,6 +291,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	tr := &pb.TestResult{
 		ResultId: r.ResultID,
 		Status:   pb.TestStatus(r.Status),
+		StatusV2: pb.TestResult_Status(r.StatusV2),
 	}
 	tr.Name = pbutil.TestResultName(
 		string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
@@ -299,7 +300,6 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		tr.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
 	}
 
-	testresults.PopulateStatusV2Field(tr, r.StatusV2)
 	testresults.PopulateExpectedField(tr, r.IsUnexpected)
 	testresults.PopulateDurationField(tr, r.RunDurationUsec)
 	testresults.PopulateSkipReasonField(tr, r.SkipReason)

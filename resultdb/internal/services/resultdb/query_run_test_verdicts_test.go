@@ -124,6 +124,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 							ResultId:    "1",
 							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
 							Status:      pb.TestStatus_CRASH,
+							StatusV2:    pb.TestResult_FAILED,
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								// Legacy test result: no Kind set.
@@ -140,6 +141,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
 							Expected:    true,
 							Status:      pb.TestStatus_PASS,
+							StatusV2:    pb.TestResult_PASSED,
 							SummaryHtml: "SummaryHtml",
 							Properties:  properties,
 						},

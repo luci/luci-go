@@ -72,7 +72,7 @@ func TestListTestResults(t *testing.T) {
 			insert.Invocation("reqx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 		)
 		trs := insertTestResults(ctx, t, "req", "DoBaz", 0,
-			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
+			[]pb.TestResult_Status{pb.TestResult_PASSED, pb.TestResult_FAILED})
 
 		srv := newTestResultDBService()
 
@@ -115,7 +115,7 @@ func TestListTestResults(t *testing.T) {
 
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
-func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
+func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, testName string, startID int, statuses []pb.TestResult_Status) []*pb.TestResult {
 	t.Helper()
 	trs := make([]*pb.TestResult, len(statuses))
 	ms := make([]*spanner.Mutation, len(statuses))
@@ -140,8 +140,9 @@ func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, 
 			},
 			Variant:     v,
 			VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1", "k2", "v2")),
-			Expected:    status == pb.TestStatus_PASS,
-			Status:      status,
+			Expected:    status == pb.TestResult_PASSED,
+			Status:      pb.TestStatus_FAIL,
+			StatusV2:    status,
 			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
 		}
 
@@ -152,7 +153,8 @@ func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, 
 			"Variant":         trs[i].Variant,
 			"VariantHash":     pbutil.VariantHash(trs[i].Variant),
 			"CommitTimestamp": spanner.CommitTimestamp,
-			"Status":          status,
+			"Status":          pb.TestStatus_FAIL,
+			"StatusV2":        status,
 			"RunDurationUsec": 1e6*i + 234567,
 		}
 		if !trs[i].Expected {

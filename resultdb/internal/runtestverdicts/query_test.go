@@ -168,11 +168,11 @@ func TestQuery(t *testing.T) {
 				Results: []*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:     "invocations/a/tests/C/results/0",
-							ResultId: "0",
-							Duration: &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							Status:   pb.TestStatus_SKIP,
-							// Legacy result: Status V2 is not set.
+							Name:        "invocations/a/tests/C/results/0",
+							ResultId:    "0",
+							Duration:    &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							Status:      pb.TestStatus_SKIP,
+							StatusV2:    pb.TestResult_EXECUTION_ERRORED,
 							SummaryHtml: "SummaryHtml",
 							Properties:  properties,
 							SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
@@ -180,11 +180,11 @@ func TestQuery(t *testing.T) {
 					},
 					{
 						Result: &pb.TestResult{
-							Name:     "invocations/a/tests/C/results/1",
-							ResultId: "1",
-							Duration: &durationpb.Duration{Seconds: 1, Nanos: 234567000},
-							Status:   pb.TestStatus_CRASH,
-							// Legacy result: Status V2 is not set.
+							Name:        "invocations/a/tests/C/results/1",
+							ResultId:    "1",
+							Duration:    &durationpb.Duration{Seconds: 1, Nanos: 234567000},
+							Status:      pb.TestStatus_CRASH,
+							StatusV2:    pb.TestResult_FAILED,
 							SummaryHtml: "SummaryHtml",
 							FailureReason: &pb.FailureReason{
 								// Legacy test result: Kind is not set.

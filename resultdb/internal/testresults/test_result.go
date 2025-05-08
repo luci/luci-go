@@ -73,7 +73,6 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	}
 	var (
 		maybeUnexpected     spanner.NullBool
-		statusV2            spanner.NullInt64
 		micros              spanner.NullInt64
 		summaryHTML         spanutil.Compressed
 		tmd                 spanutil.Compressed
@@ -88,7 +87,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		"VariantHash":         &tr.VariantHash,
 		"IsUnexpected":        &maybeUnexpected,
 		"Status":              &tr.Status,
-		"StatusV2":            &statusV2,
+		"StatusV2":            &tr.StatusV2,
 		"SummaryHTML":         &summaryHTML,
 		"StartTime":           &tr.StartTime,
 		"RunDurationUsec":     &micros,
@@ -115,7 +114,6 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 
 	tr.SummaryHtml = string(summaryHTML)
 	PopulateExpectedField(tr, maybeUnexpected)
-	PopulateStatusV2Field(tr, statusV2)
 	PopulateDurationField(tr, micros)
 	PopulateSkipReasonField(tr, skipReason)
 	if err := PopulateTestMetadata(tr, tmd); err != nil {
@@ -155,14 +153,6 @@ func PopulateSkipReasonField(tr *pb.TestResult, skipReason spanner.NullInt64) {
 // PopulateExpectedField populates tr.Expected from NullBool.
 func PopulateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
-}
-
-// PopulateStatusV2Field populates tr.StatusV2 from NullInt64.
-func PopulateStatusV2Field(tr *pb.TestResult, statusV2 spanner.NullInt64) {
-	tr.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
-	if statusV2.Valid {
-		tr.StatusV2 = pb.TestResult_Status(statusV2.Int64)
-	}
 }
 
 func PopulateTestMetadata(tr *pb.TestResult, tmd spanutil.Compressed) error {

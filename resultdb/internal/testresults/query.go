@@ -210,7 +210,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	parser = func(row *spanner.Row) (*pb.TestResult, error) {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
-		var statusV2 spanner.NullInt64
 		var micros spanner.NullInt64
 		var skipReason spanner.NullInt64
 		tr := &pb.TestResult{}
@@ -222,7 +221,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
-			&statusV2,
+			&tr.StatusV2,
 			&tr.StartTime,
 			&micros,
 		}
@@ -268,7 +267,6 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		tr.TestIdStructured = tvID
 		tr.SummaryHtml = string(summaryHTML)
 		PopulateExpectedField(tr, maybeUnexpected)
-		PopulateStatusV2Field(tr, statusV2)
 		PopulateDurationField(tr, micros)
 		PopulateSkipReasonField(tr, skipReason)
 		if err := PopulateTestMetadata(tr, tmd); err != nil {

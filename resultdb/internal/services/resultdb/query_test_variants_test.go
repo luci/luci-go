@@ -294,7 +294,7 @@ func TestQueryTestVariants(t *testing.T) {
 								Name:     "invocations/inv4/tests/T1004/results/0",
 								ResultId: "0",
 								Status:   pb.TestStatus_FAIL,
-								StatusV2: pb.TestResult_STATUS_UNSPECIFIED, // Legacy results currently do not have this field populated in the database.
+								StatusV2: pb.TestResult_FAILED,
 								Duration: duration,
 								FailureReason: &pb.FailureReason{
 									// This is a legacy result, Kind is not populated.
