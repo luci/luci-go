@@ -109,6 +109,7 @@ type TestResult struct {
 	IsUnexpected         bool
 	RunDuration          *time.Duration
 	Status               pb.TestResultStatus
+	StatusV2             pb.TestResult_Status
 	// Properties of the test verdict (stored denormalised) follow.
 	ExonerationReasons []pb.ExonerationReason
 	Sources            Sources
@@ -124,7 +125,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 	fields := []string{
 		"Project", "TestId", "PartitionTime", "VariantHash", "IngestedInvocationId",
 		"RunIndex", "ResultIndex",
-		"IsUnexpected", "RunDurationUsec", "Status",
+		"IsUnexpected", "RunDurationUsec", "Status", "StatusV2",
 		"ExonerationReasons",
 		"SourceRefHash", "SourcePosition",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
@@ -137,6 +138,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			tr := &TestResult{}
 			var runDurationUsec spanner.NullInt64
 			var isUnexpected spanner.NullBool
+			var statusV2 spanner.NullInt64
 			var sourceRefHash []byte
 			var sourcePosition spanner.NullInt64
 			var changelistHosts []string
@@ -149,7 +151,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				row,
 				&tr.Project, &tr.TestID, &tr.PartitionTime, &tr.VariantHash, &tr.IngestedInvocationID,
 				&tr.RunIndex, &tr.ResultIndex,
-				&isUnexpected, &runDurationUsec, &tr.Status,
+				&isUnexpected, &runDurationUsec, &tr.Status, &statusV2,
 				&tr.ExonerationReasons,
 				&sourceRefHash, &sourcePosition,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
@@ -163,6 +165,9 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			if runDurationUsec.Valid {
 				runDuration := time.Microsecond * time.Duration(runDurationUsec.Int64)
 				tr.RunDuration = &runDuration
+			}
+			if statusV2.Valid {
+				tr.StatusV2 = pb.TestResult_Status(statusV2.Int64)
 			}
 			tr.IsUnexpected = isUnexpected.Valid && isUnexpected.Bool
 			tr.IsFromBisection = isFromBisection.Valid && isFromBisection.Bool
@@ -212,7 +217,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 var TestResultSaveCols = []string{
 	"Project", "TestId", "PartitionTime", "VariantHash",
 	"IngestedInvocationId", "RunIndex", "ResultIndex",
-	"IsUnexpected", "RunDurationUsec", "Status",
+	"IsUnexpected", "RunDurationUsec", "Status", "StatusV2",
 	"ExonerationReasons",
 	"SourceRefHash", "SourcePosition",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
@@ -271,7 +276,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	vals := []any{
 		tr.Project, tr.TestID, tr.PartitionTime, tr.VariantHash,
 		tr.IngestedInvocationID, tr.RunIndex, tr.ResultIndex,
-		isUnexpected, runDurationUsec, int64(tr.Status),
+		isUnexpected, runDurationUsec, int64(tr.Status), int64(tr.StatusV2),
 		spanutil.ToSpanner(exonerationReasons),
 		sourceRefHash, sourcePosition,
 		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,

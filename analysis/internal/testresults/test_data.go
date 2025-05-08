@@ -141,7 +141,8 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 				WithPartitionTime(partitionTime).
 				WithIngestedInvocationID(invId).
 				WithSubRealm("realm").
-				WithStatus(pb.TestResultStatus_PASS)
+				WithStatus(pb.TestResultStatus_PASS).
+				WithStatusV2(pb.TestResult_PASSED)
 
 			var changelists []Changelist
 			for _, clNum := range changeListNumber {

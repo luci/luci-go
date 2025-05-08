@@ -111,6 +111,7 @@ func TestTestHistoryServer(t *testing.T) {
 					WithIngestedInvocationID(invId).
 					WithSubRealm(subRealm).
 					WithStatus(pb.TestResultStatus_PASS).
+					WithStatusV2(pb.TestResult_PASSED).
 					WithIsFromBisection(isFromBisection).
 					WithoutRunDuration()
 				if hasUnsubmittedChanges {

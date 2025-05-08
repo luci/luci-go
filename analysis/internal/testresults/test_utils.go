@@ -118,6 +118,11 @@ func (b TestResultBuilder) WithStatus(status pb.TestResultStatus) TestResultBuil
 	return b
 }
 
+func (b TestResultBuilder) WithStatusV2(statusV2 pb.TestResult_Status) TestResultBuilder {
+	b.result.StatusV2 = statusV2
+	return b
+}
+
 func (b TestResultBuilder) WithExonerationReasons(exonerationReasons ...pb.ExonerationReason) TestResultBuilder {
 	b.result.ExonerationReasons = exonerationReasons
 	return b

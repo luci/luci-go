@@ -687,6 +687,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(3*time.Second+1*time.Microsecond).
 			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
@@ -698,6 +699,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(false).
+			WithStatusV2(pb.TestResult_PASSED).
 			WithStatus(pb.TestResultStatus_PASS).
 			WithRunDuration(5 * time.Second).
 			WithoutExoneration().
@@ -708,6 +710,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(false).
+			WithStatusV2(pb.TestResult_SKIPPED).
 			WithStatus(pb.TestResultStatus_SKIP).
 			WithoutRunDuration().
 			WithoutExoneration().
@@ -718,6 +721,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_PASS).
 			WithoutRunDuration().
 			WithoutExoneration().
@@ -728,6 +732,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithoutRunDuration().
 			WithoutExoneration().
@@ -738,6 +743,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(1).
 			WithResultIndex(0).
 			WithIsUnexpected(false).
+			WithStatusV2(pb.TestResult_PASSED).
 			WithStatus(pb.TestResultStatus_PASS).
 			WithoutRunDuration().
 			WithoutExoneration().
@@ -748,6 +754,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(2 * time.Second).
 			WithoutExoneration().
@@ -758,6 +765,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(1 * time.Second).
 			WithoutExoneration().
@@ -768,6 +776,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(10 * time.Second).
 			WithoutExoneration().
@@ -778,6 +787,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(1).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(11 * time.Second).
 			WithoutExoneration().
@@ -788,6 +798,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(1).
 			WithResultIndex(0).
 			WithIsUnexpected(false).
+			WithStatusV2(pb.TestResult_PASSED).
 			WithStatus(pb.TestResultStatus_PASS).
 			WithRunDuration(12 * time.Second).
 			WithoutExoneration().
@@ -798,6 +809,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_FAIL).
 			WithRunDuration(4 * time.Second).
 			WithoutExoneration().
@@ -808,6 +820,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_EXECUTION_ERRORED).
 			WithStatus(pb.TestResultStatus_SKIP).
 			WithoutRunDuration().
 			WithoutExoneration().
@@ -818,6 +831,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunIndex(0).
 			WithResultIndex(0).
 			WithIsUnexpected(true).
+			WithStatusV2(pb.TestResult_FAILED).
 			WithStatus(pb.TestResultStatus_PASS).
 			WithoutRunDuration().
 			WithoutExoneration().

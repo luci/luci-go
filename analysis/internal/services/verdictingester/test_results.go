@@ -220,6 +220,7 @@ func batchTestResults(ingestion *IngestionContext, testVariants []*rdbpb.TestVar
 					ResultIndex:          int64(resultIndex),
 					IsUnexpected:         !inputTR.Result.Expected,
 					Status:               pbutil.LegacyTestStatusFromResultDB(inputTR.Result.Status),
+					StatusV2:             pbutil.TestStatusV2FromResultDB(inputTR.Result.StatusV2),
 					ExonerationReasons:   exonerationReasons,
 					SubRealm:             ingestion.SubRealm,
 					IsFromBisection:      isFromBisection,

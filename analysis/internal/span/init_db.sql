@@ -418,6 +418,9 @@ CREATE TABLE TestResults (
   -- The test result status.
   Status INT64 NOT NULL,
 
+  -- The test result status (v2).
+  StatusV2 INT64,
+
   -- The reasons (if any) the test verdict was exonerated.
   -- If this array is null, the test verdict was not exonerated.
   -- (Non-null) empty array values are not used.
