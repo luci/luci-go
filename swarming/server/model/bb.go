@@ -147,7 +147,6 @@ func SetBBTaskStatus(state apipb.TaskState, failure bool, bbTask *bbpb.Task) {
 	case apipb.TaskState_COMPLETED:
 		if failure {
 			bbTask.Status = bbpb.Status_FAILURE
-			bbTask.SummaryMarkdown = "Task completed with failure."
 		} else {
 			bbTask.Status = bbpb.Status_SUCCESS
 		}

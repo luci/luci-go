@@ -131,7 +131,7 @@ func TestTaskBackendFetchTasks(t *testing.T) {
 			))
 		assert.Loosely(t, resp.Responses[2].GetTask(),
 			should.Match(
-				expectedTask("failure-0", "COMPLETED-0s", bbpb.Status_FAILURE, "Task completed with failure."),
+				expectedTask("failure-0", "COMPLETED-0s", bbpb.Status_FAILURE, ""),
 			))
 		assert.Loosely(t, resp.Responses[3].GetTask(),
 			should.Match(
