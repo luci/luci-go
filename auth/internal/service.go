@@ -77,6 +77,14 @@ func (p *serviceAccountTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
+func (p *serviceAccountTokenProvider) RequiresWarmup() bool {
+	// TODO: This should really be "true" to proactively verify the private key
+	// hasn't been revoked yet, but changing this can likely break some fragile
+	// existing code that constructs an authenticator, but doesn't use it, so
+	// leave it as "false" to avoid dealing with this situation.
+	return false
+}
+
 func (p *serviceAccountTokenProvider) MemoryCacheOnly() bool {
 	return false
 }

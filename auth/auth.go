@@ -864,6 +864,9 @@ func (a *Authenticator) CheckLoginRequired() error {
 	if err := a.ensureInitialized(); err != nil {
 		return err
 	}
+	if err := a.warmupTokens(); err != nil {
+		return err
+	}
 
 	// No cached base token and the token provider requires interaction with the
 	// user: need to login. Only non-interactive token providers are allowed to
@@ -1120,6 +1123,12 @@ func (a *Authenticator) ensureInitialized() error {
 		}
 	}
 
+	return nil
+}
+
+// warmupTokens loads tokens from the cache or mints them if the provider has
+// RequiresWarmup() set to true and RequiresInteraction() set to false.
+func (a *Authenticator) warmupTokens() error {
 	// Fetch any existing tokens from the cache.
 	if err := a.baseToken.fetchFromCache(a.ctx); err != nil {
 		logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", err)
@@ -1129,10 +1138,32 @@ func (a *Authenticator) ensureInitialized() error {
 			logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", err)
 		}
 	}
+
+	// Mint the base token if necessary. Note that warming up derived tokens
+	// is not supported currently, they will be minted on first actual use. Only
+	// warmup `a.baseToken`.
+	if a.baseToken.token == nil &&
+		!a.baseToken.provider.RequiresInteraction() &&
+		a.baseToken.provider.RequiresWarmup() {
+		logging.Debugf(a.ctx, "Minting the initial token")
+		var err error
+		a.baseToken.token, err = a.baseToken.provider.MintToken(a.ctx, nil)
+		if err != nil {
+			return err
+		}
+		if err := a.baseToken.putToCache(a.ctx); err != nil {
+			logging.Warningf(a.ctx, "Failed to write token to cache: %s", err)
+		}
+	}
+
 	return nil
 }
 
 // doLoginIfRequired optionally performs an interactive login.
+//
+// It makes sure the authenticator is fully initialized, with tokens loaded
+// from the cache (or minted if absent in the cache and the token provider has
+// RequiresWarmup() set to true).
 //
 // This is the main place where LoginMode handling is performed. Used by various
 // factories (Transport, PerRPCCredentials, TokenSource, ...).
@@ -1148,11 +1179,20 @@ func (a *Authenticator) ensureInitialized() error {
 //	(false, nil) to disable authentication (for OptionalLogin mode).
 //	(false, err) on errors.
 func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err error) {
-	err = a.CheckLoginRequired() // also initializes guts for effectiveLoginMode()
+	// CheckLoginRequired initializes guts of the authenticator, constructs the
+	// token provider, fetches tokens from the cache or proactively mints them
+	// through the token provider (if it has RequiresWarmup() set to true).
+	err = a.CheckLoginRequired()
+
+	// Upgrade OptionalLogin to SilentLogin depending on what token provider is
+	// used (some are always expected to produce tokens) and what credential
+	// propagation mechanism is used (some can't be used without a token, this
+	// is conveyed by `requireAuth` argument).
 	effectiveMode := a.effectiveLoginMode()
 	if requiresAuth && effectiveMode == OptionalLogin {
 		effectiveMode = SilentLogin
 	}
+
 	switch {
 	case err == nil:
 		return true, nil // have a valid cached base token
@@ -1167,9 +1207,13 @@ func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err 
 	case effectiveMode != InteractiveLogin:
 		return false, errors.Reason("invalid mode argument: %s", effectiveMode).Err()
 	}
+
+	// Ask the user to do the login flow. As already checked, we are in
+	// InteractiveLogin mode, so blocking on the user is acceptable.
 	if err := a.Login(); err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -1220,6 +1264,9 @@ func (a *Authenticator) currentToken() (tok *internal.Token, err error) {
 		a.lock.Lock()
 		defer a.lock.Unlock()
 		if err = a.ensureInitialized(); err != nil {
+			return nil, err
+		}
+		if err = a.warmupTokens(); err != nil {
 			return nil, err
 		}
 		return a.authToken.token, nil

@@ -565,6 +565,42 @@ func TestTransport(t *testing.T) {
 	})
 }
 
+func TestRequiresWarmupProvider(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Mints the token eagerly: OK", func(t *testing.T) {
+		tokenProvider := &fakeTokenProvider{
+			requiresWarmup: true,
+			revokedCreds:   false,
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		_, err := auth.Transport()
+		assert.NoErr(t, err)
+	})
+
+	t.Run("Mints the token eagerly: fail early", func(t *testing.T) {
+		tokenProvider := &fakeTokenProvider{
+			requiresWarmup: true,
+			revokedCreds:   true,
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		_, err := auth.Transport()
+		assert.That(t, err, should.ErrLike(internal.ErrBadCredentials))
+	})
+
+	t.Run("Mints the token lazily: fail late", func(t *testing.T) {
+		tokenProvider := &fakeTokenProvider{
+			requiresWarmup: false,
+			revokedCreds:   true,
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		rt, err := auth.Transport()
+		assert.NoErr(t, err)
+		_, err = rt.RoundTrip(&http.Request{})
+		assert.That(t, err, should.ErrLike(internal.ErrBadCredentials))
+	})
+}
+
 func TestOptionalLogin(t *testing.T) {
 	t.Parallel()
 
@@ -829,6 +865,7 @@ func cacheToken(a *Authenticator, p internal.TokenProvider, tok *internal.Token)
 
 type fakeTokenProvider struct {
 	interactive            bool
+	requiresWarmup         bool
 	revokedCreds           bool
 	revokedToken           bool
 	transientRefreshErrors int
@@ -847,6 +884,10 @@ type fakeTokenProvider struct {
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
 	return p.interactive
+}
+
+func (p *fakeTokenProvider) RequiresWarmup() bool {
+	return p.requiresWarmup
 }
 
 func (p *fakeTokenProvider) MemoryCacheOnly() bool {

@@ -55,6 +55,10 @@ func (p *iamTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
+func (p *iamTokenProvider) RequiresWarmup() bool {
+	return false
+}
+
 func (p *iamTokenProvider) MemoryCacheOnly() bool {
 	return false
 }

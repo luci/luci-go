@@ -83,6 +83,10 @@ func (p *luciTSTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
+func (p *luciTSTokenProvider) RequiresWarmup() bool {
+	return false
+}
+
 func (p *luciTSTokenProvider) MemoryCacheOnly() bool {
 	return false
 }

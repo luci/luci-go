@@ -74,6 +74,10 @@ func (p *loginSessionTokenProvider) RequiresInteraction() bool {
 	return true
 }
 
+func (p *loginSessionTokenProvider) RequiresWarmup() bool {
+	return false
+}
+
 func (p *loginSessionTokenProvider) MemoryCacheOnly() bool {
 	return false
 }

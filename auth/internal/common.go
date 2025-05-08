@@ -94,6 +94,24 @@ type TokenProvider interface {
 	// interaction in its MintToken implementation.
 	RequiresInteraction() bool
 
+	// RequiresWarmup is true if MintToken should be called right when
+	// constructing the authenticator (and not lazily when an authentication token
+	// is needed for the first time).
+	//
+	// If there's a cached token already, has no effect (the cached token is
+	// used until it expires). If RequiresInteraction is true, has no effect
+	// (warming up such a token will require user interactions, this situation
+	// will result in ErrLoginRequired error).
+	//
+	// This is useful for token providers that can't certainly tell if they are
+	// configured correctly before they are actually used to mint a token.
+	//
+	// If RequiresWarmup is true and token provider's MintToken is failing,
+	// the error will surface during the initialization (e.g. when constructing
+	// the per-RPC credentials), not when the token is used (e.g. when making
+	// the first RPC that tries to use the per-RPC credentials).
+	RequiresWarmup() bool
+
 	// MemoryCacheOnly is true if the token should be stored only in the memory
 	// cache (not in the disk cache).
 	//

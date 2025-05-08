@@ -164,6 +164,10 @@ func (p *gceTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
+func (p *gceTokenProvider) RequiresWarmup() bool {
+	return false
+}
+
 func (p *gceTokenProvider) MemoryCacheOnly() bool {
 	return true
 }

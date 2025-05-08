@@ -106,6 +106,10 @@ func (p *luciContextTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
+func (p *luciContextTokenProvider) RequiresWarmup() bool {
+	return false
+}
+
 func (p *luciContextTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
