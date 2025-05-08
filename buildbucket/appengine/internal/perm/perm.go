@@ -21,6 +21,7 @@ package perm
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -44,29 +45,38 @@ import (
 )
 
 const (
-	// Administrators is a group of users that have all permissions in all
-	// buckets.
+	// Administrators is a group of users that have read & cancel permissions
+	// in all buckets.
 	Administrators = "administrators"
 )
 
-// Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
-//
-// Missing buckets are represented by empty pb.Bucket protos.
-var bucketCache = layered.RegisterCache(layered.Parameters[*pb.Bucket]{
-	ProcessCacheCapacity: 65536,
-	GlobalNamespace:      "bucket_cache_v1",
-	Marshal: func(item *pb.Bucket) ([]byte, error) {
-		return proto.Marshal(item)
-	},
-	Unmarshal: func(blob []byte) (*pb.Bucket, error) {
-		pb := &pb.Bucket{}
-		if err := proto.Unmarshal(blob, pb); err != nil {
-			return nil, err
-		}
-		return pb, nil
-	},
-	AllowNoProcessCacheFallback: true, // allow skipping cache in tests
-})
+var (
+	// Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
+	//
+	// Missing buckets are represented by empty pb.Bucket protos.
+	bucketCache = layered.RegisterCache(layered.Parameters[*pb.Bucket]{
+		ProcessCacheCapacity: 65536,
+		GlobalNamespace:      "bucket_cache_v1",
+		Marshal: func(item *pb.Bucket) ([]byte, error) {
+			return proto.Marshal(item)
+		},
+		Unmarshal: func(blob []byte) (*pb.Bucket, error) {
+			pb := &pb.Bucket{}
+			if err := proto.Unmarshal(blob, pb); err != nil {
+				return nil, err
+			}
+			return pb, nil
+		},
+		AllowNoProcessCacheFallback: true, // allow skipping cache in tests
+	})
+
+	// Permissions granted to admin users in all buckets, including canceling
+	// a build and reading details of a build or builder.
+	AdminPerms = []realms.Permission{
+		bbperms.BuildsCancel, bbperms.BuildsGet, bbperms.BuildsList,
+		bbperms.BuildersGet, bbperms.BuildersList,
+	}
+)
 
 // getBucket fetches a cached bucket proto.
 //
@@ -144,17 +154,22 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 		return nil
 	}
 
-	// For compatibility with legacy ACLs, administrators have implicit access to
-	// everything. Log when this rule is invoked, since it's surprising and it
-	// something we might want to get rid of after everything is migrated to
-	// Realms.
+	// Administrators have the ability to cancel any build, and to read details
+	// of any build or builder in any bucket.
 	switch is, err := auth.IsMember(ctx, Administrators); {
 	case err != nil:
 		return errors.Annotate(err, "failed to check group membership in %q", Administrators).Err()
 	case is:
-		logging.Warningf(ctx, "ADMIN_FALLBACK: perm=%q bucket=%q caller=%q",
-			perm, project+"/"+bucket, auth.CurrentIdentity(ctx))
-		return nil
+		if slices.Contains(AdminPerms, perm) {
+			// Log when this rule is invoked, since it's surprising.
+			logging.Warningf(ctx, "ADMIN_FALLBACK: perm=%q bucket=%q caller=%q",
+				perm, project+"/"+bucket, auth.CurrentIdentity(ctx))
+			return nil
+		}
+		// Give a detailed error message because the caller is an administrator.
+		return appstatus.Errorf(codes.PermissionDenied,
+			"%q does not have permission %q in bucket %q",
+			auth.CurrentIdentity(ctx), perm, project+"/"+bucket)
 	}
 
 	// The user doesn't have the requested permission. Give a detailed error

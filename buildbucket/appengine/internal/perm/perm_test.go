@@ -125,6 +125,13 @@ func TestHasInBucket(t *testing.T) {
 				assert.Loosely(t, check(existingBucketID, bbperms.BuildsGet, writer), should.Equal(codes.OK))
 			})
 
+			t.Run("Create perm", func(t *ftt.Test) {
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCreate, anon), should.Equal(codes.NotFound))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCreate, admin), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCreate, reader), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCreate, writer), should.Equal(codes.PermissionDenied))
+			})
+
 			t.Run("Write perm", func(t *ftt.Test) {
 				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, anon), should.Equal(codes.NotFound))
 				assert.Loosely(t, check(existingBucketID, bbperms.BuildsCancel, admin), should.Equal(codes.OK))
