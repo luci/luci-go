@@ -366,6 +366,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 				BotVersion:          bot.Version,
 				BotLogsCloudProject: r.Session.BotConfig.LogsCloudProject,
 				BotIdleSince:        bot.IdleSince.Get(),
+				BotOwners:           r.BotOwners,
 			})
 
 			if err != nil {

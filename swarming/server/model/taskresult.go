@@ -83,8 +83,6 @@ type TaskResultCommon struct {
 	BotLogsCloudProject string `gae:"bot_logs_cloud_project,noindex"`
 
 	// BotOwners is the list of bot owners from bots.cfg entry for the bot.
-	//
-	// TODO: Populate.
 	BotOwners []string `gae:"bot_owners,noindex"`
 
 	// ServerVersions is a set of server version(s) that touched this entity.

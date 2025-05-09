@@ -310,6 +310,7 @@ func knownBotProvider(ctx context.Context, botID string) (*botsrv.KnownBotInfo, 
 			Dimensions:    info.Dimensions,
 			CurrentTaskID: info.TaskID,
 			LastSeen:      info.LastSeen.Get(),
+			Owners:        info.Owners,
 		}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, nil

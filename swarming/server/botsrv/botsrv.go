@@ -58,6 +58,7 @@ type Request struct {
 	Dimensions    BotDimensions        // bot's "k:v" dimensions as stored in the datastore
 	CurrentTaskID string               // the TaskRunResult key of the current task as store in the datastore
 	BotLastSeen   time.Time            // the last time the server recorded to be contacted by the bot
+	BotOwners     []string             // the last known bot owners from bots.cfg
 }
 
 // BotDimensions is a sorted list of bot's "k:v" dimensions.
@@ -108,6 +109,8 @@ type KnownBotInfo struct {
 	// LastSeen is the last time the server recorded to be contacted by the
 	// bot, if ever.
 	LastSeen time.Time
+	// Owners is the list of bot owners as was pulled from bots.cfg.
+	Owners []string
 }
 
 // KnownBotProvider knows how to return information about existing bots.
@@ -288,6 +291,7 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			Dimensions:    knownBot.Dimensions,
 			CurrentTaskID: knownBot.CurrentTaskID,
 			BotLastSeen:   knownBot.LastSeen,
+			BotOwners:     knownBot.Owners,
 		})
 		if err != nil {
 			writeErr(err, req, wrt, RB(body), session)

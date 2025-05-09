@@ -47,6 +47,8 @@ type ClaimOp struct {
 	BotLogsCloudProject string
 	// BotIdleSince is when this bot finished its previous task.
 	BotIdleSince time.Time
+	// BotOwners is the list of bot owners from bots.cfg.
+	BotOwners []string
 }
 
 // ClaimOpOutcome is returned by ClaimTxn.
@@ -116,6 +118,7 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 			BotDimensions:       op.BotDimensions,
 			BotIdleSince:        datastore.NewUnindexedOptional(idleSince),
 			BotLogsCloudProject: op.BotLogsCloudProject,
+			BotOwners:           op.BotOwners,
 			ServerVersions:      []string{m.serverVersion},
 			CurrentTaskSlice:    int64(ttr.TaskSliceIndex()),
 			Started:             datastore.NewIndexedNullable(now),

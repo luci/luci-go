@@ -134,6 +134,7 @@ func TestClaimOp(t *testing.T) {
 			BotVersion:          "bot-version",
 			BotLogsCloudProject: "bot-logs",
 			BotIdleSince:        testTime.Add(-time.Hour),
+			BotOwners:           []string{"owner-1", "owner-2"},
 		}
 
 		run := func(ttrKey *datastore.Key) *ClaimOpOutcome {
@@ -173,6 +174,7 @@ func TestClaimOp(t *testing.T) {
 					BotDimensions:       claimOp.BotDimensions,
 					BotIdleSince:        datastore.NewUnindexedOptional(claimOp.BotIdleSince),
 					BotLogsCloudProject: claimOp.BotLogsCloudProject,
+					BotOwners:           []string{"owner-1", "owner-2"},
 					ServerVersions:      []string{"cur-version"},
 					CurrentTaskSlice:    1,
 					Started:             datastore.NewIndexedNullable(testTime),
@@ -198,6 +200,7 @@ func TestClaimOp(t *testing.T) {
 					BotDimensions:       claimOp.BotDimensions,
 					BotIdleSince:        datastore.NewUnindexedOptional(claimOp.BotIdleSince),
 					BotLogsCloudProject: claimOp.BotLogsCloudProject,
+					BotOwners:           []string{"owner-1", "owner-2"},
 					ServerVersions:      []string{"cur-version", "prev-version"},
 					CurrentTaskSlice:    1,
 					Started:             datastore.NewIndexedNullable(testTime),
