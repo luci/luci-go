@@ -45,6 +45,10 @@ var botUsernames = []string{
 	"buildbot@chromium.org", // Legacy bot.
 }
 
+// maxAutomaticMessageLengthBytes is the maximum length in bytes for an automatic
+// tree status message.
+const maxAutomaticMessageLengthBytes = 1024
+
 type treeStatus struct {
 	username           string
 	message            string
@@ -373,9 +377,9 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	var message string
 	var closingBuilderName string
 	if newStatus == config.Open {
-		message = fmt.Sprintf("Tree is open (Automatic: %s)", randomMessage(c))
+		message = truncateString(fmt.Sprintf("Tree is open (Automatic: %s", randomMessage(c)), maxAutomaticMessageLengthBytes-1) + ")"
 	} else {
-		message = fmt.Sprintf("Tree is closed (Automatic: %s)", oldestClosed.Message)
+		message = truncateString(fmt.Sprintf("Tree is closed (Automatic: %s", oldestClosed.Message), maxAutomaticMessageLengthBytes-1) + ")"
 		closingBuilderName = generateClosingBuilderName(c, oldestClosed)
 	}
 
@@ -384,6 +388,27 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	}
 	logging.Infof(c, "Would update status for %s to %q", treeName, message)
 	return nil
+}
+
+// truncateString truncates a UTF-8 string to the given number of bytes.
+// If the string is truncated, ellipsis ("...") are added.
+// Truncation is aware of UTF-8 runes and will only truncate whole runes.
+// length must be at least 3 (to leave space for ellipsis, if needed).
+func truncateString(s string, length int) string {
+	if len(s) <= length {
+		return s
+	}
+	// The index (in bytes) at which to begin truncating the string.
+	lastIndex := 0
+	// Find the point where we must truncate from. We only want to
+	// start truncation at the start/end of a rune, not in the middle.
+	// See https://blog.golang.org/strings.
+	for i := range s {
+		if i <= (length - 3) {
+			lastIndex = i
+		}
+	}
+	return s[:lastIndex] + "..."
 }
 
 func generateClosingBuilderName(c context.Context, treeCloser *config.TreeCloser) string {

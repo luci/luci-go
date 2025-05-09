@@ -609,6 +609,90 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, status.status, should.Equal(config.Open))
 			assert.Loosely(t, status.message, should.HavePrefix("Tree is open (Automatic: "))
 		})
+
+		t.Run("Message truncation", func(t *ftt.Test) {
+			longCloseMessage := strings.Repeat("a", 1500)
+			// Prefix: "Tree is closed (Automatic: " (length 27)
+			// Postfix: "(" (length 1)
+			// Expected truncated part of longMessage: 1024 - 27 ("Tree is closed (Automatic: ") - 3 ("...") - 1 = 993 'a's
+			expectedClosedTruncatedMessage := "Tree is closed (Automatic: " + strings.Repeat("a", 993) + "...)"
+			assert.Loosely(t, len(expectedClosedTruncatedMessage), should.Equal(1024))
+
+			tsClose := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0], // Automatic
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(), // Newer than treeStatus.timestamp
+				BuildCreateTime: time.Now().UTC(), // Newer than treeStatus.timestamp
+				Message:         longCloseMessage,
+			}), should.BeNil)
+
+			assert.Loosely(t, updateTrees(c, &tsClose), should.BeNil)
+
+			statusClose, errClose := tsClose.getStatus(c, "chromium")
+			assert.Loosely(t, errClose, should.BeNil)
+			assert.Loosely(t, statusClose.status, should.Equal(config.Closed))
+			assert.Loosely(t, statusClose.message, should.Equal(expectedClosedTruncatedMessage))
+			assert.Loosely(t, len(statusClose.message), should.Equal(1024))
+		})
+
+		t.Run("Message truncation unicode", func(t *ftt.Test) {
+			// Each "é" is 2 bytes in UTF-8.
+			longUnicodeMessage := strings.Repeat("é", 600) // 1200 bytes
+
+			// Prefix: "Tree is closed (Automatic: " (length 27)
+			// Suffix: ")" (length 1)
+			// Ellipsis: "..." (length 3)
+			// Max length for truncateString input: 1024 - 1 = 1023
+			// Max length for the custom part of the message before ellipsis: 1023 - 27 (prefix) - 3 (ellipsis) = 993 bytes.
+			// Number of 'é' (2 bytes) that fit in 993 bytes: floor(993 / 2) = 496 'é's.
+			// Length of 496 'é's: 496 * 2 = 992 bytes.
+			expectedTruncatedUnicodePart := strings.Repeat("é", 496)
+			expectedClosedUnicodeMessage := "Tree is closed (Automatic: " + expectedTruncatedUnicodePart + "...)"
+			// Total length: 27 (prefix) + 992 (truncated unicode part) + 3 (ellipsis) + 1 (suffix) = 1023
+			assert.Loosely(t, len(expectedClosedUnicodeMessage), should.Equal(1023))
+
+			tsCloseUnicode := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0], // Automatic
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(), // Newer than treeStatus.timestamp
+				BuildCreateTime: time.Now().UTC(), // Newer than treeStatus.timestamp
+				Message:         longUnicodeMessage,
+			}), should.BeNil)
+
+			assert.Loosely(t, updateTrees(c, &tsCloseUnicode), should.BeNil)
+
+			statusCloseUnicode, errCloseUnicode := tsCloseUnicode.getStatus(c, "chromium")
+			assert.Loosely(t, errCloseUnicode, should.BeNil)
+			assert.Loosely(t, statusCloseUnicode.status, should.Equal(config.Closed))
+			assert.Loosely(t, statusCloseUnicode.message, should.Equal(expectedClosedUnicodeMessage))
+			assert.Loosely(t, len(statusCloseUnicode.message), should.Equal(1023))
+		})
 	})
 }
 
