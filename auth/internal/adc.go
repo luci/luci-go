@@ -60,8 +60,8 @@ func (p *adcTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 
-func (p *adcTokenProvider) Email() string {
-	return NoEmail
+func (p *adcTokenProvider) Email() (string, error) {
+	return "", ErrUnimplementedEmail
 }
 
 func (p *adcTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
@@ -76,7 +76,7 @@ func (p *adcTokenProvider) MintToken(ctx context.Context, _ *Token) (*Token, err
 	return &Token{
 		Token:   *tok,
 		IDToken: NoIDToken,
-		Email:   NoEmail,
+		Email:   UnknownEmail,
 	}, nil
 }
 

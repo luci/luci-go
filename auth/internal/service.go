@@ -89,21 +89,18 @@ func (p *serviceAccountTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 
-func (p *serviceAccountTokenProvider) Email() string {
+func (p *serviceAccountTokenProvider) Email() (string, error) {
 	switch cfg, err := p.jwtConfig(p.ctx); {
 	case err != nil:
-		// Return UnknownEmail since we couldn't load it. This will trigger a code
-		// path that attempts to refresh the token, where this error will be hit
-		// again and properly reported.
-		return UnknownEmail
+		return "", ErrBadCredentials
 	case cfg.Email == "":
 		// Service account JSON file doesn't have 'email' field. Assume the email
 		// is not available in that case. Strictly speaking we may try to generate
 		// an OAuth token and then ask token info endpoint for an email, but this is
 		// too much work. We require 'email' field to be present instead.
-		return NoEmail
+		return "", ErrNoEmail
 	default:
-		return cfg.Email
+		return cfg.Email, nil
 	}
 }
 

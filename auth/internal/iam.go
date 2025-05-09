@@ -63,8 +63,8 @@ func (p *iamTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 
-func (p *iamTokenProvider) Email() string {
-	return p.actAs
+func (p *iamTokenProvider) Email() (string, error) {
+	return p.actAs, nil
 }
 
 func (p *iamTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
@@ -98,7 +98,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 					Expiry:      time.Unix(claims.Exp, 0),
 				},
 				IDToken: tok,
-				Email:   p.Email(),
+				Email:   p.actAs,
 			}, nil
 		}
 	} else {
@@ -108,7 +108,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 			return &Token{
 				Token:   *tok,
 				IDToken: NoIDToken,
-				Email:   p.Email(),
+				Email:   p.actAs,
 			}, nil
 		}
 	}

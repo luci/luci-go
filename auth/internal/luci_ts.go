@@ -91,8 +91,8 @@ func (p *luciTSTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 
-func (p *luciTSTokenProvider) Email() string {
-	return p.actAs
+func (p *luciTSTokenProvider) Email() (string, error) {
+	return p.actAs, nil
 }
 
 func (p *luciTSTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
@@ -155,7 +155,7 @@ func (p *luciTSTokenProvider) MintToken(ctx context.Context, base *Token) (*Toke
 			TokenType:   "Bearer",
 		},
 		IDToken: idToken,
-		Email:   p.Email(),
+		Email:   p.actAs,
 	}, nil
 }
 

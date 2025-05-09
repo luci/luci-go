@@ -82,9 +82,9 @@ func (p *loginSessionTokenProvider) MemoryCacheOnly() bool {
 	return false
 }
 
-func (p *loginSessionTokenProvider) Email() string {
+func (p *loginSessionTokenProvider) Email() (string, error) {
 	// We don't know the email before user logs in.
-	return UnknownEmail
+	return "", ErrUnknownEmail
 }
 
 func (p *loginSessionTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {

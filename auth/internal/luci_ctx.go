@@ -114,8 +114,11 @@ func (p *luciContextTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 
-func (p *luciContextTokenProvider) Email() string {
-	return p.email
+func (p *luciContextTokenProvider) Email() (string, error) {
+	if p.email == NoEmail {
+		return "", ErrNoEmail
+	}
+	return p.email, nil
 }
 
 func (p *luciContextTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
@@ -151,7 +154,7 @@ func (p *luciContextTokenProvider) mintOAuthToken(ctx context.Context) (*Token, 
 			TokenType:   "Bearer",
 		},
 		IDToken: NoIDToken,
-		Email:   p.Email(),
+		Email:   p.email,
 	}, nil
 }
 
@@ -177,7 +180,7 @@ func (p *luciContextTokenProvider) mintIDToken(ctx context.Context) (*Token, err
 			TokenType:   "Bearer",
 		},
 		IDToken: response.IDToken,
-		Email:   p.Email(),
+		Email:   p.email,
 	}, nil
 }
 

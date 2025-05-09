@@ -87,12 +87,8 @@ func (p *credHelperTokenProvider) MemoryCacheOnly() bool {
 }
 
 // Email implements internal.TokenProvider.
-func (p *credHelperTokenProvider) Email() string {
-	// It is hard to get the email in a generic way without doing unnecessary
-	// RPCs. Disable this functionality for now until it is really needed. Note
-	// that "luci-auth info" still will be able to get the email, since it has
-	// a generic fallback path (that does RPCs).
-	return internal.NoEmail
+func (p *credHelperTokenProvider) Email() (string, error) {
+	return "", internal.ErrUnimplementedEmail
 }
 
 // CacheKey implements internal.TokenProvider.
@@ -150,7 +146,7 @@ func (p *credHelperTokenProvider) MintToken(ctx context.Context, _ *internal.Tok
 	return &internal.Token{
 		Token:   *tok,
 		IDToken: internal.NoIDToken,
-		Email:   internal.NoEmail,
+		Email:   internal.UnknownEmail,
 	}, nil
 }
 

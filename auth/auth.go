@@ -51,6 +51,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -71,7 +72,7 @@ var (
 	// ErrNoEmail is returned by GetEmail() if the cached credentials are not
 	// associated with some particular email. This may happen, for example, when
 	// using a refresh token that doesn't have 'userinfo.email' scope.
-	ErrNoEmail = errors.New("the token is not associated with an email")
+	ErrNoEmail = internal.ErrNoEmail
 
 	// ErrBadOptions is returned by Login() or Transport() if Options passed
 	// to authenticator indicate incompatible features. This likely indicates
@@ -551,6 +552,8 @@ type Options struct {
 	testingBaseTokenProvider internal.TokenProvider
 	// testingIAMTokenProvider is used in unit tests.
 	testingIAMTokenProvider internal.TokenProvider
+	// testingTokenInfoEndpoint is used in unit tests.
+	testingTokenInfoEndpoint func(context.Context, googleoauth.TokenInfoParams) (*googleoauth.TokenInfo, error)
 }
 
 // PopulateDefaults populates empty fields of `opts` with default values.
@@ -912,35 +915,85 @@ func (a *Authenticator) GetEmail() (string, error) {
 	// There's no token cached yet (and thus email is not known). First try to ask
 	// the provider for email only. Most providers can return it without doing any
 	// RPCs or heavy calls. If this is not supported, resort to a heavier code
-	// paths that actually refreshes the token and grabs its email along the way.
+	// paths that actually refreshes the token and grabs its email along the way
+	// or calls the token info endpoint.
 	a.lock.RLock()
-	email := a.authToken.provider.Email()
+	email, err := a.authToken.provider.Email()
 	a.lock.RUnlock()
-	switch {
-	case email == internal.NoEmail:
-		return "", ErrNoEmail
-	case email != "":
-		return email, nil
-	}
 
-	// The provider doesn't know the email. We need a forceful token refresh to
-	// grab it (or discover it is NoEmail). This is relatively rare. It happens
-	// only when using UserAuth TokenProvider and there's no cached token at all
-	// or it is in old format that don't have email field.
-	//
-	// Pass -1 as lifetime to force trigger the refresh right now.
-	tok, err = a.refreshToken(tok, -1)
 	switch {
-	case err == ErrLoginRequired:
-		return "", err
-	case err != nil:
-		return "", errors.Annotate(err, "failed to refresh auth token").Err()
-	case tok.Email == internal.NoEmail:
+	case err == nil:
+		return email, nil
+
+	case errors.Is(err, internal.ErrNoEmail):
 		return "", ErrNoEmail
-	case tok.Email == internal.UnknownEmail: // this must not happen, but let's be cautious
-		return "", errors.Reason("internal error when fetching the email, see logs").Err()
+
+	case errors.Is(err, internal.ErrUnknownEmail):
+		// The provider doesn't know the email in advance, but it can get it as
+		// as side effect of refreshing the token. We need a forceful token refresh
+		// to grab it (or discover it is NoEmail). Pass -1 as lifetime to force
+		// trigger the refresh right now.
+		tok, err = a.refreshToken(tok, -1)
+		switch {
+		case errors.Is(err, ErrLoginRequired):
+			return "", err
+		case err != nil:
+			return "", errors.Annotate(err, "failed to refresh auth token").Err()
+		case tok.Email == internal.NoEmail:
+			return "", ErrNoEmail
+		case tok.Email == internal.UnknownEmail: // this must not happen, but let's be cautious
+			return "", errors.Reason("internal error when fetching the email, see logs").Err()
+		default:
+			return tok.Email, nil
+		}
+
+	case errors.Is(err, internal.ErrUnimplementedEmail):
+		// The provider has no idea about emails at all. If this is an access token,
+		// we can ask the token info endpoint to potentially get it.
+		if a.opts.UseIDTokens {
+			return "", ErrNoEmail
+		}
+
+		// Need a fresh token for that. The one returned by a.currentToken() above
+		// is potentially stale (since a.currentToken() doesn't refresh it).
+		tok, err := a.GetAccessToken(10 * time.Second)
+		if err != nil {
+			return "", err
+		}
+
+		// Call the RPC.
+		tokenInfoEndpoint := googleoauth.GetTokenInfo
+		if a.opts.testingTokenInfoEndpoint != nil {
+			tokenInfoEndpoint = a.opts.testingTokenInfoEndpoint
+		}
+		info, err := tokenInfoEndpoint(a.ctx, googleoauth.TokenInfoParams{
+			AccessToken: tok.AccessToken,
+		})
+		switch {
+		case err != nil:
+			return "", errors.Annotate(err, "failed to call token info endpoint").Err()
+		case info.Email == "":
+			return "", ErrNoEmail
+		case !info.EmailVerified:
+			return "", errors.Reason("the email %s in the token is not verified", info.Email).Err()
+		}
+
+		// Cache the outcome.
+		a.lock.Lock()
+		if a.authToken.token != nil && // haven't logged out yet
+			a.authToken.token.AccessToken == tok.AccessToken && // haven't relogined in yet
+			a.authToken.token.Email != info.Email { // haven't cached it yet
+			a.authToken.token.Email = info.Email
+			if err := a.authToken.putToCache(a.ctx); err != nil {
+				logging.Warningf(a.ctx, "Failed to write token to cache: %s", err)
+			}
+		}
+		a.lock.Unlock()
+
+		return info.Email, nil
+
 	default:
-		return tok.Email, nil
+		return "", err
 	}
 }
 
@@ -1640,6 +1693,12 @@ func (t *tokenWithProvider) renewToken(ctx context.Context, prev, base *internal
 		logging.Warningf(ctx, "Failed to refresh the token: %s", err)
 		return nil, err
 	}
+
+	// Carry over the email that was cached in the previous version of the token.
+	if tok.Email == internal.UnknownEmail {
+		tok.Email = prev.Email
+	}
+
 	return tok, nil
 }
 

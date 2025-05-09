@@ -16,6 +16,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -672,7 +674,7 @@ func TestOptionalLogin(t *testing.T) {
 func TestGetEmail(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Test non-interactive auth (no cache)", t, func(t *ftt.Test) {
+	t.Run("Test non-interactive auth (no cache)", func(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			knownEmail:  "known-email@example.com",
@@ -685,19 +687,19 @@ func TestGetEmail(t *testing.T) {
 
 		// No cached token.
 		tok, err := auth.currentToken()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, tok, should.BeNil)
 
 		// We get the email directly from the provider.
 		email, err := auth.GetEmail()
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, email, should.Equal("known-email@example.com"))
+		assert.NoErr(t, err)
+		assert.That(t, email, should.Equal("known-email@example.com"))
 
 		// MintToken was NOT called.
-		assert.Loosely(t, tokenProvider.mintTokenCalled, should.BeFalse)
+		assert.That(t, tokenProvider.mintTokenCalled, should.BeFalse)
 	})
 
-	ftt.Run("Non-expired cache without email is upgraded", t, func(t *ftt.Test) {
+	t.Run("Non-expired cache without email is upgraded", func(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 		}
@@ -711,26 +713,26 @@ func TestGetEmail(t *testing.T) {
 		})
 
 		// No need to login, already have a token.
-		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
+		assert.NoErr(t, auth.CheckLoginRequired())
 
 		// GetAccessToken returns the cached token.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, oauthTok.AccessToken, should.Equal("cached"))
+		assert.NoErr(t, err)
+		assert.That(t, oauthTok.AccessToken, should.Equal("cached"))
 
 		// But getting an email triggers a refresh, since the cached token doesn't
 		// have an email.
 		email, err := auth.GetEmail()
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, email, should.Equal("some-email-refreshtoken@example.com"))
+		assert.NoErr(t, err)
+		assert.That(t, email, should.Equal("some-email-refreshtoken@example.com"))
 
 		// GetAccessToken picks up the refreshed token too.
 		oauthTok, err = auth.GetAccessToken(time.Minute)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, oauthTok.AccessToken, should.Equal("some refreshed access token"))
+		assert.NoErr(t, err)
+		assert.That(t, oauthTok.AccessToken, should.Equal("some refreshed access token"))
 	})
 
-	ftt.Run("No email triggers ErrNoEmail", t, func(t *ftt.Test) {
+	t.Run("No email triggers ErrNoEmail", func(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToMint: &internal.Token{
@@ -739,17 +741,49 @@ func TestGetEmail(t *testing.T) {
 			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		assert.Loosely(t, auth.CheckLoginRequired(), should.BeNil)
+		assert.NoErr(t, auth.CheckLoginRequired())
 
 		// The token is minted on first request.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, oauthTok.AccessToken, should.Equal("minted"))
+		assert.NoErr(t, err)
+		assert.That(t, oauthTok.AccessToken, should.Equal("minted"))
 
 		// But getting an email fails with ErrNoEmail.
 		email, err := auth.GetEmail()
-		assert.Loosely(t, err, should.Equal(ErrNoEmail))
-		assert.Loosely(t, email, should.BeEmpty)
+		assert.That(t, err, should.Equal(ErrNoEmail))
+		assert.That(t, email, should.Equal(""))
+	})
+
+	t.Run("Fallback to the token info endpoint", func(t *testing.T) {
+		tokenProvider := &fakeTokenProvider{
+			interactive:        false,
+			emailUnimplemented: true,
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "minted"},
+				Email: internal.UnknownEmail,
+			},
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		assert.NoErr(t, auth.CheckLoginRequired())
+
+		// Getting an email triggers the token info endpoint call.
+		calls := 0
+		auth.opts.testingTokenInfoEndpoint = func(_ context.Context, params googleoauth.TokenInfoParams) (*googleoauth.TokenInfo, error) {
+			calls++
+			assert.That(t, params.AccessToken, should.Equal("minted"))
+			return &googleoauth.TokenInfo{
+				Email:         fmt.Sprintf("token-info-%d@example.com", calls),
+				EmailVerified: true,
+			}, nil
+		}
+		email, err := auth.GetEmail()
+		assert.NoErr(t, err)
+		assert.That(t, email, should.Equal("token-info-1@example.com"))
+
+		// Calling it again returns the cached email.
+		email, err = auth.GetEmail()
+		assert.NoErr(t, err)
+		assert.That(t, email, should.Equal("token-info-1@example.com"))
 	})
 }
 
@@ -879,7 +913,8 @@ type fakeTokenProvider struct {
 	baseTokenInMint    *internal.Token
 	baseTokenInRefresh *internal.Token
 
-	knownEmail string
+	emailUnimplemented bool
+	knownEmail         string
 }
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
@@ -894,8 +929,18 @@ func (p *fakeTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 
-func (p *fakeTokenProvider) Email() string {
-	return p.knownEmail
+func (p *fakeTokenProvider) Email() (string, error) {
+	if p.emailUnimplemented {
+		return "", internal.ErrUnimplementedEmail
+	}
+	switch p.knownEmail {
+	case "":
+		return "", internal.ErrUnknownEmail
+	case internal.NoEmail:
+		return "", internal.ErrNoEmail
+	default:
+		return p.knownEmail, nil
+	}
 }
 
 func (p *fakeTokenProvider) CacheKey(ctx context.Context) (*internal.CacheKey, error) {

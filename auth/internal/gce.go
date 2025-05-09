@@ -172,8 +172,8 @@ func (p *gceTokenProvider) MemoryCacheOnly() bool {
 	return true
 }
 
-func (p *gceTokenProvider) Email() string {
-	return p.email
+func (p *gceTokenProvider) Email() (string, error) {
+	return p.email, nil
 }
 
 func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
@@ -216,7 +216,7 @@ func (p gceTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
 			Expiry:      time.Unix(claims.Exp, 0),
 		},
 		IDToken: token,
-		Email:   p.Email(),
+		Email:   p.email,
 	}, nil
 }
 
@@ -265,7 +265,7 @@ func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) 
 			"oauth2.google.serviceAccount": p.account,
 		}),
 		IDToken: NoIDToken,
-		Email:   p.Email(),
+		Email:   p.email,
 	}, nil
 }
 

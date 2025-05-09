@@ -72,6 +72,19 @@ var (
 	// ErrBadCredentials is returned by MintToken or RefreshToken if provided
 	// offline credentials (like service account key) are invalid.
 	ErrBadCredentials = errors.New("invalid or unavailable service account credentials")
+
+	// ErrNoEmail is returned by Email() if the cached credentials are not
+	// associated with some particular email at all. This may happen, for example,
+	// when using a refresh token that doesn't have 'userinfo.email' scope.
+	ErrNoEmail = errors.New("the token is not associated with an email")
+
+	// ErrUnknownEmail means the provider can't tell the email in advance and
+	// it should be obtained via MintToken or RefreshToken call.
+	ErrUnknownEmail = errors.New("an associates email is not known yet")
+
+	// ErrUnimplementedEmail means the provider can't detect the email at all and
+	// the caller should try the generic token info endpoint RPC to get it.
+	ErrUnimplementedEmail = errors.New("the provider doesn't implement email fetching")
 )
 
 // Token is an oauth2.Token with an email and ID token that correspond to it.
@@ -121,14 +134,9 @@ type TokenProvider interface {
 
 	// Email is email associated with tokens produced by the provider, if known.
 	//
-	// May return UnknownEmail, which means the provider doesn't know the email
-	// in advance and RefreshToken must be used to get the token and the email.
-	// This happens, for example, for interactive providers before user has
-	// logged in.
-	//
-	// It can also be NoEmail which means the email is not available, even if
-	// caller is using RefreshToken.
-	Email() string
+	// Recognized errors are ErrNoEmail, ErrUnknownEmail, ErrUnimplementedEmail.
+	// Any other error is propagated up the stack.
+	Email() (string, error)
 
 	// CacheKey identifies a slot in the token cache to store the token in.
 	//
