@@ -146,6 +146,7 @@ func createTaskResultCommon(testTime time.Time) *model.TaskResultCommon {
 		},
 		BotIdleSince:        datastore.NewUnindexedOptional(testTime),
 		BotLogsCloudProject: "some-cloud-project",
+		BotOwners:           []string{"owner-1", "owner-2"},
 		ServerVersions:      []string{"foo", "bar"},
 		CurrentTaskSlice:    1,
 		Started:             datastore.NewIndexedNullable(testTime),
@@ -353,6 +354,7 @@ func createBQTaskResultBase(taskID string, testTime time.Time) *bqpb.TaskResult 
 			Pools: []string{"try:ci", "try:test"},
 			Info: &bqpb.BotInfo{
 				IdleSinceTs: timestamppb.New(testTime),
+				Owners:      []string{"owner-1", "owner-2"},
 			},
 		},
 	}
@@ -653,6 +655,7 @@ func TestBotEventConversion(t *testing.T) {
 				TaskID:          "task-id",
 				LastSeen:        datastore.NewUnindexedOptional(testTime),
 				IdleSince:       datastore.NewUnindexedOptional(testTime),
+				Owners:          []string{"owner-1", "owner-2"},
 			},
 			Key:       datastore.NewKey(ctx, "BotEvent", "", 12345, model.BotRootKey(ctx, "bot-id")),
 			Timestamp: eventTime,
@@ -693,6 +696,7 @@ func TestBotEventConversion(t *testing.T) {
 					AuthenticatedAs: "authenticated-as",
 					IdleSinceTs:     timestamppb.New(testTime),
 					LastSeenTs:      lastSeen,
+					Owners:          []string{"owner-1", "owner-2"},
 				},
 			},
 			Event:    typ,

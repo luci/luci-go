@@ -226,6 +226,16 @@ func taskResultCommon(rc *model.TaskResultCommon, req *model.TaskRequest) *bqpb.
 		}
 	}
 
+	if len(rc.BotOwners) != 0 {
+		if out.Bot == nil {
+			out.Bot = &bqpb.Bot{}
+		}
+		if out.Bot.Info == nil {
+			out.Bot.Info = &bqpb.BotInfo{}
+		}
+		out.Bot.Info.Owners = rc.BotOwners
+	}
+
 	out.State = bqpb.TaskState_TASK_STATE_INVALID
 	if rc.InternalFailure {
 		out.State = bqpb.TaskState_RAN_INTERNAL_FAILURE
@@ -432,6 +442,7 @@ func botEvent(ev *model.BotEvent) *bqpb.BotEvent {
 			Version:         ev.Version,
 			ExternalIp:      ev.ExternalIP,
 			AuthenticatedAs: string(ev.AuthenticatedAs),
+			Owners:          ev.Owners,
 		},
 	}
 

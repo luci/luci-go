@@ -799,6 +799,9 @@ message BotInfo {
 
   // The time when the bot became idle.
   google.protobuf.Timestamp idle_since_ts = 11;
+
+  // The list of bot owners from bots.cfg entry for this bot.
+  repeated string owners = 12;
 }
 
 
