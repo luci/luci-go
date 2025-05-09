@@ -18,6 +18,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	"path"
+	"strings"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -163,6 +166,9 @@ func main() {
 			ctx.Writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
 			_, _ = ctx.Writer.Write([]byte("Server up"))
 		})
+
+		// UI handler
+		installUIHandlers(srv, cfg)
 
 		// Endpoints that return bot code. Used by bots and bootstrap scripts.
 		botsrv.GET(botSrv, "/bot_code", botAPI.BotCode)
@@ -316,5 +322,84 @@ func knownBotProvider(ctx context.Context, botID string) (*botsrv.KnownBotInfo, 
 		return nil, nil
 	default:
 		return nil, err
+	}
+}
+
+// installUIHandlers adds HTTP handlers that render HTML pages.
+func installUIHandlers(srv *server.Server, cfg *cfg.Provider) {
+	srv.Routes.GET("/", nil, render(srv.Context, "swarming", cfg))
+	srv.Routes.GET("/bot", nil, render(srv.Context, "bot", cfg))
+	srv.Routes.GET("/botlist", nil, render(srv.Context, "botlist", cfg))
+	srv.Routes.GET("/task", nil, render(srv.Context, "task", cfg))
+	srv.Routes.GET("/tasklist", nil, render(srv.Context, "tasklist", cfg))
+}
+
+func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler {
+	csp := map[string][]string{
+		"default-src": {"'self'"},
+		"script-src": {
+			"'self'",
+			// Swarming pages are static so cannot use nonces for now
+			"'unsafe-inline'",
+
+			"https://www.google-analytics.com",
+			"https://www.google.com/jsapi",
+			"https://apis.google.com",
+			"https://www.gstatic.com",          // Google charts loader
+			"https://www.googletagmanager.com", // gtag for Google Analytics
+		},
+
+		"style-src": {
+			"'self'",
+			// Swarming pages are static so cannot use nonces for now
+			"'unsafe-inline'",
+			"https://fonts.googleapis.com",
+			"https://www.gstatic.com", // Google charts styling
+		},
+
+		"frame-src": {
+			"'self'",
+			"https://accounts.google.com", // Google OAuth2 library opens iframes
+		},
+
+		"img-src": {
+			"'self'",
+			"https://www.google-analytics.com",
+			"https://*.googleusercontent.com", // Google user avatars
+		},
+
+		"font-src": {
+			"'self'",
+			"https://fonts.gstatic.com", // Google-hosted fonts
+		},
+
+		"connect-src": {
+			"'self'",
+			"https://www.google-analytics.com",
+			"https://*.google-analytics.com",
+		},
+		"object-src": {"'none'"}, // we don't generally use Flash or Java
+	}
+	return func(rctx *router.Context) {
+		settings := cfg.Cached(ctx).Settings()
+		tmpl := settings.GetDisplayServerUrlTemplate()
+		if tmpl != "" {
+			if !strings.HasPrefix(tmpl, "/") {
+				// We assume the template specifies '%s' in its last path component.
+				// We strip it to get a "parent" path that we can put into CSP.
+				// Note that allowing an entire display server domain is unnecessary wide.
+				csp["frame-src"] = append(csp["frame-src"], strings.TrimSuffix(tmpl, "/%s"))
+			}
+		}
+		extra := settings.GetExtraChildSrcCspUrl()
+		csp["frame-src"] = append(csp["frame-src"], extra...)
+
+		cspHdr := ""
+		for directive, srcs := range csp {
+			cspHdr += fmt.Sprintf("%s %s; ", directive, strings.Join(srcs, " "))
+		}
+		rctx.Writer.Header().Add("Content-Security-Policy", cspHdr)
+		pagePath := path.Join("ui2", "dist", fmt.Sprintf("public_%s_index.html", page))
+		http.ServeFile(rctx.Writer, rctx.Request, pagePath)
 	}
 }
