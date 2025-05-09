@@ -238,8 +238,6 @@ type BotCommon struct {
 	IdleSince datastore.Optional[time.Time, datastore.Unindexed] `gae:"idle_since_ts"`
 
 	// Owners is the list of bot owners from bots.cfg entry for the bot.
-	//
-	// TODO: Populate.
 	Owners []string `gae:"owners,noindex"`
 
 	// ExpireAt is when this entity can be deleted via Cloud Datastore TTL policy.

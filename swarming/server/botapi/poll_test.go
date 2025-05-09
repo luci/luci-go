@@ -481,15 +481,17 @@ func TestPollResponse(t *testing.T) {
 				EventType:     model.BotEventIdle,
 				EventDedupKey: testRequestUUID,
 				Dimensions:    req.dims,
-				BotGroupDimensions: map[string][]string{
-					"pool": {testBotPool},
-				},
-				State: &botstate.Dict{JSON: []byte(`{"rbe_idle": true}`)},
+				State:         &botstate.Dict{JSON: []byte(`{"rbe_idle": true}`)},
 				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool": {testBotPool},
+					},
 				},
 				HealthInfo: &botinfo.HealthInfo{},
 			}))
@@ -523,15 +525,17 @@ func TestPollResponse(t *testing.T) {
 				EventType:     model.BotEventSleep,
 				EventDedupKey: testRequestUUID,
 				Dimensions:    req.dims,
-				BotGroupDimensions: map[string][]string{
-					"pool": {testBotPool},
-				},
-				State: &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
+				State:         &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
 				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool": {testBotPool},
+					},
 				},
 				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "boom",
@@ -552,15 +556,17 @@ func TestPollResponse(t *testing.T) {
 				EventType:     model.BotEventSleep,
 				EventDedupKey: testRequestUUID,
 				Dimensions:    req.dims,
-				BotGroupDimensions: map[string][]string{
-					"pool": {testBotPool},
-				},
-				State: &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
+				State:         &botstate.Dict{JSON: []byte(`{"quarantined": "boom"}`)},
 				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         testBotVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool": {testBotPool},
+					},
 				},
 				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "boom",
@@ -613,7 +619,8 @@ func TestPoll(t *testing.T) {
 		mockedConf := func(rbeInstance string, extraDims ...string) *cfg.Provider {
 			conf := cfgtest.NewMockedConfigs()
 			conf.MockBotPackage("stable", map[string]string{"version": "stable"})
-			conf.MockBot(testBotID, testBotPool, extraDims...)
+			groupCfg := conf.MockBot(testBotID, testBotPool, extraDims...)
+			groupCfg.Owners = []string{"owner-1@example.com", "owner-2@example.com"}
 			conf.MockPool(testBotPool, "proj:realm").RbeMigration = &configpb.Pool_RBEMigration{
 				RbeInstance:    rbeInstance,
 				RbeModePercent: 100,
@@ -738,16 +745,19 @@ func TestPoll(t *testing.T) {
 			}))
 
 			assert.That(t, lastUpdate, should.Match(&botinfo.Update{
-				BotID:              testBotID,
-				EventType:          model.BotEventPolling,
-				Dimensions:         []string{"dim:val", "id:test-bot", "pool:test-pool"},
-				BotGroupDimensions: map[string][]string{"pool": {"test-pool"}},
-				State:              &botstate.Dict{JSON: []byte(`{"key": "val"}`)},
+				BotID:      testBotID,
+				EventType:  model.BotEventPolling,
+				Dimensions: []string{"dim:val", "id:test-bot", "pool:test-pool"},
+				State:      &botstate.Dict{JSON: []byte(`{"key": "val"}`)},
 				CallInfo: &botinfo.CallInfo{
 					SessionID:       testSessionID,
 					Version:         stableVersion,
 					ExternalIP:      testBotIP,
 					AuthenticatedAs: testBotIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{"pool": {"test-pool"}},
+					Owners:     []string{"owner-1@example.com", "owner-2@example.com"},
 				},
 				HealthInfo:         &botinfo.HealthInfo{},
 				EffectiveBotIDInfo: &botinfo.RBEEffectiveBotIDInfo{},

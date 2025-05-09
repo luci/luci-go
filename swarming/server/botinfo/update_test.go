@@ -83,11 +83,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			}
 
 			update := Update{
-				BotID: "bot-id",
-				BotGroupDimensions: map[string][]string{
-					"pool":      {"a", "b"},
-					"something": {"c"},
-				},
+				BotID:         "bot-id",
 				EventType:     ev,
 				EventDedupKey: dedupKey,
 				TasksManager: &tasks.MockedManager{
@@ -103,8 +99,15 @@ func TestBotInfoUpdate(t *testing.T) {
 					ExternalIP:      "external-ip",
 					AuthenticatedAs: "user:someone@example.com",
 				},
-				HealthInfo:         healthInfo,
-				TaskInfo:           taskInfo,
+				HealthInfo: healthInfo,
+				TaskInfo:   taskInfo,
+				BotGroupInfo: &BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool":      {"a", "b"},
+						"something": {"c"},
+					},
+					Owners: []string{"owner-1", "owner-2"},
+				},
 				EffectiveBotIDInfo: effectiveIDInfo,
 			}
 			submitted, err := update.Submit(ctx)
@@ -169,6 +172,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					AuthenticatedAs: "user:someone@example.com",
 					Version:         "version",
 					LastSeen:        datastore.NewUnindexedOptional(testTime),
+					Owners:          []string{"owner-1", "owner-2"},
 					ExpireAt:        testTime.Add(oldBotInfoCutoff),
 				},
 			}))
@@ -191,6 +195,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					AuthenticatedAs: "user:someone@example.com",
 					Version:         "version",
 					LastSeen:        datastore.NewUnindexedOptional(testTime),
+					Owners:          []string{"owner-1", "owner-2"},
 					ExpireAt:        testTime.Add(oldBotEventsCutOff),
 				},
 			}))

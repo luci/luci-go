@@ -200,17 +200,6 @@ type Update struct {
 	// If empty, the current dimensions will be left unchanged.
 	Dimensions []string
 
-	// BotGroupDimensions are extra dimension associated with the bot in the
-	// bot group config in bots.cfg.
-	//
-	// These are used only if Dimensions are unset and this update is the first
-	// update ever that registers the BotInfo. We need to associate some
-	// dimensions with a new bot, and dimensions in the config is all we have at
-	// this point. The type matches cfg.BotGroup(...).Dimensions.
-	//
-	// Can be omitted if Dimensions are set.
-	BotGroupDimensions map[string][]string
-
 	// State is a JSON dict with the bot state as reported by the bot itself.
 	//
 	// If nil, the current recorded bot state won't be changed.
@@ -243,6 +232,12 @@ type Update struct {
 	// task ID assigned to the bot will be reset. Otherwise it will be left
 	// untouched.
 	TaskInfo *TaskInfo
+
+	// BotGroupInfo is information about the bot group in bots.cfg.
+	//
+	// If nil, the values currently stored in BotInfo entity will remain
+	// unchanged.
+	BotGroupInfo *BotGroupInfo
 
 	// EffectiveBotIDInfo can be used to change the bot ID in RBE sessions.
 	//
@@ -310,6 +305,14 @@ type TaskInfo struct {
 	TaskName string
 	// TaskFlags hold aspects of the task, see TaskFlag*.
 	TaskFlags model.TaskFlags
+}
+
+// BotGroupInfo is information about the bot group in bots.cfg.
+type BotGroupInfo struct {
+	// Dimensions are extra dimension associated with the bot in the bot group.
+	Dimensions map[string][]string
+	// Owners is the list of bot owners as specified in the bots.cfg.
+	Owners []string
 }
 
 // RBEEffectiveBotIDInfo carries the bot ID to use in RBE sessions.
@@ -583,6 +586,11 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 		current.Quarantined = u.HealthInfo.Quarantined != ""
 	}
 
+	// Pick up new bot group config value if necessary.
+	if u.BotGroupInfo != nil {
+		current.Owners = u.BotGroupInfo.Owners
+	}
+
 	// We need to abandon the task on BotEventMissing (and similar) even though
 	// they may not be changing TaskID. See BotInfo.LastAbandonedTask for details
 	// why.
@@ -753,6 +761,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 				TaskID:          eventTaskID,
 				LastSeen:        current.LastSeen,
 				IdleSince:       current.IdleSince,
+				Owners:          current.Owners,
 				ExpireAt:        now.Add(oldBotEventsCutOff),
 			},
 		}
@@ -771,14 +780,16 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 
 // connectingBotDims is a list of dimensions for a bot seen for the first time.
 func (u *Update) connectingBotDims() []string {
-	dims := make([]string, 0, 1+len(u.BotGroupDimensions))
+	dims := make([]string, 0, 1)
 	dims = append(dims, "id:"+u.BotID)
-	for key, vals := range u.BotGroupDimensions {
-		for _, val := range vals {
-			dims = append(dims, fmt.Sprintf("%s:%s", key, val))
+	if u.BotGroupInfo != nil {
+		for key, vals := range u.BotGroupInfo.Dimensions {
+			for _, val := range vals {
+				dims = append(dims, fmt.Sprintf("%s:%s", key, val))
+			}
 		}
+		slices.Sort(dims)
 	}
-	slices.Sort(dims)
 	return dims
 }
 

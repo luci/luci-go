@@ -509,18 +509,21 @@ func (srv *BotAPIServer) pollResponse(ctx context.Context, pr *pollRequest, resp
 	}
 
 	update := &botinfo.Update{
-		BotID:              pr.botID,
-		EventType:          ev,
-		EventDedupKey:      pr.requestUUID,
-		EventMessage:       resp.Message,
-		TasksManager:       srv.tasksManager,
-		Dimensions:         pr.dims, // will be nil if the request is broken, meaning do not update dims in BotInfo
-		BotGroupDimensions: pr.group.Dimensions,
-		State:              botState,
+		BotID:         pr.botID,
+		EventType:     ev,
+		EventDedupKey: pr.requestUUID,
+		EventMessage:  resp.Message,
+		TasksManager:  srv.tasksManager,
+		Dimensions:    pr.dims, // will be nil if the request is broken, meaning do not update dims in BotInfo
+		State:         botState,
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: pr.session.GetSessionId(),
 			Version:   pr.version,
 		}),
+		BotGroupInfo: &botinfo.BotGroupInfo{
+			Dimensions: pr.group.Dimensions,
+			Owners:     pr.group.Owners,
+		},
 		HealthInfo:         healthInfo,
 		EffectiveBotIDInfo: pr.effectiveBotID,
 	}

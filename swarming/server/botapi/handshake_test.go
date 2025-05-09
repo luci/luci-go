@@ -84,6 +84,7 @@ func TestHandshake(t *testing.T) {
 
 		botGroupCfg := mockedCfg.MockBot(botID, botPool, "extra:1", "extra:2")
 		botGroupCfg.BotConfigScript = botHooksPy
+		botGroupCfg.Owners = []string{"owner-1@example.com", "owner-2@example.com"}
 
 		mockedCfg.MockBot(conflictingBotID, botPool, "pool:extra")
 		mockedCfg.MockPool("extra", "some:realm").RbeMigration = &configpb.Pool_RBEMigration{
@@ -173,10 +174,6 @@ func TestHandshake(t *testing.T) {
 
 			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
-				BotGroupDimensions: map[string][]string{
-					"pool":  {botPool},
-					"extra": {"1", "2"},
-				},
 				State: &botstate.Dict{
 					JSON: []byte(`{
 							"handshaking": true,
@@ -194,6 +191,13 @@ func TestHandshake(t *testing.T) {
 					Version:         "reported-bot-version",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool":  {botPool},
+						"extra": {"1", "2"},
+					},
+					Owners: []string{"owner-1@example.com", "owner-2@example.com"},
 				},
 				HealthInfo: &botinfo.HealthInfo{},
 			}))
@@ -227,10 +231,6 @@ func TestHandshake(t *testing.T) {
 
 			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
-				BotGroupDimensions: map[string][]string{
-					"pool":  {botPool},
-					"extra": {"1", "2"},
-				},
 				State: &botstate.Dict{
 					JSON: []byte(`{
 							"handshaking": true,
@@ -245,6 +245,13 @@ func TestHandshake(t *testing.T) {
 					SessionID:       "autogen-2338085100000-7828158075477027098",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool":  {botPool},
+						"extra": {"1", "2"},
+					},
+					Owners: []string{"owner-1@example.com", "owner-2@example.com"},
 				},
 				HealthInfo: &botinfo.HealthInfo{},
 			}))
@@ -268,10 +275,6 @@ func TestHandshake(t *testing.T) {
 
 			assert.That(t, latestUpdate, should.Match(&botinfo.Update{
 				BotID: botID,
-				BotGroupDimensions: map[string][]string{
-					"pool":  {botPool},
-					"extra": {"1", "2"},
-				},
 				State: &botstate.Dict{
 					JSON: []byte(`{
 							"handshaking": true,
@@ -289,6 +292,13 @@ func TestHandshake(t *testing.T) {
 					SessionID:       "reported-session-id",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
+				},
+				BotGroupInfo: &botinfo.BotGroupInfo{
+					Dimensions: map[string][]string{
+						"pool":  {botPool},
+						"extra": {"1", "2"},
+					},
+					Owners: []string{"owner-1@example.com", "owner-2@example.com"},
 				},
 				HealthInfo: &botinfo.HealthInfo{
 					Quarantined: "Boom",

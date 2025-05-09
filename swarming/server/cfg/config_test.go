@@ -477,6 +477,7 @@ func TestBuildQueriableConfig(t *testing.T) {
 						BotId:           []string{"host-0-0", "host-0-1--abc"},
 						Dimensions:      []string{"pool:a"},
 						BotConfigScript: "script.py",
+						Owners:          []string{"owner-1@example.com", "owner-2@example.com"},
 					},
 					{
 						BotIdPrefix: []string{"host-0-"},
@@ -614,6 +615,9 @@ func TestBuildQueriableConfig(t *testing.T) {
 		assert.That(t, gr.BotConfigScriptName, should.Equal("script.py"))
 		assert.That(t, gr.BotConfigScriptBody, should.Equal("some-script"))
 		assert.That(t, gr.BotConfigScriptSHA256, should.Equal("8edd90a7de22b7ad9af01fa01e3eca0da6e0a112359f6405a8a42b72df067565"))
+
+		// Owners propagated.
+		assert.That(t, gr.Owners, should.Match([]string{"owner-1@example.com", "owner-2@example.com"}))
 
 		// Traffic routing rules are processed.
 		assert.That(t, cfg.RouteToGoPercent("/prpc/unknown"), should.Equal(0))

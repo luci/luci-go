@@ -77,6 +77,9 @@ type BotGroup struct {
 	// This eventually shows up as part of bot info in the UI. Swarming itself
 	// doesn't access this project.
 	LogsCloudProject string
+
+	// Owners is the list of bot owners as specified in the config.
+	Owners []string
 }
 
 // Pools returns pools assigned to the bot or ["unassigned"] if not set.
@@ -208,6 +211,7 @@ func newBotGroup(gr *configpb.BotGroup, scripts map[string]configHooksScript) (*
 		BotConfigScriptBody:   scriptBody,
 		BotConfigScriptSHA256: scriptSHA256,
 		LogsCloudProject:      gr.LogsCloudProject,
+		Owners:                gr.Owners,
 	}, nil
 }
 
