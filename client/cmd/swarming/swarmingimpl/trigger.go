@@ -260,7 +260,19 @@ func (cmd *triggerImpl) ParseInputs(ctx context.Context, args []string, env subc
 		cmd.user = env[swarming.UserEnvVar].Value
 	}
 	cmd.cmd = args
-	cmd.parentTaskID = env[swarming.TaskIDEnvVar].Value
+
+	if currentTaskID := env[swarming.TaskIDEnvVar].Value; currentTaskID != "" {
+		usingSameServer, err := usingDefaultServer(env, extra.ServerURL)
+		if err != nil {
+			return err
+		}
+		if usingSameServer {
+			cmd.parentTaskID = currentTaskID
+		} else {
+			logging.Warningf(ctx, "Request is using %s instead of this task's server, not setting parent task ID in the request", extra.ServerURL)
+		}
+	}
+
 	return nil
 }
 

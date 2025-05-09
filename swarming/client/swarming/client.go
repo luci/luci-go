@@ -63,7 +63,7 @@ const (
 // UserAgent identifies the version of the client.
 //
 // It is sent in all RPCs.
-var UserAgent = "swarming 0.5.2"
+var UserAgent = "swarming 0.5.3"
 
 func init() {
 	ver, err := version.GetStartupVersion()

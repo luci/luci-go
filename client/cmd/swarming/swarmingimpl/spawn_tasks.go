@@ -141,7 +141,7 @@ func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.En
 			if usingSameServer {
 				ntr.ParentTaskId = currentTaskID
 			} else if !warnLogged {
-				logging.Warningf(ctx, "Request is using %s instead of this task's server, not setting parent task ID in requests.", serverURL)
+				logging.Warningf(ctx, "Request is using %s instead of this task's server, not setting parent task ID in requests", serverURL)
 				warnLogged = true
 			}
 		}
