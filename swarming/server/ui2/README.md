@@ -25,7 +25,6 @@ To build the pages for deploying, run:
     make release
 
 The output of the dist/ folder will have the bundled HTML, JS and CSS files.
-This should be checked in so as to fit with the App Engine deployment setup.
 
 ## Using the demo pages
 

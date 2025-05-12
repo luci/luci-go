@@ -32,3 +32,18 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/*"
     service: default-go
+
+  # Serve UI using Go.
+  - url: "*/"
+    service: default-go
+
+  - url: "*/newres*"
+    service: default-go
+
+  # Serve task|tasklist pages using Go.
+  - url: "*/task*"
+    service: default-go
+
+  # Serve bot|botlist pages using Go.
+  - url: "*/bot*"
+    service: default-go
