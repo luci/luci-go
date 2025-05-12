@@ -14,12 +14,10 @@
 
 import { useMemo } from 'react';
 
-import { filterOptionPlaceholder } from '@/fleet/pages/device_list_page/helpers';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
-import { SelectedChip } from '../filter_dropdown/selected_chip';
-
 import { DeviceListFilterButton } from './device_list_filter_button';
+import { DeviceListSelectedChip } from './device_list_selected_chip';
 import { DeviceSearchBar } from './device_search_bar';
 
 function elevateSelectedFiltersToTheTop(
@@ -77,17 +75,16 @@ export const DeviceListFilterBar = ({
         }
       />
       {Object.entries(selectedOptions).map(
-        ([optionKey, optionValues], idx) =>
+        ([optionKey, optionValues]) =>
           optionValues?.length > 0 && (
-            <SelectedChip
-              option={
-                filterOptions.find((x) => x.value === optionKey) ??
-                filterOptionPlaceholder(optionKey, optionValues)
-              }
-              key={`selected-chip-${idx}`}
-              selectedOptions={selectedOptions}
+            <DeviceListSelectedChip
+              key={`selected-chip-${optionKey}`}
+              filterOptions={sortedFilterOptions}
+              isLoading={isLoading ?? false}
               onSelectedOptionsChange={onSelectedOptionsChange}
-              isLoading={isLoading}
+              selectedOptions={selectedOptions}
+              optionKey={optionKey}
+              optionValues={optionValues}
             />
           ),
       )}

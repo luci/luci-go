@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,23 @@
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip } from '@mui/material';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
-import { DIMENSION_SEPARATOR } from '../device_table/dimensions';
-import { OptionsDropdown } from '../options_dropdown';
+interface SelectedChipProps {
+  dropdownContent: ReactNode;
+  label: string;
+  onApply: () => void;
+  onDelete: () => void;
+}
 
 export function SelectedChip({
-  option,
-  selectedOptions,
-  onSelectedOptionsChange,
-  isLoading,
-}: {
-  option: OptionCategory;
-  selectedOptions: SelectedOptions;
-  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
-  isLoading?: boolean;
-}) {
+  dropdownContent,
+  label,
+  onApply,
+  onDelete,
+}: SelectedChipProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
@@ -46,12 +45,7 @@ export function SelectedChip({
                 textOverflow: 'ellipsis',
               }}
             >
-              {`${selectedOptions[option.value]?.length ?? 0} | [ ${option.label} ]: ${option?.options
-                ?.filter((o2) =>
-                  selectedOptions[option.value]?.includes(o2.value),
-                )
-                ?.map((o2) => o2.label)
-                .join(DIMENSION_SEPARATOR)}`}
+              {label}
             </span>
             <ArrowDropDownIcon />
           </p>
@@ -60,25 +54,17 @@ export function SelectedChip({
           maxWidth: 300,
         }}
         variant="filter"
-        onDelete={(_) =>
-          onSelectedOptionsChange({
-            ...selectedOptions,
-            [option.value]: [],
-          })
-        }
+        onDelete={onDelete}
       />
       <OptionsDropdown
-        onClose={() => setAnchorEL(null)}
         anchorEl={anchorEl}
-        open={anchorEl !== null}
-        option={option}
-        selectedOptions={selectedOptions}
-        onSelectedOptionsChange={onSelectedOptionsChange}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
+        open={!!anchorEl}
+        renderChild={() => dropdownContent}
+        onApply={() => {
+          setAnchorEL(null);
+          onApply();
         }}
-        isLoading={isLoading}
+        onClose={() => setAnchorEL(null)}
       />
     </>
   );

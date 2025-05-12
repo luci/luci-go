@@ -26,9 +26,9 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
-import { CustomSelectedChip } from '@/fleet/components/filter_dropdown/custom_selected_chip';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
 import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -345,7 +345,7 @@ export const ResourceRequestListPage = () => {
         ).map(
           ([filterKey, filterValue]) =>
             filterValue && (
-              <CustomSelectedChip
+              <SelectedChip
                 key={filterKey}
                 dropdownContent={getSelectedChipDropdownContent(filterKey)}
                 label={getSelectedFilterLabel(filterKey, filterValue)}

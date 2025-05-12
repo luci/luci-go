@@ -19,9 +19,12 @@ import {
 } from '@mui/x-data-grid';
 
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { OptionValue } from '@/fleet/types/option';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
-import { OptionsDropdown } from '../options_dropdown';
+import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
+import { OptionsMenu } from '../filter_dropdown/options_menu';
+import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
 import { getVisibilityModel } from './search_param_utils';
 
@@ -51,49 +54,57 @@ export function ColumnsManageDropDown({
     apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
   };
 
-  const columns: OptionCategory = {
-    label: 'column',
-    value: 'column',
-    options: columnDefinitions
-      .filter((column) => column.field !== '__check__')
-      .map((column) => ({
-        label: column.headerName ?? column.field,
-        value: column.field,
-      })),
-  };
+  const columns = columnDefinitions
+    .filter((column) => column.field !== '__check__')
+    .map(
+      (d) =>
+        ({
+          label: d.headerName ?? d.field,
+          value: d.field,
+        }) as OptionValue,
+    );
 
-  const selectedColumns: SelectedOptions = {
-    column: columnVisibilityModel
-      ? Object.keys(columnVisibilityModel).filter(
-          (key) => columnVisibilityModel[key],
-        )
-      : [],
-  };
+  const selectedColumns = columnVisibilityModel
+    ? Object.keys(columnVisibilityModel).filter(
+        (key) => columnVisibilityModel[key],
+      )
+    : [];
 
   return (
     <OptionsDropdown
       onClose={() => setAnchorEL(null)}
-      selectedOptions={selectedColumns}
       anchorEl={anchorEl}
       open={!!anchorEl}
-      option={columns}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'center',
       }}
       enableSearchInput={true}
-      onFlipOption={toggleColumn}
       maxHeight={500}
-      isLoading={isLoading}
       onResetClick={() =>
         apiRef.current?.setColumnVisibilityModel(
           getVisibilityModel(
-            columns.options.map((c) => c.value),
+            columns.map((c) => c.value),
             DEFAULT_DEVICE_COLUMNS,
           ),
         )
       }
       footerButtons={['reset']}
+      onApply={() => {}}
+      renderChild={(searchQuery) => {
+        if (isLoading) {
+          return <MenuSkeleton itemCount={columns.length} maxHeight={200} />;
+        }
+
+        const sortedColumns = fuzzySort(searchQuery)(columns, (x) => x.label);
+        return (
+          <OptionsMenu
+            elements={sortedColumns}
+            selectedElements={new Set(selectedColumns)}
+            flipOption={toggleColumn}
+          />
+        );
+      }}
     />
   );
 }
