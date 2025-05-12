@@ -311,16 +311,30 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 		// statement generation step.
 		"hasUnsubmittedChanges": opts.SubmittedFilter == pb.SubmittedFilter_ONLY_UNSUBMITTED,
 
-		// Verdict status enum values.
+		// Verdict status v1 enum values.
 		"unexpected":          int(pb.TestVerdictStatus_UNEXPECTED),
 		"unexpectedlySkipped": int(pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED),
 		"flaky":               int(pb.TestVerdictStatus_FLAKY),
 		"exonerated":          int(pb.TestVerdictStatus_EXONERATED),
 		"expected":            int(pb.TestVerdictStatus_EXPECTED),
 
-		// Test result status enum values.
+		// Test result status v1 enum values.
 		"skip": int(pb.TestResultStatus_SKIP),
 		"pass": int(pb.TestResultStatus_PASS),
+
+		// Verdict status v2 enum values.
+		"passedVerdict":           int(pb.TestVerdict_PASSED),
+		"flakyVerdict":            int(pb.TestVerdict_FLAKY),
+		"failedVerdict":           int(pb.TestVerdict_FAILED),
+		"skippedVerdict":          int(pb.TestVerdict_SKIPPED),
+		"executionErroredVerdict": int(pb.TestVerdict_EXECUTION_ERRORED),
+		"precludedVerdict":        int(pb.TestVerdict_PRECLUDED),
+
+		// Test result status v2 enum values.
+		"passedV2":           int(pb.TestResult_PASSED),
+		"failedV2":           int(pb.TestResult_FAILED),
+		"skippedV2":          int(pb.TestResult_SKIPPED),
+		"executionErroredV2": int(pb.TestResult_EXECUTION_ERRORED),
 	}
 	input := map[string]any{
 		"hasLimit":                opts.PageSize > 0,
@@ -468,6 +482,26 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 	return verdicts, nextPageToken, nil
 }
 
+type verdictCountsV2 struct {
+	Failed                     int64
+	Flaky                      int64
+	Passed                     int64
+	Skipped                    int64
+	ExecutionErrored           int64
+	Precluded                  int64
+	FailedExonerated           int64
+	ExecutionErroredExonerated int64
+	PrecludedExonerated        int64
+}
+
+type verdictCountsV1 struct {
+	Unexpected          int64
+	UnexpectedlySkipped int64
+	Flaky               int64
+	Exonerated          int64
+	Expected            int64
+}
+
 // ReadTestHistoryStats reads stats of verdicts grouped by UTC dates from the
 // spanner database.
 // Must be called in a spanner transactional context.
@@ -482,26 +516,50 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions) (gro
 	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
 		group := &pb.QueryTestHistoryStatsResponse_Group{}
 		var (
-			unexpectedCount, unexpectedlySkippedCount  int64
-			flakyCount, exoneratedCount, expectedCount int64
-			passedAvgDurationUsec                      spanner.NullInt64
+			verdictCountsV2       verdictCountsV2
+			verdictCountsV1       verdictCountsV1
+			passedAvgDurationUsec spanner.NullInt64
 		)
 		err := b.FromSpanner(
 			row,
 			&group.PartitionTime,
 			&group.VariantHash,
-			&unexpectedCount, &unexpectedlySkippedCount,
-			&flakyCount, &exoneratedCount, &expectedCount,
+			&verdictCountsV2.Failed,
+			&verdictCountsV2.Flaky,
+			&verdictCountsV2.Passed,
+			&verdictCountsV2.Skipped,
+			&verdictCountsV2.ExecutionErrored,
+			&verdictCountsV2.Precluded,
+			&verdictCountsV2.FailedExonerated,
+			&verdictCountsV2.ExecutionErroredExonerated,
+			&verdictCountsV2.PrecludedExonerated,
+			&verdictCountsV1.Unexpected,
+			&verdictCountsV1.UnexpectedlySkipped,
+			&verdictCountsV1.Flaky,
+			&verdictCountsV1.Exonerated,
+			&verdictCountsV1.Expected,
 			&passedAvgDurationUsec,
 		)
 		if err != nil {
 			return err
 		}
-		group.UnexpectedCount = int32(unexpectedCount)
-		group.UnexpectedlySkippedCount = int32(unexpectedlySkippedCount)
-		group.FlakyCount = int32(flakyCount)
-		group.ExoneratedCount = int32(exoneratedCount)
-		group.ExpectedCount = int32(expectedCount)
+
+		group.VerdictCounts = &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+			Failed:                     int32(verdictCountsV2.Failed),
+			Flaky:                      int32(verdictCountsV2.Flaky),
+			Passed:                     int32(verdictCountsV2.Passed),
+			Skipped:                    int32(verdictCountsV2.Skipped),
+			ExecutionErrored:           int32(verdictCountsV2.ExecutionErrored),
+			Precluded:                  int32(verdictCountsV2.Precluded),
+			FailedExonerated:           int32(verdictCountsV2.FailedExonerated),
+			ExecutionErroredExonerated: int32(verdictCountsV2.ExecutionErroredExonerated),
+			PrecludedExonerated:        int32(verdictCountsV2.PrecludedExonerated),
+		}
+		group.UnexpectedCount = int32(verdictCountsV1.Unexpected)
+		group.UnexpectedlySkippedCount = int32(verdictCountsV1.UnexpectedlySkipped)
+		group.FlakyCount = int32(verdictCountsV1.Flaky)
+		group.ExoneratedCount = int32(verdictCountsV1.Exonerated)
+		group.ExpectedCount = int32(verdictCountsV1.Expected)
 		if passedAvgDurationUsec.Valid {
 			group.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
 		}
@@ -802,6 +860,16 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 			ELSE @flaky
 		END TvStatus
 	{{end}}
+	{{define "tvStatusV2"}}
+		CASE
+			WHEN LOGICAL_OR(StatusV2 = @passedV2) AND LOGICAL_OR(StatusV2 = @failedV2) THEN @flakyVerdict
+			WHEN LOGICAL_OR(StatusV2 = @passedV2) THEN @passedVerdict
+			WHEN LOGICAL_OR(StatusV2 = @failedV2) THEN @failedVerdict
+			WHEN LOGICAL_OR(StatusV2 = @skippedV2) THEN @skippedVerdict
+			WHEN LOGICAL_OR(StatusV2 = @executionErroredV2) THEN @executionErroredVerdict
+			ELSE @precludedVerdict
+		END TvStatusV2
+	{{end}}
 
 	{{define "testResultFilter"}}
 		Project = @project
@@ -870,6 +938,8 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 				VariantHash,
 				IngestedInvocationId,
 				{{template "tvStatus" .}},
+				{{template "tvStatusV2" .}},
+				ANY_VALUE(ExonerationReasons IS NOT NULL AND ARRAY_LENGTH(ExonerationReasons) > 0) As IsExonerated,
 				COUNTIF(Status = @pass AND RunDurationUsec IS NOT NULL) AS PassedWithDurationCount,
 				SUM(IF(Status = @pass, RunDurationUsec, 0)) AS SumPassedDurationUsec,
 			FROM TestResults
@@ -884,11 +954,20 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 		SELECT
 			TIMESTAMP_TRUNC(PartitionTime, DAY, "UTC") AS PartitionDate,
 			VariantHash,
-			COUNTIF(TvStatus = @unexpected) AS UnexpectedCount,
-			COUNTIF(TvStatus = @unexpectedlySkipped) AS UnexpectedlySkippedCount,
-			COUNTIF(TvStatus = @flaky) AS FlakyCount,
-			COUNTIF(TvStatus = @exonerated) AS ExoneratedCount,
-			COUNTIF(TvStatus = @expected) AS ExpectedCount,
+			COUNTIF(TvStatusV2 = @failedVerdict) AS Failed,
+			COUNTIF(TvStatusV2 = @flakyVerdict) AS Flaky,
+			COUNTIF(TvStatusV2 = @passedVerdict) AS Passed,
+			COUNTIF(TvStatusV2 = @skippedVerdict) AS Skipped,
+			COUNTIF(TvStatusV2 = @executionErroredVerdict) AS ExecutionErrored,
+			COUNTIF(TvStatusV2 = @precludedVerdict) AS Precluded,
+			COUNTIF(TvStatusV2 = @failedVerdict AND IsExonerated) AS FailedExonerated,
+			COUNTIF(TvStatusV2 = @executionErroredVerdict AND IsExonerated) AS ExecutionErroredExonerated,
+			COUNTIF(TvStatusV2 = @precludedVerdict AND IsExonerated) AS PrecludedExonerated,
+			COUNTIF(TvStatus = @unexpected) AS Unexpected,
+			COUNTIF(TvStatus = @unexpectedlySkipped) AS UnexpectedlySkipped,
+			COUNTIF(TvStatus = @flaky) AS Flaky,
+			COUNTIF(TvStatus = @exonerated) AS Exonerated,
+			COUNTIF(TvStatus = @expected) AS Expected,
 			CAST(SAFE_DIVIDE(SUM(SumPassedDurationUsec), SUM(PassedWithDurationCount)) AS INT64) AS PassedAvgDurationUsec,
 		FROM verdicts
 		GROUP BY PartitionDate, VariantHash

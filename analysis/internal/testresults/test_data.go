@@ -48,7 +48,7 @@ func createTestHistoryTestData(ctx context.Context, referenceTime time.Time) err
 		insertTVR("realm", testVariant3)
 		insertTVR("realm2", testVariant4)
 
-		insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, status pb.TestVerdictStatus, hasUnsubmittedChanges bool, isFromBisection bool, avgDuration *time.Duration) {
+		insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, status pb.TestVerdict_Status, statusOverride pb.TestVerdict_StatusOverride, hasUnsubmittedChanges bool, isFromBisection bool, avgDuration *time.Duration) {
 			baseTestResult := NewTestResult().
 				WithProject("project").
 				WithTestID("test_id").
@@ -83,6 +83,7 @@ func createTestHistoryTestData(ctx context.Context, referenceTime time.Time) err
 			trs := NewTestVerdict().
 				WithBaseTestResult(baseTestResult.Build()).
 				WithStatus(status).
+				WithStatusOverride(statusOverride).
 				WithPassedAvgDuration(avgDuration).
 				Build()
 			for _, tr := range trs {
@@ -91,16 +92,16 @@ func createTestHistoryTestData(ctx context.Context, referenceTime time.Time) err
 		}
 
 		day := 24 * time.Hour
-		insertTV(referenceTime.Add(-1*time.Hour), testVariant1, "inv1", pb.TestVerdictStatus_EXPECTED, false, false, newDuration(22222*time.Microsecond))
-		insertTV(referenceTime.Add(-12*time.Hour), testVariant1, "inv2", pb.TestVerdictStatus_EXONERATED, false, false, newDuration(1234567890123456*time.Microsecond))
-		insertTV(referenceTime.Add(-24*time.Hour), testVariant2, "inv1", pb.TestVerdictStatus_FLAKY, false, false, nil)
+		insertTV(referenceTime.Add(-1*time.Hour), testVariant1, "inv1", pb.TestVerdict_PASSED, pb.TestVerdict_NOT_OVERRIDDEN, false, false, newDuration(22222*time.Microsecond))
+		insertTV(referenceTime.Add(-12*time.Hour), testVariant1, "inv2", pb.TestVerdict_FAILED, pb.TestVerdict_EXONERATED, false, false, nil)
+		insertTV(referenceTime.Add(-24*time.Hour), testVariant2, "inv1", pb.TestVerdict_FLAKY, pb.TestVerdict_NOT_OVERRIDDEN, false, false, newDuration(1234567890123456*time.Microsecond))
 
-		insertTV(referenceTime.Add(-day-1*time.Hour), testVariant1, "inv1", pb.TestVerdictStatus_UNEXPECTED, false, false, newDuration(33333*time.Microsecond))
-		insertTV(referenceTime.Add(-day-12*time.Hour), testVariant1, "inv2", pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED, true, false, nil)
-		insertTV(referenceTime.Add(-day-24*time.Hour), testVariant2, "inv1", pb.TestVerdictStatus_EXPECTED, true, false, nil)
+		insertTV(referenceTime.Add(-day-1*time.Hour), testVariant1, "inv1", pb.TestVerdict_FAILED, pb.TestVerdict_NOT_OVERRIDDEN, false, false, nil)
+		insertTV(referenceTime.Add(-day-12*time.Hour), testVariant1, "inv2", pb.TestVerdict_EXECUTION_ERRORED, pb.TestVerdict_NOT_OVERRIDDEN, true, false, nil)
+		insertTV(referenceTime.Add(-day-24*time.Hour), testVariant2, "inv1", pb.TestVerdict_PASSED, pb.TestVerdict_NOT_OVERRIDDEN, true, false, nil)
 
-		insertTV(referenceTime.Add(-2*day-3*time.Hour), testVariant3, "inv1", pb.TestVerdictStatus_EXONERATED, true, false, newDuration(88888*time.Microsecond))
-		insertTV(referenceTime.Add(-1*time.Hour), testVariant4, "inv3", pb.TestVerdictStatus_EXPECTED, true, true, newDuration(22222*time.Microsecond))
+		insertTV(referenceTime.Add(-2*day-3*time.Hour), testVariant3, "inv1", pb.TestVerdict_PRECLUDED, pb.TestVerdict_EXONERATED, true, false, nil)
+		insertTV(referenceTime.Add(-1*time.Hour), testVariant4, "inv3", pb.TestVerdict_SKIPPED, pb.TestVerdict_NOT_OVERRIDDEN, true, true, nil)
 
 		return nil
 	})

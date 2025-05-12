@@ -137,7 +137,7 @@ func TestTestHistoryServer(t *testing.T) {
 
 				trs := testresults.NewTestVerdict().
 					WithBaseTestResult(baseTestResult.Build()).
-					WithStatus(pb.TestVerdictStatus_EXPECTED).
+					WithStatus(pb.TestVerdict_PASSED).
 					WithPassedAvgDuration(nil).
 					Build()
 				for _, tr := range trs {
@@ -499,11 +499,17 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
 							VariantHash:   pbutil.VariantHash(var3),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-4 * day)),
 							VariantHash:   pbutil.VariantHash(var4),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 					},
 				}))
@@ -518,16 +524,25 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
 							VariantHash:   pbutil.VariantHash(var1),
 							ExpectedCount: 2,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 2,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
 							VariantHash:   pbutil.VariantHash(var2),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
 							VariantHash:   pbutil.VariantHash(var1),
 							ExpectedCount: 2,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 2,
+							},
 						},
 					},
 					NextPageToken: res.NextPageToken,
@@ -543,11 +558,17 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
 							VariantHash:   pbutil.VariantHash(var2),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
 							VariantHash:   pbutil.VariantHash(var3),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 					},
 				}))
@@ -564,26 +585,41 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
 							VariantHash:   pbutil.VariantHash(var1),
 							ExpectedCount: 2,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 2,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
 							VariantHash:   pbutil.VariantHash(var2),
 							ExpectedCount: 2,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 2,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
 							VariantHash:   pbutil.VariantHash(var1),
 							ExpectedCount: 2,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 2,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
 							VariantHash:   pbutil.VariantHash(var2),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 						{
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
 							VariantHash:   pbutil.VariantHash(var3),
 							ExpectedCount: 1,
+							VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+								Passed: 1,
+							},
 						},
 					},
 				}))

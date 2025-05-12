@@ -78,7 +78,7 @@ func TestReadTestHistory(t *testing.T) {
 				InvocationId:      "inv3",
 				Status:            pb.TestVerdictStatus_EXPECTED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
-				PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
 			},
 			{
@@ -87,7 +87,7 @@ func TestReadTestHistory(t *testing.T) {
 				InvocationId:      "inv2",
 				Status:            pb.TestVerdictStatus_EXONERATED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
-				PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+				PassedAvgDuration: nil,
 			},
 			{
 				TestId:            "test_id",
@@ -95,7 +95,7 @@ func TestReadTestHistory(t *testing.T) {
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_FLAKY,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-				PassedAvgDuration: nil,
+				PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 			},
 			{
 				TestId:            "test_id",
@@ -103,7 +103,7 @@ func TestReadTestHistory(t *testing.T) {
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_UNEXPECTED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-				PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+				PassedAvgDuration: nil,
 			},
 			{
 				TestId:            "test_id",
@@ -128,7 +128,7 @@ func TestReadTestHistory(t *testing.T) {
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_EXONERATED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-				PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
 			},
 		}
@@ -191,7 +191,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_UNEXPECTED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+					PassedAvgDuration: nil,
 				},
 				{
 					TestId:            "test_id",
@@ -231,7 +231,7 @@ func TestReadTestHistory(t *testing.T) {
 						InvocationId:      "inv1",
 						Status:            pb.TestVerdictStatus_FLAKY,
 						PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-						PassedAvgDuration: nil,
+						PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 					},
 					{
 						TestId:            "test_id",
@@ -248,7 +248,7 @@ func TestReadTestHistory(t *testing.T) {
 						InvocationId:      "inv1",
 						Status:            pb.TestVerdictStatus_EXONERATED,
 						PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+						PassedAvgDuration: nil,
 						Changelists:       expectedChangelists,
 					},
 				}))
@@ -270,7 +270,7 @@ func TestReadTestHistory(t *testing.T) {
 						InvocationId:      "inv1",
 						Status:            pb.TestVerdictStatus_EXONERATED,
 						PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+						PassedAvgDuration: nil,
 						Changelists:       expectedChangelists,
 					},
 				}))
@@ -293,7 +293,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_FLAKY,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 				},
 				{
 					TestId:            "test_id",
@@ -323,7 +323,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_FLAKY,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 				},
 				{
 					TestId:            "test_id",
@@ -349,7 +349,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv3",
 					Status:            pb.TestVerdictStatus_EXPECTED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
-					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
 				{
@@ -376,7 +376,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_EXONERATED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
 			}))
@@ -400,7 +400,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv2",
 					Status:            pb.TestVerdictStatus_EXONERATED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					PassedAvgDuration: nil,
 				},
 				{
 					TestId:            "test_id",
@@ -408,7 +408,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_FLAKY,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 				},
 				{
 					TestId:            "test_id",
@@ -416,7 +416,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_UNEXPECTED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+					PassedAvgDuration: nil,
 				},
 			}))
 		})
@@ -441,7 +441,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv2",
 					Status:            pb.TestVerdictStatus_EXONERATED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					PassedAvgDuration: nil,
 				},
 				{
 					TestId:            "test_id",
@@ -449,7 +449,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_FLAKY,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 				},
 				{
 					TestId:            "test_id",
@@ -457,7 +457,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_UNEXPECTED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+					PassedAvgDuration: nil,
 				},
 				{
 					TestId:            "test_id",
@@ -482,7 +482,7 @@ func TestReadTestHistory(t *testing.T) {
 					InvocationId:      "inv1",
 					Status:            pb.TestVerdictStatus_EXONERATED,
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+					PassedAvgDuration: nil,
 					Changelists:       expectedChangelists,
 				},
 			}))
@@ -513,38 +513,57 @@ func TestReadTestHistoryStats(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				ExpectedCount:     1,
 				ExoneratedCount:   1,
-				PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+				PassedAvgDuration: durationpb.New((22222) * time.Microsecond),
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Failed:           1, // which is also exonerated (see below).
+					Passed:           1,
+					FailedExonerated: 1,
+				},
 			},
 			{
-				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
-				VariantHash:       pbutil.VariantHash(testVariant4),
-				ExpectedCount:     1,
-				PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+				PartitionTime: timestamppb.New(referenceTime.Add(-1 * day)),
+				VariantHash:   pbutil.VariantHash(testVariant4),
+				ExpectedCount: 1,
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Skipped: 1,
+				},
 			},
 			{
 				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 				VariantHash:       pbutil.VariantHash(testVariant2),
 				FlakyCount:        1,
-				PassedAvgDuration: nil,
+				PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Flaky: 1,
+				},
 			},
 			{
 				PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 				VariantHash:              pbutil.VariantHash(testVariant1),
 				UnexpectedCount:          1,
 				UnexpectedlySkippedCount: 1,
-				PassedAvgDuration:        durationpb.New(33333 * time.Microsecond),
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Failed:           1,
+					ExecutionErrored: 1,
+				},
 			},
 			{
 				PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 				VariantHash:       pbutil.VariantHash(testVariant2),
 				ExpectedCount:     1,
 				PassedAvgDuration: nil,
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Passed: 1,
+				},
 			},
 			{
-				PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
-				VariantHash:       pbutil.VariantHash(testVariant3),
-				ExoneratedCount:   1,
-				PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+				PartitionTime:   timestamppb.New(referenceTime.Add(-3 * day)),
+				VariantHash:     pbutil.VariantHash(testVariant3),
+				ExoneratedCount: 1,
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Precluded:           1,
+					PrecludedExonerated: 1,
+				},
 			},
 		}
 
@@ -600,13 +619,20 @@ func TestReadTestHistoryStats(t *testing.T) {
 						VariantHash:              pbutil.VariantHash(testVariant1),
 						UnexpectedCount:          1,
 						UnexpectedlySkippedCount: 1,
-						PassedAvgDuration:        durationpb.New(33333 * time.Microsecond),
+						PassedAvgDuration:        nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Failed:           1,
+							ExecutionErrored: 1,
+						},
 					},
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
 						ExpectedCount:     1,
 						PassedAvgDuration: nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Passed: 1,
+						},
 					},
 				}))
 			})
@@ -626,18 +652,27 @@ func TestReadTestHistoryStats(t *testing.T) {
 						VariantHash:              pbutil.VariantHash(testVariant1),
 						UnexpectedlySkippedCount: 1,
 						PassedAvgDuration:        nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							ExecutionErrored: 1,
+						},
 					},
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
 						ExpectedCount:     1,
 						PassedAvgDuration: nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Passed: 1,
+						},
 					},
 					{
-						PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
-						VariantHash:       pbutil.VariantHash(testVariant3),
-						ExoneratedCount:   1,
-						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+						PartitionTime:   timestamppb.New(referenceTime.Add(-3 * day)),
+						VariantHash:     pbutil.VariantHash(testVariant3),
+						ExoneratedCount: 1,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Precluded:           1,
+							PrecludedExonerated: 1,
+						},
 					},
 				}))
 			})
@@ -658,19 +693,29 @@ func TestReadTestHistoryStats(t *testing.T) {
 						PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
 						FlakyCount:        1,
-						PassedAvgDuration: nil,
+						PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Flaky: 1,
+						},
 					},
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant2),
 						ExpectedCount:     1,
 						PassedAvgDuration: nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Passed: 1,
+						},
 					},
 					{
 						PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant3),
 						ExoneratedCount:   1,
-						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+						PassedAvgDuration: nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Precluded:           1,
+							PrecludedExonerated: 1,
+						},
 					},
 				}))
 			})
@@ -689,7 +734,11 @@ func TestReadTestHistoryStats(t *testing.T) {
 						PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 						VariantHash:       pbutil.VariantHash(testVariant3),
 						ExoneratedCount:   1,
-						PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+						PassedAvgDuration: nil,
+						VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+							Precluded:           1,
+							PrecludedExonerated: 1,
+						},
 					},
 				}))
 			})
@@ -709,13 +758,19 @@ func TestReadTestHistoryStats(t *testing.T) {
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					FlakyCount:        1,
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Flaky: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Passed: 1,
+					},
 				},
 			}))
 		})
@@ -734,13 +789,19 @@ func TestReadTestHistoryStats(t *testing.T) {
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					FlakyCount:        1,
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Flaky: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Passed: 1,
+					},
 				},
 			}))
 		})
@@ -767,25 +828,29 @@ func TestReadTestHistoryStats(t *testing.T) {
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant4),
 					ExpectedCount:     1,
-					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+					PassedAvgDuration: nil,
+					VerdictCounts:     &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Skipped: 1},
 				},
 				{
 					PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:              pbutil.VariantHash(testVariant1),
 					UnexpectedlySkippedCount: 1,
 					PassedAvgDuration:        nil,
+					VerdictCounts:            &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{ExecutionErrored: 1},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
+					VerdictCounts:     &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 1},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant3),
 					ExoneratedCount:   1,
-					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+					PassedAvgDuration: nil,
+					VerdictCounts:     &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Precluded: 1, PrecludedExonerated: 1},
 				},
 			}))
 
@@ -799,19 +864,30 @@ func TestReadTestHistoryStats(t *testing.T) {
 					VariantHash:       pbutil.VariantHash(testVariant1),
 					ExpectedCount:     1,
 					ExoneratedCount:   1,
-					PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Failed:           1,
+						Passed:           1,
+						FailedExonerated: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					FlakyCount:        1,
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Flaky: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant1),
 					UnexpectedCount:   1,
-					PassedAvgDuration: durationpb.New(33333 * time.Microsecond),
+					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Failed: 1,
+					},
 				},
 			}))
 		})
@@ -827,32 +903,51 @@ func TestReadTestHistoryStats(t *testing.T) {
 					VariantHash:       pbutil.VariantHash(testVariant1),
 					ExpectedCount:     1,
 					ExoneratedCount:   1,
-					PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Failed:           1,
+						Passed:           1,
+						FailedExonerated: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					FlakyCount:        1,
-					PassedAvgDuration: nil,
+					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Flaky: 1,
+					},
 				},
 				{
 					PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:              pbutil.VariantHash(testVariant1),
 					UnexpectedCount:          1,
 					UnexpectedlySkippedCount: 1,
-					PassedAvgDuration:        durationpb.New(33333 * time.Microsecond),
+					PassedAvgDuration:        nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Failed:           1,
+						ExecutionErrored: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant2),
 					ExpectedCount:     1,
 					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Passed: 1,
+					},
 				},
 				{
 					PartitionTime:     timestamppb.New(referenceTime.Add(-3 * day)),
 					VariantHash:       pbutil.VariantHash(testVariant3),
 					ExoneratedCount:   1,
-					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Precluded:           1,
+						PrecludedExonerated: 1,
+					},
 				},
 			}))
 		})

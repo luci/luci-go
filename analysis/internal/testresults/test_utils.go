@@ -182,7 +182,8 @@ func CopySources(sources Sources) Sources {
 // TestVerdictBuilder provides methods to build a test variant for testing.
 type TestVerdictBuilder struct {
 	baseResult        TestResult
-	status            *pb.TestVerdictStatus
+	status            *pb.TestVerdict_Status
+	statusOverride    pb.TestVerdict_StatusOverride
 	runStatuses       []RunStatus
 	passedAvgDuration *time.Duration
 }
@@ -198,8 +199,9 @@ const (
 func NewTestVerdict() *TestVerdictBuilder {
 	result := new(TestVerdictBuilder)
 	result.baseResult = *NewTestResult().WithStatus(pb.TestResultStatus_PASS).Build()
-	status := pb.TestVerdictStatus_FLAKY
+	status := pb.TestVerdict_FLAKY
 	result.status = &status
+	result.statusOverride = pb.TestVerdict_NOT_OVERRIDDEN
 	result.runStatuses = nil
 	d := 919191 * time.Microsecond
 	result.passedAvgDuration = &d
@@ -223,51 +225,103 @@ func (b *TestVerdictBuilder) WithPassedAvgDuration(duration *time.Duration) *Tes
 }
 
 // WithStatus specifies the status of the test verdict.
-func (b *TestVerdictBuilder) WithStatus(status pb.TestVerdictStatus) *TestVerdictBuilder {
+func (b *TestVerdictBuilder) WithStatus(status pb.TestVerdict_Status) *TestVerdictBuilder {
 	b.status = &status
+	b.runStatuses = nil
+	return b
+}
+
+// WithStatus specifies the status of the test verdict.
+func (b *TestVerdictBuilder) WithStatusOverride(statusOverride pb.TestVerdict_StatusOverride) *TestVerdictBuilder {
+	b.statusOverride = statusOverride
 	return b
 }
 
 // WithRunStatus specifies the status of runs of the test verdict.
 func (b *TestVerdictBuilder) WithRunStatus(runStatuses ...RunStatus) *TestVerdictBuilder {
+	b.status = nil
 	b.runStatuses = runStatuses
 	return b
 }
 
-func applyStatus(trs []*TestResult, status pb.TestVerdictStatus) {
-	// Set all test results to unexpected, not exonerated by default.
+func applyStatus(trs []*TestResult, status pb.TestVerdict_Status, statusOverride pb.TestVerdict_StatusOverride) {
+	// Set all test results to precluded, not exonerated by default.
 	for _, tr := range trs {
-		tr.IsUnexpected = true
+		tr.StatusV2 = pb.TestResult_PRECLUDED
 		tr.ExonerationReasons = nil
+		// Populate the v1 Status values for backwards compatibility.
+		tr.IsUnexpected = true
+		tr.Status = pb.TestResultStatus_SKIP
 	}
+
 	switch status {
-	case pb.TestVerdictStatus_EXONERATED:
+	case pb.TestVerdict_FAILED:
+		// Adding a FAILED result makes the verdict FAILED provided
+		// there are no PASSED results (which there are not).
+		trs[0].StatusV2 = pb.TestResult_FAILED
+
+		// Also create the v1 verdict status UNEXPECTED.
+		for _, tr := range trs {
+			tr.IsUnexpected = true
+			// Needed to avoid the status becoming unexpectedly skipped.
+			tr.Status = pb.TestResultStatus_FAIL
+		}
+	case pb.TestVerdict_PASSED:
+		// Adding a passing result makes the verdict PASSED provided
+		// there are no FAILED results (which there are not).
+		trs[0].StatusV2 = pb.TestResult_PASSED
+
+		// Make all results expected to also produce the the v1 verdict
+		// status EXPECTED.
+		for _, tr := range trs {
+			tr.Status = pb.TestResultStatus_PASS // Allows computing average passed duration.
+			tr.IsUnexpected = false
+		}
+	case pb.TestVerdict_FLAKY:
+		// Adding a passing and failing result makes the status FLAKY
+		// regardless of of the results.
+		trs[0].StatusV2 = pb.TestResult_PASSED
+		trs[1].StatusV2 = pb.TestResult_FAILED
+
+		// Produce a flaky v1 verdict.
+		trs[0].IsUnexpected = false
+		trs[1].IsUnexpected = true
+
+		// Make one of the results a pass so that we can contribute to average passed duration.
+		trs[0].Status = pb.TestResultStatus_PASS
+
+	case pb.TestVerdict_SKIPPED:
+		// Adding a SKIP result to a set of precluded or execution errored
+		// results makes the verdict SKIP.
+		trs[0].StatusV2 = pb.TestResult_SKIPPED
+
+		// Also produce a v1 verdict status of expected.
+		for _, tr := range trs {
+			tr.Status = pb.TestResultStatus_SKIP // should not matter.
+			tr.IsUnexpected = false
+		}
+
+	case pb.TestVerdict_EXECUTION_ERRORED:
+		// Adding one execution errored result to a set of precluded results
+		// makes the verdict EXECUTION_ERRORED.
+		trs[0].StatusV2 = pb.TestResult_EXECUTION_ERRORED
+
+	case pb.TestVerdict_PRECLUDED:
+		// No need to change anything, verdict will already
+		// be precluded as all test results are precluded.
+
+	default:
+		panic("status must be specified")
+	}
+	switch statusOverride {
+	case pb.TestVerdict_EXONERATED:
 		for _, tr := range trs {
 			tr.ExonerationReasons = []pb.ExonerationReason{pb.ExonerationReason_OCCURS_ON_MAINLINE}
 		}
-	case pb.TestVerdictStatus_UNEXPECTED:
+	case pb.TestVerdict_NOT_OVERRIDDEN:
 		// No changes required.
-	case pb.TestVerdictStatus_EXPECTED:
-		allSkipped := true
-		for _, tr := range trs {
-			tr.IsUnexpected = false
-			if tr.Status != pb.TestResultStatus_SKIP {
-				allSkipped = false
-			}
-		}
-		// Make sure not all test results are SKIPPED, to avoid the status
-		// UNEXPECTEDLY_SKIPPED.
-		if allSkipped {
-			trs[0].Status = pb.TestResultStatus_CRASH
-		}
-	case pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED:
-		for _, tr := range trs {
-			tr.Status = pb.TestResultStatus_SKIP
-		}
-	case pb.TestVerdictStatus_FLAKY:
-		trs[0].IsUnexpected = false
 	default:
-		panic("status must be specified")
+		panic("status override must be specified")
 	}
 }
 
@@ -357,7 +411,7 @@ func (b *TestVerdictBuilder) Build() []*TestResult {
 	// Normally only one of these should be set.
 	// If both are set, run statuses has precedence.
 	if b.status != nil {
-		applyStatus(trs, *b.status)
+		applyStatus(trs, *b.status, b.statusOverride)
 	}
 	for i, runStatus := range b.runStatuses {
 		runTRs := trs[i*2 : (i+1)*2]

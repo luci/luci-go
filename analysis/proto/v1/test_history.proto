@@ -137,20 +137,59 @@ message QueryTestHistoryStatsResponse {
     // The hash of the variant.
     string variant_hash = 2;
 
+    // Counts of verdicts, using verdict status v2.
+    message VerdictCounts {
+      // Counts of verdicts by base status.
+
+      // The number of failed verdicts.
+      // Count includes both exonerated and non-exonerated verdicts.
+      int32 failed = 1;
+      // The number of flaky verdicts.
+      int32 flaky = 2;
+      // The number of passed verdicts.
+      int32 passed = 3;
+      // The number of skipped verdicts.
+      int32 skipped = 4;
+      // The number of execution errored verdicts.
+      // Count includes both exonerated and non-exonerated verdicts.
+      int32 execution_errored = 5;
+      // The number of precluded verdicts.
+      // Count includes both exonerated and non-exonerated verdicts.
+      int32 precluded = 6;
+
+      // Breakdown of selected failed statuses by override status.
+      // Summing all _exonerated_count(s) below yields the total number
+      // of exonerated verdicts.
+
+      // The number of failed verdicts with exonerations.
+      int32 failed_exonerated = 7;
+      // The number of execution errored verdicts with exonerations.
+      int32 execution_errored_exonerated = 8;
+      // The number of precluded verdicts with exonerations.
+      int32 precluded_exonerated = 9;
+    }
+
+    // The counts of verdicts in the group.
+    VerdictCounts verdict_counts = 9;
+
+    // The following fields refer to counts based on v1 verdict statuses.
+    // They are deprecated in favour of v2 verdict status counts above.
+
+    // Deprecated: Use `counts` field instead.
     // The number of unexpected test verdicts in the group.
-    int32 unexpected_count = 3;
+    int32 unexpected_count = 3 [ deprecated = true ];
 
     // The number of unexpectedly skipped test verdicts in the group.
-    int32 unexpectedly_skipped_count = 4;
+    int32 unexpectedly_skipped_count = 4 [ deprecated = true ];
 
     // The number of flaky test verdicts in the group.
-    int32 flaky_count = 5;
+    int32 flaky_count = 5 [ deprecated = true ];
 
     // The number of exonerated test verdicts in the group.
-    int32 exonerated_count = 6;
+    int32 exonerated_count = 6 [ deprecated = true ];
 
     // The number of expected test verdicts in the group.
-    int32 expected_count = 7;
+    int32 expected_count = 7 [ deprecated = true ];
 
     // The average duration of passing test results in the group.
     google.protobuf.Duration passed_avg_duration = 8;
