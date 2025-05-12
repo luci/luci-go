@@ -74,23 +74,6 @@ func (s *DecoratedTestVariantBranches) Query(ctx context.Context, req *QueryTest
 	return
 }
 
-func (s *DecoratedTestVariantBranches) QuerySourcePositions(ctx context.Context, req *QuerySourcePositionsRequest) (rsp *QuerySourcePositionsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QuerySourcePositions", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QuerySourcePositions(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QuerySourcePositions", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedTestVariantBranches) QuerySourceVerdicts(ctx context.Context, req *QuerySourceVerdictsRequest) (rsp *QuerySourceVerdictsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

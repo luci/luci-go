@@ -47,8 +47,6 @@ service TestVariantBranches {
   // Query queries test variant branches for a given test id and ref.
   rpc Query(QueryTestVariantBranchRequest) returns (
     QueryTestVariantBranchResponse) {};
-  // Lists commits and the test verdicts at these commits, starting from a source position.
-  rpc QuerySourcePositions(QuerySourcePositionsRequest) returns (QuerySourcePositionsResponse) {};
   // Lists source verdicts for a test variant branch.
   rpc QuerySourceVerdicts(QuerySourceVerdictsRequest) returns (QuerySourceVerdictsResponse) {};
   // Query for AI analysis of the possible culprits of a test changepoint.
