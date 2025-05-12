@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { getInvURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
@@ -26,7 +27,6 @@ import {
 } from '@/generic_libs/components/expandable_entry';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 export interface ArtifactsEntryProps {

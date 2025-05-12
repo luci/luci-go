@@ -30,13 +30,13 @@ import { CulpritVerificationTable } from '@/bisection/components/culprit_verific
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
 import { TestFailuresTable } from '@/bisection/components/test_table';
-import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
 import {
   GenericCulpritWithDetails,
   GenericNthSectionAnalysisResult,
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 

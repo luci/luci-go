@@ -17,12 +17,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { formatNum } from '@/generic_libs/tools/string_utils';
 import { QueryTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
 
 export const QUERY_TEST_VERDICT_PAGE_SIZE = 10000;

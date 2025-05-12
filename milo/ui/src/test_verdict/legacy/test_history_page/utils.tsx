@@ -14,8 +14,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { QueryTestMetadataRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 const MAIN_GIT_REF = 'refs/heads/main';
 

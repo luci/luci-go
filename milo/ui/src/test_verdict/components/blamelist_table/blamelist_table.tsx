@@ -14,11 +14,11 @@
 
 import { ListRange } from 'react-virtuoso';
 
-import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputTestVariantBranch,
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
+import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import {
   UseVirtualizedQueryOption,
   useVirtualizedQuery,

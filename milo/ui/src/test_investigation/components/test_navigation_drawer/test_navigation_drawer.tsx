@@ -17,13 +17,13 @@ import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import {
   buildHierarchyTree,

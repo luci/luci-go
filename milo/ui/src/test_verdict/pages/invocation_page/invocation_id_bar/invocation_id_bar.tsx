@@ -18,13 +18,13 @@ import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { Timestamp } from '@/common/components/timestamp';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import {
   getBuildURLPathFromBuildId,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/test_verdict/constants/invocation';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 export interface InvocationIdBarProps {
   readonly invName: string;

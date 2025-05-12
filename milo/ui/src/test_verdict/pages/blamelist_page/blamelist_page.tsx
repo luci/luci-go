@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
 import { useLocation, useParams } from 'react-router-dom';
 
-import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputTestVariantBranch,
   ParsedTestVariantBranchName,
@@ -28,6 +27,7 @@ import {
   useEstablishProjectCtx,
 } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
+import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { BlamelistTable } from '@/test_verdict/components/blamelist_table';

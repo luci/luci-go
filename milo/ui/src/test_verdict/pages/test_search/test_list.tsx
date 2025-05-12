@@ -16,7 +16,7 @@ import { Link, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
+import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { QueryTestsRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 

@@ -19,6 +19,7 @@ import { createContext, ReactNode, useEffect, useMemo } from 'react';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { useInfiniteIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   useNotifyAlertsClient,
   useSoMAlertsClient,
@@ -48,7 +49,6 @@ import {
   TestVariant,
   TestVariantStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 const FIELD_MASK = Object.freeze([
   'builds.*.builder',

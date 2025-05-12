@@ -31,8 +31,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';

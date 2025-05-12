@@ -27,9 +27,9 @@ import {
 } from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from './context';

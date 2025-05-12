@@ -15,11 +15,11 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputChangepoint,
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
+import { useChangepointsClient } from '@/common/hooks/prpc_clients';
 import {
   ChangepointPredicate,
   QueryChangepointsInGroupRequest,

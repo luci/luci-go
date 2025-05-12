@@ -26,7 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import {
   ListTestAnalysesRequest,
   TestAnalysis,

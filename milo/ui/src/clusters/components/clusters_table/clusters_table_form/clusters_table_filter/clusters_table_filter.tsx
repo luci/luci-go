@@ -20,7 +20,6 @@ import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import { useMemo, useRef, useState } from 'react';
 
-import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { useFilterParam } from '@/clusters/components/clusters_table/hooks';
 import {
   Aip160Autocomplete,
@@ -28,6 +27,7 @@ import {
   FieldDef,
   tryUnquoteStr,
 } from '@/common/components/aip_160_autocomplete';
+import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
 import { HighlightedText } from '@/generic_libs/components/highlighted_text';
 import {
   CommitOrClear,

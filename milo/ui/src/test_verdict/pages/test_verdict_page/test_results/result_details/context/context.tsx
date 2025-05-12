@@ -15,10 +15,10 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { createContext, ReactNode, useEffect, useMemo } from 'react';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 interface ResultDataContext {

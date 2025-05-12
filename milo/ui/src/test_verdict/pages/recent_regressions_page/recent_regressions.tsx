@@ -16,7 +16,6 @@ import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { useChangepointsClient } from '@/analysis/hooks/prpc_clients';
 import { OutputChangepointGroupSummary } from '@/analysis/types';
 import {
   emptyPageTokenUpdater,
@@ -25,6 +24,7 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
+import { useChangepointsClient } from '@/common/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ChangepointPredicate,

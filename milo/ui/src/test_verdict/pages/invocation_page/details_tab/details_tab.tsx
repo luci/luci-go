@@ -19,6 +19,7 @@ import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PropertyViewer } from '@/common/components/property_viewer';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   PropertyViewerConfig,
   PropertyViewerConfigInstance,
@@ -26,7 +27,6 @@ import {
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { invocation_StateToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { IncludedInvocationsTimeline } from './included_invocations_timeline';
 import { SourceSpecSection } from './source_spec_section';

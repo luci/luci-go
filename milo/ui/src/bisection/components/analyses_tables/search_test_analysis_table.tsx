@@ -21,7 +21,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useQuery } from '@tanstack/react-query';
 
-import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TestAnalysesTable } from './test_analyses_table';

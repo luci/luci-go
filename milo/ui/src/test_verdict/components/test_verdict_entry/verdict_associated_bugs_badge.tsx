@@ -16,8 +16,8 @@ import { useQueries } from '@tanstack/react-query';
 import { memo } from 'react';
 
 import { AssociatedBugsBadge } from '@/analysis/components/associated_bugs_badge';
-import { useBatchedClustersClient } from '@/analysis/hooks/prpc_clients';
 import { OutputClusterResponse } from '@/analysis/types';
+import { useBatchedClustersClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import {
   ClusterRequest,

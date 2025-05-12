@@ -17,11 +17,11 @@ import { CircularProgress } from '@mui/material';
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   ArtifactContentMatcher,
   QueryTestVariantArtifactsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryTestVariantArtifactsResponse } from '@/test_verdict/types';
 
 import { LogSnippetRow } from '../log_snippet_row';

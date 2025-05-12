@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 
 import {
   SIDE_PANEL_PADDING,

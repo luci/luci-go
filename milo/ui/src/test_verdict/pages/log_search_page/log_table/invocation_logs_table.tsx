@@ -23,9 +23,9 @@ import {
   getPageSize,
   getPageToken,
 } from '@/common/components/params_pager';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryInvocationVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 import { OutputQueryInvocationVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
 import { SearchFilter, useInvocationLogPagerCtx } from '../context';

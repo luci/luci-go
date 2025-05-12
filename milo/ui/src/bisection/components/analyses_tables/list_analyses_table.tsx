@@ -30,7 +30,7 @@ import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import {
   Analysis,
   ListAnalysesRequest,

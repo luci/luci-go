@@ -17,12 +17,12 @@ import { UseQueryOptions, useQueries } from '@tanstack/react-query';
 import { chunk } from 'lodash-es';
 import { useEffect } from 'react';
 
-import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
 import {
   OutputBatchGetTestVariantBranchResponse,
   ParsedTestVariantBranchName,
   TestVariantBranchDef,
 } from '@/analysis/types';
+import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import {
   BatchGetTestVariantBranchRequest,
   BatchGetTestVariantBranchResponse,

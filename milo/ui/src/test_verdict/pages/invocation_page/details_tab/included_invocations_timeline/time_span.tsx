@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ScaleTime } from 'd3';
 import { DateTime } from 'luxon';
 
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 
 import {
   TIME_SPAN_HEIGHT,

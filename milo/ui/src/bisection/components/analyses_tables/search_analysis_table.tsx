@@ -27,7 +27,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { useQuery } from '@tanstack/react-query';
 
-import { useAnalysesClient } from '@/bisection/hooks/prpc_clients';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { QueryAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { AnalysisTableRow } from './table_row';

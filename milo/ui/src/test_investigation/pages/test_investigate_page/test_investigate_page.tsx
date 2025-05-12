@@ -23,13 +23,14 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { OutputClusterResponse } from '@/analysis/types';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   useBatchedClustersClient,
   useTestVariantBranchesClient,
-} from '@/analysis/hooks/prpc_clients';
-import { OutputClusterResponse } from '@/analysis/types';
-import { useAnalysesClient as useLuciBisectionClient } from '@/bisection/hooks/prpc_clients';
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+  useResultDbClient,
+  useAnalysesClient as useLuciBisectionClient,
+} from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
@@ -59,7 +60,6 @@ import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test
 import { TestDetails } from '@/test_investigation/components/test_details';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { getProjectFromRealm } from '../../utils/test_variant_utils';
 
@@ -96,7 +96,6 @@ export function TestInvestigatePage(): JSX.Element {
   } = useQuery({
     queryKey: ['invocation', rawInvocationId],
     queryFn: async () => {
-      if (!invocationQueryEnabled) return null;
       return resultDbClient.GetInvocation(invocationRequest);
     },
     enabled: invocationQueryEnabled,

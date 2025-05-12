@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ChangepointsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
+import { TestHistoryClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { TestVariantBranchesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { AnalysesClientImpl } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
+import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TreesClientImpl } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
+import { BatchedClustersClientImpl } from '@/proto_utils/batched_clients/clusters_client';
 import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_clients/milo_internal_client';
 
 import { usePrpcServiceClient } from './prpc_query';
@@ -36,5 +42,47 @@ export function useTreesClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciTreeStatus.host,
     ClientImpl: TreesClientImpl,
+  });
+}
+
+export function useResultDbClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.resultdb.host,
+    ClientImpl: ResultDBClientImpl,
+  });
+}
+
+export function useChangepointsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: ChangepointsClientImpl,
+  });
+}
+
+export function useTestVariantBranchesClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: TestVariantBranchesClientImpl,
+  });
+}
+
+export function useTestHistoryClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: TestHistoryClientImpl,
+  });
+}
+
+export function useBatchedClustersClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: BatchedClustersClientImpl,
+  });
+}
+
+export function useAnalysesClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciBisection.host,
+    ClientImpl: AnalysesClientImpl,
   });
 }

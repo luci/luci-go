@@ -27,6 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   renderMustacheMarkdown,
   targetedInstructionMap,
@@ -34,7 +35,6 @@ import {
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { InstructionTarget } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/instruction.pb';
 import { QueryInstructionRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import { InstructionDependency } from './instruction_dependency';
 import { codeBlockStyles } from './style';

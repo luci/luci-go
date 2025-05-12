@@ -17,9 +17,12 @@ import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
+import {
+  useTestHistoryClient,
+  useResultDbClient,
+} from '@/common/hooks/prpc_clients';
 import { QueryTestHistoryRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import {
   TestVerdict,
@@ -27,7 +30,6 @@ import {
   testVerdictStatusToJSON,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 const VERDICT_STATUS_CLASS_MAP: { [status: string]: string } = {
   [TestVerdictStatus.UNEXPECTED]: 'failure',

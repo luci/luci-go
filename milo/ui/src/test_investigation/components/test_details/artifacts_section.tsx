@@ -25,9 +25,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
 import {
   buildCustomArtifactTreeNodes,
