@@ -33,7 +33,7 @@ import (
 )
 
 // expiryRandInterval is used by TokenExpiresInRnd.
-const expiryRandInterval = 30 * time.Second
+const expiryRandInterval = 5 * time.Second
 
 const (
 	// NoEmail indicates an OAuth2 token is not associated with an email.
@@ -263,7 +263,7 @@ func TokenExpiresIn(ctx context.Context, t *Token, lifetime time.Duration) bool 
 //   - The token expires before now+lifetime.
 //   - The token expiration time is between (now+lifetime, now+lifetime+rnd),
 //     where rnd is a uniformly distributed random number between 0 and
-//     expiryRandInterval sec (which is set to 30 sec).
+//     expiryRandInterval sec (which is set to 5 sec).
 //
 // This is useful for processes that use multiple service account keys at
 // around the same time. Without randomization, access tokens for such keys

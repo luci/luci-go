@@ -411,6 +411,30 @@ func TestRefreshToken(t *testing.T) {
 		assert.Loosely(t, after.Sub(before), should.BeLessThan(4*time.Minute))
 		assert.Loosely(t, 5000-tokenProvider.transientRefreshErrors, should.Equal(15))
 	})
+
+	ftt.Run("Test token provider not really refreshing the token", t, func(t *ftt.Test) {
+		almostExpiredTok := &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      now.Add(time.Second), // very close to expiration
+			},
+			Email: "cached-email@example.com",
+		}
+		tokenProvider := &fakeTokenProvider{
+			interactive:    false,
+			tokenToRefresh: almostExpiredTok, // returns it unchanged
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, almostExpiredTok)
+
+		// Gets the token back, even though it doesn't have enough lifetime left.
+		oauthTok, err := auth.GetAccessToken(time.Minute)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, oauthTok.AccessToken, should.Equal("cached"))
+
+		// Still attempted to refresh it though.
+		assert.That(t, tokenProvider.refreshTokenCalled, should.BeTrue)
+	})
 }
 
 func TestActorMode(t *testing.T) {

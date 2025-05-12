@@ -2404,13 +2404,6 @@ func (s *Server) initAuthStart() error {
 	// log spam.
 	opts.DisableMonitoring = true
 
-	// GCP is very aggressive in caching the token internally (in the metadata
-	// server) and refreshing it only when it is very close to its expiration. We
-	// need to match this behavior in our in-process cache, otherwise
-	// GetAccessToken complains that the token refresh procedure doesn't actually
-	// change the token (because the metadata server returned the cached one).
-	opts.MinTokenLifetime = 20 * time.Second
-
 	// The default value for ClientAuth.SecretsDir is usually hardcoded to point
 	// to where the token cache is located on developer machines (~/.config/...).
 	// This location often doesn't exist when running from inside a container.

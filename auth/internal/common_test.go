@@ -174,10 +174,10 @@ func TestTokenHelpers(t *testing.T) {
 		}
 
 		// The histogram should have a shape:
-		//   * 0 samples until somewhere around 3 min 30 sec
+		//   * 0 samples until somewhere around 3 min 55 sec
 		//     (which is tokenLifetime - requestedLifetime - expiryRandInterval).
 		//   * increasingly more non zero samples in the following
-		//     expiryRandInterval seconds (3 min 30 sec - 4 min 00 sec).
+		//     expiryRandInterval seconds (3 min 55 sec - 4 min 00 sec).
 		//   * 100% samples after tokenLifetime - requestedLifetime (> 4 min).
 		firstNonZero := -1
 		firstFull := -1
@@ -190,15 +190,16 @@ func TestTokenHelpers(t *testing.T) {
 			}
 		}
 
-		// The first non-zero sample is at 3 min 30 sec (+1, by chance).
-		assert.Loosely(t, firstNonZero, should.Equal(3*60+30+1))
-		// The first 100% sample is at 4 min (-1, by chance).
-		assert.Loosely(t, firstFull, should.Equal(4*60-1))
+		// The first non-zero sample.
+		assert.Loosely(t, time.Duration(firstNonZero)*time.Second,
+			should.Equal(tokenLifetime-requestedLifetime-expiryRandInterval))
+		// The first 100% sample.
+		assert.Loosely(t, time.Duration(firstFull)*time.Second,
+			should.Equal(tokenLifetime-requestedLifetime))
 		// The in-between contains linearly increasing chance of early expiry, as
 		// can totally be seen from this assertion.
 		assert.Loosely(t, hist[firstNonZero:firstFull], should.Match([]int{
-			8, 6, 8, 23, 20, 27, 28, 29, 25, 36, 43, 41, 53, 49,
-			49, 57, 59, 62, 69, 69, 76, 72, 82, 73, 85, 83, 93, 93,
+			6, 35, 55, 71, 93,
 		}))
 	})
 }

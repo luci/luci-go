@@ -534,16 +534,14 @@ type Options struct {
 	// The default is 'luci-go'.
 	MonitorAs string
 
-	// MinTokenLifetime defines a minimally acceptable lifetime of access tokens
-	// generated internally by authenticating http.RoundTripper, TokenSource and
-	// PerRPCCredentials.
+	// MinTokenLifetime defines the remaining lifetime of a cached access token
+	// before it is refreshed.
 	//
-	// Not used when GetAccessToken is called directly (it accepts this parameter
-	// as an argument).
+	// This used internally by an authenticating http.RoundTripper, TokenSource
+	// and PerRPCCredentials. Not used when GetAccessToken is called directly (it
+	// accepts this parameter as an argument).
 	//
-	// The default is 2 min. There's rarely a need to change it and using smaller
-	// values may be dangerous (e.g. if the request gets stuck somewhere or the
-	// token is cached incorrectly it may expire before it is checked).
+	// The default is 10 sec.
 	MinTokenLifetime time.Duration
 
 	// testingCache is used in unit tests.
@@ -578,7 +576,7 @@ func (opts *Options) PopulateDefaults() {
 		opts.Transport = http.DefaultTransport
 	}
 	if opts.MinTokenLifetime == 0 {
-		opts.MinTokenLifetime = 2 * time.Minute
+		opts.MinTokenLifetime = 10 * time.Second
 	}
 
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
@@ -786,10 +784,15 @@ func (a *Authenticator) PerRPCCredentials() (credentials.PerRPCCredentials, erro
 	}
 }
 
-// GetAccessToken returns a valid token with the specified minimum lifetime.
+// GetAccessToken returns an authentication token.
 //
 // Returns either an access token or an ID token based on UseIDTokens
 // authenticator option.
+//
+// The given lifetime is the preferred minimal lifetime the returned token
+// should have. If the currently cached token expires sooner, it will be
+// proactively refreshed. Depending on the token provider used, this may not
+// actually result in a new token though.
 //
 // Does not interact with the user. May return ErrLoginRequired.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, error) {
@@ -823,10 +826,23 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 			}
 			return nil, errors.Annotate(err, "failed to refresh auth token").Err()
 		}
-		// Note: no randomization here. It is a sanity check that verifies
-		// refreshToken did its job.
+		// Verify we've got a token that haven't expired yet. We should never ever
+		// return expired tokens, they are useless.
+		if internal.TokenExpiresIn(a.ctx, tok, 0) {
+			return nil, errors.Reason("failed to refresh auth token: got an expired token after the refresh").Err()
+		}
+		// Some external token providers implement caches themselves and, depending
+		// on how this cache functions, they may return the same token with its
+		// expiry unchanged instead of minting a new token. Log a warning when this
+		// happens, but carry on. Most likely such token is still usable until it
+		// truly expires. Note that such token will be attempted to be refreshed
+		// EVERY time it is used, resulting in excessive calls to the token
+		// provider. This can be fixed by some kind of rate limiting if it becomes
+		// a problem.
 		if internal.TokenExpiresIn(a.ctx, tok, lifetime) {
-			return nil, errors.Reason("failed to refresh auth token: still stale even after refresh").Err()
+			logging.Warningf(a.ctx,
+				"The token provider didn't refresh the token (it still expires in %s), trying to use it anyway",
+				tok.Expiry.Round(0).Sub(clock.Now(a.ctx)))
 		}
 	}
 
@@ -1473,12 +1489,14 @@ func (a *Authenticator) refreshToken(prev *internal.Token, lifetime time.Duratio
 		refreshCb: func(ctx context.Context, prev *internal.Token) (*internal.Token, error) {
 			// In Actor mode, need to make sure we have a sufficiently fresh base
 			// token first, since it's needed to call "acting" API to get a new auth
-			// token for the target service account. 1 min should be more than enough
-			// to make an RPC.
+			// token for the target service account. Hopefully 10 sec is enough
+			// to make an RPC. Increasing this value risks hitting edge cases related
+			// to token providers that cache tokens internally (see GetAccessToken
+			// implementation).
 			var base *internal.Token
 			if a.actingMode() != actingModeNone {
 				var err error
-				if base, err = a.getBaseTokenLocked(ctx, time.Minute); err != nil {
+				if base, err = a.getBaseTokenLocked(ctx, 10*time.Second); err != nil {
 					return nil, err
 				}
 			}
