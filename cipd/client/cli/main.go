@@ -3558,6 +3558,8 @@ func cmdProxy(params Parameters) *subcommands.Command {
 			c := &proxyRun{}
 			c.registerBaseFlags()
 			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
+			c.authFlags.RegisterCredentialHelperFlags(&c.Flags)
+			c.authFlags.RegisterADCFlags(&c.Flags)
 			c.Flags.StringVar(&c.unixSocket, "unix-socket", "", "Unix domain socket path to serve the proxy on (default to a temp file).")
 			c.Flags.StringVar(&c.proxyPolicy, "proxy-policy", "-", "Path to a text protobuf file with cipd.proxy.Policy message (or - for reading from stdin).")
 			return c
