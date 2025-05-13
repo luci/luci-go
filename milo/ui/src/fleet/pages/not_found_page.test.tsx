@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CircularProgress, {
-  CircularProgressProps,
-} from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid2';
+import { render, screen } from '@testing-library/react';
 
-const CentralizedProgress = (props: CircularProgressProps) => {
-  return (
-    <Grid container alignItems="center" justifyContent="center">
-      <CircularProgress {...props} />
-    </Grid>
-  );
-};
+import { PageNotFoundPage } from './not_found_page';
 
-export default CentralizedProgress;
+describe('<PageNotFoundPage />', () => {
+  it('should render', async () => {
+    render(<PageNotFoundPage />);
+
+    expect(screen.getByText(/Page not found/)).toBeVisible();
+  });
+});

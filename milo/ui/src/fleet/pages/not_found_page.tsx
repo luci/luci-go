@@ -20,7 +20,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 
 import { FleetHelmet } from '../layouts/fleet_helmet';
 
-const PageNotFoundPage = () => {
+export const PageNotFoundPage = () => {
   return (
     <div
       css={{

@@ -21,7 +21,7 @@ import { ListMachinesRequest } from '@/proto/go.chromium.org/infra/unifiedfleet/
 import { useUfsClient } from '../hooks/prpc_clients';
 import { FleetHelmet } from '../layouts/fleet_helmet';
 
-const SandboxPage = () => {
+export const SandboxPage = () => {
   // See go/luci-ui-rpc-tutorial for more info on how to make pRPC requests.
   const ufsClient = useUfsClient();
 

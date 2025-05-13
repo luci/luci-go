@@ -140,7 +140,7 @@ export const DeviceDetailsPage = () => {
           margin: '24px 0px',
         }}
       >
-        <CentralizedProgress />
+        <CentralizedProgress data-testid="loading-spinner" />
       </div>
     );
   }

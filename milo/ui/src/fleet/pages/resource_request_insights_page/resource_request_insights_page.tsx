@@ -190,7 +190,7 @@ export const ResourceRequestListPage = () => {
     return (
       <Container>
         <div css={{ padding: '0 50%' }}>
-          <CircularProgress />
+          <CircularProgress data-testid="loading-spinner" />
         </div>
       </Container>
     );
