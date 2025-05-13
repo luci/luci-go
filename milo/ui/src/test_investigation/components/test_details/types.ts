@@ -22,7 +22,7 @@ export interface CustomArtifactTreeNode {
   children?: CustomArtifactTreeNode[];
   isSummary?: boolean;
   isLeaf?: boolean;
-  artifactPb?: Artifact;
+  artifact?: Artifact;
   level: number;
   isRootChild?: boolean;
 }

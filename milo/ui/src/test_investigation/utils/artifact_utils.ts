@@ -51,7 +51,7 @@ export function addArtifactsToNodeChildren(
           name: part,
           level: currentLevelForNode,
           isLeaf: isLeafPart,
-          artifactPb: isLeafPart ? art : undefined,
+          artifact: isLeafPart ? art : undefined,
           children: isLeafPart ? undefined : [],
         };
         artifactMap.set(currentPathForMapKey, node);

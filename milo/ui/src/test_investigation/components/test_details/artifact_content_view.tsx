@@ -66,10 +66,10 @@ export function ArtifactContentView({
   }
 
   if (
-    selectedArtifactForDisplay?.artifactPb &&
+    selectedArtifactForDisplay?.artifact &&
     !selectedArtifactForDisplay.isSummary
   ) {
-    const artifactPb = selectedArtifactForDisplay.artifactPb;
+    const artifactPb = selectedArtifactForDisplay.artifact;
     return (
       <Box>
         <Typography variant="h6" gutterBottom>

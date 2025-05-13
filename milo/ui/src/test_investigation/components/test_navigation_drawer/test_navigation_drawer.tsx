@@ -57,9 +57,8 @@ export function TestNavigationDrawer({
 
   const { data: testVariantsResponse, isLoading: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
-      queryKey: ['queryTestVariantsForDrawer', invocation.name],
-      queryFn: async () => {
-        const req = QueryTestVariantsRequest.fromPartial({
+      ...resultDbClient.QueryTestVariants.query(
+        QueryTestVariantsRequest.fromPartial({
           invocations: [invocation.name],
           resultLimit: 100,
           pageSize: 1000,
@@ -73,10 +72,8 @@ export function TestNavigationDrawer({
             'status',
             'results.*.result.expected',
           ],
-        });
-        const res = await resultDbClient.QueryTestVariants(req);
-        return res;
-      },
+        }),
+      ),
       enabled: !!invocation.name,
       staleTime: 5 * 60 * 1000,
       select: (data) => data?.testVariants || [],

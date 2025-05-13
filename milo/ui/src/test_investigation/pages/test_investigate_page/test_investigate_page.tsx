@@ -42,14 +42,8 @@ import {
   SourceRef as AnalysisSourceRef,
   GitilesRef as AnalysisGitilesRef,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
-import {
-  QueryTestVariantBranchRequest,
-  TestVariantBranch,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import {
-  BatchGetTestAnalysesRequest,
-  TestAnalysis,
-} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { QueryTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { BatchGetTestAnalysesRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   GetInvocationRequest,
@@ -94,10 +88,7 @@ export function TestInvestigatePage(): JSX.Element {
     isError: isInvocationError,
     error: invocationError,
   } = useQuery({
-    queryKey: ['invocation', rawInvocationId],
-    queryFn: async () => {
-      return resultDbClient.GetInvocation(invocationRequest);
-    },
+    ...resultDbClient.GetInvocation.query(invocationRequest),
     enabled: invocationQueryEnabled,
     staleTime: 5 * 60 * 1000,
     select: (data: Invocation | null) => data,
@@ -135,12 +126,7 @@ export function TestInvestigatePage(): JSX.Element {
     isError: isTestVariantError,
     error: testVariantError,
   } = useQuery({
-    queryKey: ['testVariant', rawInvocationId, decodedTestId, rawVariantHash],
-    queryFn: async () => {
-      if (!testVariantQueryEnabled) return null;
-      // TODO: Change to GetTestVerdicts once it is available.
-      return resultDbClient.BatchGetTestVariants(testVariantRequest);
-    },
+    ...resultDbClient.BatchGetTestVariants.query(testVariantRequest),
     enabled: testVariantQueryEnabled,
     staleTime: Infinity,
     select: (data): TestVariant | null => {
@@ -178,15 +164,9 @@ export function TestInvestigatePage(): JSX.Element {
 
   const associatedBugsQueries = useQueries({
     queries: associatedBugsQueriesEnabled
-      ? resultsToCluster.map((r, index) => ({
-          queryKey: [
-            'associatedBug',
-            project,
-            testVariantData!.testId,
-            r!.resultId || `reason-${index}`,
-          ],
-          queryFn: async () => {
-            const req = ClusterRequest.fromPartial({
+      ? resultsToCluster.map((r) => ({
+          ...analysisClustersClient.Cluster.query(
+            ClusterRequest.fromPartial({
               project,
               testResults: [
                 {
@@ -194,9 +174,8 @@ export function TestInvestigatePage(): JSX.Element {
                   failureReason: r!.failureReason,
                 },
               ],
-            });
-            return analysisClustersClient.Cluster(req);
-          },
+            }),
+          ),
           select: (res: ClusterResponse): OutputClusterResponse =>
             res as OutputClusterResponse,
           enabled: associatedBugsQueriesEnabled,
@@ -283,27 +262,16 @@ export function TestInvestigatePage(): JSX.Element {
     isError: isTestVariantBranchError,
     error: testVariantBranchError,
   } = useQuery({
-    queryKey: [
-      'testVariantBranch',
-      project,
-      testVariantData?.testId,
-      testVariantData?.variantHash,
-      sourceRefForAnalysis,
-    ],
-    queryFn: async () => {
-      if (!testVariantBranchQueryEnabled) return null;
-      const response = await analysisBranchesClient.Query(
-        testVariantBranchRequest,
-      );
+    ...analysisBranchesClient.Query.query(testVariantBranchRequest),
+    enabled: testVariantBranchQueryEnabled,
+    staleTime: 5 * 60 * 1000,
+    select: (response) => {
       return (
         response.testVariantBranch?.find(
           (tvb) => tvb.variantHash === testVariantData!.variantHash,
         ) || null
       );
     },
-    enabled: testVariantBranchQueryEnabled,
-    staleTime: 5 * 60 * 1000,
-    select: (data: TestVariantBranch | null) => data,
   });
 
   const bisectionAnalysisQueryEnabled = !!(
@@ -338,23 +306,14 @@ export function TestInvestigatePage(): JSX.Element {
     isError: isBisectionAnalysisError,
     error: bisectionAnalysisError,
   } = useQuery({
-    queryKey: [
-      'bisectionTestAnalysis',
-      project,
-      bisectionTestFailureIdentifier,
-    ],
-    queryFn: async () => {
-      if (!bisectionAnalysisQueryEnabled) return null;
-      const response = await bisectionClient.BatchGetTestAnalyses(
-        bisectionAnalysisRequest,
-      );
+    ...bisectionClient.BatchGetTestAnalyses.query(bisectionAnalysisRequest),
+    enabled: bisectionAnalysisQueryEnabled,
+    staleTime: 15 * 60 * 1000, // More stale as bisection results change less often
+    select: (response) => {
       return response.testAnalyses && response.testAnalyses.length > 0
         ? response.testAnalyses[0]
         : null;
     },
-    enabled: bisectionAnalysisQueryEnabled,
-    staleTime: 15 * 60 * 1000, // More stale as bisection results change less often
-    select: (data: TestAnalysis | null) => data,
   });
 
   const handleDrawerTestSelection = (

@@ -28,6 +28,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 import {
   buildCustomArtifactTreeNodes,
@@ -38,7 +39,7 @@ import {
 
 import { ArtifactContentView } from './artifact_content_view';
 import { ArtifactTreeView } from './artifact_tree_view';
-import { CustomArtifactTreeNode, FetchedArtifactContent } from './types';
+import { CustomArtifactTreeNode } from './types';
 
 interface ArtifactsSectionProps {
   currentResult?: TestResult;
@@ -65,38 +66,30 @@ export function ArtifactsSection({
     data: testResultArtifactsData,
     isLoading: isLoadingTestResultArtifacts,
   } = useQuery({
-    queryKey: ['listTestResultArtifactsForSection', currentResult?.name],
-    queryFn: async () => {
-      if (!currentResult?.name) return null;
-      const req = ListArtifactsRequest.fromPartial({
-        parent: currentResult.name,
+    ...resultDbClient.ListArtifacts.query(
+      ListArtifactsRequest.fromPartial({
+        parent: currentResult!.name,
         pageSize: 1000,
-      });
-      const res = await resultDbClient.ListArtifacts(req);
-      // TODO: fetch additional pages.
-      return res.artifacts || [];
-    },
+      }),
+    ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
+    select: (res) => res.artifacts || [],
   });
 
   const {
     data: invocationScopeArtifactsData,
     isLoading: isLoadingInvocationScopeArtifacts,
   } = useQuery({
-    queryKey: ['listInvocationArtifactsForSection', invocationName],
-    queryFn: async () => {
-      if (!invocationName) return null;
-      const req = ListArtifactsRequest.fromPartial({
+    ...resultDbClient.ListArtifacts.query(
+      ListArtifactsRequest.fromPartial({
         parent: invocationName,
         pageSize: 1000,
-      });
-      const res = await resultDbClient.ListArtifacts(req);
-      // TODO: fetch additional pages.
-      return res.artifacts || [];
-    },
+      }),
+    ),
     enabled: !!invocationName,
     staleTime: Infinity,
+    select: (res) => res.artifacts || [],
   });
 
   const artifactTreeRootNodes = useMemo(
@@ -128,7 +121,7 @@ export function ArtifactsSection({
         nodes: CustomArtifactTreeNode[],
       ): CustomArtifactTreeNode | null => {
         for (const node of nodes) {
-          if (node.isLeaf && !node.isSummary && node.artifactPb) return node;
+          if (node.isLeaf && !node.isSummary && node.artifact) return node;
           if (node.children) {
             const found = findFirstLeafRecursive(node.children);
             if (found) return found;
@@ -136,7 +129,7 @@ export function ArtifactsSection({
         }
         for (const node of nodes) {
           // Fallback for top-level leaf if no nested found
-          if (node.isLeaf && node.artifactPb) return node;
+          if (node.isLeaf && node.artifact) return node;
         }
         return null;
       };
@@ -158,69 +151,14 @@ export function ArtifactsSection({
   }, [currentResult, testResultArtifactsData, invocationScopeArtifactsData]);
 
   const artifactContentQueryEnabled =
-    !!selectedArtifactForDisplay?.artifactPb?.fetchUrl && // User fixed to fetchUrl
+    !!selectedArtifactForDisplay?.artifact?.fetchUrl && // User fixed to fetchUrl
     !selectedArtifactForDisplay.isSummary;
 
   const { data: artifactContentData, isLoading: rawIsLoadingArtifactContent } =
-    useQuery<FetchedArtifactContent, Error>({
-      queryKey: [
-        'artifactContentForSection',
-        selectedArtifactForDisplay?.artifactPb?.name || 'no-artifact-selected',
-        artifactContentQueryEnabled,
-      ],
-      queryFn: async () => {
-        if (
-          !selectedArtifactForDisplay?.artifactPb?.fetchUrl ||
-          selectedArtifactForDisplay.isSummary
-        ) {
-          return {
-            data: null,
-            isText: false,
-            contentType: null,
-            error: new Error('Query ran when it should have been disabled'),
-            sizeBytes: 0,
-          };
-        }
-        const artifact = selectedArtifactForDisplay.artifactPb;
-        const contentType = artifact.contentType || 'application/octet-stream';
-        const isText = contentType.toLowerCase().startsWith('text/');
-        try {
-          const response = await fetch(artifact.fetchUrl);
-          if (!response.ok) {
-            throw new Error(
-              `Failed to fetch artifact content: ${response.status} ${response.statusText}`,
-            );
-          }
-          if (isText) {
-            const textContent = await response.text();
-            return {
-              data: textContent,
-              isText: true,
-              contentType,
-              error: null,
-              sizeBytes: artifact.sizeBytes,
-            };
-          }
-          return {
-            data: null,
-            isText: false,
-            contentType,
-            error: null,
-            sizeBytes: artifact.sizeBytes,
-          };
-        } catch (e) {
-          return {
-            data: null,
-            isText: false,
-            contentType,
-            error: e as Error,
-            sizeBytes: artifact.sizeBytes,
-          };
-        }
-      },
-      enabled: artifactContentQueryEnabled,
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
+    useFetchArtifactContentQuery({
+      artifactContentQueryEnabled,
+      isSummary: selectedArtifactForDisplay?.isSummary,
+      artifact: selectedArtifactForDisplay?.artifact,
     });
 
   const isLoadingArtifactContent =
