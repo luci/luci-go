@@ -85,8 +85,8 @@ enum TestVerdictStatus {
 
 message TestVerdict {
   // The test verdict status.
-  // References to test statuses (pass, fail, skip, infra_fail) in
-  // the enum descriptions refer to TestResultStatusV2 values.
+  // References to test statuses (passed, failed, skipped, execution_errored, precluded) in
+  // the enum descriptions refer to TestResult.Status values.
   // A mirror of luci.resultdb.v1.TestVerdict.Status.
   enum Status {
     STATUS_UNSPECIFIED = 0;
@@ -120,8 +120,8 @@ message TestVerdict {
     // The test verdict is not overridden.
     //
     // To confirm a test is not exonerated prefer to check it is not EXONERATED
-    // rather than that the override is NONE, as this is safe in case of
-    // enum extension.
+    // rather than check it is NOT_OVERRIDDEN, as this is safe in case of
+    // extensions to this enum.
     NOT_OVERRIDDEN = 1;
 
     // The test variant has one or more exonerations, and the

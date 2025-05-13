@@ -186,8 +186,8 @@ func (TestVerdictStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 // The test verdict status.
-// References to test statuses (pass, fail, skip, infra_fail) in
-// the enum descriptions refer to TestResultStatusV2 values.
+// References to test statuses (passed, failed, skipped, execution_errored, precluded) in
+// the enum descriptions refer to TestResult.Status values.
 // A mirror of luci.resultdb.v1.TestVerdict.Status.
 type TestVerdict_Status int32
 
@@ -267,8 +267,8 @@ const (
 	// The test verdict is not overridden.
 	//
 	// To confirm a test is not exonerated prefer to check it is not EXONERATED
-	// rather than that the override is NONE, as this is safe in case of
-	// enum extension.
+	// rather than check it is NOT_OVERRIDDEN, as this is safe in case of
+	// extensions to this enum.
 	TestVerdict_NOT_OVERRIDDEN TestVerdict_StatusOverride = 1
 	// The test variant has one or more exonerations, and the
 	// test verdict status was FAILED, EXECUTION_ERRORED OR PRECLUDED.
