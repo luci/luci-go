@@ -97,6 +97,20 @@ const getTaskDuration = (task: TaskResultResponse): string => {
   return prettySeconds(duration);
 };
 
+const getTaskTagValue = (
+  task: TaskResultResponse,
+  tagName: string,
+): string | undefined => {
+  for (const item of task.tags) {
+    const [key, value] = item.split(':');
+    if (key && key === tagName && value) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
 export const Tasks = ({
   dutId,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
@@ -196,11 +210,11 @@ export const Tasks = ({
     duration: getTaskDuration(t),
     result: prettifySwarmingState(t),
     tags: t.tags,
+    buildVersion: getTaskTagValue(t, 'build'),
   }));
 
   // TODO: 371010330 - Prettify these columns.
   const columns: GridColDef[] = [
-    // TODO: 393586616 - Add a link to the Milo UI.
     {
       field: 'task',
       headerName: 'Task',
@@ -224,6 +238,11 @@ export const Tasks = ({
           </a>
         );
       },
+    },
+    {
+      field: 'buildVersion',
+      headerName: 'Build version',
+      flex: 1,
     },
     // TODO: 371010330 - Make rows and add a failure icon somewhere (for a11y)
     // if result is a failure.
