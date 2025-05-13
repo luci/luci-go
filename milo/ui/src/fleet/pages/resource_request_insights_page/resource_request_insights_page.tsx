@@ -14,7 +14,7 @@
 
 import styled from '@emotion/styled';
 import { Alert, CircularProgress } from '@mui/material';
-import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
+import { GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -35,16 +35,15 @@ import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { toIsoString } from '@/fleet/utils/dates';
 import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  ResourceRequest,
-  ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
+import {
+  DEFAULT_SORT_COLUMN,
+  getColumnByField,
+  rriColumns,
+} from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
 import {
   filterOpts,
@@ -61,106 +60,6 @@ const DEFAULT_PAGE_SIZE = 25;
 const Container = styled.div`
   margin: 24px;
 `;
-
-interface ColumnDescriptor {
-  id: string;
-  gridColDef: GridColDef;
-  valueGetter: (rr: ResourceRequest) => string;
-}
-
-const columns = [
-  {
-    id: 'rr_id',
-    gridColDef: {
-      field: 'id',
-      headerName: 'RR ID',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) => rr.rrId,
-  },
-  {
-    id: 'resource_details',
-    gridColDef: {
-      field: 'resource_details',
-      headerName: 'Resource Details',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) => rr.resourceDetails,
-  },
-  {
-    id: 'expected_eta',
-    gridColDef: {
-      field: 'expected_eta',
-      headerName: 'Estimated Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
-  },
-  {
-    id: 'fulfillment_status',
-    gridColDef: {
-      field: 'fulfillment_status',
-      headerName: 'Fulfillment Status',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) =>
-      rr.fulfillmentStatus !== undefined
-        ? fulfillmentStatusDisplayValueMap[
-            ResourceRequest_Status[
-              rr.fulfillmentStatus
-            ] as keyof typeof ResourceRequest_Status
-          ]
-        : '',
-  },
-  {
-    id: 'material_sourcing_actual_delivery_date',
-    gridColDef: {
-      field: 'material_sourcing_actual_delivery_date',
-      headerName: 'Material Sourcing Estimated Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.procurementActualDeliveryDate),
-  },
-  {
-    id: 'build_actual_delivery_date',
-    gridColDef: {
-      field: 'build_actual_delivery_date',
-      headerName: 'Build Estimated Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.buildActualDeliveryDate),
-  },
-  {
-    id: 'qa_actual_delivery_date',
-    gridColDef: {
-      field: 'qa_actual_delivery_date',
-      headerName: 'QA Estimated Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaActualDeliveryDate),
-  },
-  {
-    id: 'config_actual_delivery_date',
-    gridColDef: {
-      field: 'config_actual_delivery_date',
-      headerName: 'Config Estimated Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.configActualDeliveryDate),
-  },
-] as const satisfies readonly ColumnDescriptor[];
-
-export type ResourceRequestColumnKey = (typeof columns)[number]['id'];
-
-const DEFAULT_SORT_COLUMN: ColumnDescriptor =
-  columns.find((c) => c.id === 'rr_id') ?? columns[0];
-
-const getColumnByField = (field: string): ColumnDescriptor | undefined => {
-  return columns.find((c) => c.gridColDef.field === field);
-};
 
 const getOrderByParamFromSortModel = (sortModel: GridSortModel) => {
   if (sortModel.length !== 1) {
@@ -241,15 +140,19 @@ export const ResourceRequestListPage = () => {
 
   const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
     filterOpts.map((option) => {
+      const label: string =
+        rriColumns.find((c) => c.id === option.value)?.gridColDef.headerName ??
+        option.value;
+
       return {
-        label: option.label,
+        label: label,
         value: option.value,
         getSearchScore: (searchQuery: string) => {
           const typedOption = option as RriFilterOption;
           const childrenScore = typedOption.getChildrenSearchScore
             ? typedOption.getChildrenSearchScore(searchQuery)
             : 0;
-          const [score, matches] = fuzzySubstring(searchQuery, option.label);
+          const [score, matches] = fuzzySubstring(searchQuery, label);
           return { score: Math.max(score, childrenScore), matches: matches };
         },
         optionsComponent: option.optionsComponent,
@@ -296,7 +199,7 @@ export const ResourceRequestListPage = () => {
   const rows: Record<string, string>[] = query.data.resourceRequests.map(
     (resourceRequest) => {
       const row: Record<string, string> = {};
-      for (const column of columns) {
+      for (const column of rriColumns) {
         row[column.gridColDef.field] = column.valueGetter(resourceRequest);
       }
       return row;
@@ -384,7 +287,7 @@ export const ResourceRequestListPage = () => {
         }}
       >
         <StyledGrid
-          columns={columns.map((column) => column.gridColDef)}
+          columns={rriColumns.map((column) => column.gridColDef)}
           rows={rows}
           slots={{
             pagination: Pagination,

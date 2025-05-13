@@ -17,6 +17,7 @@ import { useEffect } from 'react';
 
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
 
+import { rriColumns } from './rri_columns';
 import { ResourceRequestInsightsOptionComponentProps } from './use_rri_filters';
 
 export function RriTextFilter({
@@ -35,10 +36,14 @@ export function RriTextFilter({
 
   const currentValue = filters ? filters[option.value] : '';
 
+  const label =
+    rriColumns.find((c) => c.id === option.value)?.gridColDef.headerName ??
+    option.value;
+
   return (
     <Box sx={{ padding: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
       <TextField
-        label={`Filter by ${option.label}`}
+        label={`Filter by ${label}`}
         variant="outlined"
         size="small"
         value={currentValue}

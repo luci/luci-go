@@ -26,7 +26,7 @@ import {
   getFulfillmentStatusScoredOptions,
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
-import { ResourceRequestColumnKey } from './resource_request_insights_page';
+import { ResourceRequestColumnKey, rriColumns } from './rri_columns';
 import { RriTextFilter } from './rri_text_filter';
 
 const FILTERS_PARAM_KEY = 'filters';
@@ -64,7 +64,6 @@ export type RriFilters = {
 };
 
 export interface RriFilterOption {
-  label: string;
   value: RriFilterKey;
   getChildrenSearchScore?: (searchQuery: string) => number;
   optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
@@ -80,39 +79,32 @@ export interface ResourceRequestInsightsOptionComponentProps {
 
 export const filterOpts = [
   {
-    label: 'RR ID',
     value: 'rr_id',
     optionsComponent: RriTextFilter,
   },
   {
-    label: 'Fulfillment Status',
     value: 'fulfillment_status',
     getChildrenSearchScore: (searchQuery: string) =>
       getFulfillmentStatusScoredOptions(searchQuery)[0].score,
     optionsComponent: FulfillmentStatusFilter,
   },
   {
-    label: 'Expected ETA',
     value: 'expected_eta',
     optionsComponent: DateFilter,
   },
   {
-    label: 'Material Sourcing Estimated Delivery Date',
     value: 'material_sourcing_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'Build Estimated Delivery Date',
     value: 'build_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'QA Estimated Delivery Date',
     value: 'qa_actual_delivery_date',
     optionsComponent: DateFilter,
   },
   {
-    label: 'Config Estimated Delivery Date',
     value: 'config_actual_delivery_date',
     optionsComponent: DateFilter,
   },
@@ -345,9 +337,9 @@ export const useRriFilters = () => {
     filterKey: RriFilterKey,
     filterValue: RriFilters[RriFilterKey],
   ): string => {
-    let label: string | undefined = filterOpts.find(
-      (opt) => opt.value === filterKey,
-    )?.label;
+    let label: string =
+      rriColumns.find((c) => c.id === filterKey)?.gridColDef.headerName ??
+      filterKey;
 
     if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
       label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
