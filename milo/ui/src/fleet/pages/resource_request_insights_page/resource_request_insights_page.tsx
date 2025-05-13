@@ -22,6 +22,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
   getCurrentPageIndex,
+  getPageSize,
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
@@ -273,7 +274,7 @@ export const ResourceRequestListPage = () => {
     client.ListResourceRequests.query({
       filter: aipString,
       orderBy: getOrderByDto(sortModel),
-      pageSize: pagerCtx.options.defaultPageSize,
+      pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
     }),
   );
@@ -399,7 +400,7 @@ export const ResourceRequestListPage = () => {
           rowCount={-1}
           paginationModel={{
             page: getCurrentPageIndex(pagerCtx),
-            pageSize: pagerCtx.options.defaultPageSize,
+            pageSize: getPageSize(pagerCtx, searchParams),
           }}
           rowSelection={false}
           sortModel={sortModel}
