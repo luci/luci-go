@@ -44,45 +44,49 @@ message TestVerdict {
   reserved 3,4;
 
   // Status of a test verdict.
-  // References to test statuses (pass, fail, skip, infra_fail) in
-  // the enum descriptions refer to TestResultStatusV2 values.
+  // References to test statuses (passed, failed, skipped, execution_error, precluded) in
+  // the enum descriptions refer to TestResult.Status values.
+  // Values are sorted with the most interesting verdict statuses first.
   enum Status {
-    // A test verdict must not have this status.
-    // This is only used when filtering verdicts.
     STATUS_UNSPECIFIED = 0;
 
-    // The test variant has only failing result(s), after excluding
-    // skips and infra fails. It has at least one such failing result.
+    // The test has failing results and no passing results.
     FAILED = 10;
 
-    // The test variant has only infra failed results.
-    // This means there was a problem obtaining a result for the test.
-    INFRA_FAILED = 20;
+    // The test has execution errored results and no
+    // passing, failing or skipped results.
+    EXECUTION_ERRORED = 20;
 
-    // The test variant has both passing and failing results.
-    FLAKY = 30;
+    // The test has only precluded results.
+    PRECLUDED = 30;
 
-    // The test variant has only passing result(s), after excluding
-    // skips and infra fails. It has at least one such passing result.
-    PASSED = 40;
+    // The test has both passing and failing results.
+    FLAKY = 40;
 
-    // The test variant has at least one skipped result. It has
-    // no passing or failing results.
+    // The test skipped results and no passing or
+    // failing results.
     SKIPPED = 50;
+
+    // The test has passing results and no failing results.
+    PASSED = 60;
   }
 
   // Overrides applying to the test verdict.
+  // Open to extension.
   enum StatusOverride {
     STATUS_OVERRIDE_UNSPECIFIED = 0;
+
     // The test verdict is not overridden.
     //
     // To confirm a test is not exonerated prefer to check it is not EXONERATED
-    // rather than that the override is NONE, as this is safe in case of
-    // enum extension.
-    NONE = 1;
+    // rather than check it is NOT_OVERRIDDEN, as this is safe in case of
+    // extensions to this enum.
+    NOT_OVERRIDDEN = 1;
 
     // The test variant has one or more exonerations, and the
-    // test verdict status was FAILED or INFRA_FAILED.
+    // test verdict status was FAILED, EXECUTION_ERRORED OR PRECLUDED.
+    // An exoneration absolves the subject of the invocation (e.g. CL)
+    // from blame and means means the verdict is no longer blocking.
     EXONERATED = 2;
 
     // In future other overrides could be added here, e.g. INDICTED
