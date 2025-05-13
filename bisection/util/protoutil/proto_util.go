@@ -71,16 +71,28 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 	}
 
 	// Get test bundle.
-	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
-	if err != nil {
-		return nil, errors.Annotate(err, "get test failure bundle").Err()
-	}
+	var bundle *model.TestFailureBundle
 	includeTestFailures := tfaMask.MustIncludes("test_failures")
 	if includeTestFailures == mask.IncludeEntirely || includeTestFailures == mask.IncludePartially {
+		// Test failure bundle can be large, only fetch it when it's needed.
+		bundle, err = datastoreutil.GetTestFailureBundle(ctx, tfa)
+		if err != nil {
+			return nil, errors.Annotate(err, "get test failure bundle").Err()
+		}
 		tfMask := tfaMask.MustSubmask("test_failures.*")
 		result.TestFailures = TestFailureBundleToPb(ctx, bundle, tfMask)
 	}
-	primary := bundle.Primary()
+
+	var primary *model.TestFailure
+	if bundle != nil {
+		primary = bundle.Primary()
+	} else {
+		primary, err = datastoreutil.GetPrimaryTestFailure(ctx, tfa)
+		if err != nil {
+			return nil, errors.Annotate(err, "get primary test failure").Err()
+		}
+	}
+
 	// It doesn't make sense to return commit information partially.
 	// We don't check mask.IncludePartially here.
 	if tfaMask.MustIncludes("start_commit") == mask.IncludeEntirely {

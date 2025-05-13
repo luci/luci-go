@@ -526,7 +526,32 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 				Culprit: culpritPb,
 			}))
 		})
+
+		t.Run("Field mask with not with test_failures", func(t *ftt.Test) {
+			fieldMask := &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"analysis_id",
+					"start_commit",
+				},
+			}
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
+			assert.Loosely(t, err, should.BeNil)
+
+			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfaProto, should.Match(&pb.TestAnalysis{
+				AnalysisId: 100,
+				StartCommit: &buildbucketpb.GitilesCommit{
+					Host:     "chromium.googlesource.com",
+					Project:  "chromium/src",
+					Ref:      "ref",
+					Id:       "start_commit_hash",
+					Position: 100,
+				},
+			}))
+		})
 	})
+
 }
 
 func TestRegressionRange(t *testing.T) {
