@@ -68,6 +68,14 @@ func TestCompleteOp(t *testing.T) {
 				PubSubTopic:         "pubsub-topic",
 				ResultDBUpdateToken: "token",
 				Realm:               "project:realm",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Idempotent: true,
+						},
+						PropertiesHash: []byte("hash"),
+					},
+				},
 			}
 			trc := model.TaskResultCommon{
 				State: state,
@@ -273,6 +281,7 @@ func TestCompleteOp(t *testing.T) {
 			assert.That(t, trs.DurationSecs.Get(), should.Equal(duration))
 			assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
 			assert.That(t, trs.Failure, should.BeTrue)
+			assert.That(t, trs.PropertiesHash.IsSet(), should.BeFalse)
 			assert.That(t, trs.Modified, should.Match(now))
 			assert.That(t, trs.Completed.Get(), should.Match(now))
 			assert.That(t, trs.CASOutputRoot, should.Match(casOutput))
@@ -444,6 +453,32 @@ func TestCompleteOp(t *testing.T) {
 				assert.NoErr(t, datastore.Get(ctx, trr))
 				assert.That(t, trr.Killing, should.BeFalse)
 			})
+		})
+
+		t.Run("OK-result-reusable", func(t *ftt.Test) {
+			ents := createTaskEntities(apipb.TaskState_RUNNING)
+
+			var exitcode int64 = 0
+			var duration float64 = 3600
+			op := &CompleteOp{
+				Request:  ents.tr,
+				BotID:    "bot1",
+				ExitCode: &exitcode,
+				Duration: &duration,
+				CostUSD:  0.35,
+			}
+			outcome, err := run(op)
+			assert.NoErr(t, err)
+			assert.That(t, outcome.Updated, should.BeTrue)
+			assert.That(t, outcome.BotEventType, should.Equal(model.BotEventTaskCompleted))
+
+			trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
+			assert.NoErr(t, datastore.Get(ctx, trs))
+			assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
+			assert.That(t, trs.Failure, should.BeFalse)
+			assert.That(t, trs.InternalFailure, should.BeFalse)
+			assert.That(t, trs.DedupedFrom, should.Equal(""))
+			assert.That(t, trs.PropertiesHash.Get(), should.Match(ents.tr.TaskSlices[0].PropertiesHash))
 		})
 
 		t.Run("abandon", func(t *ftt.Test) {

@@ -237,6 +237,11 @@ func (m *managerImpl) CompleteTxn(ctx context.Context, op *CompleteOp) (*Complet
 	// different versions.
 	trs.ServerVersions = trsServerVers
 
+	if isTaskResultReusable(tr, trs) {
+		// Store the properties hash to trs so it could be used for task deduplication.
+		trs.PropertiesHash.Set(tr.TaskSlices[trs.CurrentTaskSlice].PropertiesHash)
+	}
+
 	if err := datastore.Put(ctx, toPut...); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save task %q: %s", taskID, err)
 	}
@@ -361,4 +366,18 @@ func (m *managerImpl) finalizeResultDBInvocation(ctx context.Context, taskID str
 		return errors.Annotate(err, "failed to create resultdb client").Tag(transient.Tag).Err()
 	}
 	return client.FinalizeInvocation(ctx, trs.ResultDBInfo.Invocation, tr.ResultDBUpdateToken)
+}
+
+func isTaskResultReusable(tr *model.TaskRequest, trs *model.TaskResultSummary) bool {
+	if trs.State != apipb.TaskState_COMPLETED {
+		return false
+	}
+	if trs.Failure || trs.InternalFailure {
+		return false
+	}
+	if trs.DedupedFrom != "" {
+		return false
+	}
+
+	return tr.TaskSlices[trs.CurrentTaskSlice].Properties.Idempotent
 }
