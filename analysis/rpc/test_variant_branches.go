@@ -24,7 +24,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -362,37 +361,6 @@ func validateBatchGetTestVariantBranchRequest(req *pb.BatchGetTestVariantBranchR
 	}
 	// Contents of names collection already validated by caller.
 	return nil
-}
-
-func toVerdictsProto(bqVerdicts []*testresults.BQTestVerdict) []*pb.TestVerdict {
-	res := make([]*pb.TestVerdict, 0, len(bqVerdicts))
-	for _, tv := range bqVerdicts {
-		if !tv.HasAccess {
-			// The caller doesn't have access to this test verdict.
-			continue
-		}
-		tvpb := &pb.TestVerdict{
-			TestId:        tv.TestID,
-			VariantHash:   tv.VariantHash,
-			InvocationId:  tv.InvocationID,
-			Status:        pb.TestVerdictStatus(pb.TestVerdictStatus_value[tv.Status]),
-			PartitionTime: timestamppb.New(tv.PartitionTime),
-			Changelists:   []*pb.Changelist{},
-		}
-		if tv.PassedAvgDurationUsec.Valid {
-			tvpb.PassedAvgDuration = durationpb.New(time.Duration(int(tv.PassedAvgDurationUsec.Float64*1000)) * time.Millisecond)
-		}
-		for _, cl := range tv.Changelists {
-			tvpb.Changelists = append(tvpb.Changelists, &pb.Changelist{
-				Host:      cl.Host.String(),
-				Change:    cl.Change.Int64,
-				Patchset:  int32(cl.Patchset.Int64),
-				OwnerKind: pb.ChangelistOwnerKind(pb.ChangelistOwnerKind_value[cl.OwnerKind.String()]),
-			})
-		}
-		res = append(res, tvpb)
-	}
-	return res
 }
 
 // QuerySourceVerdicts lists source verdicts for a test variant branch.

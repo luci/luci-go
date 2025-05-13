@@ -69,6 +69,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_EXPECTED,
+				StatusV2:          pb.TestVerdict_PASSED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
 				PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
 			},
@@ -77,6 +79,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant4),
 				InvocationId:      "inv3",
 				Status:            pb.TestVerdictStatus_EXPECTED,
+				StatusV2:          pb.TestVerdict_SKIPPED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
 				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
@@ -86,6 +90,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				InvocationId:      "inv2",
 				Status:            pb.TestVerdictStatus_EXONERATED,
+				StatusV2:          pb.TestVerdict_FAILED,
+				StatusOverride:    pb.TestVerdict_EXONERATED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
 				PassedAvgDuration: nil,
 			},
@@ -94,6 +100,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant2),
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_FLAKY,
+				StatusV2:          pb.TestVerdict_FLAKY,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
 				PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
 			},
@@ -102,6 +110,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_UNEXPECTED,
+				StatusV2:          pb.TestVerdict_FAILED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
 				PassedAvgDuration: nil,
 			},
@@ -110,6 +120,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant1),
 				InvocationId:      "inv2",
 				Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
+				StatusV2:          pb.TestVerdict_EXECUTION_ERRORED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-day - 12*time.Hour)),
 				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
@@ -118,6 +130,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant2),
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_EXPECTED,
+				StatusV2:          pb.TestVerdict_PASSED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
 				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
@@ -127,6 +141,8 @@ func TestReadTestHistory(t *testing.T) {
 				VariantHash:       pbutil.VariantHash(testVariant3),
 				InvocationId:      "inv1",
 				Status:            pb.TestVerdictStatus_EXONERATED,
+				StatusV2:          pb.TestVerdict_PRECLUDED,
+				StatusOverride:    pb.TestVerdict_EXONERATED,
 				PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
 				PassedAvgDuration: nil,
 				Changelists:       expectedChangelists,
@@ -185,32 +201,9 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_UNEXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: nil,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv2",
-					Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 12*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
+				expectedTestVerdicts[4],
+				expectedTestVerdicts[5],
+				expectedTestVerdicts[6],
 			}))
 		})
 
@@ -225,32 +218,9 @@ func TestReadTestHistory(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-					{
-						TestId:            "test_id",
-						VariantHash:       pbutil.VariantHash(testVariant2),
-						InvocationId:      "inv1",
-						Status:            pb.TestVerdictStatus_FLAKY,
-						PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-						PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
-					},
-					{
-						TestId:            "test_id",
-						VariantHash:       pbutil.VariantHash(testVariant2),
-						InvocationId:      "inv1",
-						Status:            pb.TestVerdictStatus_EXPECTED,
-						PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-						PassedAvgDuration: nil,
-						Changelists:       expectedChangelists,
-					},
-					{
-						TestId:            "test_id",
-						VariantHash:       pbutil.VariantHash(testVariant3),
-						InvocationId:      "inv1",
-						Status:            pb.TestVerdictStatus_EXONERATED,
-						PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-						PassedAvgDuration: nil,
-						Changelists:       expectedChangelists,
-					},
+					expectedTestVerdicts[3],
+					expectedTestVerdicts[6],
+					expectedTestVerdicts[7],
 				}))
 			})
 
@@ -264,15 +234,7 @@ func TestReadTestHistory(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-					{
-						TestId:            "test_id",
-						VariantHash:       pbutil.VariantHash(testVariant3),
-						InvocationId:      "inv1",
-						Status:            pb.TestVerdictStatus_EXONERATED,
-						PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-						PassedAvgDuration: nil,
-						Changelists:       expectedChangelists,
-					},
+					expectedTestVerdicts[7],
 				}))
 			})
 		})
@@ -287,23 +249,8 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_FLAKY,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
+				expectedTestVerdicts[3],
+				expectedTestVerdicts[6],
 			}))
 		})
 
@@ -317,23 +264,8 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_FLAKY,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
+				expectedTestVerdicts[3],
+				expectedTestVerdicts[6],
 			}))
 		})
 
@@ -343,42 +275,10 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant4),
-					InvocationId:      "inv3",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv2",
-					Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 12*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant3),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXONERATED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
+				expectedTestVerdicts[1],
+				expectedTestVerdicts[5],
+				expectedTestVerdicts[6],
+				expectedTestVerdicts[7],
 			}))
 
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_SUBMITTED
@@ -386,38 +286,10 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
-					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv2",
-					Status:            pb.TestVerdictStatus_EXONERATED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
-					PassedAvgDuration: nil,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_FLAKY,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_UNEXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: nil,
-				},
+				expectedTestVerdicts[0],
+				expectedTestVerdicts[2],
+				expectedTestVerdicts[3],
+				expectedTestVerdicts[4],
 			}))
 		})
 
@@ -427,64 +299,13 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.TestVerdict{
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * time.Hour)),
-					PassedAvgDuration: durationpb.New(22222 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv2",
-					Status:            pb.TestVerdictStatus_EXONERATED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-12 * time.Hour)),
-					PassedAvgDuration: nil,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_FLAKY,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-24 * time.Hour)),
-					PassedAvgDuration: durationpb.New(1234567890123456 * time.Microsecond),
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_UNEXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 1*time.Hour)),
-					PassedAvgDuration: nil,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant1),
-					InvocationId:      "inv2",
-					Status:            pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 12*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				}, {
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant2),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXPECTED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 24*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
-				{
-					TestId:            "test_id",
-					VariantHash:       pbutil.VariantHash(testVariant3),
-					InvocationId:      "inv1",
-					Status:            pb.TestVerdictStatus_EXONERATED,
-					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 3*time.Hour)),
-					PassedAvgDuration: nil,
-					Changelists:       expectedChangelists,
-				},
+				expectedTestVerdicts[0],
+				expectedTestVerdicts[2],
+				expectedTestVerdicts[3],
+				expectedTestVerdicts[4],
+				expectedTestVerdicts[5],
+				expectedTestVerdicts[6],
+				expectedTestVerdicts[7],
 			}))
 		})
 	})

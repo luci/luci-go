@@ -415,7 +415,9 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 			TestId: opts.TestID,
 		}
 		var status int64
+		var statusV2 int64
 		var passedAvgDurationUsec spanner.NullInt64
+		var isExonerated bool
 		var changelistHosts []string
 		var changelistChanges []int64
 		var changelistPatchsets []int64
@@ -426,6 +428,8 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 			&tv.VariantHash,
 			&tv.InvocationId,
 			&status,
+			&statusV2,
+			&isExonerated,
 			&passedAvgDurationUsec,
 			&changelistHosts,
 			&changelistChanges,
@@ -436,6 +440,17 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 			return err
 		}
 		tv.Status = pb.TestVerdictStatus(status)
+		tv.StatusV2 = pb.TestVerdict_Status(statusV2)
+
+		if isExonerated && (tv.StatusV2 == pb.TestVerdict_FAILED || tv.StatusV2 == pb.TestVerdict_EXECUTION_ERRORED || tv.StatusV2 == pb.TestVerdict_PRECLUDED) {
+			// Exonerated override only ever applies to failed, execution errored
+			// and precluded verdicts. While exonerations can be uploaded for any
+			// verdict, they have no effect for the other verdict statuses.
+			tv.StatusOverride = pb.TestVerdict_EXONERATED
+		} else {
+			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
+		}
+
 		if passedAvgDurationUsec.Valid {
 			tv.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
 		}
@@ -906,6 +921,8 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 			VariantHash,
 			IngestedInvocationId,
 			{{template "tvStatus" .}},
+			{{template "tvStatusV2" .}},
+			ANY_VALUE(ExonerationReasons IS NOT NULL AND ARRAY_LENGTH(ExonerationReasons) > 0) AS IsExonerated,
 			CAST(AVG(IF(Status = @pass, RunDurationUsec, NULL)) AS INT64) AS PassedAvgDurationUsec,
 			ANY_VALUE(ChangelistHosts) AS ChangelistHosts,
 			ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
