@@ -18,8 +18,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"maps"
 	"net/http"
 	"path"
+	"slices"
 	"strings"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -334,9 +336,12 @@ func installUIHandlers(srv *server.Server, cfg *cfg.Provider) {
 	srv.Routes.GET("/tasklist", nil, render(srv.Context, "tasklist", cfg))
 }
 
-func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler {
+// All CSP directives except "frame-src", which is constructed dynamically
+// per request below.
+var baseCSP = func() string {
 	csp := map[string][]string{
 		"default-src": {"'self'"},
+
 		"script-src": {
 			"'self'",
 			// Swarming pages are static so cannot use nonces for now
@@ -357,11 +362,6 @@ func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler 
 			"https://www.gstatic.com", // Google charts styling
 		},
 
-		"frame-src": {
-			"'self'",
-			"https://accounts.google.com", // Google OAuth2 library opens iframes
-		},
-
 		"img-src": {
 			"'self'",
 			"https://www.google-analytics.com",
@@ -378,27 +378,42 @@ func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler 
 			"https://www.google-analytics.com",
 			"https://*.google-analytics.com",
 		},
-		"object-src": {"'none'"}, // we don't generally use Flash or Java
+
+		"object-src": {
+			"'none'", // we don't generally use Flash or Java
+		},
 	}
+
+	cspHdr := ""
+	for i, key := range slices.Sorted(maps.Keys(csp)) {
+		if i != 0 {
+			cspHdr += "; "
+		}
+		cspHdr += fmt.Sprintf("%s %s", key, strings.Join(csp[key], " "))
+	}
+	return cspHdr
+}()
+
+func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler {
 	return func(rctx *router.Context) {
+		frameSrc := []string{
+			"'self'",
+			"https://accounts.google.com", // Google OAuth2 library opens iframes
+		}
 		settings := cfg.Cached(ctx).Settings()
-		tmpl := settings.GetDisplayServerUrlTemplate()
-		if tmpl != "" {
+		if tmpl := settings.GetDisplayServerUrlTemplate(); tmpl != "" {
 			if !strings.HasPrefix(tmpl, "/") {
 				// We assume the template specifies '%s' in its last path component.
 				// We strip it to get a "parent" path that we can put into CSP.
 				// Note that allowing an entire display server domain is unnecessary wide.
-				csp["frame-src"] = append(csp["frame-src"], strings.TrimSuffix(tmpl, "/%s"))
+				frameSrc = append(frameSrc, strings.TrimSuffix(tmpl, "/%s"))
 			}
 		}
-		extra := settings.GetExtraChildSrcCspUrl()
-		csp["frame-src"] = append(csp["frame-src"], extra...)
-
-		cspHdr := ""
-		for directive, srcs := range csp {
-			cspHdr += fmt.Sprintf("%s %s; ", directive, strings.Join(srcs, " "))
-		}
-		rctx.Writer.Header().Add("Content-Security-Policy", cspHdr)
+		frameSrc = append(frameSrc, settings.GetExtraChildSrcCspUrl()...)
+		rctx.Writer.Header().Add(
+			"Content-Security-Policy",
+			fmt.Sprintf("%s; frame-src %s", baseCSP, strings.Join(frameSrc, " ")),
+		)
 		pagePath := path.Join("ui2", "dist", fmt.Sprintf("public_%s_index.html", page))
 		http.ServeFile(rctx.Writer, rctx.Request, pagePath)
 	}
