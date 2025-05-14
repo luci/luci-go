@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -48,7 +49,7 @@ func TestHandleBuild(t *testing.T) {
 		expectedTask := &taskspb.IngestTestVerdicts{
 			PartitionTime: timestamppb.New(buildCreateTime),
 			Build:         build.ExpectedResult(),
-			IngestionId:   fmt.Sprintf("%s/build-%d", rdbHost, build.buildID),
+			IngestionId:   string(control.IngestionIDFromBuildID(build.buildID)),
 			Project:       "buildproject",
 		}
 

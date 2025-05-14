@@ -111,19 +111,26 @@ type Entry struct {
 	LastUpdated time.Time
 }
 
+const (
+	// Host name of ResultDB for use in Ingestion IDs. If we wish a deployment
+	// to support multiple ResultDB instances, we should change this.
+	// Note: this is a legacy ResultDB host.
+	legacyRdbHost = "results.api.cr.dev"
+)
+
 // IngestionID represents the join logic between invocation, build and cv runs.
 // IngestionID can be derived from build ID or invocation ID.
 // Entities with the same ingestionID belongs to the same ingestion.
 type IngestionID string
 
 // IngestionIDFromBuildID returns the ingestionID for a given build id.
-func IngestionIDFromBuildID(rdbHost string, buildID int64) IngestionID {
-	return IngestionID(fmt.Sprintf("%s/build-%d", rdbHost, buildID))
+func IngestionIDFromBuildID(buildID int64) IngestionID {
+	return IngestionID(fmt.Sprintf("%s/build-%d", legacyRdbHost, buildID))
 }
 
 // IngestionIDFromInvocationID returns the ingestionID for a given invocation id.
-func IngestionIDFromInvocationID(rdbHost, invocationID string) IngestionID {
-	return IngestionID(fmt.Sprintf("%s/%s", rdbHost, invocationID))
+func IngestionIDFromInvocationID(invocationID string) IngestionID {
+	return IngestionID(fmt.Sprintf("%s/%s", legacyRdbHost, invocationID))
 }
 
 // Read reads ingestion control records for the specified ingestionIDs.

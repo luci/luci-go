@@ -41,12 +41,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
-const (
-	// TODO: Removing the hosts after ResultDB PubSub, CVPubSub and GetRun RPC added them.
-	// Host name of ResultDB.
-	rdbHost = "results.api.cr.dev"
-)
-
 var (
 	// buildInvocationRE extracts the buildbucket build number from invocations
 	// named after a buildbucket build ID.
@@ -130,13 +124,7 @@ func JoinBuildResult(ctx context.Context, buildID int64, buildProject string, is
 	if br == nil {
 		return errors.New("build result must be specified")
 	}
-	resultdbHost := br.ResultdbHost
-	if resultdbHost == "" {
-		// Assign a default rdbhost when the the resultdbHost from the build is empty.
-		// This happens when the build doesn't have an invocation.
-		resultdbHost = rdbHost
-	}
-	ingestionID := control.IngestionIDFromBuildID(resultdbHost, buildID)
+	ingestionID := control.IngestionIDFromBuildID(buildID)
 	var saved bool
 	var createdTask *taskDetails
 	f := func(ctx context.Context) error {
@@ -243,7 +231,7 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[int64
 		var ingestionIDs []control.IngestionID
 		var buildIDs []int64
 		for id := range presubmitResultByBuildID {
-			ingestionID := control.IngestionIDFromBuildID(rdbHost, id)
+			ingestionID := control.IngestionIDFromBuildID(id)
 			ingestionIDs = append(ingestionIDs, ingestionID)
 			buildIDs = append(buildIDs, id)
 		}
@@ -333,7 +321,7 @@ func JoinInvocationResult(ctx context.Context, invocationID, invocationProject s
 		saved = false
 		createdTask = nil
 
-		ingestionID := control.IngestionIDFromInvocationID(rdbHost, invocationID)
+		ingestionID := control.IngestionIDFromInvocationID(invocationID)
 		entries, err := control.Read(ctx, []control.IngestionID{ingestionID})
 		if err != nil {
 			return err

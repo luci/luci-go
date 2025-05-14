@@ -27,6 +27,12 @@ import (
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 )
 
+const (
+	// TODO: Removing the hosts after ResultDB PubSub, CVPubSub and GetRun RPC added them.
+	// Host name of ResultDB.
+	rdbHost = "results.api.luci.app"
+)
+
 // JoinInvocation notifies ingestion that the given invocation has finalized.
 // Ingestion tasks are created when all required data for a ingestion
 // (including any associated LUCI CV run, build and invocation) is available.

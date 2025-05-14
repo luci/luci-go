@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -63,7 +64,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			// Task has been scheduled.
 			expectedTask := &taskspb.IngestTestVerdicts{
 				PartitionTime: timestamppb.New(invocationCreateTime),
-				IngestionId:   fmt.Sprintf("%s/inv-123", rdbHost),
+				IngestionId:   string(control.IngestionIDFromInvocationID("inv-123")),
 				Project:       "buildproject",
 				Invocation: &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,
@@ -85,7 +86,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			expectedTask := &taskspb.IngestTestVerdicts{
 				PartitionTime: timestamppb.New(invocationCreateTime),
 				Build:         build.ExpectedResult(),
-				IngestionId:   fmt.Sprintf("%s/%s", rdbHost, invocationID),
+				IngestionId:   string(control.IngestionIDFromInvocationID(invocationID)),
 				Project:       "buildproject",
 				Invocation: &controlpb.InvocationResult{
 					ResultdbHost: rdbHost,

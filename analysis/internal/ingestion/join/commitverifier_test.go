@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/cv"
+	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -266,7 +267,7 @@ func expectedTasks(taskTemplate *taskspb.IngestTestVerdicts, builds []*buildBuil
 		t := proto.Clone(taskTemplate).(*taskspb.IngestTestVerdicts)
 		t.PresubmitRun.Critical = ((build.buildID % 2) == 0)
 		t.Build = build.ExpectedResult()
-		t.IngestionId = fmt.Sprintf("%s/build-%d", rdbHost, build.buildID)
+		t.IngestionId = string(control.IngestionIDFromBuildID(build.buildID))
 		t.PartitionTime = timestamppb.New(build.createTime)
 
 		if build.hasInvocation {
