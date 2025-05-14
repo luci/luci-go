@@ -72,7 +72,9 @@ func Run(ctx context.Context) error {
 
 func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	authDBRev int64, ts *timestamppb.Timestamp) (reterr error) {
+	start := clock.Now(ctx)
 	groups, err := expandGroups(ctx, authDB)
+	logging.Debugf(ctx, "expanding groups took %s", clock.Since(ctx, start))
 	if err != nil {
 		return errors.Annotate(err, "failed to expand all groups").Err()
 	}
@@ -81,7 +83,9 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 		groupRows[i] = toGroupRow(group, authDBRev, ts)
 	}
 
+	start = clock.Now(ctx)
 	realmRows, err := parseRealms(ctx, authDB, authDBRev, ts)
+	logging.Debugf(ctx, "parsing realms took %s", clock.Since(ctx, start))
 	if err != nil {
 		return errors.Annotate(err, "failed to make realm rows for export").Err()
 	}
@@ -98,22 +102,32 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	}()
 
 	// Insert all groups.
-	if err := client.InsertGroups(ctx, groupRows); err != nil {
+	start = clock.Now(ctx)
+	err = client.InsertGroups(ctx, groupRows)
+	logging.Debugf(ctx, "inserting BQ rows for groups took %s", clock.Since(ctx, start))
+	if err != nil {
 		return errors.Annotate(err,
 			"failed to insert all groups for AuthDB rev %d at %s",
 			authDBRev, ts.String()).Err()
 	}
 
 	// Insert all realms.
-	if err := client.InsertRealms(ctx, realmRows); err != nil {
+	start = clock.Now(ctx)
+	err = client.InsertRealms(ctx, realmRows)
+	logging.Debugf(ctx, "inserting BQ rows for realms took %s", clock.Since(ctx, start))
+	if err != nil {
 		return errors.Annotate(err,
 			"failed to insert all realms for AuthDB rev %d at %s",
 			authDBRev, ts.String()).Err()
 	}
 
+	start = clock.Now(ctx)
 	roles, err := collateLatestRoles(ctx, ts)
+	logging.Debugf(ctx, "collating roles took %s", clock.Since(ctx, start))
 	if err == nil {
+		start = clock.Now(ctx)
 		err = client.InsertRoles(ctx, roles)
+		logging.Debugf(ctx, "inserting BQ rows for roles took %s", clock.Since(ctx, start))
 	}
 	if err != nil {
 		// Non-fatal; just log the error.
@@ -121,7 +135,10 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	}
 
 	// Ensure the views for the latest data, to propagate schema changes.
-	if err := client.EnsureLatestViews(ctx); err != nil {
+	start = clock.Now(ctx)
+	err = client.EnsureLatestViews(ctx)
+	logging.Debugf(ctx, "ensuring latest views took %s", clock.Since(ctx, start))
+	if err != nil {
 		return err
 	}
 
