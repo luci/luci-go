@@ -113,7 +113,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		}
 	}
 	if msg.FrameworkExtensions != nil {
-		if err := pbutil.ValidateFrameworkExtensions(msg.FrameworkExtensions); err != nil {
+		if err := pbutil.ValidateFrameworkExtensions(msg.FrameworkExtensions, msg.StatusV2); err != nil {
 			return errors.Annotate(err, "framework_extensions").Err()
 		}
 	}

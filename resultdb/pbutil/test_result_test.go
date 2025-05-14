@@ -876,11 +876,113 @@ func TestValidateTestResult(t *testing.T) {
 			})
 			t.Run("web test", func(t *ftt.Test) {
 				msg.FrameworkExtensions.WebTest = &pb.WebTest{
-					Status: pb.WebTest_PASS,
+					IsExpected: true,
+					Status:     pb.WebTest_PASS,
 				}
 
 				t.Run("valid", func(t *ftt.Test) {
 					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("inconsistent with top-level status_v2", func(t *ftt.Test) {
+					t.Run("passed", func(t *ftt.Test) {
+						msg.StatusV2 = pb.TestResult_PASSED
+						msg.FrameworkExtensions.WebTest = &pb.WebTest{
+							IsExpected: true,
+							Status:     pb.WebTest_FAIL,
+						}
+						assert.Loosely(t, validateTR(msg), should.BeNil)
+
+						t.Run("wrong expectation", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.IsExpected = false
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: is_expected: a result with a top-level status_v2 of PASSED must be marked expected"))
+						})
+						t.Run("wrong status", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_SKIP
+							assert.Loosely(t, validateTR(msg), should.ErrLike("framework_extensions: web_test: status: a result with a top-level status_v2 of PASSED must not be marked a web test skip"))
+						})
+					})
+					t.Run("failed", func(t *ftt.Test) {
+						msg.StatusV2 = pb.TestResult_FAILED
+						msg.FailureReason = &pb.FailureReason{
+							Kind: pb.FailureReason_ORDINARY,
+						}
+						msg.FrameworkExtensions.WebTest = &pb.WebTest{
+							IsExpected: false,
+							Status:     pb.WebTest_FAIL,
+						}
+						assert.Loosely(t, validateTR(msg), should.BeNil)
+
+						t.Run("wrong expectation", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.IsExpected = true
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: is_expected: a result with a top-level status_v2 of FAILED must be marked unexpected"))
+						})
+						t.Run("wrong status", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_SKIP
+							assert.Loosely(t, validateTR(msg), should.ErrLike("framework_extensions: web_test: status: a result with a top-level status_v2 of FAILED must not be marked a web test skip"))
+						})
+					})
+					t.Run("skipped", func(t *ftt.Test) {
+						msg.StatusV2 = pb.TestResult_SKIPPED
+						msg.SkippedReason = &pb.SkippedReason{
+							Kind: pb.SkippedReason_SKIPPED_BY_TEST_BODY,
+						}
+						msg.FrameworkExtensions.WebTest = &pb.WebTest{
+							IsExpected: true,
+							Status:     pb.WebTest_SKIP,
+						}
+						assert.Loosely(t, validateTR(msg), should.BeNil)
+
+						t.Run("wrong expectation", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.IsExpected = false
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: is_expected: a result with a top-level status_v2 of SKIPPED must be marked expected"))
+						})
+						t.Run("wrong status", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_PASS
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of SKIPPED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+						})
+					})
+					t.Run("execution errored", func(t *ftt.Test) {
+						msg.StatusV2 = pb.TestResult_EXECUTION_ERRORED
+						msg.FrameworkExtensions.WebTest = &pb.WebTest{
+							IsExpected: false,
+							Status:     pb.WebTest_SKIP,
+						}
+						assert.Loosely(t, validateTR(msg), should.BeNil)
+
+						t.Run("wrong expectation", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.IsExpected = true
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: is_expected: a result with a top-level status_v2 of EXECUTION_ERRORED must be marked unexpected"))
+						})
+						t.Run("wrong status", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_FAIL
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of EXECUTION_ERRORED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+						})
+					})
+					t.Run("precluded", func(t *ftt.Test) {
+						msg.StatusV2 = pb.TestResult_PRECLUDED
+						msg.FrameworkExtensions.WebTest = &pb.WebTest{
+							IsExpected: false,
+							Status:     pb.WebTest_SKIP,
+						}
+						assert.Loosely(t, validateTR(msg), should.BeNil)
+
+						t.Run("wrong expectation", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.IsExpected = true
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: is_expected: a result with a top-level status_v2 of PRECLUDED must be marked unexpected"))
+						})
+						t.Run("wrong status", func(t *ftt.Test) {
+							msg.FrameworkExtensions.WebTest.Status = pb.WebTest_CRASH
+							assert.Loosely(t, validateTR(msg), should.ErrLike(
+								"framework_extensions: web_test: status: a result with a top-level status_v2 of PRECLUDED may not be used in conjunction with with a web test fail, pass, crash or timeout"))
+						})
+					})
 				})
 				t.Run("status", func(t *ftt.Test) {
 					t.Run("unspecified", func(t *ftt.Test) {

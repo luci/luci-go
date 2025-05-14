@@ -222,7 +222,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		}
 	}
 	if tr.FrameworkExtensions != nil {
-		if err := ValidateFrameworkExtensions(tr.FrameworkExtensions); err != nil {
+		if err := ValidateFrameworkExtensions(tr.FrameworkExtensions, tr.StatusV2); err != nil {
 			return errors.Annotate(err, "framework_extensions").Err()
 		}
 	}
@@ -530,12 +530,12 @@ func ValidateSkippedReasonKind(k pb.SkippedReason_Kind) error {
 }
 
 // ValidateFrameworkExtensions returns a non-nil error if fe is invalid.
-func ValidateFrameworkExtensions(fe *pb.FrameworkExtensions) error {
+func ValidateFrameworkExtensions(fe *pb.FrameworkExtensions, statusV2 pb.TestResult_Status) error {
 	if fe == nil {
 		return errors.Reason("unspecified").Err()
 	}
 	if fe.WebTest != nil {
-		if err := ValidateWebTest(fe.WebTest); err != nil {
+		if err := ValidateWebTest(fe.WebTest, statusV2); err != nil {
 			return errors.Annotate(err, "web_test").Err()
 		}
 	}
@@ -543,13 +543,36 @@ func ValidateFrameworkExtensions(fe *pb.FrameworkExtensions) error {
 }
 
 // ValidateWebTest returns a non-nil error if wt is invalid.
-func ValidateWebTest(wt *pb.WebTest) error {
+func ValidateWebTest(wt *pb.WebTest, statusV2 pb.TestResult_Status) error {
 	if wt == nil {
 		return errors.Reason("unspecified").Err()
 	}
 	if err := ValidateWebTestStatus(wt.Status); err != nil {
 		return errors.Annotate(err, "status").Err()
 	}
+	// Besides semantic consistency between web test statuses and status_v2,
+	// this constraint exists to ensure ResultDB Indexes on unexpected results
+	// can be used to find failed, flaky, execution errored and precluded verdicts.
+	if wt.IsExpected {
+		if statusV2 == pb.TestResult_FAILED || statusV2 == pb.TestResult_PRECLUDED || statusV2 == pb.TestResult_EXECUTION_ERRORED {
+			return errors.Reason("is_expected: a result with a top-level status_v2 of %s must be marked unexpected", statusV2.String()).Err()
+		}
+	} else {
+		if statusV2 == pb.TestResult_PASSED || statusV2 == pb.TestResult_SKIPPED {
+			return errors.Reason("is_expected: a result with a top-level status_v2 of %s must be marked expected", statusV2.String()).Err()
+		}
+	}
+
+	if wt.Status == pb.WebTest_SKIP {
+		if statusV2 == pb.TestResult_FAILED || statusV2 == pb.TestResult_PASSED {
+			return errors.Reason("status: a result with a top-level status_v2 of %s must not be marked a web test skip", statusV2.String()).Err()
+		}
+	} else {
+		if statusV2 == pb.TestResult_PRECLUDED || statusV2 == pb.TestResult_EXECUTION_ERRORED || statusV2 == pb.TestResult_SKIPPED {
+			return errors.Reason("status: a result with a top-level status_v2 of %s may not be used in conjunction with with a web test fail, pass, crash or timeout", statusV2.String()).Err()
+		}
+	}
+
 	return nil
 }
 
