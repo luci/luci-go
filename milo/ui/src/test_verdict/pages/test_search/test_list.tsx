@@ -27,42 +27,25 @@ interface Props {
 
 export function TestList({ project, searchQuery }: Props) {
   const client = useTestHistoryClient();
-  const sensitive = useInfiniteQuery({
-    ...client.QueryTests.queryPaged(
-      QueryTestsRequest.fromPartial({
-        project: project,
-        testIdSubstring: searchQuery,
-      }),
-    ),
-    enabled: searchQuery !== '',
-  });
-
-  const insensitive = useInfiniteQuery({
-    ...client.QueryTests.queryPaged(
-      QueryTestsRequest.fromPartial({
-        project: project,
-        testIdSubstring: searchQuery,
-        caseInsensitive: true,
-      }),
-    ),
-    enabled: searchQuery !== '' && !sensitive.hasNextPage,
-  });
+  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      ...client.QueryTests.queryPaged(
+        QueryTestsRequest.fromPartial({
+          project: project,
+          testIdSubstring: searchQuery,
+          caseInsensitive: true,
+        }),
+      ),
+      enabled: searchQuery !== '',
+    });
 
   const testIds = useMemo(() => {
-    const testIds = sensitive.data?.pages.flatMap((p) => p.testIds) || [];
-    const lookupSet = new Set(testIds);
-    for (const page of insensitive.data?.pages || []) {
-      page.testIds
-        .filter((id) => !lookupSet.has(id))
-        .forEach((id) => {
-          testIds.push(id);
-        });
-    }
+    const testIds = data?.pages.flatMap((p) => p.testIds) || [];
     return testIds;
-  }, [sensitive.data, insensitive.data]);
+  }, [data]);
 
-  if (sensitive.isError || insensitive.isError) {
-    throw sensitive.error ?? insensitive.error;
+  if (isError) {
+    throw error;
   }
 
   return (
@@ -72,37 +55,27 @@ export function TestList({ project, searchQuery }: Props) {
           <TestRow key={testId} project={project} testId={testId} />
         ))}
       </ul>
-      {(sensitive.isLoading || insensitive.isLoading) && searchQuery !== '' ? (
+      {isLoading && searchQuery !== '' ? (
         <Typography component="span">
           Loading
-          {!sensitive.isLoading &&
-            insensitive.isLoading &&
-            ' case insensitive results'}
           <DotSpinner />
         </Typography>
       ) : (
-        (sensitive.hasNextPage || insensitive.hasNextPage) && (
+        hasNextPage && (
           <Typography
             component="span"
             className="active-text"
-            onClick={() =>
-              sensitive.hasNextPage
-                ? sensitive.fetchNextPage()
-                : insensitive.fetchNextPage()
-            }
+            onClick={() => fetchNextPage()}
           >
             [load more]
           </Typography>
         )
       )}
-      {testIds.length === 0 &&
-        searchQuery !== '' &&
-        !sensitive.isLoading &&
-        !insensitive.isLoading && (
-          <Typography component="span">
-            No tests found with case insensitive substring search.
-          </Typography>
-        )}
+      {testIds.length === 0 && searchQuery !== '' && !isLoading && (
+        <Typography component="span">
+          No tests found with case insensitive substring search.
+        </Typography>
+      )}
     </>
   );
 }
