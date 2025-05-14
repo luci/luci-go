@@ -96,6 +96,15 @@ serverInjectedVars.SETTINGS = Object.freeze({
   },
   fleetConsole: {
     host: assertNonNullable(process.env['VITE_FLEET_CONSOLE_HOST']),
+    hats: {
+      apiKey: assertNonNullable(process.env['VITE_FLEET_CONSOLE_HATS_API_KEY']),
+      triggerId: assertNonNullable(
+        process.env['VITE_FLEET_CONSOLE_HATS_TRIGGER_ID'],
+      ),
+      productId: assertNonNullable(
+        process.env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID'],
+      ),
+    },
   },
   ufs: {
     host: assertNonNullable(process.env['VITE_UFS_HOST']),

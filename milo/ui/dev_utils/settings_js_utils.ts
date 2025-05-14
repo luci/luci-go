@@ -92,6 +92,11 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     },
     fleetConsole: {
       host: assertNonNullable(env['VITE_FLEET_CONSOLE_HOST']),
+      hats: {
+        apiKey: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_API_KEY']),
+        triggerId: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_TRIGGER_ID']),
+        productId: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
+      },
     },
     ufs: {
       host: assertNonNullable(env['VITE_UFS_HOST']),

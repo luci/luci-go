@@ -90,11 +90,18 @@ declare const SETTINGS: {
   };
   readonly fleetConsole: {
     readonly host: string;
+    readonly hats: HaTSConfig;
   };
   readonly ufs: {
     readonly host: string;
   };
 };
+
+interface HaTSConfig {
+  readonly apiKey: string;
+  readonly triggerId: string;
+  readonly productId: string;
+}
 
 /**
  * Import all JS modules. This ensures all modules are initialized.

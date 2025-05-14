@@ -147,9 +147,19 @@ message Settings {
   }
   LUCISourceIndex luci_source_index = 15;
 
+  message HaTSConfig {
+    // API key configured in Pantheon for HaTS
+    string api_key = 1;
+    // Listnr survey trigger ID
+    string trigger_id = 2;
+    // Listnr product ID
+    string product_id = 3;
+  }
   message FleetConsole {
     // host is the hostname of the FleetConsole instance we're pointing to (eg. fleet-console-dev-xxx.run.app).
     string host = 1;
+    // HaTS configuration
+    HaTSConfig hats = 2;
   }
   FleetConsole fleet_console = 16;
 
