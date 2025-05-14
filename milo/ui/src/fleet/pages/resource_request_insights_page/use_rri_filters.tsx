@@ -230,14 +230,10 @@ const filtersToAip = (filters: RriFilters): string => {
         continue;
       }
       if (filter.min) {
-        parts.push(
-          `${key} > ${toIsoString(filter.min)}`, // TODO: replace with GTE
-        );
+        parts.push(`${key} >= ${toIsoString(filter.min)}`);
       }
       if (filter.max) {
-        parts.push(
-          `${key} < ${toIsoString(filter.max)}`, // TODO: replace with LTE
-        );
+        parts.push(`${key} <= ${toIsoString(filter.max)}`);
       }
     }
     if (type === 'string') {
