@@ -53,6 +53,18 @@ func TestValidateTestResult(t *testing.T) {
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
 			assert.Loosely(t, err, should.BeNil)
 		})
+		t.Run(`TestIdStructured`, func(t *ftt.Test) {
+			t.Run(`missing`, func(t *ftt.Test) {
+				tr.TestIdStructured = nil
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
+				assert.Loosely(t, err, should.ErrLike("test_id_structured: unspecified"))
+			})
+			t.Run(`case name components missing`, func(t *ftt.Test) {
+				tr.TestIdStructured.CaseNameComponents = nil
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr, usingStructuredID)
+				assert.Loosely(t, err, should.ErrLike("test_id_structured: case_name_components: unspecified"))
+			})
+		})
 
 		t.Run(`Properties`, func(t *ftt.Test) {
 			t.Run(`Valid Properties`, func(t *ftt.Test) {

@@ -330,7 +330,7 @@ func TestReportTestResults(t *testing.T) {
 					checkResults()
 				})
 			})
-			t.Run("with fields missing", func(t *ftt.Test) {
+			t.Run("with coarse name missing", func(t *ftt.Test) {
 				tr.TestIdStructured.CoarseName = ""
 
 				sink, err := newSinkServer(ctx, cfg)
@@ -339,6 +339,18 @@ func TestReportTestResults(t *testing.T) {
 				_, err = sink.ReportTestResults(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`test_id_structured: coarse_name: required, please set a Package (scheme "myscheme")`))
+			})
+			t.Run("with case name components missing", func(t *ftt.Test) {
+				// This often occurs if the person writing an uploader is accidentally working against
+				// the ResultDB proto instead of the ResultSink proto.
+				tr.TestIdStructured.CaseNameComponents = nil
+
+				sink, err := newSinkServer(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+				_, err = sink.ReportTestResults(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`test_id_structured: case_name_components: unspecified`))
 			})
 		})
 

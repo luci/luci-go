@@ -50,6 +50,9 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		if msg.TestIdStructured == nil {
 			return errors.Reason("test_id_structured: unspecified").Err()
 		}
+		if len(msg.TestIdStructured.CaseNameComponents) == 0 {
+			return errors.Reason("test_id_structured: case_name_components: unspecified").Err()
+		}
 		// Perform basic validation, using a placeholder module name and scheme.
 		baseID := pbutil.BaseTestIdentifier{
 			ModuleName:   "placeholder",
