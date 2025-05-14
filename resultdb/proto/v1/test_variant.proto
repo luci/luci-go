@@ -20,6 +20,7 @@ import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_verdict.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -47,8 +48,15 @@ message TestVariant {
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
   string variant_hash = 3;
 
+  // Deprecated: Use status_v2 and status_override.
   // Status of the test variant.
-  TestVariantStatus status = 4;
+  TestVariantStatus status = 4 [ deprecated = true ];
+
+  // Status of the test verdict (v2).
+  TestVerdict.Status status_v2 = 12;
+
+  // The status override, e.g. whether the test was exonerated.
+  TestVerdict.StatusOverride status_override = 13;
 
   // Outcomes of the test variant.
   repeated TestResultBundle results = 5;

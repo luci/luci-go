@@ -177,6 +177,7 @@ func (q *Query) resultSelectColumns() []string {
 		"InvocationId",
 		"ResultId",
 		"IsUnexpected",
+		"StatusV2", // Always select as necessary to compute results.*.status_v2.
 	)
 
 	// Select extra columns depending on the mask.
@@ -197,7 +198,6 @@ func (q *Query) resultSelectColumns() []string {
 	}
 
 	selectIfIncluded("Status", "results.*.result.status")
-	selectIfIncluded("StatusV2", "results.*.result.status_v2")
 	selectIfIncluded("StartTime", "results.*.result.start_time")
 	selectIfIncluded("RunDurationUsec", "results.*.result.duration")
 	selectIfIncluded("SummaryHTML", "results.*.result.summary_html")
@@ -495,6 +495,8 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		tv := &pb.TestVariant{}
 		var tvStatus int64
+		var tvStatusV2 int64
+		var tvStatusOverride int64
 		var results []*tvResult
 		var exonerationIDs []string
 		var exonerationInvocationIDs []string
@@ -502,7 +504,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		var exonerationReasons []int64
 		var tmd spanutil.Compressed
 		err := b.FromSpanner(row,
-			&tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results,
+			&tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &tvStatusV2, &tvStatusOverride, &results,
 			&exonerationIDs, &exonerationInvocationIDs, &exonerationExplanationHTMLs,
 			&exonerationReasons)
 		if err != nil {
@@ -513,6 +515,8 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		if tv.Status == pb.TestVariantStatus_EXPECTED {
 			panic("query of test variants with unexpected results returned a test variant with only expected results.")
 		}
+		tv.StatusV2 = pb.TestVerdict_Status(tvStatusV2)
+		tv.StatusOverride = pb.TestVerdict_StatusOverride(tvStatusOverride)
 
 		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(tv.TestId, tv.Variant)
 		if err != nil {
@@ -849,6 +853,8 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 		isOnlyExpected := tv.Results[0].Result.Expected
 		if isOnlyExpected {
 			tv.Status = pb.TestVariantStatus_EXPECTED
+			tv.StatusV2 = calculateStatusV2(tv.Results)
+			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
 
 			// Populate the code sources tested.
 			if err := q.populateSources(tv, distinctSources); err != nil {
@@ -898,6 +904,41 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
 }
 
+func calculateStatusV2(trs []*pb.TestResultBundle) pb.TestVerdict_Status {
+	numPassed := 0
+	numFailed := 0
+	numSkipped := 0
+	numExecutionErrored := 0
+	for _, tr := range trs {
+		switch tr.Result.StatusV2 {
+		case pb.TestResult_FAILED:
+			numFailed++
+		case pb.TestResult_PASSED:
+			numPassed++
+		case pb.TestResult_SKIPPED:
+			numSkipped++
+		case pb.TestResult_EXECUTION_ERRORED:
+			numExecutionErrored++
+		case pb.TestResult_PRECLUDED:
+		default:
+			panic(fmt.Sprintf("unknown test result status: %v", tr.Result.StatusV2))
+		}
+	}
+	if numPassed > 0 && numFailed > 0 {
+		return pb.TestVerdict_FLAKY
+	} else if numPassed > 0 {
+		return pb.TestVerdict_PASSED
+	} else if numFailed > 0 {
+		return pb.TestVerdict_FAILED
+	} else if numSkipped > 0 {
+		return pb.TestVerdict_SKIPPED
+	} else if numExecutionErrored > 0 {
+		return pb.TestVerdict_EXECUTION_ERRORED
+	} else {
+		return pb.TestVerdict_PRECLUDED
+	}
+}
+
 // fetchVerdictInstruction gets the instruction for test variant.
 // Returns instruction of the invocation of the first test result.
 func fetchVerdictInstruction(tv *pb.TestVariant, instructionMap map[invocations.ID]*pb.VerdictInstruction) (*pb.VerdictInstruction, error) {
@@ -943,13 +984,31 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 		"testResultInvIDs":      testResultInvs,
 		"testExonerationInvIDs": exonerationInvs,
 		"testIDs":               q.TestIDs,
-		"skipStatus":            int(pb.TestStatus_SKIP),
-		"unexpected":            int(pb.TestVariantStatus_UNEXPECTED),
-		"unexpectedlySkipped":   int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
-		"flaky":                 int(pb.TestVariantStatus_FLAKY),
-		"exonerated":            int(pb.TestVariantStatus_EXONERATED),
-		"expected":              int(pb.TestVariantStatus_EXPECTED),
-		"status":                status,
+		// Test result status v1 values.
+		"skipStatus": int(pb.TestStatus_SKIP),
+		// Test verdict status v1 values.
+		"unexpected":          int(pb.TestVariantStatus_UNEXPECTED),
+		"unexpectedlySkipped": int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
+		"flaky":               int(pb.TestVariantStatus_FLAKY),
+		"exonerated":          int(pb.TestVariantStatus_EXONERATED),
+		"expected":            int(pb.TestVariantStatus_EXPECTED),
+		// Test result status v2 values.
+		"passedResult":           int(pb.TestResult_PASSED),
+		"failedResult":           int(pb.TestResult_FAILED),
+		"skippedResult":          int(pb.TestResult_SKIPPED),
+		"executionErroredResult": int(pb.TestResult_EXECUTION_ERRORED),
+		// Test verdict status v2 values.
+		"failedVerdict":           int(pb.TestVerdict_FAILED),
+		"executionErroredVerdict": int(pb.TestVerdict_EXECUTION_ERRORED),
+		"precludedVerdict":        int(pb.TestVerdict_PRECLUDED),
+		"flakyVerdict":            int(pb.TestVerdict_FLAKY),
+		"skippedVerdict":          int(pb.TestVerdict_SKIPPED),
+		"passedVerdict":           int(pb.TestVerdict_PASSED),
+
+		"exoneratedOverride": int(pb.TestVerdict_EXONERATED),
+		"notOverriden":       int(pb.TestVerdict_NOT_OVERRIDDEN),
+
+		"status": status,
 	}
 
 	var expected bool
@@ -1003,8 +1062,12 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ANY_VALUE(Variant) Variant,
 			ANY_VALUE(TestMetadata) TestMetadata,
 			COUNTIF(IsUnexpected) num_unexpected,
-			COUNTIF(Status=@skipStatus) num_skipped,
+			COUNTIF(Status=@skipStatus) num_skips,
 			COUNT(TestId) num_total,
+			COUNTIF(StatusV2=@passedResult) num_passed,
+			COUNTIF(StatusV2=@failedResult) num_failed,
+			COUNTIF(StatusV2=@skippedResult) num_skipped,
+			COUNTIF(StatusV2=@executionErroredResult) num_execution_errored,
 			ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
@@ -1034,10 +1097,27 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			CASE
 				WHEN exonerated.TestId IS NOT NULL THEN @exonerated
 				WHEN num_unexpected = 0 THEN @expected -- should never happen in this query
-				WHEN num_skipped = num_unexpected AND num_skipped = num_total THEN @unexpectedlySkipped
+				WHEN num_skips = num_unexpected AND num_skips = num_total THEN @unexpectedlySkipped
 				WHEN num_unexpected = num_total THEN @unexpected
 				ELSE @flaky
 			END TvStatus,
+			CASE
+				WHEN num_failed > 0 AND num_passed = 0 THEN @failedVerdict
+				WHEN num_failed > 0 AND num_passed > 0 THEN @flakyVerdict
+				WHEN num_failed = 0 AND num_passed > 0 THEN @passedVerdict
+				-- Given none of the above match, we know num_failed = 0 and num_passed = 0.
+				-- i.e. the results are mix of skips, execution_errored and/or precluded only.
+				WHEN num_skipped > 0 THEN @skippedVerdict
+				WHEN num_execution_errored > 0 THEN @executionErroredVerdict
+				ELSE @precludedVerdict
+			END TvStatusV2,
+			CASE
+				WHEN num_passed > 0 THEN @notOverriden -- Flaky and passed verdicts cannot be exonerated.
+				WHEN num_failed = 0 AND num_passed = 0 AND num_skipped > 0 THEN @notOverriden -- Skipped verdicts cannot be exonerated.
+				-- The verdict is eligible for exoneration, i.e. one of failed, execution errored or precluded.
+				WHEN exonerated.TestId IS NOT NULL THEN @exoneratedOverride
+				ELSE @notOverriden
+			END TvStatusOverride,
 			ARRAY(
 				SELECT AS STRUCT *
 				FROM UNNEST(tv.results)
@@ -1057,6 +1137,8 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		Variant,
 		TestMetadata,
 		TvStatus,
+		TvStatusV2,
+		TvStatusOverride,
 		results,
 		ExonerationIDs,
 		InvocationIDs,

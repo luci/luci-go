@@ -15,7 +15,6 @@
 package resultdb
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -136,14 +135,6 @@ func TestQueryTestVariants(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		getTVStrings := func(tvs []*pb.TestVariant) []string {
-			tvStrings := make([]string, len(tvs))
-			for i, tv := range tvs {
-				tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
-			}
-			return tvStrings
-		}
-
 		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req := &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
@@ -202,9 +193,11 @@ func TestQueryTestVariants(t *testing.T) {
 						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
 						CaseName:          "T1002",
 					},
-					TestId:      "T1002",
-					VariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
-					Status:      pb.TestVariantStatus_UNEXPECTED,
+					TestId:         "T1002",
+					VariantHash:    pbutil.VariantHash(pbutil.Variant("k0", "v0")),
+					Status:         pb.TestVariantStatus_UNEXPECTED,
+					StatusV2:       pb.TestVerdict_FAILED,
+					StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
@@ -235,10 +228,12 @@ func TestQueryTestVariants(t *testing.T) {
 						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
 						CaseName:          "T1003",
 					},
-					TestId:      "T1003",
-					Variant:     pbutil.Variant("k1", "v1"),
-					VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
-					Status:      pb.TestVariantStatus_EXONERATED,
+					TestId:         "T1003",
+					Variant:        pbutil.Variant("k1", "v1"),
+					VariantHash:    pbutil.VariantHash(pbutil.Variant("k1", "v1")),
+					Status:         pb.TestVariantStatus_EXONERATED,
+					StatusV2:       pb.TestVerdict_FAILED,
+					StatusOverride: pb.TestVerdict_EXONERATED,
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
@@ -284,10 +279,12 @@ func TestQueryTestVariants(t *testing.T) {
 						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
 						CaseName:          "T1004",
 					},
-					TestId:      "T1004",
-					Variant:     pbutil.Variant("k2", "v2"),
-					VariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
-					Status:      pb.TestVariantStatus_EXONERATED,
+					TestId:         "T1004",
+					Variant:        pbutil.Variant("k2", "v2"),
+					VariantHash:    pbutil.VariantHash(pbutil.Variant("k2", "v2")),
+					Status:         pb.TestVariantStatus_EXONERATED,
+					StatusV2:       pb.TestVerdict_FAILED,
+					StatusOverride: pb.TestVerdict_EXONERATED,
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
@@ -322,9 +319,11 @@ func TestQueryTestVariants(t *testing.T) {
 						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k3", "v3")),
 						CaseName:          "T1005",
 					},
-					TestId:      "T1005",
-					VariantHash: pbutil.VariantHash(pbutil.Variant("k3", "v3")),
-					Status:      pb.TestVariantStatus_EXONERATED,
+					TestId:         "T1005",
+					VariantHash:    pbutil.VariantHash(pbutil.Variant("k3", "v3")),
+					Status:         pb.TestVariantStatus_EXONERATED,
+					StatusV2:       pb.TestVerdict_FAILED,
+					StatusOverride: pb.TestVerdict_EXONERATED,
 					Results: []*pb.TestResultBundle{
 						{
 							Result: &pb.TestResult{
@@ -373,10 +372,10 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, page.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			assert.Loosely(t, len(page.TestVariants), should.Equal(3))
-			assert.Loosely(t, getTVStrings(page.TestVariants), should.Match([]string{
-				"10/T2/e3b0c44298fc1c14",
-				"30/T1/c467ccce5a16dc72",
-				"40/T1/e3b0c44298fc1c14",
+			assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
+				"10/T2/e3b0c44298fc1c14/FAILED",
+				"30/T1/c467ccce5a16dc72/FLAKY",
+				"40/T1/e3b0c44298fc1c14/EXONERATED",
 			}))
 
 			expectedSources := testutil.TestSourcesWithChangelistNumbers(1)
@@ -418,8 +417,8 @@ func TestQueryTestVariants(t *testing.T) {
 			assert.Loosely(t, res.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			assert.Loosely(t, len(res.TestVariants), should.Equal(1))
-			assert.Loosely(t, getTVStrings(res.TestVariants), should.Match([]string{
-				"30/T1/c467ccce5a16dc72",
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+				"30/T1/c467ccce5a16dc72/FLAKY",
 			}))
 		})
 
@@ -442,9 +441,9 @@ func TestQueryTestVariants(t *testing.T) {
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(res.TestVariants), should.Equal(2))
-			assert.Loosely(t, getTVStrings(res.TestVariants), should.Match([]string{
-				"50/T3/e3b0c44298fc1c14",
-				"50/T4/e3b0c44298fc1c14",
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+				"50/T3/e3b0c44298fc1c14/PASSED",
+				"50/T4/e3b0c44298fc1c14/SKIPPED",
 			}))
 
 			expectedTestResults := [][]*pb.TestResult{

@@ -43,7 +43,11 @@ func variantHash(pairs ...string) string {
 func tvStrings(tvs []*pb.TestVariant) []string {
 	tvStrings := make([]string, len(tvs))
 	for i, tv := range tvs {
-		tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
+		statusV2Desc := tv.StatusV2.String()
+		if tv.StatusOverride != pb.TestVerdict_NOT_OVERRIDDEN {
+			statusV2Desc = tv.StatusOverride.String()
+		}
+		tvStrings[i] = fmt.Sprintf("%d/%s/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash, statusV2Desc)
 	}
 	return tvStrings
 }
@@ -127,9 +131,9 @@ func TestBatchGetTestVariants(t *testing.T) {
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
-				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
-				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+				fmt.Sprintf("10/test3/%s/FAILED", variantHash("a", "b")),
+				fmt.Sprintf("20/test4/%s/EXECUTION_ERRORED", variantHash("g", "h")),
+				fmt.Sprintf("50/test1/%s/SKIPPED", variantHash("a", "b")),
 			}))
 
 			expectedResults := []*pb.TestResult{
@@ -199,10 +203,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
-				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
-				fmt.Sprintf("20/test5/%s", variantHash()),
-				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+				fmt.Sprintf("10/test3/%s/FAILED", variantHash("a", "b")),
+				fmt.Sprintf("20/test4/%s/EXECUTION_ERRORED", variantHash("g", "h")),
+				fmt.Sprintf("20/test5/%s/PRECLUDED", variantHash()),
+				fmt.Sprintf("50/test1/%s/SKIPPED", variantHash("a", "b")),
 			}))
 		})
 		t.Run(`Valid request without included invocation`, func(t *ftt.Test) {
@@ -218,8 +222,8 @@ func TestBatchGetTestVariants(t *testing.T) {
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("50/test1/%s", variantHash("e", "f")),
-				fmt.Sprintf("50/test3/%s", variantHash("c", "d")),
+				fmt.Sprintf("50/test1/%s/PASSED", variantHash("e", "f")),
+				fmt.Sprintf("50/test3/%s/PASSED", variantHash("c", "d")),
 			}))
 
 			for _, tv := range res.TestVariants {
@@ -249,9 +253,9 @@ func TestBatchGetTestVariants(t *testing.T) {
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
-				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
-				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+				fmt.Sprintf("10/test3/%s/FAILED", variantHash("a", "b")),
+				fmt.Sprintf("20/test4/%s/EXECUTION_ERRORED", variantHash("g", "h")),
+				fmt.Sprintf("50/test1/%s/SKIPPED", variantHash("a", "b")),
 			}))
 
 			for _, tv := range res.TestVariants {
@@ -290,7 +294,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+				fmt.Sprintf("50/test1/%s/SKIPPED", variantHash("a", "b")),
 			}))
 
 			for _, tv := range res.TestVariants {
@@ -328,7 +332,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			// Testing that we don't match test3, a:b, even though we've
 			// requested that test id and variant hash separately.
 			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+				fmt.Sprintf("50/test1/%s/SKIPPED", variantHash("a", "b")),
 			}))
 
 			for _, tv := range res.TestVariants {

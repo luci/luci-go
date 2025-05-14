@@ -139,7 +139,11 @@ func TestQueryTestVariants(t *testing.T) {
 			keys := make([]string, len(tvs))
 			for i, tv := range tvs {
 				instructionName := tv.GetInstruction().GetInstruction()
-				keys[i] = fmt.Sprintf("%d/%s/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash, instructionName)
+				statusV2Desc := tv.StatusV2.String()
+				if tv.StatusOverride != pb.TestVerdict_NOT_OVERRIDDEN {
+					statusV2Desc = tv.StatusOverride.String()
+				}
+				keys[i] = fmt.Sprintf("%d/%s/%s/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash, statusV2Desc, instructionName)
 			}
 			return keys
 		}
@@ -149,7 +153,7 @@ func TestQueryTestVariants(t *testing.T) {
 		testutil.MustApply(ctx, t, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, t, insert.Invocation("inv3", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.TestResults(t, "inv0", "T1", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
+			insert.TestResults(t, "inv0", "T1", nil, pb.TestResult_FAILED, pb.TestResult_FAILED),
 			insert.TestResults(t, "inv0", "T2", nil, pb.TestResult_PASSED),
 			insert.TestResults(t, "inv0", "T5", nil, pb.TestResult_FAILED),
 			insert.TestResults(t,
@@ -162,7 +166,7 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults(t, "inv0", "T7", nil, pb.TestResult_SKIPPED),
 			insert.TestResults(t, "inv0", "T8", nil, pb.TestResult_PASSED, pb.TestResult_FAILED),
 			insert.TestResults(t, "inv0", "T9", nil, pb.TestResult_PASSED),
-			insert.TestResults(t, "inv1", "T1", nil, pb.TestResult_PASSED),
+			insert.TestResults(t, "inv1", "T1", nil, pb.TestResult_FAILED),
 			insert.TestResults(t, "inv1", "T2", nil, pb.TestResult_FAILED),
 			insert.TestResults(t, "inv1", "T3", nil, pb.TestResult_PASSED, pb.TestResult_PASSED),
 			insert.TestResults(t, "inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED),
@@ -174,7 +178,8 @@ func TestQueryTestVariants(t *testing.T) {
 				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
 				pb.TestResult_FAILED, pb.TestResult_FAILED, pb.TestResult_FAILED,
 			),
-			insert.TestResults(t, "inv1", "Tx", nil, pb.TestResult_EXECUTION_ERRORED, pb.TestResult_SKIPPED), // Has both expected and unexpected skips, so should produce a flaky result.
+			// Has both expected and unexpected skips, so should produce a flaky result in verdict status v1 and a skipped result with verdict status v2.
+			insert.TestResults(t, "inv1", "Tx", nil, pb.TestResult_EXECUTION_ERRORED, pb.TestResult_SKIPPED),
 			insert.TestResults(t, "inv1", "Tz", nil, pb.TestResult_EXECUTION_ERRORED, pb.TestResult_EXECUTION_ERRORED),
 
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
@@ -188,15 +193,15 @@ func TestQueryTestVariants(t *testing.T) {
 			tvs := page.TestVariants
 			tvStrings := tvStrings(tvs)
 			assert.Loosely(t, tvStrings, should.Match([]string{
-				"10/T4/c467ccce5a16dc72/",
-				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"10/Ty/e3b0c44298fc1c14/",
-				"20/Tz/e3b0c44298fc1c14/",
-				"30/T5/c467ccce5a16dc72/",
-				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"30/Tx/e3b0c44298fc1c14/",
-				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/FAILED/",
+				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 			}))
 
 			expectedT4Result := insert.MakeTestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED)
@@ -259,11 +264,11 @@ func TestQueryTestVariants(t *testing.T) {
 			page := mustFetch(q)
 			tvs := page.TestVariants
 			assert.Loosely(t, tvStrings(tvs), should.Match([]string{
-				"50/T3/e3b0c44298fc1c14/",
-				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
+				"50/T3/e3b0c44298fc1c14/PASSED/",
+				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
 			}))
 			assert.Loosely(t, len(tvs[0].Results), should.Equal(2))
 
@@ -360,13 +365,15 @@ func TestQueryTestVariants(t *testing.T) {
 						assert.Loosely(t, tv.TestIdStructured.CaseName, should.NotBeEmpty)
 
 						assert.That(t, tv.Status, should.NotEqual(pb.TestVariantStatus_TEST_VARIANT_STATUS_UNSPECIFIED))
+						assert.That(t, tv.StatusV2, should.NotEqual(pb.TestVerdict_STATUS_UNSPECIFIED))
+						assert.That(t, tv.StatusOverride, should.NotEqual(pb.TestVerdict_STATUS_OVERRIDE_UNSPECIFIED))
 						assert.Loosely(t, tv.Results, should.NotBeEmpty)
 						assert.Loosely(t, tv.TestMetadata, should.NotBeNil)
 						if tv.TestId == "T3" {
 							assert.Loosely(t, tv.SourcesId, should.NotBeEmpty)
 						}
 
-						if tv.Status == pb.TestVariantStatus_EXONERATED {
+						if tv.Status == pb.TestVariantStatus_EXONERATED || tv.StatusOverride == pb.TestVerdict_EXONERATED {
 							assert.Loosely(t, tv.Exonerations, should.NotBeEmpty)
 						}
 
@@ -374,6 +381,7 @@ func TestQueryTestVariants(t *testing.T) {
 							assert.Loosely(t, result.Result.Name, should.NotBeEmpty)
 							assert.Loosely(t, result.Result.ResultId, should.NotBeEmpty)
 							assert.Loosely(t, result.Result.Status, should.NotBeZero)
+							assert.Loosely(t, result.Result.StatusV2, should.NotBeZero)
 							assert.Loosely(t, result.Result.SummaryHtml, should.NotBeBlank)
 							assert.Loosely(t, result.Result.Duration, should.NotBeNil)
 							assert.Loosely(t, result.Result.Tags, should.NotBeNil)
@@ -422,6 +430,8 @@ func TestQueryTestVariants(t *testing.T) {
 							VariantHash:      tv.VariantHash,
 							TestIdStructured: tv.TestIdStructured,
 							Status:           tv.Status,
+							StatusV2:         tv.StatusV2,
+							StatusOverride:   tv.StatusOverride,
 							Results:          tv.Results,
 							Exonerations:     tv.Exonerations,
 							Variant:          tv.Variant,
@@ -463,30 +473,30 @@ func TestQueryTestVariants(t *testing.T) {
 
 			q.PageSize = 15
 			nextToken := page("", 8, []string{
-				"10/T4/c467ccce5a16dc72/",
-				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"10/Ty/e3b0c44298fc1c14/",
-				"20/Tz/e3b0c44298fc1c14/",
-				"30/T5/c467ccce5a16dc72/",
-				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"30/Tx/e3b0c44298fc1c14/",
-				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/FAILED/",
+				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 			})
 			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			nextToken = page(nextToken, 1, []string{
-				"50/T3/e3b0c44298fc1c14/",
+				"50/T3/e3b0c44298fc1c14/PASSED/",
 			})
 			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14")))
 
 			nextToken = page(nextToken, 2, []string{
-				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
 			})
 			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14")))
 
-			nextToken = page(nextToken, 2, []string{"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test", "50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test"})
+			nextToken = page(nextToken, 2, []string{"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test", "50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test"})
 			assert.Loosely(t, nextToken, should.Equal("CghFWFBFQ1RFRAoCVHkKEGUzYjBjNDQyOThmYzFjMTQ="))
 
 			nextToken = page(nextToken, 0, []string{})
@@ -519,9 +529,9 @@ func TestQueryTestVariants(t *testing.T) {
 				page := mustFetch(q)
 				tvStrings := tvStrings(page.TestVariants)
 				assert.Loosely(t, tvStrings, should.Match([]string{
-					"10/T4/c467ccce5a16dc72/",
-					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"10/Ty/e3b0c44298fc1c14/",
+					"10/T4/c467ccce5a16dc72/FAILED/",
+					"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/FAILED/",
 				}))
 				assert.Loosely(t, page.NextPageToken, should.BeEmpty)
 			})
@@ -530,11 +540,11 @@ func TestQueryTestVariants(t *testing.T) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_EXPECTED}
 				page := mustFetch(q)
 				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
-					"50/T3/e3b0c44298fc1c14/",
-					"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
+					"50/T3/e3b0c44298fc1c14/PASSED/",
+					"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+					"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+					"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+					"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
 				}))
 				assert.Loosely(t, len(page.TestVariants[0].Results), should.Equal(2))
 			})
@@ -543,15 +553,15 @@ func TestQueryTestVariants(t *testing.T) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED_MASK}
 				page := mustFetch(q)
 				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
-					"10/T4/c467ccce5a16dc72/",
-					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"10/Ty/e3b0c44298fc1c14/",
-					"20/Tz/e3b0c44298fc1c14/",
-					"30/T5/c467ccce5a16dc72/",
-					"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"30/Tx/e3b0c44298fc1c14/",
-					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"10/T4/c467ccce5a16dc72/FAILED/",
+					"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/FAILED/",
+					"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+					"30/T5/c467ccce5a16dc72/FLAKY/",
+					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+					"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+					"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				}))
 			})
 		})
@@ -577,20 +587,20 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// All test variants should be returned.
 			assert.Loosely(t, tvStrings(allTVs), should.Match([]string{
-				"10/T4/c467ccce5a16dc72/",
-				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"10/Ty/e3b0c44298fc1c14/",
-				"20/Tz/e3b0c44298fc1c14/",
-				"30/T5/c467ccce5a16dc72/",
-				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"30/Tx/e3b0c44298fc1c14/",
-				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T3/e3b0c44298fc1c14/",
-				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/FAILED/",
+				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"50/T3/e3b0c44298fc1c14/PASSED/",
+				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
 			}))
 		})
 
@@ -606,20 +616,20 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// All test variants should be returned.
 			assert.Loosely(t, tvStrings(allTVs), should.Match([]string{
-				"10/T4/c467ccce5a16dc72/",
-				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"10/Ty/e3b0c44298fc1c14/",
-				"20/Tz/e3b0c44298fc1c14/",
-				"30/T5/c467ccce5a16dc72/",
-				"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"30/Tx/e3b0c44298fc1c14/",
-				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T3/e3b0c44298fc1c14/",
-				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/FAILED/",
+				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"50/T3/e3b0c44298fc1c14/PASSED/",
+				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
 			}))
 		})
 
@@ -629,15 +639,15 @@ func TestQueryTestVariants(t *testing.T) {
 			t.Run(`with only limited access`, func(t *ftt.Test) {
 				page := mustFetch(q)
 				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
-					"10/T4/c467ccce5a16dc72/",
-					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"10/Ty/e3b0c44298fc1c14/",
-					"20/Tz/e3b0c44298fc1c14/",
-					"30/T5/c467ccce5a16dc72/",
-					"30/T8/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"30/Tx/e3b0c44298fc1c14/",
-					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
+					"10/T4/c467ccce5a16dc72/FAILED/",
+					"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/FAILED/",
+					"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+					"30/T5/c467ccce5a16dc72/FLAKY/",
+					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+					"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+					"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				}))
 
 				// Check the test variant and its test results and test exonerations
@@ -717,15 +727,15 @@ func TestQueryTestVariants(t *testing.T) {
 				page := mustFetch(q)
 				tvs := page.TestVariants
 				assert.Loosely(t, tvStrings(tvs), should.Match([]string{
-					"10/T4/c467ccce5a16dc72/",
-					"10/T5/e3b0c44298fc1c14/",
-					"10/Ty/e3b0c44298fc1c14/",
-					"20/Tz/e3b0c44298fc1c14/",
-					"30/T5/c467ccce5a16dc72/",
-					"30/T8/e3b0c44298fc1c14/",
-					"30/Tx/e3b0c44298fc1c14/",
-					"40/T1/e3b0c44298fc1c14/",
-					"40/T2/e3b0c44298fc1c14/",
+					"10/T4/c467ccce5a16dc72/FAILED/",
+					"10/T5/e3b0c44298fc1c14/FAILED/",
+					"10/Ty/e3b0c44298fc1c14/FAILED/",
+					"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+					"30/T5/c467ccce5a16dc72/FLAKY/",
+					"30/T8/e3b0c44298fc1c14/FLAKY/",
+					"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+					"40/T1/e3b0c44298fc1c14/EXONERATED/",
+					"40/T2/e3b0c44298fc1c14/FLAKY/",
 				}))
 
 				// Check all the test exonerations have been masked.
