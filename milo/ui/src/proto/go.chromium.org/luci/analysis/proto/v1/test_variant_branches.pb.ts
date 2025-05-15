@@ -8,10 +8,8 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Any } from "../../../../../google/protobuf/any.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { Commit } from "../../../common/proto/git/commit.pb";
 import { Variant } from "./common.pb";
 import { Changelist, SourceRef } from "./sources.pb";
-import { TestVerdict } from "./test_verdict.pb";
 
 export const protobufPackage = "luci.analysis.v1";
 
@@ -453,45 +451,6 @@ export interface Segment_Counts {
   readonly totalVerdicts: number;
 }
 
-export interface QuerySourcePositionsRequest {
-  /** The LUCI project. */
-  readonly project: string;
-  /** The identifier of a test. */
-  readonly testId: string;
-  /** The hash of the variant. */
-  readonly variantHash: string;
-  /** Hash of the source branch, as 16 lowercase hexadecimal characters. */
-  readonly refHash: string;
-  /**
-   * The source position where to start listing from, in descending order (newest commit to older commits).
-   * This start source position will be the largest source position in the response.
-   */
-  readonly startSourcePosition: string;
-  /**
-   * The maximum number of commits to return.
-   *
-   * The service may return fewer than this value.
-   * If unspecified, at most 100 commits will be returned.
-   * The maximum value is 1,000; values above 1,000 will be coerced to 1,000.
-   */
-  readonly pageSize: number;
-  /**
-   * A page token, received from a previous `QuerySourcePositions` call.
-   * Provide this to retrieve the subsequent page.
-   *
-   * When paginating, all other parameters provided to `QuerySourcePositions` MUST
-   * match the call that provided the page token.
-   */
-  readonly pageToken: string;
-}
-
-export interface QuerySourcePositionsResponse {
-  /** Source positions in descending order, start from the commit at start_source_position. */
-  readonly sourcePositions: readonly SourcePosition[];
-  /** A page token for next QuerySourcePositionsRequest to fetch the next page of commits. */
-  readonly nextPageToken: string;
-}
-
 export interface QuerySourceVerdictsRequest {
   /**
    * The name of the test variant branch to query.
@@ -635,23 +594,6 @@ export interface QuerySourceVerdictsResponse_SourceVerdict {
    * Limited to at most 20 test verdicts.
    */
   readonly verdicts: readonly QuerySourceVerdictsResponse_TestVerdict[];
-}
-
-/** SourcePosition contains the commit and the test verdicts at a source position for a test variant branch. */
-export interface SourcePosition {
-  /** Source position. */
-  readonly position: string;
-  /** The git commit. */
-  readonly commit:
-    | Commit
-    | undefined;
-  /**
-   * Test verdicts at this source position.
-   * Test verdicts will be ordered by `partition_time` DESC.
-   * At most 20 verdicts will be returned here.
-   * Most of time, a test variant at the same source position has less than 20 verdicts.
-   */
-  readonly verdicts: readonly TestVerdict[];
 }
 
 export interface QueryChangepointAIAnalysisRequest {
@@ -2538,248 +2480,6 @@ export const Segment_Counts: MessageFns<Segment_Counts> = {
   },
 };
 
-function createBaseQuerySourcePositionsRequest(): QuerySourcePositionsRequest {
-  return {
-    project: "",
-    testId: "",
-    variantHash: "",
-    refHash: "",
-    startSourcePosition: "0",
-    pageSize: 0,
-    pageToken: "",
-  };
-}
-
-export const QuerySourcePositionsRequest: MessageFns<QuerySourcePositionsRequest> = {
-  encode(message: QuerySourcePositionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.project !== "") {
-      writer.uint32(10).string(message.project);
-    }
-    if (message.testId !== "") {
-      writer.uint32(18).string(message.testId);
-    }
-    if (message.variantHash !== "") {
-      writer.uint32(26).string(message.variantHash);
-    }
-    if (message.refHash !== "") {
-      writer.uint32(34).string(message.refHash);
-    }
-    if (message.startSourcePosition !== "0") {
-      writer.uint32(40).int64(message.startSourcePosition);
-    }
-    if (message.pageSize !== 0) {
-      writer.uint32(48).int32(message.pageSize);
-    }
-    if (message.pageToken !== "") {
-      writer.uint32(58).string(message.pageToken);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): QuerySourcePositionsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuerySourcePositionsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.project = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.testId = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.variantHash = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.refHash = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.startSourcePosition = reader.int64().toString();
-          continue;
-        }
-        case 6: {
-          if (tag !== 48) {
-            break;
-          }
-
-          message.pageSize = reader.int32();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.pageToken = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QuerySourcePositionsRequest {
-    return {
-      project: isSet(object.project) ? globalThis.String(object.project) : "",
-      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
-      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
-      refHash: isSet(object.refHash) ? globalThis.String(object.refHash) : "",
-      startSourcePosition: isSet(object.startSourcePosition) ? globalThis.String(object.startSourcePosition) : "0",
-      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
-      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
-    };
-  },
-
-  toJSON(message: QuerySourcePositionsRequest): unknown {
-    const obj: any = {};
-    if (message.project !== "") {
-      obj.project = message.project;
-    }
-    if (message.testId !== "") {
-      obj.testId = message.testId;
-    }
-    if (message.variantHash !== "") {
-      obj.variantHash = message.variantHash;
-    }
-    if (message.refHash !== "") {
-      obj.refHash = message.refHash;
-    }
-    if (message.startSourcePosition !== "0") {
-      obj.startSourcePosition = message.startSourcePosition;
-    }
-    if (message.pageSize !== 0) {
-      obj.pageSize = Math.round(message.pageSize);
-    }
-    if (message.pageToken !== "") {
-      obj.pageToken = message.pageToken;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<QuerySourcePositionsRequest>): QuerySourcePositionsRequest {
-    return QuerySourcePositionsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<QuerySourcePositionsRequest>): QuerySourcePositionsRequest {
-    const message = createBaseQuerySourcePositionsRequest() as any;
-    message.project = object.project ?? "";
-    message.testId = object.testId ?? "";
-    message.variantHash = object.variantHash ?? "";
-    message.refHash = object.refHash ?? "";
-    message.startSourcePosition = object.startSourcePosition ?? "0";
-    message.pageSize = object.pageSize ?? 0;
-    message.pageToken = object.pageToken ?? "";
-    return message;
-  },
-};
-
-function createBaseQuerySourcePositionsResponse(): QuerySourcePositionsResponse {
-  return { sourcePositions: [], nextPageToken: "" };
-}
-
-export const QuerySourcePositionsResponse: MessageFns<QuerySourcePositionsResponse> = {
-  encode(message: QuerySourcePositionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.sourcePositions) {
-      SourcePosition.encode(v!, writer.uint32(10).fork()).join();
-    }
-    if (message.nextPageToken !== "") {
-      writer.uint32(18).string(message.nextPageToken);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): QuerySourcePositionsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuerySourcePositionsResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.sourcePositions.push(SourcePosition.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.nextPageToken = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): QuerySourcePositionsResponse {
-    return {
-      sourcePositions: globalThis.Array.isArray(object?.sourcePositions)
-        ? object.sourcePositions.map((e: any) => SourcePosition.fromJSON(e))
-        : [],
-      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
-    };
-  },
-
-  toJSON(message: QuerySourcePositionsResponse): unknown {
-    const obj: any = {};
-    if (message.sourcePositions?.length) {
-      obj.sourcePositions = message.sourcePositions.map((e) => SourcePosition.toJSON(e));
-    }
-    if (message.nextPageToken !== "") {
-      obj.nextPageToken = message.nextPageToken;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<QuerySourcePositionsResponse>): QuerySourcePositionsResponse {
-    return QuerySourcePositionsResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<QuerySourcePositionsResponse>): QuerySourcePositionsResponse {
-    const message = createBaseQuerySourcePositionsResponse() as any;
-    message.sourcePositions = object.sourcePositions?.map((e) => SourcePosition.fromPartial(e)) || [];
-    message.nextPageToken = object.nextPageToken ?? "";
-    return message;
-  },
-};
-
 function createBaseQuerySourceVerdictsRequest(): QuerySourceVerdictsRequest {
   return { parent: "", startSourcePosition: "0", endSourcePosition: "0" };
 }
@@ -3141,102 +2841,6 @@ export const QuerySourceVerdictsResponse_SourceVerdict: MessageFns<QuerySourceVe
   },
 };
 
-function createBaseSourcePosition(): SourcePosition {
-  return { position: "0", commit: undefined, verdicts: [] };
-}
-
-export const SourcePosition: MessageFns<SourcePosition> = {
-  encode(message: SourcePosition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.position !== "0") {
-      writer.uint32(8).int64(message.position);
-    }
-    if (message.commit !== undefined) {
-      Commit.encode(message.commit, writer.uint32(18).fork()).join();
-    }
-    for (const v of message.verdicts) {
-      TestVerdict.encode(v!, writer.uint32(26).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): SourcePosition {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSourcePosition() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.position = reader.int64().toString();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.commit = Commit.decode(reader, reader.uint32());
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.verdicts.push(TestVerdict.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): SourcePosition {
-    return {
-      position: isSet(object.position) ? globalThis.String(object.position) : "0",
-      commit: isSet(object.commit) ? Commit.fromJSON(object.commit) : undefined,
-      verdicts: globalThis.Array.isArray(object?.verdicts)
-        ? object.verdicts.map((e: any) => TestVerdict.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: SourcePosition): unknown {
-    const obj: any = {};
-    if (message.position !== "0") {
-      obj.position = message.position;
-    }
-    if (message.commit !== undefined) {
-      obj.commit = Commit.toJSON(message.commit);
-    }
-    if (message.verdicts?.length) {
-      obj.verdicts = message.verdicts.map((e) => TestVerdict.toJSON(e));
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<SourcePosition>): SourcePosition {
-    return SourcePosition.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<SourcePosition>): SourcePosition {
-    const message = createBaseSourcePosition() as any;
-    message.position = object.position ?? "0";
-    message.commit = (object.commit !== undefined && object.commit !== null)
-      ? Commit.fromPartial(object.commit)
-      : undefined;
-    message.verdicts = object.verdicts?.map((e) => TestVerdict.fromPartial(e)) || [];
-    return message;
-  },
-};
-
 function createBaseQueryChangepointAIAnalysisRequest(): QueryChangepointAIAnalysisRequest {
   return { project: "", testId: "", variantHash: "", refHash: "", startSourcePosition: "0", promptOptions: undefined };
 }
@@ -3563,8 +3167,6 @@ export interface TestVariantBranches {
   BatchGet(request: BatchGetTestVariantBranchRequest): Promise<BatchGetTestVariantBranchResponse>;
   /** Query queries test variant branches for a given test id and ref. */
   Query(request: QueryTestVariantBranchRequest): Promise<QueryTestVariantBranchResponse>;
-  /** Lists commits and the test verdicts at these commits, starting from a source position. */
-  QuerySourcePositions(request: QuerySourcePositionsRequest): Promise<QuerySourcePositionsResponse>;
   /** Lists source verdicts for a test variant branch. */
   QuerySourceVerdicts(request: QuerySourceVerdictsRequest): Promise<QuerySourceVerdictsResponse>;
   /**
@@ -3585,7 +3187,6 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     this.GetRaw = this.GetRaw.bind(this);
     this.BatchGet = this.BatchGet.bind(this);
     this.Query = this.Query.bind(this);
-    this.QuerySourcePositions = this.QuerySourcePositions.bind(this);
     this.QuerySourceVerdicts = this.QuerySourceVerdicts.bind(this);
     this.QueryChangepointAIAnalysis = this.QueryChangepointAIAnalysis.bind(this);
   }
@@ -3605,12 +3206,6 @@ export class TestVariantBranchesClientImpl implements TestVariantBranches {
     const data = QueryTestVariantBranchRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Query", data);
     return promise.then((data) => QueryTestVariantBranchResponse.fromJSON(data));
-  }
-
-  QuerySourcePositions(request: QuerySourcePositionsRequest): Promise<QuerySourcePositionsResponse> {
-    const data = QuerySourcePositionsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "QuerySourcePositions", data);
-    return promise.then((data) => QuerySourcePositionsResponse.fromJSON(data));
   }
 
   QuerySourceVerdicts(request: QuerySourceVerdictsRequest): Promise<QuerySourceVerdictsResponse> {

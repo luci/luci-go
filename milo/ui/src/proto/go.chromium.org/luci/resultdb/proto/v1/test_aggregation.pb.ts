@@ -25,39 +25,38 @@ export interface TestAggregation {
    */
   readonly nextFinerLevel: AggregationLevel;
   /** The counts of test verdict statuses rolling up to this aggregation. */
-  readonly verdictCounts: VerdictStatusCounts | undefined;
+  readonly verdictCounts: TestAggregation_VerdictCounts | undefined;
 }
 
-/** Counts of verdicts by base status. */
-export interface VerdictStatusCounts {
+/** Counts of verdicts, by status v2. */
+export interface TestAggregation_VerdictCounts {
   /**
-   * Total number of failed verdicts.
-   * Some of these may have been exonerated, see failed_exonerated for a breakout.
+   * The number of failed verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
    */
   readonly failed: number;
-  /** Total number of flaky verdicts. */
+  /** The number of flaky verdicts. */
   readonly flaky: number;
-  /** Total number of passed verdicts. */
+  /** The number of passed verdicts. */
   readonly passed: number;
-  /** Total number of skipped verdicts. */
+  /** The number of skipped verdicts. */
   readonly skipped: number;
   /**
-   * Total number of infra failed verdicts.
-   * Some of these may have been exonerated, see infra_failed_exonerated for a breakout.
+   * The number of execution errored verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
    */
-  readonly infraFailed: number;
+  readonly executionErrored: number;
   /**
-   * Total number of failed verdicts with exonerations.
-   * To work out how many failures have not been exonerated use
-   * (failed - failed_exonerated).
+   * The number of precluded verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
    */
+  readonly precluded: number;
+  /** The number of failed verdicts with exonerations. */
   readonly failedExonerated: number;
-  /**
-   * Total number of infra failed verdicts with exonerations.
-   * To work out how many infra failures have not been exonerated use
-   * (infra_failed - infra_failed_exonerated).
-   */
-  readonly infraFailedExonerated: number;
+  /** The number of execution errored verdicts with exonerations. */
+  readonly executionErroredExonerated: number;
+  /** The number of precluded verdicts with exonerations. */
+  readonly precludedExonerated: number;
 }
 
 function createBaseTestAggregation(): TestAggregation {
@@ -73,7 +72,7 @@ export const TestAggregation: MessageFns<TestAggregation> = {
       writer.uint32(16).int32(message.nextFinerLevel);
     }
     if (message.verdictCounts !== undefined) {
-      VerdictStatusCounts.encode(message.verdictCounts, writer.uint32(26).fork()).join();
+      TestAggregation_VerdictCounts.encode(message.verdictCounts, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -106,7 +105,7 @@ export const TestAggregation: MessageFns<TestAggregation> = {
             break;
           }
 
-          message.verdictCounts = VerdictStatusCounts.decode(reader, reader.uint32());
+          message.verdictCounts = TestAggregation_VerdictCounts.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -122,7 +121,9 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     return {
       id: isSet(object.id) ? TestIdentifierPrefix.fromJSON(object.id) : undefined,
       nextFinerLevel: isSet(object.nextFinerLevel) ? aggregationLevelFromJSON(object.nextFinerLevel) : 0,
-      verdictCounts: isSet(object.verdictCounts) ? VerdictStatusCounts.fromJSON(object.verdictCounts) : undefined,
+      verdictCounts: isSet(object.verdictCounts)
+        ? TestAggregation_VerdictCounts.fromJSON(object.verdictCounts)
+        : undefined,
     };
   },
 
@@ -135,7 +136,7 @@ export const TestAggregation: MessageFns<TestAggregation> = {
       obj.nextFinerLevel = aggregationLevelToJSON(message.nextFinerLevel);
     }
     if (message.verdictCounts !== undefined) {
-      obj.verdictCounts = VerdictStatusCounts.toJSON(message.verdictCounts);
+      obj.verdictCounts = TestAggregation_VerdictCounts.toJSON(message.verdictCounts);
     }
     return obj;
   },
@@ -150,18 +151,28 @@ export const TestAggregation: MessageFns<TestAggregation> = {
       : undefined;
     message.nextFinerLevel = object.nextFinerLevel ?? 0;
     message.verdictCounts = (object.verdictCounts !== undefined && object.verdictCounts !== null)
-      ? VerdictStatusCounts.fromPartial(object.verdictCounts)
+      ? TestAggregation_VerdictCounts.fromPartial(object.verdictCounts)
       : undefined;
     return message;
   },
 };
 
-function createBaseVerdictStatusCounts(): VerdictStatusCounts {
-  return { failed: 0, flaky: 0, passed: 0, skipped: 0, infraFailed: 0, failedExonerated: 0, infraFailedExonerated: 0 };
+function createBaseTestAggregation_VerdictCounts(): TestAggregation_VerdictCounts {
+  return {
+    failed: 0,
+    flaky: 0,
+    passed: 0,
+    skipped: 0,
+    executionErrored: 0,
+    precluded: 0,
+    failedExonerated: 0,
+    executionErroredExonerated: 0,
+    precludedExonerated: 0,
+  };
 }
 
-export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
-  encode(message: VerdictStatusCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCounts> = {
+  encode(message: TestAggregation_VerdictCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.failed !== 0) {
       writer.uint32(8).int32(message.failed);
     }
@@ -174,22 +185,28 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
     if (message.skipped !== 0) {
       writer.uint32(32).int32(message.skipped);
     }
-    if (message.infraFailed !== 0) {
-      writer.uint32(40).int32(message.infraFailed);
+    if (message.executionErrored !== 0) {
+      writer.uint32(40).int32(message.executionErrored);
+    }
+    if (message.precluded !== 0) {
+      writer.uint32(48).int32(message.precluded);
     }
     if (message.failedExonerated !== 0) {
-      writer.uint32(48).int32(message.failedExonerated);
+      writer.uint32(56).int32(message.failedExonerated);
     }
-    if (message.infraFailedExonerated !== 0) {
-      writer.uint32(56).int32(message.infraFailedExonerated);
+    if (message.executionErroredExonerated !== 0) {
+      writer.uint32(64).int32(message.executionErroredExonerated);
+    }
+    if (message.precludedExonerated !== 0) {
+      writer.uint32(72).int32(message.precludedExonerated);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): VerdictStatusCounts {
+  decode(input: BinaryReader | Uint8Array, length?: number): TestAggregation_VerdictCounts {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseVerdictStatusCounts() as any;
+    const message = createBaseTestAggregation_VerdictCounts() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -230,7 +247,7 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
             break;
           }
 
-          message.infraFailed = reader.int32();
+          message.executionErrored = reader.int32();
           continue;
         }
         case 6: {
@@ -238,7 +255,7 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
             break;
           }
 
-          message.failedExonerated = reader.int32();
+          message.precluded = reader.int32();
           continue;
         }
         case 7: {
@@ -246,7 +263,23 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
             break;
           }
 
-          message.infraFailedExonerated = reader.int32();
+          message.failedExonerated = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.executionErroredExonerated = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.precludedExonerated = reader.int32();
           continue;
         }
       }
@@ -258,19 +291,23 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
     return message;
   },
 
-  fromJSON(object: any): VerdictStatusCounts {
+  fromJSON(object: any): TestAggregation_VerdictCounts {
     return {
       failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
       flaky: isSet(object.flaky) ? globalThis.Number(object.flaky) : 0,
       passed: isSet(object.passed) ? globalThis.Number(object.passed) : 0,
       skipped: isSet(object.skipped) ? globalThis.Number(object.skipped) : 0,
-      infraFailed: isSet(object.infraFailed) ? globalThis.Number(object.infraFailed) : 0,
+      executionErrored: isSet(object.executionErrored) ? globalThis.Number(object.executionErrored) : 0,
+      precluded: isSet(object.precluded) ? globalThis.Number(object.precluded) : 0,
       failedExonerated: isSet(object.failedExonerated) ? globalThis.Number(object.failedExonerated) : 0,
-      infraFailedExonerated: isSet(object.infraFailedExonerated) ? globalThis.Number(object.infraFailedExonerated) : 0,
+      executionErroredExonerated: isSet(object.executionErroredExonerated)
+        ? globalThis.Number(object.executionErroredExonerated)
+        : 0,
+      precludedExonerated: isSet(object.precludedExonerated) ? globalThis.Number(object.precludedExonerated) : 0,
     };
   },
 
-  toJSON(message: VerdictStatusCounts): unknown {
+  toJSON(message: TestAggregation_VerdictCounts): unknown {
     const obj: any = {};
     if (message.failed !== 0) {
       obj.failed = Math.round(message.failed);
@@ -284,30 +321,38 @@ export const VerdictStatusCounts: MessageFns<VerdictStatusCounts> = {
     if (message.skipped !== 0) {
       obj.skipped = Math.round(message.skipped);
     }
-    if (message.infraFailed !== 0) {
-      obj.infraFailed = Math.round(message.infraFailed);
+    if (message.executionErrored !== 0) {
+      obj.executionErrored = Math.round(message.executionErrored);
+    }
+    if (message.precluded !== 0) {
+      obj.precluded = Math.round(message.precluded);
     }
     if (message.failedExonerated !== 0) {
       obj.failedExonerated = Math.round(message.failedExonerated);
     }
-    if (message.infraFailedExonerated !== 0) {
-      obj.infraFailedExonerated = Math.round(message.infraFailedExonerated);
+    if (message.executionErroredExonerated !== 0) {
+      obj.executionErroredExonerated = Math.round(message.executionErroredExonerated);
+    }
+    if (message.precludedExonerated !== 0) {
+      obj.precludedExonerated = Math.round(message.precludedExonerated);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<VerdictStatusCounts>): VerdictStatusCounts {
-    return VerdictStatusCounts.fromPartial(base ?? {});
+  create(base?: DeepPartial<TestAggregation_VerdictCounts>): TestAggregation_VerdictCounts {
+    return TestAggregation_VerdictCounts.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<VerdictStatusCounts>): VerdictStatusCounts {
-    const message = createBaseVerdictStatusCounts() as any;
+  fromPartial(object: DeepPartial<TestAggregation_VerdictCounts>): TestAggregation_VerdictCounts {
+    const message = createBaseTestAggregation_VerdictCounts() as any;
     message.failed = object.failed ?? 0;
     message.flaky = object.flaky ?? 0;
     message.passed = object.passed ?? 0;
     message.skipped = object.skipped ?? 0;
-    message.infraFailed = object.infraFailed ?? 0;
+    message.executionErrored = object.executionErrored ?? 0;
+    message.precluded = object.precluded ?? 0;
     message.failedExonerated = object.failedExonerated ?? 0;
-    message.infraFailedExonerated = object.infraFailedExonerated ?? 0;
+    message.executionErroredExonerated = object.executionErroredExonerated ?? 0;
+    message.precludedExonerated = object.precludedExonerated ?? 0;
     return message;
   },
 };

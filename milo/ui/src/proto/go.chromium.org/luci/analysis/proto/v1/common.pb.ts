@@ -456,6 +456,139 @@ export interface NumericRange {
   readonly upperBound: number;
 }
 
+/**
+ * Message used to namespace test status ennum values, to avoid
+ * naming conflicts with verdicts.
+ */
+export interface TestResult {
+}
+
+/**
+ * Status of a test result (v2).
+ * It is a mirror of luci.resultdb.v1.TestResult_Status, to avoid LUCI
+ * Analysis RPC protos being coupled to RDB protos.
+ */
+export enum TestResult_Status {
+  /** STATUS_UNSPECIFIED - Status was not specified. Do not use. */
+  STATUS_UNSPECIFIED = 0,
+  /** PASSED - The test case has passed. */
+  PASSED = 1,
+  /**
+   * FAILED - The test case has failed.
+   * Suggests that the code under test is incorrect, but it is also possible
+   * that the test is incorrect or it is a flake.
+   *
+   * If a test failed to complete due to an error that is not the fault of
+   * this test's content, use the status EXECUTION_ERRORED (for errors specific
+   * to this test) or PRECLUDED (for errors at a higher-level) instead.
+   *
+   * If you specify this status, you must also populate the failure_reason.kind field.
+   */
+  FAILED = 2,
+  /**
+   * SKIPPED - The test case did not, *and should not*, run to completion in this
+   * configuration.
+   *
+   * For example:
+   * - The test is disabled in code
+   * - The test assumptions are not met (e.g. JUnit assumption failure
+   *   or Tast test hardware dependency unmet)
+   * - The test was not stable enough to in presubmit right now.
+   *
+   * If a test was not run or not run to completion due to an error, use the
+   * status EXECUTION_ERRORED (for test-level errors) or PRECLUDED
+   * (for higher-level errors) instead.
+   *
+   * If you specify this status, you must also populate the skipped_reason field.
+   */
+  SKIPPED = 3,
+  /**
+   * EXECUTION_ERRORED - The test did not run to completion, because an infrastructure error
+   * precluded it from doing so.
+   *
+   * Infrastructure here is broadly defined, to mean "not the content
+   * of this test".
+   *
+   * For example:
+   * - The test ran, but the result file could not be parsed.
+   * - A file this test depends on could not be downloaded.
+   *
+   * Sometimes it is ambiguous whether test content is at fault or not.
+   * For example, loss of SSH connection during the test could be because
+   * the test caused a kernel panic or because of a flaky ethernet adapter.
+   * Judgement is required. If unsure, use EXECUTION_ERRORED status instead
+   * of FAIL to avoid falsely inflating the flakiness rate of a test.
+   *
+   * Results with this status should be ignored when calculating the flake
+   * and failure rates of the test.
+   *
+   * Currently, there is no dedicated 'reason' field for this status;
+   * please just include a suitable description in the result `summary_html`.
+   */
+  EXECUTION_ERRORED = 4,
+  /**
+   * PRECLUDED - The test did not run to completion, because its execution is precluded
+   * by an error at a higher-level. For example, a work unit-level timeout.
+   *
+   * If you report this status, you must report an error on the containing
+   * work unit. If this restriction is changed in future to allow preclusion
+   * by other sources (e.g. a class fixture failed to setup so the tests in
+   * using it could not run), a preclusion reason field will be added to
+   * capture this.
+   *
+   * Results with this status should be ignored when calculating the flake
+   * and failure rates of the test.
+   *
+   * Currently, there is no dedicated 'reason' field for this status; please
+   * include a suitable description in the result `summary_html`.
+   */
+  PRECLUDED = 5,
+}
+
+export function testResult_StatusFromJSON(object: any): TestResult_Status {
+  switch (object) {
+    case 0:
+    case "STATUS_UNSPECIFIED":
+      return TestResult_Status.STATUS_UNSPECIFIED;
+    case 1:
+    case "PASSED":
+      return TestResult_Status.PASSED;
+    case 2:
+    case "FAILED":
+      return TestResult_Status.FAILED;
+    case 3:
+    case "SKIPPED":
+      return TestResult_Status.SKIPPED;
+    case 4:
+    case "EXECUTION_ERRORED":
+      return TestResult_Status.EXECUTION_ERRORED;
+    case 5:
+    case "PRECLUDED":
+      return TestResult_Status.PRECLUDED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResult_Status");
+  }
+}
+
+export function testResult_StatusToJSON(object: TestResult_Status): string {
+  switch (object) {
+    case TestResult_Status.STATUS_UNSPECIFIED:
+      return "STATUS_UNSPECIFIED";
+    case TestResult_Status.PASSED:
+      return "PASSED";
+    case TestResult_Status.FAILED:
+      return "FAILED";
+    case TestResult_Status.SKIPPED:
+      return "SKIPPED";
+    case TestResult_Status.EXECUTION_ERRORED:
+      return "EXECUTION_ERRORED";
+    case TestResult_Status.PRECLUDED:
+      return "PRECLUDED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestResult_Status");
+  }
+}
+
 function createBaseTimeRange(): TimeRange {
   return { earliest: undefined, latest: undefined };
 }
@@ -1247,6 +1380,49 @@ export const NumericRange: MessageFns<NumericRange> = {
     const message = createBaseNumericRange() as any;
     message.lowerBound = object.lowerBound ?? 0;
     message.upperBound = object.upperBound ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestResult(): TestResult {
+  return {};
+}
+
+export const TestResult: MessageFns<TestResult> = {
+  encode(_: TestResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TestResult {
+    return {};
+  },
+
+  toJSON(_: TestResult): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestResult>): TestResult {
+    return TestResult.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TestResult>): TestResult {
+    const message = createBaseTestResult() as any;
     return message;
   },
 };

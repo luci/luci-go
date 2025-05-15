@@ -413,7 +413,7 @@ export interface TestResult {
   readonly skippedReason:
     | SkippedReason
     | undefined;
-  /** Test results framwork-specific data model elements. */
+  /** Test result framework-specific data model elements. */
   readonly frameworkExtensions: FrameworkExtensions | undefined;
 }
 

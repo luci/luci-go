@@ -9,6 +9,14 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { TestIdentifier, Variant } from "./common.pb";
 import { TestMetadata } from "./test_metadata.pb";
 import { TestExoneration, TestResult } from "./test_result.pb";
+import {
+  TestVerdict_Status,
+  testVerdict_StatusFromJSON,
+  TestVerdict_StatusOverride,
+  testVerdict_StatusOverrideFromJSON,
+  testVerdict_StatusOverrideToJSON,
+  testVerdict_StatusToJSON,
+} from "./test_verdict.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 
@@ -126,8 +134,17 @@ export interface TestVariant {
    * hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
    */
   readonly variantHash: string;
-  /** Status of the test variant. */
+  /**
+   * Deprecated: Use status_v2 and status_override.
+   * Status of the test variant.
+   *
+   * @deprecated
+   */
   readonly status: TestVariantStatus;
+  /** Status of the test verdict (v2). */
+  readonly statusV2: TestVerdict_Status;
+  /** The status override, e.g. whether the test was exonerated. */
+  readonly statusOverride: TestVerdict_StatusOverride;
   /** Outcomes of the test variant. */
   readonly results: readonly TestResultBundle[];
   /** Test exonerations if any test variant is exonerated. */
@@ -239,6 +256,8 @@ function createBaseTestVariant(): TestVariant {
     variant: undefined,
     variantHash: "",
     status: 0,
+    statusV2: 0,
+    statusOverride: 0,
     results: [],
     exonerations: [],
     testMetadata: undefined,
@@ -264,6 +283,12 @@ export const TestVariant: MessageFns<TestVariant> = {
     }
     if (message.status !== 0) {
       writer.uint32(32).int32(message.status);
+    }
+    if (message.statusV2 !== 0) {
+      writer.uint32(96).int32(message.statusV2);
+    }
+    if (message.statusOverride !== 0) {
+      writer.uint32(104).int32(message.statusOverride);
     }
     for (const v of message.results) {
       TestResultBundle.encode(v!, writer.uint32(42).fork()).join();
@@ -333,6 +358,22 @@ export const TestVariant: MessageFns<TestVariant> = {
           message.status = reader.int32() as any;
           continue;
         }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.statusV2 = reader.int32() as any;
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.statusOverride = reader.int32() as any;
+          continue;
+        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -397,6 +438,8 @@ export const TestVariant: MessageFns<TestVariant> = {
       variant: isSet(object.variant) ? Variant.fromJSON(object.variant) : undefined,
       variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
       status: isSet(object.status) ? testVariantStatusFromJSON(object.status) : 0,
+      statusV2: isSet(object.statusV2) ? testVerdict_StatusFromJSON(object.statusV2) : 0,
+      statusOverride: isSet(object.statusOverride) ? testVerdict_StatusOverrideFromJSON(object.statusOverride) : 0,
       results: globalThis.Array.isArray(object?.results)
         ? object.results.map((e: any) => TestResultBundle.fromJSON(e))
         : [],
@@ -426,6 +469,12 @@ export const TestVariant: MessageFns<TestVariant> = {
     }
     if (message.status !== 0) {
       obj.status = testVariantStatusToJSON(message.status);
+    }
+    if (message.statusV2 !== 0) {
+      obj.statusV2 = testVerdict_StatusToJSON(message.statusV2);
+    }
+    if (message.statusOverride !== 0) {
+      obj.statusOverride = testVerdict_StatusOverrideToJSON(message.statusOverride);
     }
     if (message.results?.length) {
       obj.results = message.results.map((e) => TestResultBundle.toJSON(e));
@@ -462,6 +511,8 @@ export const TestVariant: MessageFns<TestVariant> = {
       : undefined;
     message.variantHash = object.variantHash ?? "";
     message.status = object.status ?? 0;
+    message.statusV2 = object.statusV2 ?? 0;
+    message.statusOverride = object.statusOverride ?? 0;
     message.results = object.results?.map((e) => TestResultBundle.fromPartial(e)) || [];
     message.exonerations = object.exonerations?.map((e) => TestExoneration.fromPartial(e)) || [];
     message.testMetadata = (object.testMetadata !== undefined && object.testMetadata !== null)

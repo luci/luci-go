@@ -51,37 +51,30 @@ export interface TestVerdict {
 
 /**
  * Status of a test verdict.
- * References to test statuses (pass, fail, skip, infra_fail) in
- * the enum descriptions refer to TestResultStatusV2 values.
+ * References to test statuses (passed, failed, skipped, execution_error, precluded) in
+ * the enum descriptions refer to TestResult.Status values.
+ * Values are sorted with the most interesting verdict statuses first.
  */
 export enum TestVerdict_Status {
-  /**
-   * STATUS_UNSPECIFIED - A test verdict must not have this status.
-   * This is only used when filtering verdicts.
-   */
   STATUS_UNSPECIFIED = 0,
-  /**
-   * FAILED - The test variant has only failing result(s), after excluding
-   * skips and infra fails. It has at least one such failing result.
-   */
+  /** FAILED - The test has failing results and no passing results. */
   FAILED = 10,
   /**
-   * INFRA_FAILED - The test variant has only infra failed results.
-   * This means there was a problem obtaining a result for the test.
+   * EXECUTION_ERRORED - The test has execution errored results and no
+   * passing, failing or skipped results.
    */
-  INFRA_FAILED = 20,
-  /** FLAKY - The test variant has both passing and failing results. */
-  FLAKY = 30,
+  EXECUTION_ERRORED = 20,
+  /** PRECLUDED - The test has only precluded results. */
+  PRECLUDED = 30,
+  /** FLAKY - The test has both passing and failing results. */
+  FLAKY = 40,
   /**
-   * PASSED - The test variant has only passing result(s), after excluding
-   * skips and infra fails. It has at least one such passing result.
-   */
-  PASSED = 40,
-  /**
-   * SKIPPED - The test variant has at least one skipped result. It has
-   * no passing or failing results.
+   * SKIPPED - The test skipped results and no passing or
+   * failing results.
    */
   SKIPPED = 50,
+  /** PASSED - The test has passing results and no failing results. */
+  PASSED = 60,
 }
 
 export function testVerdict_StatusFromJSON(object: any): TestVerdict_Status {
@@ -93,17 +86,20 @@ export function testVerdict_StatusFromJSON(object: any): TestVerdict_Status {
     case "FAILED":
       return TestVerdict_Status.FAILED;
     case 20:
-    case "INFRA_FAILED":
-      return TestVerdict_Status.INFRA_FAILED;
+    case "EXECUTION_ERRORED":
+      return TestVerdict_Status.EXECUTION_ERRORED;
     case 30:
+    case "PRECLUDED":
+      return TestVerdict_Status.PRECLUDED;
+    case 40:
     case "FLAKY":
       return TestVerdict_Status.FLAKY;
-    case 40:
-    case "PASSED":
-      return TestVerdict_Status.PASSED;
     case 50:
     case "SKIPPED":
       return TestVerdict_Status.SKIPPED;
+    case 60:
+    case "PASSED":
+      return TestVerdict_Status.PASSED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_Status");
   }
@@ -115,33 +111,40 @@ export function testVerdict_StatusToJSON(object: TestVerdict_Status): string {
       return "STATUS_UNSPECIFIED";
     case TestVerdict_Status.FAILED:
       return "FAILED";
-    case TestVerdict_Status.INFRA_FAILED:
-      return "INFRA_FAILED";
+    case TestVerdict_Status.EXECUTION_ERRORED:
+      return "EXECUTION_ERRORED";
+    case TestVerdict_Status.PRECLUDED:
+      return "PRECLUDED";
     case TestVerdict_Status.FLAKY:
       return "FLAKY";
-    case TestVerdict_Status.PASSED:
-      return "PASSED";
     case TestVerdict_Status.SKIPPED:
       return "SKIPPED";
+    case TestVerdict_Status.PASSED:
+      return "PASSED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_Status");
   }
 }
 
-/** Overrides applying to the test verdict. */
+/**
+ * Overrides applying to the test verdict.
+ * Open to extension.
+ */
 export enum TestVerdict_StatusOverride {
   STATUS_OVERRIDE_UNSPECIFIED = 0,
   /**
-   * NONE - The test verdict is not overridden.
+   * NOT_OVERRIDDEN - The test verdict is not overridden.
    *
    * To confirm a test is not exonerated prefer to check it is not EXONERATED
-   * rather than that the override is NONE, as this is safe in case of
-   * enum extension.
+   * rather than check it is NOT_OVERRIDDEN, as this is safe in case of
+   * extensions to this enum.
    */
-  NONE = 1,
+  NOT_OVERRIDDEN = 1,
   /**
    * EXONERATED - The test variant has one or more exonerations, and the
-   * test verdict status was FAILED or INFRA_FAILED.
+   * test verdict status was FAILED, EXECUTION_ERRORED OR PRECLUDED.
+   * An exoneration absolves the subject of the invocation (e.g. CL)
+   * from blame and means means the verdict is no longer blocking.
    */
   EXONERATED = 2,
 }
@@ -152,8 +155,8 @@ export function testVerdict_StatusOverrideFromJSON(object: any): TestVerdict_Sta
     case "STATUS_OVERRIDE_UNSPECIFIED":
       return TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED;
     case 1:
-    case "NONE":
-      return TestVerdict_StatusOverride.NONE;
+    case "NOT_OVERRIDDEN":
+      return TestVerdict_StatusOverride.NOT_OVERRIDDEN;
     case 2:
     case "EXONERATED":
       return TestVerdict_StatusOverride.EXONERATED;
@@ -166,8 +169,8 @@ export function testVerdict_StatusOverrideToJSON(object: TestVerdict_StatusOverr
   switch (object) {
     case TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED:
       return "STATUS_OVERRIDE_UNSPECIFIED";
-    case TestVerdict_StatusOverride.NONE:
-      return "NONE";
+    case TestVerdict_StatusOverride.NOT_OVERRIDDEN:
+      return "NOT_OVERRIDDEN";
     case TestVerdict_StatusOverride.EXONERATED:
       return "EXONERATED";
     default:

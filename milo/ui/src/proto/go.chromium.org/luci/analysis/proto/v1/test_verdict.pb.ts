@@ -169,50 +169,10 @@ export function testVerdictStatusToJSON(object: TestVerdictStatus): string {
 }
 
 /**
- * Machine-readable reason that a test execution was skipped.
- * It is a mirror of luci.resultdb.v1.SkipReason, but the right to evolve
- * it independently is reserved.
+ * A test verdict. The outcome of a test variant in an invocation.
+ * As each test variant may be attempted multiple times within an invocation,
+ * a test verdict can encapsulate multiple test results.
  */
-export enum SkipReason {
-  /**
-   * SKIP_REASON_UNSPECIFIED - Skip reason was not specified.
-   * This represents an unset field which should be used for non-skip test
-   * result statuses.  It can also be used if none of the other statuses
-   * apply.
-   */
-  SKIP_REASON_UNSPECIFIED = 0,
-  /**
-   * AUTOMATICALLY_DISABLED_FOR_FLAKINESS - Disabled automatically in response to a test skipping policy that skips
-   * flaky tests.
-   * Used for ChromeOS CQ test filtering.
-   */
-  AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1,
-}
-
-export function skipReasonFromJSON(object: any): SkipReason {
-  switch (object) {
-    case 0:
-    case "SKIP_REASON_UNSPECIFIED":
-      return SkipReason.SKIP_REASON_UNSPECIFIED;
-    case 1:
-    case "AUTOMATICALLY_DISABLED_FOR_FLAKINESS":
-      return SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkipReason");
-  }
-}
-
-export function skipReasonToJSON(object: SkipReason): string {
-  switch (object) {
-    case SkipReason.SKIP_REASON_UNSPECIFIED:
-      return "SKIP_REASON_UNSPECIFIED";
-    case SkipReason.AUTOMATICALLY_DISABLED_FOR_FLAKINESS:
-      return "AUTOMATICALLY_DISABLED_FOR_FLAKINESS";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum SkipReason");
-  }
-}
-
 export interface TestVerdict {
   /**
    * Unique identifier of the test.
@@ -226,8 +186,17 @@ export interface TestVerdict {
    * ingested.
    */
   readonly invocationId: string;
-  /** The status of the test verdict. */
+  /**
+   * Deprecated: Use status_v2 below instead.
+   * The status of the test verdict.
+   *
+   * @deprecated
+   */
   readonly status: TestVerdictStatus;
+  /** The status of the test verdict (v2), e.g. passed, flaky, failed. */
+  readonly statusV2: TestVerdict_Status;
+  /** The status override applying to the verdict, e.g. if the test was exonerated. */
+  readonly statusOverride: TestVerdict_StatusOverride;
   /**
    * The time the verdict's invocation was created in Spanner. This
    * is the start of the test verdict's retention period.
@@ -249,12 +218,143 @@ export interface TestVerdict {
   readonly changelists: readonly Changelist[];
 }
 
+/**
+ * The test verdict status.
+ * References to test statuses (passed, failed, skipped, execution_errored, precluded) in
+ * the enum descriptions refer to TestResult.Status values.
+ * A mirror of luci.resultdb.v1.TestVerdict.Status.
+ */
+export enum TestVerdict_Status {
+  STATUS_UNSPECIFIED = 0,
+  /** FAILED - The test has failing results and no passing results. */
+  FAILED = 10,
+  /**
+   * EXECUTION_ERRORED - The test has execution errored results and no
+   * passing, failing or skipped results.
+   */
+  EXECUTION_ERRORED = 20,
+  /** PRECLUDED - The test has only precluded results. */
+  PRECLUDED = 30,
+  /** FLAKY - The test has both passing and failing results. */
+  FLAKY = 40,
+  /**
+   * SKIPPED - The test skipped results and no passing or
+   * failing results.
+   */
+  SKIPPED = 50,
+  /** PASSED - The test has passing results and no failing results. */
+  PASSED = 60,
+}
+
+export function testVerdict_StatusFromJSON(object: any): TestVerdict_Status {
+  switch (object) {
+    case 0:
+    case "STATUS_UNSPECIFIED":
+      return TestVerdict_Status.STATUS_UNSPECIFIED;
+    case 10:
+    case "FAILED":
+      return TestVerdict_Status.FAILED;
+    case 20:
+    case "EXECUTION_ERRORED":
+      return TestVerdict_Status.EXECUTION_ERRORED;
+    case 30:
+    case "PRECLUDED":
+      return TestVerdict_Status.PRECLUDED;
+    case 40:
+    case "FLAKY":
+      return TestVerdict_Status.FLAKY;
+    case 50:
+    case "SKIPPED":
+      return TestVerdict_Status.SKIPPED;
+    case 60:
+    case "PASSED":
+      return TestVerdict_Status.PASSED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_Status");
+  }
+}
+
+export function testVerdict_StatusToJSON(object: TestVerdict_Status): string {
+  switch (object) {
+    case TestVerdict_Status.STATUS_UNSPECIFIED:
+      return "STATUS_UNSPECIFIED";
+    case TestVerdict_Status.FAILED:
+      return "FAILED";
+    case TestVerdict_Status.EXECUTION_ERRORED:
+      return "EXECUTION_ERRORED";
+    case TestVerdict_Status.PRECLUDED:
+      return "PRECLUDED";
+    case TestVerdict_Status.FLAKY:
+      return "FLAKY";
+    case TestVerdict_Status.SKIPPED:
+      return "SKIPPED";
+    case TestVerdict_Status.PASSED:
+      return "PASSED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_Status");
+  }
+}
+
+/**
+ * Overrides applying to the test verdict.
+ * A mirror of luci.resultdb.v1.TestVerdict.StatusOverride.
+ */
+export enum TestVerdict_StatusOverride {
+  STATUS_OVERRIDE_UNSPECIFIED = 0,
+  /**
+   * NOT_OVERRIDDEN - The test verdict is not overridden.
+   *
+   * To confirm a test is not exonerated prefer to check it is not EXONERATED
+   * rather than check it is NOT_OVERRIDDEN, as this is safe in case of
+   * extensions to this enum.
+   */
+  NOT_OVERRIDDEN = 1,
+  /**
+   * EXONERATED - The test variant has one or more exonerations, and the
+   * test verdict status was FAILED, EXECUTION_ERRORED OR PRECLUDED.
+   * An exoneration absolves the subject of the invocation (e.g. CL)
+   * from blame and means means the verdict is no longer blocking.
+   */
+  EXONERATED = 2,
+}
+
+export function testVerdict_StatusOverrideFromJSON(object: any): TestVerdict_StatusOverride {
+  switch (object) {
+    case 0:
+    case "STATUS_OVERRIDE_UNSPECIFIED":
+      return TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED;
+    case 1:
+    case "NOT_OVERRIDDEN":
+      return TestVerdict_StatusOverride.NOT_OVERRIDDEN;
+    case 2:
+    case "EXONERATED":
+      return TestVerdict_StatusOverride.EXONERATED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_StatusOverride");
+  }
+}
+
+export function testVerdict_StatusOverrideToJSON(object: TestVerdict_StatusOverride): string {
+  switch (object) {
+    case TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED:
+      return "STATUS_OVERRIDE_UNSPECIFIED";
+    case TestVerdict_StatusOverride.NOT_OVERRIDDEN:
+      return "NOT_OVERRIDDEN";
+    case TestVerdict_StatusOverride.EXONERATED:
+      return "EXONERATED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdict_StatusOverride");
+  }
+}
+
 function createBaseTestVerdict(): TestVerdict {
   return {
     testId: "",
     variantHash: "",
     invocationId: "",
     status: 0,
+    statusV2: 0,
+    statusOverride: 0,
     partitionTime: undefined,
     passedAvgDuration: undefined,
     changelists: [],
@@ -274,6 +374,12 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     }
     if (message.status !== 0) {
       writer.uint32(32).int32(message.status);
+    }
+    if (message.statusV2 !== 0) {
+      writer.uint32(64).int32(message.statusV2);
+    }
+    if (message.statusOverride !== 0) {
+      writer.uint32(72).int32(message.statusOverride);
     }
     if (message.partitionTime !== undefined) {
       Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(42).fork()).join();
@@ -326,6 +432,22 @@ export const TestVerdict: MessageFns<TestVerdict> = {
           message.status = reader.int32() as any;
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.statusV2 = reader.int32() as any;
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.statusOverride = reader.int32() as any;
+          continue;
+        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -365,6 +487,8 @@ export const TestVerdict: MessageFns<TestVerdict> = {
       variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
       invocationId: isSet(object.invocationId) ? globalThis.String(object.invocationId) : "",
       status: isSet(object.status) ? testVerdictStatusFromJSON(object.status) : 0,
+      statusV2: isSet(object.statusV2) ? testVerdict_StatusFromJSON(object.statusV2) : 0,
+      statusOverride: isSet(object.statusOverride) ? testVerdict_StatusOverrideFromJSON(object.statusOverride) : 0,
       partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
       passedAvgDuration: isSet(object.passedAvgDuration) ? Duration.fromJSON(object.passedAvgDuration) : undefined,
       changelists: globalThis.Array.isArray(object?.changelists)
@@ -387,6 +511,12 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     if (message.status !== 0) {
       obj.status = testVerdictStatusToJSON(message.status);
     }
+    if (message.statusV2 !== 0) {
+      obj.statusV2 = testVerdict_StatusToJSON(message.statusV2);
+    }
+    if (message.statusOverride !== 0) {
+      obj.statusOverride = testVerdict_StatusOverrideToJSON(message.statusOverride);
+    }
     if (message.partitionTime !== undefined) {
       obj.partitionTime = message.partitionTime;
     }
@@ -408,6 +538,8 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     message.variantHash = object.variantHash ?? "";
     message.invocationId = object.invocationId ?? "";
     message.status = object.status ?? 0;
+    message.statusV2 = object.statusV2 ?? 0;
+    message.statusOverride = object.statusOverride ?? 0;
     message.partitionTime = object.partitionTime ?? undefined;
     message.passedAvgDuration = (object.passedAvgDuration !== undefined && object.passedAvgDuration !== null)
       ? Duration.fromPartial(object.passedAvgDuration)

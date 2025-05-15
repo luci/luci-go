@@ -120,18 +120,74 @@ export interface QueryTestHistoryStatsResponse_Group {
     | undefined;
   /** The hash of the variant. */
   readonly variantHash: string;
-  /** The number of unexpected test verdicts in the group. */
+  /** The counts of verdicts in the group. */
+  readonly verdictCounts:
+    | QueryTestHistoryStatsResponse_Group_VerdictCounts
+    | undefined;
+  /**
+   * Deprecated: Use `counts` field instead.
+   * The number of unexpected test verdicts in the group.
+   *
+   * @deprecated
+   */
   readonly unexpectedCount: number;
-  /** The number of unexpectedly skipped test verdicts in the group. */
+  /**
+   * The number of unexpectedly skipped test verdicts in the group.
+   *
+   * @deprecated
+   */
   readonly unexpectedlySkippedCount: number;
-  /** The number of flaky test verdicts in the group. */
+  /**
+   * The number of flaky test verdicts in the group.
+   *
+   * @deprecated
+   */
   readonly flakyCount: number;
-  /** The number of exonerated test verdicts in the group. */
+  /**
+   * The number of exonerated test verdicts in the group.
+   *
+   * @deprecated
+   */
   readonly exoneratedCount: number;
-  /** The number of expected test verdicts in the group. */
+  /**
+   * The number of expected test verdicts in the group.
+   *
+   * @deprecated
+   */
   readonly expectedCount: number;
   /** The average duration of passing test results in the group. */
   readonly passedAvgDuration: Duration | undefined;
+}
+
+/** Counts of verdicts, using verdict status v2. */
+export interface QueryTestHistoryStatsResponse_Group_VerdictCounts {
+  /**
+   * The number of failed verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
+   */
+  readonly failed: number;
+  /** The number of flaky verdicts. */
+  readonly flaky: number;
+  /** The number of passed verdicts. */
+  readonly passed: number;
+  /** The number of skipped verdicts. */
+  readonly skipped: number;
+  /**
+   * The number of execution errored verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
+   */
+  readonly executionErrored: number;
+  /**
+   * The number of precluded verdicts.
+   * Count includes both exonerated and non-exonerated verdicts.
+   */
+  readonly precluded: number;
+  /** The number of failed verdicts with exonerations. */
+  readonly failedExonerated: number;
+  /** The number of execution errored verdicts with exonerations. */
+  readonly executionErroredExonerated: number;
+  /** The number of precluded verdicts with exonerations. */
+  readonly precludedExonerated: number;
 }
 
 /** A request message for the `QueryVariants` RPC. */
@@ -654,6 +710,7 @@ function createBaseQueryTestHistoryStatsResponse_Group(): QueryTestHistoryStatsR
   return {
     partitionTime: undefined,
     variantHash: "",
+    verdictCounts: undefined,
     unexpectedCount: 0,
     unexpectedlySkippedCount: 0,
     flakyCount: 0,
@@ -670,6 +727,9 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
     }
     if (message.variantHash !== "") {
       writer.uint32(18).string(message.variantHash);
+    }
+    if (message.verdictCounts !== undefined) {
+      QueryTestHistoryStatsResponse_Group_VerdictCounts.encode(message.verdictCounts, writer.uint32(74).fork()).join();
     }
     if (message.unexpectedCount !== 0) {
       writer.uint32(24).int32(message.unexpectedCount);
@@ -713,6 +773,14 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
           }
 
           message.variantHash = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.verdictCounts = QueryTestHistoryStatsResponse_Group_VerdictCounts.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -776,6 +844,9 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
     return {
       partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
       variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+      verdictCounts: isSet(object.verdictCounts)
+        ? QueryTestHistoryStatsResponse_Group_VerdictCounts.fromJSON(object.verdictCounts)
+        : undefined,
       unexpectedCount: isSet(object.unexpectedCount) ? globalThis.Number(object.unexpectedCount) : 0,
       unexpectedlySkippedCount: isSet(object.unexpectedlySkippedCount)
         ? globalThis.Number(object.unexpectedlySkippedCount)
@@ -794,6 +865,9 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
     }
     if (message.variantHash !== "") {
       obj.variantHash = message.variantHash;
+    }
+    if (message.verdictCounts !== undefined) {
+      obj.verdictCounts = QueryTestHistoryStatsResponse_Group_VerdictCounts.toJSON(message.verdictCounts);
     }
     if (message.unexpectedCount !== 0) {
       obj.unexpectedCount = Math.round(message.unexpectedCount);
@@ -823,6 +897,9 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
     const message = createBaseQueryTestHistoryStatsResponse_Group() as any;
     message.partitionTime = object.partitionTime ?? undefined;
     message.variantHash = object.variantHash ?? "";
+    message.verdictCounts = (object.verdictCounts !== undefined && object.verdictCounts !== null)
+      ? QueryTestHistoryStatsResponse_Group_VerdictCounts.fromPartial(object.verdictCounts)
+      : undefined;
     message.unexpectedCount = object.unexpectedCount ?? 0;
     message.unexpectedlySkippedCount = object.unexpectedlySkippedCount ?? 0;
     message.flakyCount = object.flakyCount ?? 0;
@@ -831,6 +908,215 @@ export const QueryTestHistoryStatsResponse_Group: MessageFns<QueryTestHistorySta
     message.passedAvgDuration = (object.passedAvgDuration !== undefined && object.passedAvgDuration !== null)
       ? Duration.fromPartial(object.passedAvgDuration)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseQueryTestHistoryStatsResponse_Group_VerdictCounts(): QueryTestHistoryStatsResponse_Group_VerdictCounts {
+  return {
+    failed: 0,
+    flaky: 0,
+    passed: 0,
+    skipped: 0,
+    executionErrored: 0,
+    precluded: 0,
+    failedExonerated: 0,
+    executionErroredExonerated: 0,
+    precludedExonerated: 0,
+  };
+}
+
+export const QueryTestHistoryStatsResponse_Group_VerdictCounts: MessageFns<
+  QueryTestHistoryStatsResponse_Group_VerdictCounts
+> = {
+  encode(
+    message: QueryTestHistoryStatsResponse_Group_VerdictCounts,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.failed !== 0) {
+      writer.uint32(8).int32(message.failed);
+    }
+    if (message.flaky !== 0) {
+      writer.uint32(16).int32(message.flaky);
+    }
+    if (message.passed !== 0) {
+      writer.uint32(24).int32(message.passed);
+    }
+    if (message.skipped !== 0) {
+      writer.uint32(32).int32(message.skipped);
+    }
+    if (message.executionErrored !== 0) {
+      writer.uint32(40).int32(message.executionErrored);
+    }
+    if (message.precluded !== 0) {
+      writer.uint32(48).int32(message.precluded);
+    }
+    if (message.failedExonerated !== 0) {
+      writer.uint32(56).int32(message.failedExonerated);
+    }
+    if (message.executionErroredExonerated !== 0) {
+      writer.uint32(64).int32(message.executionErroredExonerated);
+    }
+    if (message.precludedExonerated !== 0) {
+      writer.uint32(72).int32(message.precludedExonerated);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryTestHistoryStatsResponse_Group_VerdictCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryTestHistoryStatsResponse_Group_VerdictCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.failed = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.flaky = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.passed = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.skipped = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.executionErrored = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.precluded = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.failedExonerated = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.executionErroredExonerated = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.precludedExonerated = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryTestHistoryStatsResponse_Group_VerdictCounts {
+    return {
+      failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
+      flaky: isSet(object.flaky) ? globalThis.Number(object.flaky) : 0,
+      passed: isSet(object.passed) ? globalThis.Number(object.passed) : 0,
+      skipped: isSet(object.skipped) ? globalThis.Number(object.skipped) : 0,
+      executionErrored: isSet(object.executionErrored) ? globalThis.Number(object.executionErrored) : 0,
+      precluded: isSet(object.precluded) ? globalThis.Number(object.precluded) : 0,
+      failedExonerated: isSet(object.failedExonerated) ? globalThis.Number(object.failedExonerated) : 0,
+      executionErroredExonerated: isSet(object.executionErroredExonerated)
+        ? globalThis.Number(object.executionErroredExonerated)
+        : 0,
+      precludedExonerated: isSet(object.precludedExonerated) ? globalThis.Number(object.precludedExonerated) : 0,
+    };
+  },
+
+  toJSON(message: QueryTestHistoryStatsResponse_Group_VerdictCounts): unknown {
+    const obj: any = {};
+    if (message.failed !== 0) {
+      obj.failed = Math.round(message.failed);
+    }
+    if (message.flaky !== 0) {
+      obj.flaky = Math.round(message.flaky);
+    }
+    if (message.passed !== 0) {
+      obj.passed = Math.round(message.passed);
+    }
+    if (message.skipped !== 0) {
+      obj.skipped = Math.round(message.skipped);
+    }
+    if (message.executionErrored !== 0) {
+      obj.executionErrored = Math.round(message.executionErrored);
+    }
+    if (message.precluded !== 0) {
+      obj.precluded = Math.round(message.precluded);
+    }
+    if (message.failedExonerated !== 0) {
+      obj.failedExonerated = Math.round(message.failedExonerated);
+    }
+    if (message.executionErroredExonerated !== 0) {
+      obj.executionErroredExonerated = Math.round(message.executionErroredExonerated);
+    }
+    if (message.precludedExonerated !== 0) {
+      obj.precludedExonerated = Math.round(message.precludedExonerated);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<QueryTestHistoryStatsResponse_Group_VerdictCounts>,
+  ): QueryTestHistoryStatsResponse_Group_VerdictCounts {
+    return QueryTestHistoryStatsResponse_Group_VerdictCounts.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<QueryTestHistoryStatsResponse_Group_VerdictCounts>,
+  ): QueryTestHistoryStatsResponse_Group_VerdictCounts {
+    const message = createBaseQueryTestHistoryStatsResponse_Group_VerdictCounts() as any;
+    message.failed = object.failed ?? 0;
+    message.flaky = object.flaky ?? 0;
+    message.passed = object.passed ?? 0;
+    message.skipped = object.skipped ?? 0;
+    message.executionErrored = object.executionErrored ?? 0;
+    message.precluded = object.precluded ?? 0;
+    message.failedExonerated = object.failedExonerated ?? 0;
+    message.executionErroredExonerated = object.executionErroredExonerated ?? 0;
+    message.precludedExonerated = object.precludedExonerated ?? 0;
     return message;
   },
 };

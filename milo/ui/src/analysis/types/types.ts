@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { DeepNonNullableProps, NonNullableProps } from '@/generic_libs/types';
-import { OutputCommit } from '@/gitiles/types';
 import {
   Changepoint,
   ChangepointGroupSummary,
@@ -27,10 +26,8 @@ import { Variant } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.p
 import { SourceRef } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import {
   BatchGetTestVariantBranchResponse,
-  QuerySourcePositionsResponse,
   QuerySourceVerdictsResponse_VerdictStatus,
   Segment,
-  SourcePosition,
   TestVariantBranch,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
@@ -93,16 +90,6 @@ export interface OutputTestVariantBranch extends TestVariantBranch {
 export interface OutputBatchGetTestVariantBranchResponse
   extends BatchGetTestVariantBranchResponse {
   readonly testVariantBranches: readonly OutputTestVariantBranch[];
-}
-
-export interface OutputSourcePosition extends SourcePosition {
-  readonly commit: OutputCommit;
-  readonly verdicts: readonly OutputTestVerdict[];
-}
-
-export interface OutputQuerySourcePositionsResponse
-  extends QuerySourcePositionsResponse {
-  readonly sourcePositions: readonly OutputSourcePosition[];
 }
 
 export type OutputChangepoint = NonNullableProps<Changepoint, 'variant'>;
