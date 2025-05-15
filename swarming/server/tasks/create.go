@@ -374,9 +374,11 @@ func (c *CreationOp) copyDuplicateTask(ctx context.Context, new, dup *model.Task
 	new.BotDimensions = dup.BotDimensions
 	new.BotIdleSince = dup.BotIdleSince
 	new.BotLogsCloudProject = dup.BotLogsCloudProject
+	new.BotOwners = dup.BotOwners
 	new.Started = dup.Started
 	new.ExitCode = dup.ExitCode
 	new.Completed = dup.Completed
+	new.DurationSecs = dup.DurationSecs
 	new.ExitCode = dup.ExitCode
 	new.StdoutChunks = dup.StdoutChunks
 	new.CASOutputRoot = dup.CASOutputRoot

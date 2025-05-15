@@ -198,10 +198,12 @@ func TestCreation(t *testing.T) {
 							Hostname:   "resultdb.example.com",
 							Invocation: "invocations/task-65aba3a3e6b99310",
 						},
+						DurationSecs: datastore.NewUnindexedOptional(500.00),
 					},
 					PropertiesHash: datastore.NewIndexedOptional(hash),
 					Created:        now.Add(-30 * time.Minute),
 					CostUSD:        10.0,
+					TryNumber:      datastore.NewIndexedNullable(int64(1)),
 				}
 				secrets := &model.SecretBytes{
 					Key:         model.SecretBytesKey(ctx, reqKey),
@@ -249,6 +251,8 @@ func TestCreation(t *testing.T) {
 				assert.That(t, trs.CostUSD, should.Equal(0.0))
 				assert.That(t, trs.ServerVersions, should.Match([]string{"v1", "v2"}))
 				assert.That(t, trs.PropertiesHash.Get(), should.Match(datastore.Optional[[]byte, datastore.Indexed]{}.Get()))
+				assert.That(t, trs.DedupedFrom, should.Equal("65aba3a3e6b99311"))
+				assert.That(t, trs.DurationSecs.Get(), should.Equal(500.00))
 
 				newSecret := &model.SecretBytes{
 					Key: model.SecretBytesKey(ctx, trs.TaskRequestKey()),
