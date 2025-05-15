@@ -61,7 +61,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
         variant AS Variant,
         previous_failure_rate as StartPositionUnexpectedResultRate,
         current_failure_rate as EndPositionUnexpectedResultRate
-        ) ORDER BY test_id, variant_hash) AS TestVariants,
+        ) ORDER BY test_id, variant_hash LIMIT @testVariantLimit) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
@@ -144,7 +144,7 @@ LIMIT 5000`))
         variant AS Variant,
         previous_failure_rate as StartPositionUnexpectedResultRate,
         current_failure_rate as EndPositionUnexpectedResultRate
-        ) ORDER BY test_id, variant_hash) AS TestVariants,
+        ) ORDER BY test_id, variant_hash LIMIT @testVariantLimit) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate

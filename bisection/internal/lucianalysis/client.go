@@ -41,6 +41,10 @@ import (
 
 var internalDatasetID = "internal"
 
+// testVariantLimit is the maximum number of test variants to aggregate
+// in the BigQuery query for each regression group.
+var testVariantLimit = 1500
+
 var readFailureTemplate = template.Must(template.New("").Parse(
 	`
 {{define "basic" -}}
@@ -68,7 +72,7 @@ WITH
         variant AS Variant,
         previous_failure_rate as StartPositionUnexpectedResultRate,
         current_failure_rate as EndPositionUnexpectedResultRate
-        ) ORDER BY test_id, variant_hash) AS TestVariants,
+        ) ORDER BY test_id, variant_hash LIMIT @testVariantLimit) AS TestVariants,
       ANY_VALUE(segments[0].start_hour) AS StartHour,
       ANY_VALUE(segments[0].end_hour) AS EndHour
     FROM segments_with_failure_rate
@@ -199,10 +203,11 @@ type BuilderRegressionGroup struct {
 	Ref                     *Ref
 	RegressionStartPosition bigquery.NullInt64
 	RegressionEndPosition   bigquery.NullInt64
-	TestVariants            []*TestVariant
-	StartHour               bigquery.NullTimestamp
-	EndHour                 bigquery.NullTimestamp
-	SheriffRotations        []bigquery.NullString
+	// This list is capped at 1500 variants by the BigQuery query.
+	TestVariants     []*TestVariant
+	StartHour        bigquery.NullTimestamp
+	EndHour          bigquery.NullTimestamp
+	SheriffRotations []bigquery.NullString
 }
 
 type Ref struct {
@@ -242,6 +247,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		{Name: "excludedPools", Value: filter.GetExcludedTestPools()},
 		{Name: "allowedBuilderGroups", Value: filter.GetAllowedBuilderGroups()},
 		{Name: "excludedBuilderGroups", Value: filter.GetExcludedBuilderGroups()},
+		{Name: "testVariantLimit", Value: testVariantLimit},
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
