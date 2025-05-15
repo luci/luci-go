@@ -14,18 +14,56 @@
 
 import { createContext, useContext } from 'react';
 
-export interface TestInvestigateContext {
-  testId: string;
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+
+export interface InvocationContextValue {
+  invocation: Invocation;
+  rawInvocationId: string;
+  project: string | undefined;
 }
 
-export const TestInvestigateCtx = createContext<TestInvestigateContext | null>(
+export const InvocationContext = createContext<InvocationContextValue | null>(
   null,
 );
 
-export function useTestId(): string {
-  const ctx = useContext(TestInvestigateCtx);
+export interface TestVariantContextValue {
+  testVariant: TestVariant;
+}
+export const TestVariantContext = createContext<TestVariantContextValue | null>(
+  null,
+);
+
+export function useInvocation() {
+  const ctx = useContext(InvocationContext);
   if (!ctx) {
-    throw Error('useTestId can only be used in a TestInvestigateProvider');
+    throw new Error('useInvocation must be used within an InvocationProvider');
   }
-  return ctx.testId;
+  return ctx.invocation;
+}
+
+export function useRawInvocationId() {
+  const ctx = useContext(InvocationContext);
+  if (!ctx) {
+    throw new Error(
+      'useRawInvocationId must be used within an InvocationProvider',
+    );
+  }
+  return ctx.rawInvocationId;
+}
+
+export function useProject() {
+  const ctx = useContext(InvocationContext);
+  if (!ctx) {
+    throw new Error('useProject must be used within a InvocationProvider');
+  }
+  return ctx.project;
+}
+
+export function useTestVariant() {
+  const ctx = useContext(TestVariantContext);
+  if (!ctx) {
+    throw new Error('useTestVariant must be used within a TestVariantProvider');
+  }
+  return ctx.testVariant;
 }

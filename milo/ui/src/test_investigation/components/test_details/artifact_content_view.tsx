@@ -1,4 +1,3 @@
-// src/test_investigation/components/test_details/artifact_content_view.tsx
 // Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

@@ -14,28 +14,31 @@
 
 import BugReportIcon from '@mui/icons-material/BugReport';
 import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
-import { Box, Link, Typography } from '@mui/material';
-import React, { JSX, useMemo } from 'react';
+import { Box, CircularProgress, Link, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import React, { useMemo } from 'react';
 
+import { useAnalysesClient as useLuciBisectionClient } from '@/common/hooks/prpc_clients';
 import {
   getStatusStyle,
   SemanticStatusType,
   StatusStyle,
 } from '@/common/styles/status_styles';
-import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import {
-  TestAnalysis,
   AnalysisRunStatus,
+  BatchGetTestAnalysesRequest,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useProject, useTestVariant } from '@/test_investigation/context';
 
+import { useAssociatedBugs } from '../context';
+import { useTestVariantBranch } from '../context/context';
 import {
   NO_ASSOCIATED_BUGS_TEXT,
   BISECTION_NO_ANALYSIS_TEXT,
   BISECTION_DATA_INCOMPLETE_TEXT,
-} from './types';
-
+} from '../types';
 // Helper to map TestVariantStatus to SemanticStatusType
 function getSemanticStatusFromTestVariant(
   tvStatus: TestVariantStatus,
@@ -57,22 +60,54 @@ function getSemanticStatusFromTestVariant(
   }
 }
 
-interface OverviewStatusSectionProps {
-  testVariantStatus: TestVariantStatus;
-  associatedBugs?: readonly AssociatedBug[];
-  bisectionAnalysis?: TestAnalysis | null;
-  project?: string;
-}
+export function OverviewStatusSection() {
+  const bisectionClient = useLuciBisectionClient();
+  const testVariant = useTestVariant();
+  const project = useProject();
+  const associatedBugs = useAssociatedBugs();
+  const testVariantBranch = useTestVariantBranch();
 
-export function OverviewStatusSection({
-  testVariantStatus,
-  associatedBugs,
-  bisectionAnalysis,
-  project,
-}: OverviewStatusSectionProps): JSX.Element {
+  const bisectionAnalysisQueryEnabled = !!(
+    project &&
+    testVariant?.testId &&
+    testVariant?.variantHash &&
+    testVariantBranch?.refHash
+  );
+
+  const bisectionTestFailureIdentifier = useMemo(() => {
+    if (!bisectionAnalysisQueryEnabled) return undefined;
+    return {
+      testId: testVariant!.testId,
+      variantHash: testVariant!.variantHash!,
+      refHash: testVariantBranch!.refHash!,
+    };
+  }, [bisectionAnalysisQueryEnabled, testVariant, testVariantBranch]);
+
+  const bisectionAnalysisRequest = useMemo(() => {
+    if (!bisectionAnalysisQueryEnabled || !bisectionTestFailureIdentifier) {
+      return BatchGetTestAnalysesRequest.fromPartial({});
+    }
+    return BatchGetTestAnalysesRequest.fromPartial({
+      project: project!,
+      testFailures: [bisectionTestFailureIdentifier],
+    });
+  }, [bisectionAnalysisQueryEnabled, project, bisectionTestFailureIdentifier]);
+
+  const { data: bisectionAnalysis, isLoading: isLoadingBisectionAnalysis } =
+    useQuery({
+      ...bisectionClient.BatchGetTestAnalyses.query(bisectionAnalysisRequest),
+      enabled: bisectionAnalysisQueryEnabled,
+      staleTime: 15 * 60 * 1000, // More stale as bisection results change less often
+      select: (response) => {
+        return response.testAnalyses && response.testAnalyses.length > 0
+          ? response.testAnalyses[0]
+          : null;
+      },
+    });
+
   const mainStatusSemanticType = useMemo(
-    () => getSemanticStatusFromTestVariant(testVariantStatus),
-    [testVariantStatus],
+    () => getSemanticStatusFromTestVariant(testVariant.status),
+    [testVariant.status],
   );
   const mainStatusStyle: StatusStyle = useMemo(
     () => getStatusStyle(mainStatusSemanticType),
@@ -109,7 +144,7 @@ export function OverviewStatusSection({
         ? `https://ci.chromium.org/ui/p/${project}/bisection/test-analysis/b/${bisectionAnalysis.analysisId}`
         : undefined;
 
-    let textElement: JSX.Element = <></>;
+    let textElement = <></>;
     if (status === BisectionAnalysisStatus.FOUND && bisectionAnalysis.culprit) {
       const culprit = bisectionAnalysis.culprit;
       const culpritCommit = culprit.commit;
@@ -165,11 +200,11 @@ export function OverviewStatusSection({
 
   // Prepare the display string, e.g., "Failed" instead of "UNEXPECTED"
   const displayStatusString = useMemo(() => {
-    const rawStatusString = TestVariantStatus[testVariantStatus];
+    const rawStatusString = TestVariantStatus[testVariant.status];
     return rawStatusString
       .replace('UNEXPECTEDLY_', '')
       .replace('UNEXPECTED', 'Failed');
-  }, [testVariantStatus]);
+  }, [testVariant.status]);
 
   return (
     <>
@@ -232,6 +267,7 @@ export function OverviewStatusSection({
             }}
           />{' '}
           Culprit Searching: {bisectionDisplayInfo.textElement}
+          {isLoadingBisectionAnalysis && <CircularProgress />}
           {bisectionDisplayInfo.link && (
             <Link
               href={bisectionDisplayInfo.link}

@@ -15,15 +15,17 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useState, useEffect, JSX } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import { useRawInvocationId } from '@/test_investigation/context/context';
 
 import {
   buildHierarchyTree,
@@ -35,25 +37,19 @@ import { DrawerContent } from './drawer_content';
 
 const DRAWER_WIDTH_OPEN = 360;
 
-interface TestNavigationDrawerProps {
-  invocation: Invocation;
-  onSelectTestVariant?: (testId: string, variantHash: string) => void;
-  currentTestId?: string;
-  currentVariantHash?: string;
-}
+export function TestNavigationDrawer() {
+  const navigate = useNavigate();
 
-export function TestNavigationDrawer({
-  invocation,
-  onSelectTestVariant,
-  currentTestId,
-  currentVariantHash,
-}: TestNavigationDrawerProps): JSX.Element {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState(0);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const resultDbClient = useResultDbClient();
+
+  const invocation = useInvocation();
+  const testVariant = useTestVariant();
+  const rawInvocationId = useRawInvocationId();
 
   const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
@@ -88,10 +84,10 @@ export function TestNavigationDrawer({
     useMemo((): HierarchyBuildResult => {
       return buildHierarchyTree(
         testVariants,
-        currentTestId,
-        currentVariantHash,
+        testVariant.testId,
+        testVariant.variantHash,
       );
-    }, [testVariants, currentTestId, currentVariantHash]);
+    }, [testVariants, testVariant.testId, testVariant.variantHash]);
 
   const failureReasonTreeData = useMemo(
     () => buildFailureReasonTree(testVariants),
@@ -117,6 +113,17 @@ export function TestNavigationDrawer({
       return newSet;
     });
   }, []);
+
+  const handleDrawerTestSelection = (
+    selectedTestId: string,
+    selectedVariantHash: string,
+  ) => {
+    if (rawInvocationId && selectedTestId && selectedVariantHash) {
+      navigate(
+        `/ui/test-investigate/invocations/${rawInvocationId}/tests/${encodeURIComponent(selectedTestId)}/variants/${selectedVariantHash}`,
+      );
+    }
+  };
 
   return (
     <>
@@ -179,9 +186,9 @@ export function TestNavigationDrawer({
           failureReasonTreeData={failureReasonTreeData}
           expandedNodes={expandedNodes}
           toggleNodeExpansion={toggleNodeExpansion}
-          currentTestId={currentTestId}
-          currentVariantHash={currentVariantHash}
-          onSelectTestVariant={onSelectTestVariant}
+          currentTestId={testVariant.testId}
+          currentVariantHash={testVariant.variantHash}
+          onSelectTestVariant={handleDrawerTestSelection}
           closeDrawer={handleToggleDrawer}
         />
       </Drawer>

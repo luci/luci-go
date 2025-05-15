@@ -13,17 +13,14 @@
 // limitations under the License.
 
 import { Box, SelectChangeEvent, Typography } from '@mui/material';
-import { JSX, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   TestResult,
   TestResult_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import {
-  TestVariant,
-  TestResultBundle,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import { normalizeFailureReason } from '../../utils/test_variant_utils';
 
@@ -32,15 +29,10 @@ import { ClusteringControls } from './clustering_controls';
 import { TagsSection } from './tags_section';
 import { ClusteredResult } from './types';
 
-interface TestTabContentProps {
-  invocation: Invocation;
-  testVariant: TestVariant;
-}
+export function TestTabContent() {
+  const invocation = useInvocation();
+  const testVariant = useTestVariant();
 
-export function TestTabContent({
-  invocation,
-  testVariant,
-}: TestTabContentProps): JSX.Element {
   const [clusteredFailures, setClusteredFailures] = useState<ClusteredResult[]>(
     [],
   );

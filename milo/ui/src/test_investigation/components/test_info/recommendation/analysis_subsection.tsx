@@ -13,26 +13,25 @@
 // limitations under the License.
 
 import { Box, Link, Typography } from '@mui/material';
-import { createElement, JSX } from 'react';
+import { createElement } from 'react';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
 
-import { SegmentAnalysisResult } from '../../utils/test_info_utils';
+import { useSegmentAnalysis } from '../context/context';
+import { RateBox } from '../rate_box';
 
-import { RateBox } from './rate_box';
+// TODO: Add all test history link
+const allTestHistoryLink = '#all-history-todo';
 
-interface AnalysisSubsectionsProps {
-  segmentAnalysis: SegmentAnalysisResult;
-  allTestHistoryLink?: string;
-}
+export function AnalysisSubsection() {
+  const segmentAnalysis = useSegmentAnalysis();
 
-export function AnalysisSubsection({
-  segmentAnalysis,
-  allTestHistoryLink,
-}: AnalysisSubsectionsProps): JSX.Element {
+  if (!segmentAnalysis) {
+    return null;
+  }
   const currentRateBoxStyle = segmentAnalysis.currentRateBox
     ? getStatusStyle(segmentAnalysis.currentRateBox.statusType)
-    : getStatusStyle('unknown'); // Fallback style
+    : getStatusStyle('unknown');
 
   const TransitionIconComponent = currentRateBoxStyle.icon;
 

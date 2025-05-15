@@ -12,101 +12,146 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Box,
-  ButtonBase,
-  Link,
-  List,
-  ListItemButton,
-  ListItemText,
-  Popover,
-  Typography,
-} from '@mui/material';
-import React, { cloneElement, Fragment, JSX, useState } from 'react';
+import BuildIcon from '@mui/icons-material/Build';
+import CodeIcon from '@mui/icons-material/Code';
+import CommitIcon from '@mui/icons-material/Commit';
+import ComputerIcon from '@mui/icons-material/Computer';
+import { Box, ButtonBase, Link, Typography } from '@mui/material';
+import React, {
+  cloneElement,
+  Fragment,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 import { CopyButton } from '@/common/components/copy_button';
-import { FormattedCLInfo } from '@/test_investigation/utils/test_info_utils';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import {
+  getCommitInfoFromInvocation,
+  getInvocationTag,
+  getVariantValue,
+} from '@/test_investigation/utils/test_info_utils';
 
+import { CLsPopover } from './cls_popver';
+import { useFormattedCLs } from './context';
 import { InfoLineItem, NO_CLS_TEXT } from './types';
 
-interface TestInfoHeaderProps {
-  testDisplayName: string;
-  infoLineItems: readonly InfoLineItem[];
-  allFormattedCLs: readonly FormattedCLInfo[];
-}
-
-export function TestInfoHeader({
-  testDisplayName,
-  infoLineItems,
-  allFormattedCLs,
-}: TestInfoHeaderProps): JSX.Element {
+export function TestInfoHeader() {
+  const testVariant = useTestVariant();
+  const invocation = useInvocation();
+  const allFormattedCLs = useFormattedCLs();
   const [clPopoverAnchorEl, setClPopoverAnchorEl] =
     useState<HTMLElement | null>(null);
-
-  const handleCLPopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setClPopoverAnchorEl(event.currentTarget);
-  };
-
-  const handleCLPopoverClose = () => {
+  const handleCLPopoverOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>) =>
+      setClPopoverAnchorEl(event.currentTarget),
+    [],
+  );
+  const handleCLPopoverClose = useCallback(() => {
     setClPopoverAnchorEl(null);
-  };
+  }, []);
 
   const clPopoverOpen = Boolean(clPopoverAnchorEl);
-  const clPopoverId = clPopoverOpen ? 'cl-popover-header' : undefined;
+  const clPopoverId = clPopoverOpen ? 'cl-popover-main-test-info' : undefined;
+  const infoLineItems = useMemo((): InfoLineItem[] => {
+    // TODO: this is currently hardcoded to specific keys, it needs to be generic.
+    const items: InfoLineItem[] = [];
+    const builder = getVariantValue(testVariant?.variant, 'builder');
+    const testSuiteNameFromVariant = getVariantValue(
+      testVariant?.variant,
+      'test_suite',
+    );
+    const testSuiteNameFromTestId = testVariant.testId
+      ? testVariant.testId.split('.')[0]
+      : undefined;
+    const testSuiteNameFromInvTag = getInvocationTag(
+      invocation.tags,
+      'test_suite',
+    );
+    const testSuiteName =
+      testSuiteNameFromVariant ||
+      testSuiteNameFromTestId ||
+      testSuiteNameFromInvTag;
+    const osFromInvTag =
+      getInvocationTag(invocation.tags, 'os') ||
+      getInvocationTag(invocation.tags, 'os_family');
+    const osName = osFromInvTag || getVariantValue(testVariant.variant, 'os');
+    const commitInfo = getCommitInfoFromInvocation(invocation);
 
-  const enrichedInfoLineItems = infoLineItems.map((item) => {
-    if (item.label === 'CL') {
-      return {
-        ...item,
-        customRender: () => {
-          if (allFormattedCLs.length === 0) {
-            return (
-              <Typography
-                variant="body2"
-                component="span"
-                color="text.disabled"
-                sx={{ ml: 0.5 }}
-              >
-                {NO_CLS_TEXT}
-              </Typography>
-            );
-          }
-          const firstCL = allFormattedCLs[0];
+    if (builder)
+      items.push({ label: 'Builder', value: builder, icon: <BuildIcon /> });
+    if (testSuiteName)
+      items.push({
+        label: 'Test suite',
+        value: testSuiteName,
+      });
+    if (osName)
+      items.push({ label: 'OS', value: osName, icon: <ComputerIcon /> });
+    if (commitInfo)
+      items.push({ label: 'Commit', value: commitInfo, icon: <CommitIcon /> });
+    items.push({
+      label: 'CL',
+      icon: <CodeIcon />,
+      customRender: () => {
+        if (allFormattedCLs.length === 0) {
           return (
-            <>
-              <Link
-                href={firstCL.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="hover"
-                variant="body2"
-                color="text.primary"
-                sx={{ ml: 0.5 }}
-              >
-                {firstCL.display}
-              </Link>
-              {allFormattedCLs.length > 1 && (
-                <ButtonBase
-                  onClick={handleCLPopoverOpen}
-                  aria-describedby={clPopoverId}
-                  sx={{
-                    ml: 0.5,
-                    textDecoration: 'underline',
-                    color: 'primary.main',
-                    cursor: 'pointer',
-                    typography: 'body2',
-                  }}
-                >
-                  + {allFormattedCLs.length - 1} more
-                </ButtonBase>
-              )}
-            </>
+            <Typography
+              variant="body2"
+              component="span"
+              color="text.disabled"
+              sx={{ ml: 0.5 }}
+            >
+              {NO_CLS_TEXT}
+            </Typography>
           );
-        },
-      };
-    }
-    return item;
-  });
+        }
+        const firstCL = allFormattedCLs[0];
+        return (
+          <>
+            <Link
+              href={firstCL.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              variant="body2"
+              color="text.primary"
+              sx={{ ml: 0.5 }}
+            >
+              {firstCL.display}
+            </Link>
+            {allFormattedCLs.length > 1 && (
+              <ButtonBase
+                onClick={handleCLPopoverOpen}
+                aria-describedby={clPopoverId}
+                sx={{
+                  ml: 0.5,
+                  textDecoration: 'underline',
+                  color: 'primary.main',
+                  cursor: 'pointer',
+                  typography: 'body2',
+                }}
+              >
+                + {allFormattedCLs.length - 1} more
+              </ButtonBase>
+            )}
+          </>
+        );
+      },
+    });
+    return items.filter(
+      (item) => item.isPlaceholder === false || item.customRender || item.value,
+    );
+  }, [
+    testVariant,
+    invocation,
+    allFormattedCLs,
+    handleCLPopoverOpen,
+    clPopoverId,
+  ]);
+
+  const testDisplayName =
+    testVariant?.testMetadata?.name || testVariant?.testId;
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -135,13 +180,13 @@ export function TestInfoHeader({
           sx={{ ml: 0.5 }}
         />
       </Box>
-      {enrichedInfoLineItems.length > 0 && (
+      {infoLineItems.length > 0 && (
         <Typography
           component="div"
           variant="body2"
           sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: '4px 0px' }}
         >
-          {enrichedInfoLineItems.map((item, index) => (
+          {infoLineItems.map((item, index) => (
             <Fragment key={item.label + index}>
               {index > 0 && (
                 <Box
@@ -202,39 +247,12 @@ export function TestInfoHeader({
           ))}
         </Typography>
       )}
-      <Popover
-        id={clPopoverId}
-        open={clPopoverOpen}
+      <CLsPopover
         anchorEl={clPopoverAnchorEl}
+        open={clPopoverOpen}
         onClose={handleCLPopoverClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      >
-        <List dense sx={{ minWidth: 250, maxWidth: 500, p: 1 }}>
-          {allFormattedCLs.map((cl) => (
-            <ListItemButton
-              key={cl.key}
-              component="a"
-              href={cl.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ pl: 1, pr: 1, py: 0.5 }}
-            >
-              <ListItemText
-                primary={cl.display}
-                primaryTypographyProps={{
-                  variant: 'body2',
-                  style: {
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  },
-                }}
-              />
-            </ListItemButton>
-          ))}
-        </List>
-      </Popover>
+        id={clPopoverId}
+      />
     </Box>
   );
 }

@@ -1,4 +1,3 @@
-// src/test_investigation/components/test_info/overview_history_section.tsx
 // Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,37 +13,42 @@
 // limitations under the License.
 
 import { Box, ButtonBase, Link, Typography } from '@mui/material';
-import React, { JSX } from 'react';
+import { useCallback, useState } from 'react';
 
-import {
-  FormattedCLInfo,
-  SegmentAnalysisResult,
-} from '@/test_investigation/utils/test_info_utils';
+import { CLsPopover } from '../cls_popver';
+import { useFormattedCLs } from '../context';
+import { useSegmentAnalysis } from '../context/context';
+import { RateBox } from '../rate_box';
+import { NO_HISTORY_DATA_TEXT, NO_CLS_TEXT } from '../types';
 
-import { RateBox } from './rate_box';
-import { NO_HISTORY_DATA_TEXT, NO_CLS_TEXT } from './types';
+const clHistoryLinkSuffix = '/+log';
+const allTestHistoryLink = '#all-history-todo';
 
-interface OverviewHistorySectionProps {
-  segmentAnalysis: SegmentAnalysisResult;
-  allTestHistoryLink: string;
-  allFormattedCLs: readonly FormattedCLInfo[];
-  onCLPopoverOpen: (event: React.MouseEvent<HTMLElement>) => void;
-  clHistoryLinkSuffix: string;
-}
+export function OverviewHistorySection() {
+  const allFormattedCLs = useFormattedCLs();
+  const segmentAnalysis = useSegmentAnalysis();
+  const [clPopoverAnchorEl, setClPopoverAnchorEl] =
+    useState<HTMLElement | null>(null);
 
-export function OverviewHistorySection({
-  segmentAnalysis,
-  allTestHistoryLink,
-  allFormattedCLs,
-  onCLPopoverOpen,
-  clHistoryLinkSuffix,
-}: OverviewHistorySectionProps): JSX.Element {
+  const handleCLPopoverOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      setClPopoverAnchorEl(event.currentTarget);
+    },
+    [],
+  );
+
+  const handleCLPopoverClose = () => {
+    setClPopoverAnchorEl(null);
+  };
+
+  const clPopoverOpen = Boolean(clPopoverAnchorEl);
+
   return (
     <>
       <Typography variant="subtitle2" gutterBottom color="text.primary">
         History (failure rate):
       </Typography>
-      {segmentAnalysis.currentRateBox ? (
+      {segmentAnalysis && segmentAnalysis.currentRateBox ? (
         <Box sx={{ mb: 1 }}>
           <Box
             sx={{
@@ -118,8 +122,8 @@ export function OverviewHistorySection({
               {allFormattedCLs[0].display}
             </Link>
             <ButtonBase
-              onClick={onCLPopoverOpen}
-              aria-describedby="cl-popover-overview" // Ensure ID is unique if multiple popovers
+              onClick={handleCLPopoverOpen}
+              aria-describedby="cl-popover-overview"
               sx={{
                 ml: 0.5,
                 textDecoration: 'underline',
@@ -143,6 +147,12 @@ export function OverviewHistorySection({
             (View history)
           </Link>
         )}
+        <CLsPopover
+          anchorEl={clPopoverAnchorEl}
+          open={clPopoverOpen}
+          onClose={handleCLPopoverClose}
+          id="cl-popover-overview"
+        />
       </Typography>
     </>
   );

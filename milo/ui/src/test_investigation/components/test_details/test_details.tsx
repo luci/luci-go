@@ -13,28 +13,17 @@
 // limitations under the License.
 
 import { Box, Tab, Tabs, Typography } from '@mui/material';
-import { JSX, useState } from 'react';
-
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useState } from 'react';
 
 import { TestTabContent } from './test_tab_content'; // Correct path
 
-interface TestDetailsProps {
-  invocation: Invocation;
-  testVariant: TestVariant;
-}
-
-export function TestDetails({
-  invocation,
-  testVariant,
-}: TestDetailsProps): JSX.Element {
+export function TestDetails() {
   const [selectedTab, setSelectedTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) =>
     setSelectedTab(newValue);
 
-  const placeholderInvocationDetails = `Invocation Details Placeholder (Realm: ${invocation.realm})`;
+  const placeholderInvocationDetails = `Invocation Details Placeholder (Realm: TODO)`;
   const placeholderPerformance = 'Performance Content Placeholder - TODO';
   const placeholderChanges = 'Changes Content Placeholder - TODO';
   const placeholderFeatureFlags = 'Feature Flags Content Placeholder - TODO';
@@ -54,12 +43,7 @@ export function TestDetails({
       </Tabs>
 
       <Box sx={{ paddingTop: '24px' }}>
-        {selectedTab === 0 && (
-          <TestTabContent // This now handles content for the "Test" tab
-            invocation={invocation}
-            testVariant={testVariant}
-          />
-        )}
+        {selectedTab === 0 && <TestTabContent />}
         {selectedTab === 1 && (
           <Typography>{placeholderInvocationDetails}</Typography>
         )}

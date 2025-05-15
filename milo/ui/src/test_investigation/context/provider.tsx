@@ -12,16 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TestInvestigateCtx } from './context';
+import React, { useMemo } from 'react';
+
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+
+import { getProjectFromRealm } from '../utils/test_variant_utils';
+
+import { InvocationContext, TestVariantContext } from './context';
 
 interface Props {
   children: React.ReactNode;
 }
 
-export function TestInvestigateProvider({ children }: Props) {
+interface InvocationProviderProps extends Props {
+  invocation: Invocation;
+  rawInvocationId: string;
+  children: React.ReactNode;
+}
+
+export function InvocationProvider({
+  invocation,
+  rawInvocationId,
+  children,
+}: InvocationProviderProps) {
+  const project = useMemo(
+    () => getProjectFromRealm(invocation.realm),
+    [invocation.realm],
+  );
   return (
-    <TestInvestigateCtx.Provider value={{ testId: '' }}>
+    <InvocationContext.Provider
+      value={{
+        invocation,
+        rawInvocationId,
+        project,
+      }}
+    >
       {children}
-    </TestInvestigateCtx.Provider>
+    </InvocationContext.Provider>
+  );
+}
+
+interface TestVariantProviderProps extends Props {
+  testVariant: TestVariant;
+}
+
+export function TestVariantProvider({
+  testVariant,
+  children,
+}: TestVariantProviderProps) {
+  return (
+    <TestVariantContext.Provider
+      value={{
+        testVariant,
+      }}
+    >
+      {children}
+    </TestVariantContext.Provider>
   );
 }

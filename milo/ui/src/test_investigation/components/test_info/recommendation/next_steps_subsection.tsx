@@ -13,19 +13,16 @@
 // limitations under the License.
 
 import BugReportIcon from '@mui/icons-material/BugReport';
-import { Box, Link, Typography } from '@mui/material';
-import { JSX } from 'react';
+import { Box, CircularProgress, Link, Typography } from '@mui/material';
 
 import { StyledActionBlock } from '@/common/components/gm3_styled_components';
-import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
-interface NextStepsSubsectionProps {
-  associatedBugs?: readonly AssociatedBug[];
-}
+import { useAssociatedBugs, useIsLoadingAssociatedBugs } from '../context';
 
-export function NextStepsSubsection({
-  associatedBugs,
-}: NextStepsSubsectionProps): JSX.Element {
+export function NextStepsSubsection() {
+  const associatedBugs = useAssociatedBugs();
+  const isLoadingAssociatedBugs = useIsLoadingAssociatedBugs();
+
   return (
     <Box sx={{ flex: 1 }}>
       <Typography
@@ -56,6 +53,8 @@ export function NextStepsSubsection({
             </Typography>
           </StyledActionBlock>
         ))
+      ) : isLoadingAssociatedBugs ? (
+        <CircularProgress />
       ) : (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
           No associated bugs found for next steps.

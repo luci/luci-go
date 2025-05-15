@@ -17,28 +17,19 @@ import SourceIcon from '@mui/icons-material/Source';
 import { Box, Button } from '@mui/material';
 import { JSX, useMemo } from 'react';
 
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import {
   constructFileBugUrl,
   constructCodesearchUrl,
   getVariantValue,
-} from '../../utils/test_info_utils';
+} from '../../../utils/test_info_utils';
 
-interface OverviewActionsSectionProps {
-  invocation: Invocation;
-  testVariant: TestVariant;
-  compareLink: string;
-  onRerunClick?: () => void;
-}
+const compareLink = '#compare-todo';
 
-export function OverviewActionsSection({
-  invocation,
-  testVariant,
-  compareLink,
-  onRerunClick,
-}: OverviewActionsSectionProps): JSX.Element {
+export function OverviewActionsSection(): JSX.Element {
+  const testVariant = useTestVariant();
+  const invocation = useInvocation();
   const builder = getVariantValue(testVariant.variant, 'builder');
 
   const fileBugUrl = useMemo(
@@ -74,9 +65,7 @@ export function OverviewActionsSection({
       <Button
         variant="outlined"
         size="small"
-        onClick={
-          onRerunClick || (() => alert('Rerun functionality to be implemented'))
-        }
+        onClick={() => alert('Rerun functionality to be implemented')}
       >
         Rerun
       </Button>

@@ -13,30 +13,24 @@
 // limitations under the License.
 
 import { Box, Card, Divider, Typography } from '@mui/material';
-import { JSX } from 'react';
 
-import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
+import { useInvocation } from '@/test_investigation/context';
+import { formatDurationSince } from '@/test_investigation/utils/test_info_utils';
 
-import { SegmentAnalysisResult } from '../../utils/test_info_utils';
+import { useAssociatedBugs } from '../context';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
 
-interface RecommendationsSectionProps {
-  recommendationCount: number;
-  lastUpdateTime: string;
-  segmentAnalysis: SegmentAnalysisResult;
-  associatedBugs?: readonly AssociatedBug[];
-  allTestHistoryLink?: string;
-}
-
-export function RecommendationsSection({
-  recommendationCount,
-  lastUpdateTime,
-  segmentAnalysis,
-  associatedBugs,
-  allTestHistoryLink,
-}: RecommendationsSectionProps): JSX.Element {
+export function RecommendationsSection() {
+  const invocation = useInvocation();
+  const associatedBugs = useAssociatedBugs();
+  // Data points that were part of uiPlaceholders, now defined directly or passed
+  const recommendationCount = associatedBugs.length || 0;
+  const lastUpdateTime = invocation.finalizeTime
+    ? formatDurationSince(invocation.finalizeTime) || 'N/A'
+    : 'N/A';
+  // Define any other *real* links or data points that were in uiPlaceholders and are still needed
   return (
     <Box sx={{ flex: { md: 2 } }}>
       <Card
@@ -71,11 +65,8 @@ export function RecommendationsSection({
             flexGrow: 1,
           }}
         >
-          <AnalysisSubsection
-            segmentAnalysis={segmentAnalysis}
-            allTestHistoryLink={allTestHistoryLink}
-          />
-          <NextStepsSubsection associatedBugs={associatedBugs} />
+          <AnalysisSubsection />
+          <NextStepsSubsection />
         </Box>
       </Card>
     </Box>
