@@ -4,7 +4,7 @@ runtime: go123
 # For accessing GAE memcache.
 app_engine_apis: true
 
-instance_class: F4
+instance_class: F4_1G
 
 inbound_services:
 - warmup
