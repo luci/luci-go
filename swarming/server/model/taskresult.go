@@ -362,6 +362,15 @@ type TaskResultSummary struct {
 	// there's no TaskRunResult representing this task, since it didn't run.
 	DedupedFrom string `gae:"deduped_from,noindex"`
 
+	// SliceExpiration tracks the expiration of the current slice of the task.
+	//
+	// Set to the Expiration field of the current TaskToRun entity. In particular,
+	// unset if the task is not pending anymore.
+	//
+	// Used by a cron job to expire slices in case the RBE PubSub gets stuck or
+	// misses notifications.
+	SliceExpiration datastore.Optional[time.Time, datastore.Unindexed] `gae:"slice_expiration_ts"`
+
 	// ExpirationDelay is a delay from TaskRequest.ExpirationTS to the actual
 	// expiry time.
 	//
@@ -392,6 +401,39 @@ func NewTaskResultSummary(ctx context.Context, req *TaskRequest, serverVersion s
 		RequestPool:          req.Pool(),
 		RequestBotID:         req.BotID(),
 	}
+}
+
+// ConsumeTaskToRun moves `ttr` into non-reapable state (e.g. when canceling).
+//
+// This mutates both `trs` and `ttr`.
+func (trs *TaskResultSummary) ConsumeTaskToRun(ttr *TaskToRun, claimID string) {
+	trs.assertCanTouchTaskToRun(ttr)
+
+	// The actual change.
+	ttr.ClaimID = datastore.NewUnindexedOptional(claimID)
+	ttr.Expiration.Unset()
+	ttr.QueueNumber.Unset()
+
+	trs.syncToTaskToRun(ttr)
+}
+
+// ActivateTaskToRun changes `trs` to point to the given TaskToRun.
+func (trs *TaskResultSummary) ActivateTaskToRun(ttr *TaskToRun) {
+	trs.assertCanTouchTaskToRun(ttr)
+	trs.syncToTaskToRun(ttr)
+}
+
+// assertCanTouchTaskToRun panics if `ttr` must not be used with `trs`.
+func (trs *TaskResultSummary) assertCanTouchTaskToRun(ttr *TaskToRun) {
+	if !ttr.TaskRequestKey().Equal(trs.TaskRequestKey()) {
+		panic(fmt.Sprintf("cannot use %s with %s", ttr.Key, trs.Key))
+	}
+}
+
+// syncToTaskToRun populates `trs` fields based on `ttr`.
+func (trs *TaskResultSummary) syncToTaskToRun(ttr *TaskToRun) {
+	trs.CurrentTaskSlice = int64(ttr.TaskSliceIndex())
+	trs.SliceExpiration = ttr.Expiration.AsUnindexed()
 }
 
 // ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse.

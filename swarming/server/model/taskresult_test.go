@@ -224,6 +224,40 @@ func TestTaskResultSummary(t *testing.T) {
 		})
 	})
 
+	ftt.Run("TaskToRun association", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
+		assert.NoErr(t, err)
+
+		ttr0 := &TaskToRun{
+			Key:         TaskToRunKey(ctx, reqKey, 0, TaskToRunID(0)),
+			Expiration:  datastore.NewIndexedOptional(testTime),
+			QueueNumber: datastore.NewIndexedOptional(int64(123)),
+		}
+		ttr1 := &TaskToRun{
+			Key:         TaskToRunKey(ctx, reqKey, 0, TaskToRunID(1)),
+			Expiration:  datastore.NewIndexedOptional(testTime.Add(time.Hour)),
+			QueueNumber: datastore.NewIndexedOptional(int64(456)),
+		}
+
+		trs := &TaskResultSummary{Key: TaskResultSummaryKey(ctx, reqKey)}
+
+		trs.ActivateTaskToRun(ttr0)
+		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(0)))
+		assert.That(t, trs.SliceExpiration.Get(), should.Match(testTime))
+
+		trs.ConsumeTaskToRun(ttr0, "claim-id")
+		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(0)))
+		assert.That(t, trs.SliceExpiration.IsSet(), should.BeFalse)
+		assert.That(t, ttr0.ClaimID.Get(), should.Equal("claim-id"))
+		assert.That(t, ttr0.Expiration.IsSet(), should.BeFalse)
+		assert.That(t, ttr0.QueueNumber.IsSet(), should.BeFalse)
+
+		trs.ActivateTaskToRun(ttr1)
+		assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(1)))
+		assert.That(t, trs.SliceExpiration.Get(), should.Match(testTime.Add(time.Hour)))
+	})
+
 	ftt.Run("CostsUSD", t, func(t *ftt.Test) {
 		t.Run("ok", func(t *ftt.Test) {
 			trs := TaskResultSummary{CostUSD: 100.00}

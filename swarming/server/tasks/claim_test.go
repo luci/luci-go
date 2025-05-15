@@ -89,9 +89,10 @@ func TestClaimOp(t *testing.T) {
 			},
 		}
 		trs := &model.TaskResultSummary{
-			Key:     model.TaskResultSummaryKey(ctx, reqKey),
-			Created: createTime,
-			Tags:    req.Tags,
+			Key:             model.TaskResultSummaryKey(ctx, reqKey),
+			Created:         createTime,
+			Tags:            req.Tags,
+			SliceExpiration: datastore.NewUnindexedOptional(testTime.Add(time.Hour)),
 			TaskResultCommon: model.TaskResultCommon{
 				State:          apipb.TaskState_PENDING,
 				Modified:       createTime,

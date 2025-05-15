@@ -49,11 +49,13 @@ import (
 func TestCreation(t *testing.T) {
 	t.Parallel()
 
+	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+
 	ftt.Run("Creation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, _ = testclock.UseTime(ctx, testTime)
 		ctx = cryptorand.MockForTest(ctx, 0)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		globalStore := tsmon.Store(ctx)
@@ -153,7 +155,7 @@ func TestCreation(t *testing.T) {
 		})
 
 		t.Run("duplicate_with_properties_hash", func(t *ftt.Test) {
-			now := testclock.TestRecentTimeUTC
+			now := testTime
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			mockCfg := &cfgtest.MockedConfigs{
@@ -254,7 +256,7 @@ func TestCreation(t *testing.T) {
 				err = datastore.Get(ctx, newSecret)
 				assert.That(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
 				assert.That(t, tqt.Pending(tqt.PubSubNotify), should.Match([]string{
-					"2cbe1fa55012fa10",
+					"fa798ce1e012fa10",
 				}))
 
 				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"spec", "project", "subproject", "pool", "rbe-instance", true})
@@ -309,7 +311,7 @@ func TestCreation(t *testing.T) {
 				trs = res.Result
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
 				assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
-					"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+					"rbe-instance/swarming-fa798ce1e012fa10-0-0",
 				}))
 				// No PubSub notification.
 				assert.Loosely(t, tqt.Pending(tqt.PubSubNotify), should.HaveLength(0))
@@ -343,10 +345,10 @@ func TestCreation(t *testing.T) {
 		})
 
 		t.Run("resultdb_enabled", func(t *ftt.Test) {
-			taskRunID := "2cbe1fa55012fa11"
-			invocationID := "task-example.appspot.com-2cbe1fa55012fa11"
+			taskRunID := "fa798ce1e012fa11"
+			invocationID := "task-example.appspot.com-fa798ce1e012fa11"
 			realm := "project:realm"
-			deadline := testclock.TestRecentTimeUTC.Add(3600 * time.Second)
+			deadline := testTime.Add(3600 * time.Second)
 
 			createTask := func(ctx context.Context, cfg *cfg.Config, mcf resultdb.RecorderFactory) (*CreatedTask, error) {
 				mgr.rdb = mcf
@@ -368,7 +370,7 @@ func TestCreation(t *testing.T) {
 							Enable: true,
 						},
 						Realm:   realm,
-						Created: testclock.TestRecentTimeUTC,
+						Created: testTime,
 					},
 					Config: cfg,
 				})
@@ -413,6 +415,7 @@ func TestCreation(t *testing.T) {
 				}
 				p := cfgtest.MockConfigs(ctx, mockCfg)
 				cfg := p.Cached(ctx)
+
 				t.Run("failed", func(t *ftt.Test) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.PermissionDenied, "boom"), "")
@@ -428,7 +431,7 @@ func TestCreation(t *testing.T) {
 				})
 
 				t.Run("OK", func(t *ftt.Test) {
-					token := "token for 2cbe1fa55012fa11"
+					token := "token for fa798ce1e012fa11"
 					inv := &rdbpb.Invocation{
 						Name: "invocations/" + invocationID,
 					}
@@ -469,10 +472,12 @@ func TestCreation(t *testing.T) {
 			}
 			p := cfgtest.MockConfigs(ctx, mockCfg)
 			cfg := p.Cached(ctx)
-			now := testclock.TestRecentTimeUTC
+			now := testTime
 			newTR := &model.TaskRequest{
+				Created: now,
 				TaskSlices: []model.TaskSlice{
 					{
+						ExpirationSecs: 300,
 						Properties: model.TaskProperties{
 							Dimensions: model.TaskDimensions{
 								"pool": {"pool"},
@@ -499,7 +504,7 @@ func TestCreation(t *testing.T) {
 			assert.Loosely(t, trs, should.NotBeNil)
 			assert.That(
 				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
-				should.Equal("2cbe1fa55012fa10"))
+				should.Equal("fa798ce1e012fa10"))
 
 			updatedTR := res.Request
 			updatedTRProto := updatedTR.ToProto()
@@ -527,8 +532,11 @@ func TestCreation(t *testing.T) {
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
 			assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
-				"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+				"rbe-instance/swarming-fa798ce1e012fa10-0-0",
 			}))
+
+			assert.That(t, ttr.Expiration.Get(), should.Match(now.Add(5*time.Minute)))
+			assert.That(t, trs.SliceExpiration.Get(), should.Match(ttr.Expiration.Get()))
 		})
 
 		t.Run("OK_termination_task", func(t *ftt.Test) {
@@ -601,7 +609,7 @@ func TestCreation(t *testing.T) {
 			assert.Loosely(t, trs, should.NotBeNil)
 			assert.That(
 				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
-				should.Equal("2cbe1fa55012fa10"))
+				should.Equal("fa798ce1e012fa10"))
 			assert.That(t, trs.Tags, should.Match([]string{
 				"id:bot-0",
 				"rbe:rbe-instance",
@@ -628,7 +636,7 @@ func TestCreation(t *testing.T) {
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
 			assert.That(t, tqt.Pending(tqt.EnqueueRBE), should.Match([]string{
-				"rbe-instance/swarming-2cbe1fa55012fa10-0-0",
+				"rbe-instance/swarming-fa798ce1e012fa10-0-0",
 			}))
 		})
 	})

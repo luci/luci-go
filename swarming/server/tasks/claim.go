@@ -131,13 +131,13 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 	trs.BotID.Set(botID)
 	trs.TryNumber.Set(1)
 
+	// Mark TaskToRun as claimed (this updates `trs` as well).
+	trs.ConsumeTaskToRun(ttr, op.ClaimID)
+
 	// Repopulate ServerVersions which was clobbered in TaskResultCommon
 	// assignment above. Note that TaskRunResult was touched only by one server
 	// version (we just created it), but TaskResultSummary can be touched by many.
 	trs.ServerVersions = trsServerVers.ToSortedSlice()
-
-	// Mark TaskToRun as claimed.
-	ttr.Consume(op.ClaimID)
 
 	// Store this all back.
 	if err := datastore.Put(ctx, ttr, trs, run); err != nil {

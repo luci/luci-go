@@ -108,10 +108,9 @@ func TestExpireSliceTxn(t *testing.T) {
 				Created: createTime,
 				Tags:    req.Tags,
 				TaskResultCommon: model.TaskResultCommon{
-					State:            apipb.TaskState_PENDING,
-					Modified:         createTime,
-					ServerVersions:   []string{"prev-version"},
-					CurrentTaskSlice: int64(sliceIdx),
+					State:          apipb.TaskState_PENDING,
+					Modified:       createTime,
+					ServerVersions: []string{"prev-version"},
 				},
 				RequestPriority: 20,
 			}
@@ -132,6 +131,7 @@ func TestExpireSliceTxn(t *testing.T) {
 				ttr.Expiration.Set(exp)
 			}
 
+			trs.ActivateTaskToRun(ttr)
 			assert.NoErr(t, datastore.Put(ctx, trs, ttr))
 			return trs, ttr
 		}
@@ -191,6 +191,7 @@ func TestExpireSliceTxn(t *testing.T) {
 			assert.That(t, loadedTRS.Abandoned.Get(), should.Match(testTime))
 			assert.That(t, loadedTRS.InternalFailure, should.BeFalse)
 			assert.That(t, loadedTRS.ExpirationDelay.Get(), should.Equal(time.Minute.Seconds()))
+			assert.That(t, loadedTRS.SliceExpiration.IsSet(), should.BeFalse)
 			assert.That(t, loadedTRS.ServerVersions, should.Match([]string{"cur-version", "prev-version"}))
 
 			assert.That(t, loadedTTR.IsReapable(), should.BeFalse)
@@ -233,6 +234,7 @@ func TestExpireSliceTxn(t *testing.T) {
 			assert.That(t, loadedTRS.Abandoned.Get(), should.Match(testTime))
 			assert.That(t, loadedTRS.InternalFailure, should.BeFalse)
 			assert.That(t, loadedTRS.ExpirationDelay.IsSet(), should.BeFalse)
+			assert.That(t, loadedTRS.SliceExpiration.IsSet(), should.BeFalse)
 
 			assert.That(t, loadedTTR.IsReapable(), should.BeFalse)
 			assert.That(t, loadedTTR.ExpirationDelay.IsSet(), should.BeFalse)
@@ -275,6 +277,7 @@ func TestExpireSliceTxn(t *testing.T) {
 			assert.That(t, loadedTRS.InternalFailure, should.BeTrue)
 			assert.That(t, loadedTRS.BotID.Get(), should.Equal(culpritBot))
 			assert.That(t, loadedTRS.ExpirationDelay.IsSet(), should.BeFalse)
+			assert.That(t, loadedTRS.SliceExpiration.IsSet(), should.BeFalse)
 
 			assert.That(t, loadedTTR.IsReapable(), should.BeFalse)
 			assert.That(t, loadedTTR.ExpirationDelay.IsSet(), should.BeFalse)
@@ -305,8 +308,10 @@ func TestExpireSliceTxn(t *testing.T) {
 			assert.That(t, loadedTRS.Completed.Get(), should.Match(now))
 			assert.That(t, loadedTRS.Abandoned.Get(), should.Match(now))
 			assert.That(t, loadedTRS.InternalFailure, should.BeFalse)
+
 			// The task is not really expired.
 			assert.That(t, loadedTRS.ExpirationDelay.Get(), should.Equal(0.0))
+			assert.That(t, loadedTRS.SliceExpiration.IsSet(), should.BeFalse)
 			assert.That(t, loadedTRS.ServerVersions, should.Match([]string{"cur-version", "prev-version"}))
 
 			assert.That(t, loadedTTR.IsReapable(), should.BeFalse)
@@ -336,7 +341,8 @@ func TestExpireSliceTxn(t *testing.T) {
 
 			assert.That(t, loadedTRS.State, should.Equal(apipb.TaskState_PENDING)) // Still pending
 			assert.That(t, loadedTRS.Modified, should.Match(testTime))
-			assert.That(t, loadedTRS.CurrentTaskSlice, should.Equal(int64(1))) // Moved to next slice
+			assert.That(t, loadedTRS.CurrentTaskSlice, should.Equal(int64(1)))                            // Moved to next slice
+			assert.That(t, loadedTRS.SliceExpiration.Get(), should.Match(createTime.Add(20*time.Minute))) // slice 1 expiry time
 			assert.That(t, loadedTRS.Completed.IsSet(), should.BeFalse)
 			assert.That(t, loadedTRS.Abandoned.IsSet(), should.BeFalse)
 			assert.That(t, loadedTRS.ServerVersions, should.Match([]string{"cur-version", "prev-version"}))

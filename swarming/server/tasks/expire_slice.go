@@ -82,7 +82,7 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 		return nil
 	}
 
-	tpPut := []any{ttr, trs}
+	toPut := []any{ttr, trs}
 	var terminalState apipb.TaskState
 	switch op.Reason {
 	case Expired:
@@ -97,34 +97,33 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 
 	now := clock.Now(ctx).UTC()
 
-	// Update current TaskToRun
+	// Update the current TaskToRun.
 	curIdx := ttr.TaskSliceIndex()
 	if terminalState == apipb.TaskState_EXPIRED {
 		delay := now.Sub(ttr.Expiration.Get()).Seconds()
 		ttr.ExpirationDelay.Set(max(0.0, delay))
 	}
-	ttr.Consume("")
+	trs.ConsumeTaskToRun(ttr, "")
 
 	// Create the next TaskToRun if there are more slices to run.
 	var newTTR *model.TaskToRun
-	var err error
-	nextIdx := curIdx + 1
-	if nextIdx < len(op.Request.TaskSlices) {
+	if nextIdx := curIdx + 1; nextIdx < len(op.Request.TaskSlices) {
+		var err error
 		newTTR, err = model.NewTaskToRun(ctx, m.serverProject, op.Request, nextIdx)
 		if err != nil {
 			return err
 		}
-		tpPut = append(tpPut, newTTR)
+		toPut = append(toPut, newTTR)
 		if err := EnqueueRBENew(ctx, m.disp, op.Request, newTTR, op.Config); err != nil {
 			return err
 		}
 	}
 
-	// Update TaskResultSummary
+	// Update TaskResultSummary.
 	trs.Modified = now
 	trs.ServerVersions = addServerVersion(trs.ServerVersions, m.serverVersion)
 	if newTTR != nil {
-		trs.CurrentTaskSlice = int64(nextIdx)
+		trs.ActivateTaskToRun(newTTR)
 	} else {
 		trs.State = terminalState
 		trs.Completed.Set(now)
@@ -139,7 +138,7 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 		}
 	}
 
-	if err := datastore.Put(ctx, tpPut...); err != nil {
+	if err := datastore.Put(ctx, toPut...); err != nil {
 		return err
 	}
 

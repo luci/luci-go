@@ -105,6 +105,22 @@ func (o *Optional[T, I]) Unset() {
 	o.val = zero
 }
 
+// AsIndexed returns an indexed copy of this property.
+func (o *Optional[T, I]) AsIndexed() Optional[T, Indexed] {
+	return Optional[T, Indexed]{
+		isSet: o.isSet,
+		val:   o.val,
+	}
+}
+
+// AsUnindexed returns an unindexed copy of this property.
+func (o *Optional[T, I]) AsUnindexed() Optional[T, Unindexed] {
+	return Optional[T, Unindexed]{
+		isSet: o.isSet,
+		val:   o.val,
+	}
+}
+
 // FromProperty implements PropertyConverter.
 func (o *Optional[T, I]) FromProperty(prop Property) error {
 	if prop.Type() == PTNull {
@@ -181,6 +197,22 @@ func (o *Nullable[T, I]) Unset() {
 	var zero T
 	o.isSet = false
 	o.val = zero
+}
+
+// AsIndexed returns an indexed copy of this property.
+func (o *Nullable[T, I]) AsIndexed() Nullable[T, Indexed] {
+	return Nullable[T, Indexed]{
+		isSet: o.isSet,
+		val:   o.val,
+	}
+}
+
+// AsUnindexed returns an unindexed copy of this property.
+func (o *Nullable[T, I]) AsUnindexed() Nullable[T, Unindexed] {
+	return Nullable[T, Unindexed]{
+		isSet: o.isSet,
+		val:   o.val,
+	}
 }
 
 // FromProperty implements PropertyConverter.

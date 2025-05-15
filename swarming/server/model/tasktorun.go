@@ -55,7 +55,9 @@ const (
 //
 // The entity starts its life in reapable state and then transitions to consumed
 // state either by being picked up by a bot for execution or when it expires.
-// Consumed state is final.
+// Consumed state is final. Consumption happens through parent TaskResultSummary
+// entity (since in all cases its state needs to be updated transactionally with
+// consumption of TaskToRun).
 //
 // The key ID is (see TaskToRunID):
 // - lower 4 bits is the try number. The only supported value is 1 now.
@@ -111,6 +113,10 @@ type TaskToRun struct {
 	// It is unset when the TaskToRun is claimed, canceled or expires.
 	//
 	// Used in both native and RBE mode.
+	//
+	// TODO: Remove the index once Python code is not running anymore. Go code
+	// periodically scans all pending jobs (to collect statistics) and it does
+	// late slice expiration that way, it doesn't need an index.
 	Expiration datastore.Optional[time.Time, datastore.Indexed] `gae:"expiration_ts"`
 
 	// QueueNumber is a magical number by which bots and tasks find one another.
@@ -122,6 +128,8 @@ type TaskToRun struct {
 	// then timestamp.
 	//
 	// Gets unset when the TaskToRun is consumed.
+	//
+	// TODO: Remove once Python code is gone. Go code is not using this.
 	QueueNumber datastore.Optional[int64, datastore.Indexed] `gae:"queue_number"`
 
 	// ClaimID is set if some bot claimed this TaskToRun and will execute it.
@@ -164,13 +172,6 @@ func (t *TaskToRun) TaskRequestKey() *datastore.Key {
 // IsReapable returns true if the TaskToRun is still pending.
 func (t *TaskToRun) IsReapable() bool {
 	return t.Expiration.IsSet()
-}
-
-// Consume moves t into non-reapable state (e.g. when canceling).
-func (t *TaskToRun) Consume(claimID string) {
-	t.ClaimID = datastore.NewUnindexedOptional(claimID)
-	t.Expiration = datastore.Optional[time.Time, datastore.Indexed]{}
-	t.QueueNumber = datastore.Optional[int64, datastore.Indexed]{}
 }
 
 // TaskSliceIndex returns the entity's task slice index.

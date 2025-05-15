@@ -168,14 +168,14 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 	var ttr *model.TaskToRun
 	if dupResult == nil {
 		// The task has to run.
-		// Start with zeroth slice. If there are slices that can't execute due
-		// to missing bots, there will be a ping pong game between Swarming and
-		// RBE skipping them.
-		trs.CurrentTaskSlice = 0
-		ttr, err = model.NewTaskToRun(ctx, m.serverProject, tr, int(trs.CurrentTaskSlice))
+		// Start with zeroth slice (the last argument). If there are slices that
+		// can't execute due to missing bots, there will be a ping pong game between
+		// Swarming and RBE skipping them.
+		ttr, err = model.NewTaskToRun(ctx, m.serverProject, tr, 0)
 		if err != nil {
 			return nil, err
 		}
+		trs.ActivateTaskToRun(ttr)
 
 		if tr.ResultDB.Enable {
 			taskRunID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)

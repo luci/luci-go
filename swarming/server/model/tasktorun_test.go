@@ -87,14 +87,6 @@ func TestTaskToRuns(t *testing.T) {
 		}
 		assert.NoErr(t, datastore.Put(ctx, toPut...))
 
-		t.Run("Consume", func(t *ftt.Test) {
-			claimID := "claim_id"
-			toRuns[0].Consume(claimID)
-			assert.Loosely(t, toRuns[0].ClaimID.Get(), should.Equal(claimID))
-			assert.Loosely(t, toRuns[0].Expiration.Get().IsZero(), should.BeTrue)
-			assert.Loosely(t, toRuns[0].QueueNumber.Get(), should.BeZero)
-		})
-
 		t.Run("TaskSliceIndex", func(t *ftt.Test) {
 			for i := range len(toRuns) {
 				assert.That(t, toRuns[i].TaskSliceIndex(), should.Equal(i))
