@@ -99,13 +99,33 @@ func main() {
 		})
 
 		cron.RegisterHandler("report-tasks", func(ctx context.Context) error {
-			return scan.ActiveTasks(ctx, []scan.TaskVisitor{
+
+			visitors := []scan.TaskVisitor{
 				&scan.ActiveJobsReporter{
 					ServiceName: srv.Options.TsMonServiceName,
 					JobName:     srv.Options.TsMonJobName,
 					Monitor:     mon,
 				},
-			})
+			}
+
+			// Reuse `-allow-abandoning-tasks` flag value to conditionally enable new
+			// task slice expiration code path. This is a hack. This new scanner
+			// doesn't really abandon tasks (but it should not be used in the same
+			// environments where -allow-abandoning-tasks is "no", so it's fine
+			// to reuse the flag).
+			if *allowAbandoningTasks == "yes" {
+				conf, err := cfg.Latest(ctx)
+				if err != nil {
+					return errors.Annotate(err, "failed to fetch the service config").Err()
+				}
+				visitors = append(visitors, &scan.SliceExpirationEnforcer{
+					GracePeriod:  time.Minute,
+					TasksManager: tasksManager,
+					Config:       conf,
+				})
+			}
+
+			return scan.ActiveTasks(ctx, visitors)
 		})
 
 		return nil
