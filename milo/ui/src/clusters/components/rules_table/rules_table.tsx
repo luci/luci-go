@@ -39,12 +39,12 @@ interface Props {
 
 const RulesTable = ({ project }: Props) => {
   const {
-    isLoading: isConfigLoading,
+    isPending: isConfigLoading,
     data: projectConfig,
     error: configError,
   } = useFetchProjectConfig(project);
 
-  const { isLoading, data: rules, error } = useFetchRules(project);
+  const { isPending, data: rules, error } = useFetchRules(project);
 
   const policyIDs =
     projectConfig?.bugManagement?.policies?.map((p) => p.id) || [];
@@ -56,7 +56,7 @@ const RulesTable = ({ project }: Props) => {
   if (configError) {
     return <LoadErrorAlert entityName="project config" error={configError} />;
   }
-  if (isLoading || isConfigLoading) {
+  if (isPending || isConfigLoading) {
     return <LinearProgress />;
   }
 

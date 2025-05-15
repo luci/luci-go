@@ -125,7 +125,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(0, 2),
         isLoading: false,
       },
-      expect.anything(),
+      undefined,
     );
     endedBuildsTableMock.mockClear();
 
@@ -140,7 +140,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(2, 4),
         isLoading: false,
       },
-      expect.anything(),
+      undefined,
     );
     endedBuildsTableMock.mockClear();
 
@@ -158,7 +158,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: builds.slice(1, 3),
         isLoading: false,
       },
-      expect.anything(),
+      undefined,
     );
 
     const buildStatusFilter = screen.getByRole('combobox', {
@@ -185,7 +185,7 @@ describe('EndedBuildsSection', () => {
         endedBuilds: [],
         isLoading: false,
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

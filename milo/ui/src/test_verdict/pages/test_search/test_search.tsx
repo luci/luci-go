@@ -14,7 +14,7 @@
 
 import Box from '@mui/material/Box';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {

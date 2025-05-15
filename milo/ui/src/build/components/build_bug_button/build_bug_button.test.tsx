@@ -46,8 +46,8 @@ describe('<BuildBugButton />', () => {
     getProjectCfgMock.mockClear();
   });
 
-  it('e2e', async () => {
-    const { rerender } = render(
+  it('button does not render', async () => {
+    render(
       <FakeContextProvider>
         <BuildBugButton project="proj" />
       </FakeContextProvider>,
@@ -59,8 +59,10 @@ describe('<BuildBugButton />', () => {
       GetProjectCfgRequest.fromPartial({ project: 'proj' }),
     );
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
 
-    rerender(
+  it('button renders', async () => {
+    render(
       <FakeContextProvider>
         <BuildBugButton
           project="proj"
@@ -71,6 +73,7 @@ describe('<BuildBugButton />', () => {
         />
       </FakeContextProvider>,
     );
+    await act(() => jest.runAllTimersAsync());
 
     // The bug button is only rendered when `build` is populated.
     expect(screen.getByRole('button')).toBeInTheDocument();

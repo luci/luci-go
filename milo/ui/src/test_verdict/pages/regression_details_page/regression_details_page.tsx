@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';

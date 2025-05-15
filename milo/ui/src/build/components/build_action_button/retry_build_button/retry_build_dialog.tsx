@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
@@ -76,7 +76,7 @@ export function RetryBuildDialog({
         <LoadingButton
           onClick={() => retryBuildMutation.mutate()}
           variant="contained"
-          loading={retryBuildMutation.isLoading}
+          loading={retryBuildMutation.isPending}
         >
           Confirm
         </LoadingButton>

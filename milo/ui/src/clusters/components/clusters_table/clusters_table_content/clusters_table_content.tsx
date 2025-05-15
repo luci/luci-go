@@ -58,7 +58,7 @@ const ClustersTableContent = ({ project }: Props) => {
     interval: interval,
   };
   const {
-    isLoading: isBasicSummariesLoading,
+    isPending: isBasicSummariesLoading,
     isSuccess: isBasicSummariesSuccess,
     data: basicSummaries,
     error: basicSummariesError,

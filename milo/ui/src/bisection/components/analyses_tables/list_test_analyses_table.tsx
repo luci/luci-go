@@ -22,9 +22,9 @@ import TablePagination, {
   LabelDisplayedRowsArgs,
 } from '@mui/material/TablePagination';
 import Typography from '@mui/material/Typography';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router';
 
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import {
@@ -74,12 +74,12 @@ export function ListTestAnalysesTable() {
 
   const client = useAnalysesClient();
   const {
-    isLoading,
+    isPending,
     isError,
     data: response,
     error,
     isFetching,
-    isPreviousData,
+    isPlaceholderData,
   } = useQuery({
     ...client.ListTestAnalyses.query(
       ListTestAnalysesRequest.fromPartial({
@@ -89,17 +89,20 @@ export function ListTestAnalysesTable() {
         fields: MASK,
       }),
     ),
-    keepPreviousData: true,
-    onSuccess: (response) => {
-      // Record the page token for the next page of analyses
-      if (response.nextPageToken) {
-        const nextPageStartIndex = (page + 1) * pageSize;
+    placeholderData: keepPreviousData,
+  });
+
+  useEffect(() => {
+    // Record the page token for the next page of analyses
+    if (response && response.nextPageToken) {
+      const nextPageStartIndex = (page + 1) * pageSize;
+      if (!pageTokens.has(nextPageStartIndex)) {
         setPageTokens(
           new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
         );
       }
-    },
-  });
+    }
+  }, [page, pageSize, pageTokens, response]);
 
   const analyses: readonly TestAnalysis[] = response?.analyses || [];
 
@@ -115,7 +118,7 @@ export function ListTestAnalysesTable() {
     setPage(0);
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
@@ -151,7 +154,7 @@ export function ListTestAnalysesTable() {
     <Box data-testid="list-analyses-table">
       <TestAnalysesTable analyses={analyses} />
       <>
-        {!isFetching || !isPreviousData ? (
+        {!isFetching || !isPlaceholderData ? (
           <TablePagination
             component="div"
             count={-1}
@@ -164,7 +167,13 @@ export function ListTestAnalysesTable() {
               `${from}-${from + analyses.length - 1}`
             }
             // disable the "next" button if there are no more analyses
-            nextIconButtonProps={{ disabled: isLastPage }}
+            slotProps={{
+              actions: {
+                nextButton: {
+                  disabled: isLastPage,
+                },
+              },
+            }}
           />
         ) : (
           <Box

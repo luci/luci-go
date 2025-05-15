@@ -67,7 +67,7 @@ export function InstructionDialog({
 }: InstructionDialogProps) {
   // Load instruction.
   const client = useResultDbClient();
-  const { isLoading, isError, data } = useQuery({
+  const { isPending, isError, data } = useQuery({
     ...client.QueryInstruction.query(
       QueryInstructionRequest.fromPartial({ name: instructionName }),
     ),
@@ -140,7 +140,7 @@ export function InstructionDialog({
               whiteSpace: 'pre-wrap',
             }}
           >
-            {isLoading && <DotSpinner />}
+            {isPending && <DotSpinner />}
             {isError && (
               <Alert severity="error">
                 <AlertTitle>Error</AlertTitle>

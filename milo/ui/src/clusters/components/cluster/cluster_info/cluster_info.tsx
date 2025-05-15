@@ -18,7 +18,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import CodeBlock from '@/clusters/components/codeblock/codeblock';
@@ -81,7 +81,7 @@ const ClusterInfo = () => {
   } = useContext(ClusterContext);
 
   const {
-    isLoading,
+    isPending,
     isSuccess,
     data: cluster,
     error,
@@ -98,7 +98,7 @@ const ClusterInfo = () => {
     <Paper data-cy="cluster-info" elevation={3} sx={{ pt: 2, pb: 2, mt: 1 }}>
       <Container maxWidth={false}>
         <PanelHeading gutterBottom>{criteriaName}</PanelHeading>
-        {isLoading && <CentralizedProgress />}
+        {isPending && <CentralizedProgress />}
         {error && <LoadErrorAlert entityName="cluster" error={error} />}
         {isSuccess && cluster && <ClusterDetails cluster={cluster} />}
       </Container>

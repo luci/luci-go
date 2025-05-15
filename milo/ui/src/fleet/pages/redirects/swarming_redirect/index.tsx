@@ -14,7 +14,7 @@
 
 import { Alert, AlertTitle, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { genFeedbackUrl } from '@/common/tools/utils';
@@ -37,7 +37,7 @@ export function SwarmingRedirect() {
     queryFn: () => getRedirectAddress(params['*'], searchParams, client),
   });
 
-  if (q.isLoading) return 'Redirecting...';
+  if (q.isPending) return 'Redirecting...';
 
   if (q.isError)
     return (

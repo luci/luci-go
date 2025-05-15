@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, Link, Typography } from '@mui/material';
-import { createElement } from 'react';
+import { createElement, JSX } from 'react';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
 

@@ -155,7 +155,7 @@ interface OutputBuild extends Build {
 function MyComponent() {
   const client = useBuildsClient();
 
-  const {data, isLoading, isError, error} = useQuery({
+  const {data, isPending, isError, error} = useQuery({
     ...client.GetBuild.query(
       GetBuildRequest.fromPartial({
         mask: {
@@ -169,7 +169,7 @@ function MyComponent() {
   if (isError) {
     throw error;
   }
-  if (isLoading) {
+  if (isPending) {
     return <></>;
   }
 

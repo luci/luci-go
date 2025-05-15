@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Tab, TabProps } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { useActiveTabId } from './context';
 

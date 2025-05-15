@@ -59,7 +59,7 @@ export function MachinePoolSection({
     host: swarmingHost,
     ClientImpl: BotsClientImpl,
   });
-  const { data, error, isError, isSuccess, isLoading } = useQuery({
+  const { data, error, isError, isSuccess, isPending } = useQuery({
     ...client.ListBots.query(
       BotsRequest.fromPartial({
         limit: PAGE_SIZE,
@@ -120,7 +120,7 @@ export function MachinePoolSection({
           </>
         )}
       </h3>
-      {isLoading && <CircularProgress />}
+      {isPending && <CircularProgress />}
       {isPermissionError && (
         <Alert severity="warning">
           <AlertTitle>

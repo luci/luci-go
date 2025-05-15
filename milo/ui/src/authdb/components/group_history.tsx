@@ -179,7 +179,7 @@ export function GroupHistory({ name }: GroupHistoryProps) {
   const pageToken = getPageToken(pagerCtx, searchParams);
 
   const {
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -193,7 +193,7 @@ export function GroupHistory({ name }: GroupHistoryProps) {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

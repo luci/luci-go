@@ -24,7 +24,7 @@ import {
 import { isEqual } from 'lodash-es';
 import { DateTime } from 'luxon';
 import { useState, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import {

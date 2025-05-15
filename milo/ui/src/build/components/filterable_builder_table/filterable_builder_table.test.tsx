@@ -71,7 +71,7 @@ describe('<FilterableBuilderTable />', () => {
         ),
         numOfBuilds: 25,
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

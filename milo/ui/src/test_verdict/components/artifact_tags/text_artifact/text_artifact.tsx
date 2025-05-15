@@ -52,7 +52,7 @@ export function TextArtifact({
     return getRawArtifactURLPath(artifactName);
   }, [invLevel, artifactId, resultName]);
 
-  const { data, isError, error, isLoading } = useQuery({
+  const { data, isError, error, isPending } = useQuery({
     queryKey: [identity, 'fetch-text-artifact', fetchUrl],
     queryFn: async () => {
       const url = urlSetSearchQueryParam(
@@ -94,7 +94,7 @@ export function TextArtifact({
       </Alert>
     );
   }
-  if (isLoading) {
+  if (isPending) {
     return (
       <>
         Loading <DotSpinner />

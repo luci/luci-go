@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Box, Typography } from '@mui/material';
+import { JSX } from 'react';
 
 import { getStatusStyle, StatusStyle } from '@/common/styles/status_styles';
 import { RateBoxDisplayInfo } from '@/test_investigation/utils/test_info_utils';

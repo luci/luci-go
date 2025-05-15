@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { To } from 'react-router-dom';
+import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { BASE_DIMENSIONS } from '@/fleet/components/device_table/dimensions';

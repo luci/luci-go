@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type { RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router';
 
 // We cannot use module alias (e.g. `@/<package>`) here because they are not
 // not supported in vite.config.ts. And we need to import those routes in
@@ -81,8 +81,13 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/build/pages/builder_page'),
   },
   {
-    path: 'b/:buildId/*?',
-    lazy: () => import('@/build/legacy/build_page/build_page_short_link'),
+    path: 'b/:buildId',
+    children: [
+      {
+        path: '*?',
+        lazy: () => import('@/build/legacy/build_page/build_page_short_link'),
+      },
+    ],
   },
   {
     path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
@@ -178,8 +183,14 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/test_verdict/legacy/test_history_page'),
   },
   {
-    path: 'bisection/*',
-    lazy: () => import('@/bisection/pages/redirection_loader'),
+    path: 'bisection',
+    children: [
+      {
+        path: '*',
+        lazy: () => import('@/bisection/pages/redirection_loader'),
+        // index: true,
+      },
+    ],
   },
   {
     path: 'p/:project/bisection',

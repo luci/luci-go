@@ -15,7 +15,7 @@
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import { BUILD_FIELD_MASK } from '@/build/constants';
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
@@ -26,7 +26,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 export function BuildPageShortLink() {
-  const { buildId, ['__luci_ui__-raw-*']: pathSuffix } = useParams();
+  const { buildId, ['*']: pathSuffix } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -50,22 +50,26 @@ export function BuildPageShortLink() {
       }),
     ),
     select: (data) => data as OutputBuild,
-    onSuccess(data) {
+  });
+
+  useEffect(() => {
+    if (build) {
       // Allow GetBuild query using the builder ID + build number to hit the
       // same cache.
       const query = client.GetBuild.query(
         GetBuildRequest.fromPartial({
-          builder: data.builder,
-          buildNumber: data.number,
+          builder: build.builder,
+          buildNumber: build.number,
           mask: {
             fields: BUILD_FIELD_MASK,
           },
         }),
       );
-      queryClient.setQueryDefaults(query.queryKey, { cacheTime: 5000 });
-      queryClient.setQueryData(query.queryKey, data);
-    },
-  });
+      queryClient.setQueryDefaults(query.queryKey, { gcTime: 5000 });
+      queryClient.setQueryData(query.queryKey, build);
+    }
+  }, [client.GetBuild, queryClient, build]);
+
   if (isError) {
     // TODO(b/335065098): display a warning that the build might've expired if
     // the build is not found.

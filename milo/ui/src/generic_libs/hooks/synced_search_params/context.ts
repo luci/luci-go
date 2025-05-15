@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { createContext } from 'react';
-import { NavigateOptions } from 'react-router-dom';
+import { NavigateOptions } from 'react-router';
 
 export const SyncedSearchParamsContext = createContext<
   readonly [URLSearchParams, SetURLSearchParams] | undefined

@@ -23,12 +23,12 @@ import {
 
 const useFetchMetrics = (
   project: string,
-  onSuccess?: (data: ProjectMetric[]) => void,
 ): UseQueryResult<ProjectMetric[], Error> => {
   const metricsService = useMetricsService();
-  return useQuery(
-    ['metrics', project],
-    async () => {
+  return useQuery({
+    queryKey: ['metrics', project],
+
+    queryFn: async () => {
       const request: ListProjectMetricsRequest = {
         parent: 'projects/' + project,
       };
@@ -36,11 +36,9 @@ const useFetchMetrics = (
       const response = await metricsService.ListForProject(request);
       return response.metrics || [];
     },
-    {
-      retry: prpcRetrier,
-      onSuccess: onSuccess,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchMetrics;

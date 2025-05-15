@@ -50,25 +50,26 @@ const ReclusteringProgressIndicator = ({
   const clustersService = useClustersService();
 
   const {
-    isLoading,
+    isPending,
     data: progress,
     error,
-  } = useQuery(
-    ['reclusteringProgress', project],
-    async () => {
+  } = useQuery({
+    queryKey: ['reclusteringProgress', project],
+
+    queryFn: async () => {
       return await fetchProgress(project, clustersService);
     },
-    {
-      refetchInterval: () => {
-        // Only update the progress if we are still less than 100%
-        if (progressPerMille >= 1000) {
-          return false;
-        }
-        return 1000;
-      },
-      retry: prpcRetrier,
+
+    refetchInterval: () => {
+      // Only update the progress if we are still less than 100%
+      if (progressPerMille >= 1000) {
+        return false;
+      }
+      return 1000;
     },
-  );
+
+    retry: prpcRetrier,
+  });
 
   useEffect(() => {
     if (progress) {
@@ -105,14 +106,18 @@ const ReclusteringProgressIndicator = ({
     return <LoadErrorAlert entityName="reclustering progress" error={error} />;
   }
 
-  if (isLoading && !progress) {
+  if (isPending && !progress) {
     // no need to show anything if there is no progress and we are still loading
     return <></>;
   }
 
   const handleRefreshAnalysis = () => {
-    queryClient.invalidateQueries(['cluster']);
-    queryClient.invalidateQueries(['clusterFailures']);
+    queryClient.invalidateQueries({
+      queryKey: ['cluster'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['clusterFailures'],
+    });
     setShow(false);
   };
 

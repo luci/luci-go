@@ -39,7 +39,7 @@ export interface SearchAnalysisTableProps {
 export function SearchAnalysisTable({ bbid }: SearchAnalysisTableProps) {
   const client = useAnalysesClient();
   const {
-    isLoading,
+    isPending,
     isError,
     isSuccess,
     data: response,
@@ -59,7 +59,7 @@ export function SearchAnalysisTable({ bbid }: SearchAnalysisTableProps) {
     enabled: !!bbid,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

@@ -27,8 +27,8 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import {
@@ -61,12 +61,12 @@ export function ListAnalysesTable() {
 
   const client = useAnalysesClient();
   const {
-    isLoading,
+    isPending,
     isError,
     data: response,
     error,
     isFetching,
-    isPreviousData,
+    isPlaceholderData,
   } = useQuery({
     ...client.ListAnalyses.query(
       ListAnalysesRequest.fromPartial({
@@ -74,17 +74,22 @@ export function ListAnalysesTable() {
         pageToken: pageTokens.get(page * pageSize) || '',
       }),
     ),
-    keepPreviousData: true,
-    onSuccess: (response) => {
-      // Record the page token for the next page of analyses
-      if (response.nextPageToken !== null) {
-        const nextPageStartIndex = (page + 1) * pageSize;
-        setPageTokens(
-          new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
-        );
-      }
-    },
+    placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    // Record the page token for the next page of analyses
+    const nextPageStartIndex = (page + 1) * pageSize;
+    if (
+      response &&
+      response.nextPageToken !== null &&
+      !pageTokens.has(nextPageStartIndex)
+    ) {
+      setPageTokens(
+        new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken)),
+      );
+    }
+  }, [page, pageSize, pageTokens, response]);
 
   const analyses: readonly Analysis[] = response?.analyses || [];
 
@@ -107,7 +112,7 @@ export function ListAnalysesTable() {
     return '';
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
@@ -162,7 +167,7 @@ export function ListAnalysesTable() {
         </Table>
       </TableContainer>
       <>
-        {!isFetching || !isPreviousData ? (
+        {!isFetching || !isPlaceholderData ? (
           <TablePagination
             component="div"
             count={-1}
@@ -173,7 +178,13 @@ export function ListAnalysesTable() {
             onRowsPerPageChange={handleChangeRowsPerPage}
             labelDisplayedRows={labelDisplayedRows}
             // disable the "next" button if there are no more analyses
-            nextIconButtonProps={{ disabled: isLastPage }}
+            slotProps={{
+              actions: {
+                nextButton: {
+                  disabled: isLastPage,
+                },
+              },
+            }}
           />
         ) : (
           <Box

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { ReactNode, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import { logging } from '@/common/tools/logging';
 import { useIsDevBuild } from '@/generic_libs/hooks/is_dev_build';

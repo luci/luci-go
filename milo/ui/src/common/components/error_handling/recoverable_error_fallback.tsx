@@ -16,7 +16,7 @@ import { GrpcError } from '@chopsui/prpc-client';
 import { Link } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { FallbackProps } from 'react-error-boundary';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useLatest } from 'react-use';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';

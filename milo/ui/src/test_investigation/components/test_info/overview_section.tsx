@@ -14,7 +14,7 @@
 // limitations under the License.
 
 import { Box, Card, Divider, Typography } from '@mui/material';
-import React from 'react';
+import React, { JSX } from 'react';
 
 import { AssociatedBug } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';

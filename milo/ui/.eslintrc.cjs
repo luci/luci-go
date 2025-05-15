@@ -163,7 +163,7 @@ module.exports = {
           // Ban the use of `useSearchParams` because it may accidentally
           // override search params when updater pattern is used.
           {
-            group: ['react-router-dom'],
+            group: ['react-router'],
             importNames: ['useSearchParams'],
             message: 'use `useSyncedSearchParams` instead',
           },

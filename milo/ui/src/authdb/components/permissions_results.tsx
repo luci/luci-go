@@ -39,7 +39,7 @@ export function PermissionsResults({ principal }: PermissionsResultsProps) {
   const request = principalAsRequestProto(principal);
   const {
     fetchStatus,
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -50,11 +50,11 @@ export function PermissionsResults({ principal }: PermissionsResultsProps) {
   });
 
   // Leave results empty if query is empty.
-  if (fetchStatus === 'idle' && isLoading) {
+  if (fetchStatus === 'idle' && isPending) {
     return <></>;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

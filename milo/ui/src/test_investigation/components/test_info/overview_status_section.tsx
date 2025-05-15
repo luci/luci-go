@@ -15,7 +15,7 @@
 import BugReportIcon from '@mui/icons-material/BugReport';
 import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
 import { Box, Link, Typography } from '@mui/material';
-import React, { useMemo } from 'react';
+import React, { JSX, useMemo } from 'react';
 
 import {
   getStatusStyle,

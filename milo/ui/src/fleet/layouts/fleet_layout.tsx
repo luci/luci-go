@@ -15,7 +15,7 @@
 import { ThemeProvider, styled } from '@mui/material';
 import { NotificationsProvider } from '@toolpad/core/useNotifications';
 import { Helmet } from 'react-helmet';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { useLocalStorage } from 'react-use';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';

@@ -28,20 +28,21 @@ interface Props {
 }
 
 export function TextDiff({ artifact }: Props) {
-  const { data, isError, error, isLoading } = useQuery({
+  const { data, isError, error, isPending } = useQuery({
     queryFn: async () => {
       const res = await fetch(
         urlSetSearchQueryParam(artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT),
       );
       return res.text();
     },
+    queryKey: [artifact.fetchUrl, artifact.artifactId],
   });
 
   if (isError) {
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <CircularProgress />;
   }
 

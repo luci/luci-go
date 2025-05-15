@@ -15,7 +15,7 @@
 import { Box, Link, Skeleton, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import {

@@ -16,7 +16,7 @@ import { LinearProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -39,15 +39,15 @@ export function BuilderGroupPage() {
   useEstablishProjectCtx(project);
 
   const client = useMiloInternalClient();
-  const { data, isLoading, error, isError, fetchNextPage, hasNextPage } =
-    useInfiniteQuery(
-      client.ListBuilders.queryPaged(
+  const { data, isPending, error, isError, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      ...client.ListBuilders.queryPaged(
         ListBuildersRequest.fromPartial({
           project,
           group,
         }),
       ),
-    );
+    });
 
   if (isError) {
     throw error;
@@ -55,11 +55,11 @@ export function BuilderGroupPage() {
 
   // Keep loading until all pages have been loaded.
   useEffect(() => {
-    if (isLoading || !hasNextPage) {
+    if (isPending || !hasNextPage) {
       return;
     }
     fetchNextPage();
-  }, [isLoading, hasNextPage, data?.pages.length, fetchNextPage]);
+  }, [isPending, hasNextPage, data?.pages.length, fetchNextPage]);
 
   const builders = useMemo(
     () => data?.pages.flatMap((p) => p.builders.map((b) => b.id!)) || [],
@@ -76,7 +76,7 @@ export function BuilderGroupPage() {
       <BuilderGroupIdBar project={project} group={group} />
       <LinearProgress
         value={100}
-        variant={isLoading ? 'indeterminate' : 'determinate'}
+        variant={isPending ? 'indeterminate' : 'determinate'}
         color="primary"
       />
       <FilterableBuilderTable

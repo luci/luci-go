@@ -21,19 +21,19 @@ import { ListProjectsRequest } from '@/proto/go.chromium.org/luci/analysis/proto
 const useFetchProjects = () => {
   const service = useProjectsService();
   const request: ListProjectsRequest = {};
-  return useQuery(
-    ['projects'],
-    async () => {
+  return useQuery({
+    queryKey: ['projects'],
+
+    queryFn: async () => {
       const response = await service.List(request);
       // Chromium milestone projects are explicitly ignored by the backend, match this in the frontend.
       return response.projects.filter(
         (p) => !/^(chromium|chrome)-m[0-9]+$/.test(p.project),
       );
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchProjects;

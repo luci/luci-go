@@ -23,7 +23,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { TestAnalysisOverview } from '@/bisection/components/analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
@@ -66,7 +66,7 @@ export function TestAnalysisDetailsPage() {
 
   const client = useAnalysesClient();
   const {
-    isLoading,
+    isPending,
     isError,
     data: analysis,
     error,
@@ -93,7 +93,7 @@ export function TestAnalysisDetailsPage() {
     );
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box
         display="flex"
@@ -105,7 +105,7 @@ export function TestAnalysisDetailsPage() {
       </Box>
     );
   }
-  const suspect = analysis.nthSectionResult?.suspect
+  const suspect = analysis?.nthSectionResult?.suspect
     ? [analysis.nthSectionResult.suspect]
     : [];
   return (
@@ -171,7 +171,7 @@ export function TestAnalysisDetailsPage() {
         <Typography variant="h5" gutterBottom>
           Test Failures
         </Typography>
-        <TestFailuresTable testFailures={analysis.testFailures} />
+        <TestFailuresTable testFailures={analysis?.testFailures} />
       </div>
     </>
   );

@@ -24,7 +24,7 @@ import { Range, intersect, splitRange } from '@/generic_libs/tools/num_utils';
 
 export const PENDING_RESULT: Omit<
   UseQueryResult<never, never>,
-  'refetch' | 'remove'
+  'refetch' | 'remove' | 'promise'
 > = Object.freeze({
   data: undefined,
   dataUpdatedAt: 0,
@@ -36,7 +36,8 @@ export const PENDING_RESULT: Omit<
   isError: false,
   isFetched: false,
   isFetchedAfterMount: false,
-  isFetching: false,
+  isFetching: true,
+  isPending: true,
   isLoading: true,
   isLoadingError: false,
   isInitialLoading: true,
@@ -47,7 +48,7 @@ export const PENDING_RESULT: Omit<
   isRefetching: false,
   isStale: false,
   isSuccess: false,
-  status: 'loading',
+  status: 'pending',
   fetchStatus: 'idle',
 });
 
@@ -129,7 +130,7 @@ export interface UseVirtualizedQueryResult<TDataItem, TError = unknown> {
    */
   get(
     index: number,
-  ): Omit<UseQueryResult<TDataItem, TError>, 'refetch' | 'remove'>;
+  ): Omit<UseQueryResult<TDataItem, TError>, 'refetch' | 'remove' | 'promise'>;
 }
 
 /**
@@ -138,7 +139,7 @@ export interface UseVirtualizedQueryResult<TDataItem, TError = unknown> {
  */
 export function useVirtualizedQuery<TQueryFnData, TDataItem, TError = unknown>(
   opts: UseVirtualizedQueryOption<TQueryFnData, TDataItem, TError>,
-): UseVirtualizedQueryResult<TDataItem, TError> {
+): UseVirtualizedQueryResult<TDataItem, TError | Error> {
   const [startBound, endBound] = opts.rangeBoundary;
   const { ticks, base, getChunkIndexRange } = useMemo(() => {
     // Splits the boundary into multiple aligned chunks. So

@@ -15,7 +15,7 @@
 import { Alert, AlertTitle, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { getInvURLPath } from '@/common/tools/url_utils';
@@ -52,7 +52,7 @@ export function ArtifactsEntry({ testResultName }: ArtifactsEntryProps) {
   );
 
   const isLoading =
-    resultArtifactsQuery.isLoading || invArtifactsQuery.isLoading;
+    resultArtifactsQuery.isPending || invArtifactsQuery.isPending;
   const artifactsCount =
     (resultArtifactsQuery.data?.artifacts.length || 0) +
     (invArtifactsQuery.data?.artifacts.length || 0);

@@ -15,7 +15,7 @@
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';

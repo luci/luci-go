@@ -36,7 +36,7 @@ export function TestPropertiesEntry({
 }: TestPropertiesEntryProps) {
   const [testPropertiesExpanded, setTestPropertiesExpanded] = useState(false);
   const project = extractProject(projectOrRealm);
-  const { data, isSuccess, isLoading } = useTestMetadata(
+  const { data, isSuccess, isPending } = useTestMetadata(
     QueryTestMetadataRequest.fromPartial({
       project,
       predicate: { testIds: [testId] },
@@ -44,7 +44,7 @@ export function TestPropertiesEntry({
   );
   return (
     <>
-      {!isLoading && isSuccess && data?.testMetadata?.properties && (
+      {!isPending && isSuccess && data?.testMetadata?.properties && (
         <ExpandableEntry expanded={testPropertiesExpanded}>
           <div css={{ color: 'var(--light-text-color)' }}>
             <ExpandableEntryHeader onToggle={setTestPropertiesExpanded}>

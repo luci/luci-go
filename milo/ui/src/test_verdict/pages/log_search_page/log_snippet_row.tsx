@@ -15,7 +15,7 @@
 import { Box, Link, styled } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { parseArtifactName } from '@/common/services/resultdb';

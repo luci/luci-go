@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RouteObject } from 'react-router-dom';
+import { RouteObject } from 'react-router';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
@@ -20,8 +20,14 @@ import { RouteObject } from 'react-router-dom';
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
 export const authRoutes: RouteObject[] = [
   {
-    path: 'groups/*',
-    lazy: () => import('@/authdb/pages/groups_page'),
+    path: 'groups',
+    children: [
+      {
+        path: '*',
+        lazy: () => import('@/authdb/pages/groups_page'),
+        index: true,
+      },
+    ],
   },
   {
     path: 'lookup',

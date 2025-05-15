@@ -25,6 +25,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
+import { JSX } from 'react';
 
 import { CustomArtifactTreeNode } from './types';
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 

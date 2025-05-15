@@ -57,7 +57,7 @@ interface MonitoringContext {
   readonly bugsLoading?: boolean;
 }
 
-interface BugsQueryError {
+interface BugsQueryError extends Error {
   readonly result: {
     error: {
       message: string;

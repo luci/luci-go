@@ -15,7 +15,7 @@
 import { Alert, Box, Link } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import { useInterval } from 'react-use';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';

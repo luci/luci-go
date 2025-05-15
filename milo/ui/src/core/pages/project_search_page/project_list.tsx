@@ -33,14 +33,14 @@ export interface ProjectListProps {
 
 export function ProjectList({ searchQuery }: ProjectListProps) {
   const client = useMiloInternalClient();
-  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfiniteQuery(
-      client.ListProjects.query(
+  const { data, isError, error, isPending, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      ...client.ListProjects.queryPaged(
         ListProjectsRequest.fromPartial({
           pageSize: 10000,
         }),
       ),
-    );
+    });
 
   if (isError) {
     throw error;
@@ -48,10 +48,10 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
 
   // Keep loading projects until all pages are loaded.
   useEffect(() => {
-    if (!isLoading && hasNextPage) {
+    if (!isPending && hasNextPage) {
       fetchNextPage();
     }
-  }, [fetchNextPage, isLoading, hasNextPage]);
+  }, [fetchNextPage, isPending, hasNextPage]);
 
   // Computes `projects` separately so it's not re-computed when only
   // `searchQuery` is updated.
@@ -123,10 +123,10 @@ export function ProjectList({ searchQuery }: ProjectListProps) {
         onSelectProjectNotification={saveRecentProject}
       />
       <Box sx={{ textAlign: 'center', padding: '20px' }}>
-        {!isLoading && filteredProjects.length === 0 && (
+        {!isPending && filteredProjects.length === 0 && (
           <Typography>No projects match your filter.</Typography>
         )}
-        {isLoading && <CircularProgress />}
+        {isPending && <CircularProgress />}
       </Box>
     </>
   );

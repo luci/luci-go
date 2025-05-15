@@ -17,7 +17,7 @@ import { TextField, TextFieldProps } from '@mui/material';
 import _ from 'lodash';
 
 export type SearchInputProps = TextFieldProps & {
-  searchInput: React.RefObject<HTMLInputElement>;
+  searchInput: React.RefObject<HTMLInputElement | null>;
   searchQuery: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };

@@ -29,31 +29,31 @@ export const useMutateRule = (
   const queryClient = useQueryClient();
   const { setSnack } = useContext(SnackbarContext);
 
-  return useMutation(
-    (updateRuleRequest: UpdateRuleRequest) =>
+  return useMutation({
+    mutationFn: (updateRuleRequest: UpdateRuleRequest) =>
       ruleService.Update(updateRuleRequest),
-    {
-      onSuccess: (data) => {
-        queryClient.setQueryData(['rules', data.project, data.ruleId], data);
-        setSnack({
-          open: true,
-          message: 'Rule updated successfully',
-          severity: 'success',
-        });
-        if (successCallback) {
-          successCallback();
-        }
-      },
-      onError: (error) => {
-        setSnack({
-          open: true,
-          message: `Failed to mutate rule due to: ${error}`,
-          severity: 'error',
-        });
-        if (errorCallback) {
-          errorCallback();
-        }
-      },
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(['rules', data.project, data.ruleId], data);
+      setSnack({
+        open: true,
+        message: 'Rule updated successfully',
+        severity: 'success',
+      });
+      if (successCallback) {
+        successCallback();
+      }
     },
-  );
+
+    onError: (error) => {
+      setSnack({
+        open: true,
+        message: `Failed to mutate rule due to: ${error}`,
+        severity: 'error',
+      });
+      if (errorCallback) {
+        errorCallback();
+      }
+    },
+  });
 };

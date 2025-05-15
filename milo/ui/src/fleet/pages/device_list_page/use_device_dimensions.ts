@@ -33,7 +33,7 @@ export const useDeviceDimensions = () => {
     queryFn: client.GetDeviceDimensions.query({}).queryFn,
     // By default staleTime is zero,
     // so it updates the cache data every time.
-    cacheTime: Infinity,
+    gcTime: Infinity,
   });
 
   return devicesQuery;

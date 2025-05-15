@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { JSX } from 'react';
+
 export interface InfoLineItem {
   label: string;
   value?: string;

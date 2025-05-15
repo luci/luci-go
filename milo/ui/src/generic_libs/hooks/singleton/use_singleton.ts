@@ -53,7 +53,7 @@ export function useSingleton<T>({ key, fn }: UseSingletonOptions<T>): T {
     );
   }
 
-  const hookId = useRef();
+  const hookId = useRef(undefined);
   const strKey = stableStringify(key);
   const handle = store.getOrCreate(hookId, strKey, fn);
 

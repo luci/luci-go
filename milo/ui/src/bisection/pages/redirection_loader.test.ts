@@ -20,6 +20,7 @@ describe('redirectionLoader', () => {
       const response = redirectionLoader({
         request: new Request('https://luci-milo-dev.appspot.com/ui/bisection'),
         params: {},
+        context: '',
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
@@ -32,6 +33,7 @@ describe('redirectionLoader', () => {
           'https://luci-milo-dev.appspot.com/ui/bisection/analysis',
         ),
         params: {},
+        context: '',
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
@@ -44,6 +46,7 @@ describe('redirectionLoader', () => {
           'https://luci-milo-dev.appspot.com/ui/bisection/test-analysis',
         ),
         params: {},
+        context: '',
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
@@ -58,6 +61,7 @@ describe('redirectionLoader', () => {
           'https://luci-milo-dev.appspot.com/ui/bisection/analysis/b/123',
         ),
         params: {},
+        context: '',
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(
@@ -70,6 +74,7 @@ describe('redirectionLoader', () => {
           'https://luci-milo-dev.appspot.com/ui/bisection/test-analysis/b/123',
         ),
         params: {},
+        context: '',
       });
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toEqual(

@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { DurationBadge } from '@/common/components/duration_badge';
 import { TagsEntry } from '@/common/components/tags_entry';

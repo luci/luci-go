@@ -32,7 +32,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { nameRe, stripPrefix } from '@/authdb/common/helpers';
 import { AuthTableList } from '@/authdb/components/auth_table_list';
@@ -84,16 +84,13 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
   const globsRef = createRef<FormListElement>();
   const client = useAuthServiceGroupsClient();
   const {
-    isLoading,
+    isPending,
     isError,
     data: response,
     error,
     refetch,
   } = useQuery({
     ...client.GetGroup.query({ name: name }),
-    onSuccess: (response) => {
-      setIsExternal(isExternalGroupName(response?.name));
-    },
     refetchOnWindowFocus: false,
   });
 
@@ -258,7 +255,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
     setOpenDeleteDialog(false);
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
@@ -297,6 +294,9 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
   const callerCanModify: boolean = response?.callerCanModify || false;
   const callerCanViewMembers: boolean = response?.callerCanViewMembers || false;
   const numRedacted: number = response?.numRedacted || 0;
+  if (isExternal === undefined) {
+    setIsExternal(isExternalGroupName(response?.name || ''));
+  }
 
   return (
     <>

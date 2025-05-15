@@ -15,7 +15,7 @@
 import { Box, CircularProgress, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PropertyViewer } from '@/common/components/property_viewer';
@@ -51,14 +51,14 @@ export function DetailsTab() {
     data: invocation,
     error,
     isError,
-    isLoading,
+    isPending,
   } = useQuery({
     ...client.GetInvocation.query({ name: 'invocations/' + invId }),
   });
   if (isError) {
     throw error;
   }
-  if (isLoading) {
+  if (isPending) {
     return (
       <Container>
         <Box display="flex" justifyContent="center" alignItems="center">
@@ -75,37 +75,43 @@ export function DetailsTab() {
         <tbody>
           <StringRow
             label="State"
-            value={invocation_StateToJSON(invocation.state)}
+            value={invocation ? invocation_StateToJSON(invocation.state) : ''}
           />
-          <StringRow label="Realm" value={invocation.realm} />
-          <StringRow label="Created By" value={invocation.createdBy} />
-          <StringRow label="Baseline" value={invocation.baselineId || 'N/A'} />
+          <StringRow label="Realm" value={invocation ? invocation.realm : ''} />
+          <StringRow
+            label="Created By"
+            value={invocation ? invocation.createdBy : ''}
+          />
+          <StringRow
+            label="Baseline"
+            value={invocation ? invocation.baselineId : 'N/A'}
+          />
           <StringRow
             label="Is Export Root"
-            value={invocation.isExportRoot ? 'True' : 'False'}
+            value={invocation && invocation.isExportRoot ? 'True' : 'False'}
           />
         </tbody>
       </table>
       <h3>Timing</h3>
       <table>
         <tbody>
-          <TimestampRow label="Created At" dateISO={invocation.createTime} />
+          <TimestampRow label="Created At" dateISO={invocation?.createTime} />
           <TimestampRow
             label="Finalizing At"
-            dateISO={invocation.finalizeStartTime}
+            dateISO={invocation?.finalizeStartTime}
           />
           <TimestampRow
             label="Finalized At"
-            dateISO={invocation.finalizeTime}
+            dateISO={invocation?.finalizeTime}
           />
-          <TimestampRow label="Deadline" dateISO={invocation.deadline} />
+          <TimestampRow label="Deadline" dateISO={invocation?.deadline} />
         </tbody>
       </table>
       <>
         <h3>Source Specification</h3>
-        <SourceSpecSection sourceSpec={invocation.sourceSpec} />
+        <SourceSpecSection sourceSpec={invocation?.sourceSpec} />
       </>
-      {invocation.properties !== undefined && (
+      {invocation && invocation.properties !== undefined && (
         <>
           <h3>Properties</h3>
           <PropertyViewer
@@ -114,7 +120,7 @@ export function DetailsTab() {
           />
         </>
       )}
-      {invocation.tags.length ? (
+      {invocation && invocation.tags.length ? (
         <>
           <h3>Tags</h3>
           <table>
@@ -131,7 +137,7 @@ export function DetailsTab() {
       ) : (
         <></>
       )}
-      {invocation.includedInvocations.length ? (
+      {invocation && invocation.includedInvocations.length ? (
         <>
           <h3>
             Included Invocations ({invocation.includedInvocations.length}):

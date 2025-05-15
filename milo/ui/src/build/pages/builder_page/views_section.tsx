@@ -28,7 +28,7 @@ export interface ViewsSectionProps {
 
 export function ViewsSection({ builderId }: ViewsSectionProps) {
   const client = useMiloInternalClient();
-  const { data, error, isError, isLoading } = useQuery(
+  const { data, error, isError, isPending } = useQuery(
     client.QueryConsoles.query(
       QueryConsolesRequest.fromPartial({
         predicate: {
@@ -46,7 +46,7 @@ export function ViewsSection({ builderId }: ViewsSectionProps) {
   return (
     <>
       <h3>Views</h3>
-      {isLoading ? (
+      {isPending ? (
         <CircularProgress />
       ) : (
         <>

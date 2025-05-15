@@ -43,7 +43,7 @@ describe('<BuildIdBar />', () => {
   // This may happen when user lands on the page with a build ID but incorrect
   // builder ID supplied by the URL.
   it('should render the real builder ID', () => {
-    const { rerender } = render(
+    render(
       <FakeContextProvider>
         <BuildContextProvider>
           <BuildIdBar
@@ -61,8 +61,10 @@ describe('<BuildIdBar />', () => {
     expect(screen.getByText('fake-bucket')).toBeInTheDocument();
     expect(screen.getByText('fake-builder')).toBeInTheDocument();
     expect(screen.getByText('b654321')).toBeInTheDocument();
+  });
 
-    rerender(
+  it('renders builder', () => {
+    render(
       <FakeContextProvider>
         <BuildContextProvider build={mockBuild}>
           <BuildIdBar

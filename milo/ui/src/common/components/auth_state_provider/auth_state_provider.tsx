@@ -67,13 +67,13 @@ export function AuthStateProvider({
     queryKey: AUTH_STATE_QUERY_KEY,
     queryFn: () => queryAuthState(),
     placeholderData: initialValue,
-    refetchInterval(prevData) {
-      if (!prevData) {
+    refetchInterval: (q) => {
+      if (!q.state.data) {
         return MIN_QUERY_INTERVAL_MS;
       }
       // Expires the auth state 1 min earlier to the tokens won't expire
       // on the fly.
-      return Math.max(msToExpire(prevData) - 60000, MIN_QUERY_INTERVAL_MS);
+      return Math.max(msToExpire(q.state.data) - 60000, MIN_QUERY_INTERVAL_MS);
     },
   });
   // Placeholder data is provided. Cannot be null.

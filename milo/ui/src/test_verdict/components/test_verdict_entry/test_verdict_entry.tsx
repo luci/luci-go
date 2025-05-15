@@ -88,7 +88,7 @@ export function TestVerdictEntry({
   }
 
   const client = useResultDbClient();
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...client.BatchGetTestVariants.query({
       invocation: 'invocations/' + invocationId,
       testVariants: [
@@ -120,7 +120,7 @@ export function TestVerdictEntry({
         )}
         <Box>
           <InvIdLink invId={invocationId} />
-          {!isLoading && !expanded && testVerdict && (
+          {!isPending && !expanded && testVerdict && (
             <>
               {' '}
               <VerdictAssociatedBugsBadge
@@ -137,7 +137,7 @@ export function TestVerdictEntry({
         </Box>
       </ExpandableEntryHeader>
       <ExpandableEntryBody>
-        {isLoading ? (
+        {isPending ? (
           <DotSpinner />
         ) : (
           <EntryContent project={project} verdict={data.testVariants[0]} />

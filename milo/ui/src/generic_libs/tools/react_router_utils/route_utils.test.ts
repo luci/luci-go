@@ -17,7 +17,7 @@
 /* eslint-disable max-len */
 /* eslint prettier/prettier: ['error', {singleQuote: true, printWidth: 180}] */
 
-import { RouteObject } from 'react-router-dom';
+import { RouteObject } from 'react-router';
 
 import { regexpsForRoutes } from './route_utils';
 

@@ -69,7 +69,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useChangepointsClient();
-  const { data, isLoading, isError, error } = useQuery(
+  const { data, isPending, isError, error } = useQuery(
     client.QueryGroupSummaries.query(
       QueryChangepointGroupSummariesRequest.fromPartial({
         project,
@@ -109,7 +109,7 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
           }}
         />
       </Box>
-      {isLoading ? (
+      {isPending ? (
         <Box display="flex" justifyContent="center" alignItems="center">
           <CircularProgress />
         </Box>
@@ -117,7 +117,8 @@ export function RecentRegressions({ project }: RecentRegressionsProps) {
         <>
           <RegressionTable
             regressions={
-              data.groupSummaries as readonly OutputChangepointGroupSummary[]
+              (data?.groupSummaries as readonly OutputChangepointGroupSummary[]) ||
+              []
             }
             getDetailsUrlPath={getDetailsUrlPath}
           />

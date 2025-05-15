@@ -20,7 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import LinearProgress from '@mui/material/LinearProgress';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import BugPicker from '@/clusters/components/bug_picker/bug_picker';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
@@ -38,7 +38,7 @@ const BugEditDialog = ({ open, setOpen }: Props) => {
   const { project, id: ruleId } = useParams();
 
   const {
-    isLoading,
+    isPending,
     data: rule,
     error,
   } = useFetchRule(project || '', ruleId || '');
@@ -72,7 +72,7 @@ const BugEditDialog = ({ open, setOpen }: Props) => {
     return <LoadErrorAlert entityName="rule" error={error} />;
   }
 
-  if (isLoading || !rule) {
+  if (isPending || !rule) {
     return <LinearProgress />;
   }
 
@@ -122,7 +122,7 @@ const BugEditDialog = ({ open, setOpen }: Props) => {
             variant="contained"
             data-testid="bug-edit-dialog-save"
             onClick={handleSave}
-            loading={mutateRule.isLoading}
+            loading={mutateRule.isPending}
           >
             Save
           </LoadingButton>

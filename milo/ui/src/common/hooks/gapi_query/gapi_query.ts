@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {
-  UseInfiniteQueryOptions,
   UseQueryOptions,
   UseQueryResult,
   useInfiniteQuery,
@@ -24,10 +23,14 @@ import {
   TokenType,
   useGetAuthToken,
 } from '@/common/components/auth_state_provider';
+import {
+  WrapperInfiniteQueryOptions,
+  WrapperQueryOptions,
+} from '@/common/types/query_wrapper_options';
 
 export const useGapiQuery = <Response>(
   args: gapi.client.RequestOptions,
-  queryOptions?: UseQueryOptions<Response>,
+  queryOptions?: WrapperQueryOptions<Response>,
 ): UseQueryResult<Response> => {
   const getAccessToken = useGetAuthToken(TokenType.Access);
   const options: UseQueryOptions<Response> = {
@@ -51,10 +54,11 @@ export function useInfiniteGapiQuery<
   Response extends InfiniteGapiQueryResponse,
 >(
   args: gapi.client.RequestOptions,
-  queryOptions?: UseInfiniteQueryOptions<Response>,
+  queryOptions?: WrapperInfiniteQueryOptions<Response>,
 ) {
   const getAccessToken = useGetAuthToken(TokenType.Access);
-  const options: UseInfiniteQueryOptions<Response> = {
+  return useInfiniteQuery({
+    initialPageParam: '',
     ...queryOptions,
     queryKey: ['gapi', args.method, args.path, args.params, args.body],
     queryFn: async ({ pageParam }): Promise<Response> => {
@@ -72,7 +76,5 @@ export function useInfiniteGapiQuery<
     getNextPageParam: (response) => {
       return response.nextPageToken;
     },
-  };
-
-  return useInfiniteQuery(options);
+  });
 }

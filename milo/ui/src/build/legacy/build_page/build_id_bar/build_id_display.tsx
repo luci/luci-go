@@ -14,7 +14,7 @@
 
 import { Help } from '@mui/icons-material';
 import { Box, Link, SxProps, Theme, styled } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { SanitizedHtml } from '@/common/components/sanitized_html';

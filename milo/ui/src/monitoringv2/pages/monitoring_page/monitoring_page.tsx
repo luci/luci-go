@@ -27,7 +27,7 @@ import {
   Link as RouterLink,
   LinkProps as RouterLinkProps,
   useParams,
-} from 'react-router-dom';
+} from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {

@@ -14,17 +14,17 @@
 
 import { cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy, Instance } from 'mobx-state-tree';
-import type { NavigateFunction } from 'react-router-dom';
-import * as reactRouterDom from 'react-router-dom';
+import type { NavigateFunction } from 'react-router';
+import * as reactRouterDom from 'react-router';
 
 import { Store, StoreProvider } from '@/common/store';
 
 import { BuildDefaultTab } from './build_default_tab';
 import { BuildPageTab } from './common';
 
-jest.mock('react-router-dom', () => {
-  return createSelectiveMockFromModule<typeof import('react-router-dom')>(
-    'react-router-dom',
+jest.mock('react-router', () => {
+  return createSelectiveMockFromModule<typeof import('react-router')>(
+    'react-router',
     ['useNavigate'],
   );
 });
@@ -49,7 +49,7 @@ describe('BuildDefaultTab', () => {
       )
       .mockImplementation(() => {
         const navigate = (
-          jest.requireActual('react-router-dom') as typeof reactRouterDom
+          jest.requireActual('react-router') as typeof reactRouterDom
         ).useNavigate();
         // Return the same mock reference if the reference to `navigate` is the
         // same. This is to ensure the dependency checks having the same result.

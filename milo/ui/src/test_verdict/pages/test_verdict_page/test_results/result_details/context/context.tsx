@@ -63,14 +63,14 @@ export function ResultDataProvider({
     isLoading: invArtifactsLoading,
     hasNextPage: invArtifactsHasNextPage,
     fetchNextPage: invArtifactsFetchNextPage,
-  } = useInfiniteQuery(
-    client.ListArtifacts.queryPaged(
+  } = useInfiniteQuery({
+    ...client.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
         parent:
           'invocations/' + parseTestResultName(result.name || '').invocationId,
       }),
     ),
-  );
+  });
 
   useEffect(() => {
     if (!resultArtifactsLoading && resultArtifactsHasNextPage) {

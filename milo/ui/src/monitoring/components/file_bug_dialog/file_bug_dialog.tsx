@@ -77,7 +77,7 @@ export const FileBugDialog = ({
   if (!tree) {
     return null;
   }
-  if (linkBugMutation.isLoading) {
+  if (linkBugMutation.isPending) {
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Link bug</DialogTitle>
       <CircularProgress></CircularProgress>

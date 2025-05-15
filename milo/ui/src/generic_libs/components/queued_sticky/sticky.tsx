@@ -51,8 +51,8 @@ export function Sticky({
   sx,
   children,
 }: StickyProps) {
-  const componentRef = useRef();
-  const containerEleRef = useRef<HTMLElement>();
+  const componentRef = useRef(undefined);
+  const containerEleRef = useRef<HTMLElement>(undefined);
   const sizeRecorder = useSizeRecorder();
 
   useEffect(() => {

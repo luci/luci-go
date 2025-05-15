@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type { RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
@@ -33,8 +33,13 @@ export const fleetRoutes: RouteObject[] = [
               import('@/fleet/pages/redirects/single_device_redirect'),
           },
           {
-            path: 'swarming/*',
-            lazy: () => import('@/fleet/pages/redirects/swarming_redirect'),
+            path: 'swarming',
+            children: [
+              {
+                path: '*',
+                lazy: () => import('@/fleet/pages/redirects/swarming_redirect'),
+              },
+            ],
           },
         ],
       },

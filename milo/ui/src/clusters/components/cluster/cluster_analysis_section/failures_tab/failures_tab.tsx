@@ -101,7 +101,7 @@ const FailuresTable = ({ metrics }: TableProps) => {
   const [isAscending, setIsAscending] = useState(false);
   const joinedGroups = selectedVariantGroups.join(',');
   const {
-    isLoading,
+    isPending,
     data: failures,
     error,
     isSuccess,
@@ -183,7 +183,7 @@ const FailuresTable = ({ metrics }: TableProps) => {
         handleVariantGroupsChange={handleVariantsChange}
       />
       {error && <LoadErrorAlert entityName="recent failures" error={error} />}
-      {isLoading && <CentralizedProgress />}
+      {isPending && <CentralizedProgress />}
       {isSuccess && failures !== undefined && (
         <Table size="small">
           <FailuresTableHead

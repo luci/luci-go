@@ -90,10 +90,7 @@ export type ValueQueryOptions<T> =
   | Omit<UseQueryOptions<readonly ValueDef[]>, 'select'>
   // We don't care about the shape of the data returned from the `queryFn` when
   // `select` is specified.
-  | NonNullableProps<
-      UseQueryOptions<T, unknown, readonly ValueDef[]>,
-      'select'
-    >;
+  | NonNullableProps<UseQueryOptions<T, Error, readonly ValueDef[]>, 'select'>;
 
 /**
  * An AIP-160 filter autocomplete suggestion

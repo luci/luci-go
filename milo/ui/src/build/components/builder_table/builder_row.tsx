@@ -14,7 +14,7 @@
 
 import { Link } from '@mui/material';
 import { styled } from '@mui/system';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { getBuilderURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';

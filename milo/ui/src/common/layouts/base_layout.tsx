@@ -15,7 +15,7 @@
 import { Box, styled } from '@mui/material';
 import { ReactNode } from 'react';
 import { Helmet } from 'react-helmet';
-import { Outlet, UIMatch, useMatches } from 'react-router-dom';
+import { Outlet, UIMatch, useMatches } from 'react-router';
 import { useLocalStorage } from 'react-use';
 
 import miloFavicon from '@/common/assets/favicons/milo-32.png';

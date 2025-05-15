@@ -48,7 +48,7 @@ export const useBot = (
 
   let info = undefined;
   let botFound = false;
-  if (!isError && !isLoading && data.items.length) {
+  if (!isError && !isLoading && data && data.items.length) {
     info = data.items[0];
     botFound = true;
   }

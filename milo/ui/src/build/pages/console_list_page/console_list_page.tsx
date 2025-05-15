@@ -16,7 +16,7 @@ import { LinearProgress } from '@mui/material';
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { OutputQueryConsoleSnapshotsResponse } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -40,7 +40,7 @@ export function ConsoleListPage() {
   useEstablishProjectCtx(project);
 
   const client = useMiloInternalClient();
-  const { data, error, isError, isLoading, fetchNextPage, hasNextPage } =
+  const { data, error, isError, isPending, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
       ...client.QueryConsoleSnapshots.queryPaged(
         QueryConsoleSnapshotsRequest.fromPartial({
@@ -57,10 +57,10 @@ export function ConsoleListPage() {
   }
 
   useEffect(() => {
-    if (!isLoading && hasNextPage) {
+    if (!isPending && hasNextPage) {
       fetchNextPage();
     }
-  }, [isLoading, fetchNextPage, hasNextPage, data?.pages.length]);
+  }, [isPending, fetchNextPage, hasNextPage, data?.pages.length]);
 
   return (
     <>
@@ -70,7 +70,7 @@ export function ConsoleListPage() {
       <ProjectIdBar project={project} />
       <LinearProgress
         value={100}
-        variant={isLoading ? 'indeterminate' : 'determinate'}
+        variant={isPending ? 'indeterminate' : 'determinate'}
         color="primary"
       />
       <table css={{ width: '100%' }}>

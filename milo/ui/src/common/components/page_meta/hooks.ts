@@ -30,7 +30,7 @@ export function useDeclarePageId(pageId: UiPage) {
     throw new Error('useDeclarePageId can only be used in a PageMetaProvider');
   }
 
-  const hookId = useRef();
+  const hookId = useRef(undefined);
   useEffect(() => {
     dispatch({ type: 'activatePage', pageId, hookId });
     return () => dispatch({ type: 'deactivatePage', pageId, hookId });

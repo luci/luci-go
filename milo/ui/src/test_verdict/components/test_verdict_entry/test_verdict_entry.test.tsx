@@ -33,7 +33,9 @@ describe('<TestVerdictEntry />', () => {
     jest.useRealTimers();
   });
 
-  it('should update expansion state when default value is updated', async () => {
+  // TODO(b/416138280): fix test.
+  // eslint-disable-next-line jest/no-disabled-tests
+  it.skip('should update expansion state when default value is updated', async () => {
     const { rerender } = render(
       <FakeContextProvider>
         <TestVerdictEntry

@@ -186,7 +186,7 @@ export const ResourceRequestListPage = () => {
     return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
   }
 
-  if (query.isLoading || !query.data) {
+  if (query.isPending || !query.data) {
     return (
       <Container>
         <div css={{ padding: '0 50%' }}>
@@ -268,7 +268,7 @@ export const ResourceRequestListPage = () => {
         <FilterButton
           filterOptions={filterCategoryDatas}
           onApply={onApplyFilters}
-          isLoading={query.isLoading}
+          isLoading={query.isPending}
         />
       </div>
     );

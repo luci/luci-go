@@ -15,7 +15,7 @@
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';

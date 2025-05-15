@@ -129,6 +129,7 @@ export type DecoratedMethod<MK, Req, Res, Params extends unknown[] = []> = {
     ];
     queryFn: (ctx: { pageParam?: string }) => Res;
     getNextPageParam: (lastRes: Awaited<Res>) => string | null;
+    initialPageParam: '';
   };
 };
 

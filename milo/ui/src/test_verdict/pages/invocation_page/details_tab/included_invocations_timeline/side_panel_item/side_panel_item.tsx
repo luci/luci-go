@@ -15,7 +15,7 @@
 import { Box, CircularProgress, Link, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
@@ -45,7 +45,7 @@ export function SidePanelItem({
   const client = useResultDbClient();
   const {
     data: invocation,
-    isLoading,
+    isPending,
     isError,
     error,
   } = useQuery(client.GetInvocation.query({ name: invName }));
@@ -104,7 +104,7 @@ export function SidePanelItem({
                 {invId}
               </Link>
             </Box>
-            {isLoading && <CircularProgress size={TEXT_FONT_SIZE} />}
+            {isPending && <CircularProgress size={TEXT_FONT_SIZE} />}
           </Box>
         </HtmlTooltip>
       </foreignObject>

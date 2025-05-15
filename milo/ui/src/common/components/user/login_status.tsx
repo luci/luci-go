@@ -18,7 +18,7 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { StyledIconButton } from '@/common/components/gm3_styled_components';

@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
 import { getBuilderURLPath } from '@/common/tools/url_utils';
@@ -62,7 +62,7 @@ export function BuilderStats({ builder }: BuilderStatsProps) {
 
   const maxBatchSize = useMaxBatchSize();
   const client = useBatchedBuildsClient(maxBatchSize);
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...client.Batch.query({
       requests: [
         {
@@ -102,7 +102,7 @@ export function BuilderStats({ builder }: BuilderStatsProps) {
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Container>
         <CircularProgress size={20} />

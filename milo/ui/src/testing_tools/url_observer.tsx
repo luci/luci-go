@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 export const locationCallback = jest.fn((_path: string) => {});
 

@@ -20,6 +20,7 @@ import {
   Box,
   Typography,
 } from '@mui/material';
+import { JSX } from 'react';
 
 import { StringPair } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 

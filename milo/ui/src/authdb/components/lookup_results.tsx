@@ -81,7 +81,7 @@ export function LookupResults({ name }: LookupResultsProps) {
 
   const {
     fetchStatus,
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -92,11 +92,11 @@ export function LookupResults({ name }: LookupResultsProps) {
   });
 
   // Leave results empty if query is empty.
-  if (fetchStatus === 'idle' && isLoading) {
+  if (fetchStatus === 'idle' && isPending) {
     return <></>;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, Tab, Tabs, Typography } from '@mui/material';
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';

@@ -14,7 +14,7 @@
 
 import { Link, TableCell, TableRow, styled } from '@mui/material';
 import { DateTime } from 'luxon';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { OutputChangepointGroupSummary } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';

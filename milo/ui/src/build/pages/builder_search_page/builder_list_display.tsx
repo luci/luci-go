@@ -14,7 +14,7 @@
 
 import { Link, Typography, styled } from '@mui/material';
 import { memo } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { GroupedVirtuoso } from 'react-virtuoso';
 
 import { getBuilderURLPath } from '@/common/tools/url_utils';

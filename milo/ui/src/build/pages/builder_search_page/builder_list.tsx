@@ -28,14 +28,14 @@ interface BuilderListProps {
 
 export function BuilderList({ searchQuery }: BuilderListProps) {
   const client = useMiloInternalClient();
-  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfiniteQuery(
-      client.ListBuilders.queryPaged(
+  const { data, isError, error, isPending, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      ...client.ListBuilders.queryPaged(
         ListBuildersRequest.fromPartial({
           pageSize: 10000,
         }),
       ),
-    );
+    });
 
   if (isError) {
     throw error;
@@ -74,15 +74,15 @@ export function BuilderList({ searchQuery }: BuilderListProps) {
 
   // Keep loading builders until all pages are loaded.
   useEffect(() => {
-    if (!isLoading && hasNextPage) {
+    if (!isPending && hasNextPage) {
       fetchNextPage();
     }
-  }, [fetchNextPage, isLoading, hasNextPage, data?.pages.length]);
+  }, [fetchNextPage, isPending, hasNextPage, data?.pages.length]);
 
   return (
     <>
       <BuilderListDisplay groupedBuilders={groupedBuilders} />
-      {isLoading && (
+      {isPending && (
         <Box display="flex" justifyContent="center" alignItems="center">
           <CircularProgress />
         </Box>

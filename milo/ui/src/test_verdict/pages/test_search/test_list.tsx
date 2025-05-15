@@ -27,7 +27,7 @@ interface Props {
 
 export function TestList({ project, searchQuery }: Props) {
   const client = useTestHistoryClient();
-  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
+  const { data, isError, error, isPending, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
       ...client.QueryTests.queryPaged(
         QueryTestsRequest.fromPartial({
@@ -55,7 +55,7 @@ export function TestList({ project, searchQuery }: Props) {
           <TestRow key={testId} project={project} testId={testId} />
         ))}
       </ul>
-      {isLoading && searchQuery !== '' ? (
+      {isPending && searchQuery !== '' ? (
         <Typography component="span">
           Loading
           <DotSpinner />
@@ -71,7 +71,7 @@ export function TestList({ project, searchQuery }: Props) {
           </Typography>
         )
       )}
-      {testIds.length === 0 && searchQuery !== '' && !isLoading && (
+      {testIds.length === 0 && searchQuery !== '' && !isPending && (
         <Typography component="span">
           No tests found with case insensitive substring search.
         </Typography>

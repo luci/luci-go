@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import { Outlet, RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { Outlet, RouterProvider, createMemoryRouter } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';

@@ -20,8 +20,8 @@ import {
   styled,
   tooltipClasses,
 } from '@mui/material';
-import { forwardRef, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { forwardRef, useMemo, useRef, type JSX } from 'react';
+import { Link } from 'react-router';
 import { useClickAway, useTimeout } from 'react-use';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';

@@ -55,7 +55,7 @@ const ExonerationsV2Tab = ({ value }: Props) => {
   const [isAscending, setIsAscending] = useState(false);
 
   const {
-    isLoading,
+    isPending,
     isSuccess,
     data: response,
     error,
@@ -87,7 +87,7 @@ const ExonerationsV2Tab = ({ value }: Props) => {
       {error && (
         <LoadErrorAlert entityName="exonerated test variants" error={error} />
       )}
-      {isLoading && <CentralizedProgress />}
+      {isPending && <CentralizedProgress />}
       {isSuccess && (
         <Table size="small">
           <ExonerationsTableHead

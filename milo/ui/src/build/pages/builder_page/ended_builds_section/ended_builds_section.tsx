@@ -14,7 +14,7 @@
 
 import { Autocomplete, Box, capitalize, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useRef } from 'react';
 
@@ -98,16 +98,16 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     fields: FIELD_MASK,
   });
 
-  const { data, error, isError, isLoading, isPreviousData } = useQuery({
+  const { data, error, isError, isPending, isPlaceholderData } = useQuery({
     ...client.SearchBuilds.query(req),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   if (isError) {
     throw error;
   }
 
-  const nextPageToken = isPreviousData ? '' : (data?.nextPageToken ?? '');
+  const nextPageToken = isPlaceholderData ? '' : (data?.nextPageToken ?? '');
   const builds = (data?.builds || []) as readonly OutputBuild[];
 
   return (
@@ -166,7 +166,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
       </Stack>
       <EndedBuildTable
         endedBuilds={builds}
-        isLoading={isLoading || isPreviousData}
+        isLoading={isPending || isPlaceholderData}
       />
       <Box sx={{ mt: '5px' }}>
         <ParamsPager pagerCtx={pagerCtx} nextPageToken={nextPageToken} />

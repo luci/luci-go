@@ -51,14 +51,14 @@ export interface VerdictCountIndicatorProps {
 
 export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
   const client = useResultDbClient();
-  const { data, error, isError, isLoading, hasNextPage } = useInfiniteQuery(
-    client.QueryTestVariants.queryPaged(
+  const { data, error, isError, isPending, hasNextPage } = useInfiniteQuery({
+    ...client.QueryTestVariants.queryPaged(
       QueryTestVariantsRequest.fromPartial({
         invocations: [invName],
         pageSize: QUERY_TEST_VERDICT_PAGE_SIZE,
       }),
     ),
-  );
+  });
 
   if (isError) {
     throw error;
@@ -104,7 +104,7 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
     [firstPage, worstStatus],
   );
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Container>
         <CircularProgress size={15} />

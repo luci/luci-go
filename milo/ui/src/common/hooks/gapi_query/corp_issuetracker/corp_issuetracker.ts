@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { UseQueryResult } from '@tanstack/react-query';
+
 import {
-  UseQueryOptions,
-  UseQueryResult,
-  UseInfiniteQueryOptions,
-} from '@tanstack/react-query';
+  WrapperInfiniteQueryOptions,
+  WrapperQueryOptions,
+} from '@/common/types/query_wrapper_options';
 
 import { useGapiQuery, useInfiniteGapiQuery } from '../gapi_query';
 
@@ -30,7 +31,7 @@ const API_BASE_PATH = 'https://content-issuetracker.corp.googleapis.com/';
  */
 export const useGetComponentQuery = (
   params: GetComponentParams,
-  queryOptions: UseQueryOptions<ComponentJson>,
+  queryOptions: WrapperQueryOptions<ComponentJson>,
 ): UseQueryResult<ComponentJson> => {
   return useGapiQuery<ComponentJson>(
     {
@@ -46,7 +47,7 @@ export const useGetComponentQuery = (
  */
 export const useGetIssueQuery = (
   params: GetIssueParams,
-  queryOptions: UseQueryOptions<IssueJson>,
+  queryOptions: WrapperQueryOptions<IssueJson>,
 ): UseQueryResult<IssueJson> => {
   return useGapiQuery<IssueJson>(
     {
@@ -64,7 +65,7 @@ export const useGetIssueQuery = (
  */
 export const useIssueListQuery = (
   params: IssueListParams,
-  queryOptions: UseQueryOptions<IssueListResponse>,
+  queryOptions: WrapperQueryOptions<IssueListResponse>,
 ): UseQueryResult<IssueListResponse> => {
   return useGapiQuery<IssueListResponse>(
     {
@@ -81,7 +82,7 @@ export const useIssueListQuery = (
  */
 export function useInfiniteIssueListQuery(
   params: IssueListParams,
-  queryOptions: UseInfiniteQueryOptions<IssueListResponse>,
+  queryOptions: WrapperInfiniteQueryOptions<IssueListResponse>,
 ) {
   return useInfiniteGapiQuery<IssueListResponse>(
     {
@@ -89,7 +90,9 @@ export function useInfiniteIssueListQuery(
       path: API_BASE_PATH + 'v1/issues',
       params,
     },
-    queryOptions,
+    {
+      ...queryOptions,
+    },
   );
 }
 

@@ -89,7 +89,7 @@ interface MonitoringContext {
   readonly testAlerts: TestAlert[];
 }
 
-interface BugsQueryError {
+interface BugsQueryError extends Error {
   readonly result: {
     error: {
       message: string;

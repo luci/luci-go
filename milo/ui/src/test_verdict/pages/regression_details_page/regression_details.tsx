@@ -45,7 +45,7 @@ export function RegressionDetails({
   predicate,
 }: RegressionDetailsProps) {
   const client = useChangepointsClient();
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...client.QueryChangepointsInGroup.query(
       QueryChangepointsInGroupRequest.fromPartial({
         project: testVariantBranch.project,
@@ -70,7 +70,7 @@ export function RegressionDetails({
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

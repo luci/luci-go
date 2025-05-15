@@ -105,7 +105,7 @@ describe('<BuilderListPage />', () => {
         builders,
         maxBatchSize: expect.anything(),
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

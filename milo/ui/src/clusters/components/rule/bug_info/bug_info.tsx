@@ -115,13 +115,13 @@ const BugInfo = ({ rule }: Props) => {
               lg: 2,
             }}
           >
-            {mutateRule.isLoading && <CircularProgress size="1rem" />}
+            {mutateRule.isPending && <CircularProgress size="1rem" />}
             <Switch
               data-testid="update-bug-toggle"
               aria-label="update bug"
               checked={rule.isManagingBug}
               onChange={handleToggleUpdateBug}
-              disabled={mutateRule.isLoading}
+              disabled={mutateRule.isPending}
             />
           </Grid>
         </Grid>
@@ -140,13 +140,13 @@ const BugInfo = ({ rule }: Props) => {
                   lg: 2,
                 }}
               >
-                {mutateRule.isLoading && <CircularProgress size="1rem" />}
+                {mutateRule.isPending && <CircularProgress size="1rem" />}
                 <Switch
                   data-testid="update-bug-priority-toggle"
                   aria-label="update bug priority"
                   checked={rule.isManagingBugPriority}
                   onChange={handleToggleUpdateBugPriority}
-                  disabled={mutateRule.isLoading}
+                  disabled={mutateRule.isPending}
                 />
               </Grid>
             </Grid>

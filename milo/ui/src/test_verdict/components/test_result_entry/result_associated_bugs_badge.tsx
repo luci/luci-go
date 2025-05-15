@@ -44,7 +44,7 @@ export function ResultAssociatedBugsBadge({
   testId,
 }: ResultAssociatedBugsBadgeProps) {
   const client = useBatchedClustersClient();
-  const { data } = useQuery({
+  const { data, isError, error } = useQuery({
     ...client.Cluster.query(
       ClusterRequest.fromPartial({
         project,
@@ -64,11 +64,12 @@ export function ResultAssociatedBugsBadge({
     enabled:
       !testResult.expected &&
       ![TestStatus.PASS, TestStatus.SKIP].includes(testResult.status),
-    onError: (err) => {
-      logging.error(err);
-    },
     select: (res) => res as OutputClusterResponse,
   });
+
+  if (isError && error) {
+    logging.error(error);
+  }
 
   if (!data) {
     return <></>;

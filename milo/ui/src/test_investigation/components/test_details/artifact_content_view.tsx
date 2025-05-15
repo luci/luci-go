@@ -15,6 +15,7 @@
 
 import DescriptionIcon from '@mui/icons-material/Description';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
+import { JSX } from 'react';
 
 import { sanitizeHTML } from '@/common/tools/sanitize_html/sanitize_html';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';

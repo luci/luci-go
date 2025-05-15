@@ -113,7 +113,7 @@ export function RelatedBuildsDisplay({ build }: RelatedBuildsDisplayProps) {
     }
   }
 
-  const isLoading = queries.some((query) => query.isLoading);
+  const isLoading = queries.some((query) => query.isPending);
   const builds: CategoryTreeEntry<string, OutputBuild>[] = [
     [[...build.ancestorIds, build.id], build],
   ];

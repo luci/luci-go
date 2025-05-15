@@ -41,7 +41,7 @@ export function BlamelistDisplay({
     isError,
     hasNextPage,
     fetchNextPage,
-    isLoading,
+    isPending,
     isFetchingNextPage,
   } = useInfiniteQuery({
     ...client.QueryBlamelist.queryPaged(
@@ -60,7 +60,7 @@ export function BlamelistDisplay({
   }
 
   const pages = data?.pages || [];
-  const isLoadingPage = isLoading || isFetchingNextPage;
+  const isLoadingPage = isPending || isFetchingNextPage;
   const commitCount = pages.reduce(
     (prev, page) => prev + page.commits.length,
     0,

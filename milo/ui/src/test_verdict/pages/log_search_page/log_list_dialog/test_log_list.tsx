@@ -46,7 +46,7 @@ export function TestLogList({
   const { testID, variantHash, artifactID } = logGroupIdentifer;
   const {
     data,
-    isLoading,
+    isPending,
     error,
     isError,
     fetchNextPage,
@@ -75,7 +75,7 @@ export function TestLogList({
   if (isError) {
     throw error;
   }
-  if (isLoading) {
+  if (isPending) {
     return <CircularProgress sx={{ fontSize: '16px' }} />;
   }
   return (

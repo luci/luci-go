@@ -17,7 +17,7 @@ import { useContext } from 'react';
 import { SyncedSearchParamsContext } from './context';
 
 /**
- * Similar to `useSearchParams` from `'react-router-dom'`, except that
+ * Similar to `useSearchParams` from `'react-router'`, except that
  * 1. it can only be used in a SyncedSearchParamsProvider, and
  * 2. multiple search param updates can be scheduled at the same time with the
  *    [updater pattern][1], and

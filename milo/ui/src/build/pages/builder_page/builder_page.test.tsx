@@ -125,7 +125,7 @@ describe('BuilderPage', () => {
       {
         builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
       },
-      expect.anything(),
+      undefined,
     );
     expect(mockedMachinePoolSection).toHaveBeenCalledWith(
       {
@@ -135,7 +135,7 @@ describe('BuilderPage', () => {
           { key: 'key2', value: 'val2' },
         ],
       },
-      expect.anything(),
+      undefined,
     );
   });
 
@@ -167,7 +167,7 @@ describe('BuilderPage', () => {
       {
         builderId: { project: 'project', bucket: 'bucket', builder: 'builder' },
       },
-      expect.anything(),
+      undefined,
     );
     expect(mockedMachinePoolSection).not.toHaveBeenCalled();
   });

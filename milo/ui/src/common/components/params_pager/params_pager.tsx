@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 

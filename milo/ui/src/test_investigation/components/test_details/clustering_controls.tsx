@@ -20,6 +20,7 @@ import {
   SelectChangeEvent,
   Typography,
 } from '@mui/material';
+import { JSX } from 'react';
 
 import {
   TestResult,

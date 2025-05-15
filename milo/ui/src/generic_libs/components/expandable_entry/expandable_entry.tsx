@@ -14,7 +14,7 @@
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box, SxProps, Theme } from '@mui/material';
-import { createContext, useContext, useRef } from 'react';
+import { createContext, useContext, useRef, type JSX } from 'react';
 
 const ExpandedContext = createContext(false);
 

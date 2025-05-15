@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { Link } from '@mui/material';
 import { useMemo } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
 import { formatBuilderId } from '@/build/tools/build_utils';

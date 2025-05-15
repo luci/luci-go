@@ -21,7 +21,7 @@ import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import { createRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import { GroupDetails } from '@/authdb/components/group_details';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
@@ -34,7 +34,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 export function GroupsPage() {
-  const { ['__luci_ui__-raw-*']: groupName } = useParams();
+  const { ['*']: groupName } = useParams();
   const navigate = useNavigate();
   const listRef = createRef<GroupsListElement>();
   const [searchParams] = useSyncedSearchParams();

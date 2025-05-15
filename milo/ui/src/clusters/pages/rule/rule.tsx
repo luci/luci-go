@@ -16,7 +16,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
@@ -38,7 +38,7 @@ export const RulePage = () => {
   }
 
   const {
-    isLoading,
+    isPending,
     data: rule,
     error,
     isSuccess,
@@ -50,7 +50,7 @@ export const RulePage = () => {
         <title>Rule | {id}</title>
       </Helmet>
       <Grid sx={{ mt: 1 }} container spacing={2}>
-        {isLoading && <LinearProgress />}
+        {isPending && <LinearProgress />}
         {error && <LoadErrorAlert entityName="rule" error={error} />}
         {isSuccess && rule && (
           <>

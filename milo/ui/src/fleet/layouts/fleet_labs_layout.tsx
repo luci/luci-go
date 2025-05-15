@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
-import { Fragment, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Fragment, useEffect, type JSX } from 'react';
+import { Link } from 'react-router';
 
 import { getPropKeyLabel } from '@/common/services/resultdb';
 import { useStore } from '@/common/store';

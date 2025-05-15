@@ -70,13 +70,14 @@ const ExonerationsTab = ({ value }: Props) => {
   );
 
   const {
-    isLoading,
+    isPending,
     isSuccess,
     data: unsortedTestVariants,
     error,
-  } = useQuery(
-    ['exoneratedTestVariants', project, clusterAlgorithm, clusterId],
-    async () => {
+  } = useQuery({
+    queryKey: ['exoneratedTestVariants', project, clusterAlgorithm, clusterId],
+
+    queryFn: async () => {
       const clusterResponse = await service.QueryExoneratedTestVariants({
         parent: `projects/${project}/clusters/${clusterAlgorithm}/${clusterId}/exoneratedTestVariants`,
       });
@@ -103,10 +104,9 @@ const ExonerationsTab = ({ value }: Props) => {
         }) || []
       );
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 
   useEffect(() => {
     if (unsortedTestVariants) {
@@ -135,7 +135,7 @@ const ExonerationsTab = ({ value }: Props) => {
       {error && (
         <LoadErrorAlert entityName="exonerated test variants" error={error} />
       )}
-      {isLoading && <CentralizedProgress />}
+      {isPending && <CentralizedProgress />}
       {isSuccess && (
         <Table size="small">
           <ExonerationsTableHead

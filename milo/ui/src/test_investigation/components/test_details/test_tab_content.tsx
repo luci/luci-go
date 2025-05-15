@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, SelectChangeEvent, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {

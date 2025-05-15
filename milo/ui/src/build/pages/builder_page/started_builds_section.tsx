@@ -36,7 +36,7 @@ export interface StartedBuildsSectionProps {
 
 export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
   const client = useBuildsClient();
-  const { data, error, isError, isLoading } = useQuery(
+  const { data, error, isError, isPending } = useQuery(
     client.SearchBuilds.query(
       SearchBuildsRequest.fromPartial({
         predicate: {
@@ -58,18 +58,18 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
     <>
       <h3>
         Started Builds
-        {!isLoading && (
+        {!isPending && (
           <>
             {' '}
             (
             {data.nextPageToken
               ? `most recent ${PAGE_SIZE} builds`
-              : data.builds?.length || 0}
+              : data?.builds?.length || 0}
             )
           </>
         )}
       </h3>
-      {isLoading ? (
+      {isPending ? (
         <CircularProgress />
       ) : (
         <ul css={{ maxHeight: '400px', overflow: 'auto' }}>

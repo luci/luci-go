@@ -15,7 +15,7 @@
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SourceIcon from '@mui/icons-material/Source';
 import { Box, Button } from '@mui/material';
-import { useMemo } from 'react';
+import { JSX, useMemo } from 'react';
 
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';

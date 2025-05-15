@@ -21,7 +21,7 @@ import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import ConfirmDialog from '@/clusters/components/confirm_dialog/confirm_dialog';
 import GridLabel from '@/clusters/components/grid_label/grid_label';
@@ -121,7 +121,7 @@ const RuleInfo = ({ project, rule }: Props) => {
             </Box>
             <LoadingButton
               data-testid="rule-archived-toggle"
-              loading={mutateRule.isLoading}
+              loading={mutateRule.isPending}
               variant="outlined"
               startIcon={rule.isActive ? <Archive /> : <Unarchive />}
               onClick={() => setConfirmDialogOpen(true)}

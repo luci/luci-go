@@ -44,7 +44,7 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
     principal: principal,
   };
   const {
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -53,7 +53,7 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import {
   BUILD_FIELD_MASK,
@@ -102,7 +102,7 @@ export const BuildPage = observer(() => {
     data: build,
     isError,
     error,
-    isLoading,
+    isPending,
   } = useQuery({
     ...client.GetBuild.query(req),
     select: (data) => data as OutputBuild,
@@ -161,7 +161,7 @@ export const BuildPage = observer(() => {
           <BuildIdBar builderId={builderId} buildNumOrId={buildNumOrId} />
           <LinearProgress
             value={100}
-            variant={isLoading ? 'indeterminate' : 'determinate'}
+            variant={isPending ? 'indeterminate' : 'determinate'}
             color={
               build ? BUILD_STATUS_COLOR_THEME_MAP[build.status] : 'primary'
             }

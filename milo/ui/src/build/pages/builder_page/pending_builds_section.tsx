@@ -36,7 +36,7 @@ export interface PendingBuildsSectionProps {
 
 export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
   const client = useBuildsClient();
-  const { data, error, isError, isLoading } = useQuery(
+  const { data, error, isError, isPending } = useQuery(
     client.SearchBuilds.query(
       SearchBuildsRequest.fromPartial({
         predicate: {
@@ -58,7 +58,7 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
     <>
       <h3>
         Scheduled Builds
-        {!isLoading && (
+        {!isPending && (
           <>
             {' '}
             (
@@ -69,7 +69,7 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
           </>
         )}
       </h3>
-      {isLoading ? (
+      {isPending ? (
         <CircularProgress />
       ) : (
         <ul css={{ maxHeight: '400px', overflow: 'auto' }}>

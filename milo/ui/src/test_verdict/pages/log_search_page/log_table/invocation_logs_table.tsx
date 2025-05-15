@@ -51,7 +51,7 @@ export function InvocationLogsTable({
   const pageToken = getPageToken(pagerCtx, searchParams);
   const { form, startTime, endTime } = filter;
   const client = useResultDbClient();
-  const { data, isLoading, error, isError } = useQuery({
+  const { data, isPending, error, isError } = useQuery({
     ...client.QueryInvocationVariantArtifactGroups.query(
       QueryInvocationVariantArtifactGroupsRequest.fromPartial({
         project: project,
@@ -87,7 +87,7 @@ export function InvocationLogsTable({
           padding: '10px 0px',
         }}
       >
-        {isLoading ? (
+        {isPending ? (
           <>
             <LinearProgress />
             {form.artifactIDStr === '' && (

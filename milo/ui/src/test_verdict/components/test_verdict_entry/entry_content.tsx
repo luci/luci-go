@@ -28,7 +28,6 @@ export interface EntryContentProps {
 
 export function EntryContent({ project, verdict }: EntryContentProps) {
   const expandResultId = getSuggestedResultId(verdict.results);
-
   return (
     <>
       {verdict.exonerations.map((e) => (

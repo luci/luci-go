@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link, TableCell } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
 

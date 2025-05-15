@@ -104,7 +104,7 @@ export function CancelBuildDialog({
         <LoadingButton
           onClick={handleConfirm}
           variant="contained"
-          loading={cancelBuildMutation.isLoading}
+          loading={cancelBuildMutation.isPending}
         >
           Confirm
         </LoadingButton>

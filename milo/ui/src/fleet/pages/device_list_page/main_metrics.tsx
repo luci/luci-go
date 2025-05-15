@@ -98,7 +98,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
             <SingleMetric
               name="Devices"
               value={countQuery.data?.total}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
             />
           </div>
         </div>
@@ -124,14 +124,14 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               name="Leased"
               value={countQuery.data?.taskState?.busy}
               total={countQuery.data?.total}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('state', ['DEVICE_STATE_LEASED'])}
             />
             <SingleMetric
               name="Available"
               value={countQuery.data?.taskState?.idle}
               total={countQuery.data?.total}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('state', [
                 'DEVICE_STATE_AVAILABLE',
               ])}
@@ -152,7 +152,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               name="Ready"
               value={countQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('labels.dut_state', ['ready'])}
             />
             <SingleMetric
@@ -164,7 +164,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
                 />
               }
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('labels.dut_state', [
                 'needs_repair',
               ])}
@@ -174,7 +174,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               value={countQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('labels.dut_state', [
                 'repair_failed',
               ])}
@@ -184,7 +184,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
               value={countQuery.data?.deviceState?.needManualRepair}
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              loading={countQuery.isLoading}
+              loading={countQuery.isPending}
               filterUrl={getFilterQueryString('labels.dut_state', [
                 'needs_manual_repair',
               ])}

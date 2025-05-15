@@ -15,7 +15,7 @@
 import Grid from '@mui/material/Grid2';
 import TextField from '@mui/material/TextField';
 import { ChangeEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
 

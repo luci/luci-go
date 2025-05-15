@@ -18,7 +18,7 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { parseRuleName } from '@/clusters/tools/rules';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';

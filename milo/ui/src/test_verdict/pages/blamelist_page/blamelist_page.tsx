@@ -15,7 +15,7 @@
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router';
 
 import {
   OutputTestVariantBranch,
@@ -51,7 +51,7 @@ export function BlamelistPage() {
   };
 
   const client = useTestVariantBranchesClient();
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...client.BatchGet.query(
       BatchGetTestVariantBranchRequest.fromPartial({
         names: [ParsedTestVariantBranchName.toString(testVariantBranch)],
@@ -63,7 +63,7 @@ export function BlamelistPage() {
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

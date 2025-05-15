@@ -59,7 +59,7 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
   const pageToken = getPageToken(pagerCtx, searchParams);
   const client = useResultDbClient();
   const { form, startTime, endTime } = filter;
-  const { data, isLoading, error, isError } = useQuery({
+  const { data, isPending, error, isError } = useQuery({
     ...client.QueryTestVariantArtifactGroups.query(
       QueryTestVariantArtifactGroupsRequest.fromPartial({
         project: project,
@@ -96,7 +96,7 @@ export function TestLogsTable({ project, filter }: TestLogsTableProps) {
           padding: '10px 0px',
         }}
       >
-        {isLoading ? (
+        {isPending ? (
           <>
             <LinearProgress />
             {form.testIDStr === '' && (

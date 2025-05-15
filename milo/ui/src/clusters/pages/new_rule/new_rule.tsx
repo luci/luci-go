@@ -23,7 +23,7 @@ import Typography from '@mui/material/Typography';
 import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, useContext, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import BugPicker from '@/clusters/components/bug_picker/bug_picker';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
@@ -69,9 +69,9 @@ export const NewRulePage = () => {
   const service = useRulesService();
 
   const { setSnack } = useContext(SnackbarContext);
-  const createRule = useMutation((request: CreateRuleRequest) =>
-    service.Create(request),
-  );
+  const createRule = useMutation({
+    mutationFn: (request: CreateRuleRequest) => service.Create(request),
+  });
   const [validationError, setValidationError] = useState<GrpcError | null>(
     null,
   );
@@ -183,7 +183,7 @@ export const NewRulePage = () => {
               variant="contained"
               data-testid="create-rule-save"
               onClick={handleSave}
-              loading={createRule.isLoading}
+              loading={createRule.isPending}
             >
               Save
             </LoadingButton>

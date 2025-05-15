@@ -20,8 +20,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMemo, JSX } from 'react';
+import { useNavigate, useParams } from 'react-router';
 
 import { OutputClusterResponse } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -84,7 +84,7 @@ export function TestInvestigatePage(): JSX.Element {
 
   const {
     data: invocationData,
-    isLoading: isLoadingInvocation,
+    isPending: isLoadingInvocation,
     isError: isInvocationError,
     error: invocationError,
   } = useQuery({
@@ -122,7 +122,7 @@ export function TestInvestigatePage(): JSX.Element {
 
   const {
     data: testVariantData,
-    isLoading: isLoadingTestVariant,
+    isPending: isLoadingTestVariant,
     isError: isTestVariantError,
     error: testVariantError,
   } = useQuery({
@@ -186,13 +186,13 @@ export function TestInvestigatePage(): JSX.Element {
 
   const isLoadingAssociatedBugs =
     associatedBugsQueriesEnabled &&
-    associatedBugsQueries.some((q) => q.isLoading);
+    associatedBugsQueries.some((q) => q.isPending);
   const associatedBugsFetchErrorQuery =
     associatedBugsQueriesEnabled &&
     associatedBugsQueries.find((q) => q.isError);
   const associatedBugsFetchError: string | undefined =
     associatedBugsFetchErrorQuery
-      ? (associatedBugsFetchErrorQuery?.error as string)
+      ? (associatedBugsFetchErrorQuery?.error as unknown as string)
       : undefined;
 
   const associatedBugs: AssociatedBug[] = useMemo(() => {
@@ -258,7 +258,7 @@ export function TestInvestigatePage(): JSX.Element {
 
   const {
     data: testVariantBranchData,
-    isLoading: isLoadingTestVariantBranch,
+    isPending: isLoadingTestVariantBranch,
     isError: isTestVariantBranchError,
     error: testVariantBranchError,
   } = useQuery({
@@ -302,7 +302,7 @@ export function TestInvestigatePage(): JSX.Element {
 
   const {
     data: bisectionAnalysisData,
-    isLoading: isLoadingBisectionAnalysis,
+    isPending: isLoadingBisectionAnalysis,
     isError: isBisectionAnalysisError,
     error: bisectionAnalysisError,
   } = useQuery({

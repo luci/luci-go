@@ -16,7 +16,7 @@
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { IconButton, Tooltip, TooltipProps } from '@mui/material';
 import { IconButtonProps } from '@mui/material/IconButton';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, JSX } from 'react';
 
 const DEFAULT_TOOLTIP = 'Copy';
 const COPIED_TOOLTIP = 'Copied!';

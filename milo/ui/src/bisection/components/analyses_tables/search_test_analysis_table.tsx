@@ -35,7 +35,7 @@ export function SearchTestAnalysisTable({
 }: SearchTestAnalysisTableProps) {
   const client = useAnalysesClient();
   const {
-    isLoading,
+    isPending,
     isError,
     data: analysis,
     error,
@@ -49,7 +49,7 @@ export function SearchTestAnalysisTable({
     enabled: !!analysisId,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

@@ -186,7 +186,7 @@ export function BlamelistTable({
               position={position}
               testVariantBranch={testVariantBranch}
               sourceVerdict={sourceVerdictQuery.data || null}
-              isSvLoading={sourceVerdictQuery.isLoading}
+              isSvLoading={sourceVerdictQuery.isPending}
             />
           );
         }}

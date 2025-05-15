@@ -22,7 +22,7 @@ import Paper from '@mui/material/Paper';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import MultiRulesFound from '@/clusters/components/bugs/multi_rules_found/multi_rules_found';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
@@ -48,9 +48,10 @@ export const BugPage = () => {
 
   const bugSystem = 'buganizer';
 
-  const { isLoading, error, isSuccess, data } = useQuery(
-    ['bug', bugSystem, id],
-    async () => {
+  const { isPending, error, isSuccess, data } = useQuery({
+    queryKey: ['bug', bugSystem, id],
+
+    queryFn: async () => {
       const request: LookupBugRequest = {
         system: bugSystem,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -58,11 +59,10 @@ export const BugPage = () => {
       };
       return await service.LookupBug(request);
     },
-    {
-      enabled: !!(bugSystem && id),
-      retry: prpcRetrier,
-    },
-  );
+
+    enabled: !!(bugSystem && id),
+    retry: prpcRetrier,
+  });
 
   useEffect(() => {
     if (isSuccess && data?.rules?.length === 1) {
@@ -100,7 +100,7 @@ export const BugPage = () => {
           mx: 2,
         }}
       >
-        {isLoading && <LinearProgress />}
+        {isPending && <LinearProgress />}
         {error && <LoadErrorAlert entityName="rule" error={error} />}
         {isSuccess && data && (
           <Grid container>

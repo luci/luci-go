@@ -20,7 +20,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
-import React from 'react';
+import { JSX } from 'react';
 
 import { DrawerTreeItem } from './drawer_tree_item';
 import { DrawerTreeNode } from './types';

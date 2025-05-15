@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, JSX } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
@@ -64,7 +64,7 @@ export function ArtifactsSection({
 
   const {
     data: testResultArtifactsData,
-    isLoading: isLoadingTestResultArtifacts,
+    isPending: isLoadingTestResultArtifacts,
   } = useQuery({
     ...resultDbClient.ListArtifacts.query(
       ListArtifactsRequest.fromPartial({
@@ -79,7 +79,7 @@ export function ArtifactsSection({
 
   const {
     data: invocationScopeArtifactsData,
-    isLoading: isLoadingInvocationScopeArtifacts,
+    isPending: isLoadingInvocationScopeArtifacts,
   } = useQuery({
     ...resultDbClient.ListArtifacts.query(
       ListArtifactsRequest.fromPartial({
@@ -154,7 +154,7 @@ export function ArtifactsSection({
     !!selectedArtifactForDisplay?.artifact?.fetchUrl && // User fixed to fetchUrl
     !selectedArtifactForDisplay.isSummary;
 
-  const { data: artifactContentData, isLoading: rawIsLoadingArtifactContent } =
+  const { data: artifactContentData, isPending: rawIsLoadingArtifactContent } =
     useFetchArtifactContentQuery({
       artifactContentQueryEnabled,
       isSummary: selectedArtifactForDisplay?.isSummary,

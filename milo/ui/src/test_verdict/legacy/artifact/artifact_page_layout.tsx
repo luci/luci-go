@@ -19,7 +19,7 @@ import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { useEffect, useRef } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { ArtifactIdentifier } from '@/common/services/resultdb';

@@ -36,7 +36,7 @@ export function useActiveTabId() {
  * For each `<RoutedTabs />`, at most one tab can be activated at a time.
  */
 export function useDeclareTabId(tabId: string) {
-  const hookId = useRef();
+  const hookId = useRef(undefined);
   const dispatch = useContext(ActiveTabUpdaterContext);
   if (dispatch === undefined) {
     throw new Error('useDeclareTabId can only be used in a RoutedTabs');

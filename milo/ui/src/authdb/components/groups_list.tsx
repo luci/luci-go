@@ -22,7 +22,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import { useQuery } from '@tanstack/react-query';
 import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
@@ -54,7 +54,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
 
     const client = useAuthServiceGroupsClient();
     const {
-      isLoading,
+      isPending,
       isError,
       data: response,
       error,
@@ -122,7 +122,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
       }
     };
 
-    if (isLoading) {
+    if (isPending) {
       return (
         <Box display="flex" justifyContent="center" alignItems="center">
           <CircularProgress />

@@ -18,7 +18,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
 import { upperFirst } from 'lodash-es';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -52,7 +52,7 @@ export function TestVerdictPage() {
     data: results,
     error,
     isError,
-    isLoading,
+    isPending,
   } = useQuery(
     client.BatchGetTestVariants.query(
       BatchGetTestVariantsRequest.fromPartial({
@@ -71,7 +71,7 @@ export function TestVerdictPage() {
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <LinearProgress />;
   }
 

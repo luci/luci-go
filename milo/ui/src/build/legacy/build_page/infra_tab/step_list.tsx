@@ -99,7 +99,7 @@ export class BuildPageStepListElement extends MobxExtLitElement {
   ];
 }
 
-declare global {
+declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {

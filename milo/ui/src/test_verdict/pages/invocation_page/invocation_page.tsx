@@ -15,7 +15,7 @@
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useEstablishProjectCtx } from '@/common/components/page_meta';
@@ -38,7 +38,7 @@ export function InvocationPage() {
   const invName = 'invocations/' + invId;
 
   const client = useResultDbClient();
-  const { data, error, isError, isLoading } = useQuery(
+  const { data, error, isError, isPending } = useQuery(
     client.GetInvocation.query({ name: invName }),
   );
   if (isError) {
@@ -56,7 +56,7 @@ export function InvocationPage() {
       <InvocationIdBar invName={invName} />
       <LinearProgress
         value={100}
-        variant={isLoading ? 'indeterminate' : 'determinate'}
+        variant={isPending ? 'indeterminate' : 'determinate'}
       />
       <AppRoutedTabs>
         <AppRoutedTab

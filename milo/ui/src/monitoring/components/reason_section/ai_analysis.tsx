@@ -97,7 +97,7 @@ export function AIAnalysis({ test, project }: AIAnalysisProps) {
   const {
     data: aiData,
     refetch: refetchAIAnalysis,
-    isLoading,
+    isPending,
     isError,
   } = useQuery({
     ...client.QueryChangepointAIAnalysis.query({
@@ -131,7 +131,7 @@ export function AIAnalysis({ test, project }: AIAnalysisProps) {
   };
 
   const handleClose = () => {
-    if (isLoading) {
+    if (isPending) {
       return;
     }
     setOpen(false);
@@ -162,7 +162,7 @@ export function AIAnalysis({ test, project }: AIAnalysisProps) {
       >
         <DialogTitle id="scroll-dialog-title">AI cuplrit analysis</DialogTitle>
         <DialogContent dividers>
-          {isLoading && <LinearProgressWithLabel labelString="Analyzing" />}
+          {isPending && <LinearProgressWithLabel labelString="Analyzing" />}
           {showPrompt && aiData && <PromptDetails prompt={aiData.prompt} />}
           {aiHTML && <SanitizedHtml html={aiHTML} />}
           {isError && <Alert severity="error">{'Failed to load'}</Alert>}

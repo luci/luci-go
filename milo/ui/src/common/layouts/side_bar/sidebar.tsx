@@ -25,7 +25,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { StyledToolbar } from '@/common/components/gm3_styled_components';

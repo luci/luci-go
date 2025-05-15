@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { parseInvId } from '@/common/tools/invocation_utils';
 import {

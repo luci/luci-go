@@ -31,10 +31,10 @@ import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
 export function usePermCheck(
   realm?: string | null,
   perm?: string | null,
-): [allowed: boolean, isLoading: boolean] {
+): [allowed: boolean, isPending: boolean] {
   const client = useBatchedMiloInternalClient();
 
-  const { data, isError, error, isLoading } = useQuery({
+  const { data, isError, error, isPending } = useQuery({
     ...client.BatchCheckPermissions.query({
       realm: realm!,
       permissions: [perm!],
@@ -47,5 +47,5 @@ export function usePermCheck(
   if (isError) {
     throw error;
   }
-  return [data ?? false, isLoading];
+  return [data ?? false, isPending];
 }

@@ -49,7 +49,7 @@ class WrapperElement extends LitElement {
 }
 WrapperElement; // 'Use' the class to silence eslint/tsc warnings.
 
-declare global {
+declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {

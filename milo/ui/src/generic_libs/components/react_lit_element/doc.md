@@ -106,7 +106,7 @@ class MyCustomElement extends ReactLitElement {
 
 // Declare the custom element in the JSX namespace if you want to use it in
 // React template. Otherwise its unnecessary.
-declare global {
+declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {

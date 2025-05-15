@@ -70,7 +70,7 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
             label="New Status"
             value={state}
             onChange={(e) => setState(e.target.value as GeneralState)}
-            disabled={updateMutation.isLoading}
+            disabled={updateMutation.isPending}
             size="small"
           >
             <MenuItem value={GeneralState.OPEN}>Open</MenuItem>
@@ -85,7 +85,7 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
             label="Message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            disabled={updateMutation.isLoading}
+            disabled={updateMutation.isPending}
             size="small"
           />
         </FormControl>

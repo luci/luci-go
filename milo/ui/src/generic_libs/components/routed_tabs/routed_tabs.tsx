@@ -14,7 +14,7 @@
 
 import { Tabs, TabsProps } from '@mui/material';
 import { useReducer } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import {
   ActiveTabContextProvider,

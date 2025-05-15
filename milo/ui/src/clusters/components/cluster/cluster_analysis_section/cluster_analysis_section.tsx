@@ -19,7 +19,7 @@ import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import { useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import ExonerationsTab from '@/clusters/components/cluster/cluster_analysis_section/exonerations_tab/exonerations_tab';
 import FailuresTab from '@/clusters/components/cluster/cluster_analysis_section/failures_tab/failures_tab';

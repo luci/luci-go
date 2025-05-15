@@ -42,9 +42,15 @@ const useFetchExoneratedTestVariantBranches = (
   const clusterService = useClustersService();
   const tvService = useTestVariantsService();
 
-  return useQuery(
-    ['exoneratedTestVariantBranches', project, clusterAlgorithm, clusterId],
-    async () => {
+  return useQuery({
+    queryKey: [
+      'exoneratedTestVariantBranches',
+      project,
+      clusterAlgorithm,
+      clusterId,
+    ],
+
+    queryFn: async () => {
       const clusterResponse =
         await clusterService.QueryExoneratedTestVariantBranches({
           parent: `projects/${project}/clusters/${clusterAlgorithm}/${clusterId}/exoneratedTestVariantBranches`,
@@ -113,10 +119,9 @@ const useFetchExoneratedTestVariantBranches = (
       };
       return result;
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchExoneratedTestVariantBranches;

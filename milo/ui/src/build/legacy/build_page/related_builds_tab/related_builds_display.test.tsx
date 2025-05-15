@@ -111,7 +111,7 @@ describe('RelatedBuildsDisplay', () => {
         ]),
         showLoadingBar: false,
       },
-      expect.anything(),
+      undefined,
     );
   });
 
@@ -243,7 +243,7 @@ describe('RelatedBuildsDisplay', () => {
         ),
         showLoadingBar: false,
       },
-      expect.anything(),
+      undefined,
     );
   });
 
@@ -296,7 +296,7 @@ describe('RelatedBuildsDisplay', () => {
         ),
         showLoadingBar: true,
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

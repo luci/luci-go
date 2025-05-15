@@ -218,12 +218,12 @@ function useSuggestionsAsync(
     enabled: false,
   };
 
-  const { data, isError, error, isLoading, isFetching } = useQuery(valueQuery);
+  const { data, isError, error, isPending, isFetching } = useQuery(valueQuery);
   if (isError) {
     throw error;
   }
 
-  if (isLoading && !isFetching) {
+  if (isPending && !isFetching) {
     return [];
   }
   // This is already covered by the case above. Add it for type narrowing.
@@ -231,7 +231,7 @@ function useSuggestionsAsync(
     return [];
   }
 
-  if (isLoading) {
+  if (isPending) {
     return [
       {
         id: 'loading',

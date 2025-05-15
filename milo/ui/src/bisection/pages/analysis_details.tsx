@@ -23,7 +23,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { AnalysisOverview } from '@/bisection/components/analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
@@ -90,7 +90,7 @@ export function AnalysisDetailsPage() {
   };
 
   const client = useAnalysesClient();
-  const { isLoading, isError, data, error } = useQuery(
+  const { isPending, isError, data, error } = useQuery(
     client.QueryAnalysis.query(
       QueryAnalysisRequest.fromPartial({
         buildFailure: {
@@ -120,7 +120,7 @@ export function AnalysisDetailsPage() {
     );
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box
         display="flex"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RouteObject } from 'react-router-dom';
+import { RouteObject } from 'react-router';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.

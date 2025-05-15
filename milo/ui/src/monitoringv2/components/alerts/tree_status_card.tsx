@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { LinkifiedText } from '@/common/components/linkified_text';
 import {
@@ -86,7 +86,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
             borderColor: statusColor(latest?.generalState),
           }}
           label={
-            statusQuery.isLoading ? 'Loading' : statusText(latest?.generalState)
+            statusQuery.isPending ? 'Loading' : statusText(latest?.generalState)
           }
           variant="outlined"
         />

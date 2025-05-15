@@ -17,7 +17,7 @@ import styled from '@emotion/styled';
 import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -64,7 +64,7 @@ export function BuilderPage() {
   };
 
   const client = useBuildersClient();
-  const { data, error, isLoading } = useQuery({
+  const { data, error, isPending } = useQuery({
     ...client.GetBuilder.query(
       GetBuilderRequest.fromPartial({
         id: builderId,
@@ -105,7 +105,7 @@ export function BuilderPage() {
       />
       <LinearProgress
         value={100}
-        variant={isLoading ? 'indeterminate' : 'determinate'}
+        variant={isPending ? 'indeterminate' : 'determinate'}
         color="primary"
       />
       <Grid container spacing={2} sx={{ padding: '0 16px' }}>

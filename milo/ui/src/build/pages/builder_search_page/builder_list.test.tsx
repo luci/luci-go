@@ -88,8 +88,8 @@ describe('<BuilderList />', () => {
     listBuilderMock.mockReset();
   });
 
-  it('e2e', async () => {
-    const { rerender } = render(
+  it('no search query shows all builders', async () => {
+    render(
       <FakeContextProvider>
         <BuilderList searchQuery="" />
       </FakeContextProvider>,
@@ -118,15 +118,22 @@ describe('<BuilderList />', () => {
           ],
         },
       },
-      expect.anything(),
+      undefined,
     );
+  });
 
+  it('search query filters builders', async () => {
     // Filter builder.
-    rerender(
+    render(
       <FakeContextProvider>
         <BuilderList searchQuery="builder2" />
       </FakeContextProvider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
     // Builders are filtered correctly.
@@ -144,15 +151,22 @@ describe('<BuilderList />', () => {
           ],
         },
       },
-      expect.anything(),
+      undefined,
     );
+  });
 
+  it('fuzzy search builder', async () => {
     // Fuzzy search builder.
-    rerender(
+    render(
       <FakeContextProvider>
         <BuilderList searchQuery="CkEt1/bU Oj2" />
       </FakeContextProvider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runAllTimersAsync());
+
     // Do not trigger more list builder calls.
     expect(listBuilderMock).toHaveBeenCalledTimes(3);
     // Builders are filtered correctly.
@@ -165,7 +179,7 @@ describe('<BuilderList />', () => {
           ],
         },
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

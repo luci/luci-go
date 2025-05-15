@@ -15,7 +15,7 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import {
   StyledIconButton,

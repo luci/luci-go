@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { redirect, type RouteObject } from 'react-router-dom';
+import { redirect, type RouteObject } from 'react-router';
 
 export interface TrackedRedirectionParams {
   readonly contentGroup: string;
@@ -26,7 +26,7 @@ export interface TrackedRedirectionParams {
 }
 
 /**
- * Similar to `redirect` from `react-router-dom` but also track the original URL
+ * Similar to `redirect` from `react-router` but also track the original URL
  * visit as a page view event.
  */
 export function trackedRedirect(
@@ -128,8 +128,7 @@ function regexpsForRoutesImpl(
 
       return (
         // The prefix matches the route path.
-        composableRegexpForPattern(routePath) +
-        // The suffix is empty, is '/', or matches a child route.
+        composableRegexpForPattern(routePath) + // The suffix is empty, is '/', or matches a child route.
         `(|/|${regexpsForRoutesImpl(route.children, childPrefix)})`
       );
     })

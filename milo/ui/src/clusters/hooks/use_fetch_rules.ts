@@ -21,9 +21,10 @@ import { ListRulesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1
 const useFetchRules = (project: string) => {
   const rulesService = useRulesService();
 
-  return useQuery(
-    ['rules', project],
-    async () => {
+  return useQuery({
+    queryKey: ['rules', project],
+
+    queryFn: async () => {
       const request: ListRulesRequest = {
         parent: `projects/${encodeURIComponent(project || '')}`,
       };
@@ -45,10 +46,9 @@ const useFetchRules = (project: string) => {
       });
       return sortedRules;
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchRules;

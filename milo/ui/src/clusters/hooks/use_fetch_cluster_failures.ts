@@ -30,9 +30,16 @@ const useFetchClusterFailures = (
 ): UseQueryResult<DistinctClusterFailure[], Error> => {
   const service = useClustersService();
 
-  return useQuery(
-    ['clusterFailures', project, algorithm, id, filterToMetric?.metricId],
-    async () => {
+  return useQuery({
+    queryKey: [
+      'clusterFailures',
+      project,
+      algorithm,
+      id,
+      filterToMetric?.metricId,
+    ],
+
+    queryFn: async () => {
       const request: QueryClusterFailuresRequest = {
         parent: `projects/${project}/clusters/${algorithm}/${id}/failures`,
         metricFilter: filterToMetric?.name || '',
@@ -40,10 +47,9 @@ const useFetchClusterFailures = (
       const response = await service.QueryClusterFailures(request);
       return response.failures || [];
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchClusterFailures;

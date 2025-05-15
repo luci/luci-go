@@ -22,7 +22,7 @@ import {
   Popover,
   Typography,
 } from '@mui/material';
-import React, { cloneElement, Fragment, useState } from 'react';
+import React, { cloneElement, Fragment, JSX, useState } from 'react';
 
 import { CopyButton } from '@/common/components/copy_button';
 import { FormattedCLInfo } from '@/test_investigation/utils/test_info_utils';

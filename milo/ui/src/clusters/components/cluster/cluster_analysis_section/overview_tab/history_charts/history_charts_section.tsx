@@ -16,7 +16,7 @@ import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { useContext, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { ClusterContext } from '@/clusters/components/cluster/cluster_context';
@@ -69,7 +69,7 @@ export const HistoryChartsSection = () => {
   const days = selectedHistoryTimeRange?.value || 0;
 
   // Note that querying the history of a single cluster is faster and cheaper.
-  const { isLoading, isSuccess, data, error } = useQueryClusterHistory(
+  const { isPending, isSuccess, data, error } = useQueryClusterHistory(
     clusterId.project,
     `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`,
     days,
@@ -91,7 +91,7 @@ export const HistoryChartsSection = () => {
     <div>
       <HistoryChartsForm />
       {error && <LoadErrorAlert entityName="cluster history" error={error} />}
-      {!error && isLoading && <CentralizedProgress />}
+      {!error && isPending && <CentralizedProgress />}
       {isSuccess && data && metrics && selectedMetrics.length > 0 ? (
         <Grid container columns={90} data-testid="history-charts-container">
           {selectedMetrics.map((m) => (

@@ -176,7 +176,7 @@ const FailureReasonDisplay = ({
   variantHash,
 }: FailureReasonDisplayProps) => {
   const client = useResultDbClient();
-  const { data, error, isError, isLoading } = useQuery(
+  const { data, error, isError, isPending } = useQuery(
     client.BatchGetTestVariants.query(
       BatchGetTestVariantsRequest.fromPartial({
         invocation: `invocations/${invocationId}`,
@@ -189,7 +189,7 @@ const FailureReasonDisplay = ({
       }),
     ),
   );
-  if (isLoading) {
+  if (isPending) {
     return <LinearProgress />;
   }
   if (isError) {

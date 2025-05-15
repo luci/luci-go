@@ -36,7 +36,7 @@ export function GroupDescendants({ name }: GroupDescendantsProps) {
   const client = useAuthServiceGroupsClient();
 
   const {
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -44,7 +44,7 @@ export function GroupDescendants({ name }: GroupDescendantsProps) {
     ...client.GetExpandedGroup.query({ name: name }),
     refetchOnWindowFocus: false,
   });
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />

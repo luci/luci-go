@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, Chip, Link, TableCell } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import {

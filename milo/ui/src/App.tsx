@@ -27,7 +27,7 @@ import {
 } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 
 import releaseNotes from '@root/RELEASE_NOTES.md?raw';
 

@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
-import { useMatches } from 'react-router-dom';
+import { useMatches } from 'react-router';
 
 import { UiPage } from '@/common/constants/view';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
@@ -24,9 +24,9 @@ import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
 import { PAGE_LABEL_MAP } from './constants';
 
-jest.mock('react-router-dom', () => {
-  return self.createSelectiveSpiesFromModule<typeof import('react-router-dom')>(
-    'react-router-dom',
+jest.mock('react-router', () => {
+  return self.createSelectiveSpiesFromModule<typeof import('react-router')>(
+    'react-router',
     ['useMatches'],
   );
 });

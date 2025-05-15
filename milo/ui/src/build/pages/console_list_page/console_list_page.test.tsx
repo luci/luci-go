@@ -122,49 +122,49 @@ describe('ConsoleListPage', () => {
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-1'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-2'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-3'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-4'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-5'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-6'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-7'),
       }),
-      expect.anything(),
+      undefined,
     );
     expect(consoleSnapshotRowSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         snapshot: makeFakeConsoleSnapshot('console-8'),
       }),
-      expect.anything(),
+      undefined,
     );
   });
 });

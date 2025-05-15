@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
 import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
@@ -80,7 +80,7 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
   const numOfBuilds = useNumOfBuilds();
   const maxBatchSize = useMaxBatchSize();
   const client = useBatchedBuildsClient(maxBatchSize);
-  const { data, isLoading, error, isError } = useQuery(
+  const { data, isPending, error, isError } = useQuery(
     client.SearchBuilds.query(
       SearchBuildsRequest.fromPartial({
         predicate: {
@@ -99,7 +99,7 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
     throw error;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <CircularProgress size={20} />;
   }
 

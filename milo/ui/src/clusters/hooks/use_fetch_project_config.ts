@@ -25,9 +25,10 @@ export const useFetchProjectConfig = (
   project: string,
 ): UseQueryResult<ProjectConfig, Error> => {
   const projectsService = useProjectsService();
-  return useQuery(
-    ['projectconfig', project],
-    async () => {
+  return useQuery({
+    queryKey: ['projectconfig', project],
+
+    queryFn: async () => {
       if (!project) {
         throw new Error('invariant violated: project must be set');
       }
@@ -36,9 +37,8 @@ export const useFetchProjectConfig = (
       };
       return await projectsService.GetConfig(request);
     },
-    {
-      enabled: !!project,
-      retry: prpcRetrier,
-    },
-  );
+
+    enabled: !!project,
+    retry: prpcRetrier,
+  });
 };

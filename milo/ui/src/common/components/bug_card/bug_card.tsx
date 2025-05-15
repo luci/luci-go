@@ -38,12 +38,12 @@ export const BugCard = ({
 }: BugCardProps & { clusterId?: { id: string } }) => {
   const {
     data: bug,
-    isLoading,
+    isPending,
     error,
   } = useGetIssueQuery({ issueId: bugId }, {});
   const {
     data: component,
-    isLoading: isLoadingComponent,
+    isPending: isLoadingComponent,
     error: errorComponent,
   } = useGetComponentQuery(
     { componentId: bug?.issueState.componentId || '' },
@@ -51,7 +51,7 @@ export const BugCard = ({
       enabled: !!bug?.issueState.componentId,
     },
   );
-  if (isLoading) {
+  if (isPending) {
     return <CircularProgress />;
   }
   if (error) {

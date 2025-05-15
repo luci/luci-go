@@ -20,7 +20,7 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { getProjectURLPath } from '@/common/tools/url_utils';
 import { ProjectListItem } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';

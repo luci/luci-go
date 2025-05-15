@@ -14,7 +14,7 @@
 // limitations under the License.
 
 import { Box, ButtonBase, Link, Typography } from '@mui/material';
-import React from 'react';
+import React, { JSX } from 'react';
 
 import {
   FormattedCLInfo,

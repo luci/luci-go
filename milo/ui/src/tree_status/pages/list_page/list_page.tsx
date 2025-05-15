@@ -15,7 +15,7 @@
 import { Alert, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -123,9 +123,9 @@ export const TreeStatusListPage = () => {
       <div style={{ marginTop: '40px', height: '0px' }} />
       <TreeStatusUpdater tree={treeName} />
       <div style={{ marginTop: '40px', height: '0px' }} />
-      {status.isLoading ? (
+      {status.isPending ? (
         <CircularProgress />
-      ) : status.data.status.length === 0 ? (
+      ) : status?.data?.status.length === 0 ? (
         <Alert severity="warning">
           <strong>
             There are no status updates currently recorded for the {treeName}{' '}
@@ -137,7 +137,7 @@ export const TreeStatusListPage = () => {
           but it is better to explicitly add an open status.
         </Alert>
       ) : (
-        <TreeStatusTable status={status.data.status} />
+        <TreeStatusTable status={status?.data?.status || []} />
       )}
       <ParamsPager
         pagerCtx={pagerCtx}

@@ -20,16 +20,16 @@ import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
 const useFetchRule = (project: string, ruleId: string) => {
   const rulesService = useRulesService();
 
-  return useQuery(
-    ['rules', project, ruleId],
-    async () =>
+  return useQuery({
+    queryKey: ['rules', project, ruleId],
+
+    queryFn: async () =>
       await rulesService.Get({
         name: `projects/${project}/rules/${ruleId}`,
       }),
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchRule;

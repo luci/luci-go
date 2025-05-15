@@ -68,7 +68,7 @@ function TestComponent({ property }: TestComponentProps) {
   );
 }
 
-declare global {
+declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {

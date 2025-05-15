@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { redirect, type LoaderFunction } from 'react-router-dom';
+import { redirect, type LoaderFunction } from 'react-router';
 
 /**
  * Build a loader that redirects users to the child path while keeping the

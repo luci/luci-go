@@ -106,7 +106,7 @@ export function LogTable() {
   const virtuosoRef = useRef<TableVirtuosoHandle | null>(null);
   const [urlSearchParams] = useSyncedSearchParams();
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     ...client.ListArtifactLines.query(
       ListArtifactLinesRequest.fromPartial({
         parent: selectedArtifact?.name || '',
@@ -133,7 +133,7 @@ export function LogTable() {
 
   return (
     <>
-      {selectedArtifact && isLoading && <LinearProgress />}
+      {selectedArtifact && isPending && <LinearProgress />}
       {!selectedArtifact ? (
         'Please select an artifact from the tree to view its log lines.'
       ) : (

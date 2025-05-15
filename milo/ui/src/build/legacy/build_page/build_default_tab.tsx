@@ -14,7 +14,7 @@
 
 import { untracked } from 'mobx';
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useStore } from '@/common/store';
@@ -37,7 +37,9 @@ export function BuildDefaultTab() {
 
   const newUrl = `${basePath}/${defaultTab}${search}${hash}`;
   useEffect(
-    () => navigate(newUrl, { replace: true }),
+    () => {
+      navigate(newUrl, { replace: true });
+    },
     // The react-router router implementation could trigger URL related updates
     // (e.g. search query update) before unmounting the component and
     // redirecting users to the new component.

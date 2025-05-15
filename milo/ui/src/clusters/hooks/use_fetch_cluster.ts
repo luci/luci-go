@@ -27,9 +27,10 @@ const useFetchCluster = (
   id: string,
 ): UseQueryResult<Cluster, Error> => {
   const clustersService = useClustersService();
-  return useQuery(
-    ['cluster', project, algorithm, id],
-    async () => {
+  return useQuery({
+    queryKey: ['cluster', project, algorithm, id],
+
+    queryFn: async () => {
       const request: GetClusterRequest = {
         name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
       };
@@ -37,10 +38,9 @@ const useFetchCluster = (
       const response = await clustersService.Get(request);
       return response;
     },
-    {
-      retry: prpcRetrier,
-    },
-  );
+
+    retry: prpcRetrier,
+  });
 };
 
 export default useFetchCluster;

@@ -14,13 +14,7 @@
 
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import {
-  MutableRefObject,
-  ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { RefObject, ReactNode, useEffect, useRef, useState } from 'react';
 
 import {
   ATTACHED_REACT_LIT_ELEMENT_EVENT,
@@ -41,8 +35,8 @@ export interface ReactLitBridgeProps {
  */
 export function ReactLitBridge({ children }: ReactLitBridgeProps) {
   const [_, setState] = useState({});
-  const elementsRef = useRef<Map<ReactLitElement, number>>();
-  const trackerRef = useRef<ReactLitElementTrackerElement>();
+  const elementsRef = useRef<Map<ReactLitElement, number>>(undefined);
+  const trackerRef = useRef<ReactLitElementTrackerElement>(undefined);
   useEffect(() => {
     const tracker = trackerRef.current!;
 
@@ -153,14 +147,12 @@ class ReactLitElementTrackerElement extends LitElement {
   }
 }
 
-declare global {
+declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
       'react-lit-element-tracker': {
-        readonly ref: MutableRefObject<
-          ReactLitElementTrackerElement | undefined
-        >;
+        readonly ref: RefObject<ReactLitElementTrackerElement | undefined>;
         readonly children: ReactNode;
       };
     }

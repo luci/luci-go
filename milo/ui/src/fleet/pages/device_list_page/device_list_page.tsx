@@ -116,7 +116,7 @@ export const DeviceListPage = () => {
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
-    if (dimensionsQuery.isLoading) return;
+    if (dimensionsQuery.isPending) return;
 
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
@@ -137,7 +137,7 @@ export const DeviceListPage = () => {
   }, [
     addWarning,
     columns,
-    dimensionsQuery.isLoading,
+    dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
   ]);
@@ -219,7 +219,7 @@ export const DeviceListPage = () => {
             }
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
-            isLoading={dimensionsQuery.isLoading}
+            isLoading={dimensionsQuery.isPending}
           />
         )}
       </div>
@@ -236,8 +236,8 @@ export const DeviceListPage = () => {
           pagerCtx={pagerCtx}
           isError={devicesQuery.isError || dimensionsQuery.isError}
           error={devicesQuery.error || dimensionsQuery.error}
-          isLoading={devicesQuery.isLoading}
-          isLoadingColumns={dimensionsQuery.isLoading}
+          isLoading={devicesQuery.isPending}
+          isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
         />
       </div>

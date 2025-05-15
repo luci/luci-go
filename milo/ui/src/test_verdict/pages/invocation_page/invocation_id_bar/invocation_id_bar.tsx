@@ -15,7 +15,7 @@
 import { Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';

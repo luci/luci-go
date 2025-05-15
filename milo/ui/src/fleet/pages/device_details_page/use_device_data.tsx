@@ -39,8 +39,9 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
   const queryClient = useQueryClient();
   const listDevicesQueryKey = useListDevicesQueryKey();
 
-  const queriesData =
-    queryClient.getQueriesData<ListDevicesResponse>(listDevicesQueryKey);
+  const queriesData = queryClient.getQueriesData<ListDevicesResponse>({
+    queryKey: listDevicesQueryKey,
+  });
 
   const request = ListDevicesRequest.fromPartial({
     pageSize: 1,

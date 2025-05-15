@@ -18,7 +18,7 @@ import {
   // depends on `useSearchParams`.
   // eslint-disable-next-line no-restricted-imports
   useSearchParams,
-} from 'react-router-dom';
+} from 'react-router';
 import { useLatest } from 'react-use';
 
 import { SetURLSearchParams, SyncedSearchParamsContext } from './context';

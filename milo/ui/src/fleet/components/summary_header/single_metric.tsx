@@ -14,7 +14,7 @@
 
 import { Button, colors, Skeleton, Typography } from '@mui/material';
 import { ReactElement } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { theme } from '@/fleet/theme/theme';
 

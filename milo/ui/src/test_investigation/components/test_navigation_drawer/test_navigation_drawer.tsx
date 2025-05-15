@@ -15,7 +15,7 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, JSX } from 'react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
@@ -55,7 +55,7 @@ export function TestNavigationDrawer({
 
   const resultDbClient = useResultDbClient();
 
-  const { data: testVariantsResponse, isLoading: isLoadingTestVariants } =
+  const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
       ...resultDbClient.QueryTestVariants.query(
         QueryTestVariantsRequest.fromPartial({

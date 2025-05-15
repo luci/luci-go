@@ -83,7 +83,7 @@ const RuleEditDialog = ({ open = false, setOpen, rule }: Props) => {
           variant="contained"
           data-testid="rule-edit-dialog-save"
           onClick={handleSave}
-          loading={mutateRule.isLoading}
+          loading={mutateRule.isPending}
         >
           Save
         </LoadingButton>

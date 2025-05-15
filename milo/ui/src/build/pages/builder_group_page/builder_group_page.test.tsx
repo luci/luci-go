@@ -107,7 +107,7 @@ describe('<BuilderGroupPage />', () => {
         builders,
         maxBatchSize: expect.anything(),
       },
-      expect.anything(),
+      undefined,
     );
   });
 });

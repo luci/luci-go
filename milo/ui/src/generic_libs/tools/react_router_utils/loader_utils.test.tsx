@@ -14,7 +14,7 @@
 
 import { cleanup, render } from '@testing-library/react';
 import { act } from 'react';
-import { RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { RouterProvider, createMemoryRouter } from 'react-router';
 
 import { URLObserver } from '@/testing_tools/url_observer';
 

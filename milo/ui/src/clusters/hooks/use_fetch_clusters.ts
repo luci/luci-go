@@ -79,8 +79,8 @@ export const useFetchClusterSummaries = (
   view: ClusterSummaryView,
 ): UseQueryResult<QueryClusterSummariesResponse, Error> => {
   const clustersService = useClustersService();
-  return useQuery(
-    [
+  return useQuery({
+    queryKey: [
       'clusters',
       view,
       project,
@@ -89,7 +89,8 @@ export const useFetchClusterSummaries = (
       intervalDuration(interval),
       metricsKey(metrics),
     ],
-    async () => {
+
+    queryFn: async () => {
       const latestTime = DateTime.now();
 
       const request: QueryClusterSummariesRequest = {
@@ -109,15 +110,15 @@ export const useFetchClusterSummaries = (
       };
       return await clustersService.QueryClusterSummaries(request);
     },
-    {
-      retry: prpcRetrier,
-      enabled:
-        orderBy !== undefined &&
-        orderBy.metric !== '' &&
-        metrics.length > 0 &&
-        interval !== undefined &&
-        (view !== ClusterSummaryView.FULL ||
-          (ClusterSummaryView.FULL && interval.duration > 24)),
-    },
-  );
+
+    retry: prpcRetrier,
+
+    enabled:
+      orderBy !== undefined &&
+      orderBy.metric !== '' &&
+      metrics.length > 0 &&
+      interval !== undefined &&
+      (view !== ClusterSummaryView.FULL ||
+        (ClusterSummaryView.FULL && interval.duration > 24)),
+  });
 };

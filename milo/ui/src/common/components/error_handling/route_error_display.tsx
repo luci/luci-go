@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { useRouteError } from 'react-router-dom';
+import { useRouteError } from 'react-router';
 
 import { ErrorDisplay } from './error_display';
 

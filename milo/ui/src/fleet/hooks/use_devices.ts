@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryKey, useQuery } from '@tanstack/react-query';
+import { QueryKey, useQuery, keepPreviousData } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -35,7 +35,7 @@ export const useDevices = (request: ListDevicesRequest) => {
   const devicesQuery = useQuery({
     queryKey: queryKey,
     queryFn: client.ListDevices.query(request).queryFn,
-    keepPreviousData: true, // avoid loading while switching page
+    placeholderData: keepPreviousData, // avoid loading while switching page
   });
 
   return devicesQuery;

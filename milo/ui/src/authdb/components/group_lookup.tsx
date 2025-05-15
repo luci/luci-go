@@ -41,7 +41,7 @@ export function GroupLookup({ name }: GroupLookupProps) {
     kind: PrincipalKind.GROUP,
   };
   const {
-    isLoading,
+    isPending,
     isError,
     error,
     data: response,
@@ -50,7 +50,7 @@ export function GroupLookup({ name }: GroupLookupProps) {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
@@ -70,8 +70,8 @@ export function GroupLookup({ name }: GroupLookupProps) {
   }
 
   const summary = interpretLookupResults(response);
-  const directIncluders = summary.directIncluders;
-  const indirectIncluders = summary.indirectIncluders;
+  const directIncluders = summary.directIncluders || [];
+  const indirectIncluders = summary.indirectIncluders || [];
 
   return (
     <>

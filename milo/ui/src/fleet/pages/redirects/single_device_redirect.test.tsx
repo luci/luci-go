@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 import {
   MOCK_DEVICE_1,

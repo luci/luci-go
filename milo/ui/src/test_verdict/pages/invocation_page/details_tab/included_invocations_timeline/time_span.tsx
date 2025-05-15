@@ -34,19 +34,19 @@ export function TimeSpan({ invName, xScale }: TimeSpanProps) {
   const client = useResultDbClient();
   const {
     data: invocation,
-    isLoading,
+    isPending,
     isError,
     error,
   } = useQuery(client.GetInvocation.query({ name: invName }));
   if (isError) {
     throw error;
   }
-  if (isLoading) {
+  if (isPending) {
     return <></>;
   }
 
   const createTime = DateTime.fromISO(invocation.createTime!);
-  const finalizeTime = invocation.finalizeTime
+  const finalizeTime = invocation?.finalizeTime
     ? DateTime.fromISO(invocation.finalizeTime)
     : null;
   const start = xScale(createTime);

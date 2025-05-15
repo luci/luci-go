@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 import { act } from 'react';
 
@@ -26,7 +26,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { ListTestAnalysesTable } from './list_test_analyses_table';
 
-describe('<AnalysesTable />', () => {
+describe('<TestAnalysesTable />', () => {
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
@@ -104,7 +104,9 @@ describe('<AnalysesTable />', () => {
     expect(screen.getByText('26-40')).toBeInTheDocument();
 
     // Check the "next" button is disabled as there are no more analyses
-    expect(screen.getByTitle('Go to next page')).toHaveAttribute('disabled');
+    waitFor(() =>
+      expect(screen.getByTitle('Go to next page')).toHaveAttribute('disabled'),
+    );
   });
 
   test('if an appropriate message is displayed for no analyses', async () => {

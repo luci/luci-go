@@ -26,7 +26,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
  * @return The render result.
  */
 export const renderWithRouter = (
-  ui: React.ReactElement,
+  ui: React.ReactElement<any>,
   route = '/',
 ): RenderResult => {
   window.history.pushState({}, 'Test page', route);
@@ -52,7 +52,7 @@ export const renderWithRouter = (
  * @return The render result.
  */
 export const renderWithRouterAndClient = (
-  ui: React.ReactElement,
+  ui: React.ReactElement<any>,
   route = '/',
   routeDefinition = '',
 ) => {
