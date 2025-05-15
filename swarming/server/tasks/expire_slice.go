@@ -28,6 +28,10 @@ import (
 	"go.chromium.org/luci/swarming/server/model"
 )
 
+// ExpireSliceOp represent an operation of switching to the next task slice.
+//
+// Despite its name, this can happen for a variety of reasons, not just passage
+// of time (see Reason field).
 type ExpireSliceOp struct {
 	// Request is the task's TaskRequest entity.
 	Request *model.TaskRequest
@@ -35,8 +39,6 @@ type ExpireSliceOp struct {
 	ToRunKey *datastore.Key
 	// Reason is the reason the slice is marked as expired.
 	Reason ExpireReason
-	// Details is the details of the reason.
-	Details string
 	// CulpritBotID is the bot that is likely responsible for BOT_INTERNAL_ERROR
 	// if known.
 	CulpritBotID string
@@ -44,7 +46,15 @@ type ExpireSliceOp struct {
 	Config *cfg.Config
 }
 
+// ExpireSliceTxnOutcome is returned by ExpireSliceTxn.
+type ExpireSliceTxnOutcome struct {
+	Expired   bool // if true, actually expired the slice, otherwise did nothing
+	Completed bool // if true, actually expired the last task slice
+}
+
 // Reason is the reason the slice is marked as expired.
+//
+// Its literal string value shows up in metric fields.
 type ExpireReason string
 
 const (
@@ -53,7 +63,8 @@ const (
 	PermissionDenied  ExpireReason = "permission_denied"  // no access to the RBE instance
 	InvalidArgument   ExpireReason = "invalid_argument"   // RBE didn't like something about the reservation
 	BotInternalError  ExpireReason = "bot_internal_error" // the bot picked up the reservation and then died
-	Expired           ExpireReason = "expired"            // the scheduling deadline exceeded
+	Expired           ExpireReason = "expired"            // the scheduling deadline exceeded, discovered via RBE PubSub
+	ExpiredViaScan    ExpireReason = "expired_via_scan"   // the scheduling deadline exceeded, discovered via scanning
 )
 
 // ExpireSliceTxn is called inside a transaction to mark the task slice as
@@ -61,7 +72,7 @@ const (
 //
 // If the task has more slices, enqueues the next slice. Otherwise marks the
 // whole task as expired by updating TaskResultSummary.
-func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) error {
+func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) (*ExpireSliceTxnOutcome, error) {
 	taskID := model.RequestKeyToTaskID(op.Request.Key, model.AsRequest)
 	trs := &model.TaskResultSummary{
 		Key: model.TaskResultSummaryKey(ctx, op.Request.Key),
@@ -73,19 +84,19 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		// Nothing to expire
 		logging.Warningf(ctx, "task %q not found", taskID)
-		return nil
+		return &ExpireSliceTxnOutcome{}, nil
 	case err != nil:
-		return errors.Annotate(err, "datastore error fetching task result entities for task %s", taskID).Err()
+		return nil, errors.Annotate(err, "datastore error fetching task result entities for task %s", taskID).Err()
 	}
 
 	if !ttr.IsReapable() {
-		return nil
+		return &ExpireSliceTxnOutcome{}, nil
 	}
 
 	toPut := []any{ttr, trs}
 	var terminalState apipb.TaskState
 	switch op.Reason {
-	case Expired:
+	case Expired, ExpiredViaScan:
 		terminalState = apipb.TaskState_EXPIRED
 	case NoResource:
 		terminalState = apipb.TaskState_NO_RESOURCE
@@ -111,11 +122,11 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 		var err error
 		newTTR, err = model.NewTaskToRun(ctx, m.serverProject, op.Request, nextIdx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		toPut = append(toPut, newTTR)
 		if err := EnqueueRBENew(ctx, m.disp, op.Request, newTTR, op.Config); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -139,7 +150,7 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 	}
 
 	if err := datastore.Put(ctx, toPut...); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Report metrics in case the transaction actually lands.
@@ -147,8 +158,14 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) err
 		onTaskExpired(ctx, trs, ttr, string(op.Reason))
 	})
 
-	if newTTR != nil {
-		return nil
+	if newTTR == nil {
+		if err := m.onTaskComplete(ctx, taskID, op.Request, trs); err != nil {
+			return nil, err
+		}
 	}
-	return m.onTaskComplete(ctx, taskID, op.Request, trs)
+
+	return &ExpireSliceTxnOutcome{
+		Expired:   true,
+		Completed: newTTR == nil,
+	}, nil
 }

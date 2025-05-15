@@ -31,7 +31,7 @@ type MockedManager struct {
 	CancelTxnMock          func(context.Context, *CancelOp) (*CancelOpOutcome, error)
 	CompleteTxnMock        func(context.Context, *CompleteOp) (*CompleteTxnOutcome, error)
 	UpdateTxnMock          func(context.Context, *UpdateOp) (*UpdateTxnOutcome, error)
-	ExpireSliceTxnMock     func(context.Context, *ExpireSliceOp) error
+	ExpireSliceTxnMock     func(context.Context, *ExpireSliceOp) (*ExpireSliceTxnOutcome, error)
 }
 
 func (m *MockedManager) CreateTask(ctx context.Context, op *CreationOp) (*CreatedTask, error) {
@@ -76,7 +76,7 @@ func (m *MockedManager) UpdateTxn(ctx context.Context, op *UpdateOp) (*UpdateTxn
 	return m.UpdateTxnMock(ctx, op)
 }
 
-func (m *MockedManager) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) error {
+func (m *MockedManager) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) (*ExpireSliceTxnOutcome, error) {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("must be in a transaction")
 	}

@@ -136,10 +136,12 @@ func TestExpireSliceTxn(t *testing.T) {
 			return trs, ttr
 		}
 
-		run := func(ctx context.Context, op *ExpireSliceOp) error {
-			return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return mgr.ExpireSliceTxn(ctx, op)
+		run := func(ctx context.Context, op *ExpireSliceOp) (outcome *ExpireSliceTxnOutcome, err error) {
+			err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+				outcome, err = mgr.ExpireSliceTxn(ctx, op)
+				return
 			}, nil)
+			return
 		}
 
 		t.Run("Task Not Found", func(t *ftt.Test) {
@@ -149,7 +151,9 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			assert.NoErr(t, run(ctx, op))
+			out, err := run(ctx, op)
+			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{}))
 		})
 
 		t.Run("Slice Already Consumed", func(t *ftt.Test) {
@@ -160,8 +164,9 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{}))
 
 			loadedTRS := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}
@@ -178,8 +183,12 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{
+				Expired:   true,
+				Completed: true,
+			}))
 
 			loadedTRS := &model.TaskResultSummary{Key: trs.Key}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}
@@ -221,8 +230,12 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   NoResource,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{
+				Expired:   true,
+				Completed: true,
+			}))
 
 			loadedTRS := &model.TaskResultSummary{Key: trs.Key}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}
@@ -263,8 +276,12 @@ func TestExpireSliceTxn(t *testing.T) {
 				CulpritBotID: culpritBot,
 				Config:       cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{
+				Expired:   true,
+				Completed: true,
+			}))
 
 			loadedTRS := &model.TaskResultSummary{Key: trs.Key}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}
@@ -296,8 +313,12 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{
+				Expired:   true,
+				Completed: true,
+			}))
 
 			loadedTRS := &model.TaskResultSummary{Key: trs.Key}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}
@@ -330,8 +351,11 @@ func TestExpireSliceTxn(t *testing.T) {
 				Reason:   Expired,
 				Config:   cfg,
 			}
-			err := run(ctx, op)
+			out, err := run(ctx, op)
 			assert.NoErr(t, err)
+			assert.That(t, out, should.Match(&ExpireSliceTxnOutcome{
+				Expired: true,
+			}))
 
 			loadedTRS := &model.TaskResultSummary{Key: trs.Key}
 			loadedTTR := &model.TaskToRun{Key: ttr.Key}

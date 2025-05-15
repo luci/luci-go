@@ -473,7 +473,7 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 		if percent != 100 {
 			logging.Infof(ctx, "Routing to Go to expire slice (configured to route %d%% to Go)", percent)
 		}
-		return s.expireSliceGo(ctx, task, code, culpritRBEBotID, details)
+		return s.expireSliceGo(ctx, task, code, culpritRBEBotID)
 	}
 	logging.Infof(ctx, "Routing to Python to expire slice (configured to route %d%% to Go)", percent)
 	return s.expireSlicePy(ctx, task, code, culpritRBEBotID, details)
@@ -498,7 +498,7 @@ func (s *ReservationServer) expireSlicePy(ctx context.Context, task *internalspb
 }
 
 // expireSliceGo calls tasksManager.ExpireSliceTxn.
-func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID, details string) error {
+func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritRBEBotID string) error {
 	// Do not use effective bot ID in place of the real bot ID.
 	if _, _, _, ok := model.ParseRBEEffectiveBotID(culpritRBEBotID); ok {
 		culpritRBEBotID = ""
@@ -535,13 +535,13 @@ func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb
 		Request:      tr,
 		ToRunKey:     model.TaskToRunKey(ctx, tr.Key, task.TaskToRunShard, task.TaskToRunId),
 		Reason:       reason,
-		Details:      details,
 		CulpritBotID: culpritRBEBotID,
 		Config:       s.cfg.Cached(ctx),
 	}
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		return s.tasksManager.ExpireSliceTxn(ctx, expireOp)
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		_, err := s.tasksManager.ExpireSliceTxn(ctx, expireOp)
+		return err
 	}, nil)
 	if err != nil {
 		return errors.Annotate(err, "failed to expire slice").Tag(transient.Tag).Err()

@@ -284,18 +284,14 @@ func TestReservationServer(t *testing.T) {
 			taskToRunID := ttrKey.IntID()
 			taskToRunShard := (&model.TaskToRun{Key: ttrKey}).MustShardIndex()
 
-			var (
-				expireSliceReason  tasks.ExpireReason
-				expireSliceDetails string
-			)
+			var expireSliceReason tasks.ExpireReason
 			srv.tasksManager = &tasks.MockedManager{
-				ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) error {
+				ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) (*tasks.ExpireSliceTxnOutcome, error) {
 					assert.That(t, model.RequestKeyToTaskID(op.Request.Key, model.AsRequest), should.Equal(taskID))
 					assert.That(t, op.ToRunKey, should.Match(model.TaskToRunKey(ctx, op.Request.Key, taskToRunShard, taskToRunID)))
 					assert.That(t, op.Reason, should.NotEqual(tasks.ReasonUnspecified))
 					expireSliceReason = op.Reason
-					expireSliceDetails = op.Details
-					return nil
+					return &tasks.ExpireSliceTxnOutcome{Expired: true}, nil
 				},
 			}
 
@@ -351,7 +347,6 @@ func TestReservationServer(t *testing.T) {
 				}
 				rbe.reservation.Payload, _ = anypb.New(taskPayload)
 				expireSliceReason = tasks.ReasonUnspecified
-				expireSliceDetails = ""
 				return srv.expireSliceBasedOnReservation(ctx, reservationName)
 			}
 
@@ -366,7 +361,6 @@ func TestReservationServer(t *testing.T) {
 			expectExpireSlice := func(r tasks.ExpireReason, details string) {
 				expectNoResubmit()
 				assert.Loosely(t, expireSliceReason, should.Equal(r))
-				assert.Loosely(t, expireSliceDetails, should.ContainSubstring(details))
 			}
 
 			expectResubmit := func(reservationID string) {
