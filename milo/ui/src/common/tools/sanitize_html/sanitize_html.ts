@@ -56,7 +56,7 @@ export function sanitizeHTML(
       'inv-level',
       'experimental-ansi-support',
     ],
-    ADD_TAGS: ['text-artifact'],
+    // ADD_TAGS: ['text-artifact'],
     RETURN_TRUSTED_TYPE: opts?.RETURN_TRUSTED_TYPE,
   });
 }
