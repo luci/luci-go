@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -163,7 +164,8 @@ func TestTestHistoryServer(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		server := NewTestHistoryServer()
+		searchClient := &testrealms.FakeClient{}
+		server := NewTestHistoryServer(searchClient)
 
 		t.Run("Query", func(t *ftt.Test) {
 			req := &pb.QueryTestHistoryRequest{
@@ -744,6 +746,29 @@ func TestTestHistoryServer(t *testing.T) {
 		})
 
 		t.Run("QueryTests", func(t *ftt.Test) {
+			searchClient.TestRealms = []testrealms.TestRealm{
+				{
+					TestID: "test_id",
+					Realm:  "project:realm",
+				},
+				{
+					TestID: "test_id1",
+					Realm:  "project:realm",
+				},
+				{
+					TestID: "test_id2",
+					Realm:  "project:realm",
+				},
+				{
+					TestID: "test_id3",
+					Realm:  "project:other-realm",
+				},
+				{
+					TestID: "test_id4",
+					Realm:  "project:forbidden-realm",
+				},
+			}
+
 			req := &pb.QueryTestsRequest{
 				Project:         "project",
 				TestIdSubstring: "test_id",

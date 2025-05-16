@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package testrealms contains logic related to test search and the
+// test_realms BigQuery table.
 package testrealms
 
 import (

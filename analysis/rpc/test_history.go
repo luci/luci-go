@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -45,14 +46,19 @@ var pageSizeLimiter = pagination.PageSizeLimiter{
 	Max:     1000,
 }
 
+type TestSearchClient interface {
+	QueryTests(ctx context.Context, project, testIDSubstring string, opts testrealms.QueryTestsOptions) (testIDs []string, nextPageToken string, err error)
+}
+
 // testHistoryServer implements pb.TestHistoryServer.
 type testHistoryServer struct {
+	searchClient TestSearchClient
 }
 
 // NewTestHistoryServer returns a new pb.TestHistoryServer.
-func NewTestHistoryServer() pb.TestHistoryServer {
+func NewTestHistoryServer(searchClient TestSearchClient) pb.TestHistoryServer {
 	return &pb.DecoratedTestHistory{
-		Service:  &testHistoryServer{},
+		Service:  &testHistoryServer{searchClient: searchClient},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -226,7 +232,7 @@ func validateQueryVariantsRequest(req *pb.QueryVariantsRequest) error {
 
 // QueryTests finds all test IDs that contain the given substring in a given
 // project that were recorded in the past 90 days.
-func (*testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRequest) (*pb.QueryTestsResponse, error) {
+func (s *testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRequest) (*pb.QueryTestsResponse, error) {
 	if err := validateQueryTestsRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
@@ -235,16 +241,20 @@ func (*testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRequ
 	if err != nil {
 		return nil, err
 	}
+	authorizedRealms := make([]string, 0, len(subRealms))
+	for _, subRealm := range subRealms {
+		authorizedRealms = append(authorizedRealms, realms.Join(req.Project, subRealm))
+	}
 
 	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
-	opts := testresults.QueryTestsOptions{
+	opts := testrealms.QueryTestsOptions{
 		CaseSensitive: !req.CaseInsensitive,
-		SubRealms:     subRealms,
+		Realms:        authorizedRealms,
 		PageSize:      pageSize,
 		PageToken:     req.GetPageToken(),
 	}
 
-	testIDs, nextPageToken, err := testresults.QueryTests(span.Single(ctx), req.Project, req.TestIdSubstring, opts)
+	testIDs, nextPageToken, err := s.searchClient.QueryTests(ctx, req.Project, req.TestIdSubstring, opts)
 	if err != nil {
 		return nil, err
 	}

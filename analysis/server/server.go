@@ -117,6 +117,11 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 		return errors.Annotate(err, "creating test verdicts read client").Err()
 	}
 
+	tsc, err := testrealms.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Annotate(err, "creating test search client").Err()
+	}
+
 	trc, err := testresults.NewReadClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
 		return errors.Annotate(err, "creating test results read client").Err()
@@ -147,7 +152,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL(basePath), bc, selfEmail))
 
 	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
-	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
+	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer(tsc))
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
 	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))

@@ -785,85 +785,6 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 	return variants, nextPageToken, nil
 }
 
-// QueryTestsOptions specifies options for QueryTests().
-type QueryTestsOptions struct {
-	CaseSensitive bool
-	SubRealms     []string
-	PageSize      int
-	PageToken     string
-}
-
-// parseQueryTestsPageToken parses the positions from the page token.
-func parseQueryTestsPageToken(pageToken string) (afterTestId string, err error) {
-	tokens, err := pagination.ParseToken(pageToken)
-	if err != nil {
-		return "", err
-	}
-
-	if len(tokens) != 1 {
-		return "", pagination.InvalidToken(errors.Reason("expected 1 components, got %d", len(tokens)).Err())
-	}
-
-	return tokens[0], nil
-}
-
-// QueryTests finds all the test IDs with the specified testIDSubstring from
-// the spanner database.
-// Must be called in a spanner transactional context.
-func QueryTests(ctx context.Context, project, testIDSubstring string, opts QueryTestsOptions) (testIDs []string, nextPageToken string, err error) {
-	paginationTestID := ""
-	if opts.PageToken != "" {
-		paginationTestID, err = parseQueryTestsPageToken(opts.PageToken)
-		if err != nil {
-			return nil, "", err
-		}
-	}
-	params := map[string]any{
-		"project":       project,
-		"testIdPattern": "%" + spanutil.QuoteLike(testIDSubstring) + "%",
-		"subRealms":     opts.SubRealms,
-
-		// Control pagination.
-		"limit":            opts.PageSize,
-		"paginationTestId": paginationTestID,
-	}
-	input := map[string]any{
-		"hasLimit":      opts.PageSize > 0,
-		"params":        params,
-		"caseSensitive": opts.CaseSensitive,
-	}
-
-	stmt, err := spanutil.GenerateStatement(QueryTestsQueryTmpl, QueryTestsQueryTmpl.Name(), input)
-	if err != nil {
-		return nil, "", err
-	}
-	stmt.Params = params
-
-	var b spanutil.Buffer
-	testIDs = make([]string, 0, opts.PageSize)
-	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
-		var testID string
-		err := b.FromSpanner(
-			row,
-			&testID,
-		)
-		if err != nil {
-			return err
-		}
-		testIDs = append(testIDs, testID)
-		return nil
-	})
-	if err != nil {
-		return nil, "", err
-	}
-
-	if opts.PageSize != 0 && len(testIDs) == opts.PageSize {
-		lastTestID := testIDs[len(testIDs)-1]
-		nextPageToken = pagination.Token(lastTestID)
-	}
-	return testIDs, nextPageToken, nil
-}
-
 var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 	{{define "tvStatus"}}
 		CASE
@@ -1020,31 +941,6 @@ var variantsQueryTmpl = template.Must(template.New("variantsQuery").Parse(`
 			AND VariantHash > @paginationVariantHash
 	GROUP BY VariantHash
 	ORDER BY VariantHash ASC
-	{{if .hasLimit}}
-		LIMIT @limit
-	{{end}}
-`))
-
-// The query is written in a way to force spanner NOT to put
-// `SubRealm IN UNNEST(@subRealms)` check in Filter Scan seek condition, which
-// can significantly increase the time it takes to scan the table.
-var QueryTestsQueryTmpl = template.Must(template.New("QueryTestsQuery").Parse(`
-  @{USE_ADDITIONAL_PARALLELISM=TRUE}
-	WITH Tests as (
-		SELECT DISTINCT TestId, SubRealm IN UNNEST(@subRealms) as HasAccess
-		FROM TestRealms
-		WHERE
-			Project = @project
-				AND TestId > @paginationTestId
-				{{if .caseSensitive}}
-					AND TestId LIKE @testIdPattern
-				{{else}}
-					AND TestIdLower LIKE LOWER(@testIdPattern)
-				{{end}}
-	)
-	SELECT TestId FROM Tests
-	WHERE HasAccess
-	ORDER BY TestId ASC
 	{{if .hasLimit}}
 		LIMIT @limit
 	{{end}}
