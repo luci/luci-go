@@ -1,0 +1,55 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/bq/common.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// Represents a distinct (test, realm) pair observed in a LUCI Project.
+// Supports the test search implementation.
+//
+// Primary key (test_variant_segments): project, test_id, realm.
+message TestRealmRow {
+  // The LUCI Project. E.g. "chromium".
+  string project = 1;
+
+  // A unique identifier of the test in a LUCI project, excluding variant.
+  //
+  // This is the flat-form encoding of the structured test variant ID above.
+  string test_id = 2;
+
+  // The realm within the project that this test was found.
+  string realm = 3;
+
+  // A unique identifier of the test in a LUCI project, excluding variant,
+  // in lower case.
+  // For case-insensitive matching.
+  string test_id_lower = 4;
+
+  // The structured test identifier, excluding variant information.
+  // For structured test ID search.
+  TestIdentifierBase test_id_structured = 5;
+
+  // The structured test identifier in lower case, excluding variant information.
+  // For case-insensitive structured test ID search.
+  TestIdentifierBase test_id_structured_lower = 6;
+
+  // The partition time of the last test result observed for this test realm.
+  google.protobuf.Timestamp last_seen = 7;
+}

@@ -59,6 +59,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/services/verdictingester"
 	"go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/ui"
@@ -175,6 +176,9 @@ func RegisterCrons(srv *luciserver.Server) {
 	})
 	cron.RegisterHandler("merge-test-variant-branches", func(ctx context.Context) error {
 		return cpbq.MergeTables(ctx, srv.Options.CloudProject)
+	})
+	cron.RegisterHandler("merge-test-realms", func(ctx context.Context) error {
+		return testrealms.MergeTables(ctx, srv.Options.CloudProject)
 	})
 	cron.RegisterHandler("update-changepoint-table", func(ctx context.Context) error {
 		return bqupdator.UpdateChangepointTable(ctx, srv.Options.CloudProject)
