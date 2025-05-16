@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { act } from 'react';
 
 import { OutputCommit } from '@/gitiles/types';
 import { Commit_TreeDiff_ChangeType } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';

@@ -14,9 +14,8 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { useQuery } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { act } from 'react';
 import { ReactNode } from 'react';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
