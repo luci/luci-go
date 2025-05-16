@@ -28,7 +28,7 @@ test:
 # * release tarballs when running presubmit checks to ensure the CL doesn't
 #   break the builds (see https://chromium.googlesource.com/infra/infra/+/73ad16cffae6eb25bb30cba6da1a91dc777b2a43/recipes/recipes/infra_frontend_tester.py#128).
 build:
-	npm run build
+	NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 # Used to run integration test in a builder (see https://chromium.googlesource.com/infra/infra/+/73ad16cffae6eb25bb30cba6da1a91dc777b2a43/recipes/recipes/luci_ui_promoter.py#85).
 e2e:
