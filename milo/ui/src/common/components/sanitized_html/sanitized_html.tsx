@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Box, SxProps, Theme } from '@mui/material';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import { sanitizeHTML } from '@/common/tools/sanitize_html';
 
@@ -38,7 +38,11 @@ export interface SanitizedHtmlProps {
  * It also makes components under unit test behave closer production. As trusted
  * type policy and CSP are not typically used in unit tests.
  */
-export function SanitizedHtml({ html, sx, className }: SanitizedHtmlProps) {
+export function SanitizedHtmlComponent({
+  html,
+  sx,
+  className,
+}: SanitizedHtmlProps) {
   // `sanitizedHtml` must be a `TrustedHTML` not a `string` to ensure the HTML
   // doesn't get sanitized again by the default trusted type policy.
   //
@@ -60,3 +64,5 @@ export function SanitizedHtml({ html, sx, className }: SanitizedHtmlProps) {
     />
   );
 }
+
+export const SanitizedHtml = memo(SanitizedHtmlComponent);
