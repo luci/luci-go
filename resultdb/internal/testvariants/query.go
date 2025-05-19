@@ -103,6 +103,24 @@ const (
 	AccessLevelUnrestricted
 )
 
+type SortOrder int
+
+const (
+	// Results should be sorted by verdict status v1, in ascending status order
+	// (unexpected results first).
+	SortOrderLegacyStatus SortOrder = iota
+	// Results should be sorted by effective verdict status v2, in ascending order.
+	// This means the order will be:
+	// - Failed
+	// - Execution Error
+	// - Precluded
+	// - Flaky
+	// - Exonerated
+	// - Passed and skipped (these are currently bunched together for performance
+	//   reasons).
+	SortOrderStatusV2Effective
+)
+
 // Query specifies test variants to fetch.
 type Query struct {
 	ReachableInvocations graph.ReachableInvocations
@@ -126,18 +144,22 @@ type Query struct {
 	TestIDs   []string
 	// The level of access the user has to test results and test exoneration data.
 	AccessLevel AccessLevel
+	// The sort order of results.
+	OrderBy SortOrder
 
 	decompressBuf []byte         // buffer for decompressing blobs
 	params        map[string]any // query parameters
 }
 
 // trim is equivalent to q.Mask.Trim with the exception that "test_id",
-// "variant_hash", and "status" are always kept intact. Those fields are needed
-// to generate page tokens.
+// "variant_hash", and status fields are always kept intact.
+// Those fields are needed to generate page tokens.
 func (q *Query) trim(tv *pb.TestVariant) error {
 	testID := tv.TestId
 	vHash := tv.VariantHash
 	status := tv.Status
+	statusV2 := tv.StatusV2
+	statusOverride := tv.StatusOverride
 
 	if err := q.Mask.Trim(tv); err != nil {
 		return errors.Annotate(err, "error trimming fields for test variant with ID: %s, variant hash: %s", tv.TestId, tv.VariantHash).Err()
@@ -146,6 +168,8 @@ func (q *Query) trim(tv *pb.TestVariant) error {
 	tv.TestId = testID
 	tv.VariantHash = vHash
 	tv.Status = status
+	tv.StatusV2 = statusV2
+	tv.StatusOverride = statusOverride
 	return nil
 }
 
@@ -480,9 +504,10 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]any{
-		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
-		"HasTestIds":    len(q.TestIDs) > 0,
-		"StatusFilter":  q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
+		"ResultColumns":            strings.Join(q.resultSelectColumns(), ", "),
+		"HasTestIds":               len(q.TestIDs) > 0,
+		"StatusFilter":             q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
+		"OrderByStatusV2Effective": q.OrderBy == SortOrderStatusV2Effective,
 	})
 	if err != nil {
 		return
@@ -647,7 +672,14 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 	if len(tvs) == q.PageSize || err == responseLimitReachedErr {
 		// There could be more test variants to return.
 		last := tvs[len(tvs)-1]
-		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
+
+		var sortValue string
+		if q.OrderBy == SortOrderStatusV2Effective {
+			sortValue = calculateStatusV2Effective(last.StatusV2, last.StatusOverride).String()
+		} else {
+			sortValue = last.Status.String()
+		}
+		nextPageToken = pagination.Token(sortValue, last.TestId, last.VariantHash)
 	} else {
 		// We have finished reading all test variants with unexpected results.
 		if q.Predicate.GetStatus() != 0 {
@@ -657,8 +689,14 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 		} else {
 			// If we got less than one page of test variants with unexpected results,
 			// and the query is not for test variants with specific status,
-			// compute the nextPageToken for test variants with only expected results.
-			nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), "", "")
+			// compute the nextPageToken for test variants which may have only expected results.
+			var sortValue string
+			if q.OrderBy == SortOrderStatusV2Effective {
+				sortValue = statusV2EffectivePassedOrSkipped.String()
+			} else {
+				sortValue = pb.TestVariantStatus_EXPECTED.String()
+			}
+			nextPageToken = pagination.Token(sortValue, "", "")
 		}
 	}
 	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
@@ -673,8 +711,9 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 	)
 	defer func() { tracing.End(ts, err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]any{
-		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
-		"HasTestIds":    len(q.TestIDs) > 0,
+		"ResultColumns":            strings.Join(q.resultSelectColumns(), ", "),
+		"HasTestIds":               len(q.TestIDs) > 0,
+		"OrderByStatusV2Effective": q.OrderBy == SortOrderStatusV2Effective,
 	})
 	st.Params = q.params
 	st.Params["limit"] = limit
@@ -817,7 +856,13 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 // results when the soft response size limit has been reached.
 var responseLimitReachedErr = errors.New("terminating iteration early as response size limit reached")
 
-func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (Page, error) {
+// fetchTestVariantsWithExpectedStatus fetches test variants that are not
+// handled by fetchTestVariantsWithUnexpectedResults.
+//
+// These are:
+// - Where the response is sorted by v1 verdict status: Expected verdicts.
+// - Where the response is sorted by v2 verdict status effective: Passed and Skipped verdicts.
+func (q *Query) fetchTestVariantsWithExpectedStatus(ctx context.Context) (Page, error) {
 	responseSize := 0
 	tvs := make([]*pb.TestVariant, 0, q.PageSize)
 
@@ -848,12 +893,39 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 		lastProcessedTestID = tv.TestId
 		lastProcessedVariantHash = tv.VariantHash
 
-		// Within the test variant, unexpected results appear first.
-		// So if the first result is expected, all are.
-		isOnlyExpected := tv.Results[0].Result.Expected
-		if isOnlyExpected {
-			tv.Status = pb.TestVariantStatus_EXPECTED
-			tv.StatusV2 = calculateStatusV2(tv.Results)
+		// Some verdicts with a v1 status of EXONERATED will erroneously
+		// be reported as FLAKY here, because exonerations are not
+		// available in this context.
+		//
+		// For example, verdicts with the test results
+		// (EXECUTION_ERROR + PASSED) or (EXECUTION_ERROR + SKIP)
+		// in conjunction with an exoneration.
+		//
+		// Such test results will produce a v2 verdicts status of PASSED
+		// or SKIPPED, but produce a status v1 verdict of FLAKY
+		// unless overridden by an exoneration.
+		//
+		// As we are migrating away from v1 verdict statuses, it does not seem
+		// prudent to invest time to fix this issue. It should be noted
+		// this issue only arises when we sort by v2 verdict status.
+		// If we sort by v1 verdict status, this method only returns expected
+		// verdicts, which are not subject to exoneration.
+		tv.Status = calculateBaseStatusV1(tv.Results)
+
+		tv.StatusV2 = calculateStatusV2(tv.Results)
+
+		var includeTestVerdict bool
+		if q.OrderBy == SortOrderStatusV2Effective {
+			includeTestVerdict = tv.StatusV2 == pb.TestVerdict_PASSED || tv.StatusV2 == pb.TestVerdict_SKIPPED
+		} else {
+			includeTestVerdict = tv.Status == pb.TestVariantStatus_EXPECTED
+		}
+
+		if includeTestVerdict {
+			// If we got here because the v2 verdict is PASSED OR SKIPPED, these
+			// verdicts are not eligible for exoneration,
+			// If we got here because the v1 verdict is EXPECTED, this verdict
+			// can only have a v2 verdict of PASSED or SKIPPED so we are still fine.
 			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
 
 			// Populate the code sources tested.
@@ -898,12 +970,47 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (P
 	if finished {
 		nextPageToken = ""
 	} else {
-		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), lastProcessedTestID, lastProcessedVariantHash)
+		var sortValue string
+		if q.OrderBy == SortOrderStatusV2Effective {
+			sortValue = statusV2EffectivePassedOrSkipped.String()
+		} else {
+			sortValue = pb.TestVariantStatus_EXPECTED.String()
+		}
+		nextPageToken = pagination.Token(sortValue, lastProcessedTestID, lastProcessedVariantHash)
 	}
 
 	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
 }
 
+// calculateBaseStatusV1 calculates the verdict status v1 for a set of test results.
+// The status does not consider any exonerations.
+func calculateBaseStatusV1(trs []*pb.TestResultBundle) pb.TestVariantStatus {
+	numExpected := 0
+	numSkips := 0
+	for _, tr := range trs {
+		if tr.Result.Expected {
+			numExpected++
+		}
+		if tr.Result.Status == pb.TestStatus_SKIP {
+			numSkips++
+		}
+	}
+	numUnexpected := len(trs) - numExpected
+	numTotal := len(trs)
+
+	if numExpected == numTotal {
+		return pb.TestVariantStatus_EXPECTED
+	}
+	if numUnexpected == numTotal {
+		if numSkips == numTotal {
+			return pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED
+		}
+		return pb.TestVariantStatus_UNEXPECTED
+	}
+	return pb.TestVariantStatus_FLAKY
+}
+
+// calculateStatusV2 calculates the verdict status v2 for a set of test results.
 func calculateStatusV2(trs []*pb.TestResultBundle) pb.TestVerdict_Status {
 	numPassed := 0
 	numFailed := 0
@@ -1004,6 +1111,13 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 		"flakyVerdict":            int(pb.TestVerdict_FLAKY),
 		"skippedVerdict":          int(pb.TestVerdict_SKIPPED),
 		"passedVerdict":           int(pb.TestVerdict_PASSED),
+		// Values used to define "status v2 effective".
+		"failedVerdictEff":           int(statusV2EffectiveFailed),
+		"executionErroredVerdictEff": int(statusV2EffectiveExecutionErrored),
+		"precludedVerdictEff":        int(statusV2EffectivePrecluded),
+		"flakyVerdictEff":            int(statusV2EffectiveFlaky),
+		"exoneratedVerdictEff":       int(statusV2EffectiveExonerated),
+		"passedOrSkippedVerdictEff":  int(statusV2EffectivePassedOrSkipped),
 
 		"exoneratedOverride": int(pb.TestVerdict_EXONERATED),
 		"notOverriden":       int(pb.TestVerdict_NOT_OVERRIDDEN),
@@ -1011,39 +1125,63 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 		"status": status,
 	}
 
-	var expected bool
+	useUnxpectedIndex := true
+
 	switch parts, err := pagination.ParseToken(q.PageToken); {
 	case err != nil:
 		return Page{}, err
 	case len(parts) == 0:
-		expected = false
+		// Start trying to use the unexpected index to get the interesting verdicts.
+		// For v1 status, this is unexpected, unexpectedly skipped, flaky, exonerated.
+		// For v2 effective status, this is failed, execution error, precluded, flaky, exonerated.
+		useUnxpectedIndex = true
 		q.params["afterTvStatus"] = 0
 		q.params["afterTestId"] = ""
 		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
 		return Page{}, pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
 	default:
-		status, ok := pb.TestVariantStatus_value[parts[0]]
-		if !ok {
-			return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+		if q.OrderBy == SortOrderStatusV2Effective {
+			afterStatus, err := parseStatusV2Effective(parts[0])
+			if err != nil {
+				return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test verdict status v2 effective: %q", parts[0]).Err())
+			}
+			q.params["afterTvStatus"] = int(afterStatus)
+
+			// Once we get to passed and skipped verdicts, there may not have an unexpected result
+			// so we cannot use the index to help us find them, so we revert to a full scan.
+			useUnxpectedIndex = afterStatus != statusV2EffectivePassedOrSkipped
+		} else {
+			var ok bool
+			afterStatus, ok := pb.TestVariantStatus_value[parts[0]]
+			if !ok {
+				return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+			}
+			q.params["afterTvStatus"] = int(afterStatus)
+
+			// Once we revert to expected verdicts, we cannot use the unexpected result index to
+			// find them, so we revert to a full scan.
+			useUnxpectedIndex = pb.TestVariantStatus(afterStatus) != pb.TestVariantStatus_EXPECTED
 		}
-		expected = pb.TestVariantStatus(status) == pb.TestVariantStatus_EXPECTED
-		q.params["afterTvStatus"] = int(status)
 		q.params["afterTestId"] = parts[1]
 		q.params["afterVariantHash"] = parts[2]
 	}
 
 	if q.Predicate.GetStatus() == pb.TestVariantStatus_EXPECTED {
-		expected = true
+		useUnxpectedIndex = false
 	}
 
-	if expected {
-		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
-	} else {
+	if useUnxpectedIndex {
+		// Use a query that uses the index on unexpected results.
 		return q.fetchTestVariantsWithUnexpectedResults(ctx)
+	} else {
+		return q.fetchTestVariantsWithExpectedStatus(ctx)
 	}
 }
 
+// testVariantsWithUnexpectedResultsSQLTmpl queries the test verdicts with statuses:
+// - if sorting by v1 verdict status: UNEXPECTED, UNEXPECTEDLY_SKIPPED, FLAKY, EXONERATED
+// - if sorting by v2 effective verdict status: FAILED, EXECUTION_ERROR, PRECLUDED, FLAKY, EXONERATED.
 var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testVariantsWithUnexpectedResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
 	WITH unexpectedTestVariants AS (
@@ -1118,6 +1256,18 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 				WHEN exonerated.TestId IS NOT NULL THEN @exoneratedOverride
 				ELSE @notOverriden
 			END TvStatusOverride,
+		{{if .OrderByStatusV2Effective}}
+			CASE
+				WHEN num_failed > 0 AND num_passed > 0 THEN @flakyVerdictEff
+				WHEN num_failed = 0 AND num_passed > 0 THEN @passedOrSkippedVerdictEff -- Passed.
+				WHEN num_failed = 0 AND num_passed = 0 AND num_skipped > 0 THEN @passedOrSkippedVerdictEff -- Skipped.
+				-- Now only the verdicts which are eligible for exoneration remain.
+				WHEN exonerated.TestId IS NOT NULL THEN @exoneratedVerdictEff
+				WHEN num_failed > 0 THEN @failedVerdictEff
+				WHEN num_execution_errored > 0 THEN @executionErroredVerdictEff
+				ELSE @precludedVerdictEff
+			END TvStatusV2Effective,
+		{{end}}
 			ARRAY(
 				SELECT AS STRUCT *
 				FROM UNNEST(tv.results)
@@ -1128,7 +1278,6 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			exonerated.ExonerationReasons
 		FROM test_variants tv
 		LEFT JOIN exonerated USING(TestId, VariantHash)
-		ORDER BY TvStatus, TestId, VariantHash
 	)
 
 	SELECT
@@ -1150,14 +1299,32 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		TestId in UNNEST(@testIDs) AND
 	{{end}}
 	{{if .StatusFilter}}
-		(TvStatus = @status AND TestId > @afterTestId) OR
-		(TvStatus = @status AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+		(
+			(TvStatus = @status AND TestId > @afterTestId) OR
+			(TvStatus = @status AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+		)
 	{{else}}
-		(TvStatus > @afterTvStatus) OR
-		(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
-		(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+		{{if .OrderByStatusV2Effective}}
+			(
+				(TvStatusV2Effective > @afterTvStatus) OR
+				(TvStatusV2Effective = @afterTvStatus AND TestId > @afterTestId) OR
+				(TvStatusV2Effective = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+			)
+			-- Do not return PASSED or SKIPPED verdicts from this query if sorting by v2 status.
+			AND TvStatusV2Effective < @passedOrSkippedVerdictEff
+		{{else}}
+			(
+				(TvStatus > @afterTvStatus) OR
+				(TvStatus = @afterTvStatus AND TestId > @afterTestId) OR
+				(TvStatus = @afterTvStatus AND TestId = @afterTestId AND VariantHash > @afterVariantHash)
+			)
+		{{end}}
 	{{end}}
-	ORDER BY TvStatus, TestId, VariantHash
+	{{if .OrderByStatusV2Effective}}
+		ORDER BY TvStatusV2Effective, TestId, VariantHash
+	{{else}}
+		ORDER BY TvStatus, TestId, VariantHash
+	{{end}}
 	LIMIT @limit
 `))
 
@@ -1182,8 +1349,22 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 		(TestId > @afterTestId) OR
 		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	)
-	-- Within a test variant, return the unexpected results first.
+{{if .OrderByStatusV2Effective}}
+	-- Within a test variant, return failed results first. Then return the remaining results in the order:
+	-- (passed, skipped, execution_error, precluded).
+	-- This is so we can reliably identify PASSED and SKIPPED test verdicts even in the presence of
+	-- a limit clause that truncates the test results returned for a verdict.
+	-- With this sort order, it follows from the verdict status calculation rules that:
+	-- If the first result is failed, the verdict must be failed or flaky.
+	-- If the first result is passed, the verdict must be passed (since there are no failed results).
+	-- If the first result is skipped, the verdict must be skipped (since there are no failed or passed results).
+	ORDER BY TestId, VariantHash, (StatusV2 = @failedResult) DESC, StatusV2 ASC
+{{else}}
+	-- Within a test variant, return the unexpected results first. This is so that
+	-- we can more reliably identify EXPECTED test verdicts even in the presence of a limit clause.
+	-- With this sort order, if the first result is expected, the verdict is by definition expected.
 	ORDER BY TestId, VariantHash, IsUnexpected DESC
+{{end}}
 	LIMIT @limit
 `))
 

@@ -17,6 +17,7 @@ package testvariants
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -292,9 +293,11 @@ func TestQueryTestVariants(t *testing.T) {
 						assert.Loosely(t, tv.VariantHash, should.NotBeEmpty)
 						assert.Loosely(t, tv.Status, should.NotBeZero)
 						assert.Loosely(t, tv, should.Match(&pb.TestVariant{
-							TestId:      tv.TestId,
-							VariantHash: tv.VariantHash,
-							Status:      tv.Status,
+							TestId:         tv.TestId,
+							VariantHash:    tv.VariantHash,
+							Status:         tv.Status,
+							StatusV2:       tv.StatusV2,
+							StatusOverride: tv.StatusOverride,
 						}))
 					}
 				}
@@ -877,6 +880,105 @@ func TestQueryTestVariants(t *testing.T) {
 				allTVs = append(allTVs, page.TestVariants...)
 			})
 			assert.Loosely(t, allTVs, should.HaveLength(0))
+		})
+		t.Run(`Order by works`, func(t *ftt.Test) {
+			q.OrderBy = SortOrderStatusV2Effective
+
+			expectedTVs := []string{
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+				"10/Ty/e3b0c44298fc1c14/FAILED/",
+				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
+				"50/T3/e3b0c44298fc1c14/PASSED/",
+				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+				"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+				"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
+				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
+			}
+			t.Run(`Fetch all`, func(t *ftt.Test) {
+				var allTVs []*pb.TestVariant
+				fetchAll(q, func(page Page) {
+					allTVs = append(allTVs, page.TestVariants...)
+				})
+				// All test variants should be returned.
+				assert.Loosely(t, tvStrings(allTVs), should.Match(expectedTVs))
+			})
+			t.Run(`With minimum page size`, func(t *ftt.Test) {
+				// Stress test the pagination.
+				q.PageSize = 1
+
+				var allTVs []*pb.TestVariant
+				fetchAll(q, func(page Page) {
+					allTVs = append(allTVs, page.TestVariants...)
+				})
+				// All test variants should be returned.
+				assert.Loosely(t, tvStrings(allTVs), should.Match(expectedTVs))
+			})
+			t.Run(`With minimum page and result size`, func(t *ftt.Test) {
+				// Stress test all aspects. Cutting down the result limit
+				// may slightly harm reproduction instructions and the
+				// v1 verdicts.
+				q.ResultLimit = 1
+				q.PageSize = 1
+
+				var allTVs []*pb.TestVariant
+				fetchAll(q, func(page Page) {
+					allTVs = append(allTVs, page.TestVariants...)
+				})
+				// All test variants should be returned.
+				assert.Loosely(t, tvStrings(allTVs), should.Match([]string{
+					"10/T4/c467ccce5a16dc72/FAILED/",
+					"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
+					"10/Ty/e3b0c44298fc1c14/FAILED/",
+					"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
+					"40/T2/e3b0c44298fc1c14/FLAKY/", // Missing repro instructions.
+					"30/T5/c467ccce5a16dc72/FLAKY/",
+					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+					"40/T1/e3b0c44298fc1c14/EXONERATED/", // Missing repro instructions.
+					"50/T3/e3b0c44298fc1c14/PASSED/",
+					"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+					"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
+					"50/T9/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
+					"50/Tw/e3b0c44298fc1c14/PASSED/invocations/inv1/instructions/test",
+					"50/Tx/e3b0c44298fc1c14/SKIPPED/", // V1 status should be flaky, now reported as expected.
+				}))
+			})
+			t.Run(`With limited access`, func(t *ftt.Test) {
+				q.AccessLevel = AccessLevelLimited
+				q.PageSize = 1 // To stress test pagination in combination with masking.
+
+				var allTVs []*pb.TestVariant
+				fetchAll(q, func(page Page) {
+					allTVs = append(allTVs, page.TestVariants...)
+				})
+				// All test variants should be returned.
+				assert.Loosely(t, tvStrings(allTVs), should.Match(expectedTVs))
+			})
+			t.Run(`With minimum field mask`, func(t *ftt.Test) {
+				q.Mask = mask.MustFromReadMask(
+					&pb.TestVariant{},
+					"test_id",
+				)
+				q.PageSize = 1 // To stress test pagination in combination with masking.
+
+				for i := range expectedTVs {
+					// Remove expectations for reproduction instructions.
+					expectedTVs[i] = strings.Replace(expectedTVs[i], "/invocations/inv0/instructions/test", "/", 1)
+					expectedTVs[i] = strings.Replace(expectedTVs[i], "/invocations/inv1/instructions/test", "/", 1)
+				}
+
+				var allTVs []*pb.TestVariant
+				fetchAll(q, func(page Page) {
+					allTVs = append(allTVs, page.TestVariants...)
+				})
+				// All test variants should be returned.
+				assert.Loosely(t, tvStrings(allTVs), should.Match(expectedTVs))
+			})
 		})
 	})
 }

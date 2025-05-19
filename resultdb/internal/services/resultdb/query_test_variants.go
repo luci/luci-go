@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -33,6 +34,11 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+)
+
+var (
+	StatusFieldPath            = aip132.NewFieldPath("status")
+	StatusV2EffectiveFieldPath = aip132.NewFieldPath("status_v2_effective")
 )
 
 // determineListAccessLevel determines the list access level the caller has for
@@ -95,6 +101,18 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		return nil, appstatus.BadRequest(err)
 	}
 
+	orderByClause, err := aip132.ParseOrderBy(in.OrderBy)
+	if err != nil {
+		// This shouldn't happen, it should already be validated in
+		// validateQueryTestVariantsRequest.
+		return nil, err
+	}
+
+	verdictOrder := testvariants.SortOrderLegacyStatus
+	if len(orderByClause) == 1 && orderByClause[0].FieldPath.Equals(StatusV2EffectiveFieldPath) {
+		verdictOrder = testvariants.SortOrderStatusV2Effective
+	}
+
 	// Query is valid - increment the queryInvocationsCount metric
 	queryInvocationsCount.Add(ctx, 1, "QueryTestVariants", len(in.Invocations))
 
@@ -118,6 +136,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		PageToken:            in.PageToken,
 		Mask:                 readMask,
 		AccessLevel:          accessLevel,
+		OrderBy:              verdictOrder,
 	}
 
 	var result testvariants.Page
@@ -159,5 +178,23 @@ func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
 		return errors.Annotate(err, "result_limit").Err()
 	}
 
+	// We support a limited subset of AIP-132 order by syntax, so as to specify
+	// sorting by status or status_v2_effective only.
+	orderBy, err := aip132.ParseOrderBy(in.OrderBy)
+	if err != nil {
+		return errors.Annotate(err, "order_by").Err()
+	}
+	if len(orderBy) > 1 {
+		return errors.Reason("order_by: more than one order by field is not currently supported").Err()
+	}
+	if len(orderBy) == 1 {
+		orderByItem := orderBy[0]
+		if !orderByItem.FieldPath.Equals(StatusFieldPath) && !orderByItem.FieldPath.Equals(StatusV2EffectiveFieldPath) {
+			return errors.Reason("order_by: order by field must be one of %q or %q", StatusFieldPath, StatusV2EffectiveFieldPath).Err()
+		}
+		if orderByItem.Descending {
+			return errors.Reason("order_by: descending order is not supported").Err()
+		}
+	}
 	return nil
 }

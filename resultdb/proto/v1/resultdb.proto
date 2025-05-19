@@ -587,7 +587,7 @@ message QueryArtifactFailureOnlyLinesResponse {
 }
 
 // A request message for QueryTestVariants RPC.
-// Next id: 9.
+// Next id: 10.
 message QueryTestVariantsRequest {
   // Retrieve test verdicts included in these invocations, directly or indirectly
   // (via Invocation.included_invocations).
@@ -636,6 +636,20 @@ message QueryTestVariantsRequest {
   // * variant_hash
   // * status
   google.protobuf.FieldMask read_mask = 7;
+
+  // The ordering of test verdicts in the response.
+  //
+  // See https://google.aip.dev/132 for syntax.
+  //
+  // For performance reasons, only two sort orders are supported:
+  // - verdict status v1 ascending (order is UNEXPECTED, UNEXPECTEDLY_SKIPPED,
+  //   FLAKY, EXONERATED, EXPECTED).
+  //   This is the default. It can be explicitly requested by "status" or "status asc".
+  // - effective verdict status v2 ascending (by verdict status v2 including any status overrides,
+  //   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED & PASSED).
+  //   It can be requested by "status_v2_effective" or "status_v2_effective asc"
+  //   where status_v2_effective is a virtual field representing the above sort order.
+  string order_by = 9;
 }
 
 // A response message for QueryTestVariants RPC.

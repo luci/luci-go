@@ -422,6 +422,37 @@ func TestQueryTestVariants(t *testing.T) {
 			}))
 		})
 
+		t.Run(`Valid with status v2 sort order`, func(t *ftt.Test) {
+			page, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv0"},
+				OrderBy:     "status_v2_effective",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			tokenParts, err := pagination.ParseToken(page.NextPageToken)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
+
+			assert.Loosely(t, len(page.TestVariants), should.Equal(3))
+			assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
+				"10/T2/e3b0c44298fc1c14/FAILED",
+				"30/T1/c467ccce5a16dc72/FLAKY",
+				"40/T1/e3b0c44298fc1c14/EXONERATED",
+			}))
+
+			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv0"},
+				OrderBy:     "status_v2_effective",
+				PageToken:   pagination.Token("PASSED_OR_SKIPPED", "", ""),
+			})
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.TestVariants), should.Equal(2))
+			assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+				"50/T3/e3b0c44298fc1c14/PASSED",
+				"50/T4/e3b0c44298fc1c14/SKIPPED",
+			}))
+		})
+
 		t.Run(`Too many invocations`, func(t *ftt.Test) {
 			_, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0", "invocations/inv1"},
@@ -471,12 +502,50 @@ func TestQueryTestVariants(t *testing.T) {
 
 func TestValidateQueryTestVariantsRequest(t *testing.T) {
 	ftt.Run(`validateQueryTestVariantsRequest`, t, func(t *ftt.Test) {
+		request := &pb.QueryTestVariantsRequest{
+			Invocations: []string{"invocations/invx"},
+		}
+		t.Run(`valid`, func(t *ftt.Test) {
+			err := validateQueryTestVariantsRequest(request)
+			assert.Loosely(t, err, should.BeNil)
+		})
 		t.Run(`negative result_limit`, func(t *ftt.Test) {
-			err := validateQueryTestVariantsRequest(&pb.QueryTestVariantsRequest{
-				Invocations: []string{"invocations/invx"},
-				ResultLimit: -1,
-			})
+			request.ResultLimit = -1
+			err := validateQueryTestVariantsRequest(request)
 			assert.Loosely(t, err, should.ErrLike(`result_limit: negative`))
+		})
+		t.Run(`order_by`, func(t *ftt.Test) {
+			request.OrderBy = "status_v2_effective"
+
+			t.Run(`valid`, func(t *ftt.Test) {
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`empty is also valid`, func(t *ftt.Test) {
+				request.OrderBy = ""
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`invalid syntax`, func(t *ftt.Test) {
+				request.OrderBy = "something something"
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike(`order_by: syntax error: 1:11: unexpected token "something"`))
+			})
+			t.Run(`more than one order by field`, func(t *ftt.Test) {
+				request.OrderBy = "test_id, status"
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike(`order_by: more than one order by field is not currently supported`))
+			})
+			t.Run(`invalid order by field`, func(t *ftt.Test) {
+				request.OrderBy = "test_id"
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike(`order_by: order by field must be one of "status" or "status_v2_effective"`))
+			})
+			t.Run(`descending order`, func(t *ftt.Test) {
+				request.OrderBy = "status desc"
+				err := validateQueryTestVariantsRequest(request)
+				assert.Loosely(t, err, should.ErrLike(`order_by: descending order is not supported`))
+			})
 		})
 	})
 }
