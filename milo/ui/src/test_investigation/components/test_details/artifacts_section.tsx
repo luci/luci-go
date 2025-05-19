@@ -68,7 +68,7 @@ export function ArtifactsSection({
   } = useQuery({
     ...resultDbClient.ListArtifacts.query(
       ListArtifactsRequest.fromPartial({
-        parent: currentResult!.name,
+        parent: currentResult?.name,
         pageSize: 1000,
       }),
     ),

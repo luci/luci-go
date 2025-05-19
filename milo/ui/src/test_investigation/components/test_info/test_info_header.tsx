@@ -25,7 +25,7 @@ import React, {
   useState,
 } from 'react';
 
-import { CopyButton } from '@/common/components/copy_button';
+import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 import {
   getCommitInfoFromInvocation,
@@ -173,10 +173,9 @@ export function TestInfoHeader() {
         >
           {testDisplayName}
         </Typography>
-        <CopyButton
+        <CopyToClipboard
           textToCopy={testDisplayName}
-          tooltipPlacement="top"
-          aria-label="copy test name"
+          aria-label="Copy test ID."
           sx={{ ml: 0.5 }}
         />
       </Box>
