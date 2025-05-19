@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -942,97 +941,6 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 		assert.Loosely(t, tvr.LastIngestionTime, should.NotBeZero, truth.LineContext())
 		expectedTVR.LastIngestionTime = tvr.LastIngestionTime
 		assert.Loosely(t, tvr, should.Match(expectedTVR), truth.LineContext())
-	}
-
-	// Validate TestRealms table is populated.
-	testRealms := make([]*testresults.TestRealm, 0)
-	err = testresults.ReadTestRealms(span.Single(ctx), spanner.AllKeys(), func(tvr *testresults.TestRealm) error {
-		testRealms = append(testRealms, tvr)
-		return nil
-	})
-	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-
-	// The order of test realms doesn't matter. Sort it to make comparing it
-	// against the expected test realm list easier.
-	sort.Slice(testRealms, func(i, j int) bool {
-		item1 := testRealms[i]
-		item2 := testRealms[j]
-		if item1.Project != item2.Project {
-			return item1.Project <= item2.Project
-		}
-		if item1.SubRealm != item2.SubRealm {
-			return item1.SubRealm <= item2.SubRealm
-		}
-		if item1.TestID != item2.TestID {
-			return item1.TestID <= item2.TestID
-		}
-		return false
-	})
-
-	expectedTestRealms := []*testresults.TestRealm{
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_consistent_failure",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_expected",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_filtering_event",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_from_luci_bisection",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_has_unexpected",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_known_flake",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_new_failure",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_new_flake",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_no_new_results",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_skip",
-			SubRealm: "ci",
-		},
-		{
-			Project:  "project",
-			TestID:   ":module!junit:package:class#test_unexpected_pass",
-			SubRealm: "ci",
-		},
-	}
-
-	assert.Loosely(t, testRealms, should.HaveLength(len(expectedTestRealms)), truth.LineContext())
-	for i, tr := range testRealms {
-		expectedTR := expectedTestRealms[i]
-		assert.Loosely(t, tr.LastIngestionTime, should.NotBeZero, truth.LineContext())
-		expectedTR.LastIngestionTime = tr.LastIngestionTime
-		assert.Loosely(t, tr, should.Match(expectedTR), truth.LineContext())
 	}
 }
 

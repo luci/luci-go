@@ -645,48 +645,6 @@ func (tvr *TestVariantRealm) SaveUnverified() *spanner.Mutation {
 	return spanner.InsertOrUpdate("TestVariantRealms", TestVariantRealmSaveCols, vals)
 }
 
-// TestVariantRealm represents a row in the TestVariantRealm table.
-type TestRealm struct {
-	Project           string
-	TestID            string
-	SubRealm          string
-	LastIngestionTime time.Time
-}
-
-// ReadTestRealms read test variant realms from the TestRealms table.
-// Must be called in a spanner transactional context.
-func ReadTestRealms(ctx context.Context, keys spanner.KeySet, fn func(tr *TestRealm) error) error {
-	var b spanutil.Buffer
-	fields := []string{"Project", "TestId", "SubRealm", "LastIngestionTime"}
-	return span.Read(ctx, "TestRealms", keys, fields).Do(
-		func(row *spanner.Row) error {
-			tr := &TestRealm{}
-			err := b.FromSpanner(
-				row,
-				&tr.Project,
-				&tr.TestID,
-				&tr.SubRealm,
-				&tr.LastIngestionTime,
-			)
-			if err != nil {
-				return err
-			}
-			return fn(tr)
-		})
-}
-
-// TestRealmSaveCols is the set of columns written to in a test variant
-// realm save. Allocated here once to avoid reallocating on every save.
-var TestRealmSaveCols = []string{"Project", "TestId", "SubRealm", "LastIngestionTime"}
-
-// SaveUnverified creates a mutation to save the test realm into the TestRealms
-// table. The test realm is not verified.
-// Must be called in spanner RW transactional context.
-func (tvr *TestRealm) SaveUnverified() *spanner.Mutation {
-	vals := []any{tvr.Project, tvr.TestID, tvr.SubRealm, tvr.LastIngestionTime}
-	return spanner.InsertOrUpdate("TestRealms", TestRealmSaveCols, vals)
-}
-
 // ReadVariantsOptions specifies options for ReadVariants().
 type ReadVariantsOptions struct {
 	SubRealms        []string

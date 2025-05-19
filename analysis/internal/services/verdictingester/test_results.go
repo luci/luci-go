@@ -102,9 +102,6 @@ func extractIngestionContext(task *taskspb.IngestTestVerdicts, inv *rdbpb.Invoca
 }
 
 type batch struct {
-	// The test realms to insert/update.
-	// Test realms should be inserted before any test variant realms.
-	testRealms []*spanner.Mutation
 	// The test variant realms to insert/update.
 	// Test variant realms should be inserted before any test results.
 	testVariantRealms []*spanner.Mutation
@@ -148,24 +145,17 @@ func batchTestResults(ingestion *IngestionContext, testVariants []*rdbpb.TestVar
 
 	var trs []*spanner.Mutation
 	var tvrs []*spanner.Mutation
-	testRealmSet := make(map[testresults.TestRealm]bool, batchSize)
 	startBatch := func() {
 		trs = make([]*spanner.Mutation, 0, batchSize)
 		tvrs = make([]*spanner.Mutation, 0, batchSize)
-		testRealmSet = make(map[testresults.TestRealm]bool, batchSize)
 	}
 	outputBatch := func() {
 		if len(trs) == 0 {
 			// This should never happen.
 			panic("Pushing empty batch")
 		}
-		testRealms := make([]*spanner.Mutation, 0, len(testRealmSet))
-		for testRealm := range testRealmSet {
-			testRealms = append(testRealms, testRealm.SaveUnverified())
-		}
 
 		outputC <- batch{
-			testRealms:        testRealms,
 			testVariantRealms: tvrs,
 			testResults:       trs,
 		}
@@ -180,14 +170,6 @@ func batchTestResults(ingestion *IngestionContext, testVariants []*rdbpb.TestVar
 			outputBatch()
 			startBatch()
 		}
-
-		testRealm := testresults.TestRealm{
-			Project:           ingestion.Project,
-			TestID:            tv.TestId,
-			SubRealm:          ingestion.SubRealm,
-			LastIngestionTime: spanner.CommitTimestamp,
-		}
-		testRealmSet[testRealm] = true
 
 		tvr := testresults.TestVariantRealm{
 			Project:           ingestion.Project,
@@ -282,13 +264,6 @@ func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*
 			c <- func() error {
 				// Write to different tables in different transactions to minimize the
 				// number of splits involved in each transaction.
-				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					span.BufferWrite(ctx, batch.testRealms...)
-					return nil
-				})
-				if err != nil {
-					return errors.Annotate(err, "inserting test realms").Err()
-				}
 				_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					span.BufferWrite(ctx, batch.testVariantRealms...)
 					return nil

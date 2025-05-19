@@ -74,19 +74,6 @@ func TestTestHistoryServer(t *testing.T) {
 		var5 := pbutil.Variant("key1", "val3", "key2", "val2")
 
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			insertTR := func(subRealm string, testID string) {
-				span.BufferWrite(ctx, (&testresults.TestRealm{
-					Project:  "project",
-					TestID:   testID,
-					SubRealm: subRealm,
-				}).SaveUnverified())
-			}
-			insertTR("realm", "test_id")
-			insertTR("realm", "test_id1")
-			insertTR("realm", "test_id2")
-			insertTR("other-realm", "test_id3")
-			insertTR("forbidden-realm", "test_id4")
-
 			insertTVR := func(subRealm string, variant *pb.Variant) {
 				span.BufferWrite(ctx, (&testresults.TestVariantRealm{
 					Project:     "project",
