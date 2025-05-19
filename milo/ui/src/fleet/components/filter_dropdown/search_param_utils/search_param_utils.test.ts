@@ -54,6 +54,18 @@ const sharedTestCases: [SelectedOptions, string][] = [
     },
     'key1 = ("value 1" OR "value2") key2 = "value"',
   ],
+  [
+    {
+      key1: ['WORKING'],
+    },
+    'key1 = "WORKING"',
+  ],
+  [
+    {
+      key1: ['WORKING', 'BROKEN'],
+    },
+    'key1 = ("WORKING" OR "BROKEN")',
+  ],
 ];
 
 const justStringifyCases: [SelectedOptions, string][] = [

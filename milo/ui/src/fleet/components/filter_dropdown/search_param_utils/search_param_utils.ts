@@ -53,7 +53,7 @@ export const parseFilters = (
 
     values = rest
       .substring(1, rhsEndIdx)
-      .split('OR')
+      .split(/\s+OR\s+(?=(?:[^"]*(?:"(?:\\.|[^"])*"[^"]*)*)*$)/) // Find the word OR, peek ahead and check if there are an even number of quotes (skip escaped quotes).
       .map((s) => s.trim().replace(/^"/, '').replace(/"$/, ''));
     if (values.some((v) => v === '')) {
       return { filters: undefined, error: Error('Found a hanging ORs') };
