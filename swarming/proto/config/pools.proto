@@ -522,6 +522,12 @@ message ExternalSchedulerConfig {
   // system, this flag should be disabled, to get stricter consistency between
   // swarming's state and external scheduler's state.
   bool allow_es_fallback = 8;
+
+  // Percent of tasks to skip this external scheduler and fallback to native
+  // scheduler directly.
+  //
+  // The server will decide which scheduler to send a task to upon creation.
+  int32 disable_percent = 9;
 }
 
 message ExternalServices {
