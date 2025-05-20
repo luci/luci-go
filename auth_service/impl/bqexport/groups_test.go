@@ -17,15 +17,17 @@ package bqexport
 import (
 	"context"
 	"testing"
+	"time"
 
-	"go.chromium.org/luci/common/data/stringset"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
 func TestBQGroups(t *testing.T) {
@@ -33,6 +35,9 @@ func TestBQGroups(t *testing.T) {
 
 	ftt.Run("expandGroups works", t, func(t *ftt.Test) {
 		ctx := context.Background()
+		testRev := int64(1000)
+		testTime := timestamppb.New(
+			time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC))
 		testAuthDB := &protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
@@ -75,79 +80,95 @@ func TestBQGroups(t *testing.T) {
 			},
 		}
 
-		expected := []*graph.ExpandedGroup{
+		expected := []*bqpb.GroupRow{
 			{
 				Name: "group-a",
-				Members: stringset.NewFromSlice(
+				Members: []string{
 					"user:a1@example.com",
 					"user:a2@example.com",
 					"user:a3@example.com",
 					"user:d@test.com",
-				),
-				Globs: stringset.NewFromSlice(
+				},
+				Globs: []string{
 					"user:d*@example.com",
-				),
-				Nested: stringset.NewFromSlice(
+				},
+				Subgroups: []string{
 					"group-d",
 					"group-missing",
-				),
-				Redacted: stringset.New(0),
+				},
+				DirectMembers: []string{
+					"user:a1@example.com",
+					"user:a2@example.com",
+					"user:a3@example.com",
+				},
+				AuthdbRev:  testRev,
+				ExportedAt: testTime,
 			},
 			{
 				Name: "group-b",
-				Members: stringset.NewFromSlice(
+				Members: []string{
 					"user:b@example.com",
 					"user:c1@example.com",
 					"user:c2@example.com",
 					"user:d@test.com",
-				),
-				Globs: stringset.NewFromSlice(
+				},
+				Globs: []string{
 					"user:d*@example.com",
-				),
-				Nested: stringset.NewFromSlice(
+				},
+				Subgroups: []string{
 					"group-c",
 					"group-d",
-				),
-				Redacted: stringset.New(0),
+				},
+				DirectMembers: []string{
+					"user:b@example.com",
+				},
+				AuthdbRev:  testRev,
+				ExportedAt: testTime,
 			},
 			{
 				Name: "group-c",
-				Members: stringset.NewFromSlice(
+				Members: []string{
 					"user:c1@example.com",
 					"user:c2@example.com",
 					"user:d@test.com",
-				),
-				Globs: stringset.NewFromSlice(
+				},
+				Globs: []string{
 					"user:d*@example.com",
-				),
-				Nested: stringset.NewFromSlice(
+				},
+				Subgroups: []string{
 					"group-d",
-				),
-				Redacted: stringset.New(0),
+				},
+				DirectMembers: []string{
+					"user:c1@example.com",
+					"user:c2@example.com",
+				},
+				AuthdbRev:  testRev,
+				ExportedAt: testTime,
 			},
 			{
 				Name: "group-d",
-				Members: stringset.NewFromSlice(
+				Members: []string{
 					"user:d@test.com",
-				),
-				Globs: stringset.NewFromSlice(
+				},
+				Globs: []string{
 					"user:d*@example.com",
-				),
-				Nested:   stringset.New(0),
-				Redacted: stringset.New(0),
+				},
+				DirectMembers: []string{
+					"user:d@test.com",
+				},
+				AuthdbRev:  testRev,
+				ExportedAt: testTime,
 			},
 			{
-				Name:     "group-missing",
-				Owners:   model.AdminGroup,
-				Members:  stringset.New(0),
-				Globs:    stringset.New(0),
-				Nested:   stringset.New(0),
-				Redacted: stringset.New(0),
-				Missing:  true,
+				Name:       "group-missing",
+				Owners:     model.AdminGroup,
+				Missing:    true,
+				AuthdbRev:  testRev,
+				ExportedAt: testTime,
 			},
 		}
 
-		actual, err := expandGroups(ctx, testAuthDB)
+		actual, err := expandGroups(ctx, testAuthDB, testRev, testTime)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(expected))
 	})

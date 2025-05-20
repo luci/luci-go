@@ -73,7 +73,7 @@ func init() {
 		},
 		// Relax ensures no fields are marked "required".
 		Schema: groupsSchema.Relax(),
-		Labels: map[string]string{bq.MetadataVersionKey: "2"},
+		Labels: map[string]string{bq.MetadataVersionKey: "3"},
 	}
 	groupDesc := groupRow.ProtoReflect().Descriptor()
 	if groupsTableSchemaDescriptor, err = generateSchemaDescriptor(groupDesc); err != nil {

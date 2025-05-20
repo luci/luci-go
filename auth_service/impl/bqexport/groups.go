@@ -17,10 +17,13 @@ package bqexport
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
@@ -28,18 +31,21 @@ import (
 // expandGroups returns the expanded version of all groups in the given AuthDB.
 // All members, globs and nested subgroups included in a group (either directly
 // or indirectly) are specified for each group.
-func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*graph.ExpandedGroup, error) {
+func expandGroups(ctx context.Context, authDB *protocol.AuthDB, authDBRev int64,
+	ts *timestamppb.Timestamp) ([]*bqpb.GroupRow, error) {
 	sizeHint := len(authDB.Groups)
 
 	if sizeHint == 0 {
 		// Log a warning because it is very unlikely the AuthDB has no groups.
 		logging.Warningf(ctx, "no groups in AuthDB")
-		return []*graph.ExpandedGroup{}, nil
+		return []*bqpb.GroupRow{}, nil
 	}
 
 	groups := make([]model.GraphableGroup, sizeHint)
+	directMemberships := make(map[string][]string, sizeHint)
 	for i, group := range authDB.Groups {
 		groups[i] = model.GraphableGroup(group)
+		directMemberships[group.Name] = group.Members
 	}
 	groupsGraph := graph.NewGraph(groups)
 
@@ -50,13 +56,28 @@ func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*graph.Expand
 	cache := &graph.ExpansionCache{
 		Groups: make(map[string]*graph.ExpandedGroup, sizeHint),
 	}
-	result := make([]*graph.ExpandedGroup, sizeHint)
+	result := make([]*bqpb.GroupRow, sizeHint)
 	for i, name := range names {
 		expanded, err := groupsGraph.GetExpandedGroup(ctx, name, true, cache)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to expand group %q", name).Err()
 		}
-		result[i] = expanded
+		var directMembers []string
+		if dm, ok := directMemberships[name]; ok {
+			directMembers = dm
+		}
+		result[i] = &bqpb.GroupRow{
+			Name:          expanded.Name,
+			Description:   expanded.Description,
+			Owners:        expanded.Owners,
+			Members:       expanded.Members.ToSortedSlice(),
+			Globs:         expanded.Globs.ToSortedSlice(),
+			Subgroups:     expanded.Nested.ToSortedSlice(),
+			AuthdbRev:     authDBRev,
+			ExportedAt:    ts,
+			Missing:       expanded.Missing,
+			DirectMembers: directMembers,
+		}
 	}
 
 	return result, nil

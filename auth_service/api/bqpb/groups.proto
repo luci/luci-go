@@ -45,4 +45,6 @@ message GroupRow {
   google.protobuf.Timestamp exported_at = 8;
   // Whether the corresponding AuthGroup entity is missing from the AuthDB.
   bool missing = 9;
+  // Directly included non-glob identities that are explicitly in the group.
+  repeated string direct_members = 10;
 }

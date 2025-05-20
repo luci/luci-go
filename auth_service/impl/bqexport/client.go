@@ -280,7 +280,7 @@ func (client *Client) ensureLatestView(ctx context.Context,
 // metadata version to propagate it to the view as well.
 func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	// Apply the metadata for the view of the latest groups.
-	groupsViewVersion := "1"
+	groupsViewVersion := "3"
 	groupsViewQuery, err := constructLatestSnapshotViewQuery(ctx, groupsTableName, realmsTableName)
 	if err != nil {
 		return errors.Annotate(err,

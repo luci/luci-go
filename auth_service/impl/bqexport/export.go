@@ -26,9 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-	"go.chromium.org/luci/auth_service/impl/model/graph"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 )
 
@@ -73,14 +71,10 @@ func Run(ctx context.Context) error {
 func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	authDBRev int64, ts *timestamppb.Timestamp) (reterr error) {
 	start := clock.Now(ctx)
-	groups, err := expandGroups(ctx, authDB)
+	groupRows, err := expandGroups(ctx, authDB, authDBRev, ts)
 	logging.Debugf(ctx, "expanding groups took %s", clock.Since(ctx, start))
 	if err != nil {
 		return errors.Annotate(err, "failed to expand all groups").Err()
-	}
-	groupRows := make([]*bqpb.GroupRow, len(groups))
-	for i, group := range groups {
-		groupRows[i] = toGroupRow(group, authDBRev, ts)
 	}
 
 	start = clock.Now(ctx)
@@ -143,19 +137,4 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	}
 
 	return nil
-}
-
-func toGroupRow(group *graph.ExpandedGroup,
-	authDBRev int64, ts *timestamppb.Timestamp) *bqpb.GroupRow {
-	return &bqpb.GroupRow{
-		Name:        group.Name,
-		Description: group.Description,
-		Owners:      group.Owners,
-		Members:     group.Members.ToSortedSlice(),
-		Globs:       group.Globs.ToSortedSlice(),
-		Subgroups:   group.Nested.ToSortedSlice(),
-		AuthdbRev:   authDBRev,
-		ExportedAt:  ts,
-		Missing:     group.Missing,
-	}
 }
