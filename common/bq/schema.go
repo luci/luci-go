@@ -80,10 +80,14 @@ func (c *SchemaConverter) field(file *descriptorpb.FileDescriptorProto, field *d
 		Repeated:    descutil.Repeated(field),
 		Required:    descutil.Required(field),
 	}
-
-	// If have bqschema.options field option, just grab the type from there.
+	// Check for BigQuery-specific field options.
 	if field.Options != nil && proto.HasExtension(field.Options, bqpb.E_Options) {
 		meta := proto.GetExtension(field.Options, bqpb.E_Options).(*bqpb.FieldOptions)
+		// If default_value is specified, use it for the schema's DefaultValueExpression.
+		if defaultValue := meta.GetDefaultValue(); defaultValue != "" {
+			schema.DefaultValueExpression = defaultValue
+		}
+		// If bq_type is specified, just grab the type from there.
 		if typ := meta.GetBqType(); typ != "" {
 			schema.Type = bigquery.FieldType(typ)
 			return schema, nil
@@ -325,4 +329,23 @@ func GenerateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigqu
 	}
 	schema, _, err = conv.Schema(message)
 	return schema, err
+}
+
+// Relax returns a version of the schema where no fields are marked
+// as Required. Same as bigquery.Schema.Relax() but with defaultValueExpression preserved.
+func RelaxSchema(s bigquery.Schema) bigquery.Schema {
+	var out bigquery.Schema
+	for _, v := range s {
+		relaxed := &bigquery.FieldSchema{
+			Name:                   v.Name,
+			Description:            v.Description,
+			Repeated:               v.Repeated,
+			Required:               false,
+			Type:                   v.Type,
+			Schema:                 v.Schema.Relax(),
+			DefaultValueExpression: v.DefaultValueExpression,
+		}
+		out = append(out, relaxed)
+	}
+	return out
 }

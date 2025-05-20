@@ -24,6 +24,28 @@ option go_package = "go.chromium.org/luci/common/bq/pb";
 message FieldOptions {
   // BigQuery field type to use for this field instead of the "guessed" one.
   optional string bq_type = 1;
+
+  // Specifies the default value for this field in the BigQuery schema.
+  // It can only be set for top level fields (columns).
+  // See https://pkg.go.dev/cloud.google.com/go/bigquery@v1.66.0#FieldSchema.DefaultValueExpression
+  // for more details on supported default value expressions.
+  //
+  // Setting this option have different behaviour in the following three scenarios:
+  //
+  // ** Add on existing table, existing field:**
+  // Setting a default value here WILL NOT automatically apply to existing rows.
+  // To update existing rows, manually run:
+  //   ALTER TABLE my_table ALTER COLUMN my_column SET DEFAULT my_default_value;
+  // Important: While applying the manual change, ensure this option is also set
+  // in the proto file. This maintains consistency and prevent overriding your manual change.
+  //
+  // ** Add on existing table, new field:**
+  // BigQuery DOES NOT ALLOW adding a new field with a default value directly.
+  // This will cause an error. Add the new field first and them set the default value to the existing field.
+  //
+  // ** Add on new table:**
+  // Default values for fields in a new table WILL be applied automatically upon table creation.
+  optional string default_value = 2;
 }
 
 // Definition of field-level options understood by bqschemaupdater.
@@ -33,7 +55,10 @@ message FieldOptions {
 //    import "go.chromium.org/luci/common/bq/pb/options.proto";
 //
 //    message {
-//       int64 timestamp = 1 [(bqschema.options).bq_type = "TIMESTAMP"];
+//       int64 timestamp = 1 [
+//         (bqschema.options).bq_type = "TIMESTAMP",
+//         (bqschema.options).default_value = "CURRENT_TIMESTAMP()"
+//       ];
 //    }
 extend google.protobuf.FieldOptions {
   optional FieldOptions options = 74700;

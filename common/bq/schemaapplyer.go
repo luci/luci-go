@@ -103,13 +103,14 @@ func NewSchemaApplyer(cache SchemaApplyerCache) *SchemaApplyer {
 // table := client.Dataset("my_dataset").Table("my_table")
 // schema := ... // e.g. from SchemaConverter.
 //
-//	spec := &bigquery.TableMetadata{
-//	   TimePartitioning: &bigquery.TimePartitioning{
-//	     Field:      "partition_time",
-//	     Expiration: 540 * time.Day,
-//	   },
-//	   Schema: schema.Relax(), // Ensure no mandatory fields.
-//	}
+//		spec := &bigquery.TableMetadata{
+//		   TimePartitioning: &bigquery.TimePartitioning{
+//		     Field:      "partition_time",
+//		     Expiration: 540 * time.Day,
+//		   },
+//	    // Ensure no mandatory fields.
+//		   Schema: schema.Relax(), // or bq.RelaxSchema(schema) if schema contain default values.
+//		}
 //
 // err := schemaApplyer.EnsureBQTable(ctx, table, spec)
 //

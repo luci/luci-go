@@ -63,7 +63,7 @@ func init() {
 		},
 		Description: "Contains test results produced by Android.",
 		// Relax ensures no fields are marked "required".
-		Schema: schema.Relax(),
+		Schema: bq.RelaxSchema(schema),
 		Labels: map[string]string{bq.MetadataVersionKey: "1"},
 	}
 }
