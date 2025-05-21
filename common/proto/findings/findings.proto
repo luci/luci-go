@@ -49,6 +49,10 @@ message Finding {
   //
   // If multiple fixes are present, they should be ordered by preference.
   repeated Fix fixes = 5;
+  // An optional URL that points to more detail about this finding.
+  //
+  // For example, the Buildbucket build that generates this finding.
+  string url = 6;
 }
 
 // Location describes a location in the source code.
