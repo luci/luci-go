@@ -118,17 +118,17 @@ func persistentHashTestIdentifier(id *bqpb.AntsTestResultRow_TestIdentifier) (st
 }
 
 // hashParameters generates a SHA256 hash for a slice of module parameters
-// (*bqpb.AntsTestResultRow_StringPair), replicating the AnTS hashing logic
+// (*bqpb.StringPair), replicating the AnTS hashing logic
 // for compatibility.
 //
 // Returns an empty string if the input slice is nil or empty.
-func hashParameters(parameters []*bqpb.AntsTestResultRow_StringPair) string {
+func hashParameters(parameters []*bqpb.StringPair) string {
 	if len(parameters) == 0 {
 		return ""
 	}
 
 	// Create a copy to avoid modifying the original slice during sorting.
-	paramsCopy := make([]*bqpb.AntsTestResultRow_StringPair, len(parameters))
+	paramsCopy := make([]*bqpb.StringPair, len(parameters))
 	copy(paramsCopy, parameters)
 
 	// Sort by Name, then Value.

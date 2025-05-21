@@ -48,7 +48,7 @@ func TestPersistentHashTestIdentifier(t *testing.T) {
 			name: "populated all",
 			input: &bqpb.AntsTestResultRow_TestIdentifier{
 				Module: "moduleA",
-				ModuleParameters: []*bqpb.AntsTestResultRow_StringPair{
+				ModuleParameters: []*bqpb.StringPair{
 					{Name: "module-abi", Value: "x86_64"},
 				},
 				ModuleParametersHash: "fb333bd62d7e6ce27603606218c06b136d20d6d3a958223281592af645af9c1e",
@@ -75,7 +75,7 @@ func TestHashParameters(t *testing.T) {
 
 	testCases := []struct {
 		name     string
-		input    []*bqpb.AntsTestResultRow_StringPair
+		input    []*bqpb.StringPair
 		expected string
 	}{
 		{
@@ -85,14 +85,14 @@ func TestHashParameters(t *testing.T) {
 		},
 		{
 			name: "single parameter",
-			input: []*bqpb.AntsTestResultRow_StringPair{
+			input: []*bqpb.StringPair{
 				{Name: "n2.2", Value: "v2.2"},
 			},
 			expected: "f299baffc34885241144be98e24a6d93acb3a0f0675ca3149e28393183c8e2f4",
 		},
 		{
 			name: "out of order parameter",
-			input: []*bqpb.AntsTestResultRow_StringPair{
+			input: []*bqpb.StringPair{
 				{Name: "n1.2", Value: "v1.2"},
 				{Name: "n1.1", Value: "v1.1"},
 			},
@@ -100,7 +100,7 @@ func TestHashParameters(t *testing.T) {
 		},
 		{
 			name: "in order parameter",
-			input: []*bqpb.AntsTestResultRow_StringPair{
+			input: []*bqpb.StringPair{
 				{Name: "n1.1", Value: "v1.1"},
 				{Name: "n1.2", Value: "v1.2"},
 			},

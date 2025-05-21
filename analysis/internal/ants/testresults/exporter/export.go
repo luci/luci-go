@@ -88,11 +88,11 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertT
 		if err != nil {
 			return nil, errors.Annotate(err, "test_id_structured").Err()
 		}
-		moduleParameters := make([]*bqpb.AntsTestResultRow_StringPair, 0, len(tv.Variant.GetDef()))
+		moduleParameters := make([]*bqpb.StringPair, 0, len(tv.Variant.GetDef()))
 		for key, val := range tv.Variant.GetDef() {
 			// Module parameters should only contain module-abi and module-param.
 			if key == "module_abi" || key == "module_param" {
-				moduleParameters = append(moduleParameters, &bqpb.AntsTestResultRow_StringPair{
+				moduleParameters = append(moduleParameters, &bqpb.StringPair{
 					// AnTS keys are module-abi and module-param (dash instead of underscore).
 					Name:  strings.ReplaceAll(key, "_", "-"),
 					Value: val,
@@ -174,10 +174,10 @@ func convertToAnTSStatus(status rdbpb.TestStatus) bqpb.AntsTestResultRow_TestSta
 	}
 }
 
-func convertToAnTSStringPair(pairs []*rdbpb.StringPair) []*bqpb.AntsTestResultRow_StringPair {
-	result := make([]*bqpb.AntsTestResultRow_StringPair, 0, len(pairs))
+func convertToAnTSStringPair(pairs []*rdbpb.StringPair) []*bqpb.StringPair {
+	result := make([]*bqpb.StringPair, 0, len(pairs))
 	for _, pair := range pairs {
-		result = append(result, &bqpb.AntsTestResultRow_StringPair{
+		result = append(result, &bqpb.StringPair{
 			Name:  pair.Key,
 			Value: pair.Value,
 		})

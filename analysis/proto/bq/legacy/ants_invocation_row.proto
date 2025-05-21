@@ -1,0 +1,138 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq.legacy;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
+
+// AntsInvocationRow represents a row in a BigQuery table for an AnTS invocation.
+// Next ID: 18.
+message AntsInvocationRow {
+
+  // The possible states an Invocation or WorkUnit can be in. `COMPLETED`, `ERROR`,
+  // and `CANCELLED` states are considered final states.
+  enum SchedulerState {
+    SCHEDULER_STATE_UNSPECIFIED = 0;
+    QUEUED = 1;
+    // Invocation or WorkUnit is currently running tests.
+    RUNNING = 2;
+    // Invocation or WorkUnit finished running tests and reported an error. This is
+    // considered a final state.
+    ERROR = 3;
+    // Invocation or WorkUnit finished running tests without an error. This is
+    // considered a final state.
+    COMPLETED = 4;
+    // Invocation or WorkUnit was cancelled before it could finish. This could be
+    // due to a user cancelling a test or due to a timeout. This is considered a
+    // final state.
+    CANCELLED = 5;
+    // Invocation is pending to be picked up.
+    PENDING = 6;
+  }
+
+  // Describes an Android Build that is being tested.
+  // Next ID: 5
+  message AndroidBuild {
+    // The build provider. For example, `androidbuild`.
+    string build_provider = 1;
+    // The branch. For example, `git_master`.
+    string branch = 2;
+    // The build target. For example, `walleye-userdebug`.
+    string build_target = 3;
+    // The build ID.
+    string build_id = 4;
+  }
+
+  // The timing of a particular Invocation.
+  // Next ID: 3
+  message Timing {
+    // The time the resource started running. This is in UTC Epoch time in milliseconds.
+    int64 creation_timestamp = 1;
+    // Indicates the time when the operation finished. This is in UTC Epoch time in milliseconds.
+    int64 complete_timestamp = 2;
+  }
+
+  // The build ID associated with this invocation.
+  string build_id = 1;
+
+  // The unique identifier for this invocation.
+  string invocation_id = 2;
+
+  // The state of the invocation.
+  SchedulerState scheduler_state = 3;
+
+  // A TestDefinition describes how to identify an Invocation.
+  Test test = 4;
+
+  // Generic key-value properties associated with the invocation.
+  repeated StringPair properties = 5;
+
+  // Labels associated with the test.
+  repeated string test_labels = 6;
+
+  // The primary Android build being tested.
+  AndroidBuild primary_build = 7;
+
+  // Additional Android builds used in the test.
+  repeated AndroidBuild extra_builds = 8;
+
+  // Timing information for the invocation.
+  Timing timing = 9;
+
+  // The runner that executed the invocation.
+  string runner = 10;
+
+  // The scheduler that managed the invocation.
+  string scheduler = 11;
+
+  // A summary of the invocation.
+  string summary = 12;
+
+  // The trigger for this invocation.
+  string trigger = 13;
+
+  // Users associated with this invocation.
+  repeated string users = 14;
+
+  // Tags associated with the invocation.
+  repeated string tags = 15;
+
+  // The ID of the test definition.
+  string test_definition_id = 16;
+
+  // The completion time of the invocation, same as timing.complete_timestamp.
+  // Use to partition the BigQuery table.
+  google.protobuf.Timestamp completion_time = 17;
+
+  // The time when BigQuery started inserting the row into the BigQuery table.
+  //
+  // While this is approximately the same as the time the row became visible in the
+  // BigQuery table, it will not match exactly due factors such as:
+  // - BigQuery server processing delay,
+  // - BigQuery server clock drift.
+  // For these reasons, a row with a later insert_time may actually have
+  // been visible before a row with an earlier insert_time.
+  //
+  // If you require timestamping that lines up with table visibility, e.g.
+  // for incremental extracts, you may better off using the APPENDS Table-valued
+  // function that is part of the BigQuery change history feature:
+  // https://cloud.google.com/bigquery/docs/change-history
+  google.protobuf.Timestamp insert_time = 18 [(bqschema.options).default_value = "CURRENT_TIMESTAMP()"];
+}

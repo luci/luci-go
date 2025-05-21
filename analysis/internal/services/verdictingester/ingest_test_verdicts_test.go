@@ -1718,7 +1718,7 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					CompleteTimestamp: 0,         // Start + 0s
 					CreationMonth:     "1970-01", // Default from zero time
 				},
-				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+				Properties: []*bqpblegacy.StringPair{
 					{Name: "is_luci_bisection", Value: "true"},
 				},
 				TestId:         ":module!junit:package:class#test_from_luci_bisection",
@@ -1784,7 +1784,7 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					CompleteTimestamp: 1264982402, // Start + 2s
 					CreationMonth:     "2010-02",
 				},
-				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+				Properties: []*bqpblegacy.StringPair{
 					{Name: "os", Value: "Mac"},
 					{Name: "monorail_component", Value: "Monorail>Component"},
 				},
@@ -1809,7 +1809,7 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 					CompleteTimestamp: 1262304001, // Start + 1s
 					CreationMonth:     "2010-01",
 				},
-				Properties: []*bqpblegacy.AntsTestResultRow_StringPair{
+				Properties: []*bqpblegacy.StringPair{
 					{Name: "random_tag", Value: "random_tag_value"},
 					{Name: "public_buganizer_component", Value: "951951951"},
 				},
