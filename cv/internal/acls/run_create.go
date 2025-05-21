@@ -36,6 +36,7 @@ const (
 	okButDueToOthers                 = "CV cannot start a Run due to errors in the following CL(s)."
 	ownerNotCommitter                = "CV cannot start a Run for `%s` because the user is not a committer."
 	ownerNotDryRunner                = "CV cannot start a Run for `%s` because the user is not a dry-runner."
+	notSubmittableOwnerNotDryRunner  = "CV cannot start a Run for `%s` because the user is not a dry-runner. Get approvals first before triggering a dry run."
 	notOwnerNotCommitter             = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
 	notOwnerNotCommitterNotDryRunner = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer nor a dry-runner."
 
@@ -306,7 +307,7 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 		return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
 	}
 	if !ck.submittable && !ck.submitted {
-		return noWithReason(notSubmittableReason(ctx, ck.cl)), nil
+		return noWithReason(fmt.Sprintf(notSubmittableOwnerNotDryRunner, ck.triggererEmail)), nil
 	}
 	return ck.canTrustDeps(ctx)
 }

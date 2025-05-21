@@ -151,10 +151,11 @@ func TestCheckRunCLs(t *testing.T) {
 			assert.Loosely(t, res.OK(), should.BeTrue)
 		}
 		mustFailWith := func(cl *changelist.CL, format string, args ...any) CheckResult {
+			t.Helper()
 			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeFalse)
-			assert.Loosely(t, res.Failure(cl), should.ContainSubstring(fmt.Sprintf(format, args...)))
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res.Failure(cl), should.ContainSubstring(fmt.Sprintf(format, args...)))
 			return res
 		}
 		markCLSubmittable := func(cl *changelist.CL) {
@@ -319,9 +320,9 @@ func TestCheckRunCLs(t *testing.T) {
 					})
 					t.Run("CL not submittable", func(t *ftt.Test) {
 						// Should fail always.
-						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
+						mustFailWith(cl, ownerNotDryRunner, owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustFailWith(cl, notSubmittable)
+						mustFailWith(cl, notSubmittableOwnerNotDryRunner, owner)
 					})
 				})
 			})
@@ -543,13 +544,13 @@ func TestCheckRunCLs(t *testing.T) {
 				mustOK()
 			})
 			t.Run("all CLs failed", func(t *ftt.Test) {
-				mustFailWith(cl1, notSubmittable)
-				mustFailWith(cl2, notSubmittable)
+				mustFailWith(cl1, notSubmittableOwnerNotDryRunner, owner)
+				mustFailWith(cl2, notSubmittableOwnerNotDryRunner, owner)
 			})
 			t.Run("Some CLs failed", func(t *ftt.Test) {
 				markCLSubmittable(cl1)
 				mustFailWith(cl1, "CV cannot start a Run due to errors in the following CL(s)")
-				mustFailWith(cl2, notSubmittable)
+				mustFailWith(cl2, notSubmittableOwnerNotDryRunner, owner)
 			})
 		})
 	})
