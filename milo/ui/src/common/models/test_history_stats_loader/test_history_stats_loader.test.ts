@@ -33,6 +33,9 @@ function createGroup(
     variantHash,
     passedAvgDuration: '1s',
     expectedCount: 1,
+    verdictCounts: {
+      passed: 1,
+    },
   };
 }
 
@@ -134,6 +137,7 @@ describe('TestHistoryStatsLoader', () => {
     expect(statsLoader.getStats('key1:val2', 2, true)).toEqual({
       partitionTime: '2021-11-03T00:00:00.000Z',
       variantHash: 'key1:val2',
+      verdictCounts: {},
     });
   });
 });

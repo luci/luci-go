@@ -50,7 +50,8 @@ import { VerdictDetailsDialog } from './verdict_details_dialog';
  */
 const GRAPH_TYPE_COMPONENT_MAP = {
   [GraphType.DURATION]: DurationGraph,
-  [GraphType.STATUS]: StatusGraph,
+  [GraphType.STATUS_WITH_EXONERATION]: StatusGraph,
+  [GraphType.STATUS_WITHOUT_EXONERATION]: StatusGraph,
 };
 
 const PageContainer = styled.div({

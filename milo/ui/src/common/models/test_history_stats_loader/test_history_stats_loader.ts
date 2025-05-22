@@ -153,6 +153,7 @@ export class TestHistoryStatsLoader {
       return {
         variantHash,
         partitionTime: this.getDateTime(dateIndex).toISO(),
+        verdictCounts: {},
       };
     }
 

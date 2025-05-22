@@ -22,16 +22,16 @@ import '@/generic_libs/components/dot_spinner';
 import './graph_config';
 import checkCircle from '@/common/assets/svgs/check_circle_24dp.svg';
 import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
-import {
-  VARIANT_STATUS_CLASS_MAP,
-  VERDICT_VARIANT_STATUS_MAP,
-} from '@/common/constants/legacy';
+import nextPlan from '@/common/assets/svgs/next_plan_24dp.svg';
+import nextPlanStacked from '@/common/assets/svgs/next_plan_stacked_24dp.svg';
+import { VERDICT_STATUS_CLASS_MAP } from '@/common/constants/legacy';
 import {
   QueryTestHistoryStatsResponseGroup,
-  TestVerdictStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from '@/common/services/luci_analysis';
-import { TestVariantStatus } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
+import { GraphType } from '@/common/store/test_history_page';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { consumer } from '@/generic_libs/tools/lit_context';
@@ -40,12 +40,17 @@ import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 const ICON_PADDING = (CELL_SIZE - 24) / 2;
 
-const STATUS_ORDER = [
-  TestVerdictStatus.EXPECTED,
-  TestVerdictStatus.EXONERATED,
-  TestVerdictStatus.FLAKY,
-  TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
-  TestVerdictStatus.UNEXPECTED,
+const STATUS_ORDER: (
+  | TestVerdict_Status
+  | TestVerdict_StatusOverride.EXONERATED
+)[] = [
+  TestVerdict_Status.PASSED,
+  TestVerdict_StatusOverride.EXONERATED,
+  TestVerdict_Status.SKIPPED,
+  TestVerdict_Status.FLAKY,
+  TestVerdict_Status.PRECLUDED,
+  TestVerdict_Status.EXECUTION_ERRORED,
+  TestVerdict_Status.FAILED,
 ];
 
 @customElement('milo-th-status-graph')
@@ -110,15 +115,37 @@ export class TestHistoryStatusGraphElement extends MobxExtLitElement {
   }
 
   private renderEntries(group: QueryTestHistoryStatsResponseGroup) {
+    const showExonerations =
+      this.pageState.graphType === GraphType.STATUS_WITH_EXONERATION;
+
     const counts = {
-      [TestVerdictStatus.EXPECTED]: group.expectedCount || 0,
-      [TestVerdictStatus.EXONERATED]: group.exoneratedCount || 0,
-      [TestVerdictStatus.FLAKY]: group.flakyCount || 0,
-      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
-        group.unexpectedlySkippedCount || 0,
-      [TestVerdictStatus.UNEXPECTED]: group.unexpectedCount || 0,
-      [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: 0,
+      [TestVerdict_Status.FAILED]: group.verdictCounts.failed || 0,
+      [TestVerdict_Status.EXECUTION_ERRORED]:
+        group.verdictCounts.executionErrored || 0,
+      [TestVerdict_Status.PRECLUDED]: group.verdictCounts.precluded || 0,
+      [TestVerdict_Status.FLAKY]: group.verdictCounts.flaky || 0,
+      [TestVerdict_Status.SKIPPED]: group.verdictCounts.skipped || 0,
+      [TestVerdict_Status.PASSED]: group.verdictCounts.passed || 0,
+      [TestVerdict_StatusOverride.EXONERATED]: 0,
+      [TestVerdict_Status.STATUS_UNSPECIFIED]: 0,
     };
+    if (showExonerations) {
+      counts[TestVerdict_StatusOverride.EXONERATED] =
+        (group.verdictCounts.failedExonerated || 0) +
+        (group.verdictCounts.executionErroredExonerated || 0) +
+        (group.verdictCounts.precludedExonerated || 0);
+
+      counts[TestVerdict_Status.FAILED] =
+        counts[TestVerdict_Status.FAILED] -
+        (group.verdictCounts.failedExonerated || 0);
+      counts[TestVerdict_Status.EXECUTION_ERRORED] =
+        counts[TestVerdict_Status.EXECUTION_ERRORED] -
+        (group.verdictCounts.executionErroredExonerated || 0);
+      counts[TestVerdict_Status.PRECLUDED] =
+        counts[TestVerdict_Status.PRECLUDED] -
+        (group.verdictCounts.precludedExonerated || 0);
+    }
+
     const totalCount = Object.values(counts).reduce(
       (sum, count) => sum + count,
       0,
@@ -128,17 +155,40 @@ export class TestHistoryStatusGraphElement extends MobxExtLitElement {
       return;
     }
 
-    const title = svg`<title>Unexpected: ${counts[TestVariantStatus.UNEXPECTED]}
-Unexpectedly Skipped: ${counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED]}
-Flaky: ${counts[TestVariantStatus.FLAKY]}
-Exonerated: ${counts[TestVariantStatus.EXONERATED]}
-Expected: ${counts[TestVariantStatus.EXPECTED]}
+    const title = svg`<title>Failed: ${counts[TestVerdict_Status.FAILED]}
+Execution Errored: ${counts[TestVerdict_Status.EXECUTION_ERRORED]}
+Precluded: ${counts[TestVerdict_Status.PRECLUDED]}
+Flaky: ${counts[TestVerdict_Status.FLAKY]}
+Skipped: ${counts[TestVerdict_Status.SKIPPED]}
+${showExonerations ? `Exonerated: ${counts[TestVerdict_StatusOverride.EXONERATED]}\n` : ''}Passed: ${counts[TestVerdict_Status.PASSED]}
 Click to view test details.</title>`;
 
     let previousHeight = 0;
 
-    if (counts[TestVariantStatus.EXPECTED] === totalCount) {
+    if (
+      counts[TestVerdict_Status.PASSED] === totalCount &&
+      !this.pageState.countPassed
+    ) {
       const img = totalCount > 1 ? checkCircleStacked : checkCircle;
+      return svg`
+        <image
+          href=${img}
+          x=${ICON_PADDING}
+          y=${ICON_PADDING}
+          height="24"
+          width="24"
+          style="cursor: pointer;"
+          @click=${() => this.pageState.setSelectedGroup(group)}
+        >
+          ${title}
+        </image>
+      `;
+    }
+    if (
+      counts[TestVerdict_Status.SKIPPED] === totalCount &&
+      !this.pageState.countSkipped
+    ) {
+      const img = totalCount > 1 ? nextPlanStacked : nextPlan;
       return svg`
         <image
           href=${img}
@@ -155,15 +205,18 @@ Click to view test details.</title>`;
     }
 
     const count =
-      (this.pageState.countUnexpected
-        ? counts[TestVariantStatus.UNEXPECTED]
+      (this.pageState.countFailed ? counts[TestVerdict_Status.FAILED] : 0) +
+      (this.pageState.countExecutionErrored
+        ? counts[TestVerdict_Status.EXECUTION_ERRORED]
         : 0) +
-      (this.pageState.countUnexpectedlySkipped
-        ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED]
+      (this.pageState.countPrecluded
+        ? counts[TestVerdict_Status.PRECLUDED]
         : 0) +
-      (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0) +
+      (this.pageState.countFlaky ? counts[TestVerdict_Status.FLAKY] : 0) +
+      (this.pageState.countSkipped ? counts[TestVerdict_Status.SKIPPED] : 0) +
+      (this.pageState.countPassed ? counts[TestVerdict_Status.PASSED] : 0) +
       (this.pageState.countExonerated
-        ? counts[TestVariantStatus.EXONERATED]
+        ? counts[TestVerdict_StatusOverride.EXONERATED]
         : 0);
 
     const nonEmptyStatusCount = STATUS_ORDER.reduce(
@@ -183,9 +236,7 @@ Click to view test details.</title>`;
           1;
         const ele = svg`
           <rect
-            class="${
-              VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]
-            }"
+            class="${VERDICT_STATUS_CLASS_MAP[status]}"
             y=${previousHeight}
             width=${INNER_CELL_SIZE}
             height=${height}
@@ -222,20 +273,26 @@ Click to view test details.</title>`;
         width: 100%;
       }
 
-      .unexpected {
+      .failed-verdict {
         fill: var(--failure-color);
       }
-      .unexpectedly-skipped {
+      .execution-errored-verdict {
         fill: var(--critical-failure-color);
       }
-      .flaky {
+      .precluded-verdict {
+        fill: var(--precluded-color);
+      }
+      .flaky-verdict {
         fill: var(--warning-color);
       }
-      .exonerated {
-        fill: var(--exonerated-color);
+      .skipped-verdict {
+        fill: var(--skipped-color);
       }
-      .expected {
+      .passed-verdict {
         fill: var(--success-color);
+      }
+      .exonerated-verdict {
+        fill: var(--exonerated-color);
       }
 
       .count-label {

@@ -37,6 +37,8 @@ html {
   --scheduled-color: #73808c;
   --started-color: #ff8000;
   --critical-failure-color: #6c40bf;
+  --skipped-color: #606060;
+  --precluded-color:  #000000;
   --canceled-color: var(--exonerated-color);
 
   --scheduled-bg-color: #b7c1c9;

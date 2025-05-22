@@ -27,6 +27,30 @@
 export const colorClasses = new CSSStyleSheet();
 
 colorClasses.replace(`
+/* v2 verdicts */
+.failed-verdict {
+  color: var(--failure-color);
+}
+.execution-errored-verdict {
+  color: var(--critical-failure-color);
+}
+.precluded-verdict {
+  color: var(--precluded-color);
+}
+.passed-verdict {
+  color: var(--success-color);
+}
+.skipped-verdict {
+  color: var(--skipped-color);
+}
+.flaky-verdict {
+  color: var(--warning-color);
+}
+.exonerated-verdict {
+  color: var(--exonerated-color);
+}
+
+/* v1 verdicts */
 .unexpected {
   color: var(--failure-color);
 }

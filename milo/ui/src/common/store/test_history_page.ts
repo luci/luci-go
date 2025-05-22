@@ -39,7 +39,8 @@ import { ToString } from '@/generic_libs/types';
 import { getCriticalVariantKeys } from '@/test_verdict/tools/variant_utils/variant_utils';
 
 export const enum GraphType {
-  STATUS = 'STATUS',
+  STATUS_WITHOUT_EXONERATION = 'STATUS_WITHOUT_EXONERATION',
+  STATUS_WITH_EXONERATION = 'STATUS_WITH_EXONERATION',
   DURATION = 'DURATION',
 }
 
@@ -68,12 +69,15 @@ export const TestHistoryPage = types
       null,
     ),
 
-    graphType: types.frozen<GraphType>(GraphType.STATUS),
+    graphType: types.frozen<GraphType>(GraphType.STATUS_WITH_EXONERATION),
     xAxisType: types.frozen<XAxisType>(XAxisType.DATE),
 
-    countUnexpected: true,
-    countUnexpectedlySkipped: true,
+    countPassed: false,
+    countFailed: true,
+    countExecutionErrored: true,
+    countPrecluded: true,
     countFlaky: true,
+    countSkipped: false,
     countExonerated: true,
 
     durationInitialized: false,
@@ -286,14 +290,23 @@ export const TestHistoryPage = types
     setXAxisType(type: XAxisType) {
       self.xAxisType = type;
     },
-    setCountUnexpected(count: boolean) {
-      self.countUnexpected = count;
+    setCountPassed(count: boolean) {
+      self.countPassed = count;
     },
-    setCountUnexpectedlySkipped(count: boolean) {
-      self.countUnexpectedlySkipped = count;
+    setCountFailed(count: boolean) {
+      self.countFailed = count;
+    },
+    setCountExecutionErrored(count: boolean) {
+      self.countExecutionErrored = count;
+    },
+    setCountPrecluded(count: boolean) {
+      self.countPrecluded = count;
     },
     setCountFlaky(count: boolean) {
       self.countFlaky = count;
+    },
+    setCountSkipped(count: boolean) {
+      self.countSkipped = count;
     },
     setCountExonerated(count: boolean) {
       self.countExonerated = count;

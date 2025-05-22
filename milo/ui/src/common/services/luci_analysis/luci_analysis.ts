@@ -43,6 +43,31 @@ export enum TestVerdictStatus {
   EXPECTED = 'EXPECTED',
 }
 
+export enum TestVerdict_Status {
+  STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
+  FAILED = 'FAILED',
+  EXECUTION_ERRORED = 'EXECUTION_ERRORED',
+  PRECLUDED = 'PRECLUDED',
+  FLAKY = 'FLAKY',
+  SKIPPED = 'SKIPPED',
+  PASSED = 'PASSED',
+}
+
+export enum TestVerdict_StatusOverride {
+  STATUS_OVERRIDE_UNSPECIFIED = 'STATUS_OVERRIDE_UNSPECIFIED',
+  NOT_OVERRIDDEN = 'NOT_OVERRIDDEN',
+  EXONERATED = 'EXONERATED',
+}
+
+export enum TestResult_Status {
+  STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
+  FAILED = 'FAILED',
+  PASSED = 'PASSED',
+  SKIPPED = 'SKIPPED',
+  EXECUTION_ERRORED = 'EXECUTION_ERRORED',
+  PRECLUDED = 'PRECLUDED',
+}
+
 export interface TimeRange {
   readonly earliest?: string;
   readonly latest?: string;
@@ -81,6 +106,8 @@ export interface TestVerdict {
   readonly variantHash: string;
   readonly invocationId: string;
   readonly status: TestVerdictStatus;
+  readonly statusV2: TestVerdict_Status;
+  readonly statusOverride: TestVerdict_StatusOverride;
   readonly partitionTime: string;
   readonly passedAvgDuration?: string;
   readonly changelists?: readonly Changelist[];
@@ -99,9 +126,22 @@ export interface QueryTestHistoryStatsRequest {
   readonly pageToken?: string;
 }
 
+export interface QueryTestHistoryStatsResponseGroupVerdictCounts {
+  readonly failed?: number;
+  readonly flaky?: number;
+  readonly passed?: number;
+  readonly skipped?: number;
+  readonly executionErrored?: number;
+  readonly precluded?: number;
+  readonly failedExonerated?: number;
+  readonly executionErroredExonerated?: number;
+  readonly precludedExonerated?: number;
+}
+
 export interface QueryTestHistoryStatsResponseGroup {
   readonly partitionTime: string;
   readonly variantHash: string;
+  readonly verdictCounts: QueryTestHistoryStatsResponseGroupVerdictCounts;
   readonly unexpectedCount?: number;
   readonly unexpectedlySkippedCount?: number;
   readonly flakyCount?: number;

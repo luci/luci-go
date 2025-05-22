@@ -28,13 +28,16 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import {
-  VARIANT_STATUS_CLASS_MAP,
-  VARIANT_STATUS_ICON_MAP,
-  VERDICT_VARIANT_STATUS_MAP,
+  VERDICT_STATUS_CLASS_MAP,
+  VERDICT_STATUS_ICON_MAP,
 } from '@/common/constants/legacy';
-import { TestVerdictBundle } from '@/common/services/luci_analysis';
+import {
+  TestVerdict_StatusOverride,
+  TestVerdictBundle,
+} from '@/common/services/luci_analysis';
 import { RESULT_LIMIT } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
+import { GraphType } from '@/common/store/test_history_page';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
@@ -252,16 +255,27 @@ export class TestHistoryDetailsEntryElement
   }
 
   protected render() {
+    // Depending on the test history view mode, show the base status or the status
+    // including overrides.
+    const showOverrideStatus =
+      this.store.testHistoryPage.graphType ===
+      GraphType.STATUS_WITH_EXONERATION;
+
     const status =
-      VERDICT_VARIANT_STATUS_MAP[this.verdictBundle.verdict.status];
+      showOverrideStatus &&
+      this.verdictBundle.verdict.statusOverride !==
+        TestVerdict_StatusOverride.NOT_OVERRIDDEN
+        ? this.verdictBundle.verdict.statusOverride
+        : this.verdictBundle.verdict.statusV2;
+
     return html`
       <milo-expandable-entry
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
       >
         <div id="header" slot="header">
-          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[status]}
-            >${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon
+          <mwc-icon class=${VERDICT_STATUS_CLASS_MAP[status]}
+            >${VERDICT_STATUS_ICON_MAP[status]}</mwc-icon
           >
           <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
             ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}

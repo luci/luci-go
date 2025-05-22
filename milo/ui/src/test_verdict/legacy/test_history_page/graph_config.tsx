@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -34,7 +35,8 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
 
   @computed private get shouldShowCountFilter() {
     return (
-      this.pageState.graphType === GraphType.STATUS &&
+      (this.pageState.graphType === GraphType.STATUS_WITH_EXONERATION ||
+        this.pageState.graphType === GraphType.STATUS_WITHOUT_EXONERATION) &&
       this.pageState.xAxisType === XAxisType.DATE
     );
   }
@@ -56,10 +58,18 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
           }}
         >
           <option
-            ?selected=${this.pageState.graphType === GraphType.STATUS}
-            value=${GraphType.STATUS}
+            ?selected=${this.pageState.graphType ===
+            GraphType.STATUS_WITH_EXONERATION}
+            value=${GraphType.STATUS_WITH_EXONERATION}
           >
-            Status
+            Status after Exoneration
+          </option>
+          <option
+            ?selected=${this.pageState.graphType ===
+            GraphType.STATUS_WITHOUT_EXONERATION}
+            value=${GraphType.STATUS_WITHOUT_EXONERATION}
+          >
+            Status before Exoneration
           </option>
           <option
             ?selected=${this.pageState.graphType === GraphType.DURATION}
@@ -117,32 +127,36 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
         <label>Count:</label>
         <div class="filter">
           <input
-            id="unexpected-toggle"
+            id="passed-toggle"
             type="checkbox"
-            ?checked=${this.pageState.countUnexpected}
+            ?checked=${this.pageState.countPassed}
             @change=${(e: Event) =>
-              this.pageState.setCountUnexpected(
-                (e.target as HTMLInputElement).checked,
-              )}
-          />
-          <label for="unexpected-toggle" style="color: var(--failure-color);"
-            >Unexpected</label
-          >
-        </div>
-        <div class="filter">
-          <input
-            id="unexpectedly-skipped-toggle"
-            type="checkbox"
-            ?checked=${this.pageState.countUnexpectedlySkipped}
-            @change=${(e: Event) =>
-              this.pageState.setCountUnexpectedlySkipped(
+              this.pageState.setCountPassed(
                 (e.target as HTMLInputElement).checked,
               )}
           />
           <label
-            for="unexpectedly-skipped-toggle"
-            style="color: var(--critical-failure-color);"
-            >Unexpectedly Skipped</label
+            for="passed-toggle"
+            style="color: var(--success-color);"
+            title="The test obtained a passing result."
+            >Passed</label
+          >
+        </div>
+        <div class="filter">
+          <input
+            id="failed-toggle"
+            type="checkbox"
+            ?checked=${this.pageState.countFailed}
+            @change=${(e: Event) =>
+              this.pageState.setCountFailed(
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <label
+            for="failed-toggle"
+            style="color: var(--failure-color);"
+            title="The test obtained a failing result."
+            >Failed</label
           >
         </div>
         <div class="filter">
@@ -155,11 +169,73 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
                 (e.target as HTMLInputElement).checked,
               )}
           />
-          <label for="flaky-toggle" style="color: var(--warning-color);"
+          <label
+            for="flaky-toggle"
+            style="color: var(--warning-color);"
+            title="The test had both passing and failing results on the same code under test."
             >Flaky</label
           >
         </div>
         <div class="filter">
+          <input
+            id="skipped-toggle"
+            type="checkbox"
+            ?checked=${this.pageState.countSkipped}
+            @change=${(e: Event) =>
+              this.pageState.setCountSkipped(
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <label
+            for="skipped-toggle"
+            style="color: var(--skipped-color);"
+            title="The test was intentionally not run. For example, because it is disabled in code."
+            >Skipped</label
+          >
+        </div>
+        <div class="filter">
+          <input
+            id="execution-errored-toggle"
+            type="checkbox"
+            ?checked=${this.pageState.countExecutionErrored}
+            @change=${(e: Event) =>
+              this.pageState.setCountExecutionErrored(
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <label
+            for="execution-errored-toggle"
+            style="color: var(--critical-failure-color);"
+            title="There was a problem running the test."
+            >Execution Errored</label
+          >
+        </div>
+        <div class="filter">
+          <input
+            id="precluded-toggle"
+            type="checkbox"
+            ?checked=${this.pageState.countPrecluded}
+            @change=${(e: Event) =>
+              this.pageState.setCountPrecluded(
+                (e.target as HTMLInputElement).checked,
+              )}
+          />
+          <label
+            for="precluded-toggle"
+            style="color: var(--precluded-color);"
+            title="The test was not run because of a problem at a higher-level (e.g. device provisioning issue or suite-level timeout hit)."
+            >Precluded</label
+          >
+        </div>
+        <div
+          class="filter"
+          style=${styleMap({
+            display:
+              this.pageState.graphType === GraphType.STATUS_WITH_EXONERATION
+                ? ''
+                : 'none',
+          })}
+        >
           <input
             id="exonerated-toggle"
             type="checkbox"
@@ -169,7 +245,10 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
                 (e.target as HTMLInputElement).checked,
               )}
           />
-          <label for="exonerated-toggle" style="color: var(--exonerated-color);"
+          <label
+            for="exonerated-toggle"
+            style="color: var(--exonerated-color);"
+            title="The test failed (or execution errored or was precluded), but the CL under test was absolved from blame."
             >Exonerated</label
           >
         </div>
@@ -209,7 +288,7 @@ export class TestHistoryGraphConfigElement extends MobxExtLitElement {
 
       #count-filter {
         display: grid;
-        grid-template-columns: auto auto auto auto 1fr;
+        grid-template-columns: auto auto auto auto auto auto auto 1fr;
         grid-gap: 8px;
         height: 100%;
         line-height: 32px;
