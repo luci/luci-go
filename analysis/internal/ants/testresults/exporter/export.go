@@ -19,15 +19,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.
@@ -56,11 +53,7 @@ type ExportOptions struct {
 // Export exports the given test results to BigQuery.
 func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant, opts ExportOptions) error {
 
-	// Time to use as the insert time for all exported rows.
-	// Timestamp all rows exported in one batch the same.
-	insertTime := clock.Now(ctx)
-
-	exportRow, err := prepareExportRow(testVariants, opts, insertTime)
+	exportRow, err := prepareExportRow(testVariants, opts)
 	if err != nil {
 		return errors.Annotate(err, "prepare row").Err()
 	}
@@ -72,7 +65,7 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 }
 
 // prepareExportRow prepares a BigQuery export rows.
-func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertTime time.Time) ([]*bqpb.AntsTestResultRow, error) {
+func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqpb.AntsTestResultRow, error) {
 
 	invocationID, err := rdbpbutil.ParseInvocationName(opts.Invocation.Name)
 	if err != nil {
@@ -121,8 +114,8 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertT
 			tr := trb.Result
 
 			timing := &bqpb.AntsTestResultRow_Timing{
-				CreationTimestamp: tr.StartTime.AsTime().Unix(),
-				CompleteTimestamp: tr.StartTime.AsTime().Add(tr.Duration.AsDuration()).Unix(),
+				CreationTimestamp: tr.StartTime.AsTime().UnixMilli(),
+				CompleteTimestamp: tr.StartTime.AsTime().Add(tr.Duration.AsDuration()).UnixMilli(),
 				CreationMonth:     tr.StartTime.AsTime().Format("2006-01"),
 			}
 
@@ -148,7 +141,6 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions, insertT
 				Properties:             convertToAnTSStringPair(tr.Tags),
 				TestId:                 tv.TestId,
 				CompletionTime:         opts.Invocation.FinalizeTime,
-				InsertTime:             timestamppb.New(insertTime),
 			})
 		}
 	}
