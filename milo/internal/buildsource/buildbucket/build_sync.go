@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/structmask"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -162,24 +163,32 @@ func DeleteOldBuilds(c context.Context) error {
 	})
 }
 
-var summaryBuildMask = &field_mask.FieldMask{
-	Paths: []string{
-		"id",
-		"builder",
-		"number",
-		"create_time",
-		"start_time",
-		"end_time",
-		"update_time",
-		"status",
-		"summary_markdown",
-		"tags",
-		"infra.buildbucket.hostname",
-		"infra.swarming",
-		"input.experimental",
-		"input.gitiles_commit",
-		"output.properties",
-		"critical",
+var summaryBuildMask = &buildbucketpb.BuildMask{
+	Fields: &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"summary_markdown",
+			"tags",
+			"infra.buildbucket.hostname",
+			"infra.swarming",
+			"input.experimental",
+			"input.gitiles_commit",
+			"output.properties",
+			"output.gitiles_commit",
+			"critical",
+		},
+	},
+	OutputProperties: []*structmask.StructMask{
+		{
+			Path: []string{"$recipe_engine/milo/blamelist_pins"},
+		},
 	},
 }
 
@@ -437,7 +446,7 @@ func syncBuildsImpl(c context.Context) error {
 								Id:          buildID,
 								BuildNumber: buildNum,
 								Builder:     builder,
-								Fields:      summaryBuildMask,
+								Mask:        summaryBuildMask,
 							}
 							newBuild, err := client.GetBuild(c, req)
 							if status.Code(err) == codes.NotFound {
