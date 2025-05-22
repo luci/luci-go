@@ -156,20 +156,18 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
 		})
 		t.Run("with legacy test results data", func(t *ftt.Test) {
-			// This test case can be deleted from March 2023. This should be
-			// combined with an update to make ChangelistOwnerKinds NOT NULL.
+			// This test case can be deleted from August 2025. This should be
+			// combined with an update to make StatusV2 NOT NULL.
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				stmt := spanner.NewStatement("UPDATE TestResults SET ChangelistOwnerKinds = NULL WHERE TRUE")
+				stmt := spanner.NewStatement("UPDATE TestResults SET StatusV2 = NULL WHERE TRUE")
 				_, err := span.Update(ctx, stmt)
 				return err
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			for _, v := range expectedTestVerdicts {
-				for _, cl := range v.Changelists {
-					cl.OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
-				}
-			}
+			// In test result status v1, precluded statuses cannot be represented.
+			// The unexpected skips get mapped back to execution errors instead.
+			expectedTestVerdicts[7].StatusV2 = pb.TestVerdict_EXECUTION_ERRORED
 
 			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
@@ -408,14 +406,21 @@ func TestReadTestHistoryStats(t *testing.T) {
 			assert.Loosely(t, verdicts, should.Match(expectedGroups[4:]))
 		})
 		t.Run("with legacy test results data", func(t *ftt.Test) {
-			// This test case can be deleted from March 2023. This should be
-			// combined with an update to make ChangelistOwnerKinds NOT NULL.
+			// This test case can be deleted from August 2025. This should be
+			// combined with an update to make StatusV2 NOT NULL.
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				stmt := spanner.NewStatement("UPDATE TestResults SET ChangelistOwnerKinds = NULL WHERE TRUE")
+				stmt := spanner.NewStatement("UPDATE TestResults SET StatusV2 = NULL WHERE TRUE")
 				_, err := span.Update(ctx, stmt)
 				return err
 			})
 			assert.Loosely(t, err, should.BeNil)
+
+			// In test result status v1, precluded statuses cannot be represented.
+			// The unexpected skips get mapped back to execution errors.
+			expectedGroups[5].VerdictCounts = &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+				ExecutionErrored:           1,
+				ExecutionErroredExonerated: 1,
+			}
 
 			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)

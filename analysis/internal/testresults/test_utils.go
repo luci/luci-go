@@ -289,6 +289,7 @@ func applyStatus(trs []*TestResult, status pb.TestVerdict_Status, statusOverride
 
 		// Make one of the results a pass so that we can contribute to average passed duration.
 		trs[0].Status = pb.TestResultStatus_PASS
+		trs[1].Status = pb.TestResultStatus_FAIL
 
 	case pb.TestVerdict_SKIPPED:
 		// Adding a SKIP result to a set of precluded or execution errored

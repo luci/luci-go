@@ -755,12 +755,14 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 		END TvStatus
 	{{end}}
 	{{define "tvStatusV2"}}
+	  -- TODO: From August 2025, the COALESCE can be removed and the statement can
+		-- rely only on StatusV2 as it will always be set.
 		CASE
-			WHEN LOGICAL_OR(StatusV2 = @passedV2) AND LOGICAL_OR(StatusV2 = @failedV2) THEN @flakyVerdict
-			WHEN LOGICAL_OR(StatusV2 = @passedV2) THEN @passedVerdict
-			WHEN LOGICAL_OR(StatusV2 = @failedV2) THEN @failedVerdict
-			WHEN LOGICAL_OR(StatusV2 = @skippedV2) THEN @skippedVerdict
-			WHEN LOGICAL_OR(StatusV2 = @executionErroredV2) THEN @executionErroredVerdict
+			WHEN LOGICAL_OR(COALESCE(StatusV2 = @passedV2, NOT COALESCE(IsUnexpected, FALSE) AND Status <> @skip)) AND LOGICAL_OR(COALESCE(StatusV2 = @failedV2, COALESCE(IsUnexpected, FALSE) AND Status <> @skip)) THEN @flakyVerdict
+			WHEN LOGICAL_OR(COALESCE(StatusV2 = @passedV2, NOT COALESCE(IsUnexpected, FALSE) AND Status <> @skip)) THEN @passedVerdict
+			WHEN LOGICAL_OR(COALESCE(StatusV2 = @failedV2, COALESCE(IsUnexpected, FALSE) AND Status <> @skip)) THEN @failedVerdict
+			WHEN LOGICAL_OR(COALESCE(StatusV2 = @skippedV2, NOT COALESCE(IsUnexpected, FALSE) AND Status = @skip)) THEN @skippedVerdict
+			WHEN LOGICAL_OR(COALESCE(StatusV2 = @executionErroredV2, COALESCE(IsUnexpected, FALSE) and Status = @skip)) THEN @executionErroredVerdict
 			ELSE @precludedVerdict
 		END TvStatusV2
 	{{end}}

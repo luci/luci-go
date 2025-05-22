@@ -419,6 +419,8 @@ CREATE TABLE TestResults (
   Status INT64 NOT NULL,
 
   -- The test result status (v2).
+  -- From August 2025 onwards, this should be marked NOT NULL as it will
+  -- always be set.
   StatusV2 INT64,
 
   -- The reasons (if any) the test verdict was exonerated.
@@ -457,10 +459,8 @@ CREATE TABLE TestResults (
   -- The following fields capture information about any unsubmitted
   -- changelists that were tested by the test execution. The arrays
   -- are matched in length and correspond in index, i.e.
-  -- ChangelistHosts[OFFSET(0)] corresponds with ChangelistChanges[OFFSET(0)]
-  -- and ChangelistPatchsets[OFFSET(0)],
-  -- with the exception of ChangelistOwnerKinds, for which correspondance
-  -- is not guaranteed until March 2023 (as the column was retrofitted later).
+  -- ChangelistHosts[OFFSET(0)] corresponds with ChangelistChanges[OFFSET(0)],
+  -- ChangelistPatchsets[OFFSET(0)] and ChangelistOwnerKinds[OFFSET(0)].
   --
   -- Changelists are stored in ascending lexicographical order (over
   -- (hostname, change, patchset)).
@@ -485,7 +485,7 @@ CREATE TABLE TestResults (
   -- one of the luci.analysis.v1.ChangelistOwnerKinds values.
   -- 'U' corresponds to a User changelist, 'A' corresponds to an Automation
   -- changelist, and '' corresponds to a changelist of unspecified origin.
-  ChangelistOwnerKinds ARRAY<STRING(1)>,
+  ChangelistOwnerKinds ARRAY<STRING(1)> NOT NULL,
 
   -- Whether there were any changes made to the sources, not described above.
   -- For example, a version of a dependency was uprevved in the build (e.g.
