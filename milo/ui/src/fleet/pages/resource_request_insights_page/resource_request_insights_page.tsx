@@ -309,6 +309,9 @@ export const ResourceRequestListPage = () => {
           sortModel={sortModel}
           sortingMode="server"
           onSortModelChange={handleSortModelChange}
+          columnVisibilityModel={{
+            material_sourcing_target_delivery_date: false,
+          }}
         />
       </div>
     </Container>
