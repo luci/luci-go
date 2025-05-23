@@ -38,7 +38,7 @@ import {
   createTVPropGetter,
   RESULT_LIMIT,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
 } from '@/common/services/resultdb';
 import { ServicesStore } from '@/common/store/services';
 import { logging } from '@/common/tools/logging';
@@ -61,6 +61,10 @@ export class QueryInvocationError extends Error implements InnerTag {
     this[TAG_SOURCE] = source;
   }
 }
+
+// A special group value for the 'status' group. which indicates the group
+// that contains both passed and skipped verdicts.
+export const PASSED_OR_SKIPPED = 'PASSED_OR_SKIPPED';
 
 export const InvocationState = types
   .model('InvocationState', {
@@ -108,7 +112,14 @@ export const InvocationState = types
       },
     );
     const sortingKeys = computed(
-      () => self.customSortingKeys || defaultSortingKeys.get(),
+      () => {
+        // The default value of customSortingKeys ([]) is considered a truthy
+        // value, so check it is non-empty instead.
+        if (self.customSortingKeys.length > 0) {
+          return self.customSortingKeys;
+        }
+        return defaultSortingKeys.get();
+      },
       {
         equals: comparer.shallow,
       },
@@ -120,7 +131,14 @@ export const InvocationState = types
       },
     );
     const groupingKeys = computed(
-      () => self.customGroupingKeys || defaultGroupingKeys.get(),
+      () => {
+        // The default value of customGroupingKeys ([]) is considered a truthy
+        // value, so check it is non-empty instead.
+        if (self.customGroupingKeys.length > 0) {
+          return self.customGroupingKeys;
+        }
+        return defaultGroupingKeys.get();
+      },
       {
         equals: comparer.shallow,
       },
@@ -211,29 +229,32 @@ export const InvocationState = types
         }
         const ret: VariantGroup[] = [];
         if (
-          this.testLoader.loadedAllUnexpectedVariants &&
-          this.testLoader.unexpectedTestVariants.length === 0
+          this.testLoader.loadedAllFailedVariants &&
+          this.testLoader.failedTestVariants.length === 0
         ) {
           // Indicates that there are no unexpected test variants.
           ret.push({
-            def: [['status', TestVariantStatus.UNEXPECTED]],
+            def: [['status', TestVerdict_Status.FAILED]],
             variants: [],
           });
         }
         ret.push(
-          ...this.testLoader.groupedNonExpectedVariants.map((group) => ({
-            def: self.groupers.map(
-              ([key, getter]) => [key, getter(group[0])] as [string, unknown],
-            ),
-            variants: group,
-          })),
+          ...this.testLoader.groupedNonPassedNorSkippedVariants.map(
+            (group) => ({
+              def: self.groupers.map(
+                ([key, getter]) => [key, getter(group[0])] as [string, unknown],
+              ),
+              variants: group,
+            }),
+          ),
           {
-            def: [['status', TestVariantStatus.EXPECTED]],
-            variants: this.testLoader.expectedTestVariants,
+            def: [['status', PASSED_OR_SKIPPED]],
+            variants: this.testLoader.passedAndSkippedTestVariants,
             note: deepEqual(self.groupingKeys, ['status'])
               ? ''
               : html`<b
-                  >note: custom grouping doesn't apply to expected tests</b
+                  >note: custom grouping doesn't apply to passed and skipped
+                  tests</b
                 >`,
           },
         );

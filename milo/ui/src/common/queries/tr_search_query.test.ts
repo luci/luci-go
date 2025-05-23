@@ -14,9 +14,10 @@
 
 import {
   TestResult,
-  TestStatus,
+  TestResult_Status,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from '@/common/services/resultdb';
 
 import {
@@ -32,25 +33,26 @@ const variant1: TestVariant = {
   testMetadata: {
     name: 'test-name-1',
   },
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
-        status: TestStatus.Fail,
+        statusV2: TestResult_Status.FAILED,
         tags: [{ key: 'tag-key-1', value: 'tag-val-1' }],
         duration: '10s',
       } as TestResult,
     },
     {
       result: {
-        status: TestStatus.Fail,
+        statusV2: TestResult_Status.FAILED,
         tags: [{ key: 'tag-key-1', value: 'tag-val-1=1' }],
         duration: '15s',
       } as TestResult,
     },
     {
       result: {
-        status: TestStatus.Skip,
+        statusV2: TestResult_Status.SKIPPED,
         tags: [{ key: 'tag-key-2', value: 'tag-val-2' }],
         duration: '20s',
       } as TestResult,
@@ -66,18 +68,19 @@ const variant2: TestVariant = {
   testMetadata: {
     name: 'test-name-2',
   },
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
         tags: [{ key: 'tag-key-1', value: 'unknown-val' }],
-        status: TestStatus.Fail,
+        statusV2: TestResult_Status.FAILED,
         duration: '30s',
       } as TestResult,
     },
     {
       result: {
-        status: TestStatus.Fail,
+        statusV2: TestResult_Status.FAILED,
         tags: [
           { key: 'duplicated-tag-key', value: 'first-tag-val' },
           { key: 'duplicated-tag-key', value: 'second-tag-val' },
@@ -95,16 +98,17 @@ const variant3: TestVariant = {
   testMetadata: {
     name: 'test',
   },
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
-        status: TestStatus.Pass,
+        statusV2: TestResult_Status.PASSED,
       } as TestResult,
     },
     {
       result: {
-        status: TestStatus.Fail,
+        statusV2: TestResult_Status.FAILED,
       } as TestResult,
     },
   ],
@@ -115,7 +119,8 @@ const variant4: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXONERATED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.EXONERATED,
 };
 
 const variant5: TestVariant = {
@@ -123,11 +128,12 @@ const variant5: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
-        status: TestStatus.Pass,
+        statusV2: TestResult_Status.PASSED,
       } as TestResult,
     },
   ],
@@ -141,11 +147,12 @@ const variant6: TestVariant = {
   testMetadata: {
     name: 'sub',
   },
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
-        status: TestStatus.Skip,
+        statusV2: TestResult_Status.SKIPPED,
       } as TestResult,
     },
   ],
@@ -156,11 +163,12 @@ const variant7: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val3=val' } },
   variantHash: 'key1:val2|key2:val3=val',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {
-        status: TestStatus.Skip,
+        statusV2: TestResult_Status.SKIPPED,
       } as TestResult,
     },
   ],
@@ -219,19 +227,19 @@ describe('parseTestResultSearchQuery', () => {
 
   describe('RSTATUS query', () => {
     test('should filter out variants with no matching status', () => {
-      const filter = parseTestResultSearchQuery('rstatus:pass');
+      const filter = parseTestResultSearchQuery('rstatus:passed');
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant3, variant5]);
     });
 
     test('supports multiple statuses', () => {
-      const filter = parseTestResultSearchQuery('rstatus:pass,fail');
+      const filter = parseTestResultSearchQuery('rstatus:passed,failed');
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant1, variant2, variant3, variant5]);
     });
 
     test('should work with negation', () => {
-      const filter = parseTestResultSearchQuery('-rstatus:pass');
+      const filter = parseTestResultSearchQuery('-rstatus:passed');
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([
         variant1,
@@ -467,13 +475,15 @@ describe('parseTestResultSearchQuery', () => {
 
   describe('multiple queries', () => {
     test('should be able to combine different types of query', () => {
-      const filter = parseTestResultSearchQuery('rstatus:pass id:test-3');
+      const filter = parseTestResultSearchQuery('rstatus:passed id:test-3');
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant3]);
     });
 
     test('should be able to combine normal and negative queries', () => {
-      const filter = parseTestResultSearchQuery('rstatus:pass -rstatus:fail');
+      const filter = parseTestResultSearchQuery(
+        'rstatus:passed -rstatus:failed',
+      );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant5]);
     });
@@ -487,83 +497,111 @@ describe('suggestTestResultSearchQuery', () => {
   });
 
   test('should not give suggestions when the sub-query is empty', () => {
-    const suggestions1 = suggestTestResultSearchQuery('Status:UNEXPECTED ');
+    const suggestions1 = suggestTestResultSearchQuery('Status:FAILED ');
     expect(suggestions1.length).toStrictEqual(0);
   });
 
   test('should give user suggestions based on the last sub-query', () => {
-    const suggestions1 = suggestTestResultSearchQuery('unexpected Pass');
-    expect(suggestions1.find((s) => s.value === 'RStatus:Pass')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Pass')).toBeDefined();
+    const suggestions1 = suggestTestResultSearchQuery('execution Pass');
     expect(
-      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
+      suggestions1.find((s) => s.value === 'RStatus:PASSED'),
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:PASSED'),
+    ).toBeDefined();
+    expect(suggestions1.find((s) => s.value === 'Status:PASSED')).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:PASSED'),
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:EXECUTION_ERRORED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
+      suggestions1.find((s) => s.value === '-RStatus:EXECUTION_ERRORED'),
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:EXECUTION_ERRORED'),
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:EXECUTION_ERRORED'),
     ).toBeUndefined();
   });
 
-  test('should suggest run status query with matching status', () => {
+  test('should suggest result status query with matching status', () => {
     const suggestions1 = suggestTestResultSearchQuery('Pass');
-    expect(suggestions1.find((s) => s.value === 'RStatus:Pass')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Pass')).toBeDefined();
-
-    const suggestions2 = suggestTestResultSearchQuery('Fail');
-    expect(suggestions2.find((s) => s.value === 'RStatus:Fail')).toBeDefined();
-    expect(suggestions2.find((s) => s.value === '-RStatus:Fail')).toBeDefined();
-
-    const suggestions3 = suggestTestResultSearchQuery('Crash');
-    expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
     expect(
-      suggestions3.find((s) => s.value === '-RStatus:Crash'),
+      suggestions1.find((s) => s.value === 'RStatus:PASSED'),
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:PASSED'),
     ).toBeDefined();
 
-    const suggestions4 = suggestTestResultSearchQuery('Abort');
-    expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
+    const suggestions2 = suggestTestResultSearchQuery('Fail');
     expect(
-      suggestions4.find((s) => s.value === '-RStatus:Abort'),
+      suggestions2.find((s) => s.value === 'RStatus:FAILED'),
+    ).toBeDefined();
+    expect(
+      suggestions2.find((s) => s.value === '-RStatus:FAILED'),
+    ).toBeDefined();
+
+    const suggestions3 = suggestTestResultSearchQuery('Execution');
+    expect(
+      suggestions3.find((s) => s.value === 'RStatus:EXECUTION_ERRORED'),
+    ).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === '-RStatus:EXECUTION_ERRORED'),
+    ).toBeDefined();
+
+    const suggestions4 = suggestTestResultSearchQuery('Precluded');
+    expect(
+      suggestions4.find((s) => s.value === 'RStatus:PRECLUDED'),
+    ).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === '-RStatus:PRECLUDED'),
     ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('Skip');
-    expect(suggestions5.find((s) => s.value === 'RStatus:Skip')).toBeDefined();
-    expect(suggestions5.find((s) => s.value === '-RStatus:Skip')).toBeDefined();
+    expect(
+      suggestions5.find((s) => s.value === 'RStatus:SKIPPED'),
+    ).toBeDefined();
+    expect(
+      suggestions5.find((s) => s.value === '-RStatus:SKIPPED'),
+    ).toBeDefined();
   });
 
   test('should not suggest run status query with a different status', () => {
     const suggestions1 = suggestTestResultSearchQuery('Pass');
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Fail'),
+      suggestions1.find((s) => s.value === 'RStatus:FAILED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Fail'),
+      suggestions1.find((s) => s.value === '-RStatus:FAILED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Crash'),
+      suggestions1.find((s) => s.value === 'RStatus:EXECUTION_ERRORED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Crash'),
+      suggestions1.find((s) => s.value === '-RStatus:EXECUTION_ERRORED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Abort'),
+      suggestions1.find((s) => s.value === 'RStatus:PRECLUDED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Abort'),
+      suggestions1.find((s) => s.value === '-RStatus:PRECLUDED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'RStatus:Skip'),
+      suggestions1.find((s) => s.value === 'RStatus:SKIPPED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-RStatus:Skip'),
+      suggestions1.find((s) => s.value === '-RStatus:SKIPPED'),
     ).toBeUndefined();
   });
 
   test('should suggest variant status query with matching status', () => {
-    const suggestions1 = suggestTestResultSearchQuery('unexpected');
+    const suggestions1 = suggestTestResultSearchQuery('failed');
+    expect(suggestions1.find((s) => s.value === 'Status:FAILED')).toBeDefined();
     expect(
-      suggestions1.find((s) => s.value === 'Status:UNEXPECTED'),
-    ).toBeDefined();
-    expect(
-      suggestions1.find((s) => s.value === '-Status:UNEXPECTED'),
+      suggestions1.find((s) => s.value === '-Status:FAILED'),
     ).toBeDefined();
 
     const suggestions2 = suggestTestResultSearchQuery('flaky');
@@ -578,17 +616,15 @@ describe('suggestTestResultSearchQuery', () => {
       suggestions3.find((s) => s.value === '-Status:EXONERATED'),
     ).toBeDefined();
 
-    const suggestions4 = suggestTestResultSearchQuery('expected');
+    const suggestions4 = suggestTestResultSearchQuery('passed');
+    expect(suggestions4.find((s) => s.value === 'Status:PASSED')).toBeDefined();
     expect(
-      suggestions4.find((s) => s.value === 'Status:EXPECTED'),
-    ).toBeDefined();
-    expect(
-      suggestions4.find((s) => s.value === '-Status:EXPECTED'),
+      suggestions4.find((s) => s.value === '-Status:PASSED'),
     ).toBeDefined();
   });
 
   test('should not suggest variant status query with a different status', () => {
-    const suggestions1 = suggestTestResultSearchQuery('UNEXPECTED');
+    const suggestions1 = suggestTestResultSearchQuery('failed');
     expect(
       suggestions1.find((s) => s.value === 'Status:FLAKY'),
     ).toBeUndefined();
@@ -602,37 +638,53 @@ describe('suggestTestResultSearchQuery', () => {
       suggestions1.find((s) => s.value === '-Status:EXONERATED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === 'Status:EXPECTED'),
+      suggestions1.find((s) => s.value === 'Status:PASSED'),
     ).toBeUndefined();
     expect(
-      suggestions1.find((s) => s.value === '-Status:EXPECTED'),
+      suggestions1.find((s) => s.value === '-Status:PASSED'),
     ).toBeUndefined();
   });
 
   test('suggestion should be case insensitive', () => {
-    const suggestions1 = suggestTestResultSearchQuery('PASS');
-    expect(suggestions1.find((s) => s.value === 'RStatus:Pass')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Pass')).toBeDefined();
-
-    const suggestions2 = suggestTestResultSearchQuery('fail');
-    expect(suggestions2.find((s) => s.value === 'RStatus:Fail')).toBeDefined();
-    expect(suggestions2.find((s) => s.value === '-RStatus:Fail')).toBeDefined();
-
-    const suggestions3 = suggestTestResultSearchQuery('CrAsH');
-    expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
+    const suggestions1 = suggestTestResultSearchQuery('PaSS');
     expect(
-      suggestions3.find((s) => s.value === '-RStatus:Crash'),
+      suggestions1.find((s) => s.value === 'RStatus:PASSED'),
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:PASSED'),
     ).toBeDefined();
 
-    const suggestions4 = suggestTestResultSearchQuery('Abort');
-    expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
+    const suggestions2 = suggestTestResultSearchQuery('fail');
     expect(
-      suggestions4.find((s) => s.value === '-RStatus:Abort'),
+      suggestions2.find((s) => s.value === 'RStatus:FAILED'),
+    ).toBeDefined();
+    expect(
+      suggestions2.find((s) => s.value === '-RStatus:FAILED'),
+    ).toBeDefined();
+
+    const suggestions3 = suggestTestResultSearchQuery('execution errored');
+    expect(
+      suggestions3.find((s) => s.value === 'RStatus:EXECUTION_ERRORED'),
+    ).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === '-RStatus:EXECUTION_ERRORED'),
+    ).toBeDefined();
+
+    const suggestions4 = suggestTestResultSearchQuery('Precluded');
+    expect(
+      suggestions4.find((s) => s.value === 'RStatus:PRECLUDED'),
+    ).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === '-RStatus:PRECLUDED'),
     ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('sKIP');
-    expect(suggestions5.find((s) => s.value === 'RStatus:Skip')).toBeDefined();
-    expect(suggestions5.find((s) => s.value === '-RStatus:Skip')).toBeDefined();
+    expect(
+      suggestions5.find((s) => s.value === 'RStatus:SKIPPED'),
+    ).toBeDefined();
+    expect(
+      suggestions5.find((s) => s.value === '-RStatus:SKIPPED'),
+    ).toBeDefined();
   });
 
   test('should suggest ID query', () => {
@@ -659,11 +711,15 @@ describe('suggestTestResultSearchQuery', () => {
   });
 
   test('should suggest ID query even when there are other matching queries', () => {
-    const suggestions1 = suggestTestResultSearchQuery('fail');
-    expect(suggestions1.find((s) => s.value === 'RStatus:Fail')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Fail')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === 'ID:fail')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-ID:fail')).toBeDefined();
+    const suggestions1 = suggestTestResultSearchQuery('failed');
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:FAILED'),
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:FAILED'),
+    ).toBeDefined();
+    expect(suggestions1.find((s) => s.value === 'ID:failed')).toBeDefined();
+    expect(suggestions1.find((s) => s.value === '-ID:failed')).toBeDefined();
   });
 
   test('should suggest ExactID query when the query prefix is ExactID:', () => {

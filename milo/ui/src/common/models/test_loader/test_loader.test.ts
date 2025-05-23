@@ -17,7 +17,8 @@ import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
   ResultDb,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from '@/common/services/resultdb';
 import { CacheOption } from '@/generic_libs/tools/cached_fn';
 
@@ -28,7 +29,8 @@ const variant1 = {
   sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant2 = {
@@ -36,7 +38,8 @@ const variant2 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant3 = {
@@ -44,7 +47,8 @@ const variant3 = {
   sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
-  status: TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+  statusV2: TestVerdict_Status.EXECUTION_ERRORED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant4 = {
@@ -52,7 +56,8 @@ const variant4 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant5 = {
@@ -60,7 +65,8 @@ const variant5 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant6 = {
@@ -68,7 +74,8 @@ const variant6 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val2' } },
   variantHash: 'key1:val2|key2:val2',
-  status: TestVariantStatus.EXONERATED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.EXONERATED,
 };
 
 const variant7 = {
@@ -76,7 +83,8 @@ const variant7 = {
   sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
-  status: TestVariantStatus.EXONERATED,
+  statusV2: TestVerdict_Status.PRECLUDED,
+  statusOverride: TestVerdict_StatusOverride.EXONERATED,
 };
 
 const variant8 = {
@@ -84,7 +92,8 @@ const variant8 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant9 = {
@@ -92,7 +101,8 @@ const variant9 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant10 = {
@@ -100,7 +110,8 @@ const variant10 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.SKIPPED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant11 = {
@@ -108,7 +119,8 @@ const variant11 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant12 = {
@@ -116,7 +128,8 @@ const variant12 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 describe('TestLoader', () => {
@@ -154,34 +167,37 @@ describe('TestLoader', () => {
     });
 
     test('should preserve loading progress', async () => {
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingUnexpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingFailedVerdicts,
+      );
       expect(stub.mock.calls.length).toStrictEqual(0);
 
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
         variant4,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([]);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
+      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlakyVerdicts);
       expect(stub.mock.calls.length).toStrictEqual(1);
       expect(stub.mock.lastCall?.[0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: '',
+        orderBy: 'status_v2_effective',
       });
 
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -190,18 +206,21 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([]);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingPassedAndSkippedVerdicts,
+      );
       expect(stub.mock.calls.length).toStrictEqual(2);
       expect(stub.mock.lastCall?.[0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: 'page2',
+        orderBy: 'status_v2_effective',
       });
 
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -210,28 +229,31 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
         variant11,
       ]);
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingPassedAndSkippedVerdicts,
+      );
       expect(stub.mock.calls.length).toStrictEqual(3);
       expect(stub.mock.lastCall?.[0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: 'page3',
+        orderBy: 'status_v2_effective',
       });
 
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -240,17 +262,17 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
         variant11,
         variant12,
       ]);
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
       expect(stub.mock.calls.length).toStrictEqual(4);
@@ -258,12 +280,13 @@ describe('TestLoader', () => {
         ...req,
         pageSize: 10000,
         pageToken: 'page4',
+        orderBy: 'status_v2_effective',
       });
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -272,24 +295,26 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
         variant11,
         variant12,
       ]);
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
       expect(stub.mock.calls.length).toStrictEqual(4);
     });
 
     test('should handle concurrent loadNextPage calls correctly', async () => {
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingUnexpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingFailedVerdicts,
+      );
 
       const loadReq1 = testLoader.loadNextTestVariants();
       const loadReq2 = testLoader.loadNextTestVariants();
@@ -297,29 +322,31 @@ describe('TestLoader', () => {
       const loadReq4 = testLoader.loadNextTestVariants();
       const loadReq5 = testLoader.loadNextTestVariants();
       expect(testLoader.isLoading).toBeTruthy();
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingUnexpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingFailedVerdicts,
+      );
 
       await loadReq1;
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
         variant4,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([]);
       // loadReq2 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
+      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlakyVerdicts);
 
       await loadReq2;
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -328,19 +355,21 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([]);
       // loadReq3 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingPassedAndSkippedVerdicts,
+      );
 
       await loadReq3;
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -349,7 +378,7 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
@@ -357,16 +386,18 @@ describe('TestLoader', () => {
       ]);
       // loadReq4 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingPassedAndSkippedVerdicts,
+      );
 
       await loadReq4;
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -375,7 +406,7 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
@@ -384,16 +415,16 @@ describe('TestLoader', () => {
       ]);
       // The list is exhausted, loadReq5 should not change the loading state.
       expect(testLoader.isLoading).toBeFalsy();
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
 
       await loadReq5;
-      expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([
+      expect(testLoader.failedTestVariants).toEqual([variant1, variant2]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([
         variant1,
         variant2,
         variant3,
@@ -402,7 +433,7 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
@@ -410,10 +441,10 @@ describe('TestLoader', () => {
         variant12,
       ]);
       expect(testLoader.isLoading).toBeFalsy();
-      expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(
-        testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-      ).toStrictEqual(1);
+      expect(testLoader.unfilteredFailedVariantsCount).toStrictEqual(2);
+      expect(testLoader.unfilteredExecutionErroredVariantsCount).toStrictEqual(
+        1,
+      );
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
 
@@ -422,21 +453,25 @@ describe('TestLoader', () => {
         ...req,
         pageSize: 10000,
         pageToken: '',
+        orderBy: 'status_v2_effective',
       });
       expect(stub.mock.calls[1][0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: 'page2',
+        orderBy: 'status_v2_effective',
       });
       expect(stub.mock.calls[2][0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: 'page3',
+        orderBy: 'status_v2_effective',
       });
       expect(stub.mock.calls[3][0]).toEqual({
         ...req,
         pageSize: 10000,
         pageToken: 'page4',
+        orderBy: 'status_v2_effective',
       });
     });
 
@@ -455,15 +490,15 @@ describe('TestLoader', () => {
       testLoader.filter = (v) => v.testId === 'matched-id';
       await testLoader.loadNextTestVariants();
 
-      expect(testLoader.unexpectedTestVariants).toEqual([]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant5]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
+      expect(testLoader.failedTestVariants).toEqual([]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([variant5]);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([]);
 
       await testLoader.loadNextTestVariants();
 
-      expect(testLoader.unexpectedTestVariants).toEqual([]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant5]);
-      expect(testLoader.expectedTestVariants).toEqual([variant12]);
+      expect(testLoader.failedTestVariants).toEqual([]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([variant5]);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([variant12]);
     });
 
     test('should stop loading at the final page when no test variants matches the filter', async () => {
@@ -520,10 +555,12 @@ describe('TestLoader', () => {
       expect(stub.mock.calls.length).toStrictEqual(0);
 
       await testLoader.loadNextTestVariants();
-      expect(testLoader.unexpectedTestVariants).toEqual([]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8]);
-      expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
+      expect(testLoader.failedTestVariants).toEqual([]);
+      expect(testLoader.nonPassedNorSkippedTestVariants).toEqual([]);
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([variant8]);
+      expect(testLoader.stage).toStrictEqual(
+        LoadingStage.LoadingPassedAndSkippedVerdicts,
+      );
     });
   });
 
@@ -561,7 +598,7 @@ describe('TestLoader', () => {
 
     test('should not return empty groups', async () => {
       // [] means there are no groups. [[]] means there is one empty group.
-      expect(testLoader.groupedNonExpectedVariants).toEqual([]);
+      expect(testLoader.groupedNonPassedNorSkippedVariants).toEqual([]);
     });
 
     test('should group test variants correctly', async () => {
@@ -569,13 +606,13 @@ describe('TestLoader', () => {
       await testLoader.loadNextTestVariants();
       await testLoader.loadNextTestVariants();
 
-      expect(testLoader.groupedNonExpectedVariants).toEqual([
+      expect(testLoader.groupedNonPassedNorSkippedVariants).toEqual([
         [variant1, variant2],
         [variant3],
         [variant4, variant5],
         [variant6, variant7],
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,
@@ -592,7 +629,7 @@ describe('TestLoader', () => {
       await testLoader.loadNextTestVariants();
       await testLoader.loadNextTestVariants();
 
-      expect(testLoader.groupedNonExpectedVariants).toEqual([
+      expect(testLoader.groupedNonPassedNorSkippedVariants).toEqual([
         [variant1],
         [variant2],
         [variant3],
@@ -600,7 +637,7 @@ describe('TestLoader', () => {
         [variant6],
         [variant7],
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([
+      expect(testLoader.passedAndSkippedTestVariants).toEqual([
         variant8,
         variant9,
         variant10,

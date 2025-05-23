@@ -19,7 +19,8 @@ import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from '@/common/services/resultdb';
 import { Store, StoreInstance } from '@/common/store';
 import { logging } from '@/common/tools/logging';
@@ -30,7 +31,8 @@ const variant1: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant2: TestVariant = {
@@ -38,7 +40,8 @@ const variant2: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant3: TestVariant = {
@@ -46,7 +49,8 @@ const variant3: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant4: TestVariant = {
@@ -54,7 +58,8 @@ const variant4: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXONERATED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.EXONERATED,
 };
 
 const variant5: TestVariant = {
@@ -62,7 +67,8 @@ const variant5: TestVariant = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
-  status: TestVariantStatus.EXPECTED,
+  statusV2: TestVerdict_Status.PASSED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 describe('InvocationState', () => {
@@ -101,47 +107,52 @@ describe('InvocationState', () => {
     test('should not filter out anything when search text is empty', () => {
       store.invocationPage.invocation.setSearchText('');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
+        store.invocationPage.invocation.testLoader!.failedTestVariants,
       ).toEqual([variant1, variant2]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants,
+        store.invocationPage.invocation.testLoader!
+          .passedAndSkippedTestVariants,
       ).toEqual([variant5]);
     });
 
     test("should filter out variants whose test ID doesn't match the search text", () => {
       store.invocationPage.invocation.setSearchText('test-suite-a');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
+        store.invocationPage.invocation.testLoader!.failedTestVariants,
       ).toEqual([variant1, variant2]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants,
+        store.invocationPage.invocation.testLoader!
+          .passedAndSkippedTestVariants,
       ).toEqual([]);
     });
 
     test('search text should be case insensitive', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
+        store.invocationPage.invocation.testLoader!.failedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants,
+        store.invocationPage.invocation.testLoader!
+          .passedAndSkippedTestVariants,
       ).toEqual([variant5]);
     });
 
     test('should preserve the last known valid filter', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
+        store.invocationPage.invocation.testLoader!.failedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants,
+        store.invocationPage.invocation.testLoader!
+          .passedAndSkippedTestVariants,
       ).toEqual([variant5]);
       store.invocationPage.invocation.setSearchText('invalid:filter');
       expect(
-        store.invocationPage.invocation.testLoader!.unexpectedTestVariants,
+        store.invocationPage.invocation.testLoader!.failedTestVariants,
       ).toEqual([]);
       expect(
-        store.invocationPage.invocation.testLoader!.expectedTestVariants,
+        store.invocationPage.invocation.testLoader!
+          .passedAndSkippedTestVariants,
       ).toEqual([variant5]);
     });
   });

@@ -45,12 +45,18 @@ release tag numbers.
 -->
 
 <!-- Add new changes here. See the instruction above for more details. -->
+<!-- __RELEASE__: 7 -->
+## 2025-05-20
+Test result and test verdict statuses have been updated. The new statuses should
+be simpler to understand and make it easier to see when tests have been skipped.
 
 <!-- __RELEASE__: 6 -->
+<br/><br/><br/>
+
+# Past releases
 ## 2025-04-23
 The app bar now follows the Google Material 3 style guide.
-This is our first step towrrds moving all of our styles and design language to GM3.
-
+This is our first step towards moving all of our styles and design language to GM3.
 <!-- __RELEASE__: 5 -->
 ## 2023-11-07
  [LUCI Analysis](https://luci-analysis.appspot.com) is now using problem-based bug management.
@@ -59,9 +65,6 @@ This is our first step towrrds moving all of our styles and design language to G
  filed for on the LUCI Analysis rule page and new, more descriptive, bug comments.
 
 <!-- __RELEASE__: 4 -->
-<br/><br/><br/>
-
-# Past releases
 ## 2023-10-25
  LUCI is now [finding and bisecting test failures](/ui/p/chromium/bisection/test-analysis).
 <!-- __RELEASE__: 3 -->

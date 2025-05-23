@@ -46,8 +46,28 @@ colorClasses.replace(`
 .flaky-verdict {
   color: var(--warning-color);
 }
+span.flaky-verdict {
+  color: var(--warning-text-color);
+}
 .exonerated-verdict {
   color: var(--exonerated-color);
+}
+
+/* v2 test results */
+.failed-result {
+  color: var(--failure-color);
+}
+.execution-errored-result {
+  color: var(--critical-failure-color);
+}
+.precluded-result {
+  color: var(--precluded-color);
+}
+.passed-result {
+  color: var(--success-color);
+}
+.skipped-result {
+  color: var(--skipped-color);
 }
 
 /* v1 verdicts */

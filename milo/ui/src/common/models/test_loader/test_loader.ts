@@ -25,7 +25,8 @@ import {
   QueryTestVariantsResponse,
   ResultDb,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from '@/common/services/resultdb';
 import { InnerTag, TAG_SOURCE } from '@/generic_libs/tools/tag';
 import { toError } from '@/generic_libs/tools/utils';
@@ -36,12 +37,13 @@ import { toError } from '@/generic_libs/tools/utils';
  * 2. Done: all test variants have been loaded.
  */
 export const enum LoadingStage {
-  LoadingUnexpected = 0,
-  LoadingUnexpectedlySkipped = 1,
-  LoadingFlaky = 2,
-  LoadingExonerated = 3,
-  LoadingExpected = 4,
-  Done = 5,
+  LoadingFailedVerdicts = 0,
+  LoadingExecutionErroredVerdicts = 1,
+  LoadingPrecludedVerdicts = 2,
+  LoadingFlakyVerdicts = 3,
+  LoadingExoneratedVerdicts = 4,
+  LoadingPassedAndSkippedVerdicts = 5,
+  Done = 6,
 }
 
 export class LoadTestVariantsError extends Error implements InnerTag {
@@ -81,27 +83,28 @@ export class TestLoader {
   @computed get stage() {
     return this._stage;
   }
-  @observable.ref private _stage = LoadingStage.LoadingUnexpected;
+  @observable.ref private _stage = LoadingStage.LoadingFailedVerdicts;
 
   @observable.ref unfilteredTestVariantCount = 0;
 
   @computed
   get testVariantCount() {
     return (
-      this.nonExpectedTestVariants.length + this.expectedTestVariants.length
+      this.nonPassedNorSkippedTestVariants.length +
+      this.passedAndSkippedTestVariants.length
     );
   }
 
   /**
-   * non-expected test variants grouped by keys from groupByPropGetters.
-   * expected test variants are not included.
+   * not passed or skipped test variants grouped by keys from groupByPropGetters.
+   * passed and skipped test variants are not included.
    */
-  @computed get groupedNonExpectedVariants() {
-    if (this.nonExpectedTestVariants.length === 0) {
+  @computed get groupedNonPassedNorSkippedVariants() {
+    if (this.nonPassedNorSkippedTestVariants.length === 0) {
       return [];
     }
 
-    let groups = [this.nonExpectedTestVariants];
+    let groups = [this.nonPassedNorSkippedTestVariants];
     for (const [, propGetter] of this.groupers) {
       groups = groups.flatMap((group) =>
         Object.values(groupBy(group, propGetter)),
@@ -110,12 +113,12 @@ export class TestLoader {
     return groups.map((group) => group.sort(this.cmpFn));
   }
 
-  @computed get groupedUnfilteredUnexpectedVariants() {
-    if (this.unfilteredUnexpectedVariants.length === 0) {
+  @computed get groupedUnfilteredFailedVariants() {
+    if (this.unfilteredFailedVariants.length === 0) {
       return [];
     }
 
-    let groups = [this.unfilteredUnexpectedVariants];
+    let groups = [this.unfilteredFailedVariants];
     for (const [prop, propGetter] of this.groupers) {
       // No point grouping by status.
       if (prop === 'status') {
@@ -129,52 +132,55 @@ export class TestLoader {
   }
 
   /**
-   * non-expected test variants include test variants of any status except
-   * TestVariantStatus.Expected.
+   * Include test variants of any status except Passed or Skipped.
    */
-  @computed get nonExpectedTestVariants() {
-    return this.unfilteredNonExpectedVariants.filter(this.filter);
+  @computed get nonPassedNorSkippedTestVariants() {
+    return this.unfilteredNonPassedNorSkippedVariants.filter(this.filter);
   }
-  @computed get unexpectedTestVariants() {
-    return this.unfilteredUnexpectedVariants.filter(this.filter);
+  @computed get failedTestVariants() {
+    return this.unfilteredFailedVariants.filter(this.filter);
   }
-  @computed get expectedTestVariants() {
-    return this.unfilteredExpectedVariants.filter(this.filter);
-  }
-
-  @computed get unfilteredUnexpectedVariantsCount() {
-    return this.unfilteredUnexpectedVariants.length;
+  @computed get passedAndSkippedTestVariants() {
+    return this.unfilteredPassedAndSkippedVariants.filter(this.filter);
   }
 
-  @observable.ref private _unfilteredUnexpectedlySkippedVariantsCount = 0;
-  get unfilteredUnexpectedlySkippedVariantsCount() {
-    return this._unfilteredUnexpectedlySkippedVariantsCount;
+  @computed get unfilteredFailedVariantsCount() {
+    return this.unfilteredFailedVariants.length;
+  }
+
+  @observable.ref private _unfilteredExecutionErroredVariantsCount = 0;
+  get unfilteredExecutionErroredVariantsCount() {
+    return this._unfilteredExecutionErroredVariantsCount;
+  }
+  @observable.ref private _unfilteredPrecludedVariantsCount = 0;
+  get unfilteredPrecludedVariantsCount() {
+    return this._unfilteredPrecludedVariantsCount;
   }
   @observable.ref private _unfilteredFlakyVariantsCount = 0;
   get unfilteredFlakyVariantsCount() {
     return this._unfilteredFlakyVariantsCount;
   }
 
-  @observable.shallow private unfilteredNonExpectedVariants: TestVariant[] = [];
-  @observable.shallow private unfilteredUnexpectedVariants: TestVariant[] = [];
-  @observable.shallow private unfilteredExpectedVariants: TestVariant[] = [];
+  @observable.shallow
+  private unfilteredNonPassedNorSkippedVariants: TestVariant[] = [];
+  @observable.shallow private unfilteredFailedVariants: TestVariant[] = [];
+  @observable.shallow
+  private unfilteredPassedAndSkippedVariants: TestVariant[] = [];
 
   @computed get loadedAllVariants() {
     return this.stage === LoadingStage.Done;
   }
-  @computed get loadedAllUnexpectedVariants() {
-    return this.stage > LoadingStage.LoadingUnexpected;
+  @computed get loadedAllFailedVariants() {
+    return this.stage > LoadingStage.LoadingFailedVerdicts;
   }
   @computed get firstPageLoaded() {
     return (
-      this.unfilteredUnexpectedVariants.length > 0 ||
-      this.loadedAllUnexpectedVariants
+      this.unfilteredFailedVariants.length > 0 || this.loadedAllFailedVariants
     );
   }
   @computed get firstPageIsEmpty() {
     return (
-      this.loadedAllUnexpectedVariants &&
-      this.unfilteredUnexpectedVariants.length === 0
+      this.loadedAllFailedVariants && this.unfilteredFailedVariants.length === 0
     );
   }
 
@@ -249,7 +255,12 @@ export class TestLoader {
       return;
     }
 
-    const req = { ...this.req, pageSize, pageToken: this.nextPageToken };
+    const req = {
+      ...this.req,
+      pageSize,
+      pageToken: this.nextPageToken,
+      orderBy: 'status_v2_effective',
+    };
     let res: QueryTestVariantsResponse;
     try {
       res = await this.resultDb.queryTestVariants(req);
@@ -270,7 +281,9 @@ export class TestLoader {
       // undefined, the following pages must be expected test variants.
       // Without this special case, the UI may incorrectly indicate that not all
       // variants have been loaded for statuses worse than Expected.
-      action(() => (this._stage = LoadingStage.LoadingExpected))();
+      action(
+        () => (this._stage = LoadingStage.LoadingPassedAndSkippedVerdicts),
+      )();
       return;
     }
   }
@@ -293,32 +306,43 @@ export class TestLoader {
   private processTestVariants(testVariants: readonly TestVariant[]) {
     this.unfilteredTestVariantCount += testVariants.length;
     for (const testVariant of testVariants) {
-      switch (testVariant.status) {
-        case TestVariantStatus.UNEXPECTED:
-          this._stage = LoadingStage.LoadingUnexpected;
-          this.unfilteredUnexpectedVariants.push(testVariant);
-          this.unfilteredNonExpectedVariants.push(testVariant);
+      const effectiveStatus =
+        testVariant.statusOverride === TestVerdict_StatusOverride.EXONERATED
+          ? testVariant.statusOverride
+          : testVariant.statusV2;
+      switch (effectiveStatus) {
+        case TestVerdict_Status.FAILED:
+          this._stage = LoadingStage.LoadingFailedVerdicts;
+          this.unfilteredFailedVariants.push(testVariant);
+          this.unfilteredNonPassedNorSkippedVariants.push(testVariant);
           this.recordStep(testVariant);
           break;
-        case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
-          this._stage = LoadingStage.LoadingUnexpectedlySkipped;
-          this._unfilteredUnexpectedlySkippedVariantsCount++;
-          this.unfilteredNonExpectedVariants.push(testVariant);
+        case TestVerdict_Status.EXECUTION_ERRORED:
+          this._stage = LoadingStage.LoadingExecutionErroredVerdicts;
+          this._unfilteredExecutionErroredVariantsCount++;
+          this.unfilteredNonPassedNorSkippedVariants.push(testVariant);
           this.recordStep(testVariant);
           break;
-        case TestVariantStatus.FLAKY:
-          this._stage = LoadingStage.LoadingFlaky;
+        case TestVerdict_Status.PRECLUDED:
+          this._stage = LoadingStage.LoadingPrecludedVerdicts;
+          this._unfilteredPrecludedVariantsCount++;
+          this.unfilteredNonPassedNorSkippedVariants.push(testVariant);
+          this.recordStep(testVariant);
+          break;
+        case TestVerdict_Status.FLAKY:
+          this._stage = LoadingStage.LoadingFlakyVerdicts;
           this._unfilteredFlakyVariantsCount++;
-          this.unfilteredNonExpectedVariants.push(testVariant);
+          this.unfilteredNonPassedNorSkippedVariants.push(testVariant);
           this.recordStep(testVariant);
           break;
-        case TestVariantStatus.EXONERATED:
-          this._stage = LoadingStage.LoadingExonerated;
-          this.unfilteredNonExpectedVariants.push(testVariant);
+        case TestVerdict_StatusOverride.EXONERATED:
+          this._stage = LoadingStage.LoadingExoneratedVerdicts;
+          this.unfilteredNonPassedNorSkippedVariants.push(testVariant);
           break;
-        case TestVariantStatus.EXPECTED:
-          this._stage = LoadingStage.LoadingExpected;
-          this.unfilteredExpectedVariants.push(testVariant);
+        case TestVerdict_Status.PASSED: // Fallthrough.
+        case TestVerdict_Status.SKIPPED:
+          this._stage = LoadingStage.LoadingPassedAndSkippedVerdicts;
+          this.unfilteredPassedAndSkippedVariants.push(testVariant);
           break;
         default:
           break;

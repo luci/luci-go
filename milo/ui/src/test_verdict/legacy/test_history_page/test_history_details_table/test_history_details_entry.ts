@@ -35,7 +35,7 @@ import {
   TestVerdict_StatusOverride,
   TestVerdictBundle,
 } from '@/common/services/luci_analysis';
-import { RESULT_LIMIT } from '@/common/services/resultdb';
+import { RESULT_LIMIT, TestResult_Status } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
@@ -162,7 +162,12 @@ export class TestHistoryDetailsEntryElement
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
     return (
-      this.testVariant?.results?.findIndex((e) => !e.result.expected) ?? -1
+      this.testVariant?.results?.findIndex(
+        (e) =>
+          ![TestResult_Status.PASSED, TestResult_Status.SKIPPED].includes(
+            e.result.statusV2,
+          ),
+      ) ?? -1
     );
   }
 

@@ -25,16 +25,14 @@ import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
-import { VARIANT_STATUS_CLASS_MAP } from '@/common/constants/legacy';
-import {
-  getPropKeyLabel,
-  TestVariant,
-  TestVariantStatus,
-} from '@/common/services/resultdb';
+import { VERDICT_STATUS_CLASS_MAP } from '@/common/constants/legacy';
+import { TestVerdict_Status } from '@/common/services/luci_analysis';
+import { getPropKeyLabel, TestVariant } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import {
   consumeInvocationState,
   InvocationStateInstance,
+  PASSED_OR_SKIPPED,
 } from '@/common/store/invocation_state';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { getTestHistoryURLPath } from '@/common/tools/url_utils';
@@ -165,13 +163,10 @@ export class TestVariantsTableElement extends MobxExtLitElement {
           ${group.def.map(
             ([k, v]) =>
               html`<span class="group-kv"
-                ><span>${getPropKeyLabel(k)}=</span
-                ><span
-                  class=${k === 'status'
-                    ? VARIANT_STATUS_CLASS_MAP[v as TestVariantStatus]
-                    : ''}
-                  >${v}</span
-                ></span
+                ><span>${getPropKeyLabel(k)}=</span>${this.renderGroupValue(
+                  k,
+                  v,
+                )}</span
               >`,
           )}
           ${group.note || ''}
@@ -206,6 +201,30 @@ export class TestVariantsTableElement extends MobxExtLitElement {
         },
       )}
     `;
+  }
+
+  private renderGroupValue(k: string, v: unknown) {
+    if (k === 'status') {
+      if (v === PASSED_OR_SKIPPED) {
+        // This is a special value used to denote the group containing
+        // both passed and skipped results.
+        return html`<span
+            class=${VERDICT_STATUS_CLASS_MAP[TestVerdict_Status.PASSED]}
+            >PASSED</span
+          >
+          or
+          <span class=${VERDICT_STATUS_CLASS_MAP[TestVerdict_Status.SKIPPED]}
+            >SKIPPED</span
+          >`;
+      } else {
+        return html`<span
+          class=${VERDICT_STATUS_CLASS_MAP[v as TestVerdict_Status]}
+          >${v}</span
+        >`;
+      }
+    }
+    // No special formatting.
+    return html`<span>${v}</span>`;
   }
 
   private renderLoadMore() {
@@ -395,6 +414,10 @@ export class TestVariantsTableElement extends MobxExtLitElement {
         color: var(--light-text-color);
       }
       .group-kv > span:nth-child(2) {
+        font-weight: 500;
+        font-style: italic;
+      }
+      .group-kv > span:nth-child(3) {
         font-weight: 500;
         font-style: italic;
       }

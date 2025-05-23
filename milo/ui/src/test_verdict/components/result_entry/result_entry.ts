@@ -32,12 +32,19 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { makeClusterLink } from '@/analysis/tools/utils';
-import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/legacy';
+import {
+  TEST_STATUS_V2_CLASS_MAP,
+  TEST_STATUS_V2_DISPLAY_MAP,
+  WEB_TEST_STATUS_DISPLAY_MAP,
+} from '@/common/constants/legacy';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
   Artifact,
+  FailureReason_Kind,
   ListArtifactsResponse,
+  SkippedReason_Kind,
   TestResult,
+  TestResult_Status,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
@@ -231,6 +238,23 @@ ${errMsg}</pre
     `;
   }
 
+  private renderSkippedReason() {
+    const reasonMsg = this.testResult.skippedReason?.reasonMessage;
+    if (!reasonMsg) {
+      return html``;
+    }
+
+    return html`
+      <milo-expandable-entry .contentRuler="none" .expanded=${true}>
+        <span slot="header">Skipped Reason: </span>
+        ${reasonMsg &&
+        html`<pre id="skipped-reason" class="info-block" slot="content">
+${reasonMsg}</pre
+        >`}
+      </milo-expandable-entry>
+    `;
+  }
+
   private renderLogLinkArtifacts() {
     if (this.testhausLogArtifact || this.stainlessLogArtifact) {
       let testhausLink = null;
@@ -347,7 +371,8 @@ ${errMsg}</pre
     }
 
     return html`
-      ${this.renderFailureReason()}${this.renderSummaryHtml()}
+      ${this.renderFailureReason()}${this.renderSkippedReason()}
+      ${this.renderSummaryHtml()}
       ${this.textDiffArtifact &&
       html`
         <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
@@ -388,12 +413,7 @@ ${errMsg}</pre
           <div class="duration ${durationUnits}" title=${duration}>
             ${compactDuration}
           </div>
-          result #${this.id}
-          <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
-            ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}
-            ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
-          </span>
-          ${this.renderParentLink()}
+          result #${this.id} ${this.renderStatus()} ${this.renderParentLink()}
           ${this.clusters.length && this.project
             ? html`<milo-associated-bugs-badge
                 .project=${this.project}
@@ -405,6 +425,63 @@ ${errMsg}</pre
       </milo-expandable-entry>
     `;
   });
+
+  private renderStatus() {
+    const requiresLeadingWas =
+      this.testResult.statusV2 === TestResult_Status.PRECLUDED ||
+      this.testResult.statusV2 === TestResult_Status.SKIPPED;
+    const webTest = this.testResult.frameworkExtensions?.webTest;
+    const failureKind =
+      this.testResult.failureReason?.kind ||
+      FailureReason_Kind.KIND_UNSPECIFIED;
+    const skippedKind =
+      this.testResult.skippedReason?.kind ||
+      SkippedReason_Kind.KIND_UNSPECIFIED;
+
+    let statusDetail: string = '';
+    if (webTest) {
+      statusDetail = `${webTest.isExpected ? 'expectedly' : 'unexpectedly'} ${WEB_TEST_STATUS_DISPLAY_MAP[webTest.status]}`;
+    } else if (
+      this.testResult.statusV2 === TestResult_Status.FAILED &&
+      failureKind !== FailureReason_Kind.KIND_UNSPECIFIED
+    ) {
+      switch (failureKind) {
+        case FailureReason_Kind.CRASH:
+          statusDetail = 'crashed';
+          break;
+        case FailureReason_Kind.TIMEOUT:
+          statusDetail = 'timed out';
+          break;
+        case FailureReason_Kind.ORDINARY:
+          // No detail to show.
+          break;
+      }
+    } else if (
+      this.testResult.statusV2 === TestResult_Status.SKIPPED &&
+      skippedKind !== SkippedReason_Kind.KIND_UNSPECIFIED
+    ) {
+      switch (skippedKind) {
+        case SkippedReason_Kind.DEMOTED:
+          statusDetail = 'demoted';
+          break;
+        case SkippedReason_Kind.DISABLED_AT_DECLARATION:
+          statusDetail = 'disabled at declaration';
+          break;
+        case SkippedReason_Kind.SKIPPED_BY_TEST_BODY:
+          statusDetail = 'by test body';
+          break;
+        case SkippedReason_Kind.OTHER:
+          // No status detail to show, but the failure reason section will contain information.
+          break;
+      }
+    }
+
+    return html`${requiresLeadingWas ? 'was ' : ''}
+      <span class=${TEST_STATUS_V2_CLASS_MAP[this.testResult.statusV2]}>
+        ${TEST_STATUS_V2_DISPLAY_MAP[this.testResult.statusV2]}
+        ${statusDetail ? html` (${statusDetail})` : null}
+      </span>`;
+  }
 
   private renderParentLink() {
     const parsedInvId = parseInvId(this.parentInvId);

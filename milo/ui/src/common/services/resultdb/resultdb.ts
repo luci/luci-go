@@ -34,13 +34,53 @@ import { ToString } from '@/generic_libs/types';
  */
 /* eslint-enable max-len */
 
-export enum TestStatus {
-  Unspecified = 'STATUS_UNSPECIFIED',
-  Pass = 'PASS',
-  Fail = 'FAIL',
-  Crash = 'CRASH',
-  Abort = 'ABORT',
-  Skip = 'SKIP',
+export enum TestVerdict_Status {
+  STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
+  FAILED = 'FAILED',
+  EXECUTION_ERRORED = 'EXECUTION_ERRORED',
+  PRECLUDED = 'PRECLUDED',
+  FLAKY = 'FLAKY',
+  SKIPPED = 'SKIPPED',
+  PASSED = 'PASSED',
+}
+
+export enum TestVerdict_StatusOverride {
+  STATUS_OVERRIDE_UNSPECIFIED = 'STATUS_OVERRIDE_UNSPECIFIED',
+  NOT_OVERRIDDEN = 'NOT_OVERRIDDEN',
+  EXONERATED = 'EXONERATED',
+}
+
+export enum TestResult_Status {
+  STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
+  FAILED = 'FAILED',
+  PASSED = 'PASSED',
+  SKIPPED = 'SKIPPED',
+  EXECUTION_ERRORED = 'EXECUTION_ERRORED',
+  PRECLUDED = 'PRECLUDED',
+}
+
+export enum FailureReason_Kind {
+  KIND_UNSPECIFIED = 'KIND_UNSPECIFIED',
+  ORDINARY = 'ORDINARY',
+  CRASH = 'CRASH',
+  TIMEOUT = 'TIMEOUT',
+}
+
+export enum SkippedReason_Kind {
+  KIND_UNSPECIFIED = 'KIND_UNSPECIFIED',
+  DISABLED_AT_DECLARATION = 'DISABLED_AT_DECLARATION',
+  SKIPPED_BY_TEST_BODY = 'SKIPPED_BY_TEST_BODY',
+  DEMOTED = 'DEMOTED',
+  OTHER = 'OTHER',
+}
+
+export enum WebTest_Status {
+  STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
+  PASS = 'PASS',
+  FAIL = 'FAIL',
+  CRASH = 'CRASH',
+  TIMEOUT = 'TIMEOUT',
+  SKIP = 'SKIP',
 }
 
 export enum InvocationState {
@@ -68,19 +108,34 @@ export interface TestResult {
   readonly resultId: string;
   readonly variant?: Variant;
   readonly variantHash?: string;
-  readonly expected?: boolean;
-  readonly status: TestStatus;
+  readonly statusV2: TestResult_Status;
   readonly summaryHtml: string;
   readonly startTime: string;
   readonly duration?: string;
   readonly tags?: StringPair[];
   readonly failureReason?: FailureReason;
+  readonly skippedReason?: SkippedReason;
+  readonly frameworkExtensions?: FrameworkExtensions;
 }
 
 export interface TestLocation {
   readonly repo: string;
   readonly fileName: string;
   readonly line?: number;
+}
+
+export interface SkippedReason {
+  readonly kind?: SkippedReason_Kind;
+  readonly reasonMessage?: string;
+}
+
+export interface WebTest {
+  readonly status: WebTest_Status;
+  readonly isExpected?: boolean;
+}
+
+export interface FrameworkExtensions {
+  readonly webTest?: WebTest;
 }
 
 export interface TestExoneration {
@@ -108,6 +163,7 @@ export interface Variant {
 }
 
 export interface FailureReason {
+  readonly kind?: FailureReason_Kind;
   readonly primaryErrorMessage: string;
 }
 
@@ -199,6 +255,7 @@ export interface QueryTestVariantsRequest {
   readonly pageSize?: number;
   readonly pageToken?: string;
   readonly resultLimit?: number;
+  readonly orderBy?: string;
 }
 
 export interface QueryTestVariantsResponse {
@@ -210,7 +267,8 @@ export interface TestVariant {
   readonly testId: string;
   readonly variant?: Variant;
   readonly variantHash: string;
-  readonly status: TestVariantStatus;
+  readonly statusV2: TestVerdict_Status;
+  readonly statusOverride: TestVerdict_StatusOverride;
   readonly results?: readonly TestResultBundle[];
   readonly exonerations?: readonly TestExoneration[];
   readonly testMetadata?: TestMetadata;
@@ -223,24 +281,22 @@ export interface Sources {
   readonly changelists?: GerritChange[];
 }
 
-export const enum TestVariantStatus {
-  TEST_VARIANT_STATUS_UNSPECIFIED = 'TEST_VARIANT_STATUS_UNSPECIFIED',
-  UNEXPECTED = 'UNEXPECTED',
-  UNEXPECTEDLY_SKIPPED = 'UNEXPECTEDLY_SKIPPED',
-  FLAKY = 'FLAKY',
-  EXONERATED = 'EXONERATED',
-  EXPECTED = 'EXPECTED',
-}
-
 // Note: once we have more than 9 statuses, we need to add '0' prefix so '10'
 // won't appear before '2' after sorting.
 export const TEST_VARIANT_STATUS_CMP_STRING = {
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: '0',
-  [TestVariantStatus.UNEXPECTED]: '1',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: '2',
-  [TestVariantStatus.FLAKY]: '3',
-  [TestVariantStatus.EXONERATED]: '4',
-  [TestVariantStatus.EXPECTED]: '5',
+  // These statuses should never appear so their sort order does
+  // not matter.
+  [TestVerdict_Status.STATUS_UNSPECIFIED]: '0',
+  [TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED]: '0',
+  [TestVerdict_StatusOverride.NOT_OVERRIDDEN]: '0',
+  // Valid statuses.
+  [TestVerdict_Status.FAILED]: '1',
+  [TestVerdict_Status.EXECUTION_ERRORED]: '2',
+  [TestVerdict_Status.PRECLUDED]: '3',
+  [TestVerdict_Status.FLAKY]: '4',
+  [TestVerdict_StatusOverride.EXONERATED]: '5',
+  [TestVerdict_Status.PASSED]: '6',
+  [TestVerdict_Status.SKIPPED]: '7',
 };
 
 export interface TestMetadata {
@@ -513,7 +569,11 @@ export function createTVPropGetter(
     case 'name':
       return (v) => v.testMetadata?.name || v.testId;
     case 'status':
-      return (v) => v.status;
+      return (v) => {
+        return v.statusOverride === TestVerdict_StatusOverride.EXONERATED
+          ? v.statusOverride
+          : v.statusV2;
+      };
     default:
       logging.warn('invalid property key', propKey);
       return () => '';
@@ -543,7 +603,9 @@ export function createTVCmpFn(
         return [
           mul,
           (v) =>
-            TEST_VARIANT_STATUS_CMP_STRING[propGetter(v) as TestVariantStatus],
+            TEST_VARIANT_STATUS_CMP_STRING[
+              propGetter(v) as TestVerdict_Status | TestVerdict_StatusOverride
+            ],
         ];
       }
       return [mul, propGetter];

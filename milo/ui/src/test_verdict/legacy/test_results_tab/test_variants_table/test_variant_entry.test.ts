@@ -27,10 +27,13 @@ import './test_variant_entry';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { Cluster } from '@/common/services/luci_analysis';
 import {
+  FrameworkExtensions,
+  TestResult_Status,
   TestResultBundle,
-  TestStatus,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+  WebTest_Status,
 } from '@/common/services/resultdb';
 import { provideStore, Store, StoreInstance } from '@/common/store';
 import { logging } from '@/common/tools/logging';
@@ -148,8 +151,8 @@ describe('<TestVariantEntry />', () => {
 
     function makeResult(
       resultId: string,
-      expected: boolean,
-      status: TestStatus,
+      statusV2: TestResult_Status,
+      frameworkExtensions: FrameworkExtensions | undefined,
       failureMsg: string,
     ): TestResultBundle {
       const ret: DeepMutable<TestResultBundle> = {
@@ -157,8 +160,8 @@ describe('<TestVariantEntry />', () => {
           name: 'invocations/inv/tests/test-id/results/' + resultId,
           testId: 'test-id',
           resultId,
-          expected,
-          status,
+          statusV2,
+          frameworkExtensions,
           summaryHtml: '',
           startTime: '2022-01-01',
         },
@@ -173,18 +176,43 @@ describe('<TestVariantEntry />', () => {
       testId: 'test-id',
       sourcesId: '1',
       variantHash: 'vhash',
-      status: TestVariantStatus.FLAKY,
+      statusV2: TestVerdict_Status.FLAKY,
+      statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
       results: [
         // Passed result. Ignore.
-        makeResult('result-1', false, TestStatus.Pass, 'reason1'),
+        makeResult('result-1', TestResult_Status.PASSED, undefined, 'reason1'),
         // Skipped result. Ignore.
-        makeResult('result-2', false, TestStatus.Skip, 'reason2'),
+        makeResult('result-2', TestResult_Status.SKIPPED, undefined, 'reason2'),
         // Failed result. Query cluster.
-        makeResult('result-3', false, TestStatus.Fail, 'reason3'),
-        // Failed result but expected. Ignored.
-        makeResult('result-4', true, TestStatus.Fail, 'reason4'),
-        // Abort result. Query Cluster.
-        makeResult('result-5', false, TestStatus.Abort, ''),
+        makeResult('result-3', TestResult_Status.FAILED, undefined, 'reason3'),
+        // Failed result but a webtest pass. Ignored.
+        makeResult(
+          'result-4',
+          TestResult_Status.FAILED,
+          { webTest: { status: WebTest_Status.PASS } },
+          'reason4',
+        ),
+        // Failed result that was also a failing webtest type. Query Cluster.
+        makeResult(
+          'result-5',
+          TestResult_Status.FAILED,
+          { webTest: { status: WebTest_Status.TIMEOUT } },
+          '',
+        ),
+        // Execution errored result. Ignore.
+        makeResult(
+          'result-6',
+          TestResult_Status.EXECUTION_ERRORED,
+          undefined,
+          'reason6',
+        ),
+        // Precluded result. Ignore.
+        makeResult(
+          'result-7',
+          TestResult_Status.PRECLUDED,
+          undefined,
+          'reason7',
+        ),
       ],
     };
 
@@ -224,15 +252,15 @@ describe('<TestVariantEntry />', () => {
       testId: 'test-id',
       sourcesId: '1',
       variantHash: 'vhash',
-      status: TestVariantStatus.UNEXPECTED,
+      statusV2: TestVerdict_Status.FAILED,
+      statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
       results: [
         {
           result: {
             name: 'invocations/inv/tests/test-id/results/result-id',
             testId: 'test-id',
             resultId: 'result-id',
-            expected: false,
-            status: TestStatus.Fail,
+            statusV2: TestResult_Status.FAILED,
             summaryHtml: '',
             startTime: '2022-01-01',
           },
@@ -275,15 +303,15 @@ describe('<TestVariantEntry />', () => {
       testId: 'test-id',
       sourcesId: '1',
       variantHash: 'vhash',
-      status: TestVariantStatus.UNEXPECTED,
+      statusV2: TestVerdict_Status.FAILED,
+      statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
       results: [
         {
           result: {
             name: 'invocations/inv/tests/test-id/results/result-id',
             testId: 'test-id',
             resultId: 'result-id',
-            expected: false,
-            status: TestStatus.Fail,
+            statusV2: TestResult_Status.FAILED,
             summaryHtml: '',
             startTime: '2022-01-01',
           },

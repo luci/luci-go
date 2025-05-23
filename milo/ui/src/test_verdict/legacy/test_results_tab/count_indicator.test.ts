@@ -18,7 +18,10 @@ import { customElement } from 'lit/decorators.js';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
-import { TestVariantStatus } from '@/common/services/resultdb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/common/services/resultdb';
 import { Store, StoreInstance } from '@/common/store';
 import {
   InvocationStateInstance,
@@ -34,7 +37,8 @@ const variant1 = {
   sourcesId: '1',
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant2 = {
@@ -42,7 +46,8 @@ const variant2 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant3 = {
@@ -50,7 +55,8 @@ const variant3 = {
   sourcesId: '1',
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
-  status: TestVariantStatus.UNEXPECTED,
+  statusV2: TestVerdict_Status.FAILED,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant4 = {
@@ -58,7 +64,8 @@ const variant4 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 const variant5 = {
@@ -66,7 +73,8 @@ const variant5 = {
   sourcesId: '1',
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
 };
 
 @customElement('milo-trt-count-indicator-context-provider')

@@ -22,17 +22,12 @@
 import { fromPromise } from 'mobx-utils';
 
 import { BuildbucketStatus } from '@/common/services/buildbucket';
-import { TestVerdictStatus } from '@/common/services/luci_analysis';
 import {
   TestResult_Status,
   TestVerdict_Status,
   TestVerdict_StatusOverride,
 } from '@/common/services/luci_analysis';
-import {
-  InvocationState,
-  TestStatus,
-  TestVariantStatus,
-} from '@/common/services/resultdb';
+import { InvocationState, WebTest_Status } from '@/common/services/resultdb';
 
 import { NEVER_PROMISE } from './utils';
 
@@ -42,36 +37,6 @@ export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Finalizing]: 'finalizing',
   [InvocationState.Finalized]: 'finalized',
 };
-
-// Just so happens to be the same as VARIANT_STATUS_DISPLAY_MAP.
-export const VARIANT_STATUS_CLASS_MAP = Object.freeze({
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
-  [TestVariantStatus.UNEXPECTED]: 'unexpected',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'unexpectedly-skipped',
-  [TestVariantStatus.FLAKY]: 'flaky',
-  [TestVariantStatus.EXONERATED]: 'exonerated',
-  [TestVariantStatus.EXPECTED]: 'expected',
-});
-
-export const VARIANT_STATUS_ICON_MAP = Object.freeze({
-  [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 'unspecified',
-  [TestVariantStatus.UNEXPECTED]: 'error',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'report',
-  [TestVariantStatus.FLAKY]: 'warning',
-  [TestVariantStatus.EXONERATED]: 'remove_circle',
-  [TestVariantStatus.EXPECTED]: 'check_circle',
-});
-
-export const VERDICT_VARIANT_STATUS_MAP = Object.freeze({
-  [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]:
-    TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED,
-  [TestVerdictStatus.UNEXPECTED]: TestVariantStatus.UNEXPECTED,
-  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
-    TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  [TestVerdictStatus.FLAKY]: TestVariantStatus.FLAKY,
-  [TestVerdictStatus.EXONERATED]: TestVariantStatus.EXONERATED,
-  [TestVerdictStatus.EXPECTED]: TestVariantStatus.EXPECTED,
-});
 
 export const VERDICT_STATUS_CLASS_MAP = Object.freeze({
   // Invalid values.
@@ -103,15 +68,6 @@ export const VERDICT_STATUS_ICON_MAP = Object.freeze({
   [TestVerdict_StatusOverride.EXONERATED]: 'remove_circle',
 });
 
-export const TEST_STATUS_DISPLAY_MAP = Object.freeze({
-  [TestStatus.Unspecified]: 'unspecified',
-  [TestStatus.Pass]: 'passed',
-  [TestStatus.Fail]: 'failed',
-  [TestStatus.Skip]: 'skipped',
-  [TestStatus.Crash]: 'crashed',
-  [TestStatus.Abort]: 'aborted',
-});
-
 export const TEST_STATUS_V2_DISPLAY_MAP = Object.freeze({
   [TestResult_Status.STATUS_UNSPECIFIED]: 'unspecified',
   [TestResult_Status.FAILED]: 'failed',
@@ -119,6 +75,24 @@ export const TEST_STATUS_V2_DISPLAY_MAP = Object.freeze({
   [TestResult_Status.SKIPPED]: 'skipped',
   [TestResult_Status.EXECUTION_ERRORED]: 'execution errored',
   [TestResult_Status.PRECLUDED]: 'precluded',
+});
+
+export const TEST_STATUS_V2_CLASS_MAP = Object.freeze({
+  [TestResult_Status.STATUS_UNSPECIFIED]: 'unspecified',
+  [TestResult_Status.FAILED]: 'failed-result',
+  [TestResult_Status.PASSED]: 'passed-result',
+  [TestResult_Status.SKIPPED]: 'skipped-result',
+  [TestResult_Status.EXECUTION_ERRORED]: 'execution-errored-result',
+  [TestResult_Status.PRECLUDED]: 'precluded-result',
+});
+
+export const WEB_TEST_STATUS_DISPLAY_MAP = Object.freeze({
+  [WebTest_Status.STATUS_UNSPECIFIED]: 'unspecified',
+  [WebTest_Status.FAIL]: 'failed',
+  [WebTest_Status.PASS]: 'passed',
+  [WebTest_Status.SKIP]: 'skipped',
+  [WebTest_Status.CRASH]: 'crashed',
+  [WebTest_Status.TIMEOUT]: 'timed out',
 });
 
 export const BUILD_STATUS_DISPLAY_MAP = Object.freeze({

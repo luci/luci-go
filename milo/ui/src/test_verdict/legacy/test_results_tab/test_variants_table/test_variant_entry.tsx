@@ -31,14 +31,15 @@ import { useEffect, useRef } from 'react';
 
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
-  VARIANT_STATUS_CLASS_MAP,
-  VARIANT_STATUS_ICON_MAP,
+  VERDICT_STATUS_CLASS_MAP,
+  VERDICT_STATUS_ICON_MAP,
 } from '@/common/constants/legacy';
-import { Cluster } from '@/common/services/luci_analysis';
+import { Cluster, TestResult_Status } from '@/common/services/luci_analysis';
 import {
   RESULT_LIMIT,
-  TestStatus,
   TestVariant,
+  TestVerdict_StatusOverride,
+  WebTest_Status,
 } from '@/common/services/resultdb';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
@@ -135,12 +136,15 @@ export class TestVariantEntryElement
       return fromPromise(Promise.race([]));
     }
 
-    // We don't care about expected result nor unexpectedly passed/skipped
-    // results. Filter them out.
+    // We only care about failed results that are not
+    // unexpectedly passed/skipped web tests. Filter the rest out.
     const results = this.variant.results?.filter(
       (r) =>
-        !r.result.expected &&
-        ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status),
+        r.result.statusV2 === TestResult_Status.FAILED &&
+        ![WebTest_Status.PASS, WebTest_Status.SKIP].includes(
+          r.result.frameworkExtensions?.webTest?.status ||
+            WebTest_Status.STATUS_UNSPECIFIED,
+        ),
     );
 
     if (!results?.length) {
@@ -259,7 +263,14 @@ export class TestVariantEntryElement
       return 0;
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
-    return this.variant.results?.findIndex((e) => !e.result.expected) ?? -1;
+    return (
+      this.variant.results?.findIndex(
+        (e) =>
+          ![TestResult_Status.PASSED, TestResult_Status.SKIPPED].includes(
+            e.result.statusV2,
+          ),
+      ) ?? -1
+    );
   }
 
   @computed private get columnValues() {
@@ -378,14 +389,18 @@ export class TestVariantEntryElement
   }
 
   protected render() {
+    const effectiveStatus =
+      this.variant.statusOverride === TestVerdict_StatusOverride.EXONERATED
+        ? this.variant.statusOverride
+        : this.variant.statusV2;
     return html`
       <milo-expandable-entry
         .expanded=${this.expanded}
         .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
       >
         <div id="header" slot="header">
-          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
-            ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
+          <mwc-icon class=${VERDICT_STATUS_CLASS_MAP[effectiveStatus]}>
+            ${VERDICT_STATUS_ICON_MAP[effectiveStatus]}
           </mwc-icon>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
           <div id="test-name">

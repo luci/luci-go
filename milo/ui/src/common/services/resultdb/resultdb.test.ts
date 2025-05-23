@@ -18,7 +18,8 @@ import {
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
   TestVariant,
-  TestVariantStatus,
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
 } from './resultdb';
 
 describe('resultdb', () => {
@@ -41,10 +42,17 @@ describe('resultdb', () => {
 describe('createTVPropGetter', () => {
   test('can create a status getter', async () => {
     const getter = createTVPropGetter('status');
-    const prop = getter({
-      status: TestVariantStatus.EXONERATED,
+    const prop1 = getter({
+      statusV2: TestVerdict_Status.FAILED,
+      statusOverride: TestVerdict_StatusOverride.EXONERATED,
     } as Partial<TestVariant> as TestVariant);
-    expect(prop).toStrictEqual(TestVariantStatus.EXONERATED);
+    expect(prop1).toStrictEqual(TestVerdict_StatusOverride.EXONERATED);
+
+    const prop2 = getter({
+      statusV2: TestVerdict_Status.FAILED,
+      statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+    } as Partial<TestVariant> as TestVariant);
+    expect(prop2).toStrictEqual(TestVerdict_Status.FAILED);
   });
 
   test('can create a name getter', async () => {
@@ -79,21 +87,24 @@ describe('createTVPropGetter', () => {
 
 describe('createTVCmpFn', () => {
   const variant1 = {
-    status: TestVariantStatus.UNEXPECTED,
+    statusV2: TestVerdict_Status.FAILED,
+    statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
     testMetadata: {
       name: 'a',
     },
     variant: { def: { key1: 'val1' } },
   } as Partial<TestVariant> as TestVariant;
   const variant2 = {
-    status: TestVariantStatus.EXONERATED,
+    statusV2: TestVerdict_Status.FAILED,
+    statusOverride: TestVerdict_StatusOverride.EXONERATED,
     testMetadata: {
       name: 'b',
     },
     variant: { def: { key1: 'val2' } },
   } as Partial<TestVariant> as TestVariant;
   const variant3 = {
-    status: TestVariantStatus.EXONERATED,
+    statusV2: TestVerdict_Status.EXECUTION_ERRORED,
+    statusOverride: TestVerdict_StatusOverride.EXONERATED,
     testMetadata: {
       name: 'b',
     },
@@ -123,6 +134,10 @@ describe('createTVCmpFn', () => {
     expect(cmpFn(variant1, variant2)).toStrictEqual(-1);
     expect(cmpFn(variant2, variant1)).toStrictEqual(1);
     expect(cmpFn(variant1, variant1)).toStrictEqual(0);
+
+    expect(cmpFn(variant1, variant3)).toStrictEqual(-1);
+    expect(cmpFn(variant3, variant1)).toStrictEqual(1);
+    expect(cmpFn(variant2, variant3)).toStrictEqual(0);
   });
 
   test('can sort by multiple keys', async () => {

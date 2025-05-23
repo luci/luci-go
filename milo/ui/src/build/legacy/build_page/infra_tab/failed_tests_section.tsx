@@ -82,7 +82,7 @@ export const FailedTestSection = observer(() => {
   const columnWidths =
     '24px ' + invState.columnWidths.map(() => '0').join(' ') + ' 1fr';
   const displayedTVCount = Math.min(
-    testLoader.unfilteredUnexpectedVariantsCount,
+    testLoader.unfilteredFailedVariantsCount,
     MAX_DISPLAYED_UNEXPECTED_TESTS,
   );
 
@@ -97,7 +97,7 @@ export const FailedTestSection = observer(() => {
 
   let remainingEntry = displayedTVCount;
 
-  const groupEntries = testLoader.groupedUnfilteredUnexpectedVariants.entries();
+  const groupEntries = testLoader.groupedUnfilteredFailedVariants.entries();
   renderTestList: for (const [i, group] of groupEntries) {
     if (groupDefs.length !== 0) {
       lists.push(
@@ -141,12 +141,12 @@ export const FailedTestSection = observer(() => {
       <div css={{ marginBottom: '25px' }}>
         <div css={{ '--tvt-columns': columnWidths }}>{lists}</div>
         <div css={{ marginTop: '10px' }}>
-          {testLoader.unfilteredUnexpectedVariantsCount === 0 ? (
+          {testLoader.unfilteredFailedVariantsCount === 0 ? (
             'No failed tests.'
           ) : (
             <>
               Showing {displayedTVCount}/
-              {testLoader.unfilteredUnexpectedVariantsCount} failed tests.{' '}
+              {testLoader.unfilteredFailedVariantsCount} failed tests.{' '}
               <Link
                 to={testsTabUrl}
                 css={{ color: 'var(--default-text-color)' }}

@@ -15,7 +15,10 @@
 import { html } from 'lit';
 
 import { Suggestion } from '@/common/components/lit_auto_complete';
-import { TestVariant } from '@/common/services/resultdb';
+import {
+  TestVariant,
+  TestVerdict_StatusOverride,
+} from '@/common/services/resultdb';
 import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { highlight } from '@/generic_libs/tools/lit_utils';
 
@@ -48,14 +51,20 @@ export function parseTestResultSearchQuery(
       // Whether the test variant has the specified status.
       case 'STATUS': {
         const statuses = valueUpper.split(',');
-        return (v: TestVariant) => negate !== statuses.includes(v.status);
+        return (v: TestVariant) => {
+          const status =
+            v.statusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
+              ? v.statusOverride
+              : v.statusV2;
+          return negate !== statuses.includes(status);
+        };
       }
       // Whether there's at least one a test result of the specified status.
       case 'RSTATUS': {
         const statuses = valueUpper.split(',');
         return (v: TestVariant) =>
           negate !==
-          (v.results || []).some((r) => statuses.includes(r.result.status));
+          (v.results || []).some((r) => statuses.includes(r.result.statusV2));
       }
       // Whether the test ID contains the query as a substring (case
       // insensitive).
@@ -143,20 +152,28 @@ export function parseTestResultSearchQuery(
 // Queries with predefined value.
 const QUERY_SUGGESTIONS = [
   {
-    value: 'Status:UNEXPECTED',
-    explanation: 'Include only tests with unexpected status',
+    value: 'Status:FAILED',
+    explanation: 'Include only tests with failed status',
   },
   {
-    value: '-Status:UNEXPECTED',
-    explanation: 'Exclude tests with unexpected status',
+    value: '-Status:FAILED',
+    explanation: 'Exclude tests with failed status',
   },
   {
-    value: 'Status:UNEXPECTEDLY_SKIPPED',
-    explanation: 'Include only tests with unexpectedly skipped status',
+    value: 'Status:EXECUTION_ERRORED',
+    explanation: 'Include only tests with execution errored status',
   },
   {
-    value: '-Status:UNEXPECTEDLY_SKIPPED',
-    explanation: 'Exclude tests with unexpectedly skipped status',
+    value: '-Status:EXECUTION_ERRORED',
+    explanation: 'Exclude tests with execution errored status',
+  },
+  {
+    value: 'Status:PRECLUDED',
+    explanation: 'Include only tests with precluded status',
+  },
+  {
+    value: '-Status:PRECLUDED',
+    explanation: 'Exclude tests with precluded status',
   },
   {
     value: 'Status:FLAKY',
@@ -172,53 +189,62 @@ const QUERY_SUGGESTIONS = [
     explanation: 'Exclude tests with exonerated status',
   },
   {
-    value: 'Status:EXPECTED',
-    explanation: 'Include only tests with expected status',
+    value: 'Status:PASSED',
+    explanation: 'Include only tests with passed status',
   },
   {
-    value: '-Status:EXPECTED',
-    explanation: 'Exclude tests with expected status',
+    value: '-Status:PASSED',
+    explanation: 'Exclude tests with passed status',
+  },
+  {
+    value: 'Status:SKIPPED',
+    explanation: 'Include only tests with skipped status',
+  },
+  {
+    value: '-Status:SKIPPED',
+    explanation: 'Exclude tests with skipped status',
   },
 
   {
-    value: 'RStatus:Pass',
-    explanation: 'Include only tests with at least one passed run',
+    value: 'RStatus:PASSED',
+    explanation: 'Include only tests with at least one passed result',
   },
   {
-    value: '-RStatus:Pass',
-    explanation: 'Exclude tests with at least one passed run',
+    value: '-RStatus:PASSED',
+    explanation: 'Exclude tests with at least one passed result',
   },
   {
-    value: 'RStatus:Fail',
-    explanation: 'Include only tests with at least one failed run',
+    value: 'RStatus:SKIPPED',
+    explanation: 'Include only tests with at least one skipped result',
   },
   {
-    value: '-RStatus:Fail',
-    explanation: 'Exclude tests with at least one failed run',
+    value: '-RStatus:SKIPPED',
+    explanation: 'Exclude tests with at least one skipped result',
   },
   {
-    value: 'RStatus:Crash',
-    explanation: 'Include only tests with at least one crashed run',
+    value: 'RStatus:FAILED',
+    explanation: 'Include only tests with at least one failed result',
   },
   {
-    value: '-RStatus:Crash',
-    explanation: 'Exclude tests with at least one crashed run',
+    value: '-RStatus:FAILED',
+    explanation: 'Exclude tests with at least one failed result',
   },
   {
-    value: 'RStatus:Abort',
-    explanation: 'Include only tests with at least one aborted run',
+    value: 'RStatus:EXECUTION_ERRORED',
+    explanation:
+      'Include only tests with at least one execution errored result',
   },
   {
-    value: '-RStatus:Abort',
-    explanation: 'Exclude tests with at least one aborted run',
+    value: '-RStatus:EXECUTION_ERRORED',
+    explanation: 'Exclude tests with at least one execution errored result',
   },
   {
-    value: 'RStatus:Skip',
-    explanation: 'Include only tests with at least one skipped run',
+    value: 'RStatus:PRECLUDED',
+    explanation: 'Include only tests with at least one precluded result',
   },
   {
-    value: '-RStatus:Skip',
-    explanation: 'Exclude tests with at least one skipped run',
+    value: '-RStatus:PRECLUDED',
+    explanation: 'Exclude tests with at least one precluded result',
   },
 ];
 
@@ -314,11 +340,11 @@ export function suggestTestResultSearchQuery(
         display: html`<strong>Advanced Syntax</strong>`,
       },
       {
-        value: '-Status:EXPECTED',
+        value: '-Status:PASSED',
         explanation: "Use '-' prefix to negate the filter",
       },
       {
-        value: 'Status:UNEXPECTED -RStatus:Skipped',
+        value: 'Status:FAILED -RStatus:SKIPPED',
         explanation:
           'Use space to separate filters. Filters are logically joined with AND',
       },
@@ -361,11 +387,11 @@ export function suggestTestResultSearchQuery(
       },
       {
         value:
-          'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED',
+          'Status:FAILED,EXECUTION_ERRORED,PRECLUDED,FLAKY,EXONERATED,PASSED,SKIPPED',
         explanation: 'Include only tests with the specified status',
       },
       {
-        value: 'RStatus:Pass,Fail,Crash,Abort,Skip',
+        value: 'RStatus:FAILED,EXECUTION_ERRORED,PRECLUDED,PASSED,SKIPPED',
         explanation:
           'Include only tests with at least one run of the specified status',
       },

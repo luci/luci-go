@@ -74,33 +74,48 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
       return html`<milo-dot-spinner></milo-dot-spinner>`;
     }
 
-    if (testLoader.unfilteredUnexpectedVariantsCount > 0) {
+    if (testLoader.unfilteredFailedVariantsCount > 0) {
       return html`<div
-        id="unexpected"
+        id="failed"
         title=${formatNum(
-          testLoader.unfilteredUnexpectedVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants,
-        ) + ' unexpected tests'}
+          testLoader.unfilteredFailedVariantsCount,
+          !testLoader.loadedAllFailedVariants,
+        ) + ' failed tests'}
       >
         ${formatNum(
-          testLoader.unfilteredUnexpectedVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants,
+          testLoader.unfilteredFailedVariantsCount,
+          !testLoader.loadedAllFailedVariants,
           99,
         )}
       </div>`;
     }
 
-    if (testLoader.unfilteredUnexpectedlySkippedVariantsCount > 0) {
+    if (testLoader.unfilteredExecutionErroredVariantsCount > 0) {
       return html`<div
-        id="unexpectedly-skipped"
+        id="exection-errored"
         title=${formatNum(
-          testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants,
-        ) + ' unexpectedly skipped tests'}
+          testLoader.unfilteredExecutionErroredVariantsCount,
+          !testLoader.loadedAllFailedVariants,
+        ) + ' execution errored tests'}
       >
         ${formatNum(
-          testLoader.unfilteredUnexpectedlySkippedVariantsCount,
-          testLoader.stage < LoadingStage.LoadingUnexpectedlySkipped,
+          testLoader.unfilteredExecutionErroredVariantsCount,
+          testLoader.stage < LoadingStage.LoadingExecutionErroredVerdicts,
+        )}
+      </div>`;
+    }
+
+    if (testLoader.unfilteredPrecludedVariantsCount > 0) {
+      return html`<div
+        id="precluded"
+        title=${formatNum(
+          testLoader.unfilteredPrecludedVariantsCount,
+          !testLoader.loadedAllFailedVariants,
+        ) + ' precluded tests'}
+      >
+        ${formatNum(
+          testLoader.unfilteredPrecludedVariantsCount,
+          testLoader.stage < LoadingStage.LoadingPrecludedVerdicts,
         )}
       </div>`;
     }
@@ -110,18 +125,18 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
         id="flaky"
         title=${formatNum(
           testLoader.unfilteredFlakyVariantsCount,
-          !testLoader.loadedAllUnexpectedVariants,
+          !testLoader.loadedAllFailedVariants,
         ) + ' flaky tests'}
       >
         ${formatNum(
           testLoader.unfilteredFlakyVariantsCount,
-          testLoader.stage < LoadingStage.LoadingFlaky,
+          testLoader.stage < LoadingStage.LoadingFlakyVerdicts,
         )}
       </div>`;
     }
 
     if (testLoader.unfilteredTestVariantCount > 0) {
-      return html`<mwc-icon id="expected" title="all tests passed"
+      return html`<mwc-icon id="expected" title="all tests passed (or skipped)"
         >check_circle</mwc-icon
       >`;
     }

@@ -138,7 +138,7 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
         </mwc-button>
         <p>A key must be one of the following:</p>
         <ol>
-          <li>'status': status of the test variant (e.g. Unexpected, Flaky).</li>
+          <li>'status': status of the test variant (e.g. Passed, Flaky).</li>
           <li>'name': name of the test variant.</li>
           <li>'v.{variant_key}': variant key of the test variant (e.g. v.gpu).</li>
         </ol>
