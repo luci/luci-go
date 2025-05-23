@@ -12,53 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BrokenImageIcon from '@mui/icons-material/BrokenImage';
-import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DoNotDisturbIcon from '@mui/icons-material/DoNotDisturb';
-import DoNotDisturbOnTotalSilenceIcon from '@mui/icons-material/DoNotDisturbOnTotalSilence';
+import ErrorIcon from '@mui/icons-material/Error';
+import NextPlanIcon from '@mui/icons-material/NextPlan';
+import NotStartedIcon from '@mui/icons-material/NotStarted';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import ReportIcon from '@mui/icons-material/Report';
 import Grid from '@mui/material/Grid2';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import { useEffectOnce } from 'react-use';
 
-import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/test';
+import {
+  TEST_STATUS_V2_CLASS_MAP,
+  TEST_STATUS_V2_DISPLAY_MAP,
+} from '@/common/constants/test';
 import { setSingleQueryParam } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   TestResult,
-  TestStatus,
+  TestResult_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { getSuggestedResultId } from '@/test_verdict/tools/test_result_utils';
 
 import { useResults } from '../context';
 import { RESULT_ID_SEARCH_PARAM_KEY, getSelectedResultId } from '../utils';
 
-function getRunStatusIcon(status: TestStatus, expected: boolean) {
-  const className = expected ? 'expected' : 'unexpected';
+function getRunStatusIcon(status: TestResult_Status) {
+  const className = TEST_STATUS_V2_CLASS_MAP[status];
   switch (status) {
-    case TestStatus.ABORT:
-      return <DoNotDisturbOnTotalSilenceIcon className={className} />;
-    case TestStatus.CRASH:
-      return <BrokenImageIcon className={className} />;
-    case TestStatus.FAIL:
-      return <CancelIcon className={className} />;
-    case TestStatus.PASS:
+    case TestResult_Status.FAILED:
+      return <ErrorIcon className={className} />;
+    case TestResult_Status.EXECUTION_ERRORED:
+      return <ReportIcon className={className} />;
+    case TestResult_Status.PRECLUDED:
+      return <NotStartedIcon className={className} />;
+    case TestResult_Status.PASSED:
       return <CheckCircleIcon className={className} />;
-    case TestStatus.SKIP:
-      return <DoNotDisturbIcon className={className} />;
-    case TestStatus.STATUS_UNSPECIFIED:
+    case TestResult_Status.SKIPPED:
+      return <NextPlanIcon className={className} />;
     default:
       return <QuestionMarkIcon className={className} />;
   }
 }
 
 function getTitle(result: TestResult) {
-  return `${result.expected ? 'Expectedly' : 'Unexpectedly'} ${
-    TEST_STATUS_DISPLAY_MAP[result.status]
-  }`;
+  return TEST_STATUS_V2_DISPLAY_MAP[result.statusV2];
 }
 
 export function ResultsHeader() {
@@ -109,7 +109,7 @@ export function ResultsHeader() {
             }}
             icon={
               <Tooltip title={getTitle(result.result)}>
-                {getRunStatusIcon(result.result.status, result.result.expected)}
+                {getRunStatusIcon(result.result.statusV2)}
               </Tooltip>
             }
             iconPosition="end"

@@ -15,25 +15,30 @@
 import { arc, pie } from 'd3';
 import { useMemo } from 'react';
 
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 
 import { VerdictStatusIcon } from './verdict_status_icon';
 
 const STATUSES = Object.freeze([
-  TestVariantStatus.UNEXPECTED,
-  TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  TestVariantStatus.FLAKY,
-  TestVariantStatus.EXONERATED,
-  TestVariantStatus.EXPECTED,
+  TestVerdict_Status.FAILED,
+  TestVerdict_Status.EXECUTION_ERRORED,
+  TestVerdict_Status.PRECLUDED,
+  TestVerdict_Status.FLAKY,
+  TestVerdict_Status.PASSED,
+  TestVerdict_Status.SKIPPED,
 ] as const);
 
 export interface VerdictCounts {
-  readonly [TestVariantStatus.UNEXPECTED]?: number;
-  readonly [TestVariantStatus.UNEXPECTEDLY_SKIPPED]?: number;
-  readonly [TestVariantStatus.FLAKY]?: number;
-  readonly [TestVariantStatus.EXONERATED]?: number;
-  readonly [TestVariantStatus.EXPECTED]?: number;
+  readonly [TestVerdict_Status.FAILED]?: number;
+  readonly [TestVerdict_Status.EXECUTION_ERRORED]?: number;
+  readonly [TestVerdict_Status.PRECLUDED]?: number;
+  readonly [TestVerdict_Status.FLAKY]?: number;
+  readonly [TestVerdict_Status.PASSED]?: number;
+  readonly [TestVerdict_Status.SKIPPED]?: number;
 }
 
 export interface VerdictSetStatusProps {
@@ -53,7 +58,8 @@ export function VerdictSetStatus({ counts }: VerdictSetStatusProps) {
   if (singleStatus !== undefined) {
     return (
       <VerdictStatusIcon
-        status={singleStatus}
+        statusV2={singleStatus}
+        statusOverride={TestVerdict_StatusOverride.NOT_OVERRIDDEN}
         sx={{ verticalAlign: 'middle' }}
       />
     );

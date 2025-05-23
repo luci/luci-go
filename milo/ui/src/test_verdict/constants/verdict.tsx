@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
 export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
-  [TestVariantStatus.EXONERATED]: 'var(--exonerated-color)',
-  [TestVariantStatus.EXPECTED]: 'var(--success-color)',
-  [TestVariantStatus.FLAKY]: 'var(--warning-color)',
-  [TestVariantStatus.UNEXPECTED]: 'var(--failure-color)',
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 'var(--critical-failure-color)',
+  [TestVerdict_Status.FAILED]: 'var(--failure-color)',
+  [TestVerdict_Status.EXECUTION_ERRORED]: 'var(--critical-failure-color)',
+  [TestVerdict_Status.PRECLUDED]: 'var(--precluded-color)',
+  [TestVerdict_Status.FLAKY]: 'var(--warning-color)',
+  [TestVerdict_Status.PASSED]: 'var(--success-color)',
+  [TestVerdict_Status.SKIPPED]: 'var(--skipped-color)',
+});
+
+export const VERDICT_STATUS_OVERRIDE_COLOR_MAP = Object.freeze({
+  [TestVerdict_StatusOverride.EXONERATED]: 'var(--exonerated-color)',
 });

@@ -18,7 +18,10 @@ import { Link as RouterLink } from 'react-router';
 
 import { DurationBadge } from '@/common/components/duration_badge';
 import { TagsEntry } from '@/common/components/tags_entry';
-import { TEST_STATUS_DISPLAY_MAP } from '@/common/constants/test';
+import {
+  TEST_STATUS_V2_CLASS_MAP,
+  testResultStatusLabel,
+} from '@/common/constants/test';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
@@ -27,7 +30,10 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
-import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  TestResult,
+  TestResult_Status,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactsEntry } from './artifacts_entry';
@@ -75,9 +81,12 @@ export function TestResultEntry({
           }
         />{' '}
         result #{index + 1}{' '}
-        <span className={testResult.expected ? 'expected' : 'unexpected'}>
-          {testResult.expected ? 'expectedly' : 'unexpectedly'}{' '}
-          {TEST_STATUS_DISPLAY_MAP[testResult.status]}
+        {testResult.statusV2 === TestResult_Status.SKIPPED ||
+        testResult.statusV2 === TestResult_Status.PRECLUDED
+          ? 'was '
+          : ''}
+        <span className={TEST_STATUS_V2_CLASS_MAP[testResult.statusV2]}>
+          {testResultStatusLabel(testResult)}
         </span>
         {parsedInvId.type === 'swarming-task' && (
           <>

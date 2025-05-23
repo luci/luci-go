@@ -16,7 +16,7 @@ import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { VerdictSetStatus } from '@/test_verdict/components//verdict_set_status';
 import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
@@ -135,9 +135,9 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
           <SpanLabel>
             <VerdictSetStatus
               counts={{
-                [TestVariantStatus.UNEXPECTED]: unexpectedCount,
-                [TestVariantStatus.FLAKY]: flakyCount,
-                [TestVariantStatus.EXPECTED]: expectedCount,
+                [TestVerdict_Status.FAILED]: unexpectedCount,
+                [TestVerdict_Status.FLAKY]: flakyCount,
+                [TestVerdict_Status.PASSED]: expectedCount,
               }}
             />
             <Count>
@@ -146,9 +146,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
                   unexpectedCount
                     ? {
                         color:
-                          VERDICT_STATUS_COLOR_MAP[
-                            TestVariantStatus.UNEXPECTED
-                          ],
+                          VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FAILED],
                       }
                     : {
                         opacity: 0.6,
@@ -163,7 +161,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
                   flakyCount
                     ? {
                         color:
-                          VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY],
+                          VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FLAKY],
                       }
                     : {
                         opacity: 0.6,
@@ -178,7 +176,7 @@ export function SegmentSpan({ testVariantBranch, segment }: SegmentSpanProps) {
                   expectedCount
                     ? {
                         color:
-                          VERDICT_STATUS_COLOR_MAP[TestVariantStatus.EXPECTED],
+                          VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.PASSED],
                       }
                     : {
                         opacity: 0.6,

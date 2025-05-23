@@ -30,7 +30,7 @@ import { RegressionRow } from './regression_row';
 import { GetDetailsUrlPath } from './types';
 
 const AVG_FAILURE_RATE_TOOLTIP = `\
-  The average of the average unexpected source verdict rate of the test variants in the segments.\
+  The average of the average failed source verdict rate of the test variants in the segments.\
 `;
 
 const FAILURE_RATE_DELTA_TOOLTIP = `\
@@ -40,23 +40,23 @@ const FAILURE_RATE_DELTA_TOOLTIP = `\
 
 const BEFORE_STATUS_TOOLTIP = `\
   The ratio of test variants in the group that are failing \
-  (red, >95% recent unexpected source verdict rate), \
-  have mixed results (yellow, 5~95% recent unexpected source verdict rate), \
-  or passing (green, <5% recent unexpected source verdict rate) before the changepoint.\
+  (red, >95% recent failed source verdict rate), \
+  have mixed results (yellow, 5~95% recent failed source verdict rate), \
+  or passing (green, <5% recent failed source verdict rate) before the changepoint.\
 `;
 
 const AFTER_STATUS_TOOLTIP = `\
   The ratio of test variants in the group that are still failing \
-  (red, >95% recent unexpected source verdict rate), \
-  have mixed results (yellow, 5~95% recent unexpected source verdict rate), \
-  or have been fixed (green, <5% recent unexpected source verdict rate) after the changepoint.\
+  (red, >95% recent failed source verdict rate), \
+  have mixed results (yellow, 5~95% recent failed source verdict rate), \
+  or have been fixed (green, <5% recent failed source verdict rate) after the changepoint.\
 `;
 
 const CURRENT_STATUS_TOOLTIP = `\
   The ratio of test variants in the group that are still failing \
-  (red, >95% recent unexpected source verdict rate), \
-  have mixed results (yellow, 5~95% recent unexpected source verdict rate), \
-  or have been fixed (green, <5% recent unexpected source verdict rate). \
+  (red, >95% recent failed source verdict rate), \
+  have mixed results (yellow, 5~95% recent failed source verdict rate), \
+  or have been fixed (green, <5% recent failed source verdict rate). \
   This is useful for determining whether this regression has been fixed.\
 `;
 

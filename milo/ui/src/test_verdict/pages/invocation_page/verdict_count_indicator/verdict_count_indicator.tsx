@@ -20,10 +20,12 @@ import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { formatNum } from '@/generic_libs/tools/string_utils';
 import { QueryTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
-import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
 
 export const QUERY_TEST_VERDICT_PAGE_SIZE = 10000;
 
@@ -66,26 +68,45 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
 
   const firstPage = data?.pages[0];
   const hasVerdicts = (firstPage?.testVariants.length || 0) !== 0;
-  const worstStatus = (firstPage?.testVariants[0]?.status ||
-    TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED) as
-    | SpecifiedTestVerdictStatus
-    | TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED;
+
+  // Results are sorted with the worst (most interesting) status first.
+  const worstStatus =
+    firstPage?.testVariants[0]?.statusV2 ||
+    TestVerdict_Status.STATUS_UNSPECIFIED;
+  const worstStatusOverride =
+    firstPage?.testVariants[0]?.statusOverride ||
+    TestVerdict_StatusOverride.NOT_OVERRIDDEN;
+  const worstStatusEffective =
+    worstStatusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
+      ? worstStatusOverride
+      : worstStatus;
+
   const { worstStatusCount, countedAll } = useMemo(
     () => {
-      // Not interested in the count when there are no test verdict worse than
-      // being exonerated.
+      // Not interested in the count unless the worst status is one of:
+      // - Failed
+      // - Execution Errored
+      // - Precluded
+      // - Flaky
+      // (and not exonerated).
       if (
-        worstStatus === TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED ||
-        worstStatus >= TestVariantStatus.EXONERATED
+        worstStatus === TestVerdict_Status.STATUS_UNSPECIFIED ||
+        worstStatus >= TestVerdict_Status.SKIPPED ||
+        worstStatusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
       ) {
         return { worstStatusCount: 0, countedAll: true };
       }
 
       let worstStatusCount = 0;
       for (const tv of firstPage?.testVariants || []) {
-        // Verdicts are sorted by their status. Do not need to check further
+        // Verdicts are sorted by their effective status. Do not need to check further
         // once we found a different status.
-        if (tv.status > worstStatus) {
+        const effectiveStatus =
+          tv.statusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
+            ? tv.statusOverride
+            : tv.statusV2;
+
+        if (worstStatusEffective !== effectiveStatus) {
           return { worstStatusCount, countedAll: true };
         }
         worstStatusCount += 1;
@@ -112,17 +133,20 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
     );
   }
 
-  if (
-    !hasVerdicts ||
-    worstStatus === TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED
-  ) {
+  if (!hasVerdicts || worstStatus === TestVerdict_Status.STATUS_UNSPECIFIED) {
     return <Container />;
   }
 
-  if (worstStatus >= TestVariantStatus.EXONERATED) {
+  if (
+    worstStatus >= TestVerdict_Status.SKIPPED ||
+    worstStatusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
+  ) {
     return (
       <Container>
-        <VerdictStatusIcon status={worstStatus} />
+        <VerdictStatusIcon
+          statusV2={worstStatus}
+          statusOverride={worstStatusOverride}
+        />
       </Container>
     );
   }

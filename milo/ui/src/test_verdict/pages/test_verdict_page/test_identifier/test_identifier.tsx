@@ -14,6 +14,8 @@
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import NextPlanIcon from '@mui/icons-material/NextPlan';
+import NotStartedIcon from '@mui/icons-material/NotStarted';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import ReportIcon from '@mui/icons-material/Report';
@@ -21,37 +23,66 @@ import WarningIcon from '@mui/icons-material/Warning';
 import Grid from '@mui/material/Grid2';
 import { upperFirst } from 'lodash-es';
 
-import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { SpecifiedTestVerdictStatus } from '@/test_verdict/types';
+import {
+  VERDICT_STATUS_DISPLAY_MAP,
+  VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
+} from '@/common/constants/test';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+import {
+  SpecifiedTestVerdictStatusOverride,
+  SpecifiedTestVerdictStatus,
+} from '@/test_verdict/types';
 
 import { useTestVerdict } from '../context';
 
 import { CLInfo } from './cl_info';
 
-function getTestVariantStatusLabel(status: SpecifiedTestVerdictStatus) {
+function getTestVariantStatusLabel(
+  status: SpecifiedTestVerdictStatus,
+  statusOverride: SpecifiedTestVerdictStatusOverride,
+) {
+  if (statusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN) {
+    return upperFirst(VERDICT_STATUS_OVERRIDE_DISPLAY_MAP[statusOverride]);
+  }
   return upperFirst(VERDICT_STATUS_DISPLAY_MAP[status]);
 }
 
-function getTestVariantStatusIcon(status: SpecifiedTestVerdictStatus) {
+function getTestVariantStatusIcon(
+  status: SpecifiedTestVerdictStatus,
+  statusOverride: SpecifiedTestVerdictStatusOverride,
+) {
+  if (statusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN) {
+    switch (statusOverride) {
+      case TestVerdict_StatusOverride.EXONERATED:
+        return <RemoveCircleIcon className="exonerated-verdict" />;
+      default:
+        return <QuestionMarkIcon className="unspecified" />;
+    }
+  }
+
   switch (status) {
-    case TestVariantStatus.UNEXPECTED:
-      return <CancelIcon className="unexpected" />;
-    case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
-      return <ReportIcon className="unexpectedly-skipped" />;
-    case TestVariantStatus.FLAKY:
-      return <WarningIcon className="flaky" />;
-    case TestVariantStatus.EXONERATED:
-      return <RemoveCircleIcon className="exonerated" />;
-    case TestVariantStatus.EXPECTED:
-      return <CheckCircleIcon className="expected" />;
+    case TestVerdict_Status.FAILED:
+      return <CancelIcon className="failed-verdict" />;
+    case TestVerdict_Status.EXECUTION_ERRORED:
+      return <ReportIcon className="execution-errored-verdict" />;
+    case TestVerdict_Status.PRECLUDED:
+      return <NotStartedIcon className="precluded-verdict" />;
+    case TestVerdict_Status.FLAKY:
+      return <WarningIcon className="flaky-verdict" />;
+    case TestVerdict_Status.PASSED:
+      return <CheckCircleIcon className="passed-verdict" />;
+    case TestVerdict_Status.SKIPPED:
+      return <NextPlanIcon className="skipped-verdict" />;
     default:
       return <QuestionMarkIcon className="unspecified" />;
   }
 }
 
 export function TestIdentifier() {
-  const { status, testId } = useTestVerdict();
+  const { statusV2, statusOverride, testId } = useTestVerdict();
 
   return (
     <Grid container rowGap={1}>
@@ -66,8 +97,8 @@ export function TestIdentifier() {
           mb: 1,
         }}
       >
-        {getTestVariantStatusIcon(status)}
-        {getTestVariantStatusLabel(status)}: {testId}
+        {getTestVariantStatusIcon(statusV2, statusOverride)}
+        {getTestVariantStatusLabel(statusV2, statusOverride)}: {testId}
       </Grid>
     </Grid>
   );

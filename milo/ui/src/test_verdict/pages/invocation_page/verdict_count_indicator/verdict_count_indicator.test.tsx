@@ -19,7 +19,10 @@ import {
   QueryTestVariantsResponse,
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import {
@@ -50,9 +53,18 @@ describe('<VerdictCountIndicator />', () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
-          ...Array(55).fill({ status: TestVariantStatus.UNEXPECTED }),
-          ...Array(10).fill({ status: TestVariantStatus.FLAKY }),
-          ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
+          ...Array(55).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+          }),
+          ...Array(10).fill({
+            statusV2: TestVerdict_Status.FLAKY,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+          }),
+          ...Array(5).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.EXONERATED,
+          }),
         ],
       }),
     );
@@ -65,15 +77,21 @@ describe('<VerdictCountIndicator />', () => {
     const indicator = screen.getByTestId('verdict-count-indicator');
     expect(indicator).toHaveTextContent('55');
     expect(indicator.title).toContain('55');
-    expect(indicator.title).toContain('unexpectedly failed');
+    expect(indicator.title).toContain('failed');
   });
 
   it('can show flaky count', async () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
-          ...Array(10).fill({ status: TestVariantStatus.FLAKY }),
-          ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
+          ...Array(10).fill({
+            statusV2: TestVerdict_Status.FLAKY,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+          }),
+          ...Array(5).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.EXONERATED,
+          }),
         ],
       }),
     );
@@ -93,7 +111,10 @@ describe('<VerdictCountIndicator />', () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
-          ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
+          ...Array(5).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.EXONERATED,
+          }),
         ],
       }),
     );
@@ -133,8 +154,14 @@ describe('<VerdictCountIndicator />', () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
-          ...Array(200).fill({ status: TestVariantStatus.UNEXPECTED }),
-          ...Array(5).fill({ status: TestVariantStatus.EXONERATED }),
+          ...Array(200).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+          }),
+          ...Array(5).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.EXONERATED,
+          }),
         ],
       }),
     );
@@ -154,7 +181,10 @@ describe('<VerdictCountIndicator />', () => {
     queryTestVariantsMock.mockResolvedValueOnce(
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
-          ...Array(10).fill({ status: TestVariantStatus.UNEXPECTED }),
+          ...Array(10).fill({
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
+          }),
         ],
         nextPageToken: 'page2',
       }),
@@ -176,7 +206,8 @@ describe('<VerdictCountIndicator />', () => {
       QueryTestVariantsResponse.fromPartial({
         testVariants: [
           ...Array(QUERY_TEST_VERDICT_PAGE_SIZE).fill({
-            status: TestVariantStatus.UNEXPECTED,
+            statusV2: TestVerdict_Status.FAILED,
+            statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
           }),
         ],
         nextPageToken: 'page2',

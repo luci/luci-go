@@ -15,10 +15,11 @@
 import { ReactNode } from 'react';
 
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
-  TestVariant,
-  TestVariantStatus,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { Duration } from '@/proto/google/protobuf/duration.pb';
 import { OutputTestVerdict } from '@/test_verdict/types';
 
@@ -32,7 +33,8 @@ export const placeholderVerdict = TestVariant.fromPartial({
     },
   },
   variantHash: '6657d9dc1549eacc',
-  status: TestVariantStatus.FLAKY,
+  statusV2: TestVerdict_Status.FLAKY,
+  statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
   results: [
     {
       result: {

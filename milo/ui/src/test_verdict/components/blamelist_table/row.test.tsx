@@ -32,8 +32,11 @@ import {
   BatchGetTestVariantsResponse,
   ResultDBClientImpl,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BlamelistContextProvider } from './context';
@@ -107,28 +110,28 @@ describe('<BlamelistTableContentRow />', () => {
           testVariants: [
             {
               testId: 'test-id',
-              status: TestVariantStatus.UNEXPECTED,
+              statusV2: TestVerdict_Status.FAILED,
+              statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
               results: [
                 {
                   result: {
                     name: `invocations/build-5678/tests/test-id/results/1`,
                     summaryHtml: `Result #1 from ${req.invocation}`,
-                    expected: false,
-                    status: TestStatus.FAIL,
+                    statusV2: TestResult_Status.FAILED,
                   },
                 },
               ],
             },
             {
               testId: 'test-id',
-              status: TestVariantStatus.EXPECTED,
+              statusV2: TestVerdict_Status.PASSED,
+              statusOverride: TestVerdict_StatusOverride.NOT_OVERRIDDEN,
               results: [
                 {
                   result: {
                     name: `invocations/build-5678/tests/test-id/results/2`,
                     summaryHtml: `Result #2 from ${req.invocation}`,
-                    expected: true,
-                    status: TestStatus.PASS,
+                    statusV2: TestResult_Status.PASSED,
                   },
                 },
               ],

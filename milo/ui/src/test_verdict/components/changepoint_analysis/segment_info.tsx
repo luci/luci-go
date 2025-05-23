@@ -17,7 +17,7 @@ import { ReactNode } from 'react';
 
 import { OutputSegment } from '@/analysis/types';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
 import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 
@@ -59,16 +59,16 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
         <tr>
           <td>
             <VerdictStatusIcon
-              status={TestVariantStatus.UNEXPECTED}
+              statusV2={TestVerdict_Status.FAILED}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
-            Unexpected Source Verdicts:
+            Failed Source Verdicts:
           </td>
           <td
             css={{
               color:
                 segment.counts.unexpectedVerdicts > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVariantStatus.UNEXPECTED]
+                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FAILED]
                   : 'var(--greyed-out-text-color)',
             }}
           >
@@ -78,7 +78,7 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
         <tr>
           <td>
             <VerdictStatusIcon
-              status={TestVariantStatus.FLAKY}
+              statusV2={TestVerdict_Status.FLAKY}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
             Flaky Source Verdicts:
@@ -87,7 +87,7 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
             css={{
               color:
                 segment.counts.flakyVerdicts > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVariantStatus.FLAKY]
+                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.FLAKY]
                   : 'var(--greyed-out-text-color)',
             }}
           >
@@ -97,16 +97,16 @@ export function SegmentInfo({ segment, instructionRow }: SegmentInfoProps) {
         <tr>
           <td>
             <VerdictStatusIcon
-              status={TestVariantStatus.EXPECTED}
+              statusV2={TestVerdict_Status.PASSED}
               sx={{ verticalAlign: 'middle' }}
             />{' '}
-            Expected Source Verdicts:
+            Passed Source Verdicts:
           </td>
           <td
             css={{
               color:
                 expectedVerdictCount > 0
-                  ? VERDICT_STATUS_COLOR_MAP[TestVariantStatus.EXPECTED]
+                  ? VERDICT_STATUS_COLOR_MAP[TestVerdict_Status.PASSED]
                   : 'var(--greyed-out-text-color)',
             }}
           >

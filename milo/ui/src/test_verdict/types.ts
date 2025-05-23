@@ -21,9 +21,7 @@
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
-import { SpecifiedTestVerdictStatus as AnalysisVerdictStatus } from '@/analysis/types';
 import { NonNullableProps } from '@/generic_libs/types';
-import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import {
   BatchGetTestVariantsResponse,
   ArtifactMatchingContent,
@@ -37,41 +35,21 @@ import {
 import {
   TestResultBundle,
   TestVariant,
-  TestVariantStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
 export type SpecifiedTestVerdictStatus = Exclude<
-  TestVariantStatus,
-  | TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED
-  | TestVariantStatus.UNEXPECTED_MASK
+  TestVerdict_Status,
+  TestVerdict_Status.STATUS_UNSPECIFIED
 >;
 
-const VERDICT_STATUS_MAP_FROM_ANALYSIS = Object.freeze({
-  [TestVerdictStatus.UNEXPECTED]: TestVariantStatus.UNEXPECTED,
-  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
-    TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  [TestVerdictStatus.FLAKY]: TestVariantStatus.FLAKY,
-  [TestVerdictStatus.EXONERATED]: TestVariantStatus.EXONERATED,
-  [TestVerdictStatus.EXPECTED]: TestVariantStatus.EXPECTED,
-});
-
-const VERDICT_STATUS_MAP_TO_ANALYSIS = Object.freeze({
-  [TestVariantStatus.UNEXPECTED]: TestVerdictStatus.UNEXPECTED,
-  [TestVariantStatus.UNEXPECTEDLY_SKIPPED]:
-    TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
-  [TestVariantStatus.FLAKY]: TestVerdictStatus.FLAKY,
-  [TestVariantStatus.EXONERATED]: TestVerdictStatus.EXONERATED,
-  [TestVariantStatus.EXPECTED]: TestVerdictStatus.EXPECTED,
-});
-
-export const SpecifiedTestVerdictStatus = {
-  fromAnalysis(status: AnalysisVerdictStatus): SpecifiedTestVerdictStatus {
-    return VERDICT_STATUS_MAP_FROM_ANALYSIS[status];
-  },
-  toAnalysis(status: SpecifiedTestVerdictStatus): AnalysisVerdictStatus {
-    return VERDICT_STATUS_MAP_TO_ANALYSIS[status];
-  },
-};
+export type SpecifiedTestVerdictStatusOverride = Exclude<
+  TestVerdict_StatusOverride,
+  TestVerdict_StatusOverride.STATUS_OVERRIDE_UNSPECIFIED
+>;
 
 export type OutputTestResultBundle = NonNullableProps<
   TestResultBundle,
@@ -79,7 +57,8 @@ export type OutputTestResultBundle = NonNullableProps<
 >;
 
 export interface OutputTestVerdict extends TestVariant {
-  readonly status: SpecifiedTestVerdictStatus;
+  readonly statusV2: SpecifiedTestVerdictStatus;
+  readonly statusOverride: SpecifiedTestVerdictStatusOverride;
   readonly results: readonly OutputTestResultBundle[];
 }
 
