@@ -45,7 +45,8 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
-	antsExporter "go.chromium.org/luci/analysis/internal/ants/testresults/exporter"
+	antsinvocationexporter "go.chromium.org/luci/analysis/internal/ants/invocations/exporter"
+	antstestresultexporter "go.chromium.org/luci/analysis/internal/ants/testresults/exporter"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/changepoints"
@@ -113,12 +114,14 @@ func TestIngestTestVerdicts(t *testing.T) {
 		testVerdicts := testverdicts.NewFakeClient()
 		tvBQExporterClient := bqexporter.NewFakeClient()
 		analysis := analysis.NewClusteringHandler(clusteredFailures)
-		antsClient := antsExporter.NewFakeClient()
+		antsTestResultsClient := antstestresultexporter.NewFakeClient()
+		antsInvocationClient := antsinvocationexporter.NewFakeClient()
 		ri := &verdictIngester{
 			clustering:                ingestion.New(chunkStore, analysis),
 			verdictExporter:           testverdicts.NewExporter(testVerdicts),
 			testVariantBranchExporter: bqexporter.NewExporter(tvBQExporterClient),
-			antsTestResultExporter:    antsExporter.NewExporter(antsClient),
+			antsTestResultExporter:    antstestresultexporter.NewExporter(antsTestResultsClient),
+			antsInvocationExporter:    antsinvocationexporter.NewExporter(antsInvocationClient),
 		}
 
 		t.Run(`partition time`, func(t *ftt.Test) {
@@ -326,8 +329,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// Clustering not enabled - no chunk has been written to GCS.
 				assert.Loosely(t, len(chunkStore.Contents), should.BeZero)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, false)
-
-				verifyAnTSExport(t, antsClient, false)
+				verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+				verifyAnTSInvocationExport(t, antsInvocationClient, false)
 
 				// Changepoint analysis should not be updated.
 				// In this pipeline, invocations with changelists are ingested
@@ -358,7 +361,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
-				verifyAnTSExport(t, antsClient, false)
+				verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+				verifyAnTSInvocationExport(t, antsInvocationClient, false)
 			})
 			t.Run(`Last task`, func(t *ftt.Test) {
 				payload.TaskIndex = 10
@@ -384,24 +388,49 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
-				verifyAnTSExport(t, antsClient, false)
+				verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+				verifyAnTSInvocationExport(t, antsInvocationClient, false)
 			})
 
 			t.Run(`Export to AnTS table`, func(t *ftt.Test) {
-				payload.Build = nil
-				payload.PresubmitRun = nil
-				payload.Project = "android"
+				t.Run(`First task`, func(t *ftt.Test) {
+					payload.Build = nil
+					payload.PresubmitRun = nil
+					payload.Project = "android"
 
-				setupGetInvocationMock()
-				setupQueryTestVariantsMock()
-				setupConfig(ctx, cfg)
+					setupGetInvocationMock()
+					setupQueryTestVariantsMock()
+					setupConfig(ctx, cfg)
 
-				// Act
-				err := ri.ingestTestVerdicts(ctx, payload)
-				assert.Loosely(t, err, should.BeNil)
+					// Act
+					err := ri.ingestTestVerdicts(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
 
-				// Verify
-				verifyAnTSExport(t, antsClient, true)
+					// Verify
+					verifyAnTSTestResultExport(t, antsTestResultsClient, true)
+					verifyAnTSInvocationExport(t, antsInvocationClient, false)
+				})
+				t.Run(`Last task`, func(t *ftt.Test) {
+					payload.Build = nil
+					payload.PresubmitRun = nil
+					payload.Project = "android"
+					payload.TaskIndex = 10
+					expectedCheckpoints = removeCheckpointForProcess(expectedCheckpoints, "verdict-ingestion/schedule-continuation")
+
+					setupGetInvocationMock()
+					setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
+						rsp.NextPageToken = ""
+					})
+					setupConfig(ctx, cfg)
+
+					// Act
+					err := ri.ingestTestVerdicts(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					verifyAnTSTestResultExport(t, antsTestResultsClient, true)
+					verifyAnTSInvocationExport(t, antsInvocationClient, true)
+				})
 			})
 
 			t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
@@ -436,7 +465,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 				verifyClustering(t, chunkStore, clusteredFailures)
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
-				verifyAnTSExport(t, antsClient, false)
+				verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+				verifyAnTSInvocationExport(t, antsInvocationClient, false)
 			})
 			t.Run(`No project config`, func(t *ftt.Test) {
 				// If no project config exists, results should be ingested into
@@ -462,7 +492,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// Test verdicts exported.
 				verifyTestVerdicts(t, testVerdicts, partitionTime, true)
 				verifyTestVariantAnalysis(ctx, t, invocationCreationTime, tvBQExporterClient)
-				verifyAnTSExport(t, antsClient, false)
+				verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+				verifyAnTSInvocationExport(t, antsInvocationClient, false)
 			})
 			t.Run(`Invocation is not an export root`, func(t *ftt.Test) {
 				setupGetInvocationMock(func(i *rdbpb.Invocation) {
@@ -1629,7 +1660,7 @@ func removeCheckpointForProcess(cs []checkpoints.Checkpoint, processID string) [
 	return result
 }
 
-func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExport bool) {
+func verifyAnTSTestResultExport(t testing.TB, client *antstestresultexporter.FakeClient, shouldExport bool) {
 	t.Helper()
 	actualRows := client.Insertions
 	var expectedRows []*bqpblegacy.AntsTestResultRow
@@ -1934,5 +1965,24 @@ func verifyAnTSExport(t testing.TB, client *antsExporter.FakeClient, shouldExpor
 		for i, row := range actualRows {
 			assert.Loosely(t, row, should.Match(expectedRows[i]), truth.LineContext())
 		}
+	}
+}
+
+func verifyAnTSInvocationExport(t testing.TB, client *antsinvocationexporter.FakeClient, shouldExport bool) {
+	t.Helper()
+	actualRow := client.Insertion
+	if shouldExport {
+		expectedRow := &bqpblegacy.AntsInvocationRow{
+			InvocationId: "build-87654321",
+			Timing: &bqpblegacy.AntsInvocationRow_Timing{
+				CreationTimestamp: 0,
+				CompleteTimestamp: 1744070400000,
+			},
+			CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+		}
+		assert.Loosely(t, actualRow, should.Match(expectedRow), truth.LineContext())
+
+	} else {
+		assert.Loosely(t, actualRow, should.BeNil)
 	}
 }
