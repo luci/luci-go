@@ -17,10 +17,11 @@ package exporter
 import (
 	"context"
 
-	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.
