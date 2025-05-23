@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
+
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/cli/base"
 	"go.chromium.org/luci/lucicfg/cli/cmds/fmt"

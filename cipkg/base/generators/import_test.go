@@ -22,13 +22,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/luci/cipkg/core"
-	"go.chromium.org/luci/cipkg/internal/testutils"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/transform"
+
+	"go.chromium.org/luci/cipkg/core"
+	"go.chromium.org/luci/cipkg/internal/testutils"
 )
 
 func TestImport(t *testing.T) {

@@ -27,7 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
-
+	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
@@ -43,8 +43,6 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/server/tq"
-
-	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 
 	// Use datastore as a backend for auth session and TQ transactions.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"

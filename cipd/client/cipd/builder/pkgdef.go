@@ -20,12 +20,14 @@ import (
 	"regexp"
 	"sort"
 
+	"github.com/goccy/go-yaml"
+
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
-	"go.chromium.org/luci/common/errors"
-	"github.com/goccy/go-yaml"
 )
 
 // PackageDef defines how exactly to build a package.

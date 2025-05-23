@@ -21,8 +21,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/internal/typed"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 func TestSmartCmpDiff(t *testing.T) {

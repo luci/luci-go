@@ -15,8 +15,9 @@
 package issuetracker
 
 import (
-	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	"google.golang.org/api/iterator"
+
+	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
 // IssueCommentIterator manages a stream of *issuetrackerpb.IssueComment.

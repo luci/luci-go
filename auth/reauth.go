@@ -21,11 +21,11 @@ import (
 	"net/url"
 	"time"
 
+	"golang.org/x/net/publicsuffix"
+
 	"go.chromium.org/luci/auth/reauth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/publicsuffix"
 )
 
 const metadataKeyRapt = "rapt"

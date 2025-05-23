@@ -20,11 +20,12 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth/identity"
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/config/validation"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"

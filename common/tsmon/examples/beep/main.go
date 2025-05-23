@@ -25,11 +25,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/examples/beep/dummy_project"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/target"
-
-	"go.chromium.org/luci/common/tsmon/examples/beep/dummy_project"
 )
 
 var presence = metric.NewBoolWithOptions(

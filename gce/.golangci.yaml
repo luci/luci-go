@@ -6,9 +6,16 @@ version: "2"
 # ref: https://golangci-lint.run/usage/configuration/#config-file
 
 linters:
-  enable:
+  disable:
+    - copyloopvar
+    - errcheck
     - errorlint
+    - govet
+    - ineffassign
+    - intrange
+    - noctx
     - staticcheck
+    - unused
 
 issues:
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.

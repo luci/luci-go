@@ -20,9 +20,10 @@ import (
 	"context"
 	"regexp"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"

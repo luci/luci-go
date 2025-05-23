@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/internal/typed"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 func TestRenderFinding(t *testing.T) {

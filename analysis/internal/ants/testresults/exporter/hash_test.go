@@ -17,9 +17,10 @@ package exporter
 import (
 	"testing"
 
-	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
 func TestPersistentHashTestIdentifier(t *testing.T) {

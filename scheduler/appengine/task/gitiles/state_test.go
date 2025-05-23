@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/scheduler/appengine/messages"
 )
 

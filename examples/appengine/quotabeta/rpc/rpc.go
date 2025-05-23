@@ -18,18 +18,16 @@ package rpc
 import (
 	"context"
 
-	"google.golang.org/protobuf/runtime/protoiface"
-
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/runtime/protoiface"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/quotabeta"
-
-	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
 )
 
 // Demo implements pb.DemoServer. Requires a quotaconfig.Interface in the

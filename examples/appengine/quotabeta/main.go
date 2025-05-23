@@ -22,15 +22,14 @@ package main
 
 import (
 	"go.chromium.org/luci/config/server/cfgmodule"
+	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
+	"go.chromium.org/luci/examples/appengine/quotabeta/rpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/module"
 	quota "go.chromium.org/luci/server/quotabeta"
 	quotapb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
-
-	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
-	"go.chromium.org/luci/examples/appengine/quotabeta/rpc"
 )
 
 func main() {

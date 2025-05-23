@@ -20,8 +20,9 @@ import (
 	"text/template"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/common/errors"
 	"google.golang.org/api/iterator"
+
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/pagination"

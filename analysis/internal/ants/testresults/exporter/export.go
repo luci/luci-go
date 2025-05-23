@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	"go.chromium.org/luci/analysis/internal/bqutil"
-	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	"go.chromium.org/luci/analysis/internal/bqutil"
+	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
 // InsertClient defines an interface for inserting rows into BigQuery.

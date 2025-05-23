@@ -27,10 +27,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/prpc"
-
+	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 	"go.chromium.org/luci/gae/service/datastore"
-
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -39,8 +38,6 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
-
-	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 )
 
 var tracer = otel.Tracer("go.chromium.org/luci/example")

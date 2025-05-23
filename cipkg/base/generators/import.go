@@ -26,9 +26,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.chromium.org/luci/cipkg/core"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
+
+	"go.chromium.org/luci/cipkg/core"
 )
 
 type ImportTarget struct {

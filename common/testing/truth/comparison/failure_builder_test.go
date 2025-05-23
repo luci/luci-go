@@ -17,8 +17,8 @@ package comparison
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/internal/typed"
+	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Check that calling NewSummaryBuilder does something remotely reasonable.

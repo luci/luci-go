@@ -23,10 +23,11 @@ import (
 	"slices"
 	"strings"
 
-	"go.chromium.org/luci/cipkg/core"
+	"google.golang.org/protobuf/proto"
+
 	luciproto "go.chromium.org/luci/common/proto"
 
-	"google.golang.org/protobuf/proto"
+	"go.chromium.org/luci/cipkg/core"
 )
 
 type FetchURL struct {

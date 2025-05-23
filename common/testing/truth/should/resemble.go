@@ -21,9 +21,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/internal/typed"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/internal/typed"
 )
 
 // should.Match needs to keep a cache of type -> []cmp.Option for

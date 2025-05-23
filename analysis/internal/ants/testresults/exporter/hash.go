@@ -24,8 +24,9 @@ import (
 	"strings"
 	"unicode/utf16"
 
-	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 	"go.chromium.org/luci/common/errors"
+
+	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
 // putInt writes a 32-bit integer (like Java's int) to the hasher in LittleEndian order.
