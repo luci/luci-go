@@ -673,6 +673,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
