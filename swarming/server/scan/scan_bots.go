@@ -122,7 +122,6 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 	// Run finalizers in parallel, they may do slow IO. Collect all errors.
 	errs := make(chan error, len(visitors))
 	for _, v := range visitors {
-		v := v
 		go func() {
 			errs <- v.Finalize(logging.SetField(ctx, "visitor", v.ID()), scanErr)
 		}()

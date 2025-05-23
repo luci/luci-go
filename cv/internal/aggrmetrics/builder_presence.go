@@ -42,7 +42,6 @@ func (t *builderPresenceAggregator) metrics() []types.Metric {
 func (t *builderPresenceAggregator) report(ctx context.Context, projects []string) error {
 	err := parallel.WorkPool(min(8, len(projects)), func(work chan<- func() error) {
 		for _, project := range projects {
-			project := project
 			work <- func() error {
 				meta, err := prjcfg.GetLatestMeta(ctx, project)
 				switch {

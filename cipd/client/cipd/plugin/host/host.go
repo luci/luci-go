@@ -183,7 +183,6 @@ func (h *Host) Close(ctx context.Context) {
 
 	wg.Add(len(h.plugins))
 	for _, plugin := range h.plugins {
-		plugin := plugin
 		go func() {
 			defer wg.Done()
 			plugin.Terminate(ctx)

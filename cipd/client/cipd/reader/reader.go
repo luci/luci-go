@@ -291,7 +291,6 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	// Spawn worker threads to do the CPU-intensive extraction in parallel.
 	err = parallel.WorkPool(workerCount, func(tasks chan<- func() error) {
 		for _, f := range filesToExtract {
-			f := f
 			task := func() error {
 				defer progress.advance(f.Size())
 				if f.Symlink() {

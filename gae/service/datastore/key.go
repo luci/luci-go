@@ -347,7 +347,6 @@ func (k *Key) MarshalJSON() ([]byte, error) {
 func (k *Key) Encode() string {
 	e := make([]*pb.Path_Element, len(k.toks))
 	for i, t := range k.toks {
-		t := t
 		e[i] = &pb.Path_Element{
 			Type: &t.Kind,
 		}

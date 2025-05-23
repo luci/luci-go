@@ -377,7 +377,7 @@ func (u *Updater) ResolveAndScheduleDepsUpdate(ctx context.Context, luciProject 
 
 	errs := parallel.WorkPool(min(10, len(toSchedule)), func(work chan<- func() error) {
 		for _, i := range toSchedule {
-			i, d := i, resolvingDeps[i]
+			d := resolvingDeps[i]
 			work <- func() error {
 				if err := d.createIfNotExists(ctx, u.mutator, luciProject); err != nil {
 					return err
@@ -403,7 +403,6 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 	total := len(batch.GetTasks())
 	err := parallel.WorkPool(min(16, total), func(work chan<- func() error) {
 		for _, task := range batch.GetTasks() {
-			task := task
 			work <- func() error { return u.Schedule(ctx, task) }
 		}
 	})

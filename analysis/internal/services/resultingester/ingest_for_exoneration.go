@@ -86,10 +86,6 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 		}
 
 		for batch := range batchC {
-			// Bind to a local variable so it can be used in a goroutine without being
-			// overwritten. See https://go.dev/doc/faq#closures_and_goroutines
-			batch := batch
-
 			c <- func() error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					span.BufferWrite(ctx, batch.testResults...)

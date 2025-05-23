@@ -215,7 +215,6 @@ func TestQueryBuildsToSync(t *testing.T) {
 				}
 
 				for bks := range bkC {
-					bks := bks
 					allBks = append(allBks, bks...)
 				}
 			})

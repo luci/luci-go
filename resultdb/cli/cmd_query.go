@@ -195,7 +195,6 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 	resultC := make(chan resultItem)
 
 	for _, id := range invIDs {
-		id := id
 		eg.Go(func() error {
 			return r.fetchInvocation(ctx, id, resultC)
 		})
@@ -215,7 +214,6 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 		})
 	} else {
 		for _, id := range invIDs {
-			id := id
 			tmpl := resultItem{invocationID: id}
 			eg.Go(func() error {
 				return r.fetchItems(ctx, []string{id}, trMask, tmpl, resultC)

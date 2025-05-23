@@ -71,7 +71,6 @@ func declNative(name string, f nativeFunc) {
 func native(extra starlark.StringDict) starlark.Value {
 	dict := make(starlark.StringDict, len(nativeFuncs)+len(extra))
 	for name, cb := range nativeFuncs {
-		cb := cb
 		dict[name] = starlark.NewBuiltin(name, func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 			ctx := interpreter.Context(th)
 			return cb(nativeCall{

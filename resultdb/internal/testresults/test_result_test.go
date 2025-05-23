@@ -53,7 +53,6 @@ func TestMustParseName(t *testing.T) {
 				"invocations/a/tests/b/exonerations/c",
 			}
 			for _, name := range invalidNames {
-				name := name
 				assert.Loosely(t, func() { MustParseName(name) }, should.Panic)
 			}
 		})

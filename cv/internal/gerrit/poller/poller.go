@@ -243,7 +243,6 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 	errs := make(errors.MultiError, len(stateBefore.QueryStates.GetStates()))
 	err := parallel.WorkPool(10, func(work chan<- func() error) {
 		for i, qs := range stateBefore.QueryStates.GetStates() {
-			i, qs := i, qs
 			work <- func() error {
 				ctx := logging.SetField(ctx, "gHost", qs.GetHost())
 				err := p.doOneQuery(ctx, luciProject, qs)

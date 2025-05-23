@@ -897,7 +897,6 @@ func TestGetScalingType(t *testing.T) {
 		{"time based 2", &config.Config{Amount: &config.Amount{Change: changes}}, dynamicScalingType},
 	}
 	for _, tt := range cases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			actual := getScalingType(tt.input)

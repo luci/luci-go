@@ -150,7 +150,6 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	// Utilize multiple cores.
 	err = parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
 		for i, builder := range builders {
-			i, builder := i, builder
 			var isOptional bool
 			var useEquivalent bool
 			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 {

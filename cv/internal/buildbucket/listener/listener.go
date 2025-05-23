@@ -131,7 +131,6 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier, t
 	return func(ctx context.Context) error {
 		return parallel.FanOutIn(func(workCh chan<- func() error) {
 			for i := 0; i < NumConcurrentListeners; i++ {
-				i := i
 				workCh <- func() error {
 					return tqd.AddTask(ctx, &tq.Task{
 						Title: fmt.Sprintf("listener-%d", i),

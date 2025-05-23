@@ -103,7 +103,6 @@ func (b RecentQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key
 	allKeys := make([][]*datastore.Key, len(projects))
 	errs := parallel.WorkPool(min(16, len(projects)), func(work chan<- func() error) {
 		for i, p := range projects {
-			i, p := i, p
 			work <- func() error {
 				var err error
 				allKeys[i], err = b.keysForProject(ctx, p)

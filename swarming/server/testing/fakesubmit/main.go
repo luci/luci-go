@@ -101,7 +101,6 @@ func run(ctx context.Context) error {
 	results := make(chan execResult, *tasks)
 
 	for i := 0; i < *tasks; i++ {
-		i := i
 		go func() {
 			taskID := fmt.Sprintf("%s-%04d", *taskIDPrefix, i)
 			start := clock.Now(ctx)

@@ -487,7 +487,6 @@ func TestReplace(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(threads)
 		for th := 0; th < threads; th++ {
-			th := th
 			go func() {
 				defer wg.Done()
 				var oldpath string

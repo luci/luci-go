@@ -154,7 +154,6 @@ func createNewTasks(ctx context.Context, service swarming.Client, requests []*sw
 	results := make([]*swarmingv2.TaskRequestMetadataResponse, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {
 		for _, request := range requests {
-			request := request
 			gen <- func() error {
 				result, err := service.NewTask(ctx, request)
 				if err != nil {

@@ -60,8 +60,6 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 		buildStatusToUpdate := make([]*model.BuildStatus, len(buildsToUpdate))
 		err := mr.RunMulti(func(workC chan<- func() error) {
 			for i, b := range buildsToUpdate {
-				i := i
-				b := b
 				workC <- func() error {
 					statusUpdater := buildstatus.Updater{
 						Build:       b,
@@ -148,7 +146,6 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 			}
 
 			for bs := range ch {
-				bs := bs
 				workC <- func() error {
 					return errors.WrapIf(expireBuilds(ctx, bs, mr), "expireBuilds")
 				}

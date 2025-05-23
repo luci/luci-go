@@ -45,7 +45,6 @@ func TestASI(t *testing.T) {
 			}
 
 			for _, tc := range tests {
-				tc := tc
 				t.Run(tc.name, func(t *ftt.Test) {
 					assert.Loosely(t, AssembleASI(tc.in...), should.Match(tc.out), truth.Explain("encode"))
 					dec, err := DecodeASI(tc.out)

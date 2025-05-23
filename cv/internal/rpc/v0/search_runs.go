@@ -150,7 +150,6 @@ func populateRuns(ctx context.Context, runs []*run.Run) ([]*apiv0pb.Run, error) 
 	respRuns := make([]*apiv0pb.Run, len(runs))
 	errs := parallel.WorkPool(min(len(runs), 16), func(work chan<- func() error) {
 		for i, r := range runs {
-			i, r := i, r
 			work <- func() (err error) {
 				ctx := logging.SetField(ctx, "run", r.ID)
 				respRuns[i], err = populateRunResponse(ctx, r)

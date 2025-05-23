@@ -65,7 +65,6 @@ func Map[E any](ctx context.Context, q *datastore.Query, shards, batchSize int, 
 	logging.Infof(ctx, "Querying %d ranges in parallel...", len(ranges))
 	eg, ctx := errgroup.WithContext(ctx)
 	for idx, r := range ranges {
-		idx := idx
 		rangedQ := r.Apply(q)
 		eg.Go(func() error {
 			return datastore.RunBatch(ctx, int32(batchSize), rangedQ, func(e E) error {

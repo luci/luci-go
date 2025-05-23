@@ -117,7 +117,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			return nil
 		}
 		for i, r := range goBatchReq {
-			i, r := i, r
 			c <- func() (err error) {
 				ctx := ctx
 				method := ""

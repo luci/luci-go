@@ -498,7 +498,6 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 	return parallel.FanOutIn(func(tasks chan<- func() error) {
 		for job, triggers := range perJob {
 			jobID := job.JobID
-			triggers := triggers
 			tasks <- func() error {
 				return e.execEnqueueTriggersTask(c, &internal.EnqueueTriggersTask{
 					JobId:    jobID,

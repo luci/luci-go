@@ -241,7 +241,6 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 	eg, ctx := errgroup.WithContext(ctx)
 
 	for rows := range batchC {
-		rows := rows
 		if err := b.batchSem.Acquire(ctx, 1); err != nil {
 			// This can happen only if errgroup context is canceled, which usually
 			// happens on errors. Grab the error from the errgroup.

@@ -96,7 +96,6 @@ func RunTests(t *testing.T, opts Options) {
 	sort.Strings(files)
 
 	for _, f := range files {
-		f := f
 		t.Run(f, func(t *testing.T) { runSingleTest(t, f, opts) })
 	}
 }

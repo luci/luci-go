@@ -102,7 +102,6 @@ func TestParseGitilesURL(t *testing.T) {
 
 	ftt.Run(`parseGitilesURL`, t, func(t *ftt.Test) {
 		for _, tc := range cases {
-			tc := tc
 			t.Run(fmt.Sprintf("%q", tc.url), func(t *ftt.Test) {
 				commit, err := parseGitilesURL(tc.url, tc.ref)
 				if tc.err != "" {

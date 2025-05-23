@@ -97,7 +97,6 @@ type UpdateIncompleteRunsConfig struct {
 func (u *UpdateIncompleteRunsConfig) Do(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, id := range u.RunIDs {
-			id := id
 			work <- func() error {
 				return u.RunNotifier.UpdateConfig(ctx, id, u.Hash, u.EVersion)
 			}
@@ -116,7 +115,6 @@ type CancelIncompleteRuns struct {
 func (c *CancelIncompleteRuns) Do(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, id := range c.RunIDs {
-			id := id
 			work <- func() error {
 				return c.RunNotifier.Cancel(ctx, id, fmt.Sprintf("CV is disabled for LUCI Project %q", id.LUCIProject()))
 			}
@@ -135,7 +133,6 @@ type TriggerPurgeCLTasks struct {
 func (t *TriggerPurgeCLTasks) Do(ctx context.Context) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, p := range t.payloads {
-			p := p
 			work <- func() error {
 				return t.clPurger.Schedule(ctx, p)
 			}
@@ -157,7 +154,6 @@ func (t *ScheduleTriggeringCLDepsTasks) Do(ctx context.Context) error {
 	}
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, p := range t.payloads {
-			p := p
 			work <- func() error {
 				return t.clTriggerer.Schedule(ctx, p)
 			}

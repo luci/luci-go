@@ -116,7 +116,6 @@ func (l *Listener) reloadSubscribers(ctx context.Context, settings []*listenerpb
 	defer l.mu.Unlock()
 
 	for i, setting := range settings {
-		i, setting := i, setting
 		host := setting.GetHost()
 		if !activeHosts.Add(host) {
 			return fmt.Errorf("duplicate host %q; there must be a bug in the cfg validation", host)

@@ -146,7 +146,6 @@ func DeleteOldBuilds(c context.Context) error {
 			return parallel.WorkPool(nWorkers, func(workC chan<- func() error) {
 				for bks := range buildsC {
 					// Bind to a local variable so each worker can have their own copy.
-					bks := bks
 					workC <- func() error {
 						// Flatten first w/o filtering to calculate how many builds were
 						// actually removed.
@@ -513,7 +512,6 @@ func syncBuildsImpl(c context.Context) error {
 			return parallel.WorkPool(nWorkers, func(workC chan<- func() error) {
 				for builds := range buildsC {
 					// Bind to a local variable so each worker can have their own copy.
-					builds := builds
 					workC <- func() error {
 						for _, bs := range builds {
 							host, err := bs.GetHost()

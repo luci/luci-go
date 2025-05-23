@@ -86,7 +86,6 @@ var multiCLAnalysisMapperFactory = func(_ context.Context, j *dsmapper.Job, _ in
 		eg, ectx := errgroup.WithContext(ctx)
 		eg.SetLimit(8)
 		for _, r := range multiCLRuns {
-			r := r
 			eg.Go(func() error {
 				cls, err := run.LoadRunCLs(ectx, r.ID, r.CLs)
 				if err != nil {

@@ -65,7 +65,6 @@ func (k *KVS) GetMulti(ctx context.Context, keys []string, fn func(key string, v
 	if err := k.db.View(func(txn *badger.Txn) error {
 		eg, _ := errgroup.WithContext(ctx)
 		for _, key := range keys {
-			key := key
 			eg.Go(func() error {
 				item, err := txn.Get([]byte(key))
 				if err == badger.ErrKeyNotFound {

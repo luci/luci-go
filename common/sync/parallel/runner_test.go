@@ -50,8 +50,6 @@ func TestRunner(t *testing.T) {
 
 			// Dispatch iters tasks.
 			for i := 0; i < iters; i++ {
-				i := i
-
 				errC := r.RunOne(func() error {
 					atomic.AddInt32(&ac, int32(i))
 					return numberError(i)
@@ -166,7 +164,6 @@ func TestRunner(t *testing.T) {
 			assert.Loosely(t, func() {
 				errC = r.Run(func(ch chan<- func() error) {
 					for i := 0; i < 100; i++ {
-						i := i
 						ch <- func() error {
 							atomic.AddInt32(count, 1)
 							return fmt.Errorf("whaaattt: %d", i)

@@ -84,7 +84,6 @@ func checkBuilderQueue(ctx context.Context, bldrQ *model.BuilderQueue) {
 	eg, _ := errgroup.WithContext(ctx)
 	eg.SetLimit(64)
 	for _, b := range builds {
-		b := b
 		eg.Go(func() error {
 			if !protoutil.IsEnded(b.Status) {
 				return nil

@@ -228,7 +228,6 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	err = parallel.WorkPool(maxParallelism, func(c chan<- func() error) {
 		for i, entry := range entries {
 			// Capture value of loop variables.
-			i, entry := i, entry
 			c <- func() error {
 
 				// Read the test results from GCS.

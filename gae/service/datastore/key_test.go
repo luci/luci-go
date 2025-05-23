@@ -47,7 +47,6 @@ func TestKeyEncode(t *testing.T) {
 
 	ftt.Run("Key Round trip", t, func(t *ftt.Test) {
 		for _, k := range keys {
-			k := k
 			t.Run(k.String(), func(t *ftt.Test) {
 				enc := k.Encode()
 				dec, err := NewKeyEncoded(enc)

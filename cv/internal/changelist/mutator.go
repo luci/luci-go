@@ -494,11 +494,9 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 func (m *Mutator) handleBatchOnCLUpdatedTask(ctx context.Context, batch *BatchOnCLUpdatedTask) error {
 	errs := parallel.WorkPool(min(16, len(batch.GetProjects())+len(batch.GetRuns())), func(work chan<- func() error) {
 		for project, events := range batch.GetProjects() {
-			project, events := project, events
 			work <- func() error { return m.pm.NotifyCLsUpdated(ctx, project, events) }
 		}
 		for run, events := range batch.GetRuns() {
-			run, events := run, events
 			work <- func() error { return m.rm.NotifyCLsUpdated(ctx, common.RunID(run), events) }
 		}
 	})

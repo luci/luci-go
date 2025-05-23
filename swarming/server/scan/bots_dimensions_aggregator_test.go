@@ -173,7 +173,6 @@ func TestBotsDimensionsAggregator(t *testing.T) {
 	}
 
 	for _, cs := range cases {
-		cs := cs
 		t.Run(cs.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := memory.Use(context.Background())

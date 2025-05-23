@@ -117,7 +117,6 @@ func (t *testApp) shutdown() {
 	t.shutdownOnce.Do(func() {
 		var wg sync.WaitGroup
 		for _, s := range t.servers {
-			s := s
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -230,7 +229,6 @@ func (t *testApp) initServers(ctx context.Context) error {
 func (t *testApp) Serve() error {
 	eg := errgroup.Group{}
 	for _, s := range t.servers {
-		s := s
 		eg.Go(func() error {
 			defer t.shutdown()
 			return s.Serve()

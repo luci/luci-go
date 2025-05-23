@@ -83,7 +83,6 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 	errs := make(errors.MultiError, len(op.rcls))
 	poolError := parallel.WorkPool(min(len(op.rcls), 8), func(work chan<- func() error) {
 		for i, rcl := range op.rcls {
-			i, rcl := i, rcl
 			if op.Run.HasRootCL() && rcl.ID != op.Run.RootCL {
 				continue
 			}

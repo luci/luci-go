@@ -6,8 +6,9 @@ version: "2"
 # ref: https://golangci-lint.run/usage/configuration/#config-file
 
 linters:
-  disable:
+  enable:
     - copyloopvar
+  disable:
     - errcheck
     - errorlint
     - govet

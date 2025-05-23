@@ -467,7 +467,6 @@ func fetchShardSizes(ctx context.Context, baseQ *datastore.Query, shards []*shar
 
 	err := parallel.WorkPool(32, func(tasks chan<- func() error) {
 		for _, sh := range shards {
-			sh := sh
 			tasks <- func() error {
 				n, err := datastore.CountBatch(ctx, 1024, sh.Range.Apply(baseQ))
 				if err == nil {

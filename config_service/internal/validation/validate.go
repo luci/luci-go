@@ -78,7 +78,6 @@ func (v *Validator) Validate(ctx context.Context, cs config.Set, files []File) (
 	results := make([]*cfgcommonpb.ValidationResult, len(srvValidators))
 	eg, ectx := errgroup.WithContext(ctx)
 	for i, sv := range srvValidators {
-		i, sv := i, sv
 		eg.Go(func() (err error) {
 			filePaths := make([]string, len(sv.files))
 			for i, file := range sv.files {

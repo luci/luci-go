@@ -384,7 +384,6 @@ func FetchLatestRealmsConfigs(ctx context.Context) (map[string]*config.Config, e
 
 	// Get other projects' realms configs.
 	for _, project := range projects {
-		project := project
 		eg.Go(func() error {
 			return latestMap.getLatestConfig(childCtx, client, project)
 		})

@@ -161,7 +161,6 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 	withBrokenDS(func() {
 		parallel.WorkPool(16, func(work chan<- func() error) {
 			for i := 1; i <= 500; i++ {
-				i := i
 				work <- func() error {
 					return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						task := &tq.Task{Payload: &durationpb.Duration{Seconds: int64(i)}}

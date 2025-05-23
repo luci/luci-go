@@ -116,8 +116,6 @@ func queryDepChangeInfos(ctx context.Context, cl *changelist.CL) ([]*apiv0pb.Get
 	infos := make([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo, 0, len(cl.Snapshot.Deps))
 	var infosMu sync.Mutex
 	for _, dep := range cl.Snapshot.Deps {
-		dep := dep // See https://go.dev/blog/loopvar-preview for why this is needed before Go 1.22.
-
 		eg.Go(func() error {
 			depClid := common.CLID(dep.Clid)
 

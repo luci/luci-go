@@ -119,7 +119,6 @@ func UpdateProjectCfg(ctx context.Context) error {
 	cfgs := make([]*config.Config, len(cfgMetas))
 	err = parallel.WorkPool(min(64, len(cfgMetas)), func(work chan<- func() error) {
 		for i, meta := range cfgMetas {
-			i := i
 			cfgSet := meta.ConfigSet
 			work <- func() error {
 				cfg, err := client.GetConfig(ctx, cfgSet, "${appid}.cfg", false)
@@ -620,8 +619,6 @@ func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.Buildbucket
 	errs := make(errors.MultiError, len(topics))
 	_ = parallel.WorkPool(min(6, len(topics)), func(work chan<- func() error) {
 		for i, topic := range topics {
-			i := i
-			topic := topic
 			cloudProj, topicID, err := clients.ValidatePubSubTopicName(topic.Name)
 			if err != nil {
 				errs[i] = err

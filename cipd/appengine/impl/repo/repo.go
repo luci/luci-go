@@ -443,7 +443,6 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 	err = parallel.WorkPool(8, func(tasks chan<- func() error) {
 		mu := sync.Mutex{}
 		for _, pfx := range visibleRoots {
-			pfx := pfx
 			tasks <- func() error {
 				// TODO(vadimsh): This is inefficient for non-recursive listings.
 				// Unfortunately we have to do the recursive listing to discover
@@ -1590,7 +1589,6 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 		// Call describeBootstrapFile in parallel for each requested variant.
 		err = parallel.WorkPool(16, func(tasks chan<- func() error) {
 			for _, variant := range r.Variants {
-				variant := variant
 				tasks <- func() error {
 					bf, err := impl.describeBootstrapFile(ctx, r.Prefix+"/"+variant, r.Version)
 					mu.Lock()

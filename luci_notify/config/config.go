@@ -275,7 +275,6 @@ func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
 	}
 	return parallel.WorkPool(10, func(work chan<- func() error) {
 		for _, p := range allProjects {
-			p := p
 			if !liveProjects.Has(p.Name) {
 				work <- func() error {
 					logging.Warningf(c, "deleting project %s", p.Name)
@@ -333,8 +332,6 @@ func updateProjects(c context.Context) error {
 	// Update each project concurrently.
 	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for _, cfg := range configs {
-			cfg := cfg
-
 			curRev, ok := projectRevisions[cfg.ConfigSet.Project()]
 			if ok && curRev == cfg.Revision {
 				// Same revision.

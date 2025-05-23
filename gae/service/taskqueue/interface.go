@@ -56,7 +56,6 @@ func addRaw(raw RawInterface, queueName string, tasks []*Task) error {
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		offset := 0
 		for _, batch := range makeBatches(tasks, raw.Constraints().MaxAddSize) {
-			batch := batch
 			i := offset
 			offset += len(batch)
 			work <- func() error {
@@ -94,7 +93,6 @@ func Delete(c context.Context, queueName string, tasks ...*Task) error {
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		offset := 0
 		for _, batch := range makeBatches(tasks, raw.Constraints().MaxDeleteSize) {
-			batch := batch
 			localOffset := offset
 			offset += len(batch)
 			work <- func() error {

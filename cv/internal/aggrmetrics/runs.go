@@ -162,7 +162,6 @@ func initRunStats(ctx context.Context, projects []string) (*runStats, error) {
 	// datastore.
 	err := parallel.WorkPool(min(8, len(projects)), func(work chan<- func() error) {
 		for _, project := range projects {
-			project := project
 			work <- func() error {
 				switch meta, err := prjcfg.GetLatestMeta(ctx, project); {
 				case err != nil:

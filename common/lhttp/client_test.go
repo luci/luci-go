@@ -166,7 +166,6 @@ func TestNewRequestDefaultFactory(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(fmt.Sprintf("Status code %d, path %q", tc.statusCode, tc.path), func(t *testing.T) {
 			t.Parallel()
 			serverCalls := 0

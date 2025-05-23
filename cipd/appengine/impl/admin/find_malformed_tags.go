@@ -78,7 +78,6 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFix
 	err = parallel.WorkPool(32, func(tasks chan<- func() error) {
 		var mu sync.Mutex
 		for _, keys := range perRoot {
-			keys := keys
 			root := keys[0].Root()
 			tasks <- func() error {
 				var fixedHere []*api.TagFixReport_Tag

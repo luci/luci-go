@@ -257,10 +257,6 @@ func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*
 		}
 
 		for batch := range batchC {
-			// Bind to a local variable so it can be used in a goroutine without being
-			// overwritten. See https://go.dev/doc/faq#closures_and_goroutines
-			batch := batch
-
 			c <- func() error {
 				// Write to different tables in different transactions to minimize the
 				// number of splits involved in each transaction.

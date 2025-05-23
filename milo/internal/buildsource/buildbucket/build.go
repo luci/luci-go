@@ -138,8 +138,6 @@ func getRelatedBuilds(c context.Context, now *timestamppb.Timestamp, client buil
 	resps := make([]*buildbucketpb.SearchBuildsResponse, len(bs))
 	if err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i, buildset := range bs {
-			i := i
-			buildset := buildset
 			ch <- func() (err error) {
 				logging.Debugf(c, "Searching for %s (%d)", buildset, i)
 				resps[i], err = client.SearchBuilds(c, searchBuildset(buildset, summaryBuildsMask))

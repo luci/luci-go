@@ -60,7 +60,6 @@ func (portalPage) Overview(ctx context.Context) (template.HTML, error) {
 func (portalPage) Actions(ctx context.Context) ([]portal.Action, error) {
 	var actions []portal.Action
 	for _, id := range Default.handlerIDs() {
-		id := id
 		actions = append(actions, portal.Action{
 			ID:    genActionID(id),
 			Title: fmt.Sprintf("Run %q now", id),

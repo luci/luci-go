@@ -156,7 +156,6 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	cmRes := make(map[string]time.Time)
 	var mu sync.Mutex
 	for _, name := range cmNames {
-		name := name
 		eg.Go(func() (err error) {
 			var b []*model.Build
 			if err = datastore.GetAll(eCtx, q.Eq("custom_builder_max_age_metrics", name), &b); err != nil {
@@ -251,9 +250,7 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 		cmCounts[name] = make(map[pb.Status]int64)
 	}
 	for _, name := range cmNames {
-		name := name
 		for _, status := range statuses {
-			status := status
 			eg.Go(func() (err error) {
 				mu.Lock()
 				defer mu.Unlock()
@@ -318,9 +315,7 @@ func reportConsecutiveFailures(ctx context.Context, project, bucket, builder str
 		cmCounts[name] = make(map[pb.Status]int64)
 	}
 	for _, name := range cmNames {
-		name := name
 		for _, status := range statuses {
-			status := status
 			eg.Go(func() (err error) {
 				mu.Lock()
 				defer mu.Unlock()

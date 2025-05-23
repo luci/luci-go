@@ -516,8 +516,6 @@ func BatchCreateBackendBuildTasks(ctx context.Context, batchTask *taskdefs.Batch
 		eg, _ := errgroup.WithContext(ctx)
 		eg.SetLimit(64)
 		for i, req := range batchTask.Requests {
-			i := i
-			req := req
 			eg.Go(func() error {
 				merr[i] = fn(ctx, req)
 				return nil

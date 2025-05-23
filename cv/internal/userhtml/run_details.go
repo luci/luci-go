@@ -171,7 +171,6 @@ func computeCLsAndLinks(ctx context.Context, cls []*run.RunCL, rid common.RunID)
 	ret := make([]*clAndNeighborRuns, len(cls))
 	eg, ctx := errgroup.WithContext(ctx)
 	for i, cl := range cls {
-		i, cl := i, cl
 		eg.Go(func() error {
 			prev, next, err := getNeighborsByCL(ctx, cl, rid)
 			if err != nil {

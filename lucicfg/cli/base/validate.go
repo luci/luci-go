@@ -168,7 +168,6 @@ func validateOutput(ctx context.Context, output lucicfg.Output, cfgConn ConfigSe
 	wg := sync.WaitGroup{}
 	wg.Add(len(configSets))
 	for i, cs := range configSets {
-		i, cs := i, cs
 		go func() {
 			results[i] = cs.Validate(ctx, validator)
 			wg.Done()

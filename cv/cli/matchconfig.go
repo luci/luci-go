@@ -90,7 +90,6 @@ func (r *matchConfigRun) Run(a subcommands.Application, args []string, env subco
 	results := make([]matchResult, len(clURLs))
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		for i, clURL := range clURLs {
-			i, clURL := i, clURL
 			matcher := cfgmatcher.LoadMatcherFromConfigGroups(ctx, prjCfgGroups, nil)
 			work <- func() error {
 				results[i] = r.match(ctx, clURL, matcher)

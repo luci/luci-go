@@ -156,7 +156,6 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 	// but the current version was good enough in load tests already.
 	merr := parallel.WorkPool(16, func(work chan<- func() error) {
 		for _, r := range payloaded {
-			r := r
 			work <- func() error {
 				err := SubmitFromReminder(ctx, sub, db, r, TxnPathSweep)
 				if err != nil {

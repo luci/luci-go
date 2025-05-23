@@ -29,8 +29,6 @@ func ExampleSemaphore() {
 	done := make([]int, 20)
 	wg := sync.WaitGroup{}
 	for i := 0; i < len(done); i++ {
-		i := i
-
 		wg.Add(1)
 		sem.Lock()
 		go func() {

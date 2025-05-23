@@ -96,8 +96,6 @@ func readConfigCron(ctx context.Context, adminServer admin.AdminServer) error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(fetchers))
 	for idx, fetcher := range fetchers {
-		idx := idx
-		fetcher := fetcher
 		go func() {
 			defer wg.Done()
 			if _, err := fetcher.cb(ctx, nil); err != nil {
@@ -125,8 +123,6 @@ func fetchCRLCron(ctx context.Context, caServer admin.CertificateAuthoritiesServ
 	wg := sync.WaitGroup{}
 	wg.Add(len(list.Cn))
 	for idx, cn := range list.Cn {
-		idx := idx
-		cn := cn
 		go func() {
 			defer wg.Done()
 			if _, err := caServer.FetchCRL(ctx, &admin.FetchCRLRequest{Cn: cn}); err != nil {

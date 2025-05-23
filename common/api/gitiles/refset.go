@@ -114,7 +114,6 @@ func (w RefSet) Resolve(ctx context.Context, client gitiles.GitilesClient, proje
 	refTips = map[string]string{}
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		for prefix := range w.byPrefix {
-			prefix := prefix
 			work <- func() error {
 				resp, err := client.Refs(ctx, &gitiles.RefsRequest{Project: project, RefsPath: prefix})
 				if err != nil {

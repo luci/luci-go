@@ -261,7 +261,6 @@ func (a Application) Run(c context.Context) error {
 		// Run "google-api-go-generator" against the hosted service.
 		err = parallel.FanOutIn(func(taskC chan<- func() error) {
 			for i, item := range dir.Items {
-				item := item
 				c := log.SetFields(c, log.Fields{
 					"index": i,
 					"api":   item.ID,

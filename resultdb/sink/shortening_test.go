@@ -129,7 +129,6 @@ func TestTruncateTestIDComponent(t *testing.T) {
 			},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				gotTruncated, gotResult, gotResultBytes := truncateTestIDComponent(tc.input, tc.maxLengthBytes, tc.additionalCutoutBytes)
 				assert.That(t, gotTruncated, should.Equal(tc.wantTruncated))
@@ -213,7 +212,6 @@ func TestShortenIDComponent(t *testing.T) {
 			},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				gotResult, gotResultBytes, err := shortenIDComponent(tc.input, tc.maxLengthBytes)
 				if tc.wantErr != "" {
@@ -385,7 +383,6 @@ func TestShortenCaseNameComponents(t *testing.T) {
 			},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				gotResult, gotResultBytes, err := shortenCaseNameComponents(tc.input, tc.maxLengthBytes)
 				if tc.wantErr != "" {
@@ -499,7 +496,6 @@ func TestShortenStructuredID(t *testing.T) {
 			},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				gotResult, err := shortenStructuredID(tc.input, tc.maxLengthBytes)
 				if tc.wantErr != "" {
@@ -555,7 +551,6 @@ func TestShortenTestID(t *testing.T) {
 			},
 		}
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				gotResult, err := shortenTestID(tc.input, tc.maxBytes)
 				if tc.wantErr != "" {

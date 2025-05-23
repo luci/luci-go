@@ -48,7 +48,6 @@ func TestMultipleDeployProcesses(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(procs)
 	for p := 0; p < procs; p++ {
-		p := p
 		go func() {
 			defer wg.Done()
 			// Run a crashing process first, to emulate an unowned lock.

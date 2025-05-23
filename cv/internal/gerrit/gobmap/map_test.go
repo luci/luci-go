@@ -412,7 +412,6 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 		eg, egCtx := errgroup.WithContext(ctx)
 		retries := make([]int, workers)
 		for w := 0; w < workers; w++ {
-			w := w
 			eg.Go(func() error {
 				for i := w; i < len(tasks); i += workers {
 				retryLoop:

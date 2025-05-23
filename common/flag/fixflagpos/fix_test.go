@@ -58,7 +58,6 @@ func TestFixSubcommands(t *testing.T) {
 				Out: s("--", "-flag", "100", "world", "hello")},
 		}
 		for _, tc := range tests {
-			tc := tc
 			t.Run(tc.Name, func(t *ftt.Test) {
 				assert.Loosely(t, Fix(tc.In), should.Match(tc.Out))
 			})
@@ -82,7 +81,6 @@ func TestFixSubcommands(t *testing.T) {
 				Out: s("hello", "-flag", "100", "world")},
 		}
 		for _, tc := range tests {
-			tc := tc
 			t.Run(tc.Name, func(t *ftt.Test) {
 				assert.Loosely(t, FixSubcommands(tc.In), should.Match(tc.Out))
 			})

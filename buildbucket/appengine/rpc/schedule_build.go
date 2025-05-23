@@ -2014,8 +2014,6 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	// Validate requests.
 	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
 		for i, req := range reqs {
-			i := i
-			req := req
 			work <- func() error {
 				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
 				return nil
@@ -2046,9 +2044,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 			if bld == nil {
 				continue
 			}
-			i := i
 			origI := idxMapValidReqs[i]
-			bld := bld
 			work <- func() error {
 				// Note: We don't redact the Build response here because we expect any user with
 				// BuildsAdd permission should also have BuildsGet.

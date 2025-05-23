@@ -119,7 +119,6 @@ func TestSanitize(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(c.in, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			err := Sanitize(buf, strings.NewReader(c.in))

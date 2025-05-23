@@ -123,7 +123,6 @@ func TestPropertyMapSerialization(t *testing.T) {
 	ftt.Run("PropertyMap serialization", t, func(t *ftt.Test) {
 		t.Run("round trip", func(t *ftt.Test) {
 			for _, tc := range tests {
-				tc := tc
 				t.Run(tc.name, func(t *ftt.Test) {
 					data := SerializeKC.ToBytes(tc.props)
 					dec, err := Deserialize.PropertyMap(mkBuf(data))

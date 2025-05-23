@@ -163,7 +163,6 @@ func (tc *tasksCleaner) execCleanupTask(ctx context.Context, t *taskspb.CleanupO
 	)
 
 	for _, taskID := range t.TaskIds {
-		taskID := taskID
 		key, err := model.TaskIDToRequestKey(ctx, taskID)
 		if err != nil {
 			// This should not be happening.

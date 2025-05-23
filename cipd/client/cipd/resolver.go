@@ -132,8 +132,6 @@ func (r *Resolver) ResolveAllPlatforms(ctx context.Context, file *ensure.File) (
 	// Note: errors are reported through 'results'.
 	parallel.FanOutIn(func(tasks chan<- func() error) {
 		for idx, plat := range file.VerifyPlatforms {
-			idx := idx
-			plat := plat
 			tasks <- func() error {
 				ret, err := r.Resolve(ctx, file, plat.Expander())
 				results[idx] = resolvedOrErr{ret, err}

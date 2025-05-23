@@ -132,7 +132,6 @@ func TestMakeDimensionEditCommands(t *testing.T) {
 
 	ftt.Run(`MakeDimensionEditCommands`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				dec, err := MakeDimensionEditCommands(tc.cmds)
 				if tc.err == "" {

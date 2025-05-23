@@ -68,7 +68,6 @@ func (d *Driver) Cron(ctx context.Context) error {
 	var wg sync.WaitGroup
 	wg.Add(len(d.aggregators))
 	for i, a := range d.aggregators {
-		i, a := i, a
 		go func() {
 			defer wg.Done()
 			if err := a.report(ctx, active); err != nil {

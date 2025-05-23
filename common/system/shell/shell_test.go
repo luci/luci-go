@@ -61,7 +61,6 @@ func TestQuoteUnix(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		tt := tt
 		t.Run(strings.Join(tt.in, " "), func(t *testing.T) {
 			t.Parallel()
 			expected := tt.out

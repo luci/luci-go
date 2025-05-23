@@ -365,7 +365,6 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 		t.Run("happy path: fetches CL in ignorable state", func(t *ftt.Test) {
 			for _, s := range []gerritpb.ChangeStatus{gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED} {
-				s := s
 				t.Run(s.String(), func(t *ftt.Test) {
 					ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
 						gf.CI(gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.Status(s),

@@ -266,8 +266,6 @@ func TestPoolFromDimensions(t *testing.T) {
 		},
 	}
 	for i, c := range cases {
-		i := i
-		c := c
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			got := poolFromDimensions(c.input)
 			if diff := cmp.Diff(c.want, got); diff != "" {

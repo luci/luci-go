@@ -52,7 +52,6 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 	var respSize int64
 	_ = parallel.WorkPool(8, func(workC chan<- func() error) {
 		for i, e := range req.Req {
-			i, e := i, e
 			workC <- func() error {
 				c := logging.SetField(c, "batchIndex", i)
 

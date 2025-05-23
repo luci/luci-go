@@ -48,8 +48,6 @@ func TestFanOutIn(t *testing.T) {
 
 		err := FanOutIn(func(taskC chan<- func() error) {
 			for i := 0; i < iters; i++ {
-				i := i
-
 				taskC <- func() error {
 					if i == (iters - 1) {
 						return terr

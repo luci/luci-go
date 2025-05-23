@@ -115,7 +115,6 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 
 	err = parallel.WorkPool(32, func(workCh chan<- func() error) {
 		for _, task := range tasks {
-			task := task
 			workCh <- func() (err error) {
 				if err = r.tqd.AddTask(ctx, task); err != nil {
 					logging.Errorf(ctx, "Failed to submit task for %q: %s", task.Title, err)

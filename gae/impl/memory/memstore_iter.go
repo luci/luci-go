@@ -54,7 +54,6 @@ func multiIterate(defs []*iterDefinition, cb func(suffix []byte) error) error {
 	prefixLens := make([]int, len(defs))
 	for i, def := range defs {
 		// bind i so that the defer below doesn't get goofed by the loop variable
-		i := i
 		ts[i] = def.mkIter()
 		prefixLens[i] = def.prefixLen
 	}

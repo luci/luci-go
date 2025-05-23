@@ -206,7 +206,6 @@ func (c *Cancellator) cancelTryjobs(ctx context.Context, tjs []*tryjob.Tryjob) e
 	}
 	errs := parallel.WorkPool(min(8, len(tjs)), func(work chan<- func() error) {
 		for _, tj := range tjs {
-			tj := tj
 			work <- func() error {
 				be, err := c.backendFor(tj)
 				if err != nil {

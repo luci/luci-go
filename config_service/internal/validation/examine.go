@@ -67,7 +67,6 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 	ret := &ExamineResult{}
 	var mu sync.Mutex
 	for _, file := range files {
-		file := file
 		eg.Go(func() error {
 			services := v.Finder.FindInterestedServices(ectx, cs, file.GetPath())
 			if len(services) == 0 {

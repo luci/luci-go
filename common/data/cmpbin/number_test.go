@@ -73,7 +73,6 @@ func TestWrite(t *testing.T) {
 	t.Parallel()
 	ftt.Run("WriteFuncs", t, func(t *ftt.Test) {
 		for _, c := range cases {
-			c := c
 			t.Run(fmt.Sprintf("%d -> % x", c.val, c.expect), func(t *ftt.Test) {
 				t.Run("Write", func(t *ftt.Test) {
 					buf := &bytes.Buffer{}
@@ -100,7 +99,6 @@ func TestWrite(t *testing.T) {
 func TestRead(t *testing.T) {
 	ftt.Run("Read", t, func(t *ftt.Test) {
 		for _, c := range cases {
-			c := c
 			t.Run(fmt.Sprintf("% x -> %d", c.expect, c.val), func(t *ftt.Test) {
 				buf := bytes.NewBuffer(c.expect)
 				v, n, err := ReadInt(buf)

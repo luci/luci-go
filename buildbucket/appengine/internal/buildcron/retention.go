@@ -95,7 +95,6 @@ func DeleteOldBuilds(ctx context.Context) error {
 		}
 
 		for bks := range ch {
-			bks := bks
 			workC <- func() error { return deleteBuilds(ctx, bks) }
 		}
 	})

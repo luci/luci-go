@@ -145,7 +145,6 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 	// Enqueue tasks
 	err = parallel.WorkPool(8, func(workCh chan<- func() error) {
 		for _, cs := range cfgSets {
-			cs := cs
 			workCh <- func() error {
 				err := dispatcher.AddTask(ctx, &tq.Task{
 					Payload: &taskpb.ImportConfigs{ConfigSet: cs},

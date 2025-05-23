@@ -265,7 +265,6 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 	resolved := make([]*resolveWorkItem, len(toResolve))
 	parallel.FanOutIn(func(tasks chan<- func() error) {
 		for _, p := range toResolve {
-			p := p
 			tasks <- func() error {
 				p.pin, p.err = rslv(p.pkg, p.def.UnresolvedVersion)
 				if p.err == nil {

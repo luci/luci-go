@@ -177,7 +177,6 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 	ch := make(chan struct{}, runtime.NumCPU())
 
 	for _, dst := range dsts {
-		dst := dst
 		src := srcs[dst.Digest]
 		ch <- struct{}{}
 		eg.Go(func() (err error) {
@@ -256,8 +255,6 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.
 		var eg errgroup.Group
 
 		for _, output := range outputs {
-			output := output
-
 			eg.Go(func() error {
 				b, err := func() ([]byte, error) {
 					ch <- struct{}{}

@@ -326,7 +326,6 @@ func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 
 	return parallel.WorkPool(16, func(workC chan<- func() error) {
 		for _, rowSet := range batch(rows, u.batchSize()) {
-			rowSet := rowSet
 			workC <- func() error {
 				var failed int
 				err := u.Inserter.Put(ctx, rowSet)

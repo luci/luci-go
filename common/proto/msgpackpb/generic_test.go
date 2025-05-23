@@ -170,7 +170,6 @@ func TestRoundtrip(t *testing.T) {
 
 	ftt.Run(`TestRoundtrip`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				raw, err := Marshal(tc.input, tc.options...)
 				if tc.err == "" {
@@ -316,7 +315,6 @@ func TestDecode(t *testing.T) {
 
 	ftt.Run(`TestDecode`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.name, func(t *ftt.Test) {
 				enc := msgpack.GetEncoder()
 				defer msgpack.PutEncoder(enc)

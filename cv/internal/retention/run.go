@@ -86,7 +86,6 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 	wg.Add(len(projects))
 	poolErr := parallel.WorkPool(min(8, len(projects)), func(workCh chan<- func() error) {
 		for _, proj := range projects {
-			proj := proj
 			workCh <- func() error {
 				defer wg.Done()
 				runs, err := findRunsToWipeoutForProject(ctx, proj, cutoff)
@@ -158,7 +157,6 @@ func wipeoutRuns(ctx context.Context, runIDs common.RunIDs, rm rm) error {
 
 	return parallel.WorkPool(min(10, len(runIDs)), func(workC chan<- func() error) {
 		for _, r := range runs {
-			r := r
 			workC <- func() error {
 				return wipeoutRun(ctx, r, rm)
 			}

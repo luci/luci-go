@@ -202,7 +202,6 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
 	m := logMultiplexer{Chans: make([]logChan, len(addrs))}
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		for i, addr := range addrs {
-			i := i
 			stream := client.Stream(addr.Project, addr.Path)
 			fetchers[i] = stream.Fetcher(ctx, nil)
 			work <- func() error {
@@ -224,7 +223,6 @@ func (r *logRun) printLogs(ctx context.Context, logs []*pb.Log) error {
 
 	// Start fetching.
 	for i := range m.Chans {
-		i := i
 		c := make(chan logAndErr, 256)
 		m.Chans[i].c = c
 		go func() {

@@ -240,8 +240,6 @@ func RunBotVisitor(ctx context.Context, v BotVisitor, b []FakeBot) error {
 	var wg sync.WaitGroup
 	wg.Add(len(shards))
 	for shardIdx, shard := range shards {
-		shardIdx := shardIdx
-		shard := shard
 		go func() {
 			defer wg.Done()
 			for _, bot := range shard {

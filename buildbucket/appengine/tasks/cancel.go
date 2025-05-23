@@ -109,7 +109,6 @@ func CancelChildren(ctx context.Context, bID int64) error {
 	summary := fmt.Sprintf("cancel since the parent %d is canceled", bID)
 
 	for _, child := range children {
-		child := child
 		eg.Go(func() error {
 			_, err := StartCancel(ctx, child.ID, summary)
 			return err

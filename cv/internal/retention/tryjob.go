@@ -97,7 +97,6 @@ func wipeoutTryjobs(ctx context.Context, ids common.TryjobIDs) error {
 	}
 	return parallel.WorkPool(min(10, len(tryjobs)), func(workCh chan<- func() error) {
 		for _, tj := range tryjobs {
-			tj := tj
 			workCh <- func() error {
 				return wipeoutTryjob(ctx, tj)
 			}

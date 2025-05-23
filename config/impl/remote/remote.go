@@ -242,7 +242,6 @@ func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter f
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 	for _, cfg := range filtered {
-		cfg := cfg
 		eg.Go(func() error {
 			body, err := r.grpcClient.GetConfig(ectx, &pb.GetConfigRequest{
 				ConfigSet:     string(cfgSet),

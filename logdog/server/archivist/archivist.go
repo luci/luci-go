@@ -736,8 +736,6 @@ func (d *stagingPaths) addMetrics(ctx context.Context, projectField, archiveFiel
 func (sa *stagedArchival) finalize(ar *logdog.ArchiveStreamRequest) error {
 	err := parallel.FanOutIn(func(taskC chan<- func() error) {
 		for _, d := range sa.getStagingPaths() {
-			d := d
-
 			// Don't finalize zero-sized streams.
 			if !d.enabled() || d.bytesWritten == 0 {
 				continue

@@ -112,9 +112,6 @@ func AssignTaskNumbers(ctx context.Context) error {
 
 	return parallel.FanOutIn(func(tasks chan<- func() error) {
 		for target, set := range perTarget {
-			target := target
-			set := set
-
 			tasks <- func() error {
 				// "Flush" all pending expired instances.
 				if err := set.cleanupExpired(ctx); err != nil {

@@ -149,7 +149,6 @@ func Register(
 			if onlyOneTable != "" && table != onlyOneTable {
 				continue
 			}
-			table := table
 			eg.Go(func() error {
 				return scheduleExportTasks(
 					ctx, disp, keyPrefix, maxTasks,

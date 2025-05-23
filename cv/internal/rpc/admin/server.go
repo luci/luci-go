@@ -298,7 +298,6 @@ func (a *AdminServer) SearchRuns(ctx context.Context, req *adminpb.SearchRunsReq
 	runs := make([]*adminpb.GetRunResponse, len(runKeys))
 	errs := parallel.WorkPool(min(len(runKeys), 16), func(work chan<- func() error) {
 		for i, key := range runKeys {
-			i, key := i, key
 			work <- func() (err error) {
 				runs[i], err = loadRunAndEvents(ctx, common.RunID(key.StringID()), shouldSkip)
 				return
@@ -426,7 +425,6 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 	cls := make([]*changelist.CL, len(p.State.GetPcls()))
 	errs := parallel.WorkPool(20, func(work chan<- func() error) {
 		for i, pcl := range p.State.GetPcls() {
-			i := i
 			id := pcl.GetClid()
 			work <- func() error {
 				// Load individual CL to avoid OOMs.

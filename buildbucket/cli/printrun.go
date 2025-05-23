@@ -300,7 +300,6 @@ func (r *printRun) runUnordered(ctx context.Context, jobs int, argC <-chan strin
 			if ctx.Err() != nil {
 				break
 			}
-			arg := arg
 			work <- func() error {
 				build, err := fn(ctx, arg)
 				resultC <- buildResult{arg, build, err}

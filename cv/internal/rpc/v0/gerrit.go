@@ -37,7 +37,6 @@ func populateRunInfo(ctx context.Context, runs []*run.Run) ([]*apiv0pb.GetCLRunI
 	respRuns := make([]*apiv0pb.GetCLRunInfoResponse_RunInfo, len(runs))
 	errs := parallel.WorkPool(min(len(runs), 16), func(work chan<- func() error) {
 		for i, r := range runs {
-			i, r := i, r
 			work <- func() (err error) {
 				respRuns[i], err = populateRunInfoResponse(ctx, r)
 				return err

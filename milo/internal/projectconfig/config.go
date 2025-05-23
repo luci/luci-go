@@ -500,7 +500,6 @@ func UpdateProjects(c context.Context) error {
 	// We don't want to run all of them sequentially.
 	parallel.WorkPool(8, func(tasks chan<- func() error) {
 		for _, cfg := range cfgs {
-			cfg := cfg
 			tasks <- func() error {
 				project, miloCfg, miloCfgMeta, err := fetchProject(c, &cfg)
 				results <- result{
@@ -539,7 +538,6 @@ func UpdateProjects(c context.Context) error {
 	// external console references along the way.
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		for _, res := range resultsList {
-			res := res
 			// If there was an error fetching this project, don't apply any Datastore changes.
 			if res.err != nil {
 				continue

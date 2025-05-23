@@ -129,7 +129,6 @@ func ComputeLogs(c context.Context, luciProject string, oldCheckout, newCheckout
 	result := make(Logs)
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for repo, revision := range newCheckout {
-			repo := repo
 			newRev := revision
 			oldRev, ok := oldCheckout[repo]
 			if !ok {

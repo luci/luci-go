@@ -191,8 +191,6 @@ func TestExtractTimestamp(t *testing.T) {
 			}
 
 			for _, tc := range testCases {
-				tc := tc
-
 				t.Run(tc.description, func(t *ftt.Test) {
 					actualTimestamp, err := extractTimestamp(tc.line, tc.year)
 
@@ -344,8 +342,6 @@ func TestExtractSeverity(t *testing.T) {
 			}
 
 			for _, tc := range testCases {
-				tc := tc
-
 				t.Run(tc.description, func(t *ftt.Test) {
 					actual := extractSeverity(tc.logLine)
 					assert.Loosely(t, actual, should.Equal(tc.expected))

@@ -50,7 +50,6 @@ func TestRunMulti(t *testing.T) {
 				// Runner, this would prevent the top-level dispatchers' dispatched
 				// routines from running.
 				for i := 0; i < n; i++ {
-					i := i
 					workC <- func() error {
 						// Take one token.
 						<-tokenC
@@ -98,8 +97,6 @@ func TestRunMulti(t *testing.T) {
 		err := RunMulti(c, 1, func(mr MultiRunner) error {
 			return mr.RunMulti(func(workC chan<- func() error) {
 				for i := 0; i < n; i++ {
-					i := i
-
 					if i == cancelPoint {
 						// This and all future work should not be dispatched. Our previous
 						// work item *may* execute depending on whether it was dispatched

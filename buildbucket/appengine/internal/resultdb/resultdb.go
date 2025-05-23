@@ -78,8 +78,6 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, opts []Create
 
 	_ = parallel.WorkPool(64, func(ch chan<- func() error) {
 		for i, b := range builds {
-			i := i
-			b := b
 			proj := b.Proto.Builder.Project
 			if !b.Proto.GetInfra().GetResultdb().GetEnable() {
 				continue

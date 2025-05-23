@@ -191,7 +191,6 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 	}
 	eg, ectx := errgroup.WithContext(ctx)
 	for _, uf := range uploadFiles {
-		uf := uf
 		eg.Go(func() error {
 			logging.Debugf(ectx, "Uploading file %q for validation", uf.GetPath())
 			start := clock.Now(ctx)

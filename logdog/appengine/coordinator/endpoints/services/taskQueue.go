@@ -245,7 +245,6 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 
 	parallel.WorkPool(8, func(ch chan<- func() error) {
 		for _, task := range tasks {
-			task := task
 			at, err := archiveTask(task, queueNumber)
 			if err != nil {
 				// Ignore malformed name errors, just log them.
@@ -302,7 +301,6 @@ func (s *server) DeleteArchiveTasks(c context.Context, req *logdog.DeleteRequest
 
 	return &emptypb.Empty{}, parallel.WorkPool(8, func(ch chan<- func() error) {
 		for queueNumber, tasks := range tasksPerQueue {
-			queueNumber, tasks := queueNumber, tasks
 			queueName := RawArchiveQueueName(queueNumber)
 
 			ch <- func() error {

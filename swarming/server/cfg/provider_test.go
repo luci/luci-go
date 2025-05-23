@@ -217,8 +217,6 @@ func TestProviderConcurrencyStressTest(t *testing.T) {
 	defer wg.Wait()
 
 	for idx := 0; idx < goroutineCount; idx++ {
-		idx := idx
-
 		go func() {
 			defer wg.Done()
 

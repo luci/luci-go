@@ -32,7 +32,6 @@ import (
 func Group(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
 	var wg sync.WaitGroup
 	for i := 0; i < replicas; i++ {
-		i := i
 		ctx := logging.SetField(ctx, "cron_replica", i)
 		wg.Add(1)
 		go func() {

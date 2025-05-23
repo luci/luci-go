@@ -46,7 +46,6 @@ func Search(ctx context.Context, buildC chan<- *pb.Build, client pb.BuildsClient
 	// Start len(requests) concurrent searches.
 	allStreams := make([]searchStream, len(requests))
 	for i, req := range requests {
-		req := req
 		s := searchStream{
 			buildC: make(chan *pb.Build),
 			// Create a buffered channel because we will not necessarily

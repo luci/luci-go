@@ -1209,7 +1209,6 @@ func resolvedFilesToPinMap(res map[template.Platform]*ensure.ResolvedFile) map[s
 			for _, pin := range resolvedPins {
 				// Put a copy into 'pins', otherwise they all end up pointing to the
 				// same variable living in the outer scope.
-				pin := pin
 				pins = append(pins, pinInfo{
 					Pkg:      pin.PackageName,
 					Pin:      &pin,

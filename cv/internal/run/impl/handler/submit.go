@@ -640,7 +640,6 @@ func (impl *Impl) scheduleResetTriggersForNotSubmittedCLs(ctx context.Context, r
 			msg := fmt.Sprintf("%s%s", partiallySubmittedMsgForSubmittedCLs, sb.String())
 			err := parallel.FanOutIn(func(workCh chan<- func() error) {
 				for _, submittedCL := range submitted {
-					submittedCL := submittedCL
 					workCh <- func() error {
 						// Swallow the error because these messages are not critical and
 						// it's okay to not posting them during a Gerrit hiccup.

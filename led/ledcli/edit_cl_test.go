@@ -124,7 +124,6 @@ func TestParseCLURL(t *testing.T) {
 
 	ftt.Run(`parseCrChangeListURL`, t, func(t *ftt.Test) {
 		for _, tc := range cases {
-			tc := tc
 			t.Run(fmt.Sprintf("%q", tc.url), func(t *ftt.Test) {
 				cl, err := parseCrChangeListURL(tc.url, func(string, int64) (string, int64, error) {
 					if tc.resolvePatchset != 0 {

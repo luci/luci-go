@@ -274,7 +274,6 @@ func GetMultiOutputProperties(c context.Context, props ...*BuildOutputProperties
 
 	err := parallel.WorkPool(nWorkers, func(work chan<- func() error) {
 		for _, prop := range props {
-			prop := prop
 			if prop == nil || prop.Build == nil {
 				continue
 			}

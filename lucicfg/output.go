@@ -252,12 +252,8 @@ func (o Output) Compare(dir string, semantic bool) (map[string]CompareResult, er
 
 	err := parallel.WorkPool(runtime.NumCPU()+4, func(tasks chan<- func() error) {
 		for name, datum := range o.Data {
-			name := name
-			datum := datum
-
 			tasks <- func() error {
 				path := filepath.Join(dir, filepath.FromSlash(name))
-
 				var res CompareResult
 				switch existing, err := os.ReadFile(path); {
 				case os.IsNotExist(err):

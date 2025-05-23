@@ -92,7 +92,6 @@ func registerWipeoutCLsTask(tqd *tq.Dispatcher) {
 func wipeoutCLs(ctx context.Context, clids common.CLIDs) error {
 	return parallel.WorkPool(min(10, len(clids)), func(workCh chan<- func() error) {
 		for _, clid := range clids {
-			clid := clid
 			workCh <- func() error {
 				return wipeoutCL(ctx, clid)
 			}

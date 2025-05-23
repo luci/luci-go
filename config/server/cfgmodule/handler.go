@@ -83,7 +83,6 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 	for i, file := range req.GetFiles().GetFiles() {
-		i, file := i, file
 		eg.Go(func() error {
 			var content []byte
 			switch file.GetContent().(type) {

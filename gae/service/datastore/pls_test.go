@@ -2497,7 +2497,6 @@ func TestRoundTrip(t *testing.T) {
 
 	ftt.Run("Test round-trip", t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			tc := tc
 			t.Run(tc.desc, func(t *ftt.Test) {
 				pls, ok := tc.src.(PropertyLoadSaver)
 				if !ok {

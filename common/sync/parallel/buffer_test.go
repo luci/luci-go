@@ -57,8 +57,6 @@ func TestBuffer(t *testing.T) {
 			errC := make([]<-chan error, iters)
 			unblockC := make(chan struct{})
 			for i := range errC {
-				i := i
-
 				errC[i] = b.RunOne(func() error {
 					<-unblockC
 					return numberError(i)
@@ -89,7 +87,6 @@ func TestBuffer(t *testing.T) {
 
 			errC := b.Run(func(taskC chan<- func() error) {
 				for i := 0; i < iters; i++ {
-					i := i
 					taskC <- func() error {
 						return numberError(i)
 					}
@@ -119,7 +116,6 @@ func TestBuffer(t *testing.T) {
 				// Start with 2 buffered tasks to fill our work channels so our buffer
 				// empty order is deterministic.
 				for i := -2; i < 0; i++ {
-					i := i
 					taskC <- func() error {
 						workerStarted <- i
 						<-wait
@@ -131,7 +127,6 @@ func TestBuffer(t *testing.T) {
 				<-workerStarted
 				// Add `iters` tasks which should be executed in the right order.
 				for i := 0; i < iters; i++ {
-					i := i
 					taskC <- func() error {
 						workerStarted <- i
 						return numberError(i)

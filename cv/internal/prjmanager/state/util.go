@@ -30,7 +30,6 @@ import (
 func (h *Handler) pokeRuns(ctx context.Context, s *State) error {
 	err := parallel.WorkPool(concurrency, func(work chan<- func() error) {
 		for _, id := range s.PB.IncompleteRuns() {
-			id := id
 			work <- func() error {
 				return h.RunNotifier.PokeNow(ctx, id)
 			}

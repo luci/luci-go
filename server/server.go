@@ -1697,8 +1697,6 @@ func (s *Server) Serve() error {
 	wg.Add(len(s.ports))
 	for i, port := range s.ports {
 		logging.Infof(s.Context, "Serving %s", port.nameForLog())
-		i := i
-		port := port
 		go func() {
 			defer wg.Done()
 			if err := port.serve(func() context.Context { return s.Context }); err != nil {
@@ -1760,7 +1758,6 @@ func (s *Server) shutdownPorts() bool {
 	wg := sync.WaitGroup{}
 	wg.Add(len(s.ports))
 	for _, port := range s.ports {
-		port := port
 		go func() {
 			defer wg.Done()
 			port.shutdown(s.Context)

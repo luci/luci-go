@@ -621,7 +621,6 @@ func TestButler(t *testing.T) {
 					close(ch)
 				}()
 				for _, singleNS := range ns {
-					singleNS := singleNS
 					go func() {
 						defer ret.Done()
 						assert.Loosely(t, b.DrainNamespace(c, singleNS), should.BeEmpty)

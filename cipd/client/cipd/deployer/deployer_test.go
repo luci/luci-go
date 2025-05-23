@@ -2144,7 +2144,6 @@ func TestPackagePathCollision(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(threads)
 		for th := 0; th < threads; th++ {
-			th := th
 			go func() {
 				defer wg.Done()
 				r := &results[th]
@@ -2198,7 +2197,6 @@ func TestDeployInstanceCollision(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(threads)
 		for th := 0; th < threads; th++ {
-			th := th
 			go func() {
 				defer wg.Done()
 				_, err := d.DeployInstance(ctx, "", testInstances[th%instances], "", 0)

@@ -177,7 +177,6 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		mu := sync.Mutex{}
 		for _, role := range legacyRoles {
-			role := role
 			tasks <- func() error {
 				listing, err := listACLsByPrefix(ctx, role, prefix)
 				if err == nil {

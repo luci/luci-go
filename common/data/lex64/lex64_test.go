@@ -124,7 +124,6 @@ func TestEncodeAndDecode(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -210,7 +209,6 @@ func TestPreservationOfComparisonOrder(t *testing.T) {
 			opts: V1Padding,
 		},
 	} {
-		v := v
 		t.Run(v.name, func(t *testing.T) {
 			t.Parallel()
 			expected := func(a []byte, b []byte) int {

@@ -114,7 +114,6 @@ func (f *Facade) Search(ctx context.Context, cls []*run.RunCL, definitions []*tr
 	wg.Add(len(workers))
 	resultCh := make(chan searchResult)
 	for _, worker := range workers {
-		worker := worker
 		go func() {
 			defer wg.Done()
 			worker.search(ctx, resultCh)

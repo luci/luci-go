@@ -92,7 +92,6 @@ func (sv *serviceValidator) validateAgainstSelfRules(ctx context.Context) (*cfgc
 	eg.SetLimit(8)
 
 	for _, file := range sv.files {
-		file := file
 		eg.Go(func() (err error) {
 			path := file.GetPath()
 			content, err := file.GetRawContent(ectx)
@@ -219,7 +218,6 @@ func (sv *serviceValidator) validateInLegacyProtocol(ctx context.Context) (*cfgc
 	eg.SetLimit(8)
 
 	for _, file := range sv.files {
-		file := file
 		eg.Go(func() error {
 			msgs, err := sv.validateFileLegacy(ectx, file)
 			if err != nil {

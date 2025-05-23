@@ -179,7 +179,6 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 
 	err := parallel.WorkPool(32, func(ch chan<- func() error) {
 		for _, project := range projects {
-			project := project
 			ch <- func() error {
 				return datastore.RunInTransaction(c, func(c context.Context) error {
 					switch err := datastore.Get(c, project); {
@@ -224,7 +223,6 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 	logging.Debugf(c, "closingEnabledProjects: %v", closingEnabledProjects)
 	return parallel.WorkPool(32, func(ch chan<- func() error) {
 		for tree, treeClosers := range groupTreeClosersByTree(treeClosers) {
-			tree, treeClosers := tree, treeClosers
 			ch <- func() error {
 				c := logging.SetField(c, "tree-status-tree", tree)
 				return updateTree(c, ts, treeClosers, closingEnabledProjects, tree)

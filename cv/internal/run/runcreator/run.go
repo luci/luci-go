@@ -351,7 +351,6 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 	rb.cls = make([]*changelist.CL, len(rb.InputCLs))
 	for i, inputCL := range rb.InputCLs {
 		rb.cls[i] = &changelist.CL{ID: inputCL.ID}
-		i := i
 		id := inputCL.ID
 		expected := inputCL.ExpectedEVersion
 		rb.dsBatcher.register(rb.cls[i], func(err error) error {

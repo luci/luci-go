@@ -49,7 +49,6 @@ func queryBuildsToSync(ctx context.Context, mr parallel.MultiRunner, backend, pr
 
 	return mr.RunMulti(func(work chan<- func() error) {
 		for i := 0; i < int(shards); i++ {
-			i := i
 			work <- func() error {
 				bks := make([]*datastore.Key, 0, fetchBatchSize)
 				left := model.ConstructNextSyncTime(backend, project, i, time.Time{})
@@ -263,7 +262,6 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 
 	return mr.RunMulti(func(work chan<- func() error) {
 		for _, bk := range bksToSync {
-			bk := bk
 			work <- func() error {
 				endedBld, txErr := updateBuildEntities(ctx, bk, now, taskMap, useTaskSuccess)
 				if txErr != nil {
@@ -327,7 +325,6 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 			}
 
 			for bks := range bkC {
-				bks := bks
 				work <- func() error {
 					return syncBuildsWithBackendTasks(ctx, mr, bc, bks, now, useTaskSuccess)
 				}

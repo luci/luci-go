@@ -223,7 +223,6 @@ func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (bu
 	err = parallel.WorkPool(len(bucketKeys), func(c chan<- func() error) {
 		var mu sync.Mutex
 		for _, bk := range bucketKeys {
-			bk := bk
 			c <- func() error {
 				if err := HasInBucket(ctx, p, bk.Parent().StringID(), bk.StringID()); err != nil {
 					status, ok := appstatus.Get(err)

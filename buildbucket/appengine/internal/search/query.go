@@ -166,8 +166,6 @@ func UpdateTagIndex(ctx context.Context, builds []*model.Build) errors.MultiErro
 	}
 	_ = parallel.WorkPool(64, func(work chan<- func() error) {
 		for tag, ents := range indexEntries {
-			tag := tag
-			ents := ents
 			work <- func() error {
 				if err := model.UpdateTagIndex(ctx, tag, ents); err != nil {
 					for _, i := range tagToBldIdx[tag] {

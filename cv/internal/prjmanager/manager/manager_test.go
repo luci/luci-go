@@ -314,7 +314,6 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(w)
 		for i := 0; i < w; i++ {
-			i := i
 			go func() {
 				defer wg.Done()
 				errs[i] = pm.manageProject(ctx, lProject, now)

@@ -76,7 +76,6 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 	q := datastore.NewQuery("BuildSummary")
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i := range rawCommits {
-			i := i
 			r := &ConsoleRow{Commit: commits[i]}
 			ret[i] = r
 			ch <- func() error {

@@ -100,7 +100,6 @@ func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, b
 	var actions []*cAction
 	poolErr := parallel.WorkPool(poolSize, func(work chan<- func() error) {
 		for i, oldC := range s.PB.GetComponents() {
-			i, oldC := i, oldC
 			if !needsTriage(oldC, now) {
 				continue
 			}
@@ -190,7 +189,6 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 	runsErr := parallel.WorkPool(poolSize, func(work chan<- func() error) {
 		for _, action := range actions {
 			for _, rc := range action.RunsToCreate {
-				action, rc := action, rc
 				c := s.PB.GetComponents()[action.componentIndex]
 				work <- func() error {
 					err := h.createOneRun(ctxRunCreation, rc, c)

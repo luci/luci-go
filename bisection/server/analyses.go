@@ -209,8 +209,6 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, tfa := range tfas {
 			// Assign to local variables.
-			i := i
-			tfa := tfa
 			workC <- func() error {
 				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 				if err != nil {
@@ -325,8 +323,6 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, tf := range req.TestFailures {
 			// Assign to local variables.
-			i := i
-			tf := tf
 			cpr := changePointResults.TestVariantBranches[i]
 			workC <- func() error {
 				tfaProto, err := retrieveTestAnalysis(ctx, req.Project, tf, cpr, tfamask)
@@ -772,8 +768,6 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	analyses := make([]*pb.Analysis, len(compileFailureAnalyses))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, compileFailureAnalysis := range compileFailureAnalyses {
-			i := i
-			compileFailureAnalysis := compileFailureAnalysis
 			workC <- func() error {
 				analysis, err := GetAnalysisResult(c, compileFailureAnalysis)
 				if err != nil {

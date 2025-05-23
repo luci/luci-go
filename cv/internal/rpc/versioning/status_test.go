@@ -32,7 +32,6 @@ func TestStatusV1(t *testing.T) {
 
 	ftt.Run("RunStatusV1 returns a valid enum", t, func(t *ftt.Test) {
 		for name, val := range run.Status_value {
-			name, val := name, val
 			t.Run("for internal."+name, func(t *ftt.Test) {
 				eq := RunStatusV1(run.Status(val))
 
@@ -52,7 +51,6 @@ func TestStatusV0(t *testing.T) {
 
 	ftt.Run("RunStatusV0 returns a valid enum", t, func(t *ftt.Test) {
 		for name, val := range run.Status_value {
-			name, val := name, val
 			t.Run("for internal."+name, func(t *ftt.Test) {
 				eq := RunStatusV0(run.Status(val))
 
@@ -68,7 +66,6 @@ func TestStatusV0(t *testing.T) {
 
 	ftt.Run("TryjobStatusV0 returns a valid enum", t, func(t *ftt.Test) {
 		for name, val := range tryjob.Status_value {
-			name, val := name, val
 			t.Run("for internal."+name, func(t *ftt.Test) {
 				eq := LegacyTryjobStatusV0(tryjob.Status(val))
 
@@ -84,7 +81,6 @@ func TestStatusV0(t *testing.T) {
 
 	ftt.Run("TryjobResultStatusV0 returns a valid enum", t, func(t *ftt.Test) {
 		for name, val := range tryjob.Result_Status_value {
-			name, val := name, val
 			t.Run("for internal."+name, func(t *ftt.Test) {
 				eq := LegacyTryjobResultStatusV0(tryjob.Result_Status(val))
 

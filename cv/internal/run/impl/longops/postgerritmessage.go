@@ -73,7 +73,6 @@ func (op *PostGerritMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 	errs := make(errors.MultiError, len(rcls))
 	poolError := parallel.WorkPool(min(len(rcls), 8), func(work chan<- func() error) {
 		for i, rcl := range rcls {
-			i, rcl := i, rcl
 			work <- func() error {
 				switch posted, err := op.doCL(ctx, rcl); {
 				case err != nil:

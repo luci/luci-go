@@ -220,7 +220,6 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 				break
 			}
 
-			ref := ref
 			ch <- func() error {
 				log, err := impl.log(c, host, project, refTips[ref], excludeRef, &LogOptions{Limit: limit})
 				if err != nil {

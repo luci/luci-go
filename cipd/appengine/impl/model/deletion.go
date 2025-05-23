@@ -99,7 +99,6 @@ func deleteEntityKinds(ctx context.Context, pkg string, kindsToDelete []string) 
 		// Launch queries that fetch keys to delete, and feed them to the channel.
 		// Each query enqueues nil when it is done to let the consumer know.
 		for _, kind := range kindsToDelete {
-			kind := kind
 			tasks <- func() error {
 				q := datastore.NewQuery(kind).
 					Ancestor(PackageKey(ctx, pkg)).

@@ -229,7 +229,6 @@ func QueryCLIDsUpdatedBefore(ctx context.Context, before time.Time) (common.CLID
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(10)
 	for shard := 0; shard < retentionKeyShards; shard++ {
-		shard := shard
 		eg.Go(func() error {
 			q := datastore.NewQuery("CL").
 				Lt("RetentionKey", fmt.Sprintf("%02d/%010d", shard, before.Unix())).

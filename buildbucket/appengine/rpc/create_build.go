@@ -649,8 +649,6 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	// in one transaction).
 	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
 		for i, b := range validBlds {
-			i := i
-			b := b
 			origI := idxMapValidBlds[i]
 			if bc.merr[origI] != nil {
 				validBlds[i] = nil
@@ -824,8 +822,6 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	}
 	_ = parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
 		for name, blds := range seq {
-			name := name
-			blds := blds
 			work <- func() error {
 				n, err := model.GenerateSequenceNumbers(ctx, name, len(blds))
 				if err != nil {

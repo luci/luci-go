@@ -197,8 +197,6 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 	}
 	return parallel.WorkPool(workers, func(taskC chan<- func() error) {
 		for _, be := range pr.Bundle.Entries {
-			be := be
-
 			taskC <- func() error {
 				return c.processLogStream(ctx, &bundleEntryHandler{
 					bundleHandler: &lw,

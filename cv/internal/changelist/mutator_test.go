@@ -431,7 +431,6 @@ func TestMutatorBatch(t *testing.T) {
 					muts := make([]*CLMutation, len(clids))
 					eg, egCtx := errgroup.WithContext(ctx)
 					for i, id := range clids {
-						i, id := i, id
 						eg.Go(func() error {
 							cl := &CL{ID: id}
 							if err := datastore.Get(egCtx, cl); err != nil {
@@ -465,7 +464,6 @@ func TestMutatorBatch(t *testing.T) {
 					assert.NoErr(t, err)
 					eg, egCtx := errgroup.WithContext(ctx)
 					for i, mut := range muts {
-						i, mut := i, mut
 						eg.Go(func() error {
 							mut.CL.IncompleteRuns = append(mut.CL.IncompleteRuns, run3)
 							var err error

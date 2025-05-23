@@ -235,7 +235,6 @@ func (p *Processor) RunStreams(streams []*Stream) error {
 	// Read from all configured streams until they are finished.
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
 		for _, s := range streams {
-			s := s
 			bufferSize := s.BufferSize
 			if bufferSize <= 0 {
 				bufferSize = DefaultBufferSize

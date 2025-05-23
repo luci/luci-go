@@ -468,8 +468,6 @@ func consoleHeaderOncall(c context.Context, config []*projectconfigpb.Oncall) ([
 	oncalls := make([]*ui.OncallSummary, len(config))
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
 		for i, oc := range config {
-			i := i
-			oc := oc
 			ch <- func() (err error) {
 				oncalls[i], err = getOncallData(c, oc)
 				return

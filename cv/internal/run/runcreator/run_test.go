@@ -343,7 +343,6 @@ func TestRunBuilder(t *testing.T) {
 			assert.That(t, saved, should.Match(expectedRun))
 
 			for i := range rb.InputCLs {
-				i := i
 				t.Run(fmt.Sprintf("RunCL %d-th is properly saved", i), func(t *ftt.Test) {
 					saved := &run.RunCL{
 						ID:  rb.InputCLs[i].ID,

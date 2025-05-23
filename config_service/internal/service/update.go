@@ -61,7 +61,6 @@ func Update(ctx context.Context) error {
 	var errorsMu sync.Mutex
 	perr := parallel.WorkPool(8, func(workC chan<- func() error) {
 		for _, srv := range servicesCfg.GetServices() {
-			srv := srv
 			workC <- func() error {
 				ctx := logging.SetField(ctx, "service", srv.GetId())
 				if err := updateService(ctx, srv); err != nil {

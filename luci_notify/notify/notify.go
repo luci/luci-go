@@ -226,7 +226,6 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 			template := toNotify.Notification.Template
 			steps := toNotify.MatchingSteps
 			for _, rotationURL := range toNotify.Notification.GetEmail().GetRotationUrls() {
-				rotationURL := rotationURL
 				ch <- func() error {
 					return fetchOncallers(c, rotationURL, template, steps, fetchFunc, &recipients, &mRecipients)
 				}
