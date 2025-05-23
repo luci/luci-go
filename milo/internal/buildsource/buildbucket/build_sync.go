@@ -520,7 +520,7 @@ func syncBuildsImpl(c context.Context) error {
 								continue
 							}
 
-							client, err := BuildsClient(c, host, auth.AsSelf)
+							client, err := BuildsClient(c, host, auth.AsProject, auth.WithProject(bs.ProjectID))
 							if err != nil {
 								return err
 							}
