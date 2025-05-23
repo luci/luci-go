@@ -30,6 +30,9 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 	defer cancel()
 
 	transport, err := auth.GetRPCTransport(c, auth.AsProject)
+	if err != nil {
+		return "", err
+	}
 
 	client := &http.Client{
 		Transport: transport,
