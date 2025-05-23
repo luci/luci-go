@@ -15,6 +15,8 @@
 package buildbucket
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
 	"testing"
@@ -32,6 +34,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -128,15 +131,12 @@ func TestPubSub(t *testing.T) {
 					},
 				},
 			}
-			buildExp.Output.Properties, _ = structpb.NewStruct(propertiesMap)
+			outProperties, _ := structpb.NewStruct(propertiesMap)
 
-			err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: buildExp})
-			assert.Loosely(t, err, should.ErrLike(nil))
-			datastore.GetTestable(c).CatchupIndexes()
-
-			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
+			verifyDatastore := func() {
+				datastore.GetTestable(c).CatchupIndexes()
 				buildAct := model.BuildSummary{BuildKey: bKey}
-				err := datastore.Get(c, &buildAct)
+				err = datastore.Get(c, &buildAct)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
 				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
@@ -156,6 +156,37 @@ func TestPubSub(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, blder.LastFinishedStatus, should.Match(milostatus.NotRun))
 				assert.Loosely(t, blder.LastFinishedBuildID, should.BeEmpty)
+			}
+
+			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
+				buildExp.Output.Properties = outProperties
+				pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
+				assert.Loosely(t, err, should.BeNil)
+
+				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
+				assert.Loosely(t, err, should.ErrLike(nil))
+				verifyDatastore()
+			})
+
+			t.Run("need additional GetBuild call", func(t *ftt.Test) {
+				pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
+				assert.Loosely(t, err, should.BeNil)
+
+				pubsubMsg.BuildLargeFields = nil
+				pubsubMsg.BuildLargeFieldsDropped = true
+				// Set up buildbucket client.
+				c, ctrl, mbc := newMockClient(c, t.T)
+				defer ctrl.Finish()
+				mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+					Output: &buildbucketpb.Build_Output{
+						Properties: outProperties,
+					},
+				}, nil).AnyTimes()
+
+				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
+				assert.Loosely(t, err, should.ErrLike(nil))
+				datastore.GetTestable(c).CatchupIndexes()
+				verifyDatastore()
 			})
 		})
 
@@ -173,13 +204,14 @@ func TestPubSub(t *testing.T) {
 				Id:      "8930f18245df678abc944376372c77ba5e2a658b",
 				Project: "angle/angle",
 			}
+			pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
+			assert.Loosely(t, err, should.BeNil)
 
-			err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: buildExp})
+			err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
 			assert.Loosely(t, err, should.ErrLike(nil))
-
 			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
 				buildAct := model.BuildSummary{BuildKey: bKey}
-				err := datastore.Get(c, &buildAct)
+				err = datastore.Get(c, &buildAct)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, buildAct.BuildKey.String(), should.Equal(bKey.String()))
 				assert.Loosely(t, buildAct.BuilderID, should.Equal("buildbucket/luci.fake.bucket/fake_builder"))
@@ -220,8 +252,10 @@ func TestPubSub(t *testing.T) {
 					UpdateTime: timestamppb.New(RefTime.Add(4 * time.Hour)),
 					Status:     buildbucketpb.Status_STARTED,
 				}
+				pubsubMsg, err := makeBuildsV2PpubsubMsg(eBuild)
+				assert.Loosely(t, err, should.BeNil)
 
-				err := PubSubHandler(c, pubsub.Message{}, &buildbucketpb.BuildsV2PubSub{Build: eBuild})
+				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
 				assert.Loosely(t, err, should.ErrLike(nil))
 
 				buildAct := model.BuildSummary{BuildKey: bKey}
@@ -243,6 +277,49 @@ func TestPubSub(t *testing.T) {
 			})
 		})
 	})
+}
+
+func makeBuildsV2PpubsubMsg(b *buildbucketpb.Build) (*buildbucketpb.BuildsV2PubSub, error) {
+	copyB := proto.Clone(b).(*buildbucketpb.Build)
+	large := &buildbucketpb.Build{
+		Input: &buildbucketpb.Build_Input{
+			Properties: copyB.GetInput().GetProperties(),
+		},
+		Output: &buildbucketpb.Build_Output{
+			Properties: copyB.GetOutput().GetProperties(),
+		},
+		Steps: copyB.GetSteps(),
+	}
+	if copyB.Input != nil {
+		copyB.Input.Properties = nil
+	}
+	if copyB.Output != nil {
+		copyB.Output.Properties = nil
+	}
+	copyB.Steps = nil
+	compress := func(data []byte) ([]byte, error) {
+		buf := &bytes.Buffer{}
+		zw := zlib.NewWriter(buf)
+		if _, err := zw.Write(data); err != nil {
+			return nil, errors.Annotate(err, "failed to compress").Err()
+		}
+		if err := zw.Close(); err != nil {
+			return nil, errors.Annotate(err, "error closing zlib writer").Err()
+		}
+		return buf.Bytes(), nil
+	}
+	largeBytes, err := proto.Marshal(large)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to marshal large").Err()
+	}
+	compressedLarge, err := compress(largeBytes)
+	if err != nil {
+		return nil, err
+	}
+	return &buildbucketpb.BuildsV2PubSub{
+		Build:            copyB,
+		BuildLargeFields: compressedLarge,
+	}, nil
 }
 
 func TestShouldUpdateBuilderSummary(t *testing.T) {

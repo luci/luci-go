@@ -15,14 +15,18 @@
 package buildbucket
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -193,7 +197,15 @@ var summaryBuildMask = &buildbucketpb.BuildMask{
 }
 
 func PubSubHandler(c context.Context, message pubsub.Message, buildPubSub *buildbucketpb.BuildsV2PubSub) error {
-	build := buildPubSub.Build
+	c = WithBuildsClientFactory(c, ProdBuildsClientFactory)
+	return pubSubHandlerImpl(c, message, buildPubSub)
+}
+
+func pubSubHandlerImpl(c context.Context, message pubsub.Message, buildPubSub *buildbucketpb.BuildsV2PubSub) error {
+	build, err := extractOrFetchBuild(c, buildPubSub)
+	if err != nil {
+		return err
+	}
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
 	bs, err := model.BuildSummaryFromBuild(c, build.Infra.Buildbucket.Hostname, build)
@@ -236,6 +248,90 @@ func PubSubHandler(c context.Context, message pubsub.Message, buildPubSub *build
 	}, nil))
 
 	return err
+}
+
+func extractOrFetchBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) (*buildbucketpb.Build, error) {
+	if buildsV2Msg.BuildLargeFieldsDropped {
+		if err := fetchBuildLargeFields(c, buildsV2Msg); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := extractBuildLargeFields(buildsV2Msg); err != nil {
+			return nil, err
+		}
+	}
+	return buildsV2Msg.Build, nil
+}
+
+// fetchBuildLargeFields gets the selected large build fields by calling GetBuild RPC
+// and merge them into buildsV2Msg.Build in place.
+func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
+	host := buildsV2Msg.Build.Infra.GetBuildbucket().GetHostname()
+	project := buildsV2Msg.Build.Builder.Project
+	client, err := BuildsClient(c, host, auth.AsProject, auth.WithProject(project))
+	if err != nil {
+		return errors.Annotate(err, "create buildbucket client").Err()
+	}
+
+	bID := buildsV2Msg.Build.Id
+	logging.Infof(c, "fetching large fields for build %d", bID)
+	res, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
+		Id: bID,
+		Mask: &buildbucketpb.BuildMask{
+			Fields: &field_mask.FieldMask{
+				Paths: []string{"output.properties"},
+			},
+			OutputProperties: []*structmask.StructMask{{
+				Path: []string{"$recipe_engine/milo/blamelist_pins"},
+			}},
+		},
+	})
+	if err != nil {
+		return errors.Annotate(err, "fetch large fields for buildbucket build %d", bID).Err()
+	}
+	proto.Merge(buildsV2Msg.Build, res)
+	return nil
+}
+
+// extractBuildLargeFields extracts large build fields from
+// buildsV2Msg.BuildLargeFields and merge them into buildsV2Msg.Build in place.
+func extractBuildLargeFields(buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
+	var largeFieldsData []byte
+	var err error
+	switch buildsV2Msg.Compression {
+	case buildbucketpb.Compression_ZLIB:
+		largeFieldsData, err = zlibDecompress(buildsV2Msg.BuildLargeFields)
+		if err != nil {
+			return errors.Annotate(err, "decompress ZLIB build_large_fields for build %d", buildsV2Msg.Build.Id).Err()
+		}
+	case buildbucketpb.Compression_ZSTD:
+		return errors.Reason("ZSTD decompression is not yet supported for build %d", buildsV2Msg.Build.Id).Err()
+	default:
+		return errors.Reason("unknown compression type %v for build %d", buildsV2Msg.Compression, buildsV2Msg.Build.Id).Err()
+	}
+
+	largeFields := &buildbucketpb.Build{}
+	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+		return errors.Annotate(err, "unmarshal build_large_fields for build %d", buildsV2Msg.Build.Id).Err()
+	}
+	proto.Merge(buildsV2Msg.Build, largeFields)
+	return nil
+}
+
+// zlibDecompress decompresses data using zlib.
+func zlibDecompress(compressed []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	originalData, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.Close(); err != nil {
+		return nil, err
+	}
+	return originalData, nil
 }
 
 var (
