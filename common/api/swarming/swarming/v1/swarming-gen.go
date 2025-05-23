@@ -72,8 +72,8 @@ import (
 	"strings"
 
 	"github.com/googleapis/gax-go/v2/internallog"
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
