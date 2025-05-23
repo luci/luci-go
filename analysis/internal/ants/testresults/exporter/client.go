@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"google.golang.org/protobuf/proto"
 
@@ -108,5 +109,9 @@ func (c *Client) Insert(ctx context.Context, rows []*bqpb.AntsTestResultRow) err
 	for i, r := range rows {
 		payload[i] = r
 	}
-	return writer.AppendRowsWithDefaultStream(ctx, payload)
+	// Use BigQuery default value for missing insert_time.
+	extraOpt := managedwriter.WithMissingValueInterpretations(map[string]storagepb.AppendRowsRequest_MissingValueInterpretation{
+		"insert_time": storagepb.AppendRowsRequest_DEFAULT_VALUE,
+	})
+	return writer.AppendRowsWithDefaultStream(ctx, payload, extraOpt)
 }
