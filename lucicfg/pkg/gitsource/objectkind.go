@@ -22,6 +22,7 @@ const (
 	CommitKind
 	BlobKind
 	TreeKind
+	GitLinkKind
 
 	SymlinkKind
 	DanglingSymlinkKind

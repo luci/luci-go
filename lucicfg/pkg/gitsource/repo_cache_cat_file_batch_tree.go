@@ -26,6 +26,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"go.chromium.org/luci/common/data/stringset"
 )
@@ -79,11 +80,15 @@ func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree,
 		}
 
 		kind := UnknownKind
-		if (mode & 040000) != 0 {
+		switch mode {
+		case syscall.S_IFDIR:
 			kind = TreeKind
-		} else if (mode & 012000) != 0 {
+		case syscall.S_IFLNK:
 			kind = SymlinkKind
-		} else if (mode & 0100777) == mode {
+		case syscall.S_IFDIR + syscall.S_IFLNK:
+			kind = GitLinkKind
+		case syscall.S_IFREG + 0o644, syscall.S_IFREG + 0o755:
+			// don't need to distinguish +x, original mode is also returned.
 			kind = BlobKind
 		}
 

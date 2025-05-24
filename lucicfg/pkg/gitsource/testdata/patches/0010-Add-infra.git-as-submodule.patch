@@ -1,0 +1,17 @@
+From da822713d0d524d5415c3a89f8e573ce81101bc5 Mon Sep 17 00:00:00 2001
+From: Exemplar Exemplaris <exemplar@example.com>
+Date: Fri, 23 May 2025 16:42:58 -0700
+Subject: [PATCH] Add infra.git as submodule
+
+---
+ infra | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 160000 infra
+
+diff --git a/infra b/infra
+new file mode 160000
+index 0000000..4585ca3
+--- /dev/null
++++ b/infra
+@@ -0,0 +1 @@
++Subproject commit 4585ca362480300618eec126795cb0572a0adda8

@@ -34,7 +34,7 @@ func init() {
 func TestCatFileTree(t *testing.T) {
 	t.Parallel()
 
-	commit := "9c350ff8eeacef414a4baa5d68098e61b2d51a51"
+	commit := "628403cb1e193d0131c39394dfd6abed938583a7"
 
 	r := mkRepo(t, commit+":") // ":" gets the tree
 
@@ -43,6 +43,8 @@ func TestCatFileTree(t *testing.T) {
 	assert.That(t, got, should.Match(tree{
 		{"collision1", 0o100644, BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
 		{"collision2", 0o100644, BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
+		{"infra", 0o160000, GitLinkKind, "4585ca362480300618eec126795cb0572a0adda8"},
+		{"similardirs", 0o40000, TreeKind, "55fa4e4b59d7d03fc048bce7d64176d889a6e49b"},
 		{"subdir", 0o40000, TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
 		{"unrelated_file", 0o100644, BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
 	}))

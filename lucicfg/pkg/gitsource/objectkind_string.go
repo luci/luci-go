@@ -12,15 +12,16 @@ func _() {
 	_ = x[CommitKind-1]
 	_ = x[BlobKind-2]
 	_ = x[TreeKind-3]
-	_ = x[SymlinkKind-4]
-	_ = x[DanglingSymlinkKind-5]
-	_ = x[LoopingSymlinkKind-6]
-	_ = x[NotDirSymlinkKind-7]
+	_ = x[GitLinkKind-4]
+	_ = x[SymlinkKind-5]
+	_ = x[DanglingSymlinkKind-6]
+	_ = x[LoopingSymlinkKind-7]
+	_ = x[NotDirSymlinkKind-8]
 }
 
-const _ObjectKind_name = "UnknownKindCommitKindBlobKindTreeKindSymlinkKindDanglingSymlinkKindLoopingSymlinkKindNotDirSymlinkKind"
+const _ObjectKind_name = "UnknownKindCommitKindBlobKindTreeKindGitLinkKindSymlinkKindDanglingSymlinkKindLoopingSymlinkKindNotDirSymlinkKind"
 
-var _ObjectKind_index = [...]uint8{0, 11, 21, 29, 37, 48, 67, 85, 102}
+var _ObjectKind_index = [...]uint8{0, 11, 21, 29, 37, 48, 59, 78, 96, 113}
 
 func (i ObjectKind) String() string {
 	if i < 0 || i >= ObjectKind(len(_ObjectKind_index)-1) {
