@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/lucicfg/depsource"
 	"go.chromium.org/luci/lucicfg/internal/ui"
 )
 
@@ -153,5 +152,3 @@ type GitFetcher struct {
 	pkgRoot          string
 	allowedBlobPaths stringset.Set
 }
-
-var _ depsource.Fetcher = (*GitFetcher)(nil)

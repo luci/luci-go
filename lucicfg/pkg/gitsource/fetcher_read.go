@@ -19,8 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"path"
-
-	"go.chromium.org/luci/lucicfg/depsource"
 )
 
 var (
@@ -28,8 +26,6 @@ var (
 	ErrMissingObject       = errors.New("object is missing")
 	ErrObjectNotPrefetched = errors.New("object was not prefeched")
 )
-
-var _ depsource.Fetcher = (*GitFetcher)(nil)
 
 // Read returns the bytes of the blob indicated by pkgRelPath.
 //
