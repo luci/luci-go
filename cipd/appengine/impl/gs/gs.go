@@ -255,7 +255,7 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 	//
 	// Any other code is unexpected error.
 	if code != http.StatusNotFound && code != http.StatusPreconditionFailed {
-		return errors.Annotate(err, "failed to copy the object").Err()
+		return errors.Fmt("failed to copy the object: %w", err)
 	}
 
 	switch _, exists, dstErr := gs.Size(ctx, dst); {
@@ -265,10 +265,10 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 		// Both 'src' and 'dst' are missing. It means we are not retrying a failed
 		// move (it would have left either 'src' or 'dst' or both present), and
 		// 'src' is genuinely missing.
-		return errors.Annotate(err, "the source object is missing").Err()
+		return errors.Fmt("the source object is missing: %w", err)
 	case !exists && code == http.StatusPreconditionFailed:
 		// 'dst' is still missing. It means we failed 'srcGen' precondition.
-		return errors.Annotate(err, "the source object has unexpected generation number").Err()
+		return errors.Fmt("the source object has unexpected generation number: %w", err)
 	}
 
 	return nil // 'dst' exists, Publish is considered successful

@@ -43,7 +43,7 @@ func Txn(ctx context.Context, name string, cb func(context.Context) error) error
 	}, nil)
 
 	if err != innerErr {
-		return errors.Annotate(err, "failed to land %s transaction", name).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.WrapIf(err, "failed to land %s transaction", name))
 	}
 	return innerErr
 }

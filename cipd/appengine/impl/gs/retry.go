@@ -79,18 +79,18 @@ func withRetry(ctx context.Context, call func() error) error {
 			if _, ok := err.(*RestartUploadError); ok {
 				return err
 			}
-			return errors.Annotate(err, "failed to call GS").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to call GS: %w", err))
 		}
 		logging.Infof(ctx, "GS replied with HTTP code %d", apiErr.Code)
 		logging.Debugf(ctx, "full response body:\n%s", apiErr.Body)
-		ann := errors.Annotate(err, "GS replied with HTTP code %d", apiErr.Code).
-			Tag(StatusCodeTag.WithDefault(apiErr.Code))
+		err = errors.Fmt("GS replied with HTTP code %d: %w", apiErr.Code, err)
+		err = StatusCodeTag.ApplyValue(err, apiErr.Code)
 		// Retry only on 429 and 5xx responses, according to
 		// https://cloud.google.com/storage/docs/exponential-backoff.
 		if apiErr.Code == 429 || apiErr.Code >= 500 {
-			ann.Tag(transient.Tag)
+			err = transient.Tag.Apply(err)
 		}
-		return ann.Err()
+		return err
 	}, func(err error, d time.Duration) {
 		logging.WithError(err).Errorf(ctx, "Transient error when accessing GS. Retrying in %s...", d)
 	})

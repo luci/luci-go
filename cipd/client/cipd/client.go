@@ -2028,7 +2028,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		}
 		logging.Errorf(ctx, "Failed to %s %s%s: %s", a.action, a.pin.PackageName, subdir, err)
 
-		err = errors.Annotate(err, "failed to %s %s%s", a.action, a.pin.PackageName, subdir).Err()
+		err = errors.Fmt("failed to %s %s%s: %w", a.action, a.pin.PackageName, subdir, err)
 		cipderr.AttachDetails(&err, cipderr.Details{
 			Package: a.pin.PackageName,
 			Version: a.pin.InstanceID,

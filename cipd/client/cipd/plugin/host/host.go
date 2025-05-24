@@ -136,7 +136,7 @@ func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller
 	h.m.Lock()
 	port := h.port
 	if h.srvErr != nil {
-		err = errors.Annotate(h.srvErr, "failed to launch the plugins grpc server").Err()
+		err = errors.Fmt("failed to launch the plugins grpc server: %w", h.srvErr)
 	} else {
 		if h.plugins == nil {
 			h.plugins = map[string]*PluginProcess{}

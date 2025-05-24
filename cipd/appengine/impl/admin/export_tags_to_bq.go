@@ -121,7 +121,7 @@ func uploadToBQ(ctx context.Context, job dsmapper.JobID, rows []bigquery.ValueSa
 
 	// PutMultiError happens when rows are malformed, a retry won't help.
 	if _, ok := err.(bigquery.PutMultiError); ok {
-		return errors.Annotate(err, "fatal error when uploading to BQ").Err()
+		return errors.Fmt("fatal error when uploading to BQ: %w", err)
 	}
-	return errors.Annotate(err, "transient error when uploading to BQ").Tag(transient.Tag).Err()
+	return transient.Tag.Apply(errors.Fmt("transient error when uploading to BQ: %w", err))
 }

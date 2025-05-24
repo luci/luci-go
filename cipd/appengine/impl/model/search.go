@@ -208,7 +208,7 @@ func fetchExistingInstances(ctx context.Context, keys []*datastore.Key) ([]*Inst
 
 	merr, ok := err.(errors.MultiError)
 	if !ok {
-		return nil, errors.Annotate(err, "failed to fetch instances").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch instances: %w", err))
 	}
 
 	existing := instances[:0]

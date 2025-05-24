@@ -272,8 +272,8 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 				}
 				switch {
 				case p.err != nil:
-					p.err = errors.Annotate(p.err, "failed to resolve %s@%s (line %d)",
-						p.pkg, p.def.UnresolvedVersion, p.def.LineNo).Err()
+					p.err = errors.Fmt("failed to resolve %s@%s (line %d): %w",
+						p.pkg, p.def.UnresolvedVersion, p.def.LineNo, p.err)
 				case p.pin.PackageName != p.pkg:
 					panic(fmt.Sprintf("bad resolver, returned wrong package name %q, expecting %q", p.pin.PackageName, p.pkg))
 				}

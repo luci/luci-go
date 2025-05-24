@@ -129,9 +129,9 @@ func (impl *repoImpl) packageReader(ctx context.Context, ref *api.ObjectRef) (*p
 	rawReader, err := impl.cas.GetReader(ctx, ref)
 	switch code := status.Code(err); {
 	case code == codes.NotFound:
-		return nil, errors.Annotate(err, "package instance is not in the storage").Err()
+		return nil, errors.Fmt("package instance is not in the storage: %w", err)
 	case code != codes.OK:
-		return nil, errors.Annotate(err, "failed to open the object for reading").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to open the object for reading: %w", err))
 	}
 
 	// Read in 512 Kb chunks, keep 2 of them buffered.
@@ -643,7 +643,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 			UploadOp: uploadOp,
 		}, nil
 	default:
-		return nil, errors.Annotate(err, "failed to initiate an upload op (code %s)", code).Err()
+		return nil, errors.Fmt("failed to initiate an upload op (code %s): %w", code, err)
 	}
 
 	// Warn about registering deprecated SHA1 packages. Eventually this will be
@@ -1394,28 +1394,28 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 			tasks <- func() error {
 				var err error
 				refs, err = model.ListInstanceRefs(ctx, inst)
-				return errors.Annotate(err, "failed to fetch refs").Err()
+				return errors.WrapIf(err, "failed to fetch refs")
 			}
 		}
 		if r.DescribeTags {
 			tasks <- func() error {
 				var err error
 				tags, err = model.ListInstanceTags(ctx, inst)
-				return errors.Annotate(err, "failed to fetch tags").Err()
+				return errors.WrapIf(err, "failed to fetch tags")
 			}
 		}
 		if r.DescribeProcessors {
 			tasks <- func() error {
 				var err error
 				proc, err = model.FetchProcessors(ctx, inst)
-				return errors.Annotate(err, "failed to fetch processors").Err()
+				return errors.WrapIf(err, "failed to fetch processors")
 			}
 		}
 		if r.DescribeMetadata {
 			tasks <- func() error {
 				var err error
 				mds, err = listMetadata(ctx, inst)
-				return errors.Annotate(err, "failed to fetch metadata").Err()
+				return errors.WrapIf(err, "failed to fetch metadata")
 			}
 		}
 	})

@@ -131,7 +131,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	// If asked to rewind to a faraway offset (should be rare), just restart the
 	// whole process from scratch by returning a transient error.
 	if _, ok := err.(*gs.RestartUploadError); ok {
-		err = errors.Annotate(err, "asked to restart the upload from faraway offset").Tag(transient.Tag).Err()
+		err = transient.Tag.Apply(errors.Fmt("asked to restart the upload from faraway offset: %w", err))
 	}
 
 	if err != nil {

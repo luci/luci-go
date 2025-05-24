@@ -462,7 +462,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Infof(ctx, "Pin %s is still not in the cache, retrying...", pin)
 		case os.IsNotExist(err) && attempt > 1:
 			logging.Errorf(ctx, "Pin %s is unexpectedly missing from the cache", pin)
-			return nil, errors.Annotate(err, "pin %s is unexpectedly missing from the cache", pin).Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("pin %s is unexpectedly missing from the cache: %w", pin, err))
 		case err != nil:
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
 			return nil, errors.Annotate(err, "opening the cached instance %s", pin).Tag(cipderr.IO).Err()

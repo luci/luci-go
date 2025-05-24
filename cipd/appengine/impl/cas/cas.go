@@ -393,8 +393,8 @@ func (s *storageImpl) finishAndForcedHash(ctx context.Context, op *upload.Operat
 	// which case we close the upload operation with an error.
 	pubErr := gs.Publish(ctx, s.settings.ObjectPath(hash), op.TempGSPath, -1)
 	if transient.Tag.In(pubErr) {
-		return nil, errors.Annotate(pubErr, "failed to publish the object").
-			Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(
+			errors.Fmt("failed to publish the object: %w", pubErr))
 	}
 
 	// Try to remove the leftover garbage. See maybeDelete doc for possible
@@ -638,8 +638,7 @@ func (s *storageImpl) cleanupUploadTask(ctx context.Context, task *tasks.Cleanup
 func (s *storageImpl) maybeDelete(ctx context.Context, gs gs.GoogleStorage, path string) error {
 	switch err := gs.Delete(ctx, path); {
 	case transient.Tag.In(err):
-		return errors.Annotate(err, "transient error when removing temporary Google Storage file").
-			Tag(grpcutil.InternalTag).Err()
+		return grpcutil.InternalTag.Apply(errors.Fmt("transient error when removing temporary Google Storage file: %w", err))
 	case err != nil:
 		logging.WithError(err).Errorf(ctx, "Failed to remove temporary Google Storage file, it is dead garbage now: %s", path)
 	}

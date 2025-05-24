@@ -38,10 +38,10 @@ func TestError(t *testing.T) {
 			Package: "zzz",
 		}))), should.Equal(Auth))
 
-		err1 := errors.Annotate(errors.New("tagged", Auth), "deeper").Err()
+		err1 := errors.Fmt("deeper: %w", Auth.Apply(errors.New("tagged")))
 		assert.Loosely(t, ToCode(err1), should.Equal(Auth))
 
-		err2 := errors.Annotate(errors.New("tagged", Auth), "deeper").Tag(IO).Err()
+		err2 := IO.Apply(errors.Fmt("deeper: %w", Auth.Apply(errors.New("tagged"))))
 		assert.Loosely(t, ToCode(err2), should.Equal(IO))
 
 		err3 := errors.MultiError{
@@ -51,7 +51,7 @@ func TestError(t *testing.T) {
 		}
 		assert.Loosely(t, ToCode(err3), should.Equal(Auth))
 
-		err4 := errors.Annotate(context.DeadlineExceeded, "blah").Err()
+		err4 := errors.Fmt("blah: %w", context.DeadlineExceeded)
 		assert.Loosely(t, ToCode(err4), should.Equal(Timeout))
 	})
 

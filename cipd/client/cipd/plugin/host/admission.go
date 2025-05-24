@@ -286,9 +286,9 @@ func (p *AdmissionPlugin) launchPlugin() {
 		case <-p.closing:
 			// Already closing, p.err is not nil and will be handled below.
 		case <-proc.Done():
-			err = errors.Annotate(proc.Err(), "the admission plugin terminated before making ListAdmissions RPC").Err()
+			err = errors.WrapIf(proc.Err(), "the admission plugin terminated before making ListAdmissions RPC")
 		case <-ctx.Done():
-			err = errors.Annotate(ctx.Err(), "while waiting for ListAdmissions RPC").Err()
+			err = errors.WrapIf(ctx.Err(), "while waiting for ListAdmissions RPC")
 		}
 	}
 
@@ -356,7 +356,7 @@ func (p *AdmissionPlugin) onDisconnected() {
 			if p.proc.Err() != ErrTerminated {
 				logging.Warningf(p.ctx, "The admission plugin has crashed: %s", p.proc.Err())
 			}
-			err = errors.Annotate(p.proc.Err(), "the admission plugin terminated").Err()
+			err = errors.WrapIf(p.proc.Err(), "the admission plugin terminated")
 		}
 	}
 

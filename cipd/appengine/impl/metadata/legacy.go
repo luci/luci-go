@@ -119,7 +119,7 @@ func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata,
 
 	// Fetch everything. ErrNoSuchEntity errors are fine, everything else is not.
 	if err = datastore.Get(ctx, ents); isInternalDSError(err) {
-		return nil, nil, errors.Annotate(err, "datastore error when fetching PackageACL").Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.Fmt("datastore error when fetching PackageACL: %w", err))
 	}
 
 	// Combine the result into a bunch of PrefixMetadata structs.
@@ -239,7 +239,7 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		// Fetch the existing metadata.
 		ents := prefixACLs(ctx, prefix, nil)
 		if err := datastore.Get(ctx, ents); isInternalDSError(err) {
-			return errors.Annotate(err, "datastore error when fetching PackageACL").Err()
+			return errors.Fmt("datastore error when fetching PackageACL: %w", err)
 		}
 
 		// Convert it to PrefixMetadata object. This will be nil if there's no

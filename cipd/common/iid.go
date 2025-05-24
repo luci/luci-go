@@ -72,7 +72,7 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 	if err == nil {
 		return
 	}
-	return errors.Annotate(err, "not a valid package instance ID %q", iid).Err()
+	return errors.Fmt("not a valid package instance ID %q: %w", iid, err)
 }
 
 // ValidateObjectRef returns a grpc-annotated error if the given object ref is

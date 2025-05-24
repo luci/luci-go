@@ -87,7 +87,7 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 
 	handshake := <-handshakeCh
 	if handshake.error != nil {
-		return errors.Annotate(handshake.error, "failed to read the handshake message").Err()
+		return errors.Fmt("failed to read the handshake message: %w", handshake.error)
 	}
 	conn, err := grpc.NewClient(
 		fmt.Sprintf("passthrough:///127.0.0.1:%d", handshake.PB.Port),
