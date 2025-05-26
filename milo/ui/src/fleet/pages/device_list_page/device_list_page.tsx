@@ -85,6 +85,13 @@ export const DeviceListPage = () => {
 
   const client = useFleetConsoleClient();
   const dimensionsQuery = useDeviceDimensions();
+
+  // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
+  const isDimensionsQueryProperlyLoaded =
+    dimensionsQuery.data &&
+    dimensionsQuery.data.baseDimensions &&
+    dimensionsQuery.data.labels;
+
   const countQuery = useQuery({
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
@@ -104,14 +111,14 @@ export const DeviceListPage = () => {
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columns = useMemo(
     () =>
-      dimensionsQuery.data
+      isDimensionsQueryProperlyLoaded
         ? _.uniq(
             Object.keys(dimensionsQuery.data.baseDimensions).concat(
               Object.keys(dimensionsQuery.data.labels),
             ),
           )
         : [],
-    [dimensionsQuery.data],
+    [isDimensionsQueryProperlyLoaded, dimensionsQuery.data],
   );
 
   const [warnings, addWarning] = useWarnings();
@@ -148,6 +155,7 @@ export const DeviceListPage = () => {
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
       (filterKey) =>
+        isDimensionsQueryProperlyLoaded &&
         !dimensionsQuery.data.labels[filterKey.replace('labels.', '')] &&
         !dimensionsQuery.data.baseDimensions[filterKey],
     );
@@ -160,7 +168,13 @@ export const DeviceListPage = () => {
       delete selectedOptions.filters[key];
     }
     setSearchParams(filtersUpdater(selectedOptions.filters));
-  }, [addWarning, dimensionsQuery, selectedOptions, setSearchParams]);
+  }, [
+    isDimensionsQueryProperlyLoaded,
+    addWarning,
+    dimensionsQuery,
+    selectedOptions,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     if (!selectedOptions.error) return;
@@ -213,7 +227,7 @@ export const DeviceListPage = () => {
         ) : (
           <MultiSelectFilter
             filterOptions={
-              dimensionsQuery.data
+              isDimensionsQueryProperlyLoaded
                 ? dimensionsToFilterOptions(dimensionsQuery.data)
                 : filterOptionsPlaceholder(selectedOptions.filters)
             }
