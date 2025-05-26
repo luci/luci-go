@@ -466,7 +466,7 @@ export interface QueryArtifactFailureOnlyLinesResponse_LineRange {
 
 /**
  * A request message for QueryTestVariants RPC.
- * Next id: 9.
+ * Next id: 10.
  */
 export interface QueryTestVariantsRequest {
   /**
@@ -522,7 +522,24 @@ export interface QueryTestVariantsRequest {
    * * variant_hash
    * * status
    */
-  readonly readMask: readonly string[] | undefined;
+  readonly readMask:
+    | readonly string[]
+    | undefined;
+  /**
+   * The ordering of test verdicts in the response.
+   *
+   * See https://google.aip.dev/132 for syntax.
+   *
+   * For performance reasons, only two sort orders are supported:
+   * - verdict status v1 ascending (order is UNEXPECTED, UNEXPECTEDLY_SKIPPED,
+   *   FLAKY, EXONERATED, EXPECTED).
+   *   This is the default. It can be explicitly requested by "status" or "status asc".
+   * - effective verdict status v2 ascending (by verdict status v2 including any status overrides,
+   *   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED & PASSED).
+   *   It can be requested by "status_v2_effective" or "status_v2_effective asc"
+   *   where status_v2_effective is a virtual field representing the above sort order.
+   */
+  readonly orderBy: string;
 }
 
 /** A response message for QueryTestVariants RPC. */
@@ -3339,7 +3356,15 @@ export const QueryArtifactFailureOnlyLinesResponse_LineRange: MessageFns<
 };
 
 function createBaseQueryTestVariantsRequest(): QueryTestVariantsRequest {
-  return { invocations: [], predicate: undefined, resultLimit: 0, pageSize: 0, pageToken: "", readMask: undefined };
+  return {
+    invocations: [],
+    predicate: undefined,
+    resultLimit: 0,
+    pageSize: 0,
+    pageToken: "",
+    readMask: undefined,
+    orderBy: "",
+  };
 }
 
 export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
@@ -3361,6 +3386,9 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
     }
     if (message.readMask !== undefined) {
       FieldMask.encode(FieldMask.wrap(message.readMask), writer.uint32(58).fork()).join();
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(74).string(message.orderBy);
     }
     return writer;
   },
@@ -3420,6 +3448,14 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
           message.readMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3439,6 +3475,7 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
       readMask: isSet(object.readMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.readMask)) : undefined,
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
     };
   },
 
@@ -3462,6 +3499,9 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
     if (message.readMask !== undefined) {
       obj.readMask = FieldMask.toJSON(FieldMask.wrap(message.readMask));
     }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
     return obj;
   },
 
@@ -3478,6 +3518,7 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     message.readMask = object.readMask ?? undefined;
+    message.orderBy = object.orderBy ?? "";
     return message;
   },
 };

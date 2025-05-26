@@ -58,6 +58,7 @@ export function VerdictCountIndicator({ invName }: VerdictCountIndicatorProps) {
       QueryTestVariantsRequest.fromPartial({
         invocations: [invName],
         pageSize: QUERY_TEST_VERDICT_PAGE_SIZE,
+        orderBy: 'status_v2_effective',
       }),
     ),
   });

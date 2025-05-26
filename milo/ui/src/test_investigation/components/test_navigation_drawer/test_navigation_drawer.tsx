@@ -68,6 +68,7 @@ export function TestNavigationDrawer() {
             'status',
             'results.*.result.expected',
           ],
+          orderBy: 'status_v2_effective',
         }),
       ),
       enabled: !!invocation.name,
