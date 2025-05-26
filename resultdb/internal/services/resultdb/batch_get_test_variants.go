@@ -19,8 +19,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -28,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/span"
 )
 
 func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) error {
@@ -125,6 +124,9 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		ResultLimit:          testvariants.AdjustResultLimit(in.ResultLimit),
 		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
 		AccessLevel:          accessLevel,
+		// Prefer to sort by v2 verdict status instead of v1 status, to ensure
+		// v2 verdict status is always correct. See comment on OrderBy.
+		OrderBy: testvariants.SortOrderStatusV2Effective,
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",

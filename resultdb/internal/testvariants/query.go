@@ -144,6 +144,13 @@ type Query struct {
 	// The level of access the user has to test results and test exoneration data.
 	AccessLevel AccessLevel
 	// The sort order of results.
+	// Note: except for the verdict status that the query is configured to sort by
+	// (e.g. verdict status v2 for SortOrderStatusV2Effective or verdict status v1
+	// for SortOrderLegacyStatus), the verdict statuses returned by the query may
+	// an approximation only (i.e. possibly inaccurate).
+	// This is because the non ordered-by verdict status is approximated based on
+	// the results returned by the query, which is subject to truncation according
+	// to the the `ResultLimit` parameter.
 	OrderBy SortOrder
 
 	decompressBuf []byte         // buffer for decompressing blobs
