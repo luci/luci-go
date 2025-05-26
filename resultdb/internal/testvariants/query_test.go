@@ -31,10 +31,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -43,6 +39,9 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestQueryTestVariants(t *testing.T) {
@@ -202,7 +201,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/",
 			}))
 
 			expectedT4Result := insert.MakeTestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestResult_FAILED)
@@ -484,7 +483,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/",
 			})
 			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
@@ -564,7 +563,7 @@ func TestQueryTestVariants(t *testing.T) {
 					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 					"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 					"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-					"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/FLAKY/",
 				}))
 			})
 		})
@@ -598,7 +597,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/",
 				"50/T3/e3b0c44298fc1c14/PASSED/",
 				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
 				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
@@ -627,7 +626,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/",
 				"50/T3/e3b0c44298fc1c14/PASSED/",
 				"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
 				"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",
@@ -650,7 +649,7 @@ func TestQueryTestVariants(t *testing.T) {
 					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 					"30/Tx/e3b0c44298fc1c14/SKIPPED/",
 					"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
-					"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+					"40/T2/e3b0c44298fc1c14/FLAKY/",
 				}))
 
 				// Check the test variant and its test results and test exonerations
@@ -811,24 +810,6 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, tvs[8].Results, should.Match([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
-							Name:      "invocations/inv0/tests/T2/results/0",
-							ResultId:  "0",
-							Expected:  true,
-							Status:    pb.TestStatus_PASS,
-							StatusV2:  pb.TestResult_PASSED,
-							StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
-							Duration:  &durationpb.Duration{Seconds: 0, Nanos: 234567000},
-							FrameworkExtensions: &pb.FrameworkExtensions{
-								WebTest: &pb.WebTest{
-									Status:     pb.WebTest_PASS,
-									IsExpected: true,
-								},
-							},
-							IsMasked: true,
-						},
-					},
-					{
-						Result: &pb.TestResult{
 							Name:      "invocations/inv1/tests/T2/results/0",
 							ResultId:  "0",
 							Expected:  false,
@@ -857,6 +838,24 @@ func TestQueryTestVariants(t *testing.T) {
 									IsExpected: true,
 								},
 							},
+						},
+					},
+					{
+						Result: &pb.TestResult{
+							Name:      "invocations/inv0/tests/T2/results/0",
+							ResultId:  "0",
+							Expected:  true,
+							Status:    pb.TestStatus_PASS,
+							StatusV2:  pb.TestResult_PASSED,
+							StartTime: timestamppb.New(time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)),
+							Duration:  &durationpb.Duration{Seconds: 0, Nanos: 234567000},
+							FrameworkExtensions: &pb.FrameworkExtensions{
+								WebTest: &pb.WebTest{
+									Status:     pb.WebTest_PASS,
+									IsExpected: true,
+								},
+							},
+							IsMasked: true,
 						},
 					},
 				}))
@@ -889,7 +888,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/FAILED/",
 				"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
-				"40/T2/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
+				"40/T2/e3b0c44298fc1c14/FLAKY/",
 				"30/T5/c467ccce5a16dc72/FLAKY/",
 				"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
 				"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
@@ -936,10 +935,10 @@ func TestQueryTestVariants(t *testing.T) {
 					"10/T5/e3b0c44298fc1c14/FAILED/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/FAILED/",
 					"20/Tz/e3b0c44298fc1c14/EXECUTION_ERRORED/",
-					"40/T2/e3b0c44298fc1c14/FLAKY/", // Missing repro instructions.
+					"40/T2/e3b0c44298fc1c14/FLAKY/",
 					"30/T5/c467ccce5a16dc72/FLAKY/",
 					"30/T8/e3b0c44298fc1c14/FLAKY/invocations/inv0/instructions/test",
-					"40/T1/e3b0c44298fc1c14/EXONERATED/", // Missing repro instructions.
+					"40/T1/e3b0c44298fc1c14/EXONERATED/invocations/inv0/instructions/test",
 					"50/T3/e3b0c44298fc1c14/PASSED/",
 					"50/T6/e3b0c44298fc1c14/PASSED/invocations/inv0/instructions/test",
 					"50/T7/e3b0c44298fc1c14/SKIPPED/invocations/inv0/instructions/test",

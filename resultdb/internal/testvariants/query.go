@@ -28,8 +28,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/server/auth"
-
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
@@ -40,6 +38,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth"
 )
 
 const (
@@ -1271,7 +1270,9 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ARRAY(
 				SELECT AS STRUCT *
 				FROM UNNEST(tv.results)
-				LIMIT @testResultLimit) results,
+				ORDER BY (StatusV2 = @failedResult) DESC, StatusV2 ASC
+				LIMIT @testResultLimit
+			) results,
 			exonerated.ExonerationIDs,
 			exonerated.InvocationIDs,
 			exonerated.ExonerationExplanationHTMLs,
