@@ -16,27 +16,27 @@ import {
   Box,
   CircularProgress,
   List,
-  Tab,
-  Tabs,
   Typography,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 
 import { DrawerTreeItem } from './drawer_tree_item';
-import { DrawerTreeNode } from './types';
+import { ExpandableListItem } from './expandable_list_item.tsx';
+import { TestNavigationTreeGroup, TestNavigationTreeNode } from './types';
 
 interface DrawerContentProps {
   selectedTab: number;
   onTabChange: (event: React.SyntheticEvent, newValue: number) => void;
   isLoadingTestVariants: boolean;
-  hierarchyTreeData: readonly DrawerTreeNode[];
-  failureReasonTreeData: readonly DrawerTreeNode[];
+  hierarchyTreeData: readonly TestNavigationTreeNode[];
+  failureReasonTreeData: readonly TestNavigationTreeGroup[];
   expandedNodes: Set<string>;
   toggleNodeExpansion: (nodeId: string) => void;
   currentTestId?: string;
   currentVariantHash?: string;
   onSelectTestVariant?: (testId: string, variantHash: string) => void;
-  closeDrawer?: () => void;
 }
 
 export function DrawerContent({
@@ -50,8 +50,24 @@ export function DrawerContent({
   currentTestId,
   currentVariantHash,
   onSelectTestVariant,
-  closeDrawer,
 }: DrawerContentProps): JSX.Element {
+  const handleTabChange = (
+    event: React.SyntheticEvent,
+    newValue: number | null,
+  ) => {
+    if (newValue !== null) {
+      onTabChange(event, newValue);
+    }
+  };
+
+  const [openGroups, setOpenGroups] = useState<{ [groupId: string]: boolean }>(
+    {},
+  );
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
   return (
     <Box
       sx={{
@@ -62,33 +78,41 @@ export function DrawerContent({
         flexDirection: 'column',
       }}
     >
-      <Typography
-        variant="h6"
+      <Box
         sx={{
-          p: 2,
-          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          padding: 1,
           borderBottom: 1,
           borderColor: 'divider',
-          fontWeight: 500,
         }}
       >
-        Platform Testing Infra
-      </Typography>
-      <Tabs
-        value={selectedTab}
-        onChange={onTabChange}
-        variant="fullWidth"
-        sx={{ flexShrink: 0, borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab
-          label="Test hierarchy"
-          sx={{ textTransform: 'none', fontSize: '0.875rem' }}
-        />
-        <Tab
-          label="Failure reason"
-          sx={{ textTransform: 'none', fontSize: '0.875rem' }}
-        />
-      </Tabs>
+        <Typography sx={{ mr: 1, fontSize: '0.875rem' }}>Group by:</Typography>
+        <ToggleButtonGroup
+          value={selectedTab}
+          exclusive
+          size="small"
+          onChange={handleTabChange}
+          aria-label="Grouping options"
+        >
+          <ToggleButton
+            value={0}
+            aria-label="Test hierarchy"
+            size="small"
+            sx={{ textTransform: 'none', fontSize: '0.875rem' }}
+          >
+            Test hierarchy
+          </ToggleButton>
+          <ToggleButton
+            value={1}
+            aria-label="Failure reason"
+            size="small"
+            sx={{ textTransform: 'none', fontSize: '0.875rem' }}
+          >
+            Failure reason
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
       <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
         {isLoadingTestVariants ? (
           <Box
@@ -110,13 +134,13 @@ export function DrawerContent({
                 hierarchyTreeData.map((node) => (
                   <DrawerTreeItem
                     key={node.id}
+                    indent={0}
                     node={node}
                     expandedNodes={expandedNodes}
                     toggleNodeExpansion={toggleNodeExpansion}
                     currentTestId={currentTestId}
                     currentVariantHash={currentVariantHash}
                     onSelectTestVariant={onSelectTestVariant}
-                    closeDrawer={closeDrawer}
                   />
                 ))
               ) : (
@@ -128,17 +152,30 @@ export function DrawerContent({
               ))}
             {selectedTab === 1 &&
               (failureReasonTreeData.length > 0 ? (
-                failureReasonTreeData.map((node) => (
-                  <DrawerTreeItem
-                    key={node.id}
-                    node={node}
-                    expandedNodes={expandedNodes}
-                    toggleNodeExpansion={toggleNodeExpansion}
-                    currentTestId={currentTestId}
-                    currentVariantHash={currentVariantHash}
-                    onSelectTestVariant={undefined} // TODO: Failure reasons aren't directly navigable
-                    closeDrawer={closeDrawer}
-                  />
+                failureReasonTreeData.map((group) => (
+                  <ExpandableListItem
+                    key={group.id}
+                    isExpanded={!!openGroups[group.id]}
+                    label={group.label}
+                    secondaryText={`${group.failedTests} failed (${group.totalTests} total)`}
+                    onClick={() => toggleGroup(group.id)}
+                    showBorder
+                  >
+                    <List dense component="div" disablePadding>
+                      {group.nodes.map((node) => (
+                        <DrawerTreeItem
+                          key={node.id}
+                          indent={1}
+                          node={node}
+                          expandedNodes={expandedNodes}
+                          toggleNodeExpansion={toggleNodeExpansion}
+                          currentTestId={currentTestId}
+                          currentVariantHash={currentVariantHash}
+                          onSelectTestVariant={onSelectTestVariant}
+                        />
+                      ))}
+                    </List>
+                  </ExpandableListItem>
                 ))
               ) : (
                 <Typography

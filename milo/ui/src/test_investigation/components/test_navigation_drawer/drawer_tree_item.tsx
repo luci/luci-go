@@ -12,79 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import DescriptionIcon from '@mui/icons-material/Description';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import FolderIcon from '@mui/icons-material/Folder';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import {
-  Box,
-  Chip,
-  Collapse,
-  IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from '@mui/material';
-import React, { JSX } from 'react';
+import { List } from '@mui/material';
+import { JSX } from 'react';
 
 import {
   getStatusStyle,
   SemanticStatusType,
   StatusStyle,
 } from '@/common/styles/status_styles';
-import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 
-import { getSemanticStatusFromResultV2 } from '../../utils/drawer_tree_utils';
+import { getSemanticStatusFromVerdict } from '../../utils/drawer_tree_utils';
 
-import { DrawerTreeNode } from './types';
+import { ExpandableListItem } from './expandable_list_item.tsx';
+import { TestNavigationTreeNode } from './types';
 
 interface DrawerTreeItemProps {
-  node: DrawerTreeNode;
+  indent: number;
+  node: TestNavigationTreeNode;
   expandedNodes: Set<string>;
   toggleNodeExpansion: (nodeId: string) => void;
   currentTestId?: string;
   currentVariantHash?: string;
   onSelectTestVariant?: (testId: string, variantHash: string) => void;
-  closeDrawer?: () => void;
 }
 
 export function DrawerTreeItem({
+  indent,
   node,
   expandedNodes,
   toggleNodeExpansion,
   currentTestId,
   currentVariantHash,
   onSelectTestVariant,
-  closeDrawer,
 }: DrawerTreeItemProps): JSX.Element {
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
 
-  // Determine the primary semantic status for the node's icon
   let primarySemanticStatus: SemanticStatusType = 'neutral';
-  if (node.isLeaf && node.isClickable && node.status !== undefined) {
-    // This is a test variant leaf node, its status comes from TestResult_Status
-    primarySemanticStatus = getSemanticStatusFromResultV2(
-      node.status as TestResult_Status,
+  if (node.testVariant !== undefined) {
+    primarySemanticStatus = getSemanticStatusFromVerdict(
+      node.testVariant.statusV2,
     );
-  } else if (!node.isLeaf && hasChildren) {
-    // Folder node: derive status based on children, e.g., if any child is an error
-    const hasErrorChild = node.children?.some(
-      (childNode) =>
-        childNode.isLeaf &&
-        childNode.isClickable &&
-        childNode.status === TestResult_Status.FAILED,
-    );
-    if (hasErrorChild) {
-      primarySemanticStatus = 'error';
-    } else {
-      primarySemanticStatus = 'neutral'; // Default folder status
-    }
-  } else if (node.isLeaf && !node.isClickable && node.tagColor) {
-    // For non-clickable leaves like failure reasons, use their tagColor as the primary semantic status
-    primarySemanticStatus = node.tagColor;
   }
 
   const itemStyle: StatusStyle = getStatusStyle(primarySemanticStatus);
@@ -92,185 +60,64 @@ export function DrawerTreeItem({
 
   let nodeIconElement: JSX.Element | null = null;
 
-  if (!node.isLeaf && hasChildren) {
-    // Folder node
-    const FolderSpecificIcon = isExpanded ? FolderOpenIcon : FolderIcon;
-    nodeIconElement = (
-      <FolderSpecificIcon
-        sx={{
-          fontSize: '1.1rem',
-          color: itemStyle.iconColor || itemStyle.textColor,
-        }}
-      />
-    );
-  } else if (ItemIconComponent) {
-    // Leaf node with a status-derived icon
+  if (ItemIconComponent) {
     nodeIconElement = (
       <ItemIconComponent
         sx={{
-          fontSize: '1.1rem',
+          fontSize: 'inherit',
           color: itemStyle.iconColor || itemStyle.textColor,
-        }}
-      />
-    );
-  } else {
-    // Fallback for other leaf types or if no icon from style
-    nodeIconElement = (
-      <DescriptionIcon
-        sx={{
-          fontSize: '1.1rem',
-          color: 'var(--gm3-color-on-surface-variant)',
         }}
       />
     );
   }
 
   const handleItemClick = () => {
-    if (hasChildren && !node.isLeaf && !node.isClickable) {
-      // Folder node click
+    if (hasChildren) {
       toggleNodeExpansion(node.id);
-    } else if (
-      node.isClickable &&
-      node.testId &&
-      node.variantHash &&
-      onSelectTestVariant
-    ) {
-      // Clickable leaf node
-      onSelectTestVariant(node.testId, node.variantHash);
-      if (closeDrawer) {
-        closeDrawer();
-      }
+    } else if (node.testVariant !== undefined && onSelectTestVariant) {
+      onSelectTestVariant(
+        node.testVariant.testId,
+        node.testVariant.variantHash,
+      );
     }
-    // Non-clickable leaves (like failure reasons) do nothing on click.
   };
 
   return (
-    <React.Fragment key={node.id}>
-      <ListItemButton
-        selected={
-          currentTestId === node.testId &&
-          currentVariantHash === node.variantHash &&
-          node.isClickable
-        }
-        onClick={handleItemClick}
-        sx={{ pl: node.level * 2 + 1, py: 0.35, pr: 1 }}
-      >
-        <ListItemIcon
-          sx={{
-            minWidth: 'auto',
-            mr: 0.5,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          {hasChildren && !node.isLeaf ? ( // Show expander only for non-leaf folder nodes
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleNodeExpansion(node.id);
-              }}
-              sx={{ p: 0.25 }}
-              aria-label={isExpanded ? 'Collapse' : 'Expand'}
-            >
-              {isExpanded ? (
-                <ExpandMoreIcon fontSize="inherit" />
-              ) : (
-                <ChevronRightIcon fontSize="inherit" />
-              )}
-            </IconButton>
-          ) : (
-            <Box sx={{ width: 24, height: 24 }} /> // Spacer for alignment
-          )}
-        </ListItemIcon>
-        <ListItemIcon
-          sx={{
-            minWidth: 'auto',
-            mr: 0.75,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          {nodeIconElement}
-        </ListItemIcon>
-        <ListItemText
-          primary={node.label}
-          secondary={
-            !node.isLeaf &&
-            hasChildren &&
-            (node.failedTests !== undefined || node.totalTests !== undefined)
-              ? `${node.failedTests || 0} failed (${node.totalTests || 0} total)`
-              : undefined
-          }
-          primaryTypographyProps={{
-            variant: 'body2',
-            sx: {
-              fontWeight:
-                currentTestId === node.testId &&
-                currentVariantHash === node.variantHash &&
-                node.isClickable
-                  ? 'bold'
-                  : 'normal',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              // Apply text color from style primarily for clickable items, others use default
-              color:
-                node.isClickable || (!node.isLeaf && hasChildren)
-                  ? itemStyle.textColor
-                  : 'text.primary',
-            },
-          }}
-          secondaryTypographyProps={{
-            variant: 'caption',
-            sx: {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            },
-          }}
-        />
-        {node.tag && node.tagColor && (
-          <Chip
-            label={node.tag}
-            size="small"
-            sx={{
-              ml: 1,
-              height: '18px',
-              fontSize: '0.7rem',
-              borderRadius: '4px',
-              backgroundColor: getStatusStyle(node.tagColor).backgroundColor,
-              color: getStatusStyle(node.tagColor).textColor,
-              borderColor: getStatusStyle(node.tagColor).borderColor,
-              borderStyle: getStatusStyle(node.tagColor).borderColor
-                ? 'solid'
-                : 'none',
-              borderWidth: getStatusStyle(node.tagColor).borderColor
-                ? '1px'
-                : '0',
-            }}
-          />
-        )}
-      </ListItemButton>
-      {hasChildren &&
-        !node.isLeaf && ( // Only render children block for expandable non-leaf nodes
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding dense>
-              {node.children!.map((child) => (
-                <DrawerTreeItem
-                  key={child.id}
-                  node={child}
-                  expandedNodes={expandedNodes}
-                  toggleNodeExpansion={toggleNodeExpansion}
-                  currentTestId={currentTestId}
-                  currentVariantHash={currentVariantHash}
-                  onSelectTestVariant={onSelectTestVariant}
-                  closeDrawer={closeDrawer}
-                />
-              ))}
-            </List>
-          </Collapse>
-        )}
-    </React.Fragment>
+    <ExpandableListItem
+      isExpanded={isExpanded}
+      label={node.label}
+      secondaryText={
+        hasChildren &&
+        (node.failedTests !== undefined || node.totalTests !== undefined)
+          ? `${node.failedTests || 0} failed (${node.totalTests || 0} total)`
+          : undefined
+      }
+      onClick={handleItemClick}
+      isSelected={
+        currentTestId === node.testVariant?.testId &&
+        currentVariantHash === node.testVariant?.variantHash
+      }
+      level={node.level + indent}
+      iconElement={
+        !hasChildren && nodeIconElement ? nodeIconElement : undefined
+      }
+    >
+      {hasChildren && (
+        <List component="div" disablePadding dense>
+          {node.children!.map((child) => (
+            <DrawerTreeItem
+              key={child.id}
+              indent={indent}
+              node={child}
+              expandedNodes={expandedNodes}
+              toggleNodeExpansion={toggleNodeExpansion}
+              currentTestId={currentTestId}
+              currentVariantHash={currentVariantHash}
+              onSelectTestVariant={onSelectTestVariant}
+            />
+          ))}
+        </List>
+      )}
+    </ExpandableListItem>
   );
 }

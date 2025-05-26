@@ -13,26 +13,24 @@
 // limitations under the License.
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
-import {
-  TestResult,
-  TestResult_Status,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import {
   TestVariant,
   TestVariantStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-import { DrawerTreeNode } from '../components/test_navigation_drawer/types';
-
 import {
-  getTestDisplayName,
-  normalizeDrawerFailureReason,
-} from './test_variant_utils';
+  TestNavigationTreeGroup,
+  TestNavigationTreeNode,
+} from '../components/test_navigation_drawer/types';
+
+import { normalizeDrawerFailureReason } from './test_variant_utils';
 
 export interface HierarchyBuildResult {
-  tree: DrawerTreeNode[];
-  hasStructuredData: boolean; // True if hierarchy was built, false for flat list
-  idsToExpand: string[]; // IDs of nodes to expand for the current test
+  tree: TestNavigationTreeNode[];
+  // TODO: IDs of nodes leading to the currently selected test variant.
+  idsToExpand: string[];
 }
 
 // Helper to map TestResult_Status (from a result's statusV2 field) to a SemanticStatusType.
@@ -78,343 +76,284 @@ export function getSemanticStatusFromTestVariant(
   }
 }
 
-const MAX_LABEL_LENGTH = 100; // Max length for a label segment before forced split
-
-// Definition for generateVariantNode
-function generateVariantNode(
-  tv: TestVariant,
-  variantResults: readonly TestResult[],
-  failedCount: number,
-  level: number,
-): DrawerTreeNode {
-  const variantString = Object.entries(tv.variant?.def || {})
-    .map(([key, val]) => `${key}:${val}`)
-    .join(', ');
-  const primaryResultStatusV2 =
-    failedCount > 0
-      ? TestResult_Status.FAILED
-      : variantResults.find((r) => r.statusV2 === TestResult_Status.PASSED)
-          ?.statusV2 || TestResult_Status.STATUS_UNSPECIFIED;
-
-  let tagText: string | undefined;
-  let tagColorSemanticType: SemanticStatusType = getSemanticStatusFromResultV2(
-    primaryResultStatusV2,
-  );
-
-  if (failedCount > 0) {
-    tagText = `${failedCount} failed`;
-    // tagColorSemanticType is already 'error' from getSemanticStatusFromResultV2
-  } else if (variantResults.length === 0) {
-    tagText = 'no results';
-    tagColorSemanticType = 'unknown';
+// Helper to map TestResult_Status (from a result's statusV2 field) to a SemanticStatusType.
+export function getSemanticStatusFromVerdict(
+  statusV2?: TestVerdict_Status,
+): SemanticStatusType {
+  if (statusV2 === undefined) return 'unknown';
+  switch (statusV2) {
+    case TestVerdict_Status.FLAKY:
+      return 'warning';
+    case TestVerdict_Status.PASSED:
+      return 'success';
+    case TestVerdict_Status.FAILED:
+      return 'error';
+    case TestVerdict_Status.SKIPPED:
+      return 'skipped';
+    case TestVerdict_Status.EXECUTION_ERRORED:
+      return 'infra_failure';
+    case TestVerdict_Status.PRECLUDED:
+      return 'skipped';
+    default:
+      return 'unknown';
   }
-  // Add overall TestVariant.status tag if informative and not already covered by a failure tag
-  if (tv.status && tv.status !== TestVariantStatus.EXPECTED && !tagText) {
-    tagColorSemanticType = getSemanticStatusFromTestVariant(tv.status);
-    tagText = TestVariantStatus[tv.status]?.toLowerCase().replace(/_/g, ' ');
-  }
-
-  return {
-    id: `${tv.testId}-${tv.variantHash}`,
-    label: variantString || tv.variantHash?.substring(0, 12) || 'variant',
-    level: level,
-    isLeaf: true,
-    testId: tv.testId,
-    variantHash: tv.variantHash!,
-    status: primaryResultStatusV2,
-    failedTests: failedCount,
-    totalTests: variantResults.length,
-    isClickable: true,
-    tag: tagText,
-    tagColor: tagColorSemanticType,
-  };
 }
 
-// TODO: This function does not work well for the moment, as we only have flat ids and
-// the flat id algorithm splits into far too many levels.  Fix in later CL.
 export function buildHierarchyTree(
   testVariants: readonly TestVariant[],
-  currentTestId?: string,
-  currentVariantHash?: string,
 ): HierarchyBuildResult {
-  const defaultResult: HierarchyBuildResult = {
+  const result: HierarchyBuildResult = {
     tree: [],
-    hasStructuredData: false,
     idsToExpand: [],
   };
   if (!testVariants || testVariants.length === 0) {
-    return defaultResult;
+    return result;
   }
 
-  // TODO: Implement robust logic to determine if actual structured data exists
-  // (e.g., from TestResult.testIdStructured) to decide whether to use this hierarchical approach.
-  // If not, fall back to the flat list logic.
-  const attemptHierarchicalStructure = true; // Assume true for now
+  // Algorithm:
+  // 1. Put any test variants with structured ids into a tree based on the structured ids
+  const structuredVariants = testVariants.filter((tv) => !!tv.testIdStructured);
+  result.tree = buildStructuredTree(
+    StructuredTreeLevel.Module,
+    structuredVariants,
+  );
+  // 2. For the remaining test variants, build up a hierarchy based on longest common prefixes and common separator characters.
+  const flatVariants = testVariants.filter((tv) => !tv.testIdStructured);
+  result.tree = [
+    ...result.tree,
+    ...compressSingleChildNodes(buildFlatTree(flatVariants)),
+  ];
 
-  const rootNodes: DrawerTreeNode[] = [];
-  const nodeMap = new Map<string, DrawerTreeNode>(); // Tracks folder nodes by their full path ID
-  const idsToExpandForCurrent: string[] = [];
-  let rootNodeContainingCurrentTest: DrawerTreeNode | null = null;
+  return result;
+}
 
-  if (!attemptHierarchicalStructure) {
-    // FLAT LIST LOGIC
-    testVariants.forEach((tv) => {
-      const variantResults =
-        tv.results
-          ?.map((rLink) => rLink.result)
-          .filter((r): r is TestResult => !!r) || [];
-      const failedCount = variantResults.filter(
-        (r) => r.statusV2 === TestResult_Status.FAILED,
-      ).length;
-      const hasIndividualUnexpectedNonPass = variantResults.some(
-        (r) => !r.expected && r.statusV2 !== TestResult_Status.PASSED,
-      );
-      const overallVariantSemanticStatus = getSemanticStatusFromTestVariant(
-        tv.status,
-      );
-      const isOverallVariantProblematic =
-        overallVariantSemanticStatus === 'error' ||
-        overallVariantSemanticStatus === 'unexpectedly_skipped' ||
-        overallVariantSemanticStatus === 'flaky';
+enum StructuredTreeLevel {
+  Module,
+  Variant,
+  Coarse,
+  Fine,
+  Case,
+}
 
-      if (
-        failedCount > 0 ||
-        hasIndividualUnexpectedNonPass ||
-        isOverallVariantProblematic
-      ) {
-        const displayName = getTestDisplayName(tv);
-        const variantString = Object.entries(tv.variant?.def || {})
-          .map(([k, v]) => `${k}:${v}`)
-          .join(', ');
-        const label = variantString
-          ? `${displayName} (${variantString})`
-          : displayName;
-        let primaryDisplayStatusV2: TestResult_Status =
-          TestResult_Status.STATUS_UNSPECIFIED;
-        let tagText: string | undefined;
-        let tagColorSemanticType: SemanticStatusType = 'neutral';
+export function structuredTreeLevelData(
+  level: StructuredTreeLevel,
+  tv: TestVariant,
+): string | undefined {
+  switch (level) {
+    case StructuredTreeLevel.Module:
+      return tv.testIdStructured?.moduleName;
+    case StructuredTreeLevel.Variant:
+      return tv.testIdStructured?.moduleVariantHash;
+    case StructuredTreeLevel.Coarse:
+      return tv.testIdStructured?.coarseName;
+    case StructuredTreeLevel.Fine:
+      return tv.testIdStructured?.fineName;
+    case StructuredTreeLevel.Case:
+      return tv.testIdStructured?.caseName;
+    default:
+      return undefined;
+  }
+}
 
-        if (failedCount > 0) {
-          primaryDisplayStatusV2 = TestResult_Status.FAILED;
-          tagText = `${failedCount} failed`;
-          tagColorSemanticType = 'error';
-        } else if (hasIndividualUnexpectedNonPass) {
-          primaryDisplayStatusV2 =
-            variantResults.find(
-              (r) => !r.expected && r.statusV2 !== TestResult_Status.PASSED,
-            )?.statusV2 || TestResult_Status.STATUS_UNSPECIFIED;
-          tagText = 'unexpected result';
-          tagColorSemanticType = 'warning';
-        } else if (isOverallVariantProblematic) {
-          tagText = TestVariantStatus[tv.status]
-            ?.toLowerCase()
-            .replace(/_/g, ' ');
-          tagColorSemanticType = overallVariantSemanticStatus;
-          if (tv.status === TestVariantStatus.UNEXPECTEDLY_SKIPPED)
-            primaryDisplayStatusV2 = TestResult_Status.SKIPPED;
-          else if (variantResults.length > 0)
-            primaryDisplayStatusV2 =
-              variantResults.find(
-                (r) => r.statusV2 === TestResult_Status.PASSED,
-              )?.statusV2 ||
-              variantResults[0]?.statusV2 ||
-              TestResult_Status.STATUS_UNSPECIFIED;
-        } else if (
-          variantResults.some((r) => r.statusV2 === TestResult_Status.PASSED)
-        )
-          primaryDisplayStatusV2 = TestResult_Status.PASSED;
+export function buildStructuredTree(
+  level: StructuredTreeLevel,
+  variants: TestVariant[],
+): TestNavigationTreeNode[] {
+  if (!variants || variants.length === 0) {
+    return [];
+  }
+  const groups = new Map<string, TestVariant[]>();
+  variants.forEach((tv) => {
+    const data = structuredTreeLevelData(level, tv);
+    if (!data) return;
+    if (!groups.has(data)) {
+      groups.set(data, []);
+    }
+    groups.get(data)!.push(tv);
+  });
 
-        const nodeToAdd: DrawerTreeNode = {
-          id: `${tv.testId}-${tv.variantHash}`,
-          label: label,
-          level: 0,
-          isLeaf: true,
-          testId: tv.testId,
-          variantHash: tv.variantHash!,
-          status: primaryDisplayStatusV2,
-          failedTests: failedCount,
-          totalTests: variantResults.length,
-          isClickable: true,
-          tag: tagText,
-          tagColor: tagColorSemanticType,
-        };
-        if (
-          tv.testId === currentTestId &&
-          tv.variantHash === currentVariantHash
-        ) {
-          rootNodes.unshift(nodeToAdd);
-          // For flat list, only the item itself might be "expanded" (selected)
-          // No hierarchical IDs to expand beyond the item itself if it were a folder.
-        } else {
-          rootNodes.push(nodeToAdd);
-        }
-      }
+  const nodes: TestNavigationTreeNode[] = [];
+  if (level < StructuredTreeLevel.Case) {
+    groups.forEach((variants, data) => {
+      const children = buildStructuredTree(level + 1, variants);
+      nodes.push({
+        id: `${level}-${data}`,
+        label: data,
+        level: level,
+        children: children,
+        failedTests: 0,
+        totalTests: 0,
+      });
     });
-    return { tree: rootNodes, hasStructuredData: false, idsToExpand: [] };
+  } else {
+    groups.forEach((variants, data) => {
+      nodes.push({
+        id: `${level}-${data}`,
+        label: data,
+        level: level,
+        totalTests: 1,
+        failedTests: variants[0].statusV2 === TestVerdict_Status.FAILED ? 1 : 0,
+        testVariant: variants[0],
+      });
+    });
   }
 
-  // HIERARCHICAL LOGIC
-  testVariants.forEach((tv) => {
-    const displayName = getTestDisplayName(tv);
-    // Split by any sequence of one or more non-alphanumeric characters.
-    // Filter out empty strings that can result from consecutive delimiters.
-    const originalPathSegments = displayName
-      .split(/[^a-zA-Z0-9]+/)
-      .filter(Boolean);
+  return nodes;
+}
+export interface FlatTreeEntry {
+  path: string[];
+  value: TestVariant;
+}
+export function buildFlatTree(
+  variants: TestVariant[],
+): TestNavigationTreeNode[] {
+  const entries = variants.map((tv): FlatTreeEntry => {
+    return {
+      path: pathSplit(tv.testId),
+      value: tv,
+    };
+  });
+  return buildFlatTreeFromEntries(0, entries);
+}
 
-    const variantResults: readonly TestResult[] =
-      tv.results
-        ?.map((rLink) => rLink.result)
-        .filter((r): r is TestResult => Boolean(r)) || [];
-    const failedCount = variantResults.filter(
-      (r) => r.statusV2 === TestResult_Status.FAILED,
-    ).length;
+export function buildFlatTreeFromEntries(
+  level: number,
+  entries: FlatTreeEntry[],
+): TestNavigationTreeNode[] {
+  if (!entries || entries.length === 0) {
+    return [];
+  }
 
-    let currentParentNodeList = rootNodes;
-    let accumulatedPathId = ''; // Used for nodeMap keys
-
-    for (let i = 0; i < originalPathSegments.length; i++) {
-      const segment = originalPathSegments[i];
-      const isLastOriginalSegment = i === originalPathSegments.length - 1;
-
-      // Handle length-based splitting for the current segment
-      const subSegments: string[] = [];
-      let tempSubSegment = segment;
-      while (tempSubSegment.length > MAX_LABEL_LENGTH) {
-        // For now, simple hard split. A real solution might try to find a sub-delimiter.
-        subSegments.push(tempSubSegment.substring(0, MAX_LABEL_LENGTH));
-        tempSubSegment = tempSubSegment.substring(MAX_LABEL_LENGTH);
+  const groups = new Map<string, FlatTreeEntry[]>();
+  const leaves: TestNavigationTreeNode[] = [];
+  entries.forEach((entry) => {
+    const component = entry.path[level] || '';
+    if (entry.path.length - 1 === level) {
+      leaves.push({
+        id: `${level}-${component}`,
+        label: component,
+        level: level,
+        totalTests: 1,
+        failedTests: entry.value.statusV2 === TestVerdict_Status.FAILED ? 1 : 0,
+        testVariant: entry.value,
+      });
+    } else {
+      if (!groups.has(component)) {
+        groups.set(component, []);
       }
-      subSegments.push(tempSubSegment); // Add the remainder
+      groups.get(component)!.push(entry);
+    }
+  });
 
-      for (let j = 0; j < subSegments.length; j++) {
-        const currentSubSegmentLabel = subSegments[j];
-        // Path ID must be unique for each node in the tree structure
-        const newAccumulatedPathId = `${accumulatedPathId}${accumulatedPathId ? '___' : ''}${currentSubSegmentLabel}`;
+  const nodes: TestNavigationTreeNode[] = [];
+  groups.forEach((groupEntries, component) => {
+    const children = buildFlatTreeFromEntries(level + 1, groupEntries);
+    if (children.length > 0) {
+      nodes.push({
+        id: `${component}-${level}`,
+        label: component,
+        level: level,
+        totalTests: children.reduce((sum, child) => sum + child.totalTests, 0),
+        failedTests: children.reduce(
+          (sum, child) => sum + child.failedTests,
+          0,
+        ),
+        children: children,
+      });
+    }
+  });
+  return [...nodes, ...leaves];
+}
 
-        let node = nodeMap.get(newAccumulatedPathId);
-        if (!node) {
-          node = {
-            id: `node-${newAccumulatedPathId}`, // Ensure ID is unique enough
-            label: currentSubSegmentLabel,
-            level: (nodeMap.get(accumulatedPathId)?.level ?? -1) + 1, // Level based on parent
-            children: [],
-            totalTests: 0,
-            failedTests: 0,
-            isClickable: false,
-            isLeaf: false, // Assume folder, will be true only for variants or empty end folders
-          };
-          currentParentNodeList.push(node);
-          nodeMap.set(newAccumulatedPathId, node);
-        }
-
-        node.totalTests = (node.totalTests || 0) + variantResults.length;
-        node.failedTests = (node.failedTests || 0) + failedCount;
-
-        // If this node corresponds to the currently viewed test variant's path, add to expand list
-        if (
-          tv.testId === currentTestId &&
-          tv.variantHash === currentVariantHash
-        ) {
-          if (!idsToExpandForCurrent.includes(node.id)) {
-            idsToExpandForCurrent.push(node.id);
-          }
-          if (
-            currentParentNodeList === rootNodes &&
-            !rootNodeContainingCurrentTest
-          ) {
-            rootNodeContainingCurrentTest = node;
-          }
-        }
-
-        const isLastEffectiveSegment =
-          isLastOriginalSegment && j === subSegments.length - 1;
-
-        if (isLastEffectiveSegment) {
-          // This is the deepest folder node for this test variant's path. Attach the variant.
-          node.isLeaf = false; // It's a parent of variant(s)
-          const variantNode = generateVariantNode(
-            tv,
-            variantResults,
-            failedCount,
-            node.level + 1,
-          );
-          node.children!.push(variantNode);
-        } else {
-          // This is an intermediate folder node. Prepare for the next segment.
-          currentParentNodeList = node.children!;
-          accumulatedPathId = newAccumulatedPathId; // The current node becomes the parent for the next segment
-        }
-      } // End of subSegments loop
-      // After processing all sub-segments of an original segment,
-      // if it wasn't the last original segment, currentParentNodeList is set for the next original segment.
-      // If it was the last, the variant was attached.
-      if (!isLastOriginalSegment) {
-        // accumulatedPathId is already updated for the next segment's parent
+/**
+ * Split the id string into components separated by non alpha-numeric components
+ * and preserving the split character at the end of each component string.
+ */
+export function pathSplit(id: string): string[] {
+  const parts: string[] = [];
+  let currentPart = '';
+  for (let i = 0; i < id.length; i++) {
+    const char = id[i];
+    if (/[a-zA-Z0-9_-]/.test(char)) {
+      currentPart += char;
+    } else {
+      if (currentPart) {
+        parts.push(currentPart + char);
+        currentPart = '';
+      } else {
+        // Handle consecutive separators or leading separators
+        parts.push(char);
       }
-    } // End of originalPathSegments loop
-  }); // End of testVariants.forEach
-
-  // Reorder rootNodes to put the current item's branch at the top
-  if (rootNodeContainingCurrentTest) {
-    const idx = rootNodes.indexOf(rootNodeContainingCurrentTest);
-    if (idx > 0) {
-      rootNodes.splice(idx, 1);
-      rootNodes.unshift(rootNodeContainingCurrentTest);
     }
   }
-  // Ensure uniqueness and correct order (root to leaf) for expansion
-  // The current logic adds to idsToExpandForCurrent as it traverses down, so it's already in order.
-  return {
-    tree: rootNodes,
-    hasStructuredData: true,
-    idsToExpand: Array.from(new Set(idsToExpandForCurrent)),
-  };
+  if (currentPart) {
+    parts.push(currentPart);
+  }
+  return parts;
+}
+
+/**
+ * Compress any nodes that only have a single child by combining the parent and child node
+ * into a single node with a concatenated label, and the children of the child node.
+ */
+export function compressSingleChildNodes(
+  nodes: TestNavigationTreeNode[],
+): TestNavigationTreeNode[] {
+  const compressed = nodes.map((parent) => {
+    if (parent.children) {
+      parent.children = compressSingleChildNodes(parent.children);
+      if (parent.children.length === 1) {
+        const child = parent.children[0];
+        return {
+          ...parent,
+          id: `${parent.id}-${child.id}`,
+          label: `${parent.label}${child.label}`,
+          children: child.children,
+          testVariant: child.testVariant,
+        };
+      }
+    }
+    return parent;
+  });
+
+  // Make sure any nodes that became leaves appear after all non-leaf nodes.
+  const stillNodes = compressed.filter((n) => n.children);
+  const leaves = compressed.filter((n) => !n.children);
+  return [...stillNodes, ...leaves];
 }
 
 export function buildFailureReasonTree(
   testVariants: readonly TestVariant[],
-): DrawerTreeNode[] {
+): TestNavigationTreeGroup[] {
   if (!testVariants) return [];
-  const reasons = new Map<
-    string,
-    {
-      count: number;
-      testVariantRefs: { testId: string; variantHash: string }[];
-    }
-  >();
+  const reasons = new Map<string, TestVariant[]>();
   testVariants.forEach((tv) => {
     tv.results?.forEach((rLink) => {
-      if (
-        rLink.result?.statusV2 === TestResult_Status.FAILED &&
-        rLink.result.failureReason?.primaryErrorMessage
-      ) {
+      if (rLink.result?.statusV2 === TestResult_Status.FAILED) {
         const reasonKey = normalizeDrawerFailureReason(
-          rLink.result.failureReason.primaryErrorMessage,
+          rLink.result.failureReason?.primaryErrorMessage || '',
         );
         if (!reasons.has(reasonKey)) {
-          reasons.set(reasonKey, { count: 0, testVariantRefs: [] });
+          reasons.set(reasonKey, []);
         }
-        const reasonEntry = reasons.get(reasonKey)!;
-        reasonEntry.count++;
-        if (tv.variantHash) {
-          reasonEntry.testVariantRefs.push({
-            testId: tv.testId,
-            variantHash: tv.variantHash,
-          });
+        const reasonVariants = reasons.get(reasonKey)!;
+        if (reasonVariants.indexOf(tv) === -1) {
+          reasonVariants.push(tv);
         }
       }
     });
   });
 
-  return Array.from(reasons.entries()).map(([reason, data], index) => ({
-    id: `failure-${index}-${encodeURIComponent(reason)}`,
-    label: reason,
-    level: 0,
-    isLeaf: true,
-    isClickable: false,
-    totalTests: data.count, // Using totalTests to store the count of this failure reason
-    tag: `${data.count} failed`,
-    tagColor: 'error', // SemanticStatusType
-  }));
+  return Array.from(reasons.entries()).map(
+    ([reason, variants], index): TestNavigationTreeGroup => {
+      const nodes = buildHierarchyTree(variants).tree;
+      return {
+        id: `failure-${index}-${encodeURIComponent(reason)}`,
+        label: reason,
+        nodes,
+        totalTests: nodes.reduce((sum, child) => sum + child.totalTests, 0),
+        failedTests: nodes.reduce((sum, child) => sum + child.failedTests, 0),
+      };
+    },
+  );
 }

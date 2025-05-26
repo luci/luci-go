@@ -22,15 +22,15 @@ export function normalizeFailureReason(message?: string): string {
   let normalized = message;
   const clusterRegex =
     /[/+0-9a-zA-Z]{10,}=+|[-0-9a-fA-F\s\t]{16,}|(?:0x)?[0-9a-fA-F]{8,}|[0-9]+/g;
-  normalized = normalized.replace(clusterRegex, '<VAR>');
+  normalized = normalized.replace(clusterRegex, '?');
   return normalized.trim() || 'No failure reason string specified.';
 }
 
 export function normalizeDrawerFailureReason(message?: string): string {
   if (!message || message.trim() === '') {
-    return 'No Failure Reason';
+    return '';
   }
-  return message.split('\n')[0].substring(0, 70);
+  return normalizeFailureReason(message);
 }
 
 export function getTestDisplayName(tv: TestVariant): string {

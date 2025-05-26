@@ -51,6 +51,7 @@ export function TestNavigationDrawer() {
   const testVariant = useTestVariant();
   const rawInvocationId = useRawInvocationId();
 
+  // TODO: Need to page if there is more than 1000 variants.
   const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
       ...resultDbClient.QueryTestVariants.query(
@@ -83,12 +84,8 @@ export function TestNavigationDrawer() {
 
   const { tree: hierarchyTreeData, idsToExpand: hierarchyIdsToExpand } =
     useMemo((): HierarchyBuildResult => {
-      return buildHierarchyTree(
-        testVariants,
-        testVariant.testId,
-        testVariant.variantHash,
-      );
-    }, [testVariants, testVariant.testId, testVariant.variantHash]);
+      return buildHierarchyTree(testVariants);
+    }, [testVariants]);
 
   const failureReasonTreeData = useMemo(
     () => buildFailureReasonTree(testVariants),
@@ -190,7 +187,6 @@ export function TestNavigationDrawer() {
           currentTestId={testVariant.testId}
           currentVariantHash={testVariant.variantHash}
           onSelectTestVariant={handleDrawerTestSelection}
-          closeDrawer={handleToggleDrawer}
         />
       </Drawer>
     </>

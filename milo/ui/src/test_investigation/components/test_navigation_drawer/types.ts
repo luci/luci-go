@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SemanticStatusType } from '@/common/styles/status_styles';
-import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-export interface DrawerTreeNode {
+export interface TestNavigationTreeGroup {
+  id: string;
+  label: string;
+  totalTests: number;
+  failedTests: number;
+  nodes: TestNavigationTreeNode[];
+}
+
+export interface TestNavigationTreeNode {
   id: string;
   label: string;
   level: number;
-  children?: DrawerTreeNode[];
-  totalTests?: number; // For folder nodes: total tests/variants underneath
-  failedTests?: number; // For folder nodes: total failed tests/variants underneath
-  isLeaf?: boolean;
-  // For leaf nodes that represent a specific test variant
-  testId?: string;
-  variantHash?: string;
-  status?: TestResult_Status; // The primary TestResult_Status (v2) for variant leaves, used for main icon
-  isClickable?: boolean; // True if clicking the node should navigate or perform an action
-  // For displaying an additional tag (e.g., "flaky", "X failed")
-  tag?: string;
-  tagColor?: SemanticStatusType; // The SemanticStatusType for styling the tag
+  children?: TestNavigationTreeNode[]; // undefined for leaf nodes.
+  totalTests: number;
+  failedTests: number;
+  testVariant?: TestVariant; // present on leaf nodes only.
 }
