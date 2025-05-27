@@ -13,24 +13,48 @@
 // limitations under the License.
 
 import { Box, Card, Divider, Typography } from '@mui/material';
+import { DateTime } from 'luxon';
+import { useMemo } from 'react';
 
+import { displayApproxDuartion } from '@/common/tools/time_utils/time_utils';
 import { useInvocation } from '@/test_investigation/context';
-import { formatDurationSince } from '@/test_investigation/utils/test_info_utils';
 
 import { useAssociatedBugs } from '../context';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
 
+// Helper to convert ISO string to Luxon DateTime (can be shared or local)
+// Assuming proto timestamps are ISO strings here.
+function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
+  if (!isoString) return undefined;
+  const dt = DateTime.fromISO(isoString, { zone: 'utc' });
+  return dt.isValid ? dt : undefined;
+}
+
 export function RecommendationsSection() {
   const invocation = useInvocation();
   const associatedBugs = useAssociatedBugs();
-  // Data points that were part of uiPlaceholders, now defined directly or passed
-  const recommendationCount = associatedBugs.length || 0;
-  const lastUpdateTime = invocation.finalizeTime
-    ? formatDurationSince(invocation.finalizeTime) || 'N/A'
-    : 'N/A';
-  // Define any other *real* links or data points that were in uiPlaceholders and are still needed
+
+  const recommendationCount = associatedBugs?.length || 0;
+
+  const now = useMemo(() => DateTime.now(), []);
+  const lastUpdateTime = useMemo(() => {
+    if (!invocation?.finalizeTime) {
+      return 'N/A';
+    }
+    const finalizeDt = isoStringToLuxonDateTime(invocation.finalizeTime);
+
+    if (finalizeDt && finalizeDt.isValid && now.isValid) {
+      const duration = now.diff(finalizeDt);
+      const approxText = displayApproxDuartion(duration);
+      if (approxText && approxText !== 'N/A') {
+        return `${approxText} ago`;
+      }
+    }
+    return 'N/A';
+  }, [invocation?.finalizeTime]);
+
   return (
     <Box sx={{ flex: { md: 2 } }}>
       <Card
@@ -65,7 +89,7 @@ export function RecommendationsSection() {
             flexGrow: 1,
           }}
         >
-          <AnalysisSubsection />
+          <AnalysisSubsection currentTimeForAgoDt={now} />
           <NextStepsSubsection />
         </Box>
       </Card>

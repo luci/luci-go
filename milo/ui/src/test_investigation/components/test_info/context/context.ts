@@ -16,16 +16,12 @@ import { createContext, useContext } from 'react';
 
 import { AssociatedBug } from '@/common/services/luci_analysis';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import {
-  FormattedCLInfo,
-  SegmentAnalysisResult,
-} from '@/test_investigation/utils/test_info_utils';
+import { FormattedCLInfo } from '@/test_investigation/utils/test_info_utils';
 
 export interface TestInfoContextValue {
   formattedCls: FormattedCLInfo[];
   associatedBugs: AssociatedBug[];
   isLoadingAssociatedBugs: boolean;
-  segmentAnalysis: SegmentAnalysisResult | null;
   testVariantBranch: TestVariantBranch | null | undefined;
 }
 
@@ -56,17 +52,6 @@ export function useIsLoadingAssociatedBugs() {
   }
 
   return ctx.isLoadingAssociatedBugs;
-}
-
-export function useSegmentAnalysis() {
-  const ctx = useContext(TestInfoContext);
-  if (!ctx) {
-    throw new Error(
-      'useSegmentAnalysis must be used within a TestInfoProvider',
-    );
-  }
-
-  return ctx.segmentAnalysis;
 }
 
 export function useTestVariantBranch() {

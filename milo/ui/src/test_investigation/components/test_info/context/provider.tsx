@@ -36,10 +36,7 @@ import {
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import {
-  analyzeSegments,
-  formatAllCLs,
-} from '@/test_investigation/utils/test_info_utils';
+import { formatAllCLs } from '@/test_investigation/utils/test_info_utils';
 
 import { TestInfoContext } from './context';
 interface Props {
@@ -167,18 +164,12 @@ export function TestInfoProvider({ children }: Props) {
     },
   });
 
-  const segmentAnalysis = useMemo(
-    () => analyzeSegments(testVariantBranch?.segments),
-    [testVariantBranch],
-  );
-
   return (
     <TestInfoContext.Provider
       value={{
         associatedBugs,
         isLoadingAssociatedBugs,
         formattedCls: allFormattedCLs,
-        segmentAnalysis,
         testVariantBranch,
       }}
     >

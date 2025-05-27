@@ -13,17 +13,19 @@
 // limitations under the License.
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
-import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
   StringPair,
   GerritChange,
+  Variant,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
+import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  TestVariant,
+  TestVariantStatus,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-// Core data shapes defined and exported by these utils
 export interface FormattedCLInfo {
   display: string;
   url: string;
@@ -36,14 +38,26 @@ export interface RateBoxDisplayInfo {
   ariaLabel: string;
 }
 
-export interface SegmentAnalysisResult {
-  currentRateBox?: RateBoxDisplayInfo;
-  previousRateBox?: RateBoxDisplayInfo;
-  transitionText?: string;
-  stabilitySinceText?: string;
+export interface SegmentPoint {
+  rateBox: RateBoxDisplayInfo;
+  isContextual: boolean;
+  startPosition: number;
+  endPosition: number;
+  startHour?: string;
 }
 
-// Utility functions
+export interface DisplayableHistorySegments {
+  displayedSegmentPoints: SegmentPoint[];
+  hasMoreNewer?: boolean;
+  hasMoreOlder?: boolean;
+}
+
+export interface HistoryAnalysis {
+  analysisText: string;
+  latestPostsubmitRateBox?: RateBoxDisplayInfo;
+  itemStatus?: SemanticStatusType;
+}
+
 export function getInvocationTag(
   tags: readonly StringPair[] | undefined,
   key: string,
@@ -52,8 +66,9 @@ export function getInvocationTag(
 }
 
 export function getCommitInfoFromInvocation(
-  invocation: Invocation,
+  invocation: Invocation | null,
 ): string | undefined {
+  if (!invocation) return undefined;
   const gc = invocation.sourceSpec?.sources?.gitilesCommit;
   if (gc) {
     let str =
@@ -78,7 +93,7 @@ export function getCommitInfoFromInvocation(
 }
 
 export function getVariantValue(
-  variantDef: TestVariant['variant'],
+  variantDef: Variant | undefined,
   key: string,
 ): string | undefined {
   return variantDef?.def?.[key];
@@ -107,156 +122,64 @@ export function formatAllCLs(
     .filter((clInfo): clInfo is FormattedCLInfo => clInfo !== null);
 }
 
-export function formatDurationSince(
-  ts?: Timestamp | string,
-): string | undefined {
-  let dateInMillis: number | undefined;
-
-  if (!ts) {
-    return undefined;
+export function constructTestHistoryUrl(
+  project?: string,
+  testId?: string,
+  variantDef?: { readonly [key: string]: string } | undefined,
+): string {
+  if (!project || !testId) {
+    return '#error-missing-project-or-testid';
   }
 
-  if (typeof ts === 'string') {
-    const parsedDate = new Date(ts);
-    if (!isNaN(parsedDate.getTime())) {
-      dateInMillis = parsedDate.getTime();
+  const encodedTestId = encodeURIComponent(testId);
+  let url = `/ui/test/${project}/${encodedTestId}`;
+
+  if (variantDef) {
+    const variantQueryParts: string[] = [];
+    for (const [key, value] of Object.entries(variantDef)) {
+      if (value !== undefined && value !== null) {
+        variantQueryParts.push(`V:${key}=${String(value)}`);
+      }
     }
-  } else {
-    // Assume ts is a Timestamp object (or structurally similar)
-    if (ts.seconds !== null && ts.seconds !== undefined) {
-      const secs =
-        typeof ts.seconds === 'bigint'
-          ? Number(ts.seconds)
-          : Number(ts.seconds);
-      const nanos = Number(ts.nanos || 0);
-      dateInMillis = secs * 1000 + nanos / 1000000;
+
+    if (variantQueryParts.length > 0) {
+      const params = new URLSearchParams();
+      params.set('q', variantQueryParts.join(' '));
+      url += `?${params.toString()}`;
     }
   }
-
-  if (dateInMillis === undefined || isNaN(dateInMillis)) {
-    return undefined;
-  }
-
-  const now = new Date();
-  const diffMs = now.getTime() - dateInMillis;
-
-  if (diffMs < 0) {
-    return 'just now';
-  }
-
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffHours < 1) {
-    if (diffMinutes < 1) {
-      return 'just now';
-    }
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-  }
-  if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  }
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-}
-
-export function determineRateBoxStatusType(
-  ratePercent: number,
-): SemanticStatusType {
-  if (ratePercent < 5) return 'success';
-  if (ratePercent > 95) return 'error';
-  return 'warning';
-}
-
-// TODO: Much of this logic feels very linked to the presentation and should be moved to the appropriate components.
-export function analyzeSegments(
-  segments?: readonly Segment[],
-): SegmentAnalysisResult {
-  if (!segments || segments.length === 0) {
-    return {
-      transitionText: 'No segment data available for transition analysis.',
-    };
-  }
-
-  let currentRateBox: RateBoxDisplayInfo = {
-    text: 'N/A',
-    statusType: 'info',
-    ariaLabel: 'Current failure rate not available',
-  };
-  let previousRateBox: RateBoxDisplayInfo | undefined;
-  let transitionText: string | undefined;
-  const currentSegment = segments[0];
-
-  if (currentSegment.counts) {
-    const { unexpectedResults = 0, totalResults = 0 } = currentSegment.counts;
-    const currentRatePercent =
-      totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
-    const statusType = determineRateBoxStatusType(currentRatePercent);
-    currentRateBox = {
-      text: `${currentRatePercent.toFixed(0)}%`,
-      statusType: statusType,
-      ariaLabel: `Current failure rate ${currentRatePercent.toFixed(0)}%`,
-    };
-  }
-
-  const stabilitySinceText = formatDurationSince(currentSegment.startHour);
-
-  if (
-    currentSegment.hasStartChangepoint &&
-    segments.length > 1 &&
-    currentRateBox.text !== 'N/A'
-  ) {
-    const prevSegment = segments[1];
-    if (prevSegment.counts) {
-      const {
-        unexpectedResults: prevUnexpected = 0,
-        totalResults: prevTotal = 0,
-      } = prevSegment.counts;
-      const prevRatePercent =
-        prevTotal > 0 ? (prevUnexpected / prevTotal) * 100 : 0;
-      const prevStatusType = determineRateBoxStatusType(prevRatePercent);
-      previousRateBox = {
-        text: `${prevRatePercent.toFixed(0)}%`,
-        statusType: prevStatusType,
-        ariaLabel: `Previous failure rate ${prevRatePercent.toFixed(0)}%`,
-      };
-      transitionText = `The test recently transitioned from ~${prevRatePercent.toFixed(0)}%
-                        to ~${currentRateBox.text} failure rate ${stabilitySinceText || 'recently'}.`;
-    } else {
-      transitionText = `The test started failing at ~${currentRateBox.text} failure rate
-                        ${stabilitySinceText || 'recently'} (previously no results in segment).`;
-    }
-  } else if (currentRateBox?.text !== 'N/A') {
-    transitionText = `The test has been at ~${currentRateBox.text} failure rate
-                      ${stabilitySinceText ? `for ${stabilitySinceText}` : 'for some time'}.`;
-  } else if (
-    !currentSegment.counts &&
-    segments.length > 1 &&
-    segments[1].counts
-  ) {
-    transitionText = `No recent data for this test. ${stabilitySinceText ? `Last data point was ${stabilitySinceText}.` : ''}`;
-  }
-
-  return {
-    currentRateBox,
-    previousRateBox,
-    transitionText,
-    stabilitySinceText,
-  };
+  return url;
 }
 
 export function constructFileBugUrl(
-  invocation: Invocation,
-  testVariant: TestVariant,
+  invocation: Invocation | null,
+  testVariant: TestVariant | null,
   builderName?: string,
   hotlistId?: string,
 ): string {
+  if (!invocation || !testVariant)
+    return 'about:blank#error-missing-invocation-or-testvariant';
   const testDisplayName = testVariant.testMetadata?.name || testVariant.testId;
-  const primaryFailureReason =
-    testVariant.results?.[0]?.result?.failureReason?.primaryErrorMessage ||
-    'N/A';
+  let primaryFailureReason = 'N/A';
+  if (testVariant.results) {
+    for (const tvResultLink of testVariant.results) {
+      if (tvResultLink.result?.statusV2 === TestResult_Status.FAILED) {
+        primaryFailureReason =
+          tvResultLink.result.failureReason?.primaryErrorMessage ||
+          'Unknown failure reason';
+        break;
+      }
+    }
+    if (
+      primaryFailureReason === 'N/A' &&
+      testVariant.status === TestVariantStatus.UNEXPECTED &&
+      testVariant.results[0]?.result?.failureReason
+    ) {
+      primaryFailureReason =
+        testVariant.results[0].result.failureReason.primaryErrorMessage ||
+        'Unknown failure reason';
+    }
+  }
   const title = `Failure in ${testDisplayName} on ${builderName || 'unknown builder'}`;
   let buildUiLink = `[Build resource: ${invocation.producerResource || 'N/A'}]`;
   if (
@@ -268,12 +191,11 @@ export function constructFileBugUrl(
       ? `https://ci.chromium.org/b/${bbBuildId}`
       : buildUiLink;
   }
-
   const currentUrl =
     typeof window !== 'undefined' && window.location.href !== 'about:blank'
       ? window.location.href
       : '[Current Page URL]';
-
+  // Note that whitespace is significant in this string.
   const description = `Test: ${testDisplayName}
 Variant: ${JSON.stringify(testVariant.variant?.def || {})}
 Failure Reason: ${primaryFailureReason}
@@ -281,57 +203,44 @@ Failure Reason: ${primaryFailureReason}
 Invocation: ${invocation.name}
 Build Link: ${buildUiLink}
 Realm: ${invocation.realm || 'N/A'}
-
 Test Investigation Page: ${currentUrl}
-
-(Auto-generated bug from Test Investigation Page)
-`;
+(Auto-generated bug from Test Investigation Page)\n`;
   const params = new URLSearchParams();
   params.append('title', title);
   params.append('description', description);
   const componentId =
     testVariant.testMetadata?.bugComponent?.issueTracker?.componentId;
-  if (componentId) {
-    params.append('component', componentId.toString());
-  }
-  if (hotlistId && hotlistId !== '[HOTLIST_ID_PLACEHOLDER]') {
+  if (componentId) params.append('component', componentId.toString());
+  if (hotlistId && hotlistId !== '[HOTLIST_ID_PLACEHOLDER]')
     params.append('hotlistIds', hotlistId);
-  }
   return `https://b.corp.google.com/issues/new?${params.toString()}`;
 }
 
 export function constructCodesearchUrl(
   location?: TestLocation,
 ): string | undefined {
-  if (!location?.fileName) {
-    return undefined;
-  }
+  if (!location?.fileName) return undefined;
   const filePath = location.fileName.startsWith('//')
     ? location.fileName.substring(2)
     : location.fileName;
-
   const params = new URLSearchParams();
   let query = `file:${filePath}`;
-
   if (location.repo) {
     try {
-      const repoUrl = new URL(location.repo);
-      // Basic parsing for common Gitiles URL patterns like https://host/project/+/ref
-      // or https://host/project (where project might be 'chromium/src')
-      const repoPath = repoUrl.pathname
-        .replace(/^\/\+\//, '')
-        .replace(/^\//, ''); // Remove leading /+/ or /
-      if (repoPath) {
-        query += ` repo:${repoPath}`;
+      if (location.repo.includes('://')) {
+        const repoUrl = new URL(location.repo);
+        const repoPath = repoUrl.pathname
+          .replace(/^\/\+\//, '')
+          .replace(/^\//, '');
+        if (repoPath) query += ` repo:${repoPath}`;
+      } else if (location.repo.trim() !== '') {
+        query += ` repo:${location.repo.trim()}`;
       }
     } catch (e) {
-      // If repo is not a valid URL or parsing fails, proceed without repo context
+      if (location.repo.trim() !== '') query += ` repo:${location.repo.trim()}`;
     }
   }
-
-  if (location.line && location.line > 0) {
-    query += ` line:${location.line}`;
-  }
+  if (location.line && location.line > 0) query += ` line:${location.line}`;
   params.append('q', query);
   return `https://source.corp.google.com/search?${params.toString()}`;
 }

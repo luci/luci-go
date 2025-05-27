@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Card, Divider, Typography } from '@mui/material';
+import { Box, Card, Typography } from '@mui/material';
 
+import { AssociatedCLsSection } from './associated_cls_section'; // New import
+import { HistoryRateDisplaySection } from './history_rate_display_section';
 import { OverviewActionsSection } from './overview_actions_section';
-import { OverviewHistorySection } from './overview_history_section';
 import { OverviewStatusSection } from './overview_status_section';
 
 export function OverviewSection() {
@@ -25,8 +26,8 @@ export function OverviewSection() {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 1.5,
-          p: 2,
+          gap: '32px',
+          p: '24px',
           height: '100%',
         }}
       >
@@ -36,9 +37,9 @@ export function OverviewSection() {
 
         <OverviewStatusSection />
 
-        <Divider sx={{ my: 1 }} />
+        <HistoryRateDisplaySection />
 
-        <OverviewHistorySection />
+        <AssociatedCLsSection />
 
         <OverviewActionsSection />
       </Card>

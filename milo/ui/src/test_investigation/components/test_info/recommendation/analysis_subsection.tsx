@@ -12,28 +12,83 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
-import { createElement } from 'react';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Box, Typography } from '@mui/material';
+import { DateTime } from 'luxon';
+import React, { useMemo, createElement } from 'react';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
-import { useSegmentAnalysis } from '../context/context';
-import { RateBox } from '../rate_box';
+import { useTestVariantBranch } from '../context/context';
 
-// TODO: Add all test history link
-const allTestHistoryLink = '#all-history-todo';
+import { AnalysisItemContent, generateAnalysisPoints } from './analysis_utils';
 
-export function AnalysisSubsection() {
-  const segmentAnalysis = useSegmentAnalysis();
+interface AnalysisItemProps {
+  item: AnalysisItemContent;
+}
 
-  if (!segmentAnalysis) {
-    return null;
+function AnalysisItem({ item }: AnalysisItemProps) {
+  let iconElement: React.ReactElement | null = null;
+  if (item.status) {
+    const style = getStatusStyle(item.status);
+    if (style.icon) {
+      iconElement = createElement(style.icon, {
+        sx: {
+          fontSize: 18,
+          color: style.iconColor || style.textColor,
+        },
+      });
+    } else {
+      iconElement = (
+        <InfoOutlinedIcon
+          sx={{ fontSize: 18, color: style.textColor || 'action' }}
+        />
+      );
+    }
+  } else {
+    iconElement = <InfoOutlinedIcon sx={{ fontSize: 18 }} color="action" />;
   }
-  const currentRateBoxStyle = segmentAnalysis.currentRateBox
-    ? getStatusStyle(segmentAnalysis.currentRateBox.statusType)
-    : getStatusStyle('unknown');
 
-  const TransitionIconComponent = currentRateBoxStyle.icon;
+  return (
+    <Box
+      sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', mb: 1 }}
+    >
+      {iconElement && <Box sx={{ mr: 1, mt: '3px' }}>{iconElement}</Box>}
+      <Box sx={{ flexGrow: 1 }}>
+        <Typography
+          variant="body2"
+          component="div"
+          sx={{ '& > p': { margin: 0 }, whiteSpace: 'pre-line' }}
+        >
+          {item.text}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+interface AnalysisSubsectionProps {
+  currentTimeForAgoDt: DateTime;
+}
+
+export function AnalysisSubsection({
+  currentTimeForAgoDt,
+}: AnalysisSubsectionProps) {
+  const invocation = useInvocation();
+  const testVariant = useTestVariant();
+  const testVariantBranch = useTestVariantBranch();
+
+  const analysisItems = useMemo(() => {
+    const rawSegments = testVariantBranch?.segments;
+
+    return generateAnalysisPoints(
+      currentTimeForAgoDt,
+      rawSegments,
+      invocation,
+      testVariant,
+    );
+  }, [invocation, testVariant, testVariantBranch, currentTimeForAgoDt]);
 
   return (
     <Box sx={{ flex: 1 }}>
@@ -46,70 +101,14 @@ export function AnalysisSubsection() {
         Analysis
       </Typography>
 
-      {/* Transition Text / Current Rate */}
-      {segmentAnalysis.transitionText && segmentAnalysis.currentRateBox ? (
-        <Typography
-          variant="body2"
-          sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}
-        >
-          {TransitionIconComponent && (
-            <TransitionIconComponent
-              sx={{
-                fontSize: 18,
-                mr: 0.5,
-                mt: '2px',
-                color:
-                  currentRateBoxStyle.iconColor ||
-                  currentRateBoxStyle.textColor,
-              }}
-            />
-          )}
-          <span>{segmentAnalysis.transitionText}</span>
-          {allTestHistoryLink && (
-            <Link
-              href={allTestHistoryLink}
-              sx={{ ml: 0.5, whiteSpace: 'nowrap', alignSelf: 'center' }}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View all test history
-            </Link>
-          )}
-        </Typography>
+      {analysisItems.length > 0 ? (
+        analysisItems.map((itemContent, i) => (
+          <AnalysisItem key={i} item={itemContent} />
+        ))
       ) : (
-        segmentAnalysis.currentRateBox && (
-          <Typography
-            variant="body2"
-            sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
-          >
-            {currentRateBoxStyle.icon &&
-              createElement(currentRateBoxStyle.icon, {
-                sx: {
-                  fontSize: 18,
-                  mr: 1,
-                  color:
-                    currentRateBoxStyle.iconColor ||
-                    currentRateBoxStyle.textColor,
-                },
-              })}
-            Current <RateBox info={segmentAnalysis.currentRateBox} /> failure
-            rate{' '}
-            {segmentAnalysis.stabilitySinceText
-              ? `since ${segmentAnalysis.stabilitySinceText}`
-              : 'for some time'}
-            .
-            {allTestHistoryLink && (
-              <Link
-                href={allTestHistoryLink}
-                sx={{ ml: 0.5, whiteSpace: 'nowrap' }}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View all test history
-              </Link>
-            )}
-          </Typography>
-        )
+        <Typography variant="body2" color="text.disabled">
+          There are no analysis findings.
+        </Typography>
       )}
     </Box>
   );

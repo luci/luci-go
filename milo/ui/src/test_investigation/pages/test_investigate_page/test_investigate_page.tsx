@@ -50,11 +50,10 @@ export function TestInvestigatePage() {
     testId: string;
     variantHash: string;
   }>();
+
   const resultDbClient = useResultDbClient();
 
-  // Validate URL parameters
   if (!rawInvocationId || !rawTestId || !rawVariantHash) {
-    // This error will be caught by the RecoverableErrorBoundary
     throw new Error(
       'Invalid URL: Missing invocationId, testId, or variantHash.',
     );
@@ -87,7 +86,7 @@ export function TestInvestigatePage() {
         resultLimit: 100,
       }),
     ),
-    staleTime: Infinity,
+    staleTime: Infinity, // TestVariant data for a specific inv and hash is usually immutable
     select: (data): TestVariant | null => {
       if (!data || !data.testVariants || data.testVariants.length === 0) {
         return null;
@@ -152,7 +151,8 @@ export function TestInvestigatePage() {
         <ErrorOutlineIcon color="action" sx={{ fontSize: '3rem', mb: 1 }} />
         <Typography variant="h6">Test Variant Not Found</Typography>
         <Typography color="text.secondary">
-          No test variant data was found for the specified parameters.
+          No test variant data was found for Test ID: {decodedTestId}, Variant
+          Hash: {rawVariantHash}.
         </Typography>
       </Box>
     );
