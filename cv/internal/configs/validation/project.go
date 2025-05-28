@@ -56,7 +56,7 @@ var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 func ValidateProject(ctx *validation.Context, cfg *cfgpb.Config, project string) error {
 	vd, err := makeProjectConfigValidator(ctx, project)
 	if err != nil {
-		return errors.Annotate(err, "makeProjectConfigValidator").Err()
+		return errors.Fmt("makeProjectConfigValidator: %w", err)
 	}
 	vd.validateProjectConfig(cfg)
 	return nil
@@ -93,18 +93,18 @@ type projectConfigValidator struct {
 func makeProjectConfigValidator(ctx *validation.Context, project string) (*projectConfigValidator, error) {
 	switch project {
 	case "":
-		return nil, errors.Reason("empty project").Err()
+		return nil, errors.New("empty project")
 	case dummyProjectSkipListenerValidation:
 		return &projectConfigValidator{ctx: ctx}, nil
 	}
 
 	lCfg, err := srvcfg.GetListenerConfig(ctx.Context, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "GetListenerConfig").Err()
+		return nil, errors.Fmt("GetListenerConfig: %w", err)
 	}
 	isEnabled, err := srvcfg.MakeListenerProjectChecker(lCfg)
 	if err != nil {
-		return nil, errors.Annotate(err, "MakeListenerProjectChecker").Err()
+		return nil, errors.Fmt("MakeListenerProjectChecker: %w", err)
 	}
 	ret := &projectConfigValidator{
 		ctx:                            ctx,
@@ -795,12 +795,12 @@ func (vd *projectConfigValidator) validateLimit(l *cfgpb.UserLimit_Limit) error 
 	case *cfgpb.UserLimit_Limit_Unlimited:
 	case *cfgpb.UserLimit_Limit_Value:
 		if val := l.GetValue(); val < 1 {
-			return errors.Reason("invalid limit %d; must be > 0", val).Err()
+			return errors.Fmt("invalid limit %d; must be > 0", val)
 		}
 	case nil:
-		return errors.Reason("missing; set `unlimited` if there is no limit").Err()
+		return errors.New("missing; set `unlimited` if there is no limit")
 	default:
-		return errors.Reason("unknown limit type %T", l.GetLimit()).Err()
+		return errors.Fmt("unknown limit type %T", l.GetLimit())
 	}
 	return nil
 }

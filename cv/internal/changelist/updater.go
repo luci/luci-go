@@ -414,7 +414,7 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 	default:
 		failed, _ := merrs.Summary()
 		err = common.MostSevereError(merrs)
-		return errors.Annotate(err, "failed to schedule UpdateCLTask for %d out of %d CLs, keeping the most severe error", failed, total).Err()
+		return errors.Fmt("failed to schedule UpdateCLTask for %d out of %d CLs, keeping the most severe error: %w", failed, total, err)
 	}
 }
 
@@ -475,11 +475,11 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 			// with delay so that it will be deduplicated in cloud task with any
 			// subsequent tasks.
 			if scheduleErr := u.ScheduleDelayed(ctx, task, blindRefreshInterval); scheduleErr != nil {
-				return errors.Annotate(err, "%T.Fetch failed", backend).Err()
+				return errors.Fmt("%T.Fetch failed: %w", backend, err)
 			}
 			return errHackRetryForOutOfQuota
 		case err != nil:
-			return errors.Annotate(err, "%T.Fetch failed", backend).Err()
+			return errors.Fmt("%T.Fetch failed: %w", backend, err)
 		}
 	}
 
@@ -575,7 +575,7 @@ func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *
 	// CL Snapshot is up to date, but does it belong to the right LUCI project?
 	acfg, err := backend.LookupApplicableConfig(ctx, cl)
 	if err != nil {
-		err = errors.Annotate(err, "%T.LookupApplicableConfig failed", backend).Err()
+		err = errors.Fmt("%T.LookupApplicableConfig failed: %w", backend, err)
 		return false, UpdateFields{}, err
 	}
 	if acfg == nil {
@@ -668,20 +668,20 @@ func (*Updater) preload(ctx context.Context, task *UpdateCLTask) (*CL, error) {
 		cl := &CL{ID: common.CLID(id)}
 		switch err := datastore.Get(ctx, cl); {
 		case err == datastore.ErrNoSuchEntity:
-			return nil, errors.Annotate(err, "CL %d %q doesn't exist in Datastore", id, task.GetExternalId()).Err()
+			return nil, errors.Fmt("CL %d %q doesn't exist in Datastore: %w", id, task.GetExternalId(), err)
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to load CL %d", id).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load CL %d: %w", id, err))
 		case eid != "" && eid != cl.ExternalID:
-			return nil, errors.Reason("invalid task input: CL %d actually has %q ExternalID, not %q", id, cl.ExternalID, eid).Err()
+			return nil, errors.Fmt("invalid task input: CL %d actually has %q ExternalID, not %q", id, cl.ExternalID, eid)
 		default:
 			return cl, nil
 		}
 	case eid == "":
-		return nil, errors.Reason("invalid task input: either internal ID or ExternalID must be given").Err()
+		return nil, errors.New("invalid task input: either internal ID or ExternalID must be given")
 	default:
 		switch cl, err := eid.Load(ctx); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to load CL %q", eid).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load CL %q: %w", eid, err))
 		case cl == nil:
 			// New CL to be created.
 			return &CL{
@@ -705,7 +705,7 @@ func (u *Updater) backendFor(cl *CL) (UpdaterBackend, error) {
 	if b, exists := u.backends[kind]; exists {
 		return b, nil
 	}
-	return nil, errors.Reason("%q backend is not supported", kind).Err()
+	return nil, errors.Fmt("%q backend is not supported", kind)
 }
 
 // makeTaskDeduplicationKey returns TQ task deduplication key.
@@ -838,7 +838,7 @@ func resolveDeps(ctx context.Context, luciProject string, deps map[ExternalID]De
 			if err := datastore.Get(ctx, depCLs); err != nil {
 				// Mark error as transient because by this time, all CLIDs should have
 				// corresponding CL entities in datastore.
-				return nil, errors.Annotate(err, "failed to load %d CLs", len(depCLs)).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("failed to load %d CLs: %w", len(depCLs), err))
 			}
 			for j, depCL := range depCLs {
 				ret[depCLIndices[j]].ready = !depNeedsRefresh(ctx, depCL, luciProject)

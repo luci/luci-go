@@ -158,7 +158,7 @@ func (eid ExternalID) Load(ctx context.Context) (*CL, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get CLMap").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get CLMap: %w", err))
 	}
 	cl := &CL{ID: m.InternalID}
 	switch err := datastore.Get(ctx, cl); {
@@ -169,9 +169,9 @@ func (eid ExternalID) Load(ctx context.Context) (*CL, error) {
 		// and so a retry would be produce proper datastore.ErrNoSuchEntity error.
 		msg := fmt.Sprintf("unexpectedly failed to get CL#%d given existing CLMap%q", m.InternalID, eid)
 		logging.Errorf(ctx, msg)
-		return nil, errors.Reason(msg).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.New(msg))
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get CL").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get CL: %w", err))
 	}
 	return cl, nil
 }
@@ -226,7 +226,7 @@ func Delete(ctx context.Context, id common.CLID) error {
 	case err == datastore.ErrNoSuchEntity:
 		return nil // Nothing to do.
 	case err != nil:
-		return errors.Annotate(err, "failed to get a CL").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to get a CL: %w", err))
 	}
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -234,7 +234,7 @@ func Delete(ctx context.Context, id common.CLID) error {
 		return datastore.Delete(ctx, &cl, &m)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to delete a CL").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete a CL: %w", err))
 	}
 	return nil
 }
@@ -258,7 +258,7 @@ func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
 		}
 		return out, nil
 	case merrs == nil:
-		return nil, errors.Annotate(err, "failed to load clMap").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load clMap: %w", err))
 	default:
 		for i, err := range merrs {
 			switch {

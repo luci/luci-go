@@ -195,10 +195,10 @@ func (pbp *PullingBatchProcessor) process(ctx context.Context, client *pubsub.Cl
 	// Check receive error _after_ worker pool is done to avoid leakages.
 	if err != nil {
 		// Receive exitted due to something other than timeout or cancellation, i.e. non-retryable service error.
-		return errors.Annotate(err, "failed call to pubsub receive").Err()
+		return errors.Fmt("failed call to pubsub receive: %w", err)
 	}
 	if permanentErrorCount > 0 {
-		return errors.Reason("Process had non-transient errors. E.g. %q. Review logs for more details.", firstPermErr).Err()
+		return errors.Fmt("Process had non-transient errors. E.g. %q. Review logs for more details.", firstPermErr)
 	}
 	return nil
 }
@@ -219,22 +219,22 @@ func (opts *Options) normalize() {
 // Validate checks missing required fields and normalizes options.
 func (pbp *PullingBatchProcessor) Validate() error {
 	if pbp.ProjectID == "" {
-		return errors.Reason("PullingBatchProcessor.ProjectID is required").Err()
+		return errors.New("PullingBatchProcessor.ProjectID is required")
 	}
 	if pbp.SubID == "" {
-		return errors.Reason("PullingBatchProcessor.SubID is required").Err()
+		return errors.New("PullingBatchProcessor.SubID is required")
 	}
 	if pbp.ProcessBatch == nil {
-		return errors.Reason("PullingBatchProcessor.ProcessBatch is required").Err()
+		return errors.New("PullingBatchProcessor.ProcessBatch is required")
 	}
 	if pbp.Options.ReceiveDuration < 0 {
-		return errors.Reason("Options.ReceiveDuration cannot be negative").Err()
+		return errors.New("Options.ReceiveDuration cannot be negative")
 	}
 	if pbp.Options.ConcurrentBatches < 0 {
-		return errors.Reason("Options.ConcurrentBatches cannot be negative").Err()
+		return errors.New("Options.ConcurrentBatches cannot be negative")
 	}
 	if pbp.Options.MaxBatchSize < 0 {
-		return errors.Reason("Options.MaxBatchSize cannot be negative").Err()
+		return errors.New("Options.MaxBatchSize cannot be negative")
 	}
 	pbp.Options.normalize()
 	return nil
@@ -255,7 +255,7 @@ func (pbp *PullingBatchProcessor) onBatch(ctx context.Context, msgs []*pubsub.Me
 		nackAll(msgs)
 		return trans, err
 	case err != nil:
-		common.LogError(ctx, errors.Annotate(err, "ACKing to avoid retries").Err())
+		common.LogError(ctx, errors.Fmt("ACKing to avoid retries: %w", err))
 		ackAll(msgs)
 		return perm, err
 	default:

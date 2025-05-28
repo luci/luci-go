@@ -120,7 +120,7 @@ func GetAllProjectIDs(ctx context.Context, enabledOnly bool) ([]string, error) {
 	var projects []*ProjectConfig
 	query := datastore.NewQuery(projectConfigKind).Project("Enabled")
 	if err := datastore.GetAll(ctx, query, &projects); err != nil {
-		return nil, errors.Annotate(err, "failed to query all projects").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to query all projects: %w", err))
 	}
 	ret := make([]string, 0, len(projects))
 	for _, p := range projects {
@@ -282,8 +282,9 @@ func addGerritHosts(ctx context.Context, prj *ProjectConfig, hosts stringset.Set
 			})
 		}
 		if err := datastore.Get(ctx, cgs); err != nil {
-			return errors.Annotate(err, "fetching ConfigGroups for %s",
-				strings.Join(prj.ConfigGroupNames[offset:end], ",")).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("fetching ConfigGroups for %s: %w",
+				strings.Join(prj.ConfigGroupNames[offset:end], ","), err))
+
 		}
 
 		// parse and add all the hosts.
@@ -293,13 +294,14 @@ func addGerritHosts(ctx context.Context, prj *ProjectConfig, hosts stringset.Set
 				u, err := url.Parse(rawURL)
 				if err != nil {
 					// must be a bug in the project config validator.
-					return errors.Annotate(err, "%s: invalid GerritURL %q",
-						cg.ID.Name(), rawURL).Err()
+					return errors.Fmt("%s: invalid GerritURL %q: %w",
+						cg.ID.Name(), rawURL, err)
+
 				}
 				if u.Host == "" {
 					// same; must be a bug.
-					return errors.Reason("%s: empty GerritHost %q",
-						cg.ID.Name(), rawURL).Err()
+					return errors.Fmt("%s: empty GerritHost %q",
+						cg.ID.Name(), rawURL)
 				}
 				hosts.Add(u.Host)
 			}

@@ -62,7 +62,7 @@ func MakeListenerProjectChecker(ls *listenerpb.Settings) (isEnabled func(string)
 	res, err := anchorRegexps(ls.GetDisabledProjectRegexps())
 	if err != nil {
 		// Must be a bug in the validator.
-		return nil, errors.Annotate(err, "invalid disabled_project_regexps").Err()
+		return nil, errors.Fmt("invalid disabled_project_regexps: %w", err)
 	}
 	return func(prj string) bool {
 		for _, re := range res {

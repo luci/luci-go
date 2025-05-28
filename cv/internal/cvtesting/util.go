@@ -339,7 +339,7 @@ func (t *Test) installDSReal(ctx context.Context, testingT testing.TB) (context.
 	})
 	ts, err := at.TokenSource()
 	if err != nil {
-		err = errors.Annotate(err, "failed to initialize the token source (are you in `$ luci-auth context`?)").Err()
+		err = errors.Fmt("failed to initialize the token source (are you in `$ luci-auth context`?): %w", err)
 		assert.NoErr(testingT, err)
 	}
 
@@ -420,10 +420,10 @@ func clearDS(ctx context.Context) error {
 	q := datastore.NewQuery("").KeysOnly(true)
 	var allKeys []*datastore.Key
 	if err := datastore.GetAll(ctx, q, &allKeys); err != nil {
-		return errors.Annotate(err, "failed to get entities").Err()
+		return errors.Fmt("failed to get entities: %w", err)
 	}
 	if err := datastore.Delete(ctx, allKeys); err != nil {
-		return errors.Annotate(err, "failed to delete %d entities", len(allKeys)).Err()
+		return errors.Fmt("failed to delete %d entities: %w", len(allKeys), err)
 	}
 	return nil
 }

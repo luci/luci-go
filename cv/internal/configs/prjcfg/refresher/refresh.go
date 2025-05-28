@@ -35,8 +35,10 @@ import (
 func projectsWithConfig(ctx context.Context, configFileName string) ([]string, error) {
 	projects, err := cfgclient.ProjectsWithConfig(ctx, configFileName)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get projects with %q from LUCI Config",
-			configFileName).Tag(transient.Tag).Err()
+		return nil,
+			transient.Tag.Apply(errors.Fmt("failed to get projects with %q from LUCI Config: %w",
+				configFileName, err))
+
 	}
 	return projects, nil
 }
@@ -63,7 +65,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	}
 	vctx := &lucivalidation.Context{Context: ctx}
 	if err := validation.ValidateProject(vctx, cfg, project); err != nil {
-		return errors.Annotate(err, "ValidateProject").Err()
+		return errors.Fmt("ValidateProject: %w", err)
 	}
 	if verr := vctx.Finalize(); verr != nil {
 		logging.Errorf(ctx, "UpdateProject %q on invalid config: %s", project, verr)
@@ -87,7 +89,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		}
 		switch err := datastore.Get(ctx, &hashInfo); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to get ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to get ConfigHashInfo(Hash=%q): %w", localHash, err))
 		case err == nil && hashInfo.ProjectEVersion >= targetEVersion:
 			return nil // Do not go backwards.
 		default:
@@ -100,7 +102,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		}
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to run transaction to update ConfigHashInfo").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to run transaction to update ConfigHashInfo: %w", err))
 	}
 
 	if err := putConfigGroups(ctx, cfg, project, localHash); err != nil {
@@ -113,7 +115,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		pc := prjcfg.ProjectConfig{Project: project}
 		switch err := datastore.Get(ctx, &pc); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to get ProjectConfig(project=%q): %w", project, err))
 		case pc.EVersion != existingPC.EVersion:
 			return nil // Already updated by concurrent updateProject.
 		default:
@@ -129,7 +131,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			}
 			updated = true
 			if err := datastore.Put(ctx, &pc); err != nil {
-				return errors.Annotate(err, "failed to put ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to put ProjectConfig(project=%q): %w", project, err))
 			}
 			return notify(ctx)
 		}
@@ -137,7 +139,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to run transaction to update ProjectConfig").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to run transaction to update ProjectConfig: %w", err))
 	case updated:
 		logging.Infof(ctx, "updated project %q to rev %s hash %s ", project, meta.Revision, localHash)
 	}
@@ -159,9 +161,9 @@ func needsUpdate(ctx context.Context, project string, configFileName string) (bo
 	}
 	switch err := cfgclient.Get(ctx, ps, configFileName, nil, &meta); {
 	case err != nil:
-		return false, pc, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
+		return false, pc, transient.Tag.Apply(errors.Fmt("failed to fetch meta from LUCI Config: %w", err))
 	case meta.ContentHash == "":
-		return false, pc, errors.Reason("LUCI Config returns empty content hash for project %q", project).Err()
+		return false, pc, errors.Fmt("LUCI Config returns empty content hash for project %q", project)
 	}
 
 	switch err := datastore.Get(ctx, &pc); {
@@ -169,7 +171,7 @@ func needsUpdate(ctx context.Context, project string, configFileName string) (bo
 		// ProjectConfig's zero value is a good sentinel for non yet saved case.
 		return true, pc, nil
 	case err != nil:
-		return false, pc, errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+		return false, pc, transient.Tag.Apply(errors.Fmt("failed to get ProjectConfig(project=%q): %w", project, err))
 	case !pc.Enabled:
 		// Go through update process to ensure all configs are present.
 		return true, pc, nil
@@ -202,7 +204,7 @@ func fetchCfg(ctx context.Context, project string, configFileName string) (*cfgp
 		meta,
 	)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get the project config").Err()
+		return nil, nil, errors.Fmt("failed to get the project config: %w", err)
 	}
 	// TODO(yiwzhang): validate the config here again to prevent ingesting a
 	// bad version of config that accidentally slips into LUCI Config.
@@ -221,7 +223,7 @@ func DisableProject(ctx context.Context, project string, notify NotifyCallback) 
 		case datastore.IsErrNoSuchEntity(err):
 			return nil // No-op when disabling non-existent Project
 		case err != nil:
-			return errors.Annotate(err, "failed to get existing ProjectConfig").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to get existing ProjectConfig: %w", err))
 		case !pc.Enabled:
 			return nil // Already disabled
 		}
@@ -229,7 +231,7 @@ func DisableProject(ctx context.Context, project string, notify NotifyCallback) 
 		pc.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 		pc.EVersion++
 		if err := datastore.Put(ctx, &pc); err != nil {
-			return errors.Annotate(err, "failed to put ProjectConfig").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to put ProjectConfig: %w", err))
 		}
 		disabled = true
 		return notify(ctx)
@@ -237,7 +239,7 @@ func DisableProject(ctx context.Context, project string, notify NotifyCallback) 
 
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to run transaction to disable project %q", project).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to run transaction to disable project %q: %w", project, err))
 	case disabled:
 		logging.Infof(ctx, "disabled project %q", project)
 	}
@@ -269,7 +271,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 	errs, ok := err.(errors.MultiError)
 	switch {
 	case err != nil && !ok:
-		return errors.Annotate(err, "failed to check the existence of ConfigGroups").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to check the existence of ConfigGroups: %w", err))
 	case err == nil:
 		errs = make(errors.MultiError, cgLen)
 	}
@@ -280,7 +282,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 		case err == datastore.ErrNoSuchEntity:
 			// proceed to put below.
 		case err != nil:
-			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to check the existence of one of ConfigGroups: %w", err))
 		case ent.SchemaVersion != prjcfg.SchemaVersion:
 			// Intentionally using != here s.t. rollbacks result in downgrading
 			// of the schema. Given that project configs are checked and
@@ -298,7 +300,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 	}
 
 	if err := datastore.Put(ctx, toPut); err != nil {
-		return errors.Annotate(err, "failed to put ConfigGroups").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to put ConfigGroups: %w", err))
 	}
 	return nil
 }

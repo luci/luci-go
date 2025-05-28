@@ -139,7 +139,7 @@ func (r *Refresher) refreshProject(ctx context.Context, project string, disable 
 		return r.pm.UpdateConfig(ctx, project)
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to %s project %q", action, project).Err()
+		return errors.Fmt("failed to %s project %q: %w", action, project, err)
 	}
 
 	// Refresh quota policies when the config is refreshed. WritePolicy is idempotent and would return immediately if

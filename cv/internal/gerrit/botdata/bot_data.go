@@ -52,14 +52,14 @@ const (
 func (at *ActionType) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
-		return errors.Annotate(err, "unmarshal action").Err()
+		return errors.Fmt("unmarshal action: %w", err)
 	}
 	switch t := ActionType(s); t {
 	case Start, Cancel:
 		*at = t
 		return nil
 	default:
-		return errors.Reason("invalid action: %s", t).Err()
+		return errors.Fmt("invalid action: %s", t)
 	}
 }
 
@@ -80,11 +80,11 @@ func (c *ChangeID) MarshalText() ([]byte, error) {
 func (c *ChangeID) UnmarshalText(b []byte) error {
 	segs := strings.Split(string(b), ":")
 	if len(segs) != 2 {
-		return errors.Reason("too many separators ':' in ChangeID text: %s", string(b)).Err()
+		return errors.Fmt("too many separators ':' in ChangeID text: %s", string(b))
 	}
 	num, err := strconv.ParseInt(segs[1], 10, 64)
 	if err != nil {
-		return errors.Annotate(err, "invalid Change number: %s", segs[1]).Err()
+		return errors.Fmt("invalid Change number: %s: %w", segs[1], err)
 	}
 	c.Host, c.Number = segs[0], num
 	return nil
@@ -128,13 +128,13 @@ func Append(humanMsg string, bd BotData) (string, error) {
 func append(humanMsg string, bd BotData, maxLen int) (string, error) {
 	b, err := json.Marshal(bd)
 	if err != nil {
-		return "", errors.Annotate(err, "marshal bot data").Err()
+		return "", errors.Fmt("marshal bot data: %w", err)
 	}
 
 	buf := bytes.NewBufferString(humanMsg)
 	switch hmLen, sepLen, bdLen := len(humanMsg), len(botDataSep), len(botDataPrefix)+len(b); {
 	case bdLen > maxLen:
-		return "", errors.Reason("bot data too long; max length: %d, got %d", maxLen, bdLen).Err()
+		return "", errors.Fmt("bot data too long; max length: %d, got %d", maxLen, bdLen)
 	case hmLen == 0:
 		buf.Grow(bdLen)
 		writeBotData(buf, b, false)
@@ -144,7 +144,7 @@ func append(humanMsg string, bd BotData, maxLen int) (string, error) {
 	default:
 		keepLen := maxLen - bdLen - sepLen - len(gerrit.PlaceHolder)
 		if keepLen <= 0 {
-			return "", errors.Reason("bot data too long to display human message; max length: %d, got %d", maxLen, bdLen).Err()
+			return "", errors.Fmt("bot data too long to display human message; max length: %d, got %d", maxLen, bdLen)
 		}
 		buf.Truncate(keepLen)
 		buf.Grow(maxLen - keepLen)

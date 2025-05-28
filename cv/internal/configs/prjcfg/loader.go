@@ -92,7 +92,7 @@ func GetLatestMeta(ctx context.Context, project string) (Meta, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return m, nil
 	case err != nil:
-		return m, errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
+		return m, transient.Tag.Apply(errors.Fmt("failed to get ProjectConfig(project=%q): %w", project, err))
 	case p.Enabled:
 		m.Status = StatusEnabled
 	default:
@@ -138,7 +138,7 @@ func GetHashMetas(ctx context.Context, project string, hashes ...string) ([]Meta
 		if !datastore.IsErrNoSuchEntity(err) {
 			err = transient.Tag.Apply(err)
 		}
-		return nil, errors.Annotate(err, "failed to load ConfigHashInfo(project=%q @ %s)", project, hashes).Err()
+		return nil, errors.Fmt("failed to load ConfigHashInfo(project=%q @ %s): %w", project, hashes, err)
 	}
 	metas := make([]Meta, len(infos))
 	for i, info := range infos {
@@ -181,7 +181,7 @@ func (m Meta) GetConfigGroups(ctx context.Context) ([]*ConfigGroup, error) {
 			if err == datastore.ErrNoSuchEntity {
 				// If any ConfigGroup is not found, either all are long gone,
 				// or soon will be deleted.
-				return nil, errors.Annotate(err, "ConfigGroups for %s @ %s not found", m.Project, m.Hash()).Err()
+				return nil, errors.Fmt("ConfigGroups for %s @ %s not found: %w", m.Project, m.Hash(), err)
 			}
 		}
 		err = merr.First()
@@ -200,9 +200,9 @@ func GetConfigGroup(ctx context.Context, project string, id ConfigGroupID) (*Con
 	}
 	switch err := datastore.Get(ctx, c); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "ConfigGroup(%q %q) not found", project, id).Err()
+		return nil, errors.Fmt("ConfigGroup(%q %q) not found: %w", project, id, err)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get ConfigGroup(%q %q)", project, id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get ConfigGroup(%q %q): %w", project, id, err))
 	default:
 		return c, nil
 	}

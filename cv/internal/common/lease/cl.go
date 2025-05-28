@@ -58,7 +58,7 @@ func ApplyOnCL(ctx context.Context, clid common.CLID, duration time.Duration, re
 		cancel()
 		if err := l.Terminate(ctx); err != nil {
 			// Best-effort termination since lease will expire naturally.
-			common.LogError(ctx, errors.Annotate(err, "failed to terminate a lease on the CL %d", clid).Err())
+			common.LogError(ctx, errors.Fmt("failed to terminate a lease on the CL %d: %w", clid, err))
 		}
 	}
 	return dctx, terminate, nil

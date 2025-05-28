@@ -61,7 +61,7 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 	if isListenerEnabled, err := srvcfg.MakeListenerProjectChecker(&cfg); err == nil {
 		watchedHostsByPrj, err := prjcfg.GetAllGerritHosts(ctx.Context)
 		if err != nil {
-			return errors.Annotate(err, "GetAllGerritHosts").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("GetAllGerritHosts: %w", err))
 		}
 		for prj, hosts := range watchedHostsByPrj {
 			// Unless it's matched with one of disabled_project_regexps,

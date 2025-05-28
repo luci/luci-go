@@ -34,7 +34,7 @@ type ExternalID string
 // https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2515619
 func GobID(host string, change int64) (ExternalID, error) {
 	if strings.ContainsRune(host, '/') {
-		return "", errors.Reason("invalid host %q: must not contain /", host).Err()
+		return "", errors.Fmt("invalid host %q: must not contain /", host)
 	}
 	return ExternalID(fmt.Sprintf("gerrit/%s/%d", host, change)), nil
 }
@@ -52,13 +52,13 @@ func MustGobID(host string, change int64) ExternalID {
 func (eid ExternalID) ParseGobID() (host string, change int64, err error) {
 	parts := strings.Split(string(eid), "/")
 	if len(parts) != 3 || parts[0] != "gerrit" {
-		err = errors.Reason("%q is not a valid GobID", eid).Err()
+		err = errors.Fmt("%q is not a valid GobID", eid)
 		return
 	}
 	host = parts[1]
 	change, err = strconv.ParseInt(parts[2], 10, 63)
 	if err != nil {
-		err = errors.Annotate(err, "%q is not a valid GobID", eid).Err()
+		err = errors.Fmt("%q is not a valid GobID: %w", eid, err)
 	}
 	return
 }
@@ -67,13 +67,13 @@ func (eid ExternalID) ParseGobID() (host string, change int64, err error) {
 func (eid ExternalID) URL() (string, error) {
 	parts := strings.Split(string(eid), "/")
 	if len(parts) < 2 {
-		return "", errors.Reason("invalid ExternalID: %q", eid).Err()
+		return "", errors.Fmt("invalid ExternalID: %q", eid)
 	}
 	switch kind := parts[0]; kind {
 	case "gerrit":
 		return fmt.Sprintf("https://%s/c/%s", parts[1], parts[2]), nil
 	default:
-		return "", errors.Reason("unrecognized ExternalID: %q", eid).Err()
+		return "", errors.Fmt("unrecognized ExternalID: %q", eid)
 	}
 }
 
@@ -90,7 +90,7 @@ func (eid ExternalID) kind() (string, error) {
 	s := string(eid)
 	idx := strings.IndexRune(s, '/')
 	if idx <= 0 {
-		return "", errors.Reason("invalid ExternalID: %q", s).Err()
+		return "", errors.Fmt("invalid ExternalID: %q", s)
 	}
 	return s[:idx], nil
 }

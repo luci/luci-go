@@ -156,7 +156,7 @@ func (m *Mutator) Upsert(ctx context.Context, project string, eid ExternalID, cl
 	case err == datastore.ErrNoSuchEntity:
 		// OK, proceed to slow path below.
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get clMap entity %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get clMap entity %q: %w", eid, err))
 	default:
 		return m.Update(ctx, project, mapEntity.InternalID, clbk)
 	}
@@ -175,7 +175,7 @@ func (m *Mutator) Upsert(ctx context.Context, project string, eid ExternalID, cl
 				return err
 			}
 		case err != nil:
-			return errors.Annotate(err, "failed to get clMap entity %q", eid).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to get clMap entity %q: %w", eid, err))
 		default:
 			clMutation, err = m.Begin(ctx, project, mapEntity.InternalID)
 			if err != nil {
@@ -195,7 +195,7 @@ func (m *Mutator) Upsert(ctx context.Context, project string, eid ExternalID, cl
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit Upsert of CL %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit Upsert of CL %q: %w", eid, err))
 	default:
 		return result, nil
 	}
@@ -228,7 +228,7 @@ func (m *Mutator) Update(ctx context.Context, project string, id common.CLID, cl
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit update on CL %d", id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit update on CL %d: %w", id, err))
 	default:
 		return result, nil
 	}
@@ -268,10 +268,10 @@ func (m *Mutator) beginInsert(ctx context.Context, project string, eid ExternalI
 		project: project,
 	}
 	if err := datastore.AllocateIDs(ctx, clMutation.CL); err != nil {
-		return nil, errors.Annotate(err, "failed to allocate new CL ID for %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to allocate new CL ID for %q: %w", eid, err))
 	}
 	if err := datastore.Put(ctx, &clMap{ExternalID: eid, InternalID: clMutation.CL.ID}); err != nil {
-		return nil, errors.Annotate(err, "failed to insert clMap entity for %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to insert clMap entity for %q: %w", eid, err))
 	}
 	clMutation.backup()
 	return clMutation, nil
@@ -291,9 +291,9 @@ func (m *Mutator) Begin(ctx context.Context, project string, id common.CLID) (*C
 	}
 	switch err := datastore.Get(ctx, clMutation.CL); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "CL %d doesn't exist", id).Err()
+		return nil, errors.Fmt("CL %d doesn't exist: %w", id, err)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get CL %d", id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get CL %d: %w", id, err))
 	}
 	clMutation.backup()
 	return clMutation, nil
@@ -343,7 +343,7 @@ func (clm *CLMutation) Finalize(ctx context.Context) (*CL, error) {
 		return nil, err
 	}
 	if err := datastore.Put(ctx, clm.CL); err != nil {
-		return nil, errors.Annotate(err, "failed to put CL %d", clm.id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to put CL %d: %w", clm.id, err))
 	}
 	if err := clm.m.dispatchBatchNotify(ctx, clm); err != nil {
 		return nil, err
@@ -420,7 +420,7 @@ func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL,
 		cls[i] = mut.CL
 	}
 	if err := datastore.Put(ctx, cls); err != nil {
-		return nil, errors.Annotate(err, "failed to put %d CLs", len(cls)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to put %d CLs: %w", len(cls), err))
 	}
 	if err := m.dispatchBatchNotify(ctx, muts...); err != nil {
 		return nil, err
@@ -486,7 +486,7 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 		Payload: batch,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to add BatchOnCLUpdatedTask to TQ").Err()
+		return errors.Fmt("failed to add BatchOnCLUpdatedTask to TQ: %w", err)
 	}
 	return nil
 }

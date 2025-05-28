@@ -86,13 +86,13 @@ func loadCLs(ctx context.Context, cls []*CL) ([]*CL, error) {
 	case ok:
 		for i, err := range merr {
 			if err == datastore.ErrNoSuchEntity {
-				return nil, errors.Reason("CL %d not found in Datastore", cls[i].ID).Err()
+				return nil, errors.Fmt("CL %d not found in Datastore", cls[i].ID)
 			}
 		}
 		count, err := merr.Summary()
-		return nil, errors.Annotate(err, "failed to load %d out of %d CLs", count, len(cls)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load %d out of %d CLs: %w", count, len(cls), err))
 	default:
-		return nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load %d CLs: %w", len(cls), err))
 	}
 }
 
@@ -184,11 +184,10 @@ func (s *Snapshot) OwnerIdentity() (identity.Identity, error) {
 	}
 	email := owner.GetEmail()
 	if email == "" {
-		return "", errors.Reason(
-			"CL %s/%d owner email of account %d is unknown",
+		return "", errors.Fmt("CL %s/%d owner email of account %d is unknown",
 			g.GetHost(), g.GetInfo().GetNumber(),
-			owner.GetAccountId(),
-		).Err()
+			owner.GetAccountId())
+
 	}
 	return identity.MakeIdentity("user:" + email)
 }
@@ -237,7 +236,7 @@ func QueryCLIDsUpdatedBefore(ctx context.Context, before time.Time) (common.CLID
 			var keys []*datastore.Key
 			switch err := datastore.GetAll(ectx, q, &keys); {
 			case err != nil:
-				return errors.Annotate(err, "failed to query CL keys").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to query CL keys: %w", err))
 			case len(keys) > 0:
 				retMu.Lock()
 				for _, key := range keys {

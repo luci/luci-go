@@ -88,7 +88,7 @@ func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsD
 func (id RunID) Validate() (err error) {
 	defer func() {
 		if err != nil {
-			err = errors.Annotate(err, "malformed RunID %q", id).Err()
+			err = errors.Fmt("malformed RunID %q: %w", id, err)
 		}
 	}()
 
@@ -181,7 +181,7 @@ func FromPublicRunID(id string) (RunID, error) {
 	if len(parts) == 4 && parts[0] == "projects" && parts[2] == "runs" {
 		return RunID(parts[1] + "/" + parts[3]), nil
 	}
-	return "", errors.Reason(`Run ID must be in the form "projects/$luci-project/runs/$id", but %q given"`, id).Err()
+	return "", errors.Fmt(`Run ID must be in the form "projects/$luci-project/runs/$id", but %q given"`, id)
 }
 
 // AttemptKey returns CQDaemon attempt key.

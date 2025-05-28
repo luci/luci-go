@@ -56,7 +56,7 @@ func Emit(ctx context.Context, value []byte, to Recipient) error {
 	// See also oldestEventAge().
 	id := fmt.Sprintf("%s/%d", uuid.New().String(), clock.Now(ctx).UnixNano())
 	if err := d.Add(ctx, []dsset.Item{{ID: id, Value: value}}); err != nil {
-		return errors.Annotate(err, "failed to send event").Err()
+		return errors.Fmt("failed to send event: %w", err)
 	}
 	metricSent.Add(ctx, 1, to.MonitoringString)
 	return nil
@@ -152,14 +152,13 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 		case err != nil:
 			return err
 		case latestEV != expectedEV:
-			return errors.Reason(
-				"Datastore contention: EVersion read %d, but expected %d", latestEV, expectedEV,
-			).Tag(transient.Tag).Tag(common.DSContentionTag).Err()
+			return common.DSContentionTag.Apply(transient.Tag.Apply(errors.Fmt("Datastore contention: EVersion read %d, but expected %d", latestEV, expectedEV)))
+
 		}
 
 		popOp, err := d.BeginPop(ctx, listing)
 		if err != nil {
-			return errors.Annotate(err, "failed to BeginPop").Err()
+			return errors.Fmt("failed to BeginPop: %w", err)
 		}
 
 		var newState State
@@ -186,7 +185,7 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit mutation").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit mutation: %w", err))
 	default:
 		metricRemoved.Add(ctx, int64(eventsRemoved), r.MonitoringString)
 		return postProcessFns, nil
@@ -306,7 +305,7 @@ func deleteSemanticGarbage(ctx context.Context, r Recipient, d *dsset.Set, event
 		return ""
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to delete %d semantic garbage events before transaction", l).Err()
+		return errors.Fmt("failed to delete %d semantic garbage events before transaction: %w", l, err)
 	}
 	metricRemoved.Add(ctx, int64(l), r.MonitoringString)
 	return nil

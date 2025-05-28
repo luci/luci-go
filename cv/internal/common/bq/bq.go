@@ -61,7 +61,7 @@ func NewProdClient(ctx context.Context, cloudProject string) (*prodClient, error
 	}
 	b, err := bigquery.NewClient(ctx, cloudProject, option.WithHTTPClient(&http.Client{Transport: t}))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create BQ client").Err()
+		return nil, errors.Fmt("failed to create BQ client: %w", err)
 	}
 	return &prodClient{b}, nil
 }
@@ -85,9 +85,9 @@ func (c *prodClient) SendRow(ctx context.Context, row Row) error {
 	}
 	if err := table.Inserter().Put(ctx, r); err != nil {
 		if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
-			return errors.Annotate(err, "bad row").Err()
+			return errors.Fmt("bad row: %w", err)
 		}
-		return errors.Annotate(err, "unknown error sending row").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("unknown error sending row: %w", err))
 	}
 	return nil
 }

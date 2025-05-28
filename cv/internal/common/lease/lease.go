@@ -66,11 +66,11 @@ type Application struct {
 func (a *Application) validate(ctx context.Context) error {
 	switch {
 	case a == nil:
-		return errors.Reason("nil lease application").Err()
+		return errors.New("nil lease application")
 	case !a.ResourceID.isValid():
-		return errors.Reason("invalid ResourceID: %q", a.ResourceID).Err()
+		return errors.Fmt("invalid ResourceID: %q", a.ResourceID)
 	case a.Holder == "":
-		return errors.Reason("empty lease Holder").Err()
+		return errors.New("empty lease Holder")
 	}
 	return nil
 }
@@ -129,7 +129,7 @@ func (l *Lease) Expired(ctx context.Context) bool {
 func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 	switch {
 	case addition < 0:
-		return errors.Reason("expected positive additional duration; got %s", addition).Err()
+		return errors.Fmt("expected positive additional duration; got %s", addition)
 	case l.Expired(ctx):
 		return errors.New("can't extend an expired lease")
 	}
@@ -138,7 +138,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 	extended.ExpireTime = l.ExpireTime.UTC().Add(addition).Truncate(time.Millisecond)
 	extended.Token = make([]byte, tokenLen)
 	if _, err := mathrand.Read(ctx, extended.Token); err != nil {
-		return errors.Annotate(err, "failed to generate token for the extension").Err()
+		return errors.Fmt("failed to generate token for the extension: %w", err)
 	}
 
 	var innerErr error
@@ -147,7 +147,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 		cur, err := Load(ctx, l.ResourceID)
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch lease for resource %s: %w", l.ResourceID, err))
 		case cur == nil:
 			return errors.New("target lease doesn't exist in datastore")
 		case !bytes.Equal(cur.Token, l.Token):
@@ -158,7 +158,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 			}
 		}
 		if err := datastore.Put(ctx, &extended); err != nil {
-			return errors.Annotate(err, "failed to put lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to put lease for resource %s: %w", l.ResourceID, err))
 		}
 		return nil
 	}, nil)
@@ -167,7 +167,7 @@ func (l *Lease) Extend(ctx context.Context, addition time.Duration) error {
 	case innerErr != nil:
 		return innerErr
 	case finalErr != nil:
-		return errors.Annotate(finalErr, "failed to extend lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to extend lease for resource %s: %w", l.ResourceID, finalErr))
 	}
 	*l = extended
 	return nil
@@ -184,7 +184,7 @@ func (l *Lease) Terminate(ctx context.Context) error {
 		cur, err := Load(ctx, l.ResourceID)
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch lease for resource %s: %w", l.ResourceID, err))
 		case cur == nil:
 			return nil // lease is already terminated
 		case !bytes.Equal(cur.Token, l.Token):
@@ -195,7 +195,7 @@ func (l *Lease) Terminate(ctx context.Context) error {
 			}
 		}
 		if err := datastore.Delete(ctx, l); err != nil {
-			return errors.Annotate(err, "failed to delete lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to delete lease for resource %s: %w", l.ResourceID, err))
 		}
 		return nil
 	}, nil)
@@ -204,7 +204,7 @@ func (l *Lease) Terminate(ctx context.Context) error {
 	case innerErr != nil:
 		return innerErr
 	case finalErr != nil:
-		return errors.Annotate(finalErr, "failed to terminate lease for resource %s", l.ResourceID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to terminate lease for resource %s: %w", l.ResourceID, finalErr))
 	}
 	return nil
 }
@@ -273,14 +273,14 @@ func Apply(ctx context.Context, app Application) (*Lease, error) {
 		defer func() { innerErr = err }()
 		cur, err := Load(ctx, rid)
 		if err != nil {
-			return errors.Annotate(err, "failed to fetch lease for resource %s", rid).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch lease for resource %s: %w", rid, err))
 		}
 		ret, err = TryApply(ctx, cur, app)
 		if err != nil {
 			return err
 		}
 		if err := datastore.Put(ctx, ret); err != nil {
-			return errors.Annotate(err, "failed to put Lease for resource %s", rid).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to put Lease for resource %s: %w", rid, err))
 		}
 		return nil
 	}, nil)
@@ -288,7 +288,7 @@ func Apply(ctx context.Context, app Application) (*Lease, error) {
 	case innerErr != nil:
 		return nil, innerErr
 	case finalErr != nil:
-		return nil, errors.Annotate(finalErr, "failed to create lease for resource %s", rid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to create lease for resource %s: %w", rid, finalErr))
 	}
 	return ret, nil
 }
