@@ -221,17 +221,18 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 			var err error
 
 			tasks, err = taskqueue.Lease(c, int(req.MaxTasks), queueName, duration)
-			// TODO(iannucci): There probably should be a better API for this error
-			// detection stuff, but since taskqueue is deprecated, I don't think it's
-			// worth the effort.
-			ann := errors.Annotate(err, "leasing archive tasks")
-			if err != nil && strings.Contains(err.Error(), "TRANSIENT_ERROR") {
-				ann.Tag(
-					grpcutil.ResourceExhaustedTag, // for HTTP response code 429.
-					transient.Tag,                 // for retry.Retry.
-				)
+			if err != nil {
+				// TODO(iannucci): There probably should be a better API for this error
+				// detection stuff, but since taskqueue is deprecated, I don't think it's
+				// worth the effort.
+				err := errors.Fmt("leasing archive tasks: %w", err)
+				if strings.Contains(err.Error(), "TRANSIENT_ERROR") {
+					// for HTTP response code 429.
+					err = grpcutil.ResourceExhaustedTag.Apply(err)
+					err = transient.Tag.Apply(err)
+				}
 			}
-			return ann.Err()
+			return err
 		},
 		retry.LogCallback(c, "taskqueue.Lease"))
 	if err != nil {

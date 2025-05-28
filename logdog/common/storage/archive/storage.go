@@ -184,7 +184,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 
 		case amt != sz:
 			// If we didn't buffer the complete frame, we hit a premature EOF.
-			return errors.Annotate(io.EOF, "incomplete frame read").Err()
+			return errors.Fmt("incomplete frame read: %w", io.EOF)
 		}
 
 		// If we read from offset 0, the first frame will be the log stream's

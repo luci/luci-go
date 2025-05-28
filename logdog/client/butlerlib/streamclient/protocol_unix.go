@@ -59,7 +59,7 @@ func (u *unixDialer) DialStream(forProcess bool, f streamproto.Flags) (io.WriteC
 	// either File dup'd our connection, or it failed; either way conn must be
 	// closed here.
 	conn.Close()
-	return fd, errors.Annotate(err, "converting to os.File").Err()
+	return fd, errors.WrapIf(err, "converting to os.File")
 }
 
 func (u *unixDialer) DialDgramStream(f streamproto.Flags) (DatagramStream, error) {

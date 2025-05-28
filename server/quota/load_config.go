@@ -150,6 +150,6 @@ func (a *Application) loadPolicies(ctx context.Context, cid *quotapb.PolicyConfi
 		}
 
 		_, err = conn.Do("HSET", args...)
-		return errors.Annotate(err, "unable to load policy config").Err()
+		return errors.WrapIf(err, "unable to load policy config")
 	})
 }

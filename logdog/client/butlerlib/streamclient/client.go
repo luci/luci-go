@@ -136,7 +136,7 @@ func (c *Client) NewStream(ctx context.Context, name types.StreamName, opts ...O
 		return nil, err
 	}
 	ret, err := c.dial.DialStream(fullOpts.forProcess, fullOpts.desc)
-	return ret, errors.Annotate(err, "attempting to connect stream %q", name).Err()
+	return ret, errors.WrapIf(err, "attempting to connect stream %q", name)
 }
 
 // NewDatagramStream returns a new datagram stream to the butler.
@@ -161,7 +161,7 @@ func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, o
 		return nil, errors.Reason("cannot specify ForProcess on a datagram stream").Err()
 	}
 	ret, err := c.dial.DialDgramStream(fullOpts.desc)
-	return ret, errors.Annotate(err, "attempting to connect datagram stream %q", name).Err()
+	return ret, errors.WrapIf(err, "attempting to connect datagram stream %q", name)
 }
 
 // GetNamespace returns the LOGDOG_NAMESPACE value associated with this Client.

@@ -1241,10 +1241,10 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	for _, impl := range impls {
 		if impl.cookieAuth != nil {
 			if cookieAuthMod != nil {
-				return srv, errors.Annotate(err,
+				return srv, errors.Fmt(
 					"conflict between %q and %q: both register a cookie auth scheme - pick one",
 					cookieAuthMod.Name(), impl.mod.Name(),
-				).Err()
+				)
 			}
 			cookieAuthMod = impl.mod
 			srv.CookieAuth = impl.cookieAuth

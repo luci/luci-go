@@ -326,7 +326,7 @@ func (ctl *Controller) AbortJob(ctx context.Context, id JobID) (job *Job, err er
 			job.State = dsmapperpb.State_ABORTING
 		}
 		job.Updated = clock.Now(ctx).UTC()
-		return errors.Annotate(datastore.Put(ctx, job), "failed to store Job entity").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.WrapIf(datastore.Put(ctx, job), "failed to store Job entity"))
 	})
 	if err != nil {
 		job = nil // don't return bogus data in case txn failed to land
@@ -352,7 +352,7 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	// Fetch job details. Make sure it isn't canceled and isn't running already.
 	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_STARTING)
 	if err != nil || job == nil {
-		return errors.Annotate(err, "in SplitAndLaunch").Err()
+		return errors.WrapIf(err, "in SplitAndLaunch")
 	}
 
 	// Figure out key ranges for shards. There may be fewer shards than requested
@@ -437,7 +437,7 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	return runTxn(ctx, func(ctx context.Context) error {
 		job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_STARTING)
 		if err != nil || job == nil {
-			return errors.Annotate(err, "in SplitAndLaunch txn").Err()
+			return errors.WrapIf(err, "in SplitAndLaunch txn")
 		}
 
 		job.State = dsmapperpb.State_RUNNING
@@ -472,7 +472,7 @@ func fetchShardSizes(ctx context.Context, baseQ *datastore.Query, shards []*shar
 				if err == nil {
 					sh.ExpectedCount = n
 				}
-				return errors.Annotate(err, "for shard #%d", sh.Index).Err()
+				return errors.WrapIf(err, "for shard #%d", sh.Index)
 			}
 		}
 	})
@@ -492,7 +492,7 @@ func (ctl *Controller) fanOutShardsHandler(ctx context.Context, payload proto.Me
 	// to proceed.
 	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
-		return errors.Annotate(err, "in FanOutShards").Err()
+		return errors.WrapIf(err, "in FanOutShards")
 	}
 
 	// Grab the list of shards created in SplitAndLaunch. It must exist at this
@@ -528,8 +528,11 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	// Grab the shard. This returns (nil, nil) if this Task Queue task is stale
 	// (based on taskNum) and should be silently skipped.
 	sh, err := getActiveShard(ctx, msg.ShardId, msg.TaskNum)
-	if err != nil || sh == nil {
+	if err != nil {
 		return errors.Annotate(err, "when fetching shard state").Err()
+	}
+	if sh == nil {
+		return errors.Fmt("when fetching shard state: shard is nil")
 	}
 	ctx = logging.SetField(ctx, "shardIdx", sh.Index)
 
@@ -540,7 +543,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	// Grab the job config, make sure the job is still active.
 	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
-		return errors.Annotate(err, "in ProcessShard").Err()
+		return errors.WrapIf(err, "in ProcessShard")
 	}
 
 	// If the job is being killed, kill the shard as well. This will eventually
@@ -554,7 +557,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	mapper, err := ctl.initMapper(ctx, job, sh.Index)
 	switch {
 	case transient.Tag.In(err):
-		return errors.Annotate(err, "transient error when instantiating a mapper").Err()
+		return errors.Fmt("transient error when instantiating a mapper: %w", err)
 	case err != nil:
 		// Kill the shard if the factory returns a fatal error.
 		return ctl.finishShard(ctx, sh.ID, 0, err)
@@ -720,7 +723,7 @@ func (ctl *Controller) finishShard(ctx context.Context, shardID, processedCount 
 		sh.ProcessedCount += processedCount
 		return true, ctl.requestJobStateUpdate(ctx, sh.JobID, sh.ID)
 	})
-	return errors.Annotate(err, "when marking the shard as finished").Err()
+	return errors.WrapIf(err, "when marking the shard as finished")
 }
 
 // makeProcessShardTask creates a ProcessShard tq.Task.
@@ -778,7 +781,7 @@ func (ctl *Controller) requestJobStateUpdateHandler(ctx context.Context, payload
 		ETA:              time.Unix(eta, 0),
 		Payload:          &tasks.UpdateJobState{JobId: msg.JobId},
 	})
-	return errors.Annotate(err, "when adding UpdateJobState task").Err()
+	return errors.WrapIf(err, "when adding UpdateJobState task")
 }
 
 // updateJobStateHandler is called some time later after one or more shards have
@@ -791,7 +794,7 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 	// Get the job and all its shards in their most recent state.
 	job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 	if err != nil || job == nil {
-		return errors.Annotate(err, "in UpdateJobState").Err()
+		return errors.WrapIf(err, "in UpdateJobState")
 	}
 	shards, err := job.fetchShards(ctx)
 	if err != nil {
@@ -823,7 +826,7 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 	return runTxn(ctx, func(ctx context.Context) error {
 		job, err := getJobInState(ctx, JobID(msg.JobId), dsmapperpb.State_RUNNING, dsmapperpb.State_ABORTING)
 		if err != nil || job == nil {
-			return errors.Annotate(err, "in UpdateJobState txn").Err()
+			return errors.WrapIf(err, "in UpdateJobState txn")
 		}
 
 		// Make sure an aborting job ends up in aborted state, even if all its

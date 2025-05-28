@@ -258,7 +258,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 		})
 		switch {
 		case innerErr != nil:
-			renderErr(c, errors.Annotate(err, "failed to process fetched log entries").Err())
+			renderErr(c, errors.Annotate(innerErr, "failed to process fetched log entries").Err())
 			return 1
 
 		case err != nil:

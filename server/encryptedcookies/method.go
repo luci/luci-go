@@ -938,7 +938,7 @@ func (s *authSessionImpl) unseal() error {
 	s.once.Do(func() {
 		if !s.done {
 			private, _, err := internal.UnsealPrivate(s.cookie, s.session)
-			s.unsealed(private, errors.Annotate(err, "failed to unseal the session").Err())
+			s.unsealed(private, errors.WrapIf(err, "failed to unseal the session"))
 		}
 	})
 	return s.err

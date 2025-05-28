@@ -108,7 +108,7 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 	}
 	res, ok := val.(int64)
 	if !ok {
-		return nil, errors.Annotate(err, "expected int64 not %T", val).Err()
+		return nil, errors.Fmt("expected int64 not %T", val)
 	}
 	rsp.Resources = res
 	return rsp, nil

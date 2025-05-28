@@ -210,6 +210,6 @@ func sweepTaskRouting(disp *Dispatcher, opts DistributedSweeperOptions, exec swe
 			Payload: task,
 			Title:   fmt.Sprintf("l%d_%d_%d", task.Level, task.ShardIndex, task.ShardCount),
 		})
-		return errors.Annotate(err, "adding task to sweeper task queue %q", opts.TaskQueue).Err()
+		return errors.WrapIf(err, "adding task to sweeper task queue %q", opts.TaskQueue)
 	}
 }

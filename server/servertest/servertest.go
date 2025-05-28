@@ -311,7 +311,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 			return errors.Reason("server was interrupted unexpectedly when starting").Err()
 		}
 		logging.Errorf(srvCtx, "The server failed to start: %s", err)
-		return errors.Annotate(err, "server failed to start").Err()
+		return errors.Fmt("server failed to start: %w", err)
 	}
 
 	// Wait either until the server stops (presumably due to an error) or the

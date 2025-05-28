@@ -63,7 +63,7 @@ func (s *streamTracker) CanRegister(name types.StreamName) error {
 func (s *streamTracker) canRegisterLocked(name types.StreamName) error {
 	for _, ns := range name.Namespaces() {
 		if _, closed := s.closedNamespaces[ns]; closed {
-			return errors.Annotate(errClosedNamespace, "namespace %q", ns).Err()
+			return errors.Fmt("namespace %q: %w", ns, errClosedNamespace)
 		}
 	}
 	return nil
@@ -81,7 +81,7 @@ func (s *streamTracker) RegisterStream(name types.StreamName) error {
 	}
 
 	if s.seen.Has(string(name)) {
-		return errors.Annotate(errAlreadyRegistered, "stream %q", name).Err()
+		return errors.Fmt("stream %q: %w", name, errAlreadyRegistered)
 	}
 
 	s.seen.Add(string(name))

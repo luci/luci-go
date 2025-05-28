@@ -147,7 +147,7 @@ func TestScan(t *testing.T) {
 
 			t.Run("Timeout without anything fetched", func(t *ftt.Test) {
 				mockDB.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, errors.Annotate(ctx.Err(), "failed to fetch all").Err())
+					Return(nil, errors.WrapIf(ctx.Err(), "failed to fetch all"))
 
 				rems, more := scan(ctx, part0to10)
 
