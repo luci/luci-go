@@ -44,7 +44,7 @@ export const configuredTrees: TreeJson[] = [
   },
   {
     name: 'chromeos',
-    display_name: 'Chrome OS',
+    display_name: 'ChromeOS',
     default_monorail_project_name: 'chromium',
     hotlistId: '895366',
     project: 'chromeos',
