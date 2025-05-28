@@ -46,9 +46,9 @@ func countVMs(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.CountVMs)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
+		return errors.Fmt("unexpected payload type %T", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	}
 	// Count VMs per project, server and zone.
 	// VMs created from the same config eventually have the same project, server,
@@ -62,7 +62,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 	switch err := datastore.Get(c, cfg); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch config").Err()
+		return errors.Fmt("failed to fetch config: %w", err)
 	default:
 		vms.AddConfigured(int(cfg.Config.CurrentAmount), cfg.Config.Attributes.Project)
 	}
@@ -77,7 +77,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+			return errors.Fmt("failed to fetch VM with id: %q: %w", task.GetId(), err)
 		default:
 			if vm.Created > 0 {
 				vms.AddCreated(1, vm.Attributes.Project, vm.Attributes.Zone)
@@ -88,11 +88,11 @@ func countVMs(c context.Context, payload proto.Message) error {
 			return nil
 		}
 	}); err != nil {
-		return errors.Annotate(err, "failed to fetch VMs").Err()
+		return errors.Fmt("failed to fetch VMs: %w", err)
 	}
 	resourceGroup := cfg.Config.GetAttributes().GetLabel()["resource_group"]
 	if err := vms.Update(c, task.Id, resourceGroup, getScalingType(cfg.Config)); err != nil {
-		return errors.Annotate(err, "failed to update count").Err()
+		return errors.Fmt("failed to update count: %w", err)
 	}
 	return nil
 }
@@ -104,9 +104,9 @@ func drainVMQueueHandler(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DrainVM)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
+		return errors.Fmt("unexpected payload %q", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -115,7 +115,7 @@ func drainVMQueueHandler(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Fmt("failed to fetch VM with id: %q: %w", task.GetId(), err)
 	case vm.URL == "":
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
@@ -135,7 +135,7 @@ func drainVM(c context.Context, vm *model.VM) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Debugf(c, "config %q does not exist", cfg.ID)
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch config").Err()
+		return errors.Fmt("failed to fetch config: %w", err)
 	}
 	if vm.DUT != "" {
 		// DUT is still present in config.
@@ -158,14 +158,14 @@ func drainVM(c context.Context, vm *model.VM) error {
 			vm.Drained = true
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM prefix: %q", vm.Config).Err()
+			return errors.Fmt("failed to fetch VM prefix: %q: %w", vm.Config, err)
 		case vm.Drained:
 			return nil
 		}
 		vm.Drained = true
 		logging.Debugf(c, "set VM %s as drained in db", vm.Hostname)
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM prefix: %q", vm.Config).Err()
+			return errors.Fmt("failed to store VM prefix: %q: %w", vm.Config, err)
 		}
 		return nil
 	}, nil)
@@ -189,11 +189,11 @@ func createVM(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.CreateVM)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
+		return errors.Fmt("unexpected payload type %T", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	case task.GetConfig() == "":
-		return errors.Reason("config is required").Err()
+		return errors.New("config is required")
 	}
 
 	// VMs paired with DUTs cannot rely on index for hostname uniqueness.
@@ -219,7 +219,7 @@ func createVM(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Debugf(c, "Create VM: VM not exists, so proceed with creation: hostname:%q, ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
+		return errors.Fmt("failed to fetch VM %q: %w", hostname, err)
 	default:
 		logging.Debugf(c, "Create VM: VM already exists: hostname:%q, ID:%q, prefix:%q", vm.Hostname, vm.ID, vm.Prefix)
 		return nil
@@ -228,7 +228,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		switch err := datastore.Get(c, vm); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM %q", hostname).Err()
+			return errors.Fmt("failed to fetch VM %q: %w", hostname, err)
 		default:
 			logging.Debugf(c, "Create VM: VM found: hostname:%q, ID:%q, prefix:%q", vm.Hostname, vm.ID, vm.Prefix)
 			return nil
@@ -255,7 +255,7 @@ func createVM(c context.Context, payload proto.Message) error {
 		}
 
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+			return errors.Fmt("failed to store VM: %w", err)
 		}
 		logging.Debugf(c, "VM created: hostname:%q, task ID:%q, prefix:%q", hostname, task.GetId(), task.GetPrefix())
 		return nil
@@ -270,14 +270,14 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err e
 	}
 	// Avoid transaction if possible.
 	if err = datastore.Get(c, cfg); err != nil {
-		err = errors.Annotate(err, "failed to fetch config").Err()
+		err = errors.Fmt("failed to fetch config: %w", err)
 		return
 	}
 
 	var amt int32
 	switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
 	case err != nil:
-		err = errors.Annotate(err, "failed to parse amount").Err()
+		err = errors.Fmt("failed to parse amount: %w", err)
 		return
 	case cfg.Config.CurrentAmount == amt:
 		return
@@ -286,19 +286,19 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err e
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		var err error
 		if err = datastore.Get(c, cfg); err != nil {
-			return errors.Annotate(err, "failed to fetch config").Err()
+			return errors.Fmt("failed to fetch config: %w", err)
 		}
 
 		switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
 		case err != nil:
-			return errors.Annotate(err, "failed to parse amount").Err()
+			return errors.Fmt("failed to parse amount: %w", err)
 		case cfg.Config.CurrentAmount == amt:
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt
 		logging.Debugf(c, "set config %q to allow %d VMs", cfg.ID, cfg.Config.CurrentAmount)
 		if err = datastore.Put(c, cfg); err != nil {
-			return errors.Annotate(err, "failed to store config").Err()
+			return errors.Fmt("failed to store config: %w", err)
 		}
 		return nil
 	}, nil)
@@ -312,7 +312,7 @@ func getCurrentVMsByPrefix(ctx context.Context, prefix string) ([]*model.VM, err
 	if err := datastore.Run(ctx, q, func(vm *model.VM) {
 		vms = append(vms, vm)
 	}); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch vms for %s", prefix).Err()
+		return nil, errors.Fmt("failed to fetch vms for %s: %w", prefix, err)
 	}
 	return vms, nil
 }
@@ -325,9 +325,9 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ExpandConfig)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
+		return errors.Fmt("unexpected payload type %T", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	}
 	cfg, err := updateCurrentAmount(c, task.Id)
 	if err != nil {
@@ -356,7 +356,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 
 	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
-		return errors.Annotate(err, "expend config: failed to schedule tasks").Err()
+		return errors.Fmt("expend config: failed to schedule tasks: %w", err)
 	}
 	return nil
 }
@@ -365,7 +365,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 func createTasksPerDUT(c context.Context, vms []*model.VM, cfg *model.Config, expandTime *timestamppb.Timestamp) ([]*tq.Task, error) {
 	logging.Debugf(c, "CloudBots flow entered for config %s", cfg.Config.Prefix)
 	if len(cfg.Config.Duts) == 0 {
-		return nil, errors.Reason("config.DUTs cannot be empty").Err()
+		return nil, errors.New("config.DUTs cannot be empty")
 	}
 	existingVMs := make(map[string]string, len(vms))
 	for _, vm := range vms {
@@ -438,7 +438,7 @@ func getScalingType(cfg *config.Config) scalingType {
 func createTasksPerAmount(c context.Context, vms []*model.VM, cfg *model.Config, expandTime *timestamppb.Timestamp) ([]*tq.Task, error) {
 	logging.Debugf(c, "default flow entered for config %s", cfg.Config.Prefix)
 	if len(cfg.Config.Duts) > 0 {
-		return nil, errors.Reason("config.Duts should be empty").Err()
+		return nil, errors.New("config.Duts should be empty")
 	}
 	existingVMs := stringset.New(len(vms))
 	for _, vm := range vms {
@@ -489,15 +489,15 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ReportQuota)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
+		return errors.Fmt("unexpected payload type %T", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	}
 	p := &model.Project{
 		ID: task.Id,
 	}
 	if err := datastore.Get(c, p); err != nil {
-		return errors.Annotate(err, "failed to fetch project").Err()
+		return errors.Fmt("failed to fetch project: %w", err)
 	}
 	mets := stringset.NewFromSlice(p.Config.Metric...)
 	regs := stringset.NewFromSlice(p.Config.Region...)
@@ -506,7 +506,7 @@ func reportQuota(c context.Context, payload proto.Message) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, "Report quota", task.Id, gerr)
 		}
-		return errors.Annotate(err, "failed to fetch quota").Err()
+		return errors.Fmt("failed to fetch quota: %w", err)
 	}
 	for _, r := range rsp.Items {
 		if regs.Has(r.Name) {

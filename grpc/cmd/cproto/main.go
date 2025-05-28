@@ -123,7 +123,7 @@ func run(ctx context.Context, inputDir string) error {
 	// https://developers.google.com/protocol-buffers/docs/reference/go-generated
 	descSet, rawDesc, err := loadDescriptorSet(descPath)
 	if err != nil {
-		return errors.Annotate(err, "failed to load the descriptor set with generated files").Err()
+		return errors.Fmt("failed to load the descriptor set with generated files: %w", err)
 	}
 
 	generatedDesc := make([]*descriptorpb.FileDescriptorProto, 0, len(inputs.ProtoFiles))
@@ -134,14 +134,14 @@ func run(ctx context.Context, inputDir string) error {
 	for _, protoFile := range inputs.ProtoFiles {
 		fileDesc := descSet[path.Join(inputs.ProtoPackage, protoFile)]
 		if fileDesc == nil {
-			return errors.Reason("descriptor for %q is unexpectedly absent", protoFile).Err()
+			return errors.Fmt("descriptor for %q is unexpectedly absent", protoFile)
 		}
 		generatedDesc = append(generatedDesc, fileDesc)
 
 		// "go_package" option is required now.
 		goPackage := fileDesc.Options.GetGoPackage()
 		if goPackage == "" {
-			return errors.Reason("file %q has no go_package option set, it is required", protoFile).Err()
+			return errors.Fmt("file %q has no go_package option set, it is required", protoFile)
 		}
 		// Convert e.g. "foo/bar;pkgname" => "foo/bar".
 		if idx := strings.LastIndex(goPackage, ";"); idx != -1 {
@@ -156,7 +156,7 @@ func run(ctx context.Context, inputDir string) error {
 			strings.TrimSuffix(protoFile, ".proto")+".pb.go",
 		)
 		if _, err := os.Stat(goFile); err != nil {
-			return errors.Reason("could not find *.pb.go file generated from %q, is go_package option correct?", protoFile).Err()
+			return errors.Fmt("could not find *.pb.go file generated from %q, is go_package option correct?", protoFile)
 		}
 
 		// Transform .go files by adding pRPC stubs after gPRC stubs. Code generated
@@ -166,7 +166,7 @@ func run(ctx context.Context, inputDir string) error {
 		if !*disableGRPC && !*useGRPCPlugin {
 			var t transformer
 			if err := t.transformGoFile(goFile); err != nil {
-				return errors.Annotate(err, "could not transform %q", goFile).Err()
+				return errors.Fmt("could not transform %q: %w", goFile, err)
 			}
 		}
 
@@ -184,10 +184,9 @@ func run(ctx context.Context, inputDir string) error {
 		// ended up in the same Go package. Otherwise it's not clear what package to
 		// put the pb.discovery.go into.
 		if goPackages.Len() != 1 {
-			return errors.Reason(
-				"cannot generate pb.discovery.go: generated *.pb.go files are in multiple packages %v",
-				goPackages.ToSortedSlice(),
-			).Err()
+			return errors.Fmt("cannot generate pb.discovery.go: generated *.pb.go files are in multiple packages %v",
+				goPackages.ToSortedSlice())
+
 		}
 		goPkg := goPackages.ToSlice()[0]
 		out := filepath.Join(

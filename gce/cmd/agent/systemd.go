@@ -52,26 +52,26 @@ func (*SystemdStrategy) autostart(c context.Context, path, user string, python s
 	}
 	s, err := substitute(c, string(GetAsset(systemdTmpl)), subs)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare template %q", systemdTmpl).Err()
+		return errors.Fmt("failed to prepare template %q: %w", systemdTmpl, err)
 	}
 
 	logging.Infof(c, "installing: %s", systemdCfg)
 	// 0644 allows the systemd config to be read by all users.
 	// Useful when SSHing to the instance.
 	if err := os.WriteFile(systemdCfg, []byte(s), 0644); err != nil {
-		return errors.Annotate(err, "failed to write: %s", systemdCfg).Err()
+		return errors.Fmt("failed to write: %s: %w", systemdCfg, err)
 	}
 
 	// Enable the service so it starts on next boot.
 	logging.Infof(c, "enabling %q", systemdSrv)
 	if err := exec.Command("systemctl", "enable", systemdSrv).Run(); err != nil {
-		return errors.Annotate(err, "failed to enable service %q", systemdSrv).Err()
+		return errors.Fmt("failed to enable service %q: %w", systemdSrv, err)
 	}
 
 	// Start the service right now.
 	logging.Infof(c, "starting %q", systemdSrv)
 	if err := exec.Command("systemctl", "start", systemdSrv).Run(); err != nil {
-		return errors.Annotate(err, "failed to start service %q", systemdSrv).Err()
+		return errors.Fmt("failed to start service %q: %w", systemdSrv, err)
 	}
 	return nil
 }

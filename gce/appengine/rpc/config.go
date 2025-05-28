@@ -47,7 +47,7 @@ func (*Config) Delete(c context.Context, req *config.DeleteRequest) (*emptypb.Em
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	if err := datastore.Delete(c, &model.Config{ID: req.Id}); err != nil {
-		return nil, errors.Annotate(err, "failed to delete config").Err()
+		return nil, errors.Fmt("failed to delete config: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -72,13 +72,13 @@ func (*Config) Ensure(c context.Context, req *config.EnsureRequest) (*config.Con
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			priorAmount = 0
 		default:
-			return errors.Annotate(err, "failed to fetch config").Err()
+			return errors.Fmt("failed to fetch config: %w", err)
 		}
 		cfg.Config = req.Config
 		cfg.Config.CurrentAmount = priorAmount
 		cfg.Config.Duts = priorDUTs
 		if err := datastore.Put(c, cfg); err != nil {
-			return errors.Annotate(err, "failed to store config").Err()
+			return errors.Fmt("failed to store config: %w", err)
 		}
 		return nil
 	}, nil); err != nil {
@@ -158,7 +158,7 @@ func updateDUTs(c context.Context, req *config.UpdateRequest) (*config.Config, e
 		// The first source of truth being Config.Duts.
 		cfg.Config.CurrentAmount = int32(len(duts))
 		if err := datastore.Put(c, cfg); err != nil {
-			return errors.Annotate(err, "failed to store config").Err()
+			return errors.Fmt("failed to store config: %w", err)
 		}
 		return nil
 	}, nil); err != nil {
@@ -183,13 +183,13 @@ func updateAmount(c context.Context, req *config.UpdateRequest) (*config.Config,
 		amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to parse amount").Err()
+			return errors.Fmt("failed to parse amount: %w", err)
 		case amt == cfg.Config.CurrentAmount:
 			return nil
 		default:
 			cfg.Config.CurrentAmount = amt
 			if err := datastore.Put(c, cfg); err != nil {
-				return errors.Annotate(err, "failed to store config").Err()
+				return errors.Fmt("failed to store config: %w", err)
 			}
 			return nil
 		}
@@ -238,7 +238,7 @@ func getConfigByID(c context.Context, id string) (*model.Config, error) {
 	case datastore.ErrNoSuchEntity:
 		return nil, notFoundErr(id)
 	default:
-		return nil, errors.Annotate(err, "failed to fetch config").Err()
+		return nil, errors.Fmt("failed to fetch config: %w", err)
 	}
 
 	switch is, err := auth.IsMember(c, cfg.Config.GetOwner()...); {

@@ -32,7 +32,7 @@ func (b *Buildbucket) WriteProperties(inputs map[string]any) {
 	b.EnsureBasics()
 
 	if err := exe.WriteProperties(b.BbagentArgs.Build.Input.Properties, inputs); err != nil {
-		panic(errors.Annotate(err, "impossible").Err())
+		panic(errors.Fmt("impossible: %w", err))
 	}
 }
 

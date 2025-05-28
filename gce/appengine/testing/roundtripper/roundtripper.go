@@ -77,7 +77,7 @@ func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 		err := json.NewDecoder(req.Body).Decode(&val)
 		req.Body.Close()
 		if err != nil {
-			panic(errors.Annotate(err, "failed to unmarshal *http.Request.Body").Err())
+			panic(errors.Fmt("failed to unmarshal *http.Request.Body: %w", err))
 		}
 	}
 
@@ -88,7 +88,7 @@ func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	code, rsp := t.Handler(val)
 	b, err := json.Marshal(rsp)
 	if err != nil {
-		panic(errors.Annotate(err, "failed to marshal *http.Response.Body").Err())
+		panic(errors.Fmt("failed to marshal *http.Response.Body: %w", err))
 	}
 	return &http.Response{
 		Body:       io.NopCloser(bytes.NewReader(b)),

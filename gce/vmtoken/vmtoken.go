@@ -81,7 +81,7 @@ type signatureChecker interface {
 func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload, error) {
 	chunks := strings.Split(jwt, ".")
 	if len(chunks) != 3 {
-		return nil, errors.Reason("bad JWT: expected 3 components separated by '.'").Err()
+		return nil, errors.New("bad JWT: expected 3 components separated by '.'")
 	}
 
 	// Check the header, grab the key ID from it.
@@ -90,25 +90,25 @@ func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload
 		Kid string `json:"kid"`
 	}
 	if err := unmarshalB64JSON(chunks[0], &hdr); err != nil {
-		return nil, errors.Annotate(err, "bad JWT header").Err()
+		return nil, errors.Fmt("bad JWT header: %w", err)
 	}
 	if hdr.Alg != "RS256" {
-		return nil, errors.Reason("bad JWT: only RS256 alg is supported, not %q", hdr.Alg).Err()
+		return nil, errors.Fmt("bad JWT: only RS256 alg is supported, not %q", hdr.Alg)
 	}
 	if hdr.Kid == "" {
-		return nil, errors.Reason("bad JWT: missing the signing key ID in the header").Err()
+		return nil, errors.New("bad JWT: missing the signing key ID in the header")
 	}
 
 	// Need a raw binary blob with the signature to verify it.
 	sig, err := base64.RawURLEncoding.DecodeString(chunks[2])
 	if err != nil {
-		return nil, errors.Annotate(err, "bad JWT: can't base64 decode the signature").Err()
+		return nil, errors.Fmt("bad JWT: can't base64 decode the signature: %w", err)
 	}
 
 	// Check that "b64(hdr).b64(payload)" part of the token matches the signature.
 	// If it does, we know the token was created by Google.
 	if err = certs.CheckSignature(hdr.Kid, []byte(chunks[0]+"."+chunks[1]), sig); err != nil {
-		return nil, errors.Annotate(err, "bad JWT: bad signature").Err()
+		return nil, errors.Fmt("bad JWT: bad signature: %w", err)
 	}
 
 	// Decode the payload. There should be no errors here generally, the encoded
@@ -136,13 +136,13 @@ func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload
 		} `json:"google"`
 	}
 	if err = unmarshalB64JSON(chunks[1], &payload); err != nil {
-		return nil, errors.Annotate(err, "bad JWT payload").Err()
+		return nil, errors.Fmt("bad JWT payload: %w", err)
 	}
 
 	// Tokens can either be in "full" or "standard" format. We want "full", since
 	// "standard" doesn't have details about the VM.
 	if payload.Google.ComputeEngine.ProjectID == "" {
-		return nil, errors.Reason("no google.compute_engine in the GCE VM token, use 'full' format").Err()
+		return nil, errors.New("no google.compute_engine in the GCE VM token, use 'full' format")
 	}
 
 	// Check token's "issued at" and "expiry" claims. Allow some leeway for clock
@@ -150,9 +150,9 @@ func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload
 	const allowedDriftSec = 30
 	switch now := clock.Now(c).Unix(); {
 	case now < payload.Iat-allowedDriftSec:
-		return nil, errors.Reason("bad JWT: too early (now %d < iat %d)", now, payload.Iat).Err()
+		return nil, errors.Fmt("bad JWT: too early (now %d < iat %d)", now, payload.Iat)
 	case now > payload.Exp+allowedDriftSec:
-		return nil, errors.Reason("bad JWT: expired (now %d > exp %d)", now, payload.Exp).Err()
+		return nil, errors.Fmt("bad JWT: expired (now %d > exp %d)", now, payload.Exp)
 	}
 
 	// The caller is supposed to check 'aud' claim to finish the verification.
@@ -167,10 +167,10 @@ func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload
 func unmarshalB64JSON(blob string, out any) error {
 	raw, err := base64.RawURLEncoding.DecodeString(blob)
 	if err != nil {
-		return errors.Annotate(err, "not base64").Err()
+		return errors.Fmt("not base64: %w", err)
 	}
 	if err := json.Unmarshal(raw, out); err != nil {
-		return errors.Annotate(err, "not JSON").Err()
+		return errors.Fmt("not JSON: %w", err)
 	}
 	return nil
 }

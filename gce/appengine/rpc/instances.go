@@ -54,13 +54,13 @@ func deleteByID(c context.Context, id string) (*emptypb.Empty, error) {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+			return errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
 		case vm.Drained:
 			return nil
 		}
 		vm.Drained = true
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+			return errors.Fmt("failed to store VM: %w", err)
 		}
 		return nil
 	}, nil); err != nil {
@@ -77,7 +77,7 @@ func deleteByHostname(c context.Context, hostname string) (*emptypb.Empty, error
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
 	switch err := datastore.GetAll(c, q, &vms); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM with hostname: %q", hostname).Err()
+		return nil, errors.Fmt("failed to fetch VM with hostname: %q: %w", hostname, err)
 	case len(vms) == 0:
 		return &emptypb.Empty{}, nil
 	default:
@@ -156,7 +156,7 @@ func getByID(c context.Context, id string) (*instances.Instance, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no VM found with ID %q", id)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+		return nil, errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
 	default:
 		return toInstance(vm), nil
 	}
@@ -174,7 +174,7 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
 	switch err := datastore.GetAll(c, q, &vms); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VM with hostname: %q", hostname).Err()
+		return nil, errors.Fmt("failed to fetch VM with hostname: %q: %w", hostname, err)
 	case len(vms) == 0:
 		if vmtoken.Has(c) {
 			metrics.UpdateUntrackedGets(c, hostname)

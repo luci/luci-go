@@ -71,7 +71,7 @@ func metaIntoHeaders(md metadata.MD, h http.Header) error {
 	for k, vs := range md {
 		canon := http.CanonicalHeaderKey(k)
 		if isReservedMetadataKey(canon) {
-			return errors.Reason("using reserved metadata key %q", k).Err()
+			return errors.Fmt("using reserved metadata key %q", k)
 		}
 		if !strings.HasSuffix(canon, "-Bin") {
 			h[canon] = append(h[canon], vs...)
@@ -117,7 +117,7 @@ func headersIntoMetadata(h http.Header) (md metadata.MD, err error) {
 			md = make(metadata.MD, len(h))
 		}
 		if err := headerIntoMeta(k, v, md); err != nil {
-			return nil, errors.Annotate(err, "can't decode header %q", k).Err()
+			return nil, errors.Fmt("can't decode header %q: %w", k, err)
 		}
 	}
 	return

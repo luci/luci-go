@@ -91,12 +91,12 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 	// when running in Go Modules mode, so we still need to keep `goPkg` argument.
 	pkg, err := build.ImportDir(filepath.Dir(output), 0)
 	if err != nil {
-		return errors.Annotate(err, "failed to figure out Go package name for %q", output).Err()
+		return errors.Fmt("failed to figure out Go package name for %q: %w", output, err)
 	}
 
 	compressedDescBytes, err := compress(raw)
 	if err != nil {
-		return errors.Annotate(err, "failed to compress the descriptor set proto").Err()
+		return errors.Fmt("failed to compress the descriptor set proto: %w", err)
 	}
 
 	var buf bytes.Buffer
@@ -107,13 +107,13 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 		"CompressedBytes": asByteArray(compressedDescBytes),
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to execute discovery file template").Err()
+		return errors.Fmt("failed to execute discovery file template: %w", err)
 	}
 
 	src := buf.Bytes()
 	formatted, err := gofmt(src)
 	if err != nil {
-		return errors.Annotate(err, "failed to gofmt the generated discovery file").Err()
+		return errors.Fmt("failed to gofmt the generated discovery file: %w", err)
 	}
 
 	return os.WriteFile(output, formatted, 0666)

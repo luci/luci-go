@@ -51,25 +51,25 @@ func (*WindowsStrategy) autostart(c context.Context, path, user string, python s
 	}
 	s, err := substitute(c, string(GetAsset(startupTmpl)), subs)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare template %q", startupTmpl).Err()
+		return errors.Fmt("failed to prepare template %q: %w", startupTmpl, err)
 	}
 	p, err := substitute(c, startupCfg, subs)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare path: %s", startupCfg).Err()
+		return errors.Fmt("failed to prepare path: %s: %w", startupCfg, err)
 	}
 
 	logging.Infof(c, "installing: %s", startupCfg)
 	// 0644 allows the startup task to be read by all users.
 	// Useful when SSHing to the instance.
 	if err := os.WriteFile(p, []byte(s), 0644); err != nil {
-		return errors.Annotate(err, "failed to write: %s", p).Err()
+		return errors.Fmt("failed to write: %s: %w", p, err)
 	}
 
 	logging.Infof(c, "starting %q", startupTask)
 	cmd := exec.Command(p)
 	setFlags(cmd)
 	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start task %q", startupTask).Err()
+		return errors.Fmt("failed to start task %q: %w", startupTask, err)
 	}
 	return nil
 }
@@ -78,7 +78,7 @@ func (*WindowsStrategy) autostart(c context.Context, path, user string, python s
 // Implements PlatformStrategy.
 func (*WindowsStrategy) chown(c context.Context, path, username string) error {
 	if err := exec.Command("icacls", path, "/setowner", username).Run(); err != nil {
-		return errors.Annotate(err, "failed to set owner: %s", path).Err()
+		return errors.Fmt("failed to set owner: %s: %w", path, err)
 	}
 	return nil
 }

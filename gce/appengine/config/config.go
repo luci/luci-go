@@ -131,12 +131,12 @@ func fetch(c context.Context) (*Config, error) {
 	case err == config.ErrNoConfig:
 		logging.Debugf(c, "%q not found", vmsFile)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", vmsFile).Err()
+		return nil, errors.Fmt("failed to fetch %q: %w", vmsFile, err)
 	default:
 		rev = vmsCfg.Revision
 		logging.Debugf(c, "found %q revision %s", vmsFile, vmsCfg.Revision)
 		if err := proto.UnmarshalText(vmsCfg.Content, vms); err != nil {
-			return nil, errors.Annotate(err, "failed to load %q", vmsFile).Err()
+			return nil, errors.Fmt("failed to load %q: %w", vmsFile, err)
 		}
 	}
 	prjs := &projects.Configs{}
@@ -144,14 +144,14 @@ func fetch(c context.Context) (*Config, error) {
 	case err == config.ErrNoConfig:
 		logging.Debugf(c, "%q not found", projectsFile)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", projectsFile).Err()
+		return nil, errors.Fmt("failed to fetch %q: %w", projectsFile, err)
 	default:
 		logging.Debugf(c, "found %q revision %s", projectsFile, prjsCfg.Revision)
 		if rev != "" && prjsCfg.Revision != rev {
-			return nil, errors.Reason("config revision mismatch").Err()
+			return nil, errors.New("config revision mismatch")
 		}
 		if err := proto.UnmarshalText(prjsCfg.Content, prjs); err != nil {
-			return nil, errors.Annotate(err, "failed to load %q", projectsFile).Err()
+			return nil, errors.Fmt("failed to load %q: %w", projectsFile, err)
 		}
 	}
 	return &Config{
@@ -181,17 +181,17 @@ func deref(c context.Context, cfg *Config) error {
 			if m.GetFromFile() != "" {
 				parts := strings.SplitN(m.GetFromFile(), ":", 2)
 				if len(parts) < 2 {
-					return errors.Reason("metadata from file must be in key:value form").Err()
+					return errors.New("metadata from file must be in key:value form")
 				}
 				file := parts[1]
 				if _, ok := fileMap[file]; !ok {
 					fileCfg, err := cli.GetConfig(c, "services/${appid}", file, false)
 					if err != nil {
-						return errors.Annotate(err, "failed to fetch %q", file).Err()
+						return errors.Fmt("failed to fetch %q: %w", file, err)
 					}
 					logging.Debugf(c, "found %q revision %s", file, fileCfg.Revision)
 					if fileCfg.Revision != cfg.revision {
-						return errors.Reason("config revision mismatch %q", fileCfg.Revision).Err()
+						return errors.Fmt("config revision mismatch %q", fileCfg.Revision)
 					}
 					fileMap[file] = fileCfg.Content
 				}
@@ -216,15 +216,15 @@ func normalize(c context.Context, cfg *Config) error {
 	for _, v := range cfg.VMs.GetVms() {
 		for _, ch := range v.Amount.GetChange() {
 			if err := ch.Length.Normalize(); err != nil {
-				return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
+				return errors.Fmt("failed to normalize %q: %w", v.Prefix, err)
 			}
 		}
 		if err := v.Lifetime.Normalize(); err != nil {
-			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
+			return errors.Fmt("failed to normalize %q: %w", v.Prefix, err)
 		}
 		v.Revision = cfg.revision
 		if err := v.Timeout.Normalize(); err != nil {
-			return errors.Annotate(err, "failed to normalize %q", v.Prefix).Err()
+			return errors.Fmt("failed to normalize %q: %w", v.Prefix, err)
 		}
 	}
 	return nil
@@ -236,7 +236,7 @@ func syncVMs(c context.Context, vms []*gce.Config) error {
 	srv := getVMsServer(c)
 	rsp, err := srv.List(c, &gce.ListRequest{})
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch VMs configs").Err()
+		return errors.Fmt("failed to fetch VMs configs: %w", err)
 	}
 	// Track the revision of each config.
 	revs := make(map[string]string, len(rsp.Configs))
@@ -256,7 +256,7 @@ func syncVMs(c context.Context, vms []*gce.Config) error {
 		ens.Id = v.Prefix
 		ens.Config = v
 		if _, err := srv.Ensure(c, ens); err != nil {
-			return errors.Annotate(err, "failed to ensure VMs config %q", ens.Id).Err()
+			return errors.Fmt("failed to ensure VMs config %q: %w", ens.Id, err)
 		}
 	}
 
@@ -265,7 +265,7 @@ func syncVMs(c context.Context, vms []*gce.Config) error {
 	for id := range revs {
 		del.Id = id
 		if _, err := srv.Delete(c, del); err != nil {
-			return errors.Annotate(err, "failed to delete VMs config %q", del.Id).Err()
+			return errors.Fmt("failed to delete VMs config %q: %w", del.Id, err)
 		}
 		logging.Debugf(c, "deleted VMs config %q", del.Id)
 	}
@@ -278,7 +278,7 @@ func syncPrjs(c context.Context, prjs []*projects.Config) error {
 	srv := getProjServer(c)
 	rsp, err := srv.List(c, &projects.ListRequest{})
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch project configs").Err()
+		return errors.Fmt("failed to fetch project configs: %w", err)
 	}
 	// Track the revision of each config.
 	revs := make(map[string]string, len(rsp.Projects))
@@ -298,7 +298,7 @@ func syncPrjs(c context.Context, prjs []*projects.Config) error {
 		ens.Id = p.Project
 		ens.Project = p
 		if _, err := srv.Ensure(c, ens); err != nil {
-			return errors.Annotate(err, "failed to ensure project config %q", ens.Id).Err()
+			return errors.Fmt("failed to ensure project config %q: %w", ens.Id, err)
 		}
 	}
 
@@ -307,7 +307,7 @@ func syncPrjs(c context.Context, prjs []*projects.Config) error {
 	for id := range revs {
 		del.Id = id
 		if _, err := srv.Delete(c, del); err != nil {
-			return errors.Annotate(err, "failed to delete project config %q", del.Id).Err()
+			return errors.Fmt("failed to delete project config %q: %w", del.Id, err)
 		}
 		logging.Debugf(c, "deleted project config %q", del.Id)
 	}
@@ -317,10 +317,10 @@ func syncPrjs(c context.Context, prjs []*projects.Config) error {
 // sync synchronizes the given validated configs.
 func sync(c context.Context, cfg *Config) error {
 	if err := syncVMs(c, cfg.VMs.GetVms()); err != nil {
-		return errors.Annotate(err, "failed to sync VMs configs").Err()
+		return errors.Fmt("failed to sync VMs configs: %w", err)
 	}
 	if err := syncPrjs(c, cfg.Projects.GetProject()); err != nil {
-		return errors.Annotate(err, "failed to sync project configs").Err()
+		return errors.Fmt("failed to sync project configs: %w", err)
 	}
 	return nil
 }
@@ -330,24 +330,24 @@ func sync(c context.Context, cfg *Config) error {
 func doImport(c context.Context) error {
 	cfg, err := fetch(c)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch configs").Err()
+		return errors.Fmt("failed to fetch configs: %w", err)
 	}
 
 	// Deref before validating. VMs may be invalid until metadata from file is imported.
 	if err := deref(c, cfg); err != nil {
-		return errors.Annotate(err, "failed to dereference files").Err()
+		return errors.Fmt("failed to dereference files: %w", err)
 	}
 
 	if err := validate(c, cfg); err != nil {
-		return errors.Annotate(err, "invalid configs").Err()
+		return errors.Fmt("invalid configs: %w", err)
 	}
 
 	if err := normalize(c, cfg); err != nil {
-		return errors.Annotate(err, "failed to normalize configs").Err()
+		return errors.Fmt("failed to normalize configs: %w", err)
 	}
 
 	if err := sync(c, cfg); err != nil {
-		return errors.Annotate(err, "failed to synchronize configs").Err()
+		return errors.Fmt("failed to synchronize configs: %w", err)
 	}
 	return nil
 }

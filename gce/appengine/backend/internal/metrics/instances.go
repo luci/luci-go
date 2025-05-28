@@ -187,7 +187,7 @@ func (ic *InstanceCount) Update(c context.Context, prefix, resourceGroup, scalin
 	ic.ResourceGroup = resourceGroup
 	ic.ScalingType = scalingType
 	if err := datastore.Put(c, ic); err != nil {
-		return errors.Annotate(err, "failed to store count").Err()
+		return errors.Fmt("failed to store count: %w", err)
 	}
 	return nil
 }
@@ -214,7 +214,7 @@ func updateInstances(c context.Context) {
 			connectedInstances.Set(c, int64(conn.Count), ic.Prefix, conn.Project, ic.ScalingType, ic.ResourceGroup, conn.Server, conn.Zone)
 		}
 	}); err != nil {
-		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())
+		errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
 	}
 }
 

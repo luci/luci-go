@@ -78,7 +78,7 @@ func (tc *TaskCount) Update(c context.Context, queue string, exec, tot int) erro
 	tc.Executing = exec
 	tc.Total = tot
 	if err := datastore.Put(c, tc); err != nil {
-		return errors.Annotate(err, "failed to store count").Err()
+		return errors.Fmt("failed to store count: %w", err)
 	}
 	return nil
 }
@@ -99,7 +99,7 @@ func updateTasks(c context.Context) {
 		tasksPending.Set(c, int64(tc.Total-tc.Executing), tc.Queue)
 		tasksTotal.Set(c, int64(tc.Total), tc.Queue)
 	}); err != nil {
-		errors.Log(c, errors.Annotate(err, "failed to fetch counts").Err())
+		errors.Log(c, errors.Fmt("failed to fetch counts: %w", err))
 	}
 }
 

@@ -46,7 +46,7 @@ var (
 func setCreated(c context.Context, id string, inst *compute.Instance) error {
 	t, err := time.Parse(time.RFC3339, inst.CreationTimestamp)
 	if err != nil {
-		return errors.Annotate(err, "failed to parse instance creation time").Err()
+		return errors.Fmt("failed to parse instance creation time: %w", err)
 	}
 	nics := make([]model.NetworkInterface, len(inst.NetworkInterfaces))
 	for i, n := range inst.NetworkInterfaces {
@@ -67,7 +67,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		put = false
 		switch err := datastore.Get(c, vm); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+			return errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
 		case vm.Created > 0:
 			return nil
 		}
@@ -75,7 +75,7 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		vm.NetworkInterfaces = nics
 		vm.URL = inst.SelfLink
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM %q", id).Err()
+			return errors.Fmt("failed to store VM %q: %w", id, err)
 		}
 		put = true
 		return nil
@@ -126,14 +126,14 @@ func checkInstance(c context.Context, vm *model.VM) error {
 				logging.Debugf(c, "Check created instance %q: instance not found in %q project", vm.Hostname, vm.Attributes.GetProject())
 				metrics.UpdateFailures(c, gerr.Code, vm)
 				if err := deleteVM(c, vm.ID, vm.Hostname); err != nil {
-					return errors.Annotate(err, "check created instance %q: not found", vm.Hostname).Err()
+					return errors.Fmt("check created instance %q: not found: %w", vm.Hostname, err)
 				}
-				return errors.Annotate(err, "create instance %q: not found", vm.Hostname).Err()
+				return errors.Fmt("create instance %q: not found: %w", vm.Hostname, err)
 			}
 			logErrors(c, "Check created instance", vm.Hostname, gerr)
 		}
 		logging.Debugf(c, "Check created instance %q: fail to find in %q project", vm.Hostname, vm.Attributes.GetProject())
-		return errors.Annotate(err, "failed to fetch instance").Err()
+		return errors.Fmt("failed to fetch instance: %w", err)
 	}
 	logging.Debugf(c, "Check created instance %q: successfully created %s", vm.Hostname, inst.SelfLink)
 	metrics.CreatedInstanceChecked.Add(c, 1, vm.Config, vm.Attributes.GetProject(), vm.ScalingType, vm.Attributes.GetZone(), vm.Hostname)
@@ -148,16 +148,16 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.CreateInstance)
 	switch {
 	case !ok:
-		return errors.Reason("create instance: unexpected payload %q", payload).Err()
+		return errors.Fmt("create instance: unexpected payload %q", payload)
 	case task.GetId() == "":
-		return errors.Reason("create instance: instance ID is required").Err()
+		return errors.New("create instance: instance ID is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
 	}
 	switch err := datastore.Get(ctx, vm); {
 	case err != nil:
-		return errors.Annotate(err, "Create instance: failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Fmt("Create instance: failed to fetch VM with id: %q: %w", task.GetId(), err)
 	case vm.URL != "":
 		logging.Debugf(ctx, "Create instance: instance already %s", vm.URL)
 		return nil
@@ -178,17 +178,17 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 			metrics.UpdateFailures(ctx, gerr.Code, vm)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 			if rateLimitExceeded(gerr) {
-				return errors.Annotate(err, "rate limit exceeded creating instance %s", vm.Hostname).Err()
+				return errors.Fmt("rate limit exceeded creating instance %s: %w", vm.Hostname, err)
 			}
 			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
-				return errors.Annotate(err, "transiently failed to create instance %s", vm.Hostname).Err()
+				return errors.Fmt("transiently failed to create instance %s: %w", vm.Hostname, err)
 			}
 			logging.Debugf(ctx, "Create instance %q: try to delete instance as got error during creation.", vm.Hostname)
 			if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
 				logging.Errorf(ctx, "Create instance %q: failed to delete instance %s", vm.Hostname, err)
 			}
 		}
-		return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
+		return errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
 	}
 	logging.Debugf(ctx, "Create instance %q: received response from GCP, waiting execution", vm.Hostname)
 	if operationsErrors := op.GetErrors(); len(operationsErrors) > 0 {
@@ -198,9 +198,9 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 		}
 		metrics.UpdateFailures(ctx, 200, vm)
 		if err := deleteVM(ctx, task.Id, vm.Hostname); err != nil {
-			return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
+			return errors.Fmt("failed to create instance %s: %w", vm.Hostname, err)
 		}
-		return errors.Reason("failed to create instance %s", vm.Hostname).Err()
+		return errors.Fmt("failed to create instance %s", vm.Hostname)
 	}
 	if op.GetStatus() == "DONE" {
 		logging.Debugf(ctx, "Create instance %q: reported as created, next step is to check it.", vm.Hostname)
@@ -220,7 +220,7 @@ func destroyInstanceAsync(c context.Context, id, url string) error {
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
-		return errors.Annotate(err, "failed to schedule destroy task").Err()
+		return errors.Fmt("failed to schedule destroy task: %w", err)
 	}
 	return nil
 }
@@ -233,11 +233,11 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DestroyInstance)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload type %T", payload).Err()
+		return errors.Fmt("unexpected payload type %T", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	case task.GetUrl() == "":
-		return errors.Reason("URL is required").Err()
+		return errors.New("URL is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -246,7 +246,7 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "destroy instance: failed to fetch VM %s", vm.ID).Err()
+		return errors.Fmt("destroy instance: failed to fetch VM %s: %w", vm.ID, err)
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
 		logging.Debugf(c, "Destroy instance %q: does not exist %s", vm.Hostname, task.Url)
@@ -268,14 +268,14 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 			logErrors(c, "Destroy instance", vm.Hostname, gerr)
 		}
 		logging.Debugf(c, "Destroy instance %q: failed to destroy %s", vm.Hostname, err)
-		return errors.Annotate(err, "destroy instance %q", vm.Hostname).Err()
+		return errors.Fmt("destroy instance %q: %w", vm.Hostname, err)
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
 		logging.Debugf(c, "Destroy instance %q: failed to destroy with %d erroros: %s", vm.Hostname, len(op.Error.Errors))
 		for _, err := range op.Error.Errors {
 			logging.Errorf(c, "Destroy instance %q: failed with code %s: %s", vm.Hostname, err.Code, err.Message)
 		}
-		return errors.Reason("Destroy instance %q: failed to destroy", vm.Hostname).Err()
+		return errors.Fmt("Destroy instance %q: failed to destroy", vm.Hostname)
 	}
 	if op.Status == "DONE" {
 		logging.Debugf(c, "Destroy instance %q: done", op.TargetLink)
@@ -298,11 +298,11 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.AuditProject)
 	switch {
 	case !ok:
-		return errors.Reason("Unexpected payload type %T", payload).Err()
+		return errors.Fmt("Unexpected payload type %T", payload)
 	case task.GetProject() == "":
-		return errors.Reason("Project is required").Err()
+		return errors.New("Project is required")
 	case task.GetZone() == "":
-		return errors.Reason("Zone is required").Err()
+		return errors.New("Zone is required")
 	}
 	proj := task.GetProject()
 	zone := task.GetZone()
@@ -319,7 +319,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			logErrors(c, "Audit instance", fmt.Sprintf("%s-%s", proj, zone), gerr)
 		}
-		return errors.Annotate(err, "failed to list  %s-%s", proj, zone).Err()
+		return errors.Fmt("failed to list  %s-%s: %w", proj, zone, err)
 	}
 
 	if op.Warning != nil {

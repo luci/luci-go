@@ -33,15 +33,15 @@ type LinuxStrategy struct {
 func (*LinuxStrategy) chown(c context.Context, path, username string) error {
 	u, err := user.Lookup(username)
 	if err != nil {
-		return errors.Annotate(err, "failed to look up local user %q", username).Err()
+		return errors.Fmt("failed to look up local user %q: %w", username, err)
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
-		return errors.Annotate(err, "failed to get uid for user %q", username).Err()
+		return errors.Fmt("failed to get uid for user %q: %w", username, err)
 	}
 	gid, err := strconv.Atoi(u.Gid)
 	if err != nil {
-		return errors.Annotate(err, "failed to get gid for user %q", username).Err()
+		return errors.Fmt("failed to get gid for user %q: %w", username, err)
 	}
 	return os.Chown(path, uid, gid)
 }

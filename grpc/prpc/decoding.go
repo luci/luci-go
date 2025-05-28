@@ -35,7 +35,7 @@ import (
 const headerContentType = "Content-Type"
 
 // decompressionLimitErr is returned if readMessage decompressed too much data.
-var decompressionLimitErr = errors.Reason("the decompressed request size exceeds the server limit").Err()
+var decompressionLimitErr = errors.New("the decompressed request size exceeds the server limit")
 
 // readMessage decodes a protobuf message from an HTTP request.
 //
@@ -158,7 +158,7 @@ func parseHeader(ctx context.Context, header http.Header, host string) (context.
 	if timeoutStr := header.Get(HeaderTimeout); timeoutStr != "" {
 		timeout, err := DecodeTimeout(timeoutStr)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "%q header", HeaderTimeout).Err()
+			return nil, nil, errors.Fmt("%q header: %w", HeaderTimeout, err)
 		}
 		ctx, cancel := clock.WithTimeout(ctx, timeout)
 		return ctx, cancel, nil

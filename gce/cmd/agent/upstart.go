@@ -52,19 +52,19 @@ func (*UpstartStrategy) autostart(c context.Context, path, user string, python s
 	}
 	s, err := substitute(c, string(GetAsset(upstartTmpl)), subs)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare template %q", upstartTmpl).Err()
+		return errors.Fmt("failed to prepare template %q: %w", upstartTmpl, err)
 	}
 
 	logging.Infof(c, "installing: %s", upstartCfg)
 	// 0644 allows the upstart config to be read by all users.
 	// Useful when SSHing to the instance.
 	if err := os.WriteFile(upstartCfg, []byte(s), 0644); err != nil {
-		return errors.Annotate(err, "failed to write: %s", upstartCfg).Err()
+		return errors.Fmt("failed to write: %s: %w", upstartCfg, err)
 	}
 
 	logging.Infof(c, "starting %q", upstartSrv)
 	if err := exec.Command("initctl", "start", upstartSrv).Run(); err != nil {
-		return errors.Annotate(err, "failed to start service %q", upstartSrv).Err()
+		return errors.Fmt("failed to start service %q: %w", upstartSrv, err)
 	}
 	return nil
 }

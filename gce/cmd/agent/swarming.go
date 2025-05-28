@@ -54,11 +54,11 @@ func (s *SwarmingClient) fetch(c context.Context, path, user string) error {
 	logging.Infof(c, "downloading: %s", botCode)
 	rsp, err := s.Get(botCode)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch bot code").Err()
+		return errors.Fmt("failed to fetch bot code: %w", err)
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode != http.StatusOK {
-		return errors.Reason("server returned %q", rsp.Status).Err()
+		return errors.Fmt("server returned %q", rsp.Status)
 	}
 
 	logging.Infof(c, "installing: %s", path)
@@ -66,15 +66,15 @@ func (s *SwarmingClient) fetch(c context.Context, path, user string) error {
 	// Useful when SSHing to the instance.
 	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return errors.Annotate(err, "failed to open: %s", path).Err()
+		return errors.Fmt("failed to open: %s: %w", path, err)
 	}
 	defer out.Close()
 	_, err = io.Copy(out, rsp.Body)
 	if err != nil {
-		return errors.Annotate(err, "failed to write: %s", path).Err()
+		return errors.Fmt("failed to write: %s: %w", path, err)
 	}
 	if err := s.chown(c, path, user); err != nil {
-		return errors.Annotate(err, "failed to chown: %s", path).Err()
+		return errors.Fmt("failed to chown: %s: %w", path, err)
 	}
 	return nil
 }
@@ -84,16 +84,16 @@ func (s *SwarmingClient) Configure(c context.Context, dir, user string, python s
 	// 0755 allows the directory structure to be read and listed by all users.
 	// Useful when SSHing fo the instance.
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return errors.Annotate(err, "failed to create: %s", dir).Err()
+		return errors.Fmt("failed to create: %s: %w", dir, err)
 	}
 	if err := s.chown(c, dir, user); err != nil {
-		return errors.Annotate(err, "failed to chown: %s", dir).Err()
+		return errors.Fmt("failed to chown: %s: %w", dir, err)
 	}
 	zip := filepath.Join(dir, "swarming_bot.zip")
 	switch _, err := os.Stat(zip); {
 	case os.IsNotExist(err):
 	case err != nil:
-		return errors.Annotate(err, "failed to stat: %s", zip).Err()
+		return errors.Fmt("failed to stat: %s: %w", zip, err)
 	default:
 		logging.Infof(c, "already installed: %s", zip)
 		return nil

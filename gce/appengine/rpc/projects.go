@@ -45,7 +45,7 @@ func (*Projects) Delete(c context.Context, req *projects.DeleteRequest) (*emptyp
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	if err := datastore.Delete(c, &model.Project{ID: req.Id}); err != nil {
-		return nil, errors.Annotate(err, "failed to delete project").Err()
+		return nil, errors.Fmt("failed to delete project: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -60,7 +60,7 @@ func (*Projects) Ensure(c context.Context, req *projects.EnsureRequest) (*projec
 		Config: req.Project,
 	}
 	if err := datastore.Put(c, p); err != nil {
-		return nil, errors.Annotate(err, "failed to store project").Err()
+		return nil, errors.Fmt("failed to store project: %w", err)
 	}
 	return p.Config, nil
 }
@@ -79,7 +79,7 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 	case datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "no project found with ID %q", req.Id)
 	default:
-		return nil, errors.Annotate(err, "failed to fetch project").Err()
+		return nil, errors.Fmt("failed to fetch project: %w", err)
 	}
 }
 
