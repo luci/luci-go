@@ -97,7 +97,7 @@ func FetchNamedCacheSizeHints(ctx context.Context, pool, osFamily string, caches
 	out := make([]int64, len(caches))
 	for i, ent := range ents {
 		if len(merr) > 0 && merr[i] != nil && !errors.Is(merr[i], datastore.ErrNoSuchEntity) {
-			return nil, errors.Annotate(merr[i], "fetching NamedCacheStats %s", ent.Key.StringID()).Err()
+			return nil, errors.Fmt("fetching NamedCacheStats %s: %w", ent.Key.StringID(), merr[i])
 		}
 		// Try to find the direct hit by the OS family. Otherwise pick the largest
 		// value across all available OS families (if any) as a conservative

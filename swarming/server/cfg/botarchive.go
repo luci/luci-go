@@ -450,7 +450,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 			return nil, "", errors.Annotate(err, "failed to write %q", name).Err()
 		}
 		if uint64(wrote) != expectedSize {
-			return nil, "", errors.Annotate(err, "when writing %q wrote %d bytes, while should have %d", name, wrote, expectedSize).Err()
+			return nil, "", errors.Fmt("when writing %q wrote %d bytes, while should have %d", name, wrote, expectedSize)
 		}
 	}
 

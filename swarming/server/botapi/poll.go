@@ -362,7 +362,7 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 	// Validate dimensions. We'll quarantine the bot if they are malformed.
 	var errs errors.MultiError
 	for _, err := range validate.BotDimensions(body.Dimensions) {
-		errs = append(errs, errors.Annotate(err, "bad dimensions").Err())
+		errs = append(errs, errors.WrapIf(err, "bad dimensions"))
 	}
 	if session != nil && session.BotId != botIDFromDims {
 		errs = append(errs, errors.Reason(`"id" dimension %q doesn't match bot ID in the session %q`, botIDFromDims, session.BotId).Err())

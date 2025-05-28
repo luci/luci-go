@@ -162,7 +162,7 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 	logging.Debugf(ctx, "Updating TsMon pubsub metric with latency: %dms, httpCode: %d, status: %s, pool: %s", latency, httpCode, status, pool)
 	metrics.TaskStatusChangePubsubLatency.Add(ctx, float64(latency), pool, status, httpCode)
 
-	return errors.Annotate(err, "failed to publish the msg to %s", t.Topic).Tag(transient.Tag).Err()
+	return transient.Tag.Apply(errors.WrapIf(err, "failed to publish the msg to %s", t.Topic))
 }
 
 // handleBBNotifyTask sends a pubsub update to Buildbucket.
@@ -245,7 +245,7 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 	if len(buildTask.BotDimensions) == 0 {
 		buildTask.BotDimensions = botDims
 	}
-	return errors.Annotate(datastore.Put(ctx, buildTask), "failed to update BuildTask").Tag(transient.Tag).Err()
+	return transient.Tag.Apply(errors.WrapIf(datastore.Put(ctx, buildTask), "failed to update BuildTask"))
 }
 
 // getTopic returns the reference for a topic. If the topic is not in ps.topics

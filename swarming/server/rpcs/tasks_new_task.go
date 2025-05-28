@@ -219,19 +219,19 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 	case len(req.GetTaskSlices()) > maxSliceCount:
 		return errors.Reason("can have up to %d slices", maxSliceCount).Err()
 	case teeErr(validateParentTaskID(ctx, req.GetParentTaskId()), &err) != nil:
-		return errors.Annotate(err, "parent_task_id").Err()
+		return errors.WrapIf(err, "parent_task_id")
 	case teeErr(validate.Priority(req.GetPriority()), &err) != nil:
-		return errors.Annotate(err, "priority").Err()
+		return errors.WrapIf(err, "priority")
 	case teeErr(validateServiceAccount(req.GetServiceAccount()), &err) != nil:
-		return errors.Annotate(err, "service_account").Err()
+		return errors.WrapIf(err, "service_account")
 	case req.GetPubsubTopic() == "" && req.GetPubsubAuthToken() != "":
 		return errors.New("pubsub_auth_token requires pubsub_topic")
 	case req.GetPubsubTopic() == "" && req.GetPubsubUserdata() != "":
 		return errors.New("pubsub_userdata requires pubsub_topic")
 	case teeErr(validate.Length(req.GetPubsubUserdata(), maxPubsubUserDataLength), &err) != nil:
-		return errors.Annotate(err, "pubsub_userdata").Err()
+		return errors.WrapIf(err, "pubsub_userdata")
 	case teeErr(validateBotPingToleranceSecs(req.GetBotPingToleranceSecs()), &err) != nil:
-		return errors.Annotate(err, "bot_ping_tolerance").Err()
+		return errors.WrapIf(err, "bot_ping_tolerance")
 	case teeErr(validateRealm(req.GetRealm()), &err) != nil:
 		return err
 	case len(req.GetTags()) > maxTagCount:
@@ -340,28 +340,28 @@ func validateProperties(ctx context.Context, props *apipb.TaskProperties, pool s
 	case props == nil:
 		return errors.New("required")
 	case teeErr(validateTimeoutSecs(props.GracePeriodSecs, maxGracePeriodSecs, 0, true), &err) != nil:
-		return errors.Annotate(err, "grace_period_secs").Err()
+		return errors.WrapIf(err, "grace_period_secs")
 	case teeErr(validateTimeoutSecs(props.ExecutionTimeoutSecs, maxTimeoutSecs, minTimeOutSecs, false), &err) != nil:
-		return errors.Annotate(err, "execution_timeout_secs").Err()
+		return errors.WrapIf(err, "execution_timeout_secs")
 	case teeErr(validateTimeoutSecs(props.IoTimeoutSecs, maxTimeoutSecs, minTimeOutSecs, true), &err) != nil:
-		return errors.Annotate(err, "io_timeout_secs").Err()
+		return errors.WrapIf(err, "io_timeout_secs")
 	case teeErr(validateCommand(props.Command), &err) != nil:
-		return errors.Annotate(err, "command").Err()
+		return errors.WrapIf(err, "command")
 	case props.RelativeCwd != "" &&
 		teeErr(validate.Path(props.RelativeCwd, validate.MaxPackagePathLength, true), &err) != nil:
-		return errors.Annotate(err, "relative_cwd").Err()
+		return errors.WrapIf(err, "relative_cwd")
 	case teeErr(validateEnv(props.Env), &err) != nil:
-		return errors.Annotate(err, "env").Err()
+		return errors.WrapIf(err, "env")
 	case teeErr(validateEnvPrefixes(props.EnvPrefixes), &err) != nil:
-		return errors.Annotate(err, "env_prefixes").Err()
+		return errors.WrapIf(err, "env_prefixes")
 	case teeErr(validateCasInputRoot(props.CasInputRoot), &err) != nil:
-		return errors.Annotate(err, "cas_input_root").Err()
+		return errors.WrapIf(err, "cas_input_root")
 	case teeErr(validateOutputs(props.Outputs), &err) != nil:
-		return errors.Annotate(err, "outputs").Err()
+		return errors.WrapIf(err, "outputs")
 	}
 	doc, merr := validate.Caches(props.GetCaches(), "task_cache")
-	if merr.AsError() != nil {
-		return errors.Annotate(merr.AsError(), "caches").Err()
+	if err := merr.AsError(); err != nil {
+		return errors.Fmt("caches: %w", err)
 	}
 
 	if err = validateCipdInput(props.GetCipdInput(), props.GetIdempotent(), doc); err != nil {
@@ -437,7 +437,7 @@ func validateCasInputRoot(casInputRoot *apipb.CASReference) error {
 	case !casInstanceRe.MatchString(casInputRoot.CasInstance):
 		return errors.Reason("cas_instance %q should match %s", casInputRoot.CasInstance, casInstanceRe).Err()
 	case teeErr(validateDigest(casInputRoot.Digest), &err) != nil:
-		return errors.Annotate(err, "digest").Err()
+		return errors.WrapIf(err, "digest")
 	default:
 		return nil
 	}
@@ -474,15 +474,15 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, doc *directo
 	case cipdInput == nil:
 		return nil
 	case cipdInput.Server != "" && teeErr(validate.CIPDServer(cipdInput.Server), &err) != nil:
-		return errors.Annotate(err, "server").Err()
+		return errors.WrapIf(err, "server")
 	case teeErr(validateCIPDClientPackage(cipdInput.ClientPackage), &err) != nil:
-		return errors.Annotate(err, "client_package").Err()
+		return errors.WrapIf(err, "client_package")
 	}
 	merr := validate.CIPDPackages(cipdInput.Packages, idempotent, doc, "task_cipd_package")
-	if merr.AsError() == nil {
-		return nil
+	if err := merr.AsError(); err != nil {
+		return errors.Fmt("packages: %w", err)
 	}
-	return errors.Annotate(merr.AsError(), "packages").Err()
+	return nil
 }
 
 func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
@@ -493,9 +493,9 @@ func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 	case pkg.Path != "":
 		return errors.New("path must be unset")
 	case teeErr(validate.CIPDPackageName(pkg.PackageName, true), &err) != nil:
-		return errors.Annotate(err, "package_name").Err()
+		return errors.WrapIf(err, "package_name")
 	case teeErr(validate.CIPDPackageVersion(pkg.Version), &err) != nil:
-		return errors.Annotate(err, "version").Err()
+		return errors.WrapIf(err, "version")
 	default:
 		return nil
 	}

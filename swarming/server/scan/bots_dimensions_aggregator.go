@@ -154,7 +154,7 @@ func (a *BotsDimensionsAggregator) Finalize(ctx context.Context, scanErr error) 
 			return nil
 		}
 	case !errors.Is(current.err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(current.err, "fetching current BotsDimensionsAggregation").Err()
+		return errors.Fmt("fetching current BotsDimensionsAggregation: %w", current.err)
 	}
 
 	// Update the state stored in the datastore.

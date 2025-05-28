@@ -163,7 +163,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// Validate dimensions. We'll quarantine the bot if they are malformed.
 	var errs errors.MultiError
 	for _, err := range validate.BotDimensions(body.Dimensions) {
-		errs = append(errs, errors.Annotate(err, "bad dimensions").Err())
+		errs = append(errs, errors.WrapIf(err, "bad dimensions"))
 	}
 
 	// Validate the state is a correct JSON. We'll quarantine the bot if it isn't.

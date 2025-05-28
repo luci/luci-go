@@ -79,7 +79,7 @@ func (srv *TaskBackend) validateRunTaskRequest(ctx context.Context, req *bbpb.Ru
 	case req.PubsubTopic == "":
 		return errors.New("pubsub_topic is required")
 	case teeErr(srv.validateTarget(req.Target), &err) != nil:
-		return errors.Annotate(err, "target").Err()
+		return errors.WrapIf(err, "target")
 	case req.StartDeadline.AsTime().Before(clock.Now(ctx)):
 		return errors.New("start_deadline must be in the future")
 	case cfg.GetAgentBinaryCipdFilename() == "":

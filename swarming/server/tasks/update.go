@@ -206,7 +206,7 @@ func (op *UpdateOp) updateOutput(ctx context.Context) ([]*model.TaskOutputChunk,
 				}
 				oc = chunkEntities[i]
 			} else {
-				return nil, numChunks, errors.Annotate(merr[i], "failed to get output chunk #%d", i).Err()
+				return nil, numChunks, errors.WrapIf(merr[i], "failed to get output chunk #%d", i)
 			}
 		}
 

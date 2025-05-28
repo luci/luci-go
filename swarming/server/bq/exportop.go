@@ -279,8 +279,8 @@ func wrapAPIErr(err error, op string) error {
 		codes.Unavailable,
 		codes.Canceled,
 		codes.DeadlineExceeded:
-		return errors.Annotate(err, "transient error %s", op).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("transient error %s: %w", op, err))
 	default:
-		return errors.Annotate(err, "fatal error %s", op).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.WrapIf(err, "fatal error %s", op))
 	}
 }

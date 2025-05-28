@@ -92,7 +92,7 @@ func (r *runRun) main(a subcommands.Application, args []string) error {
 		Dir:    filepath.Dir(rootDir),
 		Prefix: time.Now().Format("2006-01-02"),
 		CleanupErrFunc: func(tdir string, err error) {
-			cleanupErr = errors.Annotate(err, "failed to clean up %s", tdir).Err()
+			cleanupErr = errors.Fmt("failed to clean up %s: %w", tdir, err)
 		},
 	}).With(func(outDir string) error {
 		if err := recreateTree(outDir, rootDir, deps); err != nil {

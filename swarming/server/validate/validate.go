@@ -230,7 +230,7 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directory
 		subMerr := validateCIPDPackage(pkgName, pkg, requirePinnedVer, doc, pkgSource)
 		if subMerr.AsError() != nil {
 			for _, err := range subMerr.Unwrap() {
-				merr.MaybeAdd(errors.Annotate(err, "package %d (%s)", i, pkgName).Err())
+				merr.MaybeAdd(errors.WrapIf(err, "package %d (%s)", i, pkgName))
 			}
 		}
 
@@ -552,7 +552,7 @@ func BotDimensions(dims map[string][]string) errors.MultiError {
 	var merr errors.MultiError
 	for _, key := range slices.Sorted(maps.Keys(perKeyErrs)) {
 		for _, err := range perKeyErrs[key] {
-			merr = append(merr, errors.Annotate(err, "key %q", trimLen(key, maxDimensionKeyLen+5)).Err())
+			merr = append(merr, errors.WrapIf(err, "key %q", trimLen(key, maxDimensionKeyLen+5)))
 		}
 	}
 

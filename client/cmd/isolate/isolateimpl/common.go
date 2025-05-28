@@ -342,7 +342,7 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 			// log for stacktrace.
 			logging.Errorf(ctx, "failed to call Upload: %+v", err)
 		}
-		return errors.Annotate(err, "failed to call Upload").Err()
+		return errors.WrapIf(err, "failed to call Upload")
 	})
 
 	if err := eg.Wait(); err != nil {

@@ -618,7 +618,7 @@ func (noopSummaryEmitter) start(merr *errors.MultiError) {}
 
 func (noopSummaryEmitter) emit(res *taskResult, merr *errors.MultiError) {
 	if res.output != nil {
-		merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
+		merr.MaybeAdd(errors.WrapIf(res.output.close(), "closing console output of %q", res.taskID))
 	}
 }
 
@@ -652,14 +652,14 @@ func (e *defaultSummaryEmitter) emit(res *taskResult, merr *errors.MultiError) {
 	if e.populateStdout && res.result != nil && res.output != nil {
 		var err error
 		entry.Output, err = res.output.dumpToUTF8()
-		merr.MaybeAdd(errors.Annotate(err, "reading task output %q", res.taskID).Err())
+		merr.MaybeAdd(errors.WrapIf(err, "reading task output %q", res.taskID))
 	}
 	if res.output != nil {
-		merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
+		merr.MaybeAdd(errors.WrapIf(res.output.close(), "closing console output of %q", res.taskID))
 	}
 
 	err := output.MapEntry(e.sink, res.taskID, entry)
-	merr.MaybeAdd(errors.Annotate(err, "writing JSON output for task %q", res.taskID).Err())
+	merr.MaybeAdd(errors.WrapIf(err, "writing JSON output for task %q", res.taskID))
 }
 
 func (e *defaultSummaryEmitter) finish(merr *errors.MultiError) {}
@@ -714,7 +714,7 @@ func (e *legacySummaryEmitter) finish(merr *errors.MultiError) {
 		jsonResult["output"] = ""
 		if e.populateStdout && result.output != nil {
 			jsonResult["output"], err = result.output.dumpToUTF8()
-			merr.MaybeAdd(errors.Annotate(err, "reading task output %q", taskID).Err())
+			merr.MaybeAdd(errors.WrapIf(err, "reading task output %q", taskID))
 		}
 
 		// Report the completed task result.
@@ -724,11 +724,11 @@ func (e *legacySummaryEmitter) finish(merr *errors.MultiError) {
 	// Close all outputs, we don't need them anymore.
 	for _, res := range e.resultByID {
 		if res.output != nil {
-			merr.MaybeAdd(errors.Annotate(res.output.close(), "closing console output of %q", res.taskID).Err())
+			merr.MaybeAdd(errors.WrapIf(res.output.close(), "closing console output of %q", res.taskID))
 		}
 	}
 
 	// Finally write the combined JSON summary for all shards.
 	err := output.JSON(e.sink, map[string]any{"shards": shards})
-	merr.MaybeAdd(errors.Annotate(err, "writing JSON summary").Err())
+	merr.MaybeAdd(errors.WrapIf(err, "writing JSON summary"))
 }
