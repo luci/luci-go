@@ -43,8 +43,11 @@ func TestNewProxyTransport(t *testing.T) {
 		{`unix://`, "unexpected path", ""},
 	}
 	for _, cs := range cases {
-		_, pa, err := NewProxyTransport(cs.url)
+		pt, err := NewProxyTransport(cs.url)
 		assert.That(t, err, should.ErrLike(cs.err))
-		assert.That(t, pa.Address, should.Equal(cs.addr))
+		if cs.err == nil {
+			assert.That(t, pt.Address, should.Equal(cs.addr))
+			assert.NoErr(t, pt.Close())
+		}
 	}
 }

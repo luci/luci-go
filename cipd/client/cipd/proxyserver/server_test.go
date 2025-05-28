@@ -56,13 +56,14 @@ func TestServer(t *testing.T) {
 	listener, err := net.Listen("unix", socket)
 	assert.NoErr(t, err)
 
-	rt, _, err := proxyclient.NewProxyTransport((&url.URL{
+	pt, err := proxyclient.NewProxyTransport((&url.URL{
 		Scheme: "unix",
 		Path:   socket,
 	}).String())
 	assert.NoErr(t, err)
+	defer func() { assert.NoErr(t, pt.Close()) }()
 
-	httpC := &http.Client{Transport: rt}
+	httpC := &http.Client{Transport: pt.RoundTripper}
 	repoC := cipdpb.NewRepositoryClient(&prpc.Client{
 		C:    httpC,
 		Host: fakeHost,

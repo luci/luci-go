@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/system/unixsock"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
@@ -55,11 +56,24 @@ type ProxyParams struct {
 func Run(ctx context.Context, params ProxyParams) error {
 	path, err := filepath.Abs(params.UnixSocket)
 	if err != nil {
-		return errors.Annotate(err, "bad socket path").Err()
+		return errors.Fmt("bad socket path: %w", err)
 	}
-	listener, err := net.Listen("unix", path)
+
+	// Make sure we reference the socket object using a short path, since "unix"
+	// address family has a limit on the path length.
+	shortPath, cleanupPath, err := unixsock.Shorten(path)
 	if err != nil {
-		return errors.Annotate(err, "failed to initialize unix socket").Err()
+		return errors.Fmt("failed to prepare listening Unix socket path: %w", err)
+	}
+	defer func() {
+		if err := cleanupPath(); err != nil {
+			logging.Warningf(ctx, "Error cleaning up listening Unix socket path: %s", err)
+		}
+	}()
+
+	listener, err := net.Listen("unix", shortPath)
+	if err != nil {
+		return errors.Fmt("failed to initialize unix socket: %w", err)
 	}
 
 	obfuscator := NewCASURLObfuscator()

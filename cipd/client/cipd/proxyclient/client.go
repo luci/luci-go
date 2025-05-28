@@ -21,46 +21,77 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/unixsock"
 )
 
-// ProxyAddr is the resolved address of the proxy server.
-type ProxyAddr struct {
-	Network string // e.g. "unix"
-	Address string // e.g. the absolute path to the socket
+// ProxyTransport is the round tripper that can send requests through the proxy
+// plus some associated state.
+//
+// It must be closed when no longer needed.
+type ProxyTransport struct {
+	RoundTripper http.RoundTripper // sends requests through the proxy
+	Network      string            // the resolved proxy address family e.g. "unix"
+	Address      string            // the resolved proxy address e.g. the absolute path to the socket
+
+	closed atomic.Bool
+	done   func() error
+}
+
+// Close releases resources used by the proxy transport.
+func (p *ProxyTransport) Close() error {
+	if p.closed.Swap(true) {
+		return errors.Fmt("already closed")
+	}
+	if p.done != nil {
+		return p.done()
+	}
+	return nil
 }
 
 // NewProxyTransport creates a round tripper that always connects to the given
 // proxy address.
 //
 // Also returns the resolved address of the proxy for e.g. logging it.
-func NewProxyTransport(proxyURL string) (http.RoundTripper, ProxyAddr, error) {
+func NewProxyTransport(proxyURL string) (*ProxyTransport, error) {
 	parsed, err := url.Parse(proxyURL)
 	if err != nil {
-		return nil, ProxyAddr{}, errors.Annotate(err, "malformed URL").Err()
+		return nil, errors.Fmt("malformed URL: %w", err)
 	}
 	if parsed.Scheme != "unix" {
-		return nil, ProxyAddr{}, errors.Reason("only unix:// scheme is supported").Err()
+		return nil, errors.Fmt("only unix:// scheme is supported")
 	}
 	if parsed.Path == "" || parsed.Host != "" {
-		return nil, ProxyAddr{}, errors.Reason("unexpected path format in the URL").Err()
+		return nil, errors.Fmt("unexpected path format in the URL")
 	}
 
-	proxyAddr := ProxyAddr{
+	proxyTransport := &ProxyTransport{
 		Network: "unix",
 		Address: filepath.Clean(parsed.Path),
 	}
-	if !filepath.IsAbs(proxyAddr.Address) {
+	if !filepath.IsAbs(proxyTransport.Address) {
 		// This should not really be possible.
-		return nil, ProxyAddr{}, errors.Reason("not an absolute path").Err()
+		return nil, errors.Fmt("not an absolute path")
 	}
+
+	// Make sure we reference the socket object using a short path, since "unix"
+	// address family has a limit on the path length.
+	shortPath, cleanupPath, err := unixsock.Shorten(proxyTransport.Address)
+	if err != nil {
+		return nil, errors.Fmt("failed to prepare Unix socket path for dialing: %w", err)
+	}
+	proxyTransport.done = cleanupPath
 
 	dialer := &net.Dialer{Timeout: 15 * time.Second}
 
-	return &http.Transport{
+	proxyTransport.RoundTripper = &http.Transport{
 		DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
+			if proxyTransport.closed.Load() {
+				return nil, errors.Fmt("using closed ProxyTransport")
+			}
 			// Network is always "tcp" (it is hardcoded in http.Transport code). it is
 			// unlikely to change. We'll ignore it and use "unix" instead.
 			_ = network
@@ -71,10 +102,10 @@ func NewProxyTransport(proxyURL string) (http.RoundTripper, ProxyAddr, error) {
 			// the call.
 			_ = addr
 			// Dial the proxy to send it the request.
-			return dialer.DialContext(ctx, proxyAddr.Network, proxyAddr.Address)
+			return dialer.DialContext(ctx, proxyTransport.Network, shortPath)
 		},
 		DialTLSContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
-			return nil, errors.Reason("TLS to the CIPD proxy is not supported").Err()
+			return nil, errors.Fmt("TLS to the CIPD proxy is not supported")
 		},
 		// Disable compression as it just wastes CPU on the localhost.
 		DisableCompression: true,
@@ -85,5 +116,7 @@ func NewProxyTransport(proxyURL string) (http.RoundTripper, ProxyAddr, error) {
 		// These are defaults from http.DefaultTransport.
 		MaxIdleConns:    100,
 		IdleConnTimeout: 90 * time.Second,
-	}, proxyAddr, nil
+	}
+
+	return proxyTransport, nil
 }

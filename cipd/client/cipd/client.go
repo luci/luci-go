@@ -131,7 +131,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.6"
+	UserAgent = "cipd 2.7.7"
 )
 
 func init() {
@@ -692,14 +692,13 @@ func NewClient(opts ClientOptions) (Client, error) {
 	anonClient := opts.AnonymousClient
 	authClient := opts.AuthenticatedClient
 	prpcInsecure := parsed.Scheme == "http" // for testing with local dev server
-	proxyAddr := proxyclient.ProxyAddr{}
+	var proxyTransport *proxyclient.ProxyTransport
 	if opts.ProxyURL != "" {
-		var proxyTransport http.RoundTripper
-		proxyTransport, proxyAddr, err = proxyclient.NewProxyTransport(opts.ProxyURL)
+		proxyTransport, err = proxyclient.NewProxyTransport(opts.ProxyURL)
 		if err != nil {
 			return nil, errors.Annotate(err, "bad %s %q", EnvCIPDProxyURL, opts.ProxyURL).Tag(cipderr.BadArgument).Err()
 		}
-		anonClient = &http.Client{Transport: proxyTransport}
+		anonClient = &http.Client{Transport: proxyTransport.RoundTripper}
 		authClient = anonClient
 		prpcInsecure = true // no TLS when talking to the proxy
 		opts.LoginInstructions = "check the CIPD proxy configuration"
@@ -762,13 +761,13 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 
 	client := &clientImpl{
-		ClientOptions: opts,
-		cas:           cas,
-		repo:          repo,
-		storage:       s,
-		deployer:      deployer.New(opts.Root),
-		proxyAddr:     proxyAddr,
-		pluginHost:    pluginHost,
+		ClientOptions:  opts,
+		cas:            cas,
+		repo:           repo,
+		storage:        s,
+		deployer:       deployer.New(opts.Root),
+		proxyTransport: proxyTransport,
+		pluginHost:     pluginHost,
 	}
 
 	if len(opts.AdmissionPlugin) != 0 && client.pluginHost != nil {
@@ -837,8 +836,8 @@ type clientImpl struct {
 	storage storage
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer deployer.Deployer
-	// proxyAddr is the resolved address of the CIPD proxy, if any.
-	proxyAddr proxyclient.ProxyAddr
+	// proxyTransport is used to communicate with the CIPD proxy, if any.
+	proxyTransport *proxyclient.ProxyTransport
 
 	// tagCache is a file-system based cache of resolved tags.
 	tagCache     *internal.TagCache
@@ -980,6 +979,11 @@ func (c *clientImpl) Close(ctx context.Context) {
 	}
 	if c.pluginHost != nil {
 		c.pluginHost.Close(ctx)
+	}
+	if c.proxyTransport != nil {
+		if err := c.proxyTransport.Close(); err != nil {
+			logging.Warningf(ctx, "Error closing the proxy transport: %s", err)
+		}
 	}
 }
 
