@@ -235,10 +235,10 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 
 	vpythonArgs, pythonArgs, err := extractFlagsForSet("vpython-", a.Arguments, &fs)
 	if err != nil {
-		return errors.Annotate(err, "failed to extract flags").Err()
+		return errors.Fmt("failed to extract flags: %w", err)
 	}
 	if err := fs.Parse(vpythonArgs); err != nil {
-		return errors.Annotate(err, "failed to parse flags").Err()
+		return errors.Fmt("failed to parse flags: %w", err)
 	}
 
 	if a.VpythonRoot == "" {
@@ -254,11 +254,11 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 			// won't blow up.
 			a.VpythonRoot = filepath.Join(os.TempDir(), fmt.Sprintf("vpython-root_%d", uid))
 		} else if a.VpythonRoot, err = os.MkdirTemp("", "vpython"); err != nil {
-			return errors.Annotate(err, "failed to create temporary vpython root").Err()
+			return errors.Fmt("failed to create temporary vpython root: %w", err)
 		}
 	}
 	if a.VpythonRoot, err = filepath.Abs(a.VpythonRoot); err != nil {
-		return errors.Annotate(err, "failed to get absolute vpython root path").Err()
+		return errors.Fmt("failed to get absolute vpython root path: %w", err)
 	}
 
 	// Set CIPD CacheDIR
@@ -267,7 +267,7 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 	}
 
 	if a.PythonCommandLine, err = python.ParseCommandLine(pythonArgs); err != nil {
-		return errors.Annotate(err, "failed to parse python commandline").Err()
+		return errors.Fmt("failed to parse python commandline: %w", err)
 	}
 
 	if a.Help {
@@ -304,7 +304,7 @@ func (a *Application) LoadSpec(ctx context.Context) error {
 	if a.DefaultSpecPath != "" {
 		a.VpythonSpec = &vpythonAPI.Spec{}
 		if err := spec.Load(a.DefaultSpecPath, a.VpythonSpec); err != nil {
-			return errors.Annotate(err, "failed to load default spec: %#v", a.DefaultSpecPath).Err()
+			return errors.Fmt("failed to load default spec: %#v: %w", a.DefaultSpecPath, err)
 		}
 	}
 
@@ -327,12 +327,12 @@ func (a *Application) LoadSpec(ctx context.Context) error {
 	if workDir == "" {
 		wd, err := os.Getwd()
 		if err != nil {
-			return errors.Annotate(err, "failed to get working directory").Err()
+			return errors.Fmt("failed to get working directory: %w", err)
 		}
 		workDir = wd
 	}
 	if err := filesystem.AbsPath(&workDir); err != nil {
-		return errors.Annotate(err, "failed to resolve absolute path of WorkDir").Err()
+		return errors.Fmt("failed to resolve absolute path of WorkDir: %w", err)
 	}
 
 	if spec, err := spec.ResolveSpec(ctx, specLoader, a.PythonCommandLine.Target, workDir); err != nil {
@@ -348,7 +348,7 @@ func (a *Application) LoadSpec(ctx context.Context) error {
 func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) error {
 	pm, err := workflow.NewLocalPackageManager(filepath.Join(a.VpythonRoot, "store"))
 	if err != nil {
-		return errors.Annotate(err, "failed to load storage").Err()
+		return errors.Fmt("failed to load storage: %w", err)
 	}
 
 	// Generate derivations
@@ -363,7 +363,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	pe := workflow.NewPackageExecutor("", nil, nil, nil, nil)
 	pkg, err := b.Build(ctx, pe, venv)
 	if err != nil {
-		return errors.Annotate(err, "failed to generate venv derivation").Err()
+		return errors.Fmt("failed to generate venv derivation: %w", err)
 	}
 	workflow.MustIncRefRecursiveRuntime(pkg)
 	a.close = func() {
@@ -385,7 +385,7 @@ func (a *Application) ExecutePython(ctx context.Context) error {
 	if a.Bypass {
 		var err error
 		if a.PythonExecutable, err = exec.LookPath(a.PythonExecutable); err != nil {
-			return errors.Annotate(err, "failed to find python in path").Err()
+			return errors.Fmt("failed to find python in path: %w", err)
 		}
 	}
 
@@ -394,7 +394,7 @@ func (a *Application) ExecutePython(ctx context.Context) error {
 	// ensure CLOEXEC is cleared from fd so the the references can be kept after
 	// execve.
 	if err := cmdExec(ctx, a.GetExecCommand()); err != nil {
-		return errors.Annotate(err, "failed to execute python").Err()
+		return errors.Fmt("failed to execute python: %w", err)
 	}
 	return nil
 }

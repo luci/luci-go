@@ -78,7 +78,7 @@ func parseName(v string) (wn wheelName, err error) {
 		wn.PlatformTag = parts[4+skip]
 
 	default:
-		err = errors.Reason("unknown number of segments (%d)", len(parts)).Err()
+		err = errors.Fmt("unknown number of segments (%d)", len(parts))
 		return
 	}
 	return
@@ -90,14 +90,14 @@ func scanDir(dir string) ([]wheelName, error) {
 	globPattern := filepath.Join(dir, "*.whl")
 	matches, err := filepath.Glob(globPattern)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to list wheel directory: %s", globPattern).Err()
+		return nil, errors.Fmt("failed to list wheel directory: %s: %w", globPattern, err)
 	}
 
 	names := make([]wheelName, 0, len(matches))
 	for _, match := range matches {
 		switch st, err := os.Stat(match); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to stat wheel in dir %s: %s", dir, match).Err()
+			return nil, errors.Fmt("failed to stat wheel in dir %s: %s: %w", dir, match, err)
 
 		case st.IsDir():
 			// Ignore directories.
@@ -108,7 +108,7 @@ func scanDir(dir string) ([]wheelName, error) {
 			name := filepath.Base(match)
 			wheelName, err := parseName(name)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to parse wheel from %s: %s", dir, name).Err()
+				return nil, errors.Fmt("failed to parse wheel from %s: %s: %w", dir, name, err)
 			}
 			names = append(names, wheelName)
 		}
@@ -124,12 +124,12 @@ func scanDir(dir string) ([]wheelName, error) {
 func writeRequirementsFile(path string, wheels []wheelName) (err error) {
 	fd, err := os.Create(path)
 	if err != nil {
-		return errors.Annotate(err, "failed to create requirements file").Err()
+		return errors.Fmt("failed to create requirements file: %w", err)
 	}
 	defer func() {
 		closeErr := fd.Close()
 		if closeErr != nil && err == nil {
-			err = errors.Annotate(closeErr, "failed to Close").Err()
+			err = errors.Fmt("failed to Close: %w", closeErr)
 		}
 	}()
 
@@ -148,7 +148,7 @@ func writeRequirementsFile(path string, wheels []wheelName) (err error) {
 		seen[archetype] = struct{}{}
 
 		if _, err := fmt.Fprintf(fd, "%s==%s\n", archetype.Distribution, archetype.Version); err != nil {
-			return errors.Annotate(err, "failed to write to requirements file").Err()
+			return errors.Fmt("failed to write to requirements file: %w", err)
 		}
 	}
 

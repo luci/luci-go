@@ -46,18 +46,18 @@ func NewTreesServer() *pb.DecoratedTrees {
 func (*treeServer) GetTree(ctx context.Context, request *pb.GetTreeRequest) (*pb.Tree, error) {
 	treeID, err := pbutil.ParseTreeName(request.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	ctx = logging.SetField(ctx, "tree_id", treeID)
 	config, err := config.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "get config").Err()
+		return nil, errors.Fmt("get config: %w", err)
 	}
 	for _, tree := range config.Trees {
 		if tree.Name == treeID {
 			hasAccess, msg, err := perms.HasGetTreePermission(ctx, treeID)
 			if err != nil {
-				return nil, errors.Annotate(err, "has get tree permission").Err()
+				return nil, errors.Fmt("has get tree permission: %w", err)
 			}
 			if !hasAccess {
 				return nil, permissionDeniedError(errors.New(msg))
@@ -68,7 +68,7 @@ func (*treeServer) GetTree(ctx context.Context, request *pb.GetTreeRequest) (*pb
 			}, nil
 		}
 	}
-	return nil, notFoundError(errors.Reason("tree %q not found", treeID).Err())
+	return nil, notFoundError(errors.Fmt("tree %q not found", treeID))
 }
 
 // QueryTrees returns trees attached to a given LUCI project.
@@ -76,7 +76,7 @@ func (*treeServer) GetTree(ctx context.Context, request *pb.GetTreeRequest) (*pb
 func (*treeServer) QueryTrees(ctx context.Context, request *pb.QueryTreesRequest) (*pb.QueryTreesResponse, error) {
 	config, err := config.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "get config").Err()
+		return nil, errors.Fmt("get config: %w", err)
 	}
 	configTrees := treesForProject(config, request.Project)
 	trees := []*pb.Tree{}
@@ -84,7 +84,7 @@ func (*treeServer) QueryTrees(ctx context.Context, request *pb.QueryTreesRequest
 		treeName := configTree.Name
 		hasAccess, _, err := perms.HasQueryTreesPermission(ctx, treeName)
 		if err != nil {
-			return nil, errors.Annotate(err, "checking query tree name permission").Err()
+			return nil, errors.Fmt("checking query tree name permission: %w", err)
 		}
 		if hasAccess {
 			trees = append(trees, &pb.Tree{

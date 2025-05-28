@@ -131,10 +131,10 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 	wheels := filepath.Join(out, "wheels")
 	ws, err := scanDir(wheels)
 	if err != nil {
-		return errors.Annotate(err, "failed to scan wheels").Err()
+		return errors.Fmt("failed to scan wheels: %w", err)
 	}
 	if err := writeRequirementsFile(filepath.Join(out, "requirements.txt"), ws); err != nil {
-		return errors.Annotate(err, "failed to write requirements.txt").Err()
+		return errors.Fmt("failed to write requirements.txt: %w", err)
 	}
 
 	return nil
@@ -167,10 +167,10 @@ func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ens
 			if errors.Is(err, template.ErrSkipTemplate) {
 				continue
 			}
-			return nil, errors.Annotate(err, "expanding %v", pkg).Err()
+			return nil, errors.Fmt("expanding %v: %w", pkg, err)
 		}
 		if _, ok := names[name]; ok {
-			return nil, errors.Reason("duplicated package: %v", pkg).Err()
+			return nil, errors.Fmt("duplicated package: %v", pkg)
 		}
 		names[name] = struct{}{}
 

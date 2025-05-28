@@ -66,7 +66,7 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string) err
 	// Tracked in https://github.com/golang/go/issues/53652
 	resolvedPath, err := exec.LookPath(argv[0])
 	if err != nil {
-		return errors.Annotate(err, "Could not locate executable for %v", argv[0]).Err()
+		return errors.Fmt("Could not locate executable for %v: %w", argv[0], err)
 	}
 	resolvedPath, err = filepath.Abs(resolvedPath)
 	if err != nil {

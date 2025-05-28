@@ -221,7 +221,7 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 	// Consume the first character from flag into "r". "flag" is the remainder.
 	r, l := utf8.DecodeRuneInString(fs.flag)
 	if r == utf8.RuneError {
-		return errors.Reason("invalid rune in flag").Err()
+		return errors.New("invalid rune in flag")
 	}
 	fs.flag = fs.flag[l:]
 
@@ -366,7 +366,7 @@ func ParseCommandLine(args []string) (*CommandLine, error) {
 		}
 		for len(fs.flag) > 0 {
 			if err := cl.parseSingleFlag(&fs); err != nil {
-				return nil, errors.Annotate(err, "failed to parse Python flag #%d: %q", i, arg).Err()
+				return nil, errors.Fmt("failed to parse Python flag #%d: %q: %w", i, arg, err)
 			}
 		}
 		args = fs.args

@@ -59,12 +59,12 @@ var listPaginator = paginator.Paginator{
 func (*treeStatusServer) ListStatus(ctx context.Context, request *pb.ListStatusRequest) (*pb.ListStatusResponse, error) {
 	tree, err := parseStatusParent(request.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	ctx = logging.SetField(ctx, "tree_name", tree)
 	hasLimitedAccess, msg, err := perms.HasListStatusLimitedPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking list status limited permission").Err()
+		return nil, errors.Fmt("checking list status limited permission: %w", err)
 	}
 	if !hasLimitedAccess {
 		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
@@ -81,12 +81,12 @@ func (*treeStatusServer) ListStatus(ctx context.Context, request *pb.ListStatusR
 	// Check if user can access to PII.
 	includeUserInResponse, _, err := perms.HasListStatusPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking list status permission").Err()
+		return nil, errors.Fmt("checking list status permission: %w", err)
 	}
 
 	values, hasNextPage, err := status.List(span.Single(ctx), tree, &options)
 	if err != nil {
-		return nil, errors.Annotate(err, "listing status values").Err()
+		return nil, errors.Fmt("listing status values: %w", err)
 	}
 
 	nextPageToken := ""
@@ -128,13 +128,13 @@ func toStatusProto(value *status.Status, includeUser bool) *pb.Status {
 func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusRequest) (*pb.Status, error) {
 	tree, id, err := parseStatusName(request.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	ctx = logging.SetField(ctx, "tree_name", tree)
 
 	hasLimitedAccess, msg, err := perms.HasGetStatusLimitedPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking get status limited permission").Err()
+		return nil, errors.Fmt("checking get status limited permission: %w", err)
 	}
 	if !hasLimitedAccess {
 		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
@@ -142,7 +142,7 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 
 	includeUserInResponse, _, err := perms.HasGetStatusPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking get status permission").Err()
+		return nil, errors.Fmt("checking get status permission: %w", err)
 	}
 
 	if id == "latest" {
@@ -156,7 +156,7 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 				CreateTime:   timestamppb.New(time.Now()),
 			}, nil
 		} else if err != nil {
-			return nil, errors.Annotate(err, "reading latest status").Err()
+			return nil, errors.Fmt("reading latest status: %w", err)
 		}
 		return toStatusProto(latest, includeUserInResponse), nil
 	}
@@ -164,7 +164,7 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 	if errors.Is(err, status.NotExistsErr) {
 		return nil, notFoundError(err)
 	} else if err != nil {
-		return nil, errors.Annotate(err, "reading status").Err()
+		return nil, errors.Fmt("reading status: %w", err)
 	}
 
 	return toStatusProto(s, includeUserInResponse), nil
@@ -174,13 +174,13 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateStatusRequest) (*pb.Status, error) {
 	tree, err := parseStatusParent(request.GetParent())
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	ctx = logging.SetField(ctx, "tree_name", tree)
 
 	hasWriteAccess, msg, err := perms.HasCreateStatusPermission(ctx, tree)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking create status permission").Err()
+		return nil, errors.Fmt("checking create status permission: %w", err)
 	}
 	if !hasWriteAccess {
 		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
@@ -188,7 +188,7 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 
 	id, err := status.GenerateID()
 	if err != nil {
-		return nil, errors.Annotate(err, "generating status id").Err()
+		return nil, errors.Fmt("generating status id: %w", err)
 	}
 
 	// Ignore the closing builder name if the status is not closed.
@@ -206,11 +206,11 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 	user := auth.CurrentIdentity(ctx).Value()
 	m, err := status.Create(s, user)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "create status").Err())
+		return nil, invalidArgumentError(errors.Fmt("create status: %w", err))
 	}
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 	if err != nil {
-		return nil, errors.Annotate(err, "apply create status to spanner").Err()
+		return nil, errors.Fmt("apply create status to spanner: %w", err)
 	}
 
 	return &pb.Status{
@@ -230,11 +230,11 @@ var statusNameRE = regexp.MustCompile(`^trees/(` + pbutil.TreeIDExpression + `)/
 // parts.
 func parseStatusParent(parent string) (tree string, err error) {
 	if parent == "" {
-		return "", errors.Reason("must be specified").Err()
+		return "", errors.New("must be specified")
 	}
 	match := statusParentRE.FindStringSubmatch(parent)
 	if match == nil {
-		return "", errors.Reason("expected format: %s", statusParentRE).Err()
+		return "", errors.Fmt("expected format: %s", statusParentRE)
 	}
 	return match[1], nil
 }
@@ -243,11 +243,11 @@ func parseStatusParent(parent string) (tree string, err error) {
 // parts.
 func parseStatusName(name string) (tree string, id string, err error) {
 	if name == "" {
-		return "", "", errors.Reason("must be specified").Err()
+		return "", "", errors.New("must be specified")
 	}
 	match := statusNameRE.FindStringSubmatch(name)
 	if match == nil {
-		return "", "", errors.Reason("expected format: %s", statusNameRE).Err()
+		return "", "", errors.Fmt("expected format: %s", statusNameRE)
 	}
 	return match[1], match[2], nil
 }

@@ -131,11 +131,11 @@ func CPythonFromPath(dir, cipdName string) (generators.Generator, error) {
 	if !filepath.IsAbs(dir) {
 		path, err := os.Executable()
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get executable").Err()
+			return nil, errors.Fmt("failed to get executable: %w", err)
 		}
 		if runtime.GOOS != "windows" {
 			if path, err = filepath.EvalSymlinks(path); err != nil {
-				return nil, errors.Annotate(err, "failed to eval symlink to executable").Err()
+				return nil, errors.Fmt("failed to eval symlink to executable: %w", err)
 			}
 		}
 		cpythonDir = filepath.Join(filepath.Dir(path), dir)
@@ -143,12 +143,12 @@ func CPythonFromPath(dir, cipdName string) (generators.Generator, error) {
 
 	v, err := os.Open(filepath.Join(cpythonDir, ".versions", fmt.Sprintf("%s.cipd_version", cipdName)))
 	if err != nil {
-		return nil, errors.Annotate(err, "Bundled Python %s not found. Use VPYTHON_BYPASS if prebuilt cpython not available on this platform", dir).Err()
+		return nil, errors.Fmt("Bundled Python %s not found. Use VPYTHON_BYPASS if prebuilt cpython not available on this platform: %w", dir, err)
 	}
 	defer v.Close()
 	version, err := io.ReadAll(v)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read version file").Err()
+		return nil, errors.Fmt("failed to read version file: %w", err)
 	}
 	return &generators.ImportTargets{
 		Name: "cpython",

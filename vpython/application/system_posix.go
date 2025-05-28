@@ -30,12 +30,12 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string) err
 	// Change directory.
 	if dir != "" {
 		if err := os.Chdir(dir); err != nil {
-			return errors.Annotate(err, "failed to chdir to %q", dir).Err()
+			return errors.Fmt("failed to chdir to %q: %w", dir, err)
 		}
 	}
 
 	if err := syscall.Exec(argv[0], argv, env.Sorted()); err != nil {
-		panic(errors.Annotate(err, "failed to execve %q", argv[0]).Err())
+		panic(errors.Fmt("failed to execve %q: %w", argv[0], err))
 	}
 	panic("must not return")
 }

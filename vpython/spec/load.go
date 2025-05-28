@@ -57,7 +57,7 @@ const (
 func Load(path string, spec *vpython.Spec) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return errors.Annotate(err, "failed to load file from: %s", path).Err()
+		return errors.Fmt("failed to load file from: %s: %w", path, err)
 	}
 
 	return Parse(string(content), spec)
@@ -66,7 +66,7 @@ func Load(path string, spec *vpython.Spec) error {
 // Parse loads a specification message from a content string.
 func Parse(content string, spec *vpython.Spec) error {
 	if err := cproto.UnmarshalTextML(content, spec); err != nil {
-		return errors.Annotate(err, "failed to unmarshal vpython.Spec").Err()
+		return errors.Fmt("failed to unmarshal vpython.Spec: %w", err)
 	}
 	return nil
 }
@@ -185,7 +185,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	// Partner File: Try loading the spec from an adjacent file.
 	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to scan for filesystem spec").Err()
+		return nil, "", errors.Fmt("failed to scan for filesystem spec: %w", err)
 	}
 
 	// Partner File: Try loading the spec from an adjacent file to the evaluated path.
@@ -193,11 +193,11 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 		// Skip EvalSymlinks for windows because it is broken:
 		// https://github.com/golang/go/issues/40180
 		if path, err = filepath.EvalSymlinks(path); err != nil {
-			return nil, "", errors.Annotate(err, "failed to get real path for script: %s", path).Err()
+			return nil, "", errors.Fmt("failed to get real path for script: %s: %w", path, err)
 		}
 		specPath, err = l.findForScript(path, isModule)
 		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to scan for filesystem spec").Err()
+			return nil, "", errors.Fmt("failed to scan for filesystem spec: %w", err)
 		}
 	}
 
@@ -222,13 +222,13 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	currPath := mainScript
 	info, err := os.Stat(currPath)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "error stat-ing file: %s", currPath).Err()
+		return nil, "", errors.Fmt("error stat-ing file: %s: %w", currPath, err)
 	}
 
 	if !info.IsDir() {
 		switch spec, err := l.parseFrom(currPath); {
 		case err != nil:
-			return nil, "", errors.Annotate(err, "failed to parse inline spec from: %s", currPath).Err()
+			return nil, "", errors.Fmt("failed to parse inline spec from: %s: %w", currPath, err)
 
 		case spec != nil:
 			logging.Infof(c, "Loaded inline spec from: %s", currPath)
@@ -284,7 +284,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 				// Not a Python module, so we're done our search.
 				return "", nil
 			}
-			return "", errors.Annotate(err, "failed to stat for: %s", path).Err()
+			return "", errors.Fmt("failed to stat for: %s: %w", path, err)
 		}
 
 		// Does a spec file exist for this path?
@@ -311,7 +311,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	fd, err := os.Open(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to open file").Err()
+		return nil, errors.Fmt("failed to open file: %w", err)
 	}
 	defer fd.Close()
 
@@ -348,7 +348,7 @@ func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 		}
 	}
 	if err := s.Err(); err != nil {
-		return nil, errors.Annotate(err, "error scanning file").Err()
+		return nil, errors.Fmt("error scanning file: %w", err)
 	}
 	if len(content) == 0 {
 		return nil, nil
@@ -382,7 +382,7 @@ func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	// Process the resulting file.
 	var spec vpython.Spec
 	if err := Parse(strings.Join(content, "\n"), &spec); err != nil {
-		return nil, errors.Annotate(err, "failed to parse spec file from: %s", path).Err()
+		return nil, errors.Fmt("failed to parse spec file from: %s: %w", path, err)
 	}
 	return &spec, nil
 }

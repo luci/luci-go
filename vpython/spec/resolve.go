@@ -63,12 +63,12 @@ func ResolveSpec(c context.Context, l *Loader, target python.Target, workDir str
 	if interactive || isCommandTarget || loadFromStdin || isModuleTarget {
 		spec, path, err := l.LoadForScript(c, workDir, false)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to load spec for script: %s", target).Err()
+			return nil, errors.Fmt("failed to load spec for script: %s: %w", target, err)
 		}
 		if spec != nil {
 			relpath, err := filepath.Rel(workDir, path)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to get relative path for %s", path).Err()
+				return nil, errors.Fmt("failed to get relative path for %s: %w", path, err)
 			}
 
 			if interactive {
@@ -91,7 +91,7 @@ func ResolveSpec(c context.Context, l *Loader, target python.Target, workDir str
 
 		// Resolve to absolute script path.
 		if err := filesystem.AbsPath(&script.Path); err != nil {
-			return nil, errors.Annotate(err, "failed to get absolute path of: %s", target).Err()
+			return nil, errors.Fmt("failed to get absolute path of: %s: %w", target, err)
 		}
 
 		// Confirm that the script path actually exists.
@@ -113,7 +113,7 @@ func ResolveSpec(c context.Context, l *Loader, target python.Target, workDir str
 			if isModule {
 				kind = "module"
 			}
-			return nil, errors.Annotate(err, "failed to load spec for %s: %s", kind, target).Err()
+			return nil, errors.Fmt("failed to load spec for %s: %s: %w", kind, target, err)
 		}
 		if spec != nil {
 			return spec, nil
