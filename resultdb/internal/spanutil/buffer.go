@@ -125,7 +125,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 	}
 
 	if err := row.Column(col, spanPtr); err != nil {
-		return errors.Annotate(err, "failed to read column %q", row.ColumnName(col)).Err()
+		return errors.Fmt("failed to read column %q: %w", row.ColumnName(col), err)
 	}
 
 	if spanPtr == goPtr {
@@ -190,7 +190,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 
 	case proto.Message:
 		if reflect.ValueOf(goPtr).IsNil() {
-			return errors.Reason("nil pointer encountered").Err()
+			return errors.New("nil pointer encountered")
 		}
 		if err := proto.Unmarshal(b.ByteSlice, goPtr); err != nil {
 			// If it was written to Spanner, it should have been validated.

@@ -61,7 +61,7 @@ func updateTestMetadata(ctx context.Context, invID invocations.ID) error {
 		return err
 	}
 	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("Invocation is not finalized %s", invID).Err()
+		return errors.Fmt("Invocation is not finalized %s", invID)
 	}
 	if inv.SourceSpec == nil {
 		logging.Infof(ctx, "Skipping metadata ingestion for invocation %s, sourceSpec not available.", inv.Name)
@@ -85,7 +85,7 @@ func updateTestMetadata(ctx context.Context, invID invocations.ID) error {
 
 	invIDs, err := graph.FindInheritSourcesDescendants(ctx, invID)
 	if err != nil {
-		return errors.Annotate(err, "find descendants invocation %s", invID).Err()
+		return errors.Fmt("find descendants invocation %s: %w", invID, err)
 	}
 
 	updator := newUpdator(source, invIDs, time.Now())

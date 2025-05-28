@@ -68,7 +68,7 @@ func (u *testMetadataUpdator) run(ctx context.Context) error {
 		eg.Go(func() error {
 			defer close(batchC)
 			if err := u.queryTestResultMetadata(ctx, invID, batchC); err != nil {
-				return errors.Annotate(err, "query test result metadata, invocation %s", invID).Err()
+				return errors.Fmt("query test result metadata, invocation %s: %w", invID, err)
 			}
 			return nil
 		})
@@ -76,10 +76,10 @@ func (u *testMetadataUpdator) run(ctx context.Context) error {
 		eg.Go(func() error {
 			var realm string
 			if err := invocations.ReadColumns(span.Single(ctx), invID, map[string]any{"Realm": &realm}); err != nil {
-				return errors.Annotate(err, "read realm, invocation %s", invID).Err()
+				return errors.Fmt("read realm, invocation %s: %w", invID, err)
 			}
 			if err := u.batchCreateOrUpdateTestMetadata(ctx, realm, batchC); err != nil {
-				return errors.Annotate(err, "create or update test metadata, invocation %s", invID).Err()
+				return errors.Fmt("create or update test metadata, invocation %s: %w", invID, err)
 			}
 			return nil
 		})

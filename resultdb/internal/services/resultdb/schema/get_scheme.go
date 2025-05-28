@@ -35,7 +35,7 @@ var schemeNameRe = regexp.MustCompile("^schema/schemes/(" + config.SchemeIDPatte
 func validateGetSchemeRequest(req *pb.GetSchemeRequest) error {
 	_, err := parseSchemeName(req.Name)
 	if err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 	return nil
 }
@@ -70,11 +70,11 @@ func (s *schemasServer) GetScheme(ctx context.Context, in *pb.GetSchemeRequest) 
 // parseSchemeName parses a scheme resource name into its constituent ID.
 func parseSchemeName(name string) (schemeID string, err error) {
 	if name == "" {
-		return "", errors.Reason("unspecified").Err()
+		return "", errors.New("unspecified")
 	}
 	match := schemeNameRe.FindStringSubmatch(name)
 	if match == nil {
-		return "", errors.Reason("invalid scheme name, expected format: %q", schemeNameRe).Err()
+		return "", errors.Fmt("invalid scheme name, expected format: %q", schemeNameRe)
 	}
 	return match[1], nil
 }

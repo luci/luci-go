@@ -47,12 +47,12 @@ func validateQueryNewTestVariantsRequest(ctx context.Context, req *pb.QueryNewTe
 	// Invocation and BaselineID provided must be formatted correctly.
 	invID, err := pbutil.ParseInvocationName(req.Invocation)
 	if err != nil {
-		return appstatus.Error(codes.InvalidArgument, errors.Annotate(err, "invocation").Err().Error())
+		return appstatus.Error(codes.InvalidArgument, errors.Fmt("invocation: %w", err).Error())
 	}
 
 	project, _, err := pbutil.ParseBaselineName(req.Baseline)
 	if err != nil {
-		return appstatus.Error(codes.InvalidArgument, errors.Annotate(err, "baseline").Err().Error())
+		return appstatus.Error(codes.InvalidArgument, errors.Fmt("baseline: %w", err).Error())
 	}
 
 	invRealm, err := invocations.ReadRealm(ctx, invocations.ID(invID))
@@ -152,7 +152,7 @@ func findNewTests(ctx context.Context, baselineProject, baselineID string, allIn
 		err := r.Columns(&testID, &variantHash)
 
 		if err != nil {
-			return errors.Annotate(err, "read new test variant row").Err()
+			return errors.Fmt("read new test variant row: %w", err)
 		}
 
 		tv := &pb.QueryNewTestVariantsResponse_NewTestVariant{
@@ -189,7 +189,7 @@ func (s *resultDBServer) QueryNewTestVariants(ctx context.Context, req *pb.Query
 
 	err := validateQueryNewTestVariantsRequest(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "new test variants").Err()
+		return nil, errors.Fmt("new test variants: %w", err)
 	}
 
 	project, baselineID := baselines.MustParseBaselineName(req.Baseline)
@@ -197,7 +197,7 @@ func (s *resultDBServer) QueryNewTestVariants(ctx context.Context, req *pb.Query
 
 	isReady, err := checkBaselineStatus(ctx, project, baselineID)
 	if err != nil {
-		return nil, errors.Annotate(err, "baseline status").Err()
+		return nil, errors.Fmt("baseline status: %w", err)
 	}
 	if !isReady {
 		return &pb.QueryNewTestVariantsResponse{
@@ -209,12 +209,12 @@ func (s *resultDBServer) QueryNewTestVariants(ctx context.Context, req *pb.Query
 	// passed to it.
 	rInvs, err := findAllInvocations(ctx, invocations.NewIDSet(invID))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the reachable invocations").Err()
+		return nil, errors.Fmt("failed to read the reachable invocations: %w", err)
 	}
 
 	nt, err := findNewTests(ctx, project, baselineID, rInvs)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to query for new test variants").Err()
+		return nil, errors.Fmt("failed to query for new test variants: %w", err)
 	}
 
 	return &pb.QueryNewTestVariantsResponse{

@@ -35,10 +35,10 @@ import (
 // to be invalid.
 func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) error {
 	if len(req.Invocations) > 1 {
-		return errors.Reason("invocations: only one invocation is allowed").Err()
+		return errors.New("invocations: only one invocation is allowed")
 	}
 	if err := pbutil.ValidateTestExonerationPredicate(req.Predicate); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	return validateQueryRequest(req)

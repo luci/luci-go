@@ -54,7 +54,7 @@ var insufficientPermissionWithQueryFilter = errors.New("insufficient permission 
 func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req *pb.QueryTestVariantArtifactGroupsRequest) (rsp *pb.QueryTestVariantArtifactGroupsResponse, err error) {
 	// Validate project before using it to check permission.
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("project: %w", err))
 	}
 	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, req.Project, nil, rdbperms.PermListArtifacts)
 	if err != nil {
@@ -62,7 +62,7 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	}
 	isGoogler, err := auth.IsMember(ctx, googlerOnlyGroup)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to check ACL").Err()
+		return nil, errors.Fmt("failed to check ACL: %w", err)
 	}
 	if err := validateQueryTestVariantArtifactGroupsRequest(req, isGoogler); err != nil {
 		if errors.Contains(err, insufficientPermissionWithQueryFilter) {
@@ -89,11 +89,11 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 			// Returns bad_request error code to avoid automatic retries.
 			return nil, appstatus.BadRequest(err)
 		}
-		return nil, errors.Annotate(err, "read test artifacts groups").Err()
+		return nil, errors.Fmt("read test artifacts groups: %w", err)
 	}
 	pbGroups, err := toTestArtifactGroupsProto(rows, req.SearchString)
 	if err != nil {
-		return nil, errors.Annotate(err, "to test artifact groups proto").Err()
+		return nil, errors.Fmt("to test artifact groups proto: %w", err)
 	}
 	return &pb.QueryTestVariantArtifactGroupsResponse{
 		Groups:        pbGroups,
@@ -103,29 +103,29 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 
 func validateQueryTestVariantArtifactGroupsRequest(req *pb.QueryTestVariantArtifactGroupsRequest, isGoogler bool) error {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := validateSearchString(req.SearchString); err != nil {
-		return errors.Annotate(err, "search_string").Err()
+		return errors.Fmt("search_string: %w", err)
 	}
 	// Non-googler caller have to specify an exact test id.
 	// Because search with empty test id, or test id prefix can uses around 36 BigQuery slot hours.
 	// This is expensive and we want to avoid people outside of google from abusing it.
 	allowNonExactMatch := isGoogler
 	if err := validateTestIDMatcher(req.TestIdMatcher, allowNonExactMatch); err != nil {
-		return errors.Annotate(err, "test_id_matcher").Err()
+		return errors.Fmt("test_id_matcher: %w", err)
 	}
 	// Non-exact artifact id match is already allowed here,
 	// because this matcher has minimal impact on the query performance for this search,.
 	if err := validateArtifactIDMatcher(req.ArtifactIdMatcher, true); err != nil {
-		return errors.Annotate(err, "artifact_id_matcher").Err()
+		return errors.Fmt("artifact_id_matcher: %w", err)
 	}
 
 	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
 		return err
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 	return nil
 }
@@ -148,7 +148,7 @@ func validateSearchString(m *pb.ArtifactContentMatcher) error {
 	}
 	// 2048 bytes (2kib) is an arbitrary limit for this field. It can be increased if needed.
 	if len(matchString) > 2048 {
-		return errors.Reason("longer than 2048 bytes").Err()
+		return errors.New("longer than 2048 bytes")
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func validateRegexSearchString(regexPattern string) error {
 		return err
 	}
 	if re.NumSubexp() > 0 {
-		return errors.Reason("capture group is not allowed").Err()
+		return errors.New("capture group is not allowed")
 	}
 	return nil
 }
@@ -229,7 +229,7 @@ func toTestArtifactGroupsProto(groups []*artifacts.ArtifactGroup, searchString *
 	for _, g := range groups {
 		variant, err := pbutil.VariantFromJSON(g.Variant.String())
 		if err != nil {
-			return nil, errors.Annotate(err, "variant from JSON").Err()
+			return nil, errors.Fmt("variant from JSON: %w", err)
 		}
 		match := &pb.QueryTestVariantArtifactGroupsResponse_MatchGroup{
 			TestId:        g.TestID,

@@ -31,13 +31,13 @@ import (
 
 func validateQueryTestMetadataRequest(req *pb.QueryTestMetadataRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := pbutil.ValidateTestMetadataPredicate(req.GetPredicate()); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ func validateQueryTestMetadataRequest(req *pb.QueryTestMetadataRequest) error {
 func (s *resultDBServer) QueryTestMetadata(ctx context.Context, in *pb.QueryTestMetadataRequest) (*pb.QueryTestMetadataResponse, error) {
 	// Validate project before using it to check permission.
 	if err := pbutil.ValidateProject(in.Project); err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("project: %w", err))
 	}
 	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, in.Project, nil, rdbperms.PermListTestMetadata)
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *resultDBServer) QueryTestMetadata(ctx context.Context, in *pb.QueryTest
 	}
 	testMetadataDetails, nextPageToken, err := q.Fetch(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetch").Err()
+		return nil, errors.Fmt("fetch: %w", err)
 	}
 	return &pb.QueryTestMetadataResponse{
 		TestMetadata:  testMetadataDetails,

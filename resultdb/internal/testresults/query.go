@@ -261,7 +261,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(tr.TestId, tr.Variant)
 		if err != nil {
-			return nil, errors.Annotate(err, "populate structured test identifier for %s", trName).Err()
+			return nil, errors.Fmt("populate structured test identifier for %s: %w", trName, err)
 		}
 
 		tr.TestIdStructured = tvID
@@ -270,22 +270,22 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		PopulateDurationField(tr, micros)
 		PopulateSkipReasonField(tr, skipReason)
 		if err := PopulateTestMetadata(tr, tmd); err != nil {
-			return nil, errors.Annotate(err, "unmarshal test_metadata for %s", trName).Err()
+			return nil, errors.Fmt("unmarshal test_metadata for %s: %w", trName, err)
 		}
 		if err := PopulateFailureReason(tr, fr); err != nil {
-			return nil, errors.Annotate(err, "unmarshal failure_reason for %s", trName).Err()
+			return nil, errors.Fmt("unmarshal failure_reason for %s: %w", trName, err)
 		}
 		if err := PopulateProperties(tr, properties); err != nil {
-			return nil, errors.Annotate(err, "unmarshal properties for %s", trName).Err()
+			return nil, errors.Fmt("unmarshal properties for %s: %w", trName, err)
 		}
 		if err := PopulateSkippedReason(tr, skippedReason); err != nil {
-			return nil, errors.Annotate(err, "unmarshal skipped reason for %s", trName).Err()
+			return nil, errors.Fmt("unmarshal skipped reason for %s: %w", trName, err)
 		}
 		if err := PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
-			return nil, errors.Annotate(err, "unmarshal framework extensions for %s", trName).Err()
+			return nil, errors.Fmt("unmarshal framework extensions for %s: %w", trName, err)
 		}
 		if err := q.Mask.Trim(tr); err != nil {
-			return nil, errors.Annotate(err, "trimming fields for %s", trName).Err()
+			return nil, errors.Fmt("trimming fields for %s: %w", trName, err)
 		}
 
 		// Always include name in tr because name is needed to calculate
@@ -373,7 +373,7 @@ func PopulateVariantParams(params map[string]any, variantPredicate *pb.VariantPr
 	case nil:
 		// No filter.
 	default:
-		panic(errors.Reason("unexpected variant predicate %q", variantPredicate).Err())
+		panic(errors.Fmt("unexpected variant predicate %q", variantPredicate))
 	}
 }
 

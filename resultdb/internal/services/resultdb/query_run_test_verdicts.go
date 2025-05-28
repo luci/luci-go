@@ -40,17 +40,17 @@ const (
 func validateQueryRunTestVerdictsRequest(req *pb.QueryRunTestVerdictsRequest) error {
 	_, err := pbutil.ParseInvocationName(req.GetInvocation())
 	if err != nil {
-		return errors.Annotate(err, "invocation").Err()
+		return errors.Fmt("invocation: %w", err)
 	}
 
 	// Validate page size is non-negative.
 	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	// Validate result limit is non-negative.
 	if err := testvariants.ValidateResultLimit(req.ResultLimit); err != nil {
-		return errors.Annotate(err, "result_limit").Err()
+		return errors.Fmt("result_limit: %w", err)
 	}
 
 	return nil

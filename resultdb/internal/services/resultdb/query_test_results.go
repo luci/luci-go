@@ -48,18 +48,18 @@ type queryRequestWithPaging interface {
 // invalid.
 func validateQueryRequest(req queryRequest) error {
 	if len(req.GetInvocations()) == 0 {
-		return errors.Reason("invocations: unspecified").Err()
+		return errors.New("invocations: unspecified")
 	}
 	for _, name := range req.GetInvocations() {
 		if err := pbutil.ValidateInvocationName(name); err != nil {
-			return errors.Annotate(err, "invocations: %q", name).Err()
+			return errors.Fmt("invocations: %q: %w", name, err)
 		}
 	}
 
 	if paging, ok := req.(queryRequestWithPaging); ok {
 		// validate paging
 		if err := pagination.ValidatePageSize(paging.GetPageSize()); err != nil {
-			return errors.Annotate(err, "page_size").Err()
+			return errors.Fmt("page_size: %w", err)
 		}
 	}
 	return nil
@@ -69,7 +69,7 @@ func validateQueryRequest(req queryRequest) error {
 // to be invalid.
 func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 	if err := pbutil.ValidateTestResultPredicate(req.Predicate); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	return validateQueryRequest(req)
@@ -101,7 +101,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	// Get the transitive closure.
 	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the reach").Err()
+		return nil, errors.Fmt("failed to read the reach: %w", err)
 	}
 	invocationIDs, err := invs.IDSet()
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 	trs, token, err := q.Fetch(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read test results").Err()
+		return nil, errors.Fmt("failed to read test results: %w", err)
 	}
 
 	return &pb.QueryTestResultsResponse{

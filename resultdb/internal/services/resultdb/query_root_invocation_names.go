@@ -32,11 +32,11 @@ import (
 // validateQueryRootInvocationNamesRequest returns an error if req is invalid.
 func validateQueryRootInvocationNamesRequest(req *pb.QueryRootInvocationNamesRequest) error {
 	if req.GetName() == "" {
-		return errors.Reason("name missing").Err()
+		return errors.New("name missing")
 	}
 
 	if err := pbutil.ValidateInvocationName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil
@@ -63,7 +63,7 @@ func (s *resultDBServer) QueryRootInvocationNames(ctx context.Context, in *pb.Qu
 
 	roots, err := graph.FindRoots(ctx, invocations.MustParseName(in.Name))
 	if err != nil {
-		return nil, errors.Annotate(err, "find root").Err()
+		return nil, errors.Fmt("find root: %w", err)
 	}
 	names := make([]string, 0, len(roots))
 	for root := range roots {

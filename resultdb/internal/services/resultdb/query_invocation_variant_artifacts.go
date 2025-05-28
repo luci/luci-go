@@ -31,7 +31,7 @@ import (
 func (s *resultDBServer) QueryInvocationVariantArtifacts(ctx context.Context, req *pb.QueryInvocationVariantArtifactsRequest) (rsp *pb.QueryInvocationVariantArtifactsResponse, err error) {
 	// Validate project before using it to check permission.
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("project: %w", err))
 	}
 	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, req.Project, nil, rdbperms.PermListArtifacts)
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *resultDBServer) QueryInvocationVariantArtifacts(ctx context.Context, re
 	}
 	rows, nextPageToken, err := s.artifactBQClient.ReadArtifacts(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "read artifacts").Err()
+		return nil, errors.Fmt("read artifacts: %w", err)
 	}
 	return &pb.QueryInvocationVariantArtifactsResponse{
 		Artifacts:     toInvocationArtifactMatchingContents(rows, req.ArtifactId, req.SearchString),
@@ -65,23 +65,23 @@ func (s *resultDBServer) QueryInvocationVariantArtifacts(ctx context.Context, re
 
 func validateQueryInvocationVariantArtifactsRequest(req *pb.QueryInvocationVariantArtifactsRequest) error {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := validateSearchString(req.SearchString); err != nil {
-		return errors.Annotate(err, "search_string").Err()
+		return errors.Fmt("search_string: %w", err)
 	}
 	if err := pbutil.ValidateVariantHash(req.VariantUnionHash); err != nil {
-		return errors.Annotate(err, "variant_union_hash").Err()
+		return errors.Fmt("variant_union_hash: %w", err)
 	}
 
 	if err := pbutil.ValidateArtifactID(req.ArtifactId); err != nil {
-		return errors.Annotate(err, "artifact_id").Err()
+		return errors.Fmt("artifact_id: %w", err)
 	}
 	if err := validateStartEndTime(req.StartTime, req.EndTime); err != nil {
 		return err
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 	return nil
 }

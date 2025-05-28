@@ -35,7 +35,7 @@ import (
 func validateQueryInstructionRequest(req *pb.QueryInstructionRequest) (invID invocations.ID, instructionID string, err error) {
 	invocationID, instructionID, err := pbutil.ParseInstructionName(req.Name)
 	if err != nil {
-		return "", "", errors.Annotate(err, "name").Err()
+		return "", "", errors.Fmt("name: %w", err)
 	}
 	return invocations.ID(invocationID), instructionID, nil
 }

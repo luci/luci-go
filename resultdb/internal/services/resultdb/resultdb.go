@@ -73,7 +73,7 @@ type Options struct {
 func InitServer(srv *server.Server, opts Options) error {
 	contentServer, err := newArtifactContentServer(srv.Context, opts)
 	if err != nil {
-		return errors.Annotate(err, "failed to create an artifact content server").Err()
+		return errors.Fmt("failed to create an artifact content server: %w", err)
 	}
 
 	// Serve all possible content hostnames.
@@ -87,12 +87,12 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	bqClient, err := bq.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating BQ client").Err()
+		return errors.Fmt("creating BQ client: %w", err)
 	}
 
 	artifactBQClient, err := artifacts.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating artifact BQ client").Err()
+		return errors.Fmt("creating artifact BQ client: %w", err)
 	}
 
 	// Serve cron jobs endpoints.
@@ -145,7 +145,7 @@ func InitServer(srv *server.Server, opts Options) error {
 
 func newArtifactContentServer(ctx context.Context, opts Options) (*artifactcontent.Server, error) {
 	if opts.ArtifactRBEInstance == "" {
-		return nil, errors.Reason("opts.ArtifactRBEInstance is required").Err()
+		return nil, errors.New("opts.ArtifactRBEInstance is required")
 	}
 
 	conn, err := artifactcontent.RBEConn(ctx)

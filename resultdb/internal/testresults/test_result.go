@@ -44,7 +44,7 @@ import (
 func MustParseName(name string) (invID invocations.ID, testID, resultID string) {
 	parts := strings.Split(name, "/")
 	if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
-		panic(errors.Reason("malformed test result name: %q", name).Err())
+		panic(errors.Fmt("malformed test result name: %q", name))
 	}
 
 	invID = invocations.ID(parts[1])
@@ -53,7 +53,7 @@ func MustParseName(name string) (invID invocations.ID, testID, resultID string) 
 
 	unescaped, err := url.PathUnescape(testID)
 	if err != nil {
-		panic(errors.Annotate(err, "malformed test id %q", testID).Err())
+		panic(errors.Fmt("malformed test id %q: %w", testID, err))
 	}
 	testID = unescaped
 
@@ -104,12 +104,12 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "fetch %q", name).Err()
+		return nil, errors.Fmt("fetch %q: %w", name, err)
 	}
 	// Populate structured test ID from flat-form ID and variant.
 	tr.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(testID, tr.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse structured test identifier").Err()
+		return nil, errors.Fmt("parse structured test identifier: %w", err)
 	}
 
 	tr.SummaryHtml = string(summaryHTML)
@@ -117,19 +117,19 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	PopulateDurationField(tr, micros)
 	PopulateSkipReasonField(tr, skipReason)
 	if err := PopulateTestMetadata(tr, tmd); err != nil {
-		return nil, errors.Annotate(err, "unmarshal test metadata").Err()
+		return nil, errors.Fmt("unmarshal test metadata: %w", err)
 	}
 	if err := PopulateFailureReason(tr, fr); err != nil {
-		return nil, errors.Annotate(err, "unmarshal failure reason").Err()
+		return nil, errors.Fmt("unmarshal failure reason: %w", err)
 	}
 	if err := PopulateProperties(tr, properties); err != nil {
-		return nil, errors.Annotate(err, "unmarshal properties").Err()
+		return nil, errors.Fmt("unmarshal properties: %w", err)
 	}
 	if err := PopulateSkippedReason(tr, skippedReason); err != nil {
-		return nil, errors.Annotate(err, "unmarshal skipped reason").Err()
+		return nil, errors.Fmt("unmarshal skipped reason: %w", err)
 	}
 	if err := PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
-		return nil, errors.Annotate(err, "unmarshal framework extensions").Err()
+		return nil, errors.Fmt("unmarshal framework extensions: %w", err)
 	}
 	return tr, nil
 }

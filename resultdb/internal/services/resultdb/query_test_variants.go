@@ -123,7 +123,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	// Get the transitive closure.
 	invs, err := graph.Reachable(ctx, ids)
 	if err != nil {
-		return nil, errors.Annotate(err, "resolving reachable invocations").Err()
+		return nil, errors.Fmt("resolving reachable invocations: %w", err)
 	}
 
 	// Query test variants.
@@ -142,7 +142,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	var result testvariants.Page
 	for len(result.TestVariants) == 0 {
 		if result, err = q.Fetch(ctx); err != nil {
-			return nil, errors.Annotate(err, "fetching test variants").Err()
+			return nil, errors.Fmt("fetching test variants: %w", err)
 		}
 
 		if result.NextPageToken == "" || outOfTime(ctx) {
@@ -172,28 +172,28 @@ func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
 	}
 
 	if len(in.Invocations) > 1 {
-		return errors.Reason("invocations: only one invocation is allowed").Err()
+		return errors.New("invocations: only one invocation is allowed")
 	}
 	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
-		return errors.Annotate(err, "result_limit").Err()
+		return errors.Fmt("result_limit: %w", err)
 	}
 
 	// We support a limited subset of AIP-132 order by syntax, so as to specify
 	// sorting by status or status_v2_effective only.
 	orderBy, err := aip132.ParseOrderBy(in.OrderBy)
 	if err != nil {
-		return errors.Annotate(err, "order_by").Err()
+		return errors.Fmt("order_by: %w", err)
 	}
 	if len(orderBy) > 1 {
-		return errors.Reason("order_by: more than one order by field is not currently supported").Err()
+		return errors.New("order_by: more than one order by field is not currently supported")
 	}
 	if len(orderBy) == 1 {
 		orderByItem := orderBy[0]
 		if !orderByItem.FieldPath.Equals(StatusFieldPath) && !orderByItem.FieldPath.Equals(StatusV2EffectiveFieldPath) {
-			return errors.Reason("order_by: order by field must be one of %q or %q", StatusFieldPath, StatusV2EffectiveFieldPath).Err()
+			return errors.Fmt("order_by: order by field must be one of %q or %q", StatusFieldPath, StatusV2EffectiveFieldPath)
 		}
 		if orderByItem.Descending {
-			return errors.Reason("order_by: descending order is not supported").Err()
+			return errors.New("order_by: descending order is not supported")
 		}
 	}
 	return nil
