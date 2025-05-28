@@ -416,7 +416,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 			ch <- func() error { return UpdateTreeClosers(c, build, 0) }
 		})
 	}, nil)
-	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
+	return transient.Tag.Apply(errors.WrapIf(err, "failed to save builder"))
 }
 
 func newBuildsClient(c context.Context, host, project string) (buildbucketpb.BuildsClient, error) {

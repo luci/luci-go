@@ -948,7 +948,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 
 	// External groups cannot be manually updated.
 	if IsExternalAuthGroupName(groupUpdate.ID) {
-		return nil, errors.Annotate(customerrors.ErrPermissionDenied, "cannot update external group").Err()
+		return nil, errors.Fmt("cannot update external group: %w", customerrors.ErrPermissionDenied)
 	}
 
 	// Do some preliminary validation before entering the Datastore transaction.
@@ -992,7 +992,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
-			return errors.Annotate(customerrors.ErrConcurrentModification, "group %q was updated by someone else", authGroup.ID).Err()
+			return errors.Fmt("group %q was updated by someone else: %w", authGroup.ID, customerrors.ErrConcurrentModification)
 		}
 
 		// Update fields according to the mask.
@@ -1054,7 +1054,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 				authGroup.Owners = newOwners
 				updated = true
 			default:
-				return errors.Annotate(customerrors.ErrInvalidArgument, "unknown field: %s", field).Err()
+				return errors.Fmt("unknown field: %s: %w", field, customerrors.ErrInvalidArgument)
 			}
 		}
 
@@ -1088,22 +1088,20 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 	// The admin group must own itself.
 	if admin.Owners != AdminGroup {
-		return errors.Annotate(customerrors.ErrInvalidArgument,
-			"%s must be owned by itself", AdminGroup).Err()
+		return errors.Fmt("%s must be owned by itself: %w", AdminGroup, customerrors.ErrInvalidArgument)
 	}
 
 	// Forbid globs because the admin group is very privileged.
 	if len(admin.Globs) > 0 {
-		return errors.Annotate(customerrors.ErrInvalidArgument,
-			"%s cannot have globs", AdminGroup).Err()
+		return errors.Fmt("%s cannot have globs: %w", AdminGroup, customerrors.ErrInvalidArgument)
 	}
 
 	// Forbid internal subgroups, as this could lead to an unexpectedly large
 	// admin group over time.
 	for _, nested := range admin.Nested {
 		if !IsExternalAuthGroupName(nested) {
-			return errors.Annotate(customerrors.ErrInvalidArgument,
-				"%s can only have external subgroups", AdminGroup).Err()
+			return errors.Fmt(
+				"%s can only have external subgroups: %w", AdminGroup, customerrors.ErrInvalidArgument)
 		}
 	}
 	// If here, all nested subgroups are external.
@@ -1116,8 +1114,8 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 		return nil
 	}
 
-	return errors.Annotate(customerrors.ErrInvalidArgument,
-		"%s cannot be empty", AdminGroup).Err()
+	return errors.Fmt(
+		"%s cannot be empty: %w", AdminGroup, customerrors.ErrInvalidArgument)
 }
 
 // DeleteAuthGroup deletes the specified AuthGroup.
@@ -1137,7 +1135,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 
 	// External groups cannot be manually deleted.
 	if IsExternalAuthGroupName(groupName) {
-		return errors.Annotate(customerrors.ErrPermissionDenied, "cannot delete external group").Err()
+		return errors.Fmt("cannot delete external group: %w", customerrors.ErrPermissionDenied)
 	}
 
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
@@ -1156,7 +1154,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
-			return errors.Annotate(customerrors.ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
+			return errors.Fmt("group %q was updated by someone else: %w", groupName, customerrors.ErrConcurrentModification)
 		}
 
 		// Check that the group is not referenced from elsewhere.
@@ -1168,7 +1166,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 		referencingGroups.Del(groupName)
 		if len(referencingGroups) > 0 {
 			groupsStr := strings.Join(referencingGroups.ToSortedSlice(), ", ")
-			return errors.Annotate(customerrors.ErrReferencedEntity, "this group is referenced by other groups: [%s]", groupsStr).Err()
+			return errors.Fmt("this group is referenced by other groups: [%s]: %w", groupsStr, customerrors.ErrReferencedEntity)
 		}
 
 		// Delete the group.

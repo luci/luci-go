@@ -130,7 +130,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	}
 	res, err := client.Log(ctx, req)
 	if err != nil {
-		return errors.Annotate(grpcutil.WrapIfTransient(err), "query Gitiles logs").Err()
+		return errors.Fmt("query Gitiles logs: %w", grpcutil.WrapIfTransient(err))
 	}
 
 	shouldIngestNextPage := res.NextPageToken != ""

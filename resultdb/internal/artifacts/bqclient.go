@@ -302,7 +302,7 @@ func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroups
 	}
 	it, err := job.Read(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(js.Err(), "read artifact groups").Err()
+		return nil, "", errors.Fmt("read artifact groups: %w", err)
 	}
 	results := []*ArtifactGroup{}
 	for {

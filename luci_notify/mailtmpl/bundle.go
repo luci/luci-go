@@ -160,7 +160,7 @@ func NewBundle(templates []*Template) *Bundle {
 			hasDefault = true
 		}
 		if err := addTemplate(t); err != nil {
-			errs = append(errs, errors.Annotate(addTemplate(t), "template %q", t.Name).Err())
+			errs = append(errs, errors.Fmt("template %q: %w", t.Name, err))
 		}
 	}
 

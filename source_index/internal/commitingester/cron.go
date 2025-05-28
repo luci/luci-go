@@ -64,7 +64,7 @@ func syncCommitsHandler(ctx context.Context) (err error) {
 		return mr.RunMulti(func(c chan<- func() error) {
 			c <- func() error {
 				err := scheduleTasks(ctx, taskC)
-				return errors.Annotate(err, "schedule tasks").Err()
+				return errors.WrapIf(err, "schedule tasks")
 			}
 
 			c <- func() error {
@@ -73,7 +73,7 @@ func syncCommitsHandler(ctx context.Context) (err error) {
 					for _, hostConfig := range cfg.HostConfigs() {
 						c <- func() error {
 							err := scanHostForTasks(ctx, mr, hostConfig, taskC)
-							return errors.Annotate(err, "scan host %q for tasks", hostConfig.Host()).Err()
+							return errors.WrapIf(err, "scan host %q for tasks", hostConfig.Host())
 						}
 					}
 				})

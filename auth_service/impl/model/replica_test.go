@@ -48,7 +48,7 @@ func TestReplicaUpdateError(t *testing.T) {
 	ftt.Run("custom ReplicaUpdateError works", t, func(t *ftt.Test) {
 		t.Run("unwrapping works", func(t *ftt.Test) {
 			replicaErr := &ReplicaUpdateError{
-				RootErr: errors.Annotate(datastore.ErrNoSuchEntity, "annotated test error").Err(),
+				RootErr: errors.Fmt("annotated test error: %w", datastore.ErrNoSuchEntity),
 				IsFatal: false,
 			}
 			// Check the root error can be identified when it is a non-fatal error.

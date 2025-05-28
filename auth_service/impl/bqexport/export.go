@@ -91,7 +91,7 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	defer func() {
 		err := client.Close()
 		if reterr == nil {
-			reterr = errors.Annotate(err, "failed to close BQ client").Err()
+			reterr = errors.WrapIf(err, "failed to close BQ client")
 		}
 	}()
 

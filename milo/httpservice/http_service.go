@@ -80,7 +80,7 @@ func ErrorHandler(c *router.Context, err error) {
 			return
 		}
 		errors.Log(
-			c.Request.Context(), errors.Annotate(err, "failed to retrieve login URL").Err())
+			c.Request.Context(), errors.Fmt("failed to retrieve login URL: %w", err))
 	case codes.OK:
 		// All good.
 	default:

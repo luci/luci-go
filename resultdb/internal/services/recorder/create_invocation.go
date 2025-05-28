@@ -93,7 +93,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 	inv := req.Invocation
 	if inv == nil {
-		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err()
+		return errors.New("invocation: unspecified")
 	}
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
@@ -101,7 +101,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if inv.Realm == "" {
-		return errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err()
+		return errors.New("invocation: realm: unspecified")
 	}
 
 	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
@@ -166,12 +166,12 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocationRequest) error {
 	inv := in.Invocation
 	if inv == nil {
-		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation").Err())
+		return appstatus.BadRequest(errors.New("invocation: unspecified"))
 	}
 
 	realm := inv.Realm
 	if realm == "" {
-		return appstatus.BadRequest(errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err())
+		return appstatus.BadRequest(errors.New("invocation: realm: unspecified"))
 	}
 	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
 		return appstatus.BadRequest(errors.Annotate(err, "invocation: realm").Err())

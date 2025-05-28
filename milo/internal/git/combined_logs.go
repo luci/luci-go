@@ -257,7 +257,7 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 
 // CombinedLogs implements Client interface.
 func (impl *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
-	defer func() { err = errors.Annotate(utils.TagGRPC(c, err), "gitiles.CombinedLogs").Err() }()
+	defer func() { err = errors.WrapIf(utils.TagGRPC(c, err), "gitiles.CombinedLogs") }()
 
 	// Check if the user is allowed to access this project.
 	allowed, err := impl.acls.IsAllowed(c, host, project)

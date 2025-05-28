@@ -57,7 +57,7 @@ func (c GitCommit) Key() Key {
 // Position extracts the commit position from the commit message.
 func (c GitCommit) Position() (*Position, error) {
 	pos, err := extractPosition(c.message)
-	return pos, errors.Annotate(err, "extract commit position from commit message").Err()
+	return pos, errors.WrapIf(err, "extract commit position from commit message")
 }
 
 var (

@@ -507,7 +507,7 @@ func UpdateProjects(c context.Context) error {
 					project:     project,
 					miloCfg:     miloCfg,
 					miloCfgMeta: miloCfgMeta,
-					err:         errors.Annotate(err, "fetching %q", cfg.ConfigSet).Err(),
+					err:         errors.WrapIf(err, "fetching %q", cfg.ConfigSet),
 				}
 				return nil
 			}
@@ -553,9 +553,9 @@ func UpdateProjects(c context.Context) error {
 					return datastore.Put(c, toPut)
 				}, nil)
 				if res.miloCfgMeta != nil {
-					return errors.Annotate(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet).Err()
+					return errors.WrapIf(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet)
 				} else {
-					return errors.Annotate(err, "when updating config for %q", res.project.ID).Err()
+					return errors.WrapIf(err, "when updating config for %q", res.project.ID)
 				}
 			}
 		}
@@ -649,10 +649,8 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 		con := []*Console{}
 		err := datastore.GetAll(c, q, &con)
 
-		return con, 0, errors.
-			Annotate(err, "getting consoles for %q", builderID).
-			Tag(transient.Tag).
-			Err()
+		return con, 0, transient.Tag.Apply(
+			errors.WrapIf(err, "getting consoles for %q", builderID))
 	})
 	con, _ := itm.([]*Console)
 	return con, err
@@ -667,7 +665,7 @@ func GetProject(c context.Context, project string) (*Project, error) {
 	if err == datastore.ErrNoSuchEntity {
 		err = nil
 	}
-	return &proj, errors.Annotate(err, "getting project %q", project).Err()
+	return &proj, errors.WrapIf(err, "getting project %q", project)
 }
 
 // GetVisibleProjects returns all projects with consoles the current user has

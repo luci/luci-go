@@ -84,7 +84,7 @@ func (l *Loader) init() {
 // The module string must be normalized.
 func (l *Loader) Load(module string) (syms *Struct, err error) {
 	defer func() {
-		err = errors.Annotate(err, "in %s", module).Err()
+		err = errors.WrapIf(err, "in %s", module)
 	}()
 
 	l.init()

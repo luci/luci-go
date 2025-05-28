@@ -184,8 +184,11 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	}
 
 	r.limit, err = strconv.ParseInt(limitStr, 10, 64)
-	if err != nil || r.limit <= 0 {
-		return errors.Annotate(err, "query parmeter n must be a positive integer, but got %q", limitStr).Err()
+	if err != nil {
+		return errors.Fmt("query parmeter n must be an integer, but got %q: %w", limitStr, err)
+	}
+	if r.limit < 0 {
+		return errors.Fmt("query parmeter n must be >= 0, got %q", limitStr)
 	}
 	return nil
 }
