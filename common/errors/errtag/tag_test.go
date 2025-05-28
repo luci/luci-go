@@ -85,7 +85,7 @@ func TestErrTag(t *testing.T) {
 		t.Run(`apply with luci errors library Annotate`, func(t *testing.T) {
 			stag2 := stag.WithDefault("newDefault")
 
-			err := luci_errors.Annotate(errors.New("bare"), "extra").Tag(stag2).Err()
+			err := stag2.Apply(luci_errors.Fmt("extra: %w", errors.New("bare")))
 			assert.That(t, stag.ValueOrDefault(err), should.Equal("newDefault"))
 		})
 
@@ -96,7 +96,7 @@ func TestErrTag(t *testing.T) {
 		})
 
 		t.Run(`can find through other wrapper`, func(t *testing.T) {
-			err := luci_errors.Annotate(stag.ApplyValue(errors.New("bare"), "someval"), "extra").Err()
+			err := luci_errors.Fmt("extra: %w", stag.ApplyValue(errors.New("bare"), "someval"))
 			assert.That(t, err.Error(), should.Equal("extra: bare"))
 			assert.That(t, stag.ValueOrDefault(err), should.Equal("someval"))
 		})

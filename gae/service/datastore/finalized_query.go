@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // FinalizedQuery is the representation of a Query which has been normalized.
@@ -347,23 +349,23 @@ func (q *FinalizedQuery) Valid(kc KeyContext) error {
 	if anc != nil {
 		switch {
 		case !anc.Valid(false, kc):
-			return MakeErrInvalidKey("ancestor [%s] is not valid in context %s", anc, kc).Err()
+			return errors.Fmt("ancestor [%s] is not valid in context %s: %w", anc, kc, ErrInvalidKey)
 		case anc.IsIncomplete():
-			return MakeErrInvalidKey("ancestor [%s] is incomplete", anc).Err()
+			return errors.Fmt("ancestor [%s] is incomplete: %w", anc, ErrInvalidKey)
 		}
 	}
 
 	if q.ineqFiltProp == "__key__" {
 		if q.ineqFiltLowSet {
 			if k := q.ineqFiltLow.Value().(*Key); !k.Valid(false, kc) {
-				return MakeErrInvalidKey(
-					"low inequality filter key [%s] is not valid in context %s", k, kc).Err()
+				return errors.Fmt(
+					"low inequality filter key [%s] is not valid in context %s: %w", k, kc, ErrInvalidKey)
 			}
 		}
 		if q.ineqFiltHighSet {
 			if k := q.ineqFiltHigh.Value().(*Key); !k.Valid(false, kc) {
-				return MakeErrInvalidKey(
-					"high inequality filter key [%s] is not valid in context %s", k, kc).Err()
+				return errors.Fmt(
+					"high inequality filter key [%s] is not valid in context %s: %w", k, kc, ErrInvalidKey)
 			}
 		}
 	}

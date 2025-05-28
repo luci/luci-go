@@ -190,7 +190,7 @@ func (rm *ErroringRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo,
 	if rm.Error == nil {
 		panic("error should not be nil")
 	}
-	return nil, errors.Annotate(rm.Error, "repo %s", repoKey).Err()
+	return nil, errors.Fmt("repo %s: %w", repoKey, rm.Error)
 }
 
 // PreconfiguredRepoManager uses an existing static set of Repo instances with

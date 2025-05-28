@@ -166,7 +166,7 @@ func (o *Options) normalize() error {
 		o.Retry = Defaults.Retry
 	}
 
-	return errors.Annotate(o.FullBehavior.Check(*o), "FullBehavior.Check").Err()
+	return errors.WrapIf(o.FullBehavior.Check(*o), "FullBehavior.Check")
 }
 
 func (o *Options) batchItemsGuess() int {

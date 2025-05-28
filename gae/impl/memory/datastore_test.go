@@ -138,7 +138,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				}))
 			})
 			t.Run("Deleting with a bogus key is bad", func(t *ftt.Test) {
-				assert.Loosely(t, ds.IsErrInvalidKey(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil))), should.BeTrue)
+				assert.Loosely(t, ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil)), should.ErrLike(ds.ErrInvalidKey))
 			})
 			t.Run("Deleting a DNE entity is fine", func(t *ftt.Test) {
 				assert.Loosely(t, ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), should.BeNil)

@@ -281,7 +281,7 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 				if err = encodeKey(mk); err == nil {
 					err = o.marshalValue(enc, fd, v)
 				}
-				err = errors.Annotate(err, "%s[%s]", name, mk).Err()
+				err = errors.WrapIf(err, "%s[%s]", name, mk)
 				return err == nil
 			})
 			if err != nil {

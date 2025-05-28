@@ -100,7 +100,7 @@ func getMocker(ctx context.Context, strict bool) (mocker execmockctx.CreateMockI
 	if state == nil {
 		if strict {
 			return func(mc *execmockctx.MockCriteria, proc **os.Process) (*execmockctx.MockInvocation, error) {
-				return nil, errors.Annotate(execmockctx.ErrNoMatchingMock, "execmock.Init not called on context").Err()
+				return nil, errors.Fmt("execmock.Init not called on context: %w", execmockctx.ErrNoMatchingMock)
 			}, false
 		}
 		return nil, false
@@ -143,7 +143,7 @@ func (state *mockState) createMockInvocation(mc *execmockctx.MockCriteria, proc 
 	}
 	state.misses = append(state.misses, mcFromInternal(mc))
 
-	return nil, errors.Annotate(execmockctx.ErrNoMatchingMock, "%s", mc).Err()
+	return nil, errors.Fmt("%s: %w", mc, execmockctx.ErrNoMatchingMock)
 }
 
 // MockCriteria are the parameters from a Command used to match an ExecMocker

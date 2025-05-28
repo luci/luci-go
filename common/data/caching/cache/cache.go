@@ -430,7 +430,7 @@ func (d *Cache) hardlinkUnlocked(digest HexDigest, dest string, perm os.FileMode
 			// In Windows, os.Link may fail with access denied error even if |src| isn't there.
 			// And this is to normalize returned error in such case.
 			// https://crbug.com/1098265
-			err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v\nlogs:\n%s", src, err, d.log.String()).Err()
+			err = errors.Fmt("%s doesn't exist and os.Link failed: %w: %v\nlogs:\n%s", src, serr, err, d.log.String())
 		}
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
 		return errors.Annotate(err, "failed to call makeHardLinkOrClone(%s, %s)\n%s", src, dest, debugInfo).Err()

@@ -666,7 +666,7 @@ func TestPut(t *testing.T) {
 					}
 					// having an Incomplete parent makes an invalid key
 					bp := &BadParent{ID: 1, Parent: MakeKey(c, "Something", 0)}
-					assert.Loosely(t, IsErrInvalidKey(Put(c, bp)), should.BeTrue)
+					assert.Loosely(t, Put(c, bp), should.ErrLike(ErrInvalidKey))
 				})
 
 				t.Run("vararg with errors", func(t *ftt.Test) {

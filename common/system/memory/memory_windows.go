@@ -42,7 +42,7 @@ func totalSystemMemoryBytes() (uint64, error) {
 	msx.dwLength = uint32(unsafe.Sizeof(memoryStatusEX{}))
 	ok, _, err := proc.Call(uintptr(unsafe.Pointer(&msx)))
 	if ok == 0 {
-		return 0, errors.Annotate(err, "memory.TotalSystemMemoryMB").Err()
+		return 0, errors.WrapIf(err, "memory.TotalSystemMemoryMB")
 	}
 	return msx.ullTotalPhys, nil
 }

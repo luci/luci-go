@@ -102,7 +102,7 @@ func ExampleInit() {
 		CollectInput: true,
 	})
 	tmpDir, err := os.MkdirTemp("", "")
-	must(errors.Annotate(err, "failed to create tmpDir").Err())
+	must(errors.WrapIf(err, "failed to create tmpDir"))
 
 	defer func() {
 		must(os.RemoveAll(tmpDir))
@@ -131,7 +131,7 @@ func ExampleInit() {
 	must(outputCall.Run())
 
 	outputFileData, err := os.ReadFile(outputFile)
-	must(errors.Annotate(err, "our mock failed to write %q", outputFile).Err())
+	must(errors.WrapIf(err, "our mock failed to write %q", outputFile))
 	if !bytes.Equal(outputFileData, []byte("hello I am Mx. Catopolous")) {
 		panic(errors.New("our mock failed to write the expected data"))
 	}
@@ -145,7 +145,7 @@ func ExampleInit() {
 	fmt.Printf("outputUses: got %d calls\n", len(outputUses.Snapshot()))
 
 	incallMock, _, err := inputUses.Snapshot()[0].GetOutput(ctx)
-	must(errors.Annotate(err, "could not get output from --input call").Err())
+	must(errors.WrapIf(err, "could not get output from --input call"))
 	fmt.Printf("incallMock: saw %q written to the mock program\n", incallMock.InputData)
 	// END: TEST CODE
 

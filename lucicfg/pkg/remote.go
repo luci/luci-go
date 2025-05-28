@@ -140,7 +140,7 @@ func (r *remoteRepoImpl) acquireFetchConcurrencySlot(ctx context.Context) (done 
 func (r *remoteRepoImpl) Fetch(ctx context.Context, rev string, repoPath string) ([]byte, error) {
 	defer r.acquireFetchConcurrencySlot(ctx)()
 	dat, err := r.repoCache.ReadSingleFile(ctx, rev, repoPath)
-	return dat, errors.Annotate(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath).Err()
+	return dat, errors.WrapIf(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath)
 }
 
 // IsOverride implements Repo.

@@ -73,7 +73,7 @@ func (u *user) Proto() (ret *git.Commit_User, err error) {
 	}
 	if !u.Time.IsZero() {
 		ret.Time, err = ptypes.TimestampProto(u.Time.Time)
-		err = errors.Annotate(err, "encoding time").Err()
+		err = errors.WrapIf(err, "encoding time")
 	}
 	return
 }

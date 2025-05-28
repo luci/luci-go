@@ -35,6 +35,7 @@ func (limitExceeded) Error() string { return "limit exceeded" }
 var (
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
+	ErrInvalidKey            = datastore.ErrInvalidKey
 
 	// Stop is understood by various services to stop iterative processes. Examples
 	// include datastore.Interface.Run's callback.
@@ -43,17 +44,6 @@ var (
 	// ErrLimitExceeded is used to indicate the iteration limit has been exceeded.
 	ErrLimitExceeded = limitExceeded{}
 )
-
-// MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid
-// key error. Calling IsErrInvalidKey on this Annotator or its derivatives will
-// return true.
-func MakeErrInvalidKey(reason string, args ...any) *errors.Annotator {
-	return errors.Annotate(datastore.ErrInvalidKey, reason, args...)
-}
-
-// IsErrInvalidKey tests if a given error is a wrapped datastore.ErrInvalidKey
-// error.
-func IsErrInvalidKey(err error) bool { return errors.Unwrap(err) == datastore.ErrInvalidKey }
 
 // IsErrNoSuchEntity tests if an error is ErrNoSuchEntity,
 // or is a MultiError that contains ErrNoSuchEntity and no other errors.

@@ -40,7 +40,7 @@ func Unspecified() error {
 // DoesNotMatchReErr returns an error indicating that a value does not match a
 // regex.
 func DoesNotMatchReErr(r *regexp.Regexp) error {
-	return errors.Annotate(doesNotMatchRe, "does not match pattern %q", r).Err()
+	return errors.Fmt("does not match pattern %q: %w", r, doesNotMatchRe)
 }
 
 // Regexp returns a non-nil error if re is not a valid regular

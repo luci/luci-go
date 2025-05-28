@@ -419,7 +419,7 @@ func IsEmptyDir(dir string) (bool, error) {
 		return len(names) == 0, nil
 	}
 
-	return false, errors.Annotate(err, "failed to call Readdirnames(1) for %s", dir).Err()
+	return false, errors.WrapIf(err, "failed to call Readdirnames(1) for %s", dir)
 }
 
 // IsDir to see whether |path| is a directory.
@@ -563,7 +563,7 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 			}
 			if !fi.IsDir() {
 				// this SHOULD ALSO be impossible...
-				return "", errors.Annotate(err, "path %q could not be resolved to parent dir", path).Err()
+				return "", errors.Fmt("path %q could not be resolved to parent dir", path)
 			}
 		}
 

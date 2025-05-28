@@ -62,9 +62,9 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 		var err error
 		switch {
 		case k.IsIncomplete():
-			err = MakeErrInvalidKey("key [%s] is incomplete", k).Err()
+			err = errors.Fmt("key [%s] is incomplete: %w", k, ErrInvalidKey)
 		case !k.Valid(true, tcf.kc):
-			err = MakeErrInvalidKey("key [%s] is not valid in context %s", k, tcf.kc).Err()
+			err = errors.Fmt("key [%s] is not valid in context %s: %w", k, tcf.kc, ErrInvalidKey)
 		}
 		if err != nil {
 			cb(i, nil, err)
@@ -94,7 +94,7 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 	var dat DroppedArgTracker
 	for i, k := range keys {
 		if !k.PartialValid(tcf.kc) {
-			cb(i, nil, MakeErrInvalidKey("key [%s] is not partially valid in context %s", k, tcf.kc).Err())
+			cb(i, nil, errors.Fmt("key [%s] is not partially valid in context %s: %w", k, tcf.kc, ErrInvalidKey))
 			dat.MarkForRemoval(i, len(keys))
 			continue
 		}
@@ -123,9 +123,9 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 		var err error
 		switch {
 		case k.IsIncomplete():
-			err = MakeErrInvalidKey("key [%s] is incomplete", k).Err()
+			err = errors.Fmt("key [%s] is incomplete: %w", k, ErrInvalidKey)
 		case !k.Valid(false, tcf.kc):
-			err = MakeErrInvalidKey("key [%s] is not valid in context %s", k, tcf.kc).Err()
+			err = errors.Fmt("key [%s] is not valid in context %s: %w", k, tcf.kc, ErrInvalidKey)
 		}
 		if err != nil {
 			cb(i, err)

@@ -42,7 +42,7 @@ func TestIsNotExist(t *testing.T) {
 		assert.Loosely(t, IsNotExist(errors.New("something")), should.BeFalse)
 
 		assert.Loosely(t, IsNotExist(err), should.BeTrue)
-		assert.Loosely(t, IsNotExist(errors.Annotate(err, "annotated").Err()), should.BeTrue)
+		assert.Loosely(t, IsNotExist(errors.Fmt("annotated: %w", err)), should.BeTrue)
 	})
 }
 

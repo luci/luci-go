@@ -18,10 +18,9 @@ import (
 	"math"
 	"testing"
 
-	"google.golang.org/appengine/datastore"
-
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -422,7 +421,8 @@ func errString(v string) func(testing.TB, error) {
 }
 
 func shouldBeErrInvalidKey(t testing.TB, err error) {
-	assert.Loosely(t, err, should.ErrLike(datastore.ErrInvalidKey))
+	t.Helper()
+	assert.Loosely(t, err, should.ErrLike(ErrInvalidKey), truth.LineContext())
 }
 
 var queryTests = []queryTest{

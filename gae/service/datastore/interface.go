@@ -191,7 +191,7 @@ func AllocateIDs(c context.Context, ent ...any) error {
 
 		mat, v := mma.get(index)
 		if !mat.setKey(v, key) {
-			et.trackError(index, MakeErrInvalidKey("failed to export key [%s]", key).Err())
+			et.trackError(index, errors.Fmt("failed to export key [%s]: %w", key, ErrInvalidKey))
 			return
 		}
 	})

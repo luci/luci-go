@@ -184,7 +184,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 			}
 		}
 		if outputDir == "" {
-			return nil, errors.Annotate(err, "the input directory %q is not under GOPATH %v", inputDir, srcDirs).Err()
+			return nil, errors.Fmt("the input directory %q is not under GOPATH %v", inputDir, srcDirs)
 		}
 	}
 

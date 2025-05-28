@@ -81,7 +81,7 @@ func TestCheckFilter(t *testing.T) {
 			keys := []*Key{MkKeyContext("wut", "wrong").MakeKey("Kind", 1)}
 			assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
 				assert.Loosely(t, pm, should.BeNil)
-				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidKey))
 			}), should.BeNil)
 
 			keys[0] = mkKey("Kind", 1)
@@ -106,7 +106,7 @@ func TestCheckFilter(t *testing.T) {
 
 			assert.Loosely(t, rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
 				assert.Loosely(t, k, should.BeNil)
-				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidKey))
 			}), should.BeNil)
 
 			keys = []*Key{mkKey("s~aid", "ns", "Kind", 0)}
@@ -131,7 +131,7 @@ func TestCheckFilter(t *testing.T) {
 
 			assert.Loosely(t, rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil), should.ErrLike("is nil"))
 			assert.Loosely(t, rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(_ int, err error) {
-				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+				assert.Loosely(t, err, should.ErrLike(ErrInvalidKey))
 			}), should.BeNil)
 
 			hit := false
