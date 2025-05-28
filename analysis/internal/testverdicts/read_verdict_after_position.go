@@ -160,7 +160,7 @@ func (c *ReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options R
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "running query").Err()
+		return nil, errors.Fmt("running query: %w", err)
 	}
 	results := []*SourceVerdict{}
 	for {
@@ -170,7 +170,7 @@ func (c *ReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options R
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next source position verdict").Err()
+			return nil, errors.Fmt("obtain next source position verdict: %w", err)
 		}
 		results = append(results, row)
 	}

@@ -28,13 +28,13 @@ import (
 // ValidateStringPair returns an error if p is invalid.
 func ValidateStringPair(p *pb.StringPair) error {
 	if err := validate.SpecifiedWithRe(stringPairKeyRe, p.Key); err != nil {
-		return errors.Annotate(err, "key").Err()
+		return errors.Fmt("key: %w", err)
 	}
 	if len(p.Key) > maxStringPairKeyLength {
-		return errors.Reason("key length must be less or equal to %d", maxStringPairKeyLength).Err()
+		return errors.Fmt("key length must be less or equal to %d", maxStringPairKeyLength)
 	}
 	if len(p.Value) > maxStringPairValueLength {
-		return errors.Reason("value length must be less or equal to %d", maxStringPairValueLength).Err()
+		return errors.Fmt("value length must be less or equal to %d", maxStringPairValueLength)
 	}
 	return nil
 }
@@ -44,7 +44,7 @@ func ValidateVariant(vr *pb.Variant) error {
 	for k, v := range vr.GetDef() {
 		p := pb.StringPair{Key: k, Value: v}
 		if err := ValidateStringPair(&p); err != nil {
-			return errors.Annotate(err, "%q:%q", k, v).Err()
+			return errors.Fmt("%q:%q: %w", k, v, err)
 		}
 	}
 	return nil
@@ -85,7 +85,7 @@ func ValidateTestVerdictPredicate(predicate *pb.TestVerdictPredicate) error {
 // ValidateEnum returns a non-nil error if the value is not among valid values.
 func ValidateEnum(value int32, validValues map[int32]string) error {
 	if _, ok := validValues[value]; !ok {
-		return errors.Reason("invalid value %d", value).Err()
+		return errors.Fmt("invalid value %d", value)
 	}
 	return nil
 }
@@ -100,12 +100,12 @@ func ValidateTimeRange(ctx context.Context, tr *pb.TimeRange) error {
 
 	earliest, err := AsTime(tr.Earliest)
 	if err != nil {
-		return errors.Annotate(err, "earliest").Err()
+		return errors.Fmt("earliest: %w", err)
 	}
 
 	latest, err := AsTime(tr.Latest)
 	if err != nil {
-		return errors.Annotate(err, "latest").Err()
+		return errors.Fmt("latest: %w", err)
 	}
 
 	if !earliest.Before(latest) {

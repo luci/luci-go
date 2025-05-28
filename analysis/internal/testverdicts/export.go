@@ -74,13 +74,13 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 	for _, tv := range testVariants {
 		exportRow, err := prepareExportRow(tv, opts, insertTime)
 		if err != nil {
-			return errors.Annotate(err, "prepare row").Err()
+			return errors.Fmt("prepare row: %w", err)
 		}
 		rows = append(rows, exportRow)
 	}
 	err := e.client.Insert(ctx, rows)
 	if err != nil {
-		return errors.Annotate(err, "insert rows").Err()
+		return errors.Fmt("insert rows: %w", err)
 	}
 	return nil
 }
@@ -90,14 +90,14 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time.Time) (*bqpb.TestVerdictRow, error) {
 	project, _, err := perms.SplitRealm(opts.Invocation.Realm)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid realm").Err()
+		return nil, errors.Fmt("invalid realm: %w", err)
 	}
 
 	results := make([]*bqpb.TestVerdictRow_TestResult, 0, len(tv.Results))
 	for _, r := range tv.Results {
 		resultEntry, err := result(r.Result)
 		if err != nil {
-			return nil, errors.Annotate(err, "result entry").Err()
+			return nil, errors.Fmt("result entry: %w", err)
 		}
 		results = append(results, resultEntry)
 	}
@@ -128,22 +128,22 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 
 	inv, err := invocation(opts.Invocation)
 	if err != nil {
-		return nil, errors.Annotate(err, "invocation").Err()
+		return nil, errors.Fmt("invocation: %w", err)
 	}
 
 	testIDStructured, err := bqutil.StructuredTestIdentifierRDB(tv.TestId, tv.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "test_id_structured").Err()
+		return nil, errors.Fmt("test_id_structured: %w", err)
 	}
 
 	variant, err := bqutil.VariantJSON(tv.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "variant").Err()
+		return nil, errors.Fmt("variant: %w", err)
 	}
 
 	tmd, err := bqutil.TestMetadata(tv.TestMetadata)
 	if err != nil {
-		return nil, errors.Annotate(err, "test_metadata").Err()
+		return nil, errors.Fmt("test_metadata: %w", err)
 	}
 
 	return &bqpb.TestVerdictRow{
@@ -171,11 +171,11 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 func invocation(invocation *rdbpb.Invocation) (*bqpb.TestVerdictRow_InvocationRecord, error) {
 	invocationID, err := rdbpbutil.ParseInvocationName(invocation.Name)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid invocation name %q", invocationID).Err()
+		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
 	}
 	propertiesJSON, err := bqutil.MarshalStructPB(invocation.Properties)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal properties").Err()
+		return nil, errors.Fmt("marshal properties: %w", err)
 	}
 
 	return &bqpb.TestVerdictRow_InvocationRecord{
@@ -238,11 +238,11 @@ func buildbucketBuild(build *controlpb.BuildResult) *bqpb.TestVerdictRow_Buildbu
 func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 	propertiesJSON, err := bqutil.MarshalStructPB(result.Properties)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal properties").Err()
+		return nil, errors.Fmt("marshal properties: %w", err)
 	}
 	invID, err := resultdb.InvocationFromTestResultName(result.Name)
 	if err != nil {
-		return nil, errors.Annotate(err, "invocation from test result name").Err()
+		return nil, errors.Fmt("invocation from test result name: %w", err)
 	}
 	tr := &bqpb.TestVerdictRow_TestResult{
 		Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{

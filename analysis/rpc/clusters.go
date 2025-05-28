@@ -77,7 +77,7 @@ func NewClustersServer(analysisClient AnalysisClient) *pb.DecoratedClusters {
 // Cluster clusters a list of test failures. See proto definition for more.
 func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	// We could make an implementation that gracefully degrades if
 	// perms.PermGetRule is not available (i.e. by not returning the
@@ -180,7 +180,7 @@ func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
 func (c *clustersServer) Get(ctx context.Context, req *pb.GetClusterRequest) (*pb.Cluster, error) {
 	project, clusterID, err := parseClusterName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -351,7 +351,7 @@ func suggestedClusterTitle(clusterID clustering.ClusterID, exampleFailure *clust
 func (c *clustersServer) GetReclusteringProgress(ctx context.Context, req *pb.GetReclusteringProgressRequest) (*pb.ReclusteringProgress, error) {
 	project, err := parseReclusteringProgressName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	// Getting reclustering progress is considered part of getting a cluster:
 	// whenever you retrieve a cluster, you should be able to tell if the
@@ -383,11 +383,11 @@ func (c *clustersServer) GetReclusteringProgress(ctx context.Context, req *pb.Ge
 
 func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.QueryClusterSummariesRequest) (*pb.QueryClusterSummariesResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 
 	if err := pbutil.ValidateTimeRange(ctx, req.TimeRange); err != nil {
-		err = errors.Annotate(err, "time_range").Err()
+		err = errors.Fmt("time_range: %w", err)
 		return nil, invalidArgumentError(err)
 	}
 
@@ -450,17 +450,17 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 
 			opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
+				bqErr = invalidArgumentError(errors.Fmt("failure_filter: %w", err))
 				return nil
 			}
 			opts.OrderBy, err = aip132.ParseOrderBy(req.OrderBy)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Annotate(err, "order_by").Err())
+				bqErr = invalidArgumentError(errors.Fmt("order_by: %w", err))
 				return nil
 			}
 			opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Annotate(err, "metrics").Err())
+				bqErr = invalidArgumentError(errors.Fmt("metrics: %w", err))
 				return nil
 			}
 			opts.Realms, err = perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
@@ -475,7 +475,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 					bqErr = invalidArgumentError(err)
 					return nil
 				}
-				bqErr = errors.Annotate(err, "query clusters for failures").Err()
+				bqErr = errors.Fmt("query clusters for failures: %w", err)
 				return nil
 			}
 			logging.Infof(ctx, "QueryClusterSummaries: BigQuery part took %v", time.Since(start))
@@ -556,7 +556,7 @@ func metricByName(project string, cfg *compiledcfg.ProjectConfig, name string) (
 		return metrics.Definition{}, err
 	}
 	if metricProject != project {
-		return metrics.Definition{}, errors.Reason("metric %s cannot be used as it is from a different LUCI Project", name).Err()
+		return metrics.Definition{}, errors.Fmt("metric %s cannot be used as it is from a different LUCI Project", name)
 	}
 	metric, err := metrics.ByID(id)
 	if err != nil {
@@ -583,7 +583,7 @@ func metricsByName(project string, cfg *compiledcfg.ProjectConfig, names []strin
 func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.QueryClusterFailuresRequest) (*pb.QueryClusterFailuresResponse, error) {
 	project, clusterID, err := parseClusterFailuresName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -613,14 +613,14 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 	if req.MetricFilter != "" {
 		metric, err := metricByName(project, cfg, req.MetricFilter)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "filter_metric").Err())
+			return nil, invalidArgumentError(errors.Fmt("filter_metric: %w", err))
 		}
 		opts.MetricFilter = &metric
 	}
 
 	failures, err := c.analysisClient.ReadClusterFailures(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "query cluster failures").Err()
+		return nil, errors.Fmt("query cluster failures: %w", err)
 	}
 	response := &pb.QueryClusterFailuresResponse{}
 	for _, f := range failures {
@@ -693,7 +693,7 @@ func createVariantPB(variant []*analysis.Variant) *pb.Variant {
 func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantsRequest) (*pb.QueryClusterExoneratedTestVariantsResponse, error) {
 	project, clusterID, err := parseClusterExoneratedTestVariantsName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -715,7 +715,7 @@ func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *p
 
 	testVariants, err := c.analysisClient.ReadClusterExoneratedTestVariants(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "query exonerated test variants").Err()
+		return nil, errors.Fmt("query exonerated test variants: %w", err)
 	}
 	response := &pb.QueryClusterExoneratedTestVariantsResponse{}
 	for _, f := range testVariants {
@@ -737,7 +737,7 @@ func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.
 func (c *clustersServer) QueryExoneratedTestVariantBranches(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantBranchesRequest) (*pb.QueryClusterExoneratedTestVariantBranchesResponse, error) {
 	project, clusterID, err := parseClusterExoneratedTestVariantBranchesName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -759,7 +759,7 @@ func (c *clustersServer) QueryExoneratedTestVariantBranches(ctx context.Context,
 
 	testVariantBranches, err := c.analysisClient.ReadClusterExoneratedTestVariantBranches(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "query exonerated test variant branches").Err()
+		return nil, errors.Fmt("query exonerated test variant branches: %w", err)
 	}
 	response := &pb.QueryClusterExoneratedTestVariantBranchesResponse{}
 	for _, tvb := range testVariantBranches {
@@ -797,7 +797,7 @@ func createSourceRef(sourceRef analysis.SourceRef) *pb.SourceRef {
 // QueryHistory clusters a list of test failures. See proto definition for more.
 func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterHistoryRequest) (*pb.QueryClusterHistoryResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetConfig); err != nil {
@@ -816,7 +816,7 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 
 	opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
+		return nil, invalidArgumentError(errors.Fmt("failure_filter: %w", err))
 	}
 
 	opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
@@ -837,7 +837,7 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 
 	days, err := c.analysisClient.ReadClusterHistory(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "cluster history").Err()
+		return nil, errors.Fmt("cluster history: %w", err)
 	}
 
 	response := &pb.QueryClusterHistoryResponse{}

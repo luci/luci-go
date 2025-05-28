@@ -201,11 +201,11 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 func CronHandler(ctx context.Context, gcpProject string) (retErr error) {
 	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq client").Err()
+		return errors.Fmt("create bq client: %w", err)
 	}
 	defer func() {
 		if err := client.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing bq client").Err()
+			retErr = errors.Fmt("closing bq client: %w", err)
 		}
 	}()
 	if err := ensureViews(ctx, client); err != nil {
@@ -242,19 +242,19 @@ func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
 		for tableName, spec := range tableSpecs {
 			table := bqClient.Dataset(datasetID).Table(tableName)
 			if err := bq.EnsureTable(ctx, table, spec, bq.UpdateMetadata(), bq.RefreshViewInterval(time.Hour)); err != nil {
-				return errors.Annotate(err, "ensure view %s", tableName).Err()
+				return errors.Fmt("ensure view %s: %w", tableName, err)
 			}
 		}
 	}
 	// Get datasets for LUCI projects.
 	datasetIDs, err := projectDatasets(ctx, bqClient)
 	if err != nil {
-		return errors.Annotate(err, "get LUCI project datasets").Err()
+		return errors.Fmt("get LUCI project datasets: %w", err)
 	}
 	// Create views that is common to each LUCI project's dataset.
 	for _, projectDatasetID := range datasetIDs {
 		if err := createViewsForLUCIDataset(ctx, bqClient, projectDatasetID); err != nil {
-			return errors.Annotate(err, "ensure view for LUCI project dataset %s", projectDatasetID).Err()
+			return errors.Fmt("ensure view for LUCI project dataset %s: %w", projectDatasetID, err)
 		}
 	}
 	return nil
@@ -264,13 +264,13 @@ func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
 func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, datasetID string) error {
 	luciProject, err := bqutil.ProjectForDataset(datasetID)
 	if err != nil {
-		return errors.Annotate(err, "get LUCI project with dataset name %s", datasetID).Err()
+		return errors.Fmt("get LUCI project with dataset name %s: %w", datasetID, err)
 	}
 	for tableName, specFunc := range luciProjectViewQueries {
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
 		if err := bq.EnsureTable(ctx, table, spec, bq.UpdateMetadata(), bq.RefreshViewInterval(time.Hour)); err != nil {
-			return errors.Annotate(err, "ensure view %s", tableName).Err()
+			return errors.Fmt("ensure view %s: %w", tableName, err)
 		}
 	}
 	return nil

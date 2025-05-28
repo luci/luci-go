@@ -61,7 +61,7 @@ type changepointsServer struct {
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
 func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequestLegacy) (*pb.QueryChangepointGroupSummariesResponseLegacy, error) {
 	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 	}
 	rows, err := c.changePointClient.ReadChangepoints(ctx, request.Project, week)
 	if err != nil {
-		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
+		return nil, errors.Fmt("read BigQuery changepoints: %w", err)
 	}
 	groups := changepoints.GroupChangepoints(ctx, rows)
 	groupSummaries := make([]*pb.ChangepointGroupSummary, 0, len(groups))
@@ -84,7 +84,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 		if len(filtered) > 0 {
 			groupSummary, err := aggregateChangepoints(filtered)
 			if err != nil {
-				return nil, errors.Annotate(err, "construct changepoint group summary proto").Err()
+				return nil, errors.Fmt("construct changepoint group summary proto: %w", err)
 			}
 			groupSummaries = append(groupSummaries, groupSummary)
 		}
@@ -117,7 +117,7 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
 func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequest) (*pb.QueryChangepointGroupSummariesResponse, error) {
 	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *p
 	}
 	rows, nextPageToken, err := c.changePointClient.ReadChangepointGroupSummaries(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "read BigQuery changepoint groups").Err()
+		return nil, errors.Fmt("read BigQuery changepoint groups: %w", err)
 	}
 	results := make([]*pb.ChangepointGroupSummary, 0, len(rows))
 	for _, row := range rows {
@@ -150,7 +150,7 @@ func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *p
 // QueryChangepointsInGroup finds and returns changepoints in a particular group.
 func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *pb.QueryChangepointsInGroupRequest) (*pb.QueryChangepointsInGroupResponse, error) {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetChangepointGroup); err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *
 	}
 	rows, err := c.changePointClient.ReadChangepointsInGroup(ctx, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "read BigQuery changepoints").Err()
+		return nil, errors.Fmt("read BigQuery changepoints: %w", err)
 	}
 	if len(rows) == 0 {
 		return nil, appstatus.Error(codes.NotFound, "changepoint group not found")
@@ -257,7 +257,7 @@ func aggregateChangepoints(group []*changepoints.ChangepointDetailRow) (summary 
 	canonical := group[0]
 	canonicalpb, err := toPBChangepointLegacy(canonical)
 	if err != nil {
-		return nil, errors.Annotate(err, "construct changepoint proto").Err()
+		return nil, errors.Fmt("construct changepoint proto: %w", err)
 	}
 	return &pb.ChangepointGroupSummary{
 		CanonicalChangepoint: canonicalpb,
@@ -274,7 +274,7 @@ func aggregateChangepoints(group []*changepoints.ChangepointDetailRow) (summary 
 func toChangepointGroupSummary(group *changepoints.GroupSummary) (summary *pb.ChangepointGroupSummary, err error) {
 	canonicalpb, err := toPBChangepoint(&group.CanonicalChangepoint)
 	if err != nil {
-		return nil, errors.Annotate(err, "construct changepoint proto").Err()
+		return nil, errors.Fmt("construct changepoint proto: %w", err)
 	}
 	return &pb.ChangepointGroupSummary{
 		CanonicalChangepoint: canonicalpb,
@@ -368,7 +368,7 @@ func validateQueryChangepointGroupSummariesRequestLegacy(req *pb.QueryChangepoin
 
 	if req.Predicate != nil {
 		if err := validateChangepointPredicateLegacy(req.Predicate); err != nil {
-			return errors.Annotate(err, "predicate").Err()
+			return errors.Fmt("predicate: %w", err)
 		}
 	}
 	if req.BeginOfWeek != nil {
@@ -387,11 +387,11 @@ func validateQueryChangepointGroupSummariesRequest(req *pb.QueryChangepointGroup
 
 	if req.Predicate != nil {
 		if err := validateChangepointPredicate(req.Predicate); err != nil {
-			return errors.Annotate(err, "predicate").Err()
+			return errors.Fmt("predicate: %w", err)
 		}
 	}
 	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 	return nil
 }
@@ -401,11 +401,11 @@ func validateQueryChangepointsInGroupRequest(req *pb.QueryChangepointsInGroupReq
 
 	if req.Predicate != nil {
 		if err := validateChangepointPredicate(req.Predicate); err != nil {
-			return errors.Annotate(err, "predicate").Err()
+			return errors.Fmt("predicate: %w", err)
 		}
 	}
 	if err := validateGroupKey(req.GroupKey); err != nil {
-		return errors.Annotate(err, "group_key").Err()
+		return errors.Fmt("group_key: %w", err)
 	}
 	return nil
 }
@@ -415,13 +415,13 @@ func validateGroupKey(key *pb.QueryChangepointsInGroupRequest_ChangepointIdentif
 		return errors.New("unspecified")
 	}
 	if err := rdbpbutil.ValidateTestID(key.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 	if err := ValidateVariantHash(key.VariantHash); err != nil {
-		return errors.Annotate(err, "variant_hash").Err()
+		return errors.Fmt("variant_hash: %w", err)
 	}
 	if err := ValidateRefHash(key.RefHash); err != nil {
-		return errors.Annotate(err, "ref_hash").Err()
+		return errors.Fmt("ref_hash: %w", err)
 	}
 	return nil
 }
@@ -432,7 +432,7 @@ func validateChangepointPredicate(predicate *pb.ChangepointPredicate) error {
 	}
 	if predicate.TestIdContain != "" {
 		if err := validateTestIDPart(predicate.TestIdContain); err != nil {
-			return errors.Annotate(err, "test_id_prefix").Err()
+			return errors.Fmt("test_id_prefix: %w", err)
 		}
 	}
 	return nil
@@ -444,19 +444,19 @@ func validateChangepointPredicateLegacy(predicate *pb.ChangepointPredicateLegacy
 	}
 	if predicate.TestIdPrefix != "" {
 		if err := validateTestIDPart(predicate.TestIdPrefix); err != nil {
-			return errors.Annotate(err, "test_id_prefix").Err()
+			return errors.Fmt("test_id_prefix: %w", err)
 		}
 	}
 	changeRange := predicate.UnexpectedVerdictRateChangeRange
 	if changeRange != nil {
 		if changeRange.LowerBound < 0 || changeRange.LowerBound > 1 {
-			return errors.Reason("unexpected_verdict_rate_change_range_range: lower_bound: should between 0 and 1").Err()
+			return errors.New("unexpected_verdict_rate_change_range_range: lower_bound: should between 0 and 1")
 		}
 		if changeRange.UpperBound < 0 || changeRange.UpperBound > 1 {
-			return errors.Reason("unexpected_verdict_rate_change_range_range: upper_bound:  should between 0 and 1").Err()
+			return errors.New("unexpected_verdict_rate_change_range_range: upper_bound:  should between 0 and 1")
 		}
 		if changeRange.UpperBound <= changeRange.LowerBound {
-			return errors.Reason("unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound").Err()
+			return errors.New("unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound")
 		}
 	}
 	return nil
@@ -464,14 +464,14 @@ func validateChangepointPredicateLegacy(predicate *pb.ChangepointPredicateLegacy
 
 func ValidateVariantHash(variantHash string) error {
 	if !variantHashRe.MatchString(variantHash) {
-		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
+		return errors.Fmt("variant hash %s must match %s", variantHash, variantHashRe)
 	}
 	return nil
 }
 
 func ValidateRefHash(refHash string) error {
 	if !refHashRe.MatchString(refHash) {
-		return errors.Reason("ref hash %s must match %s", refHash, refHashRe).Err()
+		return errors.Fmt("ref hash %s must match %s", refHash, refHashRe)
 	}
 	return nil
 }

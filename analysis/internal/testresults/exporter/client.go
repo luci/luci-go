@@ -38,7 +38,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -51,7 +51,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating managed writer client").Err()
+		return nil, errors.Fmt("creating managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -91,7 +91,7 @@ func (c *Client) ensureSchema(ctx context.Context, dst ExportDestination) error 
 	// created.
 	tableName := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(dst.tableName)
 	if err := schemaApplier.EnsureTable(ctx, tableName, dst.tableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensuring test results (by partition time) table").Err()
+		return errors.Fmt("ensuring test results (by partition time) table: %w", err)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (c *Client) ensureSchema(ctx context.Context, dst ExportDestination) error 
 // Insert inserts the given rows in BigQuery.
 func (c *Client) Insert(ctx context.Context, rows []*bqpb.TestResultRow, dest ExportDestination) error {
 	if err := c.ensureSchema(ctx, dest); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, dest.tableName)
 	writer := bq.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)

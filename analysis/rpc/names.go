@@ -110,7 +110,7 @@ func parseRuleName(name string) (project, ruleID string, err error) {
 // parts. Algorithm aliases are resolved to concrete algorithm names.
 func parseClusterName(name string) (project string, clusterID clustering.ClusterID, err error) {
 	if name == "" {
-		return "", clustering.ClusterID{}, errors.Reason("must be specified").Err()
+		return "", clustering.ClusterID{}, errors.New("must be specified")
 	}
 	match := ClusterNameRe.FindStringSubmatch(name)
 	if match == nil {
@@ -120,7 +120,7 @@ func parseClusterName(name string) (project string, clusterID clustering.Cluster
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "invalid cluster identity").Err()
+		return "", clustering.ClusterID{}, errors.Fmt("invalid cluster identity: %w", err)
 	}
 	return match[1], cID, nil
 }
@@ -137,7 +137,7 @@ func parseClusterFailuresName(name string) (project string, clusterID clustering
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
+		return "", clustering.ClusterID{}, errors.Fmt("cluster id: %w", err)
 	}
 	return match[1], cID, nil
 }
@@ -154,7 +154,7 @@ func parseClusterExoneratedTestVariantsName(name string) (project string, cluste
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
+		return "", clustering.ClusterID{}, errors.Fmt("cluster id: %w", err)
 	}
 	return match[1], cID, nil
 }
@@ -171,7 +171,7 @@ func parseClusterExoneratedTestVariantBranchesName(name string) (project string,
 	id := match[3]
 	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
 	if err := cID.Validate(); err != nil {
-		return "", clustering.ClusterID{}, errors.Annotate(err, "cluster id").Err()
+		return "", clustering.ClusterID{}, errors.Fmt("cluster id: %w", err)
 	}
 	return match[1], cID, nil
 }
@@ -181,16 +181,16 @@ func parseClusterExoneratedTestVariantBranchesName(name string) (project string,
 func parseTestVariantBranchName(name string) (project, testID, variantHash, refHash string, err error) {
 	matches := TestVariantBranchNameRe.FindStringSubmatch(name)
 	if matches == nil || len(matches) != 5 {
-		return "", "", "", "", errors.Reason("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}").Err()
+		return "", "", "", "", errors.New("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
 	}
 	// Unescape test_id.
 	testID, err = url.PathUnescape(matches[2])
 	if err != nil {
-		return "", "", "", "", errors.Annotate(err, "malformed test id").Err()
+		return "", "", "", "", errors.Fmt("malformed test id: %w", err)
 	}
 
 	if err := rdbpbutil.ValidateTestID(testID); err != nil {
-		return "", "", "", "", errors.Annotate(err, "test id %q", testID).Err()
+		return "", "", "", "", errors.Fmt("test id %q: %w", testID, err)
 	}
 
 	return matches[1], testID, matches[3], matches[4], nil

@@ -71,7 +71,7 @@ func (c *Client) QueryTests(ctx context.Context, project, testIDSubstring string
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "querying tests").Err()
+		return nil, "", errors.Fmt("querying tests: %w", err)
 	}
 
 	type resultRow struct {
@@ -84,7 +84,7 @@ func (c *Client) QueryTests(ctx context.Context, project, testIDSubstring string
 			break
 		}
 		if err != nil {
-			return nil, "", errors.Annotate(err, "obtain next test ID row").Err()
+			return nil, "", errors.Fmt("obtain next test ID row: %w", err)
 		}
 		testIDs = append(testIDs, row.TestID.StringVal)
 	}
@@ -104,7 +104,7 @@ func parseQueryTestsPageToken(pageToken string) (afterTestId string, err error) 
 	}
 
 	if len(tokens) != 1 {
-		return "", pagination.InvalidToken(errors.Reason("expected 1 components, got %d", len(tokens)).Err())
+		return "", pagination.InvalidToken(errors.Fmt("expected 1 components, got %d", len(tokens)))
 	}
 
 	return tokens[0], nil
@@ -115,7 +115,7 @@ func generateStatement(tmpl *template.Template, name string, input any) (string,
 	sql := &bytes.Buffer{}
 	err := tmpl.ExecuteTemplate(sql, name, input)
 	if err != nil {
-		return "", errors.Annotate(err, "failed to generate statement: %s", name).Err()
+		return "", errors.Fmt("failed to generate statement: %s: %w", name, err)
 	}
 	return sql.String(), nil
 }

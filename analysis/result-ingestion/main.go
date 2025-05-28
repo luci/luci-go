@@ -27,7 +27,7 @@ import (
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
 		if err := server.RegisterTaskQueueHandlers(srv); err != nil {
-			return errors.Annotate(err, "register task queue handlers").Err()
+			return errors.Fmt("register task queue handlers: %w", err)
 		}
 		return nil
 	})

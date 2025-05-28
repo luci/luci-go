@@ -180,7 +180,7 @@ func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, opti
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read query results").Err()
+		return nil, errors.Fmt("read query results: %w", err)
 	}
 	results := []*CommitWithVerdicts{}
 	for {
@@ -190,7 +190,7 @@ func (c *ReadClient) ReadTestVerdictsPerSourcePosition(ctx context.Context, opti
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next commit with test verdicts row").Err()
+			return nil, errors.Fmt("obtain next commit with test verdicts row: %w", err)
 		}
 		results = append(results, row)
 	}
@@ -305,7 +305,7 @@ func (c *ReadClient) ReadSourceVerdicts(ctx context.Context, options ReadSourceV
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "running query").Err()
+		return nil, errors.Fmt("running query: %w", err)
 	}
 
 	results := []SourceVerdict{}
@@ -316,7 +316,7 @@ func (c *ReadClient) ReadSourceVerdicts(ctx context.Context, options ReadSourceV
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "read next source verdict").Err()
+			return nil, errors.Fmt("read next source verdict: %w", err)
 		}
 		results = append(results, row)
 	}

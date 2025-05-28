@@ -31,7 +31,7 @@ func readProjectConfig(ctx context.Context, project string) (*compiledcfg.Projec
 	cfg, err := compiledcfg.Project(ctx, project, time.Time{})
 	if err != nil {
 		// GRPCifyAndLog will log this, and report an internal error to the caller.
-		return nil, errors.Annotate(err, "obtain project config").Err()
+		return nil, errors.Fmt("obtain project config: %w", err)
 	}
 	return cfg, nil
 }

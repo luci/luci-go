@@ -58,7 +58,7 @@ func gRPCifyAndLogPostlude(ctx context.Context, methodName string, rsp proto.Mes
 func checkAllowed(ctx context.Context, allowedGroup string) error {
 	switch yes, err := auth.IsMember(ctx, allowedGroup); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check ACL").Err()
+		return errors.Fmt("failed to check ACL: %w", err)
 	case !yes:
 		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowedGroup)
 	default:

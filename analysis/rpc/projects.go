@@ -42,7 +42,7 @@ func NewProjectsServer() *pb.DecoratedProjects {
 func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigRequest) (*pb.ProjectConfig, error) {
 	project, err := parseProjectConfigName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {

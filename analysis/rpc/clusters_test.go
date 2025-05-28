@@ -1822,11 +1822,11 @@ func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project 
 
 	_, _, err := analysis.ClusteredFailuresTable.WhereClause(options.FailureFilter, "w_")
 	if err != nil {
-		return nil, analysis.InvalidArgumentTag.Apply(errors.Annotate(err, "failure_filter").Err())
+		return nil, analysis.InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}
 	_, err = analysis.ClusterSummariesTable(options.Metrics).OrderByClause(options.OrderBy)
 	if err != nil {
-		return nil, analysis.InvalidArgumentTag.Apply(errors.Annotate(err, "order_by").Err())
+		return nil, analysis.InvalidArgumentTag.Apply(errors.Fmt("order_by: %w", err))
 	}
 
 	var results []*analysis.ClusterSummary

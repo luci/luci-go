@@ -370,7 +370,7 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 	case nil:
 		// No filter.
 	default:
-		panic(errors.Reason("unexpected variant predicate %q", opts.VariantPredicate).Err())
+		panic(errors.Fmt("unexpected variant predicate %q", opts.VariantPredicate))
 	}
 
 	if opts.PageToken != "" {
@@ -380,7 +380,7 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 		}
 
 		if len(tokens) != len(paginationParams) {
-			return spanner.Statement{}, pagination.InvalidToken(errors.Reason("expected %d components, got %d", len(paginationParams), len(tokens)).Err())
+			return spanner.Statement{}, pagination.InvalidToken(errors.Fmt("expected %d components, got %d", len(paginationParams), len(tokens)))
 		}
 
 		// Keep all pagination params as strings and convert them to other data
@@ -487,7 +487,7 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		return nil
 	})
 	if err != nil {
-		return nil, "", errors.Annotate(err, "query test history").Err()
+		return nil, "", errors.Fmt("query test history: %w", err)
 	}
 
 	if opts.PageSize != 0 && len(verdicts) == opts.PageSize {
@@ -582,7 +582,7 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions) (gro
 		return nil
 	})
 	if err != nil {
-		return nil, "", errors.Annotate(err, "query test history stats").Err()
+		return nil, "", errors.Fmt("query test history stats: %w", err)
 	}
 
 	if opts.PageSize != 0 && len(groups) == opts.PageSize {
@@ -661,7 +661,7 @@ func parseQueryVariantsPageToken(pageToken string) (afterHash string, err error)
 	}
 
 	if len(tokens) != 1 {
-		return "", pagination.InvalidToken(errors.Reason("expected 1 components, got %d", len(tokens)).Err())
+		return "", pagination.InvalidToken(errors.Fmt("expected 1 components, got %d", len(tokens)))
 	}
 
 	return tokens[0], nil
@@ -708,7 +708,7 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 	case nil:
 		// No filter.
 	default:
-		panic(errors.Reason("unexpected variant predicate %q", opts.VariantPredicate).Err())
+		panic(errors.Fmt("unexpected variant predicate %q", opts.VariantPredicate))
 	}
 
 	stmt, err := spanutil.GenerateStatement(variantsQueryTmpl, variantsQueryTmpl.Name(), input)

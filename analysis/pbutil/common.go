@@ -63,7 +63,7 @@ func MustTimestampProto(t time.Time) *timestamppb.Timestamp {
 // AsTime converts a *timestamppb.Timestamp to a time.Time.
 func AsTime(ts *timestamppb.Timestamp) (time.Time, error) {
 	if ts == nil {
-		return time.Time{}, errors.Reason("unspecified").Err()
+		return time.Time{}, errors.New("unspecified")
 	}
 	if err := ts.CheckValid(); err != nil {
 		return time.Time{}, err
@@ -72,7 +72,7 @@ func AsTime(ts *timestamppb.Timestamp) (time.Time, error) {
 }
 
 func doesNotMatch(r *regexp.Regexp) error {
-	return errors.Reason("does not match %s", r).Err()
+	return errors.Fmt("does not match %s", r)
 }
 
 // StringPair creates a pb.StringPair with the given strings as key/value field values.
@@ -148,7 +148,7 @@ func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 	for _, p := range pairs {
 		pair, err := StringPairFromString(p)
 		if err != nil {
-			return nil, errors.Annotate(err, "pair %q", p).Err()
+			return nil, errors.Fmt("pair %q: %w", p, err)
 		}
 		def[pair.Key] = pair.Value
 	}
@@ -269,10 +269,10 @@ func PresubmitRunStatusFromLUCICV(status cvv0.Run_Status) (pb.PresubmitRunStatus
 
 func ValidateProject(project string) error {
 	if project == "" {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if !projectRe.MatchString(project) {
-		return errors.Reason("must match %s", projectRe).Err()
+		return errors.Fmt("must match %s", projectRe)
 	}
 	return nil
 }
@@ -290,7 +290,7 @@ func ValidateTestID(testID string) error {
 // ValidateFailureReason validates a failure reason.
 func ValidateFailureReason(fr *pb.FailureReason) error {
 	if fr == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	rdbfr := &rdbpb.FailureReason{
 		PrimaryErrorMessage: fr.PrimaryErrorMessage,
@@ -300,16 +300,16 @@ func ValidateFailureReason(fr *pb.FailureReason) error {
 
 func ValidateSourceRef(ref *pb.SourceRef) error {
 	if ref == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if ref.GetGitiles().GetHost() == "" {
-		return errors.Reason("gitiles: host: unspecified").Err()
+		return errors.New("gitiles: host: unspecified")
 	}
 	if ref.GetGitiles().GetProject() == "" {
-		return errors.Reason("gitiles: project: unspecified").Err()
+		return errors.New("gitiles: project: unspecified")
 	}
 	if ref.GetGitiles().GetRef() == "" {
-		return errors.Reason("gitiles: ref: unspecified").Err()
+		return errors.New("gitiles: ref: unspecified")
 	}
 	return nil
 }
