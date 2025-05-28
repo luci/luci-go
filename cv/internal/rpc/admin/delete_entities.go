@@ -46,7 +46,7 @@ var deleteEntitiesFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsm
 		case errors.As(err, merrs):
 			for _, err := range merrs {
 				if !errors.Is(err, datastore.ErrNoSuchEntity) {
-					return errors.Annotate(merrs, "failed to delete keys").Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to delete keys: %w", merrs))
 				}
 			}
 			return nil

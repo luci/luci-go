@@ -170,7 +170,7 @@ func incompleteRuns(ctx context.Context, ids map[common.RunID]struct{}) (common.
 	for i, r := range runs {
 		switch {
 		case errs[i] != nil:
-			return nil, errors.Annotate(errs[i], "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load Run %s: %w", r.ID, errs[i]))
 		case !run.IsEnded(r.Status):
 			incomplete = append(incomplete, r.ID)
 		}

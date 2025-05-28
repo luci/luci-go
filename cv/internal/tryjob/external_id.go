@@ -219,7 +219,7 @@ func Resolve(ctx context.Context, eids ...ExternalID) (common.TryjobIDs, error) 
 		}
 		for _, err := range merr {
 			if err != nil && err != datastore.ErrNoSuchEntity {
-				return nil, errors.Annotate(common.MostSevereError(merr), "resolving ExternalIDs").Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("resolving ExternalIDs: %w", common.MostSevereError(merr)))
 			}
 		}
 	}

@@ -61,7 +61,7 @@ func TestUpdaterBackend(t *testing.T) {
 		})
 		t.Run("TQErrorSpec", func(t *ftt.Test) {
 			tqSpec := gu.TQErrorSpec()
-			err := errors.Annotate(gerrit.ErrStaleData, "retry, don't ignore").Err()
+			err := errors.Fmt("retry, don't ignore: %w", gerrit.ErrStaleData)
 			assert.Loosely(t, tq.Ignore.In(tqSpec.Error(ctx, err)), should.BeFalse)
 		})
 		t.Run("LookupApplicableConfig", func(t *ftt.Test) {

@@ -186,7 +186,7 @@ func (m Meta) GetConfigGroups(ctx context.Context) ([]*ConfigGroup, error) {
 		}
 		err = merr.First()
 	}
-	return nil, errors.Annotate(err, "failed to get ConfigGroups for %s @ %s", m.Project, m.Hash()).Tag(transient.Tag).Err()
+	return nil, transient.Tag.Apply(errors.WrapIf(err, "failed to get ConfigGroups for %s @ %s", m.Project, m.Hash()))
 }
 
 // GetConfigGroup loads ConfigGroup from datastore if exists.

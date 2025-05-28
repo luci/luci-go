@@ -150,7 +150,7 @@ func LoadExecutionLogs(ctx context.Context, runID common.RunID) ([]*ExecutionLog
 		// It's possible to get EntityNotExists, but it may only happen if data
 		// retention enforcement is deleting old entities at the same time.
 		// Thus, treat all errors as transient.
-		return nil, errors.Annotate(common.MostSevereError(err), "failed to fetch TryjobExecutionLog entities").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch TryjobExecutionLog entities: %w", common.MostSevereError(err)))
 	}
 
 	// Each TryjobExecutionLog entity contains at least 1 LogEntry.

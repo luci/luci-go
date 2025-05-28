@@ -122,7 +122,7 @@ func (p *Poller) notifyPMifKnown(ctx context.Context, luciProject, host string, 
 	cls := make([]*changelist.CL, 0, maxBatchSize)
 	flush := func() error {
 		if err := datastore.Get(ctx, cls); err != nil {
-			return errors.Annotate(common.MostSevereError(err), "failed to load CLs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.WrapIf(common.MostSevereError(err), "failed to load CLs"))
 		}
 		return p.pm.NotifyCLsUpdated(ctx, luciProject, changelist.ToUpdatedEvents(cls...))
 	}

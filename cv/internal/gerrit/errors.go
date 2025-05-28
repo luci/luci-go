@@ -32,8 +32,11 @@ var ErrOutOfQuota = errors.New("out of Gerrit Quota", transient.Tag)
 
 // UnhandledError is used to process and annotate Gerrit errors.
 func UnhandledError(ctx context.Context, err error, format string, args ...any) error {
+	if err == nil {
+		return nil
+	}
 	msg := fmt.Sprintf(format, args...)
-	ann := errors.Annotate(err, msg)
+	err = errors.Fmt("%s: %w", msg, err)
 	switch code := grpcutil.Code(err); code {
 	case
 		codes.OK,
@@ -42,21 +45,21 @@ func UnhandledError(ctx context.Context, err error, format string, args ...any) 
 		codes.FailedPrecondition:
 		// These must be handled before.
 		logging.Errorf(ctx, "FIXME unhandled Gerrit error: %s while %s", err, msg)
-		return ann.Err()
+		return err
 
 	case
 		codes.InvalidArgument,
 		codes.Unauthenticated:
 		// This must not happen in practice unless there is a bug in CV or Gerrit.
 		logging.Errorf(ctx, "FIXME bug in CV: %s while %s", err, msg)
-		return ann.Err()
+		return err
 
 	case codes.Unimplemented:
 		// This shouldn't happen in production, but may happen in development
 		// if gerrit.NewRESTClient doesn't actually implement fully the option
 		// or entire method that CV is coded to work with.
 		logging.Errorf(ctx, "FIXME likely bug in CV: %s while %s", err, msg)
-		return ann.Err()
+		return err
 
 	case codes.ResourceExhausted:
 		return errors.Annotate(ErrOutOfQuota, msg).Err()
@@ -66,6 +69,6 @@ func UnhandledError(ctx context.Context, err error, format string, args ...any) 
 	default:
 		// Assume transient. If this turns out non-transient, then its code must be
 		// handled explicitly above.
-		return ann.Tag(transient.Tag).Err()
+		return transient.Tag.Apply(err)
 	}
 }

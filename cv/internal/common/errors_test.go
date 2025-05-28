@@ -66,7 +66,7 @@ func TestTQifyError(t *testing.T) {
 		errOops := errors.New("oops")
 		errBoo := errors.New("boo")
 		errTransBoo := transient.Tag.Apply(errBoo)
-		errWrapOops := errors.Annotate(errOops, "wrapped").Err()
+		errWrapOops := errors.Fmt("wrapped: %w", errOops)
 		errMulti := errors.NewMultiError(errWrapOops, errBoo)
 		errRare := errors.New("an oppressed invertebrate lacking emoji unlike 🐞 or 🐛")
 		errTransRare := transient.Tag.Apply(errRare)
@@ -218,6 +218,6 @@ func TestIsDatastoreContention(t *testing.T) {
 		// This is copied from what was actually observed in prod as of 2021-07-22.
 		err := status.Errorf(codes.Aborted, "Aborted due to cross-transaction contention. This occurs when multiple transactions attempt to access the same data, requiring Firestore to abort at least one in order to enforce serializability")
 		assert.Loosely(t, IsDatastoreContention(err), should.BeTrue)
-		assert.Loosely(t, IsDatastoreContention(errors.Annotate(err, "wrapped").Err()), should.BeTrue)
+		assert.Loosely(t, IsDatastoreContention(errors.Fmt("wrapped: %w", err)), should.BeTrue)
 	})
 }

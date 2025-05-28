@@ -574,7 +574,7 @@ func (d *dsGetBatcher) get(ctx context.Context) error {
 	}
 	switch errs, ok := err.(errors.MultiError); {
 	case !ok:
-		return errors.Annotate(err, "failed to load entities from Datastore").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load entities from Datastore: %w", err))
 	case len(errs) != len(d.entities):
 		panic(fmt.Errorf("%d errors for %d entities", len(errs), len(d.entities)))
 	default:

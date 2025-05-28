@@ -96,7 +96,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			hashInfo.ConfigGroupNames = cgNames
 			hashInfo.GitRevision = meta.Revision
 			hashInfo.SchemaVersion = prjcfg.SchemaVersion
-			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.WrapIf(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash))
 		}
 	}, nil)
 	if err != nil {

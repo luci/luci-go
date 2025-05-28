@@ -321,7 +321,7 @@ func resetLeased(ctx context.Context, client gerrit.Client, in *ResetInput, cl *
 	msgBuilder.WriteString(failMessage)
 	if err := c.postResetMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
 		// Return the original error, but add details from just posting a message.
-		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
+		return errors.Fmt("even just posting message also failed: %w: %w", err, removeErr)
 	}
 	return nil
 }

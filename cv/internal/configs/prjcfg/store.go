@@ -256,7 +256,7 @@ func GetAllGerritHosts(ctx context.Context) (map[string]stringset.Set, error) {
 			ret[p.Project] = hosts
 			work <- func() error {
 				err := addGerritHosts(ctx, p, hosts)
-				return errors.Annotate(err, "%s: addGerritHosts", p.Project).Err()
+				return errors.WrapIf(err, "%s: addGerritHosts", p.Project)
 			}
 		}
 	})

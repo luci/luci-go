@@ -71,7 +71,7 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 		return errors.Annotate(err, "failed to load Run %q", r.ID).Tag(transient.Tag).Err()
 	case r.OngoingLongOps.GetOps()[task.GetOperationId()] == nil:
 		// Highly unexpected. Fail hard.
-		return errors.Annotate(err, "Run %q has no outstanding long operation %q", r.ID, task.GetOperationId()).Err()
+		return errors.Fmt("Run %q has no outstanding long operation %q", r.ID, task.GetOperationId())
 	}
 	op := r.OngoingLongOps.GetOps()[task.GetOperationId()]
 

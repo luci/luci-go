@@ -265,7 +265,7 @@ func Lookup(ctx context.Context, eids []ExternalID) ([]common.CLID, error) {
 			case err == nil:
 				out[i] = entities[i].InternalID
 			case err != datastore.ErrNoSuchEntity:
-				return nil, errors.Annotate(common.MostSevereError(merrs), "failed to load clMap").Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.WrapIf(common.MostSevereError(merrs), "failed to load clMap"))
 			}
 		}
 		return out, nil

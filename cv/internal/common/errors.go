@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
+	"go.chromium.org/luci/common/errors/errtag/stacktag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -182,12 +183,10 @@ func LogError(ctx context.Context, err error, expectedErrors ...error) {
 		return
 	}
 
-	// Annotate error to get full stack trace of the caller of the LogError.
-	err = errors.Annotate(err, "common.LogError").Err()
-
 	errors.Log(
 		ctx,
-		err,
+		// capture the stack if it's missing
+		stacktag.Capture(err, 1),
 		// These packages are not useful in production:
 		"go.chromium.org/luci/server",
 		"go.chromium.org/luci/server/tq",

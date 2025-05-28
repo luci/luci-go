@@ -48,8 +48,8 @@ func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 		IsCancelRequested: op.IsCancelRequested,
 	}
 	summary, err := exe.Do(ctx)
-	return op.report(ctx, err, summary), errors.Annotate(
-		err, "post-action-%s", exe.Payload.GetName()).Err()
+	return op.report(ctx, err, summary), errors.WrapIf(
+		err, "post-action-%s", exe.Payload.GetName())
 }
 
 func (op *ExecutePostActionOp) report(ctx context.Context, err error, summary string) *eventpb.LongOpCompleted {

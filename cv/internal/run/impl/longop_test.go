@@ -166,7 +166,7 @@ func TestLongOps(t *testing.T) {
 						clock.Sleep(dctx, time.Second)
 					}
 					assert.ErrIsLike(t, dctx.Err(), context.DeadlineExceeded)
-					return nil, errors.Annotate(dctx.Err(), "somehow treating as permanent failure").Err()
+					return nil, errors.Fmt("somehow treating as permanent failure: %w", dctx.Err())
 				}
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunLongOpTaskClass))
 				assert.Loosely(t, called, should.BeTrue)

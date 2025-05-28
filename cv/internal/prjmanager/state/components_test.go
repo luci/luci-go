@@ -366,7 +366,7 @@ func TestComponentsActions(t *testing.T) {
 			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch c.GetClids()[0] {
 				case 1:
-					return itriager.Result{}, errors.Annotate(itriager.ErrOutdatedPMState, "smth changed").Err()
+					return itriager.Result{}, errors.Fmt("smth changed: %w", itriager.ErrOutdatedPMState)
 				case 2, 3:
 					return itriager.Result{NewValue: markTriaged(c)}, nil
 				}

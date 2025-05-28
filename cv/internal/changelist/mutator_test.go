@@ -573,7 +573,7 @@ func TestMutatorConcurrent(t *testing.T) {
 						return
 					}
 				}
-				panic(errors.Annotate(err, "all %d tries exhausted", R).Err())
+				panic(errors.Fmt("all %d tries exhausted: %w", R, err))
 			}()
 		}
 		wg.Wait()

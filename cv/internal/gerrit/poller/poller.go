@@ -246,7 +246,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 			work <- func() error {
 				ctx := logging.SetField(ctx, "gHost", qs.GetHost())
 				err := p.doOneQuery(ctx, luciProject, qs)
-				errs[i] = errors.Annotate(err, "query %s", qs).Err()
+				errs[i] = errors.WrapIf(err, "query %s", qs)
 				return nil
 			}
 		}
@@ -262,7 +262,7 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 	err = common.MostSevereError(errs)
 	switch n, first := errs.Summary(); {
 	case n == len(errs):
-		return errors.Annotate(first, "no progress on any poller, first error").Err()
+		return errors.WrapIf(first, "no progress on any poller, first error")
 	case err != nil:
 		// Some progress. We'll retry during next poll.
 		// TODO(tandrii): revisit this logic once CV subscribes to PubSub and makes

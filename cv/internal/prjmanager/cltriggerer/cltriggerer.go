@@ -69,7 +69,7 @@ func New(n *prjmanager.Notifier, gf gerrit.Factory, clu clUpdater, clm *changeli
 			task := payload.(*prjpb.TriggeringCLDepsTask)
 			ctx = logging.SetField(ctx, "project", task.GetLuciProject())
 			return common.TQifyError(ctx,
-				errors.Annotate(v.process(ctx, task), "triggerer.process").Err())
+				errors.WrapIf(v.process(ctx, task), "triggerer.process"))
 		},
 	)
 	return v

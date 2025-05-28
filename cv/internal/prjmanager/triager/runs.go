@@ -379,7 +379,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		pcl := combo.all[i].pcl
 		exp, act := pcl.GetEversion(), cl.EVersion
 		if exp != act {
-			return nil, errors.Annotate(itriager.ErrOutdatedPMState, "CL %d EVersion changed %d => %d", cl.ID, exp, act).Err()
+			return nil, errors.Fmt("CL %d EVersion changed %d => %d: %w", cl.ID, exp, act, itriager.ErrOutdatedPMState)
 		}
 		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 

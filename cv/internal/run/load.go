@@ -169,7 +169,7 @@ func (b LoadRunsBuilder) Do(ctx context.Context) ([]*Run, errors.MultiError) {
 		errs, ok := totalErr.(errors.MultiError)
 		if !ok {
 			// Assign the same error to each Run we tried to load.
-			totalErr = errors.Annotate(totalErr, "failed to load Runs").Tag(transient.Tag).Err()
+			totalErr = transient.Tag.Apply(errors.Fmt("failed to load Runs: %w", totalErr))
 			errs = make(errors.MultiError, len(runs))
 			for i := range errs {
 				errs[i] = totalErr
@@ -254,7 +254,7 @@ func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]
 			}
 		}
 		count, err := merr.Summary()
-		return nil, errors.Annotate(err, "failed to load %d out of %d RunCLs", count, len(runCLs)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.WrapIf(err, "failed to load %d out of %d RunCLs", count, len(runCLs)))
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to load %d RunCLs", len(runCLs)).Tag(transient.Tag).Err()
 	}
@@ -287,7 +287,7 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 		// It's possible to get EntityNotExists, it may only happen if data
 		// retention enforcement is deleting old entities at the same time.
 		// Thus, treat all errors as transient.
-		return nil, errors.Annotate(common.MostSevereError(err), "failed to fetch RunLog entities").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch RunLog entities: %w", common.MostSevereError(err)))
 	}
 
 	// Each RunLog entity contains at least 1 LogEntry.

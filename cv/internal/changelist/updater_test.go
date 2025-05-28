@@ -678,7 +678,7 @@ func TestUpdaterHandlesErrors(t *testing.T) {
 				tqErrorSpec: common.TQIfy{
 					KnownIgnore: []error{ignoreMe},
 				},
-				fetchError: errors.Annotate(ignoreMe, "something went wrong").Err(),
+				fetchError: errors.Fmt("something went wrong: %w", ignoreMe),
 			}
 			u.RegisterBackend(b)
 			err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "lp", ExternalId: "fake/1"})

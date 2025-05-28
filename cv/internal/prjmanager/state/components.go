@@ -137,7 +137,7 @@ func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, b
 		return actions, errors.Contains(merrs, errCaughtPanic), nil
 	default:
 		err := common.MostSevereError(merrs)
-		return nil, false, errors.Annotate(err, "failed to triage %d components, keeping the most severe error", len(merrs)).Err()
+		return nil, false, errors.WrapIf(err, "failed to triage %d components, keeping the most severe error", len(merrs))
 	}
 }
 
@@ -287,7 +287,7 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 		logging.Warningf(ctx, "actOnComponents: created %d Runs, failed to create %d Runs", runsCreated, len(merrs))
 		if componentsUpdated+len(purgeTasks) == 0 {
 			err := common.MostSevereError(merrs)
-			return nil, errors.Annotate(err, "failed to actOnComponents, most severe error").Err()
+			return nil, errors.WrapIf(err, "failed to actOnComponents, most severe error")
 		}
 		// All actions are independent, so proceed despite the errors since partial
 		// progress is better than none.

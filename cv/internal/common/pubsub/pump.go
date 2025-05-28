@@ -251,7 +251,7 @@ func (pbp *PullingBatchProcessor) onBatch(ctx context.Context, msgs []*pubsub.Me
 	switch {
 	case transient.Tag.In(err):
 		// Ask for re-delivery later.
-		common.LogError(ctx, errors.Annotate(err, "NACKing for redelivery").Err())
+		common.LogError(ctx, errors.Fmt("NACKing for redelivery: %w", err))
 		nackAll(msgs)
 		return trans, err
 	case err != nil:

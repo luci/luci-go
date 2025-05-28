@@ -149,7 +149,7 @@ func (op *triggerDepOp) execute(ctx context.Context, gFactory gerrit.Factory, lu
 	if err := op.vote(ctx, gFactory, luciPrj, depCL); err != nil {
 		return errors.Annotate(err, "op.vote").Err()
 	}
-	return errors.Annotate(op.markOutdated(ctx, luciPrj, clm, clu, depCL), "triggerDepOp.markOutdated").Err()
+	return errors.WrapIf(op.markOutdated(ctx, luciPrj, clm, clu, depCL), "triggerDepOp.markOutdated")
 }
 
 func processGerritErr(ctx context.Context, err error) error {

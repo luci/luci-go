@@ -53,7 +53,7 @@ const (
 	noAccessGraceRetryDelay = noAccessGraceDuration / 3
 )
 
-var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access or deleted or stale").Err()
+var errStaleOrNoAccess = errors.Fmt("either no access or deleted or stale: %w", gerrit.ErrStaleData)
 
 // fetcher efficiently computes new snapshot by fetching data from Gerrit.
 //

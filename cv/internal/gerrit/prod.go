@@ -97,7 +97,7 @@ func (f *prodFactory) token(ctx context.Context, gerritHost, luciProject string)
 	case err != nil:
 		return nil, err
 	case token == nil:
-		return nil, errors.Annotate(errEmptyProjectToken, "LUCI project: %q", luciProject).Err()
+		return nil, errors.Fmt("LUCI project: %q: %w", luciProject, errEmptyProjectToken)
 	default:
 		return &oauth2.Token{
 			AccessToken: token.Token,
