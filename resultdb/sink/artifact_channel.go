@@ -191,8 +191,8 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.batchChannel, err = dispatcher.NewChannel[*uploadTask](ctx, bcOpts, func(b *buffer.Batch[*uploadTask]) error {
-		return errors.Annotate(au.BatchUpload(ctx, b), "BatchUpload").Err()
+	c.batchChannel, err = dispatcher.NewChannel(ctx, bcOpts, func(b *buffer.Batch[*uploadTask]) error {
+		return errors.WrapIf(au.BatchUpload(ctx, b), "BatchUpload")
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create batch channel for artifacts: %s", err))
@@ -207,10 +207,10 @@ func newArtifactChannel(ctx context.Context, cfg *ServerConfig) *artifactChannel
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 4000},
 		},
 	}
-	c.streamChannel, err = dispatcher.NewChannel[*uploadTask](ctx, stOpts, func(b *buffer.Batch[*uploadTask]) error {
-		return errors.Annotate(
+	c.streamChannel, err = dispatcher.NewChannel(ctx, stOpts, func(b *buffer.Batch[*uploadTask]) error {
+		return errors.WrapIf(
 			au.StreamUpload(ctx, b.Data[0].Item, cfg.UpdateToken),
-			"StreamUpload").Err()
+			"StreamUpload")
 	})
 	if err != nil {
 		panic(fmt.Sprintf("failed to create stream channel for artifacts: %s", err))

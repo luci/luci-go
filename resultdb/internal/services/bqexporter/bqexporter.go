@@ -338,7 +338,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 			}
 			return errors.Annotate(err, "ensure test results bq table").Err()
 		}
-		return errors.Annotate(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results").Err()
+		return errors.WrapIf(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results")
 	case *pb.BigQueryExport_TextArtifacts_:
 		tableMetadata.Schema = textArtifactRowSchema.Relax()
 		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
@@ -347,7 +347,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 			}
 			return errors.Annotate(err, "ensure text artifacts bq table").Err()
 		}
-		return errors.Annotate(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts").Err()
+		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts")
 	case nil:
 		return fmt.Errorf("bqExport.ResultType is unspecified")
 	default:

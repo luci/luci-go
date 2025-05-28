@@ -95,7 +95,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	if m := invocationArtifactNameRe.FindStringSubmatch(name); m != nil {
 		invocationID = m[1]
 		artifactID, err = unescape(m[2], artifactIDRe)
-		err = errors.Annotate(err, "artifact ID").Err()
+		err = errors.WrapIf(err, "artifact ID")
 		return
 	}
 
@@ -107,7 +107,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 		}
 		resultID = m[3]
 		artifactID, err = unescape(m[4], artifactIDRe)
-		err = errors.Annotate(err, "artifact ID").Err()
+		err = errors.WrapIf(err, "artifact ID")
 		return
 	}
 

@@ -72,13 +72,13 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 			// Legacy clients may use a nil variant to mean the empty variant.
 			return nil
 		}
-		return errors.Annotate(ValidateVariant(pr.Equals), "equals").Err()
+		return errors.WrapIf(ValidateVariant(pr.Equals), "equals")
 	case *pb.VariantPredicate_Contains:
 		if pr.Contains == nil {
 			// Legacy clients may use a nil variant to mean the empty variant.
 			return nil
 		}
-		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
+		return errors.WrapIf(ValidateVariant(pr.Contains), "contains")
 	case nil:
 		return validate.Unspecified()
 	default:

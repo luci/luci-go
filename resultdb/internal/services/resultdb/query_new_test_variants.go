@@ -73,7 +73,7 @@ func validateQueryNewTestVariantsRequest(ctx context.Context, req *pb.QueryNewTe
 	case err != nil:
 		return err
 	case !allowed:
-		return errors.Annotate(appstatus.Error(codes.PermissionDenied, noPermissionsError), "error1").Err()
+		return errors.Fmt("error1: %w", appstatus.Error(codes.PermissionDenied, noPermissionsError))
 	}
 
 	baselineRealm := realms.Join(project, realms.ProjectRealm)
@@ -81,7 +81,7 @@ func validateQueryNewTestVariantsRequest(ctx context.Context, req *pb.QueryNewTe
 	case err != nil:
 		return err
 	case !allowed:
-		return errors.Annotate(appstatus.Error(codes.PermissionDenied, noPermissionsError), "error2").Err()
+		return errors.Fmt("error2: %w", appstatus.Error(codes.PermissionDenied, noPermissionsError))
 	}
 
 	return nil

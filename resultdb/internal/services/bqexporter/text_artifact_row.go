@@ -164,7 +164,7 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 		}
 		return nil
 	})
-	return errors.Annotate(err, "read artifact content").Err()
+	return errors.WrapIf(err, "read artifact content")
 }
 
 type artifact struct {
@@ -281,12 +281,12 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 				logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
 			}
 		})
-		return errors.Annotate(err, "batch export rows").Err()
+		return errors.WrapIf(err, "batch export rows")
 	})
 
 	eg.Go(func() error {
 		defer close(batchC)
-		return errors.Annotate(b.artifactRowInputToBatch(ctx, rowC, batchC), "artifact row input to batch").Err()
+		return errors.WrapIf(b.artifactRowInputToBatch(ctx, rowC, batchC), "artifact row input to batch")
 	})
 
 	eg.Go(func() error {
@@ -303,12 +303,12 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 				return nil
 			})
 		}
-		return errors.Annotate(subEg.Wait(), "download artifact contents").Err()
+		return errors.WrapIf(subEg.Wait(), "download artifact contents")
 	})
 
 	eg.Go(func() error {
 		defer close(artifactC)
-		return errors.Annotate(b.queryTextArtifacts(ctx, invID, bqExport, artifactC), "query text artifacts").Err()
+		return errors.WrapIf(b.queryTextArtifacts(ctx, invID, bqExport, artifactC), "query text artifacts")
 	})
 
 	return eg.Wait()

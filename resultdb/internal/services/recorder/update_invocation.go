@@ -116,7 +116,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 
 		case "realm":
 			if req.Invocation.Realm == "" {
-				return errors.Annotate(errors.Reason("unspecified").Err(), "invocation: realm").Err()
+				return errors.New("invocation: realm: unspecified")
 			}
 			if err := realms.ValidateRealmName(req.Invocation.Realm, realms.GlobalScope); err != nil {
 				return errors.Annotate(err, "invocation: realm").Err()

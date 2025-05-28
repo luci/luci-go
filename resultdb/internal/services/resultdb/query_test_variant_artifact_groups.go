@@ -167,14 +167,14 @@ func validateRegexSearchString(regexPattern string) error {
 func validateTestIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 	if m == nil {
 		if !allowNonExactMatch {
-			return errors.Annotate(insufficientPermissionWithQueryFilter, "unspecified").Err()
+			return errors.Fmt("unspecified: %w", insufficientPermissionWithQueryFilter)
 		}
 		return nil
 	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
 		if !allowNonExactMatch {
-			return errors.Annotate(insufficientPermissionWithQueryFilter, "search by prefix is not allowed").Err()
+			return errors.Fmt("search by prefix is not allowed: %w", insufficientPermissionWithQueryFilter)
 		}
 		// ValidateTestID can also be used to validate test id prefix.
 		return pbutil.ValidateTestID(m.GetHasPrefix())
@@ -188,14 +188,14 @@ func validateTestIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 func validateArtifactIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 	if m == nil {
 		if !allowNonExactMatch {
-			return errors.Annotate(insufficientPermissionWithQueryFilter, "unspecified").Err()
+			return errors.Fmt("unspecified: %w", insufficientPermissionWithQueryFilter)
 		}
 		return nil
 	}
 	switch x := m.Matcher.(type) {
 	case *pb.IDMatcher_HasPrefix:
 		if !allowNonExactMatch {
-			return errors.Annotate(insufficientPermissionWithQueryFilter, "search by prefix is not allowed").Err()
+			return errors.Fmt("search by prefix is not allowed: %w", insufficientPermissionWithQueryFilter)
 		}
 		return pbutil.ValidateArtifactIDPrefix(m.GetHasPrefix())
 	case *pb.IDMatcher_ExactEqual:

@@ -26,20 +26,20 @@ import (
 func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	switch {
 	case bqExport.Project == "":
-		return errors.Annotate(validate.Unspecified(), "project").Err()
+		return errors.Fmt("project: %w", validate.Unspecified())
 	case bqExport.Dataset == "":
-		return errors.Annotate(validate.Unspecified(), "dataset").Err()
+		return errors.Fmt("dataset: %w", validate.Unspecified())
 	case bqExport.Table == "":
-		return errors.Annotate(validate.Unspecified(), "table").Err()
+		return errors.Fmt("table: %w", validate.Unspecified())
 	}
 
 	switch resultType := bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
-		return errors.Annotate(ValidateTestResultPredicate(resultType.TestResults.GetPredicate()), "test_results: predicate").Err()
+		return errors.WrapIf(ValidateTestResultPredicate(resultType.TestResults.GetPredicate()), "test_results: predicate")
 	case *pb.BigQueryExport_TextArtifacts_:
-		return errors.Annotate(ValidateArtifactPredicate(resultType.TextArtifacts.GetPredicate()), "artifacts: predicate").Err()
+		return errors.WrapIf(ValidateArtifactPredicate(resultType.TextArtifacts.GetPredicate()), "artifacts: predicate")
 	case nil:
-		return errors.Annotate(validate.Unspecified(), "result_type").Err()
+		return errors.Fmt("result_type: %w", validate.Unspecified())
 	default:
 		panic("impossible")
 	}
