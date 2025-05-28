@@ -121,7 +121,7 @@ func parseTestID(testID string) (BaseTestIdentifier, error) {
 		// To ensure our flat test IDs roundtrip back to the same value,
 		// we expect legacy test IDs to be serialized directly as the case
 		// name, not as :legacy...
-		return BaseTestIdentifier{}, errors.Reason("module %q may not be used within a structured test ID encoding", LegacySchemeID).Err()
+		return BaseTestIdentifier{}, errors.Fmt("module %q may not be used within a structured test ID encoding", LegacySchemeID)
 	}
 	moduleScheme, nextIndex, err := readEscapedComponent(testID, nextIndex+1, componentParseOptions{Terminator: ':'})
 	if err != nil {
@@ -210,12 +210,12 @@ func readEscapedComponent(testID string, startIndex int, opts componentParseOpti
 	for ; i < len(testID); i += width {
 		r, width = utf8.DecodeRuneInString(testID[i:])
 		if r == utf8.RuneError {
-			return "", -1, errors.Reason(`invalid UTF-8 rune at byte %v`, i).Err()
+			return "", -1, errors.Fmt(`invalid UTF-8 rune at byte %v`, i)
 		}
 		if inEscapeSequence {
 			if r != ':' && r != '\\' && r != '#' && r != '!' {
 				// Invalid escape sequence.
-				return "", -1, errors.Reason(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters :!#\ may be escaped`, r, i).Err()
+				return "", -1, errors.Fmt(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters :!#\ may be escaped`, r, i)
 			}
 			if opts.IsCaseName && (r == '\\' || r == ':') {
 				// Keep the sequences \\ and \: escaped in the parsed case name.
@@ -254,9 +254,9 @@ func readEscapedComponent(testID string, startIndex int, opts componentParseOpti
 				// Other special character that is not escaped and not our terminator.
 				// Return an error message.
 				if opts.IsCaseName {
-					return "", -1, errors.Reason("got delimiter character %+q at byte %v; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)", r, i).Err()
+					return "", -1, errors.Fmt("got delimiter character %+q at byte %v; expected normal character, escape sequence or end of string (test ID pattern is :module!scheme:coarse:fine#case)", r, i)
 				}
-				return "", -1, errors.Reason("got delimiter character %+q at byte %v; expected normal character, escape sequence or delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", r, i, opts.Terminator).Err()
+				return "", -1, errors.Fmt("got delimiter character %+q at byte %v; expected normal character, escape sequence or delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", r, i, opts.Terminator)
 			}
 		default:
 			// Normal non-terminal character.
@@ -265,11 +265,11 @@ func readEscapedComponent(testID string, startIndex int, opts componentParseOpti
 	// We reached the end of the string.
 	if inEscapeSequence {
 		// Reached end of string while still in an escape sequence. This is invalid.
-		return "", -1, errors.Reason(`unfinished escape sequence at byte %v, got end of string; expected one of :!#\`, i).Err()
+		return "", -1, errors.Fmt(`unfinished escape sequence at byte %v, got end of string; expected one of :!#\`, i)
 	}
 	if !opts.IsCaseName {
 		// We did not expect to reach end of string, we were looking for another terminator.
-		return "", -1, errors.Reason("unexpected end of string at byte %v, expected delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", i, opts.Terminator).Err()
+		return "", -1, errors.Fmt("unexpected end of string at byte %v, expected delimiter %+q (test ID pattern is :module!scheme:coarse:fine#case)", i, opts.Terminator)
 	}
 	builder.WriteString(testID[copyFromIndex:i])
 	return builder.String(), len(testID), nil
@@ -320,12 +320,12 @@ func readCaseNamePart(caseName string, startIndex int) (component string, nextIn
 	for ; i < len(caseName); i += width {
 		r, width = utf8.DecodeRuneInString(caseName[i:])
 		if r == utf8.RuneError {
-			return "", -1, errors.Reason(`invalid UTF-8 rune at byte %v`, i).Err()
+			return "", -1, errors.Fmt(`invalid UTF-8 rune at byte %v`, i)
 		}
 		if inEscapeSequence {
 			if r != '\\' && r != ':' {
 				// Invalid escape sequence.
-				return "", -1, errors.Reason(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters \ and : may be escaped`, r, i).Err()
+				return "", -1, errors.Fmt(`got unexpected character %+q at byte %v, while processing escape sequence (\); only the characters \ and : may be escaped`, r, i)
 			}
 			// Exit the escape sequence.
 			inEscapeSequence = false
@@ -353,7 +353,7 @@ func readCaseNamePart(caseName string, startIndex int) (component string, nextIn
 	// We reached the end of the string.
 	if inEscapeSequence {
 		// Reached end of string while still in an escape sequence. This is invalid.
-		return "", -1, errors.Reason(`unfinished escape sequence at byte %v, got end of string; expected one of \ or :`, i).Err()
+		return "", -1, errors.Fmt(`unfinished escape sequence at byte %v, got end of string; expected one of \ or :`, i)
 	}
 	builder.WriteString(caseName[copyFromIndex:i])
 	return builder.String(), len(caseName), nil
@@ -431,7 +431,7 @@ func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 
 	// Module variant
 	if err := ValidateVariant(id.ModuleVariant); err != nil {
-		return errors.Annotate(err, "module_variant").Err()
+		return errors.Fmt("module_variant: %w", err)
 	}
 	if id.ModuleVariantHash != "" {
 		// If clients set both the hash and the variant, they should be consistent.
@@ -443,7 +443,7 @@ func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 		// if set, to be valid.
 		expectedVariantHash := VariantHash(id.ModuleVariant)
 		if id.ModuleVariantHash != expectedVariantHash {
-			return errors.Reason("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash).Err()
+			return errors.Fmt("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash)
 		}
 	}
 	return nil
@@ -464,16 +464,16 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 
 	// Module variant.
 	if id.ModuleVariant == nil && id.ModuleVariantHash == "" {
-		return errors.Reason("at least one of module_variant and module_variant_hash must be set").Err()
+		return errors.New("at least one of module_variant and module_variant_hash must be set")
 	}
 	if id.ModuleVariant != nil {
 		if err := ValidateVariant(id.ModuleVariant); err != nil {
-			return errors.Annotate(err, "module_variant").Err()
+			return errors.Fmt("module_variant: %w", err)
 		}
 	}
 	if id.ModuleVariantHash != "" {
 		if err := ValidateVariantHash(id.ModuleVariantHash); err != nil {
-			return errors.Annotate(err, "module_variant_hash").Err()
+			return errors.Fmt("module_variant_hash: %w", err)
 		}
 		if id.ModuleVariant != nil {
 			// If clients set both the hash and the variant, they should be consistent.
@@ -481,7 +481,7 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 			// retrieved via another query.
 			expectedVariantHash := VariantHash(id.ModuleVariant)
 			if id.ModuleVariantHash != expectedVariantHash {
-				return errors.Reason("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash).Err()
+				return errors.Fmt("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash)
 			}
 		}
 	}
@@ -494,73 +494,73 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 	// Module name
 	if err := ValidateModuleName(id.ModuleName); err != nil {
-		return errors.Annotate(err, "module_name").Err()
+		return errors.Fmt("module_name: %w", err)
 	}
 
 	// Module scheme
 	isLegacyModule := id.ModuleName == LegacyModuleName
 	if err := ValidateModuleScheme(id.ModuleScheme, isLegacyModule); err != nil {
-		return errors.Annotate(err, "module_scheme").Err()
+		return errors.Fmt("module_scheme: %w", err)
 	}
 
 	// Coarse name and fine name
 	if err := ValidateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
-		return errors.Annotate(err, "coarse_name").Err()
+		return errors.Fmt("coarse_name: %w", err)
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
-		return errors.Annotate(err, "coarse_name").Err()
+		return errors.Fmt("coarse_name: %w", err)
 	}
 	if err := ValidateUTF8PrintableStrict(id.FineName, 300); err != nil {
-		return errors.Annotate(err, "fine_name").Err()
+		return errors.Fmt("fine_name: %w", err)
 	}
 	if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
-		return errors.Annotate(err, "fine_name").Err()
+		return errors.Fmt("fine_name: %w", err)
 	}
 	// If the scheme does not allow a fine name, it also does not allow a coarse
 	// name (fine name is always used before coarse name).
 	if id.FineName == "" && id.CoarseName != "" {
-		return errors.Reason("fine_name: unspecified when coarse_name is specified").Err()
+		return errors.New("fine_name: unspecified when coarse_name is specified")
 	}
 
 	// Case name
 	if id.CaseName == "" {
-		return errors.Reason("case_name: unspecified").Err()
+		return errors.New("case_name: unspecified")
 	}
 
 	// Additional validation for legacy test identifiers.
 	if isLegacyModule {
 		// Legacy test identifier represented in structured form.
 		if id.CoarseName != "" {
-			return errors.Reason("coarse_name: must be empty for tests in the %q module", LegacyModuleName).Err()
+			return errors.Fmt("coarse_name: must be empty for tests in the %q module", LegacyModuleName)
 		}
 		if id.FineName != "" {
-			return errors.Reason("fine_name: must be empty for tests in the %q module", LegacyModuleName).Err()
+			return errors.Fmt("fine_name: must be empty for tests in the %q module", LegacyModuleName)
 		}
 		if strings.HasPrefix(id.CaseName, ":") {
-			return errors.Reason("case_name: must not start with ':' for tests in the %q module", LegacyModuleName).Err()
+			return errors.Fmt("case_name: must not start with ':' for tests in the %q module", LegacyModuleName)
 		}
 		if err := ValidateUTF8Printable(id.CaseName, 512, ValidationModeLoose); err != nil {
-			return errors.Annotate(err, "case_name").Err()
+			return errors.Fmt("case_name: %w", err)
 		}
 		// This is a lightweight version of validateCaseNameNotReserved for legacy tests
 		// that still backtests on already uploaded test results.
 		if strings.HasPrefix(id.CaseName, "*") {
-			return errors.Reason("case_name: must not start with '*' for tests in the %q module", LegacyModuleName).Err()
+			return errors.Fmt("case_name: must not start with '*' for tests in the %q module", LegacyModuleName)
 		}
 	} else {
 		// Additional validation for natively structured test identifiers.
 		if err := ValidateUTF8PrintableStrict(id.CaseName, 512); err != nil {
-			return errors.Annotate(err, "case_name").Err()
+			return errors.Fmt("case_name: %w", err)
 		}
 		if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
-			return errors.Annotate(err, "case_name").Err()
+			return errors.Fmt("case_name: %w", err)
 		}
 	}
 
 	// Ensure that when we encode the structured test ID to a flat ID,
 	// it is less than 512 bytes.
 	if sizeEscapedTestID(id) > 512 {
-		return errors.Reason("test ID exceeds 512 bytes in encoded form").Err()
+		return errors.New("test ID exceeds 512 bytes in encoded form")
 	}
 	return nil
 }
@@ -568,7 +568,7 @@ func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
 // ValidateModuleName validates a module name is syntactically valid.
 func ValidateModuleName(name string) error {
 	if name == "" {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if err := ValidateUTF8PrintableStrict(name, 300); err != nil {
 		return err
@@ -581,21 +581,21 @@ func ValidateModuleName(name string) error {
 // and false otherwise.
 func ValidateModuleScheme(scheme string, isLegacyModule bool) error {
 	if scheme == "" {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if err := ValidateUTF8PrintableStrict(scheme, 20); err != nil {
 		return err
 	}
 	if !schemeRE.MatchString(scheme) {
-		return errors.Reason("does not match %q", schemeRE).Err()
+		return errors.Fmt("does not match %q", schemeRE)
 	}
 	if isLegacyModule {
 		if scheme != LegacySchemeID {
-			return errors.Reason("must be set to %q for tests in the %q module", LegacySchemeID, LegacyModuleName).Err()
+			return errors.Fmt("must be set to %q for tests in the %q module", LegacySchemeID, LegacyModuleName)
 		}
 	} else {
 		if scheme == LegacySchemeID {
-			return errors.Reason("must not be set to %q except for tests in the %q module", LegacySchemeID, LegacyModuleName).Err()
+			return errors.Fmt("must not be set to %q except for tests in the %q module", LegacySchemeID, LegacyModuleName)
 		}
 	}
 	return nil
@@ -615,10 +615,10 @@ func validateCoarseOrFineNameLeadingCharacter(name string) error {
 	// alphebetical sorting.
 	r, _ := utf8.DecodeRuneInString(name)
 	if r == utf8.RuneError {
-		return errors.Reason("leading character is not a valid rune").Err()
+		return errors.New("leading character is not a valid rune")
 	}
 	if r <= ',' {
-		return errors.Reason("character %+q may not be used as a leading character of a coarse or fine name", r).Err()
+		return errors.Fmt("character %+q may not be used as a leading character of a coarse or fine name", r)
 	}
 	return nil
 }
@@ -635,16 +635,16 @@ func validateCoarseOrFineNameLeadingCharacter(name string) error {
 func validateCaseNameNonLegacy(name string) error {
 	r, _ := utf8.DecodeRuneInString(name)
 	if r == utf8.RuneError {
-		return errors.Reason("leading character is not a valid rune").Err()
+		return errors.New("leading character is not a valid rune")
 	}
 	if r <= ',' {
 		if name == FixtureCaseName {
 			return nil
 		}
 		if r == '*' {
-			return errors.Reason("character * may not be used as a leading character of a case name, unless the case name is '%s'", FixtureCaseName).Err()
+			return errors.Fmt("character * may not be used as a leading character of a case name, unless the case name is '%s'", FixtureCaseName)
 		}
-		return errors.Reason("character %+q may not be used as a leading character of a case name", r).Err()
+		return errors.Fmt("character %+q may not be used as a leading character of a case name", r)
 	}
 	parts, err := parseTestCaseName(name)
 	if err != nil {
@@ -652,7 +652,7 @@ func validateCaseNameNonLegacy(name string) error {
 	}
 	for i, component := range parts {
 		if len(component) == 0 {
-			return errors.Reason("component %v is empty, each component of the case name must be non-empty", i+1).Err()
+			return errors.Fmt("component %v is empty, each component of the case name must be non-empty", i+1)
 		}
 	}
 	return nil
@@ -767,13 +767,13 @@ func ValidateUTF8PrintableStrict(text string, maxLength int) error {
 // and consists only for printable runes.
 func ValidateUTF8Printable(text string, maxLength int, mode validationMode) error {
 	if len(text) > maxLength {
-		return errors.Reason("longer than %v bytes", maxLength).Err()
+		return errors.Fmt("longer than %v bytes", maxLength)
 	}
 	if !utf8.ValidString(text) {
-		return errors.Reason("not a valid utf8 string").Err()
+		return errors.New("not a valid utf8 string")
 	}
 	if !norm.NFC.IsNormalString(text) {
-		return errors.Reason("not in unicode normalized form C").Err()
+		return errors.New("not in unicode normalized form C")
 	}
 	for i, rune := range text {
 		if !unicode.IsPrint(rune) {

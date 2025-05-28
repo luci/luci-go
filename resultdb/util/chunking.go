@@ -31,7 +31,7 @@ import "go.chromium.org/luci/common/errors"
 // a multi-byte UTF-8 character).
 func SplitToChunks(content []byte, maxChunkSize int, lookbackWindow int) ([]string, error) {
 	if lookbackWindow > maxChunkSize {
-		return nil, errors.Reason("lookback window %d must not be bigger than maxChunkSize %d", lookbackWindow, maxChunkSize).Err()
+		return nil, errors.Fmt("lookback window %d must not be bigger than maxChunkSize %d", lookbackWindow, maxChunkSize)
 	}
 	// Start index of a chunk.
 	startIndex := 0
@@ -43,7 +43,7 @@ func SplitToChunks(content []byte, maxChunkSize int, lookbackWindow int) ([]stri
 		// breaking multi-byte character.
 		utf8StartIndex, err := firstCharacterIndexBackward(content, startIndex+maxChunkSize)
 		if err != nil {
-			return nil, errors.Annotate(err, "indexOfUTF8Backward").Err()
+			return nil, errors.Fmt("indexOfUTF8Backward: %w", err)
 		}
 		// endIndex is the biggest index of that we can potentially split.
 		endIndex := utf8StartIndex - 1

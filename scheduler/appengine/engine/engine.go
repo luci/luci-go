@@ -389,7 +389,7 @@ func (e *engineImpl) ListInvocations(c context.Context, job *Job, opts ListInvoc
 		LastScanned: page.lastScanned,
 	})
 	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to serialize the cursor").Err()
+		return nil, "", errors.Fmt("failed to serialize the cursor: %w", err)
 	}
 	return out, cursorStr, nil
 }
@@ -489,7 +489,7 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 	}
 	switch filtered, err := e.filterByPerm(c, jobs, PermJobsTrigger); {
 	case err != nil:
-		return errors.Annotate(err, "transient error when checking permissions").Err()
+		return errors.Fmt("transient error when checking permissions: %w", err)
 	case len(filtered) != len(jobs):
 		return ErrNoPermission // some jobs are not triggerable
 	}
@@ -715,7 +715,7 @@ func (e *engineImpl) GetDebugJobState(c context.Context, jobID string) (*DebugJo
 	job, err := e.getJob(c, jobID)
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Job entity").Err()
+		return nil, errors.Fmt("failed to fetch Job entity: %w", err)
 	case job == nil:
 		return nil, ErrNoSuchJob
 	}
@@ -725,14 +725,14 @@ func (e *engineImpl) GetDebugJobState(c context.Context, jobID string) (*DebugJo
 	// Fill in FinishedInvocations.
 	state.FinishedInvocations, err = unmarshalFinishedInvs(job.FinishedInvocationsRaw)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal FinishedInvocationsRaw").Err()
+		return nil, errors.Fmt("failed to unmarshal FinishedInvocationsRaw: %w", err)
 	}
 
 	// Fill in RecentlyFinishedSet.
 	finishedSet := recentlyFinishedSet(c, jobID)
 	listing, err := finishedSet.List(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch recentlyFinishedSet").Err()
+		return nil, errors.Fmt("failed to fetch recentlyFinishedSet: %w", err)
 	}
 	state.RecentlyFinishedSet = make([]int64, len(listing.Items))
 	for i, itm := range listing.Items {
@@ -743,7 +743,7 @@ func (e *engineImpl) GetDebugJobState(c context.Context, jobID string) (*DebugJo
 	triggersSet := pendingTriggersSet(c, jobID)
 	_, state.PendingTriggersSet, err = triggersSet.Triggers(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch pendingTriggersSet").Err()
+		return nil, errors.Fmt("failed to fetch pendingTriggersSet: %w", err)
 	}
 
 	// Ask the corresponding task.Manager to fill in DebugManagerState. Pass it
@@ -1173,12 +1173,12 @@ func (e *engineImpl) initInvocation(c context.Context, inv *Invocation, req *tas
 
 	var err error
 	if inv.ID, err = generateInvocationID(c); err != nil {
-		return nil, errors.Annotate(err, "failed to generate invocation ID").Err()
+		return nil, errors.Fmt("failed to generate invocation ID: %w", err)
 	}
 
 	if req != nil {
 		if err := putRequestIntoInv(inv, req); err != nil {
-			return nil, errors.Annotate(err, "failed to serialize task request").Err()
+			return nil, errors.Fmt("failed to serialize task request: %w", err)
 		}
 		if req.DebugLog != "" {
 			inv.DebugLog += "Debug output from the triage procedure:\n"
@@ -1226,20 +1226,22 @@ const (
 var (
 	// errRetryingLaunch is returned by launchTask if the task failed to start and
 	// the launch attempt should be tried again.
-	errRetryingLaunch = errors.New("task failed to start, retrying", transient.Tag)
+	errRetryingLaunch = transient.Tag.Apply(
+
+		// withController fetches the invocation, instantiates the task controller,
+		// calls the callback, and saves back the modified invocation state, initiating
+		// all necessary engine transitions along the way.
+		//
+		// Does nothing and returns nil if the invocation is already in a final state.
+		// The callback is not called in this case at all.
+		//
+		// Skips saving the invocation if the callback returns non-nil.
+		//
+		// 'action' is used exclusively for logging. It's a human readable cause of why
+		// the controller is instantiated.
+		errors.New("task failed to start, retrying"))
 )
 
-// withController fetches the invocation, instantiates the task controller,
-// calls the callback, and saves back the modified invocation state, initiating
-// all necessary engine transitions along the way.
-//
-// Does nothing and returns nil if the invocation is already in a final state.
-// The callback is not called in this case at all.
-//
-// Skips saving the invocation if the callback returns non-nil.
-//
-// 'action' is used exclusively for logging. It's a human readable cause of why
-// the controller is instantiated.
 func (e *engineImpl) withController(c context.Context, jobID string, invID int64, action string, cb func(context.Context, *taskController) error) error {
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvID", invID)
@@ -1915,11 +1917,11 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, manager string, msg 
 	// task manager.
 	mgr := e.cfg.Catalog.GetTaskManagerByName(manager)
 	if mgr == nil {
-		return errors.Reason("unknown task manager %q", manager).Err()
+		return errors.Fmt("unknown task manager %q", manager)
 	}
 	authToken := mgr.ExamineNotification(c, msg)
 	if authToken == "" {
-		return errors.Reason("failed to extract the auth token from the pubsub message").Err()
+		return errors.New("failed to extract the auth token from the pubsub message")
 	}
 
 	// Validate authToken and extract Job and Invocation IDs from it.

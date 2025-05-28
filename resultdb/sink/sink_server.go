@@ -246,8 +246,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			if err != nil {
 				// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on
 				// newUploadTask failures instead of dropping the artifact silently.
-				logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s",
-					errors.Annotate(err, "artifact %q: %s", id, err).Err())
+				logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s", errors.Fmt("artifact %q: %s: %w", id, err, err))
 				continue
 			}
 			uts = append(uts, t)
@@ -293,8 +292,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err != nil {
 			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on
 			// newUploadTask failures instead of dropping the artifact silently.
-			logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s",
-				errors.Annotate(err, "artifact %q: %s", id, err).Err())
+			logging.Warningf(ctx, "Dropping an artifact request; failed to create a new Uploadtask: %s", errors.Fmt("artifact %q: %s: %w", id, err, err))
 			continue
 		}
 		s.mu.Lock()
@@ -357,7 +355,7 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 	}
 	if cfg.ModuleName != "" {
 		if tr.TestIdStructured == nil {
-			return nil, errors.Reason("test_id_structured: must be specified as resultsink is configured to upload structured test IDs").Err()
+			return nil, errors.New("test_id_structured: must be specified as resultsink is configured to upload structured test IDs")
 		}
 
 		// Structured test ID.
@@ -372,7 +370,7 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 		rdbtr.TestIdStructured = testID
 	} else {
 		if tr.TestId == "" && cfg.TestIDPrefix == "" {
-			return nil, errors.Reason("test_id: must be specified as resultsink is not configured to upload structured test IDs and no test ID prefix specified").Err()
+			return nil, errors.New("test_id: must be specified as resultsink is not configured to upload structured test IDs and no test ID prefix specified")
 		}
 		// tr.TestId may be blank for some uploaders relying on the cfg.TestIDPrefix being set.
 

@@ -42,7 +42,7 @@ func ValidateVariant(vr *pb.Variant) error {
 	for k, v := range vr.Def {
 		p := pb.StringPair{Key: k, Value: v}
 		if err := ValidateStringPair(&p); err != nil {
-			return errors.Annotate(err, "%q:%q", k, v).Err()
+			return errors.Fmt("%q:%q: %w", k, v, err)
 		}
 	}
 	return nil
@@ -95,7 +95,7 @@ func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 	for _, p := range pairs {
 		pair, err := StringPairFromString(p)
 		if err != nil {
-			return nil, errors.Annotate(err, "pair %q", p).Err()
+			return nil, errors.Fmt("pair %q: %w", p, err)
 		}
 		def[pair.Key] = pair.Value
 	}

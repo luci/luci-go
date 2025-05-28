@@ -70,7 +70,7 @@ const (
 
 // ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
 // started.
-var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").Err()
+var ErrCloseBeforeStart error = errors.New("the server is not started yet")
 
 // ServerConfig defines the parameters of the server.
 type ServerConfig struct {
@@ -181,70 +181,70 @@ type ServerConfig struct {
 // Validate validates all the config fields.
 func (c *ServerConfig) Validate() error {
 	if c.Recorder == nil {
-		return errors.Reason("Recorder: unspecified").Err()
+		return errors.New("Recorder: unspecified")
 	}
 	if c.ArtifactStreamClient == nil {
-		return errors.Reason("ArtifactStreamClient: unspecified").Err()
+		return errors.New("ArtifactStreamClient: unspecified")
 	}
 	if err := pbutil.ValidateStringPairs(c.BaseTags); err != nil {
-		return errors.Annotate(err, "BaseTags").Err()
+		return errors.Fmt("BaseTags: %w", err)
 	}
 	if err := pbutil.ValidateVariant(c.Variant); err != nil {
-		return errors.Annotate(err, "Variant").Err()
+		return errors.Fmt("Variant: %w", err)
 	}
 	if err := pbutil.ValidateInvocationName(c.Invocation); err != nil {
-		return errors.Annotate(err, "Invocation").Err()
+		return errors.Fmt("Invocation: %w", err)
 	}
 	if c.UpdateToken == "" {
-		return errors.Reason("UpdateToken: unspecified").Err()
+		return errors.New("UpdateToken: unspecified")
 	}
 	if c.TestLocationBase != "" {
 		if err := pbutil.ValidateFilePath(c.TestLocationBase); err != nil {
-			return errors.Annotate(err, "TestLocationBase").Err()
+			return errors.Fmt("TestLocationBase: %w", err)
 		}
 	}
 	if c.MaxBatchableArtifactSize > 10*1024*1024 {
-		return errors.Reason("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize).Err()
+		return errors.Fmt("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize)
 	}
 	if c.ModuleScheme == nil {
 		// Having the module name, scheme and variant locked-in upfront makes
 		// it easy for us to start uploading work unit-level errors to each
 		// module in future, based on the resultsink status.
-		return errors.Reason("ModuleScheme: unspecified").Err()
+		return errors.New("ModuleScheme: unspecified")
 	}
 	if c.ModuleName != "" {
 		if err := pbutil.ValidateModuleName(c.ModuleName); err != nil {
-			return errors.Annotate(err, "ModuleName").Err()
+			return errors.Fmt("ModuleName: %w", err)
 		}
 		if c.ModuleName == pbutil.LegacyModuleName {
-			return errors.Reason("ModuleName: cannot be %q", pbutil.LegacyModuleName).Err()
+			return errors.Fmt("ModuleName: cannot be %q", pbutil.LegacyModuleName)
 		}
 		if c.ModuleScheme.ID == pbutil.LegacySchemeID {
-			return errors.Reason("ModuleScheme: may not be 'legacy' if ModuleName is set").Err()
+			return errors.New("ModuleScheme: may not be 'legacy' if ModuleName is set")
 		}
 		if c.TestIDPrefix != "" {
-			return errors.Reason("TestIDPrefix: may not be set if ModuleName is set").Err()
+			return errors.New("TestIDPrefix: may not be set if ModuleName is set")
 		}
 	} else {
 		if c.ModuleScheme.ID != pbutil.LegacySchemeID {
-			return errors.Reason("ModuleScheme: should be 'legacy' if ModuleName is not set").Err()
+			return errors.New("ModuleScheme: should be 'legacy' if ModuleName is not set")
 		}
 	}
 	if c.PreviousTestIDPrefix != nil {
 		if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
-			return errors.Reason("PreviousTestIDPrefix: must not start with prefix of structured test IDs").Err()
+			return errors.New("PreviousTestIDPrefix: must not start with prefix of structured test IDs")
 		}
 		if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix); err != nil {
-			return errors.Annotate(err, "PreviousTestIDPrefix").Err()
+			return errors.Fmt("PreviousTestIDPrefix: %w", err)
 		}
 	}
 	// For clients still using legacy test IDs, deprecated.
 	if c.TestIDPrefix != "" {
 		if pbutil.IsStructuredTestID(c.TestIDPrefix) {
-			return errors.Reason("TestIDPrefix: must not start with prefix of structured test IDs").Err()
+			return errors.New("TestIDPrefix: must not start with prefix of structured test IDs")
 		}
 		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
-			return errors.Annotate(err, "TestIDPrefix").Err()
+			return errors.Fmt("TestIDPrefix: %w", err)
 		}
 	}
 	return nil
@@ -269,13 +269,13 @@ type Server struct {
 // NewServer creates a Server value and populates optional values with defaults.
 func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	if err := cfg.Validate(); err != nil {
-		return nil, errors.Annotate(err, "invalid ServerConfig").Err()
+		return nil, errors.Fmt("invalid ServerConfig: %w", err)
 	}
 
 	if cfg.AuthToken == "" {
 		tk, err := genAuthToken(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "ServerConfig: failed to generate AuthToken").Err()
+			return nil, errors.Fmt("ServerConfig: failed to generate AuthToken: %w", err)
 		}
 		cfg.AuthToken = tk
 	}
@@ -350,7 +350,7 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 	logging.Infof(ctx, "SinkServer: warm-up started")
 	if err = s.warmUp(ctx); err != nil {
 		logging.Errorf(ctx, "SinkServer: warm-up failed: %s", err)
-		return errors.Annotate(err, "warm-up").Err()
+		return errors.Fmt("warm-up: %w", err)
 	}
 	logging.Infof(ctx, "SinkServer: warm-up ended")
 
@@ -376,7 +376,7 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 // On success, Start will return nil, and a subsequent error can be obtained from Err.
 func (s *Server) Start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
-		return errors.Reason("cannot call Start twice").Err()
+		return errors.New("cannot call Start twice")
 	}
 
 	// create an HTTP server with a pRPC service.

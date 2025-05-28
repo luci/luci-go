@@ -103,11 +103,11 @@ func NormalizeInvocation(inv *pb.Invocation) {
 func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
 	// Treat nil sourceSpec message as empty message.
 	if sourceSpec.GetInherit() && sourceSpec.GetSources() != nil {
-		return errors.Reason("only one of inherit and sources may be set").Err()
+		return errors.New("only one of inherit and sources may be set")
 	}
 	if sourceSpec.GetSources() != nil {
 		if err := ValidateSources(sourceSpec.Sources); err != nil {
-			return errors.Annotate(err, "sources").Err()
+			return errors.Fmt("sources: %w", err)
 		}
 	}
 	return nil
@@ -116,14 +116,14 @@ func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
 // ValidateSources validates a set of sources.
 func ValidateSources(sources *pb.Sources) error {
 	if sources == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if err := ValidateGitilesCommit(sources.GetGitilesCommit()); err != nil {
-		return errors.Annotate(err, "gitiles_commit").Err()
+		return errors.Fmt("gitiles_commit: %w", err)
 	}
 
 	if len(sources.Changelists) > 10 {
-		return errors.Reason("changelists: exceeds maximum of 10 changelists").Err()
+		return errors.New("changelists: exceeds maximum of 10 changelists")
 	}
 	type distinctChangelist struct {
 		host   string
@@ -133,14 +133,14 @@ func ValidateSources(sources *pb.Sources) error {
 
 	for i, cl := range sources.Changelists {
 		if err := ValidateGerritChange(cl); err != nil {
-			return errors.Annotate(err, "changelists[%v]", i).Err()
+			return errors.Fmt("changelists[%v]: %w", i, err)
 		}
 		cl := distinctChangelist{
 			host:   cl.Host,
 			change: cl.Change,
 		}
 		if duplicateIndex, ok := clToIndex[cl]; ok {
-			return errors.Reason("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex).Err()
+			return errors.Fmt("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex)
 		}
 		clToIndex[cl] = i
 	}
@@ -156,20 +156,20 @@ func ValidateInvocationExtendedPropertyKey(key string) error {
 func ValidateInvocationExtendedProperties(extendedProperties map[string]*structpb.Struct) error {
 	for key, value := range extendedProperties {
 		if err := ValidateInvocationExtendedPropertyKey(key); err != nil {
-			return errors.Annotate(err, "key %q", key).Err()
+			return errors.Fmt("key %q: %w", key, err)
 		}
 		if err := validateProperties(value, MaxSizeInvocationExtendedPropertyValue); err != nil {
-			return errors.Annotate(err, "[%q]", key).Err()
+			return errors.Fmt("[%q]: %w", key, err)
 		}
 		if err := validateInvocationExtendedPropertyTypeField(value); err != nil {
-			return errors.Annotate(err, "[%q]", key).Err()
+			return errors.Fmt("[%q]: %w", key, err)
 		}
 	}
 	internalExtendedProperties := &invocationspb.ExtendedProperties{
 		ExtendedProperties: extendedProperties,
 	}
 	if proto.Size(internalExtendedProperties) > MaxSizeInvocationExtendedProperties {
-		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeInvocationExtendedProperties).Err()
+		return errors.Fmt("exceeds the maximum size of %d bytes", MaxSizeInvocationExtendedProperties)
 	}
 	return nil
 }
@@ -177,12 +177,12 @@ func ValidateInvocationExtendedProperties(extendedProperties map[string]*structp
 func validateInvocationExtendedPropertyTypeField(value *structpb.Struct) error {
 	typeVal, typeExist := value.Fields["@type"]
 	if !typeExist {
-		return errors.Reason(`must have a field "@type"`).Err()
+		return errors.New(`must have a field "@type"`)
 	}
 	typeStr := typeVal.GetStringValue()
 	slashIndex := strings.LastIndex(typeStr, "/")
 	if slashIndex == -1 {
-		return errors.Reason(`"@type" value %q must contain at least one "/" character`, typeStr).Err()
+		return errors.Fmt(`"@type" value %q must contain at least one "/" character`, typeStr)
 	}
 	if _, err := url.Parse(typeStr); err != nil {
 		return errors.Annotate(err, `"@type" value %q`, typeStr).Err()

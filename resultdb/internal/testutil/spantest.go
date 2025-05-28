@@ -123,7 +123,7 @@ func findInitScript() (string, error) {
 		if os.IsNotExist(err) {
 			parent := filepath.Dir(ancestor)
 			if parent == ancestor {
-				return "", errors.Reason("init_db.sql not found").Err()
+				return "", errors.New("init_db.sql not found")
 			}
 			ancestor = parent
 			continue
@@ -185,7 +185,7 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	// Create a Spanner database.
 	db, err := spantest.NewTempDB(ctx, dbCfg)
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
+		return 0, errors.Fmt("failed to create a temporary Spanner database: %w", err)
 	}
 	logging.Infof(ctx, "Created a temporary spanner database %s", db.Name)
 

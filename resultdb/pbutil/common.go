@@ -115,7 +115,7 @@ func ValidateRequestID(requestID string) error {
 func ValidateBatchRequestCount(count int) error {
 	const limit = 500
 	if count > limit {
-		return errors.Reason("the number of requests in the batch (%d) exceeds %d", count, limit).Err()
+		return errors.Fmt("the number of requests in the batch (%d) exceeds %d", count, limit)
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func ValidateBatchRequestCount(count int) error {
 // ValidateEnum returns a non-nil error if the value is not among valid values.
 func ValidateEnum(value int32, validValues map[int32]string) error {
 	if _, ok := validValues[value]; !ok {
-		return errors.Reason("invalid value %d", value).Err()
+		return errors.Fmt("invalid value %d", value)
 	}
 	return nil
 }
@@ -151,7 +151,7 @@ func MustMarshal(m protoreflect.ProtoMessage) []byte {
 func validateProperties(properties *structpb.Struct, maxSize int) error {
 	size := proto.Size(properties)
 	if size > maxSize {
-		return errors.Reason("the size of properties (%d) exceeds the maximum size of %d bytes", size, maxSize).Err()
+		return errors.Fmt("the size of properties (%d) exceeds the maximum size of %d bytes", size, maxSize)
 	}
 	return nil
 }
@@ -175,40 +175,40 @@ func ValidateTestMetadataProperties(properties *structpb.Struct) error {
 func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
 	switch {
 	case commit == nil:
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 
 	case commit.Host == "":
-		return errors.Reason("host: unspecified").Err()
+		return errors.New("host: unspecified")
 	case len(commit.Host) > 255:
-		return errors.Reason("host: exceeds 255 characters").Err()
+		return errors.New("host: exceeds 255 characters")
 	case !hostnameRE.MatchString(commit.Host):
-		return errors.Reason("host: does not match %q", hostnameRE).Err()
+		return errors.Fmt("host: does not match %q", hostnameRE)
 
 	case commit.Project == "":
-		return errors.Reason("project: unspecified").Err()
+		return errors.New("project: unspecified")
 	case len(commit.Project) > hostnameMaxLength:
-		return errors.Reason("project: exceeds %v characters", hostnameMaxLength).Err()
+		return errors.Fmt("project: exceeds %v characters", hostnameMaxLength)
 
 	case commit.Ref == "":
-		return errors.Reason("ref: unspecified").Err()
+		return errors.New("ref: unspecified")
 
 	// The 255 character ref limit is arbitrary and not based on a known
 	// restriction in Git. It exists simply because there should be a limit
 	// to protect downstream clients.
 	case len(commit.Ref) > 255:
-		return errors.Reason("ref: exceeds 255 characters").Err()
+		return errors.New("ref: exceeds 255 characters")
 	case !strings.HasPrefix(commit.Ref, "refs/"):
-		return errors.Reason("ref: does not match refs/.*").Err()
+		return errors.New("ref: does not match refs/.*")
 
 	case commit.CommitHash == "":
-		return errors.Reason("commit_hash: unspecified").Err()
+		return errors.New("commit_hash: unspecified")
 	case !sha1Regex.MatchString(commit.CommitHash):
-		return errors.Reason("commit_hash: does not match %q", sha1Regex).Err()
+		return errors.Fmt("commit_hash: does not match %q", sha1Regex)
 
 	case commit.Position == 0:
-		return errors.Reason("position: unspecified").Err()
+		return errors.New("position: unspecified")
 	case commit.Position < 0:
-		return errors.Reason("position: cannot be negative").Err()
+		return errors.New("position: cannot be negative")
 	}
 	return nil
 }
@@ -217,32 +217,32 @@ func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
 func ValidateGerritChange(change *pb.GerritChange) error {
 	switch {
 	case change == nil:
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 
 	case change.Host == "":
-		return errors.Reason("host: unspecified").Err()
+		return errors.New("host: unspecified")
 	case len(change.Host) > hostnameMaxLength:
-		return errors.Reason("host: exceeds %v characters", hostnameMaxLength).Err()
+		return errors.Fmt("host: exceeds %v characters", hostnameMaxLength)
 	case !hostnameRE.MatchString(change.Host):
-		return errors.Reason("host: does not match %q", hostnameRE).Err()
+		return errors.Fmt("host: does not match %q", hostnameRE)
 
 	case change.Project == "":
-		return errors.Reason("project: unspecified").Err()
+		return errors.New("project: unspecified")
 	// The 255 character project limit is arbitrary and not based on a known
 	// restriction in Gerrit. It exists simply because there should be a limit
 	// to protect downstream clients.
 	case len(change.Project) > 255:
-		return errors.Reason("project: exceeds 255 characters").Err()
+		return errors.New("project: exceeds 255 characters")
 
 	case change.Change == 0:
-		return errors.Reason("change: unspecified").Err()
+		return errors.New("change: unspecified")
 	case change.Change < 0:
-		return errors.Reason("change: cannot be negative").Err()
+		return errors.New("change: cannot be negative")
 
 	case change.Patchset == 0:
-		return errors.Reason("patchset: unspecified").Err()
+		return errors.New("patchset: unspecified")
 	case change.Patchset < 0:
-		return errors.Reason("patchset: cannot be negative").Err()
+		return errors.New("patchset: cannot be negative")
 	default:
 		return nil
 	}
@@ -254,24 +254,24 @@ func ValidateInstructions(instructions *pb.Instructions) error {
 		return nil
 	}
 	if proto.Size(instructions) > MaxInstructionsSize {
-		return errors.Reason("exceeds %d bytes", MaxInstructionsSize).Err()
+		return errors.Fmt("exceeds %d bytes", MaxInstructionsSize)
 	}
 
 	idMap := map[string]int{}
 	for i, instruction := range instructions.Instructions {
 		// Make sure that all instructions have id, and id are unique.
 		if instruction.Id == "" {
-			return errors.Reason("instructions[%v]: id: unspecified", i).Err()
+			return errors.Fmt("instructions[%v]: id: unspecified", i)
 		}
 		if !instructionIDRe.MatchString(instruction.Id) {
-			return errors.Reason("instructions[%v]: id: does not match %q", i, instructionIDPattern).Err()
+			return errors.Fmt("instructions[%v]: id: does not match %q", i, instructionIDPattern)
 		}
 		if index, ok := idMap[instruction.Id]; ok {
-			return errors.Reason("instructions[%v]: id: %q is re-used at index %d", i, instruction.Id, index).Err()
+			return errors.Fmt("instructions[%v]: id: %q is re-used at index %d", i, instruction.Id, index)
 		}
 		idMap[instruction.Id] = i
 		if err := ValidateInstruction(instruction); err != nil {
-			return errors.Annotate(err, "instructions[%v]", i).Err()
+			return errors.Fmt("instructions[%v]: %w", i, err)
 		}
 	}
 	return nil
@@ -279,24 +279,24 @@ func ValidateInstructions(instructions *pb.Instructions) error {
 
 func ValidateInstruction(instruction *pb.Instruction) error {
 	if instruction.Type == pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED {
-		return errors.Reason("type: unspecified").Err()
+		return errors.New("type: unspecified")
 	}
 	if instruction.DescriptiveName == "" {
-		return errors.Reason("descriptive_name: unspecified").Err()
+		return errors.New("descriptive_name: unspecified")
 	}
 	if len(instruction.DescriptiveName) > MaxInstructionNameSize {
-		return errors.Reason("descriptive_name: exceeds %v characters", MaxInstructionNameSize).Err()
+		return errors.Fmt("descriptive_name: exceeds %v characters", MaxInstructionNameSize)
 	}
 	targetMap := map[pb.InstructionTarget]bool{}
 	for i, targetedInstruction := range instruction.TargetedInstructions {
 		err := ValidateTargetedInstruction(targetedInstruction, targetMap)
 		if err != nil {
-			return errors.Annotate(err, "targeted_instructions[%v]", i).Err()
+			return errors.Fmt("targeted_instructions[%v]: %w", i, err)
 		}
 	}
 	// Check instruction filter.
 	if err := ValidateInstructionFilter(instruction.InstructionFilter); err != nil {
-		return errors.Annotate(err, "instruction_filter").Err()
+		return errors.Fmt("instruction_filter: %w", err)
 	}
 	return nil
 }
@@ -304,26 +304,26 @@ func ValidateInstruction(instruction *pb.Instruction) error {
 func ValidateTargetedInstruction(targetedInstruction *pb.TargetedInstruction, targetMap map[pb.InstructionTarget]bool) error {
 	// Check that targets are not empty.
 	if len(targetedInstruction.Targets) == 0 {
-		return errors.Reason("targets: empty").Err()
+		return errors.New("targets: empty")
 	}
 	// Check that targets are valid.
 	for i, target := range targetedInstruction.Targets {
 		if target == pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED {
-			return errors.Reason("targets[%v]: unspecified", i).Err()
+			return errors.Fmt("targets[%v]: unspecified", i)
 		}
 		if _, ok := targetMap[target]; ok {
-			return errors.Reason("targets[%v]: duplicated target %q", i, target).Err()
+			return errors.Fmt("targets[%v]: duplicated target %q", i, target)
 		}
 		targetMap[target] = true
 	}
 	// Make sure content size <= 10KB.
 	// TODO (nqmtuan): Validate this is a valid mustache template.
 	if len(targetedInstruction.Content) > MaxInstructionSize {
-		return errors.Reason("content: exceeds %v characters", MaxInstructionSize).Err()
+		return errors.Fmt("content: exceeds %v characters", MaxInstructionSize)
 	}
 	// Check dependency.
 	if err := ValidateDependencies(targetedInstruction.Dependencies); err != nil {
-		return errors.Annotate(err, "dependencies").Err()
+		return errors.Fmt("dependencies: %w", err)
 	}
 	return nil
 }
@@ -337,7 +337,7 @@ func ValidateInstructionFilter(filter *pb.InstructionFilter) error {
 		for i, invID := range filter.GetInvocationIds().InvocationIds {
 			err := ValidateInvocationID(invID)
 			if err != nil {
-				return errors.Annotate(err, "invocation_ids[%v]", i).Err()
+				return errors.Fmt("invocation_ids[%v]: %w", i, err)
 			}
 		}
 	}
@@ -349,11 +349,11 @@ func ValidateDependencies(dependencies []*pb.InstructionDependency) error {
 		return nil
 	}
 	if len(dependencies) > 1 {
-		return errors.Reason("more than 1").Err()
+		return errors.New("more than 1")
 	}
 	for i, dep := range dependencies {
 		if err := ValidateDependency(dep); err != nil {
-			return errors.Annotate(err, "[%v]", i).Err()
+			return errors.Fmt("[%v]: %w", i, err)
 		}
 	}
 	return nil
@@ -361,7 +361,7 @@ func ValidateDependencies(dependencies []*pb.InstructionDependency) error {
 
 func ValidateDependency(dependency *pb.InstructionDependency) error {
 	if err := ValidateInvocationID(dependency.InvocationId); err != nil {
-		return errors.Annotate(err, "invocation_id").Err()
+		return errors.Fmt("invocation_id: %w", err)
 	}
 	return nil
 }

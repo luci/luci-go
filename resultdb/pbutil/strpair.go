@@ -77,13 +77,13 @@ func SortStringPairs(tags []*pb.StringPair) {
 // ValidateStringPair returns an error if p is invalid.
 func ValidateStringPair(p *pb.StringPair) error {
 	if err := validate.SpecifiedWithRe(stringPairKeyRe, p.Key); err != nil {
-		return errors.Annotate(err, "key").Err()
+		return errors.Fmt("key: %w", err)
 	}
 	if len(p.Key) > maxStringPairKeyLength {
-		return errors.Reason("key length must be less or equal to %d", maxStringPairKeyLength).Err()
+		return errors.Fmt("key length must be less or equal to %d", maxStringPairKeyLength)
 	}
 	if len(p.Value) > maxStringPairValueLength {
-		return errors.Reason("value length must be less or equal to %d", maxStringPairValueLength).Err()
+		return errors.Fmt("value length must be less or equal to %d", maxStringPairValueLength)
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func ValidateStringPair(p *pb.StringPair) error {
 func ValidateStringPairs(pairs []*pb.StringPair) error {
 	for _, p := range pairs {
 		if err := ValidateStringPair(p); err != nil {
-			return errors.Annotate(err, "%q:%q", p.Key, p.Value).Err()
+			return errors.Fmt("%q:%q: %w", p.Key, p.Value, err)
 		}
 	}
 	return nil

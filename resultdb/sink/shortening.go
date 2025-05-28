@@ -104,7 +104,7 @@ func shortenIDComponent(s string, maxLengthBytes int) (result string, resultByte
 		return "", 0, err
 	}
 	if maxLengthBytes < 17 {
-		return "", 0, errors.Reason("max length must be at least 17 bytes, got %d", maxLengthBytes).Err()
+		return "", 0, errors.Fmt("max length must be at least 17 bytes, got %d", maxLengthBytes)
 	}
 
 	// Truncate s to maxlengthInBytes. If it needs to be truncated, take another
@@ -134,14 +134,14 @@ func shortenIDComponent(s string, maxLengthBytes int) (result string, resultByte
 // may become   ["this", "is~01234567890abcdef"].
 func shortenCaseNameComponents(components []string, maxLengthBytes int) (result []string, resultBytes int, err error) {
 	if maxLengthBytes < 21 {
-		return nil, 0, errors.Reason("max length must be at least 21 bytes, got %d", maxLengthBytes).Err()
+		return nil, 0, errors.Fmt("max length must be at least 21 bytes, got %d", maxLengthBytes)
 	}
 	for i, component := range components {
 		// Ensure the alphabet of the component we are shortening is valid, i.e.
 		// is valid UTF-8, normal form C, printables only, no unicode replacement
 		// character (U+FFFD).
 		if err := pbutil.ValidateUTF8PrintableStrict(component, maxOriginalSize); err != nil {
-			return nil, 0, errors.Annotate(err, "component[%d]", i).Err()
+			return nil, 0, errors.Fmt("component[%d]: %w", i, err)
 		}
 	}
 
@@ -227,7 +227,7 @@ func shortenStructuredID(id *sinkpb.TestIdentifier, maxBytes int) (*sinkpb.TestI
 		// - 49 bytes for the coarse name ((100-2)/2).
 		// - 24 bytes for the fine name ((100-2)*3/4 - 49).
 		// Which leaves 25 bytes remaining.
-		return nil, errors.Reason("max length must be at least 100 bytes, got %d", maxBytes).Err()
+		return nil, errors.Fmt("max length must be at least 100 bytes, got %d", maxBytes)
 	}
 
 	// Subtract two bytes for the internal separator between coarse and fine names (':'),
@@ -244,25 +244,25 @@ func shortenStructuredID(id *sinkpb.TestIdentifier, maxBytes int) (*sinkpb.TestI
 	// different test cases, resulting in tests failing to group.
 	coarseName, coarseNameLength, err := shortenIDComponent(id.CoarseName, availableBytes/2)
 	if err != nil {
-		return nil, errors.Annotate(err, "coarse_name").Err()
+		return nil, errors.Fmt("coarse_name: %w", err)
 	}
 
 	// The coarse and fine name cumulatively may use up to 75% of the available bytes.
 	fineName, fineNameLength, err := shortenIDComponent(id.FineName, (availableBytes*3/4)-coarseNameLength)
 	if err != nil {
-		return nil, errors.Annotate(err, "fine_name").Err()
+		return nil, errors.Fmt("fine_name: %w", err)
 	}
 
 	// The case name may use all remaining bytes.
 	remainingBytes := availableBytes - coarseNameLength - fineNameLength
 	shortenedComponents, caseNameLength, err := shortenCaseNameComponents(id.CaseNameComponents, remainingBytes)
 	if err != nil {
-		return nil, errors.Annotate(err, "case_name_components").Err()
+		return nil, errors.Fmt("case_name_components: %w", err)
 	}
 
 	if caseNameLength+fineNameLength+coarseNameLength+2 > maxBytes {
 		// This indicates an implementation bug. This should never happen.
-		return nil, errors.Reason("logic error: didn't reach length target, got %v bytes, want at most %v", caseNameLength+fineNameLength+coarseNameLength+2, maxBytes).Err()
+		return nil, errors.Fmt("logic error: didn't reach length target, got %v bytes, want at most %v", caseNameLength+fineNameLength+coarseNameLength+2, maxBytes)
 	}
 
 	return &sinkpb.TestIdentifier{

@@ -59,15 +59,15 @@ func newUploadTask(name string, art *sinkpb.Artifact, testStatus pb.TestStatus) 
 		st, err := os.Stat(fp)
 		switch {
 		case err != nil:
-			return nil, errors.Annotate(err, "querying file info").Err()
+			return nil, errors.Fmt("querying file info: %w", err)
 		case st.Mode().IsRegular():
 			// break
 
 		// Return a more human friendly error than 1000....0.
 		case st.IsDir():
-			return nil, errors.Reason("%q is a directory", fp).Err()
+			return nil, errors.Fmt("%q is a directory", fp)
 		default:
-			return nil, errors.Reason("%q is not a regular file: %s", fp, strconv.FormatInt(int64(st.Mode()), 2)).Err()
+			return nil, errors.Fmt("%q is not a regular file: %s", fp, strconv.FormatInt(int64(st.Mode()), 2))
 		}
 		ret.size = st.Size()
 	}
@@ -120,9 +120,8 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 		// return an error, so that the batching logic can be kept simple. Test frameworks
 		// should send finalized artifacts only.
 		if int64(len(req.Artifact.Contents)) != t.size {
-			return nil, errors.Reason(
-				"the size of the artifact contents changed from %d to %d",
-				t.size, len(req.Artifact.Contents)).Err()
+			return nil, errors.Fmt("the size of the artifact contents changed from %d to %d",
+				t.size, len(req.Artifact.Contents))
 		}
 	}
 

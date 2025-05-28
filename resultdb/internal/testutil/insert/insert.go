@@ -363,7 +363,7 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestRes
 
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, v)
 		if err != nil {
-			panic(errors.Annotate(err, "parse test variant identifier").Err())
+			panic(errors.Fmt("parse test variant identifier: %w", err))
 		}
 
 		trs[i] = &pb.TestResult{
@@ -427,7 +427,7 @@ func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.T
 		}
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, v)
 		if err != nil {
-			panic(errors.Annotate(err, "parse test variant identifier").Err())
+			panic(errors.Fmt("parse test variant identifier: %w", err))
 		}
 
 		expected := status == pb.TestStatus_PASS

@@ -82,7 +82,7 @@ func AdjustResultLimit(resultLimit int32) int {
 // Returns nil if resultLimit is 0.
 func ValidateResultLimit(resultLimit int32) error {
 	if resultLimit < 0 {
-		return errors.Reason("negative").Err()
+		return errors.New("negative")
 	}
 	return nil
 }
@@ -168,7 +168,7 @@ func (q *Query) trim(tv *pb.TestVariant) error {
 	statusOverride := tv.StatusOverride
 
 	if err := q.Mask.Trim(tv); err != nil {
-		return errors.Annotate(err, "error trimming fields for test variant with ID: %s, variant hash: %s", tv.TestId, tv.VariantHash).Err()
+		return errors.Fmt("error trimming fields for test variant with ID: %s, variant hash: %s: %w", tv.TestId, tv.VariantHash, err)
 	}
 
 	tv.TestId = testID
@@ -340,16 +340,16 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	}
 
 	if err := q.populateFailureReason(r.FailureReason, tr); err != nil {
-		return nil, errors.Annotate(err, "failure reason").Err()
+		return nil, errors.Fmt("failure reason: %w", err)
 	}
 	if err := q.populateProperties(r.Properties, tr); err != nil {
-		return nil, errors.Annotate(err, "properties").Err()
+		return nil, errors.Fmt("properties: %w", err)
 	}
 	if err := q.populateSkippedReason(r.SkippedReason, tr); err != nil {
-		return nil, errors.Annotate(err, "skipped reason").Err()
+		return nil, errors.Fmt("skipped reason: %w", err)
 	}
 	if err := q.populateFrameworkExtensions(r.FrameworkExtensions, tr); err != nil {
-		return nil, errors.Annotate(err, "framework extensions").Err()
+		return nil, errors.Fmt("framework extensions: %w", err)
 	}
 
 	// Populate Tags.
@@ -378,7 +378,7 @@ func (q *Query) populateSources(tv *pb.TestVariant, distinctSources map[string]*
 	// Look up that invocation's sources.
 	inv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
 	if !ok {
-		return errors.Reason("test result in response referenced an unreachable invocation").Err()
+		return errors.New("test result in response referenced an unreachable invocation")
 	}
 	sources := q.ReachableInvocations.Sources[inv.SourceHash]
 	if sources != nil {
@@ -423,8 +423,8 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 			allowedResult, err = auth.HasPermission(ctx,
 				rdbperms.PermGetTestResult, reachableInv.Realm, nil)
 			if err != nil {
-				return errors.Annotate(err,
-					"error checking permission for test result data restriction").Err()
+				return errors.Fmt("error checking permission for test result data restriction: %w", err)
+
 			}
 			// Record whether the caller has permission to get test results in the
 			// realm so the HasPermission result can be re-used.
@@ -470,8 +470,8 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 			allowedExoneration, err = auth.HasPermission(ctx,
 				rdbperms.PermGetTestExoneration, reachableInv.Realm, nil)
 			if err != nil {
-				return errors.Annotate(err,
-					"error checking permission for test exoneration data restriction").Err()
+				return errors.Fmt("error checking permission for test exoneration data restriction: %w", err)
+
 			}
 			// Record whether the caller has permission to get test exonerations in
 			// the realm so the HasPermission result can be re-used.
@@ -551,12 +551,12 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 
 		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(tv.TestId, tv.Variant)
 		if err != nil {
-			return errors.Annotate(err, "parsing test_id_structured for %s", tv.TestId).Err()
+			return errors.Fmt("parsing test_id_structured for %s: %w", tv.TestId, err)
 		}
 		tv.TestIdStructured = testIDStructured
 
 		if err := populateTestMetadata(tv, tmd); err != nil {
-			return errors.Annotate(err, "unmarshalling test_metadata for %s", tv.TestId).Err()
+			return errors.Fmt("unmarshalling test_metadata for %s: %w", tv.TestId, err)
 		}
 
 		// Populate tv.Results
@@ -632,33 +632,33 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 
 	instructionMap, err := q.ReachableInvocations.InstructionMap()
 	if err != nil {
-		return Page{}, errors.Annotate(err, "instruction map").Err()
+		return Page{}, errors.Fmt("instruction map: %w", err)
 	}
 
 	// Fetch test variants with unexpected results.
 	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
 		// Populate the code sources tested.
 		if err := q.populateSources(tv, distinctSources); err != nil {
-			return errors.Annotate(err, "resolving sources").Err()
+			return errors.Fmt("resolving sources: %w", err)
 		}
 
 		// Get instruction of the invocation of the first test result.
 		instruction, err := fetchVerdictInstruction(tv, instructionMap)
 		if err != nil {
-			return errors.Annotate(err, "get verdict instruction").Err()
+			return errors.Fmt("get verdict instruction: %w", err)
 		}
 		tv.Instruction = instruction
 
 		// Restrict test variant data as required.
 		if q.AccessLevel != AccessLevelUnrestricted {
 			if err := q.toLimitedData(ctx, tv, resultPerms, exonerationPerms); err != nil {
-				return errors.Annotate(err, "applying limited access mask").Err()
+				return errors.Fmt("applying limited access mask: %w", err)
 			}
 		}
 
 		// Apply field mask.
 		if err := q.trim(tv); err != nil {
-			return errors.Annotate(err, "applying field mask").Err()
+			return errors.Fmt("applying field mask: %w", err)
 		}
 
 		tvs = append(tvs, tv)
@@ -823,12 +823,12 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 
 		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(testId, variant)
 		if err != nil {
-			return errors.Annotate(err, "parsing test_id_structured for %s", current.TestId).Err()
+			return errors.Fmt("parsing test_id_structured for %s: %w", current.TestId, err)
 		}
 		current.TestIdStructured = testIDStructured
 
 		if err := populateTestMetadata(current, tmd); err != nil {
-			return errors.Annotate(err, "unmarshalling test_metadata for %s", current.TestId).Err()
+			return errors.Fmt("unmarshalling test_metadata for %s: %w", current.TestId, err)
 		}
 		if toYield != nil {
 			return yield(toYield)
@@ -887,7 +887,7 @@ func (q *Query) fetchTestVariantsWithExpectedStatus(ctx context.Context) (Page, 
 
 	instructionMap, err := q.ReachableInvocations.InstructionMap()
 	if err != nil {
-		return Page{}, errors.Annotate(err, "instruction map").Err()
+		return Page{}, errors.Fmt("instruction map: %w", err)
 	}
 
 	// The last test variant we have completely processed.
@@ -936,13 +936,13 @@ func (q *Query) fetchTestVariantsWithExpectedStatus(ctx context.Context) (Page, 
 
 			// Populate the code sources tested.
 			if err := q.populateSources(tv, distinctSources); err != nil {
-				return errors.Annotate(err, "resolving sources").Err()
+				return errors.Fmt("resolving sources: %w", err)
 			}
 
 			// Get instruction of the invocation of the first test result.
 			instruction, err := fetchVerdictInstruction(tv, instructionMap)
 			if err != nil {
-				return errors.Annotate(err, "get verdict instruction").Err()
+				return errors.Fmt("get verdict instruction: %w", err)
 			}
 			tv.Instruction = instruction
 
@@ -1058,7 +1058,7 @@ func fetchVerdictInstruction(tv *pb.TestVariant, instructionMap map[invocations.
 	resultName := tv.Results[0].Result.Name
 	invID, _, _, err := pbutil.ParseTestResultName(resultName)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse test result name").Err()
+		return nil, errors.Fmt("parse test result name: %w", err)
 	}
 	invocationID := invocations.ID(invID)
 	if instruction, ok := instructionMap[invocationID]; ok {
@@ -1086,11 +1086,11 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 	}
 	testResultInvs, err := q.ReachableInvocations.WithTestResultsIDSet()
 	if err != nil {
-		return Page{}, errors.Annotate(err, "error getting invocations with test results").Err()
+		return Page{}, errors.Fmt("error getting invocations with test results: %w", err)
 	}
 	exonerationInvs, err := q.ReachableInvocations.WithExonerationsIDSet()
 	if err != nil {
-		return Page{}, errors.Annotate(err, "error getting invocations with exonerations").Err()
+		return Page{}, errors.Fmt("error getting invocations with exonerations: %w", err)
 	}
 
 	q.params = map[string]any{
@@ -1145,12 +1145,12 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 		q.params["afterTestId"] = ""
 		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
-		return Page{}, pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
+		return Page{}, pagination.InvalidToken(errors.Fmt("expected 3 components, got %q", parts))
 	default:
 		if q.OrderBy == SortOrderStatusV2Effective {
 			afterStatus, err := parseStatusV2Effective(parts[0])
 			if err != nil {
-				return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test verdict status v2 effective: %q", parts[0]).Err())
+				return Page{}, pagination.InvalidToken(errors.Fmt("unrecognized test verdict status v2 effective: %q", parts[0]))
 			}
 			q.params["afterTvStatus"] = int(afterStatus)
 
@@ -1161,7 +1161,7 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 			var ok bool
 			afterStatus, ok := pb.TestVariantStatus_value[parts[0]]
 			if !ok {
-				return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+				return Page{}, pagination.InvalidToken(errors.Fmt("unrecognized test variant status: %q", parts[0]))
 			}
 			q.params["afterTvStatus"] = int(afterStatus)
 

@@ -69,11 +69,11 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	unescape := func(escaped string, re *regexp.Regexp) (string, error) {
 		unescaped, err := url.PathUnescape(escaped)
 		if err != nil {
-			return "", errors.Annotate(err, "%q", escaped).Err()
+			return "", errors.Fmt("%q: %w", escaped, err)
 		}
 
 		if err := validate.SpecifiedWithRe(re, unescaped); err != nil {
-			return "", errors.Annotate(err, "%q", unescaped).Err()
+			return "", errors.Fmt("%q: %w", unescaped, err)
 		}
 
 		return unescaped, nil
@@ -82,11 +82,11 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	unescapeTestID := func(escaped string) (string, error) {
 		unescaped, err := url.PathUnescape(escaped)
 		if err != nil {
-			return "", errors.Annotate(err, "%q", escaped).Err()
+			return "", errors.Fmt("%q: %w", escaped, err)
 		}
 
 		if err := ValidateTestID(unescaped); err != nil {
-			return "", errors.Annotate(err, "%q", unescaped).Err()
+			return "", errors.Fmt("%q: %w", unescaped, err)
 		}
 
 		return unescaped, nil
@@ -102,7 +102,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	if m := testResultArtifactNameRe.FindStringSubmatch(name); m != nil {
 		invocationID = m[1]
 		if testID, err = unescapeTestID(m[2]); err != nil {
-			err = errors.Annotate(err, "test ID").Err()
+			err = errors.Fmt("test ID: %w", err)
 			return
 		}
 		resultID = m[3]

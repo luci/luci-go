@@ -53,7 +53,7 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	var err error
 
 	if t.art.GetGcsUri() != "" {
-		return errors.Reason("StreamUpload does not support gcsUri upload").Err()
+		return errors.New("StreamUpload does not support gcsUri upload")
 	}
 
 	if fp := t.art.GetFilePath(); fp == "" {
@@ -70,7 +70,7 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	req, err := http.NewRequestWithContext(
 		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.StreamHost, t.artName), body)
 	if err != nil {
-		return errors.Annotate(err, "newHTTPRequest").Err()
+		return errors.Fmt("newHTTPRequest: %w", err)
 	}
 
 	// Client.Do always closes the Body on exit, whether there was an error or not.
@@ -107,7 +107,7 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	// the request body can be re-read by HTTPClient.Do.
 	hash, err := calculateHash(body)
 	if err != nil {
-		return errors.Annotate(err, "artifact-hash").Err()
+		return errors.Fmt("artifact-hash: %w", err)
 	}
 	if _, err := body.Seek(0, io.SeekStart); err != nil {
 		return err
@@ -137,7 +137,7 @@ func (u *artifactUploader) sendHTTP(req *http.Request) error {
 	return retry.Retry(req.Context(), transient.Only(retry.Default), func() error {
 		resp, err := u.StreamClient.Do(req)
 		if err != nil {
-			return errors.Annotate(err, "failed to send HTTP request").Err()
+			return errors.Fmt("failed to send HTTP request: %w", err)
 		}
 
 		code := resp.StatusCode
@@ -180,7 +180,7 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uplo
 
 		// artifactChannel.schedule() should have sent it to streamChannel.
 		if ut.size > maxSum {
-			return nil, errors.Reason("an artifact is greater than %d", maxSum).Err()
+			return nil, errors.Fmt("an artifact is greater than %d", maxSum)
 		}
 		// if the sum is going to be too big, stop the iteration.
 		if sum+ut.size > maxSum {
@@ -189,7 +189,7 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uplo
 
 		r, err := ut.CreateRequest()
 		if err != nil {
-			return nil, errors.Annotate(err, "CreateRequest").Err()
+			return nil, errors.Fmt("CreateRequest: %w", err)
 		}
 		reqs = append(reqs, r)
 		sum += ut.size
@@ -219,7 +219,7 @@ func (u *artifactUploader) BatchUpload(ctx context.Context, b *buffer.Batch[*upl
 	// handled in the current iteration.
 	for len(b.Data) > 0 {
 		if req, err = newBatchCreateArtifactsRequest(u.MaxBatchable, b.Data); err != nil {
-			return errors.Annotate(err, "newBatchCreateArtifactRequest").Err()
+			return errors.Fmt("newBatchCreateArtifactRequest: %w", err)
 		}
 
 		b.Meta = req

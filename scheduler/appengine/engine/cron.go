@@ -49,7 +49,7 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 
 	sched, err := job.ParseSchedule()
 	if err != nil {
-		return errors.Annotate(err, "bad schedule %q", job.EffectiveSchedule()).Err()
+		return errors.Fmt("bad schedule %q: %w", job.EffectiveSchedule(), err)
 	}
 
 	now := clock.Now(c).UTC()
@@ -62,7 +62,7 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 		State:    job.Cron,
 	}
 	if err := cb(machine); err != nil {
-		return errors.Annotate(err, "callback error").Err()
+		return errors.Fmt("callback error: %w", err)
 	}
 
 	tasks := []*tq.Task{}
@@ -106,11 +106,11 @@ func pokeCron(c context.Context, job *Job, disp *tq.Dispatcher, cb func(m *cron.
 				},
 			})
 		default:
-			return errors.Reason("unknown action %T emitted by the cron machine", action).Err()
+			return errors.Fmt("unknown action %T emitted by the cron machine", action)
 		}
 	}
 	if err := disp.AddTask(c, tasks...); err != nil {
-		return errors.Annotate(err, "failed to enqueue emitted actions").Err()
+		return errors.Fmt("failed to enqueue emitted actions: %w", err)
 	}
 
 	job.Cron = machine.State

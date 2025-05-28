@@ -32,12 +32,12 @@ type testObjectPredicate interface {
 // invalid.
 func validateTestObjectPredicate(p testObjectPredicate) error {
 	if err := validate.RegexpFragment(p.GetTestIdRegexp()); err != nil {
-		return errors.Annotate(err, "test_id_regexp").Err()
+		return errors.Fmt("test_id_regexp: %w", err)
 	}
 
 	if p.GetVariant() != nil {
 		if err := ValidateVariantPredicate(p.GetVariant()); err != nil {
-			return errors.Annotate(err, "variant").Err()
+			return errors.Fmt("variant: %w", err)
 		}
 	}
 	return nil
@@ -47,11 +47,11 @@ func validateTestObjectPredicate(p testObjectPredicate) error {
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
 	if err := ValidateEnum(int32(p.GetExpectancy()), pb.TestResultPredicate_Expectancy_name); err != nil {
-		return errors.Annotate(err, "expectancy").Err()
+		return errors.Fmt("expectancy: %w", err)
 	}
 
 	if p.GetExcludeExonerated() && p.GetExpectancy() == pb.TestResultPredicate_ALL {
-		return errors.Reason("exclude_exonerated and expectancy=ALL are mutually exclusive").Err()
+		return errors.New("exclude_exonerated and expectancy=ALL are mutually exclusive")
 	}
 
 	return validateTestObjectPredicate(p)
@@ -90,10 +90,10 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 // invalid.
 func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
 	if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
-		return errors.Annotate(err, "text_result_predicate").Err()
+		return errors.Fmt("text_result_predicate: %w", err)
 	}
 	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
-		return errors.Annotate(err, "content_type_regexp").Err()
+		return errors.Fmt("content_type_regexp: %w", err)
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
 func ValidateTestMetadataPredicate(p *pb.TestMetadataPredicate) error {
 	for i, testID := range p.GetTestIds() {
 		if err := ValidateTestID(testID); err != nil {
-			return errors.Annotate(err, "test_ids[%v]", i).Err()
+			return errors.Fmt("test_ids[%v]: %w", i, err)
 		}
 	}
 	return nil

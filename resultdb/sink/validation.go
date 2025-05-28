@@ -34,7 +34,7 @@ import (
 // but it will pick up a significant set.
 func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID bool) (err error) {
 	if msg == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 
 	// If the flat test ID field is present, validate it.
@@ -42,16 +42,16 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 	// expecting a valid test ID to come from concatenation with a test prefix.
 	if msg.TestId != "" {
 		if err := pbutil.ValidateTestID(msg.TestId); err != nil {
-			return errors.Annotate(err, "test_id").Err()
+			return errors.Fmt("test_id: %w", err)
 		}
 	}
 	// If structured test ID is present, validate it.
 	if msg.TestIdStructured != nil || usingStructuredID {
 		if msg.TestIdStructured == nil {
-			return errors.Reason("test_id_structured: unspecified").Err()
+			return errors.New("test_id_structured: unspecified")
 		}
 		if len(msg.TestIdStructured.CaseNameComponents) == 0 {
-			return errors.Reason("test_id_structured: case_name_components: unspecified").Err()
+			return errors.New("test_id_structured: case_name_components: unspecified")
 		}
 		// Perform basic validation, using a placeholder module name and scheme.
 		baseID := pbutil.BaseTestIdentifier{
@@ -63,61 +63,61 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		}
 
 		if err := pbutil.ValidateBaseTestIdentifier(baseID); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
+			return errors.Fmt("test_id_structured: %w", err)
 		}
 	}
 
 	if err := pbutil.ValidateResultID(msg.ResultId); err != nil {
-		return errors.Annotate(err, "result_id").Err()
+		return errors.Fmt("result_id: %w", err)
 	}
 	// This performs lightweight validation of status fields. A more comprehensive
 	// validation is performed by ResultSink later using pbutil.ValidateTestResult.
 	if msg.Status == resultpb.TestStatus_STATUS_UNSPECIFIED || msg.StatusV2 != resultpb.TestResult_STATUS_UNSPECIFIED {
 		if err := pbutil.ValidateTestResultStatusV2(msg.StatusV2); err != nil {
-			return errors.Annotate(err, "status_v2").Err()
+			return errors.Fmt("status_v2: %w", err)
 		}
 	}
 	if msg.Status != resultpb.TestStatus_STATUS_UNSPECIFIED {
 		if err := pbutil.ValidateTestResultStatus(msg.Status); err != nil {
-			return errors.Annotate(err, "status").Err()
+			return errors.Fmt("status: %w", err)
 		}
 	}
 	if err := pbutil.ValidateSummaryHTML(msg.SummaryHtml); err != nil {
-		return errors.Annotate(err, "summary_html").Err()
+		return errors.Fmt("summary_html: %w", err)
 	}
 	if err := pbutil.ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration); err != nil {
 		return err
 	}
 	if err := pbutil.ValidateStringPairs(msg.Tags); err != nil {
-		return errors.Annotate(err, "tags").Err()
+		return errors.Fmt("tags: %w", err)
 	}
 	if err := validateArtifacts(msg.Artifacts); err != nil {
-		return errors.Annotate(err, "artifacts").Err()
+		return errors.Fmt("artifacts: %w", err)
 	}
 	if msg.TestMetadata != nil {
 		if err := pbutil.ValidateTestMetadata(msg.TestMetadata); err != nil {
-			return errors.Annotate(err, "test_metadata").Err()
+			return errors.Fmt("test_metadata: %w", err)
 		}
 	}
 	if msg.FailureReason != nil {
 		useStrictValidation := msg.StatusV2 != resultpb.TestResult_STATUS_UNSPECIFIED
 		if err := pbutil.ValidateFailureReason(msg.FailureReason, useStrictValidation); err != nil {
-			return errors.Annotate(err, "failure_reason").Err()
+			return errors.Fmt("failure_reason: %w", err)
 		}
 	}
 	if msg.Properties != nil {
 		if err := pbutil.ValidateTestResultProperties(msg.Properties); err != nil {
-			return errors.Annotate(err, "properties").Err()
+			return errors.Fmt("properties: %w", err)
 		}
 	}
 	if msg.SkippedReason != nil {
 		if err := pbutil.ValidateSkippedReason(msg.SkippedReason); err != nil {
-			return errors.Annotate(err, "skipped_reason").Err()
+			return errors.Fmt("skipped_reason: %w", err)
 		}
 	}
 	if msg.FrameworkExtensions != nil {
 		if err := pbutil.ValidateFrameworkExtensions(msg.FrameworkExtensions, msg.StatusV2); err != nil {
-			return errors.Annotate(err, "framework_extensions").Err()
+			return errors.Fmt("framework_extensions: %w", err)
 		}
 	}
 	return nil
@@ -126,7 +126,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 // validateArtifact returns a non-nil error if art is invalid.
 func validateArtifact(art *sinkpb.Artifact) error {
 	if art.GetFilePath() == "" && art.GetContents() == nil && art.GetGcsUri() == "" {
-		return errors.Reason("body: one of file_path or contents or gcs_uri must be provided").Err()
+		return errors.New("body: one of file_path or contents or gcs_uri must be provided")
 	}
 	if art.GetContentType() != "" {
 		_, _, err := mime.ParseMediaType(art.ContentType)
@@ -141,13 +141,13 @@ func validateArtifact(art *sinkpb.Artifact) error {
 func validateArtifacts(arts map[string]*sinkpb.Artifact) error {
 	for id, art := range arts {
 		if art == nil {
-			return errors.Reason("%s: unspecified", id).Err()
+			return errors.Fmt("%s: unspecified", id)
 		}
 		if err := pbutil.ValidateArtifactID(id); err != nil {
-			return errors.Annotate(err, "%s", id).Err()
+			return errors.Fmt("%s: %w", id, err)
 		}
 		if err := validateArtifact(art); err != nil {
-			return errors.Annotate(err, "%s", id).Err()
+			return errors.Fmt("%s: %w", id, err)
 		}
 	}
 	return nil

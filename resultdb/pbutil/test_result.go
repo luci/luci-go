@@ -76,7 +76,7 @@ func ValidateVariantHash(variantHash string) error {
 		return validate.Unspecified()
 	}
 	if !variantHashRe.MatchString(variantHash) {
-		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
+		return errors.Fmt("variant hash %s must match %s", variantHash, variantHashRe)
 	}
 	return nil
 }
@@ -98,19 +98,19 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
 		testID, err := ParseAndValidateTestID(tr.TestId)
 		if err != nil {
-			return errors.Annotate(err, "test_id").Err()
+			return errors.Fmt("test_id: %w", err)
 		}
 		// Some legacy clients may set no variant to denote the empty variant.
 		if tr.Variant != nil {
 			if err := ValidateVariant(tr.Variant); err != nil {
-				return errors.Annotate(err, "variant").Err()
+				return errors.Fmt("variant: %w", err)
 			}
 		}
 		if validateToScheme != nil {
 			// Validate the test identifier meets the requirements of the scheme.
 			// This is enforced only at upload time.
 			if err := validateToScheme(testID); err != nil {
-				return errors.Annotate(err, "test_id").Err()
+				return errors.Fmt("test_id: %w", err)
 			}
 		}
 	} else {
@@ -119,111 +119,111 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		// the API spec and should be ignored. Instead read from the TestIdStructured field.
 
 		if err := ValidateStructuredTestIdentifierForStorage(tr.TestIdStructured); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
+			return errors.Fmt("test_id_structured: %w", err)
 		}
 		if validateToScheme != nil {
 			// Validate the test identifier meets the requirements of the scheme.
 			// This is enforced only at upload time.
 			if err := validateToScheme(ExtractBaseTestIdentifier(tr.TestIdStructured)); err != nil {
-				return errors.Annotate(err, "test_id_structured").Err()
+				return errors.Fmt("test_id_structured: %w", err)
 			}
 		}
 	}
 
 	if err := ValidateResultID(tr.ResultId); err != nil {
-		return errors.Annotate(err, "result_id").Err()
+		return errors.Fmt("result_id: %w", err)
 	}
 	// Validate StatusV2 if it is specified, or if the status v1 field is unspecified
 	// (to trigger "status_v2: must be specified" error).
 	if tr.StatusV2 != pb.TestResult_STATUS_UNSPECIFIED || tr.Status == pb.TestStatus_STATUS_UNSPECIFIED {
 		if err := ValidateTestResultStatusV2(tr.StatusV2); err != nil {
-			return errors.Annotate(err, "status_v2").Err()
+			return errors.Fmt("status_v2: %w", err)
 		}
 		// Do not allow status v2 and v1 to be set simultaneously to avoid ambiguities about
 		// precedence.
 		if tr.Status != pb.TestStatus_STATUS_UNSPECIFIED {
-			return errors.Reason("status: must not specify at same time as status_v2; specify status_v2 only").Err()
+			return errors.New("status: must not specify at same time as status_v2; specify status_v2 only")
 		}
 		if tr.Expected {
-			return errors.Reason("expected: must not specify at same time as status_v2; specify status_v2 only").Err()
+			return errors.New("expected: must not specify at same time as status_v2; specify status_v2 only")
 		}
 
 		// Require failure reason to be set for failed results.
 		if tr.StatusV2 == pb.TestResult_FAILED {
 			if tr.FailureReason == nil {
-				return errors.Reason("failure_reason: must be set when status_v2 is FAILED").Err()
+				return errors.New("failure_reason: must be set when status_v2 is FAILED")
 			}
 		} else {
 			if tr.FailureReason != nil {
-				return errors.Reason("failure_reason: must not be set when status_v2 is not FAILED").Err()
+				return errors.New("failure_reason: must not be set when status_v2 is not FAILED")
 			}
 		}
 		// Require skipped reason to be set for skipped results.
 		if tr.StatusV2 == pb.TestResult_SKIPPED {
 			if tr.SkippedReason == nil {
-				return errors.Reason("skipped_reason: must be set when status_v2 is SKIPPED").Err()
+				return errors.New("skipped_reason: must be set when status_v2 is SKIPPED")
 			}
 		} else {
 			if tr.SkippedReason != nil {
-				return errors.Reason("skipped_reason: must not be set when status_v2 is not SKIPPED").Err()
+				return errors.New("skipped_reason: must not be set when status_v2 is not SKIPPED")
 			}
 		}
 		// Deprecate use of SkipReason enum for old uploads.
 		if tr.SkipReason != pb.SkipReason_SKIP_REASON_UNSPECIFIED {
-			return errors.Reason("skip_reason: must not be set in conjuction with status_v2; set skipped_reason.kind instead").Err()
+			return errors.New("skip_reason: must not be set in conjuction with status_v2; set skipped_reason.kind instead")
 		}
 	}
 	if tr.Status != pb.TestStatus_STATUS_UNSPECIFIED {
 		if err := ValidateTestResultStatus(tr.Status); err != nil {
-			return errors.Annotate(err, "status").Err()
+			return errors.Fmt("status: %w", err)
 		}
 		// If using legacy status, the failure reason kind should not be set as it
 		// could have a conflicting value.
 		if tr.FailureReason.GetKind() != pb.FailureReason_KIND_UNSPECIFIED {
-			return errors.Reason("failure_reason: kind: please migrate to using status_v2 if you want to set this field").Err()
+			return errors.New("failure_reason: kind: please migrate to using status_v2 if you want to set this field")
 		}
 		if tr.SkippedReason != nil {
-			return errors.Reason("skipped_reason: please migrate to using status_v2 if you want to set this field").Err()
+			return errors.New("skipped_reason: please migrate to using status_v2 if you want to set this field")
 		}
 		if tr.FrameworkExtensions != nil {
-			return errors.Reason("framework_extensions: please migrate to using status_v2 if you want to set this field").Err()
+			return errors.New("framework_extensions: please migrate to using status_v2 if you want to set this field")
 		}
 		if err := ValidateTestResultSkipReason(tr.Status, tr.SkipReason); err != nil {
-			return errors.Annotate(err, "skip_reason").Err()
+			return errors.Fmt("skip_reason: %w", err)
 		}
 	}
 	if err := ValidateSummaryHTML(tr.SummaryHtml); err != nil {
-		return errors.Annotate(err, "summary_html").Err()
+		return errors.Fmt("summary_html: %w", err)
 	}
 	if err := ValidateStartTimeWithDuration(now, tr.StartTime, tr.Duration); err != nil {
 		return err
 	}
 	if err := ValidateStringPairs(tr.Tags); err != nil {
-		return errors.Annotate(err, "tags").Err()
+		return errors.Fmt("tags: %w", err)
 	}
 	if tr.TestMetadata != nil {
 		if err := ValidateTestMetadata(tr.TestMetadata); err != nil {
-			return errors.Annotate(err, "test_metadata").Err()
+			return errors.Fmt("test_metadata: %w", err)
 		}
 	}
 	if tr.FailureReason != nil {
 		if err := ValidateFailureReason(tr.FailureReason, tr.StatusV2 != pb.TestResult_STATUS_UNSPECIFIED); err != nil {
-			return errors.Annotate(err, "failure_reason").Err()
+			return errors.Fmt("failure_reason: %w", err)
 		}
 	}
 	if tr.Properties != nil {
 		if err := ValidateTestResultProperties(tr.Properties); err != nil {
-			return errors.Annotate(err, "properties").Err()
+			return errors.Fmt("properties: %w", err)
 		}
 	}
 	if tr.SkippedReason != nil {
 		if err := ValidateSkippedReason(tr.SkippedReason); err != nil {
-			return errors.Annotate(err, "skipped_reason").Err()
+			return errors.Fmt("skipped_reason: %w", err)
 		}
 	}
 	if tr.FrameworkExtensions != nil {
 		if err := ValidateFrameworkExtensions(tr.FrameworkExtensions, tr.StatusV2); err != nil {
-			return errors.Annotate(err, "framework_extensions").Err()
+			return errors.Fmt("framework_extensions: %w", err)
 		}
 	}
 	return nil
@@ -243,7 +243,7 @@ func ValidateTestResultName(name string) error {
 // ValidateSummaryHTML returns a non-nil error if summary is invalid.
 func ValidateSummaryHTML(summary string) error {
 	if len(summary) > maxLenSummaryHTML {
-		return errors.Reason("exceeds the maximum size of %d bytes", maxLenSummaryHTML).Err()
+		return errors.Fmt("exceeds the maximum size of %d bytes", maxLenSummaryHTML)
 	}
 	return nil
 }
@@ -262,11 +262,11 @@ func ValidateStartTimeWithDuration(now time.Time, startTime *timestamppb.Timesta
 
 	switch {
 	case startTime != nil && now.Add(maxClockSkew).Before(t):
-		return errors.Reason("start_time: cannot be > (now + %s), but was +%s", maxClockSkew, t.Sub(now)).Err()
+		return errors.Fmt("start_time: cannot be > (now + %s), but was +%s", maxClockSkew, t.Sub(now))
 	case duration != nil && d < 0:
-		return errors.Reason("duration: is < 0").Err()
+		return errors.New("duration: is < 0")
 	case startTime != nil && duration != nil && now.Add(maxClockSkew).Before(t.Add(d)):
-		return errors.Reason("start_time + duration: cannot be > (now + %s), but was +%s", maxClockSkew, t.Add(d).Sub(now)).Err()
+		return errors.Fmt("start_time + duration: cannot be > (now + %s), but was +%s", maxClockSkew, t.Add(d).Sub(now))
 	}
 	return nil
 }
@@ -277,7 +277,7 @@ func ValidateTestResultStatus(s pb.TestStatus) error {
 		return err
 	}
 	if s == pb.TestStatus_STATUS_UNSPECIFIED {
-		return errors.Reason("cannot be %s", pb.TestStatus_STATUS_UNSPECIFIED).Err()
+		return errors.Fmt("cannot be %s", pb.TestStatus_STATUS_UNSPECIFIED)
 	}
 	return nil
 }
@@ -287,7 +287,7 @@ func ValidateTestResultStatusV2(s pb.TestResult_Status) error {
 		return err
 	}
 	if s == pb.TestResult_STATUS_UNSPECIFIED {
-		return errors.Reason("cannot be %s", pb.TestResult_STATUS_UNSPECIFIED).Err()
+		return errors.Fmt("cannot be %s", pb.TestResult_STATUS_UNSPECIFIED)
 	}
 	return nil
 }
@@ -296,17 +296,17 @@ func ValidateTestResultStatusV2(s pb.TestResult_Status) error {
 func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 	if tmd.BugComponent != nil {
 		if err := ValidateBugComponent(tmd.BugComponent); err != nil {
-			return errors.Annotate(err, "bug_component").Err()
+			return errors.Fmt("bug_component: %w", err)
 		}
 	}
 	if tmd.Location != nil {
 		if err := ValidateTestLocation(tmd.Location); err != nil {
-			return errors.Annotate(err, "location").Err()
+			return errors.Fmt("location: %w", err)
 		}
 	}
 	if tmd.PropertiesSchema != "" {
 		if err := ValidatePropertiesSchema(tmd.PropertiesSchema); err != nil {
-			return errors.Annotate(err, "properties_schema").Err()
+			return errors.Fmt("properties_schema: %w", err)
 		}
 	}
 	if tmd.Properties != nil {
@@ -314,12 +314,12 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 			return errors.New("properties_schema must be specified with non-empty properties")
 		}
 		if err := ValidateTestMetadataProperties(tmd.Properties); err != nil {
-			return errors.Annotate(err, "properties").Err()
+			return errors.Fmt("properties: %w", err)
 		}
 	}
 	if tmd.PreviousTestId != "" {
 		if err := ValidateTestID(tmd.PreviousTestId); err != nil {
-			return errors.Annotate(err, "previous_test_id").Err()
+			return errors.Fmt("previous_test_id: %w", err)
 		}
 	}
 	return nil
@@ -328,7 +328,7 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 // ValidatePropertiesSchema returns a non-nil error if properties schema is invalid.
 func ValidatePropertiesSchema(propertiesSchema string) error {
 	if len(propertiesSchema) > maxLenPropertiesSchema {
-		return errors.Reason("exceeds the maximum size of %d bytes", maxLenPropertiesSchema).Err()
+		return errors.Fmt("exceeds the maximum size of %d bytes", maxLenPropertiesSchema)
 	}
 	return validate.SpecifiedWithRe(propertiesSchemaRe, propertiesSchema)
 }
@@ -371,17 +371,17 @@ func ValidateBugComponent(bugComponent *pb.BugComponent) error {
 func ValidateTestLocation(loc *pb.TestLocation) error {
 	switch {
 	case loc.GetRepo() == "":
-		return errors.Reason("repo: required").Err()
+		return errors.New("repo: required")
 	case strings.HasSuffix(loc.Repo, ".git"):
-		return errors.Reason("repo: must not end with .git").Err()
+		return errors.New("repo: must not end with .git")
 	case loc.FileName == "":
-		return errors.Reason("file_name: unspecified").Err()
+		return errors.New("file_name: unspecified")
 	case loc.Line < 0:
-		return errors.Reason("line: must not be negative").Err()
+		return errors.New("line: must not be negative")
 	}
 
 	if err := validateFileName(loc.FileName); err != nil {
-		return errors.Annotate(err, "file_name").Err()
+		return errors.Fmt("file_name: %w", err)
 	}
 	return nil
 }
@@ -390,18 +390,18 @@ func ValidateTestLocation(loc *pb.TestLocation) error {
 func ValidateFilePath(path string) error {
 	switch {
 	case !strings.HasPrefix(path, "//"):
-		return errors.Reason("doesn't start with //").Err()
+		return errors.New("doesn't start with //")
 	case strings.Contains(path, "\\"):
-		return errors.Reason("has \\").Err()
+		return errors.New("has \\")
 	case len(path) > 512:
-		return errors.Reason("length exceeds 512").Err()
+		return errors.New("length exceeds 512")
 	}
 	return nil
 }
 
 func validateFileName(name string) error {
 	if strings.HasSuffix(name, "/") {
-		return errors.Reason("ends with /").Err()
+		return errors.New("ends with /")
 	}
 	return ValidateFilePath(name)
 }
@@ -411,17 +411,17 @@ func validateFileName(name string) error {
 // validation of failure reasons.
 func ValidateFailureReason(fr *pb.FailureReason, useStrictValidation bool) error {
 	if fr == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 
 	if useStrictValidation {
 		if fr.Kind == pb.FailureReason_KIND_UNSPECIFIED {
-			return errors.Reason("kind: unspecified").Err()
+			return errors.New("kind: unspecified")
 		}
 	}
 	if fr.Kind != pb.FailureReason_KIND_UNSPECIFIED {
 		if err := ValidateFailureReasonKind(fr.Kind); err != nil {
-			return errors.Annotate(err, "kind").Err()
+			return errors.Fmt("kind: %w", err)
 		}
 	}
 
@@ -429,12 +429,12 @@ func ValidateFailureReason(fr *pb.FailureReason, useStrictValidation bool) error
 		// Clients should have migrated to use the errors collection.
 		// The error populated at errors[0] should auto-propagate to primary_error_message.
 		if fr.PrimaryErrorMessage != "" {
-			return errors.Reason("primary_error_message: must not be set when status_v2 is set; set errors instead").Err()
+			return errors.New("primary_error_message: must not be set when status_v2 is set; set errors instead")
 		}
 	} else {
 		if len(fr.PrimaryErrorMessage) > maxLenPrimaryErrorMessage {
-			return errors.Reason("primary_error_message: exceeds the maximum "+
-				"size of %d bytes", maxLenPrimaryErrorMessage).Err()
+			return errors.Fmt("primary_error_message: exceeds the maximum "+
+				"size of %d bytes", maxLenPrimaryErrorMessage)
 		}
 	}
 
@@ -445,24 +445,22 @@ func ValidateFailureReason(fr *pb.FailureReason, useStrictValidation bool) error
 	totalErrorLen := 0
 	for i, e := range fr.Errors {
 		if i == 0 && e.Message != fr.PrimaryErrorMessage && fr.PrimaryErrorMessage != "" {
-			return errors.Reason(
-				"errors[0]: message: must match primary_error_message, if set").Err()
+			return errors.New("errors[0]: message: must match primary_error_message, if set")
 		}
 
 		if err := ValidateFailureReasonError(e, useStrictValidation); err != nil {
-			return errors.Annotate(err, "errors[%d]", i).Err()
+			return errors.Fmt("errors[%d]: %w", i, err)
 		}
 
 		totalErrorLen += proto.Size(e)
 	}
 	if totalErrorLen > maxSizeErrors {
-		return errors.Reason("errors: exceeds the maximum total size of %d "+
-			"bytes", maxSizeErrors).Err()
+		return errors.Fmt("errors: exceeds the maximum total size of %d "+
+			"bytes", maxSizeErrors)
 	}
 
 	if fr.TruncatedErrorsCount < 0 {
-		return errors.Reason(
-			"truncated_errors_count: must be non-negative").Err()
+		return errors.New("truncated_errors_count: must be non-negative")
 	}
 	return nil
 }
@@ -473,7 +471,7 @@ func ValidateFailureReasonKind(k pb.FailureReason_Kind) error {
 		return err
 	}
 	if k == pb.FailureReason_KIND_UNSPECIFIED {
-		return errors.Reason("cannot be %s", pb.FailureReason_KIND_UNSPECIFIED).Err()
+		return errors.Fmt("cannot be %s", pb.FailureReason_KIND_UNSPECIFIED)
 	}
 	return nil
 }
@@ -481,13 +479,12 @@ func ValidateFailureReasonKind(k pb.FailureReason_Kind) error {
 // ValidateFailureReasonError returns a non-nil error if e is invalid.
 func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation bool) error {
 	if len(e.GetMessage()) > maxLenPrimaryErrorMessage {
-		return errors.Reason(
-			"message: exceeds the maximum size of %d bytes",
-			maxLenPrimaryErrorMessage).Err()
+		return errors.Fmt("message: exceeds the maximum size of %d bytes",
+			maxLenPrimaryErrorMessage)
 	}
 	if useStrictValidation {
 		if e.Message == "" {
-			return errors.Reason("message: unspecified").Err()
+			return errors.New("message: unspecified")
 		}
 		// We try not to be too pedantic about failure reasons as they often
 		// come from raw logs where programs dump random bytes. So we do not enforce
@@ -495,7 +492,7 @@ func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation b
 		// However, we do require it to be valid UTF-8 as this is a requirement
 		// of all strings passed by proto.
 		if !utf8.ValidString(e.Message) {
-			return errors.Reason("message: is not valid UTF-8").Err()
+			return errors.New("message: is not valid UTF-8")
 		}
 	}
 	return nil
@@ -504,16 +501,16 @@ func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation b
 // ValidateSkippedReason returns a non-nil error if sr is invalid.
 func ValidateSkippedReason(sr *pb.SkippedReason) error {
 	if sr == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if err := ValidateSkippedReasonKind(sr.Kind); err != nil {
-		return errors.Annotate(err, "kind").Err()
+		return errors.Fmt("kind: %w", err)
 	}
 	if err := ValidateUTF8Printable(sr.ReasonMessage, 1024, ValidationModeLoose); err != nil {
-		return errors.Annotate(err, "reason_message").Err()
+		return errors.Fmt("reason_message: %w", err)
 	}
 	if (sr.Kind == pb.SkippedReason_OTHER || sr.Kind == pb.SkippedReason_DEMOTED) && sr.ReasonMessage == "" {
-		return errors.Reason("reason_message: must be set when skipped reason kind is %s", sr.Kind).Err()
+		return errors.Fmt("reason_message: must be set when skipped reason kind is %s", sr.Kind)
 	}
 	return nil
 }
@@ -524,7 +521,7 @@ func ValidateSkippedReasonKind(k pb.SkippedReason_Kind) error {
 		return err
 	}
 	if k == pb.SkippedReason_KIND_UNSPECIFIED {
-		return errors.Reason("cannot be %s", pb.SkippedReason_KIND_UNSPECIFIED).Err()
+		return errors.Fmt("cannot be %s", pb.SkippedReason_KIND_UNSPECIFIED)
 	}
 	return nil
 }
@@ -532,11 +529,11 @@ func ValidateSkippedReasonKind(k pb.SkippedReason_Kind) error {
 // ValidateFrameworkExtensions returns a non-nil error if fe is invalid.
 func ValidateFrameworkExtensions(fe *pb.FrameworkExtensions, statusV2 pb.TestResult_Status) error {
 	if fe == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if fe.WebTest != nil {
 		if err := ValidateWebTest(fe.WebTest, statusV2); err != nil {
-			return errors.Annotate(err, "web_test").Err()
+			return errors.Fmt("web_test: %w", err)
 		}
 	}
 	return nil
@@ -545,31 +542,31 @@ func ValidateFrameworkExtensions(fe *pb.FrameworkExtensions, statusV2 pb.TestRes
 // ValidateWebTest returns a non-nil error if wt is invalid.
 func ValidateWebTest(wt *pb.WebTest, statusV2 pb.TestResult_Status) error {
 	if wt == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if err := ValidateWebTestStatus(wt.Status); err != nil {
-		return errors.Annotate(err, "status").Err()
+		return errors.Fmt("status: %w", err)
 	}
 	// Besides semantic consistency between web test statuses and status_v2,
 	// this constraint exists to ensure ResultDB Indexes on unexpected results
 	// can be used to find failed, flaky, execution errored and precluded verdicts.
 	if wt.IsExpected {
 		if statusV2 == pb.TestResult_FAILED || statusV2 == pb.TestResult_PRECLUDED || statusV2 == pb.TestResult_EXECUTION_ERRORED {
-			return errors.Reason("is_expected: a result with a top-level status_v2 of %s must be marked unexpected", statusV2.String()).Err()
+			return errors.Fmt("is_expected: a result with a top-level status_v2 of %s must be marked unexpected", statusV2.String())
 		}
 	} else {
 		if statusV2 == pb.TestResult_PASSED || statusV2 == pb.TestResult_SKIPPED {
-			return errors.Reason("is_expected: a result with a top-level status_v2 of %s must be marked expected", statusV2.String()).Err()
+			return errors.Fmt("is_expected: a result with a top-level status_v2 of %s must be marked expected", statusV2.String())
 		}
 	}
 
 	if wt.Status == pb.WebTest_SKIP {
 		if statusV2 == pb.TestResult_FAILED || statusV2 == pb.TestResult_PASSED {
-			return errors.Reason("status: a result with a top-level status_v2 of %s must not be marked a web test skip", statusV2.String()).Err()
+			return errors.Fmt("status: a result with a top-level status_v2 of %s must not be marked a web test skip", statusV2.String())
 		}
 	} else {
 		if statusV2 == pb.TestResult_PRECLUDED || statusV2 == pb.TestResult_EXECUTION_ERRORED || statusV2 == pb.TestResult_SKIPPED {
-			return errors.Reason("status: a result with a top-level status_v2 of %s may not be used in conjunction with with a web test fail, pass, crash or timeout", statusV2.String()).Err()
+			return errors.Fmt("status: a result with a top-level status_v2 of %s may not be used in conjunction with with a web test fail, pass, crash or timeout", statusV2.String())
 		}
 	}
 
@@ -582,7 +579,7 @@ func ValidateWebTestStatus(s pb.WebTest_Status) error {
 		return err
 	}
 	if s == pb.WebTest_STATUS_UNSPECIFIED {
-		return errors.Reason("cannot be %s", pb.WebTest_STATUS_UNSPECIFIED).Err()
+		return errors.Fmt("cannot be %s", pb.WebTest_STATUS_UNSPECIFIED)
 	}
 	return nil
 }
@@ -593,7 +590,7 @@ func ValidateTestResultSkipReason(status pb.TestStatus, reason pb.SkipReason) er
 		return err
 	}
 	if reason != pb.SkipReason_SKIP_REASON_UNSPECIFIED && status != pb.TestStatus_SKIP {
-		return errors.Reason("value must be zero (UNSPECIFIED) when status is not SKIP").Err()
+		return errors.New("value must be zero (UNSPECIFIED) when status is not SKIP")
 	}
 	return nil
 }
@@ -613,12 +610,12 @@ func ParseTestResultName(name string) (invID, testID, resultID string, err error
 	}
 	unescapedTestID, err := url.PathUnescape(m[2])
 	if err != nil {
-		err = errors.Annotate(err, "test id %q", m[2]).Err()
+		err = errors.Fmt("test id %q: %w", m[2], err)
 		return
 	}
 
 	if ve := ValidateTestID(unescapedTestID); ve != nil {
-		err = errors.Annotate(ve, "test id %q", unescapedTestID).Err()
+		err = errors.Fmt("test id %q: %w", unescapedTestID, ve)
 		return
 	}
 	return m[1], unescapedTestID, m[3], nil
