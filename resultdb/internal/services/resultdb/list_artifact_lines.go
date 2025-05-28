@@ -52,13 +52,13 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 	invID, _, _, artifactID, err := pbutil.ParseArtifactName(in.Parent)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "parse artifact name").Err()
+		return nil, errors.Fmt("parse artifact name: %w", err)
 	}
 
 	invocation, err := invocations.Read(ctx, invocations.ID(invID), invocations.ExcludeExtendedProperties)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "reading invocation").Err()
+		return nil, errors.Fmt("reading invocation: %w", err)
 	}
 
 	art, err := artifacts.Read(ctx, in.Parent)
@@ -68,7 +68,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 
 	content, err := s.readArtifactData(ctx, art)
 	if err != nil {
-		return nil, errors.Annotate(err, "read artifact data").Err()
+		return nil, errors.Fmt("read artifact data: %w", err)
 	}
 
 	year := invocation.CreateTime.AsTime().Year()
@@ -76,7 +76,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 	lines, err := artifacts.ToLogLines(artifactID, art.ContentType, content, year, int(in.PageSize), maxBytes)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "process lines").Err()
+		return nil, errors.Fmt("process lines: %w", err)
 	}
 
 	resp := &pb.ListArtifactLinesResponse{
@@ -88,11 +88,11 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 
 func validateListArtifactLinesRequest(req *pb.ListArtifactLinesRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Parent); err != nil {
-		return appstatus.BadRequest(errors.Reason("parent: invalid artifact name").Err())
+		return appstatus.BadRequest(errors.New("parent: invalid artifact name"))
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "page_size").Err())
+		return appstatus.BadRequest(errors.Fmt("page_size: %w", err))
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (s *resultDBServer) readArtifactData(ctx context.Context, art *artifacts.Ar
 	})
 
 	if err != nil {
-		return nil, errors.Annotate(err, "creating a byte read stream").Err()
+		return nil, errors.Fmt("creating a byte read stream: %w", err)
 	}
 
 	allData := make([]byte, 0, art.SizeBytes)
@@ -118,7 +118,7 @@ func (s *resultDBServer) readArtifactData(ctx context.Context, art *artifacts.Ar
 			if ok && st.Code() == codes.NotFound {
 				return nil, appstatus.Error(codes.NotFound, "artifact not found")
 			}
-			return nil, errors.Annotate(err, "reading bytes for artifact").Err()
+			return nil, errors.Fmt("reading bytes for artifact: %w", err)
 		}
 
 		allData = append(allData, response.Data...)

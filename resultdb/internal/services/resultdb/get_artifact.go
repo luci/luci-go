@@ -35,7 +35,7 @@ import (
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil

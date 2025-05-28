@@ -35,7 +35,7 @@ import (
 // to be invalid.
 func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 	if err := pbutil.ValidateArtifactPredicate(req.GetPredicate()); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 	return validateQueryRequest(req)
 }

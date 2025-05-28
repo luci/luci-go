@@ -51,7 +51,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 
 	invID, testID, _, artifactID, err := pbutil.ParseArtifactName(request.Parent)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse artifact name").Err()
+		return nil, errors.Fmt("parse artifact name: %w", err)
 	}
 
 	if testID == "" {
@@ -61,7 +61,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 	invocation, err := invocations.Read(ctx, invocations.ID(invID), invocations.ExcludeExtendedProperties)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "reading invocation").Err()
+		return nil, errors.Fmt("reading invocation: %w", err)
 	}
 
 	var art *artifacts.Artifact
@@ -83,7 +83,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 			})
 
 			if err != nil {
-				return errors.Annotate(err, "creating a byte read stream").Err()
+				return errors.Fmt("creating a byte read stream: %w", err)
 			}
 
 			// Read the first chunk in parallel with BigQuery.
@@ -93,7 +93,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 				return nil
 			}
 			if err != nil {
-				return errors.Annotate(err, "reading bytes for artifact").Err()
+				return errors.Fmt("reading bytes for artifact: %w", err)
 			}
 			contentChunk = response.Data
 			return nil
@@ -102,7 +102,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 			// TODO: get the artifact date and test variant for more accurate comparisons.
 			passingHashes, err = artifacts.FetchPassingHashes(ctx, s.bqClient, invocation.Realm, testID, artifactID, numPassesToCompare)
 			if err != nil {
-				return errors.Annotate(err, "get passing hashes").Err()
+				return errors.Fmt("get passing hashes: %w", err)
 			}
 			return err
 		}
@@ -118,7 +118,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 	for !eof {
 		chunkRanges, err := artifacts.ToFailureOnlyLineRanges(artifactID, art.ContentType, contentChunk, passingHashes, request.IncludeContent)
 		if err != nil {
-			return nil, errors.Annotate(err, "process lines").Err()
+			return nil, errors.Fmt("process lines: %w", err)
 		}
 		// If the first range in the new chunk is a continuation of the last range
 		// in the previous chunk, merge them together.
@@ -136,7 +136,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "reading bytes for artifact").Err()
+			return nil, errors.Fmt("reading bytes for artifact: %w", err)
 		}
 		contentChunk = response.Data
 	}
@@ -151,11 +151,11 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 
 func validateQueryArtifactFailureOnlyLinesRequest(req *pb.QueryArtifactFailureOnlyLinesRequest) error {
 	if err := pbutil.ValidateArtifactName(req.Parent); err != nil {
-		return appstatus.BadRequest(errors.Reason("parent: invalid artifact name").Err())
+		return appstatus.BadRequest(errors.New("parent: invalid artifact name"))
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "page_size").Err())
+		return appstatus.BadRequest(errors.Fmt("page_size: %w", err))
 	}
 
 	return nil

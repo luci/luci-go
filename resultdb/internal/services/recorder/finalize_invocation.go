@@ -34,7 +34,7 @@ import (
 // to be invalid.
 func validateFinalizeInvocationRequest(req *pb.FinalizeInvocationRequest) error {
 	if _, err := pbutil.ParseInvocationName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil

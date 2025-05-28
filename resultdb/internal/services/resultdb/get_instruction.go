@@ -33,7 +33,7 @@ import (
 func validateGetInstructionRequest(req *pb.GetInstructionRequest) (invocations.ID, string, error) {
 	invocationID, instructionID, err := pbutil.ParseInstructionName(req.Name)
 	if err != nil {
-		return "", "", errors.Annotate(err, "parse instruction name").Err()
+		return "", "", errors.Fmt("parse instruction name: %w", err)
 	}
 	return invocations.ID(invocationID), instructionID, nil
 }
@@ -58,7 +58,7 @@ func (s *resultDBServer) GetInstruction(ctx context.Context, req *pb.GetInstruct
 
 	instruction, err := fetchInstruction(ctx, invocationID, instructionID)
 	if err != nil {
-		return nil, errors.Annotate(err, "get instruction").Err()
+		return nil, errors.Fmt("get instruction: %w", err)
 	}
 
 	return instruction, nil

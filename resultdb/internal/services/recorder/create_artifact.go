@@ -144,7 +144,7 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 
 	// Forward the request body to RBE-CAS.
 	if err := ac.writeToCAS(ctx, ver); err != nil {
-		return errors.Annotate(err, "failed to write to CAS").Err()
+		return errors.Fmt("failed to write to CAS: %w", err)
 	}
 
 	if err := ver.ReadVerify(ctx); err != nil {
@@ -193,7 +193,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 
 	w, err := ac.NewCASWriter(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to create a CAS writer").Err()
+		return errors.Fmt("failed to create a CAS writer: %w", err)
 	}
 	defer w.CloseSend()
 
@@ -216,9 +216,9 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 		if err != nil && err != io.EOF {
 			tracing.End(readSpan, err)
 			if err != io.ErrUnexpectedEOF {
-				return errors.Annotate(err, "failed to read artifact contents").Err()
+				return errors.Fmt("failed to read artifact contents: %w", err)
 			}
-			return appstatus.BadRequest(errors.Annotate(err, "failed to read artifact contents").Err())
+			return appstatus.BadRequest(errors.Fmt("failed to read artifact contents: %w", err))
 		}
 		tracing.End(readSpan, nil, attribute.Int("size", n))
 		last := err == io.EOF
@@ -244,7 +244,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 		// Do not shadow err! It is checked below again.
 		if err = w.Send(req); err != nil && err != io.EOF {
 			tracing.End(writeSpan, err)
-			return errors.Annotate(err, "failed to write data to RBE-CAS").Err()
+			return errors.Fmt("failed to write data to RBE-CAS: %w", err)
 		}
 		tracing.End(writeSpan, nil)
 		bytesSent += n
@@ -260,11 +260,11 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, r io.Reader) (err err
 		logging.Warningf(ctx, "RBE-CAS responded with %s", err)
 		return appstatus.Errorf(codes.InvalidArgument, "Content-Hash and/or Content-Length do not match the request body")
 	case err != nil:
-		return errors.Annotate(err, "failed to read RBE-CAS write response").Err()
+		return errors.Fmt("failed to read RBE-CAS write response: %w", err)
 	case res.CommittedSize == ac.size:
 		return nil
 	default:
-		return errors.Reason("unexpected blob commit size %d, expected %d", res.CommittedSize, ac.size).Err()
+		return errors.Fmt("unexpected blob commit size %d, expected %d", res.CommittedSize, ac.size)
 	}
 }
 

@@ -41,8 +41,7 @@ func parseParent(parent string) (invocations.ID, string, error) {
 	}
 	invIDStr, testID, resultID, err := pbutil.ParseTestResultName(parent)
 	if err != nil {
-		return "", "", appstatus.BadRequest(
-			errors.Reason("parent: neither valid invocation name nor valid test result name").Err())
+		return "", "", appstatus.BadRequest(errors.New("parent: neither valid invocation name nor valid test result name"))
 	}
 	return invocations.ID(invIDStr), regexp.QuoteMeta(artifacts.ParentID(testID, resultID)), nil
 }
@@ -54,7 +53,7 @@ func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "page_size").Err())
+		return appstatus.BadRequest(errors.Fmt("page_size: %w", err))
 	}
 
 	return nil

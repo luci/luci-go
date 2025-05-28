@@ -32,11 +32,11 @@ import (
 
 func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 	if err := pbutil.ValidateInvocationName(req.GetInvocation()); err != nil {
-		return errors.Annotate(err, "invocation").Err()
+		return errors.Fmt("invocation: %w", err)
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	return nil

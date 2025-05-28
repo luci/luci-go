@@ -29,13 +29,13 @@ import (
 
 func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(msg.Invocation); err != nil {
-		return errors.Annotate(err, "invocation").Err()
+		return errors.Fmt("invocation: %w", err)
 	}
 	if err := validateTestResult(now, cfg, msg.TestResult); err != nil {
-		return errors.Annotate(err, "test_result").Err()
+		return errors.Fmt("test_result: %w", err)
 	}
 	if err := pbutil.ValidateRequestID(msg.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return errors.Fmt("request_id: %w", err)
 	}
 	return nil
 }

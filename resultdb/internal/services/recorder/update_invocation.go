@@ -51,14 +51,14 @@ func validateUpdateInvocationRequestSubmask(path string, submask *mask.Mask) err
 	if path == "extended_properties" {
 		for extPropKey, extPropMask := range submask.Children() {
 			if err := pbutil.ValidateInvocationExtendedPropertyKey(extPropKey); err != nil {
-				return errors.Annotate(err, "update_mask: extended_properties: key %q", extPropKey).Err()
+				return errors.Fmt("update_mask: extended_properties: key %q: %w", extPropKey, err)
 			}
 			if len(extPropMask.Children()) > 0 {
-				return errors.Reason("update_mask: extended_properties[%q] should not have any submask", extPropKey).Err()
+				return errors.Fmt("update_mask: extended_properties[%q] should not have any submask", extPropKey)
 			}
 		}
 	} else if len(submask.Children()) > 0 {
-		return errors.Reason("update_mask: %q should not have any submask", path).Err()
+		return errors.Fmt("update_mask: %q should not have any submask", path)
 	}
 	return nil
 }
@@ -66,16 +66,16 @@ func validateUpdateInvocationRequestSubmask(path string, submask *mask.Mask) err
 // validateUpdateInvocationRequest returns non-nil error if req is invalid.
 func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation.GetName()); err != nil {
-		return errors.Annotate(err, "invocation: name").Err()
+		return errors.Fmt("invocation: name: %w", err)
 	}
 
 	if len(req.UpdateMask.GetPaths()) == 0 {
-		return errors.Reason("update_mask: paths is empty").Err()
+		return errors.New("update_mask: paths is empty")
 	}
 
 	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
 	if err != nil {
-		return errors.Annotate(err, "update_mask").Err()
+		return errors.Fmt("update_mask: %w", err)
 	}
 	for path, submask := range updateMask.Children() {
 		if err := validateUpdateInvocationRequestSubmask(path, submask); err != nil {
@@ -87,30 +87,30 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 
 		case "deadline":
 			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), now); err != nil {
-				return errors.Annotate(err, "invocation: deadline").Err()
+				return errors.Fmt("invocation: deadline: %w", err)
 			}
 
 		case "bigquery_exports":
 			for i, bqExport := range req.Invocation.GetBigqueryExports() {
 				if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
-					return errors.Annotate(err, "invocation: bigquery_exports[%d]", i).Err()
+					return errors.Fmt("invocation: bigquery_exports[%d]: %w", i, err)
 				}
 			}
 
 		case "properties":
 			if err := pbutil.ValidateInvocationProperties(req.Invocation.Properties); err != nil {
-				return errors.Annotate(err, "invocation: properties").Err()
+				return errors.Fmt("invocation: properties: %w", err)
 			}
 
 		case "source_spec":
 			if err := pbutil.ValidateSourceSpec(req.Invocation.SourceSpec); err != nil {
-				return errors.Annotate(err, "invocation: source_spec").Err()
+				return errors.Fmt("invocation: source_spec: %w", err)
 			}
 
 		case "baseline_id":
 			if req.Invocation.BaselineId != "" {
 				if err := pbutil.ValidateBaselineID(req.Invocation.BaselineId); err != nil {
-					return errors.Annotate(err, "invocation: baseline_id").Err()
+					return errors.Fmt("invocation: baseline_id: %w", err)
 				}
 			}
 
@@ -119,12 +119,12 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 				return errors.New("invocation: realm: unspecified")
 			}
 			if err := realms.ValidateRealmName(req.Invocation.Realm, realms.GlobalScope); err != nil {
-				return errors.Annotate(err, "invocation: realm").Err()
+				return errors.Fmt("invocation: realm: %w", err)
 			}
 
 		case "instructions":
 			if err := pbutil.ValidateInstructions(req.Invocation.GetInstructions()); err != nil {
-				return errors.Annotate(err, "invocation: instructions").Err()
+				return errors.Fmt("invocation: instructions: %w", err)
 			}
 
 		case "is_source_spec_final":
@@ -134,12 +134,12 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 
 		case "extended_properties":
 			if err := pbutil.ValidateInvocationExtendedProperties(req.Invocation.GetExtendedProperties()); err != nil {
-				return errors.Annotate(err, "invocation: extended_properties").Err()
+				return errors.Fmt("invocation: extended_properties: %w", err)
 			}
 
 		case "tags":
 			if err := pbutil.ValidateStringPairs(req.Invocation.GetTags()); err != nil {
-				return errors.Annotate(err, "invocation: tags").Err()
+				return errors.Fmt("invocation: tags: %w", err)
 			}
 
 		case "state":
@@ -147,11 +147,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 			// Setting to "FINALIZING" will trigger the finalization process.
 			// Setting to "ACTIVE" is a no-op.
 			if req.Invocation.State != pb.Invocation_FINALIZING && req.Invocation.State != pb.Invocation_ACTIVE {
-				return errors.Reason("invocation: state: must be FINALIZING or ACTIVE").Err()
+				return errors.New("invocation: state: must be FINALIZING or ACTIVE")
 			}
 
 		default:
-			return errors.Reason("update_mask: unsupported path %q", path).Err()
+			return errors.Fmt("update_mask: unsupported path %q", path)
 		}
 	}
 
@@ -300,7 +300,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 
 		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
 		if err != nil {
-			return errors.Annotate(err, "update_mask").Err()
+			return errors.Fmt("update_mask: %w", err)
 		}
 		for path, submask := range updateMask.Children() {
 			switch path {
@@ -332,7 +332,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				updateSources := !proto.Equal(ret.SourceSpec, in.Invocation.SourceSpec)
 				if updateSources {
 					if wasSourcesFinal {
-						return appstatus.BadRequest(errors.Reason("invocation: source_spec: cannot modify already finalized sources").Err())
+						return appstatus.BadRequest(errors.New("invocation: source_spec: cannot modify already finalized sources"))
 					}
 
 					// Store any gerrit changes in normalised form.
@@ -345,7 +345,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "is_source_spec_final":
 				if ret.IsSourceSpecFinal != in.Invocation.IsSourceSpecFinal {
 					if !in.Invocation.IsSourceSpecFinal {
-						return appstatus.BadRequest(errors.Reason("invocation: is_source_spec_final: cannot unfinalize already finalized sources").Err())
+						return appstatus.BadRequest(errors.New("invocation: is_source_spec_final: cannot unfinalize already finalized sources"))
 					}
 
 					values["IsSourceSpecFinal"] = spanner.NullBool{Valid: in.Invocation.IsSourceSpecFinal, Bool: in.Invocation.IsSourceSpecFinal}
@@ -376,7 +376,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 						// dictates the project results are exported to.
 						// To make low-latency exports possible, we fix the realm
 						// of the root invocation from time of its creation.
-						return appstatus.BadRequest(errors.Reason("invocation: realm: cannot change realm of an invocation that is an export root").Err())
+						return appstatus.BadRequest(errors.New("invocation: realm: cannot change realm of an invocation that is an export root"))
 					}
 					realm := in.Invocation.Realm
 					values["Realm"] = realm
@@ -410,7 +410,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				}
 				// One more validation to ensure the size is within the limit.
 				if err := pbutil.ValidateInvocationExtendedProperties(ret.ExtendedProperties); err != nil {
-					return appstatus.BadRequest(errors.Annotate(err, "invocation: extended_properties").Err())
+					return appstatus.BadRequest(errors.Fmt("invocation: extended_properties: %w", err))
 				}
 				internalExtendedProperties := &invocationspb.ExtendedProperties{
 					ExtendedProperties: ret.ExtendedProperties,

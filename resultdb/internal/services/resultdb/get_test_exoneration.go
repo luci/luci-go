@@ -32,7 +32,7 @@ import (
 func verifyGetTestExonerationPermission(ctx context.Context, exonerationName string) error {
 	invID, _, _, err := pbutil.ParseTestExonerationName(exonerationName)
 	if err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "name").Err())
+		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
 
 	return permissions.VerifyInvocation(ctx, invocations.ID(invID), rdbperms.PermGetTestExoneration)
@@ -40,7 +40,7 @@ func verifyGetTestExonerationPermission(ctx context.Context, exonerationName str
 
 func validateGetTestExonerationRequest(req *pb.GetTestExonerationRequest) error {
 	if err := pbutil.ValidateTestExonerationName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil

@@ -31,11 +31,11 @@ import (
 // validateGetInvocationRequest returns an error if req is invalid.
 func validateGetInvocationRequest(req *pb.GetInvocationRequest) error {
 	if req.GetName() == "" {
-		return errors.Reason("name missing").Err()
+		return errors.New("name missing")
 	}
 
 	if err := pbutil.ValidateInvocationName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil

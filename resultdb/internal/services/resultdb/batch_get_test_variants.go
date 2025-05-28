@@ -31,39 +31,38 @@ import (
 
 func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) error {
 	if len(in.TestVariants) > 500 {
-		return errors.Reason(
-			"a maximum of 500 test variants can be requested at once").Err()
+		return errors.New("a maximum of 500 test variants can be requested at once")
 	}
 
 	if err := pbutil.ValidateInvocationName(in.Invocation); err != nil {
-		return errors.Annotate(err, "invocation: %q", in.Invocation).Err()
+		return errors.Fmt("invocation: %q: %w", in.Invocation, err)
 	}
 
 	for i, tvID := range in.TestVariants {
 		if tvID.TestIdStructured != nil {
 			if err := pbutil.ValidateStructuredTestIdentifierForQuery(tvID.TestIdStructured); err != nil {
-				return errors.Annotate(err, "test_variants[%v]: test_id_structured", i).Err()
+				return errors.Fmt("test_variants[%v]: test_id_structured: %w", i, err)
 			}
 			if tvID.TestId != "" {
-				return errors.Reason("test_variants[%v]: test_id: may not be set at same time as test_id_structured", i).Err()
+				return errors.Fmt("test_variants[%v]: test_id: may not be set at same time as test_id_structured", i)
 			}
 			if tvID.VariantHash != "" {
-				return errors.Reason("test_variants[%v]: variant_hash: may not be set at same time as test_id_structured", i).Err()
+				return errors.Fmt("test_variants[%v]: variant_hash: may not be set at same time as test_id_structured", i)
 			}
 		} else if tvID.TestId != "" || tvID.VariantHash != "" {
 			if err := pbutil.ValidateTestID(tvID.TestId); err != nil {
-				return errors.Annotate(err, "test_variants[%v]: test_id", i).Err()
+				return errors.Fmt("test_variants[%v]: test_id: %w", i, err)
 			}
 			if err := pbutil.ValidateVariantHash(tvID.VariantHash); err != nil {
-				return errors.Annotate(err, "test_variants[%v]: variant_hash", i).Err()
+				return errors.Fmt("test_variants[%v]: variant_hash: %w", i, err)
 			}
 		} else {
-			return errors.Reason("test_variants[%v]: either test_id_structured or (test_id and variant_hash) must be set", i).Err()
+			return errors.Fmt("test_variants[%v]: either test_id_structured or (test_id and variant_hash) must be set", i)
 		}
 	}
 
 	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
-		return errors.Annotate(err, "result_limit").Err()
+		return errors.Fmt("result_limit: %w", err)
 	}
 
 	return nil
@@ -112,7 +111,7 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch invocations").Err()
+		return nil, errors.Fmt("failed to fetch invocations: %w", err)
 	}
 
 	// Query test variants with an empty predicate and a list of test IDs,
@@ -149,7 +148,7 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	for len(tvs) < len(in.TestVariants) {
 		page, err := q.Fetch(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch test variants").Err()
+			return nil, errors.Fmt("failed to fetch test variants: %w", err)
 		}
 
 		for _, tv := range page.TestVariants {

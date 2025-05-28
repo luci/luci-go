@@ -40,21 +40,21 @@ import (
 func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, cfg *config.CompiledServiceConfig, requireInvocation bool) error {
 	if requireInvocation || req.Invocation != "" {
 		if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
-			return errors.Annotate(err, "invocation").Err()
+			return errors.Fmt("invocation: %w", err)
 		}
 	}
 	if err := validateTestExoneration(req.TestExoneration, cfg); err != nil {
-		return errors.Annotate(err, "test_exoneration").Err()
+		return errors.Fmt("test_exoneration: %w", err)
 	}
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return errors.Fmt("request_id: %w", err)
 	}
 	return nil
 }
 
 func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledServiceConfig) error {
 	if ex == nil {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if ex.TestIdStructured == nil && ex.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
@@ -62,7 +62,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// officially OUTPUT_ONLY now).
 		testID, err := pbutil.ParseAndValidateTestID(ex.TestId)
 		if err != nil {
-			return errors.Annotate(err, "test_id").Err()
+			return errors.Fmt("test_id: %w", err)
 		}
 		// Legacy clients may not set Variant, or use nil to represent
 		// the empty variant. As this is ambiguous, we rely on the absence
@@ -70,7 +70,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// set to nil or if the Variant is simply not set.
 		if ex.Variant != nil {
 			if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
-				return errors.Annotate(err, "variant").Err()
+				return errors.Fmt("variant: %w", err)
 			}
 		}
 
@@ -81,19 +81,19 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		if hasVariant && hasVariantHash {
 			computedHash := pbutil.VariantHash(ex.GetVariant())
 			if computedHash != ex.VariantHash {
-				return errors.Reason("computed and supplied variant hash don't match").Err()
+				return errors.New("computed and supplied variant hash don't match")
 			}
 		}
 		if hasVariantHash {
 			if err := pbutil.ValidateVariantHash(ex.VariantHash); err != nil {
-				return errors.Annotate(err, "variant_hash").Err()
+				return errors.Fmt("variant_hash: %w", err)
 			}
 		}
 
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, testID); err != nil {
-			return errors.Annotate(err, "test_id").Err()
+			return errors.Fmt("test_id: %w", err)
 		}
 	} else {
 		// Not a legacy uploader.
@@ -103,20 +103,20 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// also be ignored.
 
 		if err := pbutil.ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
+			return errors.Fmt("test_id_structured: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(ex.TestIdStructured)); err != nil {
-			return errors.Annotate(err, "test_id_structured").Err()
+			return errors.Fmt("test_id_structured: %w", err)
 		}
 	}
 
 	if ex.ExplanationHtml == "" {
-		return errors.Reason("explanation_html: unspecified").Err()
+		return errors.New("explanation_html: unspecified")
 	}
 	if ex.Reason == pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
-		return errors.Reason("reason: unspecified").Err()
+		return errors.New("reason: unspecified")
 	}
 	return nil
 }

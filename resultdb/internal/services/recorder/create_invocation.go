@@ -69,10 +69,10 @@ func validateInvocationDeadline(deadline *timestamppb.Timestamp, now time.Time) 
 		return nil
 
 	case d.Sub(now) < 10*time.Second:
-		return errors.Reason("must be at least 10 seconds in the future").Err()
+		return errors.New("must be at least 10 seconds in the future")
 
 	case d.Sub(now) > maxInvocationDeadlineDuration:
-		return errors.Reason("must be before %dh in the future", int(maxInvocationDeadlineDuration.Hours())).Err()
+		return errors.Fmt("must be before %dh in the future", int(maxInvocationDeadlineDuration.Hours()))
 
 	default:
 		return nil
@@ -85,10 +85,10 @@ func validateInvocationDeadline(deadline *timestamppb.Timestamp, now time.Time) 
 // created invocation to the given IDSet.
 func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, includedIDs invocations.IDSet) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
-		return errors.Annotate(err, "invocation_id").Err()
+		return errors.Fmt("invocation_id: %w", err)
 	}
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return errors.Fmt("request_id: %w", err)
 	}
 
 	inv := req.Invocation
@@ -97,7 +97,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
-		return errors.Annotate(err, "invocation: tags").Err()
+		return errors.Fmt("invocation: tags: %w", err)
 	}
 
 	if inv.Realm == "" {
@@ -105,59 +105,59 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if err := realms.ValidateRealmName(inv.Realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation: realm").Err()
+		return errors.Fmt("invocation: realm: %w", err)
 	}
 
 	if inv.GetDeadline() != nil {
 		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
-			return errors.Annotate(err, "invocation: deadline").Err()
+			return errors.Fmt("invocation: deadline: %w", err)
 		}
 	}
 
 	if !isValidCreateState(inv.GetState()) {
-		return errors.Reason("invocation: state: cannot be created in the state %s", inv.GetState()).Err()
+		return errors.Fmt("invocation: state: cannot be created in the state %s", inv.GetState())
 	}
 
 	for i, bqExport := range inv.GetBigqueryExports() {
 		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
-			return errors.Annotate(err, "bigquery_export[%d]", i).Err()
+			return errors.Fmt("bigquery_export[%d]: %w", i, err)
 		}
 	}
 
 	for i, incInvName := range inv.GetIncludedInvocations() {
 		incInvID, err := pbutil.ParseInvocationName(incInvName)
 		if err != nil {
-			return errors.Annotate(err, "included_invocations[%d]: invalid included invocation name %q", i, incInvName).Err()
+			return errors.Fmt("included_invocations[%d]: invalid included invocation name %q: %w", i, incInvName, err)
 		}
 		if incInvID == req.InvocationId {
-			return errors.Reason("included_invocations[%d]: invocation cannot include itself", i).Err()
+			return errors.Fmt("included_invocations[%d]: invocation cannot include itself", i)
 		}
 		includedIDs.Add(invocations.ID(incInvID))
 	}
 
 	if err := pbutil.ValidateSourceSpec(inv.GetSourceSpec()); err != nil {
-		return errors.Annotate(err, "source_spec").Err()
+		return errors.Fmt("source_spec: %w", err)
 	}
 
 	if inv.GetBaselineId() != "" {
 		if err := pbutil.ValidateBaselineID(inv.GetBaselineId()); err != nil {
-			return errors.Annotate(err, "invocation: baseline_id").Err()
+			return errors.Fmt("invocation: baseline_id: %w", err)
 		}
 	}
 
 	if err := pbutil.ValidateInvocationProperties(req.Invocation.GetProperties()); err != nil {
-		return errors.Annotate(err, "properties").Err()
+		return errors.Fmt("properties: %w", err)
 	}
 
 	// In the current flow, step instructions are populated by UpdateInvocation,
 	// instead of CreateInvocation.
 	// However, we will also store step instructions if they are passed in during creation.
 	if err := pbutil.ValidateInstructions(req.Invocation.GetInstructions()); err != nil {
-		return errors.Annotate(err, "instructions").Err()
+		return errors.Fmt("instructions: %w", err)
 	}
 
 	if err := pbutil.ValidateInvocationExtendedProperties(req.Invocation.GetExtendedProperties()); err != nil {
-		return errors.Annotate(err, "extended_properties").Err()
+		return errors.Fmt("extended_properties: %w", err)
 	}
 
 	return nil
@@ -174,7 +174,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		return appstatus.BadRequest(errors.New("invocation: realm: unspecified"))
 	}
 	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "invocation: realm").Err())
+		return appstatus.BadRequest(errors.Fmt("invocation: realm: %w", err))
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm, nil); {

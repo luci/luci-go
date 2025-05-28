@@ -57,7 +57,7 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocat
 	project, _ := realms.Split(invRealm)
 	realm := realms.Join(project, realms.ProjectRealm)
 	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation: realm").Err()
+		return errors.Fmt("invocation: realm: %w", err)
 	}
 
 	switch allowed, err := auth.HasPermission(ctx, permSetSubmittedInvocation, realm, nil); {
@@ -87,7 +87,7 @@ func (s *recorderServer) MarkInvocationSubmitted(ctx context.Context, req *pb.Ma
 	// Parsing the invocation name also validates its syntax.
 	invID, err := pbutil.ParseInvocationName(req.Invocation)
 	if err != nil {
-		return &emptypb.Empty{}, appstatus.Error(codes.InvalidArgument, errors.Annotate(err, "invocation").Err().Error())
+		return &emptypb.Empty{}, appstatus.Error(codes.InvalidArgument, errors.Fmt("invocation: %w", err).Error())
 	}
 	inv := invocations.ID(invID)
 

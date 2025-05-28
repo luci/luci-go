@@ -32,7 +32,7 @@ import (
 func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
 	invID, _, _, err := pbutil.ParseTestResultName(resultName)
 	if err != nil {
-		return appstatus.BadRequest(errors.Annotate(err, "name").Err())
+		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
 
 	return permissions.VerifyInvocation(ctx, invocations.ID(invID), rdbperms.PermGetTestResult)
@@ -40,7 +40,7 @@ func verifyGetTestResultPermission(ctx context.Context, resultName string) error
 
 func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
 	if err := pbutil.ValidateTestResultName(req.Name); err != nil {
-		return errors.Annotate(err, "name").Err()
+		return errors.Fmt("name: %w", err)
 	}
 
 	return nil

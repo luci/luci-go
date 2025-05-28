@@ -38,19 +38,19 @@ import (
 // determined to be invalid.
 func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsRequest) error {
 	if _, err := pbutil.ParseInvocationName(req.IncludingInvocation); err != nil {
-		return errors.Annotate(err, "including_invocation").Err()
+		return errors.Fmt("including_invocation: %w", err)
 	}
 	for _, name := range req.AddInvocations {
 		if name == req.IncludingInvocation {
-			return errors.Reason("cannot include itself").Err()
+			return errors.New("cannot include itself")
 		}
 		if _, err := pbutil.ParseInvocationName(name); err != nil {
-			return errors.Annotate(err, "add_invocations: %q", name).Err()
+			return errors.Fmt("add_invocations: %q: %w", name, err)
 		}
 	}
 
 	if len(req.RemoveInvocations) > 0 {
-		return errors.Reason("remove_invocations: invocation removal has been deprecated and is not permitted").Err()
+		return errors.New("remove_invocations: invocation removal has been deprecated and is not permitted")
 	}
 
 	return nil
