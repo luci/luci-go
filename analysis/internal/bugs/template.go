@@ -45,10 +45,10 @@ func (t *Template) Execute(input TemplateInput) (string, error) {
 	var b strings.Builder
 	err := t.template.Execute(&b, input)
 	if err != nil {
-		return "", errors.Annotate(err, "execute").Err()
+		return "", errors.Fmt("execute: %w", err)
 	}
 	if b.Len() > 2*templateMaxOutputBytes {
-		return "", errors.Reason("template produced %v bytes of output, which exceeds the limit of %v bytes", b.Len(), 2*templateMaxOutputBytes).Err()
+		return "", errors.Fmt("template produced %v bytes of output, which exceeds the limit of %v bytes", b.Len(), 2*templateMaxOutputBytes)
 	}
 	return b.String(), nil
 }
@@ -102,10 +102,10 @@ func (t Template) Validate() error {
 		var b strings.Builder
 		err := t.template.Execute(&b, tc.input)
 		if err != nil {
-			return errors.Annotate(err, "test case %q", tc.name).Err()
+			return errors.Fmt("test case %q: %w", tc.name, err)
 		}
 		if b.Len() > templateMaxOutputBytes {
-			return errors.Reason("test case %q: template produced %v bytes of output, which exceeds the limit of %v bytes", tc.name, b.Len(), templateMaxOutputBytes).Err()
+			return errors.Fmt("test case %q: template produced %v bytes of output, which exceeds the limit of %v bytes", tc.name, b.Len(), templateMaxOutputBytes)
 		}
 	}
 	return nil

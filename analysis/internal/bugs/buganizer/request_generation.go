@@ -76,13 +76,13 @@ func NewRequestGenerator(
 	project, uiBaseURL, selfEmail string,
 	projectCfg *configpb.ProjectConfig) (*RequestGenerator, error) {
 	if projectCfg.BugManagement.GetBuganizer() == nil {
-		return nil, errors.Reason("buganizer configuration not set").Err()
+		return nil, errors.New("buganizer configuration not set")
 	}
 
 	// Buganizer supports all priority levels P4 and above.
 	policyApplyer, err := bugs.NewPolicyApplyer(projectCfg.BugManagement.GetPolicies(), configpb.BuganizerPriority_P4)
 	if err != nil {
-		return nil, errors.Annotate(err, "create policy applyer").Err()
+		return nil, errors.Fmt("create policy applyer: %w", err)
 	}
 
 	return &RequestGenerator{
@@ -100,7 +100,7 @@ func (rg *RequestGenerator) PrepareNew(description *clustering.ClusterDescriptio
 	ruleID string, component *issuetracker.Component) (*issuetracker.CreateIssueRequest, error) {
 	priority, verified := rg.policyApplyer.RecommendedPriorityAndVerified(activePolicyIDs)
 	if verified {
-		return nil, errors.Reason("issue is recommended to be verified from time of creation; are no policies active?").Err()
+		return nil, errors.New("issue is recommended to be verified from time of creation; are no policies active?")
 	}
 
 	ruleLink := bugs.RuleURL(rg.uiBaseURL, rg.project, ruleID)
@@ -330,7 +330,7 @@ func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptio
 
 	change, err := rg.policyApplyer.PreparePriorityAndVerifiedChange(opts, rg.uiBaseURL)
 	if err != nil {
-		return MakeUpdateResult{}, errors.Annotate(err, "prepare change").Err()
+		return MakeUpdateResult{}, errors.Fmt("prepare change: %w", err)
 	}
 
 	request := &issuetracker.ModifyIssueRequest{

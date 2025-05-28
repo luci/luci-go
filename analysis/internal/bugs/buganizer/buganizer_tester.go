@@ -51,14 +51,14 @@ func CreateSampleIssue(ctx context.Context) (int64, error) {
 	client, err := NewRPCClient(ctx)
 
 	if err != nil {
-		return 0, errors.Annotate(err, "create sample issue rppc client").Err()
+		return 0, errors.Fmt("create sample issue rppc client: %w", err)
 	}
 
 	createdIssue, err := client.Client.CreateIssue(ctx, &issuetracker.CreateIssueRequest{
 		Issue: issue,
 	})
 	if err != nil {
-		return 0, errors.Annotate(err, "create sample issue sending request").Err()
+		return 0, errors.Fmt("create sample issue sending request: %w", err)
 	}
 	logging.Infof(ctx, "Created a sample issue with id: %d", createdIssue.IssueId)
 	return createdIssue.IssueId, nil

@@ -43,13 +43,13 @@ func CreateBuganizerClient(ctx context.Context) (*RPCClient, error) {
 	case ModeProvided:
 		buganizerClient, err := NewRPCClient(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "create new buganizer client").Err()
+			return nil, errors.Fmt("create new buganizer client: %w", err)
 		}
 		return buganizerClient, nil
 	case ModeDisable:
 		return nil, nil
 	default:
-		return nil, errors.Reason("Unrecognized buganizer-mode value used: %q.", buganizerClientMode).Err()
+		return nil, errors.Fmt("Unrecognized buganizer-mode value used: %q.", buganizerClientMode)
 	}
 }
 
@@ -106,7 +106,7 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 	)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "create new wrapper client").Err()
+		return nil, errors.Fmt("create new wrapper client: %w", err)
 	}
 	return &RPCClient{
 		Client: client,

@@ -434,7 +434,7 @@ func TestBugManager(t *testing.T) {
 				originalIssue := proto.Clone(fakeStore.Issues[1].Issue).(*issuetracker.Issue)
 				response, err := bm.Update(ctx, bugsToUpdate)
 				if err != nil {
-					return errors.Annotate(err, "update bugs").Err()
+					return errors.Fmt("update bugs: %w", err)
 				}
 				assert.That(t, response, should.Match(expectedResponse), truth.LineContext())
 				assert.That(t, fakeStore.Issues[1].Issue, should.Match(originalIssue), truth.LineContext())

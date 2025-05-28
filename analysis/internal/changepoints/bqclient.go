@@ -138,7 +138,7 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read query results").Err()
+		return nil, errors.Fmt("read query results: %w", err)
 	}
 	results := []*ChangepointDetailRow{}
 	for {
@@ -148,7 +148,7 @@ func (c *Client) ReadChangepoints(ctx context.Context, project string, week time
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+			return nil, errors.Fmt("obtain next changepoint row: %w", err)
 		}
 		results = append(results, row)
 	}
@@ -229,7 +229,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	}
 	job, err := q.Run(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "starting query").Err()
+		return nil, errors.Fmt("starting query: %w", err)
 	}
 	// WaitForJob cancels the job with best-effort when context deadline is reached.
 	js, err := bq.WaitForJob(ctx, job)
@@ -241,7 +241,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 	}
 	it, err := job.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read changepoint rows").Err()
+		return nil, errors.Fmt("read changepoint rows: %w", err)
 	}
 	results := []*ChangepointDetailRow{}
 	for {
@@ -251,7 +251,7 @@ func (c *Client) ReadChangepointsRealtime(ctx context.Context, week time.Time) (
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+			return nil, errors.Fmt("obtain next changepoint row: %w", err)
 		}
 		results = append(results, row)
 	}
@@ -303,15 +303,15 @@ func parseReadChangepointGroupSummariesPageToken(pageToken string) (afterStartHo
 	}
 
 	if len(tokens) != 5 {
-		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expected 5 components, got %d", len(tokens)).Err())
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.Fmt("expected 5 components, got %d", len(tokens)))
 	}
 	afterStartHourUnix, err = strconv.Atoi(tokens[0])
 	if err != nil {
-		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.New("expect the first page_token component to be an integer"))
 	}
 	afterNominalStartPosition, err = strconv.Atoi(tokens[4])
 	if err != nil {
-		return 0, "", "", "", 0, pagination.InvalidToken(errors.Reason("expect the fifth page_token component to be an integer").Err())
+		return 0, "", "", "", 0, pagination.InvalidToken(errors.New("expect the fifth page_token component to be an integer"))
 	}
 	return afterStartHourUnix, tokens[1], tokens[2], tokens[3], afterNominalStartPosition, nil
 }
@@ -435,7 +435,7 @@ func (c *Client) ReadChangepointGroupSummaries(ctx context.Context, opts ReadCha
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "read query results").Err()
+		return nil, "", errors.Fmt("read query results: %w", err)
 	}
 	results := []*GroupSummary{}
 	for {
@@ -445,7 +445,7 @@ func (c *Client) ReadChangepointGroupSummaries(ctx context.Context, opts ReadCha
 			break
 		}
 		if err != nil {
-			return nil, "", errors.Annotate(err, "obtain next changepoint group row").Err()
+			return nil, "", errors.Fmt("obtain next changepoint group row: %w", err)
 		}
 		results = append(results, row)
 	}
@@ -534,7 +534,7 @@ func (c *Client) ReadChangepointsInGroup(ctx context.Context, opts ReadChangepoi
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read query results").Err()
+		return nil, errors.Fmt("read query results: %w", err)
 	}
 	results := []*ChangepointRow{}
 	for {
@@ -544,7 +544,7 @@ func (c *Client) ReadChangepointsInGroup(ctx context.Context, opts ReadChangepoi
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next changepoint row").Err()
+			return nil, errors.Fmt("obtain next changepoint row: %w", err)
 		}
 		results = append(results, row)
 	}

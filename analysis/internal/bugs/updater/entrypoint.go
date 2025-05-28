@@ -56,7 +56,7 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 		// analysis and bug-filing in another.
 		if err := recover(); err != nil {
 			logging.Errorf(ctx, "Caught panic updating bugs for project %s: \n %s", opts.Project, string(debug.Stack()))
-			retErr = errors.Reason("caught panic: %v", err).Err()
+			retErr = errors.Fmt("caught panic: %v", err)
 		}
 	}()
 
@@ -67,7 +67,7 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 	}
 	projectCfg, err := compiledcfg.Project(ctx, opts.Project, opts.ReclusteringProgress.Next.ConfigVersion)
 	if err != nil {
-		return errors.Annotate(err, "read project config").Err()
+		return errors.Fmt("read project config: %w", err)
 	}
 
 	mgrs := make(map[string]BugManager)
@@ -79,7 +79,7 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 
 		selfEmail, ok := ctx.Value(&buganizer.BuganizerSelfEmailKey).(string)
 		if !ok {
-			return errors.Reason("buganizer self email must be specified").Err()
+			return errors.New("buganizer self email must be specified")
 		}
 
 		// Create Buganizer bug manager
@@ -91,7 +91,7 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 			projectCfg.Config,
 		)
 		if err != nil {
-			return errors.Annotate(err, "create buganizer bug manager").Err()
+			return errors.Fmt("create buganizer bug manager: %w", err)
 		}
 
 		mgrs[bugs.BuganizerSystem] = buganizerBugManager
@@ -105,7 +105,7 @@ func UpdateBugsForProject(ctx context.Context, opts UpdateOptions) (retErr error
 	bugUpdater := NewBugUpdater(opts.Project, mgrs, opts.AnalysisClient, projectCfg, opts.RunTimestamp)
 	bugUpdater.MaxBugsFiledPerRun = opts.MaxBugsFiledPerRun
 	if err := bugUpdater.Run(ctx, opts.ReclusteringProgress); err != nil {
-		return errors.Annotate(err, "update bugs").Err()
+		return errors.Fmt("update bugs: %w", err)
 	}
 	return nil
 }

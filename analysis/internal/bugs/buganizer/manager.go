@@ -118,7 +118,7 @@ func NewBugManager(client Client,
 		projectCfg,
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "create request generator").Err()
+		return nil, errors.Fmt("create request generator: %w", err)
 	}
 	defaultComponent := projectCfg.BugManagement.Buganizer.DefaultComponent
 
@@ -150,7 +150,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 
 			access, err := componentChecker.CheckAccess(ctx, wantedComponentID)
 			if err != nil {
-				response.Error = errors.Annotate(err, "check access to create Buganizer issue").Err()
+				response.Error = errors.Fmt("check access to create Buganizer issue: %w", err)
 				return response
 			}
 			if !access.Appender || !access.IssueDefaultsAppender {
@@ -169,7 +169,7 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 
 	component, err := bm.client.GetComponent(ctx, &issuetracker.GetComponentRequest{ComponentId: componentID})
 	if err != nil {
-		response.Error = errors.Annotate(err, "get Buganizer component").Err()
+		response.Error = errors.Fmt("get Buganizer component: %w", err)
 		return response
 	}
 
@@ -180,14 +180,14 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		component,
 	)
 	if err != nil {
-		response.Error = errors.Annotate(err, "prepare new issue").Err()
+		response.Error = errors.Fmt("prepare new issue: %w", err)
 		return response
 	}
 
 	var issueID int64
 	issue, err := bm.client.CreateIssue(ctx, createIssueRequest)
 	if err != nil {
-		response.Error = errors.Annotate(err, "create Buganizer issue").Err()
+		response.Error = errors.Fmt("create Buganizer issue: %w", err)
 		return response
 	}
 	issueID = issue.IssueId
@@ -199,20 +199,20 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 	if fallbackReason != FallbackReason_None {
 		commentRequest := bm.requestGenerator.PrepareComponentFallbackComment(issueID, wantedComponentID, fallbackReason)
 		if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
-			response.Error = errors.Annotate(err, "create issue link comment").Err()
+			response.Error = errors.Fmt("create issue link comment: %w", err)
 			return response
 		}
 	}
 
 	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, createRequest.ActivePolicyIDs)
 	if err != nil {
-		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		response.Error = errors.Fmt("notify policy activations: %w", err)
 		return response
 	}
 
 	hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(createRequest.ActivePolicyIDs)
 	if err := bm.insertIntoHotlists(ctx, hotlistIDs, issueID); err != nil {
-		response.Error = errors.Annotate(err, "insert into hotlists").Err()
+		response.Error = errors.Fmt("insert into hotlists: %w", err)
 		return response
 	}
 
@@ -232,12 +232,12 @@ func (bm *BugManager) notifyPolicyActivation(ctx context.Context, ruleID string,
 	for _, policyID := range sortedPolicyIDToNotify {
 		commentRequest, err := bm.requestGenerator.PreparePolicyActivatedComment(ruleID, issueID, policyID)
 		if err != nil {
-			return policiesNotified, errors.Annotate(err, "prepare comment for policy %q", policyID).Err()
+			return policiesNotified, errors.Fmt("prepare comment for policy %q: %w", policyID, err)
 		}
 		// Only post a comment if the policy has specified one.
 		if commentRequest != nil {
 			if err := bm.createIssueComment(ctx, commentRequest); err != nil {
-				return policiesNotified, errors.Annotate(err, "post comment for policy %q", policyID).Err()
+				return policiesNotified, errors.Fmt("post comment for policy %q: %w", policyID, err)
 			}
 		}
 		// Policy activation successfully notified.
@@ -253,7 +253,7 @@ func (bm *BugManager) insertIntoHotlists(ctx context.Context, hotlistIDs map[int
 	hotlistInsertionRequests := PrepareHotlistInsertions(hotlistIDs, issueID)
 	for _, req := range hotlistInsertionRequests {
 		if _, err := bm.client.CreateHotlistEntry(ctx, req); err != nil {
-			return errors.Annotate(err, "insert into hotlist %d", req.HotlistId).Err()
+			return errors.Fmt("insert into hotlist %d: %w", req.HotlistId, err)
 		}
 	}
 	return nil
@@ -263,7 +263,7 @@ func (bm *BugManager) insertIntoHotlists(ctx context.Context, hotlistIDs map[int
 func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateRequest) ([]bugs.BugUpdateResponse, error) {
 	issues, err := bm.fetchIssues(ctx, requests)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetch issues for update").Err()
+		return nil, errors.Fmt("fetch issues for update: %w", err)
 	}
 
 	issuesByID := make(map[int64]*issuetracker.Issue)
@@ -276,7 +276,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 		id, err := strconv.ParseInt(request.Bug.ID, 10, 64)
 		if err != nil {
 			// This should never occur here, as we do a similar conversion in fetchIssues.
-			return nil, errors.Annotate(err, "convert bug id to int").Err()
+			return nil, errors.Fmt("convert bug id to int: %w", err)
 		}
 		issue, ok := issuesByID[id]
 		if !ok {
@@ -359,11 +359,11 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		if !request.BugManagementState.RuleAssociationNotified {
 			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
 			if err != nil {
-				response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
+				response.Error = errors.Fmt("prepare rule associated comment: %w", err)
 				return response
 			}
 			if err := bm.createIssueComment(ctx, commentRequest); err != nil {
-				response.Error = errors.Annotate(err, "create rule associated comment").Err()
+				response.Error = errors.Fmt("create rule associated comment: %w", err)
 				return response
 			}
 			response.RuleAssociationNotified = true
@@ -375,7 +375,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		var err error
 		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, request.RuleID, issue.IssueId, policyIDsToNotify)
 		if err != nil {
-			response.Error = errors.Annotate(err, "notify policy activations").Err()
+			response.Error = errors.Fmt("notify policy activations: %w", err)
 			return response
 		}
 
@@ -390,7 +390,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 			// Determine if bug priority manually set. This involves listing issue comments.
 			hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
 			if err != nil {
-				response.Error = errors.Annotate(err, "determine if priority manually set").Err()
+				response.Error = errors.Fmt("determine if priority manually set: %w", err)
 				return response
 			}
 			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
@@ -401,11 +401,11 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 				HasManuallySetPriority: hasManuallySetPriority,
 			})
 			if err != nil {
-				response.Error = errors.Annotate(err, "create update request for issue").Err()
+				response.Error = errors.Fmt("create update request for issue: %w", err)
 				return response
 			}
 			if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
-				response.Error = errors.Annotate(err, "update Buganizer issue").Err()
+				response.Error = errors.Fmt("update Buganizer issue: %w", err)
 				return response
 			}
 			bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
@@ -422,7 +422,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		}
 
 		if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
-			response.Error = errors.Annotate(err, "insert issue into hotlists").Err()
+			response.Error = errors.Fmt("insert issue into hotlists: %w", err)
 			return response
 		}
 	}
@@ -433,7 +433,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 func (bm *BugManager) createIssueComment(ctx context.Context, commentRequest *issuetracker.CreateIssueCommentRequest) error {
 	// Only post a comment if the policy has specified one.
 	if _, err := bm.client.CreateIssueComment(ctx, commentRequest); err != nil {
-		return errors.Annotate(err, "create comment").Err()
+		return errors.Fmt("create comment: %w", err)
 	}
 	bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
 	return nil
@@ -453,7 +453,7 @@ func (bm *BugManager) hasManuallySetPriority(
 			break
 		}
 		if err != nil {
-			return false, errors.Annotate(err, "iterating through issue updates").Err()
+			return false, errors.Fmt("iterating through issue updates: %w", err)
 		}
 		if update.Author.EmailAddress != selfEmail {
 			// If the modification was done by a user, we check if
@@ -515,7 +515,7 @@ func (bm *BugManager) fetchIssues(ctx context.Context, requests []bugs.BugUpdate
 			}
 			id, err := strconv.Atoi(request.Bug.ID)
 			if err != nil {
-				return nil, errors.Annotate(err, "convert bug id to int").Err()
+				return nil, errors.Fmt("convert bug id to int: %w", err)
 			}
 			ids = append(ids, int64(id))
 		}
@@ -525,7 +525,7 @@ func (bm *BugManager) fetchIssues(ctx context.Context, requests []bugs.BugUpdate
 			View:     issuetracker.IssueView_FULL,
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "fetch issues").Err()
+			return nil, errors.Fmt("fetch issues: %w", err)
 		}
 		issues = append(issues, fetchedIssues.Issues...)
 	}
@@ -560,7 +560,7 @@ func (bm *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.
 	}
 	issueId, err := strconv.Atoi(bug.ID)
 	if err != nil {
-		return nil, errors.Annotate(err, "get merged into").Err()
+		return nil, errors.Fmt("get merged into: %w", err)
 	}
 	issue, err := bm.client.GetIssue(ctx, &issuetracker.GetIssueRequest{
 		IssueId: int64(issueId),
@@ -570,7 +570,7 @@ func (bm *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.
 	}
 	result, err := mergedIntoBug(issue)
 	if err != nil {
-		return nil, errors.Annotate(err, "resolving canoncial merged into bug").Err()
+		return nil, errors.Fmt("resolving canoncial merged into bug: %w", err)
 	}
 	return result, nil
 }
@@ -604,11 +604,11 @@ func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Up
 	}
 	issueId, err := strconv.Atoi(request.BugDetails.Bug.ID)
 	if err != nil {
-		return errors.Annotate(err, "update duplicate source").Err()
+		return errors.Fmt("update duplicate source: %w", err)
 	}
 	req := bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.BugDetails.RuleID, request.DestinationRuleID, request.BugDetails.IsAssigned)
 	if _, err := bm.client.ModifyIssue(ctx, req); err != nil {
-		return errors.Annotate(err, "failed to update duplicate source Buganizer issue %s", request.BugDetails.Bug.ID).Err()
+		return errors.Fmt("failed to update duplicate source Buganizer issue %s: %w", request.BugDetails.Bug.ID, err)
 	}
 	return nil
 }

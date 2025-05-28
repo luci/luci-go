@@ -49,12 +49,12 @@ type Handler struct {
 func (h *Handler) CronHandler(ctx context.Context) error {
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "get config").Err()
+		return errors.Fmt("get config: %w", err)
 	}
 	simulate := !h.prod
 	err = updateAnalysisAndBugs(ctx, h.cloudProject, h.uiBaseURL, simulate, cfg.BugUpdatesEnabled)
 	if err != nil {
-		return errors.Annotate(err, "update bugs").Err()
+		return errors.Fmt("update bugs: %w", err)
 	}
 	return nil
 }
@@ -82,12 +82,12 @@ func updateAnalysisAndBugs(ctx context.Context, gcpProject, uiBaseURL string, si
 	}
 	defer func() {
 		if err := analysisClient.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing analysis client").Err()
+			retErr = errors.Fmt("closing analysis client: %w", err)
 		}
 	}()
 
 	if err := analysisClient.RebuildAnalysis(ctx); err != nil {
-		return errors.Annotate(err, "update cluster summary analysis").Err()
+		return errors.Fmt("update cluster summary analysis: %w", err)
 	}
 
 	if bugUpdatesEnabled {
@@ -113,7 +113,7 @@ func updateAnalysisAndBugs(ctx context.Context, gcpProject, uiBaseURL string, si
 					Simulate:   true,
 				}
 				if err := h.UpdateBugs(ctx, task); err != nil {
-					errs = append(errs, errors.Annotate(err, "update bugs for project %s", project).Err())
+					errs = append(errs, errors.Fmt("update bugs for project %s: %w", project, err))
 				}
 			} else {
 				// In production, create a task queue task to apply the
@@ -121,7 +121,7 @@ func updateAnalysisAndBugs(ctx context.Context, gcpProject, uiBaseURL string, si
 				// allotted to updating analysis + bugs intead of being
 				// limited by the 10 minute GAE request timeout.
 				if err := bugupdater.Schedule(ctx, task); err != nil {
-					errs = append(errs, errors.Annotate(err, "schedule bug update task").Err())
+					errs = append(errs, errors.Fmt("schedule bug update task: %w", err))
 				}
 			}
 		}

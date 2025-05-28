@@ -47,10 +47,10 @@ func (f *FakeClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opt
 		if in.Mask != nil {
 			mask, err := mask.FromFieldMask(in.Mask.Fields, &bbpb.Build{}, mask.AdvancedSemantics())
 			if err != nil {
-				return nil, errors.Annotate(err, "invalid field mask").Err()
+				return nil, errors.Fmt("invalid field mask: %w", err)
 			}
 			if err := mask.Trim(buildCopy); err != nil {
-				return nil, errors.Annotate(err, "apply field mask").Err()
+				return nil, errors.Fmt("apply field mask: %w", err)
 			}
 		}
 		return buildCopy, nil

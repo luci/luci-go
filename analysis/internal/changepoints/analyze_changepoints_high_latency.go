@@ -86,7 +86,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 		batchTVs := tvs[startIndex:endIndex]
 		err := analyzeSingleBatch(ctx, batchTVs, payload, sourcesMap, exporter)
 		if err != nil {
-			return errors.Annotate(err, "analyzeSingleBatch").Err()
+			return errors.Fmt("analyzeSingleBatch: %w", err)
 		}
 		startIndex = int(endIndex)
 	}
@@ -109,19 +109,19 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 	invIDs, err := invocationIDsToClaimHighLatency(tvs, sourcesMap)
 	if err != nil {
-		return errors.Annotate(err, "identify invocation ids to claim").Err()
+		return errors.Fmt("identify invocation ids to claim: %w", err)
 	}
 
 	rootInvocationID := payload.Invocation.InvocationId
 	claimedInvs, err := tryClaimInvocations(ctx, payload.Project, rootInvocationID, invIDs)
 	if err != nil {
-		return errors.Annotate(err, "try to claim invocations").Err()
+		return errors.Fmt("try to claim invocations: %w", err)
 	}
 
 	// Only keep "relevant" test variants, and test variant with commit information.
 	filteredTVs, err := filterTestVariantsHighLatency(ctx, tvs, payload, claimedInvs, sourcesMap)
 	if err != nil {
-		return errors.Annotate(err, "filter test variants").Err()
+		return errors.Fmt("filter test variants: %w", err)
 	}
 
 	if len(filteredTVs) == 0 {
@@ -143,7 +143,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// Check checkpoints table to see if we have already processed this batch.
 		exists, err := checkpoints.Exists(ctx, checkpointKey)
 		if err != nil {
-			return errors.Annotate(err, "test existence of checkpoint").Err()
+			return errors.Fmt("test existence of checkpoint: %w", err)
 		}
 		// This batch has been processed, we can skip it.
 		if exists {
@@ -167,7 +167,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			// "Insert" the new test variant to input buffer.
 			tvb, inOrder, err := insertVerdictIntoInputBuffer(tvb, tv, payload, claimedInvs, sourcesMap)
 			if err != nil {
-				return errors.Annotate(err, "insert into input buffer").Err()
+				return errors.Fmt("insert into input buffer: %w", err)
 			}
 			if !inOrder {
 				verdictCounter.Add(ctx, 1, payload.Project, "skipped_out_of_order")
@@ -178,18 +178,18 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
 			mut, err := tvb.ToMutation(&hs)
 			if err != nil {
-				return errors.Annotate(err, "test variant branch to mutation").Err()
+				return errors.Fmt("test variant branch to mutation: %w", err)
 			}
 			mutations = append(mutations, mut)
 			bqRow, err := bqexporter.ToPartialBigQueryRow(tvb, segments)
 			if err != nil {
-				return errors.Annotate(err, "test variant branch to bigquery row").Err()
+				return errors.Fmt("test variant branch to bigquery row: %w", err)
 			}
 			bqExporterInput = append(bqExporterInput, bqRow)
 			return nil
 		}
 		if err := testvariantbranch.ReadF(ctx, tvbks, f); err != nil {
-			return errors.Annotate(err, "read test variant branches").Err()
+			return errors.Fmt("read test variant branches: %w", err)
 		}
 
 		ingestedVerdictCount := len(mutations)
@@ -202,7 +202,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	})
 
 	if err != nil {
-		return errors.Annotate(err, "analyze change point").Err()
+		return errors.Fmt("analyze change point: %w", err)
 	}
 	// Export to BigQuery.
 	// Note: exportToBigQuery does not guarantee eventual export, in case it
@@ -216,7 +216,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	}
 	err = exportToBigQuery(ctx, exporter, rowInputs)
 	if err != nil {
-		return errors.Annotate(err, "export to big query").Err()
+		return errors.Fmt("export to big query: %w", err)
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 	}
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read config").Err()
+		return errors.Fmt("read config: %w", err)
 	}
 	if !cfg.GetTestVariantAnalysis().GetBigqueryExportEnabled() {
 		return nil
@@ -238,7 +238,7 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 
 	err = exporter.ExportTestVariantBranches(ctx, rowInputs)
 	if err != nil {
-		return errors.Annotate(err, "export test variant branches").Err()
+		return errors.Fmt("export test variant branches: %w", err)
 	}
 	return nil
 }
@@ -324,7 +324,7 @@ func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant
 		for _, r := range tv.Results {
 			invID, err := resultdb.InvocationFromTestResultName(r.Result.Name)
 			if err != nil {
-				return nil, errors.Annotate(err, "invocation from test result name").Err()
+				return nil, errors.Fmt("invocation from test result name: %w", err)
 			}
 			_, isClaimed := claimedInvs[invID]
 			if r.Result.Status != rdbpb.TestStatus_SKIP && isClaimed {

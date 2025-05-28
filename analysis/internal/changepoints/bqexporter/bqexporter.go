@@ -70,7 +70,7 @@ func (e *Exporter) ExportTestVariantBranches(ctx context.Context, rowInputs RowI
 	}
 	err := e.client.Insert(ctx, bqRows)
 	if err != nil {
-		return errors.Annotate(err, "insert rows").Err()
+		return errors.Fmt("insert rows: %w", err)
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ type PartialBigQueryRow struct {
 func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, segments []analyzer.Segment) (PartialBigQueryRow, error) {
 	testIDStructured, err := bqutil.StructuredTestIdentifier(tvb.TestID, tvb.Variant)
 	if err != nil {
-		return PartialBigQueryRow{}, errors.Annotate(err, "structured test identifier").Err()
+		return PartialBigQueryRow{}, errors.Fmt("structured test identifier: %w", err)
 	}
 
 	row := &bqpb.TestVariantBranchRow{
@@ -113,7 +113,7 @@ func ToPartialBigQueryRow(tvb *testvariantbranch.Entry, segments []analyzer.Segm
 	// Variant.
 	variant, err := pbutil.VariantToJSON(tvb.Variant)
 	if err != nil {
-		return PartialBigQueryRow{}, errors.Annotate(err, "variant to json").Err()
+		return PartialBigQueryRow{}, errors.Fmt("variant to json: %w", err)
 	}
 	row.Variant = variant
 

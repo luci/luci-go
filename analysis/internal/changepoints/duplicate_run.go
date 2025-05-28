@@ -45,7 +45,7 @@ func tryClaimInvocations(ctx context.Context, project string, rootInvocationID s
 	f := func(ctx context.Context) error {
 		invMap, err := readInvocations(ctx, project, invIDs)
 		if err != nil {
-			return errors.Annotate(err, "read invocations").Err()
+			return errors.Fmt("read invocations: %w", err)
 		}
 
 		claimMap = make(map[string]bool)

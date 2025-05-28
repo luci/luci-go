@@ -32,11 +32,11 @@ import (
 func UpdateChangepointTable(ctx context.Context, gcpProject string) (retErr error) {
 	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq client").Err()
+		return errors.Fmt("create bq client: %w", err)
 	}
 	defer func() {
 		if err := client.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing bq client").Err()
+			retErr = errors.Fmt("closing bq client: %w", err)
 		}
 	}()
 	return runCreateOrReplace(ctx, client)
@@ -108,17 +108,17 @@ func runCreateOrReplace(ctx context.Context, client *bigquery.Client) error {
 
 	job, err := q.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "initiate test_variant_changepoints DDL").Err()
+		return errors.Fmt("initiate test_variant_changepoints DDL: %w", err)
 	}
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
 	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
-		return errors.Annotate(err, "waiting for query to complete").Err()
+		return errors.Fmt("waiting for query to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "DDL query failed").Err()
+		return errors.Fmt("DDL query failed: %w", err)
 	}
 	return nil
 }

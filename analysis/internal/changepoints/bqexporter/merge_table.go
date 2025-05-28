@@ -43,23 +43,23 @@ func MergeTables(ctx context.Context, gcpProject string) (retErr error) {
 
 	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq client").Err()
+		return errors.Fmt("create bq client: %w", err)
 	}
 	defer func() {
 		if err := client.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing bq client").Err()
+			retErr = errors.Fmt("closing bq client: %w", err)
 		}
 	}()
 
 	err = ensureTestVariantSegmentsSchema(ctx, client)
 	if err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 
 	// DML merge from test-variant-segment-updates to test-variant-segments table.
 	err = runDMLMerge(ctx, client)
 	if err != nil {
-		return errors.Annotate(err, "run DML merge").Err()
+		return errors.Fmt("run DML merge: %w", err)
 	}
 
 	return nil
@@ -97,17 +97,17 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 
 	job, err := q.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "initiate merge query").Err()
+		return errors.Fmt("initiate merge query: %w", err)
 	}
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
 	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
-		return errors.Annotate(err, "waiting for merging to complete").Err()
+		return errors.Fmt("waiting for merging to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "merge rows failed").Err()
+		return errors.Fmt("merge rows failed: %w", err)
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 func ensureTestVariantSegmentsSchema(ctx context.Context, client *bigquery.Client) error {
 	table := client.Dataset(bqutil.InternalDatasetID).Table(stableTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring test_variant_segments table").Err()
+		return errors.Fmt("ensuring test_variant_segments table: %w", err)
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func ensureTestVariantSegmentsSchema(ctx context.Context, client *bigquery.Clien
 func shouldMergeTable(ctx context.Context) (bool, error) {
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "read config").Err()
+		return false, errors.Fmt("read config: %w", err)
 	}
 	if !cfg.GetTestVariantAnalysis().GetEnabled() {
 		return false, nil

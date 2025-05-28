@@ -181,7 +181,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 
 	activeRules, err := rules.ReadActive(span.Single(ctx), b.project)
 	if err != nil {
-		return errors.Annotate(err, "read active failure association rules").Err()
+		return errors.Fmt("read active failure association rules: %w", err)
 	}
 
 	metricsByRuleID := make(map[string]bugs.ClusterMetrics)
@@ -205,7 +205,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 			AlwaysIncludeBugClusters: true,
 		})
 		if err != nil {
-			return errors.Annotate(err, "read impactful clusters").Err()
+			return errors.Fmt("read impactful clusters: %w", err)
 		}
 
 		// blockedSourceClusterIDs is the set of source cluster IDs for which
@@ -272,7 +272,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	// based on this state.
 	bugsToUpdate, err := b.updateBugManagementState(ctx, rms)
 	if err != nil {
-		return errors.Annotate(err, "update bug management state").Err()
+		return errors.Fmt("update bug management state: %w", err)
 	}
 
 	// Break bug updates down by bug system.
@@ -288,7 +288,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	for system, systemBugsToUpdate := range bugUpdatesBySystem {
 		err := b.updateBugsForSystem(ctx, system, systemBugsToUpdate)
 		if err != nil {
-			errs = append(errs, errors.Annotate(err, "updating bugs in %s", system).Err())
+			errs = append(errs, errors.Fmt("updating bugs in %s: %w", system, err))
 		}
 	}
 	// Returns nil if len(errs) == 0.
@@ -373,7 +373,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 		// N.B.: ReadMany returns items in 1:1 correspondence to the request.
 		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
 		if err != nil {
-			return errors.Annotate(err, "read rules").Err()
+			return errors.Fmt("read rules: %w", err)
 		}
 
 		for i, r := range rs {
@@ -393,7 +393,7 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 					opts := rules.UpdateOptions{}
 					ms, err := rules.Update(r, opts, rules.LUCIAnalysisSystem)
 					if err != nil {
-						return errors.Annotate(err, "update rule").Err()
+						return errors.Fmt("update rule: %w", err)
 					}
 					span.BufferWrite(ctx, ms)
 				}
@@ -437,7 +437,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	responses, err := manager.Update(mgrCtx, bugsToUpdate)
 	if err != nil {
 		// Catastrophic error, exit immediately.
-		return errors.Annotate(err, "update bugs").Err()
+		return errors.Fmt("update bugs: %w", err)
 	}
 
 	// The set of non-catastrophic errors encountered so far.
@@ -488,7 +488,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	}
 
 	if err := b.updateRules(ctx, updateRuleRequests); err != nil {
-		err = errors.Annotate(err, "updating rules after updating bugs").Err()
+		err = errors.Fmt("updating rules after updating bugs: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(ctx, "%s", err)
 	}
@@ -496,7 +496,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	// Handle bugs marked as duplicate.
 	for _, duplicateDetails := range duplicateBugs {
 		if err := b.handleDuplicateBug(ctx, duplicateDetails); err != nil {
-			err = errors.Annotate(err, "handling duplicate bug (%s)", duplicateDetails.Bug.String()).Err()
+			err = errors.Fmt("handling duplicate bug (%s): %w", duplicateDetails.Bug.String(), err)
 			errs = append(errs, err)
 			logging.Errorf(ctx, "%s", err)
 		}
@@ -663,7 +663,7 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 		// against update races.
 		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
 		if err != nil {
-			return errors.Annotate(err, "read rules").Err()
+			return errors.Fmt("read rules: %w", err)
 		}
 		for i, rule := range rs {
 			updateRequest := requests[i]
@@ -705,7 +705,7 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 			ms, err := rules.Update(rule, updateOptions, rules.LUCIAnalysisSystem)
 			if err != nil {
 				// Validation error; this should never happen here.
-				return errors.Annotate(err, "prepare rule update").Err()
+				return errors.Fmt("prepare rule update: %w", err)
 			}
 			span.BufferWrite(ctx, ms)
 		}
@@ -713,7 +713,7 @@ func (b *BugUpdater) updateRulesBatch(ctx context.Context, requests []updateRule
 	}
 	_, err := span.ReadWriteTransaction(ctx, f)
 	if err != nil {
-		return errors.Annotate(err, "update rules").Err()
+		return errors.Fmt("update rules: %w", err)
 	}
 	return nil
 }
@@ -730,7 +730,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 			ErrorMessage: mergeIntoCycleMessage,
 		}
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
-			return errors.Annotate(err, "update source bug after a cycle was found").Err()
+			return errors.Fmt("update source bug after a cycle was found: %w", err)
 		}
 	} else if errors.Is(err, ruleDefinitionTooLongErr) {
 		request := bugs.UpdateDuplicateSourceRequest{
@@ -738,7 +738,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 			ErrorMessage: ruleDefinitionTooLongMessage,
 		}
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
-			return errors.Annotate(err, "update source bug after merging rule definition was found too long").Err()
+			return errors.Fmt("update source bug after merging rule definition was found too long: %w", err)
 		}
 	} else if errors.Is(err, mergeIntoPermissionErr) {
 		request := bugs.UpdateDuplicateSourceRequest{
@@ -746,7 +746,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bu
 			ErrorMessage: mergeIntoPermissionMessage,
 		}
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
-			return errors.Annotate(err, "update source bug after merging rule definition encountered a permission error").Err()
+			return errors.Fmt("update source bug after merging rule definition encountered a permission error: %w", err)
 		}
 	} else if err != nil {
 		return err
@@ -771,7 +771,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 	f := func(ctx context.Context) error {
 		sourceRule, _, err := readRuleForBugAndProject(ctx, duplicateDetails.Bug, b.project)
 		if err != nil {
-			return errors.Annotate(err, "reading rule for source bug").Err()
+			return errors.Fmt("reading rule for source bug: %w", err)
 		}
 		if !sourceRule.IsActive {
 			// The source rule is no longer active. This is a race condition
@@ -785,7 +785,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 		destinationRule, _, err :=
 			readRuleForBugAndProject(ctx, destBug, b.project)
 		if err != nil {
-			return errors.Annotate(err, "reading rule for destination bug").Err()
+			return errors.Fmt("reading rule for destination bug: %w", err)
 		}
 		if destinationRule == nil {
 			// The destination bug does not have a rule in this project.
@@ -824,7 +824,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 				// Merge the source and destination rules with an "OR".
 				mergedRule, err := lang.Merge(destinationRule.RuleDefinition, sourceRule.RuleDefinition)
 				if err != nil {
-					return errors.Annotate(err, "merging rules").Err()
+					return errors.Fmt("merging rules: %w", err)
 				}
 				if len(mergedRule) > rules.MaxRuleDefinitionLength {
 					// The merged rule is too long to store.
@@ -878,7 +878,7 @@ func (b *BugUpdater) handleDuplicateBugHappyPath(ctx context.Context, duplicateD
 			DestinationRuleID: destinationBugRuleID,
 		}
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
-			return errors.Annotate(err, "updating source bug").Err()
+			return errors.Fmt("updating source bug: %w", err)
 		}
 	}
 
@@ -1053,17 +1053,17 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 	rule, err := b.generateFailureAssociationRule(alg, &summary.Example)
 	if err != nil {
-		return false, errors.Annotate(err, "obtain failure association rule").Err()
+		return false, errors.Fmt("obtain failure association rule: %w", err)
 	}
 
 	ruleID, err := rules.GenerateID()
 	if err != nil {
-		return false, errors.Annotate(err, "generating rule ID").Err()
+		return false, errors.Fmt("generating rule ID: %w", err)
 	}
 
 	description, err := alg.ClusterDescription(b.projectCfg, summary)
 	if err != nil {
-		return false, errors.Annotate(err, "prepare bug description").Err()
+		return false, errors.Fmt("prepare bug description: %w", err)
 	}
 
 	// Set policy activations starting from a state where no policies
@@ -1086,14 +1086,14 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 
 	system, err := b.routeToBugSystem(cs)
 	if err != nil {
-		return false, errors.Annotate(err, "extracting bug system").Err()
+		return false, errors.Fmt("extracting bug system: %w", err)
 	}
 
 	if system == bugs.BuganizerSystem {
 		var err error
 		request.BuganizerComponent, err = extractBuganizerComponent(cs)
 		if err != nil {
-			return false, errors.Annotate(err, "extracting buganizer component").Err()
+			return false, errors.Fmt("extracting buganizer component: %w", err)
 		}
 	} else {
 		request.MonorailComponents = extractMonorailComponents(cs)
@@ -1135,7 +1135,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 			return nil
 		}
 		if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
-			return false, errors.Annotate(err, "create rule").Err()
+			return false, errors.Fmt("create rule: %w", err)
 		}
 	}
 
@@ -1167,7 +1167,7 @@ func extractBuganizerComponent(cs *analysis.Cluster) (int64, error) {
 		if tc.Value != "" && tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal*3)/10) {
 			componentID, err := strconv.ParseInt(tc.Value, 10, 64)
 			if err != nil {
-				return 0, errors.Annotate(err, "parse buganizer component id").Err()
+				return 0, errors.Fmt("parse buganizer component id: %w", err)
 			}
 			return componentID, nil
 		}
@@ -1222,7 +1222,7 @@ func (b *BugUpdater) generateFailureAssociationRule(alg algorithms.Algorithm, fa
 	// in uncontrolled creation of new bugs.
 	expr, err := lang.Parse(rule)
 	if err != nil {
-		return "", errors.Annotate(err, "rule generated by %s did not parse", alg.Name()).Err()
+		return "", errors.Fmt("rule generated by %s did not parse: %w", alg.Name(), err)
 	}
 	match := expr.Evaluate(lang.Failure{Test: failure.TestID, Reason: failure.Reason.GetPrimaryErrorMessage()})
 	if !match {

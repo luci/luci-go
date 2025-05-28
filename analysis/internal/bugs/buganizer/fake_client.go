@@ -64,7 +64,7 @@ func (fic *FakeClient) Close() {
 func (fic *FakeClient) BatchGetIssues(ctx context.Context, in *issuetracker.BatchGetIssuesRequest) (*issuetracker.BatchGetIssuesResponse, error) {
 	issues, err := fic.FakeStore.BatchGetIssues(in.IssueIds)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake batch get issues").Err()
+		return nil, errors.Fmt("fake batch get issues: %w", err)
 	}
 	return &issuetracker.BatchGetIssuesResponse{
 		Issues: issues,
@@ -89,7 +89,7 @@ func (fic *FakeClient) GetComponent(ctx context.Context, in *issuetracker.GetCom
 func (fic *FakeClient) GetIssue(ctx context.Context, in *issuetracker.GetIssueRequest) (*issuetracker.Issue, error) {
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake get issue").Err()
+		return nil, errors.Fmt("fake get issue: %w", err)
 	}
 	if issueData.ShouldReturnAccessPermissionError {
 		return nil, status.Error(codes.PermissionDenied, "cannot access bug")
@@ -150,7 +150,7 @@ func (fic *FakeClient) GetAutomationAccess(ctx context.Context, in *issuetracker
 func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyIssueRequest) (*issuetracker.Issue, error) {
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake modify issue").Err()
+		return nil, errors.Fmt("fake modify issue: %w", err)
 	}
 	if issueData.UpdateError != nil {
 		return nil, issueData.UpdateError
@@ -229,7 +229,7 @@ func (fic *FakeClient) ListIssueUpdates(ctx context.Context, in *issuetracker.Li
 	issueUpdates, err := fic.FakeStore.ListIssueUpdates(in.IssueId)
 	if err != nil {
 		return &fakeIssueUpdateIterator{
-			err: errors.Annotate(err, "fake list issue updates").Err(),
+			err: errors.Fmt("fake list issue updates: %w", err),
 		}
 	}
 	return &fakeIssueUpdateIterator{
@@ -243,7 +243,7 @@ func (fic *FakeClient) CreateIssueComment(ctx context.Context, in *issuetracker.
 	}
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake create issue comment").Err()
+		return nil, errors.Fmt("fake create issue comment: %w", err)
 	}
 	in.Comment.IssueId = in.IssueId
 	issueData.Comments = append(issueData.Comments, in.Comment)
@@ -253,7 +253,7 @@ func (fic *FakeClient) CreateIssueComment(ctx context.Context, in *issuetracker.
 func (fic *FakeClient) UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error) {
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake update issue comment").Err()
+		return nil, errors.Fmt("fake update issue comment: %w", err)
 	}
 	if in.CommentNumber < 1 || int(in.CommentNumber) > len(issueData.Comments) {
 		return nil, errors.New("comment number is out of bounds")
@@ -268,7 +268,7 @@ func (fic *FakeClient) ListIssueComments(ctx context.Context, in *issuetracker.L
 	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
 	if err != nil {
 		return &fakeIssueCommentIterator{
-			err: errors.Annotate(err, "fake list issue comments").Err(),
+			err: errors.Fmt("fake list issue comments: %w", err),
 		}
 	}
 
@@ -280,7 +280,7 @@ func (fic *FakeClient) ListIssueComments(ctx context.Context, in *issuetracker.L
 func (fic *FakeClient) CreateHotlistEntry(ctx context.Context, in *issuetracker.CreateHotlistEntryRequest) (*issuetracker.HotlistEntry, error) {
 	err := fic.FakeStore.CreateHotlistEntry(in.HotlistEntry.IssueId, in.HotlistId)
 	if err != nil {
-		return nil, errors.Annotate(err, "fake create hotlist entry").Err()
+		return nil, errors.Fmt("fake create hotlist entry: %w", err)
 	}
 	return &issuetracker.HotlistEntry{
 		IssueId:  in.HotlistEntry.IssueId,

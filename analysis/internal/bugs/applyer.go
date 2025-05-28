@@ -57,7 +57,7 @@ func NewPolicyApplyer(policies []*configpb.BugManagementPolicy, floorPriority co
 	for _, p := range policiesByDescendingPriority {
 		template, err := ParseTemplate(p.BugTemplate.CommentTemplate)
 		if err != nil {
-			return PolicyApplyer{}, errors.Annotate(err, "parsing comment template for policy %q", p.Id).Err()
+			return PolicyApplyer{}, errors.Fmt("parsing comment template for policy %q: %w", p.Id, err)
 		}
 		templates = append(templates, template)
 	}
@@ -440,11 +440,11 @@ func (p PolicyApplyer) PolicyActivatedComment(policyID PolicyID, uiBaseURL strin
 		}
 	}
 	if template == nil {
-		return "", errors.Reason("configuration for policy %q not found", policyID).Err()
+		return "", errors.Fmt("configuration for policy %q not found", policyID)
 	}
 	templatedContent, err := template.Execute(input)
 	if err != nil {
-		return "", errors.Annotate(err, "execute").Err()
+		return "", errors.Fmt("execute: %w", err)
 	}
 	if templatedContent == "" {
 		return "", nil

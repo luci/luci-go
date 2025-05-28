@@ -135,7 +135,7 @@ func AnalyzeRun(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opts AnalysisO
 		batchTVs := tvs[startIndex:endIndex]
 		err := analyzeSingleRunBatch(ctx, batchTVs, opts, exporter)
 		if err != nil {
-			return errors.Annotate(err, "analyzeSingleBatch").Err()
+			return errors.Fmt("analyzeSingleBatch: %w", err)
 		}
 		startIndex = int(endIndex)
 	}
@@ -158,7 +158,7 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 	// Claim the invocation for the root invocation ID, if it is unclaimed.
 	isClaimed, err := tryClaimInvocation(ctx, opts.Project, opts.InvocationID, opts.RootInvocationID)
 	if err != nil {
-		return errors.Annotate(err, "test existance of checkpoint").Err()
+		return errors.Fmt("test existance of checkpoint: %w", err)
 	}
 	if !isClaimed {
 		// Already claimed by another root invocation. Do not ingest.
@@ -186,7 +186,7 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 		// Check checkpoints table to see if we have already processed this batch.
 		exists, err := checkpoints.Exists(ctx, checkpointKey)
 		if err != nil {
-			return errors.Annotate(err, "test existance of checkpoint").Err()
+			return errors.Fmt("test existance of checkpoint: %w", err)
 		}
 		// This batch has been processed, we can skip it.
 		if exists {
@@ -210,7 +210,7 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 			// "Insert" the new test run to input buffer.
 			tvb, inOrder, err := insertRunIntoInputBuffer(tvb, tv, opts)
 			if err != nil {
-				return errors.Annotate(err, "insert into input buffer").Err()
+				return errors.Fmt("insert into input buffer: %w", err)
 			}
 			if !inOrder {
 				RunCounter.Add(ctx, 1, opts.Project, "skipped_out_of_order")
@@ -221,18 +221,18 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 			tvb.ApplyRetentionPolicyForFinalizedSegments(opts.PartitionTime)
 			mut, err := tvb.ToMutation(&hs)
 			if err != nil {
-				return errors.Annotate(err, "test variant branch to mutation").Err()
+				return errors.Fmt("test variant branch to mutation: %w", err)
 			}
 			mutations = append(mutations, mut)
 			bqRow, err := bqexporter.ToPartialBigQueryRow(tvb, segments)
 			if err != nil {
-				return errors.Annotate(err, "test variant branch to bigquery row").Err()
+				return errors.Fmt("test variant branch to bigquery row: %w", err)
 			}
 			bqExporterInput = append(bqExporterInput, bqRow)
 			return nil
 		}
 		if err := testvariantbranch.ReadF(ctx, tvbks, f); err != nil {
-			return errors.Annotate(err, "read test variant branches").Err()
+			return errors.Fmt("read test variant branches: %w", err)
 		}
 
 		ingestedRunCount := len(mutations)
@@ -245,7 +245,7 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 	})
 
 	if err != nil {
-		return errors.Annotate(err, "analyze change point").Err()
+		return errors.Fmt("analyze change point: %w", err)
 	}
 	// Export to BigQuery.
 	// Note: exportToBigQuery does not guarantee eventual export, in case it
@@ -259,7 +259,7 @@ func analyzeSingleRunBatch(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opt
 	}
 	err = exportToBigQuery(ctx, exporter, rowInputs)
 	if err != nil {
-		return errors.Annotate(err, "export to big query").Err()
+		return errors.Fmt("export to big query: %w", err)
 	}
 	return nil
 }
