@@ -76,11 +76,11 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 	}
 	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
-		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+		return nil, errors.Fmt("prjcfg.GetConfigGroup: %w", err)
 	}
 	childRuns, err := run.LoadChildRuns(ctx, rs.ID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to load child runs").Err()
+		return nil, errors.Fmt("failed to load child runs: %w", err)
 	}
 	return &Result{
 		State:        rs,

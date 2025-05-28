@@ -91,7 +91,7 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 				runs, err := findRunsToWipeoutForProject(ctx, proj, cutoff)
 				switch {
 				case err != nil:
-					return errors.Annotate(err, "failed to find runs to wipe out for project %q", proj).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to find runs to wipe out for project %q: %w", proj, err))
 				case len(runs) == 0:
 					return nil
 				}
@@ -150,7 +150,7 @@ func wipeoutRuns(ctx context.Context, runIDs common.RunIDs, rm rm) error {
 	runs, err := run.LoadRunsFromIDs(runIDs...).DoIgnoreNotFound(ctx)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to load runs").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load runs: %w", err))
 	case len(runs) == 0:
 		return nil
 	}
@@ -180,7 +180,7 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 		// Poke the non-ended run expecting the run will be cancelled by RunManager.
 		// The next cron job would likely wipeout the run.
 		if err := rm.PokeNow(ctx, r.ID); err != nil {
-			return errors.Annotate(err, "failed to poke run %s", r.ID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to poke run %s: %w", r.ID, err))
 		}
 		return nil
 	}
@@ -195,7 +195,7 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery("").Ancestor(runKey).KeysOnly(true)
 	if err := datastore.GetAll(ctx, q, &toDelete); err != nil {
-		return errors.Annotate(err, "failed to query all child entities of run %s", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to query all child entities of run %s: %w", r.ID, err))
 	}
 	toDelete = append(toDelete, runKey)
 
@@ -204,7 +204,7 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	// rest of the run related entities in a transaction.
 	toDelete, err := removeLogEntities(ctx, toDelete)
 	if err != nil {
-		return errors.Annotate(err, "failed to delete log entities of run %s", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete log entities of run %s: %w", r.ID, err))
 	}
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -219,7 +219,7 @@ func wipeoutRun(ctx context.Context, r *run.Run, rm rm) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "failed to delete run entity for run %s and its child entities in a transaction", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete run entity for run %s and its child entities in a transaction: %w", r.ID, err))
 	}
 	logging.Infof(ctx, "successfully wiped out run %s", r.ID)
 	return nil

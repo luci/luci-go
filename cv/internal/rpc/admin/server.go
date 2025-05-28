@@ -97,13 +97,13 @@ func (a *AdminServer) GetProject(ctx context.Context, req *adminpb.GetProjectReq
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, req.GetProject()))
 		if err != nil {
-			return errors.Annotate(err, "failed to fetch Project Events").Err()
+			return errors.Fmt("failed to fetch Project Events: %w", err)
 		}
 		events := make([]*prjpb.Event, len(list))
 		for i, item := range list {
 			events[i] = &prjpb.Event{}
 			if err = proto.Unmarshal(item.Value, events[i]); err != nil {
-				return errors.Annotate(err, "failed to unmarshal Event %q", item.ID).Err()
+				return errors.Fmt("failed to unmarshal Event %q: %w", item.ID, err)
 			}
 		}
 		resp.Events = events
@@ -227,7 +227,7 @@ func (a *AdminServer) GetPoller(ctx context.Context, req *adminpb.GetPollerReque
 	case err == datastore.ErrNoSuchEntity:
 		return nil, appstatus.Error(codes.NotFound, "poller not found")
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Poller state").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Poller state: %w", err))
 	}
 	resp = &adminpb.GetPollerResponse{
 		Project:     s.LuciProject,
@@ -390,7 +390,7 @@ func (a *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.Dele
 	q := datastore.NewQuery("dsset.Item").Ancestor(parent).Limit(req.GetLimit())
 	var entities []*itemEntity
 	if err := datastore.GetAll(ctx, q, &entities); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch up to %d events", req.GetLimit()).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch up to %d events: %w", req.GetLimit(), err))
 	}
 
 	stats := make(map[string]int64, 10)
@@ -403,7 +403,7 @@ func (a *AdminServer) DeleteProjectEvents(ctx context.Context, req *adminpb.Dele
 		}
 	}
 	if err := datastore.Delete(ctx, entities); err != nil {
-		return nil, errors.Annotate(err, "failed to delete %d events", len(entities)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to delete %d events: %w", len(entities), err))
 	}
 	return &adminpb.DeleteProjectEventsResponse{Events: stats}, nil
 }
@@ -419,7 +419,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 
 	p, err := prjmanager.Load(ctx, req.GetProject())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Project %q", req.GetProject()).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Project %q: %w", req.GetProject(), err))
 	}
 
 	cls := make([]*changelist.CL, len(p.State.GetPcls()))
@@ -430,7 +430,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 				// Load individual CL to avoid OOMs.
 				cl := changelist.CL{ID: common.CLID(id)}
 				if err := datastore.Get(ctx, &cl); err != nil {
-					return errors.Annotate(err, "failed to fetch CL %d", id).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to fetch CL %d: %w", id, err))
 				}
 				cls[i] = &changelist.CL{ID: cl.ID, EVersion: cl.EVersion}
 				payload := &changelist.UpdateCLTask{
@@ -472,13 +472,13 @@ func (a *AdminServer) SendProjectEvent(ctx context.Context, req *adminpb.SendPro
 
 	switch p, err := prjmanager.Load(ctx, req.GetProject()); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Project").Err()
+		return nil, errors.Fmt("failed to fetch Project: %w", err)
 	case p == nil:
 		return nil, appstatus.Error(codes.NotFound, "project not found")
 	}
 
 	if err := a.pmNotifier.SendNow(ctx, req.GetProject(), req.GetEvent()); err != nil {
-		return nil, errors.Annotate(err, "failed to send event").Err()
+		return nil, errors.Fmt("failed to send event: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -497,13 +497,13 @@ func (a *AdminServer) SendRunEvent(ctx context.Context, req *adminpb.SendRunEven
 
 	switch r, err := run.LoadRun(ctx, common.RunID(req.GetRun())); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Run: %w", err))
 	case r == nil:
 		return nil, appstatus.Error(codes.NotFound, "Run not found")
 	}
 
 	if err := a.runNotifier.SendNow(ctx, common.RunID(req.GetRun()), req.GetEvent()); err != nil {
-		return nil, errors.Annotate(err, "failed to send event").Err()
+		return nil, errors.Fmt("failed to send event: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -567,7 +567,7 @@ func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 	}
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to schedule task").Err()
+		return nil, errors.Fmt("failed to schedule task: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -601,7 +601,7 @@ func (a *AdminServer) ApplyQuotaOps(ctx context.Context, req *quotapb.ApplyOpsRe
 func checkAllowed(ctx context.Context, name string) error {
 	switch yes, err := auth.IsMember(ctx, allowGroup); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check ACL").Err()
+		return errors.Fmt("failed to check ACL: %w", err)
 	case !yes:
 		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
 	default:
@@ -626,7 +626,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	eg.Go(func() error {
 		switch rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch RunCLs").Err()
+			return errors.Fmt("failed to fetch RunCLs: %w", err)
 		default:
 			cls = make([]*adminpb.GetRunResponse_CL, len(rcls))
 			for i, rcl := range rcls {
@@ -646,7 +646,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		var err error
 		logEntries, err = run.LoadRunLogEntries(ctx, r.ID)
 		if err != nil {
-			return errors.Annotate(err, "failed to fetch RunCLs").Err()
+			return errors.Fmt("failed to fetch RunCLs: %w", err)
 		}
 		return nil
 	})
@@ -655,13 +655,13 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	eg.Go(func() error {
 		list, err := eventbox.List(ctx, run.EventboxRecipient(ctx, rid))
 		if err != nil {
-			return errors.Annotate(err, "failed to fetch Run Events").Err()
+			return errors.Fmt("failed to fetch Run Events: %w", err)
 		}
 		events = make([]*eventpb.Event, len(list))
 		for i, item := range list {
 			events[i] = &eventpb.Event{}
 			if err = proto.Unmarshal(item.Value, events[i]); err != nil {
-				return errors.Annotate(err, "failed to unmarshal Event %q", item.ID).Err()
+				return errors.Fmt("failed to unmarshal Event %q: %w", item.ID, err)
 			}
 		}
 		return nil
@@ -709,7 +709,7 @@ func loadCL(ctx context.Context, req *adminpb.GetCLRequest) (*changelist.CL, err
 		case err == datastore.ErrNoSuchEntity:
 			cl, err = nil, nil
 		case err != nil:
-			err = errors.Annotate(err, "failed to fetch CL by InternalID %d", req.GetId()).Tag(transient.Tag).Err()
+			err = transient.Tag.Apply(errors.Fmt("failed to fetch CL by InternalID %d: %w", req.GetId(), err))
 		}
 	case req.GetExternalId() != "":
 		eid = changelist.ExternalID(req.GetExternalId())

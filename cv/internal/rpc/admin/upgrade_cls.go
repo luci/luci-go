@@ -70,7 +70,7 @@ var removeCLDescriptionsFactory = func(_ context.Context, j *dsmapper.Job, _ int
 
 		// Check before a transaction if an update is even necessary.
 		if err := datastore.Get(ctx, cls); err != nil {
-			return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch RunCLs: %w", err))
 		}
 		cls = needUpgrade(cls)
 		if len(cls) == 0 {
@@ -80,7 +80,7 @@ var removeCLDescriptionsFactory = func(_ context.Context, j *dsmapper.Job, _ int
 		err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			// Reload inside transaction to avoid races with other CV parts.
 			if err := datastore.Get(ctx, cls); err != nil {
-				return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to fetch RunCLs: %w", err))
 			}
 			cls = needUpgrade(cls)
 			if len(cls) == 0 {
@@ -92,7 +92,7 @@ var removeCLDescriptionsFactory = func(_ context.Context, j *dsmapper.Job, _ int
 			return datastore.Put(ctx, cls)
 		}, nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to update RunCLs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to update RunCLs: %w", err))
 		}
 		metricUpgraded.Add(ctx, int64(len(cls)), tsJobName, tsJobID, "RunCL")
 		return nil

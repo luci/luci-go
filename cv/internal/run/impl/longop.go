@@ -65,10 +65,10 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
 		// Highly unexpected. Fail hard.
-		return errors.Annotate(err, "Run %q not found", r.ID).Err()
+		return errors.Fmt("Run %q not found: %w", r.ID, err)
 	case err != nil:
 		// Will retry.
-		return errors.Annotate(err, "failed to load Run %q", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load Run %q: %w", r.ID, err))
 	case r.OngoingLongOps.GetOps()[task.GetOperationId()] == nil:
 		// Highly unexpected. Fail hard.
 		return errors.Fmt("Run %q has no outstanding long operation %q", r.ID, task.GetOperationId())
@@ -82,7 +82,7 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 		if err := notifyCompleted(result); err != nil {
 			logging.Errorf(ctx, "Failed to NotifyLongOpCompleted: %s", err)
 		}
-		return errors.Reason("DoLongRunOperationTask arrived too late (deadline: %s, now %s)", d, now).Err()
+		return errors.Fmt("DoLongRunOperationTask arrived too late (deadline: %s, now %s)", d, now)
 	}
 
 	checker := &longOpCancellationChecker{}
@@ -174,7 +174,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 		logging.Errorf(ctx, "unknown LongOp work %T", w)
 		// Fail task quickly for backwards compatibility in case of a rollback during
 		// future deployment.
-		return nil, errors.Reason("Skipping %T", opBase.Op.GetWork()).Tag(tq.Fatal).Err()
+		return nil, tq.Fatal.Apply(errors.Fmt("Skipping %T", opBase.Op.GetWork()))
 	}
 	return op.Do(ctx)
 }

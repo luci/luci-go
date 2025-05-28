@@ -55,7 +55,7 @@ var multiCLAnalysisMapperFactory = func(_ context.Context, j *dsmapper.Job, _ in
 
 		// Check before a transaction if an update is even necessary.
 		if err := datastore.Get(ctx, runs); err != nil {
-			return errors.Annotate(err, "failed to fetch RunCLs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch RunCLs: %w", err))
 		}
 		// Only interested in all multi CL runs created between 2022-08-01 to
 		// 2023-08-01
@@ -75,11 +75,11 @@ var multiCLAnalysisMapperFactory = func(_ context.Context, j *dsmapper.Job, _ in
 
 		transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
+			return errors.Fmt("failed to create Google Storage RPC transport: %w", err)
 		}
 		gsClient, err := gs.NewProdClient(ctx, transport)
 		if err != nil {
-			return errors.Annotate(err, "Failed to create GS client.").Err()
+			return errors.Fmt("Failed to create GS client.: %w", err)
 		}
 		defer func() { _ = gsClient.Close() }()
 
@@ -89,17 +89,17 @@ var multiCLAnalysisMapperFactory = func(_ context.Context, j *dsmapper.Job, _ in
 			eg.Go(func() error {
 				cls, err := run.LoadRunCLs(ectx, r.ID, r.CLs)
 				if err != nil {
-					return errors.Annotate(err, "failed to load RunCLs").Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to load RunCLs: %w", err))
 				}
 				clGraph := makeCLGraph(cls)
 				if !clGraph.hasRootCL() {
 					writer, err := gsClient.NewWriter(gs.MakePath("temp-multi-cl-graph-store", fmt.Sprintf("%s-%d", j.Config.Mapper, j.ID), fmt.Sprintf("%s.txt", r.ID)))
 					if err != nil {
-						return errors.Annotate(err, "failed to create new gs writer").Err()
+						return errors.Fmt("failed to create new gs writer: %w", err)
 					}
 					defer func() { _ = writer.Close() }()
 					if _, err := writer.Write([]byte(clGraph.computeDotGraph())); err != nil {
-						return errors.Annotate(err, "failed to write to gs object").Err()
+						return errors.Fmt("failed to write to gs object: %w", err)
 					}
 				}
 				return nil

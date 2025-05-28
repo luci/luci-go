@@ -89,7 +89,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			case err == datastore.ErrNoSuchEntity:
 				panic(fmt.Errorf("run %s has a non-existent DepRuns Run %s", rs.ID, depr.ID))
 			case err != nil:
-				return nil, errors.Annotate(err, "failed to load run %s", depr.ID).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("failed to load run %s: %w", depr.ID, err))
 			case !run.IsEnded(depr.Status):
 				// If a parent run has not finished we cannot submit this run.
 				rs = rs.ShallowCopy()
@@ -190,7 +190,7 @@ func (*Impl) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids commo
 		logging.Warningf(ctx, "received CLsSubmitted event when Run is %s", status)
 		return &Result{State: rs}, nil
 	case status != run.Status_SUBMITTING:
-		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+		return nil, errors.Fmt("expected SUBMITTING status; got %s", status)
 	}
 	rs = rs.ShallowCopy()
 	rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
@@ -222,7 +222,7 @@ func (*Impl) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids commo
 			unexpected = append(unexpected, int(clid))
 		}
 		unexpected.Sort()
-		return nil, errors.Reason("received CLsSubmitted event for cls not belonging to this Run: %v", unexpected).Err()
+		return nil, errors.Fmt("received CLsSubmitted event for cls not belonging to this Run: %v", unexpected)
 	}
 	return &Result{State: rs}, nil
 }
@@ -238,7 +238,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		}
 		return &Result{State: rs}, nil
 	case status != run.Status_SUBMITTING:
-		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
+		return nil, errors.Fmt("expected SUBMITTING status; got %s", status)
 	}
 
 	rs = rs.ShallowCopy()
@@ -253,13 +253,13 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 
 	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
-		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+		return nil, errors.Fmt("prjcfg.GetConfigGroup: %w", err)
 	}
 	switch sc.GetResult() {
 	case eventpb.SubmissionResult_SUCCEEDED:
 		childRuns, err := run.LoadChildRuns(ctx, rs.ID)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to load child runs").Err()
+			return nil, errors.Fmt("failed to load child runs: %w", err)
 		}
 		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg, childRuns)
 		// Only mark run submitted to ResultDB when submission run is successful.
@@ -337,7 +337,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 	case expired:
 		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 		if err != nil {
-			return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+			return nil, errors.Fmt("prjcfg.GetConfigGroup: %w", err)
 		}
 
 		rs = rs.ShallowCopy()
@@ -349,7 +349,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 			}
 			childRuns, err := run.LoadChildRuns(ctx, rs.ID)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to load child runs").Err()
+				return nil, errors.Fmt("failed to load child runs: %w", err)
 			}
 			return &Result{
 				State:        rs,
@@ -441,7 +441,7 @@ func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM, opts *cf
 	case innerErr != nil:
 		return false, innerErr
 	case err != nil:
-		return false, errors.Annotate(err, "failed to run the transaction to acquire submit queue").Tag(transient.Tag).Err()
+		return false, transient.Tag.Apply(errors.Fmt("failed to run the transaction to acquire submit queue: %w", err))
 	case waitlisted:
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
@@ -491,7 +491,7 @@ func releaseSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) error {
 	case innerErr != nil:
 		return innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to release submit queue").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to release submit queue: %w", err))
 	}
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 		Time: timestamppb.New(clock.Now(ctx)),

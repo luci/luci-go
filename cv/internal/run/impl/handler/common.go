@@ -271,7 +271,7 @@ func checkRunCreate(ctx context.Context, gf gerrit.Factory, rs *state.RunState, 
 	}
 	switch aclResult, err := acls.CheckRunCreate(ctx, gf, cg, trs, cls); {
 	case err != nil:
-		return false, errors.Annotate(err, "acls.CheckRunCreate").Err()
+		return false, errors.Fmt("acls.CheckRunCreate: %w", err)
 	case !aclResult.OK():
 		var b strings.Builder
 		b.WriteString("the Run does not pass eligibility checks. See reasons at:")

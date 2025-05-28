@@ -60,7 +60,7 @@ func EncryptPageToken(ctx context.Context, src proto.Message) (string, error) {
 	}
 	bytes, err := proto.Marshal(src)
 	if err != nil {
-		return "", errors.Annotate(err, "failed to serialize page token").Err()
+		return "", errors.Fmt("failed to serialize page token: %w", err)
 	}
 	return secrets.URLSafeEncrypt(ctx, bytes, cryptoAdditionalData)
 }

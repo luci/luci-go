@@ -109,14 +109,14 @@ func wipeoutCL(ctx context.Context, clid common.CLID) error {
 	}.GetAllRunKeys(ctx)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to query runs involving CL %d", clid).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to query runs involving CL %d: %w", clid, err))
 	case len(runs) > 0:
 		logging.Warningf(ctx, "WipeoutCL: skip wipeout because CL is still referenced by run %s", runs[0].StringID())
 		return nil
 	}
 
 	if err := changelist.Delete(ctx, clid); err != nil {
-		return errors.Annotate(err, "failed to delete CL %d", clid).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete CL %d: %w", clid, err))
 	}
 	logging.Infof(ctx, "successfully wiped out CL %d", clid)
 	return nil

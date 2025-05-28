@@ -48,7 +48,7 @@ var backfillRetentionKeyFactory = func(_ context.Context, j *dsmapper.Job, _ int
 				}
 			}
 			if err := datastore.Get(ctx, tryjobs); err != nil {
-				return errors.Annotate(err, "failed to fetch Tryjobs").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to fetch Tryjobs: %w", err))
 			}
 			toUpdate := tryjobs[:0] // reuse the slice
 			for _, tj := range tryjobs {
@@ -63,7 +63,7 @@ var backfillRetentionKeyFactory = func(_ context.Context, j *dsmapper.Job, _ int
 			return datastore.Put(ctx, toUpdate)
 		}, nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to update Tryjobs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to update Tryjobs: %w", err))
 		}
 		return nil
 	}, nil

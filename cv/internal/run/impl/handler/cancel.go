@@ -31,7 +31,7 @@ import (
 func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []string) (*Result, error) {
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
+		err := errors.New("CRITICAL: can't cancel a Run with unspecified status")
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_SUBMITTING:
@@ -43,7 +43,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 	}
 	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 	if err != nil {
-		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+		return nil, errors.Fmt("prjcfg.GetConfigGroup: %w", err)
 	}
 	rs = rs.ShallowCopy()
 	// make sure reasons are unique and doesn't contain empty reasons.
@@ -52,7 +52,7 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 	rs.CancellationReasons = uniqueReasons.ToSortedSlice()
 	childRuns, err := run.LoadChildRuns(ctx, rs.ID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to load child runs").Err()
+		return nil, errors.Fmt("failed to load child runs: %w", err)
 	}
 	se := impl.endRun(ctx, rs, run.Status_CANCELLED, cg, childRuns)
 

@@ -48,7 +48,7 @@ func (op *ExecuteTryjobsOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 			Status: eventpb.LongOpCompleted_SUCCEEDED,
 		}, nil
 	case !transient.Tag.In(err):
-		errors.Log(ctx, errors.Annotate(err, "tryjob executor permanently failed").Err())
+		errors.Log(ctx, errors.Fmt("tryjob executor permanently failed: %w", err))
 		fallthrough
 	default:
 		return nil, err

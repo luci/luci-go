@@ -51,7 +51,7 @@ var deleteEntitiesFactory = func(_ context.Context, j *dsmapper.Job, _ int) (dsm
 			}
 			return nil
 		default:
-			return errors.Annotate(err, "failed to delete keys").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to delete keys: %w", err))
 		}
 	}, nil
 }

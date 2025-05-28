@@ -136,7 +136,7 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 				return err
 			}
 
-			return errors.Annotate(err, "ApplyOps: ERR_UNKNOWN_POLICY").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("ApplyOps: ERR_UNKNOWN_POLICY: %w", err))
 		}
 
 		return

@@ -54,9 +54,9 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 	r := &run.Run{ID: id}
 	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
-		return errors.Reason("Run not found").Err()
+		return errors.New("Run not found")
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch Run: %w", err))
 	case !run.IsEnded(r.Status):
 		panic(fmt.Errorf("the Run status must be final before sending to BQ"))
 	}
@@ -73,7 +73,7 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 
 	a, err := makeAttempt(ctx, r, cls)
 	if err != nil {
-		return errors.Annotate(err, "failed to make Attempt").Err()
+		return errors.Fmt("failed to make Attempt: %w", err)
 	}
 
 	var wg sync.WaitGroup
@@ -156,7 +156,7 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 			}
 		}
 		if rootCL == nil {
-			return nil, errors.Reason("can not find root CL %d from run CLs", r.RootCL).Err()
+			return nil, errors.Fmt("can not find root CL %d from run CLs", r.RootCL)
 		}
 	}
 	for i, cl := range cls {

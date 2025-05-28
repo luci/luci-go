@@ -52,7 +52,7 @@ const (
 func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: can't start a Run %q with unspecified status", rs.ID).Err()
+		err := errors.Fmt("CRITICAL: can't start a Run %q with unspecified status", rs.ID)
 		common.LogError(ctx, err)
 		panic(err)
 	case status != run.Status_PENDING:
@@ -66,11 +66,11 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			case err == datastore.ErrNoSuchEntity:
 				panic(err)
 			case err != nil:
-				return nil, errors.Annotate(err, "failed to load run %s", r.ID).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("failed to load run %s: %w", r.ID, err))
 			default:
 				switch r.Status {
 				case run.Status_STATUS_UNSPECIFIED:
-					err := errors.Reason("CRITICAL: can't start a Run %q, parent Run %s has unspecified status", rs.ID, r.ID).Err()
+					err := errors.Fmt("CRITICAL: can't start a Run %q, parent Run %s has unspecified status", rs.ID, r.ID)
 					common.LogError(ctx, err)
 					panic(err)
 				case run.Status_FAILED, run.Status_CANCELLED, run.Status_PENDING:
@@ -144,9 +144,9 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
 			return postPendingCommentOnCLs(ctx, rs, pendingMsg, userLimit, runCLs)
 		case errors.Is(err, quota.ErrQuotaApply):
-			return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("QM.DebitRunQuota: unexpected quotaOp Status %s: %w", quotaOp.GetStatus(), err))
 		case err != nil:
-			return nil, errors.Annotate(err, "QM.DebitRunQuota").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("QM.DebitRunQuota: %w", err))
 		}
 	}
 	switch result, err := requirement.Compute(ctx, requirement.Input{

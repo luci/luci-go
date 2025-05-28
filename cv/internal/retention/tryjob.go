@@ -122,12 +122,12 @@ func loadTryjobsIgnoreMissing(ctx context.Context, ids common.TryjobIDs) ([]*try
 				ret = append(ret, tryjobs[i])
 			case !errors.Is(err, datastore.ErrNoSuchEntity):
 				count, err := merrs.Summary()
-				return nil, errors.Annotate(err, "failed to load %d out of %d tryjobs", count, len(ids)).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("failed to load %d out of %d tryjobs: %w", count, len(ids), err))
 			}
 		}
 		return ret, nil
 	default:
-		return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load tryjobs: %w", err))
 	}
 }
 
@@ -143,7 +143,7 @@ func wipeoutTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
 	if len(runs) > 0 {
 		switch res, err := datastore.Exists(ctx, runs...); {
 		case err != nil:
-			return errors.Annotate(err, "failed to check the existence of runs for Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to check the existence of runs for Tryjob %d: %w", tj.ID, err))
 		case res.Any():
 			logging.Warningf(ctx, "WipeoutTryjob: skip wipeout because some run(s) using this tryjob still exists")
 			return nil

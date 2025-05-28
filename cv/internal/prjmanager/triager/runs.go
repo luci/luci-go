@@ -358,7 +358,8 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 	if err := datastore.Get(ctx, cls); err != nil {
 		// Even if one of errors is ErrEntityNotFound, this is a temporary situation as
 		// such CL(s) should be removed from PM state soon.
-		return nil, errors.Annotate(err, "failed to load CLs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to load CLs: %w", err))
 	}
 
 	// Run's owner is whoever owns the latest triggered CL.
@@ -366,7 +367,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 	// purging and not marked as ready.
 	owner, err := cls[latestIndex].Snapshot.OwnerIdentity()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get OwnerIdentity of %d", cls[latestIndex].ID).Err()
+		return nil, errors.Fmt("failed to get OwnerIdentity of %d: %w", cls[latestIndex].ID, err)
 	}
 
 	bcls := make([]runcreator.CL, len(cls))
@@ -404,7 +405,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 	t := chooseTrigger(combo.latestTriggered.pcl.GetTriggers())
 	triggererIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, t.GetEmail()))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to construct triggerer identity of %s", t.GetEmail()).Err()
+		return nil, errors.Fmt("failed to construct triggerer identity of %s: %w", t.GetEmail(), err)
 	}
 	sort.Sort(incompleteRuns)
 	payer := quotaPayer(cls[latestIndex], owner, triggererIdentity, t)
@@ -555,7 +556,7 @@ func checkExisting(ctx context.Context, rc *runcreator.Creator, combo combo, use
 		// NOTE: actual creation may still fail due to a race, and that's fine.
 		return false, time.Time{}, nil
 	case err != nil:
-		return false, time.Time{}, errors.Annotate(err, "failed to check for existing Run %q", existing.ID).Tag(transient.Tag).Err()
+		return false, time.Time{}, transient.Tag.Apply(errors.Fmt("failed to check for existing Run %q: %w", existing.ID, err))
 	case !run.IsEnded(existing.Status):
 		// The Run already exists. Most likely another triager called from another
 		// TQ was first. Check again in a few seconds, at which point PM should
