@@ -562,7 +562,7 @@ export function createTVPropGetter(
 ): (v: TestVariant) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
-    return (v) => v.variant?.def[variantKey] || '';
+    return (v) => v.variant?.def?.[variantKey] || '';
   }
   propKey = propKey.toLowerCase();
   switch (propKey) {
