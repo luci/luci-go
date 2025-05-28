@@ -84,7 +84,7 @@ func RegisterTaskHandler(srv *server.Server, uiBaseURL string) error {
 // Schedule enqueues a task to update bugs for the given LUCI Project.
 func Schedule(ctx context.Context, task *taskspb.UpdateBugs) error {
 	if err := validateTask(task); err != nil {
-		return errors.Annotate(err, "validate task").Err()
+		return errors.Fmt("validate task: %w", err)
 	}
 
 	title := fmt.Sprintf("update-bugs-%s-%v", task.Project, task.ReclusteringAttemptMinute.AsTime().Format("20060102-150405"))
@@ -115,7 +115,7 @@ type Handler struct {
 // UpdateBugs handles the given bug update task.
 func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retErr error) {
 	if err := validateTask(task); err != nil {
-		return errors.Annotate(err, "validate task").Err()
+		return errors.Fmt("validate task: %w", err)
 	}
 
 	defer func() {
@@ -130,12 +130,12 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 	ctx, cancel := context.WithDeadline(ctx, task.Deadline.AsTime())
 	defer cancel()
 	if err := ctx.Err(); err != nil {
-		return errors.Annotate(err, "check deadline before start").Err()
+		return errors.Fmt("check deadline before start: %w", err)
 	}
 
 	buganizerClient, err := buganizer.CreateBuganizerClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "creating a buganizer client").Err()
+		return errors.Fmt("creating a buganizer client: %w", err)
 	}
 	if buganizerClient != nil {
 		defer buganizerClient.Close()
@@ -147,13 +147,13 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 	}
 	defer func() {
 		if err := analysisClient.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing analysis client").Err()
+			retErr = errors.Fmt("closing analysis client: %w", err)
 		}
 	}()
 
 	progress, err := runs.ReadReclusteringProgressUpTo(ctx, task.Project, task.ReclusteringAttemptMinute.AsTime())
 	if err != nil {
-		return errors.Annotate(err, "read re-clustering progress").Err()
+		return errors.Fmt("read re-clustering progress: %w", err)
 	}
 
 	runTimestamp := clock.Now(ctx).Truncate(time.Minute)
@@ -173,7 +173,7 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 	start := time.Now()
 	err = updater.UpdateBugsForProject(ctx, opts)
 	if err != nil {
-		err = errors.Annotate(err, "in project %v", task.Project).Err()
+		err = errors.Fmt("in project %v: %w", task.Project, err)
 		logging.Errorf(ctx, "Updating analysis and bugs: %s", err)
 	}
 
@@ -185,7 +185,7 @@ func (h Handler) UpdateBugs(ctx context.Context, task *taskspb.UpdateBugs) (retE
 
 func validateTask(task *taskspb.UpdateBugs) error {
 	if err := pbutil.ValidateProject(task.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := task.ReclusteringAttemptMinute.CheckValid(); err != nil {
 		return errors.New("reclustering_attempt_minute: missing or invalid timestamp")

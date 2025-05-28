@@ -40,7 +40,7 @@ func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalized
 	project, _ := realms.Split(notification.Realm)
 	id, err := pbutil.ParseInvocationName(notification.Invocation)
 	if err != nil {
-		return false, errors.Annotate(err, "parse invocation name").Err()
+		return false, errors.Fmt("parse invocation name: %w", err)
 	}
 
 	if !isBuildbucketBuildInvocation(id) && !notification.IsExportRoot {
@@ -54,7 +54,7 @@ func JoinInvocation(ctx context.Context, notification *rdbpb.InvocationFinalized
 		CreationTime: timestamppb.New(notification.CreateTime.AsTime()),
 	}
 	if err := JoinInvocationResult(ctx, id, project, result); err != nil {
-		return true, errors.Annotate(err, "joining invocation result").Err()
+		return true, errors.Fmt("joining invocation result: %w", err)
 	}
 	return true, nil
 }

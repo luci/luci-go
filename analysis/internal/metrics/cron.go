@@ -126,13 +126,13 @@ func init() {
 func GlobalMetrics(ctx context.Context) error {
 	projectConfigs, err := config.Projects(ctx)
 	if err != nil {
-		return errors.Annotate(err, "obtain project configs").Err()
+		return errors.Fmt("obtain project configs: %w", err)
 	}
 
 	// Total number of active rules, broken down by project.
 	activeRules, err := rules.ReadTotalActiveRules(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "collect total active rules").Err()
+		return errors.Fmt("collect total active rules: %w", err)
 	}
 	for _, project := range projectConfigs.Keys() {
 		// If there is no entry in activeRules for this project
@@ -146,28 +146,28 @@ func GlobalMetrics(ctx context.Context) error {
 	// Performance joining presubmit runs to buildbucket builds in ingestion.
 	psToBuildJoinStats, err := control.ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "collect presubmit run to buildbucket build join statistics").Err()
+		return errors.Fmt("collect presubmit run to buildbucket build join statistics: %w", err)
 	}
 	reportJoinStats(ctx, presubmitToBuildJoinGauge, psToBuildJoinStats)
 
 	// Performance joining buildbucket builds to presubmit runs in ingestion.
 	buildToPSJoinStats, err := control.ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "collect buildbucket build to presubmit run join statistics").Err()
+		return errors.Fmt("collect buildbucket build to presubmit run join statistics: %w", err)
 	}
 	reportJoinStats(ctx, buildToPresubmitJoinGauge, buildToPSJoinStats)
 
 	// Performance joining finalized invocations to buildbucket builds in ingestion.
 	invToBuildJoinStats, err := control.ReadInvocationToBuildJoinStatistics(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "collect invocation to buildbucket build join statistics").Err()
+		return errors.Fmt("collect invocation to buildbucket build join statistics: %w", err)
 	}
 	reportJoinStats(ctx, invocationToBuildJoinGauge, invToBuildJoinStats)
 
 	// Performance joining buildbucket builds to finalized invocations in ingestion.
 	buildToInvJoinStats, err := control.ReadBuildToInvocationJoinStatistics(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "collect buildbucket build to invocation join statistics").Err()
+		return errors.Fmt("collect buildbucket build to invocation join statistics: %w", err)
 	}
 	reportJoinStats(ctx, buildToInvocationJoinGauge, buildToInvJoinStats)
 

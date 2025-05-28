@@ -52,11 +52,11 @@ var groupChangepoints = tq.RegisterTaskClass(tq.TaskClass{
 func RegisterTaskHandler(srv *server.Server) error {
 	changepointClient, err := changepoints.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "create changepoint BigQuery client").Err()
+		return errors.Fmt("create changepoint BigQuery client: %w", err)
 	}
 	insertClient, err := groupexporter.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "create insert client").Err()
+		return errors.Fmt("create insert client: %w", err)
 	}
 	srv.RegisterCleanup(func(ctx context.Context) {
 		err := changepointClient.Close()
@@ -113,7 +113,7 @@ func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChan
 	}
 	rows, err := c.changepointClient.ReadChangepointsRealtime(ctx, payload.Week.AsTime())
 	if err != nil {
-		return errors.Annotate(err, "read BigQuery changepoints").Err()
+		return errors.Fmt("read BigQuery changepoints: %w", err)
 	}
 	changepointsByProject := splitByProject(rows)
 	groups := [][]*changepoints.ChangepointDetailRow{}
@@ -123,7 +123,7 @@ func (c *changepointGrouper) run(ctx context.Context, payload *taskspb.GroupChan
 	}
 	now := clock.Now(ctx)
 	if err := c.exporter.Export(ctx, groups, now); err != nil {
-		return errors.Annotate(err, "export groups to BigQuery").Err()
+		return errors.Fmt("export groups to BigQuery: %w", err)
 	}
 	return nil
 }

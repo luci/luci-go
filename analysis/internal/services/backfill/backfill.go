@@ -81,7 +81,7 @@ func Schedule(ctx context.Context, task *taskspb.Backfill) error {
 
 	dedupKey, err := randomDeduplicationKey()
 	if err != nil {
-		return errors.Annotate(err, "obtain deduplication key").Err()
+		return errors.Fmt("obtain deduplication key: %w", err)
 	}
 	taskProto := &tq.Task{
 		Title: title,
@@ -105,7 +105,7 @@ func Schedule(ctx context.Context, task *taskspb.Backfill) error {
 	err = retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := tq.AddTask(ctx, taskProto)
 		if err != nil {
-			return errors.Annotate(err, "create task").Err()
+			return errors.Fmt("create task: %w", err)
 		}
 		return nil
 	}, nil)
@@ -116,14 +116,14 @@ func randomDeduplicationKey() (string, error) {
 	var b [16]byte
 	_, err := rand.Read(b[:])
 	if err != nil {
-		return "", errors.Annotate(err, "read random bytes").Err()
+		return "", errors.Fmt("read random bytes: %w", err)
 	}
 	return hex.EncodeToString(b[:]), nil
 }
 
 func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfill) error {
 	if task.Day.AsTime().After(mergeAfterDay) {
-		return tq.Fatal.Apply(errors.Reason("cannot perform non-merging backfill after %v (got %v)", mergeAfterDay, task.Day.AsTime()).Err())
+		return tq.Fatal.Apply(errors.Fmt("cannot perform non-merging backfill after %v (got %v)", mergeAfterDay, task.Day.AsTime()))
 	}
 
 	// Check if we have previously backfilled this date. This is to make the
@@ -134,7 +134,7 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 	}
 	it, err := query.Read(ctx)
 	if err != nil {
-		return errors.Annotate(err, "check partition is empty").Err()
+		return errors.Fmt("check partition is empty: %w", err)
 	}
 	hasRow := false
 	for {
@@ -186,14 +186,14 @@ func backfill(ctx context.Context, client *bigquery.Client, task *taskspb.Backfi
 	}
 	job, err := query.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "start non-merging backfill").Err()
+		return errors.Fmt("start non-merging backfill: %w", err)
 	}
 	status, err := bq.WaitForJob(ctx, job)
 	if err != nil {
-		return errors.Annotate(err, "wait for non-merging backfill").Err()
+		return errors.Fmt("wait for non-merging backfill: %w", err)
 	}
 	if err := status.Err(); err != nil {
-		return errors.Annotate(err, "non-merging backfill").Err()
+		return errors.Fmt("non-merging backfill: %w", err)
 	}
 	return nil
 }
@@ -241,14 +241,14 @@ func mergingBackfill(ctx context.Context, client *bigquery.Client, task *taskspb
 	}
 	job, err := query.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "start merging backfill").Err()
+		return errors.Fmt("start merging backfill: %w", err)
 	}
 	status, err := bq.WaitForJob(ctx, job)
 	if err != nil {
-		return errors.Annotate(err, "wait for merging backfill").Err()
+		return errors.Fmt("wait for merging backfill: %w", err)
 	}
 	if err := status.Err(); err != nil {
-		return errors.Annotate(err, "merging backfill").Err()
+		return errors.Fmt("merging backfill: %w", err)
 	}
 	return nil
 }

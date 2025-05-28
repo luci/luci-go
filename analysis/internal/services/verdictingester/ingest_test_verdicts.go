@@ -272,7 +272,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 			taskCounter.Add(ctx, 1, payload.Project, "ignored_no_invocation")
 			return nil
 		}
-		return errors.Reason("ingestion with no build and no invocation should not be scheduled").Err()
+		return errors.New("ingestion with no build and no invocation should not be scheduled")
 	}
 
 	rdbHost := payload.Invocation.ResultdbHost
@@ -299,7 +299,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	}
 	if err != nil {
 		logging.Warningf(ctx, "GetInvocation has error code %s.", code)
-		return transient.Tag.Apply(errors.Annotate(err, "get invocation").Err())
+		return transient.Tag.Apply(errors.Fmt("get invocation: %w", err))
 	}
 
 	if !inv.IsExportRoot {
@@ -325,13 +325,13 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	}
 	rsp, err := rc.QueryTestVariants(ctx, req)
 	if err != nil {
-		err = errors.Annotate(err, "query test variants").Err()
+		err = errors.Fmt("query test variants: %w", err)
 		return transient.Tag.Apply(err)
 	}
 
 	sources, err := gerritchangelists.PopulateOwnerKindsBatch(ctx, payload.Project, rsp.Sources)
 	if err != nil {
-		err = errors.Annotate(err, "populate changelist owner kinds").Err()
+		err = errors.Fmt("populate changelist owner kinds: %w", err)
 		return transient.Tag.Apply(err)
 	}
 
@@ -340,7 +340,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	// inserting the verdicts for this page.
 	if rsp.NextPageToken != "" {
 		if err := scheduleNextTask(ctx, payload, rsp.NextPageToken); err != nil {
-			err = errors.Annotate(err, "schedule next task").Err()
+			err = errors.Fmt("schedule next task: %w", err)
 			return transient.Tag.Apply(err)
 		}
 	}
@@ -350,7 +350,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	if err != nil {
 		// If any transaction failed, the task will be retried and the tables will be
 		// eventual-consistent.
-		return errors.Annotate(err, "record test verdicts").Err()
+		return errors.Fmt("record test verdicts: %w", err)
 	}
 
 	nextPageToken := rsp.NextPageToken
@@ -361,7 +361,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 	// See go/luci-test-variant-analysis-design for details.
 	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp.TestVariants, sources, payload)
 	if err != nil {
-		return errors.Annotate(err, "change point analysis").Err()
+		return errors.Fmt("change point analysis: %w", err)
 	}
 
 	// Ingest the test verdicts for clustering. This should occur
@@ -374,12 +374,12 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 
 	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp.TestVariants, sources, inv, payload)
 	if err != nil {
-		return errors.Annotate(err, "export verdicts").Err()
+		return errors.Fmt("export verdicts: %w", err)
 	}
 
 	err = ingestForAnTSTestResultExport(ctx, i.antsTestResultExporter, rsp.TestVariants, inv, payload)
 	if err != nil {
-		return errors.Annotate(err, "ants test results export").Err()
+		return errors.Fmt("ants test results export: %w", err)
 	}
 
 	if nextPageToken == "" {
@@ -388,7 +388,7 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		// when joined with the invocation table.
 		err = ingestForAnTSInvocationExport(ctx, i.antsInvocationExporter, inv, payload)
 		if err != nil {
-			return errors.Annotate(err, "ants invocation export").Err()
+			return errors.Fmt("ants invocation export: %w", err)
 		}
 		// In the last task.
 		taskCounter.Add(ctx, 1, payload.Project, "success")
@@ -449,7 +449,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		}
 		exists, err := checkpoints.Exists(ctx, key)
 		if err != nil {
-			return errors.Annotate(err, "test existance of checkpoint").Err()
+			return errors.Fmt("test existance of checkpoint: %w", err)
 		}
 		if exists {
 			// Next task has already been created in the past. Do not create
@@ -492,7 +492,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	}
 	cfg, err := config.Project(ctx, ing.Project)
 	if err != nil {
-		return errors.Annotate(err, "read project config").Err()
+		return errors.Fmt("read project config: %w", err)
 	}
 
 	// Setup clustering ingestion.
@@ -537,7 +537,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 
 	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, ing.Project, changepointPartitionTime, sources)
 	if err != nil {
-		return errors.Annotate(err, "query test variant analysis for clustering").Err()
+		return errors.Fmt("query test variant analysis for clustering: %w", err)
 	}
 
 	verdicts := make([]ingestion.TestVerdict, 0, len(failingRDBVerdicts))
@@ -558,7 +558,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	// the same order), the IDs and content of the chunks it writes is
 	// designed to be stable. If chunks already exist, it will skip them.
 	if err := clustering.Ingest(ctx, opts, verdicts); err != nil {
-		err = errors.Annotate(err, "ingesting for clustering").Err()
+		err = errors.Fmt("ingesting for clustering: %w", err)
 		return transient.Tag.Apply(err)
 	}
 	return nil
@@ -574,7 +574,7 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "read config").Err()
+		return nil, errors.Fmt("read config: %w", err)
 	}
 	tvaQueriesEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled &&
 		cfg.Clustering != nil && cfg.Clustering.QueryTestVariantAnalysisEnabled
@@ -584,7 +584,7 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 		var err error
 		result, err = changepoints.QueryStatsForClustering(ctx, tvs, project, partitionTime, sourcesMap)
 		if err != nil {
-			return nil, errors.Annotate(err, "read test variant branch analysis").Err()
+			return nil, errors.Fmt("read test variant branch analysis: %w", err)
 		}
 	} else {
 		// Use nil analysis for each verdict.
@@ -599,7 +599,7 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read config").Err()
+		return errors.Fmt("read config: %w", err)
 	}
 	tvaEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled
 	if !tvaEnabled {
@@ -607,7 +607,7 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 	}
 	err = changepoints.Analyze(ctx, testVariants, payload, sources, exporter)
 	if err != nil {
-		return errors.Annotate(err, "analyze test variants").Err()
+		return errors.Fmt("analyze test variants: %w", err)
 	}
 	return nil
 }
@@ -620,7 +620,7 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read config").Err()
+		return errors.Fmt("read config: %w", err)
 	}
 	enabled := cfg.TestVerdictExport != nil && cfg.TestVerdictExport.Enabled
 	if !enabled {
@@ -634,7 +634,7 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 	}
 	err = verdictExporter.Export(ctx, testVariants, exportOptions)
 	if err != nil {
-		return errors.Annotate(err, "export").Err()
+		return errors.Fmt("export: %w", err)
 	}
 	return nil
 }
@@ -655,7 +655,7 @@ func ingestForAnTSTestResultExport(ctx context.Context, antsExporter *antstestre
 	}
 	err = antsExporter.Export(ctx, testVariants, exportOptions)
 	if err != nil {
-		return errors.Annotate(err, "export test_results").Err()
+		return errors.Fmt("export test_results: %w", err)
 	}
 	return nil
 }
@@ -672,7 +672,7 @@ func ingestForAnTSInvocationExport(ctx context.Context, antsExporter *antsinvoca
 
 	err = antsExporter.Export(ctx, inv)
 	if err != nil {
-		return errors.Annotate(err, "export invocation").Err()
+		return errors.Fmt("export invocation: %w", err)
 	}
 	return nil
 }
@@ -682,7 +682,7 @@ func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) e
 		return errors.New("ingestion ID must be specified")
 	}
 	if err := pbutil.ValidateProject(payload.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if !payload.PartitionTime.IsValid() {
 		return errors.New("partition time must be specified and valid")

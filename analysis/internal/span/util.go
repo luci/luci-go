@@ -29,7 +29,7 @@ func GenerateStatement(tmpl *template.Template, name string, input any) (spanner
 	sql := &bytes.Buffer{}
 	err := tmpl.ExecuteTemplate(sql, name, input)
 	if err != nil {
-		return spanner.Statement{}, errors.Annotate(err, "failed to generate statement: %s", name).Err()
+		return spanner.Statement{}, errors.Fmt("failed to generate statement: %s: %w", name, err)
 	}
 	return spanner.NewStatement(sql.String()), nil
 }

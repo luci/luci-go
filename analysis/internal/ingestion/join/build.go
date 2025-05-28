@@ -84,7 +84,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		return false, nil
 	}
 	if err != nil {
-		return false, transient.Tag.Apply(errors.Annotate(err, "retrieving buildbucket build").Err())
+		return false, transient.Tag.Apply(errors.Fmt("retrieving buildbucket build: %w", err))
 	}
 
 	if build.CreateTime.GetSeconds() <= 0 {
@@ -103,7 +103,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 			// If a build does not have an invocation of this form, it will never
 			// be successfully joined by our implementation. It is better to
 			// fail now in an obvious manner than fail later silently.
-			return false, errors.Reason("build %v had unexpected ResultDB invocation (got %v, want %v)", buildID, invocationName, wantInvocationName).Err()
+			return false, errors.Fmt("build %v had unexpected ResultDB invocation (got %v, want %v)", buildID, invocationName, wantInvocationName)
 		}
 		hasInvocation = true
 	}
@@ -138,7 +138,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		gerritChanges := build.GetInput().GetGerritChanges()
 		changelists, err = prepareChangelists(ctx, project, gerritChanges)
 		if err != nil {
-			return false, errors.Annotate(err, "prepare changelists").Err()
+			return false, errors.Fmt("prepare changelists: %w", err)
 		}
 	}
 
@@ -163,7 +163,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 
 	if err := JoinBuildResult(ctx, buildID, project, isPresubmit, hasInvocation, result); err != nil {
-		return false, errors.Annotate(err, "joining build result").Err()
+		return false, errors.Fmt("joining build result: %w", err)
 	}
 	// report metrics.
 	buildProcessingOutcomeCounter.Add(ctx, 1, project, "success")
@@ -199,7 +199,7 @@ func prepareChangelists(ctx context.Context, project string, gerritChanges []*bb
 
 	ownerKinds, err := gerritchangelists.FetchOwnerKinds(ctx, lookupRequest)
 	if err != nil {
-		return nil, errors.Annotate(err, "retrieving gerrit owner kinds").Err()
+		return nil, errors.Fmt("retrieving gerrit owner kinds: %w", err)
 	}
 
 	result := make([]*pb.Changelist, 0, len(gerritChanges))

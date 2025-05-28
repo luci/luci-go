@@ -61,7 +61,7 @@ func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err err
 	for _, dest := range destinations {
 		err := e.exportTo(ctx, input, dest)
 		if err != nil {
-			return errors.Annotate(err, "export to %q", dest.Key).Err()
+			return errors.Fmt("export to %q: %w", dest.Key, err)
 		}
 	}
 	return nil
@@ -81,7 +81,7 @@ func (e *TestResultsExporter) exportTo(ctx context.Context, input Inputs, dest e
 	}
 	exists, err := checkpoints.Exists(span.Single(ctx), key)
 	if err != nil {
-		return errors.Annotate(err, "test existance of checkpoint").Err()
+		return errors.Fmt("test existance of checkpoint: %w", err)
 	}
 	if exists {
 		// We already performed this export previously. Do not perform it
@@ -99,13 +99,13 @@ func (e *TestResultsExporter) exportTo(ctx context.Context, input Inputs, dest e
 	}
 	err = e.exporter.Export(ctx, input.Verdicts, dest, exportOptions)
 	if err != nil {
-		return errors.Annotate(err, "export").Err()
+		return errors.Fmt("export: %w", err)
 	}
 
 	// Create the checkpoint.
 	ms := []*spanner.Mutation{checkpoints.Insert(ctx, key, checkpointTTL)}
 	if _, err := span.Apply(ctx, ms); err != nil {
-		return errors.Annotate(err, "create checkpoint").Err()
+		return errors.Fmt("create checkpoint: %w", err)
 	}
 
 	return nil

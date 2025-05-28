@@ -91,7 +91,7 @@ func Schedule(ctx context.Context, task *taskspb.ReclusterChunks) error {
 
 	dedupKey, err := randomDeduplicationKey()
 	if err != nil {
-		return errors.Annotate(err, "obtain deduplication key").Err()
+		return errors.Fmt("obtain deduplication key: %w", err)
 	}
 	taskProto := &tq.Task{
 		Title: title,
@@ -120,7 +120,7 @@ func Schedule(ctx context.Context, task *taskspb.ReclusterChunks) error {
 	err = retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := tq.AddTask(ctx, taskProto)
 		if err != nil {
-			return errors.Annotate(err, "create task").Err()
+			return errors.Fmt("create task: %w", err)
 		}
 		return nil
 	}, nil)
@@ -131,7 +131,7 @@ func randomDeduplicationKey() (string, error) {
 	var b [16]byte
 	_, err := rand.Read(b[:])
 	if err != nil {
-		return "", errors.Annotate(err, "read random bytes").Err()
+		return "", errors.Fmt("read random bytes: %w", err)
 	}
 	return hex.EncodeToString(b[:]), nil
 }

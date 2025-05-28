@@ -198,27 +198,27 @@ func Read(ctx context.Context, ingestionIDs []IngestionID) ([]*Entry, error) {
 			&presubmitJoinedTime,
 			&lastUpdated)
 		if err != nil {
-			return errors.Annotate(err, "read IngestionJoins row").Err()
+			return errors.Fmt("read IngestionJoins row: %w", err)
 		}
 		var buildResult *ctlpb.BuildResult
 		if buildResultBytes != nil {
 			buildResult = &ctlpb.BuildResult{}
 			if err := proto.Unmarshal(buildResultBytes, buildResult); err != nil {
-				return errors.Annotate(err, "unmarshal build result").Err()
+				return errors.Fmt("unmarshal build result: %w", err)
 			}
 		}
 		var invocationResult *ctlpb.InvocationResult
 		if invocationResultBytes != nil {
 			invocationResult = &ctlpb.InvocationResult{}
 			if err := proto.Unmarshal(invocationResultBytes, invocationResult); err != nil {
-				return errors.Annotate(err, "unmarshal invocation result").Err()
+				return errors.Fmt("unmarshal invocation result: %w", err)
 			}
 		}
 		var presubmitResult *ctlpb.PresubmitResult
 		if presubmitResultBytes != nil {
 			presubmitResult = &ctlpb.PresubmitResult{}
 			if err := proto.Unmarshal(presubmitResultBytes, presubmitResult); err != nil {
-				return errors.Annotate(err, "unmarshal presubmit result").Err()
+				return errors.Fmt("unmarshal presubmit result: %w", err)
 			}
 		}
 		ingestionID := IngestionID(ingestionIDString)
@@ -421,7 +421,7 @@ func readJoinStatistics(ctx context.Context, stmt spanner.Statement) (map[string
 
 		err := r.Columns(&project, &hour, &total, &joined)
 		if err != nil {
-			return errors.Annotate(err, "read row").Err()
+			return errors.Fmt("read row: %w", err)
 		}
 
 		stats, ok := result[project]
@@ -439,7 +439,7 @@ func readJoinStatistics(ctx context.Context, stmt spanner.Statement) (map[string
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "query presubmit join stats by project").Err()
+		return nil, errors.Fmt("query presubmit join stats by project: %w", err)
 	}
 	return result, nil
 }
@@ -453,10 +453,10 @@ func validateEntry(e *Entry) error {
 			return errors.New("build result must not be set unless hasBuildBucketBuild is set")
 		}
 		if err := ValidateBuildResult(e.BuildResult); err != nil {
-			return errors.Annotate(err, "build result").Err()
+			return errors.Fmt("build result: %w", err)
 		}
 		if err := pbutil.ValidateProject(e.BuildProject); err != nil {
-			return errors.Annotate(err, "build project").Err()
+			return errors.Fmt("build project: %w", err)
 		}
 	} else {
 		if e.BuildProject != "" {
@@ -470,10 +470,10 @@ func validateEntry(e *Entry) error {
 			return errors.New("invocation result must not be set unless HasInvocation is set")
 		}
 		if err := ValidateInvocationResult(e.InvocationResult); err != nil {
-			return errors.Annotate(err, "invocation result").Err()
+			return errors.Fmt("invocation result: %w", err)
 		}
 		if err := pbutil.ValidateProject(e.InvocationProject); err != nil {
-			return errors.Annotate(err, "invocation project").Err()
+			return errors.Fmt("invocation project: %w", err)
 		}
 	} else {
 		if e.InvocationProject != "" {
@@ -487,10 +487,10 @@ func validateEntry(e *Entry) error {
 			return errors.New("presubmit result must not be set unless IsPresubmit is set")
 		}
 		if err := ValidatePresubmitResult(e.PresubmitResult); err != nil {
-			return errors.Annotate(err, "presubmit result").Err()
+			return errors.Fmt("presubmit result: %w", err)
 		}
 		if err := pbutil.ValidateProject(e.PresubmitProject); err != nil {
-			return errors.Annotate(err, "presubmit project").Err()
+			return errors.Fmt("presubmit project: %w", err)
 		}
 	} else {
 		if e.PresubmitProject != "" {

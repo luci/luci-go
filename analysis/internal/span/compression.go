@@ -91,12 +91,12 @@ func Compress(data []byte) []byte {
 // before taking the content.
 func Decompress(src, dest []byte) ([]byte, error) {
 	if !bytes.HasPrefix(src, zstdHeader) {
-		return nil, errors.Reason("expected ztd header").Err()
+		return nil, errors.New("expected ztd header")
 	}
 
 	dest, err := zstdDecoder.DecodeAll(src[len(zstdHeader):], dest[:0])
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to decode from zstd").Err()
+		return nil, errors.Fmt("failed to decode from zstd: %w", err)
 	}
 	return dest, nil
 }

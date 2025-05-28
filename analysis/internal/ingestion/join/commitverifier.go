@@ -47,7 +47,7 @@ var (
 func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, processed bool, err error) {
 	project, runID, err := parseRunID(psRun.Id)
 	if err != nil {
-		return "unknown", false, errors.Annotate(err, "failed to parse run ID").Err()
+		return "unknown", false, errors.Fmt("failed to parse run ID: %w", err)
 	}
 
 	// We do not check if the project is configured in LUCI Analysis,
@@ -65,7 +65,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 	}
 	if err != nil {
 		// Treat as transient error.
-		return project, false, transient.Tag.Apply(errors.Annotate(err, "failed to get run").Err())
+		return project, false, transient.Tag.Apply(errors.Fmt("failed to get run: %w", err))
 	}
 	if run.GetCreateTime() == nil {
 		return project, false, errors.New("could not get create time for the run")
@@ -78,7 +78,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 
 	mode, err := pbutil.PresubmitRunModeFromString(run.Mode)
 	if err != nil {
-		return project, false, errors.Annotate(err, "failed to parse run mode").Err()
+		return project, false, errors.Fmt("failed to parse run mode: %w", err)
 	}
 
 	presubmitResultByBuildID := make(map[int64]*ctlpb.PresubmitResult)
@@ -108,7 +108,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 
 			status, err := pbutil.PresubmitRunStatusFromLUCICV(run.Status)
 			if err != nil {
-				return project, false, errors.Annotate(err, "failed to parse run status").Err()
+				return project, false, errors.Fmt("failed to parse run status: %w", err)
 			}
 
 			presubmitResultByBuildID[b.Id] = &ctlpb.PresubmitResult{
@@ -126,7 +126,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 	}
 
 	if err := JoinPresubmitResult(ctx, presubmitResultByBuildID, project); err != nil {
-		return project, true, errors.Annotate(err, "joining presubmit results").Err()
+		return project, true, errors.Fmt("joining presubmit results: %w", err)
 	}
 
 	return project, true, nil
@@ -135,7 +135,7 @@ func JoinCVRun(ctx context.Context, psRun *cvv1.PubSubRun) (project string, proc
 func parseRunID(runID string) (project string, run string, err error) {
 	m := runIDRe.FindStringSubmatch(runID)
 	if m == nil {
-		return "", "", errors.Reason("run ID does not match %s", runIDRe).Err()
+		return "", "", errors.Fmt("run ID does not match %s", runIDRe)
 	}
 	return m[1], m[2], nil
 }
@@ -147,7 +147,7 @@ func parseRunID(runID string) (project string, run string, err error) {
 func getRun(ctx context.Context, psRun *cvv1.PubSubRun) (*cvv0.Run, error) {
 	c, err := cv.NewClient(ctx, psRun.Hostname)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create cv client").Err()
+		return nil, errors.Fmt("failed to create cv client: %w", err)
 	}
 	req := &cvv0.GetRunRequest{
 		Id: psRun.Id,

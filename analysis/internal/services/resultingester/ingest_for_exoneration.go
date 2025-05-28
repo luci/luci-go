@@ -56,7 +56,7 @@ func (IngestForExoneration) Ingest(ctx context.Context, input Inputs) (err error
 	}
 	err = recordTestResults(ctx, input)
 	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "record test results").Err())
+		return transient.Tag.Apply(errors.Fmt("record test results: %w", err))
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 
 	testResultSources, err := toTestResultSources(input.Sources)
 	if err != nil {
-		return errors.Annotate(err, "convert sources").Err()
+		return errors.Fmt("convert sources: %w", err)
 	}
 
 	return parallel.WorkPool(workerCount, func(c chan<- func() error) {
@@ -92,7 +92,7 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 					return nil
 				})
 				if err != nil {
-					return errors.Annotate(err, "inserting test results").Err()
+					return errors.Fmt("inserting test results: %w", err)
 				}
 				return nil
 			}

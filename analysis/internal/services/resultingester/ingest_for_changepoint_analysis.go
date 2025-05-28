@@ -55,7 +55,7 @@ func (a *IngestForChangepointAnalysis) Ingest(ctx context.Context, input Inputs)
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read config").Err()
+		return errors.Fmt("read config: %w", err)
 	}
 	tvaEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled
 	if !tvaEnabled {
@@ -71,7 +71,7 @@ func (a *IngestForChangepointAnalysis) Ingest(ctx context.Context, input Inputs)
 	}
 	err = changepoints.AnalyzeRun(ctx, input.Verdicts, opts, a.exporter)
 	if err != nil {
-		return errors.Annotate(err, "analyze test variants").Err()
+		return errors.Fmt("analyze test variants: %w", err)
 	}
 
 	return nil

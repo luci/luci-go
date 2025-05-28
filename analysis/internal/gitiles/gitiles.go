@@ -55,7 +55,7 @@ func NewClient(ctx context.Context, host string, as auth.RPCAuthorityKind) (*Cli
 	}
 	gitilesClient, err := newGitilesClient(ctx, host, as)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating Gitiles client for host %s", host).Err()
+		return nil, errors.Fmt("creating Gitiles client for host %s: %w", host, err)
 	}
 	return &Client{
 		gitilesClient: gitilesClient,
@@ -74,7 +74,7 @@ var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource
 
 func validHostname(hostname string) error {
 	if !hostnameRe.MatchString(hostname) {
-		return errors.Reason("hostname %s doesn't match %s", hostname, hostnameRe).Err()
+		return errors.Fmt("hostname %s doesn't match %s", hostname, hostnameRe)
 	}
 	return nil
 }

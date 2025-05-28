@@ -48,7 +48,7 @@ func RegisterTaskHandler() {
 	joinBuild.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.JoinBuild)
 		if _, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id); err != nil {
-			return errors.Annotate(err, "join build %s/%v", task.Host, task.Id).Err()
+			return errors.Fmt("join build %s/%v: %w", task.Host, task.Id, err)
 		}
 		return nil
 	})

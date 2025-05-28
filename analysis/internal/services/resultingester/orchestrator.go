@@ -71,7 +71,7 @@ var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
 func RegisterTaskHandler(srv *server.Server) error {
 	resultsClient, err := exporter.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "create test results BigQuery client").Err()
+		return errors.Fmt("create test results BigQuery client: %w", err)
 	}
 
 	tvbBQClient, err := tvbexporter.NewClient(srv.Context, srv.Options.CloudProject)
@@ -151,7 +151,7 @@ type orchestrator struct {
 
 func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResults) error {
 	if err := validatePayload(payload); err != nil {
-		return tq.Fatal.Apply(errors.Annotate(err, "validate payload").Err())
+		return tq.Fatal.Apply(errors.Fmt("validate payload: %w", err))
 	}
 	n := payload.Notification
 
@@ -195,7 +195,7 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	}
 	if err != nil {
 		// Other error.
-		return transient.Tag.Apply(errors.Annotate(err, "read parent invocation").Err())
+		return transient.Tag.Apply(errors.Fmt("read parent invocation: %w", err))
 	}
 
 	req := &resultpb.QueryRunTestVerdictsRequest{
@@ -213,12 +213,12 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	}
 	if err != nil {
 		// Other error.
-		return transient.Tag.Apply(errors.Annotate(err, "query test run verdicts").Err())
+		return transient.Tag.Apply(errors.Fmt("query test run verdicts: %w", err))
 	}
 
 	input, err := prepareInputs(ctx, payload, parentInv, partitionTime, rsp.RunTestVerdicts)
 	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "prepare ingestion inputs").Err())
+		return transient.Tag.Apply(errors.Fmt("prepare ingestion inputs: %w", err))
 	}
 
 	if rsp.NextPageToken != "" {
@@ -231,7 +231,7 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestResul
 	if len(input.Verdicts) > 0 {
 		for _, sink := range o.sinks {
 			if err := sink.Ingest(ctx, input); err != nil {
-				return transient.Tag.Apply(errors.Annotate(err, "ingest: %q", sink.Name()).Err())
+				return transient.Tag.Apply(errors.Fmt("ingest: %q: %w", sink.Name(), err))
 			}
 		}
 	}
@@ -245,11 +245,11 @@ func prepareInputs(ctx context.Context, task *taskspb.IngestTestResults, parent 
 
 	rootInvocationID, err := pbutil.ParseInvocationName(notification.RootInvocation)
 	if err != nil {
-		return Inputs{}, errors.Annotate(err, "parse root invocation name").Err()
+		return Inputs{}, errors.Fmt("parse root invocation name: %w", err)
 	}
 	invocationID, err := pbutil.ParseInvocationName(notification.Invocation)
 	if err != nil {
-		return Inputs{}, errors.Annotate(err, "parse invocation name").Err()
+		return Inputs{}, errors.Fmt("parse invocation name: %w", err)
 	}
 
 	result := Inputs{
@@ -269,7 +269,7 @@ func prepareInputs(ctx context.Context, task *taskspb.IngestTestResults, parent 
 		// query with the authority of that project.
 		sources, err := gerritchangelists.PopulateOwnerKinds(ctx, project, notification.Sources)
 		if err != nil {
-			return Inputs{}, errors.Annotate(err, "populate changelist owner kinds").Err()
+			return Inputs{}, errors.Fmt("populate changelist owner kinds: %w", err)
 		}
 		result.Sources = sources
 	}
@@ -293,11 +293,11 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 	rdbHost := task.Notification.ResultdbHost
 	rootInvID, err := pbutil.ParseInvocationName(task.Notification.RootInvocation)
 	if err != nil {
-		return errors.Annotate(err, "parse root invocation name").Err()
+		return errors.Fmt("parse root invocation name: %w", err)
 	}
 	invID, err := pbutil.ParseInvocationName(task.Notification.Invocation)
 	if err != nil {
-		return errors.Annotate(err, "parse invocation name").Err()
+		return errors.Fmt("parse invocation name: %w", err)
 	}
 
 	// Schedule the task transactionally, conditioned on it not having been
@@ -311,7 +311,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 		}
 		exists, err := checkpoints.Exists(ctx, key)
 		if err != nil {
-			return errors.Annotate(err, "test existance of checkpoint").Err()
+			return errors.Fmt("test existance of checkpoint: %w", err)
 		}
 		if exists {
 			// Next task has already been created in the past. Do not create
@@ -341,7 +341,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 
 func validatePayload(payload *taskspb.IngestTestResults) error {
 	if err := validateNotification(payload.Notification); err != nil {
-		return errors.Annotate(err, "notification").Err()
+		return errors.Fmt("notification: %w", err)
 	}
 	if payload.TaskIndex <= 0 {
 		return errors.New("task index must be positive")
@@ -360,21 +360,21 @@ func validateNotification(n *resultpb.InvocationReadyForExportNotification) erro
 		return errors.New("resultdb host is required")
 	}
 	if err := pbutil.ValidateInvocationName(n.RootInvocation); err != nil {
-		return errors.Annotate(err, "root invocation name").Err()
+		return errors.Fmt("root invocation name: %w", err)
 	}
 	if err := pbutil.ValidateInvocationName(n.Invocation); err != nil {
-		return errors.Annotate(err, "invocation name").Err()
+		return errors.Fmt("invocation name: %w", err)
 	}
 	if err := realms.ValidateRealmName(n.RootInvocationRealm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "root invocation realm").Err()
+		return errors.Fmt("root invocation realm: %w", err)
 	}
 	if err := realms.ValidateRealmName(n.InvocationRealm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "invocation realm").Err()
+		return errors.Fmt("invocation realm: %w", err)
 	}
 	if n.Sources != nil {
 		// If the invocation has sources, they must be valid.
 		if err := pbutil.ValidateSources(n.Sources); err != nil {
-			return errors.Annotate(err, "sources").Err()
+			return errors.Fmt("sources: %w", err)
 		}
 	}
 	return nil

@@ -68,7 +68,7 @@ func extractIngestionContext(task *taskspb.IngestTestVerdicts, inv *rdbpb.Invoca
 
 	proj, subRealm, err := perms.SplitRealm(inv.Realm)
 	if err != nil {
-		return nil, errors.Annotate(err, "invocation has invalid realm: %q", inv.Realm).Err()
+		return nil, errors.Fmt("invocation has invalid realm: %q: %w", inv.Realm, err)
 	}
 	buildStatus := pb.BuildStatus_BUILD_STATUS_UNSPECIFIED
 	var changelists []testresults.Changelist
@@ -244,7 +244,7 @@ func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*
 
 	resultSourcesByID, err := toTestResultSources(sourcesByID)
 	if err != nil {
-		return errors.Annotate(err, "convert sources").Err()
+		return errors.Fmt("convert sources: %w", err)
 	}
 
 	return parallel.WorkPool(workerCount, func(c chan<- func() error) {
@@ -265,14 +265,14 @@ func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*
 					return nil
 				})
 				if err != nil {
-					return errors.Annotate(err, "inserting test variant realms").Err()
+					return errors.Fmt("inserting test variant realms: %w", err)
 				}
 				_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					span.BufferWrite(ctx, batch.testResults...)
 					return nil
 				})
 				if err != nil {
-					return errors.Annotate(err, "inserting test results").Err()
+					return errors.Fmt("inserting test results: %w", err)
 				}
 				return nil
 			}
