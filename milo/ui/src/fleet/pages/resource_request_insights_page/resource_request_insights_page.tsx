@@ -241,6 +241,11 @@ export const ResourceRequestListPage = () => {
           borderRadius: 4,
         }}
       >
+        <FilterButton
+          filterOptions={filterCategoryDatas}
+          onApply={onApplyFilters}
+          isLoading={query.isPending}
+        />
         {(
           Object.entries(filters ?? {}) as [
             RriFilterKey,
@@ -265,11 +270,6 @@ export const ResourceRequestListPage = () => {
               />
             ),
         )}
-        <FilterButton
-          filterOptions={filterCategoryDatas}
-          onApply={onApplyFilters}
-          isLoading={query.isPending}
-        />
       </div>
     );
   };

@@ -74,6 +74,12 @@ export const DeviceListFilterBar = ({
           onSelectedOptionsChange({ id: [optionId] })
         }
       />
+      <DeviceListFilterButton
+        filterOptions={sortedFilterOptions}
+        selectedOptions={selectedOptions}
+        onSelectedOptionsChange={onSelectedOptionsChange}
+        isLoading={isLoading}
+      />
       {Object.entries(selectedOptions).map(
         ([optionKey, optionValues]) =>
           optionValues?.length > 0 && (
@@ -88,12 +94,6 @@ export const DeviceListFilterBar = ({
             />
           ),
       )}
-      <DeviceListFilterButton
-        filterOptions={sortedFilterOptions}
-        selectedOptions={selectedOptions}
-        onSelectedOptionsChange={onSelectedOptionsChange}
-        isLoading={isLoading}
-      />
     </div>
   );
 };
