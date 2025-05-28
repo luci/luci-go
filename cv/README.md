@@ -45,8 +45,11 @@ running pre-submit tests and submitting CLs when they pass all checks.
 
 Like all other LUCI go code:
 
-  * SHOULD wrap errors with
-    [`errors.Annotate`](https://pkg.go.dev/go.chromium.org/luci/common/errors#Annotate)
+  * SHOULD create errors with
+    [`errors.Fmt`](https://pkg.go.dev/go.chromium.org/luci/common/errors#Fmt),
+    [`errors.New`](https://pkg.go.dev/go.chromium.org/luci/common/errors#New),
+    or
+    [`errors.WrapIf`](https://pkg.go.dev/go.chromium.org/luci/common/errors#WrapIf)
     to provide additional context. Unlike other error-wrapping packages, it
     also captures the call stack.
 
