@@ -78,7 +78,7 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projectID 
 	rv := validation.NewRealmsValidator(db, internal)
 	rv.Validate(vctx, realmsCfg)
 	if err := vctx.Finalize(); err != nil {
-		return nil, errors.Annotate(err, "invalid realms config").Err()
+		return nil, errors.Fmt("invalid realms config: %w", err)
 	}
 
 	// Make sure @root realm exists and append implicit bindings to it. We need
@@ -213,7 +213,7 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projectID 
 	for _, r := range realmsToReturn {
 		data, err := realmsExpander.realmData(r.name, []*protocol.RealmData{})
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't fetch realm data").Err()
+			return nil, errors.Fmt("couldn't fetch realm data: %w", err)
 		}
 		realmsReturned = append(realmsReturned, &protocol.Realm{
 			Name:     fmt.Sprintf("%s:%s", projectID, r.name),
@@ -409,7 +409,7 @@ func (r *realmsMap) getLatestConfig(ctx context.Context, client config.Interface
 	targetCfgPath := validation.GetRealmsCfgPath(ctx)
 	cfg, err := client.GetConfig(ctx, cfgSet, targetCfgPath, false)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch %s for %s", targetCfgPath, project).Err()
+		return errors.Fmt("failed to fetch %s for %s: %w", targetCfgPath, project, err)
 	}
 
 	r.mu.Lock()

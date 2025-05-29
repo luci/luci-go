@@ -55,7 +55,7 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 
 	email, err := callerEmail(c)
 	if err != nil {
-		return errors.Annotate(err, "error getting caller email").Err()
+		return errors.Fmt("error getting caller email: %w", err)
 	}
 
 	// Check if the caller is authorized to upload this tarball.
@@ -97,11 +97,11 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
-		return errors.Annotate(err, "Error while marshaling JSON").Err()
+		return errors.Fmt("Error while marshaling JSON: %w", err)
 	}
 
 	if _, err = w.Write(groupResp); err != nil {
-		return errors.Annotate(err, "Error while writing JSON").Err()
+		return errors.Fmt("Error while writing JSON: %w", err)
 	}
 
 	return nil

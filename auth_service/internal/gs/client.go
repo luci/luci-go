@@ -65,7 +65,7 @@ type gsClient struct {
 func NewGSClient(ctx context.Context) (*gsClient, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "aborting - failed setting up authenticated requests to Google Storage").Err()
+		return nil, errors.Fmt("aborting - failed setting up authenticated requests to Google Storage: %w", err)
 	}
 
 	var opts []option.ClientOption
@@ -77,7 +77,7 @@ func NewGSClient(ctx context.Context) (*gsClient, error) {
 
 	client, err := storage.NewClient(ctx, opts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create Google Storage client").Err()
+		return nil, errors.Fmt("failed to create Google Storage client: %w", err)
 	}
 
 	return &gsClient{
@@ -110,7 +110,7 @@ func (c *gsClient) WriteFile(ctx context.Context, objectPath, contentType string
 	defer func() {
 		err := writer.Close()
 		if retErr == nil && err != nil {
-			retErr = errors.Annotate(err, "error uploading %s", objectPath).Err()
+			retErr = errors.Fmt("error uploading %s: %w", objectPath, err)
 			return
 		}
 
@@ -124,7 +124,7 @@ func (c *gsClient) WriteFile(ctx context.Context, objectPath, contentType string
 	writer.ChunkRetryDeadline = 30 * time.Second
 
 	if _, err := writer.Write(data); err != nil {
-		return errors.Annotate(err, "error uploading %s", objectPath).Err()
+		return errors.Fmt("error uploading %s: %w", objectPath, err)
 	}
 
 	return nil
@@ -144,7 +144,7 @@ func (c *gsClient) UpdateReadACL(ctx context.Context, objectPath string, readers
 
 	oldACL, err := acl.List(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error listing ACLs").Err()
+		return errors.Fmt("error listing ACLs: %w", err)
 	}
 	oldAccessors := stringset.New(len(oldACL))
 	oldReaders := stringset.New(len(oldACL))

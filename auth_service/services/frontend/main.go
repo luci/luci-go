@@ -264,7 +264,7 @@ func getIntegratedUI(ctx context.Context) string {
 	cfg, err := settingscfg.Get(ctx)
 	if err != nil {
 		// Non-fatal; just log the error.
-		err = errors.Annotate(err, "error getting settings.cfg").Err()
+		err = errors.Fmt("error getting settings.cfg: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return ""
 	}

@@ -53,7 +53,7 @@ func newProdClient(ctx context.Context) (*prodClient, error) {
 	projectID := getProject(ctx)
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create PubSub client for project %s", projectID).Err()
+		return nil, errors.Fmt("failed to create PubSub client for project %s: %w", projectID, err)
 	}
 
 	return &prodClient{
@@ -65,7 +65,7 @@ func newProdClient(ctx context.Context) (*prodClient, error) {
 func (c *prodClient) Close() error {
 	if c.baseClient != nil {
 		if err := c.baseClient.Close(); err != nil {
-			return errors.Annotate(err, "error closing PubSub client").Err()
+			return errors.Fmt("error closing PubSub client: %w", err)
 		}
 		c.baseClient = nil
 	}
@@ -146,7 +146,7 @@ func (c *prodClient) ensureTopic(ctx context.Context, name string) (*pubsub.Topi
 	topic := c.baseClient.Topic(name)
 	ok, err := topic.Exists(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error checking topic existence").Err()
+		return nil, errors.Fmt("error checking topic existence: %w", err)
 	}
 	if !ok {
 		// The topic doesn't exist; it must be created.
@@ -154,8 +154,9 @@ func (c *prodClient) ensureTopic(ctx context.Context, name string) (*pubsub.Topi
 			name, c.projectID)
 		topic, err = c.baseClient.CreateTopic(ctx, name)
 		if err != nil {
-			return nil, errors.Annotate(err, "error creating topic %s in project %s",
-				name, c.projectID).Err()
+			return nil, errors.Fmt("error creating topic %s in project %s: %w",
+				name, c.projectID, err)
+
 		}
 	}
 

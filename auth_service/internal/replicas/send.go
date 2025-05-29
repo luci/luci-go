@@ -52,8 +52,8 @@ func SendAuthDB(ctx context.Context, replicaURL, keyName, encodedSig string, aut
 		replicaURL+"/auth/api/v1/internal/replication",
 		bytes.NewReader(authDBBlob))
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed creating http.Request to %s", replicaURL).Err()
+		return nil, errors.Fmt("failed creating http.Request to %s: %w", replicaURL, err)
+
 	}
 
 	// Pass signature via the header.
@@ -70,7 +70,7 @@ func SendAuthDB(ctx context.Context, replicaURL, keyName, encodedSig string, aut
 	// Send the request as Auth Service.
 	tr, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting transport").Err()
+		return nil, errors.Fmt("error getting transport: %w", err)
 	}
 	client := &http.Client{
 		Transport: tr,

@@ -106,8 +106,8 @@ func getLatestRevision(ctx context.Context) (int64, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return 0, status.Error(codes.NotFound, "AuthDBSnapshotLatest not found")
 	default:
-		err = errors.Annotate(err,
-			"unknown error while calling GetAuthDBSnapshotLatest").Err()
+		err = errors.Fmt("unknown error while calling GetAuthDBSnapshotLatest: %w", err)
+
 		return 0, err
 	}
 }
@@ -156,7 +156,7 @@ func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 				"AuthDB revision %d not found", revID)
 		}
 
-		return errors.Annotate(err, "error calling GetAuthDBSnapshot").Err()
+		return errors.Fmt("error calling GetAuthDBSnapshot: %w", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -169,7 +169,7 @@ func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 		},
 	})
 	if err != nil {
-		err = errors.Annotate(err, "error encoding JSON").Err()
+		err = errors.Fmt("error encoding JSON: %w", err)
 		return err
 	}
 
@@ -240,7 +240,7 @@ func (srv *Server) CheckLegacyMembership(ctx *router.Context) error {
 		"is_member": isMember,
 	})
 	if err != nil {
-		return errors.Annotate(err, "error encoding JSON").Err()
+		return errors.Fmt("error encoding JSON: %w", err)
 	}
 
 	return nil

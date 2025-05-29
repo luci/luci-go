@@ -57,7 +57,7 @@ func publish(ctx context.Context, rev *protocol.AuthDBRevision) (retErr error) {
 	}
 	data, err := proto.Marshal(pushReq)
 	if err != nil {
-		return errors.Annotate(err, "error marshalling ReplicationPushRequest for PubSub message").Err()
+		return errors.Fmt("error marshalling ReplicationPushRequest for PubSub message: %w", err)
 	}
 	signer := auth.GetSigner(ctx)
 	if signer == nil {
@@ -65,7 +65,7 @@ func publish(ctx context.Context, rev *protocol.AuthDBRevision) (retErr error) {
 	}
 	keyName, sig, err := signer.SignBytes(ctx, data)
 	if err != nil {
-		return errors.Annotate(err, "error signing payload").Err()
+		return errors.Fmt("error signing payload: %w", err)
 	}
 
 	// Construct the PubSub message to be published.
@@ -79,7 +79,7 @@ func publish(ctx context.Context, rev *protocol.AuthDBRevision) (retErr error) {
 
 	client, err := newClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error creating PubSub client").Err()
+		return errors.Fmt("error creating PubSub client: %w", err)
 	}
 	defer func() {
 		err := client.Close()

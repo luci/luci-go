@@ -37,7 +37,7 @@ func validateAuthDB(ctx context.Context, db *protocol.AuthDB) error {
 	}
 
 	if err := authdb.ValidateAuthDB(db); err != nil {
-		return errors.Annotate(err, "invalid AuthDB").Err()
+		return errors.Fmt("invalid AuthDB: %w", err)
 	}
 
 	return nil

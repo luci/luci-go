@@ -75,7 +75,7 @@ func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask) e
 func replicate(ctx context.Context, authDBRev int64) error {
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to get current replication state").Err()
+		return errors.Fmt("failed to get current replication state: %w", err)
 	}
 
 	// Check the task is not stale before doing any heavy lifting.
@@ -89,14 +89,14 @@ func replicate(ctx context.Context, authDBRev int64) error {
 	// Google Storage and directly pushed to Replicas.
 	replicationState, revisionInfo, authDBBlob, err := packAuthDB(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to pack AuthDB").Err()
+		return errors.Fmt("failed to pack AuthDB: %w", err)
 	}
 
 	// Put the blob into datastore. Also updates pointer to the latest
 	// stored blob. This is used by the endpoint at
 	// /auth_service/api/v1/authdb/revisions/<rev|"latest">
 	if err := StoreAuthDBSnapshot(ctx, replicationState, authDBBlob); err != nil {
-		return errors.Annotate(err, "failed to store AuthDBSnapshot to datastore").Err()
+		return errors.Fmt("failed to store AuthDBSnapshot to datastore: %w", err)
 	}
 
 	// Sign the blob, so even if it travels through an unprotected
@@ -109,7 +109,7 @@ func replicate(ctx context.Context, authDBRev int64) error {
 	blobDigest := blobChecksum[:]
 	keyName, sig, err := signer.SignBytes(ctx, blobDigest)
 	if err != nil {
-		return errors.Annotate(err, "error signing AuthDB").Err()
+		return errors.Fmt("error signing AuthDB: %w", err)
 	}
 
 	// Put the blob into Google Storage, if the path has been configured.
@@ -197,12 +197,12 @@ func packAuthDB(ctx context.Context) (*AuthReplicationState, *protocol.AuthDBRev
 func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, authDBBlob, sig []byte, keyName string) error {
 	readers, err := GetAuthorizedEmails(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting authorized reader emails").Err()
+		return errors.Fmt("error getting authorized reader emails: %w", err)
 	}
 
 	serviceAccount, err := getServiceAccountName(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting service account for signed AuthDB").Err()
+		return errors.Fmt("error getting service account for signed AuthDB: %w", err)
 	}
 	signedAuthDB := &protocol.SignedAuthDB{
 		AuthDbBlob:   authDBBlob,
@@ -261,8 +261,9 @@ func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte
 		}
 		if shouldRetry {
 			// Annotate the error with the transient tag.
-			err = errors.Annotate(err,
-				"replica push update needs to be retried").Tag(transient.Tag).Err()
+			err =
+				transient.Tag.Apply(errors.Fmt("replica push update needs to be retried: %w", err))
+
 			logging.Errorf(ctx, "returning transient error to retry replication: %s", err)
 		}
 		return err

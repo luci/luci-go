@@ -45,12 +45,12 @@ func (*Server) ListReplicas(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListR
 		// Get all replicas.
 		replicas, dsErr = model.GetAllReplicas(ctx)
 		if dsErr != nil {
-			return errors.Annotate(dsErr, "failed getting replica states").Err()
+			return errors.Fmt("failed getting replica states: %w", dsErr)
 		}
 
 		primaryState, dsErr = model.GetReplicationState(ctx)
 		if dsErr != nil {
-			return errors.Annotate(dsErr, "failed getting primary replication state").Err()
+			return errors.Fmt("failed getting primary replication state: %w", dsErr)
 		}
 
 		return nil

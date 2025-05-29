@@ -133,7 +133,7 @@ func (s *Snapshot) ToAuthDBProto(ctx context.Context) (*protocol.AuthDB, error) 
 
 	realms, err := MergeRealms(ctx, s.RealmsGlobals, s.ProjectRealms)
 	if err != nil {
-		return nil, errors.Annotate(err, "error merging realms").Err()
+		return nil, errors.Fmt("error merging realms: %w", err)
 	}
 
 	return &protocol.AuthDB{
@@ -163,8 +163,8 @@ func setStringField(value string) string {
 func (s *Snapshot) ToAuthDB(ctx context.Context) (*authdb.SnapshotDB, error) {
 	authDBProto, err := s.ToAuthDBProto(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed converting AuthDB snapshot to proto").Err()
+		return nil, errors.Fmt("failed converting AuthDB snapshot to proto: %w", err)
+
 	}
 	return authdb.NewSnapshotDB(authDBProto, "", s.ReplicationState.AuthDBRev, false)
 }

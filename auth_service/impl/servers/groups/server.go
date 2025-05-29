@@ -306,14 +306,14 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			return status.Errorf(codes.NotFound, "no such group %q", name)
 		}
-		err = errors.Annotate(err, "legacyGetAuthGroup failed").Err()
+		err = errors.Fmt("legacyGetAuthGroup failed: %w", err)
 		logging.Errorf(c, err.Error())
 		return status.Errorf(codes.Internal, "failed to fetch group %q", name)
 	}
 
 	canModify, err := model.CanCallerModify(c, group)
 	if err != nil {
-		err = errors.Annotate(err, "failed to check if caller can modify").Err()
+		err = errors.Fmt("failed to check if caller can modify: %w", err)
 		return status.Error(codes.Internal, err.Error())
 	}
 
@@ -349,7 +349,7 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "error encoding JSON").Err()
+		return errors.Fmt("error encoding JSON: %w", err)
 	}
 
 	return nil
@@ -409,7 +409,7 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 		"listing": response,
 	})
 	if err != nil {
-		return errors.Annotate(err, "error encoding JSON").Err()
+		return errors.Fmt("error encoding JSON: %w", err)
 	}
 
 	return nil

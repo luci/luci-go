@@ -78,8 +78,8 @@ func refetch(ctx context.Context, prev *PermissionsSnapshot) (*PermissionsSnapsh
 	// Grab the latest AuthDB revision number.
 	latestState, err := model.GetAuthDBSnapshotLatest(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed to fetch the latest AuthDBSnapshot revision").Err()
+		return nil, errors.Fmt("failed to fetch the latest AuthDBSnapshot revision: %w", err)
+
 	}
 
 	if latestState.AuthDBRev <= prev.authDBRev {
@@ -123,7 +123,7 @@ func fetch(ctx context.Context) (snap *PermissionsSnapshot, err error) {
 		return nil
 	}, &datastore.TransactionOptions{ReadOnly: true})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch latest AuthDB").Err()
+		return nil, errors.Fmt("failed to fetch latest AuthDB: %w", err)
 	}
 
 	realms := authDB.GetRealms()
@@ -141,7 +141,7 @@ func fetch(ctx context.Context) (snap *PermissionsSnapshot, err error) {
 	// Create permissions map from the realms.
 	snap.permissionsMap, err = model.AnalyzePrincipalPermissions(authDB.Realms)
 	if err != nil {
-		return nil, errors.Annotate(err, "error analyzing permissions").Err()
+		return nil, errors.Fmt("error analyzing permissions: %w", err)
 	}
 
 	// Create a graph from the groups.

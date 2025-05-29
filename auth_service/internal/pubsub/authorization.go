@@ -43,7 +43,7 @@ const (
 func IsAuthorizedSubscriber(ctx context.Context, email string) (authorized bool, retErr error) {
 	client, err := newClient(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "error creating Pubsub client").Err()
+		return false, errors.Fmt("error creating Pubsub client: %w", err)
 	}
 	defer func() {
 		err := client.Close()
@@ -68,7 +68,7 @@ func IsAuthorizedSubscriber(ctx context.Context, email string) (authorized bool,
 func AuthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	client, err := newClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error creating Pubsub client").Err()
+		return errors.Fmt("error creating Pubsub client: %w", err)
 	}
 	defer func() {
 		err := client.Close()
@@ -79,7 +79,7 @@ func AuthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 
 	policy, err := client.GetIAMPolicy(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting IAM policy for PubSub topic").Err()
+		return errors.Fmt("error getting IAM policy for PubSub topic: %w", err)
 	}
 
 	identity := emailToIAMIdentity(email)
@@ -92,7 +92,7 @@ func AuthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	logging.Infof(ctx, "granting PubSub authorization for %s", email)
 	policy.Add(identity, subscriberRole)
 	if err := client.SetIAMPolicy(ctx, policy); err != nil {
-		return errors.Annotate(err, "failed to authorize %s", identity).Err()
+		return errors.Fmt("failed to authorize %s: %w", identity, err)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func AuthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	client, err := newClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error creating Pubsub client").Err()
+		return errors.Fmt("error creating Pubsub client: %w", err)
 	}
 	defer func() {
 		err := client.Close()
@@ -115,7 +115,7 @@ func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 
 	policy, err := client.GetIAMPolicy(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting IAM policy for PubSub topic").Err()
+		return errors.Fmt("error getting IAM policy for PubSub topic: %w", err)
 	}
 
 	id := emailToIAMIdentity(email)
@@ -128,7 +128,7 @@ func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 	logging.Infof(ctx, "revoking PubSub authorization for %s", email)
 	policy.Remove(id, subscriberRole)
 	if err := client.SetIAMPolicy(ctx, policy); err != nil {
-		return errors.Annotate(err, "failed to deauthorize %s", id).Err()
+		return errors.Fmt("failed to deauthorize %s: %w", id, err)
 	}
 
 	return nil
@@ -145,7 +145,7 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr 
 
 	client, err := newClient(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error creating Pubsub client").Err()
+		return errors.Fmt("error creating Pubsub client: %w", err)
 	}
 	defer func() {
 		err := client.Close()
@@ -156,7 +156,7 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr 
 
 	policy, err := client.GetIAMPolicy(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting IAM policy for PubSub topic").Err()
+		return errors.Fmt("error getting IAM policy for PubSub topic: %w", err)
 	}
 
 	updated := false
@@ -186,8 +186,9 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr 
 
 		trusted, err := authDB.IsMember(ctx, authIdentity, []string{trustedGroup})
 		if err != nil {
-			return errors.Annotate(err, "error checking %s membership for %s",
-				trustedGroup, authIdentity).Err()
+			return errors.Fmt("error checking %s membership for %s: %w",
+				trustedGroup, authIdentity, err)
+
 		}
 		if !trusted {
 			logging.Warningf(ctx, "revoking subscribing authorization for %s", iamIdentity)
@@ -198,7 +199,7 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr 
 
 	if updated {
 		if err := client.SetIAMPolicy(ctx, policy); err != nil {
-			return errors.Annotate(err, "failed to revoke stale authorizations").Err()
+			return errors.Fmt("failed to revoke stale authorizations: %w", err)
 		}
 	}
 

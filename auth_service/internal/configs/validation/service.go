@@ -435,7 +435,7 @@ func normalizeSubnet(raw string) (string, error) {
 		// Must be in CIDR format.
 		_, ipNetwork, err := net.ParseCIDR(raw)
 		if err != nil {
-			return "", errors.Annotate(err, "invalid subnet string").Err()
+			return "", errors.Fmt("invalid subnet string: %w", err)
 		}
 		return ipNetwork.String(), nil
 	}

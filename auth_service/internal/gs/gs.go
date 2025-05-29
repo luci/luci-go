@@ -54,7 +54,7 @@ func constructReadACLs(readers stringset.Set) []storage.ACLRule {
 func GetPath(ctx context.Context) (string, error) {
 	cfg, err := settingscfg.Get(ctx)
 	if err != nil {
-		return "", errors.Annotate(err, "error getting settings.cfg").Err()
+		return "", errors.Fmt("error getting settings.cfg: %w", err)
 	}
 
 	// Allow for a single trailing slash.
@@ -78,7 +78,7 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 	// Skip if the GS path is invalid.
 	gsPath, err := GetPath(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting GS path").Err()
+		return errors.Fmt("error getting GS path: %w", err)
 	}
 	if !IsValidPath(gsPath) {
 		if gsPath == "" {
@@ -111,7 +111,7 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 	authDBPath := fmt.Sprintf("%s/%s.db", gsPath, fileBaseName)
 	err = client.WriteFile(ctx, authDBPath, "application/protobuf", authDBData, acls)
 	if err != nil {
-		return errors.Annotate(err, "failed to upload %s", authDBPath).Err()
+		return errors.Fmt("failed to upload %s: %w", authDBPath, err)
 	}
 
 	// Upload AuthDBRevision.
@@ -122,7 +122,7 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 	revPath := fmt.Sprintf("%s/%s.json", gsPath, fileBaseName)
 	err = client.WriteFile(ctx, revPath, "application/json", authDBRevision, acls)
 	if err != nil {
-		return errors.Annotate(err, "failed to upload %s", revPath).Err()
+		return errors.Fmt("failed to upload %s: %w", revPath, err)
 	}
 
 	return nil
@@ -134,7 +134,7 @@ func UpdateReaders(ctx context.Context, readers stringset.Set) (retErr error) {
 	// Skip if the GS path is invalid.
 	gsPath, err := GetPath(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting GS path").Err()
+		return errors.Fmt("error getting GS path: %w", err)
 	}
 	if !IsValidPath(gsPath) {
 		if gsPath == "" {
@@ -177,7 +177,7 @@ func newClient(ctx context.Context) (Client, error) {
 
 	client, err := NewGSClient(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error making Google Storage client").Err()
+		return nil, errors.Fmt("error making Google Storage client: %w", err)
 	}
 
 	return client, nil

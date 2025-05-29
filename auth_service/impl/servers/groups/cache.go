@@ -102,8 +102,8 @@ func refetch(ctx context.Context, prev *AuthGroupsSnapshot) (*AuthGroupsSnapshot
 	// Grab the latest AuthDB revision number.
 	latestState, err := model.GetReplicationState(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed to check the latest AuthDB revision").Err()
+		return nil, errors.Fmt("failed to check the latest AuthDB revision: %w", err)
+
 	}
 
 	if prev.authDBRev >= latestState.AuthDBRev {
@@ -153,7 +153,7 @@ func fetch(ctx context.Context) (snap *AuthGroupsSnapshot, err error) {
 	}, &datastore.TransactionOptions{ReadOnly: true})
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch all AuthGroups").Err()
+		return nil, errors.Fmt("failed to fetch all AuthGroups: %w", err)
 	}
 
 	graphableGroups := make([]model.GraphableGroup, len(snap.groups))
