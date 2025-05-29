@@ -143,7 +143,7 @@ func leaseExclusive(ctx context.Context, meta *prjcfg.Meta) (context.Context, fu
 	if err != nil {
 		var alreadyInLeaseErr *lease.AlreadyInLeaseErr
 		if errors.As(err, &alreadyInLeaseErr) {
-			return nil, nil, errors.Annotate(err, "gobmap for %s is already being updated", meta.Project).Tag(transient.Tag).Err()
+			return nil, nil, transient.Tag.Apply(errors.Fmt("gobmap for %s is already being updated: %w", meta.Project, err))
 		}
 		return nil, nil, err
 	}
@@ -166,7 +166,7 @@ func update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) e
 	mps := []*mapPart{}
 	q := datastore.NewQuery(mapKind).Eq("Project", meta.Project)
 	if err := datastore.GetAll(ctx, q, &mps); err != nil {
-		return errors.Annotate(err, "failed to get MapPart entities for project %q", meta.Project).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to get MapPart entities for project %q: %w", meta.Project, err))
 	}
 
 	if meta.Status != prjcfg.StatusEnabled {
@@ -177,12 +177,14 @@ func update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) e
 	}
 
 	if err := datastore.Delete(ctx, toDelete); err != nil {
-		return errors.Annotate(err, "failed to delete %d MapPart entities when updating project %q",
-			len(toDelete), meta.Project).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete %d MapPart entities when updating project %q: %w",
+			len(toDelete), meta.Project, err))
+
 	}
 	if err := datastore.Put(ctx, toPut); err != nil {
-		return errors.Annotate(err, "failed to put %d MapPart entities when updating project %q",
-			len(toPut), meta.Project).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to put %d MapPart entities when updating project %q: %w",
+			len(toPut), meta.Project, err))
+
 	}
 	return nil
 }
@@ -272,7 +274,7 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 	// Fetch all MapPart entities for the given host and repo.
 	mps, err := getAll(ctx, host, repo)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch MapParts").Err()
+		return nil, errors.Fmt("failed to fetch MapParts: %w", err)
 	}
 
 	// For each MapPart entity, inspect the Groups to determine which configs
@@ -301,7 +303,7 @@ func LookupProjects(ctx context.Context, host, repo string) ([]string, error) {
 	// Fetch all MapPart entities for the given host and repo.
 	mps, err := getAll(ctx, host, repo)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch MapParts").Err()
+		return nil, errors.Fmt("failed to fetch MapParts: %w", err)
 	}
 	prjs := stringset.New(len(mps))
 	for _, mp := range mps {

@@ -188,7 +188,7 @@ func Reset(ctx context.Context, in ResetInput) error {
 		return err
 	}
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
-		return errors.New("failed to reset trigger because CV lost access to this CL", ErrResetPreconditionFailedTag)
+		return ErrResetPreconditionFailedTag.Apply(errors.New("failed to reset trigger because CV lost access to this CL"))
 	}
 	if len(in.AddToAttentionSet) > 0 && in.AttentionReason == "" {
 		logging.Warningf(ctx, "FIXME reset was given empty in AttentionReason.")
@@ -273,7 +273,7 @@ func resetLeased(ctx context.Context, client gerrit.Client, in *ResetInput, cl *
 	case err != nil:
 		return err
 	case ci.GetCurrentRevision() != c.Revision:
-		return errors.Reason("failed to reset because ps %d is not current for %s/%d", cl.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrResetPreconditionFailedTag).Err()
+		return ErrResetPreconditionFailedTag.Apply(errors.Fmt("failed to reset because ps %d is not current for %s/%d", cl.Snapshot.GetPatchset(), c.Host, c.Number))
 	}
 
 	labelsToRemove := stringset.NewFromSlice(CQLabelName)
@@ -330,11 +330,11 @@ func ensurePSLatestInCV(ctx context.Context, cl *changelist.CL) error {
 	curCLInCV := &changelist.CL{ID: cl.ID}
 	switch err := datastore.Get(ctx, curCLInCV); {
 	case err == datastore.ErrNoSuchEntity:
-		return errors.Reason("cl(id=%d) doesn't exist in datastore", cl.ID).Err()
+		return errors.Fmt("cl(id=%d) doesn't exist in datastore", cl.ID)
 	case err != nil:
-		return errors.Annotate(err, "failed to load cl: %d", cl.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load cl: %d: %w", cl.ID, err))
 	case curCLInCV.Snapshot.GetPatchset() > cl.Snapshot.GetPatchset():
-		return errors.Reason("failed to reset because ps %d is not current for cl(%d)", cl.Snapshot.GetPatchset(), cl.ID).Tag(ErrResetPreconditionFailedTag).Err()
+		return ErrResetPreconditionFailedTag.Apply(errors.Fmt("failed to reset because ps %d is not current for cl(%d)", cl.Snapshot.GetPatchset(), cl.ID))
 	}
 	return nil
 }
@@ -608,13 +608,13 @@ func (c *change) annotateGerritErr(ctx context.Context, err error, action string
 	case codes.OK:
 		return nil
 	case codes.PermissionDenied:
-		retErr = errors.Reason("no permission to %s %s/%d", action, c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
+		retErr = ErrResetPermanentTag.Apply(errors.Fmt("no permission to %s %s/%d", action, c.Host, c.Number))
 	case codes.NotFound:
-		retErr = errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
+		retErr = ErrResetPermanentTag.Apply(errors.Fmt("change %s/%d not found", c.Host, c.Number))
 	case codes.FailedPrecondition:
-		retErr = errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrResetPermanentTag).Err()
+		retErr = ErrResetPermanentTag.Apply(errors.Fmt("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err))
 	case codes.DeadlineExceeded:
-		retErr = errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
+		retErr = transient.Tag.Apply(errors.Fmt("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number))
 	default:
 		retErr = gerrit.UnhandledError(ctx, err, "failed to %s %s/%d", action, c.Host, c.Number)
 	}

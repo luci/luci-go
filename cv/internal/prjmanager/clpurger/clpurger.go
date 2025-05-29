@@ -92,12 +92,12 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	now := clock.Now(ctx)
 
 	if len(task.GetPurgeReasons()) == 0 {
-		return errors.Reason("no reasons given in %s", task).Err()
+		return errors.Fmt("no reasons given in %s", task)
 	}
 
 	d := task.GetPurgingCl().GetDeadline()
 	if d == nil {
-		return errors.Reason("no deadline given in %s", task).Err()
+		return errors.Fmt("no deadline given in %s", task)
 	}
 	switch dt := d.AsTime(); {
 	case dt.Before(now):
@@ -115,7 +115,7 @@ func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	cl := &changelist.CL{ID: common.CLID(task.GetPurgingCl().GetClid())}
 	if err := datastore.Get(ctx, cl); err != nil {
-		return errors.Annotate(err, "failed to load %d", cl.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load %d: %w", cl.ID, err))
 	}
 
 	configGroups, err := loadConfigGroups(ctx, task)
@@ -128,22 +128,22 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		logging.Errorf(ctx, "requested purging cl %d, but task has empty config group. Task body: %s", cl.ID, task)
 		// Pick the first config group of a CL instead.
 		if len(cl.ApplicableConfig.GetProjects()) == 0 {
-			return errors.Reason("cl %d doesn't have applicable project", cl.ID).Err()
+			return errors.Fmt("cl %d doesn't have applicable project", cl.ID)
 		}
 		proj := cl.ApplicableConfig.GetProjects()[0]
 		if len(proj.GetConfigGroupIds()) == 0 {
-			return errors.Reason("cl %d doesn't have applicable config group", cl.ID).Err()
+			return errors.Fmt("cl %d doesn't have applicable config group", cl.ID)
 		}
 		cg, err := prjcfg.GetConfigGroup(ctx, proj.GetName(), prjcfg.ConfigGroupID(proj.GetConfigGroupIds()[0]))
 		if err != nil {
-			return errors.Annotate(err, "failed to load a ConfigGroup").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load a ConfigGroup: %w", err))
 		}
 		configGroups = append(configGroups, cg)
 	}
 	purgeTriggers, msg, err := triggersToPurge(ctx, configGroups[0].Content, cl, task)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
+		return errors.Fmt("CL %d of project %q: %w", cl.ID, task.GetLuciProject(), err)
 	case purgeTriggers == nil:
 		return nil
 	}
@@ -197,7 +197,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	case trigger.ErrResetPermanentTag.In(err):
 		logging.Errorf(ctx, "permanently failed to purge CL: %s", err)
 	default:
-		return errors.Annotate(err, "failed to purge CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
+		return errors.Fmt("failed to purge CL %d of project %q: %w", cl.ID, task.GetLuciProject(), err)
 	}
 
 	// Schedule a refresh of a CL.
@@ -276,7 +276,7 @@ func loadConfigGroups(ctx context.Context, task *prjpb.PurgeCLTask) ([]*prjcfg.C
 	for i, id := range task.GetConfigGroups() {
 		cg, err := prjcfg.GetConfigGroup(ctx, task.GetLuciProject(), prjcfg.ConfigGroupID(id))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to load a ConfigGroup").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load a ConfigGroup: %w", err))
 		}
 		res[i] = cg
 	}

@@ -124,7 +124,7 @@ func Load(ctx context.Context, luciProject string) (*Project, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to load Project state").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load Project state: %w", err))
 	default:
 		return p, nil
 	}

@@ -190,7 +190,7 @@ func (s *State) makePCLFromDS(ctx context.Context, cl *changelist.CL, err error,
 			Status:   prjpb.PCL_DELETED,
 		}, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load CL %d: %w", cl.ID, err))
 	default:
 		pcl := s.makePCL(ctx, cl)
 		if proto.Equal(pcl, old) {
@@ -460,7 +460,7 @@ func loadCLs(ctx context.Context, cls []*changelist.CL) ([]*changelist.CL, error
 	case ok:
 		return cls, merr, nil
 	default:
-		return nil, nil, errors.Annotate(err, "failed to load %d CLs", len(cls)).Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.Fmt("failed to load %d CLs: %w", len(cls), err))
 	}
 }
 

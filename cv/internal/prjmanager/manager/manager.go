@@ -208,7 +208,7 @@ func (proc *pmProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, 
 	case err == datastore.ErrNoSuchEntity:
 		return 0, nil
 	case err != nil:
-		return 0, errors.Annotate(err, "failed to get %q", proc.luciProject).Tag(transient.Tag).Err()
+		return 0, transient.Tag.Apply(errors.Fmt("failed to get %q: %w", proc.luciProject, err))
 	default:
 		return eventbox.EVersion(p.EVersion), nil
 	}
@@ -263,7 +263,7 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 	}
 
 	if err := datastore.Put(ctx, entities...); err != nil {
-		return errors.Annotate(err, "failed to put Project").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to put Project: %w", err))
 	}
 	return nil
 }

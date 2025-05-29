@@ -50,7 +50,7 @@ func (pf *projectFinder) lookup(ctx context.Context, host, repo string) ([]strin
 	// TODO: optimize lookup with in-memory cache.
 	prjs, err := gobmap.LookupProjects(ctx, host, repo)
 	if err != nil {
-		return nil, errors.Annotate(err, "gobmap.LookupProjects").Err()
+		return nil, errors.Fmt("gobmap.LookupProjects: %w", err)
 	}
 	matched := make([]string, 0, len(prjs))
 

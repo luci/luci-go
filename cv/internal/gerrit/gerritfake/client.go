@@ -504,7 +504,7 @@ type parsedListChangesQuery struct {
 func parseListChangesQuery(query string) (p *parsedListChangesQuery, err error) {
 	defer func() {
 		if err != nil {
-			err = errors.Annotate(err, "invalid query argument %q", query).Err()
+			err = errors.Fmt("invalid query argument %q: %w", query, err)
 			p = nil
 		}
 	}()
@@ -512,19 +512,19 @@ func parseListChangesQuery(query string) (p *parsedListChangesQuery, err error) 
 	mustUnquote := func(quoted string) string {
 		l := len(quoted)
 		if l <= 2 || quoted[0] != '"' || quoted[l-1] != '"' {
-			err = errors.Reason("expected quoted string, but got %q", quoted).Err()
+			err = errors.Fmt("expected quoted string, but got %q", quoted)
 		}
 		return quoted[1 : l-1]
 	}
 	inClause := false
 	mustBeInClause := func(tok string) {
 		if !inClause {
-			err = errors.Reason("%q must be inside ()", tok).Err()
+			err = errors.Fmt("%q must be inside ()", tok)
 		}
 	}
 	mustBeOutClause := func(tok string) {
 		if inClause {
-			err = errors.Reason("%q must be outside of ()", tok).Err()
+			err = errors.Fmt("%q must be outside of ()", tok)
 		}
 	}
 
@@ -566,7 +566,7 @@ func parseListChangesQuery(query string) (p *parsedListChangesQuery, err error) 
 			mustBeOutClause(tok)
 			tok = tokenizer.next()
 			if v, ok := gerritpb.ChangeStatus_value[strings.ToUpper(tok)]; !ok {
-				err = errors.Reason("unrecognized status %q", tok).Err()
+				err = errors.Fmt("unrecognized status %q", tok)
 			} else {
 				p.status = gerritpb.ChangeStatus(v)
 			}
@@ -574,13 +574,13 @@ func parseListChangesQuery(query string) (p *parsedListChangesQuery, err error) 
 			tok = tokenizer.next()
 			switch parts := strings.SplitN(tok, ">", 2); {
 			case len(parts) != 2 || parts[0] == "" || parts[1] == "":
-				err = errors.Reason("invalid label: %s", tok).Err()
+				err = errors.Fmt("invalid label: %s", tok)
 			default:
 				p.label.name = parts[0]
 				p.label.minValueExclusive, err = strconv.Atoi(parts[1])
 			}
 		default:
-			err = errors.Reason("unrecognized token %q", tok).Err()
+			err = errors.Fmt("unrecognized token %q", tok)
 		}
 		if err != nil {
 			return

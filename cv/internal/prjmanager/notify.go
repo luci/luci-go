@@ -151,7 +151,7 @@ func (n *Notifier) SendNow(ctx context.Context, luciProject string, e *prjpb.Eve
 func (n *Notifier) sendWithoutDispatch(ctx context.Context, luciProject string, e *prjpb.Event) error {
 	value, err := proto.Marshal(e)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
+		return errors.Fmt("failed to marshal: %w", err)
 	}
 	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, luciProject))
 }

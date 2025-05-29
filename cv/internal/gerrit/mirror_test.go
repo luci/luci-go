@@ -99,7 +99,7 @@ func TestMirrorIterator(t *testing.T) {
 				err := it.RetryIfStale(func(grpc.CallOption) error {
 					tried += 1
 					if tried == 1 {
-						return errors.Annotate(ErrStaleData, "try #%d", tried).Err()
+						return errors.Fmt("try #%d: %w", tried, ErrStaleData)
 					}
 					return errors.New("something else")
 				})

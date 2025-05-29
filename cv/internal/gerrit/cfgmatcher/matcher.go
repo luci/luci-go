@@ -118,7 +118,7 @@ func (m *Matcher) Serialize() ([]byte, error) {
 func Deserialize(buf []byte) (*Matcher, error) {
 	m := &Matcher{state: &MatcherState{}}
 	if err := proto.Unmarshal(buf, m.state); err != nil {
-		return nil, errors.Annotate(err, "failed to Deserialize Matcher").Err()
+		return nil, errors.Fmt("failed to Deserialize Matcher: %w", err)
 	}
 	m.cachedConfigGroupIDs = make([]prjcfg.ConfigGroupID, len(m.state.ConfigGroupNames))
 	hash := m.state.GetConfigHash()

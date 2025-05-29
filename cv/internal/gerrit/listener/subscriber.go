@@ -67,14 +67,14 @@ func (s *subscriber) start(ctx context.Context) error {
 		select {
 		case <-s.done:
 		default:
-			return errors.Reason("cannot start again, while the subscriber is running").Err()
+			return errors.New("cannot start again, while the subscriber is running")
 		}
 	}
 	switch ex, err := s.sub.Exists(ctx); {
 	case err != nil:
-		return errors.Annotate(err, "pubsub.Exists(%s)", s.sub.ID()).Err()
+		return errors.Fmt("pubsub.Exists(%s): %w", s.sub.ID(), err)
 	case !ex:
-		return errors.Reason("subscription %q doesn't exist", s.sub.ID()).Err()
+		return errors.Fmt("subscription %q doesn't exist", s.sub.ID())
 	}
 
 	ctx = logging.SetField(ctx, "subscriptionID", s.sub.ID())

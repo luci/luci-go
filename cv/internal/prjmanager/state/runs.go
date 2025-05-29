@@ -61,7 +61,7 @@ func (s *State) addCreatedRuns(ctx context.Context, ids map[common.RunID]struct{
 			logging.Errorf(ctx, "Newly created Run %s not found", r.ID)
 			processed[i] = true
 		case err != nil:
-			return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load Run %s: %w", r.ID, err))
 		case run.IsEnded(r.Status):
 			logging.Warningf(ctx, "Newly created Run %s is already finished %s", r.ID, r.Status)
 			processed[i] = true
@@ -198,7 +198,7 @@ func loadRuns(ctx context.Context, ids map[common.RunID]struct{}) ([]*run.Run, e
 	case ok:
 		return runs, merr, nil
 	default:
-		return nil, nil, errors.Annotate(err, "failed to load %d Runs", len(runs)).Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.Fmt("failed to load %d Runs: %w", len(runs), err))
 	}
 }
 

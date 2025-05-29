@@ -136,7 +136,7 @@ func (f *fetcher) fetch(ctx context.Context) error {
 func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeInfo) error {
 	min, cur, err := gerrit.EquivalentPatchsetRange(ci)
 	if err != nil {
-		return errors.Annotate(err, "failed to compute equivalent patchset range on %s", f).Err()
+		return errors.Fmt("failed to compute equivalent patchset range on %s: %w", f, err)
 	}
 	f.toUpdate.Snapshot.MinEquivalentPatchset = int32(min)
 	f.toUpdate.Snapshot.Patchset = int32(cur)
@@ -516,7 +516,7 @@ func (f *fetcher) fetchFiles(ctx context.Context) error {
 		}
 		switch revInfo, ok := f.toUpdate.Snapshot.GetGerrit().GetInfo().GetRevisions()[curRev]; {
 		case !ok:
-			return errors.Reason("missing RevisionInfo for current revision: %s", curRev).Err()
+			return errors.Fmt("missing RevisionInfo for current revision: %s", curRev)
 		case len(revInfo.GetCommit().GetParents()) == 0:
 			// Occasionally, CL doesn't have parent commit. See: crbug.com/1295817.
 		default:
@@ -562,7 +562,7 @@ func (f *fetcher) setSoftDeps() error {
 	// Given f.host like "sub-review.x.y.z", compute "-review.x.y.z" suffix.
 	dot := strings.IndexRune(f.host, '.')
 	if dot == -1 || !strings.HasSuffix(f.host[:dot], "-review") {
-		return errors.Reason("Host %s doesn't support Cq-Depend (%s)", f.host, f).Err()
+		return errors.Fmt("Host %s doesn't support Cq-Depend (%s)", f.host, f)
 	}
 	hostSuffix := f.host[dot-len("-review"):]
 

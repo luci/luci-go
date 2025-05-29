@@ -96,7 +96,7 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 	// If pub/sub is enabled for the project, skip incremental-poll.
 	switch yes, err := srvcfg.IsProjectEnabledInListener(ctx, luciProject); {
 	case err != nil:
-		return errors.Annotate(err, "srvcfg.IsProjectEnabledInListener").Err()
+		return errors.Fmt("srvcfg.IsProjectEnabledInListener: %w", err)
 	case yes:
 		return nil
 	}

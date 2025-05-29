@@ -26,9 +26,9 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
-var ErrStaleData = errors.New("fetched stale Gerrit data", transient.Tag)
-var ErrGerritDeadlineExceeded = errors.New("Gerrit took too long to respond", transient.Tag)
-var ErrOutOfQuota = errors.New("out of Gerrit Quota", transient.Tag)
+var ErrStaleData = transient.Tag.Apply(errors.New("fetched stale Gerrit data"))
+var ErrGerritDeadlineExceeded = transient.Tag.Apply(errors.New("Gerrit took too long to respond"))
+var ErrOutOfQuota = transient.Tag.Apply(errors.New("out of Gerrit Quota"))
 
 // UnhandledError is used to process and annotate Gerrit errors.
 func UnhandledError(ctx context.Context, err error, format string, args ...any) error {

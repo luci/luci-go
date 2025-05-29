@@ -147,7 +147,7 @@ func (op *triggerDepOp) execute(ctx context.Context, gFactory gerrit.Factory, lu
 		return nil
 	}
 	if err := op.vote(ctx, gFactory, luciPrj, depCL); err != nil {
-		return errors.Annotate(err, "op.vote").Err()
+		return errors.Fmt("op.vote: %w", err)
 	}
 	return errors.WrapIf(op.markOutdated(ctx, luciPrj, clm, clu, depCL), "triggerDepOp.markOutdated")
 }
@@ -192,7 +192,7 @@ func (op *triggerDepOp) vote(ctx context.Context, gFactory gerrit.Factory, luciP
 	}
 	gc, err := gFactory.MakeClient(ctx, depCL.Snapshot.GetGerrit().GetHost(), luciPrj)
 	if err != nil {
-		return errors.Annotate(err, "gFactory.MakeClient").Err()
+		return errors.Fmt("gFactory.MakeClient: %w", err)
 	}
 	voteReq := op.makeSetReviewRequest(depCL)
 	vErr := gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
@@ -222,7 +222,7 @@ func (op *triggerDepOp) markOutdated(ctx context.Context, luciPrj string, clm *c
 	})
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "CLMutator.Update").Err()
+		return errors.Fmt("CLMutator.Update: %w", err)
 	case isOutdated:
 		// TODO(crbug.com/1284393): use Gerrit's consistency-on-demand.
 		return clu.Schedule(ctx, &changelist.UpdateCLTask{
