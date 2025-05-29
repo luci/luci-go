@@ -380,6 +380,14 @@ export interface CountResourceRequestsResponse {
   readonly config: number;
 }
 
+export interface GetResourceRequestsMultiselectFilterValuesRequest {
+}
+
+export interface GetResourceRequestsMultiselectFilterValuesResponse {
+  readonly rrIds: readonly string[];
+  readonly resourceDetails: readonly string[];
+}
+
 function createBasePingRequest(): PingRequest {
   return {};
 }
@@ -3342,6 +3350,145 @@ export const CountResourceRequestsResponse: MessageFns<CountResourceRequestsResp
   },
 };
 
+function createBaseGetResourceRequestsMultiselectFilterValuesRequest(): GetResourceRequestsMultiselectFilterValuesRequest {
+  return {};
+}
+
+export const GetResourceRequestsMultiselectFilterValuesRequest: MessageFns<
+  GetResourceRequestsMultiselectFilterValuesRequest
+> = {
+  encode(
+    _: GetResourceRequestsMultiselectFilterValuesRequest,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetResourceRequestsMultiselectFilterValuesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetResourceRequestsMultiselectFilterValuesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetResourceRequestsMultiselectFilterValuesRequest {
+    return {};
+  },
+
+  toJSON(_: GetResourceRequestsMultiselectFilterValuesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetResourceRequestsMultiselectFilterValuesRequest>,
+  ): GetResourceRequestsMultiselectFilterValuesRequest {
+    return GetResourceRequestsMultiselectFilterValuesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(
+    _: DeepPartial<GetResourceRequestsMultiselectFilterValuesRequest>,
+  ): GetResourceRequestsMultiselectFilterValuesRequest {
+    const message = createBaseGetResourceRequestsMultiselectFilterValuesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseGetResourceRequestsMultiselectFilterValuesResponse(): GetResourceRequestsMultiselectFilterValuesResponse {
+  return { rrIds: [], resourceDetails: [] };
+}
+
+export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
+  GetResourceRequestsMultiselectFilterValuesResponse
+> = {
+  encode(
+    message: GetResourceRequestsMultiselectFilterValuesResponse,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    for (const v of message.rrIds) {
+      writer.uint32(10).string(v!);
+    }
+    for (const v of message.resourceDetails) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetResourceRequestsMultiselectFilterValuesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetResourceRequestsMultiselectFilterValuesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.rrIds.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.resourceDetails.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetResourceRequestsMultiselectFilterValuesResponse {
+    return {
+      rrIds: globalThis.Array.isArray(object?.rrIds) ? object.rrIds.map((e: any) => globalThis.String(e)) : [],
+      resourceDetails: globalThis.Array.isArray(object?.resourceDetails)
+        ? object.resourceDetails.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetResourceRequestsMultiselectFilterValuesResponse): unknown {
+    const obj: any = {};
+    if (message.rrIds?.length) {
+      obj.rrIds = message.rrIds;
+    }
+    if (message.resourceDetails?.length) {
+      obj.resourceDetails = message.resourceDetails;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetResourceRequestsMultiselectFilterValuesResponse>,
+  ): GetResourceRequestsMultiselectFilterValuesResponse {
+    return GetResourceRequestsMultiselectFilterValuesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetResourceRequestsMultiselectFilterValuesResponse>,
+  ): GetResourceRequestsMultiselectFilterValuesResponse {
+    const message = createBaseGetResourceRequestsMultiselectFilterValuesResponse() as any;
+    message.rrIds = object.rrIds?.map((e) => e) || [];
+    message.resourceDetails = object.resourceDetails?.map((e) => e) || [];
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /** Ping does not send or receive any information. It just checks that the service is there. */
   Ping(request: PingRequest): Promise<PingResponse>;
@@ -3369,6 +3516,10 @@ export interface FleetConsole {
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
   /** CountResourceRequests provides counts for RRI summary header */
   CountResourceRequests(request: CountResourceRequestsRequest): Promise<CountResourceRequestsResponse>;
+  /** CountResourceRequests provides counts for RRI summary header */
+  GetResourceRequestsMultiselectFilterValues(
+    request: GetResourceRequestsMultiselectFilterValuesRequest,
+  ): Promise<GetResourceRequestsMultiselectFilterValuesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -3392,6 +3543,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
+    this.GetResourceRequestsMultiselectFilterValues = this.GetResourceRequestsMultiselectFilterValues.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -3469,6 +3621,14 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = CountResourceRequestsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CountResourceRequests", data);
     return promise.then((data) => CountResourceRequestsResponse.fromJSON(data));
+  }
+
+  GetResourceRequestsMultiselectFilterValues(
+    request: GetResourceRequestsMultiselectFilterValuesRequest,
+  ): Promise<GetResourceRequestsMultiselectFilterValuesResponse> {
+    const data = GetResourceRequestsMultiselectFilterValuesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetResourceRequestsMultiselectFilterValues", data);
+    return promise.then((data) => GetResourceRequestsMultiselectFilterValuesResponse.fromJSON(data));
   }
 }
 

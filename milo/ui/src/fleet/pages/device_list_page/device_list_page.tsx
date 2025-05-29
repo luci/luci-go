@@ -25,7 +25,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
-import { MultiSelectFilter } from '@/fleet/components/filter_dropdown';
+import { DeviceListFilterBar } from '@/fleet/components/filter_dropdown';
 import {
   filtersUpdater,
   getFilters,
@@ -225,7 +225,7 @@ export const DeviceListPage = () => {
             color="error"
           />
         ) : (
-          <MultiSelectFilter
+          <DeviceListFilterBar
             filterOptions={
               isDimensionsQueryProperlyLoaded
                 ? dimensionsToFilterOptions(dimensionsQuery.data)

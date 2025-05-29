@@ -46,7 +46,6 @@ import {
 } from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
 import {
-  filterOpts,
   ResourceRequestInsightsOptionComponentProps,
   RriFilterKey,
   RriFilterOption,
@@ -116,18 +115,23 @@ export const ResourceRequestListPage = () => {
 
   const sortModel = getSortModelFromOrderByParam(orderByParam);
 
-  const [filters, aipString, setFilters, getSelectedFilterLabel] =
-    useRriFilters();
+  const {
+    filterComponents,
+    filterData,
+    aipString,
+    setFilters,
+    getSelectedFilterLabel,
+  } = useRriFilters();
 
   const [currentFilters, setCurrentFilters] = useState<RriFilters | undefined>(
-    filters,
+    filterData,
   );
 
-  useEffect(() => setCurrentFilters(filters), [filters]);
+  useEffect(() => setCurrentFilters(filterData), [filterData]);
 
   const clearSelections = useCallback(() => {
-    setCurrentFilters(filters);
-  }, [setCurrentFilters, filters]);
+    setCurrentFilters(filterData);
+  }, [setCurrentFilters, filterData]);
 
   const onApplyFilters = () => {
     setFilters(currentFilters);
@@ -139,7 +143,7 @@ export const ResourceRequestListPage = () => {
   };
 
   const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
-    filterOpts.map((option) => {
+    filterComponents.map((option) => {
       const label: string =
         rriColumns.find((c) => c.id === option.value)?.gridColDef.headerName ??
         option.value;
@@ -207,7 +211,9 @@ export const ResourceRequestListPage = () => {
   );
 
   const getSelectedChipDropdownContent = (filterKey: RriFilterKey) => {
-    const filterOption = filterOpts.find((opt) => opt.value === filterKey);
+    const filterOption = filterComponents.find(
+      (opt) => opt.value === filterKey,
+    );
     if (!filterOption) {
       return undefined;
     }
@@ -221,7 +227,7 @@ export const ResourceRequestListPage = () => {
           filters: currentFilters,
           onClose: clearSelections,
           onFiltersChange: setCurrentFilters,
-          option: filterOpts.find((opt) => opt.value === filterKey)!,
+          option: filterComponents.find((opt) => opt.value === filterKey)!,
           onApply: onApplyFilters,
         }}
       />
@@ -247,7 +253,7 @@ export const ResourceRequestListPage = () => {
           isLoading={query.isPending}
         />
         {(
-          Object.entries(filters ?? {}) as [
+          Object.entries(filterData ?? {}) as [
             RriFilterKey,
             RriFilters[RriFilterKey],
           ][]

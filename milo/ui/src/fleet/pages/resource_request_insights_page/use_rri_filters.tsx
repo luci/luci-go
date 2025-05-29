@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
-import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  GetResourceRequestsMultiselectFilterValuesResponse,
+  ResourceRequest_Status,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DateFilter } from './date_filter';
 import {
@@ -26,8 +33,8 @@ import {
   getFulfillmentStatusScoredOptions,
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
+import { MultiSelectFilter } from './multiselect_filter';
 import { ResourceRequestColumnKey, rriColumns } from './rri_columns';
-import { RriTextFilter } from './rri_text_filter';
 
 const FILTERS_PARAM_KEY = 'filters';
 const FILTER_SEPARATOR = '&';
@@ -40,7 +47,8 @@ export type DateFilterData = {
 };
 
 export const filterDescriptors = {
-  rr_id: 'string',
+  rr_id: 'multi-select',
+  resource_details: 'multi-select',
   fulfillment_status: 'multi-select',
   expected_eta: 'date-range',
   material_sourcing_actual_delivery_date: 'date-range',
@@ -48,13 +56,12 @@ export const filterDescriptors = {
   qa_actual_delivery_date: 'date-range',
   config_actual_delivery_date: 'date-range',
 } as const satisfies Partial<
-  Record<ResourceRequestColumnKey, 'string' | 'multi-select' | 'date-range'>
+  Record<ResourceRequestColumnKey, 'multi-select' | 'date-range'>
 >;
 
 export type RriFilterKey = keyof typeof filterDescriptors;
 
 type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
-  string: string;
   'multi-select': string[];
   'date-range': DateFilterData;
 }[T];
@@ -76,39 +83,6 @@ export interface ResourceRequestInsightsOptionComponentProps {
   onClose: () => void;
   onApply: () => void;
 }
-
-export const filterOpts = [
-  {
-    value: 'rr_id',
-    optionsComponent: RriTextFilter,
-  },
-  {
-    value: 'fulfillment_status',
-    getChildrenSearchScore: (searchQuery: string) =>
-      getFulfillmentStatusScoredOptions(searchQuery)[0].score,
-    optionsComponent: FulfillmentStatusFilter,
-  },
-  {
-    value: 'expected_eta',
-    optionsComponent: DateFilter,
-  },
-  {
-    value: 'material_sourcing_actual_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    value: 'build_actual_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    value: 'qa_actual_delivery_date',
-    optionsComponent: DateFilter,
-  },
-  {
-    value: 'config_actual_delivery_date',
-    optionsComponent: DateFilter,
-  },
-] as const satisfies readonly RriFilterOption[];
 
 const parseDateOnly = (
   param: string | null | undefined,
@@ -160,7 +134,8 @@ const getFiltersFromSearchParam = (
   );
 
   return {
-    rr_id: rec['rr_id'],
+    rr_id: rec['rr_id']?.split(','),
+    resource_details: rec['resource_details']?.split(','),
     expected_eta: parseDateOnlyFromUrl(rec, 'expected_eta'),
     material_sourcing_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
@@ -199,12 +174,6 @@ const filtersToUrlString = (filters: RriFilters): string => {
         parts.push(`${key}_max=${toIsoString(filter.max)}`);
       }
     }
-    if (type === 'string') {
-      const filter = filters[key] as string | undefined;
-      if (filter) {
-        parts.push(`${key}=${filter}`);
-      }
-    }
     if (type === 'multi-select') {
       const values = filters[key] as string[] | undefined;
       if (values) {
@@ -234,15 +203,6 @@ const filtersToAip = (filters: RriFilters): string => {
       }
       if (filter.max) {
         parts.push(`${key} <= ${toIsoString(filter.max)}`);
-      }
-    }
-    if (type === 'string') {
-      const filter = filters[key] as string | undefined;
-      if (!filter) {
-        continue;
-      }
-      if (filter) {
-        parts.push(`${key} = ${filter}`);
       }
     }
     if (type === 'multi-select') {
@@ -293,10 +253,89 @@ const mapDateFilterToSelectedChipLabel = (
   return '';
 };
 
+export const getSortedMultiselectElements = (
+  data: GetResourceRequestsMultiselectFilterValuesResponse,
+  option: RriFilterKey,
+  searchQuery: string,
+) => {
+  const els = getElements(data, option).map(
+    (el): OptionValue => ({ label: el, value: el }),
+  );
+  return fuzzySort(searchQuery)(els, (x) => x.label);
+};
+
+const getElements = (
+  data: GetResourceRequestsMultiselectFilterValuesResponse,
+  option: RriFilterKey,
+) => {
+  if (option === 'rr_id') {
+    return data.rrIds;
+  }
+  if (option === 'resource_details') {
+    return data.resourceDetails;
+  }
+  return [];
+};
+
 export const useRriFilters = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const filters = useMemo(
+  const client = useFleetConsoleClient();
+  const query = useQuery(
+    client.GetResourceRequestsMultiselectFilterValues.query({}),
+  );
+
+  const filterComponents = [
+    {
+      value: 'rr_id',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(query.data, 'rr_id', searchQuery)[0]
+              .score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'resource_details',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'resource_details',
+              searchQuery,
+            )[0].score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'fulfillment_status',
+      getChildrenSearchScore: (searchQuery: string) =>
+        getFulfillmentStatusScoredOptions(searchQuery)[0].score,
+      optionsComponent: FulfillmentStatusFilter,
+    },
+    {
+      value: 'expected_eta',
+      optionsComponent: DateFilter,
+    },
+    {
+      value: 'material_sourcing_actual_delivery_date',
+      optionsComponent: DateFilter,
+    },
+    {
+      value: 'build_actual_delivery_date',
+      optionsComponent: DateFilter,
+    },
+    {
+      value: 'qa_actual_delivery_date',
+      optionsComponent: DateFilter,
+    },
+    {
+      value: 'config_actual_delivery_date',
+      optionsComponent: DateFilter,
+    },
+  ] as const satisfies readonly RriFilterOption[];
+
+  const filterData = useMemo(
     () => getFiltersFromSearchParam(searchParams),
     [searchParams],
   );
@@ -305,10 +344,11 @@ export const useRriFilters = () => {
     setSearchParams(filtersUpdater(newFilters));
   };
 
-  const aipString = filters ? filtersToAip(filters) : '';
+  const aipString = filterData ? filtersToAip(filterData) : '';
 
   const selectedFilterLabelMap = {
-    rr_id: (v) => v as string,
+    rr_id: (v) => (v as string[]).join(', '),
+    resource_details: (v) => (v as string[]).join(', '),
     fulfillment_status: (v) => {
       const values = v as (keyof typeof ResourceRequest_Status)[];
       return values
@@ -345,5 +385,14 @@ export const useRriFilters = () => {
     return `${label}: ${selectedFilterLabelMap[filterKey](filterValue)}`;
   };
 
-  return [filters, aipString, setFilters, getSelectedFilterLabel] as const;
+  return {
+    filterComponents,
+    filterData,
+    aipString,
+    setFilters,
+    /**
+     * Make sure the value is the correct type given the key
+     */
+    getSelectedFilterLabel,
+  };
 };
