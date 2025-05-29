@@ -190,7 +190,7 @@ func cachedRulesFromFullRead(activeRules []*rules.Entry) ([]*CachedRule, error) 
 	for _, r := range activeRules {
 		cr, err := NewCachedRule(r)
 		if err != nil {
-			return nil, errors.Annotate(err, "rule %s is invalid", r.RuleID).Err()
+			return nil, errors.Fmt("rule %s is invalid: %w", r.RuleID, err)
 		}
 		result = append(result, cr)
 	}
@@ -208,7 +208,7 @@ func cachedRulesFromDelta(existing []*CachedRule, delta []*rules.Entry) ([]*Cach
 		if d.IsActive {
 			cr, err := NewCachedRule(d)
 			if err != nil {
-				return nil, errors.Annotate(err, "rule %s is invalid", d.RuleID).Err()
+				return nil, errors.Fmt("rule %s is invalid: %w", d.RuleID, err)
 			}
 			ruleByID[d.RuleID] = cr
 		} else {

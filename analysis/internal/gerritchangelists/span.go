@@ -116,7 +116,7 @@ func readByKeys(ctx context.Context, keys spanner.KeySet) (map[Key]*GerritChange
 			&changelist.CreationTime,
 		)
 		if err != nil {
-			return errors.Annotate(err, "read row").Err()
+			return errors.Fmt("read row: %w", err)
 		}
 		key := Key{
 			Project: changelist.Project,
@@ -127,7 +127,7 @@ func readByKeys(ctx context.Context, keys spanner.KeySet) (map[Key]*GerritChange
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "read gerrit changelists").Err()
+		return nil, errors.Fmt("read gerrit changelists: %w", err)
 	}
 	return results, nil
 }
@@ -153,13 +153,13 @@ func CreateOrUpdate(g *GerritChangelist) (*spanner.Mutation, error) {
 // validateGerritChangelist validates that the GerritChangelist is valid.
 func validateGerritChangelist(g *GerritChangelist) error {
 	if err := pbutil.ValidateProject(g.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if g.Host == "" || len(g.Host) > 255 {
-		return errors.Reason("host: must have a length between 1 and 255").Err()
+		return errors.New("host: must have a length between 1 and 255")
 	}
 	if g.Change <= 0 {
-		return errors.Reason("change: must be set and positive").Err()
+		return errors.New("change: must be set and positive")
 	}
 	return nil
 }

@@ -129,7 +129,7 @@ func readProgressWhere(ctx context.Context, whereClause string, params map[strin
 			&attemptTimestamp, &project, &progress, &shardCount, &shardsReported,
 		)
 		if err != nil {
-			return errors.Annotate(err, "read shard row").Err()
+			return errors.Fmt("read shard row: %w", err)
 		}
 
 		result := ReclusteringProgress{
@@ -169,7 +169,7 @@ func ReadAll(ctx context.Context) ([]ReclusteringShard, error) {
 			&shardNumber, &attemptTimestamp, &project, &progress,
 		)
 		if err != nil {
-			return errors.Annotate(err, "read shard row").Err()
+			return errors.Fmt("read shard row: %w", err)
 		}
 
 		shard := ReclusteringShard{
@@ -203,7 +203,7 @@ func Create(ctx context.Context, r ReclusteringShard) error {
 
 func validateShard(r ReclusteringShard) error {
 	if err := pbutil.ValidateProject(r.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	switch {
 	case r.ShardNumber < 1:
@@ -219,7 +219,7 @@ func validateShard(r ReclusteringShard) error {
 // to update the progress, the entry for a shard may no longer exist.
 func UpdateProgress(ctx context.Context, shardNumber int64, attemptTimestamp time.Time, progress int) error {
 	if progress < 0 || progress > MaxProgress {
-		return errors.Reason("progress, if set, must be a value between 0 and %v", MaxProgress).Err()
+		return errors.Fmt("progress, if set, must be a value between 0 and %v", MaxProgress)
 	}
 	ms := spanutil.UpdateMap("ReclusteringShards", map[string]any{
 		"ShardNumber":      shardNumber,

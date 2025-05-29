@@ -96,7 +96,7 @@ func (p *PendingUpdates) Apply(ctx context.Context, analysis Analysis) (err erro
 		}
 		lastUpdated, err := state.ReadLastUpdated(ctx, keys)
 		if err != nil {
-			return errors.Annotate(err, "read last updated").Err()
+			return errors.Fmt("read last updated: %w", err)
 		}
 
 		appliedUpdates = nil
@@ -108,7 +108,7 @@ func (p *PendingUpdates) Apply(ctx context.Context, analysis Analysis) (err erro
 				continue
 			}
 			if err := pu.ApplyToSpanner(ctx); err != nil {
-				return errors.Annotate(err, "apply to spanner").Err()
+				return errors.Fmt("apply to spanner: %w", err)
 			}
 			appliedUpdates = append(appliedUpdates, pu)
 		}
@@ -120,7 +120,7 @@ func (p *PendingUpdates) Apply(ctx context.Context, analysis Analysis) (err erro
 	}
 	for _, pu := range appliedUpdates {
 		if err := pu.ApplyToAnalysis(ctx, analysis, commitTime); err != nil {
-			return errors.Annotate(err, "export analysis").Err()
+			return errors.Fmt("export analysis: %w", err)
 		}
 	}
 	if len(appliedUpdates) != len(p.updates) {

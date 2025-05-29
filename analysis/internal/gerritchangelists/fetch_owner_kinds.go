@@ -68,7 +68,7 @@ func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]p
 		var err error
 		cacheResult, err = Read(span.Single(ctx), keys)
 		if err != nil {
-			return nil, errors.Annotate(err, "read changelist cache").Err()
+			return nil, errors.Fmt("read changelist cache: %w", err)
 		}
 	}
 
@@ -81,7 +81,7 @@ func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]p
 		// Retrieve the changelist details from Gerrit.
 		ownerKind, err := retrieveChangelistOwnerKind(ctx, key, req.GerritProject)
 		if err != nil {
-			return nil, errors.Annotate(err, "retrieve owner kind from gerrit").Err()
+			return nil, errors.Fmt("retrieve owner kind from gerrit: %w", err)
 		}
 		cl := &GerritChangelist{
 			Project:   key.Project,
@@ -111,7 +111,7 @@ func FetchOwnerKinds(ctx context.Context, reqs map[Key]LookupRequest) (map[Key]p
 			return nil
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "update changelist cache").Err()
+			return nil, errors.Fmt("update changelist cache: %w", err)
 		}
 	}
 

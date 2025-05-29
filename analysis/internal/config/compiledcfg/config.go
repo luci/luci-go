@@ -59,7 +59,7 @@ func NewConfig(config *configpb.ProjectConfig) (*ProjectConfig, error) {
 	for i, rule := range rs {
 		eval, err := rules.Compile(rule)
 		if err != nil {
-			return nil, errors.Annotate(err, "compiling test name clustering rule").Err()
+			return nil, errors.Fmt("compiling test name clustering rule: %w", err)
 		}
 		compiledRules[i] = eval
 	}
@@ -68,7 +68,7 @@ func NewConfig(config *configpb.ProjectConfig) (*ProjectConfig, error) {
 	for i, p := range rmps {
 		re, err := regexp.Compile(p)
 		if err != nil {
-			return nil, errors.Annotate(err, "compiling reason mask pattern").Err()
+			return nil, errors.Fmt("compiling reason mask pattern: %w", err)
 		}
 		compiledReasonMaskPatterns[i] = re
 	}
@@ -130,7 +130,7 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 			}
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain compiled configuration").Err()
+			return nil, errors.Fmt("obtain compiled configuration: %w", err)
 		}
 		return val, nil
 	}

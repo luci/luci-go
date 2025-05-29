@@ -30,7 +30,7 @@ import (
 func IsProjectEnabledForIngestion(ctx context.Context, project string) (bool, error) {
 	cfg, err := Get(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "get service config").Err()
+		return false, errors.Fmt("get service config: %w", err)
 	}
 	if !cfg.Ingestion.GetProjectAllowlistEnabled() {
 		return true, nil

@@ -44,13 +44,13 @@ func (h *FilteredRunsAttributionHandler) CronHandler(ctx context.Context) error 
 	}
 	projectConfigs, err := config.Projects(ctx)
 	if err != nil {
-		return errors.Annotate(err, "obtain project configs").Err()
+		return errors.Fmt("obtain project configs: %w", err)
 	}
 
 	for _, project := range projectConfigs.Keys() {
 		err := attributesClient.attributeFilteredRuns(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "attribute filtered test runs for %s", project).Err()
+			return errors.Fmt("attribute filtered test runs for %s: %w", project, err)
 		}
 	}
 
@@ -137,7 +137,7 @@ var projectAttributionRule = map[string]attributionRule{
 // failure_attributes table.
 func (s *Client) attributeFilteredRuns(ctx context.Context, project string) error {
 	if err := s.ensureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 
 	rule, ok := projectAttributionRule[project]
@@ -227,10 +227,10 @@ func (s *Client) attributeFilteredRuns(ctx context.Context, project string) erro
 	defer cancel()
 	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
-		return errors.Annotate(err, "waiting for filtered test run attribution query to complete").Err()
+		return errors.Fmt("waiting for filtered test run attribution query to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "filtered test run attribution query failed").Err()
+		return errors.Fmt("filtered test run attribution query failed: %w", err)
 	}
 	return nil
 }

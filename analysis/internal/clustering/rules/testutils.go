@@ -219,7 +219,7 @@ func SetForTesting(ctx context.Context, t testing.TB, rs []*Entry) error {
 		for _, r := range rs {
 			bugManagementStateBuf, err := proto.Marshal(r.BugManagementState)
 			if err != nil {
-				return errors.Annotate(err, "marshal bug management state").Err()
+				return errors.Fmt("marshal bug management state: %w", err)
 			}
 
 			ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{

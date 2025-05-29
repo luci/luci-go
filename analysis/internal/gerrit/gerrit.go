@@ -62,7 +62,7 @@ func newGerritClient(ctx context.Context, host, project string) (gerritpb.Gerrit
 func NewClient(ctx context.Context, host, project string) (*Client, error) {
 	client, err := newGerritClient(ctx, host, project)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating Gerrit client for host %s", host).Err()
+		return nil, errors.Fmt("creating Gerrit client for host %s: %w", host, err)
 	}
 
 	return &Client{

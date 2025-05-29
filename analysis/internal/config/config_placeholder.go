@@ -34,7 +34,7 @@ func CreatePlaceholderConfig() (*configpb.Config, error) {
 	var cfg configpb.Config
 	err := prototext.Unmarshal([]byte(sampleConfigStr), &cfg)
 	if err != nil {
-		return nil, errors.Annotate(err, "Marshaling a test config").Err()
+		return nil, errors.Fmt("Marshaling a test config: %w", err)
 	}
 	return &cfg, nil
 }

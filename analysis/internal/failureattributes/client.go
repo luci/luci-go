@@ -34,7 +34,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -63,7 +63,7 @@ type Client struct {
 func (s *Client) ensureSchema(ctx context.Context) error {
 	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring failure attributes table").Err()
+		return errors.Fmt("ensuring failure attributes table: %w", err)
 	}
 	return nil
 }

@@ -81,7 +81,7 @@ func encodeClusters(algorithms map[string]struct{}, clusterIDs [][]clustering.Cl
 		for j, id := range ids {
 			clusterRef, err := rb.referenceCluster(id)
 			if err != nil {
-				return nil, errors.Annotate(err, "cluster ID %s/%s is invalid", id.Algorithm, id.ID).Err()
+				return nil, errors.Fmt("cluster ID %s/%s is invalid: %w", id.Algorithm, id.ID, err)
 			}
 			clusters.ClusterRefs[j] = clusterRef
 		}

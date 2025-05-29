@@ -174,7 +174,7 @@ func Read(ctx context.Context, project string, id string) (*Entry, error) {
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query rule by id").Err()
+		return nil, errors.Fmt("query rule by id: %w", err)
 	}
 	if len(rs) == 0 {
 		return nil, NotExistsErr
@@ -189,7 +189,7 @@ func ReadAllForTesting(ctx context.Context) ([]*Entry, error) {
 	params := map[string]any{}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query all rules").Err()
+		return nil, errors.Fmt("query all rules: %w", err)
 	}
 	return rs, nil
 }
@@ -203,7 +203,7 @@ func ReadActive(ctx context.Context, project string) ([]*Entry, error) {
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query active rules").Err()
+		return nil, errors.Fmt("query active rules: %w", err)
 	}
 	return rs, nil
 }
@@ -225,7 +225,7 @@ func ReadWithMonorailForProject(ctx context.Context, project string) ([]*Entry, 
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query monorail rules for project").Err()
+		return nil, errors.Fmt("query monorail rules for project: %w", err)
 	}
 	return rs, nil
 }
@@ -240,7 +240,7 @@ func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*Entry, error) {
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query rule by bug").Err()
+		return nil, errors.Fmt("query rule by bug: %w", err)
 	}
 	return rs, nil
 }
@@ -258,7 +258,7 @@ func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*Ent
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query rules since").Err()
+		return nil, errors.Fmt("query rules since: %w", err)
 	}
 	return rs, nil
 }
@@ -274,7 +274,7 @@ func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*Entry, e
 
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query rules since").Err()
+		return nil, errors.Fmt("query rules since: %w", err)
 	}
 	return rs, nil
 }
@@ -292,7 +292,7 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*Entry, erro
 	}
 	rs, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query rules by id").Err()
+		return nil, errors.Fmt("query rules by id: %w", err)
 	}
 	ruleByID := make(map[string]Entry)
 	for _, r := range rs {
@@ -374,13 +374,13 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 			&lastAuditableUpdateUser,
 		)
 		if err != nil {
-			return errors.Annotate(err, "read rule row").Err()
+			return errors.Fmt("read rule row: %w", err)
 		}
 
 		bugManagementState := &bugspb.BugManagementState{}
 		if len(bugManagementStateCompressed) > 0 {
 			if err := proto.Unmarshal(bugManagementStateCompressed, bugManagementState); err != nil {
-				return errors.Annotate(err, "unmarshal bug management state").Err()
+				return errors.Fmt("unmarshal bug management state: %w", err)
 			}
 		}
 
@@ -458,12 +458,12 @@ func ReadVersion(ctx context.Context, projectID string) (Version, error) {
 	err := it.Do(func(r *spanner.Row) error {
 		err := r.Columns(&predicateLastUpdated, &lastUpdated)
 		if err != nil {
-			return errors.Annotate(err, "read last updated row").Err()
+			return errors.Fmt("read last updated row: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return Version{}, errors.Annotate(err, "query last updated").Err()
+		return Version{}, errors.Fmt("query last updated: %w", err)
 	}
 	result := Version{
 		Predicates: StartingEpoch,
@@ -499,13 +499,13 @@ func ReadTotalActiveRules(ctx context.Context) (map[string]int64, error) {
 		var activeRules int64
 		err := r.Columns(&project, &activeRules)
 		if err != nil {
-			return errors.Annotate(err, "read row").Err()
+			return errors.Fmt("read row: %w", err)
 		}
 		result[project] = activeRules
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "query total active rules by project").Err()
+		return nil, errors.Fmt("query total active rules by project: %w", err)
 	}
 	return result, nil
 }
@@ -521,7 +521,7 @@ func Create(rule *Entry, user string) (*spanner.Mutation, error) {
 
 	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal bug management state").Err()
+		return nil, errors.Fmt("marshal bug management state: %w", err)
 	}
 
 	ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
@@ -580,15 +580,15 @@ func Update(rule *Entry, options UpdateOptions, user string) (*spanner.Mutation,
 		return nil, err
 	}
 	if options.PredicateUpdated && !options.IsAuditableUpdate {
-		return nil, errors.Reason("predicate updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+		return nil, errors.New("predicate updates are auditable updates, did you forget to set IsAuditableUpdate?")
 	}
 	if options.IsManagingBugPriorityUpdated && !options.IsAuditableUpdate {
-		return nil, errors.Reason("is managing bug priority updates are auditable updates, did you forget to set IsAuditableUpdate?").Err()
+		return nil, errors.New("is managing bug priority updates are auditable updates, did you forget to set IsAuditableUpdate?")
 	}
 
 	bugManagementStateBuf, err := proto.Marshal(rule.BugManagementState)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal bug management state").Err()
+		return nil, errors.Fmt("marshal bug management state: %w", err)
 	}
 
 	update := map[string]any{
@@ -626,22 +626,22 @@ func Update(rule *Entry, options UpdateOptions, user string) (*spanner.Mutation,
 // project) is not performed.
 func validateRule(r *Entry) error {
 	if err := pbutil.ValidateProject(r.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if !RuleIDRe.MatchString(r.RuleID) {
-		return errors.Reason("rule ID: must match %s", RuleIDRe).Err()
+		return errors.Fmt("rule ID: must match %s", RuleIDRe)
 	}
 	if err := r.BugID.Validate(); err != nil {
-		return errors.Annotate(err, "bug ID").Err()
+		return errors.Fmt("bug ID: %w", err)
 	}
 	if err := r.SourceCluster.Validate(); err != nil && !r.SourceCluster.IsEmpty() {
-		return errors.Annotate(err, "source cluster ID").Err()
+		return errors.Fmt("source cluster ID: %w", err)
 	}
 	if err := ValidateRuleDefinition(r.RuleDefinition); err != nil {
-		return errors.Annotate(err, "rule definition").Err()
+		return errors.Fmt("rule definition: %w", err)
 	}
 	if err := validateBugManagementState(r.BugManagementState); err != nil {
-		return errors.Annotate(err, "bug management state").Err()
+		return errors.Fmt("bug management state: %w", err)
 	}
 	return nil
 }
@@ -651,31 +651,31 @@ func ValidateRuleDefinition(ruleDefinition string) error {
 		return errors.New("unspecified")
 	}
 	if len(ruleDefinition) > MaxRuleDefinitionLength {
-		return errors.Reason("exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
+		return errors.Fmt("exceeds maximum length of %v", MaxRuleDefinitionLength)
 	}
 	_, err := lang.Parse(ruleDefinition)
 	if err != nil {
-		return errors.Annotate(err, "parse").Err()
+		return errors.Fmt("parse: %w", err)
 	}
 	return nil
 }
 
 func validateBugManagementState(state *bugspb.BugManagementState) error {
 	if state == nil {
-		return errors.Reason("must be set").Err()
+		return errors.New("must be set")
 	}
 	for policy, state := range state.PolicyState {
 		if !PolicyIDRe.MatchString(policy) {
-			return errors.Reason("policy_state[%q]: key must match pattern %s", policy, PolicyIDRe).Err()
+			return errors.Fmt("policy_state[%q]: key must match pattern %s", policy, PolicyIDRe)
 		}
 		if state.LastActivationTime != nil {
 			if err := state.LastActivationTime.CheckValid(); err != nil {
-				return errors.Annotate(err, "policy_state[%q]: last_activation_time", policy).Err()
+				return errors.Fmt("policy_state[%q]: last_activation_time: %w", policy, err)
 			}
 		}
 		if state.LastDeactivationTime != nil {
 			if err := state.LastDeactivationTime.CheckValid(); err != nil {
-				return errors.Annotate(err, "policy_state[%q]: last_deactivation_time", policy).Err()
+				return errors.Fmt("policy_state[%q]: last_deactivation_time: %w", policy, err)
 			}
 		}
 	}

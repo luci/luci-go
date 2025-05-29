@@ -79,7 +79,7 @@ func Read(ctx context.Context, projectID string, attemptTimestamp time.Time) (*R
 	}
 	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query run").Err()
+		return nil, errors.Fmt("query run: %w", err)
 	}
 	if r == nil {
 		return nil, NotFound
@@ -104,7 +104,7 @@ func ReadLastUpTo(ctx context.Context, projectID string, upToAttemptTimestamp ti
 	}
 	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query last run").Err()
+		return nil, errors.Fmt("query last run: %w", err)
 	}
 	if r == nil {
 		r = fakeLastRow(projectID)
@@ -123,7 +123,7 @@ func ReadLastWithProgressUpTo(ctx context.Context, projectID string, upToAttempt
 	}
 	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query last run with progress up to").Err()
+		return nil, errors.Fmt("query last run with progress up to: %w", err)
 	}
 	if r == nil {
 		r = fakeLastRow(projectID)
@@ -141,7 +141,7 @@ func ReadLastCompleteUpTo(ctx context.Context, projectID string, upToAttemptTime
 	}
 	r, err := readLastWhere(ctx, projectID, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "query last run up to").Err()
+		return nil, errors.Fmt("query last run up to: %w", err)
 	}
 	if r == nil {
 		r = fakeLastRow(projectID)
@@ -189,7 +189,7 @@ func readLastWhere(ctx context.Context, projectID string, whereClause string, pa
 			&algorithmsVersion, &shardCount, &shardsReported, &progress,
 		)
 		if err != nil {
-			return errors.Annotate(err, "read run row").Err()
+			return errors.Fmt("read run row: %w", err)
 		}
 
 		run := &ReclusteringRun{
@@ -232,7 +232,7 @@ func Create(ctx context.Context, r *ReclusteringRun) error {
 
 func validateRun(r *ReclusteringRun) error {
 	if err := pbutil.ValidateProject(r.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	switch {
 	case r.AttemptTimestamp.Before(StartingEpoch):

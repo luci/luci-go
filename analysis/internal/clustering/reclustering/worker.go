@@ -199,7 +199,7 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	}
 	entries, err := state.ReadNextN(span.Single(ctx), t.task.Project, readOpts, batchSize)
 	if err != nil {
-		return false, errors.Annotate(err, "read next chunk state").Err()
+		return false, errors.Fmt("read next chunk state: %w", err)
 	}
 	if len(entries) == 0 {
 		// We have finished re-clustering.
@@ -213,13 +213,13 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	// Obtain a recent ruleset of at least RulesVersion.
 	ruleset, err := Ruleset(ctx, t.task.Project, t.task.RulesVersion.AsTime())
 	if err != nil {
-		return false, errors.Annotate(err, "obtain ruleset").Err()
+		return false, errors.Fmt("obtain ruleset: %w", err)
 	}
 
 	// Obtain a recent configuration of at least ConfigVersion.
 	cfg, err := compiledcfg.Project(ctx, t.task.Project, t.task.ConfigVersion.AsTime())
 	if err != nil {
-		return false, errors.Annotate(err, "obtain config").Err()
+		return false, errors.Fmt("obtain config: %w", err)
 	}
 
 	// Prepare updates for each chunk in the batch. Parallelise to
@@ -233,14 +233,14 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 				// Read the test results from GCS.
 				chunk, err := t.worker.chunkStore.Get(ctx, t.task.Project, entry.ObjectID)
 				if err != nil {
-					return errors.Annotate(err, "read chunk").Err()
+					return errors.Fmt("read chunk: %w", err)
 				}
 
 				// Re-cluster the test results in spanner, then export
 				// the re-clustering to BigQuery for analysis.
 				update, err := PrepareUpdate(ctx, ruleset, cfg, chunk, entry)
 				if err != nil {
-					return errors.Annotate(err, "re-cluster chunk").Err()
+					return errors.Fmt("re-cluster chunk: %w", err)
 				}
 
 				updates[i] = update
@@ -290,7 +290,7 @@ func (t *taskContext) calculateAndReportProgress(ctx context.Context) (err error
 	if clock.Now(ctx).After(t.nextReportDue) {
 		progress, err := calculateProgress(t.task, t.currentChunkID)
 		if err != nil {
-			return errors.Annotate(err, "calculate progress").Err()
+			return errors.Fmt("calculate progress: %w", err)
 		}
 
 		err = t.updateProgress(ctx, progress)
@@ -310,7 +310,7 @@ func (t *taskContext) updateProgress(ctx context.Context, value int) (err error)
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		err = shards.UpdateProgress(ctx, t.task.ShardNumber, t.task.AttemptTime.AsTime(), value)
 		if err != nil {
-			return errors.Annotate(err, "update progress").Err()
+			return errors.Fmt("update progress: %w", err)
 		}
 		return nil
 	})

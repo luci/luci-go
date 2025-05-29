@@ -566,7 +566,7 @@ func lowerMapper(token lexer.Token) (lexer.Token, error) {
 func Parse(text string) (*Expr, error) {
 	expr, err := parser.ParseString("", text)
 	if err != nil {
-		return nil, errors.Annotate(err, "syntax error").Err()
+		return nil, errors.Fmt("syntax error: %w", err)
 	}
 
 	v := newValidator()

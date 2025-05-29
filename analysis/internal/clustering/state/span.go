@@ -121,7 +121,7 @@ func ReadLastUpdated(ctx context.Context, keys []ChunkKey) ([]time.Time, error) 
 		var chunkID string
 		var lastUpdated time.Time
 		if err := r.Columns(&project, &chunkID, &lastUpdated); err != nil {
-			return errors.Annotate(err, "read clustering state row").Err()
+			return errors.Fmt("read clustering state row: %w", err)
 		}
 		key := ChunkKey{project, chunkID}
 		results[key.String()] = lastUpdated
@@ -268,12 +268,12 @@ func readWhere(ctx context.Context, project, whereClause string, params map[stri
 			&result.Clustering.ConfigVersion, &result.Clustering.RulesVersion,
 			&result.LastUpdated, clusters)
 		if err != nil {
-			return errors.Annotate(err, "read clustering state row").Err()
+			return errors.Fmt("read clustering state row: %w", err)
 		}
 
 		result.Clustering.Algorithms, result.Clustering.Clusters, err = decodeClusters(clusters)
 		if err != nil {
-			return errors.Annotate(err, "decode clusters").Err()
+			return errors.Fmt("decode clusters: %w", err)
 		}
 		results = append(results, result)
 		return nil
@@ -296,7 +296,7 @@ func ReadProjects(ctx context.Context) ([]string, error) {
 	err := it.Do(func(r *spanner.Row) error {
 		var project string
 		if err := r.Columns(&project); err != nil {
-			return errors.Annotate(err, "read project row").Err()
+			return errors.Fmt("read project row: %w", err)
 		}
 		projects = append(projects, project)
 		return nil
@@ -323,7 +323,7 @@ func EstimateChunks(ctx context.Context, project string) (int, error) {
 	var chunkID string
 	err := it.Do(func(r *spanner.Row) error {
 		if err := r.Columns(&chunkID); err != nil {
-			return errors.Annotate(err, "read ChunkID row").Err()
+			return errors.Fmt("read ChunkID row: %w", err)
 		}
 		return nil
 	})
@@ -389,7 +389,7 @@ func estimateChunksFromID(chunkID100 string) (int, error) {
 
 func validateEntry(e *Entry) error {
 	if err := pbutil.ValidateProject(e.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	switch {
 	case !clustering.ChunkRe.MatchString(e.ChunkID):
@@ -416,10 +416,10 @@ func validateClusterResults(c *clustering.ClusterResults) error {
 		return errors.New("rules version must be valid")
 	default:
 		if err := validateAlgorithms(c.Algorithms); err != nil {
-			return errors.Annotate(err, "algorithms").Err()
+			return errors.Fmt("algorithms: %w", err)
 		}
 		if err := validateClusters(c.Clusters, c.Algorithms); err != nil {
-			return errors.Annotate(err, "clusters").Err()
+			return errors.Fmt("clusters: %w", err)
 		}
 		return nil
 	}
@@ -448,7 +448,7 @@ func validateClusters(clusters [][]clustering.ClusterID, algorithms map[string]s
 				return fmt.Errorf("test result %v: cluster %v: algorithm not in algorithms list: %q", i, j, c.Algorithm)
 			}
 			if err := c.ValidateIDPart(); err != nil {
-				return errors.Annotate(err, "test result %v: cluster %v: cluster ID is not valid", i, j).Err()
+				return errors.Fmt("test result %v: cluster %v: cluster ID is not valid: %w", i, j, err)
 			}
 		}
 		if !clustering.ClustersAreSortedNoDuplicates(tr) {

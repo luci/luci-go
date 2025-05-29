@@ -48,7 +48,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 	}
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -61,7 +61,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating managed writer client").Err()
+		return nil, errors.Fmt("creating managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -86,7 +86,7 @@ func (c *Client) Close() (reterr error) {
 // Insert inserts the given rows in BigQuery.
 func (c *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRulesHistoryRow) error {
 	if err := c.ensureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
 	writer := bq.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
@@ -103,7 +103,7 @@ func (c *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRule
 // which has been synced to BigQuery.
 func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error) {
 	if err := c.ensureSchema(ctx); err != nil {
-		return bigquery.NullTimestamp{}, errors.Annotate(err, "ensure schema").Err()
+		return bigquery.NullTimestamp{}, errors.Fmt("ensure schema: %w", err)
 	}
 	q := c.bqClient.Query(`
 		SELECT MAX(last_update_time) as LastUpdateTime
@@ -112,7 +112,7 @@ func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 	q.DefaultDatasetID = bqutil.InternalDatasetID
 	it, err := q.Read(ctx)
 	if err != nil {
-		return bigquery.NullTimestamp{}, errors.Annotate(err, "querying max last update").Err()
+		return bigquery.NullTimestamp{}, errors.Fmt("querying max last update: %w", err)
 	}
 	type result struct {
 		LastUpdateTime bigquery.NullTimestamp
@@ -120,7 +120,7 @@ func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 	var lastUpdatedResult result
 	err = it.Next(&lastUpdatedResult)
 	if err != nil {
-		return bigquery.NullTimestamp{}, errors.Annotate(err, "obtain next row").Err()
+		return bigquery.NullTimestamp{}, errors.Fmt("obtain next row: %w", err)
 	}
 	return lastUpdatedResult.LastUpdateTime, nil
 }
@@ -132,7 +132,7 @@ func (c *Client) ensureSchema(ctx context.Context) error {
 	// Dataset for the project may have to be manually created.
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplier.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring %s table", tableName).Err()
+		return errors.Fmt("ensuring %s table: %w", tableName, err)
 	}
 	return nil
 }
