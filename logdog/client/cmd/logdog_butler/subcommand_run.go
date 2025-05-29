@@ -295,19 +295,19 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 		// Add our pipes as direct streams, if configured.
 		if stdout != nil {
 			if err := b.AddStream(stdout, cmd.stdout.properties()); err != nil {
-				return errors.Annotate(err, "failed to attach STDOUT pipe stream").Err()
+				return errors.Fmt("failed to attach STDOUT pipe stream: %w", err)
 			}
 		}
 		if stderr != nil {
 			if err := b.AddStream(stderr, cmd.stderr.properties()); err != nil {
-				return errors.Annotate(err, "failed to attach STDERR pipe stream").Err()
+				return errors.Fmt("failed to attach STDERR pipe stream: %w", err)
 			}
 		}
 
 		// Execute the command. The bootstrapped application will begin executing
 		// in the background.
 		if err := proc.Start(); err != nil {
-			return errors.Annotate(err, "failed to start bootstrapped process").Err()
+			return errors.Fmt("failed to start bootstrapped process: %w", err)
 		}
 
 		// Wait for the process's streams to finish. We must do this before Wait()
@@ -335,7 +335,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 			if err == context.Canceled {
 				return err
 			}
-			return errors.Annotate(err, "failed to Wait() for Butler").Err()
+			return errors.Fmt("failed to Wait() for Butler: %w", err)
 		}
 
 		return nil
@@ -369,7 +369,7 @@ func (cmd *runCommandRun) maybeWriteResult(ctx context.Context, r *bootstrapResu
 		"path": cmd.resultPath,
 	}.Debugf(ctx, "Writing bootstrap result.")
 	if err := r.WriteJSON(cmd.resultPath); err != nil {
-		return errors.Annotate(err, "failed to write JSON file: %s", cmd.resultPath).Err()
+		return errors.Fmt("failed to write JSON file: %s: %w", cmd.resultPath, err)
 	}
 	return nil
 }

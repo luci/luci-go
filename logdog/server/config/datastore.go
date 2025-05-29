@@ -140,10 +140,10 @@ func syncProjectConfigs(ctx context.Context) (merr errors.MultiError) {
 	wg.Wait()
 
 	if freshErr != nil {
-		merr = append(merr, errors.Annotate(freshErr, "failed to fetch project configs from LUCI Config").Err())
+		merr = append(merr, errors.Fmt("failed to fetch project configs from LUCI Config: %w", freshErr))
 	}
 	if existingErr != nil {
-		merr = append(merr, errors.Annotate(existingErr, "failed to fetch cached project configs from datastore").Err())
+		merr = append(merr, errors.Fmt("failed to fetch cached project configs from datastore: %w", existingErr))
 	}
 	if len(merr) != 0 {
 		return merr
@@ -168,14 +168,14 @@ func syncProjectConfigs(ctx context.Context) (merr errors.MultiError) {
 		logging.Infof(ctx, "Updating project config of %q: %s => %s", projectID, ent.Meta.Revision, cfg.Meta.Revision)
 		if err := ent.update(&cfg, &svcconfig.ProjectConfig{}); err != nil {
 			logging.Errorf(ctx, "Skipping bad project config %q at rev %s: %s", projectID, cfg.Meta.Revision, err)
-			merr = append(merr, errors.Annotate(err, "bad project config %q at rev %s", projectID, cfg.Meta.Revision).Err())
+			merr = append(merr, errors.Fmt("bad project config %q at rev %s: %w", projectID, cfg.Meta.Revision, err))
 		} else {
 			toPut = append(toPut, ent)
 		}
 	}
 
 	if err := datastore.Put(ctx, toPut); err != nil {
-		merr = append(merr, errors.Annotate(err, "failed to update some project configs in datastore").Err())
+		merr = append(merr, errors.Fmt("failed to update some project configs in datastore: %w", err))
 	}
 
 	// Delete stale entities.
@@ -187,7 +187,7 @@ func syncProjectConfigs(ctx context.Context) (merr errors.MultiError) {
 	}
 
 	if err := datastore.Delete(ctx, toDelete); err != nil {
-		merr = append(merr, errors.Annotate(err, "failed to delete some stale project configs").Err())
+		merr = append(merr, errors.Fmt("failed to delete some stale project configs: %w", err))
 	}
 
 	return merr
@@ -196,7 +196,7 @@ func syncProjectConfigs(ctx context.Context) (merr errors.MultiError) {
 func syncServiceConfig(ctx context.Context) error {
 	cfg, err := cfgclient.Client(ctx).GetConfig(ctx, "services/${appid}", serviceConfigPath, false)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch service config from LUCI Config").Err()
+		return errors.Fmt("failed to fetch service config from LUCI Config: %w", err)
 	}
 
 	ent := cachedConfig{
@@ -204,7 +204,7 @@ func syncServiceConfig(ctx context.Context) error {
 		ID:   serviceConfigPath,
 	}
 	if err := datastore.Get(ctx, &ent); err != nil && err != datastore.ErrNoSuchEntity {
-		return errors.Annotate(err, "failed to fetch service config from datastore").Err()
+		return errors.Fmt("failed to fetch service config from datastore: %w", err)
 	}
 
 	if ent.Meta.Revision == cfg.Meta.Revision {
@@ -213,11 +213,11 @@ func syncServiceConfig(ctx context.Context) error {
 	}
 	logging.Infof(ctx, "Updating service config %q: %s => %s", serviceConfigPath, ent.Meta.Revision, cfg.Meta.Revision)
 	if err := ent.update(cfg, &svcconfig.Config{}); err != nil {
-		return errors.Annotate(err, "bad service config at rev %s", cfg.Meta.Revision).Err()
+		return errors.Fmt("bad service config at rev %s: %w", cfg.Meta.Revision, err)
 	}
 
 	if err := datastore.Put(ctx, &ent); err != nil {
-		return errors.Annotate(err, "failed to store updated config").Err()
+		return errors.Fmt("failed to store updated config: %w", err)
 	}
 	return nil
 }
@@ -234,7 +234,7 @@ func fromDatastore(ctx context.Context, kind, id string, msg proto.Message) erro
 	case err == datastore.ErrNoSuchEntity:
 		return err
 	case err != nil:
-		return errors.Annotate(err, "failed to access datastore").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to access datastore: %w", err))
 	default:
 		return proto.Unmarshal(ent.Config, msg)
 	}

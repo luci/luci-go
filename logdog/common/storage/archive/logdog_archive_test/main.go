@@ -62,7 +62,7 @@ func (a *application) getGSClient(c context.Context) (gs.Client, error) {
 	authenticator := auth.NewAuthenticator(c, auth.OptionalLogin, a.authOpts)
 	transport, err := authenticator.Transport()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get auth transport").Err()
+		return nil, errors.Fmt("failed to get auth transport: %w", err)
 	}
 	return gs.NewProdClient(c, transport)
 }
@@ -255,14 +255,14 @@ func (cmd *cmdRunDumpStream) Run(baseApp subcommands.Application, args []string,
 
 			var desc logpb.LogStreamDescriptor
 			if err := unmarshalAndDump(c, os.Stdout, d, &desc); err != nil {
-				return errors.Annotate(err, "failed to dump log descriptor").Err()
+				return errors.Fmt("failed to dump log descriptor: %w", err)
 			}
 			return nil
 		}
 
 		var entry logpb.LogEntry
 		if err := unmarshalAndDump(c, os.Stdout, d, &entry); err != nil {
-			return errors.Annotate(err, "failed to dump log entry").Err()
+			return errors.Fmt("failed to dump log entry: %w", err)
 		}
 		return nil
 	})
@@ -468,7 +468,7 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			// break
 
 		default:
-			return errors.Annotate(err, "reading frameIndex(%d)", frameIndex).Err()
+			return errors.Fmt("reading frameIndex(%d): %w", frameIndex, err)
 		}
 
 		if frameSize > 0 {
@@ -476,7 +476,7 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			buf.Grow(int(frameSize))
 
 			if _, err := buf.ReadFrom(r); err != nil {
-				return errors.Annotate(err, "buffering frameIndex(%d)", frameIndex).Err()
+				return errors.Fmt("buffering frameIndex(%d): %w", frameIndex, err)
 			}
 
 			if err := cb(c, buf.Bytes()); err != nil {

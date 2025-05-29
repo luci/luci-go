@@ -96,7 +96,7 @@ func main() {
 func run(ctx context.Context, templateFile, buildPath string, f parsedFlags) error {
 	build, err := readBuild(buildPath)
 	if err != nil {
-		return errors.Annotate(err, "failed to read build").Err()
+		return errors.Fmt("failed to read build: %w", err)
 	}
 
 	if templateFile, err = filepath.Abs(templateFile); err != nil {
@@ -163,12 +163,12 @@ func readTemplateBundle(ctx context.Context, templateRootDir string) *mailtmpl.B
 
 		contents, err := os.ReadFile(path)
 		if err != nil {
-			return errors.Annotate(err, "failed to read %q", path).Err()
+			return errors.Fmt("failed to read %q: %w", path, err)
 		}
 
 		t.SubjectTextTemplate, t.BodyHTMLTemplate, err = mailtmpl.SplitTemplateFile(string(contents))
 		if err != nil {
-			return errors.Annotate(err, "failed to parse %q", path).Err()
+			return errors.Fmt("failed to parse %q: %w", path, err)
 		}
 
 		templates = append(templates, t)

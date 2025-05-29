@@ -261,11 +261,11 @@ func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, er
 	// we are ready to roll out project scoped service accounts in Logdog.
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the authenticating transport").Err()
+		return nil, errors.Fmt("failed to get the authenticating transport: %w", err)
 	}
 	client, err := gs.NewProdClient(ctx, tr)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create Google Storage client").Err()
+		return nil, errors.Fmt("failed to create Google Storage client: %w", err)
 	}
 	return client, nil
 }
@@ -278,7 +278,7 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, o
 		auth.WithProject(luciProject),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
+		return nil, errors.Fmt("failed to get per RPC credentials: %w", err)
 	}
 	cl, err := cloudlogging.NewClient(
 		ctx, cloudProject,

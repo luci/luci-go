@@ -125,7 +125,7 @@ func (s *storageImpl) Get(c context.Context, req storage.GetRequest, cb storage.
 		return storage.ErrDoesNotExist
 
 	default:
-		return errors.Annotate(err, "failed to read log stream").Err()
+		return errors.Fmt("failed to read log stream: %w", err)
 	}
 }
 
@@ -142,7 +142,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 	storageReader, err := s.Client.NewReader(s.Stream, int64(offset), length)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create stream Reader.")
-		return errors.Annotate(err, "failed to create stream Reader").Err()
+		return errors.Fmt("failed to create stream Reader: %w", err)
 	}
 	defer func() {
 		if tmpErr := storageReader.Close(); tmpErr != nil {
@@ -167,7 +167,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 
 		sz, r, err := rio.ReadFrame()
 		if err != nil {
-			return errors.Annotate(err, "failed to read frame").Err()
+			return errors.Fmt("failed to read frame: %w", err)
 		}
 
 		buf.Reset()
@@ -180,7 +180,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 				"frameOffset": offset,
 				"frameSize":   sz,
 			}.Errorf(c, "Failed to read frame data.")
-			return errors.Annotate(err, "failed to read frame data").Err()
+			return errors.Fmt("failed to read frame data: %w", err)
 
 		case amt != sz:
 			// If we didn't buffer the complete frame, we hit a premature EOF.
@@ -204,7 +204,7 @@ func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb s
 				"frameOffset": offset,
 				"frameSize":   sz,
 			}.Errorf(c, "Failed to get log entry index.")
-			return errors.Annotate(err, "failed to get log entry index").Err()
+			return errors.Fmt("failed to get log entry index: %w", err)
 
 		case idx < st.startIndex:
 			// Skip this entry, as it's before the first requested entry.
@@ -333,7 +333,7 @@ func loadIndex(c context.Context, client gs.Client, path gs.Path, cache storage.
 		r, err := client.NewReader(path, 0, -1)
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to create index Reader.")
-			return nil, errors.Annotate(err, "failed to create index Reader").Err()
+			return nil, errors.Fmt("failed to create index Reader: %w", err)
 		}
 		defer func() {
 			if err := r.Close(); err != nil {
@@ -343,14 +343,14 @@ func loadIndex(c context.Context, client gs.Client, path gs.Path, cache storage.
 
 		if indexData, err = io.ReadAll(r); err != nil {
 			log.WithError(err).Errorf(c, "Failed to read index.")
-			return nil, errors.Annotate(err, "failed to read index").Err()
+			return nil, errors.Fmt("failed to read index: %w", err)
 		}
 	}
 
 	index := logpb.LogIndex{}
 	if err := proto.Unmarshal(indexData, &index); err != nil {
 		log.WithError(err).Errorf(c, "Failed to unmarshal index.")
-		return nil, errors.Annotate(err, "failed to unmarshal index").Err()
+		return nil, errors.Fmt("failed to unmarshal index: %w", err)
 	}
 
 	// If the index is valid, but wasn't cached previously, then cache it.

@@ -35,7 +35,7 @@ func GetAppID(ctx context.Context) (string, error) {
 
 	info, err := signer.ServiceInfo(ctx)
 	if err != nil {
-		return "", errors.Annotate(err, "failed to get service info").Err()
+		return "", errors.Fmt("failed to get service info: %w", err)
 	}
 
 	return info.AppID, nil

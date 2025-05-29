@@ -79,14 +79,14 @@ func (f *Flags) Validate() error {
 func StorageFromFlags(ctx context.Context, f *Flags) (*Storage, error) {
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the token source").Err()
+		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}
 	cCfg := bigtable.ClientConfig{
 		AppProfile: f.AppProfile,
 	}
 	client, err := bigtable.NewClientWithConfig(ctx, f.Project, f.Instance, cCfg, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to construct BigTable client").Err()
+		return nil, errors.Fmt("failed to construct BigTable client: %w", err)
 	}
 	return &Storage{
 		Client:   client,

@@ -129,11 +129,11 @@ func processMessage(ctx context.Context, coll *collector.Collector, msg *pubsub.
 func pubSubClient(ctx context.Context, cloudProject string) (*pubsub.Client, error) {
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the token source").Err()
+		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}
 	client, err := pubsub.NewClient(ctx, cloudProject, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create the PubSub client").Err()
+		return nil, errors.Fmt("failed to create the PubSub client: %w", err)
 	}
 	return client, nil
 }

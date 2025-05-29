@@ -88,7 +88,7 @@ func (f *CommandLineFlags) Validate() error {
 	}
 	sub := pubsub.NewSubscription(f.PubSubProject, f.PubSubSubscription)
 	if err := sub.Validate(); err != nil {
-		return errors.Annotate(err, "invalid Pub/Sub subscription %q", sub).Err()
+		return errors.Fmt("invalid Pub/Sub subscription %q: %w", sub, err)
 	}
 	return nil
 }

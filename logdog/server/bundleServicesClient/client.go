@@ -256,7 +256,7 @@ func (c *Client) sendBundle(ctx context.Context, entries []*batchEntry, opts ...
 
 		if err := c.addEntry(be); err != nil {
 			// This was already added successfully, so it can't fail here.
-			panic(errors.Annotate(err, "failed to re-add entry").Err())
+			panic(errors.Fmt("failed to re-add entry: %w", err))
 		}
 		count++
 	}

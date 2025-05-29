@@ -54,7 +54,7 @@ func (f *logdogOutputFactory) option() multiflag.Option {
 func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error) {
 	auth, err := a.authenticator(a)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to instantiate authenticator").Err()
+		return nil, errors.Fmt("failed to instantiate authenticator: %w", err)
 	}
 
 	host := a.coordinatorHost

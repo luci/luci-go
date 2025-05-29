@@ -443,7 +443,7 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 	if st.CloudLoggingProjectID != "" && sa.desc.StreamType == logpb.StreamType_TEXT {
 		// Validate the project ID, and ping the project to verify the auth.
 		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
-			return nil, errors.Annotate(err, "CloudLoggingProjectID %q", st.CloudLoggingProjectID).Err()
+			return nil, errors.Fmt("CloudLoggingProjectID %q: %w", st.CloudLoggingProjectID, err)
 		}
 		onError := func(err error) {
 			logging.Fields{
@@ -462,9 +462,9 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 			return nil, err
 		}
 		if err = clc.Ping(ctx); err != nil {
-			return nil, errors.Annotate(
-				err, "failed to ping CloudProject %q for Cloud Logging export",
-				st.CloudLoggingProjectID).Err()
+			return nil, errors.Fmt("failed to ping CloudProject %q for Cloud Logging export: %w",
+				st.CloudLoggingProjectID, err)
+
 		}
 		sa.clclient = clc
 	}
@@ -511,7 +511,7 @@ func (sa *stagedArchival) makeStagingPaths(maxGSFilenameLength int) error {
 	// "<prefix>/+/<name>" => (<prefix>, <name>).
 	prefix, name := sa.path.Split()
 	if name == "" {
-		return errors.Reason("got prefix-only path %q, don't know how to stage it", sa.path).Err()
+		return errors.Fmt("got prefix-only path %q, don't know how to stage it", sa.path)
 	}
 
 	// base64 encoded SHA256 hash of the prefix.
@@ -548,7 +548,7 @@ func (sa *stagedArchival) makeStagingPaths(maxGSFilenameLength int) error {
 		if len(nameSuffix)+bytesToCut > len(name) {
 			// There's no enough space even to fit nameSuffix. The prefix is too
 			// huge. This should be rare, abort.
-			return errors.Reason("can't stage %q of project %q, prefix is too long", sa.path, sa.project).Err()
+			return errors.Fmt("can't stage %q of project %q, prefix is too long", sa.path, sa.project)
 		}
 		name = name[:len(name)-len(nameSuffix)-bytesToCut] + nameSuffix
 	}

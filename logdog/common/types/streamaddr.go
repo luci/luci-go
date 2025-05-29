@@ -88,12 +88,12 @@ func (s *StreamAddr) URL() *url.URL {
 func ParseURL(v string) (*StreamAddr, error) {
 	u, err := url.Parse(v)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to parse URL").Err()
+		return nil, errors.Fmt("failed to parse URL: %w", err)
 	}
 
 	// Validate Scheme.
 	if u.Scheme != logDogURLScheme {
-		return nil, errors.Reason("URL scheme %q is not %s", u.Scheme, logDogURLScheme).Err()
+		return nil, errors.Fmt("URL scheme %q is not %s", u.Scheme, logDogURLScheme)
 	}
 	addr := StreamAddr{
 		Host: u.Host,
@@ -101,16 +101,16 @@ func ParseURL(v string) (*StreamAddr, error) {
 
 	parts := strings.SplitN(u.Path, "/", 3)
 	if len(parts) != 3 || len(parts[0]) != 0 {
-		return nil, errors.Reason("URL path does not include both project and path components: %s", u.Path).Err()
+		return nil, errors.Fmt("URL path does not include both project and path components: %s", u.Path)
 	}
 
 	addr.Project, addr.Path = parts[1], StreamPath(parts[2])
 	if err := config.ValidateProjectName(addr.Project); err != nil {
-		return nil, errors.Annotate(err, "invalid project name: %q", addr.Project).Err()
+		return nil, errors.Fmt("invalid project name: %q: %w", addr.Project, err)
 	}
 
 	if err := addr.Path.Validate(); err != nil {
-		return nil, errors.Annotate(err, "invalid stream path: %q", addr.Path).Err()
+		return nil, errors.Fmt("invalid stream path: %q: %w", addr.Path, err)
 	}
 
 	return &addr, nil

@@ -70,12 +70,12 @@ func (app *application) getBigTableClient(c context.Context) (*cloudBT.Client, e
 	a := auth.NewAuthenticator(c, auth.SilentLogin, app.authOpts)
 	tsrc, err := a.TokenSource()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get token source").Err()
+		return nil, errors.Fmt("failed to get token source: %w", err)
 	}
 
 	client, err := cloudBT.NewClient(c, app.btProject, app.btInstance, option.WithTokenSource(tsrc))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get BigTable client").Err()
+		return nil, errors.Fmt("failed to get BigTable client: %w", err)
 	}
 
 	return client, nil
@@ -224,7 +224,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 
 	btClient, err := app.getBigTableClient(c)
 	if err != nil {
-		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
+		renderErr(c, errors.Fmt("failed to create storage client: %w", err))
 		return 1
 	}
 	defer btClient.Close()
@@ -258,11 +258,11 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 		})
 		switch {
 		case innerErr != nil:
-			renderErr(c, errors.Annotate(innerErr, "failed to process fetched log entries").Err())
+			renderErr(c, errors.Fmt("failed to process fetched log entries: %w", innerErr))
 			return 1
 
 		case err != nil:
-			renderErr(c, errors.Annotate(err, "Failed to Get log entries.").Err())
+			renderErr(c, errors.Fmt("Failed to Get log entries.: %w", err))
 			return 1
 		}
 	}
@@ -310,7 +310,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 	btClient, err := app.getBigTableClient(c)
 	if err != nil {
-		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
+		renderErr(c, errors.Fmt("failed to create storage client: %w", err))
 		return 1
 	}
 	defer btClient.Close()
@@ -321,7 +321,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 		log.Infof(c, "Tail round %d.", round+1)
 		e, err := stClient.Tail(c, cmd.project, types.StreamPath(cmd.path))
 		if err != nil {
-			renderErr(c, errors.Annotate(err, "failed to tail log entries").Err())
+			renderErr(c, errors.Fmt("failed to tail log entries: %w", err))
 			return 1
 		}
 
@@ -332,7 +332,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 		le, err := e.GetLogEntry()
 		if err != nil {
-			renderErr(c, errors.Annotate(err, "failed to unmarshal log entry").Err())
+			renderErr(c, errors.Fmt("failed to unmarshal log entry: %w", err))
 			return 1
 		}
 
@@ -341,7 +341,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 			"size":  len(e.D),
 		}.Debugf(c, "Dumping tail entry.")
 		if err := unmarshalAndDump(c, os.Stdout, nil, le); err != nil {
-			renderErr(c, errors.Annotate(err, "failed to dump log entry").Err())
+			renderErr(c, errors.Fmt("failed to dump log entry: %w", err))
 			return 1
 		}
 	}

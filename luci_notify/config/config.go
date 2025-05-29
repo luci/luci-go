@@ -88,7 +88,7 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 	for i, partition := range partitions {
 		r, err := updateProjectNotifiers(c, parentKey, partition)
 		if err != nil {
-			return errors.Annotate(err, "applying partition %v", i).Err()
+			return errors.Fmt("applying partition %v: %w", i, err)
 		}
 		liveBuilders = r.LiveBuilders.Union(liveBuilders)
 		liveTreeClosers = r.LiveTreeClosers.Union(liveTreeClosers)
@@ -308,14 +308,14 @@ func deleteProject(c context.Context, projectID string) error {
 func updateProjects(c context.Context) error {
 	appID, err := common.GetAppID(c)
 	if err != nil {
-		return errors.Annotate(err, "failed to get app ID").Err()
+		return errors.Fmt("failed to get app ID: %w", err)
 	}
 	cfgName := appID + ".cfg"
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	lucicfg := cfgclient.Client(c)
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
-		return errors.Annotate(err, "while fetching project configs").Err()
+		return errors.Fmt("while fetching project configs: %w", err)
 	}
 	logging.Infof(c, "got %d project configs", len(configs))
 
@@ -346,19 +346,19 @@ func updateProjects(c context.Context) error {
 				projectID := cfg.ConfigSet.Project()
 				project := &notifypb.ProjectConfig{}
 				if err := proto.UnmarshalText(cfg.Content, project); err != nil {
-					return errors.Annotate(err, "unmarshalling project config").Err()
+					return errors.Fmt("unmarshalling project config: %w", err)
 				}
 
 				ctx := &validation.Context{Context: c}
 				ctx.SetFile(cfgName)
 				validateProjectConfig(ctx, project)
 				if err := ctx.Finalize(); err != nil {
-					return errors.Annotate(err, "validating project config").Err()
+					return errors.Fmt("validating project config: %w", err)
 				}
 
 				emailTemplates, err := fetchAllEmailTemplates(c, lucicfg, projectID)
 				if err != nil {
-					return errors.Annotate(err, "failed to fetch email templates").Err()
+					return errors.Fmt("failed to fetch email templates: %w", err)
 				}
 
 				parsedConfigSet := &parsedProjectConfigSet{
@@ -369,7 +369,7 @@ func updateProjects(c context.Context) error {
 					ViewURL:        cfg.ViewURL,
 				}
 				if err := updateProject(c, parsedConfigSet); err != nil {
-					return errors.Annotate(err, "importing project %q", projectID).Err()
+					return errors.Fmt("importing project %q: %w", projectID, err)
 				}
 				return nil
 			}

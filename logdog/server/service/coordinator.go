@@ -56,7 +56,7 @@ func (f *coordinatorFlags) validate() error {
 func coordinator(ctx context.Context, f *coordinatorFlags) (*bundleServicesClient.Client, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the token source").Err()
+		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}
 	prpcClient := &prpc.Client{
 		C:       &http.Client{Transport: tr},
