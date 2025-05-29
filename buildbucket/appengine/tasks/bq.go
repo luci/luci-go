@@ -49,22 +49,24 @@ import (
 // too much memory.
 var maxBuildSizeInBQ = 10*1000*1000 - 5*1000
 
-var errRowTooBig = errors.Reason("row too big").Tag(tq.Fatal).Err()
+var errRowTooBig = tq.Fatal.Apply(errors.
 
-// ExportBuild saves the build into BiqQuery.
-// The returned error has transient.Tag or tq.Fatal in order to tell tq to drop
-// or retry.
+	// ExportBuild saves the build into BiqQuery.
+	// The returned error has transient.Tag or tq.Fatal in order to tell tq to drop
+	// or retry.
+	New("row too big"))
+
 func ExportBuild(ctx context.Context, buildID int64) error {
 	b := &model.Build{ID: buildID}
 	switch err := datastore.Get(ctx, b); {
 	case err == datastore.ErrNoSuchEntity:
-		return errors.Annotate(err, "build %d not found when exporting into BQ", buildID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("build %d not found when exporting into BQ: %w", buildID, err))
 	case err != nil:
-		return errors.Annotate(err, "error fetching builds").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("error fetching builds: %w", err))
 	}
 	p, err := b.ToProto(ctx, model.NoopBuildMask, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to convert build to proto").Err()
+		return errors.Fmt("failed to convert build to proto: %w", err)
 	}
 
 	if p.Infra.Swarming == nil {

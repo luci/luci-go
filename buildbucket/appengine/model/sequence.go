@@ -45,12 +45,12 @@ func GenerateSequenceNumbers(ctx context.Context, name string, n int) (int32, er
 		case err == datastore.ErrNoSuchEntity:
 			seq.Next = 1
 		case err != nil:
-			return errors.Annotate(err, "error fetching number sequence %q", seq.ID).Err()
+			return errors.Fmt("error fetching number sequence %q: %w", seq.ID, err)
 		}
 		res = seq.Next
 		seq.Next += int32(n)
 		if err := datastore.Put(ctx, seq); err != nil {
-			return errors.Annotate(err, "error updating number sequence %q", seq.ID).Err()
+			return errors.Fmt("error updating number sequence %q: %w", seq.ID, err)
 		}
 		return nil
 	}, nil)

@@ -33,14 +33,14 @@ import (
 
 func validateSynthesize(req *pb.SynthesizeBuildRequest) error {
 	if req.GetBuilder() == nil && req.GetTemplateBuildId() == 0 {
-		return errors.Reason("builder or template_build_id is required").Err()
+		return errors.New("builder or template_build_id is required")
 	}
 	if req.GetBuilder() != nil && req.GetTemplateBuildId() != 0 {
-		return errors.Reason("builder and template_build_id are mutually exclusive").Err()
+		return errors.New("builder and template_build_id are mutually exclusive")
 	}
 	if req.GetBuilder() != nil {
 		if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-			return errors.Annotate(err, "builder").Err()
+			return errors.Fmt("builder: %w", err)
 		}
 	}
 	return nil
@@ -49,14 +49,14 @@ func validateSynthesize(req *pb.SynthesizeBuildRequest) error {
 func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	builder := schReq.GetBuilder()
 	if builder == nil {
-		return nil, errors.Reason("builder must be specified").Err()
+		return nil, errors.New("builder must be specified")
 	}
 	if err := perm.HasInBuilder(ctx, bbperms.BuildersGet, builder); err != nil {
 		return nil, err
 	}
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
+		return nil, errors.Fmt("error fetching service config: %w", err)
 	}
 
 	bktCfg := &model.Bucket{
@@ -76,13 +76,13 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 		case len(bktCfg.Shadows) > 0:
 			// This is a shadow bucket. Synthesizing a build from shadow bucket
 			// is not supported.
-			return nil, appstatus.BadRequest(errors.Reason("Synthesizing a build from a shadow bucket is not supported").Err())
+			return nil, appstatus.BadRequest(errors.New("Synthesizing a build from a shadow bucket is not supported"))
 		default:
 			// Builder not found.
 			return nil, perm.NotFoundErr(ctx)
 		}
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get builder config").Err()
+		return nil, errors.Fmt("failed to get builder config: %w", err)
 	default:
 		bld := scheduleShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
 		return bld, nil

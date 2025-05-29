@@ -95,7 +95,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 // Must run in a datastore transaction.
 func SendOnBuildStatusChange(ctx context.Context, bld *model.Build, inf *model.BuildInfra) error {
 	if datastore.Raw(ctx) == nil || datastore.CurrentTransaction(ctx) == nil {
-		return errors.Reason("must enqueue cloud tasks that are triggered by build status update in a transaction").Err()
+		return errors.New("must enqueue cloud tasks that are triggered by build status update in a transaction")
 	}
 	switch {
 	case bld.Proto.Status == pb.Status_STARTED:
@@ -121,7 +121,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
+			return errors.Fmt("failed to fetch build: %d: %w", bld.ID, err)
 		}
 
 		if protoutil.IsEnded(bld.Proto.Status) {
@@ -147,7 +147,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 		return datastore.Put(ctx, toSave)
 	}, nil)
 	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
+		return transient.Tag.Apply(errors.Fmt("failed to terminate build: %d: %w", buildID, err))
 	}
 	if statusUpdated {
 		metrics.BuildCompleted(ctx, bld)
@@ -172,7 +172,7 @@ func updateBuildStatusOnTaskStatusChange(ctx context.Context, bld *model.Build, 
 				steps = &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
 				// If the build has no steps, CancelIncomplete will return false.
 				if err := model.GetIgnoreMissing(ctx, steps); err != nil {
-					return errors.Annotate(err, "failed to fetch steps for build %d", bld.ID).Err()
+					return errors.Fmt("failed to fetch steps for build %d: %w", bld.ID, err)
 				}
 				switch _, err := steps.CancelIncomplete(ctx, timestamppb.New(updateTime.UTC())); {
 				case err != nil:

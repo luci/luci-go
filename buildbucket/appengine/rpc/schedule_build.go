@@ -73,11 +73,11 @@ func min(i, j int) int {
 func validateExpirationDuration(d *durationpb.Duration) error {
 	switch {
 	case d.GetNanos() != 0:
-		return errors.Reason("nanos must not be specified").Err()
+		return errors.New("nanos must not be specified")
 	case d.GetSeconds() < 0:
-		return errors.Reason("seconds must not be negative").Err()
+		return errors.New("seconds must not be negative")
 	case d.GetSeconds()%60 != 0:
-		return errors.Reason("seconds must be a multiple of 60").Err()
+		return errors.New("seconds must be a multiple of 60")
 	default:
 		return nil
 	}
@@ -106,17 +106,17 @@ func validateRequestedDimensions(dims []*pb.RequestedDimension) error {
 	empty := stringset.New(len(dims))
 	for i, dim := range dims {
 		if err := validateRequestedDimension(dim); err != nil {
-			return errors.Annotate(err, "[%d]", i).Err()
+			return errors.Fmt("[%d]: %w", i, err)
 		}
 
 		if dim.GetValue() == "" {
 			if nonEmpty.Has(dim.Key) {
-				return errors.Reason("contain both empty and non-empty value for the same key - %q", dim.Key).Err()
+				return errors.Fmt("contain both empty and non-empty value for the same key - %q", dim.Key)
 			}
 			empty.Add(dim.Key)
 		} else {
 			if empty.Has(dim.Key) {
-				return errors.Reason("contain both empty and non-empty value for the same key - %q", dim.Key).Err()
+				return errors.Fmt("contain both empty and non-empty value for the same key - %q", dim.Key)
 			}
 			nonEmpty.Add(dim.Key)
 		}
@@ -129,7 +129,7 @@ func validateExecutable(exe *pb.Executable) error {
 	var err error
 	switch {
 	case exe.GetCipdPackage() != "":
-		return errors.Reason("cipd_package must not be specified").Err()
+		return errors.New("cipd_package must not be specified")
 	case exe.GetCipdVersion() != "" && teeErr(cipdcommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
 		return errors.Fmt("cipd_version: %w", err)
 	default:
@@ -141,17 +141,17 @@ func validateExecutable(exe *pb.Executable) error {
 func validateGerritChange(ch *pb.GerritChange) error {
 	switch {
 	case ch.GetChange() == 0:
-		return errors.Reason("change must be specified").Err()
+		return errors.New("change must be specified")
 	case ch.Host == "":
-		return errors.Reason("host must be specified").Err()
+		return errors.New("host must be specified")
 	case !hostnameRE.MatchString(ch.Host):
-		return errors.Reason("host does not match pattern %q", hostnameRE).Err()
+		return errors.Fmt("host does not match pattern %q", hostnameRE)
 	case len(ch.Host) > 255:
-		return errors.Reason("host must not exceed 255 characters").Err()
+		return errors.New("host must not exceed 255 characters")
 	case ch.Patchset == 0:
-		return errors.Reason("patchset must be specified").Err()
+		return errors.New("patchset must be specified")
 	case ch.Project == "":
-		return errors.Reason("project must be specified").Err()
+		return errors.New("project must be specified")
 	default:
 		return nil
 	}
@@ -161,7 +161,7 @@ func validateGerritChange(ch *pb.GerritChange) error {
 func validateGerritChanges(changes []*pb.GerritChange) error {
 	for i, ch := range changes {
 		if err := validateGerritChange(ch); err != nil {
-			return errors.Annotate(err, "[%d]", i).Err()
+			return errors.Fmt("[%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -171,15 +171,15 @@ func validateGerritChanges(changes []*pb.GerritChange) error {
 func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) error {
 	switch {
 	case n.GetPubsubTopic() == "":
-		return errors.Reason("pubsub_topic must be specified").Err()
+		return errors.New("pubsub_topic must be specified")
 	case len(n.UserData) > 4096:
-		return errors.Reason("user_data cannot exceed 4096 bytes").Err()
+		return errors.New("user_data cannot exceed 4096 bytes")
 	}
 
 	// Validate the topic exists and Buildbucket has the publishing permission.
 	cloudProj, topicID, err := clients.ValidatePubSubTopicName(n.PubsubTopic)
 	if err != nil {
-		return errors.Annotate(err, "invalid pubsub_topic %s", n.PubsubTopic).Err()
+		return errors.Fmt("invalid pubsub_topic %s: %w", n.PubsubTopic, err)
 	}
 
 	// Check the global cache first to reduce calls to the actual IAM api.
@@ -202,14 +202,14 @@ func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) e
 	// cached item before it expires.
 	client, err := clients.NewPubsubClient(ctx, cloudProj, "")
 	if err != nil {
-		return errors.Annotate(err, "failed to create a pubsub client").Err()
+		return errors.Fmt("failed to create a pubsub client: %w", err)
 	}
 	topic := client.Topic(topicID)
 	switch perms, err := topic.IAM().TestPermissions(ctx, []string{"pubsub.topics.publish"}); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check existence for topic %s", topic).Err()
+		return errors.Fmt("failed to check existence for topic %s: %w", topic, err)
 	case len(perms) < 1:
-		return errors.Reason("%s@appspot.gserviceaccount.com account doesn't have the 'pubsub.topics.publish' or 'pubsub.topics.get' permission for %s", info.AppID(ctx), topic).Err()
+		return errors.Fmt("%s@appspot.gserviceaccount.com account doesn't have the 'pubsub.topics.publish' or 'pubsub.topics.get' permission for %s", info.AppID(ctx), topic)
 	default:
 		if err := cache.Set(ctx, n.PubsubTopic, []byte{1}, 10*time.Hour); err != nil {
 			logging.Warningf(ctx, "failed to save into has_perm_on_pubsub_callback_topic cache for %s", n.PubsubTopic)
@@ -248,7 +248,7 @@ func structContains(s *structpb.Struct, path []string) bool {
 func validateProperties(p *structpb.Struct) error {
 	for _, path := range prohibitedProperties {
 		if structContains(p, path) {
-			return errors.Reason("%q must not be specified", strings.Join(path, ".")).Err()
+			return errors.Fmt("%q must not be specified", strings.Join(path, "."))
 		}
 	}
 	return nil
@@ -332,7 +332,7 @@ func populateParentFields(p *parent, pBld *model.Build, pInfra *model.BuildInfra
 		panic("impossible")
 	}
 	if protoutil.IsEnded(pBld.Proto.GetStatus()) || protoutil.IsEnded(pBld.Proto.GetOutput().GetStatus()) {
-		p.err = appstatus.BadRequest(errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err())
+		p.err = appstatus.BadRequest(errors.Fmt("%d has ended, cannot add child to it", pBld.ID))
 		return
 	}
 	p.bld = pBld
@@ -449,9 +449,9 @@ func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKno
 	var err error
 	switch {
 	case strings.Contains(req.GetRequestId(), "/"):
-		return errors.Reason("request_id cannot contain '/'").Err()
+		return errors.New("request_id cannot contain '/'")
 	case req.GetBuilder() == nil && req.GetTemplateBuildId() == 0:
-		return errors.Reason("builder or template_build_id is required").Err()
+		return errors.New("builder or template_build_id is required")
 	case req.Builder != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
 		return errors.Fmt("builder: %w", err)
 	case teeErr(validateRequestedDimensions(req.Dimensions), &err) != nil:
@@ -465,18 +465,18 @@ func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKno
 	case req.Notify != nil && teeErr(validateNotificationConfig(ctx, req.Notify), &err) != nil:
 		return errors.Fmt("notify: %w", err)
 	case req.Priority < 0 || req.Priority > 255:
-		return errors.Reason("priority must be in [0, 255]").Err()
+		return errors.New("priority must be in [0, 255]")
 	case req.Properties != nil && teeErr(validateProperties(req.Properties), &err) != nil:
 		return errors.Fmt("properties: %w", err)
 	case parent == nil && req.CanOutliveParent != pb.Trinary_UNSET:
-		return errors.Reason("can_outlive_parent is specified without parent").Err()
+		return errors.New("can_outlive_parent is specified without parent")
 	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
 		return errors.Fmt("tags: %w", err)
 	}
 
 	for expName := range req.Experiments {
 		if err := config.ValidateExperimentName(expName, wellKnownExperiments); err != nil {
-			return errors.Annotate(err, "experiment %q", expName).Err()
+			return errors.Fmt("experiment %q: %w", expName, err)
 		}
 	}
 
@@ -511,7 +511,7 @@ func scheduleRequestFromBuildID(ctx context.Context, bID int64, isRetry bool) (*
 	b := bld.ToSimpleBuildProto(ctx)
 
 	if isRetry && b.Retriable == pb.Trinary_NO {
-		return nil, appstatus.BadRequest(errors.Reason("build %d is not retriable", bld.ID).Err())
+		return nil, appstatus.BadRequest(errors.Fmt("build %d is not retriable", bld.ID))
 	}
 
 	if err := model.LoadBuildDetails(ctx, templateBuildMask, nil, b); err != nil {
@@ -622,7 +622,7 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 
 	// Note; this will fill in bckCfgs and bldrCfgs.
 	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
-		return nil, nil, nil, errors.Annotate(err, "failed to fetch entities").Err()
+		return nil, nil, nil, errors.Fmt("failed to fetch entities: %w", err)
 	}
 
 	dynamicBuckets := map[string]*pb.Bucket{}
@@ -1195,7 +1195,7 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 			v = fmt.Sprintf("{\"%s\": %s}", k, v)
 			if err := protojson.Unmarshal([]byte(v), s); err != nil {
 				// Builder config should have been validated already.
-				panic(errors.Annotate(err, "error parsing %q", v).Err())
+				panic(errors.Fmt("error parsing %q: %w", v, err))
 			}
 			build.Input.Properties.Fields[k] = s.Fields[k]
 		}
@@ -1207,7 +1207,7 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	} else if cfg.GetProperties() != "" {
 		if err := protojson.Unmarshal([]byte(cfg.Properties), build.Input.Properties); err != nil {
 			// Builder config should have been validated already.
-			panic(errors.Annotate(err, "error unmarshaling builder properties for %q", cfg.GetName()).Err())
+			panic(errors.Fmt("error unmarshaling builder properties for %q: %w", cfg.GetName(), err))
 		}
 	}
 
@@ -1503,7 +1503,7 @@ func setInfraAgentSource(build *pb.Build, globalCfg *pb.SettingsCfg, experiments
 		bbagentAlternatives = append(bbagentAlternatives, p)
 	}
 	if len(bbagentAlternatives) > 1 {
-		return errors.Reason("cannot decide buildbucket agent source").Err()
+		return errors.New("cannot decide buildbucket agent source")
 	}
 	if len(bbagentAlternatives) == 1 {
 		bbagent = bbagentAlternatives[0]
@@ -1657,7 +1657,7 @@ func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map
 	}
 
 	if err := model.GetIgnoreMissing(ctx, buckets); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch bucket entities").Err()
+		return nil, errors.Fmt("failed to fetch bucket entities: %w", err)
 	}
 
 	shadows := make(map[string]string)
@@ -1709,7 +1709,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 	dryRun := reqs[0].DryRun
 	for _, req := range reqs {
 		if req.DryRun != dryRun {
-			return nil, appstatus.BadRequest(errors.Reason("all requests must have the same dry_run value").Err())
+			return nil, appstatus.BadRequest(errors.New("all requests must have the same dry_run value"))
 		}
 	}
 
@@ -1736,7 +1736,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 		origI := idxMapBlds[i]
 		pBld, err := pMap.parentBuildForRequest(reqs[origI])
 		if err != nil {
-			merr[origI] = errors.Reason("error getting the parent").Err()
+			merr[origI] = errors.New("error getting the parent")
 			blds[i] = nil
 			continue
 		}
@@ -1761,7 +1761,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 				// has checked.
 				// But still check here just in case a builder config happened to be
 				// updated between validateScheduleBuild and here.
-				merr[origI] = errors.Reason("scheduling a shadow build in the original bucket is not allowed").Err()
+				merr[origI] = errors.New("scheduling a shadow build in the original bucket is not allowed")
 				blds[i] = nil
 				continue
 			}
@@ -1771,7 +1771,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 				if pInfra == nil {
 					entities, err := common.GetBuildEntities(ctx, pBld.ID, model.BuildInfraKind)
 					if err != nil {
-						merr[origI] = errors.Reason("failed to get BuildInfra for build %d", pBld.ID).Err()
+						merr[origI] = errors.Fmt("failed to get BuildInfra for build %d", pBld.ID)
 						blds[i] = nil
 						continue
 					}
@@ -1821,7 +1821,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 			exp[d.Expiration.GetSeconds()] = struct{}{}
 		}
 		if len(exp) > 6 {
-			merr[origI] = appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
+			merr[origI] = appstatus.BadRequest(errors.Fmt("build %d contains more than 6 unique expirations", i))
 			continue
 		}
 	}
@@ -1889,7 +1889,7 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 
 	m, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
+		return nil, nil, appstatus.BadRequest(errors.Fmt("invalid mask: %w", err))
 	}
 
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
@@ -1901,7 +1901,7 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
 		shadow := shadowBuckets[k]
 		if shadow == "" || shadow == req.Builder.Bucket {
-			return nil, nil, appstatus.BadRequest(errors.Reason("scheduling a shadow build in the original bucket is not allowed").Err())
+			return nil, nil, appstatus.BadRequest(errors.New("scheduling a shadow build in the original bucket is not allowed"))
 		}
 		bkt = shadow
 	}
@@ -1924,7 +1924,7 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
+		return nil, errors.Fmt("error fetching service config: %w", err)
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
@@ -1940,7 +1940,7 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 	// get shadow buckets.
 	shadowBuckets, err := getShadowBuckets(ctx, []*pb.ScheduleBuildRequest{req})
 	if err != nil {
-		return nil, errors.Annotate(err, "error in getting shadow buckets").Err()
+		return nil, errors.Fmt("error in getting shadow buckets: %w", err)
 	}
 
 	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
@@ -1999,7 +1999,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	pMap, err := validateParents(ctx, pIDs)
 	if err != nil {
 		return nil, errorInBatch(err, func(err error) error {
-			return errors.Annotate(err, "error in schedule batch").Err()
+			return errors.Fmt("error in schedule batch: %w", err)
 		})
 	}
 
@@ -2007,7 +2007,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	shadowBuckets, err := getShadowBuckets(ctx, reqs)
 	if err != nil {
 		return nil, errorInBatch(err, func(err error) error {
-			return appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
+			return appstatus.BadRequest(errors.Fmt("error in schedule batch: %w", err))
 		})
 	}
 

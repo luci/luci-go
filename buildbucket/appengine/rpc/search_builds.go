@@ -33,11 +33,11 @@ import (
 func validateChange(ch *pb.GerritChange) error {
 	switch {
 	case ch.GetHost() == "":
-		return errors.Reason("host is required").Err()
+		return errors.New("host is required")
 	case ch.GetChange() == 0:
-		return errors.Reason("change is required").Err()
+		return errors.New("change is required")
 	case ch.GetPatchset() == 0:
-		return errors.Reason("patchset is required").Err()
+		return errors.New("patchset is required")
 	default:
 		return nil
 	}
@@ -57,7 +57,7 @@ func validateExperiment(exp string, canary pb.Trinary, includeExperimental bool)
 
 	expName = exp[1:]
 	if expName == bb.ExperimentBBCanarySoftware && canary != pb.Trinary_UNSET {
-		err = errors.Reason("cannot specify %q and canary in the same predicate", exp[1:]).Err()
+		err = errors.Fmt("cannot specify %q and canary in the same predicate", exp[1:])
 		return
 	}
 
@@ -69,38 +69,37 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	if b := pr.GetBuilder(); b != nil {
 		switch err := protoutil.ValidateBuilderID(b); {
 		case err != nil:
-			return errors.Annotate(err, "builder").Err()
+			return errors.Fmt("builder: %w", err)
 		case b.Bucket == "" && b.Builder != "":
 			return errors.New("builder: bucket is required")
 		}
 	}
 	for i, ch := range pr.GetGerritChanges() {
 		if err := validateChange(ch); err != nil {
-			return errors.Annotate(err, "gerrit_change[%d]", i).Err()
+			return errors.Fmt("gerrit_change[%d]: %w", i, err)
 		}
 	}
 	if c := pr.GetOutputGitilesCommit(); c != nil {
 		if err := validateCommit(c); err != nil {
-			return errors.Annotate(err, "output_gitiles_commit").Err()
+			return errors.Fmt("output_gitiles_commit: %w", err)
 		}
 	}
 	if pr.GetBuild() != nil && pr.CreateTime != nil {
-		return errors.Reason("build is mutually exclusive with create_time").Err()
+		return errors.New("build is mutually exclusive with create_time")
 	}
 	if pr.GetDescendantOf() != 0 && pr.GetChildOf() != 0 {
-		return errors.Reason("descendant_of is mutually exclusive with child_of").Err()
+		return errors.New("descendant_of is mutually exclusive with child_of")
 	}
 	expMap := make(map[string]bool, len(pr.GetExperiments()))
 	for i, exp := range pr.GetExperiments() {
 		plusMinus, expName, err := validateExperiment(exp, pr.GetCanary(), pr.GetIncludeExperimental())
 		if err != nil {
-			return errors.Annotate(err, "experiments[%d]", i).Err()
+			return errors.Fmt("experiments[%d]: %w", i, err)
 		}
 		enabled := plusMinus == '+'
 		if cur, has := expMap[expName]; has && cur != enabled {
-			return errors.Reason(
-				"experiments %d: experiment %q has both inclusive and exclusive filter", i, expName,
-			).Err()
+			return errors.Fmt("experiments %d: experiment %q has both inclusive and exclusive filter", i, expName)
+
 		}
 		expMap[expName] = enabled
 	}
@@ -111,7 +110,7 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 // validatePageToken validates the given page token.
 func validatePageToken(token string) error {
 	if token != "" && !search.PageTokenRegex.MatchString(token) {
-		return errors.Reason("invalid page_token").Err()
+		return errors.New("invalid page_token")
 	}
 	return nil
 }
@@ -127,7 +126,7 @@ func validateSearch(req *pb.SearchBuildsRequest) error {
 	}
 
 	if err := validatePredicate(req.GetPredicate()); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 	return nil
 }
@@ -139,7 +138,7 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	}
 	mask, err := model.NewBuildMask("builds", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("invalid mask: %w", err))
 	}
 
 	rsp, err := search.NewQuery(req).Fetch(ctx)

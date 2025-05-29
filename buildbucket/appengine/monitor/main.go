@@ -67,7 +67,7 @@ func main() {
 		// custom metrics would fail the cron jobs.
 		ctx, err := internalcontext.WithCustomMetrics(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to create custom metrics").Err()
+			return errors.Fmt("failed to create custom metrics: %w", err)
 		}
 
 		var mon monitor.Monitor
@@ -76,7 +76,7 @@ func main() {
 			var err error
 			mon, err = tsmonsrv.NewProdXMonitor(srv.Context, 1024, o.TsMonAccount)
 			if err != nil {
-				srv.Fatal(errors.Annotate(err, "initiating tsmon").Err())
+				srv.Fatal(errors.Fmt("initiating tsmon: %w", err))
 			}
 		case !o.Prod:
 			mon = monitor.NewDebugMonitor("")
@@ -91,7 +91,7 @@ func main() {
 
 			start := clock.Now(ctx)
 			if err := metrics.ReportBuilderMetrics(ctx); err != nil {
-				return errors.Annotate(err, "computing builder metrics").Err()
+				return errors.Fmt("computing builder metrics: %w", err)
 			}
 			logging.Infof(ctx, "computing builder metrics took %s", clock.Since(ctx, start))
 			start = clock.Now(ctx)

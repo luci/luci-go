@@ -106,12 +106,12 @@ func SearchTagIndex(ctx context.Context, key, val string) ([]*TagIndexEntry, err
 		}
 	}
 	if err := GetIgnoreMissing(ctx, shds); err != nil {
-		return nil, errors.Annotate(err, "error fetching tag index for %q", fmt.Sprintf("%s:%s", key, val)).Err()
+		return nil, errors.Fmt("error fetching tag index for %q: %w", fmt.Sprintf("%s:%s", key, val), err)
 	}
 	var ents []*TagIndexEntry
 	for _, s := range shds {
 		if s.Incomplete {
-			return nil, errors.Reason("tag index incomplete for %q", fmt.Sprintf("%s:%s", key, val)).Tag(TagIndexIncomplete).Err()
+			return nil, TagIndexIncomplete.Apply(errors.Fmt("tag index incomplete for %q", fmt.Sprintf("%s:%s", key, val)))
 		}
 		for i := range s.Entries {
 			// check in case the tagIndexEntry is corrupted.
@@ -148,7 +148,7 @@ func updateTagIndex(ctx context.Context, tag string, shard int, ents []TagIndexE
 		switch err := datastore.Get(ctx, shd); {
 		case err == datastore.ErrNoSuchEntity:
 		case err != nil:
-			return errors.Annotate(err, "error fetching tag index for %q", shd.ID).Err()
+			return errors.Fmt("error fetching tag index for %q: %w", shd.ID, err)
 		case shd.Incomplete:
 			// No point in updating an incomplete index because it cannot be searched.
 			return nil
@@ -165,7 +165,7 @@ func updateTagIndex(ctx context.Context, tag string, shard int, ents []TagIndexE
 		}
 
 		if err := datastore.Put(ctx, shd); err != nil {
-			return errors.Annotate(err, "error updating tag index for %q", shd.ID).Err()
+			return errors.Fmt("error updating tag index for %q: %w", shd.ID, err)
 		}
 		return nil
 	}, nil)

@@ -44,7 +44,7 @@ var tracer = otel.Tracer("go.chromium.org/luci/buildbucket")
 func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResponse, error) {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
+		return nil, errors.Fmt("error fetching service config: %w", err)
 	}
 
 	res := &pb.BatchResponse{}
@@ -81,10 +81,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	}
 
 	if readReqs > readReqsSizeLimit {
-		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed read request count in Batch is %d.", readReqsSizeLimit).Err())
+		return nil, appstatus.BadRequest(errors.Fmt("the maximum allowed read request count in Batch is %d.", readReqsSizeLimit))
 	}
 	if writeReqs > writeReqsSizeLimit {
-		return nil, appstatus.BadRequest(errors.Reason("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit).Err())
+		return nil, appstatus.BadRequest(errors.Fmt("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit))
 	}
 
 	// ID used to log this Batch operation in the pRPC request log (see common.go).

@@ -34,7 +34,7 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 	// Send the cancelation request
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "could not get global settings config").Err()
+		return errors.Fmt("could not get global settings config: %w", err)
 	}
 	backendClient, err := clients.NewBackendClient(ctx, project, target, globalCfg)
 	if err != nil {
@@ -42,7 +42,7 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 			logging.Infof(ctx, "bypass cancelling TaskBackendLite task")
 			return nil
 		}
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to connect to backend service: %w", err))
 	}
 
 	res, err := backendClient.CancelTasks(ctx, &pb.CancelTasksRequest{
@@ -56,18 +56,20 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 
 	errMsg := fmt.Sprintf("error in canceling task %s for target %s", taskID, target)
 	if err != nil {
-		return errors.Annotate(err, "transient %s", errMsg).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// TODO(b/355013317): require res.Responses after all existing TaskBackend
+			// implementations have migrated to use it.
+			Fmt("transient %s: %w", errMsg, err))
 	}
 
-	// TODO(b/355013317): require res.Responses after all existing TaskBackend
-	// implementations have migrated to use it.
 	if len(res.GetResponses()) == 1 && res.Responses[0].GetError() != nil {
 		s := res.Responses[0].GetError()
 		switch codes.Code(s.Code) {
 		case codes.Internal, codes.Unknown, codes.Unavailable, codes.DeadlineExceeded:
-			return errors.Reason("transient %s: %s", errMsg, s.Message).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("transient %s: %s", errMsg, s.Message))
 		default:
-			return errors.Reason("fatal %s: %s", errMsg, s.Message).Tag(tq.Fatal).Err()
+			return tq.Fatal.Apply(errors.Fmt("fatal %s: %s", errMsg, s.Message))
 		}
 	}
 	return nil

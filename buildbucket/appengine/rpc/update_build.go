@@ -71,7 +71,7 @@ var (
 // validateUpdate validates the given request.
 func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
-		return errors.Reason("build.id: required").Err()
+		return errors.New("build.id: required")
 	}
 
 	buildStatus := pb.Status_STATUS_UNSPECIFIED
@@ -84,7 +84,7 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			hasOutputMask = true
 		case "build.output.status":
 			if _, ok := updateBuildStatuses[req.Build.Output.GetStatus()]; !ok {
-				return errors.Reason("build.output.status: invalid status %s for UpdateBuild", req.Build.Output.GetStatus()).Err()
+				return errors.Fmt("build.output.status: invalid status %s for UpdateBuild", req.Build.Output.GetStatus())
 			}
 			buildStatus = req.Build.Output.Status
 			outputSubMasks.Add("build.output.status")
@@ -92,7 +92,7 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			outputSubMasks.Add("build.output.status_details")
 		case "build.output.summary_markdown":
 			if err := validateSummaryMarkdown(req.Build.Output.GetSummaryMarkdown()); err != nil {
-				return errors.Annotate(err, "build.output.summary_markdown").Err()
+				return errors.Fmt("build.output.summary_markdown: %w", err)
 			}
 			outputSubMasks.Add("build.output.summary_markdown")
 		case "build.output.properties":
@@ -102,12 +102,12 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			outputSubMasks.Add("build.output.properties")
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {
-				return errors.Annotate(err, "build.output.gitiles_commit").Err()
+				return errors.Fmt("build.output.gitiles_commit: %w", err)
 			}
 			outputSubMasks.Add("build.output.gitiles_commit")
 		case "build.status":
 			if _, ok := updateBuildStatuses[req.Build.Status]; !ok {
-				return errors.Reason("build.status: invalid status %s for UpdateBuild", req.Build.Status).Err()
+				return errors.Fmt("build.status: invalid status %s for UpdateBuild", req.Build.Status)
 			}
 			buildStatus = req.Build.Status
 		case "build.status_details":
@@ -115,43 +115,43 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			hasStepsMask = true
 		case "build.summary_markdown":
 			if err := validateSummaryMarkdown(req.Build.SummaryMarkdown); err != nil {
-				return errors.Annotate(err, "build.summary_markdown").Err()
+				return errors.Fmt("build.summary_markdown: %w", err)
 			}
 		case "build.tags":
 			if err := validateTags(req.Build.Tags, TagAppend); err != nil {
-				return errors.Annotate(err, "build.tags").Err()
+				return errors.Fmt("build.tags: %w", err)
 			}
 		case "build.infra.buildbucket.agent.output":
 			if err := validateAgentOutput(req); err != nil {
-				return errors.Annotate(err, "build.infra.buildbucket.agent.output").Err()
+				return errors.Fmt("build.infra.buildbucket.agent.output: %w", err)
 			}
 		case "build.infra.buildbucket.agent.purposes":
 			if err := validateAgentDataPurposes(ctx, req); err != nil {
-				return errors.Annotate(err, "build.infra.buildbucket.agent.purposes").Err()
+				return errors.Fmt("build.infra.buildbucket.agent.purposes: %w", err)
 			}
 		case "build.cancel_time":
 			if req.Build.CancelTime.AsTime().After(clock.Now(ctx)) {
-				return errors.Reason("build.cancel_time cannot be in the future").Err()
+				return errors.New("build.cancel_time cannot be in the future")
 			}
 		case "build.cancellation_markdown":
 			if err := validateSummaryMarkdown(req.Build.CancellationMarkdown); err != nil {
-				return errors.Annotate(err, "build.cancellation_markdown").Err()
+				return errors.Fmt("build.cancellation_markdown: %w", err)
 			}
 		case "build.view_url":
 		default:
-			return errors.Reason("unsupported path %q", p).Err()
+			return errors.Fmt("unsupported path %q", p)
 		}
 	}
 
 	if hasStepsMask {
 		if err := validateSteps(bs, req.Build.Steps, buildStatus); err != nil {
-			return errors.Annotate(err, "build.steps").Err()
+			return errors.Fmt("build.steps: %w", err)
 		}
 	}
 
 	if hasOutputMask {
 		if err := validateOutput(req.Build.Output, outputSubMasks); err != nil {
-			return errors.Annotate(err, "build.output").Err()
+			return errors.Fmt("build.output: %w", err)
 		}
 	}
 	return nil
@@ -164,7 +164,7 @@ func validateOutput(output *pb.Build_Output, subMasks stringset.Set) error {
 	// included in update mask, so no need to validate here.
 	if output.GetSummaryMarkdown() != "" && !subMasks.Has("build.output.summary_markdown") {
 		if err := validateSummaryMarkdown(output.SummaryMarkdown); err != nil {
-			return errors.Annotate(err, "summary_markdown").Err()
+			return errors.Fmt("summary_markdown: %w", err)
 		}
 	}
 	if output.GetProperties() != nil && !subMasks.Has("build.output.properties") {
@@ -174,7 +174,7 @@ func validateOutput(output *pb.Build_Output, subMasks stringset.Set) error {
 	}
 	if output.GetGitilesCommit() != nil && !subMasks.Has("build.output.gitiles_commit") {
 		if err := validateCommitWithRef(output.GetGitilesCommit()); err != nil {
-			return errors.Annotate(err, "gitiles_commit").Err()
+			return errors.Fmt("gitiles_commit: %w", err)
 		}
 	}
 	return nil
@@ -183,7 +183,7 @@ func validateOutput(output *pb.Build_Output, subMasks stringset.Set) error {
 func validateOutputProperties(properties *structpb.Struct) error {
 	for k, v := range properties.AsMap() {
 		if v == nil {
-			return errors.Reason("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k).Err()
+			return errors.Fmt("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k)
 		}
 	}
 	return nil
@@ -215,7 +215,7 @@ func validateAgentDataPurposes(ctx context.Context, req *pb.UpdateBuildRequest) 
 
 	for path := range agent.Purposes {
 		if d1, d2 := inputDataRef[path], outputDataRef[path]; d1 == nil && d2 == nil {
-			return errors.Reason("Invalid path %s - not in either input or output dataRef", path).Err()
+			return errors.Fmt("Invalid path %s - not in either input or output dataRef", path)
 		}
 	}
 	return nil
@@ -224,19 +224,19 @@ func validateAgentDataPurposes(ctx context.Context, req *pb.UpdateBuildRequest) 
 // validateAgentOutput validates the agent output of the Build.
 func validateAgentOutput(req *pb.UpdateBuildRequest) error {
 	if req.Build.Infra.GetBuildbucket().GetAgent().GetOutput() == nil {
-		return errors.Reason("agent output is not set while its field path appears in update_mask").Err()
+		return errors.New("agent output is not set while its field path appears in update_mask")
 	}
 	output := req.Build.Infra.Buildbucket.Agent.Output
 	if protoutil.IsEnded(req.Build.Status) && !protoutil.IsEnded(output.Status) {
-		return errors.Reason("build is in an ended status while agent output status is not ended").Err()
+		return errors.New("build is in an ended status while agent output status is not ended")
 	}
 	for _, resolved := range output.ResolvedData {
 		for _, spec := range resolved.GetCipd().GetSpecs() {
 			if err := cipdCommon.ValidatePackageName(spec.Package); err != nil {
-				return errors.Annotate(err, "cipd.package").Err()
+				return errors.Fmt("cipd.package: %w", err)
 			}
 			if err := cipdCommon.ValidateInstanceID(spec.Version, cipdCommon.AnyHash); err != nil {
-				return errors.Annotate(err, "cipd.version").Err()
+				return errors.Fmt("cipd.version: %w", err)
 			}
 		}
 	}
@@ -249,7 +249,7 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step, buildStatus pb.Status
 		return err
 	}
 	if len(bs.Bytes) > model.BuildStepsMaxBytes {
-		return errors.Reason("too big to accept").Err()
+		return errors.New("too big to accept")
 	}
 
 	seen := make(map[string]*pb.Step, len(steps))
@@ -258,21 +258,21 @@ func validateSteps(bs *model.BuildSteps, steps []*pb.Step, buildStatus pb.Status
 		var exist bool
 
 		if err := protoutil.ValidateStepName(step.Name); err != nil {
-			return errors.Annotate(err, "step[%d].name", i).Err()
+			return errors.Fmt("step[%d].name: %w", i, err)
 		}
 		if _, exist = seen[step.Name]; exist {
-			return errors.Reason("step[%d]: duplicate: %q", i, step.Name).Err()
+			return errors.Fmt("step[%d]: duplicate: %q", i, step.Name)
 		}
 		seen[step.Name] = step
 
 		if pn := protoutil.ParentStepName(step.Name); pn != "" {
 			if parent, exist = seen[pn]; !exist {
-				return errors.Reason("step[%d]: parent of %q must precede", i, step.Name).Err()
+				return errors.Fmt("step[%d]: parent of %q must precede", i, step.Name)
 			}
 		}
 
 		if err := validateStep(step, parent, buildStatus); err != nil {
-			return errors.Annotate(err, "step[%d]", i).Err()
+			return errors.Fmt("step[%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -293,52 +293,52 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	// This is the case, where the status field is set with an invalid int directly
 	// inside the server code.
 	case !isValidStatus:
-		return errors.Reason("status: invalid status %d", int32(step.Status)).Err()
+		return errors.Fmt("status: invalid status %d", int32(step.Status))
 	// If a client sends a request with an invalid status num, then it is coerced to
 	// the zero value. Thus, if the status is STATUS_UNSPECIFIED, it's either
 	// unspecified or specified with an invalid value.
 	case step.Status == pb.Status_STATUS_UNSPECIFIED:
-		return errors.Reason("status: is unspecified or unknown").Err()
+		return errors.New("status: is unspecified or unknown")
 	case step.Status == pb.Status_ENDED_MASK:
-		return errors.Reason("status: must not be ENDED_MASK").Err()
+		return errors.New("status: must not be ENDED_MASK")
 	case protoutil.IsEnded(buildStatus) && !protoutil.IsEnded(step.Status):
-		return errors.Reason("status: cannot be %q because the build has a terminal status %q", step.Status, buildStatus).Err()
+		return errors.Fmt("status: cannot be %q because the build has a terminal status %q", step.Status, buildStatus)
 	case stRequired && st.IsZero():
-		return errors.Reason("start_time: required by status %q", step.Status).Err()
+		return errors.Fmt("start_time: required by status %q", step.Status)
 	case step.Status < pb.Status_STARTED && !st.IsZero():
-		return errors.Reason("start_time: must not be specified for status %q", step.Status).Err()
+		return errors.Fmt("start_time: must not be specified for status %q", step.Status)
 	case protoutil.IsEnded(step.Status) == et.IsZero():
-		return errors.Reason("end_time: must have both or neither end_time and a terminal status. Got end_time: %q, status: %q for step %q", et, step.Status, step.Name).Err()
+		return errors.Fmt("end_time: must have both or neither end_time and a terminal status. Got end_time: %q, status: %q for step %q", et, step.Status, step.Name)
 	case !et.IsZero() && et.Before(st):
-		return errors.Reason("end_time: is before the start_time: %q < %q", et, st).Err()
+		return errors.Fmt("end_time: is before the start_time: %q < %q", et, st)
 	}
 
 	seen := stringset.New(len(step.Logs))
 	for i, log := range step.Logs {
 		switch {
 		case log.GetName() == "":
-			return errors.Reason("logs[%d].name: required", i).Err()
+			return errors.Fmt("logs[%d].name: required", i)
 		case log.Url == "":
-			return errors.Reason("logs[%d].url: required", i).Err()
+			return errors.Fmt("logs[%d].url: required", i)
 		case log.ViewUrl == "":
-			return errors.Reason("logs[%d].view_url: required", i).Err()
+			return errors.Fmt("logs[%d].view_url: required", i)
 		case !seen.Add(log.Name):
-			return errors.Reason("logs[%d].name: duplicate: %q", i, log.Name).Err()
+			return errors.Fmt("logs[%d].name: duplicate: %q", i, log.Name)
 		}
 	}
 
 	for i, tag := range step.Tags {
 		switch {
 		case tag.Key == "":
-			return errors.Reason("tags[%d].key: required", i).Err()
+			return errors.Fmt("tags[%d].key: required", i)
 		case strings.HasPrefix(tag.Key, "luci."):
-			return errors.Reason("tags[%d].key: reserved prefix 'luci.'", i).Err()
+			return errors.Fmt("tags[%d].key: reserved prefix 'luci.'", i)
 		case tag.Value == "":
-			return errors.Reason("tags[%d].value: required", i).Err()
+			return errors.Fmt("tags[%d].value: required", i)
 		case len(tag.Key) > 256:
-			return errors.Reason("tags[%d].key: len > 256", i).Err()
+			return errors.Fmt("tags[%d].key: len > 256", i)
 		case len(tag.Value) > 1024:
-			return errors.Reason("tags[%d].value: len > 1024", i).Err()
+			return errors.Fmt("tags[%d].value: len > 1024", i)
 		}
 	}
 
@@ -431,7 +431,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			// if parent is not found, we should cancel this build below.
 			parent = nil
 		default:
-			return nil, errors.Annotate(err, "failed to get parent %d", parentID).Err()
+			return nil, errors.Fmt("failed to get parent %d: %w", parentID, err)
 		}
 	}
 
@@ -493,7 +493,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 			bs, err := statusUpdater.Do(ctx)
 			if err != nil {
-				return errors.Annotate(err, "updating build status").Err()
+				return errors.Fmt("updating build status: %w", err)
 			}
 			if bs != nil {
 				toSave = append(toSave, bs)
@@ -510,7 +510,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 			bs, err := statusUpdater.Do(ctx)
 			if err != nil {
-				return errors.Annotate(err, "updating build status and output.status").Err()
+				return errors.Fmt("updating build status and output.status: %w", err)
 			}
 			if bs != nil {
 				toSave = append(toSave, bs)
@@ -536,7 +536,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			req.Build.Output.Status = b.Proto.Output.GetStatus()
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
-			return errors.Annotate(err, "attempting to merge masked build").Err()
+			return errors.Fmt("attempting to merge masked build: %w", err)
 		}
 		isEndedStatus := protoutil.IsEnded(b.Proto.Status)
 		switch {
@@ -634,7 +634,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 
 		if toSaveOutputProperties != nil {
 			if err := toSaveOutputProperties.Put(ctx); err != nil {
-				return errors.Annotate(err, "failed to put BuildOutputProperties").Err()
+				return errors.Fmt("failed to put BuildOutputProperties: %w", err)
 			}
 		}
 		return datastore.Put(ctx, toSave)
@@ -686,7 +686,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 
 	readMask, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("invalid mask: %w", err))
 	}
 
 	build, err := common.GetBuild(ctx, req.Build.Id)

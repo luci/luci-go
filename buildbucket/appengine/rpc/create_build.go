@@ -99,12 +99,12 @@ func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
 	}
 	bckStr := fmt.Sprintf("%s:%s", b.Builder.Project, b.Builder.Bucket)
 	if err := datastore.Get(ctx, bck); err != nil {
-		return errors.Annotate(err, "failed to fetch bucket config %s", bckStr).Err()
+		return errors.Fmt("failed to fetch bucket config %s: %w", bckStr, err)
 	}
 
 	constraints := bck.Proto.GetConstraints()
 	if constraints == nil {
-		return errors.Reason("constraints for %s not found", bckStr).Err()
+		return errors.Fmt("constraints for %s not found", bckStr)
 	}
 
 	allowedPools := stringset.NewFromSlice(constraints.GetPools()...)
@@ -118,12 +118,12 @@ func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
 		}
 	}
 	if pool == "" || !allowedPools.Has(pool) {
-		return errors.Reason("pool: %s not allowed", pool).Err()
+		return errors.Fmt("pool: %s not allowed", pool)
 	}
 
 	sa := taskServiceAccount(b.GetInfra())
 	if sa == "" || !allowedSAs.Has(sa) {
-		return errors.Reason("service_account: %s not allowed", sa).Err()
+		return errors.Fmt("service_account: %s not allowed", sa)
 	}
 	return nil
 }
@@ -147,7 +147,7 @@ func taskServiceAccount(infra *pb.BuildInfra) string {
 
 func validateHostName(host string) error {
 	if strings.Contains(host, "://") {
-		return errors.Reason(`must not contain "://"`).Err()
+		return errors.New(`must not contain "://"`)
 	}
 	return nil
 }
@@ -155,7 +155,7 @@ func validateHostName(host string) error {
 func validateCipdPackage(pkg string, mustWithSuffix bool) error {
 	pkgSuffix := "/${platform}"
 	if mustWithSuffix && !strings.HasSuffix(pkg, pkgSuffix) {
-		return errors.Reason("expected to end with %s", pkgSuffix).Err()
+		return errors.Fmt("expected to end with %s", pkgSuffix)
 	}
 	return cipdCommon.ValidatePackageName(strings.TrimSuffix(pkg, pkgSuffix))
 }
@@ -164,10 +164,10 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 	for path, ref := range in.GetData() {
 		for i, spec := range ref.GetCipd().GetSpecs() {
 			if err := validateCipdPackage(spec.GetPackage(), false); err != nil {
-				return errors.Annotate(err, "[%s]: [%d]: cipd.package", path, i).Err()
+				return errors.Fmt("[%s]: [%d]: cipd.package: %w", path, i, err)
 			}
 			if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
-				return errors.Annotate(err, "[%s]: [%d]: cipd.version", path, i).Err()
+				return errors.Fmt("[%s]: [%d]: cipd.version: %w", path, i, err)
 			}
 		}
 
@@ -175,11 +175,11 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 		if cas != nil {
 			switch {
 			case !casInstanceRe.MatchString(cas.GetCasInstance()):
-				return errors.Reason("[%s]: cas.cas_instance: does not match %s", path, casInstanceRe).Err()
+				return errors.Fmt("[%s]: cas.cas_instance: does not match %s", path, casInstanceRe)
 			case cas.GetDigest() == nil:
-				return errors.Reason("[%s]: cas.digest: not specified", path).Err()
+				return errors.Fmt("[%s]: cas.digest: not specified", path)
 			case cas.Digest.GetSizeBytes() < 0:
-				return errors.Reason("[%s]: cas.digest.size_bytes: must be greater or equal to 0", path).Err()
+				return errors.Fmt("[%s]: cas.digest.size_bytes: must be greater or equal to 0", path)
 			}
 		}
 	}
@@ -189,10 +189,10 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 func validateAgentSource(src *pb.BuildInfra_Buildbucket_Agent_Source) error {
 	cipd := src.GetCipd()
 	if err := validateCipdPackage(cipd.GetPackage(), true); err != nil {
-		return errors.Annotate(err, "cipd.package:").Err()
+		return errors.Fmt("cipd.package:: %w", err)
 	}
 	if err := cipdCommon.ValidateInstanceVersion(cipd.GetVersion()); err != nil {
-		return errors.Annotate(err, "cipd.version").Err()
+		return errors.Fmt("cipd.version: %w", err)
 	}
 	return nil
 }
@@ -204,7 +204,7 @@ func validateAgentPurposes(purposes map[string]pb.BuildInfra_Buildbucket_Agent_P
 
 	for path := range purposes {
 		if _, ok := in.GetData()[path]; !ok {
-			return errors.Reason("Invalid path %s - not in input dataRef", path).Err()
+			return errors.Fmt("Invalid path %s - not in input dataRef", path)
 		}
 	}
 	return nil
@@ -231,7 +231,7 @@ func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket
 	case teeErr(validateHostName(ib.GetHostname()), &err) != nil:
 		return errors.Fmt("hostname: %w", err)
 	case ib.GetHostname() != "" && ib.Hostname != bbHost:
-		return errors.Reason("incorrect hostname, want: %s, got: %s", bbHost, ib.Hostname).Err()
+		return errors.Fmt("incorrect hostname, want: %s, got: %s", bbHost, ib.Hostname)
 	case teeErr(validateAgent(ib.GetAgent()), &err) != nil:
 		return errors.Fmt("agent: %w", err)
 	case teeErr(validateRequestedDimensions(ib.RequestedDimensions), &err) != nil:
@@ -241,7 +241,7 @@ func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket
 	}
 	for _, host := range ib.GetKnownPublicGerritHosts() {
 		if err = validateHostName(host); err != nil {
-			return errors.Annotate(err, "known_public_gerrit_hosts").Err()
+			return errors.Fmt("known_public_gerrit_hosts: %w", err)
 		}
 	}
 	return nil
@@ -266,19 +266,19 @@ func validateCaches(caches []*pb.CacheEntry) error {
 	for i, cache := range caches {
 		switch {
 		case cache.Name == "":
-			return errors.Reason(fmt.Sprintf("%dth cache: name unspecified", i)).Err()
+			return errors.New(fmt.Sprintf("%dth cache: name unspecified", i))
 		case len(cache.Name) > 128:
-			return errors.Reason(fmt.Sprintf("%dth cache: name too long (limit is 128)", i)).Err()
+			return errors.New(fmt.Sprintf("%dth cache: name too long (limit is 128)", i))
 		case !names.Add(cache.Name):
-			return errors.Reason(fmt.Sprintf("duplicated cache name: %s", cache.Name)).Err()
+			return errors.New(fmt.Sprintf("duplicated cache name: %s", cache.Name))
 		case cache.Path == "":
-			return errors.Reason(fmt.Sprintf("%dth cache: path unspecified", i)).Err()
+			return errors.New(fmt.Sprintf("%dth cache: path unspecified", i))
 		case strings.Contains(cache.Path, "\\"):
-			return errors.Reason(fmt.Sprintf("%dth cache: path must use POSIX format", i)).Err()
+			return errors.New(fmt.Sprintf("%dth cache: path must use POSIX format", i))
 		case !paths.Add(cache.Path):
-			return errors.Reason(fmt.Sprintf("duplicated cache path: %s", cache.Path)).Err()
+			return errors.New(fmt.Sprintf("duplicated cache path: %s", cache.Path))
 		case cache.WaitForWarmCache.AsDuration()%(60*time.Second) != 0:
-			return errors.Reason(fmt.Sprintf("%dth cache: wait_for_warm_cache must be multiples of 60 seconds.", i)).Err()
+			return errors.New(fmt.Sprintf("%dth cache: wait_for_warm_cache must be multiples of 60 seconds.", i))
 		}
 	}
 	return nil
@@ -289,14 +289,14 @@ func validateDimensionKey(k string) error {
 		return err
 	}
 	if !dimensionKeyRe.MatchString(k) {
-		return errors.Reason("the key should match %s", dimensionKeyRe).Err()
+		return errors.Fmt("the key should match %s", dimensionKeyRe)
 	}
 	return nil
 }
 
 func validateDimensionValue(v string) error {
 	if v == "" {
-		return errors.Reason("the value cannot be empty").Err()
+		return errors.New("the value cannot be empty")
 	}
 	return validateTagValue(v)
 }
@@ -323,9 +323,9 @@ func validateDimensions(dims []*pb.RequestedDimension) error {
 	for i, dim := range dims {
 		switch err := validateDimension(dim, false); {
 		case err != nil:
-			return errors.Annotate(err, "[%d]", i).Err()
+			return errors.Fmt("[%d]: %w", i, err)
 		case dim.Value == "":
-			return errors.Reason("[%d]: value must be specified", i).Err()
+			return errors.Fmt("[%d]: value must be specified", i)
 		}
 	}
 	return nil
@@ -339,14 +339,14 @@ func validateBackendConfig(config *structpb.Struct) error {
 	var priority float64
 	if p := config.GetFields()["priority"]; p != nil {
 		if _, ok := p.GetKind().(*structpb.Value_NumberValue); !ok {
-			return errors.Reason("priority must be a number").Err()
+			return errors.New("priority must be a number")
 		}
 		priority = p.GetNumberValue()
 	}
 	// Currently apply the same rule as swarming priority rule for backend priority.
 	// This may change when we have other backends in the future.
 	if priority < 0 || priority > 255 {
-		return errors.Reason("priority must be in [0, 255]").Err()
+		return errors.New("priority must be in [0, 255]")
 	}
 	return nil
 }
@@ -358,7 +358,7 @@ func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error 
 
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error fetching service config").Err()
+		return errors.Fmt("error fetching service config: %w", err)
 	}
 
 	switch {
@@ -384,7 +384,7 @@ func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
 	case teeErr(validateHostName(is.GetHostname()), &err) != nil:
 		return errors.Fmt("hostname: %w", err)
 	case is.GetPriority() < 0 || is.GetPriority() > 255:
-		return errors.Reason("priority must be in [0, 255]").Err()
+		return errors.New("priority must be in [0, 255]")
 	case teeErr(validateDimensions(is.GetTaskDimensions()), &err) != nil:
 		return errors.Fmt("task_dimensions: %w", err)
 	case teeErr(validateCaches(convertSwarmingCaches(is.GetCaches())), &err) != nil:
@@ -420,9 +420,9 @@ func validateInfra(ctx context.Context, infra *pb.BuildInfra) error {
 	var err error
 	switch {
 	case infra.GetBackend() == nil && infra.GetSwarming() == nil:
-		return errors.Reason("backend or swarming is needed in build infra").Err()
+		return errors.New("backend or swarming is needed in build infra")
 	case infra.GetBackend() != nil && infra.GetSwarming() != nil:
-		return errors.Reason("can only have one of backend or swarming in build infra. both were provided").Err()
+		return errors.New("can only have one of backend or swarming in build infra. both were provided")
 	case teeErr(validateInfraBackend(ctx, infra.GetBackend()), &err) != nil:
 		return errors.Fmt("backend: %w", err)
 	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
@@ -450,7 +450,7 @@ func validateInput(wellKnownExperiments stringset.Set, in *pb.Build_Input) error
 	}
 	for _, expName := range in.Experiments {
 		if err := config.ValidateExperimentName(expName, wellKnownExperiments); err != nil {
-			return errors.Annotate(err, "experiment %q", expName).Err()
+			return errors.Fmt("experiment %q: %w", expName, err)
 		}
 	}
 	return nil
@@ -482,7 +482,7 @@ func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) err
 	if pkgs, ok := agent.GetInput().GetData()[payloadPath]; ok {
 		cipdPkgs := pkgs.GetCipd()
 		if cipdPkgs == nil {
-			return errors.Reason("not match build.infra.buildbucket.agent").Err()
+			return errors.New("not match build.infra.buildbucket.agent")
 		}
 
 		packageMatches := false
@@ -492,12 +492,12 @@ func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) err
 			}
 			packageMatches = true
 			if spec.Version != exe.CipdVersion {
-				return errors.Reason("cipd_version does not match build.infra.buildbucket.agent").Err()
+				return errors.New("cipd_version does not match build.infra.buildbucket.agent")
 			}
 			break
 		}
 		if !packageMatches {
-			return errors.Reason("cipd_package does not match build.infra.buildbucket.agent").Err()
+			return errors.New("cipd_package does not match build.infra.buildbucket.agent")
 		}
 	}
 	return nil
@@ -541,16 +541,16 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 	}
 
 	if err := validateBuild(ctx, wellKnownExperiments, req.GetBuild()); err != nil {
-		return nil, errors.Annotate(err, "build").Err()
+		return nil, errors.Fmt("build: %w", err)
 	}
 
 	if strings.Contains(req.GetRequestId(), "/") {
-		return nil, errors.Reason("request_id cannot contain '/'").Err()
+		return nil, errors.New("request_id cannot contain '/'")
 	}
 
 	m, err := model.NewBuildMask("", nil, req.Mask)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid mask").Err()
+		return nil, errors.Fmt("invalid mask: %w", err)
 	}
 
 	return m, nil
@@ -577,7 +577,7 @@ type buildCreator struct {
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(bc.reqIDs).
 func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error) {
 	if len(bc.blds) != len(bc.resultdbOpts) {
-		return nil, errors.Reason("len(blds) must match len(resultdbOpts)").Err()
+		return nil, errors.New("len(blds) must match len(resultdbOpts)")
 	}
 
 	now := clock.Now(ctx).UTC()
@@ -688,11 +688,11 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						case err == datastore.ErrNoSuchEntity:
 							toPut = append(toPut, r)
 						case err != nil:
-							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
+							return errors.Fmt("failed to deduplicate request ID: %d: %w", b.ID, err)
 						default:
 							b.ID = r.BuildID
 							if err := datastore.Get(ctx, b); err != nil {
-								return errors.Annotate(err, "failed to fetch deduplicated build: %d", b.ID).Err()
+								return errors.Fmt("failed to fetch deduplicated build: %d: %w", b.ID, err)
 							}
 							return nil
 						}
@@ -703,7 +703,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case err == nil:
 						return appstatus.Errorf(codes.AlreadyExists, "build already exists: %d", b.ID)
 					case err != datastore.ErrNoSuchEntity:
-						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
+						return errors.Fmt("failed to fetch build: %d: %w", b.ID, err)
 					}
 
 					// Drop the infra, input.properties when storing into Build entity, as
@@ -717,7 +717,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						b.Proto.Input.Properties = inProp
 					}()
 					if err := datastore.Put(ctx, toPut...); err != nil {
-						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
+						return errors.Fmt("failed to store build: %d: %w", b.ID, err)
 					}
 
 					switch {
@@ -727,7 +727,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 							BuildId:   b.ID,
 							BuilderId: bldrID,
 						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue PushPendingBuildTask").Err()
+							return errors.Fmt("failed to enqueue PushPendingBuildTask: %w", err)
 						}
 					case infra.GetBackend() != nil:
 						// If a backend is set, create a backend task.
@@ -735,16 +735,16 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 							BuildId:   b.ID,
 							RequestId: uuid.New().String(),
 						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateBackendTask").Err()
+							return errors.Fmt("failed to enqueue CreateBackendTask: %w", err)
 						}
 					case infra.GetSwarming().GetHostname() == "":
-						return errors.Reason("failed to create build with missing backend info and swarming host").Err()
+						return errors.New("failed to create build with missing backend info and swarming host")
 					default:
 						// Otherwise, create a swarming task.
 						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
 							BuildId: b.ID,
 						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
+							return errors.Fmt("failed to enqueue CreateSwarmingBuildTask: %d: %w", b.ID, err)
 						}
 					}
 
@@ -855,7 +855,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
+		return nil, errors.Fmt("error fetching service config: %w", err)
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
@@ -903,7 +903,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	}
 	blds, err := bc.createBuilds(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error creating build").Err()
+		return nil, errors.Fmt("error creating build: %w", err)
 	}
 
 	return blds[0].ToProto(ctx, m, nil)

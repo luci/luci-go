@@ -34,14 +34,14 @@ func validateGet(req *pb.GetBuildRequest) error {
 	switch {
 	case req.GetId() != 0:
 		if req.Builder != nil || req.BuildNumber != 0 {
-			return errors.Reason("id is mutually exclusive with (builder and build_number)").Err()
+			return errors.New("id is mutually exclusive with (builder and build_number)")
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
 		if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-			return errors.Annotate(err, "builder").Err()
+			return errors.Fmt("builder: %w", err)
 		}
 	default:
-		return errors.Reason("one of id or (builder and build_number) is required").Err()
+		return errors.New("one of id or (builder and build_number) is required")
 	}
 	return nil
 }
@@ -51,7 +51,7 @@ func getBuildIDByBuildNumber(ctx context.Context, bldr *pb.BuilderID, nbr int32)
 	switch ents, err := model.SearchTagIndex(ctx, "build_address", addr); {
 	case model.TagIndexIncomplete.In(err):
 		// Shouldn't happen because build address is globally unique (exactly one entry in a complete index).
-		return 0, errors.Reason("unexpected incomplete index for build address %q", addr).Err()
+		return 0, errors.Fmt("unexpected incomplete index for build address %q", addr)
 	case err != nil:
 		return 0, err
 	case len(ents) == 0:
@@ -60,7 +60,7 @@ func getBuildIDByBuildNumber(ctx context.Context, bldr *pb.BuilderID, nbr int32)
 		return ents[0].BuildID, nil
 	default:
 		// Shouldn't happen because build address is globally unique and created before the build.
-		return 0, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
+		return 0, errors.Fmt("unexpected number of results for build address %q: %d", addr, len(ents))
 	}
 }
 
@@ -71,7 +71,7 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	}
 	m, err := model.NewBuildMask("", req.Fields, req.Mask)
 	if err != nil {
-		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
+		return nil, appstatus.BadRequest(errors.Fmt("invalid mask: %w", err))
 	}
 	if req.Id == 0 {
 		req.Id, err = getBuildIDByBuildNumber(ctx, req.Builder, req.BuildNumber)

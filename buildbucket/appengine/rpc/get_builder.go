@@ -39,7 +39,7 @@ import (
 // validateGetBuilder validates the given request.
 func validateGetBuilder(req *pb.GetBuilderRequest) error {
 	if err := protoutil.ValidateBuilderID(req.Id); err != nil {
-		return errors.Annotate(err, "id").Err()
+		return errors.Fmt("id: %w", err)
 	}
 
 	return nil
@@ -114,18 +114,18 @@ func applyShadowAdjustment(cfg *pb.BuilderConfig) *pb.BuilderConfig {
 			shadowProp := &structpb.Struct{}
 			if err := protojson.Unmarshal([]byte(rtnCfg.Properties), origProp); err != nil {
 				// Builder config should have been validated already.
-				panic(errors.Annotate(err, "error unmarshaling builder properties for %q", rtnCfg.Name).Err())
+				panic(errors.Fmt("error unmarshaling builder properties for %q: %w", rtnCfg.Name, err))
 			}
 			if err := protojson.Unmarshal([]byte(shadowBldrCfg.Properties), shadowProp); err != nil {
 				// Builder config should have been validated already.
-				panic(errors.Annotate(err, "error unmarshaling builder shadow properties for %q", rtnCfg.Name).Err())
+				panic(errors.Fmt("error unmarshaling builder shadow properties for %q: %w", rtnCfg.Name, err))
 			}
 			for k, v := range shadowProp.GetFields() {
 				origProp.Fields[k] = v
 			}
 			updatedProp, err := protojson.Marshal(origProp)
 			if err != nil {
-				panic(errors.Annotate(err, "error marshaling builder properties for %q", rtnCfg.Name).Err())
+				panic(errors.Fmt("error marshaling builder properties for %q: %w", rtnCfg.Name, err))
 			}
 			rtnCfg.Properties = string(updatedProp)
 		}
@@ -157,7 +157,7 @@ func trySynthesizeFromShadowedBuilder(ctx context.Context, req *pb.GetBuilderReq
 		})
 	}
 	if err := model.GetIgnoreMissing(ctx, builders); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch entities").Err()
+		return nil, errors.Fmt("failed to fetch entities: %w", err)
 	}
 	for _, bldr := range builders {
 		if bldr.Config != nil {

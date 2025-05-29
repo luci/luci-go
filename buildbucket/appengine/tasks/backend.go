@@ -137,7 +137,7 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 // in RunTaskRequest. Return an empty string if the backend is in lite mode.
 func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb.SettingsCfg) (string, error) {
 	if globalCfg == nil {
-		return "", errors.Reason("error fetching service config").Err()
+		return "", errors.New("error fetching service config")
 	}
 	for _, backend := range globalCfg.Backends {
 		if backend.Target == target {
@@ -147,11 +147,11 @@ func computeBackendPubsubTopic(ctx context.Context, target string, globalCfg *pb
 			case *pb.BackendSetting_FullMode_:
 				return fmt.Sprintf("projects/%s/topics/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId()), nil
 			default:
-				return "", errors.Reason("getting pubsub_id from backend %s is not supported", target).Err()
+				return "", errors.Fmt("getting pubsub_id from backend %s is not supported", target)
 			}
 		}
 	}
-	return "", errors.Reason("backend %s not found in global settings", target).Err()
+	return "", errors.Fmt("backend %s not found in global settings", target)
 }
 
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string, globalCfg *pb.SettingsCfg) (*pb.RunTaskRequest, error) {
@@ -292,7 +292,7 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 		return resp, ttl, nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "cache error for cipd request").Err()
+		return nil, errors.Fmt("cache error for cipd request: %w", err)
 	}
 	details = map[string]*pb.RunTaskRequest_AgentExecutable_AgentSource{}
 	for k, v := range cipdDetails {
@@ -325,7 +325,7 @@ func isFatalError(err error) bool {
 func CreateBackendTask(ctx context.Context, buildID int64, requestID string, dequeueTime *timestamppb.Timestamp) error {
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 	if err != nil {
-		return errors.Annotate(err, "failed to get build %d", buildID).Err()
+		return errors.Fmt("failed to get build %d: %w", buildID, err)
 	}
 	bld := entities[0].(*model.Build)
 	if protoutil.IsEnded(bld.Status) {
@@ -336,7 +336,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 	infra := entities[1].(*model.BuildInfra)
 	target := infra.Proto.GetBackend().GetTask().GetId().GetTarget()
 	if target == "" {
-		return tq.Fatal.Apply(errors.Reason("failed to get backend target for build %d", buildID).Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to get backend target for build %d", buildID))
 	}
 
 	if infra.Proto.GetBackend().GetTask().GetId().GetId() != "" {
@@ -351,7 +351,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "could not get global settings config").Err()
+		return errors.Fmt("could not get global settings config: %w", err)
 	}
 
 	var backendCfg *pb.BackendSetting
@@ -361,7 +361,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		}
 	}
 	if backendCfg == nil {
-		return tq.Fatal.Apply(errors.Reason("failed to get backend config from global settings").Err())
+		return tq.Fatal.Apply(errors.New("failed to get backend config from global settings"))
 	}
 
 	var runTaskGiveUpTimeout time.Duration
@@ -384,14 +384,14 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		if dsPutErr != nil {
 			return dsPutErr
 		}
-		return tq.Fatal.Apply(errors.Reason("creating backend task for build %d with requestID %s has expired after %s", buildID, requestID, runTaskGiveUpTimeout.String()).Err())
+		return tq.Fatal.Apply(errors.Fmt("creating backend task for build %d with requestID %s has expired after %s", buildID, requestID, runTaskGiveUpTimeout.String()))
 	}
 
 	// Initialize a TaskCreator for creating the backend task.
 	_, isLite := backendCfg.Mode.(*pb.BackendSetting_LiteMode_)
 	backend, err := clients.NewTaskCreator(ctx, bld.Proto.Builder.Project, infra.Proto.Backend.Task.Id.Target, globalCfg, isLite)
 	if err != nil {
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to connect to backend service: %w", err))
 	}
 
 	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID, globalCfg)
@@ -413,7 +413,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		// error so Cloud Tasks retries the task.
 		if !isFatalError(err) {
 			if now.Sub(bld.CreateTime) < runTaskGiveUpTimeout {
-				return transient.Tag.Apply(errors.Annotate(err, "failed to create a backend task").Err())
+				return transient.Tag.Apply(errors.Fmt("failed to create a backend task: %w", err))
 			}
 			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
 		}
@@ -422,10 +422,10 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		if dsPutErr != nil {
 			return dsPutErr
 		}
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a backend task").Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to create a backend task: %w", err))
 	}
 	if taskResp.Task.GetUpdateId() == 0 {
-		return tq.Fatal.Apply(errors.Reason("task returned with an updateID of 0").Err())
+		return tq.Fatal.Apply(errors.New("task returned with an updateID of 0"))
 	}
 
 	checkLiveness, heartbeatTimeout, err := shouldCheckLiveness(ctx, bld, backendCfg)
@@ -436,7 +436,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			return errors.Annotate(err, "failed to get build %d", buildID).Err()
+			return errors.Fmt("failed to get build %d: %w", buildID, err)
 		}
 		bld = entities[0].(*model.Build)
 		infra = entities[1].(*model.BuildInfra)
@@ -468,7 +468,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 				delay = int64(heartbeatTimeout)
 			}
 			if err = CheckBuildLiveness(ctx, bld.ID, heartbeatTimeout, time.Duration(delay)*time.Second); err != nil {
-				return errors.Annotate(err, "failed to enqueue CheckBuildLiveness task").Err()
+				return errors.Fmt("failed to enqueue CheckBuildLiveness task: %w", err)
 			}
 		}
 		return errors.WrapIf(datastore.Put(ctx, bld, infra), "failed to save Build and BuildInfra")
@@ -498,7 +498,7 @@ func shouldCheckLiveness(ctx context.Context, bld *model.Build, backendCfg *pb.B
 				// It's a dynamic builder.
 				return true, bkt.Proto.DynamicBuilderTemplate.Template.GetHeartbeatTimeoutSecs(), nil
 			default:
-				return false, 0, errors.Annotate(err, "failed to fetch builder %s", bld.BuilderID).Err()
+				return false, 0, errors.Fmt("failed to fetch builder %s: %w", bld.BuilderID, err)
 			}
 		}
 		// No matter whether the hearbeat_timeout_secs is set or not, Buildbucket
@@ -541,7 +541,7 @@ func BatchCreateBackendBuildTasks(ctx context.Context, batchTask *taskdefs.Batch
 		}
 
 		if batchTask.Retries >= maxFailBuildRetries {
-			return tq.Fatal.Apply(errors.Reason("has retried %d times, giving up entirely", batchTask.Retries).Err())
+			return tq.Fatal.Apply(errors.Fmt("has retried %d times, giving up entirely", batchTask.Retries))
 		}
 
 		return createBatchCreateBackendBuildTasks(

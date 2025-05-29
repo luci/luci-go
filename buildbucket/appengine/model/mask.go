@@ -95,7 +95,7 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 	case legacy == nil && bm == nil:
 		return DefaultBuildMask, nil
 	case legacy != nil && bm != nil:
-		return nil, errors.Reason("`mask` and `fields` can't be used together, prefer `mask` since `fields` is deprecated").Err()
+		return nil, errors.New("`mask` and `fields` can't be used together, prefer `mask` since `fields` is deprecated")
 	case legacy != nil:
 		return newLegacyBuildMask(legacyPrefix, legacy)
 	}
@@ -169,11 +169,10 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 	// nice error messages, and use a blunt IsValid check below to reject no
 	// longer supported non-protobuf compatible masks.
 	if !fm.IsValid(&buildPrototype) {
-		return nil, errors.Reason(
-			"the extended field mask syntax is no longer supported, " +
-				"use the standard one: " +
-				"https://pkg.go.dev/google.golang.org/protobuf/types/known/fieldmaskpb#FieldMask",
-		).Err()
+		return nil, errors.New("the extended field mask syntax is no longer supported, " +
+			"use the standard one: " +
+			"https://pkg.go.dev/google.golang.org/protobuf/types/known/fieldmaskpb#FieldMask")
+
 	}
 
 	return &BuildMask{
@@ -271,7 +270,7 @@ func (m *BuildMask) Includes(fieldPath string) bool {
 	}
 	inc, err := m.m.Includes(fieldPath)
 	if err != nil {
-		panic(errors.Annotate(err, "bad field path %q", fieldPath).Err())
+		panic(errors.Fmt("bad field path %q: %w", fieldPath, err))
 	}
 	return inc != mask.Exclude
 }

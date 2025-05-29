@@ -61,7 +61,7 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest, tok st
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
+			return errors.Fmt("failed to get build %d: %w", req.BuildId, err)
 		}
 		b = entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
@@ -163,7 +163,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	b.StartBuildRequestID = req.RequestId
 	updateBuildToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_BUILD)
 	if err != nil {
-		return false, errors.Annotate(err, "failed to generate BUILD token for build %d", b.ID).Err()
+		return false, errors.Fmt("failed to generate BUILD token for build %d: %w", b.ID, err)
 	}
 	b.UpdateToken = updateBuildToken
 	if b.Proto.Output == nil {
@@ -192,7 +192,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	}
 	err = datastore.Put(ctx, toSave)
 	if err != nil {
-		return false, errors.Annotate(err, "failed to start build %d: %s", b.ID, err).Err()
+		return false, errors.Fmt("failed to start build %d: %s: %w", b.ID, err, err)
 	}
 
 	return true, nil
@@ -204,13 +204,13 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
+			return errors.Fmt("failed to get build %d: %w", req.BuildId, err)
 		}
 		b = entities[0].(*model.Build)
 		infra := entities[1].(*model.BuildInfra)
 
 		if infra.Proto.GetBackend().GetTask() == nil {
-			return errors.Reason("the build %d does not run on task backend", req.BuildId).Err()
+			return errors.Fmt("the build %d does not run on task backend", req.BuildId)
 		}
 
 		if b.StartBuildRequestID == "" {
@@ -236,10 +236,12 @@ func checkSubsequentRequest(req *pb.StartBuildRequest, savedReqID, savedTaskID s
 
 	if savedTaskID != req.TaskId {
 		// Same request id, different task id.
-		return errors.Reason("build %d has associated with task id %q with StartBuild request id %q", req.BuildId, savedTaskID, savedReqID).Tag(buildbucket.TaskWithCollidedRequestID).Err()
+		return buildbucket.TaskWithCollidedRequestID.Apply(errors.
+
+			// Idempotent
+			Fmt("build %d has associated with task id %q with StartBuild request id %q", req.BuildId, savedTaskID, savedReqID))
 	}
 
-	// Idempotent
 	return nil
 }
 
@@ -285,11 +287,11 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 
 	mask, err := model.NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to construct build mask").Err()
+		return nil, errors.Fmt("failed to construct build mask: %w", err)
 	}
 	bp, err := b.ToProto(ctx, mask, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to generate build proto from model").Err()
+		return nil, errors.Fmt("failed to generate build proto from model: %w", err)
 	}
 
 	return &pb.StartBuildResponse{Build: bp, UpdateBuildToken: b.UpdateToken}, nil

@@ -37,7 +37,7 @@ var listBuildersCursorVault = dscursor.NewVault([]byte("buildbucket.v2.Builders.
 func validateListBuildersReq(ctx context.Context, req *pb.ListBuildersRequest) error {
 	if req.Project == "" {
 		if req.Bucket != "" {
-			return errors.Reason("project must be specified when bucket is specified").Err()
+			return errors.New("project must be specified when bucket is specified")
 		}
 	} else {
 		err := protoutil.ValidateBuilderID(&pb.BuilderID{Project: req.Project, Bucket: req.Bucket})
@@ -91,7 +91,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 	q := datastore.NewQuery(model.BuilderKind).Ancestor(key).Start(cur)
 	builders, nextCursor, err := fetchBuilders(ctx, q, allowedBuckets, req.PageSize)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch builders").Err()
+		return nil, errors.Fmt("failed to fetch builders: %w", err)
 	}
 
 	// Generate the next page token.

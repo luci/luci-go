@@ -48,7 +48,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 		case err == datastore.ErrNoSuchEntity:
 			return perm.NotFoundErr(ctx)
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
+			return errors.Fmt("failed to fetch build: %d: %w", bld.ID, err)
 		case protoutil.IsEnded(bld.Proto.Status):
 			return nil
 		case bld.Proto.CancelTime != nil:
@@ -65,16 +65,16 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 
 		bld.Proto.CanceledBy = canceledBy
 		if err := datastore.Put(ctx, bld); err != nil {
-			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
+			return errors.Fmt("failed to store build: %d: %w", bld.ID, err)
 		}
 		// Enqueue the task to finally cancel the build.
 		if err := ScheduleCancelBuildTask(ctx, bID, buildbucket.MinUpdateBuildInterval+bld.Proto.GracePeriod.AsDuration()); err != nil {
-			return errors.Annotate(err, "failed to enqueue cancel task for build: %d", bld.ID).Err()
+			return errors.Fmt("failed to enqueue cancel task for build: %d: %w", bld.ID, err)
 		}
 		return nil
 	}, nil)
 	if err != nil {
-		return bld, errors.Annotate(err, "failed to set the build to CANCELING: %d", bID).Err()
+		return bld, errors.Fmt("failed to set the build to CANCELING: %d: %w", bID, err)
 	}
 
 	// TODO(crbug.com/1031205): alternatively, we could just map out the entire
@@ -148,7 +148,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
-				return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
+				return errors.Fmt("failed to fetch build: %d: %w", bld.ID, err)
 			case merr[0] == datastore.ErrNoSuchEntity:
 				return perm.NotFoundErr(ctx)
 			case merr[0] != nil:
@@ -171,7 +171,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				TaskId:   sw.TaskId,
 				Realm:    bld.Realm(),
 			}); err != nil {
-				return errors.Annotate(err, "failed to enqueue swarming task cancellation task: %d", bld.ID).Err()
+				return errors.Fmt("failed to enqueue swarming task cancellation task: %d: %w", bld.ID, err)
 			}
 		}
 		if bk := inf.Proto.GetBackend(); bk.GetTask().GetId().GetId() != "" && bk.GetTask().GetId().GetTarget() != "" {
@@ -180,7 +180,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				TaskId:  bk.Task.Id.Id,
 				Project: bld.Project,
 			}); err != nil {
-				return errors.Annotate(err, "failed to enqueue backend task cancelation task: %d", bld.ID).Err()
+				return errors.Fmt("failed to enqueue backend task cancelation task: %d: %w", bld.ID, err)
 			}
 		}
 
@@ -201,7 +201,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		}
 		bs, err := statusUpdater.Do(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to set status for build %d", bld.ID).Err()
+			return errors.Fmt("failed to set status for build %d: %w", bld.ID, err)
 		}
 		if bs != nil {
 			toPut = append(toPut, bs)
@@ -210,14 +210,14 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		if cancelSteps {
 			switch changed, err := stp.CancelIncomplete(ctx, timestamppb.New(now)); {
 			case err != nil:
-				return errors.Annotate(err, "failed to mark steps cancelled: %d", bld.ID).Err()
+				return errors.Fmt("failed to mark steps cancelled: %d: %w", bld.ID, err)
 			case changed:
 				toPut = append(toPut, stp)
 			}
 		}
 
 		if err := datastore.Put(ctx, toPut...); err != nil {
-			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
+			return errors.Fmt("failed to store build: %d: %w", bld.ID, err)
 		}
 		return nil
 	}, nil)

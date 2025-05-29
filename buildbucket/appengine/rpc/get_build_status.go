@@ -35,14 +35,14 @@ func validateGetBuildStatusRequest(req *pb.GetBuildStatusRequest) error {
 	switch {
 	case req.GetId() != 0:
 		if req.Builder != nil || req.BuildNumber != 0 {
-			return errors.Reason("id is mutually exclusive with (builder + build_number)").Err()
+			return errors.New("id is mutually exclusive with (builder + build_number)")
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
 		if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-			return errors.Annotate(err, "builder").Err()
+			return errors.Fmt("builder: %w", err)
 		}
 	default:
-		return errors.Reason("either id or (builder + build_number) is required").Err()
+		return errors.New("either id or (builder + build_number) is required")
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 	if bldr == nil {
 		parts := strings.Split(bs.BuildAddress, "/")
 		if len(parts) != 4 {
-			return nil, errors.Reason("failed to parse build_address of build %d", req.Id).Err()
+			return nil, errors.Fmt("failed to parse build_address of build %d", req.Id)
 		}
 		bldr = &pb.BuilderID{
 			Project: parts[0],
