@@ -73,12 +73,12 @@ type Subprocess struct {
 func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
 	initialBuildData, err := proto.Marshal(mkInitialBuild(ctx, input))
 	if err != nil {
-		return nil, errors.Annotate(err, "marshalling initial Build").Err()
+		return nil, errors.Fmt("marshalling initial Build: %w", err)
 	}
 
 	launchOpts, _, err := opts.rationalize(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "normalizing options").Err()
+		return nil, errors.Fmt("normalizing options: %w", err)
 	}
 
 	closeChannels := make(chan struct{})
@@ -117,14 +117,14 @@ func Start(ctx context.Context, luciexeArgs []string, input *bbpb.Build, opts *O
 		// clean up stdout/stderr
 		close(closeChannels)
 		<-allClosed
-		return nil, errors.Annotate(err, "prior to starting subprocess").Err()
+		return nil, errors.Fmt("prior to starting subprocess: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
 		// clean up stdout/stderr
 		close(closeChannels)
 		<-allClosed
-		return nil, errors.Annotate(err, "launching luciexe").Err()
+		return nil, errors.Fmt("launching luciexe: %w", err)
 	}
 
 	s := &Subprocess{

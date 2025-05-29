@@ -155,17 +155,17 @@ func (o *Options) initialize() (err error) {
 		}
 		o.BaseDir, err = ioutil.TempDir("", "luciexe-host-")
 		if err != nil {
-			return errors.Annotate(err, "Cannot create BaseDir").Err()
+			return errors.Fmt("Cannot create BaseDir: %w", err)
 		}
 	} else {
 		if o.BaseDir, err = filepath.Abs(o.BaseDir); err != nil {
-			return errors.Annotate(err, "resolving BaseDir").Err()
+			return errors.Fmt("resolving BaseDir: %w", err)
 		}
 		if err := os.RemoveAll(o.BaseDir); err != nil && !os.IsNotExist(err) {
-			return errors.Annotate(err, "clearing options.BaseDir").Err()
+			return errors.Fmt("clearing options.BaseDir: %w", err)
 		}
 		if err := os.Mkdir(o.BaseDir, 0777); err != nil {
-			return errors.Annotate(err, "creating options.BaseDir").Err()
+			return errors.Fmt("creating options.BaseDir: %w", err)
 		}
 	}
 
@@ -204,11 +204,11 @@ func (o *Options) initialize() (err error) {
 	if runtime.GOOS != "windows" {
 		tFile, err := ioutil.TempFile(o.streamServerPath, "sock.")
 		if err != nil {
-			return errors.Annotate(err, "creating tempfile").Err()
+			return errors.Fmt("creating tempfile: %w", err)
 		}
 		o.streamServerPath = tFile.Name()
 		if err := tFile.Close(); err != nil {
-			return errors.Annotate(err, "closing tempfile %q", o.streamServerPath).Err()
+			return errors.Fmt("closing tempfile %q: %w", o.streamServerPath, err)
 		}
 	}
 

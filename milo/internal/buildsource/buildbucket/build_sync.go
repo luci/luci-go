@@ -226,7 +226,7 @@ func pubSubHandlerImpl(c context.Context, message pubsub.Message, buildPubSub *b
 	err = transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		if err := datastore.Get(c, curBS); err != nil && err != datastore.ErrNoSuchEntity {
-			return errors.Annotate(err, "reading current BuildSummary").Err()
+			return errors.Fmt("reading current BuildSummary: %w", err)
 		}
 
 		if bs.Version <= curBS.Version {
@@ -269,7 +269,7 @@ func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV
 	project := buildsV2Msg.Build.Builder.Project
 	client, err := BuildsClient(c, host, auth.AsProject, auth.WithProject(project))
 	if err != nil {
-		return errors.Annotate(err, "create buildbucket client").Err()
+		return errors.Fmt("create buildbucket client: %w", err)
 	}
 
 	bID := buildsV2Msg.Build.Id
@@ -286,7 +286,7 @@ func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "fetch large fields for buildbucket build %d", bID).Err()
+		return errors.Fmt("fetch large fields for buildbucket build %d: %w", bID, err)
 	}
 	proto.Merge(buildsV2Msg.Build, res)
 	return nil
@@ -301,17 +301,17 @@ func extractBuildLargeFields(buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
 	case buildbucketpb.Compression_ZLIB:
 		largeFieldsData, err = zlibDecompress(buildsV2Msg.BuildLargeFields)
 		if err != nil {
-			return errors.Annotate(err, "decompress ZLIB build_large_fields for build %d", buildsV2Msg.Build.Id).Err()
+			return errors.Fmt("decompress ZLIB build_large_fields for build %d: %w", buildsV2Msg.Build.Id, err)
 		}
 	case buildbucketpb.Compression_ZSTD:
-		return errors.Reason("ZSTD decompression is not yet supported for build %d", buildsV2Msg.Build.Id).Err()
+		return errors.Fmt("ZSTD decompression is not yet supported for build %d", buildsV2Msg.Build.Id)
 	default:
-		return errors.Reason("unknown compression type %v for build %d", buildsV2Msg.Compression, buildsV2Msg.Build.Id).Err()
+		return errors.Fmt("unknown compression type %v for build %d", buildsV2Msg.Compression, buildsV2Msg.Build.Id)
 	}
 
 	largeFields := &buildbucketpb.Build{}
 	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-		return errors.Annotate(err, "unmarshal build_large_fields for build %d", buildsV2Msg.Build.Id).Err()
+		return errors.Fmt("unmarshal build_large_fields for build %d: %w", buildsV2Msg.Build.Id, err)
 	}
 	proto.Merge(buildsV2Msg.Build, largeFields)
 	return nil
@@ -547,12 +547,12 @@ func syncBuildsImpl(c context.Context) error {
 								logging.Warningf(c, "build %v not found on buildbucket. deleting it.\nrequest: %v", bs.BuildKey, req)
 								err := datastore.Delete(c, bs)
 								if err != nil {
-									err = errors.Annotate(err, "failed to delete build %v", bs.BuildKey).Err()
+									err = errors.Fmt("failed to delete build %v: %w", bs.BuildKey, err)
 									return err
 								}
 								continue
 							} else if err != nil {
-								err = errors.Annotate(err, "could not fetch build %v from buildbucket.\nrequest: %v", bs.BuildKey, req).Err()
+								err = errors.Fmt("could not fetch build %v from buildbucket.\nrequest: %v: %w", bs.BuildKey, req, err)
 								return err
 							}
 

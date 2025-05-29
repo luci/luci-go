@@ -136,7 +136,7 @@ func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*pb.Step, 
 	for _, annSubstep := range annSubsteps {
 		annStep := annSubstep.GetStep()
 		if annStep == nil {
-			return nil, errors.Reason("unexpected non-Step substep %v", annSubstep).Err()
+			return nil, errors.Fmt("unexpected non-Step substep %v", annSubstep)
 		}
 
 		bbSubstep, err := p.convertSteps(c, bbSteps, annStep, stepPrefix)
@@ -181,11 +181,11 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	}
 
 	if bb.StartTime, bb.EndTime, err = fixupStartAndEndTime(bb.StartTime, bb.EndTime, bbSubsteps); err != nil {
-		return nil, errors.Annotate(err, "Step %s: ", bb.Name).Err()
+		return nil, errors.Fmt("Step %s: : %w", bb.Name, err)
 	}
 
 	if bb.Status, err = determineStatus(bb.StartTime, bb.EndTime, ann, bbSubsteps); err != nil {
-		return nil, errors.Annotate(err, "Step %s: ", bb.Name).Err()
+		return nil, errors.Fmt("Step %s: : %w", bb.Name, err)
 	}
 
 	maybeCloneTimestamp(&bb.StartTime)
@@ -234,7 +234,7 @@ func fixupStartAndEndTime(startTime, endTime *timestamppb.Timestamp, subSteps []
 	// Correct that here.
 	if startTime != nil && endTime != nil && cmpTs(startTime, endTime) > 0 {
 		if startTime.Seconds-endTime.Seconds > 1 {
-			return nil, nil, errors.Reason("start time %q is much greater than end time %q", startTime, endTime).Err()
+			return nil, nil, errors.Fmt("start time %q is much greater than end time %q", startTime, endTime)
 		}
 		// Swap them. They are close enough.
 		newStart, newEnd = endTime, startTime
@@ -284,7 +284,7 @@ func determineStatus(startTime, endTime *timestamppb.Timestamp, annStep *annotpb
 		}
 
 	default:
-		return ret, errors.Reason("expected terminal status when endTime is not nil, got %s", annStep.Status).Err()
+		return ret, errors.Fmt("expected terminal status when endTime is not nil, got %s", annStep.Status)
 	}
 
 	// When parent step finishes running, compute its final status as worst

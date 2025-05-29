@@ -174,7 +174,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 		var err error
 		log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, userNamespace, calculateURLs)
 		if err != nil {
-			return nil, errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
+			return nil, errors.Fmt("build.output.logs[%q]: %w", log.Name, err)
 		}
 	}
 
@@ -224,11 +224,11 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkC
 	case validStreamT && validContentT:
 		zlib = desc.ContentType == luciexe.BuildProtoZlibContentType
 	case validStreamT && !validContentT:
-		err = errors.Reason("stream %q has content type %q, expected one of %v", desc.Name, desc.ContentType, validContentTypes.ToSortedSlice()).Err()
+		err = errors.Fmt("stream %q has content type %q, expected one of %v", desc.Name, desc.ContentType, validContentTypes.ToSortedSlice())
 	case !validStreamT && validContentT:
-		err = errors.Reason("build proto stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err()
+		err = errors.Fmt("build proto stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM)
 	case strings.HasPrefix(desc.Name, string(a.userNamespace)) && base == luciexe.BuildProtoStreamSuffix:
-		err = errors.Reason("build.proto stream %q has stream type %q and content type %q, expected %q and one of %v", desc.Name, desc.StreamType, desc.ContentType, logpb.StreamType_DATAGRAM, validContentTypes.ToSortedSlice()).Err()
+		err = errors.Fmt("build.proto stream %q has stream type %q and content type %q, expected %q and one of %v", desc.Name, desc.StreamType, desc.ContentType, logpb.StreamType_DATAGRAM, validContentTypes.ToSortedSlice())
 	default:
 		// neither a ".../build.proto" stream nor a stream with valid stream type
 		// or content type.

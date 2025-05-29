@@ -42,9 +42,9 @@ func absolutizeURLs(logURL, viewURL string, ns types.StreamName, calcFn CalcURLF
 	if isAbs(logURL) {
 		switch {
 		case viewURL == "":
-			return retLogURL, retViewURL, errors.Reason("absolute log url is provided %q but view url is empty", logURL).Err()
+			return retLogURL, retViewURL, errors.Fmt("absolute log url is provided %q but view url is empty", logURL)
 		case !isAbs(viewURL):
-			return retLogURL, retViewURL, errors.Reason("expected absolute view url, got %q", viewURL).Err()
+			return retLogURL, retViewURL, errors.Fmt("expected absolute view url, got %q", viewURL)
 		}
 		// both urls are absolute.
 		return retLogURL, retViewURL, nil
@@ -52,7 +52,7 @@ func absolutizeURLs(logURL, viewURL string, ns types.StreamName, calcFn CalcURLF
 
 	stream := types.StreamName(logURL)
 	if serr := stream.Validate(); serr != nil {
-		return retLogURL, retViewURL, errors.Annotate(serr, "bad log url %q", logURL).Err()
+		return retLogURL, retViewURL, errors.Fmt("bad log url %q: %w", logURL, serr)
 	}
 	retLogURL, retViewURL = calcFn(ns, stream)
 	return retLogURL, retViewURL, nil

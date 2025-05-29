@@ -30,7 +30,7 @@ func setSysProcAttr(cmd *exec.Cmd) {
 
 func (s *Subprocess) terminate() error {
 	if err := syscall.Kill(-s.cmd.Process.Pid, syscall.SIGTERM); err != nil {
-		return errors.Annotate(err, "send SIGTERM").Err()
+		return errors.Fmt("send SIGTERM: %w", err)
 	}
 	return nil
 }

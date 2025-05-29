@@ -30,7 +30,7 @@ func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error)
 	env := environ.New(nil)
 
 	if err := opts.ExeAuth.Launch(ctx, opts.authDir); err != nil {
-		return nil, errors.Annotate(err, "setting up task auth").Err()
+		return nil, errors.Fmt("setting up task auth: %w", err)
 	}
 	opts.ExeAuth.Report(ctx)
 	ctx = opts.ExeAuth.Export(ctx, env)
@@ -41,13 +41,13 @@ func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error)
 
 	exported, err := lucictx.ExportInto(ctx, opts.lucictxDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
+		return nil, errors.Fmt("exporting LUCI_CONTEXT: %w", err)
 	}
 	myCleanups.add("LUCI_CONTEXT", exported.Close)
 	exported.SetInEnviron(env)
 
 	if err := env.Iter(os.Setenv); err != nil {
-		return nil, errors.Annotate(err, "setting up environment").Err()
+		return nil, errors.Fmt("setting up environment: %w", err)
 	}
 
 	callerCleanups := myCleanups

@@ -157,15 +157,16 @@ func consoleRowCommits(c context.Context, project string, def *projectconfigpb.C
 	tGitiles := logTimer(c, "Rows: loading commit from gitiles")
 	repoHost, repoProject, err := gitiles.ParseRepoURL(def.RepoUrl)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "invalid repo URL %q in the config", def.RepoUrl).Err()
+		return nil, nil, errors.Fmt("invalid repo URL %q in the config: %w", def.RepoUrl, err)
 	}
 	rawCommits, err := git.Get(c).CombinedLogs(c, repoHost, repoProject, def.ExcludeRef, def.Refs, limit)
 	switch grpcutil.Code(err) {
 	case codes.OK:
 		// Do nothing, all is good.
 	case codes.NotFound:
-		return nil, nil, errors.Reason("incorrect repo URL %q in the config or no access", def.RepoUrl).
-			Tag(grpcutil.NotFoundTag).Err()
+		return nil, nil,
+			grpcutil.NotFoundTag.Apply(errors.Fmt("incorrect repo URL %q in the config or no access", def.RepoUrl))
+
 	default:
 		return nil, nil, err
 	}
@@ -336,15 +337,15 @@ func getTreeStatus(c context.Context, host string, name string) *ui.TreeStatus {
 func fetchLUCITreeStatus(c context.Context, name string, url *url.URL) (*ui.TreeStatus, error) {
 	luciTreeStatusHost, err := luciTreeStatusHost(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting luci tree status host").Err()
+		return nil, errors.Fmt("getting luci tree status host: %w", err)
 	}
 	client, err := NewTreeStatusClient(c, luciTreeStatusHost)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating tree status client").Err()
+		return nil, errors.Fmt("creating tree status client: %w", err)
 	}
 	response, err := client.GetStatus(c, &tspb.GetStatusRequest{Name: fmt.Sprintf("trees/%s/status/latest", name)})
 	if err != nil {
-		return nil, errors.Annotate(err, "calling GetStatus").Err()
+		return nil, errors.Fmt("calling GetStatus: %w", err)
 	}
 	out := &ui.TreeStatus{
 		Username:        response.CreateUser,
@@ -631,7 +632,7 @@ func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*projectco
 func ConsoleHandler(c *router.Context) error {
 	project := c.Params.ByName("project")
 	if project == "" {
-		return errors.New("missing project", grpcutil.InvalidArgumentTag)
+		return grpcutil.InvalidArgumentTag.Apply(errors.New("missing project"))
 	}
 	group := c.Params.ByName("group")
 
@@ -670,12 +671,12 @@ func ConsoleHandler(c *router.Context) error {
 		}
 		headerCons, err = projectconfig.GetConsoles(c.Request.Context(), ids)
 		if err != nil {
-			headerConsError = errors.Annotate(err, "error getting header consoles").Err()
+			headerConsError = errors.Fmt("error getting header consoles: %w", err)
 			headerCons = make([]*projectconfig.Console, 0)
 		}
 	}
 	if err := filterUnauthorizedBuildersFromConsoles(c.Request.Context(), append(headerCons, con)); err != nil {
-		return errors.Annotate(err, "error authorizing user").Err()
+		return errors.Fmt("error authorizing user: %w", err)
 	}
 
 	// Process the request and generate a renderable structure.

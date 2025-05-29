@@ -114,7 +114,7 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 	case buildbucket.NoBlamelist:
 		break
 	default:
-		blameErr = errors.Reason("invalid blamelist option").Err()
+		blameErr = errors.New("invalid blamelist option")
 	}
 
 	realm := realms.Join(b.Builder.Project, b.Builder.Bucket)
@@ -315,11 +315,11 @@ func getRelatedBuilds(c *router.Context) (*ui.RelatedBuildsTable, error) {
 
 	id, err := strconv.ParseInt(idInput, 10, 64)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad build id: %w", err))
 	}
 	rbt, err := buildbucket.GetRelatedBuildsTable(c.Request.Context(), id)
 	if err != nil {
-		return nil, errors.Annotate(err, "error when getting related builds table").Err()
+		return nil, errors.Fmt("error when getting related builds table: %w", err)
 	}
 	return rbt, nil
 }
@@ -365,7 +365,7 @@ func parseBuildID(idStr string) (id int64, err error) {
 	// Verify it is an int64.
 	id, err = strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		err = errors.Annotate(err, "invalid id").Tag(grpcutil.InvalidArgumentTag).Err()
+		err = grpcutil.InvalidArgumentTag.Apply(errors.Fmt("invalid id: %w", err))
 	}
 	return
 }
@@ -381,7 +381,7 @@ func prepareGetBuildRequest(builderID *buildbucketpb.BuilderID, numberOrID strin
 	} else {
 		number, err := strconv.ParseInt(numberOrID, 10, 32)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad build number").Tag(grpcutil.InvalidArgumentTag).Err()
+			return nil, grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad build number: %w", err))
 		}
 		br.Builder = builderID
 		br.BuildNumber = int32(number)

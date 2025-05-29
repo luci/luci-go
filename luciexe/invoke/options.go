@@ -168,7 +168,7 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 
 	startTime, err := ptypes.TimestampProto(clock.Now(ctx))
 	if err != nil {
-		return errors.Annotate(err, "invalid StartTime").Err()
+		return errors.Fmt("invalid StartTime: %w", err)
 	}
 	lo.step = &bbpb.Step{
 		Name:      o.Namespace,
@@ -204,10 +204,10 @@ func (o *Options) prepCacheDir(ctx context.Context, cdir string, lo *launchOptio
 		newDir = cdir
 	} else {
 		if newDir, err = filepath.Abs(newDir); err != nil {
-			return nil, errors.Annotate(err, "resolving CacheDir").Err()
+			return nil, errors.Fmt("resolving CacheDir: %w", err)
 		}
 		if err = checkDirExists(newDir); err != nil {
-			return nil, errors.Annotate(err, "checking CacheDir").Err()
+			return nil, errors.Fmt("checking CacheDir: %w", err)
 		}
 	}
 
@@ -227,16 +227,16 @@ func (o *Options) prepCollection(outDir string, lo *launchOptions) error {
 		collect = filepath.Join(outDir, "out"+luciexe.BuildFileCodecBinary.FileExtension())
 	} else {
 		if err := checkDirExists(filepath.Dir(collect)); err != nil {
-			return errors.Annotate(err, "checking CollectOutputPath's parent").Err()
+			return errors.Fmt("checking CollectOutputPath's parent: %w", err)
 		}
 
 		if _, err := os.Stat(collect); !os.IsNotExist(err) {
-			return errors.Reason("CollectOutputPath points to an existing file: %q", collect).Err()
+			return errors.Fmt("CollectOutputPath points to an existing file: %q", collect)
 		}
 	}
 
 	if _, err := luciexe.BuildFileCodecForPath(collect); err != nil {
-		return errors.Annotate(err, "CollectOutputPath").Err()
+		return errors.Fmt("CollectOutputPath: %w", err)
 	}
 
 	lo.args = []string{luciexe.OutputCLIArg, collect}
@@ -264,7 +264,7 @@ func (o *Options) mkdirs() (ret dirs, err error) {
 		}
 	}
 	if err = checkDirExists(base); err != nil {
-		return ret, errors.Annotate(err, "checking BaseDir").Err()
+		return ret, errors.Fmt("checking BaseDir: %w", err)
 	}
 
 	// maybeMkdir attempts to make the dir named `dirname` under `base`,
@@ -296,7 +296,7 @@ func (lo *launchOptions) prepStdio(ctx context.Context) error {
 	case bootstrap.ErrNotBootstrapped:
 		return errors.New("Logdog Butler environment required")
 	default:
-		return errors.Annotate(err, "bootstrapping logdog client").Err()
+		return errors.Fmt("bootstrapping logdog client: %w", err)
 	}
 
 	openStream := func(name string) (ret io.WriteCloser, err error) {
@@ -338,22 +338,22 @@ func (o *Options) rationalize(ctx context.Context) (ret launchOptions, newCtx co
 	}
 
 	if newCtx, err = o.prepCacheDir(ctx, d.cacheDir, &ret); err != nil {
-		err = errors.Annotate(err, "preparing cachedir").Err()
+		err = errors.Fmt("preparing cachedir: %w", err)
 		return
 	}
 
 	if err = o.prepNamespace(newCtx, &ret); err != nil {
-		err = errors.Annotate(err, "preparing namespace").Err()
+		err = errors.Fmt("preparing namespace: %w", err)
 		return
 	}
 
 	if err = o.prepCollection(d.collectOutputDir, &ret); err != nil {
-		err = errors.Annotate(err, "preparing collection").Err()
+		err = errors.Fmt("preparing collection: %w", err)
 		return
 	}
 
 	if err = ret.prepStdio(newCtx); err != nil {
-		err = errors.Annotate(err, "preparing outputs").Err()
+		err = errors.Fmt("preparing outputs: %w", err)
 		return
 	}
 
@@ -366,12 +366,12 @@ func checkDirExists(path string) error {
 	fInfo, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return errors.Reason("dir does not exist: %q", path).Err()
+			return errors.Fmt("dir does not exist: %q", path)
 		}
-		return errors.Annotate(err, "statting path: %q", path).Err()
+		return errors.Fmt("statting path: %q: %w", path, err)
 	}
 	if !fInfo.IsDir() {
-		return errors.Reason("path is not a directory: %q", path).Err()
+		return errors.Fmt("path is not a directory: %q", path)
 	}
 	return nil
 }

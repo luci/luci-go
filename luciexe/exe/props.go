@@ -61,7 +61,7 @@ func ParseProperties(props *structpb.Struct, outputs map[string]any) error {
 
 		var jsonBuf bytes.Buffer
 		if err := (&jsonpb.Marshaler{}).Marshal(&jsonBuf, val); err != nil {
-			ret.Assign(idx, errors.Annotate(err, "marshaling %q", field).Err())
+			ret.Assign(idx, errors.Fmt("marshaling %q: %w", field, err))
 			continue
 		}
 
@@ -148,7 +148,7 @@ func WriteProperties(props *structpb.Struct, inputs map[string]any) error {
 		}
 
 		if err != nil {
-			ret.Assign(idx, errors.Annotate(err, "marshaling %q", field).Err())
+			ret.Assign(idx, errors.Fmt("marshaling %q: %w", field, err))
 			continue
 		}
 

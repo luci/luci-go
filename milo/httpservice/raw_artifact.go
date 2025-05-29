@@ -50,11 +50,11 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 
 		settings, err := s.GetSettings(ctx.Request.Context())
 		if err != nil {
-			return errors.Annotate(err, "failed to get Milo's service settings").Err()
+			return errors.Fmt("failed to get Milo's service settings: %w", err)
 		}
 		rdbClient, err := s.GetResultDBClient(ctx.Request.Context(), settings.Resultdb.Host, auth.AsSessionUser)
 		if err != nil {
-			return errors.Annotate(err, "failed to get ResultDB client").Err()
+			return errors.Fmt("failed to get ResultDB client: %w", err)
 		}
 
 		artifact, err := rdbClient.GetArtifact(ctx.Request.Context(), &resultpb.GetArtifactRequest{Name: artifactName})
@@ -65,7 +65,7 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 		fetchURL := artifact.FetchUrl
 		parsedFetchURL, err := url.Parse(fetchURL)
 		if err != nil {
-			return errors.Annotate(err, "failed to parse artifact.fetchUrl").Err()
+			return errors.Fmt("failed to parse artifact.fetchUrl: %w", err)
 		}
 		fetchURLQuery := parsedFetchURL.Query()
 		// Copy query params from request to fetch URL.

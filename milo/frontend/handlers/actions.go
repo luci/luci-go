@@ -33,7 +33,7 @@ import (
 func cancelBuildHandler(ctx *router.Context) error {
 	id, reason, err := parseCancelBuildInput(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error while parsing cancel build request input fields").Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("error while parsing cancel build request input fields: %w", err))
 	}
 
 	if _, err := buildbucket.CancelBuild(ctx.Request.Context(), id, reason); err != nil {
@@ -46,12 +46,12 @@ func cancelBuildHandler(ctx *router.Context) error {
 
 func parseCancelBuildInput(ctx *router.Context) (buildbucketID int64, reason string, err error) {
 	if err := ctx.Request.ParseForm(); err != nil {
-		return 0, "", errors.Annotate(err, "unable to parse cancel build form").Err()
+		return 0, "", errors.Fmt("unable to parse cancel build form: %w", err)
 	}
 
 	buildbucketID, err = utils.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
 	if err != nil {
-		return 0, "", errors.Annotate(err, "invalid buildbucket-id").Err()
+		return 0, "", errors.Fmt("invalid buildbucket-id: %w", err)
 	}
 
 	reason, err = utils.ReadExactOneFromForm(ctx.Request.Form, "reason")
@@ -71,7 +71,7 @@ func parseCancelBuildInput(ctx *router.Context) (buildbucketID int64, reason str
 func retryBuildHandler(ctx *router.Context) error {
 	buildbucketID, requestID, err := parseRetryBuildInput(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error while parsing retry build request input fields").Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("error while parsing retry build request input fields: %w", err))
 	}
 
 	build, err := buildbucket.RetryBuild(ctx.Request.Context(), buildbucketID, requestID)
@@ -87,12 +87,12 @@ func retryBuildHandler(ctx *router.Context) error {
 
 func parseRetryBuildInput(ctx *router.Context) (buildbucketID int64, retryRequestID string, err error) {
 	if err := ctx.Request.ParseForm(); err != nil {
-		return 0, "", errors.Annotate(err, "unable to parse retry build form").Err()
+		return 0, "", errors.Fmt("unable to parse retry build form: %w", err)
 	}
 
 	buildbucketID, err = utils.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
 	if err != nil {
-		return 0, "", errors.Annotate(err, "invalid buildbucket-id").Err()
+		return 0, "", errors.Fmt("invalid buildbucket-id: %w", err)
 	}
 
 	retryRequestID, err = utils.ReadExactOneFromForm(ctx.Request.Form, "retry-request-id")

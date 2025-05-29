@@ -71,13 +71,13 @@ func main() {
 		// Wait a bit until the SMTP server is up. This is important when it is
 		// launched by Kubernetes in parallel to launching `mailer` server itself.
 		if err := waitSMTP(srv.Context, smtpAddr); err != nil {
-			return errors.Annotate(err, "failed to connect to the SMTP server").Err()
+			return errors.Fmt("failed to connect to the SMTP server: %w", err)
 		}
 
 		// Use a connection pool to avoid opening/closing connections all the time.
 		pool, err := email.NewPool(smtpAddr, *smtpPoolSize, nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to create SMTP connection pool").Err()
+			return errors.Fmt("failed to create SMTP connection pool: %w", err)
 		}
 		srv.RegisterCleanup(func(context.Context) { pool.Close() })
 

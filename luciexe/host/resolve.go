@@ -40,14 +40,14 @@ func ResolveExeCmd(opts *Options, defaultPayloadPath string) ([]string, error) {
 		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
 			absPath, err := filepath.Abs(exeArgs[0])
 			if err != nil {
-				return nil, errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err()
+				return nil, errors.Fmt("absoluting wrapper path: %q: %w", exeArgs[0], err)
 			}
 			exeArgs[0] = absPath
 		}
 
 		cmdPath, err := exec.LookPath(exeArgs[0])
 		if err != nil {
-			return nil, errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err()
+			return nil, errors.Fmt("wrapper not found: %q: %w", exeArgs[0], err)
 		}
 		exeArgs[0] = cmdPath
 	}
@@ -88,7 +88,7 @@ func resolveExe(path string) (string, error) {
 	}
 
 	me := lme.Get().(errors.MultiError)
-	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
+	return path, errors.Fmt("cannot find .exe (%q) or .bat (%q)", me[0], me[1])
 }
 
 // processCmd resolves the cmd by constructing the absolute path and resolving
@@ -97,12 +97,12 @@ func processCmd(path, cmd string) (string, error) {
 	relPath := filepath.Join(path, cmd)
 	absPath, err := filepath.Abs(relPath)
 	if err != nil {
-		return "", errors.Annotate(err, "absoluting %q", relPath).Err()
+		return "", errors.Fmt("absoluting %q: %w", relPath, err)
 	}
 	if runtime.GOOS == "windows" {
 		absPath, err = resolveExe(absPath)
 		if err != nil {
-			return "", errors.Annotate(err, "resolving %q", absPath).Err()
+			return "", errors.Fmt("resolving %q: %w", absPath, err)
 		}
 	}
 	return absPath, nil

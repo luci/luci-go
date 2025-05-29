@@ -134,17 +134,17 @@ func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
 	if t.zlib {
 		z, err := zlib.NewReader(bytes.NewBuffer(data))
 		if err != nil {
-			return nil, errors.Annotate(err, "constructing decompressor for Build").Err()
+			return nil, errors.Fmt("constructing decompressor for Build: %w", err)
 		}
 		data, err = io.ReadAll(z)
 		if err != nil {
-			return nil, errors.Annotate(err, "decompressing Build").Err()
+			return nil, errors.Fmt("decompressing Build: %w", err)
 		}
 	}
 
 	parsedBuild := &bbpb.Build{}
 	if err := proto.Unmarshal(data, parsedBuild); err != nil {
-		return nil, errors.Annotate(err, "parsing Build").Err()
+		return nil, errors.Fmt("parsing Build: %w", err)
 	}
 
 	for _, step := range parsedBuild.Steps {
@@ -167,7 +167,7 @@ func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
 			if err != nil {
 				step.Status = bbpb.Status_INFRA_FAILURE
 				step.SummaryMarkdown += err.Error()
-				return parsedBuild, errors.Annotate(err, "step[%q].logs[%q]", step.Name, log.Name).Err()
+				return parsedBuild, errors.Fmt("step[%q].logs[%q]: %w", step.Name, log.Name, err)
 			}
 		}
 		if mb := step.GetMergeBuild(); mb != nil && mb.FromLogdogStream != "" {
@@ -176,7 +176,7 @@ func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
 			if err != nil {
 				step.Status = bbpb.Status_INFRA_FAILURE
 				step.SummaryMarkdown += err.Error()
-				return parsedBuild, errors.Annotate(err, "step[%q].merge_build.from_logdog_stream", step.Name).Err()
+				return parsedBuild, errors.Fmt("step[%q].merge_build.from_logdog_stream: %w", step.Name, err)
 			}
 		}
 	}
@@ -184,7 +184,7 @@ func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
 		var err error
 		log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
 		if err != nil {
-			return parsedBuild, errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
+			return parsedBuild, errors.Fmt("build.output.logs[%q]: %w", log.Name, err)
 		}
 	}
 	parsedBuild.UpdateTime = t.merger.clockNow()

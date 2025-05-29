@@ -259,7 +259,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir, cacheB
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err, "Failed to run cipd ensure command").Err()
+		return errors.Fmt("Failed to run cipd ensure command: %w", err)
 	}
 
 	resultsFile, err := os.Open(resultsFilePath)
