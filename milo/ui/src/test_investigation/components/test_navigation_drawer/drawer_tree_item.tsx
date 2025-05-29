@@ -15,19 +15,10 @@
 import { List } from '@mui/material';
 import { JSX } from 'react';
 
-import {
-  getStatusStyle,
-  SemanticStatusType,
-  StatusStyle,
-} from '@/common/styles/status_styles';
-
-import { getSemanticStatusFromVerdict } from '../../utils/drawer_tree_utils';
-
 import { ExpandableListItem } from './expandable_list_item.tsx';
 import { TestNavigationTreeNode } from './types';
 
 interface DrawerTreeItemProps {
-  indent: number;
   node: TestNavigationTreeNode;
   expandedNodes: Set<string>;
   toggleNodeExpansion: (nodeId: string) => void;
@@ -37,7 +28,6 @@ interface DrawerTreeItemProps {
 }
 
 export function DrawerTreeItem({
-  indent,
   node,
   expandedNodes,
   toggleNodeExpansion,
@@ -47,29 +37,6 @@ export function DrawerTreeItem({
 }: DrawerTreeItemProps): JSX.Element {
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
-
-  let primarySemanticStatus: SemanticStatusType = 'neutral';
-  if (node.testVariant !== undefined) {
-    primarySemanticStatus = getSemanticStatusFromVerdict(
-      node.testVariant.statusV2,
-    );
-  }
-
-  const itemStyle: StatusStyle = getStatusStyle(primarySemanticStatus);
-  const ItemIconComponent = itemStyle.icon;
-
-  let nodeIconElement: JSX.Element | null = null;
-
-  if (ItemIconComponent) {
-    nodeIconElement = (
-      <ItemIconComponent
-        sx={{
-          fontSize: 'inherit',
-          color: itemStyle.iconColor || itemStyle.textColor,
-        }}
-      />
-    );
-  }
 
   const handleItemClick = () => {
     if (hasChildren) {
@@ -82,32 +49,38 @@ export function DrawerTreeItem({
     }
   };
 
+  const getSecondaryText = () => {
+    if (node.failedTests === undefined || node.totalTests === undefined) {
+      return undefined;
+    }
+    if (hasChildren) {
+      return `${node.failedTests || 0} failed (${node.totalTests || 0} total)`;
+    } else {
+      if (node.failedTests === 0) {
+        return 'Passed';
+      } else {
+        return 'Failed';
+      }
+    }
+  };
+
   return (
     <ExpandableListItem
       isExpanded={isExpanded}
       label={node.label}
-      secondaryText={
-        hasChildren &&
-        (node.failedTests !== undefined || node.totalTests !== undefined)
-          ? `${node.failedTests || 0} failed (${node.totalTests || 0} total)`
-          : undefined
-      }
+      secondaryText={getSecondaryText()}
       onClick={handleItemClick}
       isSelected={
         currentTestId === node.testVariant?.testId &&
         currentVariantHash === node.testVariant?.variantHash
       }
-      level={node.level + indent}
-      iconElement={
-        !hasChildren && nodeIconElement ? nodeIconElement : undefined
-      }
+      level={node.level}
     >
       {hasChildren && (
         <List component="div" disablePadding dense>
           {node.children!.map((child) => (
             <DrawerTreeItem
               key={child.id}
-              indent={indent}
               node={child}
               expandedNodes={expandedNodes}
               toggleNodeExpansion={toggleNodeExpansion}

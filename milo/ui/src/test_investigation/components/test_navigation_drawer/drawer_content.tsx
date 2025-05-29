@@ -78,42 +78,46 @@ export function DrawerContent({
         flexDirection: 'column',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: 1,
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}
-      >
-        <Typography sx={{ mr: 1, fontSize: '0.875rem' }}>Group by:</Typography>
-        <ToggleButtonGroup
-          value={selectedTab}
-          exclusive
-          size="small"
-          onChange={handleTabChange}
-          aria-label="Grouping options"
+      <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: 1.5,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
         >
-          <ToggleButton
-            value={0}
-            aria-label="Test hierarchy"
+          <Typography variant="subtitle1" sx={{ mr: 1 }}>
+            Group by
+          </Typography>
+          <ToggleButtonGroup
+            color="primary"
+            value={selectedTab}
+            exclusive
             size="small"
-            sx={{ textTransform: 'none', fontSize: '0.875rem' }}
+            onChange={handleTabChange}
+            aria-label="Grouping options"
           >
-            Test hierarchy
-          </ToggleButton>
-          <ToggleButton
-            value={1}
-            aria-label="Failure reason"
-            size="small"
-            sx={{ textTransform: 'none', fontSize: '0.875rem' }}
-          >
-            Failure reason
-          </ToggleButton>
-        </ToggleButtonGroup>
+            <ToggleButton
+              value={0}
+              aria-label="Test hierarchy"
+              sx={{ textTransform: 'none', fontSize: '1rem' }}
+            >
+              Test hierarchy
+            </ToggleButton>
+            <ToggleButton
+              value={1}
+              aria-label="Failure reason"
+              sx={{ textTransform: 'none', fontSize: '1rem' }}
+            >
+              Failure reason
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
-      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', pt: 0 }}>
         {isLoadingTestVariants ? (
           <Box
             sx={{
@@ -128,13 +132,12 @@ export function DrawerContent({
             <Typography sx={{ ml: 1 }}>Loading tests...</Typography>
           </Box>
         ) : (
-          <List dense component="nav">
+          <List dense component="nav" disablePadding>
             {selectedTab === 0 &&
               (hierarchyTreeData.length > 0 ? (
                 hierarchyTreeData.map((node) => (
                   <DrawerTreeItem
                     key={node.id}
-                    indent={0}
                     node={node}
                     expandedNodes={expandedNodes}
                     toggleNodeExpansion={toggleNodeExpansion}
@@ -159,13 +162,11 @@ export function DrawerContent({
                     label={group.label}
                     secondaryText={`${group.failedTests} failed (${group.totalTests} total)`}
                     onClick={() => toggleGroup(group.id)}
-                    showBorder
                   >
                     <List dense component="div" disablePadding>
                       {group.nodes.map((node) => (
                         <DrawerTreeItem
                           key={node.id}
-                          indent={1}
                           node={node}
                           expandedNodes={expandedNodes}
                           toggleNodeExpansion={toggleNodeExpansion}

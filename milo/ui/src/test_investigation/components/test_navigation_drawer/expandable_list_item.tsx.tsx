@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import {
-  ListItem,
   ListItemText,
   Collapse,
   Box,
   IconButton,
+  Typography,
+  Chip,
+  Divider,
+  ListItemButton,
 } from '@mui/material';
 import React from 'react';
 
@@ -31,8 +34,6 @@ interface ExpandableListItemProps {
   isSelected?: boolean;
   onClick?: () => void;
   level?: number;
-  iconElement?: React.ReactNode;
-  showBorder?: boolean;
 }
 
 export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
@@ -43,72 +44,86 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
   isSelected,
   onClick,
   level = 0,
-  iconElement,
-  showBorder = false,
 }) => {
-  const paddingLeft = level * 3 + 1;
+  const paddingLeft = level * 10 + 1;
+
+  if (secondaryText?.startsWith('0 failed')) {
+    secondaryText = secondaryText.replace('0 failed', 'Passed');
+  }
 
   return (
-    <Box
-      sx={{
-        ...(showBorder && {
-          borderTop: '1px solid #ccc',
-        }),
-      }}
-    >
-      <ListItem
+    <Box sx={{ pt: 0 }}>
+      <ListItemButton
+        selected={isSelected}
         onClick={onClick}
         dense
         sx={{
           pl: children ? `${paddingLeft}px` : `${paddingLeft + 3}px`,
-          py: 0,
+          py: 1.2,
           cursor: children ? 'pointer' : onClick ? 'pointer' : 'default',
         }}
       >
-        {children ? (
-          <IconButton size="small">
+        {children && (
+          <>
             {isExpanded ? (
-              <ExpandMoreIcon fontSize="small" />
+              <IconButton size="small">
+                <UnfoldLessIcon fontSize="small" />
+              </IconButton>
             ) : (
-              <ChevronRightIcon
-                fontSize="small"
-                sx={{ transform: 'rotate(0deg)', color: 'text.secondary' }}
-              />
+              <IconButton size="small">
+                <UnfoldMoreIcon fontSize="small" />
+              </IconButton>
             )}
-          </IconButton>
-        ) : (
-          iconElement && (
-            <IconButton size="small" sx={{ p: 0.25 }} disabled>
-              {iconElement}
-            </IconButton>
-          )
+          </>
         )}
         <ListItemText
-          primary={label || 'Unknown'}
-          secondary={secondaryText}
+          primary={
+            <Typography
+              variant="subtitle1"
+              color="primary"
+              sx={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontStyle: label ? 'normal' : 'italic',
+                marginLeft: children ? '8px' : undefined,
+              }}
+            >
+              {label || 'Unknown'}
+            </Typography>
+          }
+          secondary={
+            secondaryText && (
+              <Chip
+                label={
+                  <>
+                    <Typography variant="caption">
+                      {secondaryText.split('(')[0]}
+                    </Typography>
+                    {secondaryText.includes('(') && (
+                      <Typography
+                        variant="caption"
+                        sx={{ fontStyle: 'italic' }}
+                        color="grey"
+                      >
+                        {'(' + secondaryText.split('(')[1]}
+                      </Typography>
+                    )}
+                  </>
+                }
+                sx={{
+                  ml: children ? '8px' : undefined,
+                }}
+                color={secondaryText.startsWith('Passed') ? 'success' : 'error'}
+              ></Chip>
+            )
+          }
           title={label}
           sx={{ m: '2px 0' }}
-          primaryTypographyProps={{
-            sx: {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontStyle: label ? 'normal' : 'italic',
-              fontWeight: isSelected ? 'bold' : 'normal',
-              marginLeft: children || iconElement ? '8px' : undefined,
-            },
-          }}
-          secondaryTypographyProps={{
-            variant: 'caption',
-            sx: {
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              marginLeft: children || iconElement ? '8px' : undefined,
-            },
-          }}
+          disableTypography
         />
-      </ListItem>
+      </ListItemButton>
+      <Divider component="li" />
       {children && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
           {children}

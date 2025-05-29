@@ -35,7 +35,7 @@ import {
 
 import { DrawerContent } from './drawer_content';
 
-const DRAWER_WIDTH_OPEN = 360;
+const DRAWER_WIDTH_OPEN = 600;
 
 export function TestNavigationDrawer() {
   const navigate = useNavigate();
