@@ -174,7 +174,7 @@ func (m *Mutator) Upsert(ctx context.Context, eid ExternalID, clbk MutateCallbac
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit Upsert of Tryjob %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit Upsert of Tryjob %q: %w", eid, err))
 	default:
 		return result, nil
 	}
@@ -212,7 +212,7 @@ func (m *Mutator) Update(ctx context.Context, id common.TryjobID, clbk MutateCal
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit update on CL %d", id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit update on CL %d: %w", id, err))
 	default:
 		return result, nil
 	}
@@ -249,11 +249,11 @@ func (m *Mutator) beginInsert(ctx context.Context, eid ExternalID) (*TryjobMutat
 		trans:  datastore.CurrentTransaction(ctx),
 	}
 	if err := datastore.AllocateIDs(ctx, tjMutation.Tryjob); err != nil {
-		return nil, errors.Annotate(err, "failed to allocate new Tryjob ID for %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to allocate new Tryjob ID for %q: %w", eid, err))
 	}
 	tjMap := &tryjobMap{ExternalID: eid, InternalID: tjMutation.Tryjob.ID}
 	if err := datastore.Put(ctx, tjMap); err != nil {
-		return nil, errors.Annotate(err, "failed to insert clMap entity for %q", eid).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to insert clMap entity for %q: %w", eid, err))
 	}
 	tjMutation.backup()
 	return tjMutation, nil
@@ -271,9 +271,9 @@ func (m *Mutator) Begin(ctx context.Context, id common.TryjobID) (*TryjobMutatio
 	}
 	switch err := datastore.Get(ctx, tjMutation.Tryjob); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, errors.Annotate(err, "Tryjob %d doesn't exist", id).Err()
+		return nil, errors.Fmt("Tryjob %d doesn't exist: %w", id, err)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get Tryjob %d", id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get Tryjob %d: %w", id, err))
 	}
 	tjMutation.backup()
 	return tjMutation, nil
@@ -308,7 +308,7 @@ func (tjm *TryjobMutation) Finalize(ctx context.Context) (*Tryjob, error) {
 		toSave = append(toSave, newMapping)
 	}
 	if err := datastore.Put(ctx, toSave); err != nil {
-		return nil, errors.Annotate(err, "failed to put Tryjob %d", tjm.id).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to put Tryjob %d: %w", tjm.id, err))
 	}
 	if err := tjm.m.notifyRuns(ctx, tjm); err != nil {
 		return nil, err
@@ -413,7 +413,7 @@ func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*TryjobMutation) ([]
 		}
 	}
 	if err := datastore.Put(ctx, toSave); err != nil {
-		return nil, errors.Annotate(err, "failed to save Tryjobs and new Tryjob mappings").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to save Tryjobs and new Tryjob mappings: %w", err))
 	}
 	if err := m.notifyRuns(ctx, muts...); err != nil {
 		return nil, err

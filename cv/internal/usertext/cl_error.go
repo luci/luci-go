@@ -114,7 +114,7 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 			t = tmplTooManyDeps
 			bad = nil // there is no point listing all of them.
 		default:
-			return errors.Reason("unsupported InvalidDeps reason %s", d).Err()
+			return errors.Fmt("unsupported InvalidDeps reason %s", d)
 		}
 		urls, err := depsURLs(ctx, bad)
 		if err != nil {
@@ -173,7 +173,7 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		return tmplDepRunFailed.Execute(sb, map[string]any{"url": urls[0]})
 
 	default:
-		return errors.Reason("unsupported purge reason %t: %s", v, reason).Err()
+		return errors.Fmt("unsupported purge reason %t: %s", v, reason)
 	}
 }
 
@@ -183,7 +183,7 @@ func depsURLs(ctx context.Context, deps []*changelist.Dep) ([]string, error) {
 		cls[i] = &changelist.CL{ID: common.CLID(d.GetClid())}
 	}
 	if err := datastore.Get(ctx, cls); err != nil {
-		return nil, errors.Annotate(err, "failed to load deps as CLs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load deps as CLs: %w", err))
 	}
 	urls := make([]string, len(deps))
 	for i, cl := range cls {

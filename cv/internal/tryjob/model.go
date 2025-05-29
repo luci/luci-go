@@ -170,9 +170,9 @@ func CondDelete(ctx context.Context, tjID common.TryjobID, expectedEVersion int6
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil // tryjob already gets deleted
 		case err != nil:
-			return errors.Annotate(err, "failed to load tryjob %d", tjID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load tryjob %d: %w", tjID, err))
 		case tj.EVersion != expectedEVersion:
-			return errors.Reason("request to delete tryjob %d at EVersion: %d, got EVersion: %d", tjID, expectedEVersion, tj.EVersion).Err()
+			return errors.Fmt("request to delete tryjob %d at EVersion: %d, got EVersion: %d", tjID, expectedEVersion, tj.EVersion)
 		}
 		toDelete := []any{tj}
 		if tj.ExternalID != "" {
@@ -180,7 +180,7 @@ func CondDelete(ctx context.Context, tjID common.TryjobID, expectedEVersion int6
 			toDelete = append(toDelete, &tryjobMap{ExternalID: tj.ExternalID})
 		}
 		if err := datastore.Delete(ctx, toDelete); err != nil {
-			return errors.Annotate(err, "failed to delete tryjob %d", tjID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to delete tryjob %d: %w", tjID, err))
 		}
 		return nil
 	}, nil)
@@ -297,28 +297,28 @@ func (cp CLPatchset) Parse() (common.CLID, int32, error) {
 	case 3:
 		// Version 1 requires three slash-separated values.
 	default:
-		return 0, 0, errors.Reason("CLPatchset in unexpected format %q", cp).Err()
+		return 0, 0, errors.Fmt("CLPatchset in unexpected format %q", cp)
 	}
 
 	ver, err := strconv.ParseInt(values[0], 16, 32)
 	switch {
 	case err != nil:
-		return 0, 0, errors.Annotate(err, "version segment in unexpected format %q", values[0]).Err()
+		return 0, 0, errors.Fmt("version segment in unexpected format %q: %w", values[0], err)
 	case ver == clPatchsetEncodingVersion:
 		if len(values) != 3 {
 			panic(fmt.Errorf("impossible: number of values is not 3"))
 		}
 		clid, err = strconv.ParseInt(values[1], 16, 64)
 		if err != nil {
-			return 0, 0, errors.Annotate(err, "clid segment in unexpected format %q", values[1]).Err()
+			return 0, 0, errors.Fmt("clid segment in unexpected format %q: %w", values[1], err)
 		}
 		patchset, err = strconv.ParseInt(values[2], 16, 32)
 		if err != nil {
-			return 0, 0, errors.Annotate(err, "patchset segment in unexpected format %q", values[2]).Err()
+			return 0, 0, errors.Fmt("patchset segment in unexpected format %q: %w", values[2], err)
 		}
 		return common.CLID(clid), int32(patchset), nil
 	default:
-		return 0, 0, errors.Reason("unsupported version %d", ver).Err()
+		return 0, 0, errors.Fmt("unsupported version %d", ver)
 	}
 }
 

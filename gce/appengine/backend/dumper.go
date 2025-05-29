@@ -50,7 +50,7 @@ func newBQDataset(c context.Context) (bqDataset, error) {
 	}
 	client, err := bigquery.NewClient(c, prj)
 	if err != nil {
-		return nil, errors.Annotate(err, "new BQ dataset").Err()
+		return nil, errors.Fmt("new BQ dataset: %w", err)
 	}
 	return &realBQDataset{client: client, dsID: dataset}, nil
 }
@@ -78,7 +78,7 @@ func uploadToBQ(c context.Context, ds bqDataset) error {
 	for _, d := range entries {
 		rows, err := d.dumpFunc(c)
 		if err != nil {
-			errs = append(errs, errors.Annotate(err, "upload to BQ").Err())
+			errs = append(errs, errors.Fmt("upload to BQ: %w", err))
 			continue
 		}
 		if l := len(rows); l == 0 {
@@ -86,7 +86,7 @@ func uploadToBQ(c context.Context, ds bqDataset) error {
 			continue
 		}
 		if err := ds.putToTable(c, d.bqTableName, rows); err != nil {
-			return errors.Annotate(err, "upload to BQ (%q)", d.datastoreKind).Err()
+			return errors.Fmt("upload to BQ (%q): %w", d.datastoreKind, err)
 		} else {
 			logging.Debugf(c, "dumped %d rows of %q", len(rows), d.datastoreKind)
 		}
@@ -144,7 +144,7 @@ func dumpInstanceCount(c context.Context) ([]proto.Message, error) {
 		}
 		rows = append(rows, r)
 	}); err != nil {
-		return nil, errors.Annotate(err, "dump InstanceCount").Err()
+		return nil, errors.Fmt("dump InstanceCount: %w", err)
 	}
 	return rows, nil
 }
@@ -162,7 +162,7 @@ func dumpConfig(c context.Context) ([]proto.Message, error) {
 		}
 		rows = append(rows, r)
 	}); err != nil {
-		return nil, errors.Annotate(err, "dump Config").Err()
+		return nil, errors.Fmt("dump Config: %w", err)
 	}
 	return rows, nil
 }

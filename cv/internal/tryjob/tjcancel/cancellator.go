@@ -86,7 +86,7 @@ func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTr
 	}
 	cl := &changelist.CL{ID: common.CLID(task.GetClid())}
 	if err := datastore.Get(ctx, cl); err != nil {
-		return errors.Annotate(err, "failed to load CL %d", cl.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load CL %d: %w", cl.ID, err))
 	}
 	preserveTryjob := false
 	for _, metadata := range cl.Snapshot.GetMetadata() {
@@ -138,7 +138,7 @@ func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, pre
 	})
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to run the query to fetch candidate tryjobs for cancellation").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to run the query to fetch candidate tryjobs for cancellation: %w", err))
 	case len(candidates) == 0:
 		return nil, nil
 	}
@@ -180,9 +180,9 @@ func makeHasAllWatchingRunEndedFn(ctx context.Context, tryjobs []*tryjob.Tryjob)
 	for i, r := range runs {
 		switch err := errs[i]; {
 		case err == datastore.ErrNoSuchEntity:
-			return nil, errors.Reason("Tryjob is associated with a non-existent Run %s", r.ID).Err()
+			return nil, errors.Fmt("Tryjob is associated with a non-existent Run %s", r.ID)
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to load run %s", r.ID).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load run %s: %w", r.ID, err))
 		case run.IsEnded(r.Status):
 			endedRunIDs[r.ID] = struct{}{}
 		}
@@ -215,11 +215,11 @@ func (c *Cancellator) cancelTryjobs(ctx context.Context, tjs []*tryjob.Tryjob) e
 				// number of RPCs.
 				err = be.CancelTryjob(ctx, tj, reason)
 				if err != nil {
-					return errors.Annotate(err, "failed to cancel Tryjob [id=%d, eid=%s]", tj.ID, tj.ExternalID).Err()
+					return errors.Fmt("failed to cancel Tryjob [id=%d, eid=%s]: %w", tj.ID, tj.ExternalID, err)
 				}
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					if err := datastore.Get(ctx, tj); err != nil {
-						return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+						return transient.Tag.Apply(errors.Fmt("failed to load Tryjob %d: %w", tj.ID, err))
 					}
 					if tj.IsEnded() {
 						return nil
@@ -228,7 +228,7 @@ func (c *Cancellator) cancelTryjobs(ctx context.Context, tjs []*tryjob.Tryjob) e
 					tj.EVersion++
 					tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 					if err := datastore.Put(ctx, tj); err != nil {
-						return errors.Annotate(err, "failed to save Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+						return transient.Tag.Apply(errors.Fmt("failed to save Tryjob %d: %w", tj.ID, err))
 					}
 					return nil
 				}, nil)
@@ -262,5 +262,5 @@ func (c *Cancellator) backendFor(t *tryjob.Tryjob) (cancellatorBackend, error) {
 	if b, exists := c.backends[kind]; exists {
 		return b, nil
 	}
-	return nil, errors.Reason("%q backend is not supported", kind).Err()
+	return nil, errors.Fmt("%q backend is not supported", kind)
 }

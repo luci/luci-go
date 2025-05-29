@@ -82,7 +82,7 @@ type recentRunsParams struct {
 func parseFormParams(c *router.Context) (recentRunsParams, error) {
 	params := recentRunsParams{}
 	if err := c.Request.ParseForm(); err != nil {
-		return params, errors.Annotate(err, "failed to parse form").Err()
+		return params, errors.Fmt("failed to parse form: %w", err)
 	}
 
 	s := c.Request.Form.Get("status")

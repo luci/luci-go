@@ -64,9 +64,9 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	}
 	switch err := datastore.Get(c, vm); {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+		return errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
 	case vm.Hostname != hostname:
-		return errors.Reason("bot %q does not exist", hostname).Err()
+		return errors.Fmt("bot %q does not exist", hostname)
 	case vm.Connected > 0:
 		return nil
 	}
@@ -75,15 +75,15 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 		put = false
 		switch err := datastore.Get(c, vm); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch VM with id: %q", id).Err()
+			return errors.Fmt("failed to fetch VM with id: %q: %w", id, err)
 		case vm.Hostname != hostname:
-			return errors.Reason("bot %q does not exist", hostname).Err()
+			return errors.Fmt("bot %q does not exist", hostname)
 		case vm.Connected > 0:
 			return nil
 		}
 		vm.Connected = at.Unix()
 		if err := datastore.Put(c, vm); err != nil {
-			return errors.Annotate(err, "failed to store VM").Err()
+			return errors.Fmt("failed to store VM: %w", err)
 		}
 		put = true
 		return nil
@@ -124,9 +124,9 @@ func manageBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ManageBot)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
+		return errors.Fmt("unexpected payload %q", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -135,7 +135,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Fmt("failed to fetch VM with id: %q: %w", task.GetId(), err)
 	case vm.URL == "":
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
@@ -151,7 +151,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 			return manageMissingBot(c, vm)
 		}
 		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "failed to fetch bot").Err()
+		return errors.Fmt("failed to fetch bot: %w", err)
 	}
 	if isDestroyable(c, bot, vm) {
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
@@ -167,7 +167,7 @@ func inspectSwarmingAsync(c context.Context) error {
 	if err := datastore.Run(c, qC, func(cfg *model.Config) {
 		swarmings.Add(cfg.Config.Swarming)
 	}); err != nil {
-		return errors.Annotate(err, "inspectSwarmingAsync: Failed to query configs").Err()
+		return errors.Fmt("inspectSwarmingAsync: Failed to query configs: %w", err)
 	}
 	// Generate all the inspectSwarmingTasks
 	var inspectSwarmingTasks []*tq.Task
@@ -182,7 +182,7 @@ func inspectSwarmingAsync(c context.Context) error {
 	// schedule all the inspect swarming tasks
 	if len(inspectSwarmingTasks) > 0 {
 		if err := getDispatcher(c).AddTask(c, inspectSwarmingTasks...); err != nil {
-			return errors.Annotate(err, "inspectSwarmingAsync: failed to schedule task").Err()
+			return errors.Fmt("inspectSwarmingAsync: failed to schedule task: %w", err)
 		}
 	}
 	return nil
@@ -196,9 +196,9 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.InspectSwarming)
 	switch {
 	case !ok:
-		return errors.Reason("InspectSwarming: unexpected payload %q", payload).Err()
+		return errors.Fmt("InspectSwarming: unexpected payload %q", payload)
 	case task.GetSwarming() == "":
-		return errors.Reason("InspectSwarming: swarming is required").Err()
+		return errors.New("InspectSwarming: swarming is required")
 	}
 	var inpectSwarmingSubtasks []*tq.Task
 	listRPCResp, err := getSwarming(c, task.GetSwarming()).ListBots(c, &swarmingpb.BotsRequest{
@@ -206,7 +206,7 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 		Cursor: task.Cursor,
 	})
 	if err != nil {
-		return errors.Annotate(err, "InspectSwarming: failed to List instances from swarming").Err()
+		return errors.Fmt("InspectSwarming: failed to List instances from swarming: %w", err)
 	}
 	// Schedule the new task with the new cursor
 	if listRPCResp.Cursor != "" {
@@ -253,7 +253,7 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 	// Dispatch all the tasks
 	if len(inpectSwarmingSubtasks) > 0 {
 		if err := getDispatcher(c).AddTask(c, inpectSwarmingSubtasks...); err != nil {
-			return errors.Annotate(err, "InspectSwarming: failed to schedule sub task(s)").Err()
+			return errors.Fmt("InspectSwarming: failed to schedule sub task(s): %w", err)
 		}
 	}
 	return nil
@@ -268,7 +268,7 @@ func terminateBotAsync(c context.Context, id, hostname string) error {
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
-		return errors.Annotate(err, "failed to schedule terminate task").Err()
+		return errors.Fmt("failed to schedule terminate task: %w", err)
 	}
 	return nil
 }
@@ -281,11 +281,11 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.TerminateBot)
 	switch {
 	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
+		return errors.Fmt("unexpected payload %q", payload)
 	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
+		return errors.New("ID is required")
 	case task.GetHostname() == "":
-		return errors.Reason("hostname is required").Err()
+		return errors.New("hostname is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -294,7 +294,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Fmt("failed to fetch VM with id: %q: %w", task.GetId(), err)
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't terminate the new bot.
 		logging.Debugf(c, "Terminate bot %q: vm does not exist. Skipping...", task.Hostname)
@@ -321,7 +321,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 			return nil
 		}
 		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "terminate bot %q", vm.Hostname).Err()
+		return errors.Fmt("terminate bot %q: %w", vm.Hostname, err)
 	}
 	if err := memcache.Set(c, mi.SetExpiration(time.Hour)); err != nil {
 		logging.Warningf(c, "Terminate bot %q: failed to record task in memcache: %s", vm.Hostname, err)
@@ -338,7 +338,7 @@ func deleteBotAsync(c context.Context, id, hostname string) error {
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
-		return errors.Annotate(err, "Destroy instance %q: failed to schedule delete bot task.", hostname).Err()
+		return errors.Fmt("Destroy instance %q: failed to schedule delete bot task.: %w", hostname, err)
 	}
 	logging.Debugf(c, "Destroy instance %q: scheduled task to delete bot.", hostname)
 	return nil
@@ -352,11 +352,11 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DeleteBot)
 	switch {
 	case !ok:
-		return errors.Reason("delete bot: unexpected payload %q", payload).Err()
+		return errors.Fmt("delete bot: unexpected payload %q", payload)
 	case task.GetId() == "":
-		return errors.Reason("delete bot:ID is required").Err()
+		return errors.New("delete bot:ID is required")
 	case task.GetHostname() == "":
-		return errors.Reason("delete bot: hostname is required").Err()
+		return errors.New("delete bot: hostname is required")
 	}
 	vm := &model.VM{
 		ID: task.Id,
@@ -365,10 +365,10 @@ func deleteBot(c context.Context, payload proto.Message) error {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "delete bot: failed to fetch VM with id: %q", task.GetId()).Err()
+		return errors.Fmt("delete bot: failed to fetch VM with id: %q: %w", task.GetId(), err)
 	case vm.Hostname != task.Hostname:
 		// Instance is already destroyed and replaced. Don't delete the new bot.
-		return errors.Reason("delete bot %q: does not exist", task.Hostname).Err()
+		return errors.Fmt("delete bot %q: does not exist", task.Hostname)
 	}
 	logging.Debugf(c, "Delete bot %q: on swarming %s.", vm.Hostname, vm.Swarming)
 	_, err := getSwarming(c, vm.Swarming).DeleteBot(c, &swarmingpb.BotRequest{
@@ -381,7 +381,7 @@ func deleteBot(c context.Context, payload proto.Message) error {
 			return deleteVM(c, task.Id, vm.Hostname)
 		}
 		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "failed to delete bot").Err()
+		return errors.Fmt("failed to delete bot: %w", err)
 	}
 	logging.Debugf(c, "Delete bot %q: done!", vm.Hostname)
 	return deleteVM(c, task.Id, vm.Hostname)
@@ -398,14 +398,14 @@ func deleteVM(c context.Context, id, hostname string) error {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "delete VM %q: failed to fetch VM with id: %q", hostname, id).Err()
+			return errors.Fmt("delete VM %q: failed to fetch VM with id: %q: %w", hostname, id, err)
 		case vm.Hostname != hostname:
 			logging.Debugf(c, "Delete VM %q: not found.", hostname)
 			return nil
 		}
 		logging.Debugf(c, "Delete VM %q: VM found and ready to delete.", hostname)
 		if err := datastore.Delete(c, vm); err != nil {
-			return errors.Annotate(err, "failed to delete VM").Err()
+			return errors.Fmt("failed to delete VM: %w", err)
 		}
 		logging.Debugf(c, "Deleted VM %q: done!", hostname)
 		return nil
@@ -419,9 +419,9 @@ func deleteStaleSwarmingBots(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.DeleteStaleSwarmingBots)
 	switch {
 	case !ok:
-		return errors.Reason("deleteStaleSwarmingBots: unexpected payload %q", payload).Err()
+		return errors.Fmt("deleteStaleSwarmingBots: unexpected payload %q", payload)
 	case task.GetBots() == nil:
-		return errors.Reason("deleteStaleSwarmingBots: No Bots to process").Err()
+		return errors.New("deleteStaleSwarmingBots: No Bots to process")
 	}
 	var errs []error
 	for _, dssb := range task.GetBots() {
@@ -439,11 +439,11 @@ func deleteStaleSwarmingBots(c context.Context, payload proto.Message) error {
 func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBot) error {
 	switch {
 	case task == nil:
-		return errors.Reason("deleteStaleSwarmingBot: Bad input?").Err()
+		return errors.New("deleteStaleSwarmingBot: Bad input?")
 	case task.GetId() == "":
-		return errors.Reason("deleteStaleSwarmingBot: Missing bot id").Err()
+		return errors.New("deleteStaleSwarmingBot: Missing bot id")
 	case task.GetFirstSeenTs() == "":
-		return errors.Reason("deleteStaleSwarmingBot: Missing timestamp").Err()
+		return errors.New("deleteStaleSwarmingBot: Missing timestamp")
 	}
 	vm := &model.VM{
 		ID: task.GetId(),
@@ -452,7 +452,7 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "deleteStaleSwarmingBot: failed to fetch VM %s", task.GetId()).Err()
+		return errors.Fmt("deleteStaleSwarmingBot: failed to fetch VM %s: %w", task.GetId(), err)
 	case vm.URL == "":
 		logging.Debugf(c, "deleteStaleSwarmingBot: instance %q does not exist", vm.Hostname)
 		return nil
@@ -470,7 +470,7 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	})
 	if err != nil {
 		logGrpcError(c, vm.Hostname, err)
-		return errors.Annotate(err, "deleteStaleSwarmingBot: failed to fetch bot events for %s", vm.Hostname).Err()
+		return errors.Fmt("deleteStaleSwarmingBot: failed to fetch bot events for %s: %w", vm.Hostname, err)
 	}
 	for _, e := range events.Items {
 		if e.EventType == "bot_terminate" {
@@ -492,10 +492,10 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	if vm.Connected == 0 {
 		t, err := time.Parse(utcRFC3339, task.GetFirstSeenTs())
 		if err != nil {
-			return errors.Annotate(err, "deleteStaleSwarmingBot: %s failed to parse bot connection time", vm.ID).Err()
+			return errors.Fmt("deleteStaleSwarmingBot: %s failed to parse bot connection time: %w", vm.ID, err)
 		}
 		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
-			return errors.Annotate(err, "deleteStaleSwarmingBot: %s failed to set connected time", vm.ID).Err()
+			return errors.Fmt("deleteStaleSwarmingBot: %s failed to set connected time: %w", vm.ID, err)
 		}
 	}
 	return nil

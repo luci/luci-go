@@ -90,7 +90,7 @@ func ApplyCursors(ctx context.Context, queries []*Query, cursor Cursor) ([]*Quer
 func ApplyCursorString(ctx context.Context, queries []*Query, cursorToken string) ([]*Query, error) {
 	cursBuf, err := base64.StdEncoding.DecodeString(cursorToken)
 	if err != nil {
-		return nil, errors.Annotate(err, "Failed to decode cursor").Err()
+		return nil, errors.Fmt("Failed to decode cursor: %w", err)
 	}
 	var curs mc.Cursors
 	err = proto.Unmarshal(cursBuf, &curs)
@@ -121,7 +121,7 @@ func ApplyCursorString(ctx context.Context, queries []*Query, cursorToken string
 		if curs.Cursors[idx] != "" {
 			cursor, err := DecodeCursor(ctx, curs.Cursors[idx])
 			if err != nil {
-				return nil, errors.Annotate(err, "Cannot decode cursor for a query").Err()
+				return nil, errors.Fmt("Cannot decode cursor for a query: %w", err)
 			}
 			queries[qIdx] = queries[qIdx].Start(cursor)
 		}

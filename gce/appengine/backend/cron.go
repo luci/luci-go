@@ -81,11 +81,11 @@ func trigger(c context.Context, t tasks.Task, q *datastore.Query) error {
 		})
 	}
 	if err := datastore.Run(c, q, addTask); err != nil {
-		return errors.Annotate(err, "failed to fetch keys").Err()
+		return errors.Fmt("failed to fetch keys: %w", err)
 	}
 	logging.Debugf(c, "scheduling %d tasks", len(tasks))
 	if err := getDispatcher(c).AddTask(c, tasks...); err != nil {
-		return errors.Annotate(err, "failed to schedule tasks").Err()
+		return errors.Fmt("failed to schedule tasks: %w", err)
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func drainVMsAsync(c context.Context) error {
 	if err := datastore.Run(c, qC, func(cfg *model.Config) {
 		configMap[cfg.ID] = cfg.Config
 	}); err != nil {
-		return errors.Annotate(err, "drain vms: failed to list Config").Err()
+		return errors.Fmt("drain vms: failed to list Config: %w", err)
 	}
 	logging.Debugf(c, "Drain vms: staring...")
 	vmMap := make(map[string]*model.VM)
@@ -127,7 +127,7 @@ func drainVMsAsync(c context.Context) error {
 	if err := datastore.Run(c, qV, func(vm *model.VM) {
 		vmMap[vm.ID] = vm
 	}); err != nil {
-		return errors.Annotate(err, "drain vms: failed to list VMs").Err()
+		return errors.Fmt("drain vms: failed to list VMs: %w", err)
 	}
 	/* Config dictate how many VMs can be online for any given prefix. Check if there are
 	 * more bots assigned than required by the config and drain them.
@@ -154,7 +154,7 @@ func drainVMsAsync(c context.Context) error {
 	}
 	if len(taskList) > 0 {
 		if err := getDispatcher(c).AddTask(c, taskList...); err != nil {
-			return errors.Annotate(err, "drain vms: failed to schedule tasks").Err()
+			return errors.Fmt("drain vms: failed to schedule tasks: %w", err)
 		}
 	}
 	return nil
@@ -168,7 +168,7 @@ func auditInstances(c context.Context) error {
 	}
 	q := datastore.NewQuery(model.ConfigKind)
 	if err := datastore.Run(c, q, addProject); err != nil {
-		return errors.Annotate(err, "failed to schedule audits").Err()
+		return errors.Fmt("failed to schedule audits: %w", err)
 	}
 	projects := proj.ToSlice()
 	jobs := make([]*tq.Task, 0)
@@ -189,7 +189,7 @@ func auditInstances(c context.Context) error {
 		}
 	}
 	if err := getDispatcher(c).AddTask(c, jobs...); err != nil {
-		return errors.Annotate(err, "audit instances: failed to schedule tasks").Err()
+		return errors.Fmt("audit instances: failed to schedule tasks: %w", err)
 	}
 	return nil
 }
@@ -207,13 +207,13 @@ func countTasks(c context.Context) error {
 		s, err := taskqueue.Stats(c, q)
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to get %q task queue stats", q).Err()
+			return errors.Fmt("failed to get %q task queue stats: %w", q, err)
 		case len(s) < 1:
-			return errors.Reason("failed to get %q task queue stats", q).Err()
+			return errors.Fmt("failed to get %q task queue stats", q)
 		}
 		t := &metrics.TaskCount{}
 		if err := t.Update(c, q, s[0].InFlight, s[0].Tasks); err != nil {
-			return errors.Annotate(err, "failed to update %q task queue count", q).Err()
+			return errors.Fmt("failed to update %q task queue count: %w", q, err)
 		}
 	}
 	return nil
@@ -225,10 +225,10 @@ func countTasks(c context.Context) error {
 func dumpDatastoreSync(c context.Context) error {
 	ds, err := newBQDataset(c)
 	if err != nil {
-		return errors.Annotate(err, "dump datastore").Err()
+		return errors.Fmt("dump datastore: %w", err)
 	}
 	if err := uploadToBQ(c, ds); err != nil {
-		return errors.Annotate(err, "dump datastore").Err()
+		return errors.Fmt("dump datastore: %w", err)
 	}
 	return nil
 }

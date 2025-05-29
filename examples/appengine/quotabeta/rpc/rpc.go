@@ -56,7 +56,7 @@ func (*Demo) GlobalRateLimit(ctx context.Context, _ *emptypb.Empty) (*emptypb.Em
 	case quota.ErrInsufficientQuota:
 		return nil, appstatus.Errorf(codes.ResourceExhausted, "global rate limit exceeded")
 	default:
-		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
+		return nil, errors.Fmt("quota.UpdateQuota: %w", err)
 	}
 }
 
@@ -71,7 +71,7 @@ func (*Demo) GlobalQuotaReset(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 	case nil:
 		return &emptypb.Empty{}, nil
 	default:
-		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
+		return nil, errors.Fmt("quota.UpdateQuota: %w", err)
 	}
 }
 
@@ -96,7 +96,7 @@ func (*Demo) PerUserRateLimit(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 	case quota.ErrInsufficientQuota:
 		return nil, appstatus.Errorf(codes.ResourceExhausted, "per-user rate limit exceeded")
 	default:
-		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
+		return nil, errors.Fmt("quota.UpdateQuota: %w", err)
 	}
 }
 
@@ -114,7 +114,7 @@ func (*Demo) PerUserQuotaReset(ctx context.Context, _ *emptypb.Empty) (*emptypb.
 	case nil:
 		return &emptypb.Empty{}, nil
 	default:
-		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
+		return nil, errors.Fmt("quota.UpdateQuota: %w", err)
 	}
 }
 

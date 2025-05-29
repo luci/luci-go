@@ -67,7 +67,7 @@ func (srv *Actuations) BeginActuation(ctx context.Context, req *rpcpb.BeginActua
 			// A different caller: some kind of a conflict.
 			return status.Errorf(codes.FailedPrecondition, "actuation %q already exists and was created by %q", req.Actuation.Id, existing)
 		case err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "fetching Actuation").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("fetching Actuation: %w", err))
 		}
 
 		// Start a new operation that would update Asset and Actuation entities.
@@ -80,14 +80,14 @@ func (srv *Actuations) BeginActuation(ctx context.Context, req *rpcpb.BeginActua
 			LogUrl:     req.Actuation.LogUrl,
 		})
 		if err != nil {
-			return errors.Annotate(err, "creating Actuation").Err()
+			return errors.Fmt("creating Actuation: %w", err)
 		}
 		for assetID, assetToActuate := range req.Assets {
 			op.MakeDecision(ctx, assetID, assetToActuate)
 		}
 		decisions, err := op.Apply(ctx)
 		if err != nil {
-			return errors.Annotate(err, "applying changes").Err()
+			return errors.Fmt("applying changes: %w", err)
 		}
 		resp = &rpcpb.BeginActuationResponse{Decisions: decisions}
 		return nil
@@ -112,7 +112,7 @@ func (srv *Actuations) EndActuation(ctx context.Context, req *rpcpb.EndActuation
 		case err == datastore.ErrNoSuchEntity:
 			return status.Errorf(codes.NotFound, "actuation %q doesn't exists", req.ActuationId)
 		case err != nil:
-			return errors.Annotate(err, "fetching Actuation").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("fetching Actuation: %w", err))
 		}
 
 		// The actuation must have been started by the same identity.
@@ -139,14 +139,14 @@ func (srv *Actuations) EndActuation(ctx context.Context, req *rpcpb.EndActuation
 		// Mutate the state of all actuated assets.
 		op, err := model.NewActuationEndOp(ctx, act)
 		if err != nil {
-			return errors.Annotate(err, "finalizing Actuation").Err()
+			return errors.Fmt("finalizing Actuation: %w", err)
 		}
 		op.UpdateActuationStatus(ctx, req.Status, req.LogUrl)
 		for assetID, actuatedAsset := range req.Assets {
 			op.HandleActuatedState(ctx, assetID, actuatedAsset)
 		}
 		if err := op.Apply(ctx); err != nil {
-			return errors.Annotate(err, "applying changes").Err()
+			return errors.Fmt("applying changes: %w", err)
 		}
 		return nil
 	})

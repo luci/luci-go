@@ -61,16 +61,16 @@ func expireActuation(ctx context.Context, actuationID string) error {
 	return Txn(ctx, func(ctx context.Context) error {
 		a := Actuation{ID: actuationID}
 		if err := datastore.Get(ctx, &a); err != nil {
-			return errors.Annotate(err, "fetching Actuation entity").Err()
+			return errors.Fmt("fetching Actuation entity: %w", err)
 		}
 		if a.State == modelpb.Actuation_EXECUTING {
 			op, err := NewActuationEndOp(ctx, &a)
 			if err != nil {
-				return errors.Annotate(err, "starting Actuation end op").Err()
+				return errors.Fmt("starting Actuation end op: %w", err)
 			}
 			op.Expire(ctx)
 			if err := op.Apply(ctx); err != nil {
-				return errors.Annotate(err, "applying changes").Err()
+				return errors.Fmt("applying changes: %w", err)
 			}
 		}
 		return nil

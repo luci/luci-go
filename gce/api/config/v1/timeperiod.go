@@ -27,7 +27,7 @@ func (t *TimePeriod) Normalize() error {
 	}
 	n, err := t.Time.(*TimePeriod_Duration).ToSeconds()
 	if err != nil {
-		return errors.Annotate(err, "invalid duration").Err()
+		return errors.Fmt("invalid duration: %w", err)
 	}
 	t.Time = &TimePeriod_Seconds{
 		Seconds: n,
@@ -46,7 +46,7 @@ func (t *TimePeriod) ToSeconds() (int64, error) {
 	case *TimePeriod_Seconds:
 		return t.Seconds, nil
 	default:
-		return 0, errors.Reason("unexpected type %T", t).Err()
+		return 0, errors.Fmt("unexpected type %T", t)
 	}
 }
 

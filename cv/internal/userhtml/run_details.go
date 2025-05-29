@@ -109,7 +109,7 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 				}
 			}
 			if err := datastore.Get(ctx, latestTryjobs); err != nil {
-				return errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to load tryjobs: %w", err))
 			}
 		} else {
 			for _, tj := range r.Tryjobs.GetTryjobs() {
@@ -174,7 +174,7 @@ func computeCLsAndLinks(ctx context.Context, cls []*run.RunCL, rid common.RunID)
 		eg.Go(func() error {
 			prev, next, err := getNeighborsByCL(ctx, cl, rid)
 			if err != nil {
-				return errors.Annotate(err, "unable to get previous and next runs for cl %s", cl.ExternalID).Err()
+				return errors.Fmt("unable to get previous and next runs for cl %s: %w", cl.ExternalID, err)
 			}
 			ret[i] = &clAndNeighborRuns{
 				Prev: prev,
@@ -222,7 +222,7 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 		case err != nil:
 			return err
 		case len(keys) == limit:
-			return errors.Reason("too many Runs (>=%d) after %q", limit, rID).Err()
+			return errors.Fmt("too many Runs (>=%d) after %q", limit, rID)
 		case len(keys) > 0:
 			next = common.RunID(keys[len(keys)-1].StringID())
 			// It's OK to return the next Run ID w/o checking ACLs because even if the

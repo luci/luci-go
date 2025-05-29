@@ -28,12 +28,12 @@ func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
 	for _, s := range a.GetChange() {
 		start, err := s.mostRecentStart(now)
 		if err != nil {
-			return 0, errors.Annotate(err, "invalid start time").Err()
+			return 0, errors.Fmt("invalid start time: %w", err)
 		}
 		if start.Before(now) || start.Equal(now) {
 			sec, err := s.Length.ToSeconds()
 			if err != nil {
-				return 0, errors.Annotate(err, "invalid length").Err()
+				return 0, errors.Fmt("invalid length: %w", err)
 			}
 			end := start.Add(time.Second * time.Duration(sec))
 			if now.Before(end) {

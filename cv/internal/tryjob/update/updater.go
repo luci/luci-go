@@ -110,16 +110,16 @@ func (u *Updater) Update(ctx context.Context, eid tryjob.ExternalID, data any) e
 	case err != nil:
 		return err
 	case tj == nil:
-		return errors.Reason("unknown Tryjob with ExternalID %s", eid).Err()
+		return errors.Fmt("unknown Tryjob with ExternalID %s", eid)
 	}
 	backend, err := u.backendFor(tj)
 	if err != nil {
-		return errors.Annotate(err, "resolving backend for %v", tj).Err()
+		return errors.Fmt("resolving backend for %v: %w", tj, err)
 	}
 
 	switch status, result, err := backend.Parse(ctx, data); {
 	case err != nil:
-		return errors.Reason("failed to parse status and result for tryjob %s", eid).Err()
+		return errors.Fmt("failed to parse status and result for tryjob %s", eid)
 	default:
 		return u.conditionallyUpdate(ctx, tj.ID, status, result)
 	}
@@ -136,33 +136,33 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		switch err := datastore.Get(ctx, tj); err {
 		case nil:
 			if task.GetExternalId() != "" && task.GetExternalId() != string(tj.ExternalID) {
-				return errors.Reason("the given internal and external IDs for the Tryjob do not match").Err()
+				return errors.New("the given internal and external IDs for the Tryjob do not match")
 			}
 		case datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "unknown Tryjob with ID %d", task.Id).Err()
+			return errors.Fmt("unknown Tryjob with ID %d: %w", task.Id, err)
 		default:
-			return errors.Annotate(err, "loading Tryjob with ID %d", task.Id).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("loading Tryjob with ID %d: %w", task.Id, err))
 		}
 	case task.GetExternalId() != "":
 		var err error
 		switch tj, err = tryjob.ExternalID(task.ExternalId).Load(ctx); {
 		case err != nil:
-			return errors.Annotate(err, "loading Tryjob with ExternalID %s", task.ExternalId).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("loading Tryjob with ExternalID %s: %w", task.ExternalId, err))
 		case tj == nil:
-			return errors.Reason("unknown Tryjob with ExternalID %s", task.ExternalId).Err()
+			return errors.Fmt("unknown Tryjob with ExternalID %s", task.ExternalId)
 		}
 	default:
-		return errors.Reason("expected at least one of {Id, ExternalId} in %+v", task).Err()
+		return errors.Fmt("expected at least one of {Id, ExternalId} in %+v", task)
 	}
 
 	backend, err := u.backendFor(tj)
 	if err != nil {
-		return errors.Annotate(err, "resolving backend for %v", tj).Err()
+		return errors.Fmt("resolving backend for %v: %w", tj, err)
 	}
 
 	switch status, result, err := backend.Fetch(ctx, tj.LUCIProject(), tj.ExternalID); {
 	case err != nil:
-		return errors.Reason("failed to read status and result from %q", tj.ExternalID).Err()
+		return errors.Fmt("failed to read status and result from %q", tj.ExternalID)
 	default:
 		return u.conditionallyUpdate(ctx, tj.ID, status, result)
 	}
@@ -227,7 +227,7 @@ func isSemanticallyEqual(left, right *tryjob.Result) bool {
 func (u *Updater) reportTryjobEndedStatus(ctx context.Context, tj *tryjob.Tryjob) error {
 	r := &run.Run{ID: tj.LaunchedBy}
 	if err := datastore.Get(ctx, r); err != nil {
-		return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to load Run %s: %w", r.ID, err))
 	}
 	project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
 	isRetry := true
@@ -259,5 +259,5 @@ func (u *Updater) backendFor(t *tryjob.Tryjob) (updaterBackend, error) {
 	if b, exists := u.backends[kind]; exists {
 		return b, nil
 	}
-	return nil, errors.Reason("%q backend is not supported", kind).Err()
+	return nil, errors.Fmt("%q backend is not supported", kind)
 }

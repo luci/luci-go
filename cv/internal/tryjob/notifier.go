@@ -87,7 +87,7 @@ func (n *Notifier) ScheduleCancelStale(ctx context.Context, clid common.CLID, gt
 			ETA:   eta,
 		})
 		if err != nil {
-			return errors.Annotate(err, "failed to schedule task to cancel stale tryjobs for CLID %d", clid).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to schedule task to cancel stale tryjobs for CLID %d: %w", clid, err))
 		}
 	}
 	return nil

@@ -96,7 +96,7 @@ func (*Assets) ListAssetHistory(ctx context.Context, req *rpcpb.ListAssetHistory
 
 	var entries []*model.AssetHistory
 	if err := datastore.GetAll(ctx, q, &entries); err != nil {
-		return nil, errors.Annotate(err, "querying AssetHistory").Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(errors.Fmt("querying AssetHistory: %w", err))
 	}
 
 	resp = &rpcpb.ListAssetHistoryResponse{Asset: asset.Asset}

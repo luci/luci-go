@@ -43,13 +43,13 @@ func LoadTryjobsByIDs(ctx context.Context, ids []common.TryjobID) ([]*Tryjob, er
 	case ok:
 		for i, err := range merr {
 			if err == datastore.ErrNoSuchEntity {
-				return nil, errors.Reason("tryjob %d not found in datastore", ids[i]).Err()
+				return nil, errors.Fmt("tryjob %d not found in datastore", ids[i])
 			}
 		}
 		count, err := merr.Summary()
-		return nil, errors.Annotate(err, "failed to load %d out of %d tryjobs", count, len(ids)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load %d out of %d tryjobs: %w", count, len(ids), err))
 	default:
-		return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load tryjobs: %w", err))
 	}
 }
 
@@ -97,7 +97,7 @@ func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.
 			var keys []*datastore.Key
 			switch err := datastore.GetAll(ectx, q, &keys); {
 			case err != nil:
-				return errors.Annotate(err, "failed to query Tryjob keys").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to query Tryjob keys: %w", err))
 			case len(keys) > 0:
 				retMu.Lock()
 				for _, key := range keys {

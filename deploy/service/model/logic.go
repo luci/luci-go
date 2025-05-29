@@ -62,19 +62,19 @@ func validateState(assetID string, state *modelpb.AssetState, cb func(state any)
 	switch {
 	case state == nil:
 		// AssetState itself should be populated.
-		return errors.Reason("no state populated").Err()
+		return errors.New("no state populated")
 	case state.Status.GetCode() != int32(codes.OK):
 		if state.State != nil {
-			return errors.Reason("if `status` is not OK, `state` should be absent").Err()
+			return errors.New("if `status` is not OK, `state` should be absent")
 		}
 		return nil
 	case isAppengineAssetID(assetID):
 		if s := state.GetAppengine(); s != nil {
 			return cb(s)
 		}
-		return errors.Reason("not an Appengine state").Err()
+		return errors.New("not an Appengine state")
 	default:
-		return errors.Reason("unrecognized asset ID format").Err()
+		return errors.New("unrecognized asset ID format")
 	}
 }
 
@@ -139,7 +139,7 @@ func isAppengineAssetID(assetID string) bool {
 
 func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 	if state.IntendedState == nil {
-		return errors.Reason("no intended_state field").Err()
+		return errors.New("no intended_state field")
 	}
 
 	err := visitServices(state, true, func(svc *modelpb.AppengineState_Service) error {
@@ -147,7 +147,7 @@ func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 			return err
 		}
 		if svc.TrafficSplitting == 0 {
-			return errors.Reason("no traffic_splitting field").Err()
+			return errors.New("no traffic_splitting field")
 		}
 		return nil
 	})
@@ -157,7 +157,7 @@ func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 
 	return visitVersions(state, true, func(ver *modelpb.AppengineState_Service_Version) error {
 		if ver.IntendedState == nil {
-			return errors.Reason("no intended_state field").Err()
+			return errors.New("no intended_state field")
 		}
 		return nil
 	})
@@ -165,7 +165,7 @@ func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 
 func validateAppengineReportedState(state *modelpb.AppengineState) error {
 	if state.CapturedState == nil {
-		return errors.Reason("no captured_state field").Err()
+		return errors.New("no captured_state field")
 	}
 
 	// Note: the list of reported services may be empty for a completely new GAE
@@ -186,7 +186,7 @@ func validateAppengineReportedState(state *modelpb.AppengineState) error {
 	// versions.
 	return visitVersions(state, false, func(ver *modelpb.AppengineState_Service_Version) error {
 		if ver.CapturedState == nil {
-			return errors.Reason("no captured_state field").Err()
+			return errors.New("no captured_state field")
 		}
 		return nil
 	})
@@ -194,14 +194,14 @@ func validateAppengineReportedState(state *modelpb.AppengineState) error {
 
 func validateTrafficAllocation(t map[string]int32) error {
 	if len(t) == 0 {
-		return errors.Reason("no traffic_allocation field").Err()
+		return errors.New("no traffic_allocation field")
 	}
 	total := 0
 	for _, p := range t {
 		total += int(p)
 	}
 	if total != 1000 {
-		return errors.Reason("traffic_allocation: total traffic %d != 1000", total).Err()
+		return errors.Fmt("traffic_allocation: total traffic %d != 1000", total)
 	}
 	return nil
 }
@@ -209,14 +209,14 @@ func validateTrafficAllocation(t map[string]int32) error {
 // visitServices calls the callback for each Service proto.
 func visitServices(state *modelpb.AppengineState, allowEmpty bool, cb func(*modelpb.AppengineState_Service) error) error {
 	if len(state.Services) == 0 && !allowEmpty {
-		return errors.Reason("services list is empty").Err()
+		return errors.New("services list is empty")
 	}
 	for _, svc := range state.Services {
 		if svc.Name == "" {
-			return errors.Reason("unnamed service").Err()
+			return errors.New("unnamed service")
 		}
 		if err := cb(svc); err != nil {
-			return errors.Annotate(err, "in service %q", svc.Name).Err()
+			return errors.Fmt("in service %q: %w", svc.Name, err)
 		}
 	}
 	return nil
@@ -226,14 +226,14 @@ func visitServices(state *modelpb.AppengineState, allowEmpty bool, cb func(*mode
 func visitVersions(state *modelpb.AppengineState, allowEmpty bool, cb func(*modelpb.AppengineState_Service_Version) error) error {
 	for _, svc := range state.Services {
 		if len(svc.Versions) == 0 && !allowEmpty {
-			return errors.Reason("in service %q: no versions", svc.Name).Err()
+			return errors.Fmt("in service %q: no versions", svc.Name)
 		}
 		for _, ver := range svc.Versions {
 			if ver.Name == "" {
-				return errors.Reason("in service %q: unnamed version", svc.Name).Err()
+				return errors.Fmt("in service %q: unnamed version", svc.Name)
 			}
 			if err := cb(ver); err != nil {
-				return errors.Annotate(err, "in service %q: in version %q", svc.Name, ver.Name).Err()
+				return errors.Fmt("in service %q: in version %q: %w", svc.Name, ver.Name, err)
 			}
 		}
 	}
