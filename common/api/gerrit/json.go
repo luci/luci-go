@@ -282,7 +282,7 @@ func (r *requirement) ToProto() (*gerritpb.Requirement, error) {
 	stringVal := "REQUIREMENT_STATUS_" + r.Status
 	numVal, found := gerritpb.Requirement_Status_value[stringVal]
 	if !found {
-		return nil, errors.Reason("no Status enum value for %q", r.Status).Err()
+		return nil, errors.Fmt("no Status enum value for %q", r.Status)
 	}
 	return &gerritpb.Requirement{
 		Status:       gerritpb.Requirement_Status(numVal),
@@ -418,11 +418,11 @@ func (mi *mergeableInfo) ToProto() (*gerritpb.MergeableInfo, error) {
 	strategyEnumName := strings.Replace(strings.ToUpper(mi.Strategy), "-", "_", -1)
 	strategyEnumNum, found := gerritpb.MergeableStrategy_value[strategyEnumName]
 	if !found {
-		return nil, errors.Reason("no MergeableStrategy enum value for %q", strategyEnumName).Err()
+		return nil, errors.Fmt("no MergeableStrategy enum value for %q", strategyEnumName)
 	}
 	submitTypeEnumNum, found := gerritpb.MergeableInfo_SubmitType_value[mi.SubmitType]
 	if !found {
-		return nil, errors.Reason("no SubmitType enum value for %q", mi.SubmitType).Err()
+		return nil, errors.Fmt("no SubmitType enum value for %q", mi.SubmitType)
 	}
 	return &gerritpb.MergeableInfo{
 		SubmitType:    gerritpb.MergeableInfo_SubmitType(submitTypeEnumNum),
@@ -457,7 +457,7 @@ func (ri *reviewerInfo) ToProtoReviewerInfo() (*gerritpb.ReviewerInfo, error) {
 		score = strings.TrimLeft(score, " ")
 		scoreInt, err := strconv.ParseInt(score, 10, 32)
 		if err != nil {
-			return nil, errors.Annotate(err, "parsing approvals").Err()
+			return nil, errors.Fmt("parsing approvals: %w", err)
 		}
 		approvals[label] = int32(scoreInt)
 	}
@@ -486,7 +486,7 @@ func (rr *addReviewerResult) ToProto() (*gerritpb.AddReviewerResult, error) {
 	for _, r := range rr.Reviewers {
 		rInfo, err := r.ToProtoReviewerInfo()
 		if err != nil {
-			return nil, errors.Annotate(err, "converting reviewerInfo").Err()
+			return nil, errors.Fmt("converting reviewerInfo: %w", err)
 		}
 		reviewers = append(reviewers, rInfo)
 	}
@@ -494,7 +494,7 @@ func (rr *addReviewerResult) ToProto() (*gerritpb.AddReviewerResult, error) {
 	for _, r := range rr.Ccs {
 		rInfo, err := r.ToProtoReviewerInfo()
 		if err != nil {
-			return nil, errors.Annotate(err, "converting reviewerInfo").Err()
+			return nil, errors.Fmt("converting reviewerInfo: %w", err)
 		}
 		ccs = append(ccs, rInfo)
 	}
@@ -667,11 +667,11 @@ func (pi *projectInfo) ToProto() (*gerritpb.ProjectInfo, error) {
 	stateEnumVal := "PROJECT_STATE_" + pi.State
 	stateEnumNum, found := gerritpb.ProjectInfo_State_value[stateEnumVal]
 	if !found {
-		return nil, errors.Reason("no State enum value for %q", pi.State).Err()
+		return nil, errors.Fmt("no State enum value for %q", pi.State)
 	}
 	projectName, err := url.QueryUnescape(pi.ID)
 	if err != nil {
-		return nil, errors.Annotate(err, "decoding name").Err()
+		return nil, errors.Fmt("decoding name: %w", err)
 	}
 	absoluteRefs := make(map[string]string, len(pi.Branches))
 	for ref, sha1 := range pi.Branches {
@@ -711,7 +711,7 @@ type submitRequirementResultInfo struct {
 func (ri *submitRequirementResultInfo) ToProto() (*gerritpb.SubmitRequirementResultInfo, error) {
 	numVal, found := gerritpb.SubmitRequirementResultInfo_Status_value[ri.Status]
 	if !found {
-		return nil, errors.Reason("no Status enum value for %q", ri.Status).Err()
+		return nil, errors.Fmt("no Status enum value for %q", ri.Status)
 	}
 	return &gerritpb.SubmitRequirementResultInfo{
 		Name:                           ri.Name,

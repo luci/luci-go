@@ -100,11 +100,11 @@ func (c *commit) Proto() (ret *git.Commit, err error) {
 	}
 
 	if ret.Author, err = c.Author.Proto(); err != nil {
-		err = errors.Annotate(err, "decoding author").Err()
+		err = errors.Fmt("decoding author: %w", err)
 		return
 	}
 	if ret.Committer, err = c.Committer.Proto(); err != nil {
-		err = errors.Annotate(err, "decoding committer").Err()
+		err = errors.Fmt("decoding committer: %w", err)
 		return
 	}
 

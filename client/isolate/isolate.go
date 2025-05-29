@@ -148,7 +148,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 		info, err := os.Stat(dep)
 		if err != nil {
 			if !opts.AllowMissingFileDir {
-				return nil, "", errors.Annotate(err, "failed to call Stat for %s", dep).Err()
+				return nil, "", errors.Fmt("failed to call Stat for %s: %w", dep, err)
 			}
 			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
 			continue
@@ -164,7 +164,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
-				return nil, "", errors.Annotate(err, "failed to call filepath.Rel(%s, %s)", rootDir, base).Err()
+				return nil, "", errors.Fmt("failed to call filepath.Rel(%s, %s): %w", rootDir, base, err)
 			}
 			if !strings.HasPrefix(rel, "..") {
 				break
@@ -186,7 +186,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 func ProcessIsolate(opts *ArchiveOptions) ([]string, string, error) {
 	content, err := os.ReadFile(opts.Isolate)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to read file: %s", opts.Isolate).Err()
+		return nil, "", errors.Fmt("failed to read file: %s: %w", opts.Isolate, err)
 	}
 	deps, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {

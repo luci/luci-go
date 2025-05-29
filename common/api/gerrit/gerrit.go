@@ -1237,7 +1237,7 @@ func (c *Client) getOnce(ctx context.Context, u url.URL, result any) (int, error
 	}
 	defer r.Body.Close()
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
-		err = errors.Reason("failed to fetch %q, status code %d", u.String(), r.StatusCode).Err()
+		err = errors.Fmt("failed to fetch %q, status code %d", u.String(), r.StatusCode)
 		if r.StatusCode >= 500 {
 			err = transient.Tag.Apply(err)
 		}
@@ -1263,7 +1263,7 @@ func (c *Client) post(ctx context.Context, path string, data any, result any) (i
 		if err != nil {
 			return 0, transient.Tag.Apply(err)
 		}
-		err = errors.Reason("failed to post to %q, status code %d: %s", u.String(), r.StatusCode, strings.TrimSpace(string(b))).Err()
+		err = errors.Fmt("failed to post to %q, status code %d: %s", u.String(), r.StatusCode, strings.TrimSpace(string(b)))
 		if r.StatusCode >= 500 {
 			err = transient.Tag.Apply(err)
 		}
@@ -1278,13 +1278,13 @@ func parseResponse(resp io.Reader, result any) error {
 	trash := make([]byte, len(gerritPrefix))
 	cnt, err := resp.Read(trash)
 	if err != nil {
-		return errors.Annotate(err, "unexpected response from Gerrit").Err()
+		return errors.Fmt("unexpected response from Gerrit: %w", err)
 	}
 	if cnt != len(gerritPrefix) || gerritPrefix != string(trash) {
 		return errors.New("unexpected response from Gerrit")
 	}
 	if err = json.NewDecoder(resp).Decode(result); err != nil {
-		return errors.Annotate(err, "failed to decode Gerrit response into %T", result).Err()
+		return errors.Fmt("failed to decode Gerrit response into %T: %w", result, err)
 	}
 	return nil
 }

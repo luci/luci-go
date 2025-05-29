@@ -64,7 +64,7 @@ func (c *SchemaConverter) Schema(messageName string) (schema bigquery.Schema, de
 	for _, field := range msg.Field {
 		switch s, err := c.field(file, field); {
 		case err != nil:
-			return nil, "", errors.Annotate(err, "failed to derive schema for field %q in message %q", field.GetName(), msg.GetName()).Err()
+			return nil, "", errors.Fmt("failed to derive schema for field %q in message %q: %w", field.GetName(), msg.GetName(), err)
 		case s != nil:
 			schema = append(schema, s)
 		}
@@ -324,7 +324,7 @@ func GenerateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigqu
 	for _, f := range fdset.File {
 		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to index source code info in file %q", f.GetName()).Err()
+			return nil, errors.Fmt("failed to index source code info in file %q: %w", f.GetName(), err)
 		}
 	}
 	schema, _, err = conv.Schema(message)

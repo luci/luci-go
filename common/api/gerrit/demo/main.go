@@ -79,7 +79,7 @@ func callAndPrintResp(ctx context.Context, client gerritpb.GerritClient) error {
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "calling gerrit").Err()
+		return errors.Fmt("calling gerrit: %w", err)
 	}
 
 	m := &protojson.MarshalOptions{
@@ -87,7 +87,7 @@ func callAndPrintResp(ctx context.Context, client gerritpb.GerritClient) error {
 	}
 	b, err := m.Marshal(resp)
 	if err != nil {
-		return errors.Annotate(err, "marshal response proto").Err()
+		return errors.Fmt("marshal response proto: %w", err)
 	}
 	_, err = os.Stdout.Write(b)
 	return err

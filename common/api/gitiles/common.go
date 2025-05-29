@@ -32,7 +32,7 @@ var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource
 // ValidateRepoHost validates gitiles host.
 func ValidateRepoHost(host string) error {
 	if !hostnameRe.MatchString(host) {
-		return errors.Reason("hostname %s is not a valid Gitiles host", host).Err()
+		return errors.Fmt("hostname %s is not a valid Gitiles host", host)
 	}
 	return nil
 }
@@ -49,7 +49,7 @@ func ParseRepoURL(repoURL string) (host, project string, err error) {
 	u, err = url.Parse(repoURL)
 	switch {
 	case err != nil:
-		err = errors.Annotate(err, "invalid URL").Err()
+		err = errors.Fmt("invalid URL: %w", err)
 	case u.Scheme != "https":
 		err = errors.New("only https scheme is supported")
 	case !strings.HasSuffix(u.Host, ".googlesource.com"):

@@ -38,10 +38,10 @@ func Pack(values []int64) ([]byte, error) {
 		return nil, nil
 	}
 	if values[0] < 0 {
-		return nil, errors.Reason("values must be between 0 and 2**63").Err()
+		return nil, errors.New("values must be between 0 and 2**63")
 	}
 	if values[len(values)-1] < 0 {
-		return nil, errors.Reason("values must be between 0 and 2**63").Err()
+		return nil, errors.New("values must be between 0 and 2**63")
 	}
 
 	var b bytes.Buffer
@@ -52,24 +52,24 @@ func Pack(values []int64) ([]byte, error) {
 		value -= last
 		if value < 0 {
 			_ = w.Close()
-			return nil, errors.Reason("list must be sorted ascending").Err()
+			return nil, errors.New("list must be sorted ascending")
 		}
 		last = v
 		for value > 127 {
 			if _, err := w.Write([]byte{byte(1<<7 | value&0x7f)}); err != nil {
 				_ = w.Close()
-				return nil, errors.Annotate(err, "failed to write").Err()
+				return nil, errors.Fmt("failed to write: %w", err)
 			}
 			value >>= 7
 		}
 		if _, err := w.Write([]byte{byte(value)}); err != nil {
 			_ = w.Close()
-			return nil, errors.Annotate(err, "failed to write").Err()
+			return nil, errors.Fmt("failed to write: %w", err)
 		}
 	}
 
 	if err := w.Close(); err != nil {
-		return nil, errors.Annotate(err, "failed to close zlib writer").Err()
+		return nil, errors.Fmt("failed to close zlib writer: %w", err)
 	}
 
 	return b.Bytes(), nil
@@ -88,13 +88,13 @@ func Unpack(data []byte) ([]int64, error) {
 
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get zlib reader").Err()
+		return nil, errors.Fmt("failed to get zlib reader: %w", err)
 	}
 
 	data, err = io.ReadAll(r)
 	if err != nil {
 		_ = r.Close()
-		return nil, errors.Annotate(err, "failed to read all").Err()
+		return nil, errors.Fmt("failed to read all: %w", err)
 	}
 
 	for _, valByte := range data {
@@ -110,7 +110,7 @@ func Unpack(data []byte) ([]int64, error) {
 	}
 
 	if err := r.Close(); err != nil {
-		return nil, errors.Annotate(err, "failed to close zlib reader").Err()
+		return nil, errors.Fmt("failed to close zlib reader: %w", err)
 	}
 
 	return ret, nil

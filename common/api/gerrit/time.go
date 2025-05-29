@@ -39,7 +39,7 @@ func FormatTime(t time.Time) string {
 func ParseTime(s string) (time.Time, error) {
 	const msg = "failed to parse Gerrit timestamp %q"
 	if len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"' {
-		return time.Time{}, errors.Reason(msg, s).Err()
+		return time.Time{}, errors.Fmt(msg, s)
 	}
 	t, err := time.Parse(GerritTimestampLayout, s[1:len(s)-1])
 	if err != nil {

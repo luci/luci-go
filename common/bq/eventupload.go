@@ -115,7 +115,7 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 				vPath[len(vPath)-1] = strconv.Itoa(i)
 				elemValue, err := getValue(field, list.Get(i), vPath)
 				if err != nil {
-					return nil, errors.Annotate(err, "%s[%d]", bqField, i).Err()
+					return nil, errors.Fmt("%s[%d]: %w", bqField, i, err)
 				}
 				if elemValue == nil {
 					continue
@@ -159,7 +159,7 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 				vPath[len(vPath)-1] = pair.key
 				elemValue, err := getValue(valueDesc, pair.val, vPath)
 				if err != nil {
-					return nil, errors.Annotate(err, "%s[%s]", bqField, pair.key).Err()
+					return nil, errors.Fmt("%s[%s]: %w", bqField, pair.key, err)
 				}
 
 				elems[i] = map[string]bigquery.Value{
@@ -171,7 +171,7 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 			bqValue = elems
 		default:
 			if bqValue, err = getValue(field, fieldValue, path); err != nil {
-				return nil, errors.Annotate(err, "%s", bqField).Err()
+				return nil, errors.Fmt("%s: %w", bqField, err)
 			} else if bqValue == nil {
 				// Omit NULL/nil values
 				continue

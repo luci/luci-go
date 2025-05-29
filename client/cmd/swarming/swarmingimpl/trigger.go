@@ -159,17 +159,17 @@ func (f *optionalDimension) Set(s string) error {
 	splits := strings.SplitN(s, "=", 2)
 
 	if len(splits) != 2 {
-		return errors.Reason("cannot find key in the optional dimension: %q", s).Err()
+		return errors.Fmt("cannot find key in the optional dimension: %q", s)
 	}
 	k := splits[0]
 	valExp := splits[1]
 	colon := strings.LastIndexByte(valExp, ':')
 	if colon == -1 {
-		return errors.Reason(`cannot find ":" between value and expiration in the optional dimension: %q`, valExp).Err()
+		return errors.Fmt(`cannot find ":" between value and expiration in the optional dimension: %q`, valExp)
 	}
 	exp, err := strconv.ParseInt(valExp[colon+1:], 10, 64)
 	if err != nil {
-		return errors.Reason("cannot parse the expiration in the optional dimension: %q", valExp).Err()
+		return errors.Fmt("cannot parse the expiration in the optional dimension: %q", valExp)
 	}
 	f.kv = &swarmingv2.StringPair{Key: k, Value: valExp[:colon]}
 	f.expiration = exp
@@ -251,10 +251,10 @@ func (cmd *triggerImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *triggerImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if len(cmd.dimensions) == 0 {
-		return errors.Reason("please specify at least one dimension via -dimension").Err()
+		return errors.New("please specify at least one dimension via -dimension")
 	}
 	if len(args) == 0 {
-		return errors.Reason("please specify command after '--'").Err()
+		return errors.New("please specify command after '--'")
 	}
 	if len(cmd.user) == 0 {
 		cmd.user = env[swarming.UserEnvVar].Value
@@ -279,7 +279,7 @@ func (cmd *triggerImpl) ParseInputs(ctx context.Context, args []string, env subc
 func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	request, err := cmd.processTriggerOptions(cmd.cmd, extra.ServerURL)
 	if err != nil {
-		return errors.Annotate(err, "failed to process trigger options").Err()
+		return errors.Fmt("failed to process trigger options: %w", err)
 	}
 
 	result, err := svc.NewTask(ctx, request)
@@ -337,7 +337,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 	if cmd.secretBytesPath != "" {
 		secretBytes, err = os.ReadFile(cmd.secretBytesPath)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to read secret bytes from %s", cmd.secretBytesPath).Err()
+			return nil, errors.Fmt("failed to read secret bytes from %s: %w", cmd.secretBytesPath, err)
 		}
 	}
 
@@ -345,7 +345,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 	if cmd.digest != "" {
 		d, err := digest.NewFromString(cmd.digest)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid digest: %s", cmd.digest).Err()
+			return nil, errors.Fmt("invalid digest: %s: %w", cmd.digest, err)
 		}
 
 		casInstance := cmd.casInstance
@@ -353,7 +353,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 			// Infer CAS instance from the swarming server URL.
 			const appspot = ".appspot.com"
 			if !strings.HasSuffix(serverURL.Host, appspot) {
-				return nil, errors.Reason("server url should have '%s' suffix: %s", appspot, serverURL).Err()
+				return nil, errors.Fmt("server url should have '%s' suffix: %s", appspot, serverURL)
 			}
 			casInstance = "projects/" + strings.TrimSuffix(serverURL.Host, appspot) + "/instances/default_instance"
 		}
@@ -432,13 +432,13 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 
 	randomUUID, err := uuid.NewRandom()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get random UUID").Err()
+		return nil, errors.Fmt("failed to get random UUID: %w", err)
 	}
 
 	var taskSlices []*swarmingv2.TaskSlice
 	taskSlice, err := cmd.createTaskSliceForOptionalDimension(&properties)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to createTaskSliceForOptionalDimension").Err()
+		return nil, errors.Fmt("failed to createTaskSliceForOptionalDimension: %w", err)
 	}
 	baseExpiration := int32(cmd.expiration)
 	if taskSlice != nil {

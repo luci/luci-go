@@ -22,7 +22,7 @@ import (
 
 func makeHardLinkOrClone(src, dst string) error {
 	if err := unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY); err != nil {
-		return errors.Annotate(err, "failed to call unix.Clonefile(%s, %s, CLONE_NOFOLLOW|CLONE_NOOWNERCOPY)", src, dst).Err()
+		return errors.Fmt("failed to call unix.Clonefile(%s, %s, CLONE_NOFOLLOW|CLONE_NOOWNERCOPY): %w", src, dst, err)
 	}
 	return nil
 }

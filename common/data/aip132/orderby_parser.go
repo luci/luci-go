@@ -138,7 +138,7 @@ func ParseOrderBy(text string) ([]OrderBy, error) {
 
 	expr, err := orderByParser.ParseString("", text)
 	if err != nil {
-		return nil, errors.Annotate(err, "syntax error").Err()
+		return nil, errors.Fmt("syntax error: %w", err)
 	}
 
 	var result []OrderBy
@@ -152,7 +152,7 @@ func ParseOrderBy(text string) ([]OrderBy, error) {
 	uniqueFieldPaths := make(map[string]struct{})
 	for _, orderBy := range result {
 		if _, ok := uniqueFieldPaths[orderBy.FieldPath.String()]; ok {
-			return nil, errors.Reason("field appears multiple times: %q", orderBy.FieldPath).Err()
+			return nil, errors.Fmt("field appears multiple times: %q", orderBy.FieldPath)
 		}
 		uniqueFieldPaths[orderBy.FieldPath.String()] = struct{}{}
 	}

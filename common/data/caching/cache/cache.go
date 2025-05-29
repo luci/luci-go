@@ -103,11 +103,11 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 	var err error
 	path, err = filepath.Abs(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call Abs(%s)", path).Err()
+		return nil, errors.Fmt("failed to call Abs(%s): %w", path, err)
 	}
 	err = os.MkdirAll(path, 0700)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call MkdirAll(%s)", path).Err()
+		return nil, errors.Fmt("failed to call MkdirAll(%s): %w", path, err)
 	}
 
 	d := &Cache{
@@ -137,13 +137,13 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 		// crbug.com/932396#c123
 		files, err := os.ReadDir(path)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to call os.ReadDir(%s)", path).Err()
+			return nil, errors.Fmt("failed to call os.ReadDir(%s): %w", path, err)
 		}
 
 		for _, file := range files {
 			p := filepath.Join(path, file.Name())
 			if err := os.RemoveAll(p); err != nil {
-				return nil, errors.Annotate(err, "failed to call os.RemoveAll(%s)", p).Err()
+				return nil, errors.Fmt("failed to call os.RemoveAll(%s): %w", p, err)
 			}
 		}
 
@@ -230,7 +230,7 @@ func (d *Cache) Read(digest HexDigest) (io.ReadCloser, error) {
 	fi, err := f.Stat()
 	if err != nil {
 		f.Close()
-		return nil, errors.Annotate(err, "failed to get stat for %s", digest).Err()
+		return nil, errors.Fmt("failed to get stat for %s: %w", digest, err)
 	}
 
 	d.statsMu.Lock()
@@ -254,7 +254,7 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest HexDigest, 
 
 	fi, err := os.Stat(src)
 	if err != nil {
-		return errors.Annotate(err, "failed to get stat: %s", src).Err()
+		return errors.Fmt("failed to get stat: %s: %w", src, err)
 	}
 
 	d.mu.Lock()
@@ -266,13 +266,13 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest HexDigest, 
 			if runtime.GOOS == "darwin" {
 				// TODO(crbug.com/1140864): Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
 				if cerr := filesystem.Copy(dest, src, fi.Mode()); cerr != nil {
-					err = errors.Annotate(err, "fallback copy failed: %v", cerr).Err()
+					err = errors.Fmt("fallback copy failed: %v: %w", cerr, err)
 				} else {
 					return nil
 				}
 			}
 
-			return errors.Annotate(err, "failed to link %s to %s", src, digest).Err()
+			return errors.Fmt("failed to link %s to %s: %w", src, digest, err)
 		}()
 		if terr != nil {
 			return terr
@@ -299,7 +299,7 @@ func (d *Cache) AddWithHardlink(ctx context.Context, digest HexDigest, src io.Re
 	return d.add(ctx, digest, src, func() error {
 		if err := d.hardlinkUnlocked(digest, dest, perm); err != nil {
 			_ = os.Remove(d.itemPath(digest))
-			return errors.Annotate(err, "failed to call Hardlink(%s, %s)", digest, dest).Err()
+			return errors.Fmt("failed to call Hardlink(%s, %s): %w", digest, dest, err)
 		}
 		return nil
 	})
@@ -344,7 +344,7 @@ func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb fun
 	}
 	tmp, err := os.CreateTemp(d.path, string(digest)+".*.tmp")
 	if err != nil {
-		return errors.Annotate(err, "failed to create tempfile for %s", digest).Err()
+		return errors.Fmt("failed to create tempfile for %s: %w", digest, err)
 	}
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
 	h := d.h.New()
@@ -359,11 +359,11 @@ func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb fun
 	}
 	if d := Sum(h); d != digest {
 		_ = os.Remove(fname)
-		return errors.Annotate(ErrInvalidHash, "invalid hash, got=%s, want=%s", d, digest).Err()
+		return errors.Fmt("invalid hash, got=%s, want=%s: %w", d, digest, ErrInvalidHash)
 	}
 	if !d.policies.fitsCacheSize(units.Size(size)) {
 		_ = os.Remove(fname)
-		return errors.Reason("item too large, size=%d, limit=%d", size, d.policies.MaxSize).Err()
+		return errors.Fmt("item too large, size=%d, limit=%d", size, d.policies.MaxSize)
 	}
 
 	d.mu.Lock()
@@ -373,7 +373,7 @@ func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb fun
 	if d.lru.touch(digest) {
 		logging.Debugf(ctx, "cache already exists. path: %s, digest %s\n", d.path, digest)
 		if err := os.Remove(fname); err != nil {
-			return errors.Annotate(err, "failed to remove tmp file: %s", fname).Err()
+			return errors.Fmt("failed to remove tmp file: %s: %w", fname, err)
 		}
 		if cb != nil {
 			if err := cb(); err != nil {
@@ -385,7 +385,7 @@ func (d *Cache) add(ctx context.Context, digest HexDigest, src io.Reader, cb fun
 
 	if err := os.Rename(fname, d.itemPath(digest)); err != nil {
 		_ = os.Remove(fname)
-		return errors.Annotate(err, "failed to rename %s -> %s", fname, d.itemPath(digest)).Err()
+		return errors.Fmt("failed to rename %s -> %s: %w", fname, d.itemPath(digest), err)
 	}
 
 	if cb != nil {
@@ -433,16 +433,16 @@ func (d *Cache) hardlinkUnlocked(digest HexDigest, dest string, perm os.FileMode
 			err = errors.Fmt("%s doesn't exist and os.Link failed: %w: %v\nlogs:\n%s", src, serr, err, d.log.String())
 		}
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
-		return errors.Annotate(err, "failed to call makeHardLinkOrClone(%s, %s)\n%s", src, dest, debugInfo).Err()
+		return errors.Fmt("failed to call makeHardLinkOrClone(%s, %s)\n%s: %w", src, dest, debugInfo, err)
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
-		return errors.Annotate(err, "failed to call os.Chmod(%s, %#o)", dest, perm).Err()
+		return errors.Fmt("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
 
 	fi, err := os.Stat(dest)
 	if err != nil {
-		return errors.Annotate(err, "failed to call os.Stat(%s)", dest).Err()
+		return errors.Fmt("failed to call os.Stat(%s): %w", dest, err)
 	}
 	size := fi.Size()
 	d.statsMu.Lock()
@@ -470,7 +470,7 @@ func (d *Cache) respectPolicies(ctx context.Context) error {
 	for {
 		freeSpace, err := filesystem.GetFreeSpace(d.path)
 		if err != nil {
-			return errors.Annotate(err, "couldn't estimate the free space at %s", d.path).Err()
+			return errors.Fmt("couldn't estimate the free space at %s: %w", d.path, err)
 		}
 		if (d.policies.MaxItems == 0 || d.lru.length() <= d.policies.MaxItems) && d.policies.fitsCacheSize(d.lru.sum) && freeSpace >= minFreeSpaceWanted {
 			break

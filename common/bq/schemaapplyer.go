@@ -277,7 +277,7 @@ func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opt
 	case ok && apiErr.Code == http.StatusNotFound:
 		// Table doesn't exist. Create it now.
 		if err = createBQTable(ctx, t, spec); err != nil {
-			return errors.Annotate(err, "create bq table").Err()
+			return errors.Fmt("create bq table: %w", err)
 		}
 		return nil
 	case ok && apiErr.Code == http.StatusForbidden:
@@ -298,7 +298,7 @@ func ensureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, opt
 	}
 
 	if err = ensureBQTable(ctx, t, spec, opts); err != nil {
-		return errors.Annotate(err, "ensure bq table").Err()
+		return errors.Fmt("ensure bq table: %w", err)
 	}
 	return nil
 }

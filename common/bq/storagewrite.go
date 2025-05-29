@@ -60,7 +60,7 @@ func NewWriterClient(ctx context.Context, gcpProject string) (*managedwriter.Cli
 	// https://cloud.google.com/bigquery/docs/write-api-best-practices#limit_the_number_of_concurrent_connections
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize credentials").Err()
+		return nil, errors.Fmt("failed to initialize credentials: %w", err)
 	}
 	return managedwriter.NewClient(ctx, gcpProject,
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
@@ -152,7 +152,7 @@ func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.M
 func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedStream, rows []proto.Message) error {
 	batches, err := toBatches(rows)
 	if err != nil {
-		return errors.Annotate(err, "batching rows").Tag(InvalidRowTag).Err()
+		return InvalidRowTag.Apply(errors.Fmt("batching rows: %w", err))
 	}
 	results := make([]*managedwriter.AppendResult, 0, len(batches))
 	for _, batch := range batches {
@@ -160,13 +160,13 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		for _, r := range batch {
 			b, err := proto.Marshal(r)
 			if err != nil {
-				return errors.Annotate(err, "marshal proto").Tag(InvalidRowTag).Err()
+				return InvalidRowTag.Apply(errors.Fmt("marshal proto: %w", err))
 			}
 			encoded = append(encoded, b)
 		}
 		result, err := ms.AppendRows(ctx, encoded)
 		if err != nil {
-			return errors.Annotate(err, "start appending rows").Err()
+			return errors.Fmt("start appending rows: %w", err)
 		}
 		// Defer waiting on AppendRows until after all batches sent out.
 		// https://cloud.google.com/bigquery/docs/write-api-best-practices#do_not_block_on_appendrows_calls
@@ -180,7 +180,7 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 		// BigQuery retries and backoffs.
 		_, err := result.GetResult(ctx)
 		if err != nil {
-			return errors.Annotate(err, "appending rows (context: %s)", ctx.Err()).Err()
+			return errors.Fmt("appending rows (context: %s): %w", ctx.Err(), err)
 		}
 	}
 	return nil
@@ -197,7 +197,7 @@ func toBatches(rows []proto.Message) ([][]proto.Message, error) {
 		rowSize := RowSize(row)
 		if (batchSizeInBytes + rowSize) > RowMaxBytes {
 			if rowSize > RowMaxBytes {
-				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", RowMaxBytes).Err()
+				return nil, errors.Fmt("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", RowMaxBytes)
 			}
 			// Output batch from batchStartIndex (inclusive) to i (exclusive).
 			result = append(result, rows[batchStartIndex:i])

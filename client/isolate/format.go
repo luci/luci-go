@@ -72,7 +72,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	}
 	processedIsolate, err := processIsolate(content)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to process isolate (isolateDir: %s)", isolateDir).Err()
+		return nil, errors.Fmt("failed to process isolate (isolateDir: %s): %w", isolateDir, err)
 	}
 	out := processedIsolate.toConfigs()
 	// Add global variables. The global variables are on the empty tuple key.
@@ -134,7 +134,7 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map
 	}
 	if len(missingVars) > 0 {
 		sort.Strings(missingVars)
-		return nil, "", errors.Reason("these configuration variables were missing from the command line: %v", missingVars).Err()
+		return nil, "", errors.Fmt("these configuration variables were missing from the command line: %v", missingVars)
 	}
 	// A configuration is to be created with all the combinations of free variables.
 	config, err := isolate.GetConfig(cn)
@@ -624,7 +624,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
 	var data any
 	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
-		return nil, errors.Annotate(err, "failed to decode json %s", string(content)).Err()
+		return nil, errors.Fmt("failed to decode json %s: %w", string(content), err)
 	}
 	buf, _ := json.Marshal(&data)
 	if err := json.Unmarshal(buf, isolate); err != nil {
@@ -638,7 +638,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 func processIsolate(content []byte) (*processedIsolate, error) {
 	isolate, err := parseIsolate(content)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to parse isolate").Err()
+		return nil, errors.Fmt("failed to parse isolate: %w", err)
 	}
 	out := &processedIsolate{
 		isolate.Includes,

@@ -32,7 +32,7 @@ func New(ctx context.Context, path string) (*KVS, error) {
 	opt := badger.DefaultOptions(path).WithLoggingLevel(badger.WARNING)
 	db, err := badger.Open(opt)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to open database: %s", path).Err()
+		return nil, errors.Fmt("failed to open database: %s: %w", path, err)
 	}
 
 	return &KVS{
@@ -43,7 +43,7 @@ func New(ctx context.Context, path string) (*KVS, error) {
 // Close closes KVS.
 func (k *KVS) Close() error {
 	if err := k.db.Close(); err != nil {
-		return errors.Annotate(err, "failed to close db").Err()
+		return errors.Fmt("failed to close db: %w", err)
 	}
 	return nil
 }
@@ -55,7 +55,7 @@ func (k *KVS) Set(key string, value []byte) error {
 	if err := k.db.Update(func(txn *badger.Txn) error {
 		return txn.Set([]byte(key), value)
 	}); err != nil {
-		return errors.Annotate(err, "failed to put %s", key).Err()
+		return errors.Fmt("failed to put %s: %w", key, err)
 	}
 	return nil
 }
@@ -71,7 +71,7 @@ func (k *KVS) GetMulti(ctx context.Context, keys []string, fn func(key string, v
 					return nil
 				}
 				if err != nil {
-					return errors.Annotate(err, "failed to get %s", key).Err()
+					return errors.Fmt("failed to get %s: %w", key, err)
 				}
 				return item.Value(func(val []byte) error {
 					return fn(key, val)
@@ -82,7 +82,7 @@ func (k *KVS) GetMulti(ctx context.Context, keys []string, fn func(key string, v
 
 		return eg.Wait()
 	}); err != nil {
-		return errors.Annotate(err, "failed to get").Err()
+		return errors.Fmt("failed to get: %w", err)
 	}
 
 	return nil
@@ -95,7 +95,7 @@ func (k *KVS) SetMulti(fn func(set func(key string, value []byte) error) error) 
 
 	if err := fn(func(key string, value []byte) error {
 		if err := wb.Set([]byte(key), value); err != nil {
-			return errors.Annotate(err, "failed to set key: %s", key).Err()
+			return errors.Fmt("failed to set key: %s: %w", key, err)
 		}
 		return nil
 	}); err != nil {
@@ -103,7 +103,7 @@ func (k *KVS) SetMulti(fn func(set func(key string, value []byte) error) error) 
 	}
 
 	if err := wb.Flush(); err != nil {
-		return errors.Annotate(err, "failed to call Flush").Err()
+		return errors.Fmt("failed to call Flush: %w", err)
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (k *KVS) ForEach(fn func(key string, value []byte) error) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to iterate").Err()
+		return errors.Fmt("failed to iterate: %w", err)
 	}
 	return nil
 }

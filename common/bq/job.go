@@ -45,7 +45,7 @@ func WaitForJob(ctx context.Context, job *bigquery.Job) (*bigquery.JobStatus, er
 		js, err := job.Status(ctx)
 		if err != nil {
 			// Non critical, just log.
-			err = errors.Annotate(err, "get bigquery status").Err()
+			err = errors.Fmt("get bigquery status: %w", err)
 			logging.Errorf(ctx, err.Error())
 			return
 		}
@@ -53,7 +53,7 @@ func WaitForJob(ctx context.Context, job *bigquery.Job) (*bigquery.JobStatus, er
 			err = job.Cancel(ctx)
 			if err != nil {
 				// Non critical, just log.
-				err = errors.Annotate(err, "cancel bigquery job").Err()
+				err = errors.Fmt("cancel bigquery job: %w", err)
 				logging.Errorf(ctx, err.Error())
 			}
 		}
@@ -61,7 +61,7 @@ func WaitForJob(ctx context.Context, job *bigquery.Job) (*bigquery.JobStatus, er
 
 	js, err := job.Wait(waitCtx)
 	if err != nil {
-		return nil, errors.Annotate(err, "wait for job").Err()
+		return nil, errors.Fmt("wait for job: %w", err)
 	}
 	return js, nil
 }
