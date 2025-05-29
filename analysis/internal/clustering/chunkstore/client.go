@@ -52,7 +52,7 @@ func NewClient(ctx context.Context, bucket string) (*Client, error) {
 	// Credentials with Cloud scope.
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 	}
 
 	// Initialize the client.
@@ -64,7 +64,7 @@ func NewClient(ctx context.Context, bucket string) (*Client, error) {
 	cl, err := storage.NewClient(ctx, options...)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to instantiate Cloud Storage client").Err()
+		return nil, errors.Fmt("failed to instantiate Cloud Storage client: %w", err)
 	}
 	return &Client{
 		client: cl,
@@ -85,7 +85,7 @@ func (c *Client) Put(ctx context.Context, project string, content *cpb.Chunk) (o
 	}
 	b, err := proto.Marshal(content)
 	if err != nil {
-		return "", errors.Annotate(err, "marhsalling chunk").Err()
+		return "", errors.Fmt("marhsalling chunk: %w", err)
 	}
 	objID, err := generateObjectID()
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *Client) Put(ctx context.Context, project string, content *cpb.Chunk) (o
 	w := obj.NewWriter(ctx)
 	defer func() {
 		if err := w.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing object writer").Err()
+			retErr = errors.Fmt("closing object writer: %w", err)
 		}
 	}()
 
@@ -116,7 +116,7 @@ func (c *Client) Put(ctx context.Context, project string, content *cpb.Chunk) (o
 	w.ContentType = "application/x-protobuf"
 	_, err = w.Write(b)
 	if err != nil {
-		return "", errors.Annotate(err, "writing object %q", name).Err()
+		return "", errors.Fmt("writing object %q: %w", name, err)
 	}
 	return objID, nil
 }
@@ -133,11 +133,11 @@ func (c *Client) Get(ctx context.Context, project, objectID string) (chunk *cpb.
 	obj := c.client.Bucket(c.bucket).Object(name)
 	r, err := obj.NewReader(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating reader %q", name).Err()
+		return nil, errors.Fmt("creating reader %q: %w", name, err)
 	}
 	defer func() {
 		if err := r.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing object reader").Err()
+			retErr = errors.Fmt("closing object reader: %w", err)
 		}
 	}()
 
@@ -145,11 +145,11 @@ func (c *Client) Get(ctx context.Context, project, objectID string) (chunk *cpb.
 	// io.ReadAll to avoid needlessly reallocating slices.
 	b := make([]byte, r.Attrs.Size)
 	if _, err := io.ReadFull(r, b); err != nil {
-		return nil, errors.Annotate(err, "read object %q", name).Err()
+		return nil, errors.Fmt("read object %q: %w", name, err)
 	}
 	content := &cpb.Chunk{}
 	if err := proto.Unmarshal(b, content); err != nil {
-		return nil, errors.Annotate(err, "unmarshal chunk").Err()
+		return nil, errors.Fmt("unmarshal chunk: %w", err)
 	}
 	return content, nil
 }

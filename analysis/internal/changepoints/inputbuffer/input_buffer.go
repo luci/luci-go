@@ -369,14 +369,14 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 	// the larger buf for future decodings.
 	hs.tempBuf, err = span.Decompress(buf, hs.tempBuf)
 	if err != nil {
-		return errors.Annotate(err, "decompress error").Err()
+		return errors.Fmt("decompress error: %w", err)
 	}
 	reader := bytes.NewReader(hs.tempBuf)
 
 	// Read version.
 	version, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return errors.Annotate(err, "read version").Err()
+		return errors.Fmt("read version: %w", err)
 	}
 	if version == LegacyV2EncodingVersion {
 		return LegacyV2DecodeInto(history, reader)
@@ -388,11 +388,11 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 	// Read run count.
 	nRuns, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return errors.Annotate(err, "read number of runs").Err()
+		return errors.Fmt("read number of runs: %w", err)
 	}
 	if nRuns > uint64(cap(runs)) {
 		// The caller has allocated an inappropriately sized buffer.
-		return errors.Reason("found %v runs to decode, but capacity is only %v", nRuns, cap(runs)).Err()
+		return errors.Fmt("found %v runs to decode, but capacity is only %v", nRuns, cap(runs))
 	}
 
 	for i := 0; i < int(nRuns); i++ {
@@ -409,7 +409,7 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 		// expected.
 		posSim, err := binary.ReadUvarint(reader)
 		if err != nil {
-			return errors.Annotate(err, "read run position and flags").Err()
+			return errors.Fmt("read run position and flags: %w", err)
 		}
 		deltaPos, isSimpleExpectedPass := decodePositionAndFlags(posSim)
 
@@ -424,7 +424,7 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 		// Get the hour.
 		deltaHour, err := binary.ReadVarint(reader)
 		if err != nil {
-			return errors.Annotate(err, "read delta hour").Err()
+			return errors.Fmt("read delta hour: %w", err)
 		}
 		if i == 0 {
 			// For the first run, deltaHour is the absolute hour.
@@ -442,7 +442,7 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 			var err error
 			run.Expected, run.Unexpected, err = readRunDetailedCounts(reader)
 			if err != nil {
-				return errors.Annotate(err, "read run details").Err()
+				return errors.Fmt("read run details: %w", err)
 			}
 		}
 	}
@@ -455,56 +455,56 @@ func readRunDetailedCounts(reader *bytes.Reader) (expected, unexpected ResultCou
 	// Read expected passed count.
 	expectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected passed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read expected passed count: %w", err)
 	}
 	expected.PassCount = int(expectedPassedCount)
 
 	// Read expected failed count.
 	expectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected failed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read expected failed count: %w", err)
 	}
 	expected.FailCount = int(expectedFailedCount)
 
 	// Read expected crashed count.
 	expectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected crashed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read expected crashed count: %w", err)
 	}
 	expected.CrashCount = int(expectedCrashedCount)
 
 	// Read expected aborted count.
 	expectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read expected aborted count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read expected aborted count: %w", err)
 	}
 	expected.AbortCount = int(expectedAbortedCount)
 
 	// Read unexpected passed count.
 	unexpectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected passed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read unexpected passed count: %w", err)
 	}
 	unexpected.PassCount = int(unexpectedPassedCount)
 
 	// Read unexpected failed count.
 	unexpectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected failed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read unexpected failed count: %w", err)
 	}
 	unexpected.FailCount = int(unexpectedFailedCount)
 
 	// Read unexpected crashed count.
 	unexpectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected crashed count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read unexpected crashed count: %w", err)
 	}
 	unexpected.CrashCount = int(unexpectedCrashedCount)
 
 	// Read unexpected aborted count.
 	unexpectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return ResultCounts{}, ResultCounts{}, errors.Annotate(err, "read unexpected aborted count").Err()
+		return ResultCounts{}, ResultCounts{}, errors.Fmt("read unexpected aborted count: %w", err)
 	}
 	unexpected.AbortCount = int(unexpectedAbortedCount)
 

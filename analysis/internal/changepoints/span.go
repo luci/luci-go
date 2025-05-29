@@ -45,7 +45,7 @@ func readInvocations(ctx context.Context, project string, invocationIDs []string
 			var invID string
 			var ingestedInvID string
 			if err := b.FromSpanner(row, &invID, &ingestedInvID); err != nil {
-				return errors.Annotate(err, "read values from spanner").Err()
+				return errors.Fmt("read values from spanner: %w", err)
 			}
 			result[invID] = ingestedInvID
 			return nil

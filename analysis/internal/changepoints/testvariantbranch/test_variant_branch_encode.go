@@ -67,7 +67,7 @@ func DecodeProtoMessage(bytes []byte, m proto.Message) error {
 	buf := make([]byte, len(bytes)*2)
 	decompressed, err := span.Decompress(bytes, buf)
 	if err != nil {
-		return errors.Annotate(err, "decompress").Err()
+		return errors.Fmt("decompress: %w", err)
 	}
 	return proto.Unmarshal(decompressed, m)
 }

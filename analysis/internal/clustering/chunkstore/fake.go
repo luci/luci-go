@@ -54,7 +54,7 @@ func (fc *FakeClient) Put(ctx context.Context, project string, content *cpb.Chun
 	}
 	_, err := proto.Marshal(content)
 	if err != nil {
-		return "", errors.Annotate(err, "marhsalling chunk").Err()
+		return "", errors.Fmt("marhsalling chunk: %w", err)
 	}
 	objID, err := generateObjectID()
 	if err != nil {

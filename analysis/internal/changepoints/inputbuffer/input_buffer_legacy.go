@@ -56,7 +56,7 @@ func LegacyV2DecodeInto(history *History, reader *bytes.Reader) error {
 	// Read verdicts.
 	nVerdicts, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return errors.Annotate(err, "read number of verdicts").Err()
+		return errors.Fmt("read number of verdicts: %w", err)
 	}
 
 	lastPosition := int64(0)
@@ -67,7 +67,7 @@ func LegacyV2DecodeInto(history *History, reader *bytes.Reader) error {
 		baseRun := Run{}
 		posSim, err := binary.ReadUvarint(reader)
 		if err != nil {
-			return errors.Annotate(err, "read position simple verdict").Err()
+			return errors.Fmt("read position simple verdict: %w", err)
 		}
 		deltaPos, isSimple := decodeLegacyV2PositionSimpleVerdict(posSim)
 
@@ -78,7 +78,7 @@ func LegacyV2DecodeInto(history *History, reader *bytes.Reader) error {
 		// Get the hour.
 		deltaHour, err := binary.ReadVarint(reader)
 		if err != nil {
-			return errors.Annotate(err, "read delta hour").Err()
+			return errors.Fmt("read delta hour: %w", err)
 		}
 		baseRun.Hour = lastHour.Add(time.Duration(deltaHour) * time.Hour)
 		lastHour = baseRun.Hour
@@ -91,7 +91,7 @@ func LegacyV2DecodeInto(history *History, reader *bytes.Reader) error {
 		} else {
 			vd, err := readLegacyV2VerdictDetails(reader)
 			if err != nil {
-				return errors.Annotate(err, "read verdict details").Err()
+				return errors.Fmt("read verdict details: %w", err)
 			}
 			for _, vRun := range vd.Runs {
 				if vRun.IsDuplicate {
@@ -114,20 +114,20 @@ func readLegacyV2VerdictDetails(reader *bytes.Reader) (legacyV2VerdictDetails, e
 	// Get IsExonerated.
 	exoInt, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return vd, errors.Annotate(err, "read exoneration status").Err()
+		return vd, errors.Fmt("read exoneration status: %w", err)
 	}
 	vd.IsExonerated = exoInt == 1
 
 	// Get runs.
 	runCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return vd, errors.Annotate(err, "read run count").Err()
+		return vd, errors.Fmt("read run count: %w", err)
 	}
 	vd.Runs = make([]legacyV2Run, runCount)
 	for i := 0; i < int(runCount); i++ {
 		run, err := readLegacyV2Run(reader)
 		if err != nil {
-			return vd, errors.Annotate(err, "read run").Err()
+			return vd, errors.Fmt("read run: %w", err)
 		}
 		vd.Runs[i] = run
 	}
@@ -139,63 +139,63 @@ func readLegacyV2Run(reader *bytes.Reader) (legacyV2Run, error) {
 	// Read expected passed count.
 	expectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected passed count").Err()
+		return r, errors.Fmt("read expected passed count: %w", err)
 	}
 	r.Expected.PassCount = int(expectedPassedCount)
 
 	// Read expected failed count.
 	expectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected failed count").Err()
+		return r, errors.Fmt("read expected failed count: %w", err)
 	}
 	r.Expected.FailCount = int(expectedFailedCount)
 
 	// Read expected crashed count.
 	expectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected crashed count").Err()
+		return r, errors.Fmt("read expected crashed count: %w", err)
 	}
 	r.Expected.CrashCount = int(expectedCrashedCount)
 
 	// Read expected aborted count.
 	expectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read expected aborted count").Err()
+		return r, errors.Fmt("read expected aborted count: %w", err)
 	}
 	r.Expected.AbortCount = int(expectedAbortedCount)
 
 	// Read unexpected passed count.
 	unexpectedPassedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected passed count").Err()
+		return r, errors.Fmt("read unexpected passed count: %w", err)
 	}
 	r.Unexpected.PassCount = int(unexpectedPassedCount)
 
 	// Read unexpected failed count.
 	unexpectedFailedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected failed count").Err()
+		return r, errors.Fmt("read unexpected failed count: %w", err)
 	}
 	r.Unexpected.FailCount = int(unexpectedFailedCount)
 
 	// Read unexpected crashed count.
 	unexpectedCrashedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected crashed count").Err()
+		return r, errors.Fmt("read unexpected crashed count: %w", err)
 	}
 	r.Unexpected.CrashCount = int(unexpectedCrashedCount)
 
 	// Read unexpected aborted count.
 	unexpectedAbortedCount, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read unexpected aborted count").Err()
+		return r, errors.Fmt("read unexpected aborted count: %w", err)
 	}
 	r.Unexpected.AbortCount = int(unexpectedAbortedCount)
 
 	// Read isDuplicate
 	isDuplicate, err := binary.ReadUvarint(reader)
 	if err != nil {
-		return r, errors.Annotate(err, "read is duplicate").Err()
+		return r, errors.Fmt("read is duplicate: %w", err)
 	}
 	r.IsDuplicate = isDuplicate == 1
 

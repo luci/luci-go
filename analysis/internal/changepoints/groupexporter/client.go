@@ -40,7 +40,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -50,7 +50,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "create managed writer client").Err()
+		return nil, errors.Fmt("create managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -84,7 +84,7 @@ type Client struct {
 func (s *Client) ensureSchema(ctx context.Context) error {
 	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring grouped_changepoints table").Err()
+		return errors.Fmt("ensuring grouped_changepoints table: %w", err)
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func (s *Client) ensureSchema(ctx context.Context) error {
 // Insert inserts the given rows in BigQuery.
 func (s *Client) Insert(ctx context.Context, rows []*bqpb.GroupedChangepointRow) error {
 	if err := s.ensureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
 	writer := bq.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)

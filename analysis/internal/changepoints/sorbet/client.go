@@ -32,7 +32,7 @@ func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
 	location := "us-central1" // Fall back to inferred location or default (us-central1).
 	client, err := gai.NewClient(ctx, gcpProject, location)
 	if err != nil {
-		return nil, errors.Annotate(err, "create sorbet client").Err()
+		return nil, errors.Fmt("create sorbet client: %w", err)
 	}
 	return &Client{client: client}, nil
 }
@@ -51,7 +51,7 @@ func (c *Client) Generate(ctx context.Context, prompt string) (GenerateResponse,
 
 	response, err := m.GenerateContent(ctx, gai.Text(prompt))
 	if err != nil {
-		return GenerateResponse{}, errors.Annotate(err, "generate content").Err()
+		return GenerateResponse{}, errors.Fmt("generate content: %w", err)
 	}
 
 	if len(response.Candidates) == 0 {

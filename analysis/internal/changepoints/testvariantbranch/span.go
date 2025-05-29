@@ -84,7 +84,7 @@ func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(func(r *spanner.Row) error {
 		err := tvb.PopulateFromSpannerRow(r, &hs)
 		if err != nil {
-			return errors.Annotate(err, "convert spanner row to test variant branch").Err()
+			return errors.Fmt("convert spanner row to test variant branch: %w", err)
 		}
 		key := Key{
 			Project:     tvb.Project,
@@ -151,7 +151,7 @@ func parseQueryVariantBranchesPageToken(pageToken string) (afterVariantHash stri
 	}
 
 	if len(tokens) != 1 {
-		return "", pagination.InvalidToken(errors.Reason("expected 1 components, got %d", len(tokens)).Err())
+		return "", pagination.InvalidToken(errors.Fmt("expected 1 components, got %d", len(tokens)))
 	}
 
 	return tokens[0], nil
@@ -203,13 +203,13 @@ func QueryVariantBranches(ctx context.Context, project, testID string, refHash [
 	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
 		err := tvb.PopulateFromSpannerRow(row, &hs)
 		if err != nil {
-			return errors.Annotate(err, "populate from spanner row").Err()
+			return errors.Fmt("populate from spanner row: %w", err)
 		}
 		tvbs = append(tvbs, tvb.Copy())
 		return nil
 	})
 	if err != nil {
-		return nil, "", errors.Annotate(err, "run query").Err()
+		return nil, "", errors.Fmt("run query: %w", err)
 	}
 
 	if opts.PageSize != 0 && len(tvbs) == opts.PageSize {
@@ -234,38 +234,38 @@ func (tvb *Entry) PopulateFromSpannerRow(row *spanner.Row, hs *inputbuffer.Histo
 	err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant,
 		&sourceRef, &hotBuffer, &coldBuffer, &finalizingSegment, &finalizedSegments, &statistics)
 	if err != nil {
-		return errors.Annotate(err, "read values from spanner").Err()
+		return errors.Fmt("read values from spanner: %w", err)
 	}
 
 	// Source ref.
 	tvb.SourceRef, err = DecodeSourceRef(sourceRef)
 	if err != nil {
-		return errors.Annotate(err, "decode source ref").Err()
+		return errors.Fmt("decode source ref: %w", err)
 	}
 
 	err = hs.DecodeInto(&tvb.InputBuffer.HotBuffer, hotBuffer)
 	if err != nil {
-		return errors.Annotate(err, "decode hot history").Err()
+		return errors.Fmt("decode hot history: %w", err)
 	}
 	err = hs.DecodeInto(&tvb.InputBuffer.ColdBuffer, coldBuffer)
 	if err != nil {
-		return errors.Annotate(err, "decode cold history").Err()
+		return errors.Fmt("decode cold history: %w", err)
 	}
 
 	// Process output buffer.
 	tvb.FinalizingSegment, err = DecodeSegment(finalizingSegment)
 	if err != nil {
-		return errors.Annotate(err, "decode finalizing segment").Err()
+		return errors.Fmt("decode finalizing segment: %w", err)
 	}
 
 	tvb.FinalizedSegments, err = DecodeSegments(finalizedSegments)
 	if err != nil {
-		return errors.Annotate(err, "decode finalized segments").Err()
+		return errors.Fmt("decode finalized segments: %w", err)
 	}
 
 	tvb.Statistics, err = DecodeStatistics(statistics)
 	if err != nil {
-		return errors.Annotate(err, "decode statistics").Err()
+		return errors.Fmt("decode statistics: %w", err)
 	}
 
 	return nil
@@ -285,7 +285,7 @@ func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutati
 		cols = append(cols, "SourceRef")
 		bytes, err := EncodeSourceRef(tvb.SourceRef)
 		if err != nil {
-			return nil, errors.Annotate(err, "encode source ref").Err()
+			return nil, errors.Fmt("encode source ref: %w", err)
 		}
 		values = append(values, bytes)
 	}
@@ -308,7 +308,7 @@ func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutati
 		cols = append(cols, "FinalizingSegment")
 		bytes, err := EncodeSegment(tvb.FinalizingSegment)
 		if err != nil {
-			return nil, errors.Annotate(err, "encode finalizing segment").Err()
+			return nil, errors.Fmt("encode finalizing segment: %w", err)
 		}
 		values = append(values, bytes)
 	}
@@ -320,7 +320,7 @@ func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutati
 		cols = append(cols, "FinalizedSegments")
 		bytes, err := EncodeSegments(tvb.FinalizedSegments)
 		if err != nil {
-			return nil, errors.Annotate(err, "encode finalized segments").Err()
+			return nil, errors.Fmt("encode finalized segments: %w", err)
 		}
 		values = append(values, bytes)
 	}
@@ -332,7 +332,7 @@ func (tvb *Entry) ToMutation(hs *inputbuffer.HistorySerializer) (*spanner.Mutati
 		cols = append(cols, "Statistics")
 		bytes, err := EncodeStatistics(tvb.Statistics)
 		if err != nil {
-			return nil, errors.Annotate(err, "encode statistics").Err()
+			return nil, errors.Fmt("encode statistics: %w", err)
 		}
 		values = append(values, bytes)
 	}

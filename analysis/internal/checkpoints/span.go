@@ -66,7 +66,7 @@ func Exists(ctx context.Context, key Key) (bool, error) {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return false, nil
 		}
-		return false, errors.Annotate(err, "read checkpoint row").Err()
+		return false, errors.Fmt("read checkpoint row: %w", err)
 	}
 	return true, nil
 }
@@ -74,13 +74,13 @@ func Exists(ctx context.Context, key Key) (bool, error) {
 // Insert inserts a checkpoint with the given key and TTL.
 func Insert(ctx context.Context, key Key, ttl time.Duration) *spanner.Mutation {
 	if err := pbutil.ValidateProject(key.Project); err != nil {
-		panic(errors.Annotate(err, "invalid project name").Err())
+		panic(errors.Fmt("invalid project name: %w", err))
 	}
 	if key.ResourceID == "" {
-		panic(errors.Reason("empty resource ID").Err())
+		panic(errors.New("empty resource ID"))
 	}
 	if !processIDRe.MatchString(key.ProcessID) {
-		panic(errors.Reason("invalid process ID %q, expected pattern %s", key.ProcessID, processIDRe).Err())
+		panic(errors.Fmt("invalid process ID %q, expected pattern %s", key.ProcessID, processIDRe))
 	}
 
 	values := map[string]any{

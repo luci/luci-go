@@ -50,7 +50,7 @@ func (e *Exporter) Export(ctx context.Context, groups [][]*changepoints.Changepo
 	rows := prepareExportRows(groups, version)
 
 	if err := e.client.Insert(ctx, rows); err != nil {
-		return errors.Annotate(err, "insert rows").Err()
+		return errors.Fmt("insert rows: %w", err)
 	}
 	return nil
 }

@@ -221,12 +221,12 @@ func (i *Ingester) writeChunk(ctx context.Context, opts Options, chunkSeq int, c
 
 	ruleset, err := reclustering.Ruleset(ctx, opts.Project, rules.StartingEpoch)
 	if err != nil {
-		return errors.Annotate(err, "obtain ruleset").Err()
+		return errors.Fmt("obtain ruleset: %w", err)
 	}
 
 	cfg, err := compiledcfg.Project(ctx, opts.Project, config.StartingEpoch)
 	if err != nil {
-		return errors.Annotate(err, "obtain config").Err()
+		return errors.Fmt("obtain config: %w", err)
 	}
 
 	update, err := reclustering.PrepareUpdate(ctx, ruleset, cfg, chunk, clusterState)

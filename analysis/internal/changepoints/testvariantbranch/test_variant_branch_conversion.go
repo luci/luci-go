@@ -43,7 +43,7 @@ func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[stri
 		tr := r.GetResult()
 		invocationName, err := resultdb.InvocationFromTestResultName(tr.Name)
 		if err != nil {
-			return nil, errors.Annotate(err, "invocation from test result name").Err()
+			return nil, errors.Fmt("invocation from test result name: %w", err)
 		}
 		_, isClaimed := claimedInvs[invocationName]
 		if !isClaimed {

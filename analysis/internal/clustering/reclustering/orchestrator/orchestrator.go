@@ -122,7 +122,7 @@ func orchestrate(ctx context.Context) error {
 
 	projects, err := state.ReadProjects(span.Single(ctx))
 	if err != nil {
-		return errors.Annotate(err, "get projects").Err()
+		return errors.Fmt("get projects: %w", err)
 	}
 	// The order of projects affects worker allocations if projects
 	// are entitled to fractional workers. Ensure the project order
@@ -132,7 +132,7 @@ func orchestrate(ctx context.Context) error {
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		status = "failure"
-		return errors.Annotate(err, "get service config").Err()
+		return errors.Fmt("get service config: %w", err)
 	}
 
 	workers := int(cfg.ReclusteringWorkers)
@@ -174,7 +174,7 @@ func startRuns(ctx context.Context, projects []string, workers int) error {
 	runEnd := runStart.Add(time.Minute)
 	err := condenseShardProgressIntoRunProgress(ctx, projects, runEnd)
 	if err != nil {
-		return errors.Annotate(err, "condensing shard progress into run progress").Err()
+		return errors.Fmt("condensing shard progress into run progress: %w", err)
 	}
 
 	workerAllocs, err := projectWorkerAllocations(ctx, projects, workers)
@@ -189,7 +189,7 @@ func startRuns(ctx context.Context, projects []string, workers int) error {
 		if err != nil {
 			// If an error occurs with one project, capture it, but continue
 			// to avoid impacting other projects.
-			errs = append(errs, errors.Annotate(err, "project %s", project).Err())
+			errs = append(errs, errors.Fmt("project %s: %w", project, err))
 		}
 	}
 	if len(errs) > 0 {
@@ -223,7 +223,7 @@ func projectWorkerAllocations(ctx context.Context, projects []string, workers in
 	for _, project := range projects {
 		estimate, err := state.EstimateChunks(txn, project)
 		if err != nil {
-			return nil, errors.Annotate(err, "estimating rows for project %s", project).Err()
+			return nil, errors.Fmt("estimating rows for project %s: %w", project, err)
 		}
 		chunksByProject[project] = int64(estimate)
 		totalChunks += int64(estimate)
@@ -270,11 +270,11 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		lastComplete, err := runs.ReadLastCompleteUpTo(ctx, project, runs.MaxAttemptTimestamp)
 		if err != nil {
-			return errors.Annotate(err, "read last complete run").Err()
+			return errors.Fmt("read last complete run: %w", err)
 		}
 		lastRun, err := runs.ReadLastUpTo(ctx, project, runs.MaxAttemptTimestamp)
 		if err != nil {
-			return errors.Annotate(err, "read last run").Err()
+			return errors.Fmt("read last run: %w", err)
 		}
 		progress = &metrics{
 			progress:      float64(int(lastRun.Progress/lastRun.ShardCount)) / 1000.0,
@@ -284,11 +284,11 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 		// Create the run for the project.
 		newRun, err = nextProjectRun(ctx, project, runEnd, workers, lastRun)
 		if err != nil {
-			return errors.Annotate(err, "create run").Err()
+			return errors.Fmt("create run: %w", err)
 		}
 		err = runs.Create(ctx, newRun)
 		if err != nil {
-			return errors.Annotate(err, "create new run").Err()
+			return errors.Fmt("create new run: %w", err)
 		}
 
 		// Create the shard entries for that run.
@@ -296,7 +296,7 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 		for _, shard := range newShards {
 			err := shards.Create(ctx, shard)
 			if err != nil {
-				return errors.Annotate(err, "create shard").Err()
+				return errors.Fmt("create shard: %w", err)
 			}
 		}
 		return nil
@@ -333,7 +333,7 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err, "schedule workers").Err()
+		return errors.Fmt("schedule workers: %w", err)
 	}
 	return nil
 }
@@ -357,7 +357,7 @@ func condenseShardProgressIntoRunProgress(ctx context.Context, projects []string
 
 	progresses, err := shards.ReadAllProgresses(txn, lastAttempt)
 	if err != nil {
-		return errors.Annotate(err, "read shard progress").Err()
+		return errors.Fmt("read shard progress: %w", err)
 	}
 	// Perform in a separate transaction to the read
 	// above to avoid this transaction aborting and retrying if a
@@ -371,7 +371,7 @@ func condenseShardProgressIntoRunProgress(ctx context.Context, projects []string
 			// be a run as well, as runs are created with the shards.
 			err := runs.UpdateProgress(ctx, p.Project, p.AttemptTimestamp, p.ShardsReported, p.Progress)
 			if err != nil {
-				return errors.Annotate(err, "updating progress for project %s", p.Project).Err()
+				return errors.Fmt("updating progress for project %s: %w", p.Project, err)
 			}
 		}
 		// Delete the shard rows, so that we don't clog up the
@@ -391,7 +391,7 @@ func condenseShardProgressIntoRunProgress(ctx context.Context, projects []string
 func nextProjectRun(ctx context.Context, project string, runEnd time.Time, workers workerAllocation, lastRun *runs.ReclusteringRun) (*runs.ReclusteringRun, error) {
 	projectCfg, err := config.Project(ctx, project)
 	if err != nil {
-		return nil, errors.Annotate(err, "get project config").Err()
+		return nil, errors.Fmt("get project config: %w", err)
 	}
 	latestConfigVersion := projectCfg.LastUpdated.AsTime()
 

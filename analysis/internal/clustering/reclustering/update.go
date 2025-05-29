@@ -153,7 +153,7 @@ func (p *PendingUpdate) ApplyToAnalysis(ctx context.Context, analysis Analysis, 
 			Updates: p.updates,
 		}
 		if err := analysis.HandleUpdatedClusters(ctx, update, commitTime); err != nil {
-			return errors.Annotate(err, "handle updated clusters (project: %s chunkID: %s)", p.existingState.Project, p.existingState.ChunkID).Err()
+			return errors.Fmt("handle updated clusters (project: %s chunkID: %s): %w", p.existingState.Project, p.existingState.ChunkID, err)
 		}
 	}
 	return nil

@@ -56,7 +56,7 @@ type Evaluator func(testName string) (like string, ok bool)
 func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 	re, err := regexp.Compile(rule.Pattern)
 	if err != nil {
-		return nil, errors.Annotate(err, "pattern").Err()
+		return nil, errors.Fmt("pattern: %w", err)
 	}
 
 	// Segments defines portions of the output LIKE expression,
@@ -84,7 +84,7 @@ func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 			// text that should be included in the output directly.
 			literalText := rule.LikeTemplate[lastIndex:matchStart]
 			if err := lang.ValidateLikePattern(literalText); err != nil {
-				return nil, errors.Annotate(err, "%q is not a valid standalone LIKE expression", literalText).Err()
+				return nil, errors.Fmt("%q is not a valid standalone LIKE expression: %w", literalText, err)
 			}
 			segments = append(segments, &literalSegment{
 				value: literalText,
@@ -135,7 +135,7 @@ func Compile(rule *configpb.TestNameClusteringRule) (Evaluator, error) {
 	if lastIndex < len(rule.LikeTemplate) {
 		literalText := rule.LikeTemplate[lastIndex:len(rule.LikeTemplate)]
 		if err := lang.ValidateLikePattern(literalText); err != nil {
-			return nil, errors.Annotate(err, "like_template: %q is not a valid standalone LIKE expression", literalText).Err()
+			return nil, errors.Fmt("like_template: %q is not a valid standalone LIKE expression: %w", literalText, err)
 		}
 		// Some text after all substitution expressions. This is literal
 		// text that should be included in the output directly.

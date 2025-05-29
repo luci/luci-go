@@ -35,19 +35,19 @@ const weeksPerRun = 8
 
 func CronHandler(ctx context.Context, gcpProject string) (retErr error) {
 	if err := scheduleGroupingTasks(ctx); err != nil {
-		return errors.Annotate(err, "schedule group changepoint tasks").Err()
+		return errors.Fmt("schedule group changepoint tasks: %w", err)
 	}
 	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq client").Err()
+		return errors.Fmt("create bq client: %w", err)
 	}
 	defer func() {
 		if err := client.Close(); err != nil && retErr == nil {
-			retErr = errors.Annotate(err, "closing bq client").Err()
+			retErr = errors.Fmt("closing bq client: %w", err)
 		}
 	}()
 	if err := purgeStaleRows(ctx, client); err != nil {
-		return errors.Annotate(err, "purge stale rows").Err()
+		return errors.Fmt("purge stale rows: %w", err)
 	}
 	return nil
 }
@@ -57,7 +57,7 @@ func scheduleGroupingTasks(ctx context.Context) error {
 	for i := 0; i < weeksPerRun; i++ {
 		week := currentWeek.Add(-time.Duration(i) * 7 * 24 * time.Hour)
 		if err := changepointgrouper.Schedule(ctx, week); err != nil {
-			return errors.Annotate(err, "schedule group changepoint task week %s", week).Err()
+			return errors.Fmt("schedule group changepoint task week %s: %w", week, err)
 		}
 	}
 	return nil
@@ -82,16 +82,16 @@ func purgeStaleRows(ctx context.Context, client *bigquery.Client) error {
 	q.DefaultDatasetID = bqutil.InternalDatasetID
 	job, err := q.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "purge stale rows").Err()
+		return errors.Fmt("purge stale rows: %w", err)
 	}
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*9)
 	defer cancel()
 	js, err := job.Wait(waitCtx)
 	if err != nil {
-		return errors.Annotate(err, "waiting for query to complete").Err()
+		return errors.Fmt("waiting for query to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "DDL query failed").Err()
+		return errors.Fmt("DDL query failed: %w", err)
 	}
 	return nil
 }

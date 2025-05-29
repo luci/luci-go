@@ -251,7 +251,7 @@ func verifyEvictedSegments(evictedSegments []inputbuffer.EvictedSegment) {
 			}
 		}
 		if err := inputbuffer.VerifyRunsOrdered(seg.Runs); err != nil {
-			panic(errors.Annotate(err, "segment %v", i).Err())
+			panic(errors.Fmt("segment %v: %w", i, err))
 		}
 	}
 }

@@ -81,7 +81,7 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 	// which requires far less memory.
 	err := testvariantbranch.ReadF(span.Single(ctx), keys, f)
 	if err != nil {
-		return nil, errors.Annotate(err, "read test variant branches").Err()
+		return nil, errors.Fmt("read test variant branches: %w", err)
 	}
 	return result, nil
 }

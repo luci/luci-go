@@ -91,7 +91,7 @@ type AnalysisResponse struct {
 func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (AnalysisResponse, error) {
 	cp, err := fetchChangepoint(ctx, request)
 	if err != nil {
-		return AnalysisResponse{}, errors.Annotate(err, "fetch changepoint").Err()
+		return AnalysisResponse{}, errors.Fmt("fetch changepoint: %w", err)
 	}
 	logging.Debugf(ctx, "The changepoint matched to the request has a nominal range of [%d, %d] and 99th percentile range of [%d, %d].",
 		cp.NominalEndPreviousSegment, cp.NominalStartNextSegment, cp.StartLowerBound99th, cp.StartUpperBound99th)
@@ -101,19 +101,19 @@ func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (Analys
 
 	verdict, err := a.querySourceVerdictAtOrAfterEnd(ctx, request, bounds)
 	if err != nil {
-		return AnalysisResponse{}, errors.Annotate(err, "query verdict at or after end of searched range").Err()
+		return AnalysisResponse{}, errors.Fmt("query verdict at or after end of searched range: %w", err)
 	}
 	logging.Debugf(ctx, "Retrieved source verdict at position %d.", verdict.Position)
 
 	cls, err := queryChangelists(ctx, request, verdict, bounds)
 	if err != nil {
-		return AnalysisResponse{}, errors.Annotate(err, "query changelists").Err()
+		return AnalysisResponse{}, errors.Fmt("query changelists: %w", err)
 	}
 	logging.Debugf(ctx, "Retrieved %d changelists.", len(cls))
 
 	testCode, err := fetchCode(ctx, verdict)
 	if err != nil {
-		return AnalysisResponse{}, errors.Annotate(err, "query test code").Err()
+		return AnalysisResponse{}, errors.Fmt("query test code: %w", err)
 	}
 	logging.Debugf(ctx, "Test code retrieval complete.")
 
@@ -122,7 +122,7 @@ func (a *Analyzer) Analyze(ctx context.Context, request AnalysisRequest) (Analys
 	logging.Debugf(ctx, "Generating AI response...")
 	result, err := a.generateClient.Generate(ctx, prompt)
 	if err != nil {
-		return AnalysisResponse{}, errors.Annotate(err, "generate").Err()
+		return AnalysisResponse{}, errors.Fmt("generate: %w", err)
 	}
 	response := AnalysisResponse{
 		Response: result.Candidate,
@@ -160,7 +160,7 @@ func fetchChangepoint(ctx context.Context, request AnalysisRequest) (changepoint
 	}
 	rsp, err := testvariantbranch.Read(span.Single(ctx), []testvariantbranch.Key{key})
 	if err != nil {
-		return changepoint{}, errors.Annotate(err, "read").Err()
+		return changepoint{}, errors.Fmt("read: %w", err)
 	}
 	// Response will always have same length as request, but if not found the element
 	// may be nil.
@@ -300,7 +300,7 @@ func (a *Analyzer) querySourceVerdictAtOrAfterEnd(ctx context.Context, req Analy
 	}
 	closestAfterCommit, err := a.testVerdictClient.ReadTestVerdictAfterPosition(ctx, options)
 	if err != nil {
-		return nil, errors.Annotate(err, "read test verdict at or after position from BigQuery").Err()
+		return nil, errors.Fmt("read test verdict at or after position from BigQuery: %w", err)
 	}
 	if closestAfterCommit == nil {
 		return nil, appstatus.Errorf(codes.NotFound, "no commit could be located at or after position %v in partition time range %s to %s", bounds.endPosition, bounds.startTime, bounds.endTime)
@@ -322,7 +322,7 @@ func queryChangelists(ctx context.Context, req AnalysisRequest, closestAfterVerd
 	// TODO: Supports open-source gitiles only. Investigate auth for general case.
 	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String(), auth.NoAuth)
 	if err != nil {
-		return nil, errors.Annotate(err, "create gitiles client").Err()
+		return nil, errors.Fmt("create gitiles client: %w", err)
 	}
 	logReq := &gitilespb.LogRequest{
 		Project:    ref.Gitiles.Project.String(),
@@ -332,7 +332,7 @@ func queryChangelists(ctx context.Context, req AnalysisRequest, closestAfterVerd
 	}
 	logRes, err := gitilesClient.Log(ctx, logReq)
 	if err != nil {
-		return nil, errors.Annotate(err, "gitiles log").Err()
+		return nil, errors.Fmt("gitiles log: %w", err)
 	}
 	// The response from gitiles contains commits from closestAfterVerdict.
 	// Commit at the requested end position is at offset.
@@ -445,7 +445,7 @@ func fetchCode(ctx context.Context, verdict *testverdicts.SourceVerdict) (string
 	ref := verdict.Ref
 	gitilesClient, err := gitiles.NewClient(ctx, ref.Gitiles.Host.String(), auth.NoAuth)
 	if err != nil {
-		return "", errors.Annotate(err, "create gitiles client").Err()
+		return "", errors.Fmt("create gitiles client: %w", err)
 	}
 	path := strings.TrimLeft(verdict.TestLocation.FileName, "/")
 
