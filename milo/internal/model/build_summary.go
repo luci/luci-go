@@ -193,11 +193,11 @@ func (bs *BuildSummary) GetConsoleNames() ([]string, error) {
 		}
 		proj, _, err := cmpbin.ReadString(r)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't parse proj").Err()
+			return nil, errors.Fmt("couldn't parse proj: %w", err)
 		}
 		console, _, err := cmpbin.ReadString(r)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't parse console").Err()
+			return nil, errors.Fmt("couldn't parse console: %w", err)
 		}
 		ret.Add(fmt.Sprintf("%s/%s", proj, console))
 	}

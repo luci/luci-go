@@ -53,7 +53,7 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 	for i, c := range commits {
 		var err error
 		if rawCommits[i], err = hex.DecodeString(c); err != nil {
-			return nil, errors.Annotate(err, "bad commit[%d]: %q", i, c).Err()
+			return nil, errors.Fmt("bad commit[%d]: %q: %w", i, c, err)
 		}
 	}
 

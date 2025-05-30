@@ -58,7 +58,7 @@ func (s *MiloInternalService) listProjects(ctx context.Context, pageSize int, pa
 
 	projects, err := projectconfig.GetVisibleProjects(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting visible projects").Err()
+		return nil, errors.Fmt("getting visible projects: %w", err)
 	}
 
 	pageStart := int(pageToken.GetNextProjectIndex())
@@ -87,7 +87,7 @@ func (s *MiloInternalService) listProjects(ctx context.Context, pageSize int, pa
 func validateListProjectsRequest(req *milopb.ListProjectsRequest) error {
 	switch {
 	case req.PageSize < 0:
-		return errors.Reason("page_size can not be negative").Err()
+		return errors.New("page_size can not be negative")
 	default:
 		return nil
 	}
@@ -100,7 +100,7 @@ func validateListProjectsPageToken(req *milopb.ListProjectsRequest) (*milopb.Lis
 
 	token, err := parseListProjectsPageToken(req.PageToken)
 	if err != nil {
-		return nil, errors.Annotate(err, "unable to parse page_token").Err()
+		return nil, errors.Fmt("unable to parse page_token: %w", err)
 	}
 
 	if token.NextProjectIndex < 0 {

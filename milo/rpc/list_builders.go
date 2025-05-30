@@ -205,7 +205,7 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 	case datastore.ErrNoSuchEntity:
 		return nil, appstatus.Error(codes.NotFound, "group not found")
 	default:
-		return nil, errors.Annotate(err, "error getting console %s in project %s", group, project).Err()
+		return nil, errors.Fmt("error getting console %s in project %s: %w", group, project, err)
 	}
 
 	// Sort con.Builders. with Internal builders come before external builders.
@@ -267,9 +267,9 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 func validateListBuildersRequest(req *milopb.ListBuildersRequest) error {
 	switch {
 	case req.PageSize < 0:
-		return errors.Reason("page_size can not be negative").Err()
+		return errors.New("page_size can not be negative")
 	case req.Project == "" && req.Group != "":
-		return errors.Reason("project is required when group is specified").Err()
+		return errors.New("project is required when group is specified")
 	default:
 		return nil
 	}
@@ -282,19 +282,19 @@ func validateListBuildersPageToken(req *milopb.ListBuildersRequest) (*milopb.Lis
 
 	token, err := parseListBuildersPageToken(req.PageToken)
 	if err != nil {
-		return nil, errors.Annotate(err, "unable to parse page_token").Err()
+		return nil, errors.Fmt("unable to parse page_token: %w", err)
 	}
 
 	// Should not have NextBuildbucketPageToken and NextMiloBuilderIndex at the
 	// same time.
 	if token.NextBuildbucketBuilderIndex != 0 && token.NextMiloBuilderIndex != 0 {
-		return nil, errors.Reason("invalid page_token").Err()
+		return nil, errors.New("invalid page_token")
 	}
 
 	// NextBuildbucketPageToken should only be defined when listing all builders
 	// in the project.
 	if req.Group != "" && token.NextBuildbucketBuilderIndex != 0 {
-		return nil, errors.Reason("invalid page_token").Err()
+		return nil, errors.New("invalid page_token")
 	}
 
 	return token, nil

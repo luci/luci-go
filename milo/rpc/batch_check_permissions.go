@@ -61,14 +61,14 @@ func (s *MiloInternalService) BatchCheckPermissions(ctx context.Context, req *mi
 
 func validateBatchCheckPermissionsRequest(req *milopb.BatchCheckPermissionsRequest) error {
 	if req.GetRealm() == "" {
-		return errors.Reason("realm: must be specified").Err()
+		return errors.New("realm: must be specified")
 	}
 	if err := realms.ValidateRealmName(req.Realm, realms.GlobalScope); err != nil {
-		return errors.Annotate(err, "realm").Err()
+		return errors.Fmt("realm: %w", err)
 	}
 
 	if len(req.GetPermissions()) > maxPermissions {
-		return errors.Reason("permissions: at most %d permissions can be specified", maxPermissions).Err()
+		return errors.Fmt("permissions: at most %d permissions can be specified", maxPermissions)
 	}
 
 	return nil

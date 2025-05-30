@@ -140,7 +140,7 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 			con.Parent = datastore.MakeKey(ctx, "Project", con.Def.ExternalProject)
 			con.ID = con.Def.ExternalId
 			if err = datastore.Get(ctx, con); err != nil {
-				return errors.Annotate(err, "failed to resolve external console").Err()
+				return errors.Fmt("failed to resolve external console: %w", err)
 			}
 		}
 
@@ -273,15 +273,15 @@ func (s *MiloInternalService) QueryConsoleSnapshots(ctx context.Context, req *mi
 func validateQueryConsoleSnapshotsRequest(req *milopb.QueryConsoleSnapshotsRequest) error {
 	err := protoutil.ValidateConsolePredicate(req.Predicate)
 	if err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	if req.GetPredicate().GetProject() == "" {
-		return errors.Reason("predicate.project is required").Err()
+		return errors.New("predicate.project is required")
 	}
 
 	if req.PageSize < 0 {
-		return errors.Reason("page_size can not be negative").Err()
+		return errors.New("page_size can not be negative")
 	}
 
 	return nil

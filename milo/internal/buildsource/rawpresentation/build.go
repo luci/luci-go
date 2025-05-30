@@ -69,11 +69,11 @@ type AnnotationStream struct {
 // normalize validates and normalizes the stream's parameters.
 func (as *AnnotationStream) normalize() error {
 	if err := config.ValidateProjectName(as.Project); err != nil {
-		return errors.Annotate(err, "Invalid project name: %s", as.Project).Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("Invalid project name: %s: %w", as.Project, err))
 	}
 
 	if err := as.Path.Validate(); err != nil {
-		return errors.Annotate(err, "Invalid log stream path %q", as.Path).Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("Invalid log stream path %q: %w", as.Path, err))
 	}
 
 	return nil
@@ -178,15 +178,13 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 	if compressed {
 		z, err := zlib.NewReader(bytes.NewBuffer(dg.Data))
 		if err != nil {
-			return errors.Annotate(
-				err, "Datagram is marked as compressed, but failed to open zlib stream",
-			).Err()
+			return errors.Fmt("Datagram is marked as compressed, but failed to open zlib stream: %w", err)
+
 		}
 
 		if data, err = io.ReadAll(z); err != nil {
-			return errors.Annotate(
-				err, "Datagram is marked as compressed, but failed to decompress",
-			).Err()
+			return errors.Fmt("Datagram is marked as compressed, but failed to decompress: %w", err)
+
 		}
 	}
 
@@ -298,7 +296,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 	// Setup our LogDog client.
 	var err error
 	if as.Client, err = NewClient(c, host); err != nil {
-		return nil, nil, errors.Annotate(err, "generating LogDog Client").Err()
+		return nil, nil, errors.Fmt("generating LogDog Client: %w", err)
 	}
 
 	// Load the Milo annotation protobuf from the annotation stream.
@@ -316,7 +314,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 		return nil, nil, grpcutil.InvalidArgumentTag.Apply(err)
 
 	default:
-		return nil, nil, errors.Annotate(err, "failed to load stream").Err()
+		return nil, nil, errors.Fmt("failed to load stream: %w", err)
 	}
 
 	if as.step != nil {
@@ -333,7 +331,7 @@ func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*annopb.Step, e
 
 	client, err := NewClient(c, addr.Host)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
+		return nil, errors.Fmt("failed to create LogDog client: %w", err)
 	}
 
 	as := AnnotationStream{
@@ -342,7 +340,7 @@ func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*annopb.Step, e
 		Path:    addr.Path,
 	}
 	if err := as.normalize(); err != nil {
-		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
+		return nil, errors.Fmt("failed to normalize annotation stream parameters: %w", err)
 	}
 
 	if err := as.populateCache(c); err != nil {

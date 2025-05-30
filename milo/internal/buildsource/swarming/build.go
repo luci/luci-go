@@ -62,7 +62,7 @@ type swarmingService interface {
 
 // ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
-var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", grpcutil.PermissionDeniedTag)
+var ErrNotMiloJob = grpcutil.PermissionDeniedTag.Apply(errors.New("Not a Milo Job or access denied"))
 
 func getSwarmingClient(c context.Context, host string) (swarmingpb.TasksClient, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
@@ -483,10 +483,10 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarmingpb.TaskResultResponse, host string) error {
 	build.Summary.Status = milostatus.InfraFailure
 	if res.StartedTs == nil {
-		return errors.Reason("no started time in the Swarming task").Err()
+		return errors.New("no started time in the Swarming task")
 	}
 	if res.CompletedTs == nil {
-		return errors.Reason("no completed time in the Swarming task").Err()
+		return errors.New("no completed time in the Swarming task")
 	}
 	build.Summary.ExecutionTime = ui.NewInterval(c, res.StartedTs.AsTime(), res.CompletedTs.AsTime())
 	infoComp := infoComponent(milostatus.InfraFailure,
@@ -550,12 +550,12 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr,
 
 	addr, err := types.ParseURL(logLocation)
 	if err != nil {
-		return nil, errors.Annotate(err, "could not parse LogDog stream from location").Err()
+		return nil, errors.Fmt("could not parse LogDog stream from location: %w", err)
 	}
 
 	// The LogDog stream's project should match the LUCI project.
 	if string(addr.Project) != luciProject {
-		return nil, errors.Reason("stream project %q doesn't match LUCI project %q", addr.Project, luciProject).Err()
+		return nil, errors.Fmt("stream project %q doesn't match LUCI project %q", addr.Project, luciProject)
 	}
 
 	return addr, nil
@@ -815,13 +815,15 @@ func getSwarmingHost(c context.Context, host string) (string, error) {
 			return host, nil
 		}
 	}
-	return "", errors.New("unknown swarming host", grpcutil.InvalidArgumentTag)
+	return "", grpcutil.InvalidArgumentTag.Apply(
+
+		// GetBuild returns a milo build from a swarming task id.
+		errors.New("unknown swarming host"))
 }
 
-// GetBuild returns a milo build from a swarming task id.
 func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, error) {
 	if taskID == "" {
-		return nil, errors.New("no swarming task id", grpcutil.InvalidArgumentTag)
+		return nil, grpcutil.InvalidArgumentTag.Apply(errors.New("no swarming task id"))
 	}
 
 	sf, err := newProdService(c, host)

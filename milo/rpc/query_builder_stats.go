@@ -90,7 +90,7 @@ func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb
 
 func validatesQueryBuilderStatsRequest(req *milopb.QueryBuilderStatsRequest) error {
 	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-		return errors.Annotate(err, "builder").Err()
+		return errors.Fmt("builder: %w", err)
 	}
 	return nil
 }

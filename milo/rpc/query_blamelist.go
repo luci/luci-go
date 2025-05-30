@@ -168,27 +168,27 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 func prepareQueryBlamelistRequest(req *milopb.QueryBlamelistRequest) (startRev string, err error) {
 	switch {
 	case req.PageSize < 0:
-		return "", errors.Reason("page_size can not be negative").Err()
+		return "", errors.New("page_size can not be negative")
 	case req.GitilesCommit == nil:
-		return "", errors.Reason("gitiles_commit is required").Err()
+		return "", errors.New("gitiles_commit is required")
 	case req.GitilesCommit.Host == "":
-		return "", errors.Reason("gitiles_commit.host is required").Err()
+		return "", errors.New("gitiles_commit.host is required")
 	case !strings.HasSuffix(req.GitilesCommit.Host, ".googlesource.com"):
-		return "", errors.Reason("gitiles_commit.host must be a subdomain of .googlesource.com").Err()
+		return "", errors.New("gitiles_commit.host must be a subdomain of .googlesource.com")
 	case req.GitilesCommit.Project == "":
-		return "", errors.Reason("gitiles_commit.project is required").Err()
+		return "", errors.New("gitiles_commit.project is required")
 	case req.GitilesCommit.Id == "" && req.GitilesCommit.Ref == "":
-		return "", errors.Reason("either gitiles_commit.id or gitiles_commit.ref needs to be specified").Err()
+		return "", errors.New("either gitiles_commit.id or gitiles_commit.ref needs to be specified")
 	}
 
 	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-		return "", errors.Annotate(err, "builder").Err()
+		return "", errors.Fmt("builder: %w", err)
 	}
 
 	if req.PageToken != "" {
 		token, err := parseQueryBlamelistPageToken(req.PageToken)
 		if err != nil {
-			return "", errors.Annotate(err, "unable to parse page_token").Err()
+			return "", errors.Fmt("unable to parse page_token: %w", err)
 		}
 		return token.NextCommitId, nil
 	}

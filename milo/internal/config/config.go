@@ -172,7 +172,7 @@ func UpdateServiceConfig(c context.Context) (*configpb.Settings, error) {
 	}, nil)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to update config entry in transaction").Err()
+		return nil, errors.Fmt("failed to update config entry in transaction: %w", err)
 	}
 	logging.Infof(c, "successfully updated to new config")
 
@@ -184,7 +184,7 @@ func UpdateServiceConfig(c context.Context) (*configpb.Settings, error) {
 func UpdateConfigHandler(c context.Context) error {
 	_, err := UpdateServiceConfig(c)
 	if err != nil {
-		return errors.Annotate(err, "service update handler encountered error").Err()
+		return errors.Fmt("service update handler encountered error: %w", err)
 	}
 
 	return nil

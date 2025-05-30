@@ -60,7 +60,7 @@ func computeMutexPaths(env subcommands.Env) (lockFilePath string, drainFilePath 
 
 	lockFileDir := envVar.Value
 	if !filepath.IsAbs(lockFileDir) {
-		return "", "", errors.Reason("Lock file directory %s must be an absolute path", lockFileDir).Err()
+		return "", "", errors.Fmt("Lock file directory %s must be an absolute path", lockFileDir)
 	}
 
 	if _, err := os.Stat(lockFileDir); os.IsNotExist(err) {
@@ -103,7 +103,7 @@ func blockWhileFileExists(path string, blocker fslock.Blocker) error {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			break
 		} else if err != nil {
-			return errors.Annotate(err, "failed to stat %s", path).Err()
+			return errors.Fmt("failed to stat %s: %w", path, err)
 		}
 
 		if err := blocker(); err != nil {

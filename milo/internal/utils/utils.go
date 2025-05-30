@@ -81,9 +81,9 @@ func TagGRPC(c context.Context, err error) error {
 	if code == codes.NotFound || code == codes.PermissionDenied {
 		// Mask the errors, so they look the same.
 		if loggedIn {
-			return errors.Reason("not found").Tag(grpcutil.NotFoundTag).Err()
+			return grpcutil.NotFoundTag.Apply(errors.New("not found"))
 		}
-		return errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
+		return grpcutil.UnauthenticatedTag.Apply(errors.New("not logged in"))
 	}
 	return status.Error(code, err.Error())
 }
@@ -96,7 +96,7 @@ func ParseIntFromForm(form url.Values, key string, base int, bitSize int) (int64
 	}
 	ret, err := strconv.ParseInt(input, 10, 64)
 	if err != nil {
-		return 0, errors.Annotate(err, "invalid %v; expected an integer; actual value: %v", key, input).Err()
+		return 0, errors.Fmt("invalid %v; expected an integer; actual value: %v: %w", key, input, err)
 	}
 	return ret, nil
 }

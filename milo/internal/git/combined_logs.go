@@ -213,9 +213,9 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 					// at once, implement a cron job that runs this very function
 					// continuously to avoid bursts of gitiles traffic that will make Milo
 					// not functional for the other projects.
-					return errors.Reason("too many refs are new or changed to be "+
+					return errors.Fmt("too many refs are new or changed to be "+
 						"fetched at once, stopping after %d. Check your config and/or "+
-						"reload the page", maxGitilesLogRPCsPerRequest).Err()
+						"reload the page", maxGitilesLogRPCsPerRequest)
 				}
 				break
 			}
@@ -240,7 +240,7 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 	}
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch %d logs from Gitiles", len(refTips)-len(cachedLogs)-len(newLogs)).Err()
+		return nil, errors.Fmt("failed to fetch %d logs from Gitiles: %w", len(refTips)-len(cachedLogs)-len(newLogs), err)
 	}
 
 	// Drop ref names and create a list containing all logs.

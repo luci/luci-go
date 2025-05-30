@@ -259,7 +259,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	logging.Debugf(c, "gitiles took %fms", latency)
 	latencyMetric.Add(c, latency, l.withFiles, l.host, l.project)
 	if err != nil {
-		return nil, errors.Annotate(err, "gitiles.Log").Err()
+		return nil, errors.Fmt("gitiles.Log: %w", err)
 	}
 
 	l.writeCache(c, res)

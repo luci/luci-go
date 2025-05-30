@@ -146,7 +146,7 @@ func (a *ACLs) loadReaders(ctx *validation.Context, readers []string) []string {
 			fallthrough
 		default:
 			if _, err := identity.MakeIdentity(id); err != nil {
-				ctx.Error(errors.Annotate(err, "invalid readers %q", r).Err())
+				ctx.Error(errors.Fmt("invalid readers %q: %w", r, err))
 				continue
 			}
 		}
@@ -242,7 +242,7 @@ func validateURL(ctx *validation.Context, s string) (*url.URL, bool) {
 	}
 	u, err := url.Parse(s)
 	if err != nil {
-		ctx.Error(errors.Annotate(err, "not a valid URL").Err())
+		ctx.Error(errors.Fmt("not a valid URL: %w", err))
 		return nil, false
 	}
 	valid := true

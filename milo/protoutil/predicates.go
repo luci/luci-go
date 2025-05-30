@@ -26,7 +26,7 @@ func ValidateConsolePredicate(predicate *milopb.ConsolePredicate) error {
 	if predicate.GetBuilder() != nil {
 		err := bbprotoutil.ValidateRequiredBuilderID(predicate.Builder)
 		if err != nil {
-			return errors.Annotate(err, "builder").Err()
+			return errors.Fmt("builder: %w", err)
 		}
 	}
 

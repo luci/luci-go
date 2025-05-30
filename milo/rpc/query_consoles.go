@@ -169,11 +169,11 @@ func (s *MiloInternalService) QueryConsoles(ctx context.Context, req *milopb.Que
 func validatesQueryConsolesRequest(req *milopb.QueryConsolesRequest) error {
 	err := protoutil.ValidateConsolePredicate(req.Predicate)
 	if err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	if req.PageSize < 0 {
-		return errors.Reason("page_size can not be negative").Err()
+		return errors.New("page_size can not be negative")
 	}
 
 	return nil

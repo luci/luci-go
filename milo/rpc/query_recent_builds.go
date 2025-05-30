@@ -140,10 +140,10 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 
 func validatesQueryRecentBuildsRequest(req *milopb.QueryRecentBuildsRequest) error {
 	if req.PageSize < 0 {
-		return errors.Reason("page_size can not be negative").Err()
+		return errors.New("page_size can not be negative")
 	}
 	if err := protoutil.ValidateRequiredBuilderID(req.Builder); err != nil {
-		return errors.Annotate(err, "builder").Err()
+		return errors.Fmt("builder: %w", err)
 	}
 	return nil
 }

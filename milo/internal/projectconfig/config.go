@@ -233,11 +233,13 @@ var ErrConsoleNotFound = errors.New("console not found")
 
 func init() {
 	// We need to wait until error codes have generated tags before initializing this error
-	ErrConsoleNotFound = errors.New("console not found", grpcutil.NotFoundTag)
+	ErrConsoleNotFound = grpcutil.NotFoundTag.Apply(
+
+		// configURL returns a user friendly URL that specifies where to view
+		// this console definition.
+		errors.New("console not found"))
 }
 
-// configURL returns a user friendly URL that specifies where to view
-// this console definition.
 func configURL(c context.Context, meta *configInterface.Meta) string {
 	// TODO(hinoka): This shouldn't be hardcoded, instead we should get the
 	// luci-config instance from the context.  But we only use this instance at
@@ -281,13 +283,13 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 
 	projectID := cfg.ConfigSet.Project()
 	if projectID == "" {
-		return nil, nil, nil, errors.Reason("bad config set name %q, not a project", cfg.ConfigSet).Err()
+		return nil, nil, nil, errors.Fmt("bad config set name %q, not a project", cfg.ConfigSet)
 	}
 
 	// Deserialize project.cfg and grab an ACL from it.
 	acl, err := parseProjectACL(cfg.Content)
 	if err != nil {
-		return nil, nil, nil, errors.Annotate(err, "parsing project.cfg").Err()
+		return nil, nil, nil, errors.Fmt("parsing project.cfg: %w", err)
 	}
 
 	// The future project entity.
@@ -311,7 +313,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 		return &project, nil, nil, nil
 	case err != nil:
 		// Something blew up.
-		return nil, nil, nil, errors.Annotate(err, "when loading Milo config").Err()
+		return nil, nil, nil, errors.Fmt("when loading Milo config: %w", err)
 	}
 
 	// Backfill `id` if it's not defined.
@@ -324,7 +326,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 			}
 			bid, err := utils.ParseLegacyBuilderID(b.Name)
 			if err != nil {
-				return nil, nil, nil, errors.Annotate(err, "when backfilling builder ID").Err()
+				return nil, nil, nil, errors.Fmt("when backfilling builder ID: %w", err)
 			}
 			b.Id = bid
 		}
@@ -337,7 +339,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 	project.BugURLTemplate = miloCfg.BugUrlTemplate
 	project.MetadataConfig, err = proto.Marshal(miloCfg.MetadataConfig)
 	if err != nil {
-		return nil, nil, nil, errors.Annotate(err, "marshal metadataConfig").Err()
+		return nil, nil, nil, errors.Fmt("marshal metadataConfig: %w", err)
 	}
 	// Populate project.ExternalBuilderIDs
 	for _, console := range miloCfg.Consoles {
@@ -402,7 +404,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 		case err == ErrConsoleNotFound:
 			// continue
 		case err != nil:
-			return nil, errors.Annotate(err, "checking %s", pc.Id).Err()
+			return nil, errors.Fmt("checking %s: %w", pc.Id, err)
 		case con.ConfigRevision == meta.Revision && con.Ordinal == i:
 			logging.Debugf(c, "skipping updates")
 			// Check if revisions match; if so just skip it.
@@ -480,7 +482,7 @@ func UpdateProjects(c context.Context) error {
 	logging.Debugf(c, "fetching all project.cfg...")
 	cfgs, err := lucicfg.GetProjectConfigs(c, "project.cfg", false)
 	if err != nil {
-		return errors.Annotate(err, "while fetching project configs").Err()
+		return errors.Fmt("while fetching project configs: %w", err)
 	}
 	logging.Debugf(c, "found %d LUCI projects", len(cfgs))
 
@@ -677,7 +679,7 @@ func GetVisibleProjects(c context.Context) ([]*Project, error) {
 	projs := []*Project{}
 
 	if err := datastore.GetAll(c, q, &projs); err != nil {
-		return nil, errors.Annotate(err, "getting projects").Err()
+		return nil, errors.Fmt("getting projects: %w", err)
 	}
 	result := []*Project{}
 	for _, proj := range projs {
@@ -726,12 +728,12 @@ func GetProjectConsoles(c context.Context, projectID string) ([]*Console, error)
 	q = q.Ancestor(parentKey)
 	con := []*Console{}
 	if err := datastore.GetAll(c, q, &con); err != nil {
-		return nil, errors.Annotate(err, "getting project %q consoles", projectID).Err()
+		return nil, errors.Fmt("getting project %q consoles: %w", projectID, err)
 	}
 	sort.Slice(con, func(i, j int) bool { return con[i].Ordinal < con[j].Ordinal })
 	visibleProjects, err := getVisibleProjectIDs(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting visible projects").Err()
+		return nil, errors.Fmt("getting visible projects: %w", err)
 	}
 	return filterExternalConsoles(c, con, visibleProjects), nil
 }
@@ -750,7 +752,7 @@ func GetConsole(c context.Context, proj, id string) (*Console, error) {
 	case nil:
 		return &con, nil
 	default:
-		return nil, errors.Annotate(err, "getting project %q console %q", proj, id).Err()
+		return nil, errors.Fmt("getting project %q console %q: %w", proj, id, err)
 	}
 }
 
@@ -765,11 +767,11 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 	}
 	if err := datastore.Get(c, result); err != nil {
 		err = utils.ReplaceNSEWith(err.(errors.MultiError), ErrConsoleNotFound)
-		return result, errors.Annotate(err, "getting %s consoles", consoles).Err()
+		return result, errors.Fmt("getting %s consoles: %w", consoles, err)
 	}
 	visibleProjects, err := getVisibleProjectIDs(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting visible projects").Err()
+		return nil, errors.Fmt("getting visible projects: %w", err)
 	}
 	return filterExternalConsoles(c, result, visibleProjects), nil
 }
