@@ -86,7 +86,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 			name: "rule 1"
 		}`)
 		_, err = rpc.ImportDelegationConfigs(ctx, nil)
-		assert.Loosely(t, err, should.ErrLike(`"requestor" is required (and 4 other errors)`))
+		assert.Loosely(t, err, should.ErrLike(`err[4]: in "delegation.cfg" (rule #1: "rule 1"): "max_validity_duration" is required`))
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)

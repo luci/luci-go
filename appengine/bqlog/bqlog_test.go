@@ -280,7 +280,7 @@ func TestFlush(t *testing.T) {
 			}
 
 			count, err := testingLog.Flush(ctx)
-			assert.Loosely(t, err.Error(), should.Equal("omg, error (and 9 other errors)"))
+			assert.Loosely(t, err, should.ErrLike("err[9]: omg, error"))
 			assert.Loosely(t, count, should.BeZero)
 
 			// Bump time to make sure all pull queue leases (if any) expire. On fatal

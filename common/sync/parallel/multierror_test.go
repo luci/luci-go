@@ -36,7 +36,7 @@ func TestMultiError(t *testing.T) {
 			close(mec)
 
 			err := multiErrorFromErrors(mec)
-			assert.Loosely(t, err.Error(), should.Equal(`first error (and 1 other error)`))
+			assert.Loosely(t, err.Error(), should.Equal("err[0]: first error\nerr[1]: what"))
 		})
 
 		t.Run("multiErrorFromErrors with nil works", func(t *ftt.Test) {

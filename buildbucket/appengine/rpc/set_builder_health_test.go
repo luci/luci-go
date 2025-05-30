@@ -278,7 +278,7 @@ func TestSetBuilderHealth(t *testing.T) {
 				},
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
-			assert.Loosely(t, err.Error(), should.ContainSubstring(".health[1].id.project: required (and 2 other errors)"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("err[2]: .health[1].id.builder: required"))
 		})
 
 		t.Run("bad req; one no perm, one validation err, one no builder saved", func(t *ftt.Test) {

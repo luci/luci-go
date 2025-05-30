@@ -599,7 +599,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				err := vctx.Finalize()
 				assert.ErrIsLike(t, err, "path component not yet allowed in url")
-				assert.ErrIsLike(t, err, "and 5 other errors")
+				assert.ErrIsLike(t, err, "err[5]:")
 			})
 
 			t.Run("current limitations", func(t *ftt.Test) {
@@ -734,7 +734,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				v.RetryConfig.TimeoutWeight = -1
 				validateProjectConfig(vctx, &cfg)
 				assert.That(t, vctx.Finalize(), should.ErrLikeString(
-					"negative single_quota not allowed (-1 given) (and 4 other errors)"))
+					"err[4]: in <unspecified file> (config_group #1 \"test\" / verifiers / tryjob / retry_config): negative timeout_weight not allowed (-1 given)"))
 			})
 		})
 

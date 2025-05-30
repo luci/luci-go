@@ -186,8 +186,9 @@ var badEnsureFiles = []struct {
 			"some/package/something1 error_version",
 			"some/package/something2 error_version",
 		),
-		`failed to resolve some/package/something1@error_version (line 1): testResolver returned error ` +
-			`(and 1 other error)`, // errors are sorted by line number
+		// errors are sorted by line number
+		"err[0]: failed to resolve some/package/something1@error_version (line 1): testResolver returned error\n" +
+			"err[1]: failed to resolve some/package/something2@error_version (line 2): testResolver returned error",
 	},
 
 	{

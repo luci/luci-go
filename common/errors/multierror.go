@@ -17,6 +17,11 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"strings"
+)
+
+const (
+	maxErrors = 20
 )
 
 // MultiError is a simple `error` implementation which represents multiple
@@ -68,16 +73,44 @@ func (m *MultiError) MaybeAdd(err error) {
 }
 
 func (m MultiError) Error() string {
-	n, e := m.Summary()
-	switch n {
+	total, e := m.Summary()
+	switch total {
 	case 0:
 		return "(0 errors)"
 	case 1:
 		return e.Error()
-	case 2:
-		return e.Error() + " (and 1 other error)"
 	}
-	return fmt.Sprintf("%s (and %d other errors)", e, n-1)
+	var sb strings.Builder
+	var printed int
+	var skipped int
+	for i, e := range m {
+		if printed >= maxErrors {
+			sb.WriteString(fmt.Sprintf("\nerr[%d:%d] ", i, len(m)))
+
+			if total == len(m)-skipped {
+				sb.WriteString("<omitted>")
+			} else {
+				remainingNonNil := total - printed
+				sb.WriteString(fmt.Sprintf("<omitted %d non-nil errors>", remainingNonNil))
+			}
+			break
+		}
+
+		if e == nil {
+			skipped += 1
+			continue
+		}
+
+		if printed >= 1 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(fmt.Sprintf("err[%d]: ", i))
+		sb.WriteString(e.Error())
+
+		printed += 1
+	}
+
+	return sb.String()
 }
 
 // AsError returns an `error` interface for this MultiError only if it has >0

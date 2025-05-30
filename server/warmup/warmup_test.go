@@ -44,7 +44,7 @@ func TestWorks(t *testing.T) {
 		})
 
 		err := Warmup(context.Background())
-		assert.Loosely(t, err.Error(), should.Equal("OMG 1 (and 1 other error)"))
+		assert.Loosely(t, err.Error(), should.Equal("err[0]: OMG 1\nerr[1]: OMG 2"))
 		assert.Loosely(t, called, should.Match([]string{"1", "2", "3"}))
 	})
 }

@@ -136,7 +136,16 @@ func TestValidation(t *testing.T) {
 
 		err := c.Finalize()
 		assert.Loosely(t, err, should.HaveType[*Error])
-		assert.Loosely(t, err.Error(), should.Equal(`in <unspecified file>: top 1 (and 7 other errors)`))
+		assert.Loosely(t, err.Error(), should.Equal(
+			"err[0]: in <unspecified file>: top 1\n"+
+				"err[1]: in <unspecified file>: top 2\n"+
+				"err[2]: in \"file_1.cfg\": f1\n"+
+				"err[3]: in \"file_1.cfg\": f2\n"+
+				"err[4]: in \"file_1.cfg\" (p 1): zzz 1\n"+
+				"err[5]: in \"file_1.cfg\" (p 1 / p 2): zzz 2\n"+
+				"err[6]: in \"file_1.cfg\" (p 1): zzz 3\n"+
+				"err[7]: in \"file_2.cfg\": zzz 4",
+		))
 
 		var errs []string
 		for _, e := range err.(*Error).Errors {

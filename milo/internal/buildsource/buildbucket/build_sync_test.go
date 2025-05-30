@@ -618,7 +618,7 @@ func TestDeleteOldBuilds(t *testing.T) {
 			}
 			assert.Loosely(t, DeleteOldBuilds(ctx), should.BeNil)
 			assert.Loosely(t, datastore.Get(ctx, bs), should.ErrLike(
-				"datastore: no such entity (and 233 other errors)"))
+				"err[19]: datastore: no such entity\nerr[20:234] <omitted>"))
 		})
 	})
 }
