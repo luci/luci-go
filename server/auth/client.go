@@ -398,7 +398,7 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 	// Don't transfer tokens in clear text.
 	ri, _ := credentials.RequestInfoFromContext(ctx)
 	if err := credentials.CheckSecurityLevel(ri.AuthInfo, credentials.PrivacyAndIntegrity); err != nil {
-		return nil, errors.Annotate(err, "can't use per RPC credentials").Err()
+		return nil, errors.Fmt("can't use per RPC credentials: %w", err)
 	}
 
 	// URI is needed for some auth modes to "lock" tokens to a concrete audience.
@@ -407,7 +407,7 @@ func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) 
 	}
 	u, err := url.Parse(uri[0])
 	if err != nil {
-		return nil, errors.Annotate(err, "malformed URI %q", uri[0]).Err()
+		return nil, errors.Fmt("malformed URI %q: %w", uri[0], err)
 	}
 
 	tok, extra, err := getRPCHeaders(ctx, creds.ctx, creds.options, &http.Request{URL: u})
@@ -442,7 +442,7 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 // cannot or do not properly handle this gRPC option.
 func GetTokenSource(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
 	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
-		return nil, errors.Reason("GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authority kind").Err()
+		return nil, errors.New("GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authority kind")
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
@@ -456,8 +456,8 @@ func GetTokenSource(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOptio
 	if options.idTokenAudGen != nil {
 		// There's no access to an URI in oauth2.TokenSource.Token() method, can't
 		// use patterned audiences there.
-		return nil, errors.Reason("WithIDTokenAudience with patterned audience is not supported by GetTokenSource, " +
-			"use GetRPCTransport or GetPerRPCCredentials instead").Err()
+		return nil, errors.New("WithIDTokenAudience with patterned audience is not supported by GetTokenSource, " +
+			"use GetRPCTransport or GetPerRPCCredentials instead")
 	}
 	return &tokenSource{ctx, options}, nil
 }
@@ -473,14 +473,14 @@ func (ts *tokenSource) Token() (*oauth2.Token, error) {
 	case err != nil:
 		return nil, err
 	case tok == nil:
-		return nil, errors.Reason("using non-OAuth2 based credentials in TokenSource").Err()
+		return nil, errors.New("using non-OAuth2 based credentials in TokenSource")
 	case len(extra) != 0:
 		keys := make([]string, 0, len(extra))
 		for k := range extra {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		return nil, errors.Reason("extra headers %q with credentials are not supported in TokenSource", keys).Err()
+		return nil, errors.Fmt("extra headers %q with credentials are not supported in TokenSource", keys)
 	}
 	return tok, nil
 }
@@ -578,41 +578,41 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 
 	// Validate options.
 	if !asSelfOrActorOrProject && options.kind != AsSessionUser && options.idToken {
-		return nil, errors.Reason("WithIDToken can only be used with AsSelf, AsActor, AsProject or AsSessionUser authority kind").Err()
+		return nil, errors.New("WithIDToken can only be used with AsSelf, AsActor, AsProject or AsSessionUser authority kind")
 	}
 	if !asSelfOrActorOrProject && options.idTokenAud != "" {
-		return nil, errors.Reason("WithIDTokenAudience can only be used with AsSelf, AsActor or AsProject authority kind").Err()
+		return nil, errors.New("WithIDTokenAudience can only be used with AsSelf, AsActor or AsProject authority kind")
 	}
 	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
-		return nil, errors.Reason("WithScopes can only be used with AsSelf, AsActor or AsProject authority kind").Err()
+		return nil, errors.New("WithScopes can only be used with AsSelf, AsActor or AsProject authority kind")
 	}
 	if options.idToken && len(options.scopes) != 0 {
-		return nil, errors.Reason("WithIDToken and WithScopes cannot be used together").Err()
+		return nil, errors.New("WithIDToken and WithScopes cannot be used together")
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
-		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authority kind").Err()
+		return nil, errors.New("WithServiceAccount can only be used with AsActor authority kind")
 	}
 	if options.serviceAccount == "" && options.kind == AsActor {
-		return nil, errors.Reason("AsActor authority kind requires WithServiceAccount option").Err()
+		return nil, errors.New("AsActor authority kind requires WithServiceAccount option")
 	}
 	if options.delegationToken != "" && options.kind != AsUser {
-		return nil, errors.Reason("WithDelegationToken can only be used with AsUser authority kind").Err()
+		return nil, errors.New("WithDelegationToken can only be used with AsUser authority kind")
 	}
 	if len(options.delegationTags) != 0 && options.kind != AsUser {
-		return nil, errors.Reason("WithDelegationTags can only be used with AsUser authority kind").Err()
+		return nil, errors.New("WithDelegationTags can only be used with AsUser authority kind")
 	}
 	if len(options.delegationTags) != 0 && options.delegationToken != "" {
-		return nil, errors.Reason("WithDelegationTags and WithDelegationToken cannot be used together").Err()
+		return nil, errors.New("WithDelegationTags and WithDelegationToken cannot be used together")
 	}
 	if options.project == "" && options.kind == AsProject {
-		return nil, errors.Reason("AsProject authority kind requires WithProject option").Err()
+		return nil, errors.New("AsProject authority kind requires WithProject option")
 	}
 
 	// Temporarily not supported combinations of options.
 	//
 	// TODO(crbug.com/1081932): Support.
 	if options.idToken && (options.kind == AsActor || options.kind == AsProject) {
-		return nil, errors.Reason("WithIDToken is not supported here yet").Err()
+		return nil, errors.New("WithIDToken is not supported here yet")
 	}
 
 	// Convert `idTokenAud` into a callback {http.Request => aud}. This is needed
@@ -620,7 +620,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	if options.idTokenAud != "" {
 		gen, err := parseAudPattern(options.idTokenAud)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad WithIDTokenAudience value").Err()
+			return nil, errors.Fmt("bad WithIDTokenAudience value: %w", err)
 		}
 		options.idTokenAudGen = gen // this is nil if idTokenAud is not a pattern
 	}
@@ -656,7 +656,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	case AsProject:
 		options.getRPCHeaders = asProjectHeaders
 	default:
-		return nil, errors.Reason("unknown RPCAuthorityKind %d", options.kind).Err()
+		return nil, errors.Fmt("unknown RPCAuthorityKind %d", options.kind)
 	}
 
 	// Default value for "client" field in monitoring metrics.
@@ -683,7 +683,7 @@ func asSelfOAuthHeaders(ctx context.Context, opts *rpcOptions, req *http.Request
 	}
 	tok, err := cfg.AccessTokenProvider(ctx, opts.scopes)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get AsSelf access token").Err()
+		return nil, nil, errors.Fmt("failed to get AsSelf access token: %w", err)
 	}
 	return tok, nil, nil
 }
@@ -704,7 +704,7 @@ func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Reque
 	if opts.idTokenAudGen != nil {
 		var err error
 		if aud, err = opts.idTokenAudGen(req); err != nil {
-			return nil, nil, errors.Annotate(err, "can't derive audience for ID token").Err()
+			return nil, nil, errors.Fmt("can't derive audience for ID token: %w", err)
 		}
 	} else {
 		// Using a static audience, not a pattern.
@@ -727,9 +727,9 @@ func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Reque
 	info, err := cfg.Signer.ServiceInfo(ctx)
 	switch {
 	case err != nil:
-		return nil, nil, errors.Annotate(err, "failed to get our own service info").Err()
+		return nil, nil, errors.Fmt("failed to get our own service info: %w", err)
 	case info.ServiceAccountName == "":
-		return nil, nil, errors.Reason("no service account name in our own service info").Err()
+		return nil, nil, errors.New("no service account name in our own service info")
 	}
 
 	// Grab ID token for our own account. This uses our own IAM-scoped access
@@ -745,7 +745,7 @@ func asSelfIDTokenHeaders(ctx context.Context, opts *rpcOptions, req *http.Reque
 		MinTTL:         2 * time.Minute,
 	})
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get our own ID token for %q with aud %q", info.ServiceAccountName, aud).Err()
+		return nil, nil, errors.Fmt("failed to get our own ID token for %q with aud %q: %w", info.ServiceAccountName, aud, err)
 	}
 
 	return &oauth2.Token{
@@ -778,7 +778,7 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 
 		// Only https:// are allowed, can't send bearer tokens in clear text.
 		if req.URL.Scheme != "https" {
-			return nil, nil, errors.Reason("refusing to use delegation tokens with non-https URL").Err()
+			return nil, nil, errors.New("refusing to use delegation tokens with non-https URL")
 		}
 
 		// Grab a token that's good enough for at least 10 min. Outbound RPCs
@@ -793,7 +793,7 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 			MinTTL:     10 * time.Minute,
 		})
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "failed to mint AsUser delegation token").Err()
+			return nil, nil, errors.Fmt("failed to mint AsUser delegation token: %w", err)
 		}
 		delegationToken = tok.Token
 	}
@@ -801,7 +801,7 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 	// Use our own OAuth token too, since the delegation token is bound to us.
 	oauthTok, err := cfg.AccessTokenProvider(ctx, []string{auth.OAuthScopeEmail})
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get own access token").Err()
+		return nil, nil, errors.Fmt("failed to get own access token: %w", err)
 	}
 
 	logging.Fields{
@@ -843,7 +843,7 @@ func asActorHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*
 		MinTTL:         2 * time.Minute,
 	})
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to mint AsActor access token").Err()
+		return nil, nil, errors.Fmt("failed to mint AsActor access token: %w", err)
 	}
 	return &oauth2.Token{
 		AccessToken: tok.Token,
@@ -887,7 +887,7 @@ func asProjectHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) 
 
 	tok, err := mintTokenCall(ctx, mintParams)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to mint AsProject access token").Err()
+		return nil, nil, errors.Fmt("failed to mint AsProject access token: %w", err)
 	}
 
 	// TODO(fmatenaar): This is only during migration and needs to be removed
@@ -939,7 +939,7 @@ func asSessionUserHeaders(ctx context.Context, opts *rpcOptions, _ *http.Request
 // the AuthDB to compare the URL against the list of LUCI services.
 func isInternalURL(ctx context.Context, u *url.URL) (bool, error) {
 	if u.Scheme != "https" {
-		return false, errors.Reason("AsProject can be used only with https:// targets, got %s", u).Err()
+		return false, errors.Fmt("AsProject can be used only with https:// targets, got %s", u)
 	}
 	state := GetState(ctx)
 	if state == nil {
@@ -959,7 +959,7 @@ func parseAudPattern(pat string) (audGenerator, error) {
 	// Recognized static string, use a cheesy check for mismatched curly braces.
 	if !placeholderRe.MatchString(pat) {
 		if strings.Contains(pat, "${") {
-			return nil, errors.Reason("%q looks like a malformed pattern", pat).Err()
+			return nil, errors.Fmt("%q looks like a malformed pattern", pat)
 		}
 		return nil, nil
 	}
@@ -971,7 +971,7 @@ func parseAudPattern(pat string) (audGenerator, error) {
 				case "${host}":
 					return renderAudHost(req)
 				default:
-					err = errors.Reason("unknown var %s", match).Err()
+					err = errors.Fmt("unknown var %s", match)
 				}
 			}
 			return ""
@@ -989,7 +989,7 @@ func parseAudPattern(pat string) (audGenerator, error) {
 		},
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "bad pattern %q", pat).Err()
+		return nil, errors.Fmt("bad pattern %q: %w", pat, err)
 	}
 
 	return renderPat, nil
@@ -1034,7 +1034,7 @@ func getRPCHeaders(ctx, transportCtx context.Context, opts *rpcOptions, req *htt
 	if tstate := GetState(transportCtx); !isBackgroundState(tstate) {
 		if rstate := GetState(merged); !isBackgroundState(rstate) {
 			if tstate != rstate {
-				return nil, nil, errors.Reason("a transport or credentials provider created within a context of one user request is used within another user request, this is dangerous").Err()
+				return nil, nil, errors.New("a transport or credentials provider created within a context of one user request is used within another user request, this is dangerous")
 			}
 		}
 	}

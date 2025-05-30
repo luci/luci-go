@@ -315,11 +315,11 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 
 	incTriggers, err := i.IncomingTriggers()
 	if err != nil {
-		panic(errors.Annotate(err, "failed to deserialize incoming triggers").Err())
+		panic(errors.Fmt("failed to deserialize incoming triggers: %w", err))
 	}
 	outTriggers, err := i.OutgoingTriggers()
 	if err != nil {
-		panic(errors.Annotate(err, "failed to deserialize outgoing triggers").Err())
+		panic(errors.Fmt("failed to deserialize outgoing triggers: %w", err))
 	}
 
 	return &invocation{

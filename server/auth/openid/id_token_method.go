@@ -131,7 +131,7 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 	// Grab (usually already cached) discovery document.
 	doc, err := m.discoveryDoc(ctx)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "openid: failed to fetch the OpenID discovery doc").Err()
+		return nil, nil, errors.Fmt("openid: failed to fetch the OpenID discovery doc: %w", err)
 	}
 
 	// Validate token's signature and expiration. Extract user info from it.

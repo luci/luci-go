@@ -43,18 +43,22 @@ import (
 var (
 	// ErrBadOAuthToken is returned by GoogleOAuth2Method if the access token it
 	// checks either totally invalid, expired or has a wrong list of scopes.
-	ErrBadOAuthToken = errors.New("oauth: bad access token", grpcutil.UnauthenticatedTag)
+	ErrBadOAuthToken = grpcutil.UnauthenticatedTag.Apply(
 
-	// ErrBadAuthorizationHeader is returned by GoogleOAuth2Method if it doesn't
-	// recognize the format of Authorization header.
-	ErrBadAuthorizationHeader = errors.New("oauth: bad Authorization header", grpcutil.UnauthenticatedTag)
+		// ErrBadAuthorizationHeader is returned by GoogleOAuth2Method if it doesn't
+		// recognize the format of Authorization header.
+		errors.New("oauth: bad access token"))
+
+	ErrBadAuthorizationHeader = grpcutil.UnauthenticatedTag.Apply(
+
+		// tokenValidationOutcome is returned by validateAccessToken and cached in
+		// oauthValidationCache.
+		//
+		// It either contains an info extracted from the token or an error message if
+		// the token is invalid.
+		errors.New("oauth: bad Authorization header"))
 )
 
-// tokenValidationOutcome is returned by validateAccessToken and cached in
-// oauthValidationCache.
-//
-// It either contains an info extracted from the token or an error message if
-// the token is invalid.
 type tokenValidationOutcome struct {
 	Email    string   `json:"email,omitempty"`
 	ClientID string   `json:"client_id,omitempty"`
@@ -240,10 +244,12 @@ func validateAccessToken(ctx context.Context, accessToken, tokenInfoEndpoint str
 		if err == googleoauth.ErrBadToken {
 			return &tokenValidationOutcome{Error: err.Error()}, 0, nil
 		}
-		return nil, 0, errors.Annotate(err, "oauth: transient error when validating the token").Tag(transient.Tag).Err()
+		return nil, 0, transient.Tag.Apply(errors.
+
+			// Verify the token contains all necessary fields.
+			Fmt("oauth: transient error when validating the token: %w", err))
 	}
 
-	// Verify the token contains all necessary fields.
 	errorMsg := ""
 	switch {
 	case tokenInfo.Email == "":

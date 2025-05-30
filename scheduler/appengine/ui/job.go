@@ -107,13 +107,13 @@ func jobPage(ctx *router.Context) {
 
 	switch {
 	case invsActiveErr != nil:
-		panic(errors.Annotate(invsActiveErr, "failed to fetch active invocations").Err())
+		panic(errors.Fmt("failed to fetch active invocations: %w", invsActiveErr))
 	case invsLogErr != nil:
-		panic(errors.Annotate(invsLogErr, "failed to fetch invocation log").Err())
+		panic(errors.Fmt("failed to fetch invocation log: %w", invsLogErr))
 	case triErr != nil:
-		panic(errors.Annotate(triErr, "failed to fetch triggers").Err())
+		panic(errors.Fmt("failed to fetch triggers: %w", triErr))
 	case triageLogErr != nil:
-		panic(errors.Annotate(triageLogErr, "failed to fetch triage log").Err())
+		panic(errors.Fmt("failed to fetch triage log: %w", triageLogErr))
 	}
 
 	// memcacheKey hashes cursor to reduce its length, since full cursor doesn't

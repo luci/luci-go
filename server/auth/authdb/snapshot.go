@@ -76,15 +76,15 @@ func Revision(db DB) int64 {
 func SnapshotDBFromTextProto(r io.Reader) (*SnapshotDB, error) {
 	blob, err := io.ReadAll(r)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the file").Err()
+		return nil, errors.Fmt("failed to read the file: %w", err)
 	}
 	msg := &protocol.AuthDB{}
 	if err := proto.UnmarshalText(string(blob), msg); err != nil {
-		return nil, errors.Annotate(err, "not a valid AuthDB text proto file").Err()
+		return nil, errors.Fmt("not a valid AuthDB text proto file: %w", err)
 	}
 	db, err := NewSnapshotDB(msg, "", 0, true)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to validate AuthDB").Err()
+		return nil, errors.Fmt("failed to validate AuthDB: %w", err)
 	}
 	return db, nil
 }
@@ -105,25 +105,25 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 
 	groups, err := graph.BuildQueryable(authDB.Groups)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to build groups graph").Err()
+		return nil, errors.Fmt("failed to build groups graph: %w", err)
 	}
 
 	var realmSet *realmset.Realms
 	if authDB.Realms != nil {
 		realmSet, err = realmset.Build(authDB.Realms, groups, realms.RegisteredPermissions())
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to prepare Realms DB").Err()
+			return nil, errors.Fmt("failed to prepare Realms DB: %w", err)
 		}
 	}
 
 	allowlistedIPs, err := ipaddr.NewAllowlist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad IP allowlist in AuthDB").Err()
+		return nil, errors.Fmt("bad IP allowlist in AuthDB: %w", err)
 	}
 
 	securityCfg, err := seccfg.Parse(authDB.SecurityConfig)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad SecurityConfig").Err()
+		return nil, errors.Fmt("bad SecurityConfig: %w", err)
 	}
 
 	return &SnapshotDB{
@@ -231,7 +231,7 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 
 	// This may happen if the AuthDB proto has no Realms yet.
 	if db.realms == nil {
-		return false, errors.Reason("Realms API is not available").Err()
+		return false, errors.New("Realms API is not available")
 	}
 
 	permIdx, ok := db.realms.PermissionIndex(perm)
@@ -243,7 +243,7 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 	// Verify such realm is defined in the DB or fallback to its @root.
 	if !db.realms.HasRealm(realm) {
 		if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
-			return false, errors.Annotate(err, "when checking %q", perm).Err()
+			return false, errors.Fmt("when checking %q: %w", perm, err)
 		}
 		project, name := realms.Split(realm)
 		root := realms.Join(project, realms.RootRealm)
@@ -292,7 +292,7 @@ func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, per
 
 	// This may happen if the AuthDB proto has no Realms yet.
 	if db.realms == nil {
-		return nil, errors.Reason("Realms API is not available").Err()
+		return nil, errors.New("Realms API is not available")
 	}
 
 	permIdx, ok := db.realms.PermissionIndex(perm)
@@ -306,7 +306,7 @@ func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, per
 	// UsedInQueryRealms.
 	permBindings, ok := db.realms.QueryBindings(permIdx)
 	if !ok {
-		return nil, errors.Reason("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm).Err()
+		return nil, errors.Fmt("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm)
 	}
 
 	// For each potentially matching list of bindings, check if it really matches.
@@ -393,7 +393,7 @@ func (db *SnapshotDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist stri
 // This is needed to implement authdb.DB interface.
 func (db *SnapshotDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 	if db.AuthServiceURL == "" {
-		return "", errors.Reason("not using Auth Service").Err()
+		return "", errors.New("not using Auth Service")
 	}
 	return db.AuthServiceURL, nil
 }
@@ -409,7 +409,7 @@ func (db *SnapshotDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 func (db *SnapshotDB) GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
 	// This may happen if the AuthDB proto has no Realms yet.
 	if db.realms == nil {
-		return nil, errors.Reason("Realms API is not available").Err()
+		return nil, errors.New("Realms API is not available")
 	}
 
 	// Verify such realm is defined in the DB or fallback to its @root.

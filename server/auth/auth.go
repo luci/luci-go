@@ -40,29 +40,40 @@ var (
 
 	// ErrNotConfigured is returned by Authenticate and other functions if the
 	// context wasn't previously initialized via 'Initialize'.
-	ErrNotConfigured = errors.New("auth: the library is not properly configured", grpcutil.InternalTag)
+	ErrNotConfigured = grpcutil.InternalTag.Apply(
 
-	// ErrBadClientID is returned by Authenticate if caller is using an OAuth2
-	// client ID not in the list of allowed IDs. More info is in the log.
-	ErrBadClientID = errors.New("auth: OAuth client_id is not in the allowlist", grpcutil.PermissionDeniedTag)
+		// ErrBadClientID is returned by Authenticate if caller is using an OAuth2
+		// client ID not in the list of allowed IDs. More info is in the log.
+		errors.New("auth: the library is not properly configured"))
 
-	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
-	ErrBadAudience = errors.New("auth: bad token audience", grpcutil.PermissionDeniedTag)
+	ErrBadClientID = grpcutil.PermissionDeniedTag.Apply(
 
-	// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
-	// be parsed.
-	ErrBadRemoteAddr = errors.New("auth: bad remote addr", grpcutil.InternalTag)
+		// ErrBadAudience is returned by Authenticate if token's audience is unknown.
+		errors.New("auth: OAuth client_id is not in the allowlist"))
 
-	// ErrForbiddenIP is returned when an account is restricted by an IP allowlist
-	// and request's remote_addr is not in it.
-	ErrForbiddenIP = errors.New("auth: IP is not in the allowlist", grpcutil.PermissionDeniedTag)
+	ErrBadAudience = grpcutil.PermissionDeniedTag.Apply(
 
-	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
-	// tries to use X-Luci-Project header. Only a preapproved set of callers are
-	// allowed to use this header, see InternalServicesGroup.
-	ErrProjectHeaderForbidden = errors.New("auth: the caller is not allowed to use X-Luci-Project", grpcutil.PermissionDeniedTag)
+		// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
+		// be parsed.
+		errors.New("auth: bad token audience"))
 
-	// Other errors.
+	ErrBadRemoteAddr = grpcutil.InternalTag.Apply(
+
+		// ErrForbiddenIP is returned when an account is restricted by an IP allowlist
+		// and request's remote_addr is not in it.
+		errors.New("auth: bad remote addr"))
+
+	ErrForbiddenIP = grpcutil.PermissionDeniedTag.Apply(
+
+		// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
+		// tries to use X-Luci-Project header. Only a preapproved set of callers are
+		// allowed to use this header, see InternalServicesGroup.
+		errors.New("auth: IP is not in the allowlist"))
+
+	ErrProjectHeaderForbidden = grpcutil.PermissionDeniedTag.Apply(
+
+		// Other errors.
+		errors.New("auth: the caller is not allowed to use X-Luci-Project"))
 
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
 	// the authentication methods support UsersAPI.
@@ -583,7 +594,7 @@ func checkClientID(ctx context.Context, cfg *Config, db authdb.DB, email, client
 	// Check the global allowlist in the AuthDB.
 	switch valid, err := db.IsAllowedOAuthClientID(ctx, email, clientID); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check client ID allowlist").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to check client ID allowlist: %w", err))
 	case valid:
 		return nil
 	}
@@ -592,7 +603,7 @@ func checkClientID(ctx context.Context, cfg *Config, db authdb.DB, email, client
 	if cfg.FrontendClientID != nil {
 		switch frontendClientID, err := cfg.FrontendClientID(ctx); {
 		case err != nil:
-			return errors.Annotate(err, "failed to grab frontend client ID").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to grab frontend client ID: %w", err))
 		case clientID == frontendClientID:
 			return nil
 		}
@@ -625,11 +636,11 @@ func checkEndUserIP(ctx context.Context, cfg *Config, db authdb.DB, r RequestMet
 	// Some callers may be constrained by an IP allowlist.
 	switch ipAllowlist, err := db.GetAllowlistForIdentity(ctx, peerID); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get IP allowlist for identity %q", peerID).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to get IP allowlist for identity %q: %w", peerID, err))
 	case ipAllowlist != "":
 		switch allowed, err := db.IsAllowedIP(ctx, peerIP, ipAllowlist); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to check IP %s is in the allowlist %q", peerIP, ipAllowlist).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to check IP %s is in the allowlist %q: %w", peerIP, ipAllowlist, err))
 		case !allowed:
 			return nil, ErrForbiddenIP
 		}
@@ -680,7 +691,7 @@ func checkProjectHeader(ctx context.Context, db authdb.DB, project string, peerI
 	// See comment for InternalServicesGroup.
 	switch yes, err := db.IsMember(ctx, peerID, []string{InternalServicesGroup}); {
 	case err != nil:
-		return nil, errors.Annotate(err, "error when checking if %q is in %q", peerID, InternalServicesGroup).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("error when checking if %q is in %q: %w", peerID, InternalServicesGroup, err))
 	case !yes:
 		return nil, ErrProjectHeaderForbidden
 	}
@@ -688,7 +699,7 @@ func checkProjectHeader(ctx context.Context, db authdb.DB, project string, peerI
 	// Verify the actual value passes the regexp check.
 	projIdent, err := identity.MakeIdentity("project:" + project)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad %s", XLUCIProjectHeader).Err()
+		return nil, errors.Fmt("bad %s: %w", XLUCIProjectHeader, err)
 	}
 
 	// Log that peerID is using project-scoped identity.
@@ -710,7 +721,7 @@ func getOwnServiceIdentity(ctx context.Context, signer signing.Signer) (identity
 	case err != nil:
 		return "", err
 	case serviceInfo.AppID == "":
-		return "", errors.Reason("auth: don't known our own app ID to check the delegation token is for us").Err()
+		return "", errors.New("auth: don't known our own app ID to check the delegation token is for us")
 	default:
 		return identity.MakeIdentity("service:" + serviceInfo.AppID)
 	}

@@ -99,7 +99,7 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 	case messages.TriggeringPolicy_NEWEST_FIRST:
 		return NewestFirstPolicy(int(p.MaxConcurrentInvocations), p.PendingTimeout.AsDuration())
 	default:
-		return nil, errors.Reason("unrecognized triggering policy kind %d", p.Kind).Err()
+		return nil, errors.Fmt("unrecognized triggering policy kind %d", p.Kind)
 	}
 }
 
@@ -129,7 +129,7 @@ func UnmarshalDefinition(b []byte) (*messages.TriggeringPolicy, error) {
 	msg := &messages.TriggeringPolicy{}
 	if len(b) != 0 {
 		if err := proto.Unmarshal(b, msg); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal TriggeringPolicy").Err()
+			return nil, errors.Fmt("failed to unmarshal TriggeringPolicy: %w", err)
 		}
 	}
 	if msg.Kind == 0 {

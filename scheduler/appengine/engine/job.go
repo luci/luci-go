@@ -344,7 +344,7 @@ func (s *triggersSet) Triggers(c context.Context) (*dsset.Listing, []*internal.T
 	for i, item := range l.Items {
 		out[i] = &internal.Trigger{}
 		if err := proto.Unmarshal(item.Value, out[i]); err != nil {
-			return nil, nil, errors.Annotate(err, "failed to unmarshal trigger").Err()
+			return nil, nil, errors.Fmt("failed to unmarshal trigger: %w", err)
 		}
 		if out[i].Id != item.ID {
 			return nil, nil, fmt.Errorf("trigger ID in the body (%q) doesn't match item ID %q", out[i].Id, item.ID)

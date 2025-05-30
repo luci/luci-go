@@ -76,7 +76,7 @@ func (a *IAPAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata
 
 	jwtPayload, err := validateFunc(ctx, iapJwt, a.Aud)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "couldn't validate jwt payload").Err()
+		return nil, nil, errors.Fmt("couldn't validate jwt payload: %w", err)
 	}
 
 	email, ok := jwtPayload.Claims["email"].(string)

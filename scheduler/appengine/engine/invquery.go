@@ -321,11 +321,11 @@ func decodeInvCursor(cursor string, cur *internal.InvocationsCursor) error {
 
 	blob, err := base64.RawURLEncoding.DecodeString(cursor)
 	if err != nil {
-		return errors.Annotate(err, "failed to base64 decode the cursor").Err()
+		return errors.Fmt("failed to base64 decode the cursor: %w", err)
 	}
 
 	if err = proto.Unmarshal(blob, cur); err != nil {
-		return errors.Annotate(err, "failed to unmarshal the cursor").Err()
+		return errors.Fmt("failed to unmarshal the cursor: %w", err)
 	}
 
 	return nil
@@ -367,10 +367,12 @@ func fetchInvsPage(c context.Context, qs []invQuery, opts ListInvocationsOpts, o
 	prevSize := len(out)
 	out, final, err := mergeInvQueries(qs, opts.PageSize, out)
 	if err != nil {
-		return nil, invsPage{}, errors.Annotate(err, "failed to query invocations").Tag(transient.Tag).Err()
+		return nil, invsPage{}, transient.Tag.Apply(errors.
+
+			// Nothing new at all? We are done.
+			Fmt("failed to query invocations: %w", err))
 	}
 
-	// Nothing new at all? We are done.
 	if len(out) == prevSize {
 		return out, invsPage{final: true}, nil
 	}
@@ -425,7 +427,7 @@ func fillShallowInvs(c context.Context, invs []*Invocation, opts ListInvocations
 	}
 
 	if err := datastore.Get(c, shallow); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch invocations").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch invocations: %w", err))
 	}
 
 	filtered := invs[:0]

@@ -147,7 +147,7 @@ type Node struct {
 // Build constructs the graph from a list of AuthGroup messages.
 func Build(groups []*protocol.AuthGroup) (*Graph, error) {
 	if len(groups) > math.MaxUint16-1 {
-		return nil, errors.Reason("too many groups (%d > %d)", len(groups), math.MaxUint16-1).Err()
+		return nil, errors.Fmt("too many groups (%d > %d)", len(groups), math.MaxUint16-1)
 	}
 
 	// Build all nodes, but don't connect them yet.
@@ -157,7 +157,7 @@ func Build(groups []*protocol.AuthGroup) (*Graph, error) {
 	}
 	for idx, g := range groups {
 		if _, ok := graph.NodesByName[g.Name]; ok {
-			return nil, errors.Reason("bad AuthDB, group %q is listed twice", g.Name).Err()
+			return nil, errors.Fmt("bad AuthDB, group %q is listed twice", g.Name)
 		}
 		graph.NodesByName[g.Name] = NodeIndex(idx)
 		graph.Nodes[idx] = Node{
@@ -250,7 +250,7 @@ func (g *Graph) Ancestors(n NodeIndex) NodeSet {
 func (g *Graph) ToQueryable() (*QueryableGraph, error) {
 	globs, err := g.buildGlobsMap()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to build globs map").Err()
+		return nil, errors.Fmt("failed to build globs map: %w", err)
 	}
 	return &QueryableGraph{
 		groups:      g.NodesByName,
@@ -276,7 +276,7 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 		err := g.Visit(g.Descendants(idx), func(n *Node) error {
 			for _, glob := range n.Globs {
 				if err := builder.Add(identity.Glob(glob)); err != nil {
-					return errors.Annotate(err, "bad glob %q in group %q", glob, n.Name).Err()
+					return errors.Fmt("bad glob %q in group %q: %w", glob, n.Name, err)
 				}
 			}
 			return nil
@@ -287,7 +287,7 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 
 		switch globSet, err := builder.Build(); {
 		case err != nil:
-			return nil, errors.Annotate(err, "bad glob pattern when traversing %q", g.Nodes[idx].Name).Err()
+			return nil, errors.Fmt("bad glob pattern when traversing %q: %w", g.Nodes[idx].Name, err)
 		case globSet != nil:
 			globs[idx] = globSet
 		}

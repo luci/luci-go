@@ -284,7 +284,7 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOn
 			"Hint: have you granted read access to LUCI Scheduler on relevant refs in %q\n"+
 			"Resolved refs from gitiles:\n%q?\n",
 			missingRefs, cfg.Repo, refs.current)
-		return nil, errors.Reason("%d unresolved refs", len(missingRefs)).Err()
+		return nil, errors.Fmt("%d unresolved refs", len(missingRefs))
 	}
 	return refs, nil
 }
@@ -365,7 +365,7 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.ControllerReadOnly, repo string) (*gitilesClient, error) {
 	host, project, err := gitiles.ParseRepoURL(repo)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid repo URL %q", repo).Err()
+		return nil, errors.Fmt("invalid repo URL %q: %w", repo, err)
 	}
 	r := &gitilesClient{host: host, project: project}
 
@@ -538,12 +538,12 @@ func newPathFilter(cfg *messages.GitilesTask) (p pathFilter, err error) {
 		return // PathRegexpsExclude are ignored in this case. See also ValidateProtoMessage.
 	}
 	if p.pathInclude, err = regexp.Compile(disjunctiveOfRegexps(cfg.PathRegexps)); err != nil {
-		err = errors.Annotate(err, "invalid path_regexps %q", cfg.PathRegexps).Err()
+		err = errors.Fmt("invalid path_regexps %q: %w", cfg.PathRegexps, err)
 		return
 	}
 	if len(cfg.PathRegexpsExclude) > 0 {
 		if p.pathExclude, err = regexp.Compile(disjunctiveOfRegexps(cfg.PathRegexpsExclude)); err != nil {
-			err = errors.Annotate(err, "invalid exclude_path_regexps %q", cfg.PathRegexpsExclude).Err()
+			err = errors.Fmt("invalid exclude_path_regexps %q: %w", cfg.PathRegexpsExclude, err)
 			return
 		}
 	}

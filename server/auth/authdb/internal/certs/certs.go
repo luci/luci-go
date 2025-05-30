@@ -56,14 +56,14 @@ func (b *Bundle) GetCerts(ctx context.Context) (identity.Identity, *signing.Publ
 func (b *Bundle) fetch(ctx context.Context) (*fetchedBundle, error) {
 	certs, err := signing.FetchCertificatesFromLUCIService(ctx, b.ServiceURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch certs from %s", b.ServiceURL).Err()
+		return nil, errors.Fmt("failed to fetch certs from %s: %w", b.ServiceURL, err)
 	}
 	if certs.ServiceAccountName == "" {
-		return nil, errors.Reason("service %s didn't provide its service account name", b.ServiceURL).Err()
+		return nil, errors.Fmt("service %s didn't provide its service account name", b.ServiceURL)
 	}
 	id, err := identity.MakeIdentity("user:" + certs.ServiceAccountName)
 	if err != nil {
-		return nil, errors.Reason("invalid service_account_name %q in certificates bundle from %s", certs.ServiceAccountName, b.ServiceURL).Err()
+		return nil, errors.Fmt("invalid service_account_name %q in certificates bundle from %s", certs.ServiceAccountName, b.ServiceURL)
 	}
 	return &fetchedBundle{id, certs}, nil
 }

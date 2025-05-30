@@ -35,12 +35,12 @@ func putRequestIntoInv(inv *Invocation, req *task.Request) error {
 	if req.Properties != nil {
 		var err error
 		if props, err = proto.Marshal(req.Properties); err != nil {
-			return errors.Annotate(err, "can't marshal Properties").Err()
+			return errors.Fmt("can't marshal Properties: %w", err)
 		}
 	}
 
 	if err := utils.ValidateKVList("tag", req.Tags, ':'); err != nil {
-		return errors.Annotate(err, "rejecting bad tags").Err()
+		return errors.Fmt("rejecting bad tags: %w", err)
 	}
 	sortedTags := append([]string(nil), req.Tags...)
 	sort.Strings(sortedTags)
@@ -60,12 +60,12 @@ func putRequestIntoInv(inv *Invocation, req *task.Request) error {
 func getRequestFromInv(inv *Invocation) (r task.Request, err error) {
 	r.TriggeredBy = inv.TriggeredBy
 	if r.IncomingTriggers, err = inv.IncomingTriggers(); err != nil {
-		return r, errors.Annotate(err, "failed to deserialize incoming triggers").Err()
+		return r, errors.Fmt("failed to deserialize incoming triggers: %w", err)
 	}
 	if len(inv.PropertiesRaw) != 0 {
 		props := &structpb.Struct{}
 		if err = proto.Unmarshal(inv.PropertiesRaw, props); err != nil {
-			return r, errors.Annotate(err, "failed to deserialize properties").Err()
+			return r, errors.Fmt("failed to deserialize properties: %w", err)
 		}
 		r.Properties = props
 	}

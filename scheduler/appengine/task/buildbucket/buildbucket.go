@@ -176,7 +176,7 @@ type taskData struct {
 // writeTaskData puts information about the task into invocation's TaskData.
 func writeTaskData(ctl task.Controller, td *taskData) (err error) {
 	if ctl.State().TaskData, err = json.Marshal(td); err != nil {
-		return errors.Annotate(err, "could not serialize TaskData").Err()
+		return errors.Fmt("could not serialize TaskData: %w", err)
 	}
 	return nil
 }
@@ -185,7 +185,7 @@ func writeTaskData(ctl task.Controller, td *taskData) (err error) {
 func readTaskData(ctl task.Controller) (*taskData, error) {
 	td := &taskData{}
 	if err := json.Unmarshal(ctl.State().TaskData, td); err != nil {
-		return nil, errors.Annotate(err, "could not parse TaskData").Err()
+		return nil, errors.Fmt("could not parse TaskData: %w", err)
 	}
 	return td, nil
 }
@@ -199,7 +199,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// config has been validated already.
 	bid, err := builderID(cfg, ctl.RealmID())
 	if err != nil {
-		return errors.Annotate(err, "unexpected bad bucket name in the task config").Err()
+		return errors.Fmt("unexpected bad bucket name in the task config: %w", err)
 	}
 
 	// Join tags from all known sources. Note: no overriding here for now, tags
@@ -234,7 +234,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		if gt := last.GetGitiles(); gt != nil {
 			commit, err = triggerToCommit(gt)
 			if err != nil {
-				return errors.Annotate(err, "failed to prepare gitiles_commit").Err()
+				return errors.Fmt("failed to prepare gitiles_commit: %w", err)
 			}
 		}
 	}
@@ -340,10 +340,12 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	// So we pick a lesser evil and make AbortTask fail transiently while
 	// invocation is starting.
 	if status := ctl.State().Status; status.Initial() {
-		return errors.Reason("can't abort Buildbucket invocation in state %q", status).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// Grab build ID from the blob generated in LaunchTask.
+			Fmt("can't abort Buildbucket invocation in state %q", status))
 	}
 
-	// Grab build ID from the blob generated in LaunchTask.
 	taskData, err := readTaskData(ctl)
 	if err != nil {
 		ctl.State().Status = task.StatusFailed
@@ -478,7 +480,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	// still running LaunchTask when saving the invocation, it will only make the
 	// matters worse.
 	case status == task.StatusStarting:
-		return errors.New("invocation is still starting, try again later", transient.Tag, tq.Retry)
+		return tq.Retry.Apply(transient.Tag.Apply(errors.New("invocation is still starting, try again later")))
 	case status != task.StatusRunning:
 		return fmt.Errorf("unexpected invocation status %q, expecting %q", status, task.StatusRunning)
 	}
@@ -594,7 +596,7 @@ func builderID(cfg *messages.BuildbucketTask, realmID string) (*bbpb.BuilderID, 
 func triggerToCommit(t *scheduler.GitilesTrigger) (*bbpb.GitilesCommit, error) {
 	repo, err := gitiles.NormalizeRepoURL(t.Repo, false)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad repo URL %q", t.Repo).Err()
+		return nil, errors.Fmt("bad repo URL %q: %w", t.Repo, err)
 	}
 	return &bbpb.GitilesCommit{
 		Host:    repo.Host,

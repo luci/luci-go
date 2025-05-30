@@ -72,7 +72,7 @@ func (f *Fetcher) FetchAuthDB(ctx context.Context, cur *authdb.SnapshotDB) (fres
 	if client == nil {
 		t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(f.OAuthScopes...))
 		if err != nil {
-			return nil, errors.Reason("can't get authenticating transport").Err()
+			return nil, errors.New("can't get authenticating transport")
 		}
 		client = &http.Client{Transport: t}
 	}
@@ -119,7 +119,7 @@ func (f *Fetcher) doFetchAttempt(ctx context.Context, cur *authdb.SnapshotDB, cl
 		case err != nil:
 			return nil, err
 		case needAccess: // this should not be happening
-			return nil, errors.Reason("still no access to GCS").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.New("still no access to GCS"))
 		}
 	}
 
@@ -165,14 +165,14 @@ func (f *Fetcher) fetchLatestRev(ctx context.Context, client *http.Client) (rev 
 	case code == http.StatusOK:
 		rev := protocol.AuthDBRevision{}
 		if err := jsonpb.Unmarshal(bytes.NewReader(resp), &rev); err != nil {
-			return 0, false, errors.Annotate(err, "failed to unmarshal AuthDBRevision").Err()
+			return 0, false, errors.Fmt("failed to unmarshal AuthDBRevision: %w", err)
 		}
 		return rev.AuthDbRev, false, nil
 	case code == http.StatusForbidden || code == http.StatusNotFound:
 		logging.Errorf(ctx, "Permission errors when fetching latest.json")
 		return 0, true, nil
 	default:
-		return 0, false, errors.Reason("got HTTP %d when fetching latest.json:\n%s", code, resp).Tag(transient.Tag).Err()
+		return 0, false, transient.Tag.Apply(errors.Fmt("got HTTP %d when fetching latest.json:\n%s", code, resp))
 	}
 }
 
@@ -186,31 +186,31 @@ func (f *Fetcher) fetchSignedAuthDB(ctx context.Context, client *http.Client) (*
 		logging.Infof(ctx, "Fetched AuthDB snapshot (%.1f Kb)", float32(len(resp))/1024)
 		db := protocol.SignedAuthDB{}
 		if err := proto.Unmarshal(resp, &db); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal SignedAuthDB").Err()
+			return nil, errors.Fmt("failed to unmarshal SignedAuthDB: %w", err)
 		}
 		return &db, nil
 	default:
-		return nil, errors.Reason("got HTTP %d when fetching latest.json:\n%s", code, resp).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("got HTTP %d when fetching latest.json:\n%s", code, resp))
 	}
 }
 
 // checkSignature checks the signature in SignedAuthDB.
 func (f *Fetcher) checkSignature(ctx context.Context, s *protocol.SignedAuthDB) error {
 	if s.SignerId != f.AuthServiceAccount {
-		return errors.Reason("the snapshot is signed by %q, but we accept only %q", s.SignerId, f.AuthServiceAccount).Err()
+		return errors.Fmt("the snapshot is signed by %q, but we accept only %q", s.SignerId, f.AuthServiceAccount)
 	}
 
 	certs := f.testSigningCerts
 	if certs == nil {
 		var err error
 		if certs, err = signing.FetchCertificatesForServiceAccount(ctx, s.SignerId); err != nil {
-			return errors.Annotate(err, "failed to fetch certs of %q", s.SignerId).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch certs of %q: %w", s.SignerId, err))
 		}
 	}
 
 	hash := sha512.Sum512(s.AuthDbBlob)
 	if err := certs.CheckSignature(s.SigningKeyId, hash[:], s.Signature); err != nil {
-		return errors.Annotate(err, "failed to verify that AuthDB was signed by %q", s.SignerId).Err()
+		return errors.Fmt("failed to verify that AuthDB was signed by %q: %w", s.SignerId, err)
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (f *Fetcher) checkSignature(ctx context.Context, s *protocol.SignedAuthDB) 
 func (f *Fetcher) deserializeAuthDB(ctx context.Context, blob []byte) (*authdb.SnapshotDB, error) {
 	m := protocol.ReplicationPushRequest{}
 	if err := proto.Unmarshal(blob, &m); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal ReplicationPushRequest").Err()
+		return nil, errors.Fmt("failed to unmarshal ReplicationPushRequest: %w", err)
 	}
 	rev := m.Revision.AuthDbRev
 	logging.Infof(ctx,
@@ -228,7 +228,7 @@ func (f *Fetcher) deserializeAuthDB(ctx context.Context, blob []byte) (*authdb.S
 		rev, m.Revision.PrimaryId, m.AuthCodeVersion)
 	snap, err := authdb.NewSnapshotDB(m.AuthDb, f.AuthServiceURL, rev, true)
 	if err != nil {
-		return nil, errors.Annotate(err, "snapshot at rev %d fails validation", rev).Err()
+		return nil, errors.Fmt("snapshot at rev %d fails validation: %w", rev, err)
 	}
 	return snap, nil
 }
@@ -244,14 +244,14 @@ func (f *Fetcher) requestAccess(ctx context.Context) error {
 	case err != nil:
 		return transient.Tag.Apply(err)
 	case info.StorageDumpPath == "":
-		return errors.Reason("service %s is not configured to upload AuthDB to GCS", f.AuthServiceURL).Err()
+		return errors.Fmt("service %s is not configured to upload AuthDB to GCS", f.AuthServiceURL)
 	case info.StorageDumpPath != f.StorageDumpPath:
 		// Note: we can't just dynamically "fix" f.StorageDumpPath. It is important
 		// that original configuration (e.g. CLI flag) is fixed too, otherwise after
 		// restart we'll resume looking at the wrong place. So treat this situation
 		// as a fatal error.
-		return errors.Reason("wrong configuration: service %s uploads AuthDB to %q, but we are looking at %q",
-			f.AuthServiceURL, info.StorageDumpPath, f.StorageDumpPath).Err()
+		return errors.Fmt("wrong configuration: service %s uploads AuthDB to %q, but we are looking at %q",
+			f.AuthServiceURL, info.StorageDumpPath, f.StorageDumpPath)
 	default:
 		logging.Infof(ctx, "Access granted")
 		return nil
@@ -269,13 +269,13 @@ func (f *Fetcher) fetchFromGCS(ctx context.Context, client *http.Client, rel str
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
-		return 0, nil, errors.Annotate(err, "GET %s", url).Err()
+		return 0, nil, errors.Fmt("GET %s: %w", url, err)
 	}
 	defer resp.Body.Close()
 
 	blob, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return 0, nil, errors.Annotate(err, "GET %s", url).Err()
+		return 0, nil, errors.Fmt("GET %s: %w", url, err)
 	}
 	return resp.StatusCode, blob, nil
 }

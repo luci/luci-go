@@ -188,9 +188,8 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 	//   2. Redeploy *everything*.
 	//   3. Update Auth Service to generate realms.Realms using the new API.
 	if r.ApiVersion != ExpectedAPIVersion {
-		return nil, errors.Reason(
-			"Realms proto has api_version %d not compatible with this service (it expects %d)",
-			r.ApiVersion, ExpectedAPIVersion).Err()
+		return nil, errors.Fmt("Realms proto has api_version %d not compatible with this service (it expects %d)",
+			r.ApiVersion, ExpectedAPIVersion)
 	}
 
 	// Build map: permission name -> its index (since Binding messages operate
@@ -247,7 +246,7 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 			// condition is malformed. This should not happen in a valid AuthDB.
 			cond, err := conds.Condition(binding.Conditions)
 			if err != nil {
-				return nil, errors.Annotate(err, "invalid binding %q in realm %q", binding, realm.Name).Err()
+				return nil, errors.Fmt("invalid binding %q in realm %q: %w", binding, realm.Name, err)
 			}
 
 			// Add principals into the corresponding principal sets in realmsToBe.

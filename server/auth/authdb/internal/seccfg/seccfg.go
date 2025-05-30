@@ -40,7 +40,7 @@ func Parse(blob []byte) (*SecurityConfig, error) {
 
 	msg := protocol.SecurityConfig{}
 	if err := proto.Unmarshal(blob, &msg); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize SecurityConfig").Err()
+		return nil, errors.Fmt("failed to deserialize SecurityConfig: %w", err)
 	}
 
 	secCfg := &SecurityConfig{}
@@ -61,7 +61,7 @@ func Parse(blob []byte) (*SecurityConfig, error) {
 
 		var err error
 		if secCfg.internalServices, err = regexp.Compile(b.String()); err != nil {
-			return nil, errors.Annotate(err, "failed to compile internal_service_regexp").Err()
+			return nil, errors.Fmt("failed to compile internal_service_regexp: %w", err)
 		}
 	}
 
