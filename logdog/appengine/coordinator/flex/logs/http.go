@@ -232,12 +232,12 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 	// The expected format is "/project/path..."
 	parts := strings.SplitN(strings.TrimLeft(pathStr, "/"), "/", 2)
 	if len(parts) != 2 {
-		err = errors.Reason("invalid path %q", pathStr).Err()
+		err = errors.Fmt("invalid path %q", pathStr)
 		return
 	}
 	options.path = types.StreamPath(parts[1])
 	if err = options.path.Validate(); err != nil {
-		err = errors.Annotate(err, "invalid stream path %q", string(options.path)).Err()
+		err = errors.Fmt("invalid stream path %q: %w", string(options.path), err)
 		return
 	}
 
@@ -277,7 +277,7 @@ func initParams(c context.Context, stream *coordinator.LogStream, desc *logpb.Lo
 // * Log Stream metadata and state.
 func startFetch(c context.Context, request *http.Request, pathStr string) (data logData, err error) {
 	if data.options, err = resolveOptions(request, pathStr); err != nil {
-		err = errors.Annotate(err, "resolving options").Tag(grpcutil.InvalidArgumentTag).Err()
+		err = grpcutil.InvalidArgumentTag.Apply(errors.Fmt("resolving options: %w", err))
 		return
 	}
 	// Pull out project/path for convenience.
@@ -773,7 +773,7 @@ func GetHandler(ctx *router.Context) {
 	// Start the fetcher and wait for fetched logs to arrive into ch.
 	data, err := startFetch(ctx.Request.Context(), ctx.Request, ctx.Params.ByName("path"))
 	if err != nil {
-		err = errors.Annotate(err, "start fetch").Err()
+		err = errors.Fmt("start fetch: %w", err)
 		writeErrorPage(ctx, err, data)
 		return
 	}

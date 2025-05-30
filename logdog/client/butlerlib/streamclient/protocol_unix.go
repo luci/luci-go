@@ -36,11 +36,11 @@ var _ dialer = (*unixDialer)(nil)
 func (u *unixDialer) conn(f streamproto.Flags) (*net.UnixConn, error) {
 	conn, err := net.DialUnix("unix", nil, &net.UnixAddr{Net: "unix", Name: u.path})
 	if err != nil {
-		return nil, errors.Annotate(err, "opening socket %q", u.path).Err()
+		return nil, errors.Fmt("opening socket %q: %w", u.path, err)
 	}
 	if err = f.WriteHandshake(conn); err != nil {
 		conn.Close()
-		return nil, errors.Annotate(err, "writing handshake").Err()
+		return nil, errors.Fmt("writing handshake: %w", err)
 	}
 	return conn, nil
 }
@@ -75,10 +75,10 @@ func init() {
 		// Ensure that the supplied address exists and is a named pipe.
 		info, err := os.Lstat(address)
 		if err != nil {
-			return nil, errors.Reason("failed to stat file [%s]: %s", address, err).Err()
+			return nil, errors.Fmt("failed to stat file [%s]: %s", address, err)
 		}
 		if info.Mode()&os.ModeSocket == 0 {
-			return nil, errors.Reason("not a named pipe: [%s]", address).Err()
+			return nil, errors.Fmt("not a named pipe: [%s]", address)
 		}
 		return &unixDialer{address}, nil
 	}

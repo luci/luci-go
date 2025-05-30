@@ -101,11 +101,11 @@ func New(path string, namespace types.StreamName) (*Client, error) {
 	if f, ok := protocolRegistry[protocol]; ok {
 		dial, err := f(value)
 		if err != nil {
-			return nil, errors.Annotate(err, "opening path %q", path).Err()
+			return nil, errors.Fmt("opening path %q: %w", path, err)
 		}
 		return &Client{dial, namespace}, nil
 	}
-	return nil, errors.Reason("no protocol registered for [%s]", parts[0]).Err()
+	return nil, errors.Fmt("no protocol registered for [%s]", parts[0])
 }
 
 func (c *Client) mkOptions(ctx context.Context, name types.StreamName, opts []Option) (ret options, err error) {
@@ -119,7 +119,7 @@ func (c *Client) mkOptions(ctx context.Context, name types.StreamName, opts []Op
 	}
 
 	if err = ret.desc.Descriptor().Validate(false); err != nil {
-		err = errors.Annotate(err, "invalid stream descriptor").Err()
+		err = errors.Fmt("invalid stream descriptor: %w", err)
 	}
 	return
 }
@@ -158,7 +158,7 @@ func (c *Client) NewDatagramStream(ctx context.Context, name types.StreamName, o
 		return nil, err
 	}
 	if fullOpts.forProcess {
-		return nil, errors.Reason("cannot specify ForProcess on a datagram stream").Err()
+		return nil, errors.New("cannot specify ForProcess on a datagram stream")
 	}
 	ret, err := c.dial.DialDgramStream(fullOpts.desc)
 	return ret, errors.WrapIf(err, "attempting to connect datagram stream %q", name)

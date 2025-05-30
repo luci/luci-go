@@ -66,7 +66,7 @@ func (la legacyAuth) PubSub() *auth.Authenticator { return la.a }
 func RealmsAwareAuth(ctx context.Context) (Auth, error) {
 	sysCtx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	if err != nil {
-		return nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+		return nil, errors.Fmt("could not switch to 'system' account in LUCI_CONTEXT: %w", err)
 	}
 	sysAuth := auth.NewAuthenticator(sysCtx, auth.SilentLogin, auth.Options{
 		Scopes: []string{

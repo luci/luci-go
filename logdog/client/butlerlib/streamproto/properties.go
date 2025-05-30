@@ -75,13 +75,13 @@ const maxFrameSize = 1024 * 1024
 func (f *Flags) WriteHandshake(w io.Writer) error {
 	data, err := json.Marshal(f)
 	if err != nil {
-		return errors.Annotate(err, "marshaling flags").Err()
+		return errors.Fmt("marshaling flags: %w", err)
 	}
 	if _, err := w.Write(ProtocolFrameHeaderMagic); err != nil {
-		return errors.Annotate(err, "writing magic number").Err()
+		return errors.Fmt("writing magic number: %w", err)
 	}
 	if _, err := recordio.WriteFrame(w, data); err != nil {
-		return errors.Annotate(err, "writing properties").Err()
+		return errors.Fmt("writing properties: %w", err)
 	}
 	return nil
 }
@@ -92,25 +92,24 @@ func (f *Flags) FromHandshake(r io.Reader) error {
 	header := make([]byte, len(ProtocolFrameHeaderMagic))
 	_, err := io.ReadFull(r, header)
 	if err != nil {
-		return errors.Annotate(err, "reading magic number").Err()
+		return errors.Fmt("reading magic number: %w", err)
 	}
 	if !bytes.Equal(header, ProtocolFrameHeaderMagic) {
-		return errors.Reason(
-			"magic number mismatch: got(%q) expected(%q)",
-			header, ProtocolFrameHeaderMagic).Err()
+		return errors.Fmt("magic number mismatch: got(%q) expected(%q)",
+			header, ProtocolFrameHeaderMagic)
 	}
 
 	_, frameReader, err := recordio.NewReader(r, maxFrameSize).ReadFrame()
 	if err != nil {
-		return errors.Annotate(err, "reading property frame").Err()
+		return errors.Fmt("reading property frame: %w", err)
 	}
 
 	if err := json.NewDecoder(frameReader).Decode(f); err != nil {
-		return errors.Annotate(err, "parsing flag JSON").Err()
+		return errors.Fmt("parsing flag JSON: %w", err)
 	}
 
 	if frameReader.N > 0 {
-		return errors.Reason("handshake had %d bytes of trailing data", frameReader.N).Err()
+		return errors.Fmt("handshake had %d bytes of trailing data", frameReader.N)
 	}
 
 	return nil

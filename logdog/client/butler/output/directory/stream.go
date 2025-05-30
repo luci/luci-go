@@ -44,7 +44,7 @@ func newStream(basePath string, desc *logpb.LogStreamDescriptor) (*stream, error
 	_ = os.MkdirAll(basePath, 0750)
 	metaF, err := os.Create(filepath.Join(basePath, ".meta."+fname))
 	if err != nil {
-		return nil, errors.Annotate(err, "opening meta file for %s", relPath).Err()
+		return nil, errors.Fmt("opening meta file for %s: %w", relPath, err)
 	}
 	defer metaF.Close()
 	err = (&jsonpb.Marshaler{
@@ -52,7 +52,7 @@ func newStream(basePath string, desc *logpb.LogStreamDescriptor) (*stream, error
 		OrigName: true,
 	}).Marshal(metaF, desc)
 	if err != nil {
-		return nil, errors.Annotate(err, "writing meta file for %s", relPath).Err()
+		return nil, errors.Fmt("writing meta file for %s: %w", relPath, err)
 	}
 
 	ret := stream{basePath: basePath, fname: fname}
@@ -78,8 +78,9 @@ func (s *stream) getCurFile() (*os.File, error) {
 	s.curFile, err = os.Create(
 		filepath.Join(s.basePath, fmt.Sprintf("_%05d.%s", s.datagramCount, s.fname)))
 	if err != nil {
-		return nil, errors.Annotate(err, "could not open %d'th datagram of %s",
-			s.datagramCount, filepath.Join(s.basePath, s.fname)).Err()
+		return nil, errors.Fmt("could not open %d'th datagram of %s: %w",
+			s.datagramCount, filepath.Join(s.basePath, s.fname), err)
+
 	}
 	s.datagramCount++
 

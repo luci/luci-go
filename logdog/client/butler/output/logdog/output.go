@@ -99,18 +99,17 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		return nil, errors.New("no host supplied")
 	}
 	if err := config.ValidateProjectName(cfg.Project); err != nil {
-		return nil, errors.Annotate(err, "failed to validate project %q", cfg.Project).Err()
+		return nil, errors.Fmt("failed to validate project %q: %w", cfg.Project, err)
 	}
 	if err := cfg.Prefix.Validate(); err != nil {
-		return nil, errors.Annotate(err, "failed to validate prefix %q", cfg.Prefix).Err()
+		return nil, errors.Fmt("failed to validate prefix %q: %w", cfg.Prefix, err)
 	}
 
 	// Check no cross-project shenanigans occur. Eventually cfg.Project will be
 	// removed in favor of providing the realm name.
 	if proj := cfg.Auth.Project(); proj != "" && proj != cfg.Project {
-		return nil, errors.Reason(
-			"registering a prefix in project %q while running in a context of project %q is forbidden",
-			cfg.Project, proj).Err()
+		return nil, errors.Fmt("registering a prefix in project %q while running in a context of project %q is forbidden",
+			cfg.Project, proj)
 	}
 
 	// TODO(crbug.com/1172492): When running in "realms mode" Auth.RPC should be
@@ -227,7 +226,7 @@ func (cfg *Config) registerPrefix(c context.Context, auth *auth.Authenticator) (
 	nonce := make([]byte, types.OpNonceLength)
 	if _, err = cryptorand.Read(c, nonce); err != nil {
 		log.WithError(err).Errorf(c, "Failed to generate RegisterPrefix nonce.")
-		return nil, errors.Annotate(err, "generating nonce").Err()
+		return nil, errors.Fmt("generating nonce: %w", err)
 	}
 	req := &api.RegisterPrefixRequest{
 		Project:    string(cfg.Project),

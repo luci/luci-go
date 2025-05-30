@@ -88,7 +88,7 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string, _ 
 
 	coord, err := a.coordinatorClient("")
 	if err != nil {
-		errors.Log(a, errors.Annotate(err, "could not create Coordinator client").Err())
+		errors.Log(a, errors.Fmt("could not create Coordinator client: %w", err))
 		return 1
 	}
 

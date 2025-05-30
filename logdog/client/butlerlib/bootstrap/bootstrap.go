@@ -100,7 +100,7 @@ func GetFromEnv(env environ.Env) (*Bootstrap, error) {
 func (bs *Bootstrap) initializeClient(v string) error {
 	c, err := streamclient.New(v, bs.Namespace)
 	if err != nil {
-		return errors.Annotate(err, "bootstrap: failed to create stream client [%s]", v).Err()
+		return errors.Fmt("bootstrap: failed to create stream client [%s]: %w", v, err)
 	}
 	bs.Client = c
 	return nil

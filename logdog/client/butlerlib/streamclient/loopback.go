@@ -37,7 +37,7 @@ var _ dialer = localDialer{}
 func (d localDialer) DialStream(forProcess bool, f streamproto.Flags) (io.WriteCloser, error) {
 	r, w := io.Pipe()
 	if err := d.AddStream(r, f.Descriptor()); err != nil {
-		return nil, errors.Annotate(err, "adding stream").Err()
+		return nil, errors.Fmt("adding stream: %w", err)
 	}
 	return w, nil
 }
@@ -45,7 +45,7 @@ func (d localDialer) DialStream(forProcess bool, f streamproto.Flags) (io.WriteC
 func (d localDialer) DialDgramStream(f streamproto.Flags) (DatagramStream, error) {
 	r, w := io.Pipe()
 	if err := d.AddStream(r, f.Descriptor()); err != nil {
-		return nil, errors.Annotate(err, "adding stream").Err()
+		return nil, errors.Fmt("adding stream: %w", err)
 	}
 	return &datagramStreamWriter{w}, nil
 }

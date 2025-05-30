@@ -45,7 +45,7 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 	realPath := streamproto.LocalNamedPipePath(path)
 
 	if len(realPath) > maxWindowsNamedPipeLength {
-		return nil, errors.Reason("path exceeds maximum length %d", maxWindowsNamedPipeLength).Err()
+		return nil, errors.Fmt("path exceeds maximum length %d", maxWindowsNamedPipeLength)
 	}
 
 	ctx = log.SetField(ctx, "path", path)
@@ -60,7 +60,7 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 				OutputBufferSize: 1024 * 1024,
 			})
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to listen on named pipe").Err()
+				return nil, errors.Fmt("failed to listen on named pipe: %w", err)
 			}
 			return mkListener(l), nil
 		},

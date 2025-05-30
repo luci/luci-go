@@ -47,18 +47,18 @@ func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 		}
 		path = tFile.Name()
 		if err := tFile.Close(); err != nil {
-			return nil, errors.Annotate(err, "closing tempfile %q", path).Err()
+			return nil, errors.Fmt("closing tempfile %q: %w", path, err)
 		}
 	} else {
 		abs, err := filepath.Abs(path)
 		if err != nil {
-			return nil, errors.Annotate(err, "could not get absolute path of %q", path).Err()
+			return nil, errors.Fmt("could not get absolute path of %q: %w", path, err)
 		}
 		path = abs
 	}
 
 	if len(path) > maxPOSIXNamedSocketLength {
-		return nil, errors.Reason("path exceeds maximum length %d", maxPOSIXNamedSocketLength).Err()
+		return nil, errors.Fmt("path exceeds maximum length %d", maxPOSIXNamedSocketLength)
 	}
 
 	ctx = log.SetField(ctx, "namedPipePath", path)

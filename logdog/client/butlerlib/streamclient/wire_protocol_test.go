@@ -43,7 +43,7 @@ func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
 
 	listener, err := mkListen()
 	if err != nil {
-		panic(errors.Annotate(err, "opening listen").Err())
+		panic(errors.Fmt("opening listen: %w", err))
 	}
 
 	go func() {
@@ -52,7 +52,7 @@ func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
 			panic(err)
 		}
 		if err := listener.Close(); err != nil {
-			panic(errors.Annotate(err, "closing listener").Err())
+			panic(errors.Fmt("closing listener: %w", err))
 		}
 		go func() {
 			defer close(ret)

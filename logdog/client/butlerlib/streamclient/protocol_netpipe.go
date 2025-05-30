@@ -59,7 +59,7 @@ const (
 func dialFilePipe(path string) (*os.File, error) {
 	pPath, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "unable to render %q to UTF16", path).Err()
+		return nil, errors.Fmt("unable to render %q to UTF16: %w", path, err)
 	}
 
 	for {
@@ -94,7 +94,7 @@ type winPipeDialer struct {
 func (u *winPipeDialer) conn(forProcess bool, f streamproto.Flags) (conn io.WriteCloser, err error) {
 	if forProcess {
 		if conn, err = dialFilePipe(u.pipeName); err != nil {
-			return nil, errors.Annotate(err, "opening named pipe (synchronous) %q", u.pipeName).Err()
+			return nil, errors.Fmt("opening named pipe (synchronous) %q: %w", u.pipeName, err)
 		}
 	} else {
 		// For consistency, we dial without any timeout here.
@@ -102,13 +102,13 @@ func (u *winPipeDialer) conn(forProcess bool, f streamproto.Flags) (conn io.Writ
 		// TODO(iannucci): Support timeouts for ALL connection methods as part of
 		// the New*Stream public interface.
 		if conn, err = winio.DialPipeContext(context.Background(), u.pipeName); err != nil {
-			return nil, errors.Annotate(err, "opening named pipe %q", u.pipeName).Err()
+			return nil, errors.Fmt("opening named pipe %q: %w", u.pipeName, err)
 		}
 	}
 
 	if err = f.WriteHandshake(conn); err != nil {
 		conn.Close()
-		return nil, errors.Annotate(err, "writing handshake").Err()
+		return nil, errors.Fmt("writing handshake: %w", err)
 	}
 	return
 }

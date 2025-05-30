@@ -75,7 +75,7 @@ func NewGlobalServices(ctx context.Context, bt *bigtable.Flags) (*GlobalServices
 	// Construct the storage, inject the caching implementation into it.
 	storage, err := bigtable.StorageFromFlags(ctx, bt)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to connect to BigTable").Err()
+		return nil, errors.Fmt("failed to connect to BigTable: %w", err)
 	}
 	storage.Cache = storageCache
 
@@ -87,11 +87,11 @@ func NewGlobalServices(ctx context.Context, bt *bigtable.Flags) (*GlobalServices
 			// we are ready to roll out project scoped service accounts in Logdog.
 			transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to create Google Storage RPC transport").Err()
+				return nil, errors.Fmt("failed to create Google Storage RPC transport: %w", err)
 			}
 			prodClient, err := gs.NewProdClient(ctx, transport)
 			if err != nil {
-				return nil, errors.Annotate(err, "Failed to create GS client.").Err()
+				return nil, errors.Fmt("Failed to create GS client.: %w", err)
 			}
 			return prodClient, nil
 		},
@@ -113,11 +113,11 @@ func (gsvc *GlobalServices) StorageForStream(ctx context.Context, lst *coordinat
 	// have no archive or index URLs.
 	if lst.ArchiveStreamURL == "" {
 		logging.Warningf(ctx, "Log has no archive URL")
-		return nil, errors.New("log has no archive URL", grpcutil.NotFoundTag)
+		return nil, grpcutil.NotFoundTag.Apply(errors.New("log has no archive URL"))
 	}
 	if lst.ArchiveIndexURL == "" {
 		logging.Warningf(ctx, "Log has no index URL")
-		return nil, errors.New("log has no index URL", grpcutil.NotFoundTag)
+		return nil, grpcutil.NotFoundTag.Apply(errors.New("log has no index URL"))
 	}
 
 	gsClient, err := gsvc.gsClientFactory(ctx, project)
@@ -189,13 +189,13 @@ func (si *googleStorage) GetSignedURLs(ctx context.Context, req *coordinator.URL
 	signer := auth.GetSigner(ctx)
 	info, err := signer.ServiceInfo(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get service info").Err()
+		return nil, errors.Fmt("failed to get service info: %w", err)
 	}
 
 	lifetime := req.Lifetime
 	switch {
 	case lifetime < 0:
-		return nil, errors.Reason("invalid signed URL lifetime: %s", lifetime).Err()
+		return nil, errors.Fmt("invalid signed URL lifetime: %s", lifetime)
 
 	case lifetime > maxSignedURLLifetime:
 		lifetime = maxSignedURLLifetime
@@ -219,7 +219,7 @@ func (si *googleStorage) GetSignedURLs(ctx context.Context, req *coordinator.URL
 		url, err := gcst.SignedURL(path.Bucket(), path.Filename(), &opts)
 		if err != nil {
 			logging.Warningf(ctx, "failed to sign URL: bucket(%s)/filename(%s)", path.Bucket(), path.Filename())
-			return "", errors.Annotate(err, "failed to sign URL").Err()
+			return "", errors.Fmt("failed to sign URL: %w", err)
 		}
 		return url, nil
 	}
@@ -227,14 +227,14 @@ func (si *googleStorage) GetSignedURLs(ctx context.Context, req *coordinator.URL
 	// Sign stream URL.
 	if req.Stream {
 		if resp.Stream, err = doSign(si.stream); err != nil {
-			return nil, errors.Annotate(err, "failed to sign stream URL").Err()
+			return nil, errors.Fmt("failed to sign stream URL: %w", err)
 		}
 	}
 
 	// Sign index URL.
 	if req.Index {
 		if resp.Index, err = doSign(si.index); err != nil {
-			return nil, errors.Annotate(err, "failed to sign index URL").Err()
+			return nil, errors.Fmt("failed to sign index URL: %w", err)
 		}
 	}
 

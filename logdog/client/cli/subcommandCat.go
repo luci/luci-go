@@ -129,7 +129,7 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string, _ su
 		}
 
 		if addr.Host, err = a.resolveHost(""); err != nil {
-			err = errors.Annotate(err, "failed to resolve host: %q", addr.Host).Err()
+			err = errors.Fmt("failed to resolve host: %q: %w", addr.Host, err)
 			errors.Log(a, err)
 			return 1
 		}
@@ -150,7 +150,7 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string, _ su
 
 		var err error
 		if coords[addr.Host], err = a.coordinatorClient(addr.Host); err != nil {
-			err = errors.Annotate(err, "failed to create Coordinator client for %q", addr.Host).Err()
+			err = errors.Fmt("failed to create Coordinator client for %q: %w", addr.Host, err)
 
 			errors.Log(a, err)
 			return 1

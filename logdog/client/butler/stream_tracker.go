@@ -71,13 +71,13 @@ func (s *streamTracker) canRegisterLocked(name types.StreamName) error {
 
 func (s *streamTracker) RegisterStream(name types.StreamName) error {
 	if err := s.CanRegister(name); err != nil {
-		return errors.Annotate(err, "stream %q", name).Err()
+		return errors.Fmt("stream %q: %w", name, err)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.canRegisterLocked(name); err != nil {
-		return errors.Annotate(err, "stream %q", name).Err()
+		return errors.Fmt("stream %q: %w", name, err)
 	}
 
 	if s.seen.Has(string(name)) {

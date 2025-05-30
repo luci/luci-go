@@ -271,14 +271,14 @@ func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
 		return nil, errors.New("prefix invalid: contains wildcard `*`")
 	}
 	if err := prefix.Validate(); err != nil {
-		return nil, errors.Annotate(err, "prefix invalid").Err()
+		return nil, errors.Fmt("prefix invalid: %w", err)
 	}
 
 	if name == "" {
 		name = "**"
 	}
 	if err := types.StreamName(strings.Replace(string(name), "*", "a", -1)).Validate(); err != nil {
-		return nil, errors.Annotate(err, "name invalid").Err()
+		return nil, errors.Fmt("name invalid: %w", err)
 	}
 
 	ret := &LogStreamQuery{
@@ -300,7 +300,7 @@ func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
 
 	re, err := regexp.Compile(fmt.Sprintf("^%s$", exp))
 	if err != nil {
-		return nil, errors.Annotate(err, "compiling name regex").Err()
+		return nil, errors.Fmt("compiling name regex: %w", err)
 	}
 
 	// this function implements the check for purged as well as the name
