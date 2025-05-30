@@ -104,10 +104,10 @@ func ValidateRealmName(realm string, scope RealmNameScope) error {
 	if scope == GlobalScope {
 		idx := strings.IndexRune(realm, ':')
 		if idx == -1 {
-			return errors.Reason("bad %s realm name %q - should be <project>:<realm>", scope, realm).Err()
+			return errors.Fmt("bad %s realm name %q - should be <project>:<realm>", scope, realm)
 		}
 		if err := ValidateProjectName(realm[:idx]); err != nil {
-			return errors.Annotate(err, "bad %s realm name %q", scope, realm).Err()
+			return errors.Fmt("bad %s realm name %q: %w", scope, realm, err)
 		}
 		realm = realm[idx+1:]
 	} else if scope != ProjectScope {
@@ -115,8 +115,8 @@ func ValidateRealmName(realm string, scope RealmNameScope) error {
 	}
 
 	if realm != RootRealm && realm != LegacyRealm && realm != ProjectRealm && !realmNameRe.MatchString(realm) {
-		return errors.Reason("bad %s realm name %q - the realm name should match %q or be %q, %q or %q",
-			scope, realm, realmNameRe, RootRealm, LegacyRealm, ProjectRealm).Err()
+		return errors.Fmt("bad %s realm name %q - the realm name should match %q or be %q, %q or %q",
+			scope, realm, realmNameRe, RootRealm, LegacyRealm, ProjectRealm)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func ValidateProjectName(project string) error {
 	// Internal realms are uncommon and mentioning them in a generic error message
 	// will just confuse users.
 	if project != InternalProject && !projectNameRe.MatchString(project) {
-		return errors.Reason("bad project name %q - should match %q", project, projectNameRe).Err()
+		return errors.Fmt("bad project name %q - should match %q", project, projectNameRe)
 	}
 	return nil
 }

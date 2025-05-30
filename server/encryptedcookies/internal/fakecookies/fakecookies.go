@@ -115,7 +115,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	if email == serverEmail(ctx) {
 		switch serverUser, err := m.serverUserInfo(ctx); {
 		case err != nil:
-			return nil, nil, errors.Annotate(err, "transient error getting server's user info").Tag(transient.Tag).Err()
+			return nil, nil, transient.Tag.Apply(errors.Fmt("transient error getting server's user info: %w", err))
 		case serverUser != nil:
 			user = serverUser
 		}
@@ -273,7 +273,7 @@ func handler(ctx *router.Context, cb func(ctx context.Context, r *http.Request, 
 func (m *AuthMethod) loginHandlerGET(ctx *router.Context) {
 	handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter) error {
 		if _, err := internal.NormalizeURL(r.URL.Query().Get("r")); err != nil {
-			return errors.Annotate(err, "bad redirect URI").Err()
+			return errors.Fmt("bad redirect URI: %w", err)
 		}
 		email := serverEmail(ctx)
 		if email == "" {
@@ -288,11 +288,11 @@ func (m *AuthMethod) loginHandlerPOST(ctx *router.Context) {
 	handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter) error {
 		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
-			return errors.Annotate(err, "bad redirect URI").Err()
+			return errors.Fmt("bad redirect URI: %w", err)
 		}
 		email := r.FormValue("email")
 		if _, err := identity.MakeIdentity("user:" + email); err != nil {
-			return errors.Annotate(err, "bad email").Err()
+			return errors.Fmt("bad email: %w", err)
 		}
 
 		var curPath, prevPath string
@@ -328,7 +328,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 	handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter) error {
 		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
-			return errors.Annotate(err, "bad redirect URI").Err()
+			return errors.Fmt("bad redirect URI: %w", err)
 		}
 		internal.RemoveCookie(rw, r, cookieName, internal.UnlimitedCookiePath)
 		internal.RemoveCookie(rw, r, cookieName, internal.LimitedCookiePath)
@@ -379,7 +379,7 @@ func (m *AuthMethod) serverUserInfo(ctx context.Context) (*auth.User, error) {
 	}
 
 	if resp.StatusCode >= 500 {
-		return nil, errors.Reason("HTTP %d: %q", resp.StatusCode, body).Err()
+		return nil, errors.Fmt("HTTP %d: %q", resp.StatusCode, body)
 	}
 
 	if resp.StatusCode != 200 {
@@ -394,7 +394,7 @@ func (m *AuthMethod) serverUserInfo(ctx context.Context) (*auth.User, error) {
 		Picture string `json:"picture"`
 	}
 	if err := json.Unmarshal(body, &claims); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize userinfo endpoint response").Err()
+		return nil, errors.Fmt("failed to deserialize userinfo endpoint response: %w", err)
 	}
 
 	m.serverUserInit = true

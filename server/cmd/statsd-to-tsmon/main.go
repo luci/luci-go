@@ -66,13 +66,13 @@ func main() {
 		}
 		cfg, err := LoadConfig(*configFile)
 		if err != nil {
-			return errors.Annotate(err, "failed to load the config file").Err()
+			return errors.Fmt("failed to load the config file: %w", err)
 		}
 
 		// Statsd metrics are sent to an UDP port.
 		pc, err := net.ListenPacket("udp", fmt.Sprintf("localhost:%d", *statsdPort))
 		if err != nil {
-			return errors.Annotate(err, "failed to bind the UDP socket").Err()
+			return errors.Fmt("failed to bind the UDP socket: %w", err)
 		}
 
 		// Spin in a loop, reading and processing incoming UDP packets.

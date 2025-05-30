@@ -32,14 +32,16 @@ import (
 )
 
 // ErrNoSuchJob is returned by GetJob if there's no Job with requested ID.
-var ErrNoSuchJob = errors.New("no such mapping job", tq.Fatal)
+var ErrNoSuchJob = tq.Fatal.Apply(
 
-// Query is a representation of datastore queries supported by the
-// mapper.
-//
-// A query defines a set of entities the mapper operates on.
-//
-// This struct can be embedded into entities as is.
+	// Query is a representation of datastore queries supported by the
+	// mapper.
+	//
+	// A query defines a set of entities the mapper operates on.
+	//
+	// This struct can be embedded into entities as is.
+	errors.New("no such mapping job"))
+
 type Query struct {
 	Kind     string         // entity kind to limit the query, "" for kindless
 	Ancestor *datastore.Key // entity group to limit the query to (or nil)
@@ -99,13 +101,13 @@ type JobConfig struct {
 func (jc *JobConfig) Validate() error {
 	switch {
 	case jc.ShardCount < 1:
-		return errors.Reason("ShardCount should be >= 1, try 8").Err()
+		return errors.New("ShardCount should be >= 1, try 8")
 	case jc.PageSize <= 0:
-		return errors.Reason("PageSize should be > 0, try 256").Err()
+		return errors.New("PageSize should be > 0, try 256")
 	case jc.PagesPerTask < 0:
-		return errors.Reason("PagesPerTask should be >= 0, keep 0 for default").Err()
+		return errors.New("PagesPerTask should be >= 0, keep 0 for default")
 	case jc.TaskDuration < 0:
-		return errors.Reason("TaskDuration should be >= 0, keep 0 for default").Err()
+		return errors.New("TaskDuration should be >= 0, keep 0 for default")
 	}
 	return nil
 }
@@ -154,9 +156,9 @@ func (j *Job) fetchShardIDs(ctx context.Context) ([]int64, error) {
 	l := shardList{Parent: datastore.KeyForObj(ctx, j)}
 	switch err := datastore.Get(ctx, &l); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "broken state, no ShardList entity for job %d", j.ID).Tag(tq.Fatal).Err()
+		return nil, tq.Fatal.Apply(errors.Fmt("broken state, no ShardList entity for job %d: %w", j.ID, err))
 	case err != nil:
-		return nil, errors.Annotate(err, "when fetching list of shards of job %d", j.ID).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("when fetching list of shards of job %d: %w", j.ID, err))
 	default:
 		return l.Shards, nil
 	}
@@ -175,7 +177,7 @@ func (j *Job) fetchShards(ctx context.Context) ([]shard, error) {
 	}
 
 	if err := datastore.Get(ctx, shards); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch some shards of job %d", j.ID).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch some shards of job %d: %w", j.ID, err))
 	}
 	return shards, nil
 }
@@ -255,7 +257,7 @@ func getJob(ctx context.Context, id JobID) (*Job, error) {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, ErrNoSuchJob
 	case err != nil:
-		return nil, errors.Annotate(err, "transient datastore error").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("transient datastore error: %w", err))
 	default:
 		return job, nil
 	}
@@ -272,7 +274,7 @@ func getJob(ctx context.Context, id JobID) (*Job, error) {
 func getJobInState(ctx context.Context, id JobID, states ...dsmapperpb.State) (*Job, error) {
 	job, err := getJob(ctx, id)
 	if err != nil {
-		return nil, errors.Reason("failed to fetch job with ID %d", id).Err()
+		return nil, errors.Fmt("failed to fetch job with ID %d", id)
 	}
 	for _, s := range states {
 		if job.State == s {
@@ -361,9 +363,10 @@ func getActiveShard(ctx context.Context, shardID, taskNum int64) (*shard, error)
 	sh := &shard{ID: shardID}
 	switch err := datastore.Get(ctx, sh); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "no such shard, aborting").Tag(tq.Fatal).Err() // fatal, no retries
+		return nil, tq.Fatal.Apply(errors. // fatal, no retries
+							Fmt("no such shard, aborting: %w", err))
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch the shard: %w", err))
 	case isFinalState(sh.State):
 		logging.Warningf(ctx, "The shard is finished already")
 		return nil, nil
@@ -389,9 +392,9 @@ func shardTxn(ctx context.Context, shardID int64, cb shardTxnCb) error {
 		sh := shard{ID: shardID}
 		switch err := datastore.Get(ctx, &sh); {
 		case err == datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "when fetching shard %d", shardID).Tag(tq.Fatal).Err()
+			return tq.Fatal.Apply(errors.Fmt("when fetching shard %d: %w", shardID, err))
 		case err != nil:
-			return errors.Annotate(err, "when fetching shard %d", shardID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("when fetching shard %d: %w", shardID, err))
 		case isFinalState(sh.State):
 			return nil // the shard is already marked as done
 		}

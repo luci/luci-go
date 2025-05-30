@@ -133,7 +133,7 @@ func (cfg *Config) FindMatchingRule(name [][]byte) *Rule {
 func parseConfig(blob []byte) (*config.Config, error) {
 	cfg := &config.Config{}
 	if err := proto.UnmarshalText(string(blob), cfg); err != nil {
-		return nil, errors.Annotate(err, "bad config format").Err()
+		return nil, errors.Fmt("bad config format: %w", err)
 	}
 	return cfg, nil
 }
@@ -151,16 +151,16 @@ func loadConfig(cfg *config.Config) (*Config, error) {
 		metric := metrics[metricSpec.Metric]
 		for idx, ruleSpec := range metricSpec.Rules {
 			if ruleSpec.Pattern == "" {
-				return nil, errors.Reason("metric %q: rule #%d: a pattern is required", metricSpec.Metric, idx+1).Err()
+				return nil, errors.Fmt("metric %q: rule #%d: a pattern is required", metricSpec.Metric, idx+1)
 			}
 
 			rule, err := loadRule(metric, ruleSpec)
 			if err != nil {
-				return nil, errors.Annotate(err, "metric %q: rule %q", metricSpec.Metric, ruleSpec.Pattern).Err()
+				return nil, errors.Fmt("metric %q: rule %q: %w", metricSpec.Metric, ruleSpec.Pattern, err)
 			}
 
 			if perSuffix[rule.pattern.suffix] != nil {
-				return nil, errors.Reason("metric %q: rule %q: there's already another rule with this suffix", metricSpec.Metric, ruleSpec.Pattern).Err()
+				return nil, errors.Fmt("metric %q: rule %q: there's already another rule with this suffix", metricSpec.Metric, ruleSpec.Pattern)
 			}
 			perSuffix[rule.pattern.suffix] = rule
 		}
@@ -179,14 +179,14 @@ func loadMetrics(cfg []*config.Metric) (map[string]types.Metric, error) {
 	for idx, spec := range cfg {
 		name := spec.Metric
 		if name == "" {
-			return nil, errors.Reason("metric #%d: a name is required", idx+1).Err()
+			return nil, errors.Fmt("metric #%d: a name is required", idx+1)
 		}
 		if metrics[name] != nil {
-			return nil, errors.Reason("duplicate metric %q", name).Err()
+			return nil, errors.Fmt("duplicate metric %q", name)
 		}
 
 		if len(spec.Fields) != stringset.NewFromSlice(spec.Fields...).Len() {
-			return nil, errors.Reason("metric %q: has duplicate fields", name).Err()
+			return nil, errors.Fmt("metric %q: has duplicate fields", name)
 		}
 		tsmonFields := make([]field.Field, len(spec.Fields))
 		for idx, fieldName := range spec.Fields {
@@ -202,7 +202,7 @@ func loadMetrics(cfg []*config.Metric) (map[string]types.Metric, error) {
 		case config.Unit_UNIT_UNSPECIFIED:
 			// no units, this is fine
 		default:
-			return nil, errors.Reason("metric %q: unrecognized units %s", name, spec.Units).Err()
+			return nil, errors.Fmt("metric %q: unrecognized units %s", name, spec.Units)
 		}
 
 		var m types.Metric
@@ -221,7 +221,7 @@ func loadMetrics(cfg []*config.Metric) (map[string]types.Metric, error) {
 				distribution.DefaultBucketer,
 				tsmonFields...)
 		default:
-			return nil, errors.Reason("metric %q: unrecognized type %s", name, spec.Kind).Err()
+			return nil, errors.Fmt("metric %q: unrecognized type %s", name, spec.Kind)
 		}
 
 		metrics[name] = m
@@ -234,7 +234,7 @@ func loadMetrics(cfg []*config.Metric) (map[string]types.Metric, error) {
 func loadRule(metric types.Metric, spec *config.Rule) (*Rule, error) {
 	pat, err := parsePattern(spec.Pattern)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad pattern").Err()
+		return nil, errors.Fmt("bad pattern: %w", err)
 	}
 
 	// Make sure the rule specifies all required fields and only them.
@@ -243,32 +243,32 @@ func loadRule(metric types.Metric, spec *config.Rule) (*Rule, error) {
 	for idx, f := range tsmonFields {
 		val, ok := spec.Fields[f.Name]
 		if !ok {
-			return nil, errors.Reason("value of field %q is not provided", f.Name).Err()
+			return nil, errors.Fmt("value of field %q is not provided", f.Name)
 		}
 		// Here `val` may be a variable (e.g. "${var}"), referring to a position
 		// in the parsed pattern, or just some static string.
 		vr, err := parseVar(val)
 		if err != nil {
-			return nil, errors.Annotate(err, "field %q has bad value %q", f.Name, val).Err()
+			return nil, errors.Fmt("field %q has bad value %q: %w", f.Name, val, err)
 		}
 		switch {
 		case vr != "":
 			componentIdx, ok := pat.vars[vr]
 			if !ok {
-				return nil, errors.Reason("field %q references undefined var %q", f.Name, vr).Err()
+				return nil, errors.Fmt("field %q references undefined var %q", f.Name, vr)
 			}
 			fields[idx] = NameComponentIndex(componentIdx)
 		case val != "":
 			fields[idx] = val // just a static string
 		default:
-			return nil, errors.Reason("field %q has empty value, this is not allowed", f.Name).Err()
+			return nil, errors.Fmt("field %q has empty value, this is not allowed", f.Name)
 		}
 	}
 
 	// We checked metricsDesc.fields is a subset of spec.Fields. Now check there
 	// are in fact equal.
 	if len(spec.Fields) != len(tsmonFields) {
-		return nil, errors.Reason("has too many fields").Err()
+		return nil, errors.New("has too many fields")
 	}
 
 	return &Rule{
@@ -291,17 +291,17 @@ func parsePattern(pat string) (*pattern, error) {
 	}
 	for idx, chunk := range chunks {
 		if chunk == "" {
-			return nil, errors.Reason("empty name component").Err()
+			return nil, errors.New("empty name component")
 		}
 		if chunk == "*" {
 			continue // an index not otherwise mentioned in *pattern is a wildcard
 		}
 		switch vr, err := parseVar(chunk); {
 		case err != nil:
-			return nil, errors.Annotate(err, "in name component %q", chunk).Err()
+			return nil, errors.Fmt("in name component %q: %w", chunk, err)
 		case vr != "":
 			if _, hasIt := p.vars[vr]; hasIt {
-				return nil, errors.Reason("duplicate var %q", vr).Err()
+				return nil, errors.Fmt("duplicate var %q", vr)
 			}
 			if p.vars == nil {
 				p.vars = make(map[string]int, 1)
@@ -322,7 +322,7 @@ func parsePattern(pat string) (*pattern, error) {
 		}
 	}
 	if p.suffix == "" {
-		return nil, errors.Reason("must end with a static suffix").Err()
+		return nil, errors.New("must end with a static suffix")
 	}
 
 	return p, nil
@@ -338,12 +338,12 @@ func parsePattern(pat string) (*pattern, error) {
 func parseVar(p string) (string, error) {
 	if strings.HasPrefix(p, "${") && strings.HasSuffix(p, "}") {
 		if len(p) == 3 {
-			return "", errors.Reason("var name is required").Err()
+			return "", errors.New("var name is required")
 		}
 		return p[2 : len(p)-1], nil
 	}
 	if strings.Contains(p, "${") {
-		return "", errors.Reason("var usage such as `foo-${bar}` is not allowed").Err()
+		return "", errors.New("var usage such as `foo-${bar}` is not allowed")
 	}
 	return "", nil
 }

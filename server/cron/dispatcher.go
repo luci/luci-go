@@ -144,10 +144,10 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 		if err := d.executeHandlerByID(c.Request.Context(), id); err != nil {
 			status := 0
 			if transient.Tag.In(err) {
-				err = errors.Annotate(err, "transient error in cron handler %q", id).Err()
+				err = errors.Fmt("transient error in cron handler %q: %w", id, err)
 				status = 500
 			} else {
-				err = errors.Annotate(err, "fatal error in cron handler %q", id).Err()
+				err = errors.Fmt("fatal error in cron handler %q: %w", id, err)
 				status = 202
 			}
 			errors.Log(c.Request.Context(), err)
@@ -177,7 +177,7 @@ func (d *Dispatcher) executeHandlerByID(ctx context.Context, id string) error {
 	d.m.RUnlock()
 	if h == nil {
 		callsCounter.Add(ctx, 1, id, "no_handler")
-		return errors.Reason("no cron handler with ID %q is registered", id).Err()
+		return errors.Fmt("no cron handler with ID %q is registered", id)
 	}
 
 	start := clock.Now(ctx)

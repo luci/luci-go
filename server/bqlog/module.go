@@ -111,7 +111,7 @@ func (m *bqlogModule) Initialize(ctx context.Context, host module.Host, opts mod
 		bundler.CloudProject = opts.CloudProject
 	}
 	if opts.Prod && m.opts.Dataset == "" {
-		return nil, errors.Reason("flag -bqlog-dataset is required").Err()
+		return nil, errors.New("flag -bqlog-dataset is required")
 	}
 	bundler.Dataset = m.opts.Dataset
 
@@ -120,7 +120,7 @@ func (m *bqlogModule) Initialize(ctx context.Context, host module.Host, opts mod
 		// Create the production writer that writes to the BQ for real.
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize credentials").Err()
+			return nil, errors.Fmt("failed to initialize credentials: %w", err)
 		}
 		writer, err = storage.NewBigQueryWriteClient(ctx,
 			option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
@@ -130,7 +130,7 @@ func (m *bqlogModule) Initialize(ctx context.Context, host module.Host, opts mod
 			})),
 		)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create BQ write client").Err()
+			return nil, errors.Fmt("failed to create BQ write client: %w", err)
 		}
 	} else {
 		// Use some phony names in the dev mode, we won't be writing to BQ.

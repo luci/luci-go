@@ -66,17 +66,17 @@ func NewJSONWebKeySet(parsed *JSONWebKeySetStruct) (*JSONWebKeySet, error) {
 		if k.Kid == "" {
 			// Per spec 'kid' field is optional, but providers we support return them,
 			// so make them required to keep the code simpler.
-			return nil, errors.Reason("bad JSON web key: missing 'kid' field").Err()
+			return nil, errors.New("bad JSON web key: missing 'kid' field")
 		}
 		pub, err := decodeRSAPublicKey(k.N, k.E)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to parse RSA public key in JSON web key").Err()
+			return nil, errors.Fmt("failed to parse RSA public key in JSON web key: %w", err)
 		}
 		keys[k.Kid] = pub
 	}
 
 	if len(keys) == 0 {
-		return nil, errors.Reason("the JSON web key doc didn't have any signing keys").Err()
+		return nil, errors.New("the JSON web key doc didn't have any signing keys")
 	}
 
 	return &JSONWebKeySet{keys: keys}, nil
@@ -86,11 +86,11 @@ func NewJSONWebKeySet(parsed *JSONWebKeySetStruct) (*JSONWebKeySet, error) {
 func (k *JSONWebKeySet) CheckSignature(keyID string, signed, signature []byte) error {
 	pub, ok := k.keys[keyID]
 	if !ok {
-		return errors.Reason("unknown signing key %q", keyID).Err()
+		return errors.Fmt("unknown signing key %q", keyID)
 	}
 	digest := sha256.Sum256(signed)
 	if err := rsa.VerifyPKCS1v15(&pub, crypto.SHA256, digest[:], signature); err != nil {
-		return errors.Reason("bad signature").Err()
+		return errors.New("bad signature")
 	}
 	return nil
 }
@@ -98,11 +98,11 @@ func (k *JSONWebKeySet) CheckSignature(keyID string, signed, signature []byte) e
 func decodeRSAPublicKey(n, e string) (rsa.PublicKey, error) {
 	modulus, err := base64.RawURLEncoding.DecodeString(n)
 	if err != nil {
-		return rsa.PublicKey{}, errors.Annotate(err, "bad modulus encoding").Err()
+		return rsa.PublicKey{}, errors.Fmt("bad modulus encoding: %w", err)
 	}
 	exp, err := base64.RawURLEncoding.DecodeString(e)
 	if err != nil {
-		return rsa.PublicKey{}, errors.Annotate(err, "bad exponent encoding").Err()
+		return rsa.PublicKey{}, errors.Fmt("bad exponent encoding: %w", err)
 	}
 
 	// The exponent should be 4 bytes in BigEndian order. Pad it with zeros if

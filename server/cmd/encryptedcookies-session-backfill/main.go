@@ -85,9 +85,9 @@ func run(ctx context.Context) error {
 	})).TokenSource()
 	switch {
 	case err == auth.ErrLoginRequired:
-		return errors.Reason("Need to login. Run `luci-auth login -scopes \"%s\"`", strings.Join(scopes, " ")).Err()
+		return errors.Fmt("Need to login. Run `luci-auth login -scopes \"%s\"`", strings.Join(scopes, " "))
 	case err != nil:
-		return errors.Annotate(err, "failed to get token source").Err()
+		return errors.Fmt("failed to get token source: %w", err)
 	}
 
 	client, err := cloudds.NewClient(ctx, *cloudProject,
@@ -95,7 +95,7 @@ func run(ctx context.Context) error {
 		option.WithGRPCConnectionPool(*workers/16),
 	)
 	if err != nil {
-		return errors.Annotate(err, "failed to instantiate the datastore client").Err()
+		return errors.Fmt("failed to instantiate the datastore client: %w", err)
 	}
 
 	ctx = (&cloud.ConfigLite{
@@ -144,10 +144,10 @@ func reallyRun(ctx context.Context) error {
 	visitor.report(ctx, true)
 
 	if grErr != nil {
-		return errors.Annotate(grErr, "when processing SessionEntity").Err()
+		return errors.Fmt("when processing SessionEntity: %w", grErr)
 	}
 	if mapErr != nil {
-		return errors.Annotate(mapErr, "when visiting SessionEntity").Err()
+		return errors.Fmt("when visiting SessionEntity: %w", mapErr)
 	}
 	return nil
 }

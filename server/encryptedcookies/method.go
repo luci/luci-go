@@ -73,7 +73,7 @@ func (cfg *OpenIDConfig) discoveryDoc(ctx context.Context) (*openid.DiscoveryDoc
 	// FetchDiscoveryDoc implements caching inside.
 	doc, err := openid.FetchDiscoveryDoc(ctx, cfg.DiscoveryURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch the discovery doc").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch the discovery doc: %w", err))
 	}
 	return doc, nil
 }
@@ -212,7 +212,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	// or we changed the cookie format. We just assume such cookies are expired.
 	aead := m.AEADProvider(ctx)
 	if aead == nil {
-		return nil, nil, errors.Reason("the encryption key is not configured").Err()
+		return nil, nil, errors.New("the encryption key is not configured")
 	}
 	cookie, err := internal.DecryptSessionCookie(aead, encryptedCookie)
 	if err != nil {
@@ -226,7 +226,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	switch {
 	case err != nil:
 		logging.Warningf(ctx, "Failed to fetch session %q: %s", sid, err)
-		return nil, nil, errors.Reason("failed to fetch the session").Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.New("failed to fetch the session"))
 	case session == nil:
 		logging.Warningf(ctx, "No session %q in the store, ignoring the session cookie", sid)
 		return nil, nil, nil
@@ -242,7 +242,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 			sid, additionalScopes, m.RequiredScopes)
 		if err := m.closeSession(ctx, aead, encryptedCookie); err != nil {
 			logging.Errorf(ctx, "An error closing the session: %s", err)
-			return nil, nil, errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
+			return nil, nil, transient.Tag.Apply(errors.New("transient error when closing the session"))
 		}
 		return nil, nil, nil
 	}
@@ -263,7 +263,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 		switch session, private, err = m.refreshSession(ctx, cookie, session); {
 		case err != nil:
 			logging.Warningf(ctx, "Failed to refresh the session: %s", err)
-			return nil, nil, errors.Reason("failed to refresh the session, see server logs").Tag(transient.Tag).Err()
+			return nil, nil, transient.Tag.Apply(errors.New("failed to refresh the session, see server logs"))
 		case session == nil:
 			return nil, nil, nil // the session is no longer valid, just ignore it
 		default:
@@ -317,11 +317,11 @@ func (m *AuthMethod) StateEndpointURL(ctx context.Context) (string, error) {
 
 var (
 	// errCodeReuse is returned if the authorization code is reused.
-	errCodeReuse = errors.Reason("the authorization code has already been used").Err()
+	errCodeReuse = errors.New("the authorization code has already been used")
 	// errBadIDToken is returned if the produced ID token is not valid.
-	errBadIDToken = errors.Reason("ID token validation error").Err()
+	errBadIDToken = errors.New("ID token validation error")
 	// errSessionClosed is used internally to signal the session is closed.
-	errSessionClosed = errors.Reason("the session is already closed").Err()
+	errSessionClosed = errors.New("the session is already closed")
 )
 
 // handler is one of .../login, .../logout or .../callback handlers.
@@ -345,17 +345,17 @@ func (m *AuthMethod) checkConfigured(ctx context.Context) (*OpenIDConfig, error)
 	}
 	cfg, err := m.OpenIDConfig(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch OpenID config").Err()
+		return nil, errors.Fmt("failed to fetch OpenID config: %w", err)
 	}
 	switch {
 	case cfg.DiscoveryURL == "":
-		return nil, errors.Reason("bad OpenID config: no discovery URL").Err()
+		return nil, errors.New("bad OpenID config: no discovery URL")
 	case cfg.ClientID == "":
-		return nil, errors.Reason("bad OpenID config: no client ID").Err()
+		return nil, errors.New("bad OpenID config: no client ID")
 	case cfg.ClientSecret == "":
-		return nil, errors.Reason("bad OpenID config: no client secret").Err()
+		return nil, errors.New("bad OpenID config: no client secret")
 	case cfg.RedirectURI == "":
-		return nil, errors.Reason("bad OpenID config: no redirect URI").Err()
+		return nil, errors.New("bad OpenID config: no redirect URI")
 	}
 	return cfg, nil
 }
@@ -384,7 +384,7 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 	m.handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
 		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
-			return errors.Annotate(err, "bad redirect URI").Err()
+			return errors.Fmt("bad redirect URI: %w", err)
 		}
 
 		scopesSet := stringset.New(len(m.RequiredScopes) + len(m.OptionalScopes))
@@ -412,11 +412,11 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 		// Encrypt it using service-global AEAD, since we are going to expose it.
 		aead := m.AEADProvider(ctx)
 		if aead == nil {
-			return errors.Reason("the service encryption key is not configured").Err()
+			return errors.New("the service encryption key is not configured")
 		}
 		stateEnc, err := internal.EncryptStateB64(aead, state)
 		if err != nil {
-			return errors.Annotate(err, "failed to encrypt the state").Err()
+			return errors.Fmt("failed to encrypt the state: %w", err)
 		}
 
 		// Prepare parameters for the OpenID Connect authorization endpoint.
@@ -445,18 +445,18 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 	m.handler(ctx, func(ctx context.Context, r *http.Request, rw http.ResponseWriter, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
 		dest, err := internal.NormalizeURL(r.URL.Query().Get("r"))
 		if err != nil {
-			return errors.Annotate(err, "bad redirect URI").Err()
+			return errors.Fmt("bad redirect URI: %w", err)
 		}
 
 		// If we have a cookie, mark the session as closed.
 		if encryptedCookie, _ := r.Cookie(internal.SessionCookieName); encryptedCookie != nil {
 			aead := m.AEADProvider(ctx)
 			if aead == nil {
-				return errors.Reason("the encryption key is not configured").Err()
+				return errors.New("the encryption key is not configured")
 			}
 			if err := m.closeSession(ctx, aead, encryptedCookie); err != nil {
 				logging.Errorf(ctx, "An error closing the session: %s", err)
-				return errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.New("transient error when closing the session"))
 			}
 		}
 
@@ -480,28 +480,28 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		// This code path is hit when user clicks "Deny" on the consent page or
 		// if the OAuth client is misconfigured.
 		if errorMsg := q.Get("error"); errorMsg != "" {
-			return errors.Reason("%s", errorMsg).Err()
+			return errors.Fmt("%s", errorMsg)
 		}
 
 		// On success we must receive the authorization code and the state.
 		code := q.Get("code")
 		if code == "" {
-			return errors.Reason("missing `code` parameter").Err()
+			return errors.New("missing `code` parameter")
 		}
 		state := q.Get("state")
 		if state == "" {
-			return errors.Reason("missing `state` parameter").Err()
+			return errors.New("missing `state` parameter")
 		}
 
 		// Decrypt/verify `state`.
 		aead := m.AEADProvider(ctx)
 		if aead == nil {
-			return errors.Reason("the encryption key is not configured").Err()
+			return errors.New("the encryption key is not configured")
 		}
 		statepb, err := internal.DecryptStateB64(aead, state)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to decrypt the state: %s", err)
-			return errors.Reason("bad `state` parameter").Err()
+			return errors.New("bad `state` parameter")
 		}
 
 		// The callback URI is hardcoded in the OAuth2 client config and must always
@@ -533,7 +533,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		switch session, err := m.Sessions.FetchSession(ctx, statepb.SessionId); {
 		case err != nil:
 			logging.Errorf(ctx, "Failed to check the session: %s", err)
-			return errors.Reason("transient error when checking the session").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.New("transient error when checking the session"))
 		case session != nil:
 			return errCodeReuse
 		}
@@ -550,9 +550,9 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		if err != nil {
 			logging.Errorf(ctx, "Code exchange failed: %s", err) // only log on the server
 			if transient.Tag.In(err) {
-				return errors.Reason("transient error during code exchange").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.New("transient error during code exchange"))
 			}
-			return errors.Reason("fatal error during code exchange").Err()
+			return errors.New("fatal error during code exchange")
 		}
 
 		// Verify and unpack the ID token to grab the user info and `nonce` from it.
@@ -588,10 +588,10 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 
 		// Make sure we've got other required tokens.
 		if tokens.AccessToken == "" {
-			return errors.Reason("the ID provider didn't produce access token").Err()
+			return errors.New("the ID provider didn't produce access token")
 		}
 		if tokens.RefreshToken == "" {
-			return errors.Reason("the ID provider didn't produce refresh token").Err()
+			return errors.New("the ID provider didn't produce refresh token")
 		}
 
 		// Everything looks good and we can open the session!
@@ -603,7 +603,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		encryptedPrivate, err := internal.EncryptPrivate(sessionAEAD, tokens)
 		if err != nil {
 			logging.Errorf(ctx, "EncryptPrivate error: %s", err)
-			return errors.Reason("failed to prepare the session").Err()
+			return errors.New("failed to prepare the session")
 		}
 
 		// Prep the session we are about to store.
@@ -645,7 +645,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 				return err
 			}
 			logging.Errorf(ctx, "Failure when storing the session: %s", err)
-			return errors.Reason("failed to store the session").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.New("failed to store the session"))
 		}
 
 		// Best effort at properly closing the previous session. We are going to
@@ -661,7 +661,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		httpCookie, err := internal.EncryptSessionCookie(aead, cookie)
 		if err != nil {
 			logging.Errorf(ctx, "Cookie encryption error: %s", err)
-			return errors.Reason("failed to prepare the cookie").Err()
+			return errors.New("failed to prepare the cookie")
 		}
 
 		// Set the cookie at an appropriate path and remove a potentially stale
@@ -729,7 +729,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	// Unseal the private part of the session to get the refresh token.
 	private, sessionAEAD, err := internal.UnsealPrivate(cookie, session)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to unseal the session").Err()
+		return nil, nil, errors.Fmt("failed to unseal the session: %w", err)
 	}
 
 	// Use the refresh token to get the new access and ID tokens. A fatal error
@@ -743,7 +743,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	})
 	if err != nil {
 		if transient.Tag.In(err) {
-			return nil, nil, errors.Annotate(err, "transient error when fetching new tokens").Err()
+			return nil, nil, errors.Fmt("transient error when fetching new tokens: %w", err)
 		}
 		logging.Warningf(ctx, "Refresh failed, closing the session: %s", err)
 	}
@@ -754,17 +754,17 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 	if stillGood {
 		// Grab the updated user info from the ID token.
 		if tok, _, err = openid.UserFromIDToken(ctx, tokens.IdToken, discovery); err != nil {
-			return nil, nil, errors.Annotate(err, "failed to check the ID token").Err()
+			return nil, nil, errors.Fmt("failed to check the ID token: %w", err)
 		}
 		// Make sure we've also got the access token
 		if tokens.AccessToken == "" {
-			return nil, nil, errors.Reason("the ID provider didn't produce an access token").Err()
+			return nil, nil, errors.New("the ID provider didn't produce an access token")
 		}
 		// Reencrypt new tokens using the per-session key. The refresh token stays
 		// the same.
 		tokens.RefreshToken = private.RefreshToken
 		if encryptedPrivate, err = internal.EncryptPrivate(sessionAEAD, tokens); err != nil {
-			return nil, nil, errors.Annotate(err, "failed to encrypt the private part of the session").Err()
+			return nil, nil, errors.Fmt("failed to encrypt the private part of the session: %w", err)
 		}
 	}
 
@@ -834,7 +834,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 		if err == errSessionClosed {
 			return nil, nil, nil
 		}
-		return nil, nil, errors.Annotate(err, "failed to update the session in the storage").Err()
+		return nil, nil, errors.Fmt("failed to update the session in the storage: %w", err)
 	}
 
 	if stillGood {
@@ -843,7 +843,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 			// need tokens produced there as well.
 			tokens, _, err = internal.UnsealPrivate(cookie, refreshedSession)
 			if err != nil {
-				return nil, nil, errors.Annotate(err, "failed to unseal the session").Err()
+				return nil, nil, errors.Fmt("failed to unseal the session: %w", err)
 			}
 		}
 		return refreshedSession, tokens, nil
@@ -876,7 +876,7 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 	session, err := m.Sessions.FetchSession(ctx, sid)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch the session").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch the session: %w", err))
 	case session == nil || session.State != sessionpb.State_STATE_OPEN:
 		logging.Infof(ctx, "The session is already closed")
 		return nil
@@ -904,7 +904,7 @@ func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encrypted
 			logging.Infof(ctx, "The session is already closed")
 			return nil
 		}
-		return errors.Annotate(err, "failed to update the session in the storage").Err()
+		return errors.Fmt("failed to update the session in the storage: %w", err)
 	}
 
 	return nil
@@ -993,7 +993,7 @@ func (s *authSessionImpl) IDToken(ctx context.Context) (*oauth2.Token, error) {
 // or, if this is impossible, file a bug to implement the dynamic token refresh.
 func checkStaleToken(ctx context.Context, t *oauth2.Token) error {
 	if clock.Now(ctx).After(t.Expiry) {
-		return errors.Reason("encryptedcookies: the tokens stored in the session expired midway through the request handler").Err()
+		return errors.New("encryptedcookies: the tokens stored in the session expired midway through the request handler")
 	}
 	return nil
 }

@@ -271,7 +271,7 @@ func ShouldEnforceRealmACL(ctx context.Context, realm string) (bool, error) {
 	data, err := s.DB().GetRealmData(ctx, realm)
 	switch {
 	case err != nil:
-		return false, errors.Annotate(err, "failed to load realm data").Err()
+		return false, errors.Fmt("failed to load realm data: %w", err)
 	case data == nil:
 		return false, nil // no realms.cfg in the project at all
 	case len(data.EnforceInService) == 0:
@@ -280,7 +280,7 @@ func ShouldEnforceRealmACL(ctx context.Context, realm string) (bool, error) {
 
 	info, err := GetSigner(ctx).ServiceInfo(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "failed to get our own service info").Err()
+		return false, errors.Fmt("failed to get our own service info: %w", err)
 	}
 
 	for _, id := range data.EnforceInService {

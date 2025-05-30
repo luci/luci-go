@@ -60,7 +60,7 @@ func Map[E any](ctx context.Context, q *datastore.Query, shards, batchSize int, 
 		Samples: 500,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to do the initial __scatter__ query").Err()
+		return errors.Fmt("failed to do the initial __scatter__ query: %w", err)
 	}
 	logging.Infof(ctx, "Querying %d ranges in parallel...", len(ranges))
 	eg, ctx := errgroup.WithContext(ctx)

@@ -409,11 +409,13 @@ func (s *logSender) send(data *buffer.Batch[[]byte]) (rerr error) {
 		s.stream.CloseSend()
 		s.stream.Recv()
 		s.stream = nil
-		return errors.Annotate(err, "failed to send data to BQ").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// Otherwise try to read the acknowledgment from the server. We need to wait
+			// for it to make sure it is OK to "forget" about the `data` batch.
+			Fmt("failed to send data to BQ: %w", err))
 	}
 
-	// Otherwise try to read the acknowledgment from the server. We need to wait
-	// for it to make sure it is OK to "forget" about the `data` batch.
 	resp, err := s.stream.Recv()
 
 	// If there's a gRPC-level error, it means the connection is broken and should
@@ -421,7 +423,7 @@ func (s *logSender) send(data *buffer.Batch[[]byte]) (rerr error) {
 	if err != nil {
 		s.stream = nil
 		if err == io.EOF {
-			return errors.Annotate(err, "server unexpected closed the connection").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("server unexpected closed the connection: %w", err))
 		}
 		return grpcutil.WrapIfTransient(err)
 	}

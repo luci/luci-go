@@ -68,7 +68,7 @@ func (portalPage) Actions(ctx context.Context) ([]portal.Action, error) {
 				err := Default.executeHandlerByID(ctx, id)
 				dur := clock.Since(ctx, start)
 				if err != nil {
-					return "", "", errors.Annotate(err, "execution of cron handler %q failed after %s", id, dur).Err()
+					return "", "", errors.Fmt("execution of cron handler %q failed after %s: %w", id, dur, err)
 				}
 				report := fmt.Sprintf(
 					`<p>Execution of cron handler "%s" finished successfully after %s.</p>`,

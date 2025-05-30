@@ -364,14 +364,14 @@ const secretTypeLabel = "luci-secret"
 func parseVersion(versionName string) (int64, error) {
 	idx := strings.LastIndex(versionName, "/")
 	if idx == -1 {
-		return 0, errors.Reason("unexpected version name format %q", versionName).Err()
+		return 0, errors.Fmt("unexpected version name format %q", versionName)
 	}
 	ver, err := strconv.ParseInt(versionName[idx+1:], 10, 64)
 	if err != nil {
-		return 0, errors.Reason("unexpected version name format %q", versionName).Err()
+		return 0, errors.Fmt("unexpected version name format %q", versionName)
 	}
 	if ver == 0 {
-		return 0, errors.Reason("the version is unexpectedly 0").Err()
+		return 0, errors.New("the version is unexpectedly 0")
 	}
 	return ver, nil
 }
@@ -382,7 +382,7 @@ func (c *commandRun) secretMetadata(ctx context.Context) (*secretmanagerpb.Secre
 		Name: c.secretRef,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch the secret metadata").Err()
+		return nil, errors.Fmt("failed to fetch the secret metadata: %w", err)
 	}
 	return secret, nil
 }
@@ -393,7 +393,7 @@ func (c *commandRun) generateNewVersion(ctx context.Context) (int64, error) {
 	logging.Infof(ctx, "Creating and storing the secret of type %q...", c.secretGen.name)
 	secretBlob, err := c.secretGen.gen(ctx)
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to generate the secret of type %q", c.secretGen.name).Err()
+		return 0, errors.Fmt("failed to generate the secret of type %q: %w", c.secretGen.name, err)
 	}
 	version, err := c.gsm.AddSecretVersion(ctx, &secretmanagerpb.AddSecretVersionRequest{
 		Parent: c.secretRef,
@@ -402,7 +402,7 @@ func (c *commandRun) generateNewVersion(ctx context.Context) (int64, error) {
 		},
 	})
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to add the new secret version").Err()
+		return 0, errors.Fmt("failed to add the new secret version: %w", err)
 	}
 	ver, err := parseVersion(version.Name)
 	if err != nil {
@@ -418,7 +418,7 @@ func (c *commandRun) latestVersion(ctx context.Context) (int64, error) {
 		Name: fmt.Sprintf("%s/versions/latest", c.secretRef),
 	})
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to resolve the latest version").Err()
+		return 0, errors.Fmt("failed to resolve the latest version: %w", err)
 	}
 	return parseVersion(version.Name)
 }
@@ -437,7 +437,7 @@ func (c *commandRun) overrideAliases(ctx context.Context, etag string, aliases m
 		},
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to set version aliases to %v", aliases).Err()
+		return nil, errors.Fmt("failed to set version aliases to %v: %w", aliases, err)
 	}
 	return secret, nil
 }
@@ -456,7 +456,7 @@ func (c *commandRun) overrideLabels(ctx context.Context, etag string, labels map
 		},
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to set labels to %v", labels).Err()
+		return nil, errors.Fmt("failed to set labels to %v: %w", labels, err)
 	}
 	return secret, nil
 }
@@ -529,11 +529,10 @@ func (c *commandRun) cmdCreate(ctx context.Context) error {
 		case err == iterator.Done:
 			logging.Infof(ctx, "The secret already exists and has no versions, proceeding...")
 		case err == nil:
-			return errors.New(
-				"This secret already exists and has versions. "+
-					"If you want to rotate it use rotation-begin and rotation-end subcommands.", userError)
+			return userError.Apply(errors.New("This secret already exists and has versions. " +
+				"If you want to rotate it use rotation-begin and rotation-end subcommands."))
 		default:
-			return errors.Annotate(err, "failed to check if the secret has any versions").Err()
+			return errors.Fmt("failed to check if the secret has any versions: %w", err)
 		}
 		// Verify the type label is set, update if not.
 		secret, err = c.secretMetadata(ctx)
@@ -543,9 +542,8 @@ func (c *commandRun) cmdCreate(ctx context.Context) error {
 		existingType := secret.Labels[secretTypeLabel]
 		if existingType != c.secretGen.name {
 			if existingType != "" && !c.force {
-				return errors.Reason(
-					"The secret already exists and its type is set to %q (not %q, as requested). "+
-						"Pass -force to override the type.", existingType, c.secretGen.name).Tag(userError).Err()
+				return userError.Apply(errors.Fmt("The secret already exists and its type is set to %q (not %q, as requested). "+
+					"Pass -force to override the type.", existingType, c.secretGen.name))
 			}
 			if existingType != "" {
 				logging.Warningf(ctx, "Overriding the secret type %q => %q.", existingType, c.secretGen.name)
@@ -560,7 +558,7 @@ func (c *commandRun) cmdCreate(ctx context.Context) error {
 			}
 		}
 	} else if err != nil {
-		return errors.Annotate(err, "failed to create the secret").Err()
+		return errors.Fmt("failed to create the secret: %w", err)
 	}
 
 	added, err := c.generateNewVersion(ctx)
@@ -636,27 +634,25 @@ func (c *commandRun) cmdRotationBegin(ctx context.Context) error {
 	existingType := secret.Labels[secretTypeLabel]
 	if existingType == "" {
 		if c.secretGen.name == "" {
-			return errors.New("This secret is not annotated with a type, pass -secret-type explicitly.", userError)
+			return userError.Apply(errors.New("This secret is not annotated with a type, pass -secret-type explicitly."))
 		}
 		existingType = c.secretGen.name
 	}
 	if c.secretGen.name == "" {
 		typ, ok := secretTypes[existingType]
 		if !ok {
-			return errors.Reason(
-				"The secret is annotated with unrecognized type %q. "+
-					"You may need to pass -secret-type and -force flags to override, but be careful.",
-				existingType).Tag(userError).Err()
+			return userError.Apply(errors.Fmt("The secret is annotated with unrecognized type %q. "+
+				"You may need to pass -secret-type and -force flags to override, but be careful.",
+				existingType))
 		}
 		c.secretGen = typ.(secretGenerator)
 	}
 	if c.secretGen.name != existingType {
 		if !c.force && !c.secretGen.compatible.Has(existingType) {
-			return errors.Reason(
-				"Can't change the secret type from %q to %q. Types are incompatible. "+
-					"If you really need this change, pass -force flag. This is dangerous.",
-				existingType, c.secretGen.name,
-			).Tag(userError).Err()
+			return userError.Apply(errors.Fmt("Can't change the secret type from %q to %q. Types are incompatible. "+
+				"If you really need this change, pass -force flag. This is dangerous.",
+				existingType, c.secretGen.name))
+
 		}
 		logging.Warningf(ctx, "Overriding the secret type %q => %q.", existingType, c.secretGen.name)
 		labels := secret.Labels
@@ -684,7 +680,7 @@ func (c *commandRun) cmdRotationBegin(ctx context.Context) error {
 	// Abort if already rotating.
 	if next := secret.VersionAliases["next"]; next != 0 && next != current {
 		c.printAliasMap(ctx, "Current aliases", secret, false)
-		return errors.New("Looks like a rotation is already in progress.", userError)
+		return userError.Apply(errors.New("Looks like a rotation is already in progress."))
 	}
 
 	c.printAliasMap(ctx, "Aliases prior to the starting rotation", secret, true)
@@ -724,7 +720,7 @@ func (c *commandRun) cmdRotationEnd(ctx context.Context) error {
 	current := secret.VersionAliases["current"]
 	next := secret.VersionAliases["next"]
 	if current == 0 || next == 0 || current == next {
-		return errors.New("There's no rotation in progress.", userError)
+		return userError.Apply(errors.New("There's no rotation in progress."))
 	}
 
 	if secret.VersionAliases == nil {

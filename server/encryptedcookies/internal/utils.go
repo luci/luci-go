@@ -31,11 +31,11 @@ func NormalizeURL(dest string) (string, error) {
 	}
 	u, err := url.Parse(dest)
 	if err != nil {
-		return "", errors.Annotate(err, "bad destination URL %q", dest).Err()
+		return "", errors.Fmt("bad destination URL %q: %w", dest, err)
 	}
 	// Note: '//host/path' is a location on a server named 'host'.
 	if u.IsAbs() || !strings.HasPrefix(u.Path, "/") || strings.HasPrefix(u.Path, "//") {
-		return "", errors.Reason("bad absolute destination URL %q", u).Err()
+		return "", errors.Fmt("bad absolute destination URL %q", u)
 	}
 	// path.Clean removes trailing slash. It matters for URLs though. Keep it.
 	keepSlash := strings.HasSuffix(u.Path, "/")
@@ -44,7 +44,7 @@ func NormalizeURL(dest string) (string, error) {
 		u.Path += "/"
 	}
 	if !strings.HasPrefix(u.Path, "/") {
-		return "", errors.Reason("bad destination URL %q", u).Err()
+		return "", errors.Fmt("bad destination URL %q", u)
 	}
 	return u.String(), nil
 }

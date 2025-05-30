@@ -230,7 +230,7 @@ func (ctl *Controller) getFactory(id ID) (Factory, error) {
 	if m, ok := ctl.mappers[id]; ok {
 		return m, nil
 	}
-	return nil, errors.Reason("no mapper factory with ID %q registered", id).Err()
+	return nil, errors.Fmt("no mapper factory with ID %q registered", id)
 }
 
 // initMapper instantiates a Mapper through a registered factory.
@@ -239,11 +239,11 @@ func (ctl *Controller) getFactory(id ID) (Factory, error) {
 func (ctl *Controller) initMapper(ctx context.Context, j *Job, shardIdx int) (Mapper, error) {
 	f, err := ctl.getFactory(j.Config.Mapper)
 	if err != nil {
-		return nil, errors.Annotate(err, "when initializing mapper").Err()
+		return nil, errors.Fmt("when initializing mapper: %w", err)
 	}
 	m, err := f(ctx, j, shardIdx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error from mapper factory %q", j.Config.Mapper).Err()
+		return nil, errors.Fmt("error from mapper factory %q: %w", j.Config.Mapper, err)
 	}
 	return m, nil
 }
@@ -256,10 +256,10 @@ func (ctl *Controller) LaunchJob(ctx context.Context, j *JobConfig) (JobID, erro
 	disp := ctl.tq()
 
 	if err := j.Validate(); err != nil {
-		return 0, errors.Annotate(err, "bad job config").Err()
+		return 0, errors.Fmt("bad job config: %w", err)
 	}
 	if _, err := ctl.getFactory(j.Mapper); err != nil {
-		return 0, errors.Annotate(err, "bad job config").Err()
+		return 0, errors.Fmt("bad job config: %w", err)
 	}
 
 	// Prepare and store the job entity, generate its key. Launch a tq task that
@@ -276,7 +276,7 @@ func (ctl *Controller) LaunchJob(ctx context.Context, j *JobConfig) (JobID, erro
 			Updated: now,
 		}
 		if err := datastore.Put(ctx, &job); err != nil {
-			return errors.Annotate(err, "failed to store Job entity").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to store Job entity: %w", err))
 		}
 		return disp.AddTask(ctx, &tq.Task{
 			Title: fmt.Sprintf("split:job-%d", job.ID),
@@ -363,12 +363,14 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 		Samples: 512, // should be enough for everyone...
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to split the query into shards").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// Create entities that hold shards state. Each one is in its own entity
+			// group, since the combined write rate to them is O(ShardCount), which can
+			// overcome limits of a single entity group.
+			Fmt("failed to split the query into shards: %w", err))
 	}
 
-	// Create entities that hold shards state. Each one is in its own entity
-	// group, since the combined write rate to them is O(ShardCount), which can
-	// overcome limits of a single entity group.
 	shards := make([]*shard, len(ranges))
 	for idx, rng := range ranges {
 		shards[idx] = &shard{
@@ -387,7 +389,7 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	if job.Config.TrackProgress {
 		logging.Infof(ctx, "Estimating the size of each shard...")
 		if err := fetchShardSizes(ctx, dq, shards); err != nil {
-			return errors.Annotate(err, "when estimating shard sizes").Err()
+			return errors.Fmt("when estimating shard sizes: %w", err)
 		}
 	}
 
@@ -397,14 +399,16 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 	// key non-idempotent!).
 	logging.Infof(ctx, "Instantiating shards...")
 	if err := datastore.Put(ctx, shards); err != nil {
-		return errors.Annotate(err, "failed to store shards").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// Prepare shardList which is basically a manual fully consistent index for
+			// Job -> [Shard] relation. We can't use a regular index, since shards are all
+			// in different entity groups (see O(ShardCount) argument above).
+			//
+			// Log the resulting shards along the way.
+			Fmt("failed to store shards: %w", err))
 	}
 
-	// Prepare shardList which is basically a manual fully consistent index for
-	// Job -> [Shard] relation. We can't use a regular index, since shards are all
-	// in different entity groups (see O(ShardCount) argument above).
-	//
-	// Log the resulting shards along the way.
 	shardsEnt := shardList{
 		Parent: datastore.KeyForObj(ctx, job),
 		Shards: make([]int64, len(shards)),
@@ -443,9 +447,8 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 		job.State = dsmapperpb.State_RUNNING
 		job.Updated = now
 		if err := datastore.Put(ctx, job, &shardsEnt); err != nil {
-			return errors.Annotate(err,
-				"when storing Job %d and ShardList with %d shards", job.ID, len(shards),
-			).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("when storing Job %d and ShardList with %d shards: %w", job.ID, len(shards), err))
+
 		}
 
 		return ctl.tq().AddTask(ctx, &tq.Task{
@@ -499,7 +502,7 @@ func (ctl *Controller) fanOutShardsHandler(ctx context.Context, payload proto.Me
 	// point, since the job is in Running state.
 	shardIDs, err := job.fetchShardIDs(ctx)
 	if err != nil {
-		return errors.Annotate(err, "in FanOutShards").Err()
+		return errors.Fmt("in FanOutShards: %w", err)
 	}
 
 	// Enqueue a bunch of named ProcessShard tasks (one per shard) to actually
@@ -529,7 +532,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	// (based on taskNum) and should be silently skipped.
 	sh, err := getActiveShard(ctx, msg.ShardId, msg.TaskNum)
 	if err != nil {
-		return errors.Annotate(err, "when fetching shard state").Err()
+		return errors.Fmt("when fetching shard state: %w", err)
 	}
 	if sh == nil {
 		return errors.Fmt("when fetching shard state: shard is nil")
@@ -606,7 +609,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 		q := rng.Apply(baseQ).Limit(int32(job.Config.PageSize)).KeysOnly(true)
 		keys = keys[:0]
 		if err = datastore.GetAll(ctx, q, &keys); err != nil {
-			err = errors.Annotate(err, "when querying for keys").Tag(transient.Tag).Err()
+			err = transient.Tag.Apply(errors.Fmt("when querying for keys: %w", err))
 			break
 		}
 
@@ -623,7 +626,7 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 			keys[0].String(),
 			keys[len(keys)-1].String())
 		if err = mapper(ctx, keys); err != nil {
-			err = errors.Annotate(err, "while mapping %d keys", len(keys)).Err()
+			err = errors.Fmt("while mapping %d keys: %w", len(keys), err)
 			break
 		}
 		lastKey = keys[len(keys)-1]
@@ -694,9 +697,9 @@ func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Me
 	case err != nil && txnErr == nil:
 		return err
 	case err == nil && txnErr != nil:
-		return errors.Annotate(txnErr, "when storing shard progress").Err()
+		return errors.Fmt("when storing shard progress: %w", txnErr)
 	case err != nil && txnErr != nil:
-		return errors.Annotate(txnErr, "when storing shard progress after a transient error (%s)", err).Err()
+		return errors.Fmt("when storing shard progress after a transient error (%s): %w", err, txnErr)
 	default: // (nil, nil)
 		return nil
 	}
@@ -798,7 +801,7 @@ func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.
 	}
 	shards, err := job.fetchShards(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch shards").Err()
+		return errors.Fmt("failed to fetch shards: %w", err)
 	}
 
 	// Switch the job into a final state only when all shards are done running.

@@ -136,7 +136,7 @@ func EncryptSessionCookie(aead tink.AEAD, pb *encryptedcookiespb.SessionCookie) 
 // DecryptSessionCookie decrypts the encrypted session cookie.
 func DecryptSessionCookie(aead tink.AEAD, c *http.Cookie) (*encryptedcookiespb.SessionCookie, error) {
 	if !strings.HasPrefix(c.Value, rawCookiePrefix) {
-		return nil, errors.Reason("the value doesn't start with prefix %q", rawCookiePrefix).Err()
+		return nil, errors.Fmt("the value doesn't start with prefix %q", rawCookiePrefix)
 	}
 	enc := strings.TrimPrefix(c.Value, rawCookiePrefix)
 	cookie := &encryptedcookiespb.SessionCookie{}
@@ -153,15 +153,15 @@ func DecryptSessionCookie(aead tink.AEAD, c *http.Cookie) (*encryptedcookiespb.S
 func UnsealPrivate(c *encryptedcookiespb.SessionCookie, s *sessionpb.Session) (*sessionpb.Private, tink.AEAD, error) {
 	kh, err := insecurecleartextkeyset.Read(keyset.NewBinaryReader(bytes.NewReader(c.Keyset)))
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to deserialize per-session keyset").Err()
+		return nil, nil, errors.Fmt("failed to deserialize per-session keyset: %w", err)
 	}
 	ae, err := aead.New(kh)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to instantiate per-session AEAD").Err()
+		return nil, nil, errors.Fmt("failed to instantiate per-session AEAD: %w", err)
 	}
 	private, err := DecryptPrivate(ae, s.EncryptedPrivate)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to decrypt the private part of the session").Err()
+		return nil, nil, errors.Fmt("failed to decrypt the private part of the session: %w", err)
 	}
 	return private, ae, nil
 }

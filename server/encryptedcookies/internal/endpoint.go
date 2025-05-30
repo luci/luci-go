@@ -64,7 +64,7 @@ func HitTokenEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params map[
 		ExpiresIn    int64  `json:"expires_in"` // sec
 	}
 	if err := json.Unmarshal(blob, &tokens); err != nil {
-		return nil, time.Time{}, errors.Annotate(err, "failed to unmarshal ID providers response %q", string(blob)).Err()
+		return nil, time.Time{}, errors.Fmt("failed to unmarshal ID providers response %q: %w", string(blob), err)
 	}
 
 	exp := clock.Now(ctx).Add(time.Duration(tokens.ExpiresIn) * time.Second)
@@ -99,7 +99,7 @@ func HitRevocationEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params
 func hitEndpoint(ctx context.Context, endpoint string, params map[string]string) ([]byte, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the transport").Err()
+		return nil, errors.Fmt("failed to get the transport: %w", err)
 	}
 	client := &http.Client{Transport: tr}
 
@@ -111,7 +111,7 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 
 	req, err := http.NewRequest("POST", endpoint, body)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad OpenID provider request request").Err()
+		return nil, errors.Fmt("bad OpenID provider request request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -123,11 +123,11 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 		}()
 	}
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call %q", endpoint).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to call %q: %w", endpoint, err))
 	}
 	blob, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the response from %q", endpoint).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to read the response from %q: %w", endpoint, err))
 	}
 	resp.Body.Close()
 
@@ -136,7 +136,7 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 		if json.Unmarshal(blob, &apiErr) == nil {
 			err = &apiErr
 		} else {
-			err = errors.Reason("got HTTP %d from %q with body %q", resp.StatusCode, endpoint, blob).Err()
+			err = errors.Fmt("got HTTP %d from %q with body %q", resp.StatusCode, endpoint, blob)
 		}
 		if resp.StatusCode >= 500 {
 			err = transient.Tag.Apply(err)
