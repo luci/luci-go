@@ -70,8 +70,6 @@ import (
 	bqpblegacy "go.chromium.org/luci/analysis/proto/bq/legacy"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
 func TestSchedule(t *testing.T) {
@@ -80,10 +78,11 @@ func TestSchedule(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.IngestTestVerdicts{
-			IngestionId:   "ingestion-id",
-			Project:       "test-project",
-			Build:         &ctrlpb.BuildResult{},
-			PartitionTime: timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
+			IngestionId:          "ingestion-id",
+			Project:              "test-project",
+			Build:                &ctrlpb.BuildResult{},
+			PartitionTime:        timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
+			UseNewIngestionOrder: true,
 		}
 		expected := proto.Clone(task).(*taskspb.IngestTestVerdicts)
 
@@ -184,6 +183,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 					ResultLimit: 100,
 					ReadMask:    testVariantReadMask,
 					PageToken:   "expected_token",
+					OrderBy:     "status_v2_effective",
 				}
 				tvRsp := mockedQueryTestVariantsRsp()
 				tvRsp.NextPageToken = "continuation_token"
@@ -290,8 +290,9 @@ func TestIngestTestVerdicts(t *testing.T) {
 					Owner:        "automation",
 					CreationTime: timestamppb.New(time.Date(2021, time.April, 1, 2, 3, 4, 5, time.UTC)),
 				},
-				PageToken: "expected_token",
-				TaskIndex: 1,
+				PageToken:            "expected_token",
+				TaskIndex:            1,
+				UseNewIngestionOrder: true,
 			}
 			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
 			expectedContinuation.PageToken = "continuation_token"
@@ -1100,12 +1101,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_consistent_failure",
 			},
-			TestId:        ":module!junit:package:class#test_consistent_failure",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_EXONERATED,
+			TestId:         ":module!junit:package:class#test_consistent_failure",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_EXONERATED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_EXONERATED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1182,12 +1185,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_expected",
 			},
-			TestId:        ":module!junit:package:class#test_expected",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_EXPECTED,
+			TestId:         ":module!junit:package:class#test_expected",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_EXPECTED,
+			StatusV2:       pb.TestVerdict_PASSED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1221,12 +1226,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_filtering_event",
 			},
-			TestId:        ":module!junit:package:class#test_filtering_event",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_EXPECTED,
+			TestId:         ":module!junit:package:class#test_filtering_event",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_EXPECTED,
+			StatusV2:       pb.TestVerdict_SKIPPED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1264,12 +1271,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_from_luci_bisection",
 			},
-			TestId:        ":module!junit:package:class#test_from_luci_bisection",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			TestId:         ":module!junit:package:class#test_from_luci_bisection",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1308,12 +1317,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_has_unexpected",
 			},
-			TestId:        ":module!junit:package:class#test_has_unexpected",
-			VariantHash:   "hash",
-			Variant:       "{}",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_FLAKY,
+			TestId:         ":module!junit:package:class#test_has_unexpected",
+			VariantHash:    "hash",
+			Variant:        "{}",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_FLAKY,
+			StatusV2:       pb.TestVerdict_FLAKY,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1358,13 +1369,15 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_known_flake",
 			},
-			TestId:        ":module!junit:package:class#test_known_flake",
-			Variant:       `{"k1":"v2"}`,
-			VariantHash:   "hash_2",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			TestMetadata:  testMetadata,
+			TestId:         ":module!junit:package:class#test_known_flake",
+			Variant:        `{"k1":"v2"}`,
+			VariantHash:    "hash_2",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
+			TestMetadata:   testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1399,13 +1412,15 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_new_failure",
 			},
-			TestId:        ":module!junit:package:class#test_new_failure",
-			Variant:       `{"k1":"v1"}`,
-			VariantHash:   "hash_1",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			TestMetadata:  testMetadata,
+			TestId:         ":module!junit:package:class#test_new_failure",
+			Variant:        `{"k1":"v1"}`,
+			VariantHash:    "hash_1",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
+			TestMetadata:   testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1440,12 +1455,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_new_flake",
 			},
-			TestId:        ":module!junit:package:class#test_new_flake",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_FLAKY,
+			TestId:         ":module!junit:package:class#test_new_flake",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_FLAKY,
+			StatusV2:       pb.TestVerdict_FLAKY,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1505,12 +1522,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_no_new_results",
 			},
-			TestId:        ":module!junit:package:class#test_no_new_results",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			TestId:         ":module!junit:package:class#test_no_new_results",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1544,12 +1563,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_skip",
 			},
-			TestId:        ":module!junit:package:class#test_skip",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
+			TestId:         ":module!junit:package:class#test_skip",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
+			StatusV2:       pb.TestVerdict_EXECUTION_ERRORED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
@@ -1582,12 +1603,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				FineName:          "class",
 				CaseName:          "test_unexpected_pass",
 			},
-			TestId:        ":module!junit:package:class#test_unexpected_pass",
-			Variant:       "{}",
-			VariantHash:   "hash",
-			Invocation:    invocation,
-			PartitionTime: timestamppb.New(expectedPartitionTime),
-			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			TestId:         ":module!junit:package:class#test_unexpected_pass",
+			Variant:        "{}",
+			VariantHash:    "hash",
+			Invocation:     invocation,
+			PartitionTime:  timestamppb.New(expectedPartitionTime),
+			Status:         pb.TestVerdictStatus_UNEXPECTED,
+			StatusV2:       pb.TestVerdict_FAILED,
+			StatusOverride: pb.TestVerdict_NOT_OVERRIDDEN,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{

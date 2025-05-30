@@ -58,6 +58,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
@@ -99,6 +100,8 @@ var (
 			"test_id",
 			"variant_hash",
 			"status",
+			"status_v2",
+			"status_override",
 			"variant",
 			"test_metadata",
 			"sources_id",
@@ -323,6 +326,10 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		ReadMask:    testVariantReadMask,
 		PageToken:   payload.PageToken,
 	}
+	if payload.UseNewIngestionOrder {
+		req.OrderBy = `status_v2_effective`
+	}
+
 	rsp, err := rc.QueryTestVariants(ctx, req)
 	if err != nil {
 		err = errors.Fmt("query test variants: %w", err)
@@ -466,14 +473,15 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		nextTaskIndex := task.TaskIndex + 1
 
 		itvTask := &taskspb.IngestTestVerdicts{
-			PartitionTime: task.PartitionTime,
-			IngestionId:   task.IngestionId,
-			Project:       task.Project,
-			Invocation:    task.Invocation,
-			Build:         task.Build,
-			PresubmitRun:  task.PresubmitRun,
-			PageToken:     nextPageToken,
-			TaskIndex:     nextTaskIndex,
+			PartitionTime:        task.PartitionTime,
+			IngestionId:          task.IngestionId,
+			Project:              task.Project,
+			Invocation:           task.Invocation,
+			Build:                task.Build,
+			PresubmitRun:         task.PresubmitRun,
+			PageToken:            nextPageToken,
+			TaskIndex:            nextTaskIndex,
+			UseNewIngestionOrder: task.UseNewIngestionOrder,
 		}
 		Schedule(ctx, itvTask)
 

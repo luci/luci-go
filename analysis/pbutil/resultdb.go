@@ -16,10 +16,9 @@
 package pbutil
 
 import (
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // TestResultIDFromResultDB returns a LUCI Analysis TestResultId corresponding
@@ -129,6 +128,40 @@ func TestVerdictStatusFromResultDB(s rdbpb.TestVariantStatus) pb.TestVerdictStat
 		return pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED
 	default:
 		return pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED
+	}
+}
+
+// TestVerdictStatusV2FromResultDB returns the LUCI Analysis test verdict status
+// corresponding to the given ResultDB test verdict status.
+func TestVerdictStatusV2FromResultDB(s rdbpb.TestVerdict_Status) pb.TestVerdict_Status {
+	switch s {
+	case rdbpb.TestVerdict_FAILED:
+		return pb.TestVerdict_FAILED
+	case rdbpb.TestVerdict_EXECUTION_ERRORED:
+		return pb.TestVerdict_EXECUTION_ERRORED
+	case rdbpb.TestVerdict_PRECLUDED:
+		return pb.TestVerdict_PRECLUDED
+	case rdbpb.TestVerdict_FLAKY:
+		return pb.TestVerdict_FLAKY
+	case rdbpb.TestVerdict_SKIPPED:
+		return pb.TestVerdict_SKIPPED
+	case rdbpb.TestVerdict_PASSED:
+		return pb.TestVerdict_PASSED
+	default:
+		return pb.TestVerdict_STATUS_UNSPECIFIED
+	}
+}
+
+// TestVerdictStatusV2FromResultDB returns the LUCI Analysis test verdict status
+// corresponding to the given ResultDB test verdict status.
+func TestVerdictStatusOverrideFromResultDB(s rdbpb.TestVerdict_StatusOverride) pb.TestVerdict_StatusOverride {
+	switch s {
+	case rdbpb.TestVerdict_EXONERATED:
+		return pb.TestVerdict_EXONERATED
+	case rdbpb.TestVerdict_NOT_OVERRIDDEN:
+		return pb.TestVerdict_NOT_OVERRIDDEN
+	default:
+		return pb.TestVerdict_STATUS_OVERRIDE_UNSPECIFIED
 	}
 }
 

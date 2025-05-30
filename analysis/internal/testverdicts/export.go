@@ -155,6 +155,8 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		Invocation:        inv,
 		PartitionTime:     opts.Payload.PartitionTime,
 		Status:            pbutil.TestVerdictStatusFromResultDB(tv.Status),
+		StatusV2:          pbutil.TestVerdictStatusV2FromResultDB(tv.StatusV2),
+		StatusOverride:    pbutil.TestVerdictStatusOverrideFromResultDB(tv.StatusOverride),
 		Results:           results,
 		Exonerations:      exonerations,
 		Counts:            counts(results),

@@ -58,6 +58,11 @@ message IngestTestVerdicts {
   // task, 2 for the second task, and so on. Used to avoid creating
   // duplicate tasks.
   int64 task_index = 5;
+
+  // If set, enables the ingesting results in verdict status v2 (effective)
+  // order instead of verdict status v1 order. An ingestion for a build needs
+  // to apply this consistently to avoid breaking page tokens / missing data.
+  bool use_new_ingestion_order = 9;
 }
 
 // Payload of IngestTestResults task.

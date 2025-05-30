@@ -23,11 +23,10 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.chromium.org/luci/common/bq"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/bq"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // tableName is the name of the exported BigQuery table.
@@ -73,6 +72,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestVerdictRow{})
 	// We also need to get FileDescriptorProto for other referenced protos
 	// because they are defined in different files.
+	fdtv, _ := descriptor.MessageDescriptorProto(&pb.TestVerdict{})
 	fdtid, _ := descriptor.MessageDescriptorProto(&bqpb.TestIdentifier{})
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdfr, _ := descriptor.MessageDescriptorProto(&rdbpb.FailureReason{})
@@ -85,7 +85,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fdsr, _ := descriptor.MessageDescriptorProto(&rdbpb.SkippedReason{})
 	fdfx, _ := descriptor.MessageDescriptorProto(&rdbpb.FrameworkExtensions{})
 	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{
-		fd, fdtid, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc, fdsr, fdfx,
+		fd, fdtv, fdtid, fdsp, fdfr, fdsrc, fdgc, fdcl, fdtmd, fdtl, fdbtc, fdsr, fdfx,
 	}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }

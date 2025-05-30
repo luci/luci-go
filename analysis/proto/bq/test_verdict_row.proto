@@ -41,7 +41,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //   retain data for 510 days.
 // - Cluster by project, test_id.
 //
-// NextId: 19
+// NextId: 21
 message TestVerdictRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
@@ -120,6 +120,12 @@ message TestVerdictRow {
   // Status of the test verdict. E.g. EXPECTED, UNEXPECTED, FLAKY,
   // UNEXPECTEDLY_SKIPPED, EXONERATED.
   luci.analysis.v1.TestVerdictStatus status = 7;
+
+  // Status of the test verdict (v2), e.g. failed, flaky, passed.
+  luci.analysis.v1.TestVerdict.Status status_v2 = 19;
+
+  // The status override, e.g. whether the test was exonerated.
+  luci.analysis.v1.TestVerdict.StatusOverride status_override = 20;
 
   // ParentInvocationRecord for a test result is the immediate parent invocation
   // that directly contains the test result.

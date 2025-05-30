@@ -18,12 +18,11 @@ import (
 	"encoding/hex"
 	"testing"
 
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func TestResultDB(t *testing.T) {
@@ -77,6 +76,34 @@ func TestResultDB(t *testing.T) {
 
 			status := TestVerdictStatusFromResultDB(rdbStatus)
 			assert.Loosely(t, status, should.NotEqual(pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED))
+		}
+	})
+	ftt.Run("TestVerdictStatusV2FromResultDB", t, func(t *ftt.Test) {
+		// Confirm LUCI Analysis handles every test verdict status defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.TestVerdict_Status_value {
+			rdbStatus := rdbpb.TestVerdict_Status(v)
+			if rdbStatus == rdbpb.TestVerdict_STATUS_UNSPECIFIED {
+				continue
+			}
+
+			status := TestVerdictStatusV2FromResultDB(rdbStatus)
+			assert.Loosely(t, status, should.NotEqual(pb.TestVerdict_STATUS_UNSPECIFIED))
+		}
+	})
+	ftt.Run("TestVerdictStatusOverrideFromResultDB", t, func(t *ftt.Test) {
+		// Confirm LUCI Analysis handles every test verdict status defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.TestVerdict_StatusOverride_value {
+			rdbStatusOverride := rdbpb.TestVerdict_StatusOverride(v)
+			if rdbStatusOverride == rdbpb.TestVerdict_STATUS_OVERRIDE_UNSPECIFIED {
+				continue
+			}
+
+			status := TestVerdictStatusOverrideFromResultDB(rdbStatusOverride)
+			assert.Loosely(t, status, should.NotEqual(pb.TestVerdict_STATUS_OVERRIDE_UNSPECIFIED))
 		}
 	})
 	ftt.Run("ExonerationReasonFromResultDB", t, func(t *ftt.Test) {

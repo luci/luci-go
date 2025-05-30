@@ -83,9 +83,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 	response := &rdbpb.QueryTestVariantsResponse{
 		TestVariants: []*rdbpb.TestVariant{
 			{
-				TestId:      ":module!junit:package:class#test_consistent_failure",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_EXONERATED,
+				TestId:         ":module!junit:package:class#test_consistent_failure",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_EXONERATED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_EXONERATED,
 				Exonerations: []*rdbpb.TestExoneration{
 					// Test behaviour in the presence of multiple exoneration reasons.
 					{
@@ -126,9 +128,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				SourcesId: "sources1",
 			},
 			{
-				TestId:      ":module!junit:package:class#test_expected",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				TestId:         ":module!junit:package:class#test_expected",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_EXPECTED,
+				StatusV2:       rdbpb.TestVerdict_PASSED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -144,9 +148,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_filtering_event",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				TestId:         ":module!junit:package:class#test_filtering_event",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_EXPECTED,
+				StatusV2:       rdbpb.TestVerdict_SKIPPED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -166,9 +172,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_from_luci_bisection",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				TestId:         ":module!junit:package:class#test_from_luci_bisection",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -189,9 +197,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_has_unexpected",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_FLAKY,
+				TestId:         ":module!junit:package:class#test_has_unexpected",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_FLAKY,
+				StatusV2:       rdbpb.TestVerdict_FLAKY,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -216,11 +226,13 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:       ":module!junit:package:class#test_known_flake",
-				VariantHash:  "hash_2",
-				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
-				Variant:      pbutil.Variant("k1", "v2"),
-				TestMetadata: updatedTmd,
+				TestId:         ":module!junit:package:class#test_known_flake",
+				VariantHash:    "hash_2",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
+				Variant:        pbutil.Variant("k1", "v2"),
+				TestMetadata:   updatedTmd,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -237,11 +249,13 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:       ":module!junit:package:class#test_new_failure",
-				VariantHash:  "hash_1",
-				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
-				Variant:      pbutil.Variant("k1", "v1"),
-				TestMetadata: updatedTmd,
+				TestId:         ":module!junit:package:class#test_new_failure",
+				VariantHash:    "hash_1",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
+				Variant:        pbutil.Variant("k1", "v1"),
+				TestMetadata:   updatedTmd,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -258,9 +272,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_new_flake",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_FLAKY,
+				TestId:         ":module!junit:package:class#test_new_flake",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_FLAKY,
+				StatusV2:       rdbpb.TestVerdict_FLAKY,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -298,9 +314,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_no_new_results",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				TestId:         ":module!junit:package:class#test_no_new_results",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -316,9 +334,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_skip",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
+				TestId:         ":module!junit:package:class#test_skip",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
+				StatusV2:       rdbpb.TestVerdict_EXECUTION_ERRORED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -333,9 +353,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      ":module!junit:package:class#test_unexpected_pass",
-				VariantHash: "hash",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				TestId:         ":module!junit:package:class#test_unexpected_pass",
+				VariantHash:    "hash",
+				Status:         rdbpb.TestVariantStatus_UNEXPECTED,
+				StatusV2:       rdbpb.TestVerdict_FAILED,
+				StatusOverride: rdbpb.TestVerdict_NOT_OVERRIDDEN,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
