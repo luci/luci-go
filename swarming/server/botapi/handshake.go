@@ -168,7 +168,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 
 	// Validate the state is a correct JSON. We'll quarantine the bot if it isn't.
 	if err := body.State.Unseal(); err != nil {
-		errs = append(errs, errors.Annotate(err, "bad state dict").Err())
+		errs = append(errs, errors.Fmt("bad state dict: %w", err))
 		body.State = botstate.Dict{}
 	}
 
@@ -178,10 +178,10 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// reported (but unused) dimensions into the state for debugging.
 	body.State, err = botstate.Edit(body.State, func(state *botstate.EditableDict) error {
 		if err := state.Write(botstate.HandshakingKey, true); err != nil {
-			return errors.Annotate(err, "writing %s", botstate.HandshakingKey).Err()
+			return errors.Fmt("writing %s: %w", botstate.HandshakingKey, err)
 		}
 		if err := state.Write(botstate.InitialDimensionsKey, body.Dimensions); err != nil {
-			return errors.Annotate(err, "writing %s", botstate.InitialDimensionsKey).Err()
+			return errors.Fmt("writing %s: %w", botstate.InitialDimensionsKey, err)
 		}
 		return nil
 	})
@@ -198,7 +198,7 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	rbeConfig, err := conf.RBEConfig(botID)
 	switch {
 	case err != nil:
-		errs = append(errs, errors.Annotate(err, "conflicting RBE config").Err())
+		errs = append(errs, errors.Fmt("conflicting RBE config: %w", err))
 	case rbeConfig.Instance != "":
 		rbeParams = &BotRBEParams{
 			Instance:   rbeConfig.Instance,

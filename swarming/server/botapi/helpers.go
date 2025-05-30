@@ -118,11 +118,11 @@ func updateBotHealthInfo(state botstate.Dict, quarantinedDim []string, errs erro
 		state, err = botstate.Edit(state, func(state *botstate.EditableDict) error {
 			var cur any
 			if err := state.Read(botstate.QuarantinedKey, &cur); err != nil {
-				return errors.Annotate(err, "reading %s", botstate.QuarantinedKey).Err()
+				return errors.Fmt("reading %s: %w", botstate.QuarantinedKey, err)
 			}
 			if msg := model.QuarantineMessage(cur); msg == "" || msg == model.GenericQuarantineMessage {
 				if err := state.Write(botstate.QuarantinedKey, healthInfo.Quarantined); err != nil {
-					return errors.Annotate(err, "writing %s", botstate.QuarantinedKey).Err()
+					return errors.Fmt("writing %s: %w", botstate.QuarantinedKey, err)
 				}
 			}
 			return nil

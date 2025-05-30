@@ -39,7 +39,7 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 		auth.WithScopes(monitor.ProdXMonScope),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
+		return nil, errors.Fmt("failed to get per RPC credentials: %w", err)
 	}
 	conn, err := grpc.NewClient(
 		prodXEndpoint,
@@ -49,7 +49,7 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to dial ProdX service %s", prodXEndpoint).Err()
+		return nil, errors.Fmt("failed to dial ProdX service %s: %w", prodXEndpoint, err)
 	}
 	return monitor.NewGRPCMonitor(ctx, chunkSize, conn), nil
 }

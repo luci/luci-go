@@ -105,19 +105,19 @@ func ReadByKey(ctx context.Context, k Key) (commits Commit, err error) {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return Commit{}, spanutil.ErrNotExists
 		}
-		return Commit{}, errors.Annotate(err, "reading Commits table row").Err()
+		return Commit{}, errors.Fmt("reading Commits table row: %w", err)
 	}
 
 	commit := Commit{key: k}
 
 	var positionRef spanner.NullString
 	if err := row.Column(0, &positionRef); err != nil {
-		return Commit{}, errors.Annotate(err, "reading PositionRef column").Err()
+		return Commit{}, errors.Fmt("reading PositionRef column: %w", err)
 	}
 
 	var positionNum spanner.NullInt64
 	if err := row.Column(1, &positionNum); err != nil {
-		return Commit{}, errors.Annotate(err, "reading PositionNumber column").Err()
+		return Commit{}, errors.Fmt("reading PositionNumber column: %w", err)
 	}
 
 	if positionRef.Valid != positionNum.Valid {
@@ -173,7 +173,7 @@ func ReadByPosition(ctx context.Context, opts ReadByPositionOpts) (commits Commi
 		return r.Column(0, &commitHash)
 	})
 	if err != nil {
-		return Commit{}, errors.Annotate(err, "read commit from spanner by position").Err()
+		return Commit{}, errors.Fmt("read commit from spanner by position: %w", err)
 	}
 	if commitHash == "" {
 		return Commit{}, spanutil.ErrNotExists

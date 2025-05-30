@@ -356,7 +356,7 @@ func (srv *BotAPIServer) Claim(ctx context.Context, body *ClaimRequest, r *botsr
 		TasksManager:  srv.tasksManager,
 		Prepare: func(ctx context.Context, bot *model.BotInfo) (*botinfo.PrepareOutcome, error) {
 			if bot == nil {
-				return nil, errors.Reason("unexpectedly missing BotInfo entity").Err()
+				return nil, errors.New("unexpectedly missing BotInfo entity")
 			}
 			outcome, err = srv.tasksManager.ClaimTxn(ctx, &tasks.ClaimOp{
 				Request:             details.req,
@@ -414,7 +414,7 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching TaskRequest").Err()
+		return nil, errors.Fmt("fetching TaskRequest: %w", err)
 	}
 	if req.IsTerminate() {
 		return &claimDetails{req: req}, nil
@@ -440,7 +440,7 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 			logging.Errorf(ctx, "SecretBytes for %s is missing, proceeding anyway",
 				model.RequestKeyToTaskID(req.Key, model.AsRequest))
 		case err != nil:
-			return nil, errors.Annotate(err, "fetching SecretBytes").Err()
+			return nil, errors.Fmt("fetching SecretBytes: %w", err)
 		default:
 			secret = secretEnt.SecretBytes
 		}
@@ -458,7 +458,7 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 			names,
 		)
 		if err != nil {
-			return nil, errors.Annotate(err, "fetching named caches hints").Err()
+			return nil, errors.Fmt("fetching named caches hints: %w", err)
 		}
 		caches = make([]TaskCache, len(slice.Properties.Caches))
 		for i, c := range slice.Properties.Caches {
@@ -472,7 +472,7 @@ func (srv *BotAPIServer) fetchClaimDetails(ctx context.Context, ttr *model.TaskT
 
 	cfg, err := srv.cfg.FreshEnough(ctx, r.Session.LastSeenConfig.AsTime())
 	if err != nil {
-		return nil, errors.Annotate(err, "fetching service config").Err()
+		return nil, errors.Fmt("fetching service config: %w", err)
 	}
 
 	return &claimDetails{

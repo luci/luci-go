@@ -49,16 +49,16 @@ func (k Key) CommitHash() string {
 // NewKey creates a new Commit key.
 func NewKey(host, repository, commitHash string) (Key, error) {
 	if err := gitiles.ValidateRepoHost(host); err != nil {
-		return Key{}, errors.Annotate(err, "invalid host").Err()
+		return Key{}, errors.Fmt("invalid host: %w", err)
 	}
 
 	if err := validationutil.ValidateRepoName(repository); err != nil {
-		return Key{}, errors.Annotate(err, "invalid repository").Err()
+		return Key{}, errors.Fmt("invalid repository: %w", err)
 	}
 
 	commitHash = strings.ToLower(commitHash)
 	if err := validationutil.ValidateCommitHash(commitHash); err != nil {
-		return Key{}, errors.Annotate(err, "invalid commit hash").Err()
+		return Key{}, errors.Fmt("invalid commit hash: %w", err)
 	}
 
 	return Key{
@@ -85,7 +85,7 @@ func Exists(ctx context.Context, k Key) (bool, error) {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return false, nil
 		}
-		return false, errors.Annotate(err, "reading Commits table row").Err()
+		return false, errors.Fmt("reading Commits table row: %w", err)
 	}
 
 	return true, nil

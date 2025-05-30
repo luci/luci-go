@@ -66,7 +66,7 @@ var wasPublicRepoCache = layered.RegisterCache(layered.Parameters[bool]{
 func wasPublicRepo(ctx context.Context, host, repository string) (bool, error) {
 	client, err := gitilesutil.NewClient(ctx, host, auth.NoAuth)
 	if err != nil {
-		return false, errors.Annotate(err, "initialize Gitiles client").Err()
+		return false, errors.Fmt("initialize Gitiles client: %w", err)
 	}
 	cacheKey := fmt.Sprintf("gitiles/%q/repository/%q", host, repository)
 	canAccessRepo, err := wasPublicRepoCache.GetOrCreate(ctx, cacheKey, func() (v bool, exp time.Duration, err error) {
@@ -142,7 +142,7 @@ func ensureCanKnowRepoExists(ctx context.Context, host, repository string) error
 
 	client, err := gitilesutil.NewClient(ctx, host, auth.AsCredentialsForwarder)
 	if err != nil {
-		return errors.Annotate(err, "initialize Gitiles client").Err()
+		return errors.Fmt("initialize Gitiles client: %w", err)
 	}
 	cacheKey := fmt.Sprintf("user/%q/gitiles/%q/repository/%q", string(auth.CurrentUser(ctx).Identity), host, repository)
 	canAccessRepo, err := canKnowRepoExistsCache.GetOrCreate(ctx, cacheKey, func() (v bool, exp time.Duration, err error) {

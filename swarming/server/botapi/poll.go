@@ -164,7 +164,7 @@ func (srv *BotAPIServer) Poll(ctx context.Context, body *PollRequest, _ *botsrv.
 		// most recent version. Something is badly broken. Quarantine it and ask to
 		// sleep for a relatively long time (since it is unlikely the problem will
 		// fix itself quickly).
-		pr.validationErr(ctx, errors.Reason("no session token").Err())
+		pr.validationErr(ctx, errors.New("no session token"))
 		return srv.pollResponse(ctx, pr, &PollResponse{
 			Cmd:      PollSleep,
 			Duration: randomDuration(ctx, 5*time.Minute, 10*time.Minute),
@@ -365,7 +365,7 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		errs = append(errs, errors.WrapIf(err, "bad dimensions"))
 	}
 	if session != nil && session.BotId != botIDFromDims {
-		errs = append(errs, errors.Reason(`"id" dimension %q doesn't match bot ID in the session %q`, botIDFromDims, session.BotId).Err())
+		errs = append(errs, errors.Fmt(`"id" dimension %q doesn't match bot ID in the session %q`, botIDFromDims, session.BotId))
 	}
 
 	// If dimensions are valid, apply server-enforced dimensions on top. This is
@@ -394,24 +394,24 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 	// Validate the state is a correct JSON. We'll quarantine the bot if it isn't.
 	state := body.State
 	if err := state.Unseal(); err != nil {
-		errs = append(errs, errors.Annotate(err, "bad state dict").Err())
+		errs = append(errs, errors.Fmt("bad state dict: %w", err))
 		state = botstate.Dict{}
 	}
 
 	// A version string is required.
 	if body.Version == "" {
-		errs = append(errs, errors.Reason("no `version` in the request").Err())
+		errs = append(errs, errors.New("no `version` in the request"))
 	}
 
 	// The bot must be in the RBE mode with the RBE instance configured.
 	rbeConf, err := conf.RBEConfig(botID)
 	switch {
 	case err != nil:
-		errs = append(errs, errors.Annotate(err, "conflicting RBE config").Err())
+		errs = append(errs, errors.Fmt("conflicting RBE config: %w", err))
 	case rbeConf.Instance == "":
-		errs = append(errs, errors.Reason("RBE is not configured").Err())
+		errs = append(errs, errors.New("RBE is not configured"))
 	case rbeConf.Mode != configpb.Pool_RBEMigration_BotModeAllocation_RBE:
-		errs = append(errs, errors.Reason("unsupported RBE mode %s", rbeConf.Mode).Err())
+		errs = append(errs, errors.Fmt("unsupported RBE mode %s", rbeConf.Mode))
 	}
 
 	// Derive the effective bot ID to use in RBE sessions. This fails if the
@@ -428,7 +428,7 @@ func (srv *BotAPIServer) processPoll(ctx context.Context, body *PollRequest) (*p
 		} else {
 			rbeEffectiveBotID, err := deriveRBEEffectiveBotID(dims, rbeConf.EffectiveBotIDDimension)
 			if err != nil {
-				errs = append(errs, errors.Annotate(err, "RBE effective bot ID").Err())
+				errs = append(errs, errors.Fmt("RBE effective bot ID: %w", err))
 			} else {
 				effectiveBotID = &botinfo.RBEEffectiveBotIDInfo{
 					RBEEffectiveBotID: rbeEffectiveBotID,
@@ -542,12 +542,12 @@ func deriveRBEEffectiveBotID(dims []string, effectiveDimKey string) (string, err
 		switch k, v, _ := strings.Cut(dim, ":"); {
 		case k == "pool":
 			if pool != "" {
-				return "", errors.Reason("bots using effective Bot ID feature cannot belong to multiple pools").Err()
+				return "", errors.New("bots using effective Bot ID feature cannot belong to multiple pools")
 			}
 			pool = v
 		case k == effectiveDimKey:
 			if effectiveDim != "" {
-				return "", errors.Reason("effective bot ID dimension %q must have only one value", effectiveDimKey).Err()
+				return "", errors.Fmt("effective bot ID dimension %q must have only one value", effectiveDimKey)
 			}
 			effectiveDim = v
 		}

@@ -51,7 +51,7 @@ const taskBatchSize = 1000
 func syncCommitsHandler(ctx context.Context) (err error) {
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "get the config").Err()
+		return errors.Fmt("get the config: %w", err)
 	}
 
 	taskC := make(chan *taskspb.IngestCommits, taskBatchSize)
@@ -92,7 +92,7 @@ func scanHostForTasks(
 ) error {
 	client, err := gitilesutil.NewClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
-		return errors.Annotate(err, "initialize a Gitiles client").Err()
+		return errors.Fmt("initialize a Gitiles client: %w", err)
 	}
 
 	return mr.RunMulti(func(c chan<- func() error) {
@@ -101,7 +101,7 @@ func scanHostForTasks(
 				c <- func() error {
 					headsRes, err := client.Refs(ctx, &gitilespb.RefsRequest{Project: repoConfig.Name(), RefsPath: refPrefix})
 					if err != nil {
-						return errors.Annotate(err, "query refs %q from repository %q", refPrefix, repoConfig.Name()).Err()
+						return errors.Fmt("query refs %q from repository %q: %w", refPrefix, repoConfig.Name(), err)
 					}
 
 					for ref := range headsRes.Revisions {

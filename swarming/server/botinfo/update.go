@@ -49,7 +49,7 @@ var botInfoTxnCount = metric.NewCounter(
 )
 
 // errSkippedUpdate is used to signal the transaction that it should rollback.
-var errSkippedUpdate = errors.Reason("update is skipped by Prepare callback").Err()
+var errSkippedUpdate = errors.New("update is skipped by Prepare callback")
 
 const (
 	// oldBotEventsCutOff defines age of BotEvent entities for the TTL policy.
@@ -419,7 +419,7 @@ func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 			if err != nil {
 				// This should never happen: we take this ID from inside BotInfo
 				// entity, where it was already validated.
-				return errors.Annotate(err, "bad abandoned task ID").Err()
+				return errors.Fmt("bad abandoned task ID: %w", err)
 			}
 			tr, err := model.FetchTaskRequest(ctx, reqKey)
 			switch {
@@ -428,7 +428,7 @@ func (u *Update) Submit(ctx context.Context) (*SubmittedUpdate, error) {
 				logging.Errorf(ctx, "Abandoned task %q not found", submitted.AbandonedTaskID)
 				return nil
 			case err != nil:
-				return errors.Annotate(err, "failed to get abandoned task %q", submitted.AbandonedTaskID).Err()
+				return errors.Fmt("failed to get abandoned task %q: %w", submitted.AbandonedTaskID, err)
 			}
 			_, err = u.TasksManager.CompleteTxn(ctx, &tasks.CompleteOp{
 				BotID:     u.BotID,
@@ -474,7 +474,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		current = nil
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching current BotInfo").Err()
+		return nil, errors.Fmt("fetching current BotInfo: %w", err)
 	}
 
 	eventType := u.EventType
@@ -483,7 +483,7 @@ func (u *Update) execute(ctx context.Context) (*SubmittedUpdate, error) {
 		prepareOutcome, err := u.Prepare(ctx, current)
 		switch {
 		case err != nil:
-			return nil, errors.Annotate(err, "in Prepare callback").Err()
+			return nil, errors.Fmt("in Prepare callback: %w", err)
 		case !prepareOutcome.Proceed:
 			return nil, errSkippedUpdate
 		}

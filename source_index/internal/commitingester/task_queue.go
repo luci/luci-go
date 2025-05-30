@@ -115,7 +115,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 
 	client, err := gitilesutil.NewClient(ctx, task.Host, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
-		return errors.Annotate(err, "initialize a Gitiles client").Err()
+		return errors.Fmt("initialize a Gitiles client: %w", err)
 	}
 
 	var pageSize int32 = regularTaskPageSize
@@ -145,7 +145,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	if len(res.Log) > 0 {
 		key, err := commit.NewKey(task.Host, task.Repository, res.Log[0].Id)
 		if err != nil {
-			return errors.Annotate(err, "construct commit key for the first commit in the page").Err()
+			return errors.Fmt("construct commit key for the first commit in the page: %w", err)
 		}
 
 		// Keep the Exists check outside of the transaction to write the commits so
@@ -154,7 +154,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 		// timestamp). It's OK to overwrite the rows.
 		exists, err := commit.Exists(span.Single(ctx), key)
 		if err != nil {
-			return errors.Annotate(err, "check whether the first commit in the page was already ingested").Err()
+			return errors.Fmt("check whether the first commit in the page was already ingested: %w", err)
 		}
 		if exists {
 			logging.Infof(ctx, "commit %q is already ingested; stop ingesting", res.Log[0].Id)
@@ -168,13 +168,13 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	if len(res.Log) > 0 && shouldIngestNextPage {
 		key, err := commit.NewKey(task.Host, task.Repository, res.Log[len(res.Log)-1].Id)
 		if err != nil {
-			return errors.Annotate(err, "construct commit key for the last commit in the page").Err()
+			return errors.Fmt("construct commit key for the last commit in the page: %w", err)
 		}
 		// Keep the Exists check outside of the transaction to write the commits so
 		// the transaction to write commits are blind writes.
 		exists, err := commit.Exists(span.Single(ctx), key)
 		if err != nil {
-			return errors.Annotate(err, "check whether the last commit in the page was already ingested").Err()
+			return errors.Fmt("check whether the last commit in the page was already ingested: %w", err)
 		}
 		shouldIngestNextPage = !exists
 	}
@@ -184,7 +184,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 	for _, log := range res.Log {
 		gitCommit, err := commit.NewGitCommit(task.Host, task.Repository, log)
 		if err != nil {
-			return errors.Annotate(err, "converting git commit to source-index's representation").Err()
+			return errors.Fmt("converting git commit to source-index's representation: %w", err)
 		}
 
 		_, err = gitCommit.Position()
@@ -219,7 +219,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "saving commits").Err()
+		return errors.Fmt("saving commits: %w", err)
 	}
 
 	logging.Infof(ctx, "finished the commit ingestion task")

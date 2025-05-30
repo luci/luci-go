@@ -35,7 +35,7 @@ func FileSystemLoader(root string) Loader {
 		abs := filepath.Join(root, filepath.FromSlash(path))
 		rel, err := filepath.Rel(root, abs)
 		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to calculate relative path").Err()
+			return nil, "", errors.Fmt("failed to calculate relative path: %w", err)
 		}
 		if strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return nil, "", errors.New("outside the package root")

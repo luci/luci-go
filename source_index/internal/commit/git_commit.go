@@ -40,7 +40,7 @@ type GitCommit struct {
 func NewGitCommit(host, repository string, commit *git.Commit) (GitCommit, error) {
 	key, err := NewKey(host, repository, commit.Id)
 	if err != nil {
-		return GitCommit{}, errors.Annotate(err, "invalid commit key").Err()
+		return GitCommit{}, errors.Fmt("invalid commit key: %w", err)
 	}
 
 	return GitCommit{
@@ -78,7 +78,7 @@ func extractPosition(commitMessage string) (*Position, error) {
 		// The first item is the last footer in the commit message.
 		pos, err := extractPositionWithRe(footers[0], crCommitPositionFormat)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid %s footer", crCommitPositionFooterName).Err()
+			return nil, errors.Fmt("invalid %s footer: %w", crCommitPositionFooterName, err)
 		}
 		return pos, nil
 	}
@@ -89,7 +89,7 @@ func extractPosition(commitMessage string) (*Position, error) {
 		// The first item is the last footer in the commit message.
 		pos, err := extractPositionWithRe(footers[0], svnCommitPositionFormat)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid %s footer", svnCommitPositionFooterName).Err()
+			return nil, errors.Fmt("invalid %s footer: %w", svnCommitPositionFooterName, err)
 		}
 		return pos, nil
 	}
@@ -102,7 +102,7 @@ func extractPosition(commitMessage string) (*Position, error) {
 func extractPositionWithRe(footer string, re *regexp.Regexp) (*Position, error) {
 	match := re.FindStringSubmatch(footer)
 	if len(match) == 0 {
-		return nil, errors.Annotate(ErrInvalidPositionFooter, "does not match pattern %q", re).Err()
+		return nil, errors.Fmt("does not match pattern %q: %w", re, ErrInvalidPositionFooter)
 	}
 
 	cp := Position{}

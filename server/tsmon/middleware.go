@@ -395,7 +395,7 @@ func (s *State) ensureTaskNumAndFlush(ctx context.Context, state *tsmon.State, s
 			}
 			return err
 		default:
-			return errors.Annotate(err, "failed to get a new task num for %q", s.instanceID).Err()
+			return errors.Fmt("failed to get a new task num for %q: %w", s.instanceID, err)
 		}
 	} else {
 		task.TaskNum = 0

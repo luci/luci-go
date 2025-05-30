@@ -183,7 +183,7 @@ func (srv *BotAPIServer) checkBotCodeAccess(ctx context.Context, req *http.Reque
 	// used.
 	switch yes, err := auth.IsAllowedIP(ctx, fmt.Sprintf("%s-bots", srv.project)); {
 	case err != nil:
-		return errors.Annotate(err, "checking IP allowlist").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("checking IP allowlist: %w", err))
 	case yes:
 		if botID == "" {
 			botID = "<unknown>"

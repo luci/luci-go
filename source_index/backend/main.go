@@ -25,13 +25,13 @@ import (
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
 		if err := server.RegisterCronHandlers(srv); err != nil {
-			return errors.Annotate(err, "register cron handlers").Err()
+			return errors.Fmt("register cron handlers: %w", err)
 		}
 		if err := server.RegisterPubSubHandlers(srv); err != nil {
-			return errors.Annotate(err, "register pubsub handlers").Err()
+			return errors.Fmt("register pubsub handlers: %w", err)
 		}
 		if err := server.RegisterTaskQueueHandlers(srv); err != nil {
-			return errors.Annotate(err, "register task queue handlers").Err()
+			return errors.Fmt("register task queue handlers: %w", err)
 		}
 		return nil
 	})

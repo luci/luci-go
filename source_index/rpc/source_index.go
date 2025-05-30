@@ -55,7 +55,7 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "service-level config").Err()
+		return nil, errors.Fmt("service-level config: %w", err)
 	}
 
 	// If the commit is missing because the repository is not configured to be
@@ -87,7 +87,7 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 		if errors.Is(err, spanutil.ErrNotExists) {
 			return nil, appstatus.Attachf(err, codes.NotFound, "commit not found")
 		}
-		return nil, errors.Annotate(err, "read commit by position").Err()
+		return nil, errors.Fmt("read commit by position: %w", err)
 	}
 
 	return &pb.QueryCommitHashResponse{
@@ -97,15 +97,15 @@ func (si *sourceIndexServer) QueryCommitHash(ctx context.Context, req *pb.QueryC
 
 func validateQueryCommitHashRequest(req *pb.QueryCommitHashRequest) error {
 	if err := gitiles.ValidateRepoHost(req.Host); err != nil {
-		return errors.Annotate(err, "host").Err()
+		return errors.Fmt("host: %w", err)
 	}
 
 	if err := validationutil.ValidateRepoName(req.Repository); err != nil {
-		return errors.Annotate(err, "repository").Err()
+		return errors.Fmt("repository: %w", err)
 	}
 
 	if req.PositionRef == "" {
-		return errors.Reason("position_ref must be specified").Err()
+		return errors.New("position_ref must be specified")
 	}
 
 	return nil

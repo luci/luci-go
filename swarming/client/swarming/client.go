@@ -164,7 +164,7 @@ type ClientOptions struct {
 // goroutines.
 func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 	if opts.ServiceURL == "" {
-		return nil, errors.Reason("service URL is required").Err()
+		return nil, errors.New("service URL is required")
 	}
 	if opts.RBEAddr == "" {
 		opts.RBEAddr = casclient.AddrProd
@@ -187,7 +187,7 @@ func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 
 	serverURL, err := lhttp.ParseHostURL(opts.ServiceURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad service URL %q", opts.ServiceURL).Err()
+		return nil, errors.Fmt("bad service URL %q: %w", opts.ServiceURL, err)
 	}
 
 	prpcClient := prpc.Client{
@@ -236,7 +236,7 @@ type swarmingServiceImpl struct {
 // rbeClient constructs a new RBE client or returns the existing one.
 func (s *swarmingServiceImpl) rbeClient(inst string) (*rbeclient.Client, error) {
 	if inst == "" {
-		return nil, errors.Reason("no RBE instance name set").Err()
+		return nil, errors.New("no RBE instance name set")
 	}
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -245,7 +245,7 @@ func (s *swarmingServiceImpl) rbeClient(inst string) (*rbeclient.Client, error) 
 	}
 	cl, err := s.opts.RBEClientFactory(s.ctx, s.opts.RBEAddr, inst)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create RBE client for %s", inst).Err()
+		return nil, errors.Fmt("failed to create RBE client for %s: %w", inst, err)
 	}
 	s.rbe[inst] = cl
 	return cl, nil
@@ -492,7 +492,7 @@ func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, c
 	}
 	outputs, _, err := cascli.DownloadDirectory(ctx, d, outdir, filemetadata.NewNoopCache())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to download directory").Err()
+		return nil, errors.Fmt("failed to download directory: %w", err)
 	}
 	files := make([]string, 0, len(outputs))
 	for path := range outputs {

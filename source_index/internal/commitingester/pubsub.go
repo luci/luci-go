@@ -75,7 +75,7 @@ func pubSubHandler(ctx context.Context, message pubsub.Message, event *gerritpb.
 	// Process event.
 	repo, err = processSourceRepoEvent(ctx, gitilesHost, event)
 	if err != nil {
-		return errors.Annotate(err, "process event for host %q", gitilesHost).Err()
+		return errors.Fmt("process event for host %q: %w", gitilesHost, err)
 	}
 	return nil
 }
@@ -87,14 +87,14 @@ func processSourceRepoEvent(ctx context.Context, gitilesHost string, event *gerr
 
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return repo, errors.Annotate(err, "get the config").Err()
+		return repo, errors.Fmt("get the config: %w", err)
 	}
 
 	// Reject hosts that are not configured so if we only created the PubSub
 	// subscription but forgot to configure the host, we will get an alert
 	// (through SLO monitoring).
 	if !cfg.HasHost(gitilesHost) {
-		return repo, errors.Reason("host is not configured to be indexed").Err()
+		return repo, errors.New("host is not configured to be indexed")
 	}
 
 	chunks := strings.SplitN(event.Name, "/", 4)
