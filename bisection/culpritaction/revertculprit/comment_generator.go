@@ -106,7 +106,7 @@ const maxTestLink = 5
 func testFailureComment(ctx context.Context, suspect *model.Suspect, reason, templateName string) (string, error) {
 	tfs, err := datastoreutil.FetchTestFailuresForSuspect(ctx, suspect)
 	if err != nil {
-		return "", errors.Annotate(err, "fetch test failure for suspect").Err()
+		return "", errors.Fmt("fetch test failure for suspect: %w", err)
 	}
 	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, suspect)
 	if err != nil {

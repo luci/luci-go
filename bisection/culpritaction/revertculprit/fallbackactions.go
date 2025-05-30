@@ -34,8 +34,8 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
 	lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed handling existing revert when finding owner").Err()
+		return errors.Fmt("failed handling existing revert when finding owner: %w", err)
+
 	}
 
 	if lbOwned {
@@ -47,8 +47,8 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	// Revert is not owned by LUCI Bisection
 	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, revert)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed handling existing revert when checking for pre-existing comment").Err()
+		return errors.Fmt("failed handling existing revert when checking for pre-existing comment: %w", err)
+
 	}
 
 	if lbCommented {
@@ -62,24 +62,24 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		message, err = compileFailureComment(ctx, culpritModel, "", "supportComment")
 		if err != nil {
-			return errors.Annotate(err, "generate compile failure support comment").Err()
+			return errors.Fmt("generate compile failure support comment: %w", err)
 		}
 	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		message, err = testFailureComment(ctx, culpritModel, "", "supportComment")
 		if err != nil {
-			return errors.Annotate(err, "generate test failure support comment").Err()
+			return errors.Fmt("generate test failure support comment: %w", err)
 		}
 	}
 	_, err = gerritClient.AddComment(ctx, revert, message)
 	if err != nil {
-		return errors.Annotate(err,
-			"error when adding supporting comment to existing revert").Err()
+		return errors.Fmt("error when adding supporting comment to existing revert: %w", err)
+
 	}
 
 	// Update tsmon metrics
 	err = updateCulpritActionCounter(ctx, culpritModel, ActionTypeCommentRevert)
 	if err != nil {
-		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+		logging.Errorf(ctx, errors.Fmt("updateCulpritActionCounter: %w", err).Error())
 	}
 
 	// Update culprit for the supporting comment action
@@ -97,8 +97,8 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect details when commenting support for existing revert").Err()
+		return errors.Fmt("couldn't update suspect details when commenting support for existing revert: %w", err)
+
 	}
 	return nil
 }
@@ -112,8 +112,8 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 
 	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, culprit)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed handling failed revert creation when checking for pre-existing comment").Err()
+		return errors.Fmt("failed handling failed revert creation when checking for pre-existing comment: %w", err)
+
 	}
 
 	if lbCommented {
@@ -128,24 +128,24 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		message, err = compileFailureComment(ctx, culpritModel, reason, "blameComment")
 		if err != nil {
-			return errors.Annotate(err, "generate compile failure blame comment").Err()
+			return errors.Fmt("generate compile failure blame comment: %w", err)
 		}
 	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		message, err = testFailureComment(ctx, culpritModel, reason, "blameComment")
 		if err != nil {
-			return errors.Annotate(err, "generate test failure blame comment").Err()
+			return errors.Fmt("generate test failure blame comment: %w", err)
 		}
 	}
 
 	_, err = gerritClient.AddComment(ctx, culprit, message)
 	if err != nil {
-		return errors.Annotate(err, "error when commenting on culprit").Err()
+		return errors.Fmt("error when commenting on culprit: %w", err)
 	}
 
 	// Update tsmon metrics
 	err = updateCulpritActionCounter(ctx, culpritModel, ActionTypeCommentCulprit)
 	if err != nil {
-		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+		logging.Errorf(ctx, errors.Fmt("updateCulpritActionCounter: %w", err).Error())
 	}
 
 	// Update culprit for the comment action
@@ -163,8 +163,8 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect details when commenting on the culprit").Err()
+		return errors.Fmt("couldn't update suspect details when commenting on the culprit: %w", err)
+
 	}
 	return nil
 }
@@ -180,7 +180,7 @@ func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
 	reviewerEmails, err := rotationproxy.GetOnCallEmails(ctx,
 		culpritModel.GitilesCommit.Project)
 	if err != nil {
-		return errors.Annotate(err, "failed getting reviewers for manual review").Err()
+		return errors.Fmt("failed getting reviewers for manual review: %w", err)
 	}
 
 	// For now, no accounts are additionally CC'd

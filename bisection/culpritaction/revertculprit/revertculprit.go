@@ -73,7 +73,7 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskpb.TestFailureCulpritActionTask)
 		if err := processTestFailureCulpritTask(ctx, task.AnalysisId, client); err != nil {
-			err := errors.Annotate(err, "run test failure culprit action").Err()
+			err := errors.Fmt("run test failure culprit action: %w", err)
 			logging.Errorf(ctx, err.Error())
 
 			// Return nil so the task will not be retried.
@@ -106,8 +106,8 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(ctx, analysisID)
 	if err != nil {
 		// failed getting the CompileFailureAnalysis, so no point retrying
-		err = errors.Annotate(err,
-			"failed getting CompileFailureAnalysis when processing culprit revert task").Err()
+		err = errors.Fmt("failed getting CompileFailureAnalysis when processing culprit revert task: %w", err)
+
 		logging.Errorf(ctx, err.Error())
 		return nil
 	}
@@ -118,8 +118,8 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 			culprit, err = datastoreutil.GetSuspect(ctx, culpritID, verifiedCulprit.Parent())
 			if err != nil {
 				// failed getting the Suspect, so no point retrying
-				err = errors.Annotate(err,
-					"failed getting Suspect when processing culprit revert task").Err()
+				err = errors.Fmt("failed getting Suspect when processing culprit revert task: %w", err)
+
 				logging.Errorf(ctx, err.Error())
 				return nil
 			}
@@ -186,12 +186,12 @@ func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect
 func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 	project, err := datastoreutil.GetProjectForSuspect(ctx, culpritModel)
 	if err != nil {
-		return errors.Annotate(err, "get project for suspect").Err()
+		return errors.Fmt("get project for suspect: %w", err)
 	}
 	// Get gerrit config.
 	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
 	if err != nil {
-		return errors.Annotate(err, "get gerrit config for suspect").Err()
+		return errors.Fmt("get gerrit config for suspect: %w", err)
 	}
 	// Check if Gerrit actions are disabled
 	if !gerritConfig.ActionsEnabled {
@@ -252,8 +252,8 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 			if err != nil {
 				// Not critical - just log the error and skip updating the
 				// inaction reason.
-				err = errors.Annotate(err,
-					"no action required but failed to find owner of existing revert").Err()
+				err = errors.Fmt("no action required but failed to find owner of existing revert: %w", err)
+
 				logging.Errorf(ctx, err.Error())
 			} else {
 				reason := pb.CulpritInactionReason_REVERTED_MANUALLY
@@ -502,8 +502,8 @@ func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
 	// Check for existing reverts
 	reverts, err := gerritClient.GetReverts(ctx, culprit)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed getting existing reverts when searching for created revert").Err()
+		return nil, errors.Fmt("failed getting existing reverts when searching for created revert: %w", err)
+
 	}
 
 	var createdRevert *gerritpb.ChangeInfo = nil
@@ -511,8 +511,8 @@ func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
 		lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
 		if err != nil {
 			// non-critical - log the error and move on
-			err = errors.Annotate(err,
-				"error searching for created revert when checking owner").Err()
+			err = errors.Fmt("error searching for created revert when checking owner: %w", err)
+
 			logging.Errorf(ctx, err.Error())
 			continue
 		}
@@ -522,8 +522,8 @@ func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
 			revertDescription, err := gerrit.CommitMessage(ctx, revert)
 			if err != nil {
 				// non-critical - log the error and move on
-				err = errors.Annotate(err,
-					"error searching for created revert when getting commit message").Err()
+				err = errors.Fmt("error searching for created revert when getting commit message: %w", err)
+
 				logging.Errorf(ctx, err.Error())
 				continue
 			}
@@ -546,8 +546,8 @@ func isRevertActive(ctx context.Context, gerritClient *gerrit.Client,
 	// Refetch the created revert to get its latest status
 	revert, err := gerritClient.RefetchChange(ctx, revert)
 	if err != nil {
-		return false, errors.Annotate(err,
-			"error refetching revert created by LUCI Bisection").Err()
+		return false, errors.Fmt("error refetching revert created by LUCI Bisection: %w", err)
+
 	}
 
 	if revert.Status == gerritpb.ChangeStatus_NEW {
@@ -574,8 +574,8 @@ func saveRevertURL(ctx context.Context, gerritClient *gerrit.Client,
 	}, nil)
 
 	if err != nil {
-		err = errors.Annotate(err,
-			"couldn't update suspect details for culprit with existing revert").Err()
+		err = errors.Fmt("couldn't update suspect details for culprit with existing revert: %w", err)
+
 		return err
 	}
 
@@ -587,7 +587,7 @@ func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 	// Update tsmon metrics
 	err := updateCulpritActionCounter(ctx, culpritModel, ActionTypeCreateRevert)
 	if err != nil {
-		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+		logging.Errorf(ctx, errors.Fmt("updateCulpritActionCounter: %w", err).Error())
 	}
 
 	// Update revert details for creation
@@ -604,8 +604,8 @@ func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 		return datastore.Put(ctx, culpritModel)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect revert creation details").Err()
+		return errors.Fmt("couldn't update suspect revert creation details: %w", err)
+
 	}
 	return nil
 }
@@ -614,7 +614,7 @@ func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 	// Update tsmon metrics
 	err := updateCulpritActionCounter(ctx, culpritModel, ActionTypeSubmitRevert)
 	if err != nil {
-		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+		logging.Errorf(ctx, errors.Fmt("updateCulpritActionCounter: %w", err).Error())
 	}
 
 	// Update revert details for commit action
@@ -630,8 +630,8 @@ func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 		return datastore.Put(ctx, culpritModel)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect revert commit details").Err()
+		return errors.Fmt("couldn't update suspect revert commit details: %w", err)
+
 	}
 	return nil
 }
@@ -651,8 +651,8 @@ func saveInactionReason(ctx context.Context, culpritModel *model.Suspect,
 
 	if err != nil {
 		// not critical - just log the error
-		err = errors.Annotate(err,
-			"couldn't update suspect inaction reason").Err()
+		err = errors.Fmt("couldn't update suspect inaction reason: %w", err)
+
 		logging.Errorf(ctx, err.Error())
 	}
 }

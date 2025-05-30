@@ -63,11 +63,11 @@ func updateCulpritActionCounter(c context.Context, suspect *model.Suspect, actio
 	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		bbid, err := datastoreutil.GetAssociatedBuildID(c, suspect)
 		if err != nil {
-			return errors.Annotate(err, "GetAssociatedBuildID").Err()
+			return errors.Fmt("GetAssociatedBuildID: %w", err)
 		}
 		build, err := datastoreutil.GetBuild(c, bbid)
 		if err != nil {
-			return errors.Annotate(err, "getting build %d", bbid).Err()
+			return errors.Fmt("getting build %d: %w", bbid, err)
 		}
 		if build == nil {
 			return fmt.Errorf("no build %d", bbid)

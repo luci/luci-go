@@ -178,7 +178,7 @@ func setStatusError(c context.Context, heuristicAnalysis *model.CompileHeuristic
 	heuristicAnalysis.RunStatus = pb.AnalysisRunStatus_ENDED
 	err := datastore.Put(c, heuristicAnalysis)
 	if err != nil {
-		err = errors.Annotate(err, "couldn't setStatusError for heuristic analysis %d", heuristicAnalysis.ParentAnalysis.IntID()).Err()
+		err = errors.Fmt("couldn't setStatusError for heuristic analysis %d: %w", heuristicAnalysis.ParentAnalysis.IntID(), err)
 		logging.Errorf(c, err.Error())
 	}
 }

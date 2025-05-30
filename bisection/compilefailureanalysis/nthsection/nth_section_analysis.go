@@ -56,25 +56,25 @@ func Analyze(
 	// but we save it here because we need the object in datastore for setStatusError
 	err := datastore.Put(c, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save nthsection model").Err()
+		return nil, errors.Fmt("couldn't save nthsection model: %w", err)
 	}
 
 	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange, true)
 	if err != nil {
 		setStatusError(c, nsa)
-		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
+		return nil, errors.Fmt("couldn't fetch changelog: %w", err)
 	}
 
 	err = updateBlameList(c, nsa, changeLogs)
 	if err != nil {
 		setStatusError(c, nsa)
-		return nil, errors.Annotate(err, "couldn't update blamelist").Err()
+		return nil, errors.Fmt("couldn't update blamelist: %w", err)
 	}
 
 	err = startAnalysis(c, nsa, cfa)
 	if err != nil {
 		setStatusError(c, nsa)
-		return nil, errors.Annotate(err, "couldn't start analysis %d", cfa.Id).Err()
+		return nil, errors.Fmt("couldn't start analysis %d: %w", cfa.Id, err)
 	}
 	return nsa, nil
 }
@@ -94,7 +94,7 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 	if ok {
 		err := SaveSuspectAndTriggerCulpritVerification(c, nsa, cfa, snapshot.BlameList.Commits[cul])
 		if err != nil {
-			return errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
 		return nil
 	}
@@ -105,7 +105,7 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 	maxRerun := 1 // bisection
 	commits, err := snapshot.FindNextCommitsToRun(maxRerun)
 	if err != nil {
-		return errors.Annotate(err, "couldn't find commits to run").Err()
+		return errors.Fmt("couldn't find commits to run: %w", err)
 	}
 
 	for _, commit := range commits {
@@ -117,7 +117,7 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 		}
 		err := RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, nil)
 		if err != nil {
-			return errors.Annotate(err, "rerunCommit for %s", commit).Err()
+			return errors.Fmt("rerunCommit for %s: %w", commit, err)
 		}
 	}
 
@@ -127,13 +127,13 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 func SaveSuspectAndTriggerCulpritVerification(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa *model.CompileFailureAnalysis, commit *pb.BlameListSingleCommit) error {
 	suspect, err := storeNthSectionResultToDatastore(c, cfa, nsa, commit)
 	if err != nil {
-		return errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
+		return errors.Fmt("storeNthSectionResultToDatastore: %w", err)
 	}
 
 	// Run culprit verification
 	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't fetch shouldRunCulpritVerification config").Err()
+		return errors.Fmt("couldn't fetch shouldRunCulpritVerification config: %w", err)
 	}
 	if shouldRunCulpritVerification {
 		suspectID := nsa.Suspect.IntID()
@@ -148,7 +148,7 @@ func SaveSuspectAndTriggerCulpritVerification(c context.Context, nsa *model.Comp
 		if err != nil {
 			// Non-critical, just log the error
 			// TODO (nqmtuan): Update the analysis to ended, and update the suspect.
-			err := errors.Annotate(err, "schedule culprit verification task %d_%d", cfa.Id, suspectID).Err()
+			err := errors.Fmt("schedule culprit verification task %d_%d: %w", cfa.Id, suspectID, err)
 			logging.Errorf(c, err.Error())
 		}
 		// Update suspect verification status
@@ -162,7 +162,7 @@ func SaveSuspectAndTriggerCulpritVerification(c context.Context, nsa *model.Comp
 		}, nil)
 		if err != nil {
 			// Non-critical, just log the error
-			err := errors.Annotate(err, "saving suspect").Err()
+			err := errors.Fmt("saving suspect: %w", err)
 			logging.Errorf(c, err.Error())
 		}
 	}
@@ -186,7 +186,7 @@ func storeNthSectionResultToDatastore(c context.Context, cfa *model.CompileFailu
 	}
 	err := datastore.Put(c, suspect)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save suspect").Err()
+		return nil, errors.Fmt("couldn't save suspect: %w", err)
 	}
 
 	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
@@ -202,12 +202,12 @@ func storeNthSectionResultToDatastore(c context.Context, cfa *model.CompileFailu
 	}, nil)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save nthsection analysis").Err()
+		return nil, errors.Fmt("couldn't save nthsection analysis: %w", err)
 	}
 
 	err = statusupdater.UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't save analysis").Err()
+		return nil, errors.Fmt("couldn't save analysis: %w", err)
 	}
 
 	return suspect, nil
@@ -216,19 +216,19 @@ func storeNthSectionResultToDatastore(c context.Context, cfa *model.CompileFailu
 func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *bbpb.GitilesCommit, failedBuildID int64, dims map[string]string) error {
 	props, err := getRerunProps(c, nsa)
 	if err != nil {
-		return errors.Annotate(err, "failed getting rerun props").Err()
+		return errors.Fmt("failed getting rerun props: %w", err)
 	}
 
 	priority, err := getRerunPriority(c, nsa, commit, dims)
 	if err != nil {
-		return errors.Annotate(err, "couldn't getRerunPriority").Err()
+		return errors.Fmt("couldn't getRerunPriority: %w", err)
 	}
 
 	// TODO(nqmtuan): Pass in the project.
 	// For now, hardcode to "chromium", since we only support chromium for compile failure.
 	builder, err := config.GetCompileBuilder(c, "chromium")
 	if err != nil {
-		return errors.Annotate(err, "get compile builder").Err()
+		return errors.Fmt("get compile builder: %w", err)
 	}
 	options := &rerun.TriggerOptions{
 		Builder:         util.BuilderFromConfigBuilder(builder),
@@ -240,12 +240,12 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 	}
 	build, err := rerun.TriggerRerun(c, options)
 	if err != nil {
-		return errors.Annotate(err, "couldn't trigger rerun").Err()
+		return errors.Fmt("couldn't trigger rerun: %w", err)
 	}
 
 	_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa, priority)
 	if err != nil {
-		return errors.Annotate(err, "createRerunBuildModel").Err()
+		return errors.Fmt("createRerunBuildModel: %w", err)
 	}
 
 	return nil
@@ -262,11 +262,11 @@ func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, c
 	// Offset the priority based on run duration
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, nsa.ParentAnalysis.IntID())
 	if err != nil {
-		return 0, errors.Annotate(err, "couldn't get analysis for nthsection %d", nsa.Id).Err()
+		return 0, errors.Fmt("couldn't get analysis for nthsection %d: %w", nsa.Id, err)
 	}
 	pri, err = rerun.OffsetPriorityBasedOnRunDuration(c, pri, cfa)
 	if err != nil {
-		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration analysis %d", cfa.Id).Err()
+		return 0, errors.Fmt("couldn't OffsetPriorityBasedOnRunDuration analysis %d: %w", cfa.Id, err)
 	}
 
 	// Offset the priority if it is a tree closer
@@ -281,7 +281,7 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 	analysisID := nthSectionAnalysis.ParentAnalysis.IntID()
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
-		return nil, errors.Annotate(err, "get compile failure for analysis %d", analysisID).Err()
+		return nil, errors.Fmt("get compile failure for analysis %d: %w", analysisID, err)
 	}
 	// TODO (nqmtuan): Handle the case where the failed compile targets are newly added.
 	// So any commits before the culprits cannot run the targets.
@@ -290,7 +290,7 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 
 	host, err := hosts.APIHost(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "get bisection API Host").Err()
+		return nil, errors.Fmt("get bisection API Host: %w", err)
 	}
 
 	props := map[string]any{
@@ -314,11 +314,11 @@ func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSect
 func ShouldRunNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
 	project, err := datastoreutil.GetProjectForCompileFailureAnalysis(c, cfa)
 	if err != nil {
-		return false, errors.Annotate(err, "get project for compile failure analysis").Err()
+		return false, errors.Fmt("get project for compile failure analysis: %w", err)
 	}
 	cfg, err := config.Project(c, project)
 	if err != nil {
-		return false, errors.Annotate(err, "config project").Err()
+		return false, errors.Fmt("config project: %w", err)
 	}
 	return cfg.CompileAnalysisConfig.NthsectionEnabled, nil
 }
@@ -338,7 +338,7 @@ func setStatusError(c context.Context, nsa *model.CompileNthSectionAnalysis) {
 	}, nil)
 
 	if err != nil {
-		err = errors.Annotate(err, "couldn't setStatusError for nthsection analysis %d", nsa.ParentAnalysis.IntID()).Err()
+		err = errors.Fmt("couldn't setStatusError for nthsection analysis %d: %w", nsa.ParentAnalysis.IntID(), err)
 		logging.Errorf(c, err.Error())
 	}
 }
@@ -350,7 +350,7 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting all reruns").Err()
+		return nil, errors.Fmt("getting all reruns: %w", err)
 	}
 
 	snapshot := &nthsectionsnapshot.Snapshot{

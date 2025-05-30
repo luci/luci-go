@@ -41,7 +41,7 @@ func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *
 	// Get gerrit config.
 	gerritConfig, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error get gerrit config").Err()
+		return false, "", errors.Fmt("error get gerrit config: %w", err)
 	}
 
 	// Check if the culprit was committed recently
@@ -55,7 +55,7 @@ func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *
 	// Check if LUCI Bisection's Gerrit config allows revert submission
 	canSubmit, reason, err := config.CanSubmitRevert(ctx, gerritConfig)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error checking Submit Revert configs").Err()
+		return false, "", errors.Fmt("error checking Submit Revert configs: %w", err)
 	}
 	if !canSubmit {
 		// cannot submit revert based on config
@@ -85,7 +85,7 @@ func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
 		culpritModel.GitilesCommit.Project)
 	if err != nil {
 		// non-critical, just log the error
-		err = errors.Annotate(err, "failed getting accounts to CC on bot-commit").Err()
+		err = errors.Fmt("failed getting accounts to CC on bot-commit: %w", err)
 		logging.Errorf(ctx, err.Error())
 	}
 

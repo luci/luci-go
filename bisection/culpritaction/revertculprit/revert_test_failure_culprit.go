@@ -39,13 +39,13 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 	// Get culprit model.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
-		return errors.Annotate(err, "get test failure analysis").Err()
+		return errors.Fmt("get test failure analysis: %w", err)
 	}
 
 	culpritKey := tfa.VerifiedCulpritKey
 	culpritModel, err := datastoreutil.GetSuspect(ctx, culpritKey.IntID(), culpritKey.Parent())
 	if err != nil {
-		return errors.Annotate(err, "get suspect").Err()
+		return errors.Fmt("get suspect: %w", err)
 	}
 
 	// We mark that actions have been taken for the analyses.
@@ -61,7 +61,7 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 	// Check if primary test is still failing.
 	primaryTestFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get primary test failure").Err()
+		return errors.Fmt("get primary test failure: %w", err)
 	}
 	key := lucianalysis.TestVerdictKey{
 		TestID:      primaryTestFailure.TestID,
@@ -70,7 +70,7 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 	}
 	stillFail, err := luciAnalysis.TestIsUnexpectedConsistently(ctx, tfa.Project, key, primaryTestFailure.RegressionEndPosition)
 	if err != nil {
-		return errors.Annotate(err, "test is unexpected consistently").Err()
+		return errors.Fmt("test is unexpected consistently: %w", err)
 	}
 
 	// If the latest verdict is not unexpected anymore, do not perform any action.
@@ -80,7 +80,7 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 	}
 
 	if err := TakeCulpritAction(ctx, culpritModel); err != nil {
-		return errors.Annotate(err, "revert culprit suspect_id %d", culpritModel.Id).Err()
+		return errors.Fmt("revert culprit suspect_id %d: %w", culpritModel.Id, err)
 	}
 	return nil
 }

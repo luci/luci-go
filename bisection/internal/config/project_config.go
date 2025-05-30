@@ -105,7 +105,7 @@ func UpdateProjects(ctx context.Context) error {
 			if blocking != nil {
 				// Continue through validation errors to ensure a validation
 				// error in one project does not affect other projects.
-				errs = append(errs, errors.Annotate(blocking, "validation errors for %q", project).Err())
+				errs = append(errs, errors.Fmt("validation errors for %q: %w", project, blocking))
 				msg = nil
 			}
 		}
@@ -170,7 +170,7 @@ func updateStoredConfig(ctx context.Context, fetchedConfigs map[string]*fetchedP
 		if err != nil {
 			// Continue through errors to ensure bad config for one project
 			// does not affect others.
-			errs = append(errs, errors.Annotate(err, "marshal fetched config for project %s", project).Err())
+			errs = append(errs, errors.Fmt("marshal fetched config for project %s: %w", project, err))
 			continue
 		}
 		cur, ok := currentConfigs[project]
@@ -191,7 +191,7 @@ func updateStoredConfig(ctx context.Context, fetchedConfigs map[string]*fetchedP
 		})
 	}
 	if err := datastore.Put(ctx, toPut); err != nil {
-		errs = append(errs, errors.Annotate(err, "updating project configs").Err())
+		errs = append(errs, errors.Fmt("updating project configs: %w", err))
 	}
 
 	var toDelete []*datastore.Key
@@ -203,7 +203,7 @@ func updateStoredConfig(ctx context.Context, fetchedConfigs map[string]*fetchedP
 	}
 
 	if err := datastore.Delete(ctx, toDelete); err != nil {
-		errs = append(errs, errors.Annotate(err, "deleting stale project configs").Err())
+		errs = append(errs, errors.Fmt("deleting stale project configs: %w", err))
 	}
 
 	if len(errs) > 0 {
@@ -233,7 +233,7 @@ func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectC
 	var configs []*cachedProjectConfig
 	err := datastore.GetAll(ctx, datastore.NewQuery(projectConfigKind), &configs)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetching project configs from datastore").Err()
+		return nil, errors.Fmt("fetching project configs from datastore: %w", err)
 	}
 	result := make(map[string]*cachedProjectConfig)
 	for _, cfg := range configs {
@@ -273,13 +273,13 @@ func fetchProjects(ctx context.Context) (map[string]*configpb.ProjectConfig, err
 
 	cachedCfgs, err := fetchProjectConfigEntities(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetching cached config").Err()
+		return nil, errors.Fmt("fetching cached config: %w", err)
 	}
 	result := make(map[string]*configpb.ProjectConfig)
 	for project, cached := range cachedCfgs {
 		cfg := &configpb.ProjectConfig{}
 		if err := proto.Unmarshal(cached.Config, cfg); err != nil {
-			return nil, errors.Annotate(err, "unmarshalling cached config for project %s", project).Err()
+			return nil, errors.Fmt("unmarshalling cached config for project %s: %w", project, err)
 		}
 		result[project] = cfg
 	}
@@ -326,7 +326,7 @@ func Project(ctx context.Context, project string) (*configpb.ProjectConfig, erro
 	if c, ok := configs[project]; ok {
 		return c, nil
 	}
-	return nil, errors.Annotate(ErrNotFoundProjectConfig, "%s", project).Err()
+	return nil, errors.Fmt("%s: %w", project, ErrNotFoundProjectConfig)
 }
 
 func IsMilestoneProject(project string) bool {

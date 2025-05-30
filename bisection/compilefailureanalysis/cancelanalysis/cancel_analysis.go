@@ -54,7 +54,7 @@ func RegisterTaskClass() {
 			logging.Infof(c, "Process CancelAnalysisTask with id = %d", task.GetAnalysisId())
 			err := CancelAnalysis(c, task.GetAnalysisId())
 			if err != nil {
-				err := errors.Annotate(err, "cancelAnalysis id=%d", task.GetAnalysisId()).Err()
+				err := errors.Fmt("cancelAnalysis id=%d: %w", task.GetAnalysisId(), err)
 				logging.Errorf(c, err.Error())
 				// If the error is transient, return err to retry
 				if transient.Tag.In(err) {
@@ -79,11 +79,11 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
 	if err != nil {
-		return errors.Annotate(err, "couldn't get analysis %d", analysisID).Err()
+		return errors.Fmt("couldn't get analysis %d: %w", analysisID, err)
 	}
 	reruns, err := datastoreutil.GetRerunsForAnalysis(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't get reruns for analysis %d", analysisID).Err()
+		return errors.Fmt("couldn't get reruns for analysis %d: %w", analysisID, err)
 	}
 
 	var errs []error
@@ -92,11 +92,11 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 			bbid := rerun.RerunBuild.IntID()
 			_, err := buildbucket.CancelBuild(c, bbid, "analysis was canceled")
 			if err != nil {
-				errs = append(errs, errors.Annotate(err, "couldn't cancel build %d", bbid).Err())
+				errs = append(errs, errors.Fmt("couldn't cancel build %d: %w", bbid, err))
 			} else {
 				err = updateCancelStatusForRerun(c, rerun)
 				if err != nil {
-					errs = append(errs, errors.Annotate(err, "couldn't update rerun status %d", rerun.RerunBuild.IntID()).Err())
+					errs = append(errs, errors.Fmt("couldn't update rerun status %d: %w", rerun.RerunBuild.IntID(), err))
 				}
 			}
 		}
@@ -115,7 +115,7 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 	err = statusupdater.UpdateStatus(c, cfa, newStatus, pb.AnalysisRunStatus_CANCELED)
 
 	if err != nil {
-		return errors.Annotate(err, "couldn't update status for analysis %d", cfa.Id).Err()
+		return errors.Fmt("couldn't update status for analysis %d: %w", cfa.Id, err)
 	}
 
 	// Update status of nthsection analysis
@@ -133,7 +133,7 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 
 	err = statusupdater.UpdateNthSectionStatus(c, nsa, newStatus, pb.AnalysisRunStatus_CANCELED)
 	if err != nil {
-		return errors.Annotate(err, "couldn't update status for nthsection for analysis %d", cfa.Id).Err()
+		return errors.Fmt("couldn't update status for nthsection for analysis %d: %w", cfa.Id, err)
 	}
 
 	return nil
@@ -177,14 +177,14 @@ func updateCancelStatusForRerun(c context.Context, rerun *model.SingleRerun) err
 			}
 			err = datastore.Get(c, suspect)
 			if err != nil {
-				return errors.Annotate(err, "couldn't get suspect for rerun").Err()
+				return errors.Fmt("couldn't get suspect for rerun: %w", err)
 			}
 
 			suspect.VerificationStatus = model.SuspectVerificationStatus_Canceled
 			err = datastore.Put(c, suspect)
 
 			if err != nil {
-				return errors.Annotate(err, "couldn't update suspect status").Err()
+				return errors.Fmt("couldn't update suspect status: %w", err)
 			}
 		}
 		return nil

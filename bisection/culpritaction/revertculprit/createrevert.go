@@ -41,7 +41,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	if culpritModel.AnalysisType == bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS {
 		tfa, err := datastoreutil.GetTestFailureAnalysisForSuspect(ctx, culpritModel)
 		if err != nil {
-			return false, "", errors.Annotate(err, "get test failure analysis for suspect").Err()
+			return false, "", errors.Fmt("get test failure analysis for suspect: %w", err)
 		}
 		if len(tfa.SheriffRotations) == 0 {
 			return false, "the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves", nil
@@ -49,14 +49,14 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	} else if culpritModel.AnalysisType == bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
 		buildID, err := datastoreutil.GetBuildIDForCompileSuspect(ctx, culpritModel)
 		if err != nil {
-			return false, "", errors.Annotate(err, "get build id for suspect").Err()
+			return false, "", errors.Fmt("get build id for suspect: %w", err)
 		}
 		build, err := datastoreutil.GetBuild(ctx, buildID)
 		if err != nil {
-			return false, "", errors.Annotate(err, "get build").Err()
+			return false, "", errors.Fmt("get build: %w", err)
 		}
 		if build == nil {
-			return false, "", errors.Reason("no build found: %d", buildID).Err()
+			return false, "", errors.Fmt("no build found: %d", buildID)
 		}
 		if len(build.SheriffRotations) == 0 {
 			return false, "the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves", nil
@@ -66,7 +66,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	// Check if the culprit's description has disabled autorevert
 	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error checking for auto-revert flag").Err()
+		return false, "", errors.Fmt("error checking for auto-revert flag: %w", err)
 	}
 	if hasFlag {
 		return false, "auto-revert has been disabled for this CL by its description", nil
@@ -75,7 +75,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	// Check if the author of the culprit is irrevertible
 	cannotRevert, err := HasIrrevertibleAuthor(ctx, culprit)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error getting culprit's commit author").Err()
+		return false, "", errors.Fmt("error getting culprit's commit author: %w", err)
 	}
 	if cannotRevert {
 		return false, "LUCI Bisection cannot revert changes from this CL's author", nil
@@ -84,7 +84,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	// Check if there are other merged changes depending on the culprit
 	hasDep, err := gerritClient.HasDependency(ctx, culprit)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error checking for dependencies").Err()
+		return false, "", errors.Fmt("error checking for dependencies: %w", err)
 	}
 	if hasDep {
 		return false, "there are merged changes depending on it", nil
@@ -92,11 +92,11 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 	// Check if LUCI Bisection's Gerrit config allows revert creation
 	gerritCfg, err := config.GetGerritCfgForSuspect(ctx, culpritModel, project)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error fetching configs").Err()
+		return false, "", errors.Fmt("error fetching configs: %w", err)
 	}
 	canCreate, reason, err := config.CanCreateRevert(ctx, gerritCfg, culpritModel.AnalysisType)
 	if err != nil {
-		return false, "", errors.Annotate(err, "error checking Create Revert configs").Err()
+		return false, "", errors.Fmt("error checking Create Revert configs: %w", err)
 	}
 	if !canCreate {
 		return false, reason, nil
@@ -148,12 +148,12 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	case bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		message, err = compileFailureComment(ctx, culpritModel, "", "blameComment")
 		if err != nil {
-			return "", errors.Annotate(err, "compile failure comment").Err()
+			return "", errors.Fmt("compile failure comment: %w", err)
 		}
 	case bisectionpb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		message, err = testFailureComment(ctx, culpritModel, "", "blameComment")
 		if err != nil {
-			return "", errors.Annotate(err, "test failure comment").Err()
+			return "", errors.Fmt("test failure comment: %w", err)
 		}
 	}
 	message = "Reason for revert:\n" + message

@@ -97,7 +97,7 @@ func AnalyzeFailure(
 	err := setTreeCloser(c, analysis)
 	if err != nil {
 		// Non-critical, just continue
-		err := errors.Annotate(err, "failed to check tree closer").Err()
+		err := errors.Fmt("failed to check tree closer: %w", err)
 		logging.Errorf(c, err.Error())
 	}
 
@@ -112,7 +112,7 @@ func AnalyzeFailure(
 	if e == nil {
 		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
+			return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
 		}
 		if shouldRunCulpritVerification {
 			if !analysis.ShouldCancel {
@@ -127,12 +127,12 @@ func AnalyzeFailure(
 	// Nth-section analysis
 	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c, analysis)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't fetch config for nthsection. Build %d", firstFailedBuildID).Err()
+		return nil, errors.Fmt("couldn't fetch config for nthsection. Build %d: %w", firstFailedBuildID, err)
 	}
 	if shouldRunNthSection {
 		_, e = nthsection.Analyze(c, analysis)
 		if e != nil {
-			e = errors.Annotate(e, "error during nthsection analysis for build %d", firstFailedBuildID).Err()
+			e = errors.Fmt("error during nthsection analysis for build %d: %w", firstFailedBuildID, e)
 			logging.Errorf(c, e.Error())
 		}
 	}
@@ -140,7 +140,7 @@ func AnalyzeFailure(
 	// Update status of analysis
 	err = statusupdater.UpdateAnalysisStatus(c, analysis)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't update analysis status. Build %d", firstFailedBuildID).Err()
+		return nil, errors.Fmt("couldn't update analysis status. Build %d: %w", firstFailedBuildID, err)
 	}
 
 	return analysis, nil
@@ -216,7 +216,7 @@ func findRegressionRange(
 func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis) error {
 	fb, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
 	if err != nil {
-		return errors.Annotate(err, "getBuild").Err()
+		return errors.Fmt("getBuild: %w", err)
 	}
 	if fb == nil {
 		return fmt.Errorf("couldn't find build for analysis %d", cfa.Id)

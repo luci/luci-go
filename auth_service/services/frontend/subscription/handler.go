@@ -75,17 +75,17 @@ func CheckAccess(ctx *router.Context) error {
 
 	email, err := callerEmail(c)
 	if err != nil {
-		return errors.Annotate(err, "error getting caller email").Err()
+		return errors.Fmt("error getting caller email: %w", err)
 	}
 
 	psAuthorized, err := pubsub.IsAuthorizedSubscriber(c, email)
 	if err != nil {
-		return errors.Annotate(err, "error checking Pubsub subscription").Err()
+		return errors.Fmt("error checking Pubsub subscription: %w", err)
 	}
 
 	gsAuthorized, err := model.IsAuthorizedReader(c, email)
 	if err != nil {
-		return errors.Annotate(err, "error checking authorization status").Err()
+		return errors.Fmt("error checking authorization status: %w", err)
 	}
 
 	return respond(ctx, psAuthorized, gsAuthorized)
@@ -110,12 +110,12 @@ func Authorize(ctx *router.Context) error {
 
 	email, err := callerEmail(c)
 	if err != nil {
-		return errors.Annotate(err, "error getting caller email").Err()
+		return errors.Fmt("error getting caller email: %w", err)
 	}
 
 	eligible, err := auth.IsMember(c, model.TrustedServicesGroup, model.AdminGroup)
 	if err != nil {
-		err = errors.Annotate(err, "error checking subscribing eligibility for %s", email).Err()
+		err = errors.Fmt("error checking subscribing eligibility for %s: %w", email, err)
 		logging.Errorf(c, err.Error())
 		return status.Error(codes.Internal, "error checking caller subscribing eligibility")
 	}
@@ -124,11 +124,11 @@ func Authorize(ctx *router.Context) error {
 	}
 
 	if err := pubsub.AuthorizeSubscriber(c, email); err != nil {
-		return errors.Annotate(err, "error granting Pubsub subscriber role").Err()
+		return errors.Fmt("error granting Pubsub subscriber role: %w", err)
 	}
 
 	if err := model.AuthorizeReader(c, email); err != nil {
-		return errors.Annotate(err, "error granting Google Storage read access").Err()
+		return errors.Fmt("error granting Google Storage read access: %w", err)
 	}
 
 	return respond(ctx, true, true)
@@ -153,15 +153,15 @@ func Deauthorize(ctx *router.Context) error {
 
 	email, err := callerEmail(c)
 	if err != nil {
-		return errors.Annotate(err, "error getting caller email").Err()
+		return errors.Fmt("error getting caller email: %w", err)
 	}
 
 	if err := pubsub.DeauthorizeSubscriber(c, email); err != nil {
-		return errors.Annotate(err, "error revoking Pubsub subscriber role").Err()
+		return errors.Fmt("error revoking Pubsub subscriber role: %w", err)
 	}
 
 	if err := model.DeauthorizeReader(c, email); err != nil {
-		return errors.Annotate(err, "error revoking Google Storage read access").Err()
+		return errors.Fmt("error revoking Google Storage read access: %w", err)
 	}
 
 	return respond(ctx, false, false)
@@ -172,7 +172,7 @@ func respond(ctx *router.Context, psAuthorized, gsAuthorized bool) error {
 
 	gsPath, err := gs.GetPath(c)
 	if err != nil {
-		return errors.Annotate(err, "error getting GS path from configs").Err()
+		return errors.Fmt("error getting GS path from configs: %w", err)
 	}
 
 	topic := pubsub.GetAuthDBChangeTopic(c)
@@ -187,7 +187,7 @@ func respond(ctx *router.Context, psAuthorized, gsAuthorized bool) error {
 		},
 	})
 	if err != nil {
-		err = errors.Annotate(err, "error encoding JSON").Err()
+		err = errors.Fmt("error encoding JSON: %w", err)
 		return err
 	}
 

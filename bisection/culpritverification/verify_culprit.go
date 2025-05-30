@@ -59,7 +59,7 @@ func RegisterTaskClass() {
 
 func handleTQError(ctx context.Context, err error) error {
 	if err != nil {
-		err := errors.Annotate(err, "run culprit verification").Err()
+		err := errors.Fmt("run culprit verification: %w", err)
 		logging.Errorf(ctx, err.Error())
 		// If the error is transient, return err to retry
 		if transient.Tag.In(err) {
@@ -80,17 +80,17 @@ func processCulpritVerificationTask(c context.Context, analysisID int64, suspect
 
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
 	if err != nil {
-		return errors.Annotate(err, "failed getting CompileFailureAnalysis").Err()
+		return errors.Fmt("failed getting CompileFailureAnalysis: %w", err)
 	}
 
 	parentKey, err := datastore.NewKeyEncoded(parentKeyStr)
 	if err != nil {
-		return errors.Annotate(err, "couldn't decode parent key for suspect").Err()
+		return errors.Fmt("couldn't decode parent key for suspect: %w", err)
 	}
 
 	suspect, err := datastoreutil.GetSuspect(c, suspectID, parentKey)
 	if err != nil {
-		return errors.Annotate(err, "couldn't get suspect").Err()
+		return errors.Fmt("couldn't get suspect: %w", err)
 	}
 	return VerifySuspect(c, suspect, cfa.FirstFailedBuildId, analysisID)
 }
@@ -118,7 +118,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	// If yes, we don't run verification for this suspect anymore
 	suspectExist, err := checkSuspectWithSameCommitExist(c, cfa, suspect)
 	if err != nil {
-		return errors.Annotate(err, "checkSuspectWithSameCommitExist").Err()
+		return errors.Fmt("checkSuspectWithSameCommitExist: %w", err)
 	}
 	if suspectExist {
 		return nil
@@ -149,7 +149,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 
 	host, err := hosts.APIHost(c)
 	if err != nil {
-		return errors.Annotate(err, "get bisection API Host").Err()
+		return errors.Fmt("get bisection API Host: %w", err)
 	}
 
 	// Get rerun build property
@@ -166,7 +166,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	// Verify the suspect
 	priority, err := getSuspectPriority(c, suspect)
 	if err != nil {
-		return errors.Annotate(err, "failed getting priority").Err()
+		return errors.Fmt("failed getting priority: %w", err)
 	}
 
 	// TODO(nqmtuan): Pass in the project.
@@ -206,7 +206,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 func checkSuspectWithSameCommitExist(c context.Context, cfa *model.CompileFailureAnalysis, suspect *model.Suspect) (bool, error) {
 	suspects, err := datastoreutil.FetchSuspectsForAnalysis(c, cfa)
 	if err != nil {
-		return false, errors.Annotate(err, "fetchSuspectsForAnalysis").Err()
+		return false, errors.Fmt("fetchSuspectsForAnalysis: %w", err)
 	}
 	for _, s := range suspects {
 		// Need to be of different suspect
@@ -244,11 +244,11 @@ func VerifySuspectCommit(c context.Context, project string, suspect *model.Suspe
 	// Query Gitiles to get parent commit
 	parentCommit, err := getParentCommit(c, commit)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "get parent commit for commit %s", commit.Id).Err()
+		return nil, nil, errors.Fmt("get parent commit for commit %s: %w", commit.Id, err)
 	}
 	builder, err := config.GetCompileBuilder(c, project)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "get compile builder").Err()
+		return nil, nil, errors.Fmt("get compile builder: %w", err)
 	}
 	options := &rerun.TriggerOptions{
 		Builder:         util.BuilderFromConfigBuilder(builder),
@@ -291,7 +291,7 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	// Check if the same suspect has any running build
 	otherSuspects, err := datastoreutil.GetOtherSuspectsWithSameCL(c, suspect)
 	if err != nil {
-		return 0, errors.Annotate(err, "failed GetOtherSuspectsWithSameCL %d", suspect.Id).Err()
+		return 0, errors.Fmt("failed GetOtherSuspectsWithSameCL %d: %w", suspect.Id, err)
 	}
 
 	// If there is a running/finished suspect run -> lower priority of this run
@@ -305,11 +305,11 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	// Offset the priority based on run duration
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, suspect.ParentAnalysis.Parent().IntID())
 	if err != nil {
-		return 0, errors.Annotate(err, "couldn't get analysis for suspect %d", suspect.Id).Err()
+		return 0, errors.Fmt("couldn't get analysis for suspect %d: %w", suspect.Id, err)
 	}
 	pri, err = rerun.OffsetPriorityBasedOnRunDuration(c, pri, cfa)
 	if err != nil {
-		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration for suspect %d", suspect.Id).Err()
+		return 0, errors.Fmt("couldn't OffsetPriorityBasedOnRunDuration for suspect %d: %w", suspect.Id, err)
 	}
 
 	// Offset the priority if it is a tree closer
@@ -336,13 +336,13 @@ func updateSuspectStatus(c context.Context, suspect *model.Suspect, cfa *model.C
 		}, nil)
 
 		if err != nil {
-			logging.Errorf(c, errors.Annotate(err, "set suspect verification status").Err().Error())
+			logging.Errorf(c, errors.Fmt("set suspect verification status: %w", err).Error())
 		}
 		// Also update the analysis status this case, because
 		// the analysis may ended, given the suspect is no longer under verification
 		err = statusupdater.UpdateAnalysisStatus(c, cfa)
 		if err != nil {
-			logging.Errorf(c, errors.Annotate(err, "set analysis status").Err().Error())
+			logging.Errorf(c, errors.Fmt("set analysis status: %w", err).Error())
 		}
 	}
 }
@@ -350,11 +350,11 @@ func updateSuspectStatus(c context.Context, suspect *model.Suspect, cfa *model.C
 func ShouldRunCulpritVerification(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
 	project, err := datastoreutil.GetProjectForCompileFailureAnalysis(c, cfa)
 	if err != nil {
-		return false, errors.Annotate(err, "get project for compile failure analysis").Err()
+		return false, errors.Fmt("get project for compile failure analysis: %w", err)
 	}
 	cfg, err := config.Project(c, project)
 	if err != nil {
-		return false, errors.Annotate(err, "config project").Err()
+		return false, errors.Fmt("config project: %w", err)
 	}
 	return cfg.CompileAnalysisConfig.CulpritVerificationEnabled, nil
 }

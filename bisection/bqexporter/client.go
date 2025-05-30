@@ -41,7 +41,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -51,7 +51,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "create managed writer client").Err()
+		return nil, errors.Fmt("create managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -85,7 +85,7 @@ type Client struct {
 func (client *Client) EnsureSchema(ctx context.Context) error {
 	table := client.bqClient.Dataset(bqutil.InternalDatasetID).Table(testFailureAnalysesTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring test_analyses table").Err()
+		return errors.Fmt("ensuring test_analyses table: %w", err)
 	}
 	return nil
 }
@@ -93,7 +93,7 @@ func (client *Client) EnsureSchema(ctx context.Context) error {
 // Insert inserts the given rows in BigQuery.
 func (client *Client) Insert(ctx context.Context, rows []*bqpb.TestAnalysisRow) error {
 	if err := client.EnsureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", client.projectID, bqutil.InternalDatasetID, testFailureAnalysesTableName)
 	writer := bq.NewWriter(client.mwClient, tableName, tableSchemaDescriptor)
@@ -125,7 +125,7 @@ func (client *Client) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestF
 	q.DefaultProjectID = info.AppID(ctx)
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying test failure analyses").Err()
+		return nil, errors.Fmt("querying test failure analyses: %w", err)
 	}
 	rows := []*TestFailureAnalysisRow{}
 	for {
@@ -135,7 +135,7 @@ func (client *Client) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestF
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next test failure analysis row").Err()
+			return nil, errors.Fmt("obtain next test failure analysis row: %w", err)
 		}
 		rows = append(rows, row)
 	}

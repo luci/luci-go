@@ -140,12 +140,12 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 	})
 
 	if err != nil {
-		return errors.Annotate(err, "couldn't get build %d", bbid).Err()
+		return errors.Fmt("couldn't get build %d: %w", bbid, err)
 	}
 
 	analysis, err := datastoreutil.GetLatestAnalysisForBuilder(c, build.Builder.Project, build.Builder.Bucket, build.Builder.Builder)
 	if err != nil {
-		return errors.Annotate(err, "couldn't GetLatestAnalysisForBuilder").Err()
+		return errors.Fmt("couldn't GetLatestAnalysisForBuilder: %w", err)
 	}
 
 	if analysis == nil {
@@ -154,7 +154,7 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 
 	shouldCancel, err := shouldCancelAnalysis(c, analysis, build)
 	if err != nil {
-		return errors.Annotate(err, "shouldCancelAnalysis %d", analysis.Id).Err()
+		return errors.Fmt("shouldCancelAnalysis %d: %w", analysis.Id, err)
 	}
 	if !shouldCancel {
 		logging.Infof(c, "The build under analysis is more recent than the succeeded build")
@@ -180,7 +180,7 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 	})
 
 	if err != nil {
-		return errors.Annotate(err, "couldn't set ShouldCancel flag").Err()
+		return errors.Fmt("couldn't set ShouldCancel flag: %w", err)
 	}
 
 	return nil
@@ -191,7 +191,7 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 func shouldCancelAnalysis(c context.Context, cfa *model.CompileFailureAnalysis, succededBuild *buildbucketpb.Build) (bool, error) {
 	build, err := datastoreutil.GetFailedBuildForAnalysis(c, cfa)
 	if err != nil {
-		return false, errors.Annotate(err, "getFailedBuildForAnalysis %d", cfa.Id).Err()
+		return false, errors.Fmt("getFailedBuildForAnalysis %d: %w", cfa.Id, err)
 	}
 	if succededBuild.GetOutput() != nil && succededBuild.GetOutput().GetGitilesCommit() != nil && succededBuild.GetOutput().GetGitilesCommit().Position > 0 && build.Position > 0 {
 		return succededBuild.GetOutput().GetGitilesCommit().Position > build.Position, nil

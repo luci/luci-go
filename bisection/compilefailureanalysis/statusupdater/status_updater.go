@@ -36,21 +36,21 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	// Fetch heuristic and nthsection analysis
 	ha, err := datastoreutil.GetHeuristicAnalysis(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't fetch heuristic analysis of analysis %d", cfa.Id).Err()
+		return errors.Fmt("couldn't fetch heuristic analysis of analysis %d: %w", cfa.Id, err)
 	}
 
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't fetch nthsection analysis of analysis %d", cfa.Id).Err()
+		return errors.Fmt("couldn't fetch nthsection analysis of analysis %d: %w", cfa.Id, err)
 	}
 
 	haveUnfinishedReruns, err := analysisStillHaveUnfinishedReruns(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't decide if analysis %d has unfinished rerun", cfa.Id).Err()
+		return errors.Fmt("couldn't decide if analysis %d has unfinished rerun: %w", cfa.Id, err)
 	}
 	havePendingVerificationSuspect, err := analysisStillHasSuspectWaitingToBeVerified(c, cfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't decide if analysis %d has suspect pending verification", cfa.Id).Err()
+		return errors.Fmt("couldn't decide if analysis %d has suspect pending verification: %w", cfa.Id, err)
 	}
 
 	// No nth-section run. Just consider the heuristic analysis.
@@ -174,7 +174,7 @@ func analysisStillHaveUnfinishedReruns(c context.Context, cfa *model.CompileFail
 func analysisStillHasSuspectWaitingToBeVerified(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
 	suspects, err := datastoreutil.FetchSuspectsForAnalysis(c, cfa)
 	if err != nil {
-		return false, errors.Annotate(err, "fetchSuspectsForAnalysis").Err()
+		return false, errors.Fmt("fetchSuspectsForAnalysis: %w", err)
 	}
 	for _, suspect := range suspects {
 		if suspect.VerificationStatus == model.SuspectVerificationStatus_VerificationScheduled {

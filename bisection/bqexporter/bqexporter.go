@@ -55,12 +55,12 @@ func ExportTestAnalyses(ctx context.Context) error {
 
 	client, err := NewClient(ctx, info.AppID(ctx))
 	if err != nil {
-		return errors.Annotate(err, "new client").Err()
+		return errors.Fmt("new client: %w", err)
 	}
 	defer client.Close()
 	err = export(ctx, client)
 	if err != nil {
-		return errors.Annotate(err, "export").Err()
+		return errors.Fmt("export: %w", err)
 	}
 	return nil
 }
@@ -74,19 +74,19 @@ type ExportClient interface {
 func export(ctx context.Context, client ExportClient) error {
 	err := client.EnsureSchema(ctx)
 	if err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 
 	analyses, err := fetchTestAnalyses(ctx)
 	if err != nil {
-		return errors.Annotate(err, "fetch test analyses").Err()
+		return errors.Fmt("fetch test analyses: %w", err)
 	}
 	logging.Infof(ctx, "There are %d test analyses fetched from datastore", len(analyses))
 
 	// Read existing rows from bigquery.
 	bqrows, err := client.ReadTestFailureAnalysisRows(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read test failure analysis rows").Err()
+		return errors.Fmt("read test failure analysis rows: %w", err)
 	}
 	logging.Infof(ctx, "There are %d existing rows in BigQuery", len(bqrows))
 
@@ -103,7 +103,7 @@ func export(ctx context.Context, client ExportClient) error {
 		if _, ok := existingIDs[tfa.ID]; !ok {
 			row, err := bqutil.TestFailureAnalysisToBqRow(ctx, tfa)
 			if err != nil {
-				return errors.Annotate(err, "test failure analysis to bq row for analysis ID: %d", tfa.ID).Err()
+				return errors.Fmt("test failure analysis to bq row for analysis ID: %d: %w", tfa.ID, err)
 			}
 			rowsToInsert = append(rowsToInsert, row)
 		}
@@ -113,7 +113,7 @@ func export(ctx context.Context, client ExportClient) error {
 	// Insert into BQ.
 	err = client.Insert(ctx, rowsToInsert)
 	if err != nil {
-		return errors.Annotate(err, "insert").Err()
+		return errors.Fmt("insert: %w", err)
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 	analyses := []*model.TestFailureAnalysis{}
 	err := datastore.GetAll(ctx, q, &analyses)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test analyses").Err()
+		return nil, errors.Fmt("get test analyses: %w", err)
 	}
 
 	// Check that the analyses ended and actions were taken.
@@ -150,10 +150,10 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 		//Get culprit.
 		culprit, err := datastoreutil.GetVerifiedCulpritForTestAnalysis(ctx, tfa)
 		if err != nil {
-			return nil, errors.Annotate(err, "get verified culprit").Err()
+			return nil, errors.Fmt("get verified culprit: %w", err)
 		}
 		if culprit == nil {
-			return nil, errors.Reason("no culprit found for analysis %d", tfa.ID).Err()
+			return nil, errors.Fmt("no culprit found for analysis %d", tfa.ID)
 		}
 
 		// Make an exception: If an analysis ended more than 1 day ago, and

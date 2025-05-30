@@ -38,13 +38,13 @@ func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVer
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
-		return errors.Annotate(err, "get test failure analysis").Err()
+		return errors.Fmt("get test failure analysis: %w", err)
 	}
 
 	// Retrieves suspect.
 	suspect, err := datastoreutil.GetSuspectForTestAnalysis(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't get suspect").Err()
+		return errors.Fmt("couldn't get suspect: %w", err)
 	}
 	if suspect == nil {
 		return errors.New("couldn't get suspect: <unknown reason>")
@@ -56,12 +56,12 @@ func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVer
 func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysis, suspect *model.Suspect) error {
 	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get project bisector").Err()
+		return errors.Fmt("get project bisector: %w", err)
 	}
 	// Get test failure bundle.
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get test failure bundle").Err()
+		return errors.Fmt("get test failure bundle: %w", err)
 	}
 	// Only rerun the non-diverged test failures.
 	tfs := bundle.NonDiverged()
@@ -71,16 +71,16 @@ func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysi
 	}
 	suspectBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, commit, option)
 	if err != nil {
-		return errors.Annotate(err, "trigger suspect rerun for commit %s", commit.Id).Err()
+		return errors.Fmt("trigger suspect rerun for commit %s: %w", commit.Id, err)
 	}
 
 	parentCommit, err := getParentCommit(ctx, commit)
 	if err != nil {
-		return errors.Annotate(err, "get parent commit for commit %s", commit.Id).Err()
+		return errors.Fmt("get parent commit for commit %s: %w", commit.Id, err)
 	}
 	parentBuild, err := projectBisector.TriggerRerun(ctx, tfa, tfs, parentCommit, option)
 	if err != nil {
-		return errors.Annotate(err, "trigger parent rerun for commit %s", parentCommit.Id).Err()
+		return errors.Fmt("trigger parent rerun for commit %s: %w", parentCommit.Id, err)
 	}
 
 	// Save rerun models.
@@ -93,12 +93,12 @@ func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysi
 	}
 	suspectRerun, err := bisection.CreateTestRerunModel(ctx, options)
 	if err != nil {
-		return errors.Annotate(err, "create test rerun model for suspect rerun").Err()
+		return errors.Fmt("create test rerun model for suspect rerun: %w", err)
 	}
 	options.Build = parentBuild
 	parentRerun, err := bisection.CreateTestRerunModel(ctx, options)
 	if err != nil {
-		return errors.Annotate(err, "create test rerun model for parent rerun").Err()
+		return errors.Fmt("create test rerun model for parent rerun: %w", err)
 	}
 
 	// Update suspect.
