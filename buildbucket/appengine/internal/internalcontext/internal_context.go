@@ -41,7 +41,7 @@ func WithCustomMetrics(ctx context.Context) (context.Context, error) {
 		return err
 	}, nil)
 	if err != nil {
-		return ctx, errors.Annotate(err, "failed to get service config when register custom metrics").Err()
+		return ctx, errors.Fmt("failed to get service config when register custom metrics: %w", err)
 	}
 	return metrics.WithCustomMetrics(ctx, globalCfg)
 }

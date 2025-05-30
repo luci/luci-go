@@ -90,10 +90,10 @@ var (
 //	nil, err - on internal errors.
 func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) {
 	if project == "" {
-		return nil, errors.Reason("project name is empty").Err()
+		return nil, errors.New("project name is empty")
 	}
 	if bucket == "" {
-		return nil, errors.Reason("bucket name is empty").Err()
+		return nil, errors.New("bucket name is empty")
 	}
 
 	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (*pb.Bucket, time.Duration, error) {
@@ -113,7 +113,7 @@ func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) 
 			// the cache with requests for non-existing buckets.
 			return &pb.Bucket{}, 15 * time.Second, nil
 		default:
-			return nil, 0, errors.Annotate(err, "datastore error").Err()
+			return nil, 0, errors.Fmt("datastore error: %w", err)
 		}
 	}, layered.WithRandomizedExpiration(10*time.Second))
 	if err != nil {
@@ -141,7 +141,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	bucketPB, err := getBucket(ctx, project, bucket)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch bucket %q", project+"/"+bucket).Err()
+		return errors.Fmt("failed to fetch bucket %q: %w", project+"/"+bucket, err)
 	case bucketPB == nil:
 		return NotFoundErr(ctx)
 	}
@@ -149,7 +149,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	realm := realms.Join(project, bucket)
 	switch yes, err := auth.HasPermission(ctx, perm, realm, nil); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check realm %q ACLs", realm).Err()
+		return errors.Fmt("failed to check realm %q ACLs: %w", realm, err)
 	case yes:
 		return nil
 	}
@@ -158,7 +158,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	// of any build or builder in any bucket.
 	switch is, err := auth.IsMember(ctx, Administrators); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check group membership in %q", Administrators).Err()
+		return errors.Fmt("failed to check group membership in %q: %w", Administrators, err)
 	case is:
 		if slices.Contains(AdminPerms, perm) {
 			// Log when this rule is invoked, since it's surprising.
@@ -178,7 +178,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	if perm != bbperms.BuildersGet {
 		switch visible, err := auth.HasPermission(ctx, bbperms.BuildersGet, realm, nil); {
 		case err != nil:
-			return errors.Annotate(err, "failed to check realm %q ACLs", realm).Err()
+			return errors.Fmt("failed to check realm %q ACLs: %w", realm, err)
 		case visible:
 			return appstatus.Errorf(codes.PermissionDenied,
 				"%q does not have permission %q in bucket %q",

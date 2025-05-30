@@ -70,7 +70,7 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 					}
 					bs, err := statusUpdater.Do(ctx)
 					if err != nil {
-						return errors.Annotate(err, "updating build status for build %d", b.ID).Err()
+						return errors.Fmt("updating build status for build %d: %w", b.ID, err)
 					}
 					buildStatusToUpdate[i] = bs
 					return nil
@@ -139,7 +139,7 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 						ch <- bs
 					}
 					if err != nil {
-						return errors.Annotate(err, "querying expired %s builds", st).Err()
+						return errors.Fmt("querying expired %s builds: %w", st, err)
 					}
 				}
 				return nil

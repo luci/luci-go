@@ -43,7 +43,7 @@ func ReportBuilderMetrics(ctx context.Context) error {
 	tsmon.GetState(ctx).Store().Reset(ctx, V2.BuilderPresence)
 	luciBuckets, err := fetchLUCIBuckets(ctx)
 	if err != nil {
-		return errors.Annotate(err, "fetching LUCI buckets w/ swarming config").Err()
+		return errors.Fmt("fetching LUCI buckets w/ swarming config: %w", err)
 	}
 
 	bldrToMetrics, err := getBldrDefinedMetrics(ctx)
@@ -87,7 +87,7 @@ func ReportBuilderMetrics(ctx context.Context) error {
 			return nil
 		})
 		if err != nil {
-			taskC <- func() error { return errors.Annotate(err, "datastore.RunBatch").Err() }
+			taskC <- func() error { return errors.Fmt("datastore.RunBatch: %w", err) }
 		}
 	})
 }
@@ -342,7 +342,7 @@ func getBldrDefinedMetrics(ctx context.Context) (map[string][]string, error) {
 	bldrmetrics := &model.CustomBuilderMetrics{Key: model.CustomBuilderMetricsKey(ctx)}
 	err := datastore.Get(ctx, bldrmetrics)
 	if err != nil && err != datastore.ErrNoSuchEntity {
-		return nil, errors.Annotate(err, "fetching bldrDefinedMetrics").Err()
+		return nil, errors.Fmt("fetching bldrDefinedMetrics: %w", err)
 	}
 
 	bldrToMetrics := make(map[string][]string)

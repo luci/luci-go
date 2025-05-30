@@ -114,7 +114,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 	// config in parallel.
 	cfgMetas, err := client.GetProjectConfigs(ctx, "${appid}.cfg", true)
 	if err != nil {
-		return errors.Annotate(err, "while fetching project configs' metadata").Err()
+		return errors.Fmt("while fetching project configs' metadata: %w", err)
 	}
 	cfgs := make([]*config.Config, len(cfgMetas))
 	err = parallel.WorkPool(min(64, len(cfgMetas)), func(work chan<- func() error) {
@@ -123,7 +123,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 			work <- func() error {
 				cfg, err := client.GetConfig(ctx, cfgSet, "${appid}.cfg", false)
 				if err != nil {
-					return errors.Annotate(err, "failed to fetch the project config for %s", string(cfgSet)).Err()
+					return errors.Fmt("failed to fetch the project config for %s: %w", string(cfgSet), err)
 				}
 				cfgs[i] = cfg
 				return nil
@@ -138,7 +138,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 
 	var bucketKeys []*datastore.Key
 	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
-		return errors.Annotate(err, "failed to fetch all bucket keys").Err()
+		return errors.Fmt("failed to fetch all bucket keys: %w", err)
 	}
 
 	var changes []*changeLog
@@ -153,7 +153,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 
 	var projKeys []*datastore.Key
 	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ProjectKind), &projKeys); err != nil {
-		return errors.Annotate(err, "failed to fetch all project keys").Err()
+		return errors.Fmt("failed to fetch all project keys: %w", err)
 	}
 	projsToDelete := make(map[string]*datastore.Key) // project -> project keys
 	for _, projKey := range projKeys {
@@ -246,7 +246,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 			var builders []*model.Builder
 			bktKey := model.BucketKey(ctx, project, cfgBktName)
 			if err := datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey), &builders); err != nil {
-				return errors.Annotate(err, "failed to fetch builders for %s.%s", project, cfgBktName).Err()
+				return errors.Fmt("failed to fetch builders for %s.%s: %w", project, cfgBktName, err)
 			}
 
 			// Builders that in the current Datastore.
@@ -268,7 +268,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 				cfgBldrName := protoutil.ToBuilderIDString(project, cfgBktName, cfgBuilder.Name)
 				cfgBuilderHash, bldrSize, err := computeBuilderHash(cfgBuilder)
 				if err != nil {
-					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
+					return errors.Fmt("while computing hash for builder:%s: %w", cfgBldrName, err)
 				}
 
 				if bldr, ok := bldrMap[cfgBldrName]; ok {
@@ -286,7 +286,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 				}
 
 				if bldrSize > maxBatchSize {
-					return errors.Reason("builder %s size exceeds %d bytes", cfgBldrName, maxBatchSize).Err()
+					return errors.Fmt("builder %s size exceeds %d bytes", cfgBldrName, maxBatchSize)
 				}
 				bldrToPut := &model.Builder{
 					ID:         cfgBuilder.Name,
@@ -339,7 +339,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 				err = nonTransacUpdate(ctx, bucketToUpdate, buildersToPut, bldrsToDel)
 			}
 			if err != nil {
-				return errors.Annotate(err, "for bucket %s.%s", project, cfgBktName).Err()
+				return errors.Fmt("for bucket %s.%s: %w", project, cfgBktName, err)
 			}
 
 			// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
@@ -370,7 +370,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 		}
 		if len(shadowBucketsToUpdate) > 0 {
 			if err := datastore.Put(ctx, shadowBucketsToUpdate); err != nil {
-				return errors.Annotate(err, "for shadow buckets in project %s", project).Err()
+				return errors.Fmt("for shadow buckets in project %s: %w", project, err)
 			}
 		}
 	}
@@ -454,7 +454,7 @@ func isCommonConfigChanged(ctx context.Context, newCfg *pb.BuildbucketCfg_Common
 			return false, nil
 		}
 	case err != nil:
-		return false, errors.Annotate(err, "error fetching project entity - %s", project).Err()
+		return false, errors.Fmt("error fetching project entity - %s: %w", project, err)
 	}
 
 	storedTopics := storedPrj.CommonConfig.GetBuildsNotificationTopics()
@@ -478,13 +478,13 @@ func isCommonConfigChanged(ctx context.Context, newCfg *pb.BuildbucketCfg_Common
 func transacUpdate(ctx context.Context, bucketToUpdate *model.Bucket, buildersToPut, bldrsToDel []*model.Builder) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.Put(ctx, bucketToUpdate); err != nil {
-			return errors.Annotate(err, "failed to put bucket").Err()
+			return errors.Fmt("failed to put bucket: %w", err)
 		}
 		if err := datastore.Put(ctx, buildersToPut); err != nil {
-			return errors.Annotate(err, "failed to put %d builders", len(buildersToPut)).Err()
+			return errors.Fmt("failed to put %d builders: %w", len(buildersToPut), err)
 		}
 		if err := datastore.Delete(ctx, bldrsToDel); err != nil {
-			return errors.Annotate(err, "failed to delete %d builders", len(bldrsToDel)).Err()
+			return errors.Fmt("failed to delete %d builders: %w", len(bldrsToDel), err)
 		}
 		return nil
 	}, nil)
@@ -501,14 +501,14 @@ func nonTransacUpdate(ctx context.Context, bucketToUpdate *model.Bucket, builder
 			endIdx = len(bldrsToDel)
 		}
 		if err := datastore.Delete(ctx, bldrsToDel[startIdx:endIdx]); err != nil {
-			return errors.Annotate(err, "failed to delete builders[%d:%d]", startIdx, endIdx).Err()
+			return errors.Fmt("failed to delete builders[%d:%d]: %w", startIdx, endIdx, err)
 		}
 	}
 
 	// put builders in buildersToPut
 	for _, bldrs := range buildersToPut {
 		if err := datastore.Put(ctx, bldrs); err != nil {
-			return errors.Annotate(err, "failed to put builders starting from %s", bldrs[0].ID).Err()
+			return errors.Fmt("failed to put builders starting from %s: %w", bldrs[0].ID, err)
 		}
 	}
 
@@ -569,7 +569,7 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	if err != nil {
 		// This error is unrelated to the data being validated. So directly return
 		// to instruct config service to retry.
-		return errors.Annotate(err, "error fetching service config").Err()
+		return errors.Fmt("error fetching service config: %w", err)
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
@@ -627,15 +627,15 @@ func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.Buildbucket
 			work <- func() error {
 				client, err := clients.NewPubsubClient(ctx.Context, cloudProj, project)
 				if err != nil {
-					errs[i] = errors.Annotate(err, "failed to create a pubsub client for %q", cloudProj).Err()
+					errs[i] = errors.Fmt("failed to create a pubsub client for %q: %w", cloudProj, err)
 					return nil
 				}
 				cTopic := client.Topic(topicID)
 				switch perms, err := cTopic.IAM().TestPermissions(ctx.Context, []string{"pubsub.topics.publish"}); {
 				case err != nil:
-					errs[i] = errors.Annotate(err, "failed to check luci project account's permission for %s", topic.Name).Err()
+					errs[i] = errors.Fmt("failed to check luci project account's permission for %s: %w", topic.Name, err)
 				case len(perms) < 1:
-					errs[i] = errors.Reason("luci project account (%s-scoped@luci-project-accounts.iam.gserviceaccount.com) doesn't have the publish permission for %s", project, topic.Name).Err()
+					errs[i] = errors.Fmt("luci project account (%s-scoped@luci-project-accounts.iam.gserviceaccount.com) doesn't have the publish permission for %s", project, topic.Name)
 				}
 				return nil
 			}
@@ -676,9 +676,9 @@ func validateBucketName(bucket, project string) error {
 	case bucket == "":
 		return errors.New("bucket name is not specified")
 	case strings.HasPrefix(bucket, "luci.") && !strings.HasPrefix(bucket, fmt.Sprintf("luci.%s.", project)):
-		return errors.Reason("must start with 'luci.%s.' because it starts with 'luci.' and is defined in the %q project", project, project).Err()
+		return errors.Fmt("must start with 'luci.%s.' because it starts with 'luci.' and is defined in the %q project", project, project)
 	case !bucketRegex.MatchString(bucket):
-		return errors.Reason("%q does not match %q", bucket, bucketRegex).Err()
+		return errors.Fmt("%q does not match %q", bucket, bucketRegex)
 	}
 	return nil
 }
@@ -691,7 +691,7 @@ func ValidateTaskBackendTarget(globalCfg *pb.SettingsCfg, target string) error {
 			return nil
 		}
 	}
-	return errors.Reason("provided backend target was not in global config").Err()
+	return errors.New("provided backend target was not in global config")
 }
 
 // validateTaskBackendConfigJson makes an api call to the task backend server's
@@ -1159,7 +1159,7 @@ func validateCacheEntry(ctx *validation.Context, entry *pb.BuilderConfig_CacheEn
 func ValidateExperimentName(expName string, wellKnownExperiments stringset.Set) error {
 	switch {
 	case !protoutil.ExperimentNameRE.MatchString(expName):
-		return errors.Reason("does not match %q", protoutil.ExperimentNameRE).Err()
+		return errors.Fmt("does not match %q", protoutil.ExperimentNameRE)
 	case strings.HasPrefix(expName, "luci.") && !wellKnownExperiments.Has(expName):
 		return errors.New(`unknown experiment has reserved prefix "luci."`)
 	}
@@ -1184,7 +1184,7 @@ func isLiteBackend(target string, globalCfg *pb.SettingsCfg) bool {
 func mapBuilderMetricsToBuilders(ctx context.Context) (map[string]stringset.Set, error) {
 	globalCfg, err := GetSettingsCfg(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching service config").Err()
+		return nil, errors.Fmt("error fetching service config: %w", err)
 	}
 	res := make(map[string]stringset.Set)
 	for _, gm := range globalCfg.GetCustomMetrics() {
@@ -1202,7 +1202,7 @@ func prepareBuilderMetricsToPut(ctx context.Context, bldrMetrics map[string]stri
 	ent := &model.CustomBuilderMetrics{Key: model.CustomBuilderMetricsKey(ctx)}
 	err := datastore.Get(ctx, ent)
 	if err != nil && err != datastore.ErrNoSuchEntity {
-		return nil, errors.Annotate(err, "fetching CustomBuilderMetrics").Err()
+		return nil, errors.Fmt("fetching CustomBuilderMetrics: %w", err)
 	}
 	metricNames := make([]string, 0, len(bldrMetrics))
 	for m := range bldrMetrics {

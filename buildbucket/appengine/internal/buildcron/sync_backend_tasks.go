@@ -39,7 +39,7 @@ func getProjectBackendPairs(ctx context.Context) ([]*projectBackendPair, error) 
 		Project("project", "backend_target").Distinct(true)
 	var blds []*model.Build
 	if err := datastore.GetAll(ctx, q, &blds); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch all project keys").Err()
+		return nil, errors.Fmt("failed to fetch all project keys: %w", err)
 	}
 
 	var pairs []*projectBackendPair
@@ -60,7 +60,7 @@ func TriggerSyncBackendTasks(ctx context.Context) error {
 	var merr errors.MultiError
 	for _, p := range pairs {
 		if err := tasks.SyncWithBackend(ctx, p.backend, p.project); err != nil {
-			merr = append(merr, errors.Annotate(err, "failed to enqueue task to sync builds of project %s with backend %s", p.project, p.backend).Err())
+			merr = append(merr, errors.Fmt("failed to enqueue task to sync builds of project %s with backend %s: %w", p.project, p.backend, err))
 		}
 	}
 	return merr.AsError()

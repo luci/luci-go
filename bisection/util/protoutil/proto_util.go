@@ -77,7 +77,7 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		// Test failure bundle can be large, only fetch it when it's needed.
 		bundle, err = datastoreutil.GetTestFailureBundle(ctx, tfa)
 		if err != nil {
-			return nil, errors.Annotate(err, "get test failure bundle").Err()
+			return nil, errors.Fmt("get test failure bundle: %w", err)
 		}
 		tfMask := tfaMask.MustSubmask("test_failures.*")
 		result.TestFailures = TestFailureBundleToPb(ctx, bundle, tfMask)
@@ -89,7 +89,7 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 	} else {
 		primary, err = datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 		if err != nil {
-			return nil, errors.Annotate(err, "get primary test failure").Err()
+			return nil, errors.Fmt("get primary test failure: %w", err)
 		}
 	}
 
@@ -116,7 +116,7 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 
 	nsa, err := datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test nthsection for analysis").Err()
+		return nil, errors.Fmt("get test nthsection for analysis: %w", err)
 	}
 	if nsa != nil {
 		includeNsa := tfaMask.MustIncludes("nth_section_result")
@@ -124,7 +124,7 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 			nsaMask := tfaMask.MustSubmask("nth_section_result")
 			nsaResult, err := NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref, nsaMask)
 			if err != nil {
-				return nil, errors.Annotate(err, "nthsection analysis to pb").Err()
+				return nil, errors.Fmt("nthsection analysis to pb: %w", err)
 			}
 			result.NthSectionResult = nsaResult
 		}
@@ -133,12 +133,12 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 			culpritMask := tfaMask.MustSubmask("culprit")
 			culprit, err := datastoreutil.GetVerifiedCulpritForTestAnalysis(ctx, tfa)
 			if err != nil {
-				return nil, errors.Annotate(err, "get verified culprit").Err()
+				return nil, errors.Fmt("get verified culprit: %w", err)
 			}
 			if culprit != nil {
 				culpritPb, err := CulpritToPb(ctx, culprit, nsa, culpritMask)
 				if err != nil {
-					return nil, errors.Annotate(err, "culprit to pb").Err()
+					return nil, errors.Fmt("culprit to pb: %w", err)
 				}
 				result.Culprit = culpritPb
 			}
@@ -173,11 +173,11 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 		suspectMask := nsaMask.MustSubmask("suspect")
 		culprit, err := datastoreutil.GetSuspect(ctx, nsa.CulpritKey.IntID(), nsa.CulpritKey.Parent())
 		if err != nil {
-			return nil, errors.Annotate(err, "get suspect").Err()
+			return nil, errors.Fmt("get suspect: %w", err)
 		}
 		culpritPb, err := CulpritToPb(ctx, culprit, nsa, suspectMask)
 		if err != nil {
-			return nil, errors.Annotate(err, "culprit to pb").Err()
+			return nil, errors.Fmt("culprit to pb: %w", err)
 		}
 		result.Suspect = culpritPb
 	}
@@ -187,13 +187,13 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	if nsaMask.MustIncludes("reruns") == mask.IncludeEntirely {
 		reruns, err := datastoreutil.GetTestNthSectionReruns(ctx, nsa)
 		if err != nil {
-			return nil, errors.Annotate(err, "get test nthsection reruns").Err()
+			return nil, errors.Fmt("get test nthsection reruns: %w", err)
 		}
 		pbReruns := []*pb.TestSingleRerun{}
 		for _, rerun := range reruns {
 			pbRerun, err := testSingleRerunToPb(ctx, rerun, nsa)
 			if err != nil {
-				return nil, errors.Annotate(err, "test single rerun to pb: %d", rerun.ID).Err()
+				return nil, errors.Fmt("test single rerun to pb: %d: %w", rerun.ID, err)
 			}
 			pbReruns = append(pbReruns, pbRerun)
 		}
@@ -205,7 +205,7 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	if nsaMask.MustIncludes("remaining_nth_section_range") == mask.IncludeEntirely && !nsa.HasEnded() {
 		snapshot, err := bisection.CreateSnapshot(ctx, nsa)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't create snapshot").Err()
+			return nil, errors.Fmt("couldn't create snapshot: %w", err)
 		}
 		ff, lp, err := snapshot.GetCurrentRegressionRange()
 		// GetCurrentRegressionRange return error if the regression is invalid.
@@ -287,7 +287,7 @@ func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 		detailsMask := culpritMask.MustSubmask("verification_details")
 		verificationDetails, err := testVerificationDetails(ctx, culprit, nsa, detailsMask)
 		if err != nil {
-			return nil, errors.Annotate(err, "test verification details").Err()
+			return nil, errors.Fmt("test verification details: %w", err)
 		}
 		result.VerificationDetails = verificationDetails
 	}
@@ -352,19 +352,19 @@ func testVerificationDetails(ctx context.Context, culprit *model.Suspect, nsa *m
 	if detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely || detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely {
 		suspectRerun, parentRerun, err := datastoreutil.GetVerificationRerunsForTestCulprit(ctx, culprit)
 		if err != nil {
-			return nil, errors.Annotate(err, "get verification reruns for test culprit").Err()
+			return nil, errors.Fmt("get verification reruns for test culprit: %w", err)
 		}
 
 		if detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely && suspectRerun != nil {
 			verificationDetails.SuspectRerun, err = testSingleRerunToPb(ctx, suspectRerun, nsa)
 			if err != nil {
-				return nil, errors.Annotate(err, "suspect rerun to pb").Err()
+				return nil, errors.Fmt("suspect rerun to pb: %w", err)
 			}
 		}
 		if detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely && parentRerun != nil {
 			verificationDetails.ParentRerun, err = testSingleRerunToPb(ctx, parentRerun, nsa)
 			if err != nil {
-				return nil, errors.Annotate(err, "parent rerun to pb").Err()
+				return nil, errors.Fmt("parent rerun to pb: %w", err)
 			}
 		}
 	}
@@ -426,7 +426,7 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 	// Update rerun results.
 	pbRerunResults, err := rerunResultsToPb(ctx, rerun.TestResults, rerun.Status)
 	if err != nil {
-		return nil, errors.Annotate(err, "rerun results to pb").Err()
+		return nil, errors.Fmt("rerun results to pb: %w", err)
 	}
 	result.RerunResult = pbRerunResults
 	return result, nil
@@ -442,7 +442,7 @@ func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults, s
 	for _, singleResult := range testResults.Results {
 		pbSingleResult, err := rerunTestSingleResultToPb(ctx, singleResult)
 		if err != nil {
-			return nil, errors.Annotate(err, "rerun test single result to pb").Err()
+			return nil, errors.Fmt("rerun test single result to pb: %w", err)
 		}
 		pb.Results = append(pb.Results, pbSingleResult)
 	}
@@ -456,7 +456,7 @@ func rerunTestSingleResultToPb(ctx context.Context, singleResult model.RerunSing
 	}
 	tf, err := datastoreutil.GetTestFailure(ctx, singleResult.TestFailureKey.IntID())
 	if err != nil {
-		return nil, errors.Annotate(err, "get test failure").Err()
+		return nil, errors.Fmt("get test failure: %w", err)
 	}
 	pb.TestId = tf.TestID
 	pb.VariantHash = tf.VariantHash

@@ -159,7 +159,7 @@ func GetCompileFailureForAnalysis(c context.Context, cfa *model.CompileFailureAn
 	}
 	err := datastore.Get(c, compileFailure)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting compile failure for analysis %d", cfa.Id).Err()
+		return nil, errors.Fmt("getting compile failure for analysis %d: %w", cfa.Id, err)
 	}
 	return compileFailure, nil
 }
@@ -168,12 +168,12 @@ func GetCompileFailureForAnalysis(c context.Context, cfa *model.CompileFailureAn
 func GetFailedBuildForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) (*model.LuciFailedBuild, error) {
 	cf, err := GetCompileFailureForAnalysis(c, cfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting compile failure for analysis %d", cfa.Id).Err()
+		return nil, errors.Fmt("getting compile failure for analysis %d: %w", cfa.Id, err)
 	}
 	build := &model.LuciFailedBuild{Id: cf.Build.IntID()}
 	err = datastore.Get(c, build)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting failed build for analysis %d", cfa.Id).Err()
+		return nil, errors.Fmt("getting failed build for analysis %d: %w", cfa.Id, err)
 	}
 	return build, nil
 }
@@ -205,7 +205,7 @@ func GetNthSectionAnalysis(c context.Context, analysis *model.CompileFailureAnal
 	err := datastore.GetAll(c, q, &nthSectionAnalyses)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't get nthsection analysis for analysis %d", analysis.Id).Err()
+		return nil, errors.Fmt("couldn't get nthsection analysis for analysis %d: %w", analysis.Id, err)
 	}
 
 	if len(nthSectionAnalyses) == 0 {
@@ -226,7 +226,7 @@ func GetCompileFailureAnalysis(c context.Context, analysisID int64) (*model.Comp
 	}
 	err := datastore.Get(c, analysis)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't get CompileFailureAnalysis %d", analysis.Id).Err()
+		return nil, errors.Fmt("couldn't get CompileFailureAnalysis %d: %w", analysis.Id, err)
 	}
 	return analysis, err
 }
@@ -239,7 +239,7 @@ func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*m
 	q := datastore.NewQuery("Suspect").Eq("review_url", suspect.ReviewUrl)
 	err := datastore.GetAll(c, q, &suspects)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed GetSameSuspects").Err()
+		return nil, errors.Fmt("failed GetSameSuspects: %w", err)
 	}
 
 	// Remove this suspect
@@ -258,7 +258,7 @@ func GetLatestBuildFailureForBuilder(c context.Context, project string, bucket s
 	q := datastore.NewQuery("LuciFailedBuild").Eq("project", project).Eq("bucket", bucket).Eq("builder", builder).Order("-end_time").Limit(1)
 	err := datastore.GetAll(c, q, &builds)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed querying LuciFailedBuild").Err()
+		return nil, errors.Fmt("failed querying LuciFailedBuild: %w", err)
 	}
 
 	if len(builds) == 0 {
@@ -272,7 +272,7 @@ func GetLatestBuildFailureForBuilder(c context.Context, project string, bucket s
 func GetLatestAnalysisForBuilder(c context.Context, project string, bucket string, builder string) (*model.CompileFailureAnalysis, error) {
 	build, err := GetLatestBuildFailureForBuilder(c, project, bucket, builder)
 	if err != nil {
-		return nil, errors.Annotate(err, "cannot GetLatestBuildFailureForBuilder").Err()
+		return nil, errors.Fmt("cannot GetLatestBuildFailureForBuilder: %w", err)
 	}
 	if build == nil {
 		return nil, nil
@@ -287,7 +287,7 @@ func GetRerunsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) 
 	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting reruns for analysis %d", cfa.Id).Err()
+		return nil, errors.Fmt("getting reruns for analysis %d: %w", cfa.Id, err)
 	}
 	return reruns, nil
 }
@@ -297,7 +297,7 @@ func GetRerunsForNthSectionAnalysis(c context.Context, nsa *model.CompileNthSect
 	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting reruns for analysis %d", nsa.ParentAnalysis.IntID()).Err()
+		return nil, errors.Fmt("getting reruns for analysis %d: %w", nsa.ParentAnalysis.IntID(), err)
 	}
 	return reruns, nil
 }
@@ -309,7 +309,7 @@ func GetTestFailureAnalysis(ctx context.Context, analysisID int64) (*model.TestF
 	}
 	err := datastore.Get(ctx, analysis)
 	if err != nil {
-		return nil, errors.Annotate(err, "get TestFailureAnalysis with id %d", analysis.ID).Err()
+		return nil, errors.Fmt("get TestFailureAnalysis with id %d: %w", analysis.ID, err)
 	}
 	return analysis, err
 }
@@ -324,7 +324,7 @@ func GetPrimaryTestFailure(ctx context.Context, analysis *model.TestFailureAnaly
 	}
 	err := datastore.Get(ctx, testFailure)
 	if err != nil {
-		return nil, errors.Annotate(err, "get TestFailure from datastore %d", analysis.TestFailure.IntID()).Err()
+		return nil, errors.Fmt("get TestFailure from datastore %d: %w", analysis.TestFailure.IntID(), err)
 	}
 	return testFailure, nil
 }
@@ -341,7 +341,7 @@ func getTestFailureBundleWithAnalysisKey(ctx context.Context, analysisKey *datas
 	tfs := []*model.TestFailure{}
 	err := datastore.GetAll(ctx, q, &tfs)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test failures for analysis").Err()
+		return nil, errors.Fmt("get test failures for analysis: %w", err)
 	}
 	if len(tfs) == 0 {
 		return nil, errors.New("no test failure for analysis")
@@ -364,7 +364,7 @@ func GetTestSingleRerun(ctx context.Context, rerunID int64) (*model.TestSingleRe
 	}
 	err := datastore.Get(ctx, rerun)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test single rerun with id %d", rerunID).Err()
+		return nil, errors.Fmt("get test single rerun with id %d: %w", rerunID, err)
 	}
 	return rerun, err
 }
@@ -376,7 +376,7 @@ func GetTestFailure(ctx context.Context, failureID int64) (*model.TestFailure, e
 	}
 	err := datastore.Get(ctx, failure)
 	if err != nil {
-		return nil, errors.Annotate(err, "get TestFailure with id %d", failure.ID).Err()
+		return nil, errors.Fmt("get TestFailure with id %d: %w", failure.ID, err)
 	}
 	return failure, err
 }
@@ -388,7 +388,7 @@ func GetTestNthSectionAnalysis(ctx context.Context, analysisID int64) (*model.Te
 	}
 	err := datastore.Get(ctx, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get Nthsection analysis with id %d", nsa.ID).Err()
+		return nil, errors.Fmt("get Nthsection analysis with id %d: %w", nsa.ID, err)
 	}
 	return nsa, err
 }
@@ -403,13 +403,13 @@ func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAna
 	analyses := []*model.TestNthSectionAnalysis{}
 	err = datastore.GetAll(ctx, q, &analyses)
 	if err != nil {
-		return nil, errors.Annotate(err, "get all").Err()
+		return nil, errors.Fmt("get all: %w", err)
 	}
 	if len(analyses) == 0 {
 		return nil, nil
 	}
 	if len(analyses) > 1 {
-		return nil, errors.Reason("found more than 1 nthsection analysis: %d", len(analyses)).Err()
+		return nil, errors.Fmt("found more than 1 nthsection analysis: %d", len(analyses))
 	}
 	return analyses[0], nil
 }
@@ -423,7 +423,7 @@ func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(ctx, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test reruns").Err()
+		return nil, errors.Fmt("get test reruns: %w", err)
 	}
 	return reruns, nil
 }
@@ -433,13 +433,13 @@ func GetVerificationRerunsForTestCulprit(ctx context.Context, culprit *model.Sus
 	if culprit.SuspectRerunBuild != nil {
 		culpritRerun, err = GetTestSingleRerun(ctx, culprit.SuspectRerunBuild.IntID())
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "get suspect rerun").Err()
+			return nil, nil, errors.Fmt("get suspect rerun: %w", err)
 		}
 	}
 	if culprit.ParentRerunBuild != nil {
 		parentRerun, err = GetTestSingleRerun(ctx, culprit.ParentRerunBuild.IntID())
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "get parent rerun").Err()
+			return nil, nil, errors.Fmt("get parent rerun: %w", err)
 		}
 	}
 	return culpritRerun, parentRerun, nil
@@ -452,7 +452,7 @@ func GetTestNthSectionReruns(ctx context.Context, nsa *model.TestNthSectionAnaly
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(ctx, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test reruns").Err()
+		return nil, errors.Fmt("get test reruns: %w", err)
 	}
 	return reruns, nil
 }
@@ -460,7 +460,7 @@ func GetTestNthSectionReruns(ctx context.Context, nsa *model.TestNthSectionAnaly
 func GetProjectForCompileFailureAnalysisID(ctx context.Context, analysisID int64) (string, error) {
 	cfa, err := GetCompileFailureAnalysis(ctx, analysisID)
 	if err != nil {
-		return "", errors.Annotate(err, "get compile failure analysis").Err()
+		return "", errors.Fmt("get compile failure analysis: %w", err)
 	}
 	return GetProjectForCompileFailureAnalysis(ctx, cfa)
 }
@@ -468,11 +468,11 @@ func GetProjectForCompileFailureAnalysisID(ctx context.Context, analysisID int64
 func GetProjectForCompileFailureAnalysis(ctx context.Context, cfa *model.CompileFailureAnalysis) (string, error) {
 	cf, err := GetCompileFailureForAnalysis(ctx, cfa)
 	if err != nil {
-		return "", errors.Annotate(err, "get compile failure for analysis").Err()
+		return "", errors.Fmt("get compile failure for analysis: %w", err)
 	}
 	build, err := GetBuild(ctx, cf.Build.IntID())
 	if err != nil {
-		return "", errors.Annotate(err, "get build").Err()
+		return "", errors.Fmt("get build: %w", err)
 	}
 	return build.Project, nil
 }

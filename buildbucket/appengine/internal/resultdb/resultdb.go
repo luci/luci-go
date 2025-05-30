@@ -94,7 +94,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, opts []Create
 				// Use per-project credential to create invocation.
 				recorderClient, err := newRecorderClient(ctx, host, proj)
 				if err != nil {
-					merr[i] = errors.Annotate(err, "failed to create resultDB recorder client for project: %s", proj).Err()
+					merr[i] = errors.Fmt("failed to create resultDB recorder client for project: %s: %w", proj, err)
 					return nil
 				}
 
@@ -114,12 +114,12 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, opts []Create
 				}
 				header := metadata.MD{}
 				if _, err = recorderClient.CreateInvocation(ctx, reqForBldID, grpc.Header(&header)); err != nil {
-					merr[i] = errors.Annotate(err, "failed to create the invocation for build id: %d", b.Proto.Id).Err()
+					merr[i] = errors.Fmt("failed to create the invocation for build id: %d: %w", b.Proto.Id, err)
 					return nil
 				}
 				token, ok := header["update-token"]
 				if !ok {
-					merr[i] = errors.Reason("CreateInvocation response doesn't have update-token header for build id: %d", b.Proto.Id).Err()
+					merr[i] = errors.Fmt("CreateInvocation response doesn't have update-token header for build id: %d", b.Proto.Id)
 					return nil
 				}
 				b.ResultDBUpdateToken = token[0]
@@ -140,7 +140,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, opts []Create
 						RequestId: fmt.Sprintf("build-%d-%d", b.Proto.Id, b.Proto.Number),
 					})
 					if err != nil {
-						merr[i] = errors.Annotate(err, "failed to create the invocation for build number: %d (build id: %d)", b.Proto.Number, b.Proto.Id).Err()
+						merr[i] = errors.Fmt("failed to create the invocation for build number: %d (build id: %d): %w", b.Proto.Number, b.Proto.Id, err)
 						return nil
 					}
 				}
@@ -165,7 +165,7 @@ func FinalizeInvocation(ctx context.Context, buildID int64) error {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		return tq.Fatal.Apply(errors.Fmt("build %d or buildInfra not found: %w", buildID, err))
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch build %d or buildInfra: %w", buildID, err))
 	}
 	rdb := infra.Proto.Resultdb
 	if rdb.Hostname == "" || rdb.Invocation == "" {
@@ -176,14 +176,14 @@ func FinalizeInvocation(ctx context.Context, buildID int64) error {
 
 	recorderClient, err := newRecorderClient(ctx, rdb.Hostname, b.Project)
 	if err != nil {
-		return errors.Annotate(err, "failed to create a recorder client for build %d", buildID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("failed to create a recorder client for build %d: %w", buildID, err))
 	}
 
 	ctx = metadata.AppendToOutgoingContext(ctx, "update-token", b.ResultDBUpdateToken)
 	if _, err := recorderClient.FinalizeInvocation(ctx, &rdbPb.FinalizeInvocationRequest{Name: rdb.Invocation}); err != nil {
 		code := grpcutil.Code(err)
 		if code == codes.FailedPrecondition || code == codes.PermissionDenied {
-			return errors.Annotate(err, "Fatal rpc error when finalizing %s for build %d", rdb.Invocation, buildID).Tag(tq.Fatal).Err()
+			return tq.Fatal.Apply(errors.Fmt("Fatal rpc error when finalizing %s for build %d: %w", rdb.Invocation, buildID, err))
 		} else {
 			// Retry other errors.
 			return transient.Tag.Apply(err)

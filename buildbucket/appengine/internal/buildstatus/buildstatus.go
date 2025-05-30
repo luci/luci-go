@@ -128,16 +128,16 @@ func (u *Updater) calculateBuildStatus() *StatusWithDetails {
 // * cancel descendent builds when this build is ended.
 func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	if datastore.Raw(ctx) == nil || datastore.CurrentTransaction(ctx) == nil {
-		return nil, errors.Reason("must update build status in a transaction").Err()
+		return nil, errors.New("must update build status in a transaction")
 	}
 
 	if protoutil.IsEnded(u.Build.Proto.Status) {
-		return nil, errors.Reason("cannot update status for an ended build").Err()
+		return nil, errors.New("cannot update status for an ended build")
 	}
 
 	// Check the provided statuses.
 	if u.OutputStatus.isSet() && u.TaskStatus.isSet() {
-		return nil, errors.Reason("impossible: update build output status and task status at the same time").Err()
+		return nil, errors.New("impossible: update build output status and task status at the same time")
 	}
 
 	newBuildStatus := u.BuildStatus
@@ -146,7 +146,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	}
 	if !newBuildStatus.isSet() {
 		// Nothing provided to update.
-		return nil, errors.Reason("cannot set a build status to UNSPECIFIED").Err()
+		return nil, errors.New("cannot set a build status to UNSPECIFIED")
 	}
 
 	if newBuildStatus.Status == u.Build.Proto.Status {
@@ -177,7 +177,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 
 	// post process after build status change.
 	if err := u.PostProcess(ctx, u.Build, u.Infra); err != nil {
-		return nil, errors.Annotate(err, "failed to run post process when updating build %d to %s", u.Build.ID, newBuildStatus.Status).Err()
+		return nil, errors.Fmt("failed to run post process when updating build %d to %s: %w", u.Build.ID, newBuildStatus.Status, err)
 	}
 
 	return bs, nil

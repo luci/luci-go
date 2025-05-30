@@ -139,7 +139,7 @@ func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.
 	}
 
 	if err := GetIgnoreMissing(ctx, builderStats); err != nil {
-		return errors.Annotate(err, "error fetching BuilderStat").Err()
+		return errors.Fmt("error fetching BuilderStat: %w", err)
 	}
 
 	var toPut []*BuilderStat
@@ -162,7 +162,7 @@ func UpdateBuilderStat(ctx context.Context, builds []*Build, scheduledTime time.
 		return nil
 	}
 	if err := datastore.Put(ctx, toPut); err != nil {
-		return errors.Annotate(err, "error putting BuilderStat").Err()
+		return errors.Fmt("error putting BuilderStat: %w", err)
 	}
 	return nil
 }

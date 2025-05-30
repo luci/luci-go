@@ -105,7 +105,7 @@ func main() {
 		var err error
 		srv.Context, err = internalcontext.WithCustomMetrics(srv.Context)
 		if err != nil {
-			return errors.Annotate(err, "failed to create custom metrics").Err()
+			return errors.Fmt("failed to create custom metrics: %w", err)
 		}
 
 		var mon monitor.Monitor
@@ -114,7 +114,7 @@ func main() {
 			var err error
 			mon, err = tsmonsrv.NewProdXMonitor(srv.Context, 500, o.TsMonAccount)
 			if err != nil {
-				return errors.Annotate(err, "initiating tsmon").Err()
+				return errors.Fmt("initiating tsmon: %w", err)
 			}
 		case !o.Prod:
 			mon = monitor.NewDebugMonitor("")
@@ -147,7 +147,7 @@ func main() {
 		// Install a global bigquery client.
 		bqClient, err := clients.NewBqClient(srv.Context, o.CloudProject)
 		if err != nil {
-			return errors.Annotate(err, "failed to initiate the global Bigquery client").Err()
+			return errors.Fmt("failed to initiate the global Bigquery client: %w", err)
 		}
 		srv.Context = clients.WithBqClient(srv.Context, bqClient)
 

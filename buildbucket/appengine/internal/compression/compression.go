@@ -61,10 +61,10 @@ func ZlibCompress(data []byte) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	zw := zlib.NewWriter(buf)
 	if _, err := zw.Write(data); err != nil {
-		return nil, errors.Annotate(err, "failed to compress").Err()
+		return nil, errors.Fmt("failed to compress: %w", err)
 	}
 	if err := zw.Close(); err != nil {
-		return nil, errors.Annotate(err, "error closing zlib writer").Err()
+		return nil, errors.Fmt("error closing zlib writer: %w", err)
 	}
 	return buf.Bytes(), nil
 }

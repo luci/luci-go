@@ -30,7 +30,7 @@ func UpdateLoggingWithAnalysisID(c context.Context, analysisID int64) (context.C
 	c = SetAnalysisID(c, analysisID)
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
 	if err != nil {
-		return c, errors.Annotate(err, "failed GetCompileFailureAnalysis ID: %d", analysisID).Err()
+		return c, errors.Fmt("failed GetCompileFailureAnalysis ID: %d: %w", analysisID, err)
 	}
 	if cfa.CompileFailure != nil && cfa.CompileFailure.Parent() != nil {
 		c = SetAnalyzedBBID(c, cfa.CompileFailure.Parent().IntID())

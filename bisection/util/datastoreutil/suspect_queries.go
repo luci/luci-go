@@ -39,7 +39,7 @@ func CountLatestRevertsCreated(c context.Context, hours int64, analysisType pb.A
 
 	count, err := datastore.Count(c, q)
 	if err != nil {
-		err = errors.Annotate(err, "failed counting latest reverts created").Err()
+		err = errors.Fmt("failed counting latest reverts created: %w", err)
 		return 0, err
 	}
 
@@ -56,7 +56,7 @@ func CountLatestRevertsCommitted(c context.Context, hours int64) (int64, error) 
 
 	count, err := datastore.Count(c, q)
 	if err != nil {
-		err = errors.Annotate(err, "failed counting latest reverts committed").Err()
+		err = errors.Fmt("failed counting latest reverts committed: %w", err)
 		return 0, err
 	}
 
@@ -90,13 +90,13 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 	case pb.AnalysisType_COMPILE_FAILURE_ANALYSIS:
 		buildID, err := GetBuildIDForCompileSuspect(ctx, suspect)
 		if err != nil {
-			return 0, errors.Annotate(err, "get build id for suspect").Err()
+			return 0, errors.Fmt("get build id for suspect: %w", err)
 		}
 		return buildID, nil
 	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
 		if err != nil {
-			return 0, errors.Annotate(err, "fetch test failure analysis for suspect").Err()
+			return 0, errors.Fmt("fetch test failure analysis for suspect: %w", err)
 		}
 		return tfa.FailedBuildID, nil
 	}
@@ -105,7 +105,7 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 
 func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (int64, error) {
 	if suspect.AnalysisType != pb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
-		return 0, errors.Reason("Invalid suspect type %v", suspect.AnalysisType).Err()
+		return 0, errors.Fmt("Invalid suspect type %v", suspect.AnalysisType)
 	}
 	// Get failure analysis that the heuristic/nth section analysis relates to
 	analysisKey := suspect.ParentAnalysis.Parent()
@@ -117,7 +117,7 @@ func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (i
 
 	compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
 	if err != nil {
-		return 0, errors.Annotate(err, "get compile failure for analysis id").Err()
+		return 0, errors.Fmt("get compile failure for analysis id: %w", err)
 	}
 	if compileFailure.Build == nil {
 		return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
@@ -132,24 +132,24 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 	suspects := []*model.Suspect{}
 	ha, err := GetHeuristicAnalysis(c, cfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getHeuristicAnalysis").Err()
+		return nil, errors.Fmt("getHeuristicAnalysis: %w", err)
 	}
 	if ha != nil {
 		haSuspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, ha))
 		if err != nil {
-			return nil, errors.Annotate(err, "fetchSuspects heuristic analysis").Err()
+			return nil, errors.Fmt("fetchSuspects heuristic analysis: %w", err)
 		}
 		suspects = append(suspects, haSuspects...)
 	}
 
 	nsa, err := GetNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getNthSectionAnalysis").Err()
+		return nil, errors.Fmt("getNthSectionAnalysis: %w", err)
 	}
 	if nsa != nil {
 		haSuspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, nsa))
 		if err != nil {
-			return nil, errors.Annotate(err, "fetchSuspects nthsection analysis").Err()
+			return nil, errors.Fmt("fetchSuspects nthsection analysis: %w", err)
 		}
 		suspects = append(suspects, haSuspects...)
 	}
@@ -160,20 +160,20 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 func GetSuspectForTestAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.Suspect, error) {
 	nsa, err := GetTestNthSectionForAnalysis(ctx, tfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test nthsection for analysis").Err()
+		return nil, errors.Fmt("get test nthsection for analysis: %w", err)
 	}
 	if nsa == nil {
 		return nil, nil
 	}
 	suspects, err := fetchSuspectsForParentKey(ctx, datastore.KeyForObj(ctx, nsa))
 	if err != nil {
-		return nil, errors.Annotate(err, "fetch suspects for parent key").Err()
+		return nil, errors.Fmt("fetch suspects for parent key: %w", err)
 	}
 	if len(suspects) == 0 {
 		return nil, nil
 	}
 	if len(suspects) > 1 {
-		return nil, errors.Reason("more than 1 suspect found: %d", len(suspects)).Err()
+		return nil, errors.Fmt("more than 1 suspect found: %d", len(suspects))
 	}
 	return suspects[0], nil
 }
@@ -214,7 +214,7 @@ func getTestNthSectionAnalysisForSuspect(c context.Context, suspect *model.Suspe
 	}
 	nsa := &model.TestNthSectionAnalysis{ID: suspect.ParentAnalysis.IntID()}
 	if err := datastore.Get(c, nsa); err != nil {
-		return nil, errors.Annotate(err, "get test nthsection analysis").Err()
+		return nil, errors.Fmt("get test nthsection analysis: %w", err)
 	}
 	return nsa, nil
 }
@@ -229,7 +229,7 @@ func GetVerifiedCulpritForTestAnalysis(ctx context.Context, tfa *model.TestFailu
 	}
 	suspect, err := GetSuspect(ctx, culpritKey.IntID(), culpritKey.Parent())
 	if err != nil {
-		return nil, errors.Annotate(err, "get suspect").Err()
+		return nil, errors.Fmt("get suspect: %w", err)
 	}
 	return suspect, nil
 }
@@ -241,7 +241,7 @@ func GetProjectForSuspect(ctx context.Context, suspect *model.Suspect) (string, 
 	case pb.AnalysisType_TEST_FAILURE_ANALYSIS:
 		tfa, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
 		if err != nil {
-			return "", errors.Annotate(err, "get test failure analysis for suspect").Err()
+			return "", errors.Fmt("get test failure analysis for suspect: %w", err)
 		}
 		return tfa.Project, nil
 	}

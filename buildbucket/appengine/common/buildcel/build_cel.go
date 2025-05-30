@@ -37,7 +37,7 @@ func init() {
 	var err error
 	env, err = newBuildCELEnv()
 	if err != nil {
-		panic(errors.Annotate(err, "create CEL environment").Err())
+		panic(errors.Fmt("create CEL environment: %w", err))
 	}
 }
 
@@ -112,7 +112,7 @@ func (bce *buildCELEnv) compile(expr string, celType *cel.Type) (*cel.Ast, error
 	}
 
 	if !ast.OutputType().IsExactType(celType) {
-		return ast, errors.Reason("expect %s, got %s", celType, ast.OutputType()).Err()
+		return ast, errors.Fmt("expect %s, got %s", celType, ast.OutputType())
 	}
 	return ast, nil
 }
@@ -132,13 +132,13 @@ func newBaseBuildCEL(expr string, celType *cel.Type) (*base, error) {
 	// Compile
 	ast, err := env.compile(expr, celType)
 	if err != nil {
-		return nil, errors.Annotate(err, "error compiling expression %q", expr).Err()
+		return nil, errors.Fmt("error compiling expression %q: %w", expr, err)
 	}
 
 	// Program
 	bc.prg, err = env.program(ast)
 	if err != nil {
-		return nil, errors.Annotate(err, "program error").Err()
+		return nil, errors.Fmt("program error: %w", err)
 	}
 	return bc, nil
 }
@@ -171,7 +171,7 @@ type Bool struct {
 // generate one expression string.
 func (bbc *Bool) generateExpression(predicates []string) (string, error) {
 	if len(predicates) == 0 {
-		return "", errors.Reason("predicates are required").Err()
+		return "", errors.New("predicates are required")
 	}
 
 	// Validate
@@ -197,7 +197,7 @@ func NewBool(predicates []string) (*Bool, error) {
 	bbc := &Bool{}
 	expr, err := bbc.generateExpression(predicates)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to generate CEL expression").Err()
+		return nil, errors.Fmt("failed to generate CEL expression: %w", err)
 	}
 	bbc.base, err = newBaseBuildCEL(expr, cel.BoolType)
 	if err != nil {
@@ -248,7 +248,7 @@ type StringMap struct {
 // CEL expression.
 func (smbc *StringMap) generateExpression(strMap map[string]string) (string, error) {
 	if len(strMap) == 0 {
-		return "", errors.Reason("string map is required").Err()
+		return "", errors.New("string map is required")
 	}
 	// Validate
 	merr := make(errors.MultiError, len(strMap))
@@ -283,7 +283,7 @@ func NewStringMap(strMap map[string]string) (*StringMap, error) {
 	smbc := &StringMap{}
 	expr, err := smbc.generateExpression(strMap)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to generate CEL expression").Err()
+		return nil, errors.Fmt("failed to generate CEL expression: %w", err)
 	}
 	smbc.base, err = newBaseBuildCEL(expr, cel.MapType(cel.StringType, cel.StringType))
 	if err != nil {

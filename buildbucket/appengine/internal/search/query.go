@@ -274,7 +274,7 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	default:
 		switch buckets, err = perm.BucketsByPerm(ctx, bbperms.BuildersList, q.Builder.GetProject()); {
 		case err != nil:
-			return nil, errors.Annotate(err, "error fetching accessible buckets").Err()
+			return nil, errors.Fmt("error fetching accessible buckets: %w", err)
 		case len(buckets) == 0:
 			return &pb.SearchBuildsResponse{}, nil
 		}
@@ -389,7 +389,7 @@ func (q *Query) fetchOnTagIndex(ctx context.Context) (*pb.SearchBuildsResponse, 
 		// The non-existent builds will be filtered out in the filtering builds for-loop as they have no tags.
 		if err := model.GetIgnoreMissing(ctx, builds); err != nil {
 			logging.Errorf(ctx, "error fetching builds on fetchOnTagIndex code path : %s", err)
-			return nil, errors.Annotate(err, "error fetching builds").Err()
+			return nil, errors.Fmt("error fetching builds: %w", err)
 		}
 
 		// Filter builds

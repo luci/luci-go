@@ -160,7 +160,7 @@ func (bo *BuildOutputProperties) chunkProp(c context.Context) ([]*PropertyChunk,
 	}
 	propBytes, err := proto.Marshal(bo.Proto)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal build output properties").Err()
+		return nil, errors.Fmt("failed to marshal build output properties: %w", err)
 	}
 	if len(propBytes) <= maxPropertySize {
 		return nil, nil
@@ -242,7 +242,7 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 		}
 
 		if err := datastore.Get(c, chunks[preFetchedChunkCnt:]); err != nil {
-			return errors.Annotate(err, "failed to fetch the rest chunks for BuildOutputProperties").Err()
+			return errors.Fmt("failed to fetch the rest chunks for BuildOutputProperties: %w", err)
 		}
 	}
 	chunks = chunks[:bo.ChunkCount]
@@ -255,11 +255,11 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	var propBytes []byte
 	var err error
 	if propBytes, err = compression.ZstdDecompress(compressedBytes, nil); err != nil {
-		return errors.Annotate(err, "failed to decompress output properties bytes").Err()
+		return errors.Fmt("failed to decompress output properties bytes: %w", err)
 	}
 	bo.Proto = &structpb.Struct{}
 	if err := proto.Unmarshal(propBytes, bo.Proto); err != nil {
-		return errors.Annotate(err, "failed to unmarshal outputProperties' chunks").Err()
+		return errors.Fmt("failed to unmarshal outputProperties' chunks: %w", err)
 	}
 	bo.ChunkCount = 0
 	return nil
@@ -369,7 +369,7 @@ func (s *BuildSteps) FromProto(stp []*pb.Step) error {
 		Steps: stp,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
+		return errors.Fmt("failed to marshal: %w", err)
 	}
 	if len(b) <= BuildStepsMaxBytes {
 		s.Bytes = b
@@ -379,10 +379,10 @@ func (s *BuildSteps) FromProto(stp []*pb.Step) error {
 	buf := &bytes.Buffer{}
 	w := zlib.NewWriter(buf)
 	if _, err := w.Write(b); err != nil {
-		return errors.Annotate(err, "error zipping").Err()
+		return errors.Fmt("error zipping: %w", err)
 	}
 	if err := w.Close(); err != nil {
-		return errors.Annotate(err, "error closing writer").Err()
+		return errors.Fmt("error closing writer: %w", err)
 	}
 	s.Bytes = buf.Bytes()
 	s.IsZipped = true
@@ -395,19 +395,19 @@ func (s *BuildSteps) ToProto(ctx context.Context) ([]*pb.Step, error) {
 	if s.IsZipped {
 		r, err := zlib.NewReader(bytes.NewReader(s.Bytes))
 		if err != nil {
-			return nil, errors.Annotate(err, "error creating reader for %q", datastore.KeyForObj(ctx, s)).Err()
+			return nil, errors.Fmt("error creating reader for %q: %w", datastore.KeyForObj(ctx, s), err)
 		}
 		b, err = io.ReadAll(r)
 		if err != nil {
-			return nil, errors.Annotate(err, "error reading %q", datastore.KeyForObj(ctx, s)).Err()
+			return nil, errors.Fmt("error reading %q: %w", datastore.KeyForObj(ctx, s), err)
 		}
 		if err := r.Close(); err != nil {
-			return nil, errors.Annotate(err, "error closing reader for %q", datastore.KeyForObj(ctx, s)).Err()
+			return nil, errors.Fmt("error closing reader for %q: %w", datastore.KeyForObj(ctx, s), err)
 		}
 	}
 	p := &pb.Build{}
 	if err := proto.Unmarshal(b, p); err != nil {
-		return nil, errors.Annotate(err, "error unmarshalling %q", datastore.KeyForObj(ctx, s)).Err()
+		return nil, errors.Fmt("error unmarshalling %q: %w", datastore.KeyForObj(ctx, s), err)
 	}
 	return p.Steps, nil
 }

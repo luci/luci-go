@@ -482,7 +482,7 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 
 	for i, p := range builds {
 		if p.GetId() <= 0 {
-			return errors.Reason("invalid build for %q", p).Err()
+			return errors.Fmt("invalid build for %q", p)
 		}
 		key := datastore.KeyForObj(ctx, &Build{ID: p.Id})
 		inf = append(inf, &BuildInfra{Build: key})
@@ -500,14 +500,14 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 	}
 
 	if err := GetIgnoreMissing(ctx, dets); err != nil {
-		return errors.Annotate(err, "error fetching build details").Err()
+		return errors.Fmt("error fetching build details: %w", err)
 	}
 
 	// For `output.properties`, should use *BuildOutputProperties.Get, instead of
 	// using datastore.Get directly.
 	if included["output.properties"] {
 		if err := errors.Filter(GetMultiOutputProperties(ctx, out...), datastore.ErrNoSuchEntity); err != nil {
-			return errors.Annotate(err, "error fetching build(s) output properties").Err()
+			return errors.Fmt("error fetching build(s) output properties: %w", err)
 		}
 	}
 
@@ -524,18 +524,18 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		p.Output.Properties = out[i].Proto
 		p.Steps, err = stp[i].ToProto(ctx)
 		if err != nil {
-			return errors.Annotate(err, "error fetching steps for build %q", p.Id).Err()
+			return errors.Fmt("error fetching steps for build %q: %w", p.Id, err)
 		}
 		if m.Includes("summary_markdown") {
 			p.SummaryMarkdown = protoutil.MergeSummary(p)
 		}
 		if redact != nil {
 			if err = redact(p); err != nil {
-				return errors.Annotate(err, "error redacting build %q", p.Id).Err()
+				return errors.Fmt("error redacting build %q: %w", p.Id, err)
 			}
 		}
 		if err = m.Trim(p); err != nil {
-			return errors.Annotate(err, "error trimming fields for build %q", p.Id).Err()
+			return errors.Fmt("error trimming fields for build %q: %w", p.Id, err)
 		}
 	}
 	return nil
