@@ -66,7 +66,7 @@ func (o *options) unmarshalScalar(dec *msgpack.Decoder, fd protoreflect.FieldDes
 	//   - []byte is converted to string.
 	val, err := dec.DecodeInterfaceLoose()
 	if err != nil {
-		err = errors.Annotate(err, "decoding scalar").Err()
+		err = errors.Fmt("decoding scalar: %w", err)
 		return
 	}
 
@@ -192,12 +192,12 @@ func (o *options) unmarshalScalar(dec *msgpack.Decoder, fd protoreflect.FieldDes
 			if internIdx < len(o.internUnmarshalTable) {
 				return protoreflect.ValueOfString(o.internUnmarshalTable[internIdx]), nil
 			}
-			err = errors.Reason("interned string has index out of bounds: %d", internIdx).Err()
+			err = errors.Fmt("interned string has index out of bounds: %d", internIdx)
 			return
 		}
 	}
 
-	err = errors.Reason("bad type: expected %s, got %T", fd.Kind(), val).Err()
+	err = errors.Fmt("bad type: expected %s, got %T", fd.Kind(), val)
 	return
 }
 
@@ -249,7 +249,7 @@ func getNextMsgTag(dec *msgpack.Decoder, nextKey func() int32) (tag int32, err e
 func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message) error {
 	msgItemLen, nextKey, err := getMapLen(dec)
 	if err != nil {
-		return errors.Annotate(err, "expected message length").Err()
+		return errors.Fmt("expected message length: %w", err)
 	}
 
 	d := to.Descriptor()
@@ -260,7 +260,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 	for i := 0; i < msgItemLen; i++ {
 		tag, err := getNextMsgTag(dec, nextKey)
 		if err != nil {
-			return errors.Annotate(err, "reading message tag").Err()
+			return errors.Fmt("reading message tag: %w", err)
 		}
 
 		fd := fieldsD.ByNumber(protowire.Number(tag))
@@ -269,13 +269,13 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 			case ignoreUnknownFields:
 				//pass
 			case disallowUnknownFields:
-				return errors.Reason("unknown field tag %d on decoded field %d", tag, i).Err()
+				return errors.Fmt("unknown field tag %d on decoded field %d", tag, i)
 			case preserveUnknownFields:
 				if unknownFields == nil {
 					unknownFields = map[int32]msgpack.RawMessage{}
 				}
 				if unknownFields[tag], err = dec.DecodeRaw(); err != nil {
-					return errors.Reason("unknown field tag %d on decoded field %d: cannot decode msgpack", tag, i).Err()
+					return errors.Fmt("unknown field tag %d on decoded field %d: cannot decode msgpack", tag, i)
 				}
 			default:
 				panic("unknown value of o.unknownFieldBehavior")
@@ -290,7 +290,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 			// be encoded as a map.
 			ism, err := isMap(dec)
 			if err != nil {
-				return errors.Annotate(err, "%s: expected list or map", name).Err()
+				return errors.Fmt("%s: expected list or map: %w", name, err)
 			}
 
 			lst := to.Mutable(fd).List()
@@ -301,7 +301,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 			var postProcess func()
 			if ism {
 				if mapLen, err = dec.DecodeMapLen(); err != nil {
-					return errors.Annotate(err, "%s: expected sparse list", name).Err()
+					return errors.Fmt("%s: expected sparse list: %w", name, err)
 				}
 
 				maxIdx := 0
@@ -329,7 +329,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 				}
 			} else {
 				if mapLen, err = dec.DecodeArrayLen(); err != nil {
-					return errors.Annotate(err, "%s: expected list", name).Err()
+					return errors.Fmt("%s: expected list: %w", name, err)
 				}
 
 				addValue = func(_ int, v protoreflect.Value) { lst.Append(v) }
@@ -339,18 +339,18 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 			for i := 0; i < mapLen; i++ {
 				idx, err := decodeIdx()
 				if err != nil {
-					return errors.Annotate(err, "%s[%d]: expected int key", name, i).Err()
+					return errors.Fmt("%s[%d]: expected int key: %w", name, i, err)
 				}
 
 				var el protoreflect.Value
 				if fd.Kind() == protoreflect.MessageKind {
 					el = lst.NewElement()
 					if err = o.unmarshalMessage(dec, el.Message()); err != nil {
-						return errors.Annotate(err, "%s[%d]", name, i).Err()
+						return errors.Fmt("%s[%d]: %w", name, i, err)
 					}
 				} else {
 					if el, err = o.unmarshalScalar(dec, fd); err != nil {
-						return errors.Annotate(err, "%s[%d]", name, i).Err()
+						return errors.Fmt("%s[%d]: %w", name, i, err)
 					}
 				}
 				addValue(idx, el)
@@ -364,7 +364,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 		if fd.IsMap() {
 			mapLen, nextKey, err := getMapLen(dec)
 			if err != nil {
-				return errors.Annotate(err, "%s: expected map", name).Err()
+				return errors.Fmt("%s: expected map: %w", name, err)
 			}
 
 			valFD := fd.MapValue()
@@ -376,22 +376,22 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 				var key protoreflect.Value
 				if nextKey == nil {
 					if key, err = o.unmarshalScalar(dec, keyFD); err != nil {
-						return errors.Annotate(err, "%s[idx:%d]: bad map key", name, i).Err()
+						return errors.Fmt("%s[idx:%d]: bad map key: %w", name, i, err)
 					}
 				} else {
 					if key, err = numericMapKey(nextKey(), keyFD.Kind()); err != nil {
-						return errors.Annotate(err, "%s[idx:%d]: bad map key", name, i).Err()
+						return errors.Fmt("%s[idx:%d]: bad map key: %w", name, i, err)
 					}
 				}
 
 				if valFD.Kind() == protoreflect.MessageKind {
 					if err := o.unmarshalMessage(dec, mapp.Mutable(key.MapKey()).Message()); err != nil {
-						return errors.Annotate(err, "%s[%s]", name, key).Err()
+						return errors.Fmt("%s[%s]: %w", name, key, err)
 					}
 				} else {
 					val, err := o.unmarshalScalar(dec, valFD)
 					if err != nil {
-						return errors.Annotate(err, "%s[%s]", name, key).Err()
+						return errors.Fmt("%s[%s]: %w", name, key, err)
 					}
 					mapp.Set(key.MapKey(), val)
 				}
@@ -402,12 +402,12 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 		// singular field
 		if fd.Kind() == protoreflect.MessageKind {
 			if err := o.unmarshalMessage(dec, to.Mutable(fd).Message()); err != nil {
-				return errors.Annotate(err, "%s", name).Err()
+				return errors.Fmt("%s: %w", name, err)
 			}
 		} else {
 			val, err := o.unmarshalScalar(dec, fd)
 			if err != nil {
-				return errors.Annotate(err, "%s", name).Err()
+				return errors.Fmt("%s: %w", name, err)
 			}
 			to.Set(fd, val)
 		}

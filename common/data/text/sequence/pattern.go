@@ -67,19 +67,19 @@ func NewPattern(patternTokens ...string) (Pattern, error) {
 		} else if strings.HasPrefix(p, "/") && strings.HasSuffix(p, "/") {
 			pat, err := regexp.Compile(p[1 : len(p)-1])
 			if err != nil {
-				return nil, errors.Annotate(err, "invalid regexp (i=%d)", i).Err()
+				return nil, errors.Fmt("invalid regexp (i=%d): %w", i, err)
 			}
 			ret[i] = RegexpMatcher{pat}
 		} else if p == "..." {
 			ret[i] = Ellipsis
 		} else if p == "^" {
 			if i != 0 {
-				return nil, errors.Reason("cannot use `^` for Edge except at beginning (i=%d)", i).Err()
+				return nil, errors.Fmt("cannot use `^` for Edge except at beginning (i=%d)", i)
 			}
 			ret[i] = Edge
 		} else if p == "$" {
 			if i != len(patternTokens)-1 {
-				return nil, errors.Reason("cannot use `$` for Edge except at end (i=%d)", i).Err()
+				return nil, errors.Fmt("cannot use `$` for Edge except at end (i=%d)", i)
 			}
 			ret[i] = Edge
 		} else {
@@ -87,7 +87,7 @@ func NewPattern(patternTokens ...string) (Pattern, error) {
 		}
 		if ret[i] == Ellipsis {
 			if prevEllipsis {
-				return nil, errors.Reason("cannot have multiple Ellipsis in a row (i=%d)", i).Err()
+				return nil, errors.Fmt("cannot have multiple Ellipsis in a row (i=%d)", i)
 			}
 			prevEllipsis = true
 		} else {

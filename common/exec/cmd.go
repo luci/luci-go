@@ -219,7 +219,7 @@ func (c *Cmd) applyMock() (restore func(), mock *mockPayload, err error) {
 	if curExeErr != nil {
 		// should be impossible due to check in CommandContext... but double check
 		// here just in case.
-		panic(errors.Annotate(curExeErr, "impossible").Err())
+		panic(errors.Fmt("impossible: %w", curExeErr))
 	}
 	c.Path = curExe
 	if c.Env == nil {
@@ -429,7 +429,7 @@ func commandImpl(ctx context.Context, name string, arg []string, mkFn func(ctx c
 
 	ret.mock.originalName = name
 	if curExeErr != nil {
-		ret.Err = errors.Annotate(curExeErr, "cannot resolve os.Executable for execmock").Err()
+		ret.Err = errors.Fmt("cannot resolve os.Executable for execmock: %w", curExeErr)
 		return ret
 	}
 	// We use curExe as the target executable because exec.CommandContext does

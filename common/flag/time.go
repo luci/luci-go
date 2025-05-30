@@ -45,11 +45,11 @@ func (f *timeFlag) Get() any {
 
 func (f *timeFlag) Set(v string) error {
 	if !strings.HasSuffix(v, "Z") {
-		return errors.Reason("set time flag: timestamp must end with 'Z'").Err()
+		return errors.New("set time flag: timestamp must end with 'Z'")
 	}
 	t, err := time.Parse(time.RFC3339Nano, v)
 	if err != nil {
-		return errors.Annotate(err, "set time flag").Err()
+		return errors.Fmt("set time flag: %w", err)
 	}
 	*f = timeFlag(t)
 	return nil

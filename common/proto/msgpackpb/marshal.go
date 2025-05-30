@@ -98,7 +98,7 @@ func (o *options) marshalValue(enc *msgpack.Encoder, fd protoreflect.FieldDescri
 	case protoreflect.MessageKind:
 		return o.marshalMessage(enc, val.Message())
 	}
-	return errors.Reason("marshalValue: invalid kind %q", kind).Err()
+	return errors.Fmt("marshalValue: invalid kind %q", kind)
 }
 
 func (o *options) appendRawMsgpackMsg(raw []byte, to *[]fieldVal, tf takenFields) error {
@@ -114,16 +114,16 @@ func (o *options) appendRawMsgpackMsg(raw []byte, to *[]fieldVal, tf takenFields
 
 	msgItemLen, nextKey, err := getMapLen(dec)
 	if err != nil {
-		return errors.Annotate(err, "expected message length").Err()
+		return errors.Fmt("expected message length: %w", err)
 	}
 
 	for i := 0; i < msgItemLen; i++ {
 		tag, err := getNextMsgTag(dec, nextKey)
 		if err != nil {
-			return errors.Annotate(err, "reading message %d'th tag", i).Err()
+			return errors.Fmt("reading message %d'th tag: %w", i, err)
 		}
 		if err = tf.add(tag); err != nil {
-			return errors.Annotate(err, "reading message %d'th tag", i).Err()
+			return errors.Fmt("reading message %d'th tag: %w", i, err)
 		}
 
 		var rawVal msgpack.RawMessage
@@ -137,7 +137,7 @@ func (o *options) appendRawMsgpackMsg(raw []byte, to *[]fieldVal, tf takenFields
 			rawVal, err = dec.DecodeRaw()
 		}
 		if err != nil {
-			return errors.Annotate(err, "reading message %d't field", i).Err()
+			return errors.Fmt("reading message %d't field: %w", i, err)
 		}
 
 		*to = append(*to, fieldVal{
@@ -157,7 +157,7 @@ func (t takenFields) add(tag int32) error {
 	}
 
 	if _, ok := t[tag]; ok {
-		return errors.Reason("duplicate tag %d", tag).Err()
+		return errors.Fmt("duplicate tag %d", tag)
 	}
 	t[tag] = struct{}{}
 
@@ -171,7 +171,7 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 		fv := fieldVal{fd: fd, v: v}
 		fv.n = int32(fd.Number())
 		if err := tf.add(fv.n); err != nil {
-			panic(errors.Annotate(err, "impossible").Err())
+			panic(errors.Fmt("impossible: %w", err))
 		}
 		populatedFields = append(populatedFields, fv)
 		return true
@@ -180,20 +180,20 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 	unknownFieldsRaw := msg.GetUnknown()
 	if len(unknownFieldsRaw) > 0 {
 		if o.unknownFieldBehavior == disallowUnknownFields {
-			return errors.Reason("message has unknown fields").Err()
+			return errors.New("message has unknown fields")
 		}
 
 		var uf UnknownFields
 		if err := proto.Unmarshal(unknownFieldsRaw, &uf); err != nil {
-			return errors.Reason("unmarshaling unknown msgpack fields").Err()
+			return errors.New("unmarshaling unknown msgpack fields")
 		}
 		if len(uf.ProtoReflect().GetUnknown()) > 0 {
-			return errors.Reason("unknown non-msgpack fields unsupported").Err()
+			return errors.New("unknown non-msgpack fields unsupported")
 		}
 
 		if o.unknownFieldBehavior == preserveUnknownFields {
 			if err := o.appendRawMsgpackMsg(uf.MsgpackpbData, &populatedFields, tf); err != nil {
-				return errors.Reason("parsing unknown fields").Err()
+				return errors.New("parsing unknown fields")
 			}
 		}
 	}
@@ -242,7 +242,7 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 			}
 			for i := 0; i < lst.Len(); i++ {
 				if err := o.marshalValue(enc, fd, lst.Get(i)); err != nil {
-					return errors.Annotate(err, "%s[%d]", name, i).Err()
+					return errors.Fmt("%s[%d]: %w", name, i, err)
 				}
 			}
 			continue
@@ -291,7 +291,7 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 		}
 
 		if err := o.marshalValue(enc, fd, fv.v); err != nil {
-			return errors.Annotate(err, "%s", name).Err()
+			return errors.Fmt("%s: %w", name, err)
 		}
 	}
 

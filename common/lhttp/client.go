@@ -84,13 +84,13 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			attempts++
 			req, err := rgen()
 			if err != nil {
-				return errors.Annotate(err, "failed to call rgen").Err()
+				return errors.Fmt("failed to call rgen: %w", err)
 			}
 
 			resp, err := c.Do(req)
 			if err != nil {
 				logging.Debugf(ctx, "failed to call c.Do: %v", err)
-				err = errors.Annotate(err, "failed to call c.Do").Err()
+				err = errors.Fmt("failed to call c.Do: %w", err)
 				// Retry every error. This is sad when you specify an invalid hostname but
 				// it's better than failing when DNS resolution is flaky.
 				return errorHandler(nil, transient.Tag.Apply(err))
@@ -100,8 +100,9 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			switch {
 			case status == 408, status == 429, status >= 500:
 				// The HTTP status code means the request should be retried.
-				err = errors.Reason("http request failed: %s (HTTP %d)", http.StatusText(status), status).
-					Tag(transient.Tag).Err()
+				err =
+					transient.Tag.Apply(errors.Fmt("http request failed: %s (HTTP %d)", http.StatusText(status), status))
+
 			case status >= 400:
 				// Any other failure code is a hard failure.
 				err = fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
@@ -110,7 +111,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 				// should be retried even on successful status code.
 				err = handler(resp)
 				if err != nil {
-					return errors.Annotate(err, "failed to handle response").Err()
+					return errors.Fmt("failed to handle response: %w", err)
 				}
 				return err
 			}
@@ -119,7 +120,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			return errorHandler(resp, err)
 		}, nil)
 		if err != nil {
-			err = errors.Annotate(err, "gave up after %d attempts", attempts).Err()
+			err = errors.Fmt("gave up after %d attempts: %w", attempts, err)
 		}
 		return status, err
 	}

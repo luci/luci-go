@@ -63,14 +63,14 @@ func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastor
 	// The rest is validated by datastore.Run.
 	v := reflect.ValueOf(cb)
 	if v.Kind() != reflect.Func {
-		return errors.Reason("callback must be a function").Err()
+		return errors.New("callback must be a function")
 	}
 	t := v.Type()
 	switch {
 	case t.NumIn() != 1:
-		return errors.Reason("callback function must accept one argument").Err()
+		return errors.New("callback function must accept one argument")
 	case t.NumOut() != 1:
-		return errors.Reason("callback function must return one value").Err()
+		return errors.New("callback function must return one value")
 	}
 
 	// Modify the query with the request parameters.
@@ -123,7 +123,7 @@ func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastor
 			var err error
 			cur, err = args[1].Interface().(datastore.CursorCB)()
 			if err != nil {
-				return []reflect.Value{reflect.ValueOf(errors.Annotate(err, "failed to fetch cursor").Err())}
+				return []reflect.Value{reflect.ValueOf(errors.Fmt("failed to fetch cursor: %w", err))}
 			}
 			return returnedNil
 		}
@@ -131,7 +131,7 @@ func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastor
 	}).Interface()
 
 	if err := datastore.Run(ctx, q, curCB); err != nil {
-		return errors.Annotate(err, "failed to fetch entities").Err()
+		return errors.Fmt("failed to fetch entities: %w", err)
 	}
 	return nil
 }

@@ -62,7 +62,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 	if os.Getenv("GO111MODULE") != "off" {
 		var err error
 		if mainMod, err = getModuleInfo("main"); err != nil {
-			return nil, errors.Annotate(err, "could not find the main module").Err()
+			return nil, errors.Fmt("could not find the main module: %w", err)
 		}
 		logging.Debugf(ctx, "The main module is %q at %q", mainMod.Path, mainMod.Dir)
 	} else {
@@ -113,7 +113,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 		case err != nil:
 			return "", err
 		case !s.IsDir():
-			return "", errors.Reason("%q is not a directory", p).Err()
+			return "", errors.Fmt("%q is not a directory", p)
 		}
 		for pre, post := range mapping {
 			if abs == pre {
@@ -128,7 +128,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 
 	inputDir, err = relocatePath(inputDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad input directory").Err()
+		return nil, errors.Fmt("bad input directory: %w", err)
 	}
 
 	// Prep import paths: union of GOPATH (if any), staged modules and
@@ -155,7 +155,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 	for _, p := range protoImportPaths {
 		p, err := relocatePath(p)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad proto import path").Err()
+			return nil, errors.Fmt("bad proto import path: %w", err)
 		}
 		paths = append(paths, p)
 	}
@@ -194,7 +194,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 		return nil, err
 	}
 	if len(protoFiles) == 0 {
-		return nil, errors.Reason("%s: no .proto files found", inputDir).Err()
+		return nil, errors.Fmt("%s: no .proto files found", inputDir)
 	}
 
 	// Discover the proto package path by locating `inputDir` among import paths.
@@ -206,7 +206,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 		}
 	}
 	if protoPkg == "" {
-		return nil, errors.Reason("the input directory %q is outside of any proto path %v", inputDir, paths).Err()
+		return nil, errors.Fmt("the input directory %q is outside of any proto path %v", inputDir, paths)
 	}
 
 	return &StagedInputs{
@@ -227,7 +227,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 func StageGenericInputs(ctx context.Context, inputDir string, protoImportPaths []string) (*StagedInputs, error) {
 	absInputDir, err := filepath.Abs(inputDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "could not make path %q absolute", inputDir).Err()
+		return nil, errors.Fmt("could not make path %q absolute: %w", inputDir, err)
 	}
 
 	absImportPaths := make([]string, 0, len(protoImportPaths)+1)
@@ -236,7 +236,7 @@ func StageGenericInputs(ctx context.Context, inputDir string, protoImportPaths [
 	for _, path := range protoImportPaths {
 		abs, err := filepath.Abs(path)
 		if err != nil {
-			return nil, errors.Annotate(err, "could not make path %q absolute", path).Err()
+			return nil, errors.Fmt("could not make path %q absolute: %w", path, err)
 		}
 		absImportPaths = append(absImportPaths, abs)
 		if strings.HasPrefix(absInputDir, abs+string(filepath.Separator)) && !includesInputDir {
@@ -258,7 +258,7 @@ func StageGenericInputs(ctx context.Context, inputDir string, protoImportPaths [
 		return nil, err
 	}
 	if len(protoFiles) == 0 {
-		return nil, errors.Reason(".proto files not found").Err()
+		return nil, errors.New(".proto files not found")
 	}
 
 	return &StagedInputs{
@@ -307,7 +307,7 @@ func getModuleInfo(mod string) (*moduleInfo, error) {
 	}
 	info := &moduleInfo{}
 	if err := goList(args, info); err != nil {
-		return nil, errors.Annotate(err, "failed to resolve path of module %q", mod).Err()
+		return nil, errors.Fmt("failed to resolve path of module %q: %w", mod, err)
 	}
 	return info, nil
 }
@@ -318,7 +318,7 @@ func goList(args []string, out any) error {
 	buf, err := cmd.Output()
 	if err != nil {
 		if er, ok := err.(*exec.ExitError); ok && len(er.Stderr) > 0 {
-			return errors.Reason("%s", er.Stderr).Err()
+			return errors.Fmt("%s", er.Stderr)
 		}
 		return err
 	}

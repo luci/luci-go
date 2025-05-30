@@ -35,14 +35,14 @@ func parseMask(mask []*StructMask) (root *node, err error) {
 		elements := make([]pathElement, len(m.Path))
 		for idx, p := range m.Path {
 			if elements[idx], err = parseElement(p); err != nil {
-				return nil, errors.Annotate(err, "bad element %q in the mask %s", p, maskToStr(m)).Err()
+				return nil, errors.Fmt("bad element %q in the mask %s: %w", p, maskToStr(m), err)
 			}
 		}
 		if len(elements) == 0 {
-			return nil, errors.Reason("bad empty mask").Err()
+			return nil, errors.New("bad empty mask")
 		}
 		if root, err = updateNode(root, elements); err != nil {
-			return nil, errors.Annotate(err, "unsupported mask %s", maskToStr(m)).Err()
+			return nil, errors.Fmt("unsupported mask %s: %w", maskToStr(m), err)
 		}
 	}
 	return root, nil
@@ -63,17 +63,16 @@ func parseElement(p string) (pathElement, error) {
 	if strings.HasPrefix(p, `"`) || strings.HasPrefix(p, `'`) || strings.HasPrefix(p, "`") {
 		s, err := strconv.Unquote(p)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad quoted string").Err()
+			return nil, errors.Fmt("bad quoted string: %w", err)
 		}
 		return fieldElement{s}, nil
 	}
 
 	// Reserve `/.../` for regexps, if we ever allow them.
 	if len(p) >= 2 && strings.HasPrefix(p, `/`) && strings.HasSuffix(p, `/`) {
-		return nil, errors.Reason(
-			"regexp matches are not supported; "+
-				"if you want to match a literal field /.../, wrap the value in quotes: %s",
-			strconv.Quote(p)).Err()
+		return nil, errors.Fmt("regexp matches are not supported; "+
+			"if you want to match a literal field /.../, wrap the value in quotes: %s",
+			strconv.Quote(p))
 	}
 
 	// If it contains `*`, we require it to be just `*` for now. That way we can
@@ -82,10 +81,9 @@ func parseElement(p string) (pathElement, error) {
 		return starElement{}, nil
 	}
 	if strings.Contains(p, "*") {
-		return nil, errors.Reason(
-			"prefix and suffix matches are not supported; "+
-				"if you want to match a field with literal `*` in it, wrap the value in quotes: %s",
-			strconv.Quote(p)).Err()
+		return nil, errors.Fmt("prefix and suffix matches are not supported; "+
+			"if you want to match a field with literal `*` in it, wrap the value in quotes: %s",
+			strconv.Quote(p))
 	}
 
 	// If it looks like a number (even a float), it is a list index. We require it
@@ -93,7 +91,7 @@ func parseElement(p string) (pathElement, error) {
 	if _, err := strconv.ParseFloat(p, 32); err == nil {
 		val, err := strconv.ParseInt(p, 10, 32)
 		if err != nil || val < 0 {
-			return nil, errors.Reason("an index must be a non-negative integer").Err()
+			return nil, errors.New("an index must be a non-negative integer")
 		}
 		return indexElement{int(val)}, nil
 	}
@@ -134,7 +132,7 @@ func updateNode(n *node, mask []pathElement) (*node, error) {
 		}
 		n.fields[elem.field], err = updateNode(n.fields[elem.field], mask[1:])
 	case indexElement:
-		err = errors.Reason("individual index selectors are not supported").Err()
+		err = errors.New("individual index selectors are not supported")
 	}
 	return n, err
 }

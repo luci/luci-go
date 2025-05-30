@@ -39,11 +39,11 @@ func (f RelativeTime) String() string {
 // Set implements the flag.Value interface.
 func (f RelativeTime) Set(s string) error {
 	if f.T == nil {
-		return errors.Reason("set RelativeTime: nil time pointer").Err()
+		return errors.New("set RelativeTime: nil time pointer")
 	}
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		return errors.Annotate(err, "set RelativeTime").Err()
+		return errors.Fmt("set RelativeTime: %w", err)
 	}
 	if f.now == nil {
 		f.now = time.Now

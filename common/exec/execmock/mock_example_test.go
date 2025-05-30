@@ -68,14 +68,14 @@ var CustomRunner = execmock.Register(func(in *CustomInput) (*CustomOutput, int, 
 		}
 		data, err := os.ReadFile(*input)
 		if err != nil {
-			return nil, 1, errors.Annotate(err, "reading input file").Err()
+			return nil, 1, errors.Fmt("reading input file: %w", err)
 		}
 		ret.InputData = data
 	}
 
 	if in.OutputFile != nil {
 		if err := os.WriteFile(*output, in.OutputFile, 0777); err != nil {
-			return nil, 1, errors.Annotate(err, "writing output file").Err()
+			return nil, 1, errors.Fmt("writing output file: %w", err)
 		}
 	}
 

@@ -46,7 +46,7 @@ func ReadAttrs(r io.Reader) (*Attrs, error) {
 	for scanner.Scan() {
 		k, v, ok := strings.Cut(scanner.Text(), "=")
 		if !ok {
-			return nil, errors.Reason("read git credential attributes: invalid line %q", scanner.Text()).Err()
+			return nil, errors.Fmt("read git credential attributes: invalid line %q", scanner.Text())
 		}
 		switch k {
 		case "host":
@@ -60,7 +60,7 @@ func ReadAttrs(r io.Reader) (*Attrs, error) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, errors.Annotate(err, "read git credential attributes").Err()
+		return nil, errors.Fmt("read git credential attributes: %w", err)
 	}
 	return attrs, nil
 }

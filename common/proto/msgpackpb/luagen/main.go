@@ -510,7 +510,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 
 	of, err := os.Create(outFile)
 	if err != nil {
-		return errors.Annotate(err, "opening output file").Err()
+		return errors.Fmt("opening output file: %w", err)
 	}
 	defer func() {
 		if err := of.Close(); err != nil {

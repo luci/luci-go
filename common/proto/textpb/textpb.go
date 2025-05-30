@@ -89,7 +89,7 @@ func transformTextPBAst(nodes []*ast.Node, desc protoreflect.MessageDescriptor) 
 func transformTextPBNode(node *ast.Node, desc protoreflect.MessageDescriptor, parentName string) error {
 	fDesc := desc.Fields().ByName(protoreflect.Name(node.Name))
 	if fDesc == nil {
-		return errors.Reason("could not find field %q", node.Name).Err()
+		return errors.Fmt("could not find field %q", node.Name)
 	}
 	var format luciproto.TextPBFieldFormat
 	if opts, ok := fDesc.Options().(*descriptorpb.FieldOptions); ok {
@@ -119,11 +119,11 @@ func jsonTransformTextPBNode(node *ast.Node, parentName string) error {
 	}
 	s, _, err := unquote.Unquote(node)
 	if err != nil {
-		return errors.Annotate(err, "internal error: could not parse value for '%s' as string", name(parentName, node)).Err()
+		return errors.Fmt("internal error: could not parse value for '%s' as string: %w", name(parentName, node), err)
 	}
 	buf := &bytes.Buffer{}
 	if err := json.Indent(buf, []byte(s), "", "  "); err != nil {
-		return errors.Annotate(err, "value for '%s' must be valid JSON, got value '%s'", name(parentName, node), s).Err()
+		return errors.Fmt("value for '%s' must be valid JSON, got value '%s': %w", name(parentName, node), s, err)
 	}
 	lines := strings.Split(buf.String(), "\n")
 	values := make([]*ast.Value, 0, len(lines))

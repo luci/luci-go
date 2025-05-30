@@ -73,7 +73,7 @@ func ParseRegLiteral(token string) (Matcher, error) {
 	if strings.HasPrefix(token, "/") && strings.HasSuffix(token, "/") {
 		pat, err := regexp.Compile(token[1 : len(token)-1])
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid regexp").Err()
+			return nil, errors.Fmt("invalid regexp: %w", err)
 		}
 		return RegexpMatcher{pat}, nil
 	}
