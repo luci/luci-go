@@ -81,7 +81,7 @@ func ReadForInvocation(ctx context.Context, invocationID invocations.ID, rootRes
 
 	results, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "read export roots by invocation").Err()
+		return nil, errors.Fmt("read export roots by invocation: %w", err)
 	}
 
 	// Sort to ensure determinism.
@@ -101,7 +101,7 @@ func ReadForInvocations(ctx context.Context, invocationIDs invocations.IDSet, ro
 
 	results, err := readWhere(ctx, whereClause, params)
 	if err != nil {
-		return nil, errors.Annotate(err, "read export roots for invocations").Err()
+		return nil, errors.Fmt("read export roots for invocations: %w", err)
 	}
 
 	// Group results by invocation ID and root invocation ID.
@@ -121,7 +121,7 @@ func ReadForInvocations(ctx context.Context, invocationIDs invocations.IDSet, ro
 func ReadAllForTesting(ctx context.Context) ([]ExportRoot, error) {
 	results, err := readWhere(ctx, "TRUE", nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "read all export roots").Err()
+		return nil, errors.Fmt("read all export roots: %w", err)
 	}
 	// Sort to ensure determinism.
 	sortResults(results)
@@ -166,13 +166,13 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 
 		err := b.FromSpanner(r, &row.Invocation, &row.RootInvocation, &row.IsInheritedSourcesSet, &inheritedSourcesCmp, &notifiedTime)
 		if err != nil {
-			return errors.Annotate(err, "read export root row").Err()
+			return errors.Fmt("read export root row: %w", err)
 		}
 
 		if len(inheritedSourcesCmp) > 0 {
 			row.InheritedSources = &pb.Sources{}
 			if err := proto.Unmarshal(inheritedSourcesCmp, row.InheritedSources); err != nil {
-				return errors.Annotate(err, "unmarshal inherited sources").Err()
+				return errors.Fmt("unmarshal inherited sources: %w", err)
 			}
 		}
 		if notifiedTime.Valid {
@@ -184,7 +184,7 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "read export roots").Err()
+		return nil, errors.Fmt("read export roots: %w", err)
 	}
 	return rows, nil
 }
@@ -195,10 +195,10 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 func Create(root ExportRoot) *spanner.Mutation {
 	// Add an extra layer of protection against invalid data getting into the database.
 	if err := pbutil.ValidateInvocationID(string(root.Invocation)); err != nil {
-		panic(errors.Annotate(err, "invalid invocation ID").Err())
+		panic(errors.Fmt("invalid invocation ID: %w", err))
 	}
 	if err := pbutil.ValidateInvocationID(string(root.RootInvocation)); err != nil {
-		panic(errors.Annotate(err, "invalid root invocation ID").Err())
+		panic(errors.Fmt("invalid root invocation ID: %w", err))
 	}
 	if root.InheritedSources != nil && !root.IsInheritedSourcesSet {
 		// Note that the alternative combination InheritedSources == nil with

@@ -172,7 +172,7 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 
 	invID, testID, resultID, artifactID, err := pbutil.ParseArtifactName(r.artifactName)
 	if err != nil {
-		return errors.Annotate(err, "invalid artifact name %q", r.artifactName).Err()
+		return errors.Fmt("invalid artifact name %q: %w", r.artifactName, err)
 	}
 	r.invID = invocations.ID(invID)
 	r.parentID = artifacts.ParentID(testID, resultID)
@@ -257,7 +257,7 @@ func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactNam
 	// "canary.*" artifact links.
 	hostname := s.HostnameProvider(requestHost)
 	if hostname == "" {
-		return "", time.Time{}, errors.Reason("empty content hostname").Err()
+		return "", time.Time{}, errors.New("empty content hostname")
 	}
 
 	// Using url.URL here is hard because it escapes artifact name which we don't want.

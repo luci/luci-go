@@ -48,11 +48,11 @@ func UpdateConfig(ctx context.Context) error {
 	var errs []error
 	err := UpdateProjects(ctx)
 	if err != nil {
-		errs = append(errs, errors.Annotate(err, "update project configs").Err())
+		errs = append(errs, errors.Fmt("update project configs: %w", err))
 	}
 	err = UpdateServiceConfig(ctx)
 	if err != nil {
-		errs = append(errs, errors.Annotate(err, "update service configs").Err())
+		errs = append(errs, errors.Fmt("update service configs: %w", err))
 	}
 	if len(errs) > 0 {
 		return errors.NewMultiError(errs...)
@@ -71,7 +71,7 @@ func UpdateServiceConfig(ctx context.Context) error {
 func GetServiceConfig(ctx context.Context) (*configpb.Config, error) {
 	cfg, err := cachedServiceCfg.Get(ctx, nil)
 	if err != nil {
-		err = errors.Annotate(err, "failed to get cached config").Err()
+		err = errors.Fmt("failed to get cached config: %w", err)
 		logging.Errorf(ctx, "%s", err.Error())
 		return nil, err
 	}

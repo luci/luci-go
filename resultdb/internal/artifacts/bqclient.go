@@ -102,16 +102,16 @@ func parseReadArtifactGroupsPageToken(pageToken string) (afterMaxPartitionTimeUn
 	}
 
 	if len(tokens) != 5 {
-		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expected 5 components, got %d", len(tokens)).Err())
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.Fmt("expected 5 components, got %d", len(tokens)))
 	}
 
 	afterMaxPartitionTimeUnix, err = strconv.Atoi(tokens[0])
 	if err != nil {
-		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.New("expect the first page_token component to be an integer"))
 	}
 	maxInsertTimeUnix, err = strconv.Atoi(tokens[1])
 	if err != nil {
-		return 0, 0, "", "", "", pagination.InvalidToken(errors.Reason("expect the second page_token component to be an integer").Err())
+		return 0, 0, "", "", "", pagination.InvalidToken(errors.New("expect the second page_token component to be an integer"))
 	}
 	return afterMaxPartitionTimeUnix, maxInsertTimeUnix, tokens[2], tokens[3], tokens[4], nil
 }
@@ -220,7 +220,7 @@ func generateReadArtifactGroupsQuery(opts ReadArtifactGroupsOpts) (string, error
 	}
 	err := readArtifactGroupTmpl.ExecuteTemplate(&b, "", data)
 	if err != nil {
-		return "", errors.Annotate(err, "execute template").Err()
+		return "", errors.Fmt("execute template: %w", err)
 	}
 	return b.String(), nil
 }
@@ -286,7 +286,7 @@ func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroups
 
 	job, err := q.Run(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "starting query").Err()
+		return nil, "", errors.Fmt("starting query: %w", err)
 	}
 	// WaitForJob cancels the job with best-effort when context deadline is reached.
 	js, err := bq.WaitForJob(ctx, job)
@@ -312,7 +312,7 @@ func (c *Client) ReadArtifactGroups(ctx context.Context, opts ReadArtifactGroups
 			break
 		}
 		if err != nil {
-			return nil, "", errors.Annotate(err, "obtain next artifact groups row").Err()
+			return nil, "", errors.Fmt("obtain next artifact groups row: %w", err)
 		}
 		results = append(results, row)
 	}
@@ -377,7 +377,7 @@ func generateReadArtifactsQuery(opts ReadArtifactsOpts) (string, error) {
 		"invocationLevel": opts.IsInvocationLevel,
 	})
 	if err != nil {
-		return "", errors.Annotate(err, "execute template").Err()
+		return "", errors.Fmt("execute template: %w", err)
 	}
 	return b.String(), nil
 }
@@ -389,12 +389,12 @@ func parseReadArtifactsPageToken(pageToken string) (afterPartitionTimeUnix int, 
 	}
 
 	if len(tokens) != 3 {
-		return 0, "", "", pagination.InvalidToken(errors.Reason("expected 3 components, got %d", len(tokens)).Err())
+		return 0, "", "", pagination.InvalidToken(errors.Fmt("expected 3 components, got %d", len(tokens)))
 	}
 
 	afterPartitionTimeUnix, err = strconv.Atoi(tokens[0])
 	if err != nil {
-		return 0, "", "", pagination.InvalidToken(errors.Reason("expect the first page_token component to be an integer").Err())
+		return 0, "", "", pagination.InvalidToken(errors.New("expect the first page_token component to be an integer"))
 	}
 	return afterPartitionTimeUnix, tokens[1], tokens[2], nil
 }
@@ -454,7 +454,7 @@ func (c *Client) ReadArtifacts(ctx context.Context, opts ReadArtifactsOpts) (row
 
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "running query").Err()
+		return nil, "", errors.Fmt("running query: %w", err)
 	}
 	results := []*MatchingArtifact{}
 	for {
@@ -464,7 +464,7 @@ func (c *Client) ReadArtifacts(ctx context.Context, opts ReadArtifactsOpts) (row
 			break
 		}
 		if err != nil {
-			return nil, "", errors.Annotate(err, "obtain next matching artifact row").Err()
+			return nil, "", errors.Fmt("obtain next matching artifact row: %w", err)
 		}
 		results = append(results, row)
 	}

@@ -66,16 +66,16 @@ var LegacyScheme = &Scheme{
 // and matches the criteria given by that scheme.
 func (s Scheme) Validate(testID pbutil.BaseTestIdentifier) error {
 	if testID.ModuleScheme != s.ID {
-		return errors.Reason("module_scheme: expected test scheme %q but got scheme %q", s.ID, testID.ModuleScheme).Err()
+		return errors.Fmt("module_scheme: expected test scheme %q but got scheme %q", s.ID, testID.ModuleScheme)
 	}
 	if err := validateTestIDComponent(testID.CoarseName, testID.ModuleScheme, s.Coarse); err != nil {
-		return errors.Annotate(err, "coarse_name").Err()
+		return errors.Fmt("coarse_name: %w", err)
 	}
 	if err := validateTestIDComponent(testID.FineName, testID.ModuleScheme, s.Fine); err != nil {
-		return errors.Annotate(err, "fine_name").Err()
+		return errors.Fmt("fine_name: %w", err)
 	}
 	if err := validateTestIDComponent(testID.CaseName, testID.ModuleScheme, s.Case); err != nil {
-		return errors.Annotate(err, "case_name").Err()
+		return errors.Fmt("case_name: %w", err)
 	}
 	return nil
 }
@@ -83,14 +83,14 @@ func (s Scheme) Validate(testID pbutil.BaseTestIdentifier) error {
 func validateTestIDComponent(component, scheme string, level *SchemeLevel) error {
 	if level != nil {
 		if component == "" {
-			return errors.Reason("required, please set a %s (scheme %q)", level.HumanReadableName, scheme).Err()
+			return errors.Fmt("required, please set a %s (scheme %q)", level.HumanReadableName, scheme)
 		}
 		if level.ValidationRegexp != nil && !level.ValidationRegexp.MatchString(component) {
-			return errors.Reason("does not match validation regexp %q, please set a valid %s (scheme %q)", level.ValidationRegexp.String(), level.HumanReadableName, scheme).Err()
+			return errors.Fmt("does not match validation regexp %q, please set a valid %s (scheme %q)", level.ValidationRegexp.String(), level.HumanReadableName, scheme)
 		}
 	} else {
 		if component != "" {
-			return errors.Reason("expected empty value (level is not defined by scheme %q)", scheme).Err()
+			return errors.Fmt("expected empty value (level is not defined by scheme %q)", scheme)
 		}
 	}
 	return nil
@@ -133,7 +133,7 @@ func newSchemeLevel(level *pb.Scheme_Level) (*SchemeLevel, error) {
 		compiledRegexp, err := regexp.Compile(level.ValidationRegexp)
 		if err != nil {
 			// This should never happen as the configuration has been validated.
-			return nil, errors.Annotate(err, "could not compile validation regexp").Err()
+			return nil, errors.Fmt("could not compile validation regexp: %w", err)
 		}
 		result.ValidationRegexp = compiledRegexp
 	}

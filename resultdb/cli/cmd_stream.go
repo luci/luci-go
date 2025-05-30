@@ -333,35 +333,35 @@ type streamRun struct {
 
 func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		return errors.Reason("missing a test command to run").Err()
+		return errors.New("missing a test command to run")
 	}
 	if err := pbutil.ValidateVariant(&pb.Variant{Def: r.vars}); err != nil {
-		return errors.Annotate(err, "invalid variant").Err()
+		return errors.Fmt("invalid variant: %w", err)
 	}
 	if r.realm != "" {
 		if err := realms.ValidateRealmName(r.realm, realms.GlobalScope); err != nil {
-			return errors.Annotate(err, "invalid realm").Err()
+			return errors.Fmt("invalid realm: %w", err)
 		}
 	}
 	if r.invProperties.Struct != nil && r.invPropertiesFile != "" {
-		return errors.Reason("cannot specify both -inv-properties and -inv-properties-file at the same time").Err()
+		return errors.New("cannot specify both -inv-properties and -inv-properties-file at the same time")
 	}
 	if r.moduleName != "" {
 		if err := pbutil.ValidateModuleName(r.moduleName); err != nil {
-			return errors.Annotate(err, "invalid module name").Err()
+			return errors.Fmt("invalid module name: %w", err)
 		}
 		if r.moduleName == pbutil.LegacyModuleName {
-			return errors.Reason("-module-name cannot be %q", pbutil.LegacyModuleName).Err()
+			return errors.Fmt("-module-name cannot be %q", pbutil.LegacyModuleName)
 		}
 		if r.moduleScheme == "" {
-			return errors.Reason("-module-name requires -module-scheme to also be specified").Err()
+			return errors.New("-module-name requires -module-scheme to also be specified")
 		}
 		if err := pbutil.ValidateModuleScheme(r.moduleScheme, false /*isLegacyModule*/); err != nil {
-			return errors.Annotate(err, "invalid module scheme").Err()
+			return errors.Fmt("invalid module scheme: %w", err)
 		}
 	} else {
 		if r.moduleScheme != "" {
-			return errors.Reason("-module-scheme requires -module-name to also be specified").Err()
+			return errors.New("-module-scheme requires -module-name to also be specified")
 		}
 	}
 
@@ -376,7 +376,7 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 		sourceSpecs++
 	}
 	if sourceSpecs > 1 {
-		return errors.Reason("cannot specify more than one of -inherit-sources, -sources and -sources-file at the same time").Err()
+		return errors.New("cannot specify more than one of -inherit-sources, -sources and -sources-file at the same time")
 	}
 
 	return nil
@@ -393,7 +393,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// login is required only if it creates a new invocation.
 	if r.isNew {
 		if r.realm == "" {
-			return r.done(errors.Reason("-realm is required for new invocations").Err())
+			return r.done(errors.New("-realm is required for new invocations"))
 		}
 		loginMode = auth.SilentLogin
 	}
@@ -407,7 +407,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// upload.
 	scheme, err := r.fetchScheme(ctx)
 	if err != nil {
-		return r.done(errors.Annotate(err, "fetch scheme").Err())
+		return r.done(errors.Fmt("fetch scheme: %w", err))
 	}
 
 	// if -new is passed, create a new invocation. If not, use the existing one set in
@@ -415,7 +415,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	switch {
 	case r.isNew:
 		if r.isIncluded && r.resultdbCtx == nil {
-			return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT, but -include was given").Err())
+			return r.done(errors.New("missing an invocation in LUCI_CONTEXT, but -include was given"))
 		}
 
 		newInv, err := r.createInvocation(ctx, r.realm)
@@ -441,9 +441,9 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 			CurrentInvocation: r.invocation,
 		})
 	case r.isIncluded:
-		return r.done(errors.Reason("-new is required for -include").Err())
+		return r.done(errors.New("-new is required for -include"))
 	case r.resultdbCtx == nil:
-		return r.done(errors.Reason("missing an invocation in LUCI_CONTEXT; use -new to create a new one").Err())
+		return r.done(errors.New("missing an invocation in LUCI_CONTEXT; use -new to create a new one"))
 	default:
 		if err := r.validateCurrentInvocation(); err != nil {
 			return r.done(err)
@@ -453,11 +453,11 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 
 	invProperties, err := r.invPropertiesFromArgs(ctx)
 	if err != nil {
-		return r.done(errors.Annotate(err, "get invocation properties from arguments").Err())
+		return r.done(errors.Fmt("get invocation properties from arguments: %w", err))
 	}
 	sourceSpec, err := r.sourceSpecFromArgs(ctx)
 	if err != nil {
-		return r.done(errors.Annotate(err, "get source spec from arguments").Err())
+		return r.done(errors.Fmt("get source spec from arguments: %w", err))
 	}
 
 	defer func() {
@@ -482,7 +482,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	// after test cmd finishes.
 	invExtendedProperties, err := r.invExtendedPropertiesFromArgs(ctx)
 	if err != nil {
-		return r.done(errors.Annotate(err, "get invocation extended_properties from arguments").Err())
+		return r.done(errors.Fmt("get invocation extended_properties from arguments: %w", err))
 	}
 
 	if err := r.updateInvocation(ctx, invProperties, invExtendedProperties, sourceSpec, r.baselineID); err != nil {
@@ -529,7 +529,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string, scheme *schem
 
 	locationTags, err := r.locationTagsFromArg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "get location tags").Err()
+		return errors.Fmt("get location tags: %w", err)
 	}
 	// TODO(ddoman): send the logs of SinkServer to --log-file
 
@@ -574,7 +574,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string, scheme *schem
 
 		if err != nil {
 			logging.Warningf(ctx, "rdb-stream: failed to start test process: %s", err)
-			return errors.Annotate(err, "cmd.start").Err()
+			return errors.Fmt("cmd.start: %w", err)
 		}
 		err = cmd.Wait()
 		if err != nil {
@@ -670,12 +670,12 @@ func (r *streamRun) invPropertiesFromArgs(ctx context.Context) (*structpb.Struct
 
 	f, err := os.ReadFile(r.invPropertiesFile)
 	if err != nil {
-		return nil, errors.Annotate(err, "read file").Err()
+		return nil, errors.Fmt("read file: %w", err)
 	}
 
 	properties := &structpb.Struct{}
 	if err = protojson.Unmarshal(f, properties); err != nil {
-		return nil, errors.Annotate(err, "unmarshal file").Err()
+		return nil, errors.Fmt("unmarshal file: %w", err)
 	}
 
 	return properties, nil
@@ -690,7 +690,7 @@ func (r *streamRun) invExtendedPropertiesFromArgs(ctx context.Context) (map[stri
 
 	files, err := os.ReadDir(r.invExtendedPropertiesDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "read invocation extended properties directory %q", r.invExtendedPropertiesDir).Err()
+		return nil, errors.Fmt("read invocation extended properties directory %q: %w", r.invExtendedPropertiesDir, err)
 	}
 	extendedProperties := make(map[string]*structpb.Struct)
 	for _, file := range files {
@@ -701,11 +701,11 @@ func (r *streamRun) invExtendedPropertiesFromArgs(ctx context.Context) (map[stri
 		fileFullPath := filepath.Join(r.invExtendedPropertiesDir, file.Name())
 		f, err := os.ReadFile(fileFullPath)
 		if err != nil {
-			return nil, errors.Annotate(err, "read file %q", fileFullPath).Err()
+			return nil, errors.Fmt("read file %q: %w", fileFullPath, err)
 		}
 		extPropValue := &structpb.Struct{}
 		if err = protojson.Unmarshal(f, extPropValue); err != nil {
-			return nil, errors.Annotate(err, "unmarshal file %q", fileFullPath).Err()
+			return nil, errors.Fmt("unmarshal file %q: %w", fileFullPath, err)
 		}
 		extendedProperties[extPropKey] = extPropValue
 	}
@@ -728,12 +728,12 @@ func (r *streamRun) sourceSpecFromArgs(ctx context.Context) (*pb.SourceSpec, err
 
 	f, err := os.ReadFile(r.sourcesFile)
 	if err != nil {
-		return nil, errors.Annotate(err, "read file").Err()
+		return nil, errors.Fmt("read file: %w", err)
 	}
 
 	sources := &pb.Sources{}
 	if err = protojson.Unmarshal(f, sources); err != nil {
-		return nil, errors.Annotate(err, "unmarshal file").Err()
+		return nil, errors.Fmt("unmarshal file: %w", err)
 	}
 
 	return &pb.SourceSpec{Sources: sources}, nil
@@ -753,12 +753,12 @@ func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret luc
 		},
 	}, grpc.Header(&md))
 	if err != nil {
-		err = errors.Annotate(err, "failed to create an invocation").Err()
+		err = errors.Fmt("failed to create an invocation: %w", err)
 		return
 	}
 	tks := md.Get(pb.UpdateTokenMetadataKey)
 	if len(tks) == 0 {
-		err = errors.Reason("Missing header: %s", pb.UpdateTokenMetadataKey).Err()
+		err = errors.Fmt("Missing header: %s", pb.UpdateTokenMetadataKey)
 		return
 	}
 

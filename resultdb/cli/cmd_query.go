@@ -130,12 +130,12 @@ func (r *queryRun) parseArgs(args []string) error {
 
 	for _, id := range r.invIDs {
 		if err := pbutil.ValidateInvocationID(id); err != nil {
-			return errors.Annotate(err, "invocation id %q", id).Err()
+			return errors.Fmt("invocation id %q: %w", id, err)
 		}
 	}
 
 	if r.limit < 0 {
-		return errors.Reason("-n must be non-negative").Err()
+		return errors.New("-n must be non-negative")
 	}
 
 	// TODO(crbug.com/1021849): improve validation.
@@ -203,7 +203,7 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 	trMask := &fieldmaskpb.FieldMask{}
 	if r.trFields != "" {
 		if err := protojson.Unmarshal([]byte(fmt.Sprintf(`"%s"`, r.trFields)), trMask); err != nil {
-			return errors.Annotate(err, "tr-fields").Err()
+			return errors.Fmt("tr-fields: %w", err)
 		}
 	}
 

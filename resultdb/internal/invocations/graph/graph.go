@@ -183,7 +183,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		var err error
 		withTestResults, err = queryInvocations(ctx, `SELECT DISTINCT tr.InvocationID FROM UNNEST(@invocations) inv JOIN TestResults tr on tr.InvocationId = inv`, reachableInvocations)
 		if err != nil {
-			return errors.Annotate(err, "querying invocations with test results").Err()
+			return errors.Fmt("querying invocations with test results: %w", err)
 		}
 		return nil
 	})
@@ -191,7 +191,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		var err error
 		withExonerations, err = queryInvocations(ctx, `SELECT DISTINCT te.InvocationID FROM UNNEST(@invocations) inv JOIN TestExonerations te on te.InvocationId = inv`, reachableInvocations)
 		if err != nil {
-			return errors.Annotate(err, "querying invocations with test exonerations").Err()
+			return errors.Fmt("querying invocations with test exonerations: %w", err)
 		}
 		return nil
 	})
@@ -199,7 +199,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		var err error
 		invDetails, err = queryInvocationDetails(ctx, reachableInvocations)
 		if err != nil {
-			return errors.Annotate(err, "querying realms of reachable invocations").Err()
+			return errors.Fmt("querying realms of reachable invocations: %w", err)
 		}
 		return nil
 	})
@@ -456,7 +456,7 @@ func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err 
 
 	marshaled, err := value.marshal()
 	if err != nil {
-		return errors.Annotate(err, "marshal").Err()
+		return errors.Fmt("marshal: %w", err)
 	}
 	ts.SetAttributes(attribute.Int("size", len(marshaled)))
 

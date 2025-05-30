@@ -44,7 +44,7 @@ import (
 // For ptrMap see ReadRow comment in span/util.go.
 func ReadColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	if id == "" {
-		return errors.Reason("id is unspecified").Err()
+		return errors.New("id is unspecified")
 	}
 	err := spanutil.ReadRow(ctx, "Invocations", id.Key(), ptrMap)
 	switch {
@@ -52,7 +52,7 @@ func ReadColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.Name())
 
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch %s", id.Name()).Err()
+		return errors.Fmt("failed to fetch %s: %w", id.Name(), err)
 
 	default:
 		return nil
@@ -218,7 +218,7 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 		if includeExtendedProperties && len(extendedProperties) > 0 {
 			internalExtendedProperties := &invocationspb.ExtendedProperties{}
 			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
-				return errors.Annotate(err, "failed to unmarshal ExtendedProperties for invocation %q", id).Err()
+				return errors.Fmt("failed to unmarshal ExtendedProperties for invocation %q: %w", id, err)
 			}
 			inv.ExtendedProperties = internalExtendedProperties.ExtendedProperties
 		}
@@ -283,7 +283,7 @@ func ReadStateBatch(ctx context.Context, ids IDSet) (map[ID]pb.Invocation_State,
 		var id ID
 		var s pb.Invocation_State
 		if err := spanutil.FromSpanner(r, &id, &s); err != nil {
-			return errors.Annotate(err, "failed to fetch %s", ids).Err()
+			return errors.Fmt("failed to fetch %s: %w", ids, err)
 		}
 		ret[id] = s
 		return nil
@@ -429,7 +429,7 @@ func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
 		"IsSourceSpecFinal": &isSourceSpecFinal,
 	})
 	if err != nil {
-		return ExportInfo{}, errors.Annotate(err, "read columns").Err()
+		return ExportInfo{}, errors.Fmt("read columns: %w", err)
 	}
 
 	var result ExportInfo
@@ -444,7 +444,7 @@ func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
 	if len(sourceCmp) > 0 {
 		result.Sources = &pb.Sources{}
 		if err := proto.Unmarshal(sourceCmp, result.Sources); err != nil {
-			return ExportInfo{}, errors.Annotate(err, "unmarshal sources").Err()
+			return ExportInfo{}, errors.Fmt("unmarshal sources: %w", err)
 		}
 	}
 
@@ -471,7 +471,7 @@ func ReadFinalizedNotificationInfo(ctx context.Context, invID ID) (FinalizedNoti
 		"IsExportRoot": &isExportRoot,
 		"CreateTime":   &info.CreateTime,
 	}); err != nil {
-		return FinalizedNotificationInfo{}, errors.Annotate(err, "read columns").Err()
+		return FinalizedNotificationInfo{}, errors.Fmt("read columns: %w", err)
 	}
 	info.IsExportRoot = isExportRoot.Valid && isExportRoot.Bool
 	return info, nil

@@ -201,7 +201,7 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 						// If f() exits early, return nil here to see what error that f() returns.
 						return nil
 					}
-					return errors.Annotate(err, "write to pipe").Err()
+					return errors.Fmt("write to pipe: %w", err)
 				}
 			}
 		}

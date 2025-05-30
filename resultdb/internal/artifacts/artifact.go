@@ -63,13 +63,13 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 	}
 
 	if !strings.HasPrefix(parentID, "tr/") {
-		return "", "", errors.Reason("unrecognized artifact parent ID %q", parentID).Err()
+		return "", "", errors.Fmt("unrecognized artifact parent ID %q", parentID)
 	}
 	parentID = strings.TrimPrefix(parentID, "tr/")
 
 	lastSlash := strings.LastIndexByte(parentID, '/')
 	if lastSlash == -1 || lastSlash == 0 || lastSlash == len(parentID)-1 {
-		return "", "", errors.Reason("unrecognized artifact parent ID %q", parentID).Err()
+		return "", "", errors.Fmt("unrecognized artifact parent ID %q", parentID)
 	}
 
 	return parentID[:lastSlash], parentID[lastSlash+1:], nil
@@ -113,7 +113,7 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
+		return nil, errors.Fmt("failed to fetch %q: %w", name, err)
 	default:
 		ret.ContentType = contentType.StringVal
 		ret.SizeBytes = size.Int64

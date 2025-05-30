@@ -100,7 +100,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 
 		ex.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ex.TestId, ex.Variant)
 		if err != nil {
-			return errors.Annotate(err, "parse structured test identifier").Err()
+			return errors.Fmt("parse structured test identifier: %w", err)
 		}
 		// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
 		// erroneously allowed to set variant_hash only and not the variant. This means the

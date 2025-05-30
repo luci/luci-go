@@ -70,7 +70,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
 
 	case err != nil:
-		return nil, errors.Annotate(err, "fetch %q", ret.Name).Err()
+		return nil, errors.Fmt("fetch %q: %w", ret.Name, err)
 
 	default:
 	}
@@ -78,7 +78,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 	ret.ExplanationHtml = string(explanationHTML)
 	ret.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ret.TestId, ret.Variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse structured test identifier").Err()
+		return nil, errors.Fmt("parse structured test identifier: %w", err)
 	}
 	// Clients uploading data using the legacy API (test_id + variant/variant_hash) were
 	// erroneously allowed to set variant_hash only and not the variant. This means the

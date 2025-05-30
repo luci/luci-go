@@ -240,7 +240,7 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 					// Stop reading test results.
 					return complete
 				}
-				return errors.Annotate(err, "yield").Err()
+				return errors.Fmt("yield: %w", err)
 			}
 		}
 		return nil
@@ -272,7 +272,7 @@ func (q *Query) fetch(ctx context.Context, start PageToken, opts fetchOptions, f
 			// N.B. yield may update continuation token.
 			err := yield(lastTestVerdict)
 			if err != nil && !errors.Is(err, complete) {
-				return PageToken{}, errors.Annotate(err, "yield").Err()
+				return PageToken{}, errors.Fmt("yield: %w", err)
 			}
 		}
 	}
@@ -374,7 +374,7 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			&frameworkExtensions,
 		)
 		if err != nil {
-			return errors.Annotate(err, "unmarshal row").Err()
+			return errors.Fmt("unmarshal row: %w", err)
 		}
 
 		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
@@ -384,20 +384,20 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 		tr.SummaryHtml = string(summaryHTML)
 		testresults.PopulateDurationField(tr, durationMicros)
 		if err := testresults.PopulateTestMetadata(tr, tmd); err != nil {
-			return errors.Annotate(err, "unmarshal test metadata for %s", trName).Err()
+			return errors.Fmt("unmarshal test metadata for %s: %w", trName, err)
 		}
 		if err := testresults.PopulateFailureReason(tr, fr); err != nil {
-			return errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
+			return errors.Fmt("error unmarshalling failure_reason for %s: %w", trName, err)
 		}
 		if err := testresults.PopulateProperties(tr, properties); err != nil {
-			return errors.Annotate(err, "unmarshal properties for %s", trName).Err()
+			return errors.Fmt("unmarshal properties for %s: %w", trName, err)
 		}
 		testresults.PopulateSkipReasonField(tr, skipReason)
 		if err := testresults.PopulateSkippedReason(tr, skippedReason); err != nil {
-			return errors.Annotate(err, "unmarshal skipped reason for %s", trName).Err()
+			return errors.Fmt("unmarshal skipped reason for %s: %w", trName, err)
 		}
 		if err := testresults.PopulateFrameworkExtensions(tr, frameworkExtensions); err != nil {
-			return errors.Annotate(err, "unmarshal framework extensions for %s", trName).Err()
+			return errors.Fmt("unmarshal framework extensions for %s: %w", trName, err)
 		}
 		return f(tr)
 	})

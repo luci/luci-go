@@ -97,7 +97,7 @@ func NewSchemeLevel(level *configpb.Scheme_Level) (*schemes.SchemeLevel, error) 
 		compiledRegexp, err := regexp.Compile(level.ValidationRegexp)
 		if err != nil {
 			// This should never happen as the configuration has been validated.
-			return nil, errors.Annotate(err, "could not compile validation regexp").Err()
+			return nil, errors.Fmt("could not compile validation regexp: %w", err)
 		}
 		result.ValidationRegexp = compiledRegexp
 	}
@@ -112,7 +112,7 @@ func Service(ctx context.Context) (*CompiledServiceConfig, error) {
 		var meta config.Meta
 		cfg, err := cachedServiceCfg.Get(ctx, &meta)
 		if err != nil {
-			err = errors.Annotate(err, "fetch cached service config").Err()
+			err = errors.Fmt("fetch cached service config: %w", err)
 			logging.Errorf(ctx, "%s", err.Error())
 			return nil, 0, err
 		}
@@ -129,7 +129,7 @@ func Service(ctx context.Context) (*CompiledServiceConfig, error) {
 		cfgProto := cfg.(*configpb.Config)
 		compiledCfg, err := NewCompiledServiceConfig(cfgProto, meta.Revision)
 		if err != nil {
-			err = errors.Annotate(err, "compile service config").Err()
+			err = errors.Fmt("compile service config: %w", err)
 			return nil, 0, err
 		}
 

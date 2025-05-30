@@ -72,7 +72,7 @@ func FetchPassingHashes(ctx context.Context, client *bigquery.Client, realm stri
 	// Execute the query.
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "BQ read").Err()
+		return nil, errors.Fmt("BQ read: %w", err)
 	}
 	// Iterate through the results.
 	passingHashes := map[int64]struct{}{}
@@ -86,7 +86,7 @@ func FetchPassingHashes(ctx context.Context, client *bigquery.Client, realm stri
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "fetching BQ row").Err()
+			return nil, errors.Fmt("fetching BQ row: %w", err)
 		}
 		passingHashes[row.PassingHash] = struct{}{}
 	}

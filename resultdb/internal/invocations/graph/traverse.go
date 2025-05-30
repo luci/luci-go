@@ -127,7 +127,7 @@ func FindRoots(ctx context.Context, invID invocations.ID) (invocations.IDSet, er
 	findRoots = func(id invocations.ID) (invocations.IDSet, error) {
 		parents, err := queryParentInvocations(ctx, id)
 		if err != nil {
-			return nil, errors.Annotate(err, "queryParentInvocations for %s", id).Err()
+			return nil, errors.Fmt("queryParentInvocations for %s: %w", id, err)
 		}
 		roots := invocations.NewIDSet()
 		if len(parents) == 0 {
