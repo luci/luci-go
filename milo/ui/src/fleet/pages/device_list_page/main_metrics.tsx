@@ -17,6 +17,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { UseQueryResult } from '@tanstack/react-query';
 
+import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { colors } from '@/fleet/theme/colors';
 import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -196,16 +197,9 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
   };
 
   return (
-    <div
-      css={{
-        padding: '16px 21px',
-        gap: 28,
-        border: `1px solid ${colors.grey[300]}`,
-        borderRadius: 4,
-      }}
-    >
+    <MetricsContainer>
       <Typography variant="h4">Main metrics</Typography>
       <div css={{ marginTop: 24 }}>{getContent()}</div>
-    </div>
+    </MetricsContainer>
   );
 }

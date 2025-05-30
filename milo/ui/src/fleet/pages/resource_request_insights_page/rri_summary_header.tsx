@@ -11,21 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-import styled from '@emotion/styled';
 import { Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors } from '@/fleet/theme/colors';
-
-const Container = styled.div`
-  padding: 16px 21px;
-  gap: 28;
-  border: 1px solid ${colors.grey[300]};
-  border-radius: 4;
-`;
 
 export function RriSummaryHeader() {
   const client = useFleetConsoleClient();
@@ -41,10 +32,10 @@ export function RriSummaryHeader() {
   }
 
   return (
-    <Container>
+    <MetricsContainer>
       <Typography variant="h4">All Requests</Typography>
       <div css={{ marginTop: 24 }}>
-        <Typography variant="subhead1">Task status</Typography>
+        <Typography variant="subhead1">Request status</Typography>
         <div
           css={{
             display: 'flex',
@@ -90,6 +81,6 @@ export function RriSummaryHeader() {
           />
         </div>
       </div>
-    </Container>
+    </MetricsContainer>
   );
 }
