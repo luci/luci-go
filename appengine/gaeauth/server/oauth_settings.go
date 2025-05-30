@@ -39,7 +39,7 @@ func FetchFrontendClientID(ctx context.Context) (string, error) {
 	case err == settings.ErrNoSettings:
 		return "", nil
 	default:
-		return "", errors.Annotate(err, "failed to fetch OAuth settings").Tag(transient.Tag).Err()
+		return "", transient.Tag.Apply(errors.Fmt("failed to fetch OAuth settings: %w", err))
 	}
 }
 

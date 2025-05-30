@@ -118,7 +118,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 	})
 
 	if err != nil {
-		return "", errors.Annotate(err, "failed to start the server").Err()
+		return "", errors.Fmt("failed to start the server: %w", err)
 	}
 	return addr.String(), nil
 }
@@ -170,7 +170,7 @@ func (s *Server) emulatedMetadata(ctx context.Context) (*node, error) {
 		if err != nil {
 			var undef metadata.NotDefinedError
 			if !errors.As(err, &undef) {
-				return nil, errors.Annotate(err, "failed to get instance name").Err()
+				return nil, errors.Fmt("failed to get instance name: %w", err)
 			}
 			// There' no instance name. Fallback to the hostname.
 			if name, err = shortHostname(); err != nil {
@@ -181,7 +181,7 @@ func (s *Server) emulatedMetadata(ctx context.Context) (*node, error) {
 		if err != nil {
 			var undef metadata.NotDefinedError
 			if !errors.As(err, &undef) {
-				return nil, errors.Annotate(err, "failed to get GCE zone").Err()
+				return nil, errors.Fmt("failed to get GCE zone: %w", err)
 			}
 			// Just don't expose the zone if the metadata server doesn't know it.
 			zone = ""
@@ -216,7 +216,7 @@ func (s *Server) emulatedMetadata(ctx context.Context) (*node, error) {
 func shortHostname() (string, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return "", errors.Annotate(err, "failed to get the hostname").Err()
+		return "", errors.Fmt("failed to get the hostname: %w", err)
 	}
 	hostname, _, _ = strings.Cut(hostname, ".")
 	return hostname, nil
@@ -236,7 +236,7 @@ func (s *Server) accountToken(ctx context.Context, q url.Values) (any, error) {
 	}
 	tok, err := s.Generator.GenerateOAuthToken(ctx, scopes, s.MinTokenLifetime)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to mint the token").Err()
+		return nil, errors.Fmt("failed to mint the token: %w", err)
 	}
 	return map[string]any{
 		"access_token": tok.AccessToken,
@@ -265,7 +265,7 @@ func (s *Server) accountIdentity(ctx context.Context, q url.Values) (any, error)
 
 	tok, err := s.Generator.GenerateIDToken(ctx, aud, s.MinTokenLifetime)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to mint the token").Err()
+		return nil, errors.Fmt("failed to mint the token: %w", err)
 	}
 	return tok.AccessToken, nil
 }

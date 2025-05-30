@@ -84,13 +84,13 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 	const MaxTestVariants = 100
 
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if len(req.TestVariants) == 0 {
-		return errors.Reason("test_variants: unspecified").Err()
+		return errors.New("test_variants: unspecified")
 	}
 	if len(req.TestVariants) > MaxTestVariants {
-		return errors.Reason("test_variants: no more than %v may be queried at a time", MaxTestVariants).Err()
+		return errors.Fmt("test_variants: no more than %v may be queried at a time", MaxTestVariants)
 	}
 	type testVariant struct {
 		testID      string
@@ -99,12 +99,12 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 	uniqueTestVariants := make(map[testVariant]struct{})
 	for i, tv := range req.TestVariants {
 		if tv.GetTestId() == "" {
-			return errors.Reason("test_variants[%v]: test_id: unspecified", i).Err()
+			return errors.Fmt("test_variants[%v]: test_id: unspecified", i)
 		}
 		var variantHash string
 		if tv.VariantHash != "" {
 			if !variantHashRe.MatchString(tv.VariantHash) {
-				return errors.Reason("test_variants[%v]: variant_hash: must match %s", i, variantHashRe).Err()
+				return errors.Fmt("test_variants[%v]: variant_hash: must match %s", i, variantHashRe)
 			}
 			variantHash = tv.VariantHash
 		}
@@ -113,14 +113,14 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 		if tv.Variant != nil || tv.VariantHash == "" {
 			calculatedHash := pbutil.VariantHash(tv.Variant)
 			if tv.VariantHash != "" && calculatedHash != tv.VariantHash {
-				return errors.Reason("test_variants[%v]: variant and variant_hash mismatch, variant hashed to %s, expected %s", i, calculatedHash, tv.VariantHash).Err()
+				return errors.Fmt("test_variants[%v]: variant and variant_hash mismatch, variant hashed to %s, expected %s", i, calculatedHash, tv.VariantHash)
 			}
 			variantHash = calculatedHash
 		}
 
 		key := testVariant{testID: tv.TestId, variantHash: variantHash}
 		if _, ok := uniqueTestVariants[key]; ok {
-			return errors.Reason("test_variants[%v]: already requested in the same request", i).Err()
+			return errors.Fmt("test_variants[%v]: already requested in the same request", i)
 		}
 		uniqueTestVariants[key] = struct{}{}
 	}
@@ -177,7 +177,7 @@ func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTest
 
 func fromTestStabilityCriteriaConfig(cfg *configpb.ProjectConfig) (*pb.TestStabilityCriteria, error) {
 	if cfg.TestStabilityCriteria == nil {
-		return nil, failedPreconditionError(errors.Reason("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again").Err())
+		return nil, failedPreconditionError(errors.New("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again"))
 	}
 
 	criteria := cfg.TestStabilityCriteria
@@ -203,18 +203,18 @@ func validateQueryTestVariantStabilityRequest(req *pb.QueryTestVariantStabilityR
 	const MaxTestVariants = 100
 
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if len(req.TestVariants) == 0 {
-		return errors.Reason("test_variants: unspecified").Err()
+		return errors.New("test_variants: unspecified")
 	}
 	if len(req.TestVariants) > MaxTestVariants {
-		return errors.Reason("test_variants: no more than %v may be queried at a time", MaxTestVariants).Err()
+		return errors.Fmt("test_variants: no more than %v may be queried at a time", MaxTestVariants)
 	}
 	seenTestVariantBranches := make(map[testVariantBranch]int)
 	for i, tv := range req.TestVariants {
 		if err := validateTestVariantPosition(tv, i, seenTestVariantBranches); err != nil {
-			return errors.Annotate(err, "test_variants[%v]", i).Err()
+			return errors.Fmt("test_variants[%v]: %w", i, err)
 		}
 	}
 	return nil
@@ -231,12 +231,12 @@ type testVariantBranch struct {
 // and their offsets so that duplicates can be identified.
 func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVariantPosition, offset int, seenTestVariantBranches map[testVariantBranch]int) error {
 	if tv.GetTestId() == "" {
-		return errors.Reason("test_id: unspecified").Err()
+		return errors.New("test_id: unspecified")
 	}
 	var variantHash string
 	if tv.VariantHash != "" {
 		if !variantHashRe.MatchString(tv.VariantHash) {
-			return errors.Reason("variant_hash: must match %s", variantHashRe).Err()
+			return errors.Fmt("variant_hash: must match %s", variantHashRe)
 		}
 		variantHash = tv.VariantHash
 	}
@@ -247,7 +247,7 @@ func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVar
 	if tv.Variant != nil {
 		calculatedHash := pbutil.VariantHash(tv.Variant)
 		if tv.VariantHash != "" && calculatedHash != tv.VariantHash {
-			return errors.Reason("variant and variant_hash mismatch, variant hashed to %s, expected %s", calculatedHash, tv.VariantHash).Err()
+			return errors.Fmt("variant and variant_hash mismatch, variant hashed to %s, expected %s", calculatedHash, tv.VariantHash)
 		}
 		variantHash = calculatedHash
 	}
@@ -259,7 +259,7 @@ func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVar
 	}
 
 	if err := pbutil.ValidateSources(tv.Sources); err != nil {
-		return errors.Annotate(err, "sources").Err()
+		return errors.Fmt("sources: %w", err)
 	}
 
 	sourceRefHash := hex.EncodeToString(pbutil.SourceRefHash(pbutil.SourceRefFromSources(tv.Sources)))
@@ -267,7 +267,7 @@ func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVar
 	// Each test variant branch may appear in the request only once.
 	key := testVariantBranch{testID: tv.TestId, variantHash: variantHash, sourceRefHash: sourceRefHash}
 	if previousOffset, ok := seenTestVariantBranches[key]; ok {
-		return errors.Reason("same test variant branch already requested at index %v", previousOffset).Err()
+		return errors.Fmt("same test variant branch already requested at index %v", previousOffset)
 	}
 	seenTestVariantBranches[key] = offset
 

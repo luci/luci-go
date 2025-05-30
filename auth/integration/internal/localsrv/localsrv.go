@@ -70,7 +70,7 @@ func (s *Server) Start(ctx context.Context, name string, port int, serve ServeFu
 
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create listening socket").Err()
+		return nil, errors.Fmt("failed to create listening socket: %w", err)
 	}
 
 	s.name = name
@@ -142,7 +142,7 @@ func (s *Server) serve(cb ServeFunc) error {
 	s.l.Unlock()
 
 	if err != nil {
-		return errors.Annotate(err, "error in the serving loop").Err()
+		return errors.Fmt("error in the serving loop: %w", err)
 	}
 	return nil
 }

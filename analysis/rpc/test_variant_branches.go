@@ -84,7 +84,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	}
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	// Check ref hash.
 	refHashBytes, err := hex.DecodeString(refHash)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Reason("name: ref component must be an encoded hexadecimal string").Err())
+		return nil, invalidArgumentError(errors.New("name: ref component must be an encoded hexadecimal string"))
 	}
 	tvbk := testvariantbranch.Key{
 		Project:     project,
@@ -106,7 +106,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	defer cancel()
 	tvbs, err := testvariantbranch.Read(txn, []testvariantbranch.Key{tvbk})
 	if err != nil {
-		return nil, errors.Annotate(err, "read test variant branch").Err()
+		return nil, errors.Fmt("read test variant branch: %w", err)
 	}
 	// Should not happen.
 	if len(tvbs) != 1 {
@@ -119,7 +119,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	// Convert to proto.
 	analysis, err := toTestVariantBranchRawProto(tvbs[0])
 	if err != nil {
-		return nil, errors.Annotate(err, "build proto").Err()
+		return nil, errors.Fmt("build proto: %w", err)
 	}
 	return analysis, nil
 }
@@ -130,7 +130,7 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 	for i, name := range req.Names {
 		project, _, _, _, err := parseTestVariantBranchName(name)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "names[%d]", i).Err())
+			return nil, invalidArgumentError(errors.Fmt("names[%d]: %w", i, err))
 		}
 		if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
 			return nil, err
@@ -149,7 +149,7 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 		refHashBytes, err := hex.DecodeString(refHash)
 		if err != nil {
 			// This line is unreachable as ref hash should be validated already.
-			return nil, errors.Reason("ref hash must be an encoded hexadecimal string").Err()
+			return nil, errors.New("ref hash must be an encoded hexadecimal string")
 		}
 		keys = append(keys, testvariantbranch.Key{
 			Project:     project,
@@ -163,7 +163,7 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 	defer cancel()
 	tvbs, err := testvariantbranch.Read(txn, keys)
 	if err != nil {
-		return nil, errors.Annotate(err, "read test variant branch").Err()
+		return nil, errors.Fmt("read test variant branch: %w", err)
 	}
 
 	return &pb.BatchGetTestVariantBranchResponse{
@@ -354,10 +354,10 @@ func validateBatchGetTestVariantBranchRequest(req *pb.BatchGetTestVariantBranchR
 	const MaxTestVariantBranch = 100
 
 	if len(req.Names) == 0 {
-		return errors.Reason("names: unspecified").Err()
+		return errors.New("names: unspecified")
 	}
 	if len(req.Names) > MaxTestVariantBranch {
-		return errors.Reason("names: no more than %v may be queried at a time", MaxTestVariantBranch).Err()
+		return errors.Fmt("names: no more than %v may be queried at a time", MaxTestVariantBranch)
 	}
 	// Contents of names collection already validated by caller.
 	return nil
@@ -369,7 +369,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 	// necessary to perform the authorisation check.
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	// Perform authorization check first as per https://google.aip.dev/211.
@@ -387,7 +387,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 	refHashBytes, err := hex.DecodeString(refHash)
 	if err != nil {
 		// Should never happen as ref hash already validated.
-		panic(errors.Annotate(err, "decode ref hash").Err())
+		panic(errors.Fmt("decode ref hash: %w", err))
 	}
 
 	// Fetch test verdicts (grouped into source verdicts) by combining
@@ -431,7 +431,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 			var err error
 			spannerSourceVerdicts, err = lowlatency.ReadSourceVerdicts(span.Single(ctx), opts)
 			if err != nil {
-				return errors.Annotate(err, "read source verdicts from Spanner").Err()
+				return errors.Fmt("read source verdicts from Spanner: %w", err)
 			}
 			return nil
 		}
@@ -450,7 +450,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 			var err error
 			bigQuerySourceVerdicts, err = s.testResultClient.ReadSourceVerdicts(ctx, opts)
 			if err != nil {
-				return errors.Annotate(err, "read source verdicts from BigQuery").Err()
+				return errors.Fmt("read source verdicts from BigQuery: %w", err)
 			}
 			return nil
 		}
@@ -468,18 +468,18 @@ func validateQuerySourceVerdictsRequest(req *pb.QuerySourceVerdictsRequest) erro
 	// Do not need to validate .Parent field, that is validated in the caller.
 
 	if req.StartSourcePosition <= 0 {
-		return errors.Reason("start_source_position: must be a positive number").Err()
+		return errors.New("start_source_position: must be a positive number")
 	}
 	// EndSourcePosition is an exclusive bound.
 	// We should accept `0` otherwise source verdicts at CP#1 cannot be queried.
 	if req.EndSourcePosition < 0 {
-		return errors.Reason("end_source_position: must be a non-negative number").Err()
+		return errors.New("end_source_position: must be a non-negative number")
 	}
 	if req.EndSourcePosition >= req.StartSourcePosition {
-		return errors.Reason("end_source_position: must be less than start_source_position").Err()
+		return errors.New("end_source_position: must be less than start_source_position")
 	}
 	if req.StartSourcePosition-req.EndSourcePosition > 1000 {
-		return errors.Reason("end_source_position: must not query more than 1000 source positions from start_source_position").Err()
+		return errors.New("end_source_position: must not query more than 1000 source positions from start_source_position")
 	}
 	return nil
 }
@@ -606,7 +606,7 @@ func toChangelistBigQuery(cls []testresults.BQChangelist) []*pb.Changelist {
 // Query queries test variant branches with a given test id and ref.
 func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTestVariantBranchRequest) (*pb.QueryTestVariantBranchResponse, error) {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "project").Err())
+		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListTestVariantBranches); err != nil {
 		return nil, err
@@ -624,7 +624,7 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 	refHash := pbutil.SourceRefHash(req.Ref)
 	tvbs, nextPageToken, err := testvariantbranch.QueryVariantBranches(txn, req.Project, req.TestId, refHash, opts)
 	if err != nil {
-		return nil, errors.Annotate(err, "query variant branches").Err()
+		return nil, errors.Fmt("query variant branches: %w", err)
 	}
 	tvbpbs := make([]*pb.TestVariantBranch, 0, len(tvbs))
 	var analysis analyzer.Analyzer
@@ -641,13 +641,13 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
 	// Project already validated.
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 	if err := pbutil.ValidateSourceRef(req.Ref); err != nil {
-		return errors.Annotate(err, "ref").Err()
+		return errors.Fmt("ref: %w", err)
 	}
 	return nil
 }
@@ -667,7 +667,7 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 	refHashBytes, err := hex.DecodeString(req.RefHash)
 	if err != nil {
 		// This line is unreachable as ref hash should be validated already.
-		return nil, invalidArgumentError(errors.Reason("ref hash must be an encoded hexadecimal string").Err())
+		return nil, invalidArgumentError(errors.New("ref hash must be an encoded hexadecimal string"))
 	}
 
 	request := sorbet.AnalysisRequest{
@@ -680,7 +680,7 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 	}
 	response, err := s.sorbetAnalyzer.Analyze(ctx, request)
 	if err != nil {
-		return nil, errors.Annotate(err, "analyze").Err()
+		return nil, errors.Fmt("analyze: %w", err)
 	}
 	return &pb.QueryChangepointAIAnalysisResponse{
 		AnalysisMarkdown: response.Response,
@@ -690,19 +690,19 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 
 func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysisRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 	if err := ValidateVariantHash(req.VariantHash); err != nil {
-		return errors.Annotate(err, "variant_hash").Err()
+		return errors.Fmt("variant_hash: %w", err)
 	}
 	if err := ValidateRefHash(req.RefHash); err != nil {
-		return errors.Annotate(err, "ref_hash").Err()
+		return errors.Fmt("ref_hash: %w", err)
 	}
 	if req.StartSourcePosition <= 0 {
-		return errors.Reason("start_source_position: must be a positive number").Err()
+		return errors.New("start_source_position: must be a positive number")
 	}
 	return nil
 }

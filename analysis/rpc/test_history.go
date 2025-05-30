@@ -101,18 +101,18 @@ func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryR
 
 func validateQueryTestHistoryRequest(req *pb.QueryTestHistoryRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 
 	if err := pbutil.ValidateTestVerdictPredicate(req.GetPredicate()); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	return nil
@@ -156,18 +156,18 @@ func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHis
 
 func validateQueryTestHistoryStatsRequest(req *pb.QueryTestHistoryStatsRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 
 	if err := pbutil.ValidateTestVerdictPredicate(req.GetPredicate()); err != nil {
-		return errors.Annotate(err, "predicate").Err()
+		return errors.Fmt("predicate: %w", err)
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	return nil
@@ -206,24 +206,24 @@ func (*testHistoryServer) QueryVariants(ctx context.Context, req *pb.QueryVarian
 
 func validateQueryVariantsRequest(req *pb.QueryVariantsRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 	if req.SubRealm != "" {
 		if err := realms.ValidateRealmName(req.SubRealm, realms.ProjectScope); err != nil {
-			return errors.Annotate(err, "sub_realm").Err()
+			return errors.Fmt("sub_realm: %w", err)
 		}
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	if req.GetVariantPredicate() != nil {
 		if err := pbutil.ValidateVariantPredicate(req.GetVariantPredicate()); err != nil {
-			return errors.Annotate(err, "predicate").Err()
+			return errors.Fmt("predicate: %w", err)
 		}
 	}
 
@@ -267,19 +267,19 @@ func (s *testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRe
 
 func validateQueryTestsRequest(req *pb.QueryTestsRequest) error {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if err := validateTestIDPart(req.TestIdSubstring); err != nil {
-		return errors.Annotate(err, "test_id_substring").Err()
+		return errors.Fmt("test_id_substring: %w", err)
 	}
 	if req.SubRealm != "" {
 		if err := realms.ValidateRealmName(req.SubRealm, realms.ProjectScope); err != nil {
-			return errors.Annotate(err, "sub_realm").Err()
+			return errors.Fmt("sub_realm: %w", err)
 		}
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	return nil
@@ -287,16 +287,16 @@ func validateQueryTestsRequest(req *pb.QueryTestsRequest) error {
 
 func validateTestIDPart(testIDPart string) error {
 	if testIDPart == "" {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if len(testIDPart) > 512 {
-		return errors.Reason("length exceeds 512 bytes").Err()
+		return errors.New("length exceeds 512 bytes")
 	}
 	if !utf8.ValidString(testIDPart) {
-		return errors.Reason("not a valid utf8 string").Err()
+		return errors.New("not a valid utf8 string")
 	}
 	if !norm.NFC.IsNormalString(testIDPart) {
-		return errors.Reason("not in unicode normalized form C").Err()
+		return errors.New("not in unicode normalized form C")
 	}
 	for i, rune := range testIDPart {
 		if !unicode.IsPrint(rune) {

@@ -201,12 +201,12 @@ func (p gceTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
 	urlSuffix := fmt.Sprintf("instance/service-accounts/%s/identity?%s", p.account, v.Encode())
 	token, err := metadataClient.GetWithContext(ctx, urlSuffix)
 	if err != nil {
-		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("auth/gce: metadata server call failed: %w", err))
 	}
 
 	claims, err := ParseIDTokenClaims(token)
 	if err != nil {
-		return nil, errors.Annotate(err, "auth/gce: metadata server returned invalid ID token").Err()
+		return nil, errors.Fmt("auth/gce: metadata server returned invalid ID token: %w", err)
 	}
 
 	return &Token{
@@ -237,7 +237,7 @@ func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) 
 
 	tokenJSON, err := metadataClient.GetWithContext(ctx, tokenURI)
 	if err != nil {
-		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("auth/gce: metadata server call failed: %w", err))
 	}
 
 	var res struct {
@@ -247,9 +247,9 @@ func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) 
 	}
 	switch err = json.NewDecoder(strings.NewReader(tokenJSON)).Decode(&res); {
 	case err != nil:
-		return nil, errors.Annotate(err, "auth/gce: invalid token JSON from metadata").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("auth/gce: invalid token JSON from metadata: %w", err))
 	case res.ExpiresInSec == 0 || res.AccessToken == "":
-		return nil, errors.Reason("auth/gce: incomplete token received from metadata").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.New("auth/gce: incomplete token received from metadata"))
 	}
 
 	tok := oauth2.Token{

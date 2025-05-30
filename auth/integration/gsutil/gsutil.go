@@ -72,7 +72,7 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 	// protocol have read access to .boto file (where this secret is stored).
 	blob := make([]byte, 48)
 	if _, err := cryptorand.Read(ctx, blob); err != nil {
-		return "", errors.Annotate(err, "failed to read random bytes").Err()
+		return "", errors.Fmt("failed to read random bytes: %w", err)
 	}
 	secret := base64.RawStdEncoding.EncodeToString(blob)
 
@@ -81,7 +81,7 @@ func (s *Server) Start(ctx context.Context) (botoCfg string, err error) {
 		return s.serve(c, l, wg, secret)
 	})
 	if err != nil {
-		return "", errors.Annotate(err, "failed to start the server").Err()
+		return "", errors.Fmt("failed to start the server: %w", err)
 	}
 	defer func() {
 		if err != nil {

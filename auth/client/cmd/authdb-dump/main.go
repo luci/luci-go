@@ -96,22 +96,22 @@ func run(ctx context.Context) error {
 func fetchAuthDB(ctx context.Context, client *http.Client, authServiceURL string) (*protocol.AuthDB, error) {
 	req, err := http.NewRequest("GET", authServiceURL+"/auth_service/api/v1/authdb/revisions/latest", nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to prepare the request").Err()
+		return nil, errors.Fmt("failed to prepare the request: %w", err)
 	}
 
 	// Grab JSON with base64-encoded deflated AuthDB snapshot.
 	logging.Infof(ctx, "Sending the request to %s...", authServiceURL)
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to send the request to the auth service").Err()
+		return nil, errors.Fmt("failed to send the request to the auth service: %w", err)
 	}
 	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the response from the auth service").Err()
+		return nil, errors.Fmt("failed to read the response from the auth service: %w", err)
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.Reason("unexpected response with code %d from the auth service: %s", resp.StatusCode, body).Err()
+		return nil, errors.Fmt("unexpected response with code %d from the auth service: %s", resp.StatusCode, body)
 	}
 
 	// Extract deflated ReplicationPushRequest from it.
@@ -124,30 +124,30 @@ func fetchAuthDB(ctx context.Context, client *http.Client, authServiceURL string
 		} `json:"snapshot"`
 	}
 	if err := json.Unmarshal(body, &out); err != nil {
-		return nil, errors.Annotate(err, "failed to JSON unmarshal the response").Err()
+		return nil, errors.Fmt("failed to JSON unmarshal the response: %w", err)
 	}
 	deflated, err := base64.StdEncoding.DecodeString(out.Snapshot.DeflatedBody)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to base64-decode").Err()
+		return nil, errors.Fmt("failed to base64-decode: %w", err)
 	}
 
 	// Inflate it.
 	reader, err := zlib.NewReader(bytes.NewReader(deflated))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to start inflating").Err()
+		return nil, errors.Fmt("failed to start inflating: %w", err)
 	}
 	inflated := bytes.Buffer{}
 	if _, err := io.Copy(&inflated, reader); err != nil {
-		return nil, errors.Annotate(err, "failed to inflate").Err()
+		return nil, errors.Fmt("failed to inflate: %w", err)
 	}
 	if err := reader.Close(); err != nil {
-		return nil, errors.Annotate(err, "failed to inflate").Err()
+		return nil, errors.Fmt("failed to inflate: %w", err)
 	}
 
 	// Unmarshal the actual proto message contained there.
 	msg := protocol.ReplicationPushRequest{}
 	if err := proto.Unmarshal(inflated.Bytes(), &msg); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize AuthDB proto").Err()
+		return nil, errors.Fmt("failed to deserialize AuthDB proto: %w", err)
 	}
 
 	// Log some stats.

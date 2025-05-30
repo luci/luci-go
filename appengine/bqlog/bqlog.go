@@ -211,7 +211,7 @@ func valuesToJSON(in map[string]bigquery.Value) (map[string]bqapi.JsonValue, err
 	for k, v := range in {
 		blob, err := json.Marshal(v)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to JSON-serialize key %q", k).Err()
+			return nil, errors.Fmt("failed to JSON-serialize key %q: %w", k, err)
 		}
 		out[k] = json.RawMessage(blob)
 	}
@@ -235,10 +235,10 @@ func (l *Log) Insert(ctx context.Context, rows ...bigquery.ValueSaver) (err erro
 	for i, r := range rows {
 		values, iid, err := r.Save()
 		if err != nil {
-			return errors.Annotate(err, "failure when saving row #%d", i).Err()
+			return errors.Fmt("failure when saving row #%d: %w", i, err)
 		}
 		if entries[i].Data, err = valuesToJSON(values); err != nil {
-			return errors.Annotate(err, "failure when serializing row #%d", i).Err()
+			return errors.Fmt("failure when serializing row #%d: %w", i, err)
 		}
 		entries[i].InsertID = iid
 	}

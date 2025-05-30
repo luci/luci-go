@@ -110,7 +110,7 @@ func (b *Boto) Write(path string) error {
 func (b *Boto) readBotoConfigSections(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
-		return errors.Annotate(err, "failed to read existing .boto file at %s", path).Err()
+		return errors.Fmt("failed to read existing .boto file at %s: %w", path, err)
 	}
 
 	defer func() { _ = f.Close() }()
@@ -237,7 +237,7 @@ func findUserBotoConfig(ctx context.Context) (string, error) {
 // PrepareStateDir returns a path to the created .boto file.
 func PrepareStateDir(ctx context.Context, b *Boto) (string, error) {
 	if err := os.MkdirAll(b.StateDir, 0700); err != nil {
-		return "", errors.Annotate(err, "failed to create gsutil state dir at %s", b.StateDir).Err()
+		return "", errors.Fmt("failed to create gsutil state dir at %s: %w", b.StateDir, err)
 	}
 
 	// Find the path to the users boto config if it exists.
@@ -257,14 +257,14 @@ func PrepareStateDir(ctx context.Context, b *Boto) (string, error) {
 
 	botoCfg := filepath.Join(b.StateDir, ".boto")
 	if err := b.Write(botoCfg); err != nil {
-		return "", errors.Annotate(err, "failed to write %s", botoCfg).Err()
+		return "", errors.Fmt("failed to write %s: %w", botoCfg, err)
 	}
 
 	// Make sure the credentials cache file is empty, otherwise it will grow
 	// after each server launch, since it uses refresh_token (which we may
 	// generate randomly) as a cache key. We don't really need this cache anyway.
 	if err := os.Remove(filepath.Join(b.StateDir, "credstore")); err != nil && !os.IsNotExist(err) {
-		return "", errors.Annotate(err, "failed to remove credstore").Err()
+		return "", errors.Fmt("failed to remove credstore: %w", err)
 	}
 
 	return botoCfg, nil

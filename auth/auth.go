@@ -584,7 +584,7 @@ func (opts *Options) PopulateDefaults() {
 		var err error
 		opts.SecretsDir, err = filepath.Abs(opts.SecretsDir)
 		if err != nil {
-			panic(errors.Annotate(err, "failed to get abs path to token cache dir").Err())
+			panic(errors.Fmt("failed to get abs path to token cache dir: %w", err))
 		}
 	}
 }
@@ -824,12 +824,12 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 			if err == ErrLoginRequired {
 				return nil, err
 			}
-			return nil, errors.Annotate(err, "failed to refresh auth token").Err()
+			return nil, errors.Fmt("failed to refresh auth token: %w", err)
 		}
 		// Verify we've got a token that haven't expired yet. We should never ever
 		// return expired tokens, they are useless.
 		if internal.TokenExpiresIn(a.ctx, tok, 0) {
-			return nil, errors.Reason("failed to refresh auth token: got an expired token after the refresh").Err()
+			return nil, errors.New("failed to refresh auth token: got an expired token after the refresh")
 		}
 		// Some external token providers implement caches themselves and, depending
 		// on how this cache functions, they may return the same token with its
@@ -873,14 +873,14 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 func (a *Authenticator) UnpackTokenMetadata(key string, val any) error {
 	tok, err := a.currentToken()
 	if err != nil {
-		return errors.Annotate(err, "unpack token metadata").Err()
+		return errors.Fmt("unpack token metadata: %w", err)
 	}
 	enc, ok := tok.Metadata[key]
 	if !ok {
 		return errors.Fmt("unpack token metadata: no value for key %v", key)
 	}
 	if err := json.Unmarshal(enc, val); err != nil {
-		return errors.Annotate(err, "unpack metadata").Err()
+		return errors.Fmt("unpack metadata: %w", err)
 	}
 	return nil
 }
@@ -891,13 +891,13 @@ func (a *Authenticator) UnpackTokenMetadata(key string, val any) error {
 func (a *Authenticator) PackTokenMetadata(ctx context.Context, key string, val any) error {
 	_, err := a.currentToken()
 	if err != nil {
-		return errors.Annotate(err, "pack token metadata").Err()
+		return errors.Fmt("pack token metadata: %w", err)
 	}
 	a.lock.Lock()
 	err = a.authToken.packMetadata(ctx, key, val)
 	a.lock.Unlock()
 	if err != nil {
-		return errors.Annotate(err, "pack token metadata").Err()
+		return errors.Fmt("pack token metadata: %w", err)
 	}
 	return nil
 }
@@ -954,11 +954,11 @@ func (a *Authenticator) GetEmail() (string, error) {
 		case errors.Is(err, ErrLoginRequired):
 			return "", err
 		case err != nil:
-			return "", errors.Annotate(err, "failed to refresh auth token").Err()
+			return "", errors.Fmt("failed to refresh auth token: %w", err)
 		case tok.Email == internal.NoEmail:
 			return "", ErrNoEmail
 		case tok.Email == internal.UnknownEmail: // this must not happen, but let's be cautious
-			return "", errors.Reason("internal error when fetching the email, see logs").Err()
+			return "", errors.New("internal error when fetching the email, see logs")
 		default:
 			return tok.Email, nil
 		}
@@ -987,11 +987,11 @@ func (a *Authenticator) GetEmail() (string, error) {
 		})
 		switch {
 		case err != nil:
-			return "", errors.Annotate(err, "failed to call token info endpoint").Err()
+			return "", errors.Fmt("failed to call token info endpoint: %w", err)
 		case info.Email == "":
 			return "", ErrNoEmail
 		case !info.EmailVerified:
-			return "", errors.Reason("the email %s in the token is not verified", info.Email).Err()
+			return "", errors.Fmt("the email %s in the token is not verified", info.Email)
 		}
 
 		// Cache the outcome.
@@ -1222,13 +1222,13 @@ func (a *Authenticator) ensureInitialized() error {
 	case CredentialHelperMethod:
 		switch {
 		case a.opts.CredentialHelper == nil:
-			a.err = errors.Reason("missing CredentialHelper config").Err()
+			a.err = errors.New("missing CredentialHelper config")
 		case a.opts.UseIDTokens:
-			a.err = errors.Reason("ID tokens are currently not supported when using external credential helpers").Err()
+			a.err = errors.New("ID tokens are currently not supported when using external credential helpers")
 		}
 	case GoogleADCMethod:
 		if a.opts.UseIDTokens {
-			a.err = errors.Reason("ID tokens are not supported when using Application Default Credentials").Err()
+			a.err = errors.New("ID tokens are not supported when using Application Default Credentials")
 		}
 	}
 	if a.err != nil {
@@ -1396,7 +1396,7 @@ func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err 
 	case effectiveMode == OptionalLogin:
 		return false, nil // we can skip auth in OptionalLogin if we have no token
 	case effectiveMode != InteractiveLogin:
-		return false, errors.Reason("invalid mode argument: %s", effectiveMode).Err()
+		return false, errors.Fmt("invalid mode argument: %s", effectiveMode)
 	}
 
 	// Ask the user to do the login flow. As already checked, we are in
@@ -1765,15 +1765,15 @@ func (t *tokenWithProvider) packMetadata(ctx context.Context, key string, val an
 	}
 	enc, err := json.Marshal(val)
 	if err != nil {
-		return errors.Annotate(err, "pack metadata").Err()
+		return errors.Fmt("pack metadata: %w", err)
 	}
 	t.token.Metadata[key] = json.RawMessage(enc)
 	ckey, err := t.provider.CacheKey(ctx)
 	if err != nil {
-		return errors.Annotate(err, "pack metadata").Err()
+		return errors.Fmt("pack metadata: %w", err)
 	}
 	if err := t.cache.PutToken(ckey, t.token); err != nil {
-		return errors.Annotate(err, "pack metadata").Err()
+		return errors.Fmt("pack metadata: %w", err)
 	}
 	return nil
 }
@@ -1842,13 +1842,13 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 	switch opts.Method {
 	case UserCredentialsMethod:
 		if opts.ClientID == "" || opts.ClientSecret == "" {
-			return nil, errors.Reason("OAuth client is not configured, can't use interactive login").Err()
+			return nil, errors.New("OAuth client is not configured, can't use interactive login")
 		}
 		if internal.NewLoginSessionTokenProvider == nil {
-			return nil, errors.Reason("support for interactive login flow is not compiled into this binary").Err()
+			return nil, errors.New("support for interactive login flow is not compiled into this binary")
 		}
 		if opts.LoginSessionsHost == "" {
-			return nil, errors.Reason("no login session host configured").Err()
+			return nil, errors.New("no login session host configured")
 		}
 		// Note: LoginSessionTokenProvider supports ID tokens
 		// and OAuth access tokens at the same time.
@@ -1889,7 +1889,7 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 	case GoogleADCMethod:
 		return internal.NewGoogleADCTokenProvider(ctx, scopes)
 	default:
-		return nil, errors.Reason("unrecognized authentication method: %s", opts.Method).Err()
+		return nil, errors.Fmt("unrecognized authentication method: %s", opts.Method)
 	}
 }
 

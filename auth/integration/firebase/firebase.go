@@ -59,7 +59,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 		return s.serve(c, l, wg)
 	})
 	if err != nil {
-		return "", errors.Annotate(err, "failed to start the server").Err()
+		return "", errors.Fmt("failed to start the server: %w", err)
 	}
 	return fmt.Sprintf("http://%s", addr), nil
 }

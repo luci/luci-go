@@ -104,38 +104,38 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 
 	ac, err := analysis.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating analysis client").Err()
+		return errors.Fmt("creating analysis client: %w", err)
 	}
 
 	cpc, err := changepoints.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating changepoint client").Err()
+		return errors.Fmt("creating changepoint client: %w", err)
 	}
 
 	tvc, err := testverdicts.NewReadClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating test verdicts read client").Err()
+		return errors.Fmt("creating test verdicts read client: %w", err)
 	}
 
 	tsc, err := testrealms.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating test search client").Err()
+		return errors.Fmt("creating test search client: %w", err)
 	}
 
 	trc, err := testresults.NewReadClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating test results read client").Err()
+		return errors.Fmt("creating test results read client: %w", err)
 	}
 
 	sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "creating sorbet client").Err()
+		return errors.Fmt("creating sorbet client: %w", err)
 	}
 
 	// May be nil on deployments where Buganizer is not configured.
 	bc, err := buganizer.CreateBuganizerClient(srv.Context)
 	if err != nil {
-		return errors.Annotate(err, "create buganizer client").Err()
+		return errors.Fmt("create buganizer client: %w", err)
 	}
 	// May be empty on deployments where Buganizer is not configured.
 	selfEmail := srv.Context.Value(&buganizer.BuganizerSelfEmailKey).(string)
@@ -201,16 +201,16 @@ func RegisterPubSubHandlers() {
 // RegisterTaskQueueHandlers registers task queue handlers.
 func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	if err := backfill.RegisterTaskHandler(srv); err != nil {
-		return errors.Annotate(err, "register backfill").Err()
+		return errors.Fmt("register backfill: %w", err)
 	}
 	if err := reclustering.RegisterTaskHandler(srv); err != nil {
-		return errors.Annotate(err, "register reclustering").Err()
+		return errors.Fmt("register reclustering: %w", err)
 	}
 	if err := resultingester.RegisterTaskHandler(srv); err != nil {
-		return errors.Annotate(err, "register result ingester").Err()
+		return errors.Fmt("register result ingester: %w", err)
 	}
 	if err := verdictingester.RegisterTaskHandler(srv); err != nil {
-		return errors.Annotate(err, "register verdict ingester").Err()
+		return errors.Fmt("register verdict ingester: %w", err)
 	}
 
 	basePath, ok := srv.Context.Value(&ui.UIBaseURLKey).(string)
@@ -218,11 +218,11 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 		return errors.New("UI base URL is not configured in context")
 	}
 	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(basePath)); err != nil {
-		return errors.Annotate(err, "register bug updater").Err()
+		return errors.Fmt("register bug updater: %w", err)
 	}
 
 	if err := changepointgrouper.RegisterTaskHandler(srv); err != nil {
-		return errors.Annotate(err, "register changepoint grouper").Err()
+		return errors.Fmt("register changepoint grouper: %w", err)
 	}
 	buildjoiner.RegisterTaskHandler()
 	return nil

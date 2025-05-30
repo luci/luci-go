@@ -107,7 +107,7 @@ func AssignTaskNumbers(ctx context.Context) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to enumerate or expire entries").Err()
+		return errors.Fmt("failed to enumerate or expire entries: %w", err)
 	}
 
 	return parallel.FanOutIn(func(tasks chan<- func() error) {

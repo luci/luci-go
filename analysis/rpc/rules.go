@@ -97,7 +97,7 @@ func NewRulesServer(uiBaseURL string, client buganizer.Client, selfEmail string)
 func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetRule); err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, 
 			return nil, appstatus.Error(codes.NotFound, "rule does not exist")
 		}
 		// This will result in an internal error being reported to the caller.
-		return nil, errors.Annotate(err, "reading rule %s", ruleID).Err()
+		return nil, errors.Fmt("reading rule %s: %w", ruleID, err)
 	}
 	return createRulePB(r, cfg.Config, ruleMask), nil
 }
@@ -141,11 +141,11 @@ func ruleFieldAccess(ctx context.Context, project string) (ruleMask, error) {
 	var err error
 	result.IncludeDefinition, err = perms.HasProjectPermission(ctx, project, perms.PermGetRuleDefinition)
 	if err != nil {
-		return ruleMask{}, errors.Annotate(err, "determining access to rule definition").Err()
+		return ruleMask{}, errors.Fmt("determining access to rule definition: %w", err)
 	}
 	result.IncludeAuditUsers, err = auth.IsMember(ctx, auditUsersAccessGroup)
 	if err != nil {
-		return ruleMask{}, errors.Annotate(err, "determining access to read created/last modified users").Err()
+		return ruleMask{}, errors.Fmt("determining access to read created/last modified users: %w", err)
 	}
 	return result, nil
 }
@@ -154,7 +154,7 @@ func ruleFieldAccess(ctx context.Context, project string) (ruleMask, error) {
 func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.ListRulesResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermListRules); err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 	rs, err := rules.ReadActive(span.Single(ctx), project)
 	if err != nil {
 		// GRPCifyAndLog will log this, and report an internal error.
-		return nil, errors.Annotate(err, "reading rules").Err()
+		return nil, errors.Fmt("reading rules: %w", err)
 	}
 
 	rpbs := make([]*pb.Rule, 0, len(rs))
@@ -190,7 +190,7 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.Rule, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 
 	ruleID, err := rules.GenerateID()
 	if err != nil {
-		return nil, errors.Annotate(err, "generating rule ID").Err()
+		return nil, errors.Fmt("generating rule ID: %w", err)
 	}
 	user := auth.CurrentUser(ctx).Email
 
@@ -274,7 +274,7 @@ func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRule
 	}
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	// Check standard rule creation permissions.
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
@@ -299,7 +299,7 @@ func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRule
 
 	ruleID, err := rules.GenerateID()
 	if err != nil {
-		return nil, errors.Annotate(err, "generating rule ID").Err()
+		return nil, errors.Fmt("generating rule ID: %w", err)
 	}
 	user := auth.CurrentUser(ctx).Email
 	ruleURL := bugs.RuleURL(s.uiBaseURL, project, ruleID)
@@ -314,7 +314,7 @@ func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRule
 			code == codes.OutOfRange {
 			// Error indicates something wrong with the request,
 			// surface these back to the caller.
-			return nil, invalidArgumentError(errors.Annotate(err, "creating issue").Err())
+			return nil, invalidArgumentError(errors.Fmt("creating issue: %w", err))
 		}
 
 		// GRPCifyAndLog will log this, and report an internal error to the caller.
@@ -421,7 +421,7 @@ func toBuganizerAccessLevel(accessLevel pb.CreateRuleWithNewIssueRequest_Issue_I
 func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Rule.GetName())
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "rule: name").Err())
+		return nil, invalidArgumentError(errors.Fmt("rule: name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
@@ -452,7 +452,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			}
 			// This will result in an internal error being reported to the
 			// caller.
-			return errors.Annotate(err, "read rule").Err()
+			return errors.Fmt("read rule: %w", err)
 		}
 		originalRule = &rules.Entry{}
 		*originalRule = *rule
@@ -632,7 +632,7 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 	rules, err := rules.ReadByBug(span.Single(ctx), bug)
 	if err != nil {
 		// This will result in an internal error being reported to the caller.
-		return nil, errors.Annotate(err, "reading rule by bug %s:%s", bug.System, bug.ID).Err()
+		return nil, errors.Fmt("reading rule by bug %s:%s: %w", bug.System, bug.ID, err)
 	}
 	ruleNames := make([]string, 0, len(rules))
 	for _, rule := range rules {
@@ -652,7 +652,7 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 func (*rulesServer) PrepareDefaults(ctx context.Context, req *pb.PrepareRuleDefaultsRequest) (*pb.PrepareRuleDefaultsResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {
 		return nil, err
@@ -708,10 +708,10 @@ func validateCreateRuleRequest(req *pb.CreateRuleRequest, cfg *configpb.ProjectC
 	// validation.
 
 	if err := validateRuleForCreate(req.Rule, true /* expectBug */); err != nil {
-		return errors.Annotate(err, "rule").Err()
+		return errors.Fmt("rule: %w", err)
 	}
 	if err := validateBugAgainstConfig(cfg, req.Rule.Bug); err != nil {
-		return errors.Annotate(err, "rule: bug").Err()
+		return errors.Fmt("rule: bug: %w", err)
 	}
 	return nil
 }
@@ -723,10 +723,10 @@ func validateCreateRuleWithNewIssueRequest(req *pb.CreateRuleWithNewIssueRequest
 	// validation.
 
 	if err := validateRuleForCreate(req.Rule, false /* expectBug */); err != nil {
-		return errors.Annotate(err, "rule").Err()
+		return errors.Fmt("rule: %w", err)
 	}
 	if err := validateNewIssue(req.Issue); err != nil {
-		return errors.Annotate(err, "issue").Err()
+		return errors.Fmt("issue: %w", err)
 	}
 	return nil
 }
@@ -748,7 +748,7 @@ func validateUpdateRuleRequest(req *pb.UpdateRuleRequest, cfg *configpb.ProjectC
 		switch path {
 		case "rule_definition":
 			if err := rules.ValidateRuleDefinition(req.Rule.RuleDefinition); err != nil {
-				return errors.Annotate(err, "rule: rule_definition").Err()
+				return errors.Fmt("rule: rule_definition: %w", err)
 			}
 		case "bug":
 			if req.Rule.Bug == nil {
@@ -759,10 +759,10 @@ func validateUpdateRuleRequest(req *pb.UpdateRuleRequest, cfg *configpb.ProjectC
 				ID:     req.Rule.Bug.GetId(),
 			}
 			if err := bugID.Validate(); err != nil {
-				return errors.Annotate(err, "rule: bug").Err()
+				return errors.Fmt("rule: bug: %w", err)
 			}
 			if err := validateBugAgainstConfig(cfg, req.Rule.Bug); err != nil {
-				return errors.Annotate(err, "rule: bug").Err()
+				return errors.Fmt("rule: bug: %w", err)
 			}
 		case "is_active":
 			// Boolean value.
@@ -784,7 +784,7 @@ func validatePrepareRuleDefaultsRequest(req *pb.PrepareRuleDefaultsRequest) erro
 	// validation.
 
 	if err := validatePrepareRuleDefaultsTestResult(req.TestResult); err != nil {
-		return errors.Annotate(err, "test_result").Err()
+		return errors.Fmt("test_result: %w", err)
 	}
 	return nil
 }
@@ -795,12 +795,12 @@ func validatePrepareRuleDefaultsTestResult(result *pb.PrepareRuleDefaultsRequest
 		return nil
 	}
 	if err := pbutil.ValidateTestID(result.TestId); err != nil {
-		return errors.Annotate(err, "test_id").Err()
+		return errors.Fmt("test_id: %w", err)
 	}
 	// Failure reason is optional.
 	if result.FailureReason != nil {
 		if err := pbutil.ValidateFailureReason(result.FailureReason); err != nil {
-			return errors.Annotate(err, "failure_reason").Err()
+			return errors.Fmt("failure_reason: %w", err)
 		}
 	}
 	return nil
@@ -816,7 +816,7 @@ func validateRuleForCreate(rule *pb.Rule, expectBug bool) error {
 		}
 		b := bugs.BugID{System: rule.Bug.System, ID: rule.Bug.Id}
 		if err := b.Validate(); err != nil {
-			return errors.Annotate(err, "bug").Err()
+			return errors.Fmt("bug: %w", err)
 		}
 	} else {
 		if rule.Bug != nil {
@@ -830,12 +830,12 @@ func validateRuleForCreate(rule *pb.Rule, expectBug bool) error {
 		}
 		if !cluster.IsEmpty() {
 			if err := cluster.Validate(); err != nil {
-				return errors.Annotate(err, "source_cluster").Err()
+				return errors.Fmt("source_cluster: %w", err)
 			}
 		}
 	}
 	if err := rules.ValidateRuleDefinition(rule.RuleDefinition); err != nil {
-		return errors.Annotate(err, "rule_definition").Err()
+		return errors.Fmt("rule_definition: %w", err)
 	}
 	return nil
 }
@@ -845,19 +845,19 @@ func validateNewIssue(issue *pb.CreateRuleWithNewIssueRequest_Issue) error {
 		return errors.New("unspecified")
 	}
 	if err := validateMandatoryString(issue.Title, maxTitleLengthBytes); err != nil {
-		return errors.Annotate(err, "title").Err()
+		return errors.Fmt("title: %w", err)
 	}
 	if err := validateMandatoryString(issue.Comment, maxCommentLengthBytes); err != nil {
-		return errors.Annotate(err, "comment").Err()
+		return errors.Fmt("comment: %w", err)
 	}
 	if err := validateBugComponent(issue.Component); err != nil {
-		return errors.Annotate(err, "component").Err()
+		return errors.Fmt("component: %w", err)
 	}
 	if err := validateIssueAccessLimit(issue.AccessLimit); err != nil {
-		return errors.Annotate(err, "access_limit").Err()
+		return errors.Fmt("access_limit: %w", err)
 	}
 	if err := validateBuganizerPriority(issue.Priority); err != nil {
-		return errors.Annotate(err, "priority").Err()
+		return errors.Fmt("priority: %w", err)
 	}
 	return nil
 }
@@ -867,17 +867,17 @@ func validateMandatoryString(s string, maxLengthBytes int) error {
 		return errors.New("unspecified")
 	}
 	if len(s) > maxLengthBytes {
-		return errors.Reason("longer than %v bytes", maxLengthBytes).Err()
+		return errors.Fmt("longer than %v bytes", maxLengthBytes)
 	}
 	if !utf8.ValidString(s) {
-		return errors.Reason("not a valid utf8 string").Err()
+		return errors.New("not a valid utf8 string")
 	}
 	// W3C recommends Normalization form C is used for all content moving across the internet.
 	// Read more about Unicode and normalization:
 	// - https://google.aip.dev/210
 	// - https://unicode.org/reports/tr15/
 	if !norm.NFC.IsNormalString(s) {
-		return errors.Reason("not in unicode normalized form C").Err()
+		return errors.New("not in unicode normalized form C")
 	}
 	for i, rune := range s {
 		if !unicode.IsPrint(rune) {

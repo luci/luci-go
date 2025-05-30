@@ -283,14 +283,10 @@ func serveMetadataImpl(root *node, req *http.Request) (*response, error) {
 			http.StatusMethodNotAllowed)
 	}
 	if fl := req.Header.Get("Metadata-Flavor"); fl != "Google" {
-		return nil, statusTag.ApplyValue(
-			errors.Reason("Bad Metadata-Flavor: got %q, want %q", fl, "Google").Err(),
-			http.StatusBadRequest)
+		return nil, statusTag.ApplyValue(errors.Fmt("Bad Metadata-Flavor: got %q, want %q", fl, "Google"), http.StatusBadRequest)
 	}
 	if ff := req.Header.Get("X-Forwarded-For"); ff != "" {
-		return nil, statusTag.ApplyValue(
-			errors.Reason("Forbidden X-Forwarded-For header %q", ff).Err(),
-			http.StatusBadRequest)
+		return nil, statusTag.ApplyValue(errors.Fmt("Forbidden X-Forwarded-For header %q", ff), http.StatusBadRequest)
 	}
 
 	// Normalize the path to be "/something" (or "/" for the root).
@@ -328,24 +324,18 @@ func serveMetadataImpl(root *node, req *http.Request) (*response, error) {
 	cur := root
 	for _, name := range elems {
 		if cur.kind == kindLeaf {
-			return nil, statusTag.ApplyValue(
-				errors.Reason("Metadata %q can't be listed", cur.path).Err(),
-				http.StatusNotFound)
+			return nil, statusTag.ApplyValue(errors.Fmt("Metadata %q can't be listed", cur.path), http.StatusNotFound)
 		}
 		next := cur.children[name]
 		if next == nil {
-			return nil, statusTag.ApplyValue(
-				errors.Reason("Metadata directory %q doesn't have %q", cur.path, name).Err(),
-				http.StatusNotFound)
+			return nil, statusTag.ApplyValue(errors.Fmt("Metadata directory %q doesn't have %q", cur.path, name), http.StatusNotFound)
 		}
 		cur = next
 	}
 
 	if listing {
 		if cur.kind == kindLeaf {
-			return nil, statusTag.ApplyValue(
-				errors.Reason("Metadata %q can't be listed", cur.path).Err(),
-				http.StatusNotFound)
+			return nil, statusTag.ApplyValue(errors.Fmt("Metadata %q can't be listed", cur.path), http.StatusNotFound)
 		}
 		switch {
 		case recursive && alt == "text":
@@ -385,11 +375,11 @@ func recursiveTextListing(ctx context.Context, n *node, q url.Values) (*response
 		case statusCode(err) == http.StatusNotFound:
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "%s", n.path).Err()
+			return errors.Fmt("%s: %w", n.path, err)
 		default:
 			lines, err := convertToText(obj)
 			if err != nil {
-				return errors.Annotate(err, "%s", n.path).Err()
+				return errors.Fmt("%s: %w", n.path, err)
 			}
 			if !strings.HasPrefix(n.path, root) {
 				panic(fmt.Sprintf("impossible %q vs %q", n.path, root))
@@ -456,7 +446,7 @@ func recursiveJSONListing(ctx context.Context, n *node, q url.Values) (*response
 			case statusCode(err) == http.StatusNotFound:
 				return nil, errSkip
 			case err != nil:
-				return nil, errors.Annotate(err, "%s", n.path).Err()
+				return nil, errors.Fmt("%s: %w", n.path, err)
 			default:
 				return obj, nil
 			}
@@ -473,7 +463,7 @@ func recursiveJSONListing(ctx context.Context, n *node, q url.Values) (*response
 
 	blob, err := json.Marshal(out)
 	if err != nil {
-		return nil, errors.Annotate(err, "converting to JSON").Err()
+		return nil, errors.Fmt("converting to JSON: %w", err)
 	}
 	return &response{
 		contentType: contentTypeJSON,
@@ -547,7 +537,7 @@ func nodeContent(ctx context.Context, n *node, q url.Values, alt string) (*respo
 	case "json":
 		blob, err := json.Marshal(obj)
 		if err != nil {
-			return nil, errors.Annotate(err, "converting to JSON").Err()
+			return nil, errors.Fmt("converting to JSON: %w", err)
 		}
 		return &response{
 			contentType: contentTypeJSON,
@@ -585,7 +575,7 @@ func convertToText(obj any) ([]string, error) {
 	// Piggyback on JSON encoder for traversing `obj` and stringfying its values.
 	blob, err := json.Marshal(obj)
 	if err != nil {
-		return nil, errors.Annotate(err, "converting to JSON").Err()
+		return nil, errors.Fmt("converting to JSON: %w", err)
 	}
 
 	toPlainText := func(msg json.RawMessage) string {

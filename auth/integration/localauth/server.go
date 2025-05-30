@@ -129,14 +129,14 @@ type Server struct {
 func (s *Server) Start(ctx context.Context) (*lucictx.LocalAuth, error) {
 	la, err := s.initLocalAuth(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize LocalAuth").Err()
+		return nil, errors.Fmt("failed to initialize LocalAuth: %w", err)
 	}
 
 	addr, err := s.srv.Start(ctx, "local_auth", s.Port, func(c context.Context, l net.Listener, wg *sync.WaitGroup) error {
 		return s.serve(c, l, wg, la.Secret)
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to start the local server").Err()
+		return nil, errors.Fmt("failed to start the local server: %w", err)
 	}
 
 	la.RpcPort = uint32(addr.Port)
@@ -171,7 +171,7 @@ func (s *Server) initLocalAuth(ctx context.Context) (*lucictx.LocalAuth, error) 
 		case err == auth.ErrNoEmail:
 			email = "-"
 		case err != nil:
-			return nil, errors.Annotate(err, "could not grab email of account %q", id).Err()
+			return nil, errors.Fmt("could not grab email of account %q: %w", id, err)
 		}
 		accounts[i] = &lucictx.LocalAuthAccount{Id: id, Email: email}
 	}

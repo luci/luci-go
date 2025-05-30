@@ -205,7 +205,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	if tempDir == "" {
 		ac.tmpDir, err = ioutil.TempDir("", "luci")
 		if err != nil {
-			return errors.Annotate(err, "failed to create a temp directory").Err()
+			return errors.Fmt("failed to create a temp directory: %w", err)
 		}
 		tempDir = ac.tmpDir
 	}
@@ -221,7 +221,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	// `tokens` via the LUCI_CONTEXT protocol or GCE metadata server emulation.
 	ac.authenticator, err = tokens.Authenticator(opts.Scopes, "")
 	if err != nil {
-		return errors.Annotate(err, "failed to construct authenticator for %q account", ac.ID).Err()
+		return errors.Fmt("failed to construct authenticator for %q account: %w", ac.ID, err)
 	}
 
 	// Figure out what email is associated with this account (if any).
@@ -233,7 +233,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 		// locally without doing 'luci-auth login' first.
 		ac.anonymous = true
 	case err != nil:
-		return errors.Annotate(err, "failed to get email of %q account", ac.ID).Err()
+		return errors.Fmt("failed to get email of %q account: %w", ac.ID, err)
 	}
 
 	// Check whether we are allowed to inherit the existing LUCI_CONTEXT. We do it
@@ -250,7 +250,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	canInherit := opts.Method == auth.LUCIContextMethod && opts.ActAsServiceAccount == "" && !ac.ExposeSystemAccount
 	if !canInherit && !ac.anonymous {
 		if ac.luciSrv, ac.localAuth, err = launchSrv(ctx, tokens, ac.ID, ac.ExposeSystemAccount); err != nil {
-			return errors.Annotate(err, "failed to launch local auth server for %q account", ac.ID).Err()
+			return errors.Fmt("failed to launch local auth server for %q account: %w", ac.ID, err)
 		}
 	}
 
@@ -487,10 +487,10 @@ func launchSrv(ctx context.Context, tokens *auth.TokenGenerator, accID string, e
 func (ac *Context) setupGitAuth(tempDir string) error {
 	ac.gitHome = filepath.Join(tempDir, "git-home-"+ac.ID)
 	if err := os.Mkdir(ac.gitHome, 0700); err != nil {
-		return errors.Annotate(err, "failed to create git HOME for %q account at %s", ac.ID, ac.gitHome).Err()
+		return errors.Fmt("failed to create git HOME for %q account at %s: %w", ac.ID, ac.gitHome, err)
 	}
 	if err := ac.writeGitConfig(); err != nil {
-		return errors.Annotate(err, "failed to setup .gitconfig for %q account", ac.ID).Err()
+		return errors.Fmt("failed to setup .gitconfig for %q account: %w", ac.ID, err)
 	}
 	return nil
 }
@@ -520,14 +520,14 @@ func (ac *Context) writeGitConfig() error {
 func (ac *Context) setupDockerAuth(tempDir string) error {
 	ac.dockerConfig = filepath.Join(tempDir, "docker-cfg-"+ac.ID)
 	if err := os.Mkdir(ac.dockerConfig, 0700); err != nil {
-		return errors.Annotate(err, "failed to create Docker configuration directory for %q account at %s", ac.ID, ac.dockerConfig).Err()
+		return errors.Fmt("failed to create Docker configuration directory for %q account at %s: %w", ac.ID, ac.dockerConfig, err)
 	}
 	if err := ac.writeDockerConfig(); err != nil {
-		return errors.Annotate(err, "failed to create config.json for %q account", ac.ID).Err()
+		return errors.Fmt("failed to create config.json for %q account: %w", ac.ID, err)
 	}
 	ac.dockerTmpDir = filepath.Join(tempDir, "docker-tmp-"+ac.ID)
 	if err := os.Mkdir(ac.dockerTmpDir, 0700); err != nil {
-		return errors.Annotate(err, "failed to create Docker temporary directory for %q account at %s", ac.ID, ac.dockerTmpDir).Err()
+		return errors.Fmt("failed to create Docker temporary directory for %q account at %s: %w", ac.ID, ac.dockerTmpDir, err)
 	}
 	return nil
 }
@@ -550,7 +550,7 @@ func (ac *Context) writeDockerConfig() error {
 		},
 	}
 	if err := json.NewEncoder(f).Encode(&config); err != nil {
-		return errors.Annotate(err, "cannot encode configuration").Err()
+		return errors.Fmt("cannot encode configuration: %w", err)
 	}
 	return f.Close()
 }
@@ -558,14 +558,14 @@ func (ac *Context) writeDockerConfig() error {
 func (ac *Context) setupDevShellAuth(ctx context.Context, tempDir string) error {
 	source, err := ac.authenticator.TokenSource()
 	if err != nil {
-		return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
+		return errors.Fmt("failed to get token source for %q account: %w", ac.ID, err)
 	}
 
 	// The directory for .boto and gsutil credentials cache (including access
 	// tokens).
 	ac.gsutilState = filepath.Join(tempDir, "gsutil-"+ac.ID)
 	if err := os.Mkdir(ac.gsutilState, 0700); err != nil {
-		return errors.Annotate(err, "failed to create gsutil state dir for %q account at %s", ac.ID, ac.gsutilState).Err()
+		return errors.Fmt("failed to create gsutil state dir for %q account at %s: %w", ac.ID, ac.gsutilState, err)
 	}
 
 	// Launch gsutil auth shim server. It will put a specially constructed .boto
@@ -575,7 +575,7 @@ func (ac *Context) setupDevShellAuth(ctx context.Context, tempDir string) error 
 		StateDir: ac.gsutilState,
 	}
 	if ac.gsutilBoto, err = ac.gsutilSrv.Start(ctx); err != nil {
-		return errors.Annotate(err, "failed to start gsutil auth shim server for %q account", ac.ID).Err()
+		return errors.Fmt("failed to start gsutil auth shim server for %q account: %w", ac.ID, err)
 	}
 
 	// Presence of DevShell env var breaks gsutil on Windows. Luckily, we rarely
@@ -587,7 +587,7 @@ func (ac *Context) setupDevShellAuth(ctx context.Context, tempDir string) error 
 			Email:  ac.email,
 		}
 		if ac.devShellAddr, err = ac.devShellSrv.Start(ctx); err != nil {
-			return errors.Annotate(err, "failed to start the DevShell server").Err()
+			return errors.Fmt("failed to start the DevShell server: %w", err)
 		}
 	}
 
@@ -607,7 +607,7 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 		}
 		var err error
 		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ctx); err != nil {
-			return errors.Annotate(err, "failed to start fake GCE metadata server for %q account", ac.ID).Err()
+			return errors.Fmt("failed to start fake GCE metadata server for %q account: %w", ac.ID, err)
 		}
 		botoGCEAccount = "default" // switch .boto to use GCE auth
 	}
@@ -619,7 +619,7 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 	// ~/.config/gcloud/...).
 	ac.gcloudConfDir = filepath.Join(tempDir, "gcloud-"+ac.ID)
 	if err := os.Mkdir(ac.gcloudConfDir, 0700); err != nil {
-		return errors.Annotate(err, "failed to create gcloud config dir for %q account at %s", ac.ID, ac.gcloudConfDir).Err()
+		return errors.Fmt("failed to create gcloud config dir for %q account at %s: %w", ac.ID, ac.gcloudConfDir, err)
 	}
 
 	// The directory for .boto and gsutil credentials cache. We need to replace it
@@ -637,7 +637,7 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 func (ac *Context) setupFirebaseAuth(ctx context.Context) error {
 	source, err := ac.authenticator.TokenSource()
 	if err != nil {
-		return errors.Annotate(err, "failed to get token source for %q account", ac.ID).Err()
+		return errors.Fmt("failed to get token source for %q account: %w", ac.ID, err)
 	}
 	// Launch firebase auth shim server. It will provide an URL from which we'll
 	// fetch an auth token.
@@ -645,7 +645,7 @@ func (ac *Context) setupFirebaseAuth(ctx context.Context) error {
 		Source: source,
 	}
 	if ac.firebaseTokenURL, err = ac.firebaseSrv.Start(ctx); err != nil {
-		return errors.Annotate(err, "failed to start firebase auth shim server for %q account", ac.ID).Err()
+		return errors.Fmt("failed to start firebase auth shim server for %q account: %w", ac.ID, err)
 	}
 	return nil
 }

@@ -101,7 +101,7 @@ func (s *aeadCachedState) refresh(ctx context.Context) error {
 	chunks := strings.Split(strings.TrimPrefix(s.keyPath, "sm://"), "/")
 	if len(chunks) != 2 {
 		logging.Errorf(ctx, "Bad encryption key URI %q", s.keyPath)
-		return errors.Reason("bad secret URI %q", s.keyPath).Err()
+		return errors.Fmt("bad secret URI %q", s.keyPath)
 	}
 	blob, err := fetchSecret(ctx, chunks[0], chunks[1])
 	if err != nil {
@@ -130,12 +130,12 @@ func (s *aeadCachedState) refresh(ctx context.Context) error {
 func fetchSecret(ctx context.Context, project, secret string) ([]byte, error) {
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get OAuth2 token source").Err()
+		return nil, errors.Fmt("failed to get OAuth2 token source: %w", err)
 	}
 
 	client, err := secretmanager.NewClient(ctx, option.WithTokenSource(ts))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to setup Secret Manager client").Err()
+		return nil, errors.Fmt("failed to setup Secret Manager client: %w", err)
 	}
 	defer client.Close()
 
