@@ -48,7 +48,7 @@ func main() {
 		// Install the in-memory cache for configs in datastore, warm it up.
 		srv.Context = config.WithStore(srv.Context, &config.Store{})
 		if _, err := config.Config(srv.Context); err != nil {
-			return errors.Annotate(err, "failed to fetch the initial service config").Err()
+			return errors.Fmt("failed to fetch the initial service config: %w", err)
 		}
 
 		// Register dummy pRPC services (for RPC explorer discovery only).

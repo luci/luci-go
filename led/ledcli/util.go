@@ -162,7 +162,7 @@ func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args 
 			err = enc.Encode(output)
 		}
 		if err != nil {
-			errors.Log(ctx, errors.Annotate(err, "encoding output").Err())
+			errors.Log(ctx, errors.Fmt("encoding output: %w", err))
 			return 1
 		}
 	}
@@ -173,11 +173,11 @@ func (c *cmdBase) doContextExecute(a subcommands.Application, cmd command, args 
 func pingHost(host string) error {
 	rsp, err := http.Get("https://" + host)
 	if err != nil {
-		return errors.Annotate(err, "%q", host).Err()
+		return errors.Fmt("%q: %w", host, err)
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode != 200 {
-		return errors.Reason("%q: bad status %d", host, rsp.StatusCode).Err()
+		return errors.Fmt("%q: bad status %d", host, rsp.StatusCode)
 	}
 	return nil
 }
@@ -187,7 +187,7 @@ func processExperiments(experiments stringmapflag.Value) (map[string]bool, error
 	for k, v := range experiments {
 		lower := strings.ToLower(v)
 		if lower != "true" && lower != "false" {
-			return nil, errors.Reason("bad -experiment %s=...: the value should be `true` or `false`, got %q", k, v).Err()
+			return nil, errors.Fmt("bad -experiment %s=...: the value should be `true` or `false`, got %q", k, v)
 		}
 		processed[k] = lower == "true"
 	}

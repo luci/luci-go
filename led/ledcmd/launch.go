@@ -100,13 +100,13 @@ type LaunchSwarmingOpts struct {
 func GetUID(ctx context.Context, authenticator *auth.Authenticator) (string, error) {
 	tok, err := authenticator.GetAccessToken(time.Minute)
 	if err != nil {
-		return "", errors.Annotate(err, "getting access token").Err()
+		return "", errors.Fmt("getting access token: %w", err)
 	}
 	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
 		AccessToken: tok.AccessToken,
 	})
 	if err != nil {
-		return "", errors.Annotate(err, "getting access token info").Err()
+		return "", errors.Fmt("getting access token info: %w", err)
 	}
 	if info.Email != "" {
 		return info.Email, nil
@@ -129,7 +129,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 
 	logging.Infof(ctx, "building swarming task")
 	if err := jd.FlattenToSwarming(ctx, opts.UserID, opts.ParentTaskId, opts.KitchenSupport, opts.ResultDB); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
+		return nil, nil, errors.Fmt("failed to flatten job definition to swarming: %w", err)
 	}
 
 	st, err := jobexport.ToSwarmingNewTask(jd.GetSwarming())

@@ -39,7 +39,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 	logging.Infof(ctx, "consolidating RBE-CAS sources...")
 	tdir, err := ioutil.TempDir("", "led-consolidate-rbe-cas")
 	if err != nil {
-		return errors.Annotate(err, "failed to create tempdir in consolidation step").Err()
+		return errors.Fmt("failed to create tempdir in consolidation step: %w", err)
 	}
 	defer func() {
 		if err = os.RemoveAll(tdir); err != nil {
@@ -63,14 +63,14 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 
 		subDir := fmt.Sprintf("%s/%d", tdir, i)
 		if err := downloadFromCas(ctx, props.CasInputRoot, casClient, subDir); err != nil {
-			return errors.Annotate(err, "consolidation").Err()
+			return errors.Fmt("consolidation: %w", err)
 		}
 		if err := downloadFromCas(ctx, jd.GetSwarming().CasUserPayload, casClient, subDir); err != nil {
-			return errors.Annotate(err, "consolidation").Err()
+			return errors.Fmt("consolidation: %w", err)
 		}
 		casRef, err := uploadToCas(ctx, casClient, subDir)
 		if err != nil {
-			return errors.Annotate(err, "consolidation").Err()
+			return errors.Fmt("consolidation: %w", err)
 		}
 		props.CasInputRoot.Digest = casRef.GetDigest()
 	}

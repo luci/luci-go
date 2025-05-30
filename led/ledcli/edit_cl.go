@@ -103,7 +103,7 @@ type changeResolver func(host string, change int64) (proj string, ps int64, err 
 func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.GerritChange, error) {
 	p, err := url.Parse(clURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "URL_TO_CHANGELIST").Err()
+		return nil, errors.Fmt("URL_TO_CHANGELIST: %w", err)
 	}
 	p.Host = strings.ReplaceAll(p.Host, ".git.corp.google.com", ".googlesource.com")
 	if !strings.HasSuffix(p.Hostname(), "-review.googlesource.com") {
@@ -118,7 +118,7 @@ func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.Ger
 	if len(toks) == 0 {
 		// https://<gerrit_host>/#/c/<change>
 		// https://<gerrit_host>/#/c/<change>/<patchset>
-		return nil, errors.Reason("old/empty gerrit URL: %q", clURL).Err()
+		return nil, errors.Fmt("old/empty gerrit URL: %q", clURL)
 	}
 
 	var projectToks []string
@@ -138,18 +138,18 @@ func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.Ger
 			}
 		}
 		if len(projectToks) == 0 {
-			return nil, errors.Reason("gerrit URL missing project: %q", clURL).Err()
+			return nil, errors.Fmt("gerrit URL missing project: %q", clURL)
 		}
 	} else if len(toks) == 1 {
 		// toks ==               v------v
 		// https://<gerrit_host>/<change>
 		changePatchsetToks = toks
 	} else {
-		return nil, errors.Reason("Unknown changelist URL format: %q", clURL).Err()
+		return nil, errors.Fmt("Unknown changelist URL format: %q", clURL)
 	}
 
 	if len(changePatchsetToks) == 0 {
-		return nil, errors.Reason("gerrit URL missing change/patchset: %q", clURL).Err()
+		return nil, errors.Fmt("gerrit URL missing change/patchset: %q", clURL)
 	}
 
 	ret := &bbpb.GerritChange{
@@ -158,18 +158,17 @@ func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.Ger
 	}
 	ret.Change, err = strconv.ParseInt(changePatchsetToks[0], 10, 64)
 	if err != nil {
-		return nil, errors.Reason("gerrit URL parsing change %q from %q", changePatchsetToks[0], clURL).Err()
+		return nil, errors.Fmt("gerrit URL parsing change %q from %q", changePatchsetToks[0], clURL)
 	}
 	if len(changePatchsetToks) > 1 {
 		ret.Patchset, err = strconv.ParseInt(changePatchsetToks[1], 10, 64)
 		if err != nil {
-			return nil, errors.Reason("gerrit URL parsing patchset %q from %q", changePatchsetToks[1], clURL).Err()
+			return nil, errors.Fmt("gerrit URL parsing patchset %q from %q", changePatchsetToks[1], clURL)
 		}
 	} else {
 		ret.Project, ret.Patchset, err = resolveChange(ret.Host, ret.Change)
 		if err != nil {
-			return nil, errors.Annotate(
-				err, "resolving patchset from Gerrit Url %q", clURL).Err()
+			return nil, errors.Fmt("resolving patchset from Gerrit Url %q: %w", clURL, err)
 		}
 	}
 
@@ -180,7 +179,7 @@ func gerritResolver(ctx context.Context, authClient *http.Client) changeResolver
 	return func(host string, change int64) (string, int64, error) {
 		gc, err := gerritapi.NewRESTClient(authClient, host, true)
 		if err != nil {
-			return "", 0, errors.Annotate(err, "creating new gerrit client").Err()
+			return "", 0, errors.Fmt("creating new gerrit client: %w", err)
 		}
 		ci, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 			Number: change,
@@ -195,7 +194,7 @@ func gerritResolver(ctx context.Context, authClient *http.Client) changeResolver
 					"ignored by setting it to `0`): %w", host, err)
 		}
 		if err != nil {
-			return "", 0, errors.Annotate(err, "GetChange").Err()
+			return "", 0, errors.Fmt("GetChange: %w", err)
 		}
 
 		// There's only one.
@@ -216,7 +215,7 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 	case errors.Is(err, auth.ErrLoginRequired):
 		return errors.New("Login required: run `led auth-login`.")
 	case err != nil:
-		return errors.Annotate(err, "authenticating").Err()
+		return errors.Fmt("authenticating: %w", err)
 	}
 
 	c.gerritChange, err = parseCrChangeListURL(positionals[0], gerritResolver(ctx, authClient))

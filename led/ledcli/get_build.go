@@ -87,7 +87,7 @@ func (c *cmdGetBuild) positionalRange() (min, max int) { return 1, 1 }
 
 func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, env subcommands.Env) (err error) {
 	if err := pingHost(c.bbHost); err != nil {
-		return errors.Annotate(err, "buildbucket host").Err()
+		return errors.Fmt("buildbucket host: %w", err)
 	}
 
 	buildIDStr := positionals[0]
@@ -96,10 +96,10 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 		buildIDStr = positionals[0][1:]
 	}
 	if c.buildID, err = strconv.ParseInt(buildIDStr, 10, 64); err != nil {
-		return errors.Annotate(err, "bad <buildbucket_build_id>").Err()
+		return errors.Fmt("bad <buildbucket_build_id>: %w", err)
 	}
 	if !c.realBuild {
-		return errors.Reason("legacy led mode has been deprecated, please trigger led real build instead").Err()
+		return errors.New("legacy led mode has been deprecated, please trigger led real build instead")
 	}
 	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
 		return err

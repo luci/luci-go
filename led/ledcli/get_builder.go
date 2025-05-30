@@ -148,7 +148,7 @@ func parseV2Builder(builderStr string) *builder {
 
 func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string, env subcommands.Env) (err error) {
 	if err := pingHost(c.bbHost); err != nil {
-		return errors.Annotate(err, "buildbucket host").Err()
+		return errors.Fmt("buildbucket host: %w", err)
 	}
 
 	bldr := parseV1Builder(positionals[0])
@@ -156,7 +156,7 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 		bldr = parseV2Builder(positionals[0])
 	}
 	if bldr == nil {
-		err = errors.Reason("cannot parse builder: %q", positionals[0]).Err()
+		err = errors.Fmt("cannot parse builder: %q", positionals[0])
 		return
 	}
 
@@ -172,7 +172,7 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	}
 
 	if !c.realBuild {
-		return errors.Reason("legacy led mode has been deprecated, please trigger led real build instead").Err()
+		return errors.New("legacy led mode has been deprecated, please trigger led real build instead")
 	}
 	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
 		return err

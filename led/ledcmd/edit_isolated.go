@@ -80,7 +80,7 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 
 	tdir, err := ioutil.TempDir("", "led-edit-isolated")
 	if err != nil {
-		return errors.Annotate(err, "failed to create tempdir").Err()
+		return errors.Fmt("failed to create tempdir: %w", err)
 	}
 	defer func() {
 		if err = os.RemoveAll(tdir); err != nil {
@@ -121,7 +121,7 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	logging.Infof(ctx, "uploading new isolated to RBE-CAS")
 	casRef, err := uploadToCas(ctx, casClient, tdir)
 	if err != nil {
-		return errors.Annotate(err, "errors in uploadToCas").Err()
+		return errors.Fmt("errors in uploadToCas: %w", err)
 	}
 	logging.Infof(ctx, "isolated upload: done")
 	if jd.GetSwarming() != nil {
@@ -168,7 +168,7 @@ func downloadFromCas(ctx context.Context, casRef *swarmingpb.CASReference, casCl
 	logging.Infof(ctx, "downloading from RBE-CAS...")
 	_, _, err := casClient.DownloadDirectory(ctx, d, tdir, filemetadata.NewNoopCache())
 	if err != nil {
-		return errors.Annotate(err, "failed to download directory").Err()
+		return errors.Fmt("failed to download directory: %w", err)
 	}
 	return nil
 }
@@ -179,12 +179,12 @@ func uploadToCas(ctx context.Context, client *client.Client, dir string) (*swarm
 	}
 	rootDg, entries, _, err := client.ComputeMerkleTree(ctx, dir, "", "", &is, filemetadata.NewNoopCache())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to compute Merkle Tree").Err()
+		return nil, errors.Fmt("failed to compute Merkle Tree: %w", err)
 	}
 
 	_, _, err = client.UploadIfMissing(ctx, entries...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to upload items").Err()
+		return nil, errors.Fmt("failed to upload items: %w", err)
 	}
 	return &swarmingpb.CASReference{
 		CasInstance: client.InstanceName,

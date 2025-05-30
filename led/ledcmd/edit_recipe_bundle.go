@@ -99,7 +99,7 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		// archive for the job's executable to download.
 		bundlePath, err := os.MkdirTemp("", "led-recipe-bundle")
 		if err != nil {
-			return errors.Annotate(err, "creating temporary recipe bundle directory").Err()
+			return errors.Fmt("creating temporary recipe bundle directory: %w", err)
 		}
 		if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
 			return err
@@ -118,7 +118,7 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		}
 		jsonCASRef, err := m.Marshal(casRef)
 		if err != nil {
-			return errors.Annotate(err, "encoding CAS user payload").Err()
+			return errors.Fmt("encoding CAS user payload: %w", err)
 		}
 		extraProperties[CASRecipeBundleProperty] = string(jsonCASRef)
 	} else {
@@ -203,7 +203,7 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 		python, err = exec.LookPath("python")
 	}
 	if err != nil {
-		return errors.Annotate(err, "unable to find python3 or python in $PATH").Err()
+		return errors.Fmt("unable to find python3 or python in $PATH: %w", err)
 	}
 
 	cmd := logCmd(ctx, inDir, python, args...)
@@ -231,9 +231,9 @@ func findRecipesPy(ctx context.Context, inDir string) (string, error) {
 	pth := filepath.Join(repoRoot, "infra", "config", "recipes.cfg")
 	switch st, err := os.Stat(pth); {
 	case err != nil:
-		return "", errors.Annotate(err, "reading recipes.cfg").Err()
+		return "", errors.Fmt("reading recipes.cfg: %w", err)
 	case !st.Mode().IsRegular():
-		return "", errors.Reason("%q is not a regular file", pth).Err()
+		return "", errors.Fmt("%q is not a regular file", pth)
 	}
 
 	type recipesJSON struct {
@@ -243,12 +243,12 @@ func findRecipesPy(ctx context.Context, inDir string) (string, error) {
 
 	f, err := os.Open(pth)
 	if err != nil {
-		return "", errors.Reason("reading recipes.cfg: %q", pth).Err()
+		return "", errors.Fmt("reading recipes.cfg: %q", pth)
 	}
 	defer f.Close()
 
 	if err := json.NewDecoder(f).Decode(rj); err != nil {
-		return "", errors.Reason("parsing recipes.cfg: %q", pth).Err()
+		return "", errors.Fmt("parsing recipes.cfg: %q", pth)
 	}
 
 	return filepath.Join(
@@ -275,7 +275,7 @@ func deduceRepoRoot(ctx context.Context, inDir string) (string, error) {
 
 	curPath, err := filepath.Abs(inDir)
 	if err != nil {
-		return "", errors.Annotate(err, "compute absolute path").Err()
+		return "", errors.Fmt("compute absolute path: %w", err)
 	}
 	for {
 		if _, err := os.Stat(filepath.Join(curPath, "infra", "config", "recipes.cfg")); err == nil {

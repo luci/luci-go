@@ -145,7 +145,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	svc := flex.GetServices(c)
 	st, err := svc.StorageForStream(c, lst, coordinator.Project(c))
 	if err != nil {
-		return errors.Annotate(err, "failed to create storage instance").Err()
+		return errors.Fmt("failed to create storage instance: %w", err)
 	}
 	defer st.Close()
 
@@ -171,7 +171,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 		signedURLs, err := st.GetSignedURLs(c, &signingRequest)
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to generate signed URL").Err()
+			return errors.Fmt("failed to generate signed URL: %w", err)
 
 		case signedURLs == nil:
 			log.Debugf(c, "Signed URL was requested, but is not supported by storage.")

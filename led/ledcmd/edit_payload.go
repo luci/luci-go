@@ -54,7 +54,7 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 		m := &jsonpb.Marshaler{OrigName: true}
 		jsonCASRef, err := m.MarshalToString(casRef)
 		if err != nil {
-			return errors.Annotate(err, "encoding CAS user payload").Err()
+			return errors.Fmt("encoding CAS user payload: %w", err)
 		}
 		return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 			je.Properties(map[string]string{
@@ -82,7 +82,7 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 func editPayloadWithCIPD(ctx context.Context, jd *job.Definition, opts *EditPayloadOpts) (err error) {
 	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[job.LEDBuilderIsBootstrappedProperty].GetBoolValue()
 	if setRecipeBundleProperty {
-		return errors.Reason("cannot use CIPD info in property-only mode").Err()
+		return errors.New("cannot use CIPD info in property-only mode")
 	}
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {

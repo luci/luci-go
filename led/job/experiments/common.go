@@ -37,7 +37,7 @@ func Apply(ctx context.Context, b *bbpb.Build, task *swarmingpb.NewTaskRequest) 
 	for _, name := range b.GetInput().GetExperiments() {
 		if exp, ok := knownExperiments[name]; ok {
 			if err := exp(ctx, b, task); err != nil {
-				return errors.Annotate(err, "experiment %q", name).Err()
+				return errors.Fmt("experiment %q: %w", name, err)
 			}
 		}
 	}

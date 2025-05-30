@@ -87,16 +87,16 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 
 	bb.BbagentArgs.Build.CreateTime, err = ptypes.TimestampProto(clock.Now(ctx))
 	if err != nil {
-		return errors.Annotate(err, "populating creation time").Err()
+		return errors.Fmt("populating creation time: %w", err)
 	}
 
 	buf := make([]byte, 32)
 	if _, err := cryptorand.Read(ctx, buf); err != nil {
-		return errors.Annotate(err, "generating random token").Err()
+		return errors.Fmt("generating random token: %w", err)
 	}
 	logdogPrefixSN, err := logdog_types.MakeStreamName("", "led", uid, hex.EncodeToString(buf))
 	if err != nil {
-		return errors.Annotate(err, "generating logdog token").Err()
+		return errors.Fmt("generating logdog token: %w", err)
 	}
 	logdogPrefix := string(logdogPrefixSN)
 	logdogProjectPrefix := path.Join(bb.BbagentArgs.Build.Infra.Logdog.Project, logdogPrefix)
@@ -114,7 +114,7 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 	props := ledProperties{LedRunID: logdogProjectPrefix}
 	casUserPayload, err := jd.Info().CurrentIsolated()
 	if err != nil {
-		return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+		return errors.Fmt("failed to get CAS user payload for the build: %w", err)
 	}
 	if exe := bb.GetBbagentArgs().GetBuild().GetExe(); exe.GetCipdPackage() != "" {
 		props.CIPDInput = &cipdInput{
@@ -204,7 +204,7 @@ func (jd *Definition) makeExpiringSliceData() (ret []*expiringDims, err error) {
 		if protoDuration != nil {
 			var err error
 			if dur, err = ptypes.Duration(protoDuration); err != nil {
-				return nil, errors.Annotate(err, "parsing %s %q expiration", dimType, name).Err()
+				return nil, errors.Fmt("parsing %s %q expiration: %w", dimType, name, err)
 			}
 		}
 		if dur > 0 {
@@ -360,7 +360,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 					Enable: true,
 				}
 			} else {
-				return errors.Reason("ResultDB cannot be enabled on raw swarming tasks if the realm field is unset").Err()
+				return errors.New("ResultDB cannot be enabled on raw swarming tasks if the realm field is unset")
 			}
 		default:
 		}
@@ -368,12 +368,12 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 	err := jd.addLedProperties(ctx, uid)
 	if err != nil {
-		return errors.Annotate(err, "adding led properties").Err()
+		return errors.Fmt("adding led properties: %w", err)
 	}
 
 	expiringDims, err := jd.makeExpiringSliceData()
 	if err != nil {
-		return errors.Annotate(err, "calculating expirations").Err()
+		return errors.Fmt("calculating expirations: %w", err)
 	}
 
 	bb := jd.GetBuildbucket()
@@ -381,7 +381,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	project := bb.GetBbagentArgs().GetBuild().GetBuilder().GetProject()
 	bucket := bb.GetBbagentArgs().GetBuild().GetBuilder().GetBucket()
 	if project == "" || bucket == "" {
-		return errors.Reason("incomplete Builder ID, need both `project` and `bucket` set").Err()
+		return errors.New("incomplete Builder ID, need both `project` and `bucket` set")
 	}
 	sw := &Swarming{
 		Hostname: jd.Info().SwarmingHostname(),
@@ -412,7 +412,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	if !bb.BbagentDownloadCIPDPkgs() {
 		casUserPayload, err = jd.Info().CurrentIsolated()
 		if err != nil {
-			return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+			return errors.Fmt("failed to get CAS user payload for the build: %w", err)
 		}
 	}
 	baseProperties := &swarmingpb.TaskProperties{
@@ -457,7 +457,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 
 	baseProperties.Command, err = jd.generateCommand(ctx, ks)
 	if err != nil {
-		return errors.Annotate(err, "generating Command").Err()
+		return errors.Fmt("generating Command: %w", err)
 	}
 
 	if exe := bb.BbagentArgs.Build.Exe; exe.GetCipdPackage() != "" && !bb.BbagentDownloadCIPDPkgs() {
@@ -476,7 +476,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 	}
 
 	if err := experiments.Apply(ctx, bb.BbagentArgs.Build, sw.Task); err != nil {
-		return errors.Annotate(err, "applying experiments").Err()
+		return errors.Fmt("applying experiments: %w", err)
 	}
 
 	jd.JobType = &Definition_Swarming{Swarming: sw}

@@ -165,7 +165,7 @@ func (c *Client) getPrefixState(prefix string) (*prefixState, error) {
 			Prefix:  prefix,
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "registering prefix").Err()
+			return nil, errors.Fmt("registering prefix: %w", err)
 		}
 		idx := uint64(0)
 		state = &prefixState{index: &idx, secret: rsp.Secret, streams: stringset.New(0)}
@@ -188,14 +188,14 @@ func (c *Client) open(streamType logpb.StreamType, prefix, path logdog_types.Str
 
 	state, err := c.getPrefixState(string(prefix))
 	if err != nil {
-		return nil, errors.Annotate(err, "loading prefix state").Err()
+		return nil, errors.Fmt("loading prefix state: %w", err)
 	}
 
 	state.streamsMu.Lock()
 	defer state.streamsMu.Unlock()
 
 	if state.streams.Has(string(path)) {
-		return nil, errors.Reason("duplicate stream: %s/+/%s", prefix, path).Err()
+		return nil, errors.Fmt("duplicate stream: %s/+/%s", prefix, path)
 	}
 
 	rsp, err := c.srvServ.RegisterStream(c.ctx, &services_api.RegisterStreamRequest{
@@ -206,7 +206,7 @@ func (c *Client) open(streamType logpb.StreamType, prefix, path logdog_types.Str
 		TerminalIndex: -1,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "registering stream").Err()
+		return nil, errors.Fmt("registering stream: %w", err)
 	}
 	state.streams.Add(string(path))
 

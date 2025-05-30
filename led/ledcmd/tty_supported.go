@@ -28,7 +28,7 @@ import (
 func awaitNewline(ctx context.Context) error {
 	term, err := tty.Open()
 	if err != nil {
-		return errors.Annotate(err, "opening terminal").Err()
+		return errors.Fmt("opening terminal: %w", err)
 	}
 	defer term.Close()
 

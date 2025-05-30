@@ -159,7 +159,7 @@ func tqTaskLeased(task *logdog.ArchiveTask) (queueNumber int32, t *taskqueue.Tas
 		var queueNumberInt int
 
 		if queueNumberInt, err = strconv.Atoi(toks[0]); err != nil {
-			err = errors.Annotate(err, "parsing TaskName %q", task.TaskName).Err()
+			err = errors.Fmt("parsing TaskName %q: %w", task.TaskName, err)
 			return
 		}
 
@@ -167,7 +167,7 @@ func tqTaskLeased(task *logdog.ArchiveTask) (queueNumber int32, t *taskqueue.Tas
 		t.Name = toks[1]
 
 	default:
-		err = errors.Reason("unknown TaskName format %q", task.TaskName).Err()
+		err = errors.Fmt("unknown TaskName format %q", task.TaskName)
 	}
 
 	return

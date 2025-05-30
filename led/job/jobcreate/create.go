@@ -108,7 +108,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarmingpb.NewTaskRequest, name,
 	for i, slice := range r.TaskSlices {
 		if cir := slice.Properties.CasInputRoot; cir != nil {
 			if err := populateCasPayload(casUserPayload, cir); err != nil {
-				return nil, errors.Annotate(err, "task slice %d", i).Err()
+				return nil, errors.Fmt("task slice %d: %w", i, err)
 			}
 		}
 	}
@@ -127,17 +127,17 @@ func populateCasPayload(cas *swarmingpb.CASReference, cir *swarmingpb.CASReferen
 	if cas.CasInstance == "" {
 		cas.CasInstance = cir.CasInstance
 	} else if cas.CasInstance != cir.CasInstance {
-		return errors.Reason("RBE-CAS instance inconsistency: %q != %q", cas.CasInstance, cir.CasInstance).Err()
+		return errors.Fmt("RBE-CAS instance inconsistency: %q != %q", cas.CasInstance, cir.CasInstance)
 	}
 
 	if cas.Digest.Hash != "" && (cir.Digest == nil || cir.Digest.Hash != cas.Digest.Hash) {
-		return errors.Reason("RBE-CAS digest hash inconsistency: %+v != %+v", cas.Digest, cir.Digest).Err()
+		return errors.Fmt("RBE-CAS digest hash inconsistency: %+v != %+v", cas.Digest, cir.Digest)
 	} else if cir.Digest != nil {
 		cas.Digest.Hash = cir.Digest.Hash
 	}
 
 	if cas.Digest.SizeBytes != 0 && (cir.Digest == nil || cir.Digest.SizeBytes != cas.Digest.SizeBytes) {
-		return errors.Reason("RBE-CAS digest size bytes inconsistency: %+v != %+v", cas.Digest, cir.Digest).Err()
+		return errors.Fmt("RBE-CAS digest size bytes inconsistency: %+v != %+v", cas.Digest, cir.Digest)
 	} else if cir.Digest != nil {
 		cas.Digest.SizeBytes = cir.Digest.SizeBytes
 	}

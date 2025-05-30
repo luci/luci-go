@@ -79,7 +79,7 @@ func rsplit2(s, sep string) (a, b string) {
 func parseDimensionEditCmd(cmd string) (dim, op, val string, exp time.Duration, err error) {
 	dim, valueExp, ok := split2(cmd, "=")
 	if !ok {
-		err = errors.Reason("expected $key$op$value, but op was missing").Err()
+		err = errors.New("expected $key$op$value, but op was missing")
 		return
 	}
 
@@ -98,17 +98,17 @@ func parseDimensionEditCmd(cmd string) (dim, op, val string, exp time.Duration, 
 	if expStr != "" {
 		var expSec int
 		if expSec, err = strconv.Atoi(expStr); err != nil {
-			err = errors.Annotate(err, "parsing expiration %q", expStr).Err()
+			err = errors.Fmt("parsing expiration %q: %w", expStr, err)
 			return
 		}
 		exp = time.Second * time.Duration(expSec)
 	}
 
 	if val == "" && op != "=" {
-		err = errors.Reason("empty value not allowed for operator %q: %q", op, cmd).Err()
+		err = errors.Fmt("empty value not allowed for operator %q: %q", op, cmd)
 	}
 	if exp != 0 && op == "-=" {
-		err = errors.Reason("expiration seconds not allowed for operator %q: %q", op, cmd).Err()
+		err = errors.Fmt("expiration seconds not allowed for operator %q: %q", op, cmd)
 	}
 
 	return
@@ -146,7 +146,7 @@ func MakeDimensionEditCommands(commands []string) (DimensionEditCommands, error)
 	for _, command := range commands {
 		dimension, operator, value, expiration, err := parseDimensionEditCmd(command)
 		if err != nil {
-			return nil, errors.Annotate(err, "parsing %q", command).Err()
+			return nil, errors.Fmt("parsing %q: %w", command, err)
 		}
 		editCmd := ret[dimension]
 		if editCmd == nil {

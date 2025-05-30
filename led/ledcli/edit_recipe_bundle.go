@@ -95,20 +95,20 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 			return errors.New("override has empty project_id")
 		}
 		if v == "" {
-			return errors.Reason("override %q has empty repo path", k).Err()
+			return errors.Fmt("override %q has empty repo path", k)
 		}
 		v, err = filepath.Abs(v)
 		if err != nil {
-			return errors.Annotate(err, "override %q", k).Err()
+			return errors.Fmt("override %q: %w", k, err)
 		}
 		c.overrides[k] = v
 
 		var fi os.FileInfo
 		switch fi, err = os.Stat(v); {
 		case err != nil:
-			return errors.Annotate(err, "override %q", k).Err()
+			return errors.Fmt("override %q: %w", k, err)
 		case !fi.IsDir():
-			return errors.Reason("override %q: not a directory", k).Err()
+			return errors.Fmt("override %q: not a directory", k)
 		}
 	}
 
@@ -117,13 +117,11 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 		// OK
 
 	case c.debugSleep < 0:
-		return errors.Reason(
-			"-debug-sleep %q: duration may not be negative", c.debugSleep).Err()
+		return errors.Fmt("-debug-sleep %q: duration may not be negative", c.debugSleep)
 
 	case c.debugSleep < 10*time.Minute:
-		return errors.Reason(
-			"-debug-sleep %q: duration is less than 10 minutes... are you sure you want that?",
-			c.debugSleep).Err()
+		return errors.Fmt("-debug-sleep %q: duration is less than 10 minutes... are you sure you want that?",
+			c.debugSleep)
 	}
 
 	return
