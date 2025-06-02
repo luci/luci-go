@@ -58,7 +58,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
@@ -128,23 +127,6 @@ var (
 		Paths: []string{"builder", "infra.resultdb", "status", "input", "output", "ancestor_ids"},
 	}
 )
-
-// Options configures test result ingestion.
-type Options struct {
-}
-
-type verdictIngester struct {
-	// clustering is used to ingest test failures for clustering.
-	clustering *ingestion.Ingester
-	// verdictExporter is used to export test verdictExporter.
-	verdictExporter *testverdicts.Exporter
-	// testVariantBranchExporter is use to export change point analysis results.
-	testVariantBranchExporter *tvbexporter.Exporter
-	// antsTestResultExporter is used to export android test result in AnTS format.
-	antsTestResultExporter *antstestresultexporter.Exporter
-	// antsInvocationExporter is used to export android invocation in AnTS format.
-	antsInvocationExporter *antsinvocationexporter.Exporter
-}
 
 var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        verdictIngestionTaskClass,
@@ -224,19 +206,28 @@ func RegisterTaskHandler(srv *server.Server) error {
 	})
 
 	analysis := analysis.NewClusteringHandler(cf)
-	ri := &verdictIngester{
-		clustering:                ingestion.New(chunkStore, analysis),
-		verdictExporter:           testverdicts.NewExporter(verdictClient),
-		testVariantBranchExporter: tvbexporter.NewExporter(tvbBQClient),
-		antsTestResultExporter:    antstestresultexporter.NewExporter(antsTestResultsBQClient),
-		antsInvocationExporter:    antsinvocationexporter.NewExporter(antsInvocationBQClient),
+	o := &orchestrator{
+		sinks: []IngestionSink{
+			// Record the test verdicts for test history.
+			&TestResultsRecorder{},
+			// Ingest for test variant analysis (change point analysis).
+			// See go/luci-test-variant-analysis-design for details.
+			&ChangePointExporter{exporter: tvbexporter.NewExporter(tvbBQClient)},
+			// Ingest the test verdicts for clustering.
+			// IMPORTANT: This should occur after test variant analysis ingestion as
+			// it queries the results of the above analysis.
+			&ClusteringExporter{clustering: ingestion.New(chunkStore, analysis)},
+			&VerdictExporter{exporter: testverdicts.NewExporter(verdictClient)},
+			&AnTSTestResultExporter{exporter: antstestresultexporter.NewExporter(antsTestResultsBQClient)},
+			// This should occur after ants test result exporter, because we want to export ants invocation
+			// after test result are all exported. See go/export-result-f1 for details.
+			&AnTSTInvocationExporter{exporter: antsinvocationexporter.NewExporter(antsInvocationBQClient)}},
 	}
 	verdictHandler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestTestVerdicts)
-		return ri.ingestTestVerdicts(ctx, task)
+		return o.run(ctx, task)
 	}
 	verdictIngestion.AttachHandler(verdictHandler)
-
 	return nil
 }
 
@@ -248,7 +239,33 @@ func Schedule(ctx context.Context, task *taskspb.IngestTestVerdicts) {
 	})
 }
 
-func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
+// Inputs captures all input into an analysis or export.
+type Inputs struct {
+	Invocation *rdbpb.Invocation
+	// The test Verdicts to ingest.
+	Verdicts    []*rdbpb.TestVariant
+	SourcesByID map[string]*pb.Sources
+	Payload     *taskspb.IngestTestVerdicts
+	LastPage    bool // Whether this is the last page of test verdicts.
+}
+
+// IngestionSink is the interface implemented by consumers of test verdicts
+// in the ingestion pipeline.
+type IngestionSink interface {
+	// A short identifier for the sink, for use in errors.
+	Name() string
+	// Ingest the test verdicts.
+	Ingest(ctx context.Context, input Inputs) error
+}
+
+// orchestrator orchestrates the ingestion of test verdicts to the
+// specified sinks.
+type orchestrator struct {
+	// The set of ingestion sinks to write to, in order.
+	sinks []IngestionSink
+}
+
+func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestVerdicts) error {
 	if err := validateRequest(ctx, payload); err != nil {
 		project := "(unknown)"
 		if payload.Project != "" {
@@ -312,12 +329,6 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 		taskCounter.Add(ctx, 1, payload.Project, "ignored_not_export_root")
 		return nil
 	}
-
-	ingestion, err := extractIngestionContext(payload, inv)
-	if err != nil {
-		return err
-	}
-
 	// Query test variants from ResultDB.
 	req := &rdbpb.QueryTestVariantsRequest{
 		Invocations: []string{inv.Name},
@@ -351,52 +362,25 @@ func (i *verdictIngester) ingestTestVerdicts(ctx context.Context, payload *tasks
 			return transient.Tag.Apply(err)
 		}
 	}
-
-	// Record the test verdicts for test history.
-	err = recordTestResults(ctx, ingestion, rsp.TestVariants, sources)
-	if err != nil {
-		// If any transaction failed, the task will be retried and the tables will be
-		// eventual-consistent.
-		return errors.Fmt("record test verdicts: %w", err)
-	}
-
 	nextPageToken := rsp.NextPageToken
 
-	// Ingest for test variant analysis (change point analysis).
-	// Note that this is different from the ingestForTestVariantAnalysis below
-	// which should eventually be removed.
-	// See go/luci-test-variant-analysis-design for details.
-	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp.TestVariants, sources, payload)
-	if err != nil {
-		return errors.Fmt("change point analysis: %w", err)
+	input := Inputs{
+		Invocation:  inv,
+		Verdicts:    rsp.TestVariants,
+		SourcesByID: sources,
+		Payload:     payload,
+		LastPage:    nextPageToken == "",
 	}
 
-	// Ingest the test verdicts for clustering. This should occur
-	// after test variant analysis ingestion as it queries the results of the
-	// above analysis.
-	err = ingestForClustering(ctx, i.clustering, payload, ingestion, rsp.TestVariants, sources)
-	if err != nil {
-		return err
-	}
-
-	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp.TestVariants, sources, inv, payload)
-	if err != nil {
-		return errors.Fmt("export verdicts: %w", err)
-	}
-
-	err = ingestForAnTSTestResultExport(ctx, i.antsTestResultExporter, rsp.TestVariants, inv, payload)
-	if err != nil {
-		return errors.Fmt("ants test results export: %w", err)
-	}
-
-	if nextPageToken == "" {
-		// Export AnTS invocation to BigQuery after all test results are exported.
-		// This ordering is required by AnTS F1 users, to make sure test results are completed
-		// when joined with the invocation table.
-		err = ingestForAnTSInvocationExport(ctx, i.antsInvocationExporter, inv, payload)
-		if err != nil {
-			return errors.Fmt("ants invocation export: %w", err)
+	// Only run ingestion sinks if there is something to ingest.
+	if len(input.Verdicts) > 0 {
+		for _, sink := range o.sinks {
+			if err := sink.Ingest(ctx, input); err != nil {
+				return transient.Tag.Apply(errors.Fmt("ingest: %q %w", sink.Name(), err))
+			}
 		}
+	}
+	if nextPageToken == "" {
 		// In the last task.
 		taskCounter.Add(ctx, 1, payload.Project, "success")
 	}
@@ -488,6 +472,26 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		return nil
 	})
 	return err
+}
+
+// ClusteringExporter is an ingestion stage that exports test results for clustering.
+// It implements IngestionSink.
+type ClusteringExporter struct {
+	clustering *ingestion.Ingester
+}
+
+// Name returns a unique name for the ingestion stage.
+func (ClusteringExporter) Name() string {
+	return "export-clustering"
+}
+
+// Ingest exports the provided test results for clustering.
+func (e *ClusteringExporter) Ingest(ctx context.Context, input Inputs) (err error) {
+	ingestion, err := extractIngestionContext(input.Payload, input.Invocation)
+	if err != nil {
+		return err
+	}
+	return ingestForClustering(ctx, e.clustering, input.Payload, ingestion, input.Verdicts, input.SourcesByID)
 }
 
 func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestVerdicts, ing *IngestionContext, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources) (err error) {
@@ -601,6 +605,22 @@ func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.Tes
 	return result, nil
 }
 
+// ChangePointExporter is an ingestion stage that exports test results for changepoint analysis.
+// It implements IngestionSink.
+type ChangePointExporter struct {
+	exporter *tvbexporter.Exporter
+}
+
+// Name returns a unique name for the ingestion stage.
+func (ChangePointExporter) Name() string {
+	return "export-changepoints"
+}
+
+// Ingest exports the provided test verdicts for changepoint analysis.
+func (e *ChangePointExporter) Ingest(ctx context.Context, input Inputs) (err error) {
+	return ingestForChangePointAnalysis(ctx, e.exporter, input.Verdicts, input.SourcesByID, input.Payload)
+}
+
 func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, testVariants []*rdbpb.TestVariant, sources map[string]*pb.Sources, payload *taskspb.IngestTestVerdicts) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ingestForChangePointAnalysis")
 	defer func() { tracing.End(s, err) }()
@@ -618,6 +638,21 @@ func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exp
 		return errors.Fmt("analyze test variants: %w", err)
 	}
 	return nil
+}
+
+// VerdictExporter is an ingestion stage that exports test verdicts to BigQuery
+// It implements IngestionSink.
+type VerdictExporter struct {
+	exporter *testverdicts.Exporter
+}
+
+// Name returns a unique name for the ingestion stage.
+func (VerdictExporter) Name() string {
+	return "export-test-verdicts"
+}
+
+func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) {
+	return ingestForVerdictExport(ctx, e.exporter, input.Verdicts, input.SourcesByID, input.Invocation, input.Payload)
 }
 
 func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter,
@@ -647,6 +682,21 @@ func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.E
 	return nil
 }
 
+// AnTSTestResultExporter is an ingestion stage that exports Android test results to BigQuery.
+// It implements IngestionSink.
+type AnTSTestResultExporter struct {
+	exporter *antstestresultexporter.Exporter
+}
+
+// Name returns a unique name for the ingestion stage.
+func (AnTSTestResultExporter) Name() string {
+	return "export-ants-test-results"
+}
+
+func (e *AnTSTestResultExporter) Ingest(ctx context.Context, input Inputs) (err error) {
+	return ingestForAnTSTestResultExport(ctx, e.exporter, input.Verdicts, input.Invocation, input.Payload)
+}
+
 func ingestForAnTSTestResultExport(ctx context.Context, antsExporter *antstestresultexporter.Exporter,
 	testVariants []*rdbpb.TestVariant, inv *rdbpb.Invocation, payload *taskspb.IngestTestVerdicts) (err error) {
 
@@ -666,6 +716,27 @@ func ingestForAnTSTestResultExport(ctx context.Context, antsExporter *antstestre
 		return errors.Fmt("export test_results: %w", err)
 	}
 	return nil
+}
+
+// AnTSTInvocationExporter is an ingestion stage that exports Android invocations to BigQuery.
+// It implements IngestionSink.
+type AnTSTInvocationExporter struct {
+	exporter *antsinvocationexporter.Exporter
+}
+
+// Name returns a unique name for the ingestion stage.
+func (AnTSTInvocationExporter) Name() string {
+	return "export-ants-invocation"
+}
+
+func (e *AnTSTInvocationExporter) Ingest(ctx context.Context, input Inputs) (err error) {
+	// Export AnTS invocation to BigQuery after all test results are exported.
+	// This ordering is required by AnTS F1 users, to make sure test results are completed
+	// when joined with the invocation table.
+	if !input.LastPage {
+		return nil
+	}
+	return ingestForAnTSInvocationExport(ctx, e.exporter, input.Invocation, input.Payload)
 }
 
 func ingestForAnTSInvocationExport(ctx context.Context, antsExporter *antsinvocationexporter.Exporter,
