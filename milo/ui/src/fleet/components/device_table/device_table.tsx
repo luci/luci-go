@@ -33,6 +33,7 @@ import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
+import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { getVisibilityModel } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -102,6 +103,7 @@ interface DeviceTableProps {
   isLoading: boolean;
   isLoadingColumns: boolean;
   totalRowCount?: number;
+  currentTaskMap: Map<string, string>;
 }
 
 export function DeviceTable({
@@ -114,6 +116,7 @@ export function DeviceTable({
   isLoading,
   isLoadingColumns,
   totalRowCount,
+  currentTaskMap,
 }: DeviceTableProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
@@ -129,7 +132,14 @@ export function DeviceTable({
   const [rowSelectionModel, setRowSelectionModel] =
     useState<GridRowSelectionModel>([]);
 
-  const rows = devices.map(getRow);
+  const rows = useMemo(
+    () =>
+      devices.map((d) => ({
+        ...getRow(d),
+        current_task: currentTaskMap.get(extractDutId(d)) || '',
+      })),
+    [devices, currentTaskMap],
+  );
 
   const onSortModelChange = (newSortModel: GridSortModel) => {
     // Update order by param and clear pagination token when the sort model changes.

@@ -18,6 +18,8 @@ import {
   BotsClientImpl,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
+import { DEVICE_TASKS_SWARMING_HOST } from './builds';
+
 export const getDutName = async (
   swarmingClient: DecoratedClient<BotsClientImpl>,
   botId: string,
@@ -31,4 +33,17 @@ export const getDutName = async (
   );
 
   return res.dimensions.find(({ key }) => key === 'dut_name')?.value?.at(0);
+};
+
+/**
+ * Generates a URL to a Swarming task page.
+ * @param taskId The ID of the Swarming task.
+ * @param swarmingHost The hostname of the Swarming instance (e.g., 'chromeos-swarming.appspot.com').
+ * @returns The full URL to the Swarming task page.
+ */
+export const getTaskURL = (
+  taskId: string,
+  swarmingHost: string = DEVICE_TASKS_SWARMING_HOST,
+): string => {
+  return `https://${swarmingHost}/task?id=${taskId}`;
 };

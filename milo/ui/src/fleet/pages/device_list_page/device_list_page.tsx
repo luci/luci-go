@@ -25,6 +25,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
+import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
 import { DeviceListFilterBar } from '@/fleet/components/filter_dropdown';
 import {
   filtersUpdater,
@@ -109,13 +110,14 @@ export const DeviceListPage = () => {
   const devicesQuery = useDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+  const currentTasks = useCurrentTasks(devices);
   const columns = useMemo(
     () =>
       isDimensionsQueryProperlyLoaded
         ? _.uniq(
-            Object.keys(dimensionsQuery.data.baseDimensions).concat(
-              Object.keys(dimensionsQuery.data.labels),
-            ),
+            Object.keys(dimensionsQuery.data.baseDimensions)
+              .concat(Object.keys(dimensionsQuery.data.labels))
+              .concat('current_task'),
           )
         : [],
     [isDimensionsQueryProperlyLoaded, dimensionsQuery.data],
@@ -248,11 +250,18 @@ export const DeviceListPage = () => {
           columnIds={columns}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
-          isError={devicesQuery.isError || dimensionsQuery.isError}
-          error={devicesQuery.error || dimensionsQuery.error}
+          isError={
+            devicesQuery.isError ||
+            dimensionsQuery.isError ||
+            currentTasks.isError
+          }
+          error={
+            devicesQuery.error || dimensionsQuery.error || currentTasks.error
+          }
           isLoading={devicesQuery.isPending}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
+          currentTaskMap={currentTasks.map}
         />
       </div>
     </div>

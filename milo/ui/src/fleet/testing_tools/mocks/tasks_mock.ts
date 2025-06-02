@@ -14,13 +14,13 @@
 
 import fetchMock from 'fetch-mock-jest';
 
+import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import {
   TaskListResponse,
   TaskResultResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
-// TODO: b/404534941 Use `DEVICE_TASKS_SWARMING_HOST` instead.
-const LIST_BOT_TASKS_ENDPOINT = `https://${SETTINGS.swarming.defaultHost}/prpc/swarming.v2.Bots/ListBotTasks`;
+const LIST_BOT_TASKS_ENDPOINT = `https://${DEVICE_TASKS_SWARMING_HOST}/prpc/swarming.v2.Bots/ListBotTasks`;
 
 export function createMockTaskListResponse(
   tasks: TaskResultResponse[],

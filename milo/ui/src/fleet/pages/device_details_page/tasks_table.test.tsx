@@ -31,9 +31,6 @@ import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { Tasks } from './tasks_table';
 
-// TODO: b/404534941 Use `DEVICE_TASKS_SWARMING_HOST` instead.
-const swarmingHost = SETTINGS.swarming.defaultHost;
-
 describe('<Tasks />', () => {
   beforeEach(() => {
     mockFetchAuthState();
@@ -50,7 +47,7 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId="A1234" swarmingHost={swarmingHost} />
+        <Tasks dutId="A1234" />
       </FakeContextProvider>,
     );
 
@@ -62,7 +59,7 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId="dut1331" swarmingHost={swarmingHost} />
+        <Tasks dutId="dut1331" />
       </FakeContextProvider>,
     );
 
@@ -78,7 +75,7 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId="A1234" swarmingHost={swarmingHost} />
+        <Tasks dutId="A1234" />
       </FakeContextProvider>,
     );
 
@@ -97,7 +94,7 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId="A1234" swarmingHost={swarmingHost} />
+        <Tasks dutId="A1234" />
       </FakeContextProvider>,
     );
 
@@ -117,7 +114,7 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId={dutId} swarmingHost={swarmingHost} />
+        <Tasks dutId={dutId} />
       </FakeContextProvider>,
     );
 

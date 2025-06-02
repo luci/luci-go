@@ -62,6 +62,9 @@ serverInjectedVars.SETTINGS = Object.freeze({
   },
   swarming: {
     defaultHost: assertNonNullable(process.env['VITE_SWARMING_DEFAULT_HOST']),
+    allowedHosts: assertNonNullable(
+      process.env['VITE_SWARMING_ALLOWED_HOSTS'],
+    ).split(';'),
   },
   resultdb: {
     host: assertNonNullable(process.env['VITE_RESULT_DB_HOST']),

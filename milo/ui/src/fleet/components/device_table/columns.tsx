@@ -66,6 +66,7 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
     editable: false,
     minWidth: 70,
     maxWidth: 700,
+    sortable: COLUMN_OVERRIDES[id]?.sortable ?? true,
     flex: id === 'id' ? 3 : 1,
     renderCell: (props) =>
       COLUMN_OVERRIDES[id]?.renderCell?.(props) || (

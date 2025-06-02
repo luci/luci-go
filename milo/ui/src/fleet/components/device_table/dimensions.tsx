@@ -18,6 +18,7 @@ import { Link } from 'react-router';
 
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
+import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   Device,
   DeviceState,
@@ -41,6 +42,7 @@ type Dimension = Record<
   string, // unique id used for sorting and filtering
   {
     displayName?: string;
+    sortable?: boolean;
     getValue?: (device: Device) => string;
     renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
   }
@@ -89,6 +91,8 @@ function renderCellWithLink(
   return CellWithLink;
 }
 
+const renderCurrentTaskCell = renderCellWithLink(getTaskURL);
+
 /**
  * BASE_DIMENSIONS are dimensions associated with a device that are not labels,
  * which essentially defined how the UI renders non-label fields from the
@@ -123,6 +127,16 @@ export const BASE_DIMENSIONS: Dimension = {
   port: {
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
+  },
+  current_task: {
+    displayName: 'Current Task',
+    sortable: false,
+    renderCell: (props) => {
+      if (props.value === '') {
+        return <DeviceDataCell {...props} value="idle"></DeviceDataCell>;
+      }
+      return renderCurrentTaskCell(props);
+    },
   },
 };
 

@@ -185,6 +185,7 @@ function TestComponent({
       isLoading={false}
       isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
+      currentTaskMap={new Map<string, string>()}
     />
   );
 }

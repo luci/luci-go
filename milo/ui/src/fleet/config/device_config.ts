@@ -23,6 +23,7 @@ export const DEFAULT_DEVICE_COLUMNS: string[] = [
   'dut_id',
   'state',
   'dut_state',
+  'current_task',
   'label-board',
   'label-model',
   'label-phase',
