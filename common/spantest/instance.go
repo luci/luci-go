@@ -53,14 +53,14 @@ func NewEmulatedInstance(ctx context.Context, e *emulator.Emulator) (*EmulatedIn
 		Instance:   &inspb.Instance{NodeCount: 1},
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create instance").Err()
+		return nil, errors.Fmt("failed to create instance: %w", err)
 	}
 
 	switch ins, err := insOp.Wait(ctx); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get instance state").Err()
+		return nil, errors.Fmt("failed to get instance state: %w", err)
 	case ins.State != inspb.Instance_READY:
-		return nil, errors.Reason("instance is not ready, got state %v", ins.State).Err()
+		return nil, errors.Fmt("instance is not ready, got state %v", ins.State)
 	default:
 		return &EmulatedInstance{
 			Name:     ins.Name,

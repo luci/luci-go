@@ -124,14 +124,14 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 
 	conn, err := grpc.NewClient(opts.Host+":443", dialOpts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "cannot dial to %s", opts.Host).Err()
+		return nil, errors.Fmt("cannot dial to %s: %w", opts.Host, err)
 	}
 
 	t := http.DefaultTransport
 	if s := auth.GetState(ctx); s != nil {
 		t, err = auth.GetRPCTransport(ctx, auth.NoAuth)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create a transport").Err()
+			return nil, errors.Fmt("failed to create a transport: %w", err)
 		}
 	}
 
@@ -209,7 +209,7 @@ func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter f
 	rev := confSetPb.Configs[0].Revision
 	for _, cfg := range confSetPb.Configs {
 		if cfg.Revision != rev {
-			return nil, errors.Reason("internal error: the reply contains files from revisions %q and %q", cfg.Revision, rev).Err()
+			return nil, errors.Fmt("internal error: the reply contains files from revisions %q and %q", cfg.Revision, rev)
 		}
 	}
 
@@ -254,9 +254,9 @@ func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter f
 				// must not return ErrNoConfig anyway, because it will be interpreted
 				// as if the config set is gone, which will be incorrect.
 				if err == config.ErrNoConfig {
-					return errors.Reason("internal error: config %q at SHA256 %q is unexpectedly gone", cfg.Path, cfg.ContentSha256).Err()
+					return errors.Fmt("internal error: config %q at SHA256 %q is unexpectedly gone", cfg.Path, cfg.ContentSha256)
 				}
-				return errors.Annotate(err, "fetching %q at SHA256 %q", cfg.Path, cfg.ContentSha256).Err()
+				return errors.Fmt("fetching %q at SHA256 %q: %w", cfg.Path, cfg.ContentSha256, err)
 			}
 
 			// Ignore all metadata from `body`. It may be pointing to some other
@@ -266,7 +266,7 @@ func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter f
 			if url := body.GetSignedUrl(); url != "" {
 				content, err := config.DownloadConfigFromSignedURL(ectx, r.httpClient, url)
 				if err != nil {
-					return errors.Annotate(err, "fetching %q from signed URL", cfg.Path).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("fetching %q from signed URL: %w", cfg.Path, err))
 				}
 				resolved.Content = string(content)
 			} else {
@@ -316,7 +316,7 @@ func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnl
 			eg.Go(func() error {
 				content, err := config.DownloadConfigFromSignedURL(ectx, r.httpClient, signedURL)
 				if err != nil {
-					return errors.Annotate(err, "for file(%s) in config_set(%s)", configs[i].Path, configs[i].ConfigSet).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("for file(%s) in config_set(%s): %w", configs[i].Path, configs[i].ConfigSet, err))
 				}
 				configs[i].Content = string(content)
 				return nil
@@ -345,7 +345,7 @@ func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 		projectID := config.Set(cs.Name).Project()
 		parsedURL, err := url.Parse(cs.Url)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to parse repo url %s in project %s", cs.Url, projectID).Err()
+			return nil, errors.Fmt("failed to parse repo url %s in project %s: %w", cs.Url, projectID, err)
 		}
 		projects[i] = config.Project{
 			ID:       projectID,

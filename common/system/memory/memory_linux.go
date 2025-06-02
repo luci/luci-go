@@ -23,7 +23,7 @@ import (
 func totalSystemMemoryBytes() (uint64, error) {
 	var si unix.Sysinfo_t
 	if err := unix.Sysinfo(&si); err != nil {
-		return 0, errors.Annotate(err, "memory.TotalSystemMemoryMB").Err()
+		return 0, errors.Fmt("memory.TotalSystemMemoryMB: %w", err)
 	}
 	return si.Totalram * uint64(si.Unit), nil
 }

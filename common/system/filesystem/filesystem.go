@@ -35,7 +35,7 @@ func IsNotExist(err error) bool { return os.IsNotExist(errors.Unwrap(err)) }
 // mask to all created directories.
 func MakeDirs(path string) error {
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return errors.Annotate(err, "").Err()
+		return errors.Fmt(": %w", err)
 	}
 	return nil
 }
@@ -45,7 +45,7 @@ func MakeDirs(path string) error {
 func AbsPath(base *string) error {
 	v, err := filepath.Abs(*base)
 	if err != nil {
-		return errors.Annotate(err, "unable to resolve absolute path: %q", *base).Err()
+		return errors.Fmt("unable to resolve absolute path: %q: %w", *base, err)
 	}
 	*base = v
 	return nil
@@ -59,7 +59,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR | os.O_EXCL), mode)
 	if err == nil {
 		if err := fd.Close(); err != nil {
-			return errors.Annotate(err, "failed to close new file").Err()
+			return errors.Fmt("failed to close new file: %w", err)
 		}
 		if when.IsZero() {
 			// If "now" was specified, and we created a new file, then its times will
@@ -76,7 +76,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 		when = time.Now()
 	}
 	if err := os.Chtimes(path, when, when); err != nil {
-		return errors.Annotate(err, "failed to Chtimes: %q", path).Err()
+		return errors.Fmt("failed to Chtimes: %q: %w", path, err)
 	}
 
 	return nil
@@ -239,7 +239,7 @@ func MakePathUserWritable(path string, fi os.FileInfo) error {
 	if fi == nil {
 		var err error
 		if fi, err = os.Stat(path); err != nil {
-			return errors.Annotate(err, "failed to Stat path: %q", path).Err()
+			return errors.Fmt("failed to Stat path: %q: %w", path, err)
 		}
 	}
 
@@ -248,7 +248,7 @@ func MakePathUserWritable(path string, fi os.FileInfo) error {
 	if (mode & 0200) == 0 {
 		mode |= 0200
 		if err := os.Chmod(path, mode); err != nil {
-			return errors.Annotate(err, "could not Chmod path: mode=%#o: %q", mode, path).Err()
+			return errors.Fmt("could not Chmod path: mode=%#o: %q: %w", mode, path, err)
 		}
 	}
 	return nil
@@ -261,21 +261,21 @@ func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.Fi
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return errors.Annotate(err, "").Err()
+			return errors.Fmt(": %w", err)
 		}
 
 		mode := info.Mode()
 		if (mode.IsRegular() || mode.IsDir()) && filter(path) {
 			if newMode := chmod(mode); newMode != mode {
 				if err := os.Chmod(path, newMode); err != nil {
-					return errors.Annotate(err, "failed to Chmod: %q", path).Err()
+					return errors.Fmt("failed to Chmod: %q: %w", path, err)
 				}
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "").Err()
+		return errors.Fmt(": %w", err)
 	}
 	return nil
 }
@@ -335,7 +335,7 @@ func hardlinkWithFallback(outfile, infile string) error {
 func HardlinkRecursively(src, dst string) error {
 	src, stat, err := ResolveSymlink(src)
 	if err != nil {
-		return errors.Annotate(err, "failed to call ResolveSymlink(%s)", src).Err()
+		return errors.Fmt("failed to call ResolveSymlink(%s): %w", src, err)
 	}
 
 	if stat.Mode().IsRegular() {
@@ -343,16 +343,16 @@ func HardlinkRecursively(src, dst string) error {
 	}
 
 	if !stat.Mode().IsDir() {
-		return errors.Reason("%s is not a directory: %v", src, stat).Err()
+		return errors.Fmt("%s is not a directory: %v", src, stat)
 	}
 
 	if err := os.MkdirAll(dst, 0775); err != nil {
-		return errors.Annotate(err, "failed to call MkdirAll for %s", dst).Err()
+		return errors.Fmt("failed to call MkdirAll for %s: %w", dst, err)
 	}
 
 	file, err := os.Open(src)
 	if err != nil {
-		return errors.Annotate(err, "failed to Open %s", src).Err()
+		return errors.Fmt("failed to Open %s: %w", src, err)
 	}
 	defer file.Close()
 
@@ -362,12 +362,12 @@ func HardlinkRecursively(src, dst string) error {
 			break
 		}
 		if err != nil {
-			return errors.Annotate(err, "failed to call Readdirnames for %s", src).Err()
+			return errors.Fmt("failed to call Readdirnames for %s: %w", src, err)
 		}
 
 		for _, name := range names {
 			if err := HardlinkRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
-				return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", filepath.Join(src, name), filepath.Join(dst, name)).Err()
+				return errors.Fmt("failed to call HardlinkRecursively(%s, %s): %w", filepath.Join(src, name), filepath.Join(dst, name), err)
 			}
 
 		}
@@ -381,7 +381,7 @@ func CreateDirectories(baseDirectory string, files []string) error {
 	dirs := make([]string, len(files))
 	for i, file := range files {
 		if filepath.IsAbs(file) {
-			return errors.Reason("file should be relative path: %s", file).Err()
+			return errors.Fmt("file should be relative path: %s", file)
 		}
 		dirs[i] = filepath.Dir(file)
 	}
@@ -398,7 +398,7 @@ func CreateDirectories(baseDirectory string, files []string) error {
 		dir = filepath.Join(baseDirectory, dir)
 
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return errors.Annotate(err, "failed to create directory for %s", dir).Err()
+			return errors.Fmt("failed to create directory for %s: %w", dir, err)
 		}
 	}
 
@@ -410,7 +410,7 @@ func CreateDirectories(baseDirectory string, files []string) error {
 func IsEmptyDir(dir string) (bool, error) {
 	d, err := os.Open(dir)
 	if err != nil {
-		return false, errors.Annotate(err, "failed to Open(%s)", dir).Err()
+		return false, errors.Fmt("failed to Open(%s): %w", dir, err)
 	}
 	defer d.Close()
 
@@ -543,7 +543,7 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 			// note: we check this first to allow testing; otherwise we would need to
 			// run tests on a machine with multiple volumes.
 			if vol != *commonVolume {
-				return "", errors.Reason("provided paths originate on different volumes: path[0]:%q, path[%d]:%q", *commonVolume, i, vol).Err()
+				return "", errors.Fmt("provided paths originate on different volumes: path[0]:%q, path[%d]:%q", *commonVolume, i, vol)
 			}
 		} else {
 			commonVolume = &vol
@@ -551,7 +551,7 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 
 		fi, err := os.Lstat(path)
 		if err != nil {
-			return "", errors.Annotate(err, "reading path[%d]: %q", i, path).Err()
+			return "", errors.Fmt("reading path[%d]: %q: %w", i, path, err)
 		}
 		if !fi.IsDir() {
 			path = filepath.Dir(path)
@@ -559,7 +559,7 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 			if err != nil {
 				// given that we know that the original `path` exists, this SHOULD be
 				// impossible, but FUSE exists so... idk.
-				return "", errors.Annotate(err, "reading Dir(path[%d]): %q", i, path).Err()
+				return "", errors.Fmt("reading Dir(path[%d]): %q: %w", i, path, err)
 			}
 			if !fi.IsDir() {
 				// this SHOULD ALSO be impossible...
@@ -650,9 +650,9 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 		for _, sentinel := range rootSentinels {
 			sentinelPath := filepath.Join(curPath, sentinel)
 			if _, err := os.Lstat(sentinelPath); err == nil {
-				return "", errors.Annotate(ErrRootSentinel, "%q", sentinelPath).Err()
+				return "", errors.Fmt("%q: %w", sentinelPath, ErrRootSentinel)
 			} else if !os.IsNotExist(err) {
-				return "", errors.Annotate(err, "failed to read root sentinel %q", sentinelPath).Err()
+				return "", errors.Fmt("failed to read root sentinel %q: %w", sentinelPath, err)
 			}
 		}
 

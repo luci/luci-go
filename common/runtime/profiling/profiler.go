@@ -141,7 +141,7 @@ func (p *Profiler) Start() error {
 	if p.ProfileCPU {
 		out, err := os.Create(p.generateOutPath("cpu"))
 		if err != nil {
-			return errors.Annotate(err, "failed to create CPU profile output file").Err()
+			return errors.Fmt("failed to create CPU profile output file: %w", err)
 		}
 		pprof.StartCPUProfile(out)
 		p.profilingCPU = true
@@ -150,7 +150,7 @@ func (p *Profiler) Start() error {
 	if p.ProfileTrace {
 		out, err := os.Create(p.generateOutPath("trace"))
 		if err != nil {
-			return errors.Annotate(err, "failed to create runtime trace output file").Err()
+			return errors.Fmt("failed to create runtime trace output file: %w", err)
 		}
 		trace.Start(out)
 		p.profilingTrace = true
@@ -169,7 +169,7 @@ func (p *Profiler) Start() error {
 
 	if p.BindHTTP != "" {
 		if err := p.startHTTP(); err != nil {
-			return errors.Annotate(err, "failed to start HTTP server").Err()
+			return errors.Fmt("failed to start HTTP server: %w", err)
 		}
 	}
 
@@ -192,7 +192,7 @@ func (p *Profiler) startHTTP() error {
 	// Bind to our profiling port.
 	l, err := net.Listen("tcp4", p.BindHTTP)
 	if err != nil {
-		return errors.Annotate(err, "failed to bind to TCP4 address: %q", p.BindHTTP).Err()
+		return errors.Fmt("failed to bind to TCP4 address: %q: %w", p.BindHTTP, err)
 	}
 
 	server := http.Server{
@@ -238,7 +238,7 @@ func (p *Profiler) DumpSnapshot() error {
 
 	if p.ProfileHeap {
 		if err := p.dumpHeapProfile(); err != nil {
-			return errors.Annotate(err, "failed to dump heap profile").Err()
+			return errors.Fmt("failed to dump heap profile: %w", err)
 		}
 	}
 
@@ -248,14 +248,14 @@ func (p *Profiler) DumpSnapshot() error {
 func (p *Profiler) dumpHeapProfile() error {
 	fd, err := os.Create(p.generateOutPath("memory"))
 	if err != nil {
-		return errors.Annotate(err, "failed to create output file").Err()
+		return errors.Fmt("failed to create output file: %w", err)
 	}
 	defer fd.Close()
 
 	// Get up-to-date statistics.
 	runtime.GC()
 	if err := pprof.WriteHeapProfile(fd); err != nil {
-		return errors.Annotate(err, "failed to write heap profile").Err()
+		return errors.Fmt("failed to write heap profile: %w", err)
 	}
 	return nil
 }

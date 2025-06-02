@@ -134,15 +134,15 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		instanceName = cfg.CloudInstance
 		opts, err = prodClientOptions(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize production spanner client").Err()
+			return nil, errors.Fmt("failed to initialize production spanner client: %w", err)
 		}
 	default:
-		return nil, errors.Reason("either EmulatedInstance or CloudInstance must be set").Err()
+		return nil, errors.New("either EmulatedInstance or CloudInstance must be set")
 	}
 
 	initStatements, err := cfg.readDDLStatements()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read %q", cfg.InitScriptPath).Err()
+		return nil, errors.Fmt("failed to read %q: %w", cfg.InitScriptPath, err)
 	}
 
 	client, err := spandb.NewDatabaseAdminClient(ctx, opts...)
@@ -165,11 +165,11 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		ExtraStatements: initStatements,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create database").Err()
+		return nil, errors.Fmt("failed to create database: %w", err)
 	}
 	db, err := dbOp.Wait(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create database").Err()
+		return nil, errors.Fmt("failed to create database: %w", err)
 	}
 
 	return &TempDB{
@@ -187,7 +187,7 @@ func prodClientOptions(ctx context.Context) ([]option.ClientOption, error) {
 	})
 	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).TokenSource()
 	if errors.Is(err, auth.ErrLoginRequired) {
-		return nil, errors.Annotate(err, "please login with `luci-auth login -scopes %q`", strings.Join(opts.Scopes, " ")).Err()
+		return nil, errors.Fmt("please login with `luci-auth login -scopes %q`: %w", strings.Join(opts.Scopes, " "), err)
 	}
 	return []option.ClientOption{
 		option.WithTokenSource(ts),

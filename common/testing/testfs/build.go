@@ -95,12 +95,12 @@ func Collect(base string) (map[string]string, error) {
 		}
 
 		if !info.Mode().IsRegular() {
-			return errors.Reason("unknown file info is detected for %s: %v", path, info).Err()
+			return errors.Fmt("unknown file info is detected for %s: %v", path, info)
 		}
 
 		buf, err := os.ReadFile(filepath.Join(base, path))
 		if err != nil {
-			return errors.Annotate(err, "failed to read: %s", filepath.Join(base, path)).Err()
+			return errors.Fmt("failed to read: %s: %w", filepath.Join(base, path), err)
 		}
 
 		layout[filepath.ToSlash(path)] = string(buf)

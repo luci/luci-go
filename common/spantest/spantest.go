@@ -70,7 +70,7 @@ func findInitScript(rel string) (string, error) {
 		if os.IsNotExist(err) {
 			parent := filepath.Dir(ancestor)
 			if parent == ancestor {
-				return "", errors.Reason("%s not found", rel).Err()
+				return "", errors.Fmt("%s not found", rel)
 			}
 			ancestor = parent
 			continue
@@ -172,7 +172,7 @@ func spannerTestMain(m *testing.M, initScript string) (exitCode int, err error) 
 		EmulatedInstance: instance,
 	})
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to create a temporary Spanner database").Err()
+		return 0, errors.Fmt("failed to create a temporary Spanner database: %w", err)
 	}
 	logging.Infof(ctx, "Created a temporary spanner database %s", db.Name)
 

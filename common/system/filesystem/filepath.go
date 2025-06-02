@@ -115,7 +115,7 @@ func ResolveSymlink(path string) (string, os.FileInfo, error) {
 		var err error
 		stat, err = os.Lstat(path)
 		if err != nil {
-			return "", stat, errors.Annotate(err, "failed to call Lstat(%s)", path).Err()
+			return "", stat, errors.Fmt("failed to call Lstat(%s): %w", path, err)
 		}
 		if (stat.Mode() & os.ModeSymlink) == 0 {
 			break
@@ -123,7 +123,7 @@ func ResolveSymlink(path string) (string, os.FileInfo, error) {
 
 		link, err := os.Readlink(path)
 		if err != nil {
-			return "", stat, errors.Annotate(err, "failed to call Readlink(%s)", path).Err()
+			return "", stat, errors.Fmt("failed to call Readlink(%s): %w", path, err)
 		}
 
 		if filepath.IsAbs(link) {

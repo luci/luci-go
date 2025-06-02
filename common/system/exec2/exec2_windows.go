@@ -32,7 +32,7 @@ type attr struct {
 func iterateChildThreads(pid uint32, f func(uint32) error) error {
 	handle, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPTHREAD, pid)
 	if err != nil {
-		return errors.Annotate(err, "failed to get snapshot").Err()
+		return errors.Fmt("failed to get snapshot: %w", err)
 	}
 	defer windows.CloseHandle(handle)
 
@@ -41,7 +41,7 @@ func iterateChildThreads(pid uint32, f func(uint32) error) error {
 
 	if err := windows.Thread32First(handle, &threadEntry); err != nil {
 		if serr, ok := err.(syscall.Errno); !ok || serr != windows.ERROR_NO_MORE_FILES {
-			return errors.Annotate(err, "failed to call Thread32First").Err()
+			return errors.Fmt("failed to call Thread32First: %w", err)
 		}
 		return nil
 	}
@@ -55,7 +55,7 @@ func iterateChildThreads(pid uint32, f func(uint32) error) error {
 
 		if err := windows.Thread32Next(handle, &threadEntry); err != nil {
 			if serr, ok := err.(syscall.Errno); !ok || serr != windows.ERROR_NO_MORE_FILES {
-				return errors.Annotate(err, "failed to call Thread32Next").Err()
+				return errors.Fmt("failed to call Thread32Next: %w", err)
 			}
 			return nil
 		}
@@ -71,7 +71,7 @@ func (c *Cmd) setupCmd() {
 func createJobObject() (windows.Handle, error) {
 	job, err := windows.CreateJobObject(nil, nil)
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to create job object").Err()
+		return 0, errors.Fmt("failed to create job object: %w", err)
 	}
 
 	// TODO(tikuta): use SetInformationJobObject
@@ -81,7 +81,7 @@ func createJobObject() (windows.Handle, error) {
 
 func (c *Cmd) start() error {
 	if err := c.Cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start process").Err()
+		return errors.Fmt("failed to start process: %w", err)
 	}
 
 	pid := uint32(c.Process.Pid)
@@ -96,7 +96,7 @@ func (c *Cmd) start() error {
 
 	job, err := createJobObject()
 	if err != nil {
-		return errors.Annotate(err, "failed to create job object").Err()
+		return errors.Fmt("failed to create job object: %w", err)
 	}
 
 	defer func() {
@@ -112,24 +112,24 @@ func (c *Cmd) start() error {
 	// TODO: potential performance improvement https://crbug.com/974202
 	process, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, pid)
 	if err != nil {
-		return errors.Annotate(err, "failed to open process handle").Err()
+		return errors.Fmt("failed to open process handle: %w", err)
 	}
 	defer windows.CloseHandle(process)
 
 	if err := windows.AssignProcessToJobObject(job, process); err != nil {
-		return errors.Annotate(err, "failed to assign process to job object").Err()
+		return errors.Fmt("failed to assign process to job object: %w", err)
 	}
 
 	// TODO: potential performance improvement https://crbug.com/974202
 	err = iterateChildThreads(pid, func(tid uint32) error {
 		thread, err := windows.OpenThread(windows.THREAD_SUSPEND_RESUME, false, tid)
 		if err != nil {
-			return errors.Annotate(err, "failed to call OpenThread").Err()
+			return errors.Fmt("failed to call OpenThread: %w", err)
 		}
 		defer windows.CloseHandle(thread)
 
 		if _, err := windows.ResumeThread(thread); err != nil {
-			return errors.Annotate(err, "failed to call ResumeThread").Err()
+			return errors.Fmt("failed to call ResumeThread: %w", err)
 		}
 		return nil
 	})
@@ -155,7 +155,7 @@ func (c *Cmd) wait() error {
 	c.attr.jobMu.Lock()
 	if c.attr.job != windows.InvalidHandle {
 		if err := windows.CloseHandle(c.attr.job); err != nil {
-			return errors.Annotate(err, "failed to close job object handle").Err()
+			return errors.Fmt("failed to close job object handle: %w", err)
 		}
 		c.attr.job = windows.InvalidHandle
 	}
@@ -169,11 +169,11 @@ func (c *Cmd) kill() error {
 	defer c.attr.jobMu.Unlock()
 
 	if err := windows.TerminateJobObject(c.attr.job, 1); err != nil {
-		return errors.Annotate(err, "failed to terminate job object").Err()
+		return errors.Fmt("failed to terminate job object: %w", err)
 	}
 
 	if err := windows.CloseHandle(c.attr.job); err != nil {
-		return errors.Annotate(err, "failed to close job object handle").Err()
+		return errors.Fmt("failed to close job object handle: %w", err)
 	}
 	c.attr.job = windows.InvalidHandle
 

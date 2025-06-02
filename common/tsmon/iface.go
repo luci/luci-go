@@ -47,7 +47,7 @@ func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 	// Load the config file, and override its values with flags.
 	cfg, err := loadConfig(fl.ConfigFile)
 	if err != nil {
-		return errors.Annotate(err, "failed to load config file at [%s]", fl.ConfigFile).Err()
+		return errors.Fmt("failed to load config file at [%s]: %w", fl.ConfigFile, err)
 	}
 
 	if fl.Endpoint != "" {
@@ -63,7 +63,7 @@ func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 	mon, err := initMonitor(ctx, cfg)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to initialize monitor").Err()
+		return errors.Fmt("failed to initialize monitor: %w", err)
 	case mon == nil:
 		return nil // tsmon is disabled
 	}
@@ -92,7 +92,7 @@ func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
-		return errors.Annotate(err, "failed to configure target from flags").Err()
+		return errors.Fmt("failed to configure target from flags: %w", err)
 	}
 
 	state := GetState(ctx)
@@ -185,7 +185,7 @@ func initMonitor(ctx context.Context, cfg config) (monitor.Monitor, error) {
 			grpc.WithPerRPCCredentials(creds),
 		)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to dial ProdX service %s:%s", hostname, port).Err()
+			return nil, errors.Fmt("failed to dial ProdX service %s:%s: %w", hostname, port, err)
 		}
 		return monitor.NewGRPCMonitor(ctx, 500, conn), nil
 	case "http":

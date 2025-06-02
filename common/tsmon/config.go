@@ -47,7 +47,7 @@ func loadConfig(path string) (config, error) {
 
 		decoder := json.NewDecoder(file)
 		if err = decoder.Decode(&ret); err != nil {
-			return ret, errors.Annotate(err, "failed to decode file").Err()
+			return ret, errors.Fmt("failed to decode file: %w", err)
 		}
 		return ret, nil
 
@@ -58,7 +58,7 @@ func loadConfig(path string) (config, error) {
 
 	default:
 		// An unexpected failure occurred.
-		return ret, errors.Annotate(err, "failed to open file").Err()
+		return ret, errors.Fmt("failed to open file: %w", err)
 	}
 }
 

@@ -96,7 +96,7 @@ func NewBuffer[T any](o *Options) (*Buffer[T], error) {
 	ret := &Buffer[T]{opts: *o} // copy o before normalizing it
 
 	if err := ret.opts.normalize(); err != nil {
-		return nil, errors.Annotate(err, "normalizing buffer.Options").Err()
+		return nil, errors.Fmt("normalizing buffer.Options: %w", err)
 	}
 
 	ret.unleased.onlyID = o.FIFO

@@ -27,14 +27,14 @@ import (
 func totalSystemMemoryBytes() (uint64, error) {
 	ret, err := unix.SysctlUint64("hw.memsize")
 	if err != nil {
-		return 0, errors.Annotate(err, "memory.TotalSystemMemoryMB").Err()
+		return 0, errors.Fmt("memory.TotalSystemMemoryMB: %w", err)
 	}
 
 	// This annoyingly returns the data as an int64_t, not uint64_t so we have to
 	// check if the returned value exceeds MaxInt64 (i.e. is actually a negative
 	// int64 rather than just a really large uint64)
 	if ret > math.MaxInt64 {
-		return 0, errors.Reason("memory.TotalSystemMemoryMB: sysctl: hw.memsize: returned negative value: %d", int64(ret)).Err()
+		return 0, errors.Fmt("memory.TotalSystemMemoryMB: sysctl: hw.memsize: returned negative value: %d", int64(ret))
 	}
 	return ret, nil
 }

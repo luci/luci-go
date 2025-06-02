@@ -38,7 +38,7 @@ func (c *Cmd) start() error {
 
 func (c *Cmd) terminate() error {
 	if err := c.Process.Signal(syscall.SIGTERM); err != nil {
-		return errors.Annotate(err, "failed to send SIGTERM").Err()
+		return errors.Fmt("failed to send SIGTERM: %w", err)
 	}
 	return nil
 }

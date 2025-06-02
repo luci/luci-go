@@ -341,7 +341,7 @@ loop:
 			default:
 				// "impossible", since the only other possible error is ErrBufferFull,
 				// which we should have protected against in getWorkChannel.
-				panic(errors.Annotate(err, "unaccounted error from AddNoBlock").Err())
+				panic(errors.Fmt("unaccounted error from AddNoBlock: %w", err))
 			}
 			if err != nil {
 				state.opts.ErrorFn(&buffer.Batch[T]{

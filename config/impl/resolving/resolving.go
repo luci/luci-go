@@ -40,7 +40,7 @@ type resolvingInterface struct {
 func (r *resolvingInterface) configSet(ctx context.Context, cs config.Set) (config.Set, error) {
 	out, err := r.vars.RenderTemplate(ctx, string(cs))
 	if err != nil {
-		return "", errors.Annotate(err, "bad configSet %q", cs).Err()
+		return "", errors.Fmt("bad configSet %q: %w", cs, err)
 	}
 	return config.Set(out), nil
 }
@@ -48,7 +48,7 @@ func (r *resolvingInterface) configSet(ctx context.Context, cs config.Set) (conf
 func (r *resolvingInterface) path(ctx context.Context, p string) (string, error) {
 	out, err := r.vars.RenderTemplate(ctx, p)
 	if err != nil {
-		return "", errors.Annotate(err, "bad path %q", p).Err()
+		return "", errors.Fmt("bad path %q: %w", p, err)
 	}
 	return out, nil
 }

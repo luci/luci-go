@@ -105,11 +105,10 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 			if _, err := exec.LookPath(driver); err != nil {
 				driver = "podman"
 				if _, err := exec.LookPath(driver); err != nil {
-					return nil, errors.Reason(
-						`neither "docker", nor "podman" are in PATH: `+
-							`a containerization engine is required to run the Cloud Spanner emulator on %s`,
-						runtime.GOOS,
-					).Err()
+					return nil, errors.Fmt(`neither "docker", nor "podman" are in PATH: `+
+						`a containerization engine is required to run the Cloud Spanner emulator on %s`,
+						runtime.GOOS)
+
 				}
 			}
 		}
@@ -143,7 +142,7 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 	case "docker", "podman":
 		emu.grpcAddr, emu.stop, err = startAsContainer(ctx, driver, emu.logWrite)
 	default:
-		err = errors.Reason("unrecognized CLOUD_SPANNER_EMULATOR_DRIVER %q", driver).Err()
+		err = errors.Fmt("unrecognized CLOUD_SPANNER_EMULATOR_DRIVER %q", driver)
 	}
 	if err != nil {
 		return
@@ -154,7 +153,7 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 	// inside of it might still be initializing itself. It should be extremely
 	// quick for "gcloud" code path (and won't hurt as a double check).
 	if err = waitAvailable(ctx, emu.grpcAddr, emu.ClientOptions()); err != nil {
-		err = errors.Annotate(err, "Cloud Spanner emulator readiness check failed").Err()
+		err = errors.Fmt("Cloud Spanner emulator readiness check failed: %w", err)
 		return
 	}
 
@@ -226,7 +225,7 @@ func waitAvailable(ctx context.Context, addr string, opts []option.ClientOption)
 			return ctx.Err()
 		}
 		if attempt == maxAttempts {
-			return errors.Reason("can't connect to the emulator at %q after many attempts", addr).Err()
+			return errors.Fmt("can't connect to the emulator at %q after many attempts", addr)
 		}
 		clock.Sleep(ctx, 10*time.Millisecond*time.Duration(attempt))
 	}

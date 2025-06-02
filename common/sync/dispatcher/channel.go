@@ -172,11 +172,11 @@ func NewChannel[T any](ctx context.Context, opts *Options[T], send SendFn[T]) (C
 
 	buf, err := buffer.NewBuffer[T](&optsCopy.Buffer)
 	if err != nil {
-		return Channel[T]{}, errors.Annotate(err, "allocating Buffer").Err()
+		return Channel[T]{}, errors.Fmt("allocating Buffer: %w", err)
 	}
 
 	if err = optsCopy.normalize(ctx); err != nil {
-		return Channel[T]{}, errors.Annotate(err, "normalizing dispatcher.Options").Err()
+		return Channel[T]{}, errors.Fmt("normalizing dispatcher.Options: %w", err)
 	}
 
 	itemCh := make(chan T)
