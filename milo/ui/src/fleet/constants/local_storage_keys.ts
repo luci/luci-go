@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const COLUMNS_LOCAL_STORAGE_KEY = 'fleet-console-devices-columns';
+export const DEVICES_COLUMNS_LOCAL_STORAGE_KEY =
+  'fleet-console-devices-columns';
+export const RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY =
+  'fleet-console-rri-columns';
 export const SETTINGS_LOCAL_STORAGE_KEY = 'fleet-console-settings';

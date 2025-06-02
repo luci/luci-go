@@ -24,7 +24,7 @@ const COMMON_COLUMNS: string[] = ['id', 'dut_id', 'state'];
 
 /**
  * The idea is to first have the visible columns, then the rest.
- * Inside of each group keep COMMON_COLUMNS in the order as they appear
+ * Inside each group keep COMMON_COLUMNS in the order as they appear
  * in the array.
  */
 const sortingComparator = (

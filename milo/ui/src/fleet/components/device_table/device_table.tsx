@@ -30,10 +30,11 @@ import {
 } from '@/common/components/params_pager';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
-import { COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { getVisibilityModel } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -46,7 +47,6 @@ import {
 } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
-import { getVisibilityModel } from './search_param_utils';
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
 const UNKNOWN_ROW_COUNT = -1;
@@ -121,7 +121,7 @@ export function DeviceTable({
 
   const [visibleColumns, setVisibleColumns] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
-    COLUMNS_LOCAL_STORAGE_KEY,
+    DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
     DEFAULT_DEVICE_COLUMNS,
   );
 

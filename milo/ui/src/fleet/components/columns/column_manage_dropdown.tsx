@@ -18,20 +18,19 @@ import {
   useGridApiContext,
 } from '@mui/x-data-grid';
 
-import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { OptionValue } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
+import { getVisibilityModel } from '@/fleet/utils/search_param';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
-import { OptionsDropdown } from '../options_dropdown/options_dropdown';
-
-import { getVisibilityModel } from './search_param_utils';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
   anchorEl: HTMLElement | null;
   setAnchorEL: (newAnchorEl: HTMLElement | null) => void;
+  defaultColumns: string[];
 }
 
 /**
@@ -41,6 +40,7 @@ export function ColumnsManageDropDown({
   isLoading,
   anchorEl,
   setAnchorEL,
+  defaultColumns,
 }: ColumnsButtonProps) {
   const apiRef = useGridApiContext();
   const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
@@ -85,7 +85,7 @@ export function ColumnsManageDropDown({
         apiRef.current?.setColumnVisibilityModel(
           getVisibilityModel(
             columns.map((c) => c.value),
-            DEFAULT_DEVICE_COLUMNS,
+            defaultColumns,
           ),
         )
       }

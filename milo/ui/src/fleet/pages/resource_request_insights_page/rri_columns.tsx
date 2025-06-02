@@ -25,10 +25,11 @@ import {
 
 import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
 
-interface ColumnDescriptor {
+export interface ColumnDescriptor {
   id: string;
   gridColDef: GridColDef;
   valueGetter: (rr: ResourceRequest) => string;
+  isDefault: boolean;
 }
 
 // RriGridRow describes the fields within a row in the UI.
@@ -50,7 +51,7 @@ interface RriGridRow {
 //
 // Returns true if date1 is after date2.
 function isDateAfter(date1: string, date2: string): boolean {
-  if (date1 === '' || date2 === '') {
+  if (!date1 || !date2) {
     return false;
   }
   const dt1 = DateTime.fromISO(date1);
@@ -102,6 +103,7 @@ export const rriColumns = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => rr.rrId,
+    isDefault: true,
   },
   {
     id: 'resource_details',
@@ -111,6 +113,7 @@ export const rriColumns = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => rr.resourceDetails,
+    isDefault: true,
   },
   {
     id: 'expected_eta',
@@ -120,6 +123,7 @@ export const rriColumns = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
+    isDefault: true,
   },
   {
     id: 'fulfillment_status',
@@ -136,6 +140,7 @@ export const rriColumns = [
             ] as keyof typeof ResourceRequest_Status
           ]
         : '',
+    isDefault: true,
   },
   {
     id: 'material_sourcing_target_delivery_date',
@@ -146,6 +151,7 @@ export const rriColumns = [
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.procurementTargetDeliveryDate),
+    isDefault: false,
   },
   {
     id: 'material_sourcing_actual_delivery_date',
@@ -160,6 +166,7 @@ export const rriColumns = [
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.procurementActualDeliveryDate),
+    isDefault: true,
   },
   {
     id: 'build_actual_delivery_date',
@@ -170,6 +177,7 @@ export const rriColumns = [
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.buildActualDeliveryDate),
+    isDefault: true,
   },
   {
     id: 'qa_actual_delivery_date',
@@ -179,6 +187,7 @@ export const rriColumns = [
       flex: 1,
     },
     valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaActualDeliveryDate),
+    isDefault: true,
   },
   {
     id: 'config_actual_delivery_date',
@@ -189,6 +198,7 @@ export const rriColumns = [
     },
     valueGetter: (rr: ResourceRequest) =>
       toIsoString(rr.configActualDeliveryDate),
+    isDefault: true,
   },
 ] as const satisfies readonly ColumnDescriptor[];
 

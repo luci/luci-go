@@ -14,7 +14,7 @@
 
 import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 
-import { getVisibilityModel } from './search_param_utils';
+import { getVisibilityModel } from '@/fleet/utils/search_param';
 
 describe('data_table_search_param_utils', () => {
   describe('getVisibilityModel', () => {

@@ -19,9 +19,11 @@ import {
   GridToolbarDensitySelector,
 } from '@mui/x-data-grid';
 
-import { RunAutorepair } from '../actions/autorepair/run_autorepair';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 
-import { ColumnsButton } from './columns_button';
+import { RunAutorepair } from '../actions/autorepair/run_autorepair';
+import { ColumnsButton } from '../columns/columns_button';
+
 import { ExportButton } from './export_button';
 
 export interface FleetToolbarProps {
@@ -52,7 +54,10 @@ export function FleetToolbar({
       <ExportButton selectedRowIds={selectedRows.map((row) => `${row.id}`)} />
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
-      <ColumnsButton isLoading={isLoadingColumns} />
+      <ColumnsButton
+        isLoading={isLoadingColumns}
+        defaultColumns={DEFAULT_DEVICE_COLUMNS}
+      />
     </GridToolbarContainer>
   );
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GridColumnVisibilityModel } from '@mui/x-data-grid';
+
 /**
  * Add or update query param with value.
  *
@@ -29,3 +31,16 @@ export const addOrUpdateQueryParam = (
   newParams.set(key, value);
   return newParams;
 };
+
+export function getVisibilityModel(
+  allColumns: string[],
+  visibleColumns: string[],
+): GridColumnVisibilityModel {
+  return allColumns.reduce(
+    (acc, val) => ({
+      ...acc,
+      [val]: visibleColumns.includes(val),
+    }),
+    {},
+  );
+}

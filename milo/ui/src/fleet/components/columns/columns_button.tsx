@@ -20,12 +20,16 @@ import { ColumnsManageDropDown } from './column_manage_dropdown';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
+  defaultColumns: string[];
 }
 
 /**
  * Component for displaying a menu to customize the columns on a table.
  */
-export function ColumnsButton({ isLoading }: ColumnsButtonProps) {
+export function ColumnsButton({
+  isLoading,
+  defaultColumns,
+}: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
@@ -41,6 +45,7 @@ export function ColumnsButton({ isLoading }: ColumnsButtonProps) {
         isLoading={isLoading}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
+        defaultColumns={defaultColumns}
       />
     </>
   );
