@@ -142,14 +142,14 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 		mailer, err = m.initRPCMailer(ctx, strings.TrimPrefix(service, "http://"), true)
 	case service == "gae":
 		if opts.Serverless != module.GAE {
-			return nil, errors.Reason(`"-mailer-service gae" can only be used on GAE`).Err()
+			return nil, errors.New(`"-mailer-service gae" can only be used on GAE`)
 		}
 		if m.opts.DefaultSender == "" {
 			m.opts.DefaultSender = fmt.Sprintf("%s <noreply@%s.appspotmail.com>", opts.CloudProject, opts.CloudProject)
 		}
 		mailer, err = m.initGAEMailer(ctx)
 	default:
-		return nil, errors.Reason("unrecognized -mailer-service %q", service).Err()
+		return nil, errors.Fmt("unrecognized -mailer-service %q", service)
 	}
 
 	if err != nil {
@@ -168,7 +168,7 @@ func (m *mailerModule) sender(msg *Mail) string {
 func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure bool) (Mailer, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithIDToken())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get a RPC transport").Err()
+		return nil, errors.Fmt("failed to get a RPC transport: %w", err)
 	}
 
 	mailerClient := mailer.NewMailerClient(&prpc.Client{
@@ -192,7 +192,7 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 	return func(ctx context.Context, msg *Mail) error {
 		requestID, err := uuid.NewRandom()
 		if err != nil {
-			return errors.Annotate(err, "failed to generate request ID").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to generate request ID: %w", err))
 		}
 		resp, err := mailerClient.SendMail(ctx, &mailer.SendMailRequest{
 			RequestId: requestID.String(),

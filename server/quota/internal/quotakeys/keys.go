@@ -58,7 +58,7 @@ func parseRedisKey(key, prefix string, to proto.Message) error {
 	p := to.ProtoReflect()
 	fields := p.Descriptor().Fields()
 	if fields.Len() != len(toks) {
-		return errors.Reason("incorrect number of sections: %d != %d", len(toks), fields.Len()).Err()
+		return errors.Fmt("incorrect number of sections: %d != %d", len(toks), fields.Len())
 	}
 
 	for i, tok := range toks {
@@ -68,7 +68,7 @@ func parseRedisKey(key, prefix string, to proto.Message) error {
 		if fd.Kind() == protoreflect.Uint32Kind {
 			val, err := strconv.ParseUint(tok, 10, 32)
 			if err != nil {
-				return errors.Annotate(err, "bad version scheme").Err()
+				return errors.Fmt("bad version scheme: %w", err)
 			}
 			p.Set(fd, protoreflect.ValueOfUint32(uint32(val)))
 		} else {

@@ -111,7 +111,7 @@ func JSONPB[T any, TP interface {
 		var msg TP = new(T)
 		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
 		if err := opts.Unmarshal(message.Data, msg); err != nil {
-			return errors.Annotate(err, "parsing PubSub message as jsonpb proto").Err()
+			return errors.Fmt("parsing PubSub message as jsonpb proto: %w", err)
 		}
 		return handler(ctx, message, msg)
 	}
@@ -126,7 +126,7 @@ func WirePB[T any, TP interface {
 	return func(ctx context.Context, message Message) error {
 		var msg TP = new(T)
 		if err := proto.Unmarshal(message.Data, msg); err != nil {
-			return errors.Annotate(err, "parsing PubSub message as wirepb proto").Err()
+			return errors.Fmt("parsing PubSub message as wirepb proto: %w", err)
 		}
 		return handler(ctx, message, msg)
 	}
@@ -204,13 +204,13 @@ func (d *Dispatcher) InstallPubSubRoutes(r *router.Router, prefix string) {
 
 		if err := d.executeHandlerByID(c.Request.Context(), id, c); err != nil {
 			if transient.Tag.In(err) {
-				err = errors.Annotate(err, "transient error in pubsub handler %q", id).Err()
+				err = errors.Fmt("transient error in pubsub handler %q: %w", id, err)
 				errors.Log(c.Request.Context(), err)
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError /* 500 */)
 			} else if Ignore.In(err) {
 				http.Error(c.Writer, "", http.StatusNoContent /* 204 */)
 			} else {
-				err = errors.Annotate(err, "fatal error in pubsub handler %q", id).Err()
+				err = errors.Fmt("fatal error in pubsub handler %q: %w", id, err)
 				errors.Log(c.Request.Context(), err)
 				http.Error(c.Writer, err.Error(), http.StatusAccepted /* 202 */)
 			}
@@ -250,15 +250,15 @@ type pushRequestBody struct {
 func readMessageWrapper(c *router.Context) (pushRequestBody, error) {
 	bodyBlob, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		return pushRequestBody{}, transient.Tag.Apply(errors.Annotate(err, "reading request body").Err())
+		return pushRequestBody{}, transient.Tag.Apply(errors.Fmt("reading request body: %w", err))
 	}
 	// Deserialize the push message wrapper.
 	var body pushRequestBody
 	if err := json.Unmarshal(bodyBlob, &body); err != nil {
-		return pushRequestBody{}, errors.Annotate(err, "bad push request body").Err()
+		return pushRequestBody{}, errors.Fmt("bad push request body: %w", err)
 	}
 	if body.Subscription == "" {
-		return pushRequestBody{}, errors.Reason("bad request body, missing field 'subscription'; did you configure your pub/sub subscription to use wrapped messages?").Err()
+		return pushRequestBody{}, errors.New("bad request body, missing field 'subscription'; did you configure your pub/sub subscription to use wrapped messages?")
 	}
 	return body, nil
 }
@@ -270,7 +270,7 @@ func (d *Dispatcher) executeHandlerByID(ctx context.Context, id string, c *route
 	d.m.RUnlock()
 	if h == nil {
 		callsCounter.Add(ctx, 1, id, "no_handler")
-		return errors.Reason("no pubsub handler with ID %q is registered", id).Err()
+		return errors.Fmt("no pubsub handler with ID %q is registered", id)
 	}
 
 	start := clock.Now(ctx)
@@ -288,7 +288,7 @@ func (d *Dispatcher) executeHandlerByID(ctx context.Context, id string, c *route
 		} else {
 			result = "fatal"
 		}
-		return errors.Annotate(err, "reading pub/sub message wrapper").Err()
+		return errors.Fmt("reading pub/sub message wrapper: %w", err)
 	}
 
 	message := Message{

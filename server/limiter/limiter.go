@@ -157,5 +157,5 @@ func (l *Limiter) reject(ctx context.Context, ri *RequestInfo, reason string) er
 	} else {
 		logging.Errorf(ctx, "limiter %q: the request hit the %s limit", l.titleForLog, reason)
 	}
-	return errors.Annotate(ErrLimitReached, "limiter %q: %s limit", l.titleForLog, reason).Err()
+	return errors.Fmt("limiter %q: %s limit: %w", l.titleForLog, reason, ErrLimitReached)
 }

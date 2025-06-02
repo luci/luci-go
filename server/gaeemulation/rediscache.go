@@ -84,12 +84,12 @@ func (c redisCache) do(ctx context.Context, op string, cb func(conn redis.Conn) 
 
 	conn, err := c.pool.GetContext(ctx)
 	if err != nil {
-		return errors.Annotate(err, "dscache %s", op).Err()
+		return errors.Fmt("dscache %s: %w", op, err)
 	}
 	defer conn.Close()
 
 	if err = cb(conn); err != nil {
-		return errors.Annotate(err, "dscache %s", op).Err()
+		return errors.Fmt("dscache %s: %w", op, err)
 	}
 	return nil
 }

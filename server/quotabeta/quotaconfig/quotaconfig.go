@@ -97,7 +97,7 @@ func NewMemory(ctx context.Context, policies []*pb.Policy) (Interface, error) {
 		v.Exit()
 	}
 	if err := v.Finalize(); err != nil {
-		return nil, errors.Annotate(err, "policies did not pass validation").Err()
+		return nil, errors.Fmt("policies did not pass validation: %w", err)
 	}
 	return m, nil
 }

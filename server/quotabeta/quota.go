@@ -49,7 +49,7 @@ func Use(ctx context.Context, cfg quotaconfig.Interface) context.Context {
 func getInterface(ctx context.Context) quotaconfig.Interface {
 	cfg, ok := ctx.Value(&cfgKey).(quotaconfig.Interface)
 	if !ok {
-		panic(errors.Reason("quotaconfig.Interface implementation not found (ensure quota.Use is called in server.Main)").Err())
+		panic(errors.New("quotaconfig.Interface implementation not found (ensure quota.Use is called in server.Main)"))
 	}
 	return cfg
 }
@@ -179,14 +179,14 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 		name := pol
 		if strings.Contains(pol, "${user}") {
 			if opts == nil || opts.User == "" {
-				return errors.Reason("user unspecified for %q", pol).Err()
+				return errors.Fmt("user unspecified for %q", pol)
 			}
 			name = strings.ReplaceAll(name, "${user}", opts.User)
 		}
 		name = fmt.Sprintf("entry:%x", sha256.Sum256([]byte(name)))
 		def, err := cfg.Get(ctx, pol)
 		if err != nil {
-			return errors.Annotate(err, "fetching config").Err()
+			return errors.Fmt("fetching config: %w", err)
 		}
 		defs[name] = def
 		adjs[name] = val
@@ -195,7 +195,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "establishing connection").Err()
+		return errors.Fmt("establishing connection: %w", err)
 	}
 	defer conn.Close()
 
@@ -205,7 +205,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 			"Key": opts.RequestID,
 			"Now": now,
 		}); err != nil {
-			return errors.Annotate(err, "rendering template %q", dedupePrefix.Name()).Err()
+			return errors.Fmt("rendering template %q: %w", dedupePrefix.Name(), err)
 		}
 	}
 
@@ -219,7 +219,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 			"Replenishment": defs[name].Replenishment,
 			"Amount":        adj,
 		}); err != nil {
-			return errors.Annotate(err, "rendering template %q", updateEntry.Name()).Err()
+			return errors.Fmt("rendering template %q: %w", updateEntry.Name(), err)
 		}
 		i++
 	}
@@ -227,7 +227,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 		if err := setEntry.Execute(s, map[string]any{
 			"Var": fmt.Sprintf("entries[%d]", i),
 		}); err != nil {
-			return errors.Annotate(err, "rendering template %q", setEntry.Name()).Err()
+			return errors.Fmt("rendering template %q: %w", setEntry.Name(), err)
 		}
 	}
 
@@ -236,7 +236,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 			"Key":      opts.RequestID,
 			"Deadline": now + 3600,
 		}); err != nil {
-			return errors.Annotate(err, "rendering template %q", dedupeSuffix.Name()).Err()
+			return errors.Fmt("rendering template %q: %w", dedupeSuffix.Name(), err)
 		}
 	}
 

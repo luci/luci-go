@@ -73,11 +73,11 @@ func (c *configService) Get(ctx context.Context, name string) (*pb.Policy, error
 	case err == caching.ErrCacheMiss:
 		return nil, quotaconfig.ErrNotFound
 	case err != nil:
-		return nil, errors.Annotate(err, "retrieving cached policy %q", name).Err()
+		return nil, errors.Fmt("retrieving cached policy %q: %w", name, err)
 	}
 	p := &pb.Policy{}
 	if err := proto.Unmarshal(b, p); err != nil {
-		return nil, errors.Annotate(err, "unmarshalling cached policy %q", name).Err()
+		return nil, errors.Fmt("unmarshalling cached policy %q: %w", name, err)
 	}
 	return p, nil
 }
@@ -86,7 +86,7 @@ func (c *configService) Get(ctx context.Context, name string) (*pb.Policy, error
 func (c *configService) Refresh(ctx context.Context) error {
 	s := &pb.Config{}
 	if err := cfgclient.Get(ctx, c.cfgSet, c.path, cfgclient.ProtoText(s), nil); err != nil {
-		return errors.Annotate(err, "fetching policy config %q for config set %q", c.path, c.cfgSet).Err()
+		return errors.Fmt("fetching policy config %q for config set %q: %w", c.path, c.cfgSet, err)
 	}
 	v := &validation.Context{
 		Context: ctx,
@@ -97,15 +97,15 @@ func (c *configService) Refresh(ctx context.Context) error {
 		v.Exit()
 	}
 	if err := v.Finalize(); err != nil {
-		return errors.Annotate(err, "policy config %q for config set %q did not pass validation", c.path, c.cfgSet).Err()
+		return errors.Fmt("policy config %q for config set %q did not pass validation: %w", c.path, c.cfgSet, err)
 	}
 	for _, p := range s.GetPolicy() {
 		b, err := proto.Marshal(p)
 		if err != nil {
-			return errors.Annotate(err, "marshalling policy %q", p.Name).Err()
+			return errors.Fmt("marshalling policy %q: %w", p.Name, err)
 		}
 		if err := c.cache.Set(ctx, p.Name, b, 0); err != nil {
-			return errors.Annotate(err, "caching policy %q", p.Name).Err()
+			return errors.Fmt("caching policy %q: %w", p.Name, err)
 		}
 	}
 	return nil

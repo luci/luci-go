@@ -70,7 +70,7 @@ func convertToInput(ctx context.Context, requestID string, requestTTL *durationp
 	KEYS := stringset.New(len(ops))
 	for i, op := range ops {
 		if err := op.Validate(); err != nil {
-			return nil, nil, errors.Annotate(err, "ops[%d]", i).Err()
+			return nil, nil, errors.Fmt("ops[%d]: %w", i, err)
 		}
 
 		raw := &quotapb.RawOp{
@@ -82,22 +82,20 @@ func convertToInput(ctx context.Context, requestID string, requestTTL *durationp
 		KEYS.Add(raw.AccountRef)
 
 		if (op.Options & invalidOptionsMask) > 0 {
-			return nil, nil, errors.Reason("ops[%d]: unknown options", i).Err()
+			return nil, nil, errors.Fmt("ops[%d]: unknown options", i)
 		}
 		if op.Options&uint32(conflictOptions) == uint32(conflictOptions) {
-			return nil, nil, errors.Reason("ops[%d]: conflicting options", i).Err()
+			return nil, nil, errors.Fmt("ops[%d]: conflicting options", i)
 		}
 
 		if op.PolicyId != nil {
 			if op.AccountId.AppId != op.PolicyId.Config.AppId {
-				return nil, nil, errors.Reason(
-					"ops[%d]: account and policy come from different apps: %s vs %s",
-					i, op.AccountId.AppId, op.PolicyId.Config.AppId).Err()
+				return nil, nil, errors.Fmt("ops[%d]: account and policy come from different apps: %s vs %s",
+					i, op.AccountId.AppId, op.PolicyId.Config.AppId)
 			}
 			if op.AccountId.ResourceType != op.PolicyId.Key.ResourceType {
-				return nil, nil, errors.Reason(
-					"ops[%d]: account and policy are for different resource types: %s vs %s",
-					i, op.AccountId.ResourceType, op.PolicyId.Key.ResourceType).Err()
+				return nil, nil, errors.Fmt("ops[%d]: account and policy are for different resource types: %s vs %s",
+					i, op.AccountId.ResourceType, op.PolicyId.Key.ResourceType)
 			}
 			raw.PolicyRef = quotakeys.PolicyRef(op.PolicyId)
 			KEYS.Add(raw.PolicyRef.Config)
@@ -108,7 +106,7 @@ func convertToInput(ctx context.Context, requestID string, requestTTL *durationp
 
 	h := sha256.New()
 	if err := msgpackpb.MarshalStream(h, ret, msgpackpb.Deterministic); err != nil {
-		return nil, nil, errors.Annotate(err, "calculating hash").Err()
+		return nil, nil, errors.Fmt("calculating hash: %w", err)
 	}
 
 	if requestID != "" {
@@ -149,7 +147,7 @@ func ApplyOps(ctx context.Context, requestID string, requestTTL *durationpb.Dura
 		inputMsg, msgpackpb.Deterministic,
 		msgpackpb.WithStringInternTable(keys))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal UpdateAccountsInput").Err()
+		return nil, errors.Fmt("failed to marshal UpdateAccountsInput: %w", err)
 	}
 
 	fullArgs := make(redis.Args, 0, len(keys)+2)
@@ -161,7 +159,7 @@ func ApplyOps(ctx context.Context, requestID string, requestTTL *durationpb.Dura
 	err = withRedisConn(ctx, func(conn redis.Conn) error {
 		respRaw, err := redis.String(UpdateAccountsScript.DoContext(ctx, conn, fullArgs...))
 		if err != nil {
-			return errors.Annotate(err, "running UpdateAccountsScript").Err()
+			return errors.Fmt("running UpdateAccountsScript: %w", err)
 		}
 		if err := msgpackpb.Unmarshal(msgpack.RawMessage(respRaw), resp); err != nil {
 			return err
@@ -199,7 +197,7 @@ func GetAccounts(ctx context.Context, accounts []*quotapb.AccountID) (*quotapb.G
 	err := withRedisConn(ctx, func(conn redis.Conn) error {
 		accountsRaw, err := redis.Strings(conn.Do("MGET", args...))
 		if err != nil {
-			return errors.Annotate(err, "running MGET").Err()
+			return errors.Fmt("running MGET: %w", err)
 		}
 
 		for i, accountRaw := range accountsRaw {
@@ -219,7 +217,7 @@ func GetAccounts(ctx context.Context, accounts []*quotapb.AccountID) (*quotapb.G
 	})
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to query accounts").Err()
+		return nil, errors.Fmt("failed to query accounts: %w", err)
 	}
 
 	return resp, nil

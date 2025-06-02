@@ -80,7 +80,7 @@ func (s *MemorySessionStore) Create(ctx context.Context, session *statepb.LoginS
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.sessions[session.Id] != nil {
-		return errors.Reason("already have a session with this ID").Err()
+		return errors.New("already have a session with this ID")
 	}
 	if s.sessions == nil {
 		s.sessions = make(map[string]*statepb.LoginSession, 1)
@@ -143,9 +143,9 @@ func (s *DatastoreSessionStore) Create(ctx context.Context, session *statepb.Log
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		switch err := datastore.Get(ctx, &loginSessionEntity{ID: session.Id}); {
 		case err == nil:
-			return errors.Reason("already have a session with this ID").Err()
+			return errors.New("already have a session with this ID")
 		case err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to check if the session already exists").Err()
+			return errors.Fmt("failed to check if the session already exists: %w", err)
 		}
 		return datastore.Put(ctx, &loginSessionEntity{
 			ID:      session.Id,
@@ -163,7 +163,7 @@ func (s *DatastoreSessionStore) Get(ctx context.Context, sessionID string) (*sta
 	case err == datastore.ErrNoSuchEntity:
 		return nil, ErrNoSession
 	default:
-		return nil, errors.Annotate(err, "datastore error fetching session").Err()
+		return nil, errors.Fmt("datastore error fetching session: %w", err)
 	}
 }
 
@@ -176,7 +176,7 @@ func (s *DatastoreSessionStore) Update(ctx context.Context, sessionID string, cb
 		case err == datastore.ErrNoSuchEntity:
 			return ErrNoSession
 		case err != nil:
-			return errors.Annotate(err, "error fetching session").Err()
+			return errors.Fmt("error fetching session: %w", err)
 		}
 		clone := proto.Clone(ent.Session).(*statepb.LoginSession)
 		cb(clone)
@@ -187,7 +187,7 @@ func (s *DatastoreSessionStore) Update(ctx context.Context, sessionID string, cb
 			ent.Session = clone
 			ent.TTL = clone.Expiry.AsTime().Add(sessionCleanupDelay).UTC()
 			if err := datastore.Put(ctx, &ent); err != nil {
-				return errors.Annotate(err, "failed to store updated session").Err()
+				return errors.Fmt("failed to store updated session: %w", err)
 			}
 		}
 		stored = clone
@@ -198,7 +198,7 @@ func (s *DatastoreSessionStore) Update(ctx context.Context, sessionID string, cb
 	case err == ErrNoSession:
 		return nil, err
 	case err != nil:
-		return nil, errors.Annotate(err, "session transaction error").Err()
+		return nil, errors.Fmt("session transaction error: %w", err)
 	default:
 		return stored, nil
 	}

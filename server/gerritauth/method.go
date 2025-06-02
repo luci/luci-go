@@ -120,7 +120,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	// Peek inside the token to see what account it was supposedly signed by.
 	var unverifiedTok gerritJWT
 	if err := jwt.UnsafeDecode(encodedJWT, &unverifiedTok); err != nil {
-		return nil, nil, errors.Annotate(err, "bad Gerrit JWT").Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: %w", err)
 	}
 
 	// It must be one of the accounts we know.
@@ -132,7 +132,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 		}
 	}
 	if knownIssuer == "" {
-		return nil, nil, errors.Reason("bad Gerrit JWT: unrecognized issuer %q", unverifiedTok.Iss).Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: unrecognized issuer %q", unverifiedTok.Iss)
 	}
 
 	// Grab the signing keys we trust. Note: this usually hits the process cache.
@@ -141,26 +141,26 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 		var err error
 		certs, err = signing.FetchCertificatesForServiceAccount(ctx, knownIssuer)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "could not fetch Gerrit public keys").Err()
+			return nil, nil, errors.Fmt("could not fetch Gerrit public keys: %w", err)
 		}
 	}
 
 	// Verify the signature and deserialize the token.
 	var tok gerritJWT
 	if err := jwt.VerifyAndDecode(encodedJWT, &tok, certs); err != nil {
-		return nil, nil, errors.Annotate(err, "bad Gerrit JWT").Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: %w", err)
 	}
 
 	// Check the token was addressed to us.
 	if tok.Aud != m.Audience {
-		return nil, nil, errors.Reason("bad Gerrit JWT: wrong audience %q, expecting %q", tok.Aud, m.Audience).Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: wrong audience %q, expecting %q", tok.Aud, m.Audience)
 	}
 
 	// Check the token expiration time. Allow 30 sec clock skew.
 	now := clock.Now(ctx)
 	exp := time.Unix(tok.Exp, 0)
 	if exp.Add(30 * time.Second).Before(now) {
-		return nil, nil, errors.Reason("bad Gerrit JWT: expired %s ago", now.Sub(exp)).Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: expired %s ago", now.Sub(exp))
 	}
 
 	// Use "preferred_email", but fallback to "emails[0]" if empty, which
@@ -169,7 +169,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	preferredEmail := tok.AssertedUser.PreferredEmail
 	if preferredEmail == "" {
 		if len(tok.AssertedUser.Emails) == 0 {
-			return nil, nil, errors.Reason("bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty").Err()
+			return nil, nil, errors.New("bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty")
 		}
 		preferredEmail = tok.AssertedUser.Emails[0]
 	}
@@ -177,7 +177,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	// It must be syntactically a valid email address.
 	ident, err := identity.MakeIdentity("user:" + preferredEmail)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "bad Gerrit JWT: unrecognized email format").Err()
+		return nil, nil, errors.Fmt("bad Gerrit JWT: unrecognized email format: %w", err)
 	}
 
 	// Success.

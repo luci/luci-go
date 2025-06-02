@@ -76,12 +76,12 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 	case err == quotaconfig.ErrNotFound:
 		return nil, appstatus.Errorf(codes.NotFound, "policy %q (db name: %s) not found", rsp.Name, rsp.DbName)
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching config").Err()
+		return nil, errors.Fmt("fetching config: %w", err)
 	}
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "establishing connection").Err()
+		return nil, errors.Fmt("establishing connection: %w", err)
 	}
 	defer conn.Close()
 
@@ -94,12 +94,12 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 		"Replenishment": def.Replenishment,
 		"Amount":        0,
 	}); err != nil {
-		return nil, errors.Annotate(err, "rendering template %q", updateEntry.Name()).Err()
+		return nil, errors.Fmt("rendering template %q: %w", updateEntry.Name(), err)
 	}
 	if err := getEntry.Execute(s, map[string]any{
 		"Var": "entry",
 	}); err != nil {
-		return nil, errors.Annotate(err, "rendering template %q", setEntry.Name()).Err()
+		return nil, errors.Fmt("rendering template %q: %w", setEntry.Name(), err)
 	}
 
 	val, err := redis.NewScript(0, s.String()).Do(conn)
@@ -151,7 +151,7 @@ func (*quotaAdmin) Set(ctx context.Context, req *pb.SetRequest) (*pb.QuotaEntry,
 	case err == quotaconfig.ErrNotFound:
 		return nil, appstatus.Errorf(codes.NotFound, "policy %q (db name: %s) not found", rsp.Name, rsp.DbName)
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching config").Err()
+		return nil, errors.Fmt("fetching config: %w", err)
 	}
 	rsp.Resources = req.Resources
 	if rsp.Resources > def.Resources {
@@ -160,7 +160,7 @@ func (*quotaAdmin) Set(ctx context.Context, req *pb.SetRequest) (*pb.QuotaEntry,
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "establishing connection").Err()
+		return nil, errors.Fmt("establishing connection: %w", err)
 	}
 	defer conn.Close()
 
@@ -170,7 +170,7 @@ func (*quotaAdmin) Set(ctx context.Context, req *pb.SetRequest) (*pb.QuotaEntry,
 		"Resources": rsp.Resources,
 		"Now":       now,
 	}); err != nil {
-		return nil, errors.Annotate(err, "rendering template %q", overwriteEntry.Name()).Err()
+		return nil, errors.Fmt("rendering template %q: %w", overwriteEntry.Name(), err)
 	}
 
 	if _, err := redis.NewScript(0, s.String()).Do(conn); err != nil {
@@ -194,7 +194,7 @@ func NewQuotaAdminServer(readerGroup, writerGroup string) pb.QuotaAdminServer {
 			}
 			switch is, err := auth.IsMember(ctx, groups...); {
 			case err != nil:
-				return ctx, errors.Annotate(err, "auth.IsMember").Err()
+				return ctx, errors.Fmt("auth.IsMember: %w", err)
 			case is:
 				logging.Debugf(ctx, "%s called %q", auth.CurrentIdentity(ctx), methodName)
 				return ctx, nil

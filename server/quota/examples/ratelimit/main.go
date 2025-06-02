@@ -97,7 +97,7 @@ func main() {
 				c.Writer.WriteHeader(http.StatusTooManyRequests)
 				fmt.Fprintf(c.Writer, "Quota Denied (%s) (rpc time: %s)", resp, dur)
 			default:
-				errors.Log(c.Request.Context(), errors.Annotate(err, "debit quota").Err())
+				errors.Log(c.Request.Context(), errors.Fmt("debit quota: %w", err))
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})
@@ -116,7 +116,7 @@ func main() {
 			case nil:
 				_, _ = c.Writer.Write([]byte("OK\n"))
 			default:
-				errors.Log(c.Request.Context(), errors.Annotate(err, "credit quota").Err())
+				errors.Log(c.Request.Context(), errors.Fmt("credit quota: %w", err))
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})

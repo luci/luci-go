@@ -60,7 +60,7 @@ func (a *Application) LoadPoliciesAuto(ctx context.Context, realm string, cfg *q
 	h := sha256.New()
 	err = msgpackpb.MarshalStream(h, cfg, msgpackpb.Deterministic, msgpackpb.DisallowUnknownFields)
 	if err != nil {
-		return nil, errors.Annotate(err, "while computing PolicyConfig hash").Err()
+		return nil, errors.Fmt("while computing PolicyConfig hash: %w", err)
 	}
 	dat := h.Sum(nil)
 	buf := make([]byte, ascii85.MaxEncodedLen(len(dat)))
@@ -80,14 +80,14 @@ const secondsInDay = uint32((time.Hour * 24) / time.Second)
 
 func checkPolicy(p *quotapb.Policy) error {
 	if p.Default > p.Limit {
-		return errors.Reason("Default>Limit: %d > %d", p.Default, p.Limit).Err()
+		return errors.Fmt("Default>Limit: %d > %d", p.Default, p.Limit)
 	}
 	if r := p.Refill; r != nil {
 		if r.Interval == 0 && r.Units < 0 {
 			return errors.New("Refill: Interval=0 && Units<0")
 		}
 		if (secondsInDay % r.Interval) != 0 {
-			return errors.Reason("Interval does not cleanly divide day: %d", r.Interval).Err()
+			return errors.Fmt("Interval does not cleanly divide day: %d", r.Interval)
 		}
 	}
 	return nil
@@ -111,10 +111,10 @@ func (a *Application) loadPolicies(ctx context.Context, cid *quotapb.PolicyConfi
 
 	for i, entry := range cfg.Policies {
 		if !a.resources.Has(entry.Key.ResourceType) {
-			return errors.Reason("cfg.Policies[%d].Key: unknown resource type: %s", i, entry.Key.ResourceType).Err()
+			return errors.Fmt("cfg.Policies[%d].Key: unknown resource type: %s", i, entry.Key.ResourceType)
 		}
 		if err = checkPolicy(entry.Policy); err != nil {
-			return errors.Annotate(err, "cfg.Policies[%d].Policy", i).Err()
+			return errors.Fmt("cfg.Policies[%d].Policy: %w", i, err)
 		}
 	}
 
@@ -124,7 +124,7 @@ func (a *Application) loadPolicies(ctx context.Context, cid *quotapb.PolicyConfi
 		// If this thing exists, we're done.
 		exists, err := redis.Bool(conn.Do("EXISTS", cfgIDKey))
 		if err != nil {
-			return errors.Annotate(err, "unable to check existance of policy config %q", cfgIDKey).Err()
+			return errors.Fmt("unable to check existance of policy config %q: %w", cfgIDKey, err)
 		}
 		if exists {
 			return nil
@@ -137,14 +137,14 @@ func (a *Application) loadPolicies(ctx context.Context, cid *quotapb.PolicyConfi
 		args = args.Add(cfgIDKey)
 		tsBytes, err := msgpackpb.Marshal(timestamppb.New(clock.Now(ctx)), msgpackpb.Deterministic)
 		if err != nil {
-			return errors.Annotate(err, "serializing timestamp").Err()
+			return errors.Fmt("serializing timestamp: %w", err)
 		}
 		args = args.Add("~loaded_time", string(tsBytes))
 
 		for i, entry := range cfg.Policies {
 			polBytes, err := msgpackpb.Marshal(entry.Policy, msgpackpb.Deterministic, msgpackpb.DisallowUnknownFields)
 			if err != nil {
-				return errors.Annotate(err, "serializing cfg.Policies[%d]", i).Err()
+				return errors.Fmt("serializing cfg.Policies[%d]: %w", i, err)
 			}
 			args = args.Add(quotakeys.PolicyKey(entry.Key), string(polBytes))
 		}

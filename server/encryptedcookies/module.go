@@ -232,16 +232,16 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Check required flags.
 	if m.opts.ClientID == "" {
-		return nil, errors.Reason("client ID is required").Err()
+		return nil, errors.New("client ID is required")
 	}
 	if m.opts.ClientSecret == "" {
-		return nil, errors.Reason("client secret is required").Err()
+		return nil, errors.New("client secret is required")
 	}
 	if m.opts.RedirectURL == "" {
-		return nil, errors.Reason("redirect URL is required").Err()
+		return nil, errors.New("redirect URL is required")
 	}
 	if !strings.HasSuffix(m.opts.RedirectURL, callbackURL) {
-		return nil, errors.Reason("redirect URL should end with %q", callbackURL).Err()
+		return nil, errors.Fmt("redirect URL should end with %q", callbackURL)
 	}
 
 	// Figure out what AEAD key to use.
@@ -254,14 +254,14 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	} else {
 		aead = secrets.PrimaryTinkAEAD(ctx)
 		if aead == nil {
-			return nil, errors.Reason("no AEAD key is configured, use either -primary-tink-aead-key or -encrypted-cookies-tink-aead-key").Err()
+			return nil, errors.New("no AEAD key is configured, use either -primary-tink-aead-key or -encrypted-cookies-tink-aead-key")
 		}
 	}
 
 	// Construct the session store based on a link time config and CLI flags.
 	sessions, err := m.initSessionStore(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize the session store").Err()
+		return nil, errors.Fmt("failed to initialize the session store: %w", err)
 	}
 
 	// Load initial values of secrets to verify they are correct. This also
@@ -304,14 +304,13 @@ func (m *serverModule) initSessionStore(ctx context.Context) (session.Store, err
 	var impl internal.StoreImpl
 	switch {
 	case len(impls) == 0:
-		return nil, errors.Reason("no session store implementations are linked into the binary, " +
-			"use nameless imports to link to some").Err()
+		return nil, errors.New("no session store implementations are linked into the binary, " +
+			"use nameless imports to link to some")
 	case len(impls) == 1 && m.opts.SessionStoreKind == "":
 		impl = impls[0] // have only one and can use it by default
 	case len(impls) > 1 && m.opts.SessionStoreKind == "":
-		return nil, errors.Reason(
-			"multiple session store implementations are linked into the binary, "+
-				"pick one explicitly: %s", idsStr).Err()
+		return nil, errors.Fmt("multiple session store implementations are linked into the binary, "+
+			"pick one explicitly: %s", idsStr)
 	default:
 		found := false
 		for _, impl = range impls {
@@ -321,8 +320,8 @@ func (m *serverModule) initSessionStore(ctx context.Context) (session.Store, err
 			}
 		}
 		if !found {
-			return nil, errors.Reason("session store implementation %q is not linked into the binary, "+
-				"linked implementations: %s", m.opts.SessionStoreKind, idsStr).Err()
+			return nil, errors.Fmt("session store implementation %q is not linked into the binary, "+
+				"linked implementations: %s", m.opts.SessionStoreKind, idsStr)
 		}
 	}
 
@@ -337,7 +336,7 @@ func (m *serverModule) initSessionStore(ctx context.Context) (session.Store, err
 func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, error) {
 	secret, err := secrets.StoredSecret(ctx, m.opts.ClientSecret)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to load OAuth2 client secret").Err()
+		return nil, errors.Fmt("failed to load OAuth2 client secret: %w", err)
 	}
 
 	openIDConfig := func(s *secrets.Secret) *OpenIDConfig {

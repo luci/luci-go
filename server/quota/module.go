@@ -57,7 +57,7 @@ func (*quotaModule) Dependencies() []module.Dependency {
 func withRedisConn(ctx context.Context, cb func(redis.Conn) error) (err error) {
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
-		err = errors.Annotate(err, "quota: unable to get redis connection").Err()
+		err = errors.Fmt("quota: unable to get redis connection: %w", err)
 		return
 	}
 	defer func() {

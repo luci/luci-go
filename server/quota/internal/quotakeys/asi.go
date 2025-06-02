@@ -89,7 +89,7 @@ func DecodeASI(asi string) ([]string, error) {
 			buf = extendBuffer(buf, len(section)-1)
 			ndst, _, err := ascii85.Decode(buf, []byte(section[1:]), true)
 			if err != nil {
-				return nil, errors.Annotate(err, "DecodeASI: section[%d]", i).Err()
+				return nil, errors.Fmt("DecodeASI: section[%d]: %w", i, err)
 			}
 			sections[i] = string(buf[:ndst])
 		}

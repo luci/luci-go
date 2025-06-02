@@ -144,23 +144,23 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 	case "redis":
 		pool := redisconn.GetPool(ctx)
 		if pool == nil {
-			return nil, errors.Reason("can't use `-ds-cache redis`: redisconn module is not configured").Err()
+			return nil, errors.New("can't use `-ds-cache redis`: redisconn module is not configured")
 		}
 		cacheImpl = redisCache{pool: pool}
 	default:
-		return nil, errors.Reason("unsupported -ds-cache %q", m.opts.DSCache).Err()
+		return nil, errors.Fmt("unsupported -ds-cache %q", m.opts.DSCache)
 	}
 
 	if m.opts.RandomSecretsInDatastore {
 		store, _ := secrets.CurrentStore(ctx).(*secrets.SecretManagerStore)
 		if store == nil {
-			return nil, errors.Reason("-random-secrets-in-datastore requires module %q", secrets.ModuleName).Err()
+			return nil, errors.Fmt("-random-secrets-in-datastore requires module %q", secrets.ModuleName)
 		}
 		store.SetRandomSecretsStore(gaesecrets.New(nil))
 	}
 
 	if s := m.opts.DSConnectionPoolSize; s < 0 {
-		return nil, errors.Reason("-ds-connection-pool-size: must be >= 0, but %d", s).Err()
+		return nil, errors.Fmt("-ds-connection-pool-size: must be >= 0, but %d", s)
 	}
 
 	var client *datastore.Client
@@ -193,7 +193,7 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 	if addr := os.Getenv("DATASTORE_EMULATOR_HOST"); addr == "" {
 		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize the token source").Err()
+			return nil, errors.Fmt("failed to initialize the token source: %w", err)
 		}
 		clientOpts = []option.ClientOption{
 			option.WithTokenSource(ts),
@@ -206,7 +206,7 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 	}
 	client, err := datastore.NewClient(ctx, cloudProject, clientOpts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to instantiate the datastore client").Err()
+		return nil, errors.Fmt("failed to instantiate the datastore client: %w", err)
 	}
 
 	host.RegisterCleanup(func(ctx context.Context) {

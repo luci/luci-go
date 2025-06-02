@@ -139,12 +139,12 @@ func Call(ctx context.Context, service, method string, in, out proto.Message) (e
 
 	tickets, _ := ctx.Value(&ticketsContextKey).(*Tickets)
 	if tickets == nil {
-		return errors.Reason("no GAE API ticket in the context when calling %s.%s", service, method).Err()
+		return errors.Fmt("no GAE API ticket in the context when calling %s.%s", service, method)
 	}
 
 	data, err := proto.Marshal(in)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal RPC request to %s.%s", service, method).Err()
+		return errors.Fmt("failed to marshal RPC request to %s.%s: %w", service, method, err)
 	}
 
 	postBody, err := proto.Marshal(&remotepb.Request{
@@ -154,45 +154,42 @@ func Call(ctx context.Context, service, method string, in, out proto.Message) (e
 		RequestId:   &tickets.api,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal RPC request to %s.%s", service, method).Err()
+		return errors.Fmt("failed to marshal RPC request to %s.%s: %w", service, method, err)
 	}
 
 	respBody, err := postToServiceBridge(ctx, tickets, postBody)
 	if err != nil {
-		return errors.Annotate(err, "failed to call GAE service bridge for %s.%s", service, method).Err()
+		return errors.Fmt("failed to call GAE service bridge for %s.%s: %w", service, method, err)
 	}
 
 	res := &remotepb.Response{}
 	if err := proto.Unmarshal(respBody, res); err != nil {
-		return errors.Annotate(err, "unexpected response from GAE service bridge for %s.%s", service, method).Err()
+		return errors.Fmt("unexpected response from GAE service bridge for %s.%s: %w", service, method, err)
 	}
 
 	if res.RpcError != nil {
-		return errors.Reason(
-			"RPC error %s calling %s.%s: %s",
+		return errors.Fmt("RPC error %s calling %s.%s: %s",
 			remotepb.RpcError_ErrorCode(res.RpcError.GetCode()),
-			service, method, res.RpcError.GetDetail(),
-		).Err()
+			service, method, res.RpcError.GetDetail())
+
 	}
 
 	if res.ApplicationError != nil {
-		return errors.Reason(
-			"API error %d calling %s.%s: %s",
+		return errors.Fmt("API error %d calling %s.%s: %s",
 			res.ApplicationError.GetCode(),
-			service, method, res.ApplicationError.GetDetail(),
-		).Err()
+			service, method, res.ApplicationError.GetDetail())
+
 	}
 
 	// This should not be happening.
 	if res.Exception != nil || res.JavaException != nil {
-		return errors.Reason(
-			"service bridge returned unexpected exception from %s.%s",
-			service, method,
-		).Err()
+		return errors.Fmt("service bridge returned unexpected exception from %s.%s",
+			service, method)
+
 	}
 
 	if err := proto.Unmarshal(res.Response, out); err != nil {
-		return errors.Annotate(err, "failed to unmarshal response of %s.%s", service, method).Err()
+		return errors.Fmt("failed to unmarshal response of %s.%s: %w", service, method, err)
 	}
 	return nil
 }
@@ -253,15 +250,15 @@ func postToServiceBridge(ctx context.Context, tickets *Tickets, body []byte) ([]
 
 	res, err := apiHTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to make HTTP call").Err()
+		return nil, errors.Fmt("failed to make HTTP call: %w", err)
 	}
 	defer func() { _ = res.Body.Close() }()
 
 	switch body, err := io.ReadAll(res.Body); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to read HTTP %d response", res.StatusCode).Err()
+		return nil, errors.Fmt("failed to read HTTP %d response: %w", res.StatusCode, err)
 	case res.StatusCode != 200:
-		return nil, errors.Reason("unexpected HTTP %d: %q", res.StatusCode, body).Err()
+		return nil, errors.Fmt("unexpected HTTP %d: %q", res.StatusCode, body)
 	default:
 		return body, nil
 	}
