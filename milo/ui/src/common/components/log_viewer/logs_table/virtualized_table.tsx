@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Table, TableRow, useTheme } from '@mui/material';
+import { Table, TableRow } from '@mui/material';
 import { blue, grey } from '@mui/material/colors';
 import { ReactNode, forwardRef } from 'react';
 import {
@@ -64,8 +64,6 @@ export const VirtualizedTable = forwardRef<TableVirtuosoHandle | null, Props>(
     }: Props,
     ref,
   ) {
-    const { palette } = useTheme();
-
     const VirtuosoTableComponents: TableComponents<LogsTableEntry> = {
       Table: (props) => (
         <Table
@@ -92,13 +90,10 @@ export const VirtualizedTable = forwardRef<TableVirtuosoHandle | null, Props>(
           onClick={(event) => onRowClick && onRowClick(index, event)}
           sx={{
             backgroundColor:
-              (getRowColor?.(item.entryId, index) ?? index % 2)
-                ? grey[200]
-                : grey[700],
+              getRowColor?.(item.entryId, index) ??
+              (index % 2 ? grey[200] : ''),
             '&:hover': {
-              backgroundColor: `${
-                palette.mode === 'light' ? blue[50] : blue[900]
-              } !important`,
+              backgroundColor: `${blue[50]} !important`,
             },
           }}
           data-index={index}

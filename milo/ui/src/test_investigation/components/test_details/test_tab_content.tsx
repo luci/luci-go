@@ -24,7 +24,7 @@ import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import { normalizeFailureReason } from '../../utils/test_variant_utils';
 
-import { ArtifactsSection } from './artifacts_section';
+import { ArtifactsSection } from './artifacts/artifacts_section';
 import { ClusteringControls } from './clustering_controls';
 import { TagsSection } from './tags_section';
 import { ClusteredResult } from './types';
@@ -133,12 +133,14 @@ export function TestTabContent() {
           panelId={tagsPanelId}
           headerId={tagsHeaderId}
         />
-        <ArtifactsSection
-          currentResult={currentResult}
-          invocationName={invocation.name}
-          panelId={artifactsPanelId}
-          headerId={artifactsHeaderId}
-        />
+        {currentResult && (
+          <ArtifactsSection
+            currentResult={currentResult}
+            invocationName={invocation.name}
+            panelId={artifactsPanelId}
+            headerId={artifactsHeaderId}
+          />
+        )}
       </Box>
     </>
   );

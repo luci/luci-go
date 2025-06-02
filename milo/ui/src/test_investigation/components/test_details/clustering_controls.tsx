@@ -20,7 +20,6 @@ import {
   SelectChangeEvent,
   Typography,
 } from '@mui/material';
-import { JSX } from 'react';
 
 import {
   TestResult,
@@ -71,7 +70,7 @@ export function ClusteringControls({
   onAttemptChange,
   currentResult,
   currentCluster,
-}: ClusteringControlsProps): JSX.Element | null {
+}: ClusteringControlsProps) {
   if (!currentCluster) {
     // No cluster means no controls to show
     return null;

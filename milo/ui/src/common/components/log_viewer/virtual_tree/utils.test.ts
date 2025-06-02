@@ -20,7 +20,7 @@ import {
 } from './utils';
 
 const root: TreeNodeData = {
-  id: 1,
+  id: '1',
   name: 'root',
   children: [],
 };
@@ -37,7 +37,7 @@ const rootTreeData: TreeData<TreeNodeData> = {
 };
 
 const leaf1: TreeNodeData = {
-  id: 3,
+  id: '3',
   name: 'leaf1',
   children: [],
 };
@@ -54,7 +54,7 @@ const leaf1TreeData: TreeData<TreeNodeData> = {
 };
 
 const leaf2: TreeNodeData = {
-  id: 4,
+  id: '4',
   name: 'leaf2',
   children: [],
 };
@@ -79,7 +79,7 @@ const treeData: TreeNodeData[] = [root];
 
 describe('Virtual Tree utils', () => {
   it('should generate tree data list without active selection accessor', () => {
-    const treeDataList = generateTreeDataList(treeData, [], 0, undefined);
+    const treeDataList = generateTreeDataList(treeData);
     expect(treeDataList).toHaveLength(3);
     expect(treeDataList.map((treeData) => treeData.id)).toEqual([
       '1',
@@ -94,15 +94,7 @@ describe('Virtual Tree utils', () => {
   });
 
   it('should return list of subtree ids', () => {
-    const subTreeListIds = getSubTreeData(
-      rootTreeData,
-      [],
-      new Map<string, TreeData<TreeNodeData>>([
-        ['1', rootTreeData],
-        ['3', leaf1TreeData],
-        ['4', leaf2TreeData],
-      ]),
-    );
+    const subTreeListIds = getSubTreeData(rootTreeData);
     expect(subTreeListIds).toEqual(['3', '4']);
   });
 });

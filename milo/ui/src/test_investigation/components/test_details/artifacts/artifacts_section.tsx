@@ -22,27 +22,21 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, JSX } from 'react';
+import { useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
-
-import {
-  buildCustomArtifactTreeNodes,
-  INVOCATION_ARTIFACTS_ROOT_ID,
-  RESULT_ARTIFACTS_ROOT_ID,
-  SUMMARY_NODE_ID_TOP_LEVEL,
-} from '../../utils/artifact_utils';
+import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactContentView } from './artifact_content_view';
 import { ArtifactTreeView } from './artifact_tree_view';
-import { CustomArtifactTreeNode } from './types';
+import { ArtifactTreeNodeData } from './types';
 
 interface ArtifactsSectionProps {
-  currentResult?: TestResult;
+  currentResult: TestResult;
   invocationName: string;
   panelId: string;
   headerId: string;
@@ -53,15 +47,13 @@ export function ArtifactsSection({
   invocationName,
   panelId,
   headerId,
-}: ArtifactsSectionProps): JSX.Element {
+}: ArtifactsSectionProps) {
   const resultDbClient = useResultDbClient();
 
-  const [selectedArtifactForDisplay, setSelectedArtifactForDisplay] =
-    useState<CustomArtifactTreeNode | null>(null);
-  const [expandedArtifactNodeIds, setExpandedArtifactNodeIds] = useState<
-    Set<string>
-  >(new Set([RESULT_ARTIFACTS_ROOT_ID, INVOCATION_ARTIFACTS_ROOT_ID]));
+  const [selectedArtifactNode, setSelectedArtifactNode] =
+    useState<ArtifactTreeNodeData | null>(null);
 
+  // TODO: Paginate loading all artifacts.
   const {
     data: testResultArtifactsData,
     isPending: isLoadingTestResultArtifacts,
@@ -83,7 +75,9 @@ export function ArtifactsSection({
   } = useQuery({
     ...resultDbClient.ListArtifacts.query(
       ListArtifactsRequest.fromPartial({
-        parent: invocationName,
+        parent:
+          'invocations/' +
+          parseTestResultName(currentResult?.name).invocationId,
         pageSize: 1000,
       }),
     ),
@@ -92,93 +86,33 @@ export function ArtifactsSection({
     select: (res) => res.artifacts || [],
   });
 
-  const artifactTreeRootNodes = useMemo(
-    () =>
-      buildCustomArtifactTreeNodes(
-        currentResult,
-        testResultArtifactsData || undefined,
-        invocationScopeArtifactsData || undefined,
-      ),
-    [currentResult, testResultArtifactsData, invocationScopeArtifactsData],
-  );
-
-  useEffect(() => {
-    // This effect ensures that after currentResult (and thus artifacts) changes,
-    // a sensible default selection is made in the artifact tree.
-    const currentNodes = buildCustomArtifactTreeNodes(
-      currentResult,
-      testResultArtifactsData || undefined,
-      invocationScopeArtifactsData || undefined,
-    );
-    const summaryNode = currentNodes.find(
-      (node) => node.id === SUMMARY_NODE_ID_TOP_LEVEL,
-    );
-
-    if (summaryNode) {
-      setSelectedArtifactForDisplay(summaryNode);
-    } else if (currentNodes.length > 0) {
-      const findFirstLeafRecursive = (
-        nodes: CustomArtifactTreeNode[],
-      ): CustomArtifactTreeNode | null => {
-        for (const node of nodes) {
-          if (node.isLeaf && !node.isSummary && node.artifact) return node;
-          if (node.children) {
-            const found = findFirstLeafRecursive(node.children);
-            if (found) return found;
-          }
-        }
-        for (const node of nodes) {
-          // Fallback for top-level leaf if no nested found
-          if (node.isLeaf && node.artifact) return node;
-        }
-        return null;
-      };
-      const firstLeaf = findFirstLeafRecursive(currentNodes);
-      setSelectedArtifactForDisplay(firstLeaf);
-    } else {
-      setSelectedArtifactForDisplay(null);
-    }
-
-    // Ensure root folders are expanded by default if they exist
-    setExpandedArtifactNodeIds((prev) => {
-      const newSet = new Set(prev); // Keep existing user expansions
-      if (currentNodes.some((n) => n.id === RESULT_ARTIFACTS_ROOT_ID))
-        newSet.add(RESULT_ARTIFACTS_ROOT_ID);
-      if (currentNodes.some((n) => n.id === INVOCATION_ARTIFACTS_ROOT_ID))
-        newSet.add(INVOCATION_ARTIFACTS_ROOT_ID);
-      return newSet;
-    });
-  }, [currentResult, testResultArtifactsData, invocationScopeArtifactsData]);
-
   const artifactContentQueryEnabled =
-    !!selectedArtifactForDisplay?.artifact?.fetchUrl && // User fixed to fetchUrl
-    !selectedArtifactForDisplay.isSummary;
+    !!selectedArtifactNode?.artifact?.fetchUrl &&
+    !selectedArtifactNode.isSummary;
 
   const { data: artifactContentData, isPending: rawIsLoadingArtifactContent } =
     useFetchArtifactContentQuery({
       artifactContentQueryEnabled,
-      isSummary: selectedArtifactForDisplay?.isSummary,
-      artifact: selectedArtifactForDisplay?.artifact,
+      isSummary: selectedArtifactNode?.isSummary,
+      artifact: selectedArtifactNode?.artifact,
     });
 
   const isLoadingArtifactContent =
     artifactContentQueryEnabled && rawIsLoadingArtifactContent;
 
-  const handleArtifactNodeSelect = (node: CustomArtifactTreeNode) => {
-    setSelectedArtifactForDisplay(node);
-  };
-
-  const handleArtifactNodeToggle = (nodeId: string) => {
-    setExpandedArtifactNodeIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(nodeId)) newSet.delete(nodeId);
-      else newSet.add(nodeId);
-      return newSet;
-    });
+  const handleArtifactNodeSelect = (node: ArtifactTreeNodeData | null) => {
+    setSelectedArtifactNode(node);
   };
 
   const isOverallArtifactListsLoading =
     isLoadingTestResultArtifacts || isLoadingInvocationScopeArtifacts;
+
+  const containsArtifacts = useMemo(() => {
+    return (
+      (testResultArtifactsData && testResultArtifactsData.length > 0) ||
+      (invocationScopeArtifactsData && invocationScopeArtifactsData?.length > 0)
+    );
+  }, [testResultArtifactsData, invocationScopeArtifactsData]);
 
   return (
     <Accordion defaultExpanded>
@@ -205,8 +139,7 @@ export function ArtifactsSection({
             flexDirection: 'column',
           }}
         >
-          {isOverallArtifactListsLoading &&
-          artifactTreeRootNodes.length === 0 ? (
+          {isOverallArtifactListsLoading ? (
             <Box
               sx={{
                 display: 'flex',
@@ -218,7 +151,7 @@ export function ArtifactsSection({
               <CircularProgress />
               <Typography sx={{ ml: 1 }}>Loading artifact lists...</Typography>
             </Box>
-          ) : artifactTreeRootNodes.length > 0 ? (
+          ) : containsArtifacts ? (
             <PanelGroup
               direction="horizontal"
               style={{ height: '100%', minHeight: '380px' }}
@@ -232,16 +165,14 @@ export function ArtifactsSection({
                     borderColor: 'divider',
                   }}
                 >
-                  {artifactTreeRootNodes.map((node) => (
-                    <ArtifactTreeView
-                      key={node.id}
-                      node={node}
-                      selectedNodeId={selectedArtifactForDisplay?.id || null}
-                      onNodeSelect={handleArtifactNodeSelect}
-                      expandedNodeIds={expandedArtifactNodeIds}
-                      onNodeToggle={handleArtifactNodeToggle}
-                    />
-                  ))}
+                  <ArtifactTreeView
+                    artifactsLoading={isOverallArtifactListsLoading}
+                    invArtifacts={invocationScopeArtifactsData || []}
+                    resultArtifacts={testResultArtifactsData || []}
+                    currentResult={currentResult}
+                    selectedArtifact={selectedArtifactNode}
+                    updateSelectedArtifact={handleArtifactNodeSelect}
+                  />
                 </Box>
               </Panel>
               <PanelResizeHandle>
@@ -264,17 +195,19 @@ export function ArtifactsSection({
               </PanelResizeHandle>
               <Panel defaultSize={70} minSize={30}>
                 <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
-                  <ArtifactContentView
-                    selectedArtifactForDisplay={selectedArtifactForDisplay}
-                    currentResult={currentResult}
-                    artifactContentData={artifactContentData}
-                    isLoadingArtifactContent={isLoadingArtifactContent}
-                    invocationHasArtifacts={
-                      (invocationScopeArtifactsData &&
-                        invocationScopeArtifactsData.length > 0) ||
-                      false
-                    }
-                  />
+                  {selectedArtifactNode && (
+                    <ArtifactContentView
+                      selectedArtifactForDisplay={selectedArtifactNode}
+                      currentResult={currentResult}
+                      artifactContentData={artifactContentData}
+                      isLoadingArtifactContent={isLoadingArtifactContent}
+                      invocationHasArtifacts={
+                        (invocationScopeArtifactsData &&
+                          invocationScopeArtifactsData.length > 0) ||
+                        false
+                      }
+                    />
+                  )}
                 </Box>
               </Panel>
             </PanelGroup>

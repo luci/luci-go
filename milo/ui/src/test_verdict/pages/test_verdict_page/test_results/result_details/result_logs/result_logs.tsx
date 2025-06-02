@@ -21,7 +21,6 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { TOP_PANEL_EXPANDED_ON, TOP_PANEL_EXPANDED_PARAM } from '../constants';
 
-import { ArtifactsTree } from './artifacts_tree';
 import { ResultLogsProvider } from './context';
 import { LogTable } from './log_table';
 
@@ -59,9 +58,6 @@ export const ResultLogs = memo(function ResultLogs() {
         ref={boxRef}
       >
         <PanelGroup direction="horizontal">
-          <Panel defaultSize={20}>
-            <ArtifactsTree />
-          </Panel>
           <PanelResizeHandle>
             <Divider
               sx={{

@@ -20,7 +20,6 @@ import {
   Box,
   Typography,
 } from '@mui/material';
-import { JSX } from 'react';
 
 import { StringPair } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
@@ -30,11 +29,7 @@ interface TagsSectionProps {
   headerId: string;
 }
 
-export function TagsSection({
-  tags,
-  panelId,
-  headerId,
-}: TagsSectionProps): JSX.Element {
+export function TagsSection({ tags, panelId, headerId }: TagsSectionProps) {
   return (
     <Accordion>
       <AccordionSummary

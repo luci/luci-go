@@ -14,17 +14,18 @@
 
 import DescriptionIcon from '@mui/icons-material/Description';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import { JSX } from 'react';
 
-import { sanitizeHTML } from '@/common/tools/sanitize_html/sanitize_html';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
 
-import { CustomArtifactTreeNode, FetchedArtifactContent } from './types';
+import { FetchedArtifactContent } from '../types';
+
+import { ArtifactTreeNodeData } from './types';
 
 interface ArtifactContentViewProps {
-  selectedArtifactForDisplay: CustomArtifactTreeNode | null;
-  currentResult?: TestResult; // For summary HTML
+  selectedArtifactForDisplay: ArtifactTreeNodeData;
+  currentResult?: TestResult;
   artifactContentData?: FetchedArtifactContent;
   isLoadingArtifactContent: boolean;
   invocationHasArtifacts: boolean;
@@ -36,7 +37,7 @@ export function ArtifactContentView({
   artifactContentData,
   isLoadingArtifactContent,
   invocationHasArtifacts,
-}: ArtifactContentViewProps): JSX.Element {
+}: ArtifactContentViewProps) {
   if (isLoadingArtifactContent) {
     return (
       <Box
@@ -53,22 +54,11 @@ export function ArtifactContentView({
     );
   }
 
-  if (selectedArtifactForDisplay?.isSummary) {
-    const summaryHtml = currentResult?.summaryHtml || '';
-    const sanitizedSummaryHtml = sanitizeHTML(summaryHtml);
-    return (
-      <Box
-        dangerouslySetInnerHTML={{
-          __html: sanitizedSummaryHtml,
-        }}
-      />
-    );
+  if (selectedArtifactForDisplay.isSummary && currentResult) {
+    return <TestResultSummary testResult={currentResult} />;
   }
 
-  if (
-    selectedArtifactForDisplay?.artifact &&
-    !selectedArtifactForDisplay.isSummary
-  ) {
+  if (selectedArtifactForDisplay.artifact) {
     const artifactPb = selectedArtifactForDisplay.artifact;
     return (
       <Box>
