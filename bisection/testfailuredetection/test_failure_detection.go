@@ -72,7 +72,7 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 		logging.Infof(c, "Processing test failure detection task %v", task)
 		err := Run(ctx, ac, task)
 		if err != nil {
-			err = errors.Annotate(err, "run detection").Err()
+			err = errors.Fmt("run detection: %w", err)
 			logging.Errorf(ctx, err.Error())
 			// If the error is transient, return err to retry.
 			if transient.Tag.In(err) {
@@ -103,7 +103,7 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	// Checks if test failure detection is enabled.
 	enabled, err := isEnabled(ctx, task.Project)
 	if err != nil {
-		return errors.Annotate(err, "is enabled").Err()
+		return errors.Fmt("is enabled: %w", err)
 	}
 	if !enabled {
 		logging.Infof(ctx, "Dectection is not enabled")
@@ -111,11 +111,11 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	}
 	filter, err := getFailureIngestionFilter(ctx, task.Project)
 	if err != nil {
-		return errors.Annotate(err, "get excluded buckets").Err()
+		return errors.Fmt("get excluded buckets: %w", err)
 	}
 	groups, err := client.ReadTestFailures(ctx, task, filter)
 	if err != nil {
-		return errors.Annotate(err, "read test failures").Err()
+		return errors.Fmt("read test failures: %w", err)
 	}
 	logging.Infof(ctx, "There are %d groups from LUCI Analysis query", len(groups))
 	bundles := []*model.TestFailureBundle{}
@@ -123,13 +123,13 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	for _, g := range groups {
 		bundle, err := newTestFailureBundle(task.Project, g)
 		if err != nil {
-			return errors.Annotate(err, "new test failure bundle").Err()
+			return errors.Fmt("new test failure bundle: %w", err)
 		}
 		// Use the redundancy score of the primary test failure as
 		// the redundancy score of this test failure bundle.
 		rs, err := redundancyScore(ctx, bundle.Primary())
 		if err != nil {
-			return errors.Annotate(err, "calculate redundancy score").Err()
+			return errors.Fmt("calculate redundancy score: %w", err)
 		}
 		if rs == 1 {
 			// Test failures in this bundle are completely redundant.
@@ -168,10 +168,10 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 			// Just log.
 			logging.Errorf(ctx, "save test failure and analysis when insufficient data %v", e.Error())
 		}
-		return errors.Annotate(err, "prepare failure analysis").Err()
+		return errors.Fmt("prepare failure analysis: %w", err)
 	}
 	if err := saveTestFailuresAndAnalysis(ctx, bestBundle, testFailureAnalysis, true); err != nil {
-		return errors.Annotate(err, "save test failure and analysis").Err()
+		return errors.Fmt("save test failure and analysis: %w", err)
 	}
 	return nil
 }
@@ -232,7 +232,7 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 func redundancyScore(c context.Context, tf *model.TestFailure) (float64, error) {
 	sameTestVariant, err := datastoreutil.GetTestFailures(c, tf.Project, tf.TestID, tf.RefHash, tf.VariantHash)
 	if err != nil {
-		return 0, errors.Annotate(err, "get test failures of same test variant").Err()
+		return 0, errors.Fmt("get test failures of same test variant: %w", err)
 	}
 	for _, a := range sameTestVariant {
 		if numberOfOverlapCommit(tf.RegressionStartPosition, tf.RegressionEndPosition,
@@ -243,7 +243,7 @@ func redundancyScore(c context.Context, tf *model.TestFailure) (float64, error) 
 	maxOverlap := float64(0)
 	sameTest, err := datastoreutil.GetTestFailures(c, tf.Project, tf.TestID, tf.RefHash, "")
 	if err != nil {
-		return 0, errors.Annotate(err, "get test failures of same test").Err()
+		return 0, errors.Fmt("get test failures of same test: %w", err)
 	}
 	for _, t := range sameTest {
 		overlap := regressionRangeOverlap(tf.RegressionStartPosition, tf.RegressionEndPosition,
@@ -268,7 +268,7 @@ func prepareFailureAnalysis(ctx context.Context, client analysisClient, bundle *
 	tf := bundle.Primary()
 	buildInfo, err := client.ReadBuildInfo(ctx, tf)
 	if err != nil {
-		return nil, errors.Annotate(err, "read build info").Err()
+		return nil, errors.Fmt("read build info: %w", err)
 	}
 	testFailureAnalysis := &model.TestFailureAnalysis{
 		Project:          tf.Project,
@@ -290,7 +290,7 @@ func prepareFailureAnalysis(ctx context.Context, client analysisClient, bundle *
 func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureBundle, testFailureAnalysis *model.TestFailureAnalysis, shouldTriggerBisection bool) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		if err := datastore.AllocateIDs(ctx, testFailureAnalysis); err != nil {
-			return errors.Annotate(err, "allocate datastore ID for test failure analysis").Err()
+			return errors.Fmt("allocate datastore ID for test failure analysis: %w", err)
 		}
 		for _, testFailure := range bundle.All() {
 			testFailure.AnalysisKey = datastore.KeyForObj(ctx, testFailureAnalysis)
@@ -299,16 +299,16 @@ func saveTestFailuresAndAnalysis(ctx context.Context, bundle *model.TestFailureB
 		// If this becomes a problem, we need to save TestFailures in batches.
 		// https://cloud.google.com/datastore/docs/concepts/transactions#what_can_be_done_in_a_transaction
 		if err := datastore.Put(ctx, bundle.All()); err != nil {
-			return errors.Annotate(err, "save test failures").Err()
+			return errors.Fmt("save test failures: %w", err)
 		}
 		testFailureAnalysis.TestFailure = datastore.KeyForObj(ctx, bundle.Primary())
 		if err := datastore.Put(ctx, testFailureAnalysis); err != nil {
-			return errors.Annotate(err, "save test failure analysis").Err()
+			return errors.Fmt("save test failure analysis: %w", err)
 		}
 		// Send task to bisector transactionally.
 		if shouldTriggerBisection {
 			if err := bisection.Schedule(ctx, testFailureAnalysis.ID); err != nil {
-				return errors.Annotate(err, "send task to bisector").Err()
+				return errors.Fmt("send task to bisector: %w", err)
 			}
 		}
 		return nil

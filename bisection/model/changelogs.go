@@ -92,7 +92,7 @@ func (cl *ChangeLog) GetCommitTime() (*timestamppb.Timestamp, error) {
 	layout := "Mon Jan 02 15:04:05 2006"
 	parsedTime, err := time.ParseInLocation(layout, timeStr, time.UTC)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse time %s", timeStr).Err()
+		return nil, errors.Fmt("parse time %s: %w", timeStr, err)
 	}
 	return timestamppb.New(parsedTime), nil
 }

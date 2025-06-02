@@ -159,7 +159,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	}
 	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Annotate(err, "from field mask").Err()
+		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
 	// Decode cursor from page token.
@@ -212,7 +212,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 			workC <- func() error {
 				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 				if err != nil {
-					err = errors.Annotate(err, "test failure analysis to pb").Err()
+					err = errors.Fmt("test failure analysis to pb: %w", err)
 					logging.Errorf(ctx, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
 					return err
 				}
@@ -242,7 +242,7 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 	}
 	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Annotate(err, "from field mask").Err()
+		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, req.AnalysisId)
@@ -251,13 +251,13 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 			logging.Errorf(ctx, err.Error())
 			return nil, status.Errorf(codes.NotFound, "analysis not found: %v", err)
 		}
-		err = errors.Annotate(err, "get test failure analysis").Err()
+		err = errors.Fmt("get test failure analysis: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 	if err != nil {
-		err = errors.Annotate(err, "test failure analysis to pb").Err()
+		err = errors.Fmt("test failure analysis to pb: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
@@ -286,14 +286,14 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	}
 	tfamask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Annotate(err, "from field mask").Err()
+		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
 	// Query Changepoint analysis.
 	logging.Infof(ctx, "Start querying changepoint analysis")
 	client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
 	if err != nil {
-		return nil, errors.Annotate(err, "create LUCI Analysis client").Err()
+		return nil, errors.Fmt("create LUCI Analysis client: %w", err)
 	}
 
 	tvbRequest := &analysispb.BatchGetTestVariantBranchRequest{}
@@ -327,7 +327,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 			workC <- func() error {
 				tfaProto, err := retrieveTestAnalysis(ctx, req.Project, tf, cpr, tfamask)
 				if err != nil {
-					return errors.Annotate(err, "retrieve test analysis").Err()
+					return errors.Fmt("retrieve test analysis: %w", err)
 				}
 				result[i] = tfaProto
 				return nil
@@ -350,7 +350,7 @@ func retrieveTestAnalysis(ctx context.Context, project string, tf *pb.BatchGetTe
 	logging.Infof(ctx, "Start getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
 	tfs, err := datastoreutil.GetTestFailures(ctx, project, tf.TestId, tf.RefHash, tf.VariantHash)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test failures").Err()
+		return nil, errors.Fmt("get test failures: %w", err)
 	}
 	if len(tfs) == 0 {
 		return nil, nil
@@ -373,11 +373,11 @@ func retrieveTestAnalysis(ctx context.Context, project string, tf *pb.BatchGetTe
 	// Return the test analysis that analyze this test failure.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
 	if err != nil {
-		return nil, errors.Annotate(err, "get test failure analysis").Err()
+		return nil, errors.Fmt("get test failure analysis: %w", err)
 	}
 	tfaProto, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, tfamask)
 	if err != nil {
-		return nil, errors.Annotate(err, "convert test failure analysis to protobuf").Err()
+		return nil, errors.Fmt("convert test failure analysis to protobuf: %w", err)
 	}
 	logging.Infof(ctx, "Finished getting test failures for test_id = %q refHash = %q variantHash = %q", tf.TestId, tf.RefHash, tf.VariantHash)
 	return tfaProto, nil
@@ -463,7 +463,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 
 			verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
 			if err != nil {
-				return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+				return nil, errors.Fmt("couldn't constructSuspectVerificationDetails: %w", err)
 			}
 			pbSuspects[i].VerificationDetails = verificationDetails
 
@@ -517,7 +517,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	if err != nil {
 		// If fetching nthSection analysis result failed for some reasons, print
 		// out the error, but we still continue.
-		err = errors.Annotate(err, "getNthSectionResult for analysis %d", analysis.Id).Err()
+		err = errors.Fmt("getNthSectionResult for analysis %d: %w", analysis.Id, err)
 		logging.Errorf(c, err.Error())
 	} else {
 		result.NthSectionResult = nthSectionResult
@@ -532,7 +532,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (*pb.NthSectionAnalysisResult, error) {
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting nthsection analysis").Err()
+		return nil, errors.Fmt("getting nthsection analysis: %w", err)
 	}
 	if nsa == nil {
 		return nil, nil
@@ -576,7 +576,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			// the "last pass" revision.
 			// In this case, we should just log and continue, and the run will appear
 			// as part of culprit verification component.
-			logging.Warningf(c, errors.Annotate(err, "couldn't find index for rerun").Err().Error())
+			logging.Warningf(c, errors.Fmt("couldn't find index for rerun: %w", err).Error())
 			continue
 		}
 		rerunResult.Index = strconv.FormatInt(int64(index), 10)
@@ -586,14 +586,14 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	// Find remaining regression range
 	snapshot, err := nthsection.CreateSnapshot(c, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't create snapshot").Err()
+		return nil, errors.Fmt("couldn't create snapshot: %w", err)
 	}
 
 	ff, lp, err := snapshot.GetCurrentRegressionRange()
 	// GetCurrentRegressionRange return error if the regression is invalid
 	// We don't want to return the error here, but just continue
 	if err != nil {
-		err = errors.Annotate(err, "getCurrentRegressionRange").Err()
+		err = errors.Fmt("getCurrentRegressionRange: %w", err)
 		// Log as Debugf because it is not exactly an error, but just a state of the analysis
 		logging.Debugf(c, err.Error())
 	} else {
@@ -618,7 +618,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 
 		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+			return nil, errors.Fmt("couldn't constructSuspectVerificationDetails: %w", err)
 		}
 		pbSuspect.VerificationDetails = verificationDetails
 		result.Suspect = pbSuspect
@@ -653,12 +653,12 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 	}
 	err := datastore.Get(c, rerunBuild)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed getting rerun build").Err()
+		return nil, errors.Fmt("failed getting rerun build: %w", err)
 	}
 
 	singleRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunBuild)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed getting single rerun").Err()
+		return nil, errors.Fmt("failed getting single rerun: %w", err)
 	}
 
 	result := &pb.SingleRerun{
@@ -686,7 +686,7 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 	if suspect.SuspectRerunBuild != nil {
 		singleRerun, err := constructSingleRerun(c, suspect.SuspectRerunBuild.IntID())
 		if err != nil {
-			return nil, errors.Annotate(err, "failed getting verification rerun for suspect commit").Err()
+			return nil, errors.Fmt("failed getting verification rerun for suspect commit: %w", err)
 		}
 		verificationDetails.SuspectRerun = singleRerun
 	}
@@ -695,7 +695,7 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 	if suspect.ParentRerunBuild != nil {
 		singleRerun, err := constructSingleRerun(c, suspect.ParentRerunBuild.IntID())
 		if err != nil {
-			return nil, errors.Annotate(err, "failed getting verification rerun for parent commit of suspect").Err()
+			return nil, errors.Fmt("failed getting verification rerun for parent commit of suspect: %w", err)
 		}
 		verificationDetails.ParentRerun = singleRerun
 	}
@@ -814,32 +814,32 @@ func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) er
 	// MaxTestFailures is the maximum number of test failures to be queried in one request.
 	const MaxTestFailures = 100
 	if err := util.ValidateProject(req.Project); err != nil {
-		return errors.Annotate(err, "project").Err()
+		return errors.Fmt("project: %w", err)
 	}
 	if len(req.TestFailures) == 0 {
-		return errors.Reason("test_failures: unspecified").Err()
+		return errors.New("test_failures: unspecified")
 	}
 	if len(req.TestFailures) > MaxTestFailures {
-		return errors.Reason("test_failures: no more than %v may be queried at a time", MaxTestFailures).Err()
+		return errors.Fmt("test_failures: no more than %v may be queried at a time", MaxTestFailures)
 	}
 	for i, tf := range req.TestFailures {
 		if tf.GetTestId() == "" {
-			return errors.Reason("test_variants[%v]: test_id: unspecified", i).Err()
+			return errors.Fmt("test_variants[%v]: test_id: unspecified", i)
 		}
 		if tf.VariantHash == "" {
-			return errors.Reason("test_variants[%v]: variant_hash: unspecified", i).Err()
+			return errors.Fmt("test_variants[%v]: variant_hash: unspecified", i)
 		}
 		if tf.RefHash == "" {
-			return errors.Reason("test_variants[%v]: ref_hash: unspecified", i).Err()
+			return errors.Fmt("test_variants[%v]: ref_hash: unspecified", i)
 		}
 		if err := rdbpbutil.ValidateTestID(tf.TestId); err != nil {
-			return errors.Annotate(err, "test_variants[%v].test_id", i).Err()
+			return errors.Fmt("test_variants[%v].test_id: %w", i, err)
 		}
 		if err := util.ValidateVariantHash(tf.VariantHash); err != nil {
-			return errors.Annotate(err, "test_variants[%v].variant_hash", i).Err()
+			return errors.Fmt("test_variants[%v].variant_hash: %w", i, err)
 		}
 		if err := util.ValidateRefHash(tf.RefHash); err != nil {
-			return errors.Annotate(err, "test_variants[%v].ref_hash", i).Err()
+			return errors.Fmt("test_variants[%v].ref_hash: %w", i, err)
 		}
 	}
 	return nil

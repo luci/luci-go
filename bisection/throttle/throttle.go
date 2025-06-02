@@ -48,18 +48,18 @@ const (
 func CronHandler(ctx context.Context) error {
 	projectsToProcess, err := config.SupportedProjects(ctx)
 	if err != nil {
-		return errors.Annotate(err, "supported projects").Err()
+		return errors.Fmt("supported projects: %w", err)
 	}
 	// TODO(beining@): We should continue to next iteration when there is an error.
 	// Because error in one project should not block other projects.
 	for _, project := range projectsToProcess {
 		count, err := dailyAnalysisCount(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "daily analysis count").Err()
+			return errors.Fmt("daily analysis count: %w", err)
 		}
 		dailyLimit, err := dailyLimit(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "daily limit").Err()
+			return errors.Fmt("daily limit: %w", err)
 		}
 		if count >= dailyLimit {
 			logging.Warningf(ctx, "%d reached daily limit %d for project %s", count, dailyLimit, project)
@@ -67,11 +67,11 @@ func CronHandler(ctx context.Context) error {
 		}
 		rerunBuilds, err := congestedCompileReruns(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "obtain congested compile reruns").Err()
+			return errors.Fmt("obtain congested compile reruns: %w", err)
 		}
 		testReruns, err := congestedTestReruns(ctx, project)
 		if err != nil {
-			return errors.Annotate(err, "obtain congested test reruns").Err()
+			return errors.Fmt("obtain congested test reruns: %w", err)
 		}
 		dimensionExcludes := []*pb.Dimension{}
 		for _, d := range allRerunDimensions(rerunBuilds, testReruns) {
@@ -85,7 +85,7 @@ func CronHandler(ctx context.Context) error {
 			DimensionExcludes: dimensionExcludes,
 		}
 		if err := testfailuredetection.Schedule(ctx, task); err != nil {
-			return errors.Annotate(err, "schedule test failure detection task").Err()
+			return errors.Fmt("schedule test failure detection task: %w", err)
 		}
 		logging.Infof(ctx, "Test failure detection task scheduled %v", task)
 	}
@@ -98,7 +98,7 @@ func dailyAnalysisCount(ctx context.Context, project string) (int, error) {
 	analyses := []*model.TestFailureAnalysis{}
 	err := datastore.GetAll(ctx, q, &analyses)
 	if err != nil {
-		return 0, errors.Annotate(err, "get analyses").Err()
+		return 0, errors.Fmt("get analyses: %w", err)
 	}
 	count := 0
 	for _, tfa := range analyses {
@@ -120,7 +120,7 @@ func congestedCompileReruns(ctx context.Context, project string) ([]*model.Singl
 	rerunBuilds := []*model.CompileRerunBuild{}
 	err := datastore.GetAll(ctx, q, &rerunBuilds)
 	if err != nil {
-		return nil, errors.Annotate(err, "get scheduled CompileRerunBuilds").Err()
+		return nil, errors.Fmt("get scheduled CompileRerunBuilds: %w", err)
 	}
 	reruns := []*model.SingleRerun{}
 	for _, r := range rerunBuilds {
@@ -128,7 +128,7 @@ func congestedCompileReruns(ctx context.Context, project string) ([]*model.Singl
 		q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(ctx, r))
 		err := datastore.GetAll(ctx, q, &rerun)
 		if err != nil {
-			return nil, errors.Annotate(err, "get rerun with CompileRerunBuilds ID %d", r.Id).Err()
+			return nil, errors.Fmt("get rerun with CompileRerunBuilds ID %d: %w", r.Id, err)
 		}
 		reruns = append(reruns, rerun...)
 	}
@@ -146,7 +146,7 @@ func congestedTestReruns(ctx context.Context, project string) ([]*model.TestSing
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(ctx, q, &reruns)
 	if err != nil {
-		return nil, errors.Annotate(err, "get scheduled TestSingleRerun").Err()
+		return nil, errors.Fmt("get scheduled TestSingleRerun: %w", err)
 	}
 	return reruns, nil
 }

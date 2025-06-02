@@ -39,7 +39,7 @@ import (
 func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnalysis) (*bqpb.TestAnalysisRow, error) {
 	// Make sure that the analysis has ended.
 	if !tfa.HasEnded() {
-		return nil, errors.Reason("analysis %d has not ended", tfa.ID).Err()
+		return nil, errors.Fmt("analysis %d has not ended", tfa.ID)
 	}
 	result := &bqpb.TestAnalysisRow{
 		Project:     tfa.Project,
@@ -60,14 +60,14 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 	// Get test bundle.
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test failure bundle").Err()
+		return nil, errors.Fmt("get test failure bundle: %w", err)
 	}
 	tfFieldMask := fieldmaskpb.FieldMask{
 		Paths: []string{"*"},
 	}
 	tfMask, err := mask.FromFieldMask(&tfFieldMask, &pb.TestFailure{}, mask.AdvancedSemantics())
 	if err != nil {
-		return nil, errors.Annotate(err, "from field mask").Err()
+		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
 	result.TestFailures = protoutil.TestFailureBundleToPb(ctx, bundle, tfMask)
@@ -89,7 +89,7 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 
 	nsa, err := datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test nthsection for analysis").Err()
+		return nil, errors.Fmt("get test nthsection for analysis: %w", err)
 	}
 	if nsa != nil {
 		nsaFieldMask := fieldmaskpb.FieldMask{
@@ -97,17 +97,17 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 		}
 		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, mask.AdvancedSemantics())
 		if err != nil {
-			return nil, errors.Annotate(err, "from field mask").Err()
+			return nil, errors.Fmt("from field mask: %w", err)
 		}
 
 		nsaResult, err := protoutil.NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref, nsaMask)
 		if err != nil {
-			return nil, errors.Annotate(err, "nthsection analysis to pb").Err()
+			return nil, errors.Fmt("nthsection analysis to pb: %w", err)
 		}
 		result.NthSectionResult = nsaResult
 		culprit, err := datastoreutil.GetVerifiedCulpritForTestAnalysis(ctx, tfa)
 		if err != nil {
-			return nil, errors.Annotate(err, "get verified culprit").Err()
+			return nil, errors.Fmt("get verified culprit: %w", err)
 		}
 		if culprit != nil {
 			culpritFieldMask := fieldmaskpb.FieldMask{
@@ -115,12 +115,12 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 			}
 			culpritMask, err := mask.FromFieldMask(&culpritFieldMask, &pb.TestCulprit{}, mask.AdvancedSemantics())
 			if err != nil {
-				return nil, errors.Annotate(err, "from field mask").Err()
+				return nil, errors.Fmt("from field mask: %w", err)
 			}
 
 			culpritPb, err := protoutil.CulpritToPb(ctx, culprit, nsa, culpritMask)
 			if err != nil {
-				return nil, errors.Annotate(err, "culprit to pb").Err()
+				return nil, errors.Fmt("culprit to pb: %w", err)
 			}
 			result.Culprit = culpritPb
 		}

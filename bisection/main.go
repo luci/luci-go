@@ -161,15 +161,15 @@ func main() {
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
 		if err := revertculprit.RegisterTaskClass(srv, pg.Project); err != nil {
-			return errors.Annotate(err, "register revert culprit").Err()
+			return errors.Fmt("register revert culprit: %w", err)
 		}
 		cancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
 		if err := testfailuredetection.RegisterTaskClass(srv, pg.Project); err != nil {
-			return errors.Annotate(err, "register test failure detection").Err()
+			return errors.Fmt("register test failure detection: %w", err)
 		}
 		if err := bisection.RegisterTaskClass(srv, pg.Project); err != nil {
-			return errors.Annotate(err, "register test failure bisector").Err()
+			return errors.Fmt("register test failure bisector: %w", err)
 		}
 
 		return nil

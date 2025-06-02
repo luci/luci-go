@@ -35,7 +35,7 @@ func ServiceAccountEmail(ctx context.Context) (string, error) {
 	emailAddress, err := getServiceAccountName(ctx)
 	if err != nil {
 		// Not critical - just log the error.
-		err = errors.Annotate(err, "error getting the service account email").Err()
+		err = errors.Fmt("error getting the service account email: %w", err)
 		logging.Errorf(ctx, err.Error())
 
 		// Construct the service account email from the App ID instead.
@@ -56,7 +56,7 @@ func getServiceAccountName(ctx context.Context) (string, error) {
 
 	info, err := signer.ServiceInfo(ctx)
 	if err != nil {
-		return "", errors.Annotate(err, "failed to get service info").Err()
+		return "", errors.Fmt("failed to get service info: %w", err)
 	}
 
 	return info.ServiceAccountName, nil

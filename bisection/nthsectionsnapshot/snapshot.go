@@ -311,7 +311,7 @@ func (snapshot *Snapshot) FindNextSingleCommitToRun() (string, error) {
 	// to replace the finishing one.
 	commits, err := snapshot.FindNextCommitsToRun(1)
 	if err != nil {
-		return "", errors.Annotate(err, "find next commits to run").Err()
+		return "", errors.Fmt("find next commits to run: %w", err)
 	}
 	// There is no commit to run, perhaps we already found a culprit, or we
 	// have already scheduled the necessary build to be run.
@@ -319,7 +319,7 @@ func (snapshot *Snapshot) FindNextSingleCommitToRun() (string, error) {
 		return "", nil
 	}
 	if len(commits) != 1 {
-		return "", errors.Reason("expect only 1 commits to rerun. Got %d", len(commits)).Err()
+		return "", errors.Fmt("expect only 1 commits to rerun. Got %d", len(commits))
 	}
 	return commits[0], nil
 

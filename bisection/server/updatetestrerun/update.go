@@ -55,7 +55,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	}()
 	err := validateRequest(req)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, errors.Annotate(err, "validate request").Err().Error())
+		return status.Errorf(codes.InvalidArgument, errors.Fmt("validate request: %w", err).Error())
 	}
 	ctx = loggingutil.SetRerunBBID(ctx, req.Bbid)
 
@@ -64,9 +64,9 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	if err != nil {
 		// We don't compare err == datastore.ErrNoSuchEntity because err may be annotated.
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
-			return status.Errorf(codes.NotFound, errors.Annotate(err, "get test single rerun").Err().Error())
+			return status.Errorf(codes.NotFound, errors.Fmt("get test single rerun: %w", err).Error())
 		} else {
-			return status.Errorf(codes.Internal, errors.Annotate(err, "get test single rerun").Err().Error())
+			return status.Errorf(codes.Internal, errors.Fmt("get test single rerun: %w", err).Error())
 		}
 	}
 
@@ -85,7 +85,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	if err != nil {
 		// Do not return a NOTFOUND here since the rerun was found.
 		// If the analysis is not found, there is likely something wrong.
-		return status.Errorf(codes.Internal, errors.Annotate(err, "get test failure analysis").Err().Error())
+		return status.Errorf(codes.Internal, errors.Fmt("get test failure analysis: %w", err).Error())
 	}
 	ctx = loggingutil.SetAnalysisID(ctx, tfa.ID)
 
@@ -109,9 +109,9 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 			// If the primary failure is not found, we consider it as InvalidArgument
 			// instead of Internal, because there is nothing wrong with the service.
 			// Returning internal error here will cause the PRPC to retry.
-			return status.Errorf(codes.InvalidArgument, errors.Annotate(err, "update rerun").Err().Error())
+			return status.Errorf(codes.InvalidArgument, errors.Fmt("update rerun: %w", err).Error())
 		}
-		return status.Errorf(codes.Internal, errors.Annotate(err, "update rerun").Err().Error())
+		return status.Errorf(codes.Internal, errors.Fmt("update rerun: %w", err).Error())
 	}
 
 	if rerun.Type == model.RerunBuildType_CulpritVerification {
@@ -122,7 +122,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 				// Just log.
 				logging.Errorf(ctx, "Update analysis status %s", e.Error())
 			}
-			return status.Errorf(codes.Internal, errors.Annotate(err, "process culprit verification update").Err().Error())
+			return status.Errorf(codes.Internal, errors.Fmt("process culprit verification update: %w", err).Error())
 		}
 	}
 	if rerun.Type == model.RerunBuildType_NthSection {
@@ -133,7 +133,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 				// Just log.
 				logging.Errorf(ctx, "UpdateAnalysisStatusWhenRerunError %s", e.Error())
 			}
-			return status.Errorf(codes.Internal, errors.Annotate(err, "process nthsection update").Err().Error())
+			return status.Errorf(codes.Internal, errors.Fmt("process nthsection update: %w", err).Error())
 		}
 	}
 	return nil
@@ -146,15 +146,15 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 	}
 	suspect, err := datastoreutil.GetSuspect(ctx, rerun.CulpritKey.IntID(), rerun.CulpritKey.Parent())
 	if err != nil {
-		return errors.Annotate(err, "get suspect for rerun").Err()
+		return errors.Fmt("get suspect for rerun: %w", err)
 	}
 	suspectRerun, err := datastoreutil.GetTestSingleRerun(ctx, suspect.SuspectRerunBuild.IntID())
 	if err != nil {
-		return errors.Annotate(err, "get suspect rerun %d", suspect.SuspectRerunBuild.IntID()).Err()
+		return errors.Fmt("get suspect rerun %d: %w", suspect.SuspectRerunBuild.IntID(), err)
 	}
 	parentRerun, err := datastoreutil.GetTestSingleRerun(ctx, suspect.ParentRerunBuild.IntID())
 	if err != nil {
-		return errors.Annotate(err, "get parent rerun %d", suspect.ParentRerunBuild.IntID()).Err()
+		return errors.Fmt("get parent rerun %d: %w", suspect.ParentRerunBuild.IntID(), err)
 	}
 	// Update suspect based on rerun status.
 	suspectStatus := model.SuspectStatus(suspectRerun.Status, parentRerun.Status)
@@ -167,7 +167,7 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 		suspect.VerificationStatus = suspectStatus
 		return datastore.Put(ctx, suspect)
 	}, nil); err != nil {
-		return errors.Annotate(err, "update suspect status %d", suspect.Id).Err()
+		return errors.Fmt("update suspect status %d: %w", suspect.Id, err)
 	}
 	if suspect.VerificationStatus == model.SuspectVerificationStatus_UnderVerification {
 		return nil
@@ -183,20 +183,20 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 			return datastore.Put(ctx, tfa)
 		}, nil)
 		if err != nil {
-			return errors.Annotate(err, "update VerifiedCulpritKey of analysis").Err()
+			return errors.Fmt("update VerifiedCulpritKey of analysis: %w", err)
 		}
 		// TODO(@beining): Schedule this task when suspect is VerificationError too.
 		// According to go/luci-bisection-integrating-gerrit,
 		// we want to also perform gerrit action when suspect is VerificationError.
 		if err := revertculprit.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
 			// Non-critical, just log the error
-			err := errors.Annotate(err, "schedule culprit action task %d", tfa.ID).Err()
+			err := errors.Fmt("schedule culprit action task %d: %w", tfa.ID, err)
 			logging.Errorf(ctx, err.Error())
 			// No task scheduled, we should update suspect's HasTakenActions field.
 			suspect.HasTakenActions = true
 			err = datastore.Put(ctx, suspect)
 			if err != nil {
-				err = errors.Annotate(err, "saving suspect's HasActionTaken field").Err()
+				err = errors.Fmt("saving suspect's HasActionTaken field: %w", err)
 				logging.Errorf(ctx, err.Error())
 			}
 		}
@@ -211,7 +211,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	}
 	nsa, err := datastoreutil.GetTestNthSectionAnalysis(ctx, rerun.NthSectionAnalysisKey.IntID())
 	if err != nil {
-		return errors.Annotate(err, "get test nthsection analysis").Err()
+		return errors.Fmt("get test nthsection analysis: %w", err)
 	}
 	// This may happen during tri-section (or higher nth-section) analysis.
 	// Nthsection analysis may ended before a rerun result arrives (in such case,
@@ -226,7 +226,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	}
 	snapshot, err := bisection.CreateSnapshot(ctx, nsa)
 	if err != nil {
-		return errors.Annotate(err, "create snapshot").Err()
+		return errors.Fmt("create snapshot: %w", err)
 	}
 
 	// Check if we already found the culprit or not.
@@ -236,7 +236,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	if ok {
 		err := bisection.SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
 		if err != nil {
-			return errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
 		return nil
 	}
@@ -244,7 +244,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	// Culprit not found yet. Still need to trigger more rerun.
 	enabled, err := bisection.IsEnabled(ctx, tfa.Project)
 	if err != nil {
-		return errors.Annotate(err, "is enabled").Err()
+		return errors.Fmt("is enabled: %w", err)
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection not enabled")
@@ -256,7 +256,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	var badRangeError *nthsectionsnapshot.BadRangeError
 	if err != nil {
 		if !errors.As(err, &badRangeError) {
-			return errors.Annotate(err, "find next single commit to run").Err()
+			return errors.Fmt("find next single commit to run: %w", err)
 		}
 		// BadRangeError suggests the regression range is invalid.
 		// This is not really an error, but more of a indication of no suspect can be found
@@ -272,11 +272,11 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 				nsa.EndTime = clock.Now(ctx)
 			})
 			if err != nil {
-				return errors.Annotate(err, "save nthsection analysis").Err()
+				return errors.Fmt("save nthsection analysis: %w", err)
 			}
 			err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			if err != nil {
-				return errors.Annotate(err, "update analysis status").Err()
+				return errors.Fmt("update analysis status: %w", err)
 			}
 		}
 		return nil
@@ -284,14 +284,14 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 
 	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get project bisector").Err()
+		return errors.Fmt("get project bisector: %w", err)
 	}
 	option := projectbisector.RerunOption{
 		BotID: req.BotId,
 	}
 	err = bisection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit}, option)
 	if err != nil {
-		return errors.Annotate(err, "trigger rerun build for commits").Err()
+		return errors.Fmt("trigger rerun build for commits: %w", err)
 	}
 	return nil
 }
@@ -304,7 +304,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 			rerun.ReportTime = clock.Now(ctx)
 		})
 		if err != nil {
-			return errors.Annotate(err, "save rerun").Err()
+			return errors.Fmt("save rerun: %w", err)
 		}
 		// Return nil here because the request is valid and INFRA_FAILED is expected.
 		return nil
@@ -318,7 +318,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 	// The result of the primary test failure will determine the status of the rerun.
 	primary, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get primary test failure").Err()
+		return errors.Fmt("get primary test failure: %w", err)
 	}
 
 	recipeResults := req.Results
@@ -345,7 +345,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 	for i := range rerunTestResults.Results {
 		tf, err := datastoreutil.GetTestFailure(ctx, rerunTestResults.Results[i].TestFailureKey.IntID())
 		if err != nil {
-			return errors.Reason("could not find test failure %d", tf.ID).Err()
+			return errors.Fmt("could not find test failure %d", tf.ID)
 		}
 		recipeTestResult := findTestResult(ctx, recipeResults, tf.TestID, tf.VariantHash)
 		if divergedFromPrimary(recipeTestResult, primaryResult) {
@@ -365,7 +365,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 		// Get and save the rerun.
 		err := datastore.Get(ctx, rerun)
 		if err != nil {
-			return errors.Annotate(err, "get rerun").Err()
+			return errors.Fmt("get rerun: %w", err)
 		}
 
 		rerun.Status = rerunStatus
@@ -374,14 +374,14 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 
 		err = datastore.Put(ctx, rerun)
 		if err != nil {
-			return errors.Annotate(err, "save rerun").Err()
+			return errors.Fmt("save rerun: %w", err)
 		}
 
 		// It should be safe to just save the test failures here because we don't expect
 		// any update to other fields of test failures.
 		err = datastore.Put(ctx, divergedTestFailures)
 		if err != nil {
-			return errors.Annotate(err, "save test failures to update").Err()
+			return errors.Fmt("save test failures to update: %w", err)
 		}
 		return nil
 	}, nil)
@@ -394,13 +394,13 @@ func saveRerun(ctx context.Context, rerun *model.TestSingleRerun, updateFunc fun
 		// Get rerun to avoid race condition if something also update the rerun.
 		err := datastore.Get(ctx, rerun)
 		if err != nil {
-			return errors.Annotate(err, "get rerun").Err()
+			return errors.Fmt("get rerun: %w", err)
 		}
 		updateFunc(rerun)
 		// Save the rerun.
 		err = datastore.Put(ctx, rerun)
 		if err != nil {
-			return errors.Annotate(err, "save rerun").Err()
+			return errors.Fmt("save rerun: %w", err)
 		}
 		return nil
 	}, nil)

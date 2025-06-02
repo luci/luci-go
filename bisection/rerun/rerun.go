@@ -58,7 +58,7 @@ type TriggerOptions struct {
 func TriggerRerun(c context.Context, options *TriggerOptions) (*buildbucketpb.Build, error) {
 	err := validateOptions(options)
 	if err != nil {
-		return nil, errors.Annotate(err, "validate rerun options").Err()
+		return nil, errors.Fmt("validate rerun options: %w", err)
 	}
 	logging.Infof(c, "triggerRerun with commit %s", options.GitilesCommit.Id)
 	properties, dimensions, err := getRerunPropertiesAndDimensions(c, options.SampleBuildID, options.ExtraProperties, options.ExtraDimensions)
@@ -120,7 +120,7 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	}
 	build, err := buildbucket.GetBuild(c, bbid, mask)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get properties for build %d", bbid).Err()
+		return nil, nil, errors.Fmt("failed to get properties for build %d: %w", bbid, err)
 	}
 	properties, err := getRerunProperties(c, build, props)
 	if err != nil {
@@ -135,12 +135,12 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	}
 	parentBuildID, err := strconv.Atoi(parentBuildIDStr.GetStringValue())
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "parse parent_build_id %s", parentBuildIDStr).Err()
+		return nil, nil, errors.Fmt("parse parent_build_id %s: %w", parentBuildIDStr, err)
 	}
 	// If builder is a tester, return the dimension derived by the parent build.
 	parentBuild, err := buildbucket.GetBuild(c, int64(parentBuildID), mask)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to get properties for parent build %d", int64(parentBuildID)).Err()
+		return nil, nil, errors.Fmt("failed to get properties for parent build %d: %w", int64(parentBuildID), err)
 	}
 	dimens := getRerunDimensions(c, parentBuild, dims)
 	return properties, dimens, nil
@@ -240,7 +240,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	}
 	dimensions, err := buildbucket.GetBuildTaskDimension(c, build.GetId())
 	if err != nil {
-		return nil, errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
+		return nil, errors.Fmt("get build task dimension bbid %v: %w", build.GetId(), err)
 	}
 	// Create the first SingleRerun for CompileRerunBuild
 	// It will be updated when we receive updates from recipe
@@ -294,12 +294,12 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 		return nil
 	}
 	if err != nil {
-		return errors.Annotate(err, "couldn't get rerun model %d", bbid).Err()
+		return errors.Fmt("couldn't get rerun model %d: %w", bbid, err)
 	}
 
 	lastRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunModel)
 	if err != nil {
-		return errors.Annotate(err, "failed getting last rerun for build %d", rerunModel.Id).Err()
+		return errors.Fmt("failed getting last rerun for build %d: %w", rerunModel.Id, err)
 	}
 
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
@@ -308,7 +308,7 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "couldn't get build %d", bbid).Err()
+		return errors.Fmt("couldn't get build %d: %w", bbid, err)
 	}
 
 	startTime := build.StartTime.AsTime()
@@ -326,7 +326,7 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "couldn't save rerun model %d", bbid).Err()
+		return errors.Fmt("couldn't save rerun model %d: %w", bbid, err)
 	}
 
 	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
@@ -348,7 +348,7 @@ func UpdateCompileRerunStatus(c context.Context, bbid int64) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "failed saving last rerun for build %d", rerunModel.Id).Err()
+		return errors.Fmt("failed saving last rerun for build %d: %w", rerunModel.Id, err)
 	}
 	return nil
 }
@@ -373,7 +373,7 @@ func UpdateTestRerunStatus(ctx context.Context, build *buildbucketpb.Build) erro
 			return nil
 		}
 		if err != nil {
-			return errors.Annotate(err, "couldn't get TestSingleRerun %d", bbid).Err()
+			return errors.Fmt("couldn't get TestSingleRerun %d: %w", bbid, err)
 		}
 
 		singleRerun.LUCIBuild.StartTime = build.StartTime.AsTime()
@@ -391,19 +391,19 @@ func UpdateTestRerunStatus(ctx context.Context, build *buildbucketpb.Build) erro
 
 		err = datastore.Put(ctx, singleRerun)
 		if err != nil {
-			return errors.Annotate(err, "couldn't save single rerun %d", bbid).Err()
+			return errors.Fmt("couldn't save single rerun %d: %w", bbid, err)
 		}
 		return nil
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "saving test single rerun").Err()
+		return errors.Fmt("saving test single rerun: %w", err)
 	}
 
 	if rerunFailed {
 		tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, singleRerun.AnalysisKey.IntID())
 		if err != nil {
-			return errors.Annotate(err, "get test failure analysis").Err()
+			return errors.Fmt("get test failure analysis: %w", err)
 		}
 		// Update analysis and nthsection analysis if applicable.
 		// The reason why we put it here instead of the above transaction
@@ -411,7 +411,7 @@ func UpdateTestRerunStatus(ctx context.Context, build *buildbucketpb.Build) erro
 		// (https://cloud.google.com/datastore/docs/concepts/transactions#isolation_and_consistency)
 		err = testfailureanalysis.UpdateAnalysisStatusWhenError(ctx, tfa)
 		if err != nil {
-			return errors.Annotate(err, "update analysis status when error").Err()
+			return errors.Fmt("update analysis status when error: %w", err)
 		}
 	}
 	return nil

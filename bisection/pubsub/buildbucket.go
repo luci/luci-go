@@ -82,7 +82,7 @@ const (
 
 func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buildbucketpb.BuildsV2PubSub) error {
 	if v := msg.Attributes["version"]; v != "v2" {
-		return pubsub.Ignore.Apply(errors.Reason("got version %q, expected v2", v).Err())
+		return pubsub.Ignore.Apply(errors.Fmt("got version %q, expected v2", v))
 	}
 
 	bbid := bbmsg.GetBuild().GetId()
@@ -101,7 +101,7 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 	if err != nil {
 		// If there are no configs for the project, just ignore.
 		if !errors.Is(err, config.ErrNotFoundProjectConfig) {
-			return errors.Annotate(err, "get compile builder").Err()
+			return errors.Fmt("get compile builder: %w", err)
 		}
 	} else {
 		if bucket == compileBuilder.Bucket && builder == compileBuilder.Builder {
@@ -126,7 +126,7 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 	if err != nil {
 		// If there are no configs for the project, just ignore.
 		if !errors.Is(err, config.ErrNotFoundProjectConfig) {
-			return errors.Annotate(err, "get test builder").Err()
+			return errors.Fmt("get test builder: %w", err)
 		}
 	} else {
 		if bucket == testBuilder.Bucket && builder == testBuilder.Builder {
@@ -156,7 +156,7 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 
 	excludedBgs, err := config.GetExcludedBuilderGroupsForCompile(c, project)
 	if err != nil {
-		return errors.Annotate(err, "get excluded builder groups for compile").Err()
+		return errors.Fmt("get excluded builder groups for compile: %w", err)
 	}
 	var largeFields *buildbucketpb.Build
 	if bbmsg.BuildLargeFieldsDropped {
@@ -167,17 +167,17 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 		}
 		largeFields, err = buildbucket.GetBuild(c, bbmsg.Build.Id, mask)
 		if err != nil {
-			return errors.Annotate(err, "fetch large field").Err()
+			return errors.Fmt("fetch large field: %w", err)
 		}
 	} else {
 		// Pubsub message stores input properties in large fields.
 		largeFieldsData, err := zlibDecompress(bbmsg.BuildLargeFields)
 		if err != nil {
-			return errors.Annotate(err, "decompress large field").Err()
+			return errors.Fmt("decompress large field: %w", err)
 		}
 		largeFields = &buildbucketpb.Build{}
 		if err = proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-			return errors.Annotate(err, "unmarshal large field").Err()
+			return errors.Fmt("unmarshal large field: %w", err)
 		}
 	}
 
@@ -204,7 +204,7 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 		bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateSucceededBuild))
 		err := compilefailuredetection.UpdateSucceededBuild(c, bbid)
 		if err != nil {
-			return errors.Annotate(err, "UpdateSucceededBuild").Err()
+			return errors.Fmt("UpdateSucceededBuild: %w", err)
 		}
 		return nil
 	}

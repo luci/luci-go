@@ -112,19 +112,19 @@ func CollectGlobalMetrics(c context.Context) error {
 	var errs []error
 	err := collectMetricsForRunningAnalyses(c)
 	if err != nil {
-		err = errors.Annotate(err, "collectMetricsForRunningAnalyses").Err()
+		err = errors.Fmt("collectMetricsForRunningAnalyses: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
 	err = collectMetricsForRunningReruns(c)
 	if err != nil {
-		err = errors.Annotate(err, "collectMetricsForRunningReruns").Err()
+		err = errors.Fmt("collectMetricsForRunningReruns: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
 	err = collectMetricsForRunningTestReruns(c)
 	if err != nil {
-		err = errors.Annotate(err, "collectMetricsForRunningTestReruns").Err()
+		err = errors.Fmt("collectMetricsForRunningTestReruns: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
@@ -160,7 +160,7 @@ func retrieveRunningTestAnalyses(c context.Context) (map[string]int, error) {
 	analyses := []*model.TestFailureAnalysis{}
 	err := datastore.GetAll(c, q, &analyses)
 	if err != nil {
-		return nil, errors.Annotate(err, "get running test failure analyses").Err()
+		return nil, errors.Fmt("get running test failure analyses: %w", err)
 	}
 
 	// To store the running analyses for each project
@@ -176,7 +176,7 @@ func retrieveRunningAnalyses(c context.Context) (map[string]int, error) {
 	analyses := []*model.CompileFailureAnalysis{}
 	err := datastore.GetAll(c, q, &analyses)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't get running analyses").Err()
+		return nil, errors.Fmt("couldn't get running analyses: %w", err)
 	}
 
 	// To store the running analyses for each project
@@ -184,7 +184,7 @@ func retrieveRunningAnalyses(c context.Context) (map[string]int, error) {
 	for _, cfa := range analyses {
 		build, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
 		if err != nil {
-			return nil, errors.Annotate(err, "getting build for analysis %d", cfa.Id).Err()
+			return nil, errors.Fmt("getting build for analysis %d: %w", cfa.Id, err)
 		}
 		if build == nil {
 			return nil, fmt.Errorf("getting build for analysis %d", cfa.Id)
@@ -206,7 +206,7 @@ func collectMetricsForRunningReruns(c context.Context) error {
 	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
-		return errors.Annotate(err, "couldn't get running reruns").Err()
+		return errors.Fmt("couldn't get running reruns: %w", err)
 	}
 
 	// Get the metrics for rerun count and rerun age
@@ -216,7 +216,7 @@ func collectMetricsForRunningReruns(c context.Context) error {
 	for _, rerun := range reruns {
 		proj, platform, err := projectAndPlatformForRerun(c, rerun)
 		if err != nil {
-			return errors.Annotate(err, "projectForRerun %d", rerun.Id).Err()
+			return errors.Fmt("projectForRerun %d: %w", rerun.Id, err)
 		}
 
 		rerunBuild := &model.CompileRerunBuild{
@@ -224,7 +224,7 @@ func collectMetricsForRunningReruns(c context.Context) error {
 		}
 		err = datastore.Get(c, rerunBuild)
 		if err != nil {
-			return errors.Annotate(err, "couldn't get rerun build %d", rerun.RerunBuild.IntID()).Err()
+			return errors.Fmt("couldn't get rerun build %d: %w", rerun.RerunBuild.IntID(), err)
 		}
 
 		var key = rerunKey{
@@ -265,7 +265,7 @@ func projectAndPlatformForRerun(c context.Context, rerun *model.SingleRerun) (st
 	}
 	build, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
 	if err != nil {
-		return "", "", errors.Annotate(err, "getting build for analysis %d", cfa.Id).Err()
+		return "", "", errors.Fmt("getting build for analysis %d: %w", cfa.Id, err)
 	}
 	if build == nil {
 		return "", "", fmt.Errorf("build for analysis %d does not exist", cfa.Id)
@@ -284,7 +284,7 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 	reruns := []*model.TestSingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
-		return errors.Annotate(err, "get running test reruns").Err()
+		return errors.Fmt("get running test reruns: %w", err)
 	}
 
 	// Get the metrics for rerun count and rerun age

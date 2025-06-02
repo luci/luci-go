@@ -93,7 +93,7 @@ func UpdateNthSectionAnalysisStatus(ctx context.Context, nsa *model.TestNthSecti
 func UpdateAnalysisStatusWhenError(ctx context.Context, tfa *model.TestFailureAnalysis) error {
 	reruns, err := datastoreutil.GetInProgressReruns(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get in progress rerun").Err()
+		return errors.Fmt("get in progress rerun: %w", err)
 	}
 	// Analysis still in progress, we don't need to do anything.
 	if len(reruns) > 0 {
@@ -102,7 +102,7 @@ func UpdateAnalysisStatusWhenError(ctx context.Context, tfa *model.TestFailureAn
 	// Otherwise, update status to error.
 	nsa, err := datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get test nthsection for analysis").Err()
+		return errors.Fmt("get test nthsection for analysis: %w", err)
 	}
 	if nsa == nil {
 		return errors.New("no nthsection analysis")
@@ -110,13 +110,13 @@ func UpdateAnalysisStatusWhenError(ctx context.Context, tfa *model.TestFailureAn
 	// This will be a no-op if the nthsection analysis already ended or canceled.
 	err = UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 	if err != nil {
-		return errors.Annotate(err, "update nthsection analysis status").Err()
+		return errors.Fmt("update nthsection analysis status: %w", err)
 	}
 
 	// This will be a no-op if the analysis already ended or canceled.
 	err = UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 	if err != nil {
-		return errors.Annotate(err, "update analysis status").Err()
+		return errors.Fmt("update analysis status: %w", err)
 	}
 	return nil
 }

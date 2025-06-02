@@ -41,17 +41,17 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	logging.Infof(ctx, "Run chromium bisection")
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get test failures").Err()
+		return errors.Fmt("get test failures: %w", err)
 	}
 
 	err = b.populateTestSuiteName(ctx, bundle)
 	if err != nil {
-		return errors.Annotate(err, "populate test suite name").Err()
+		return errors.Fmt("populate test suite name: %w", err)
 	}
 
 	err = b.populateTestNames(ctx, bundle, luciAnalysis)
 	if err != nil {
-		return errors.Annotate(err, "populate test names").Err()
+		return errors.Fmt("populate test names: %w", err)
 	}
 
 	return nil
@@ -60,12 +60,12 @@ func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, 
 func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, gitilesCommit *bbpb.GitilesCommit, option projectbisector.RerunOption) (*bbpb.Build, error) {
 	builder, err := config.GetTestBuilder(ctx, tfa.Project)
 	if err != nil {
-		return nil, errors.Annotate(err, "get test builder").Err()
+		return nil, errors.Fmt("get test builder: %w", err)
 	}
 
 	extraProperties, err := getExtraProperties(ctx, tfa, tfs, option)
 	if err != nil {
-		return nil, errors.Annotate(err, "get extra properties").Err()
+		return nil, errors.Fmt("get extra properties: %w", err)
 	}
 	extraDimensions := getExtraDimensions(option)
 
@@ -80,7 +80,7 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 
 	build, err := rerun.TriggerRerun(ctx, options)
 	if err != nil {
-		return nil, errors.Annotate(err, "trigger rerun").Err()
+		return nil, errors.Fmt("trigger rerun: %w", err)
 	}
 
 	return build, nil
@@ -99,7 +99,7 @@ func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs
 	}
 	host, err := hosts.APIHost(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "get bisection API Host").Err()
+		return nil, errors.Fmt("get bisection API Host: %w", err)
 	}
 
 	props := map[string]any{
@@ -138,7 +138,7 @@ func (b *Bisector) populateTestSuiteName(ctx context.Context, bundle *model.Test
 		for _, tf := range tfs {
 			err := datastore.Put(ctx, tf)
 			if err != nil {
-				return errors.Annotate(err, "save test failure %d", tf.ID).Err()
+				return errors.Fmt("save test failure %d: %w", tf.ID, err)
 			}
 		}
 		return nil
@@ -161,7 +161,7 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 	}
 	keyMap, err := luciAnalysis.ReadLatestVerdict(ctx, bundle.Primary().Project, keys)
 	if err != nil {
-		return errors.Annotate(err, "read latest verdict").Err()
+		return errors.Fmt("read latest verdict: %w", err)
 	}
 
 	// Store in datastore.
@@ -179,7 +179,7 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 			tf.TestName = verdictResult.TestName
 			err := datastore.Put(ctx, tf)
 			if err != nil {
-				return errors.Annotate(err, "save test failure %d", tf.ID).Err()
+				return errors.Fmt("save test failure %d: %w", tf.ID, err)
 			}
 		}
 		return nil

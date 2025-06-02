@@ -69,7 +69,7 @@ func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, e
 func NewClient(ctx context.Context, host string) (*Client, error) {
 	client, err := newGerritClient(ctx, host)
 	if err != nil {
-		return nil, errors.Annotate(err, "error making Gerrit client for host %s", host).Err()
+		return nil, errors.Fmt("error making Gerrit client for host %s: %w", host, err)
 	}
 
 	return &Client{
@@ -105,8 +105,9 @@ func (c *Client) GetChange(ctx context.Context, project string, commitID string)
 	query := fmt.Sprintf("project:\"%s\" commit:\"%s\"", project, commitID)
 	changes, err := c.queryChanges(ctx, query)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting change from Gerrit host %s using query %s",
-			c.host, query).Err()
+		return nil, errors.Fmt("error getting change from Gerrit host %s using query %s: %w",
+			c.host, query, err)
+
 	}
 
 	if len(changes) == 0 {
@@ -146,9 +147,9 @@ func (c *Client) GetReverts(ctx context.Context, change *gerritpb.ChangeInfo) ([
 	query := fmt.Sprintf("project:\"%s\" revertof:%d", change.Project, change.Number)
 	changes, err := c.queryChanges(ctx, query)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting reverts of a change from Gerrit host %s using query %s",
-			c.host, query,
-		).Err()
+		return nil, errors.Fmt("error getting reverts of a change from Gerrit host %s using query %s: %w",
+			c.host, query, err)
+
 	}
 
 	return changes, nil
@@ -158,7 +159,7 @@ func (c *Client) GetReverts(ctx context.Context, change *gerritpb.ChangeInfo) ([
 func (c *Client) HasDependency(ctx context.Context, change *gerritpb.ChangeInfo) (bool, error) {
 	relatedChanges, err := c.getRelatedChanges(ctx, change)
 	if err != nil {
-		return false, errors.Annotate(err, "failed checking dependency").Err()
+		return false, errors.Fmt("failed checking dependency: %w", err)
 	}
 
 	for _, relatedChange := range relatedChanges {
@@ -189,8 +190,9 @@ func (c *Client) CreateRevert(ctx context.Context, change *gerritpb.ChangeInfo, 
 
 	res, err := c.gerritClient.RevertChange(waitCtx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "error creating revert change on Gerrit host %s for change %s~%d",
-			c.host, req.Project, req.Number).Err()
+		return nil, errors.Fmt("error creating revert change on Gerrit host %s for change %s~%d: %w",
+			c.host, req.Project, req.Number, err)
+
 	}
 
 	return res, nil
@@ -201,7 +203,7 @@ func (c *Client) AddComment(ctx context.Context, change *gerritpb.ChangeInfo, me
 	req := c.createSetReviewRequest(ctx, change, message)
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "error adding comment").Err()
+		return nil, errors.Fmt("error adding comment: %w", err)
 	}
 
 	return res, nil
@@ -232,7 +234,7 @@ func (c *Client) SendForReview(ctx context.Context, change *gerritpb.ChangeInfo,
 
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "error sending for review").Err()
+		return nil, errors.Fmt("error sending for review: %w", err)
 	}
 	return res, nil
 }
@@ -274,7 +276,7 @@ func (c *Client) CommitRevert(ctx context.Context, change *gerritpb.ChangeInfo,
 
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "error committing").Err()
+		return nil, errors.Fmt("error committing: %w", err)
 	}
 
 	return res, nil
@@ -301,9 +303,9 @@ func (c *Client) getRelatedChanges(ctx context.Context, change *gerritpb.ChangeI
 
 	res, err := c.gerritClient.GetRelatedChanges(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed getting related changes from Gerrit host %s for change %s~%d",
-			c.host, req.Project, req.Number,
-		).Err()
+		return nil, errors.Fmt("failed getting related changes from Gerrit host %s for change %s~%d: %w",
+			c.host, req.Project, req.Number, err)
+
 	}
 
 	// Changes are sorted by git commit order, newest to oldest.
@@ -324,9 +326,9 @@ func (c *Client) isPureRevert(ctx context.Context, change *gerritpb.ChangeInfo) 
 
 	res, err := c.gerritClient.GetPureRevert(ctx, req)
 	if err != nil {
-		return false, errors.Annotate(err,
-			"error querying Gerrit host %s on whether the change %s~%d is a pure revert",
-			c.host, req.Project, req.Number).Err()
+		return false, errors.Fmt("error querying Gerrit host %s on whether the change %s~%d is a pure revert: %w",
+			c.host, req.Project, req.Number, err)
+
 	}
 
 	return res.IsPureRevert, nil
@@ -336,8 +338,9 @@ func (c *Client) isPureRevert(ctx context.Context, change *gerritpb.ChangeInfo) 
 func (c *Client) setReview(ctx context.Context, req *gerritpb.SetReviewRequest) (*gerritpb.ReviewResult, error) {
 	res, err := c.gerritClient.SetReview(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to set review on Gerrit host %s for change %s~%d",
-			c.host, req.Project, req.Number).Err()
+		return nil, errors.Fmt("failed to set review on Gerrit host %s for change %s~%d: %w",
+			c.host, req.Project, req.Number, err)
+
 	}
 
 	return res, nil

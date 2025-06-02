@@ -82,7 +82,7 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 		maxRerun := 2
 		err := Run(ctx, analysisID, client, maxRerun)
 		if err != nil {
-			err = errors.Annotate(err, "run bisection").Err()
+			err = errors.Fmt("run bisection: %w", err)
 			logging.Errorf(ctx, err.Error())
 			// Return nil so the task will not be retried.
 			// We intentionally disable retrying because bisector does not support retrying at the moment.
@@ -111,7 +111,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
-		return errors.Annotate(err, "get test failure analysis").Err()
+		return errors.Fmt("get test failure analysis: %w", err)
 	}
 
 	defer func() {
@@ -120,7 +120,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 			err := testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 			if err != nil {
 				// Just log the error if there is something wrong.
-				err = errors.Annotate(err, "update status").Err()
+				err = errors.Fmt("update status: %w", err)
 				logging.Errorf(ctx, err.Error())
 			}
 		}
@@ -129,13 +129,13 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	// Checks if test failure analysis is enabled.
 	enabled, err := IsEnabled(ctx, tfa.Project)
 	if err != nil {
-		return errors.Annotate(err, "is enabled").Err()
+		return errors.Fmt("is enabled: %w", err)
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection is not enabled")
 		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_DISABLED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
-			return errors.Annotate(err, "update status disabled").Err()
+			return errors.Fmt("update status disabled: %w", err)
 		}
 		return nil
 	}
@@ -145,7 +145,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		logging.Infof(ctx, "Unsupported project: %s", tfa.Project)
 		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
-			return errors.Annotate(err, "update status unsupported").Err()
+			return errors.Fmt("update status unsupported: %w", err)
 		}
 		return
 	}
@@ -153,32 +153,32 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	// Update the analysis status.
 	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
-		return errors.Annotate(err, "update status").Err()
+		return errors.Fmt("update status: %w", err)
 	}
 
 	// Create nthsection model.
 	primaryFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get primary test failure").Err()
+		return errors.Fmt("get primary test failure: %w", err)
 	}
 	nsa, err := createNthSectionModel(ctx, tfa, primaryFailure)
 	if err != nil {
-		return errors.Annotate(err, "create nth section model").Err()
+		return errors.Fmt("create nth section model: %w", err)
 	}
 
 	projectBisector, err := GetProjectBisector(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get individual project bisector").Err()
+		return errors.Fmt("get individual project bisector: %w", err)
 	}
 
 	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
 	if err != nil {
-		return errors.Annotate(err, "prepare").Err()
+		return errors.Fmt("prepare: %w", err)
 	}
 
 	snapshot, err := CreateSnapshot(ctx, nsa)
 	if err != nil {
-		return errors.Annotate(err, "create snapshot").Err()
+		return errors.Fmt("create snapshot: %w", err)
 	}
 
 	// The culprit may be found without any bisection rerun, it is the case
@@ -190,7 +190,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	if ok {
 		err := SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
 		if err != nil {
-			return errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
 		return nil
 	}
@@ -199,16 +199,16 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	if err != nil {
 		var badRangeError *nthsectionsnapshot.BadRangeError
 		if !errors.As(err, &badRangeError) {
-			return errors.Annotate(err, "find next commits to run").Err()
+			return errors.Fmt("find next commits to run: %w", err)
 		}
 		// BadRangeError suggests that the regression range is invalid.
 		// This is not really an error, but more of a indication of no suspect can be found
 		// in this regression range. So we end the analysis with NOTFOUND status here.
 		if err = testfailureanalysis.UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
-			return errors.Annotate(err, "update nthsection analysis").Err()
+			return errors.Fmt("update nthsection analysis: %w", err)
 		}
 		if err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
-			return errors.Annotate(err, "update analysis status").Err()
+			return errors.Fmt("update analysis status: %w", err)
 		}
 		logging.Warningf(ctx, "find next single commit to run %s", err.Error())
 		return nil
@@ -216,7 +216,7 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 
 	option := projectbisector.RerunOption{}
 	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes, option); err != nil {
-		return errors.Annotate(err, "trigger rerun build for commits").Err()
+		return errors.Fmt("trigger rerun build for commits: %w", err)
 	}
 	return nil
 }
@@ -225,24 +225,24 @@ func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.Te
 	// Save nthsection result to datastore.
 	_, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, commit)
 	if err != nil {
-		return errors.Annotate(err, "store nthsection culprit to datastore").Err()
+		return errors.Fmt("store nthsection culprit to datastore: %w", err)
 	}
 	enabled, err := IsEnabled(ctx, tfa.Project)
 	if err != nil {
-		return errors.Annotate(err, "is enabled").Err()
+		return errors.Fmt("is enabled: %w", err)
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection not enabled")
 		// If not enabled, consider analysis ended.
 		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
-			return errors.Annotate(err, "update analysis status").Err()
+			return errors.Fmt("update analysis status: %w", err)
 		}
 		return nil
 	}
 	if err := task.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
 		// Non-critical, just log the error
-		err := errors.Annotate(err, "schedule culprit verification task %d", tfa.ID).Err()
+		err := errors.Fmt("schedule culprit verification task %d: %w", tfa.ID, err)
 		logging.Errorf(ctx, err.Error())
 	}
 	return nil
@@ -251,7 +251,7 @@ func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.Te
 func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, blCommit *pb.BlameListSingleCommit) (*model.Suspect, error) {
 	primary, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get primary test failure").Err()
+		return nil, errors.Fmt("get primary test failure: %w", err)
 	}
 	suspect := &model.Suspect{
 		Type: model.SuspectType_NthSection,
@@ -270,7 +270,7 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 	}
 	err = datastore.Put(ctx, suspect)
 	if err != nil {
-		return nil, errors.Annotate(err, "save suspect").Err()
+		return nil, errors.Fmt("save suspect: %w", err)
 	}
 
 	err = SaveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
@@ -281,13 +281,13 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 	})
 
 	if err != nil {
-		return nil, errors.Annotate(err, "save nthsection analysis").Err()
+		return nil, errors.Fmt("save nthsection analysis: %w", err)
 	}
 
 	// It is not ended because we still need to run suspect verification.
 	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
-		return nil, errors.Annotate(err, "update analysis status").Err()
+		return nil, errors.Fmt("update analysis status: %w", err)
 	}
 
 	return suspect, nil
@@ -299,12 +299,12 @@ func SaveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalys
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		err := datastore.Get(ctx, nsa)
 		if err != nil {
-			return errors.Annotate(err, "get nthsection analysis").Err()
+			return errors.Fmt("get nthsection analysis: %w", err)
 		}
 		updateFunc(nsa)
 		err = datastore.Put(ctx, nsa)
 		if err != nil {
-			return errors.Annotate(err, "save nthsection analysis").Err()
+			return errors.Fmt("save nthsection analysis: %w", err)
 		}
 		return nil
 	}, nil)
@@ -314,7 +314,7 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 	// Get test failure bundle
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
-		return errors.Annotate(err, "get test failure bundle").Err()
+		return errors.Fmt("get test failure bundle: %w", err)
 	}
 	// Only rerun the non-diverged test failures.
 	// At first rerun, all test failures are non-diverged, so all will be run.
@@ -329,7 +329,7 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 		}
 		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit, option)
 		if err != nil {
-			return errors.Annotate(err, "trigger rerun for commit %s", commitHash).Err()
+			return errors.Fmt("trigger rerun for commit %s: %w", commitHash, err)
 		}
 		_, err = CreateTestRerunModel(ctx, CreateRerunModelOptions{
 			TestFailureAnalysis:   tfa,
@@ -339,7 +339,7 @@ func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnal
 			RerunType:             model.RerunBuildType_NthSection,
 		})
 		if err != nil {
-			return errors.Annotate(err, "create test rerun model for build %d", build.GetId()).Err()
+			return errors.Fmt("create test rerun model for build %d: %w", build.GetId(), err)
 		}
 	}
 	return nil
@@ -358,7 +358,7 @@ func CreateTestRerunModel(ctx context.Context, options CreateRerunModelOptions) 
 	build := options.Build
 	dimensions, err := buildbucket.GetBuildTaskDimension(ctx, build.GetId())
 	if err != nil {
-		return nil, errors.Annotate(err, "get build task dimension bbid %v", build.GetId()).Err()
+		return nil, errors.Fmt("get build task dimension bbid %v: %w", build.GetId(), err)
 	}
 	testResults := model.RerunTestResults{}
 	for _, tf := range options.TestFailures {
@@ -408,7 +408,7 @@ func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nt
 	// instead of the INFRA_FAILURE status.
 	reruns, err := datastoreutil.GetTestNthSectionReruns(ctx, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting test nthsection rerun").Err()
+		return nil, errors.Fmt("getting test nthsection rerun: %w", err)
 	}
 
 	snapshot := &nthsectionsnapshot.Snapshot{
@@ -449,7 +449,7 @@ func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (pr
 		bisector := &chromium.Bisector{}
 		return bisector, nil
 	default:
-		return nil, errors.Reason("no bisector for project %s", tfa.Project).Err()
+		return nil, errors.Fmt("no bisector for project %s", tfa.Project)
 	}
 }
 
@@ -475,11 +475,11 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 	}
 	changeLogs, err := changelogutil.GetChangeLogs(ctx, regressionRange, true)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
+		return nil, errors.Fmt("couldn't fetch changelog: %w", err)
 	}
 	blameList := changelogutil.ChangeLogsToBlamelist(ctx, changeLogs)
 	if err := changelogutil.SetCommitPositionInBlamelist(blameList, primaryTestFailure.RegressionStartPosition, primaryTestFailure.RegressionEndPosition); err != nil {
-		return nil, errors.Annotate(err, "set commit position in blamelist").Err()
+		return nil, errors.Fmt("set commit position in blamelist: %w", err)
 	}
 	nsa := &model.TestNthSectionAnalysis{
 		ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
@@ -491,7 +491,7 @@ func createNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, 
 
 	err = datastore.Put(ctx, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "save nthsection").Err()
+		return nil, errors.Fmt("save nthsection: %w", err)
 	}
 	return nsa, nil
 }

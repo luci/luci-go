@@ -235,7 +235,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 
 	queryStm, err := generateTestFailuresQuery(task, dimensionExcludeFilter, filter.ExcludedTestPools)
 	if err != nil {
-		return nil, errors.Annotate(err, "generate test failures query").Err()
+		return nil, errors.Fmt("generate test failures query: %w", err)
 	}
 	q := c.client.Query(queryStm)
 	q.DefaultDatasetID = internalDatasetID
@@ -251,7 +251,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying test failures").Err()
+		return nil, errors.Fmt("querying test failures: %w", err)
 	}
 	groups := []*BuilderRegressionGroup{}
 	for {
@@ -261,7 +261,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next test failure group row").Err()
+			return nil, errors.Fmt("obtain next test failure group row: %w", err)
 		}
 		groups = append(groups, row)
 	}
@@ -271,7 +271,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 func generateTestFailuresQuery(task *tpb.TestFailureDetectionTask, dimensionExcludeFilter string, excludedPools []string) (string, error) {
 	bbTableName, err := buildBucketBuildTableName(task.Project)
 	if err != nil {
-		return "", errors.Annotate(err, "buildBucketBuildTableName").Err()
+		return "", errors.Fmt("buildBucketBuildTableName: %w", err)
 	}
 
 	swarmingProject := ""
@@ -281,7 +281,7 @@ func generateTestFailuresQuery(task *tpb.TestFailureDetectionTask, dimensionExcl
 	case "chrome":
 		swarmingProject = "chrome-swarming"
 	default:
-		return "", errors.Reason("couldn't get swarming project for project %s", task.Project).Err()
+		return "", errors.Fmt("couldn't get swarming project for project %s", task.Project)
 	}
 
 	var b bytes.Buffer
@@ -292,7 +292,7 @@ func generateTestFailuresQuery(task *tpb.TestFailureDetectionTask, dimensionExcl
 		"ExcludedPools":          excludedPools,
 	})
 	if err != nil {
-		return "", errors.Annotate(err, "execute template").Err()
+		return "", errors.Fmt("execute template: %w", err)
 	}
 	return b.String(), nil
 }
@@ -349,13 +349,13 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return BuildInfo{}, errors.Annotate(err, "querying test_verdicts").Err()
+		return BuildInfo{}, errors.Fmt("querying test_verdicts: %w", err)
 	}
 	rowVals := map[string]bigquery.Value{}
 	// First row is for regression end position.
 	err = it.Next(&rowVals)
 	if err != nil {
-		return BuildInfo{}, errors.Annotate(err, "read build info row for regression end position").Err()
+		return BuildInfo{}, errors.Fmt("read build info row for regression end position: %w", err)
 	}
 	// Make sure the first row is for the end position.
 	if rowVals["Position"].(int64) != tf.RegressionEndPosition {
@@ -368,7 +368,7 @@ func (c *Client) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (Buil
 	// Second row is for regression start position.
 	err = it.Next(&rowVals)
 	if err != nil {
-		return BuildInfo{}, errors.Annotate(err, "read build info row for regression start position").Err()
+		return BuildInfo{}, errors.Fmt("read build info row for regression start position: %w", err)
 	}
 	// Make sure the second row is for the start position.
 	if rowVals["Position"].(int64) != tf.RegressionStartPosition {
@@ -406,7 +406,7 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 	}
 	err := validateTestVerdictKeys(keys)
 	if err != nil {
-		return nil, errors.Annotate(err, "validate keys").Err()
+		return nil, errors.Fmt("validate keys: %w", err)
 	}
 	clauses := make([]string, len(keys))
 	for i, key := range keys {
@@ -441,7 +441,7 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying test name").Err()
+		return nil, errors.Fmt("querying test name: %w", err)
 	}
 	results := map[TestVerdictKey]TestVerdictResult{}
 	for {
@@ -451,7 +451,7 @@ func (c *Client) ReadLatestVerdict(ctx context.Context, project string, keys []T
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next row").Err()
+			return nil, errors.Fmt("obtain next row: %w", err)
 		}
 		key := TestVerdictKey{
 			TestID:      row.TestID.String(),
@@ -477,7 +477,7 @@ type CountRow struct {
 func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project string, key TestVerdictKey, sinceCommitPosition int64) (bool, error) {
 	err := validateTestVerdictKeys([]TestVerdictKey{key})
 	if err != nil {
-		return false, errors.Annotate(err, "validate keys").Err()
+		return false, errors.Fmt("validate keys: %w", err)
 	}
 	// If there is a row with counts.total_non_skipped > counts.unexpected_non_skipped,
 	// It means there are some expected non skipped results.
@@ -504,7 +504,7 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 
 	it, err := q.Read(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "running query").Err()
+		return false, errors.Fmt("running query: %w", err)
 	}
 	row := &CountRow{}
 	err = it.Next(row)
@@ -512,7 +512,7 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 		return false, errors.New("cannot get count")
 	}
 	if err != nil {
-		return false, errors.Annotate(err, "obtain next row").Err()
+		return false, errors.Fmt("obtain next row: %w", err)
 	}
 	return row.Count.Int64 == 0, nil
 }

@@ -81,11 +81,11 @@ func CheckTreeCloser(c context.Context, project string, bucket string, builder s
 
 	cl, err := NewClient(c, luciNotifyHost)
 	if err != nil {
-		return false, errors.Annotate(err, "couldn't create tree closer client").Err()
+		return false, errors.Fmt("couldn't create tree closer client: %w", err)
 	}
 	res, err := cl.CheckTreeCloser(c, req)
 	if err != nil {
-		return false, errors.Annotate(err, "check tree closer (%s, %s, %s, %s)", project, bucket, builder, step).Err()
+		return false, errors.Fmt("check tree closer (%s, %s, %s, %s): %w", project, bucket, builder, step, err)
 	}
 
 	return res.IsTreeCloser, nil

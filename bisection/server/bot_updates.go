@@ -56,7 +56,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
 	if err != nil {
-		err = errors.Annotate(err, "failed GetCompileFailureAnalysis ID: %d", req.AnalysisId).Err()
+		err = errors.Fmt("failed GetCompileFailureAnalysis ID: %d: %w", req.AnalysisId, err)
 		errors.Log(c, err)
 		return nil, status.Errorf(codes.Internal, "error GetCompileFailureAnalysis")
 	}
@@ -79,7 +79,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 
 	lastRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunModel)
 	if err != nil {
-		err = errors.Annotate(err, "failed getting last rerun for build %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+		err = errors.Fmt("failed getting last rerun for build %d. Analysis ID: %d: %w", rerunModel.Id, req.AnalysisId, err)
 		errors.Log(c, err)
 		return nil, status.Errorf(codes.Internal, "error getting last rerun build")
 	}
@@ -87,7 +87,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	// Update rerun model
 	err = updateRerun(c, req, lastRerun)
 	if err != nil {
-		err = errors.Annotate(err, "failed updating rerun for build %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+		err = errors.Fmt("failed updating rerun for build %d. Analysis ID: %d: %w", rerunModel.Id, req.AnalysisId, err)
 		errors.Log(c, err)
 		return nil, status.Errorf(codes.Internal, "error updating rerun build")
 	}
@@ -102,7 +102,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	if lastRerun.Type == model.RerunBuildType_CulpritVerification {
 		err := updateSuspectWithRerunData(c, lastRerun)
 		if err != nil {
-			err = errors.Annotate(err, "updateSuspectWithRerunData for build id %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+			err = errors.Fmt("updateSuspectWithRerunData for build id %d. Analysis ID: %d: %w", rerunModel.Id, req.AnalysisId, err)
 			errors.Log(c, err)
 			return nil, status.Errorf(codes.Internal, "error updating suspect")
 		}
@@ -110,7 +110,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 		// Update analysis status
 		err = statusupdater.UpdateAnalysisStatus(c, cfa)
 		if err != nil {
-			err = errors.Annotate(err, "statusupdater.UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+			err = errors.Fmt("statusupdater.UpdateAnalysisStatus. Analysis ID: %d: %w", req.AnalysisId, err)
 			errors.Log(c, err)
 			return nil, status.Errorf(codes.Internal, "error UpdateAnalysisStatus")
 		}
@@ -125,21 +125,21 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	if lastRerun.Type == model.RerunBuildType_NthSection {
 		nsa, err := processNthSectionUpdate(c, req)
 		if err != nil {
-			err = errors.Annotate(err, "processNthSectionUpdate. Analysis ID: %d", req.AnalysisId).Err()
+			err = errors.Fmt("processNthSectionUpdate. Analysis ID: %d: %w", req.AnalysisId, err)
 			logging.Errorf(c, err.Error())
 
 			// If there is an error, then nthsection analysis may ended
 			// if there is no unfinised nthsection runs
 			e := setNthSectionError(c, nsa)
 			if e != nil {
-				e = errors.Annotate(e, "setNthSectionError. Analysis ID: %d", req.AnalysisId).Err()
+				e = errors.Fmt("setNthSectionError. Analysis ID: %d: %w", req.AnalysisId, e)
 				logging.Errorf(c, e.Error())
 			}
 
 			// Also the main analysis status may need to change as well
 			e = statusupdater.UpdateAnalysisStatus(c, cfa)
 			if e != nil {
-				e = errors.Annotate(e, "UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+				e = errors.Fmt("UpdateAnalysisStatus. Analysis ID: %d: %w", req.AnalysisId, e)
 				logging.Errorf(c, e.Error())
 			}
 			return nil, status.Errorf(codes.Internal, err.Error())
@@ -148,7 +148,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 		// Update analysis status
 		err = statusupdater.UpdateAnalysisStatus(c, cfa)
 		if err != nil {
-			err = errors.Annotate(err, "statusupdater.UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+			err = errors.Fmt("statusupdater.UpdateAnalysisStatus. Analysis ID: %d: %w", req.AnalysisId, err)
 			errors.Log(c, err)
 			return nil, status.Errorf(codes.Internal, "error UpdateAnalysisStatus")
 		}
@@ -173,7 +173,7 @@ func setNthSectionError(c context.Context, nsa *model.CompileNthSectionAnalysis)
 	}
 	reruns, err := datastoreutil.GetRerunsForNthSectionAnalysis(c, nsa)
 	if err != nil {
-		return errors.Annotate(err, "GetRerunsForNthSectionAnalysis").Err()
+		return errors.Fmt("GetRerunsForNthSectionAnalysis: %w", err)
 	}
 
 	for _, rerun := range reruns {
@@ -220,7 +220,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 
 	snapshot, err := nthsection.CreateSnapshot(c, nsa)
 	if err != nil {
-		return nsa, errors.Annotate(err, "couldn't create snapshot").Err()
+		return nsa, errors.Fmt("couldn't create snapshot: %w", err)
 	}
 
 	// Check if we already found the culprit or not
@@ -230,14 +230,14 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	if ok {
 		err := nthsection.SaveSuspectAndTriggerCulpritVerification(c, nsa, cfa, snapshot.BlameList.Commits[cul])
 		if err != nil {
-			return nsa, errors.Annotate(err, "save suspect and trigger culprit verification").Err()
+			return nsa, errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
 		return nsa, nil
 	}
 
 	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return nsa, errors.Annotate(err, "couldn't fetch config for nthsection").Err()
+		return nsa, errors.Fmt("couldn't fetch config for nthsection: %w", err)
 	}
 	if !shouldRunNthSection {
 		return nsa, nil
@@ -247,7 +247,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	var badRangeError *nthsectionsnapshot.BadRangeError
 	if err != nil {
 		if !errors.As(err, &badRangeError) {
-			return nsa, errors.Annotate(err, "find next single commit to run").Err()
+			return nsa, errors.Fmt("find next single commit to run: %w", err)
 		}
 		// BadRangeError suggests the regression range is invalid.
 		// This is not really an error, but more of a indication of no suspect can be found
@@ -274,7 +274,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	}
 	err = nthsection.RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, dims)
 	if err != nil {
-		return nsa, errors.Annotate(err, "rerun commit for %s", commit).Err()
+		return nsa, errors.Fmt("rerun commit for %s: %w", commit, err)
 	}
 	return nsa, nil
 }
@@ -291,7 +291,7 @@ func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSecti
 		return datastore.Put(c, nsa)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed updating nthsectionModel").Err()
+		return errors.Fmt("failed updating nthsectionModel: %w", err)
 	}
 	return nil
 }
@@ -308,18 +308,18 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 	}
 	err := datastore.Get(c, suspect)
 	if err != nil {
-		return errors.Annotate(err, "couldn't find suspect for rerun %d", rerun.Id).Err()
+		return errors.Fmt("couldn't find suspect for rerun %d: %w", rerun.Id, err)
 	}
 
 	err = updateSuspect(c, suspect)
 	if err != nil {
-		return errors.Annotate(err, "error updating suspect for rerun %d", rerun.Id).Err()
+		return errors.Fmt("error updating suspect for rerun %d: %w", rerun.Id, err)
 	}
 
 	if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
 		err = updateSuspectAsConfirmedCulprit(c, suspect)
 		if err != nil {
-			return errors.Annotate(err, "error updateSuspectAsConfirmedCulprit for rerun %d", rerun.Id).Err()
+			return errors.Fmt("error updateSuspectAsConfirmedCulprit for rerun %d: %w", rerun.Id, err)
 		}
 
 		// Cancel all remaining runs
@@ -332,7 +332,7 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 		})
 		if err != nil {
 			// Non-critical, just log the error
-			err := errors.Annotate(err, "schedule canceling analysis %d", analysisID).Err()
+			err := errors.Fmt("schedule canceling analysis %d: %w", analysisID, err)
 			logging.Errorf(c, err.Error())
 		}
 
@@ -348,9 +348,9 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 			},
 		})
 		if err != nil {
-			return errors.Annotate(err,
-				"error creating task in task queue to revert culprit (analysis ID=%d, suspect ID=%d)",
-				analysisID, suspect.Id).Err()
+			return errors.Fmt("error creating task in task queue to revert culprit (analysis ID=%d, suspect ID=%d): %w",
+				analysisID, suspect.Id, err)
+
 		}
 	}
 	return nil
@@ -451,7 +451,7 @@ func updateRerun(c context.Context, req *pb.UpdateAnalysisProgressRequest, rerun
 
 	if err != nil {
 		logging.Errorf(c, "Error updating SingleRerun for build %d: %s", req.Bbid, rerun)
-		return errors.Annotate(err, "saving SingleRerun").Err()
+		return errors.Fmt("saving SingleRerun: %w", err)
 	}
 	return nil
 }
