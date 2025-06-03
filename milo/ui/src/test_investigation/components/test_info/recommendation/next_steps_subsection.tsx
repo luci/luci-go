@@ -24,16 +24,14 @@ export function NextStepsSubsection() {
   const isLoadingAssociatedBugs = useIsLoadingAssociatedBugs();
 
   return (
-    <Box sx={{ flex: 1 }}>
-      <Typography
-        variant="subtitle1"
-        component="div"
-        gutterBottom
-        sx={{ fontWeight: 'medium' }}
-      >
-        Next steps
-      </Typography>
-
+    <Box
+      sx={{
+        flex: 1,
+        padding: 1,
+        borderRadius: '8px',
+        background: 'var(--blue-50, #E8F0FE)',
+      }}
+    >
       {associatedBugs && associatedBugs.length > 0 ? (
         associatedBugs.map((bug) => (
           <StyledActionBlock
@@ -56,7 +54,11 @@ export function NextStepsSubsection() {
       ) : isLoadingAssociatedBugs ? (
         <CircularProgress />
       ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 1.5, padding: 1, borderRadius: '8px', background: '#FFF' }}
+        >
           No associated bugs found for next steps.
         </Typography>
       )}

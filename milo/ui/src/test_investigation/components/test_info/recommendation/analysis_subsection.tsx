@@ -91,14 +91,21 @@ export function AnalysisSubsection({
   }, [invocation, testVariant, testVariantBranch, currentTimeForAgoDt]);
 
   return (
-    <Box sx={{ flex: 1 }}>
+    <Box
+      sx={{
+        flex: 1,
+        borderRadius: '8px',
+        background: 'var(--grey-50, #F8F9FA)',
+        padding: 1,
+      }}
+    >
       <Typography
         variant="subtitle1"
         component="div"
         gutterBottom
-        sx={{ fontWeight: 'medium' }}
+        sx={{ color: 'var(--grey-700, #5F6368)' }}
       >
-        Analysis
+        Relevant analysis
       </Typography>
 
       {analysisItems.length > 0 ? (

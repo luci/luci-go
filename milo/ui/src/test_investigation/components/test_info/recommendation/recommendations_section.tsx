@@ -53,7 +53,7 @@ export function RecommendationsSection() {
       }
     }
     return 'N/A';
-  }, [invocation?.finalizeTime]);
+  }, [invocation.finalizeTime, now]);
 
   return (
     <Box sx={{ flex: { md: 2 } }}>
@@ -69,12 +69,12 @@ export function RecommendationsSection() {
         <Box
           sx={{
             display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'space-between',
-            alignItems: 'center',
           }}
         >
           <Typography variant="h6" component="div">
-            Recommendation ({recommendationCount})
+            Suggested next steps ({recommendationCount})
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Last update: {lastUpdateTime}
@@ -87,10 +87,11 @@ export function RecommendationsSection() {
             flexDirection: { xs: 'column', sm: 'row' },
             gap: { xs: 2, sm: 3 },
             flexGrow: 1,
+            alignItems: 'flex-start',
           }}
         >
-          <AnalysisSubsection currentTimeForAgoDt={now} />
           <NextStepsSubsection />
+          <AnalysisSubsection currentTimeForAgoDt={now} />
         </Box>
       </Card>
     </Box>

@@ -118,7 +118,9 @@ describe('<AnalysisSubsection />', () => {
   it('should render the "Analysis" title', () => {
     renderComponent();
     expect(
-      screen.getByText('Analysis', { selector: 'div.MuiTypography-subtitle1' }),
+      screen.getByText('Relevant analysis', {
+        selector: 'div.MuiTypography-subtitle1',
+      }),
     ).toBeInTheDocument();
   });
 
