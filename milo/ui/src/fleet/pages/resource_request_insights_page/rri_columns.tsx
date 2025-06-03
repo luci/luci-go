@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ErrorIcon from '@mui/icons-material/Error';
-import { Box } from '@mui/material';
-import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { DateTime } from 'luxon';
+import { GridColDef } from '@mui/x-data-grid';
+import { Duration } from 'luxon';
 
-import { toIsoString } from '@/fleet/utils/dates';
+import { toIsoString, toLuxonDateTime } from '@/fleet/utils/dates';
+import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 import {
   ResourceRequest,
   ResourceRequest_Status,
@@ -25,84 +24,93 @@ import {
 
 import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
 
-export interface ColumnDescriptor {
+export interface RriColumnDescriptor {
   id: string;
-  gridColDef: GridColDef;
-  valueGetter: (rr: ResourceRequest) => string;
+  gridColDef: GridColDef & { field: keyof RriGridRow };
+  assignValue: (rr: ResourceRequest, row: RriGridRow) => void;
   isDefault: boolean;
 }
 
+interface DateWithOverdueData {
+  value: string;
+  overdue: Duration;
+}
+
 // RriGridRow describes the fields within a row in the UI.
-//
-// This allows rows to reference other rows in the column definitions.
-interface RriGridRow {
+export interface RriGridRow {
   id: string;
+  rrId: string;
   resource_details: string;
   expected_eta: string;
   fulfillment_status: string;
-  material_sourcing_target_delivery_date: string;
-  material_sourcing_actual_delivery_date: string;
-  build_actual_delivery_date: string;
-  qa_actual_delivery_date: string;
-  config_actual_delivery_date: string;
+  material_sourcing_actual_delivery_date: DateWithOverdueData;
+  build_actual_delivery_date: DateWithOverdueData;
+  qa_actual_delivery_date: DateWithOverdueData;
+  config_actual_delivery_date: DateWithOverdueData;
+  customer: string;
+  resource_name: string;
+  accepted_quantity: string;
+  criticality: string;
+  request_approval: string;
+  resource_pm: string;
+  fulfillment_channel: string;
+  execution_status: string;
+  resource_groups: string;
 }
 
-// isDateAfter compares two dates objects.
-//
-// Returns true if date1 is after date2.
-function isDateAfter(date1: string, date2: string): boolean {
-  if (!date1 || !date2) {
-    return false;
+const getDateWithOverdueData = (
+  resourceRequest: ResourceRequest,
+  actualDeliveryDate?: DateOnly,
+  targetDeliveryDate?: DateOnly,
+): DateWithOverdueData => {
+  if (resourceRequest.fulfillmentStatus === ResourceRequest_Status.COMPLETED) {
+    return {
+      value: toIsoString(actualDeliveryDate),
+      overdue: Duration.fromObject({ days: 0 }),
+    };
   }
-  const dt1 = DateTime.fromISO(date1);
-  const dt2 = DateTime.fromISO(date2);
-  if (!dt1 || !dt2) {
-    // Should not happen if DateOnly objects are valid and toLuxonDateTime handles them
-    return false;
-  }
-  return dt1 > dt2;
-}
 
-// createDateRenderCell renders the grid cell with a date and other icons.
-function createDateRenderCell(
-  expectedDateExtractor: (rr: RriGridRow) => string | '',
-  actualDateExtractor: (rr: RriGridRow) => string | '',
-): (props: GridRenderCellParams) => React.ReactElement {
-  const DateRenderCell = (props: GridRenderCellParams) => {
-    const rr = props.row;
-    const displayValue = props.value as string;
+  const overdue =
+    actualDeliveryDate && targetDeliveryDate
+      ? toLuxonDateTime(actualDeliveryDate)!.diff(
+          toLuxonDateTime(targetDeliveryDate)!,
+          'days',
+        )
+      : Duration.fromObject({ days: 0 });
 
-    const expectedDate = expectedDateExtractor(rr);
-    const actualDate = actualDateExtractor(rr);
-    const late = isDateAfter(actualDate, expectedDate);
-
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          height: '100%',
-        }}
-      >
-        <span>{displayValue}</span>
-        {late && <ErrorIcon style={{ color: 'red' }} />}
-      </Box>
-    );
+  return {
+    value: toIsoString(actualDeliveryDate),
+    overdue: overdue,
   };
-  return DateRenderCell;
-}
+};
+
+const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
+  return (
+    <>
+      <span>{date.value}</span>
+      {date.overdue.days > 0 && (
+        <span css={{ color: 'red', marginLeft: 20 }}>
+          {'('}
+          {date.overdue
+            .shiftTo('years', 'months', 'weeks', 'days')
+            .rescale()
+            .toHuman({ unitDisplay: 'narrow' })}
+          {')'}
+        </span>
+      )}
+    </>
+  );
+};
 
 export const rriColumns = [
   {
     id: 'rr_id',
     gridColDef: {
-      field: 'id',
+      field: 'rrId',
       headerName: 'RR ID',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.rrId,
+    assignValue: (rr, row) => (row.rrId = rr.rrId),
     isDefault: true,
   },
   {
@@ -112,7 +120,7 @@ export const rriColumns = [
       headerName: 'Resource Details',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.resourceDetails,
+    assignValue: (rr, row) => (row.resource_details = rr.resourceDetails),
     isDefault: true,
   },
   {
@@ -122,7 +130,7 @@ export const rriColumns = [
       headerName: 'Estimated Delivery Date',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.expectedEta),
+    assignValue: (rr, row) => (row.expected_eta = toIsoString(rr.expectedEta)),
     isDefault: true,
   },
   {
@@ -132,26 +140,16 @@ export const rriColumns = [
       headerName: 'Fulfillment Status',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) =>
-      rr.fulfillmentStatus !== undefined
-        ? fulfillmentStatusDisplayValueMap[
-            ResourceRequest_Status[
-              rr.fulfillmentStatus
-            ] as keyof typeof ResourceRequest_Status
-          ]
-        : '',
+    assignValue: (rr, row) =>
+      (row.fulfillment_status =
+        rr.fulfillmentStatus !== undefined
+          ? fulfillmentStatusDisplayValueMap[
+              ResourceRequest_Status[
+                rr.fulfillmentStatus
+              ] as keyof typeof ResourceRequest_Status
+            ]
+          : ''),
     isDefault: true,
-  },
-  {
-    id: 'material_sourcing_target_delivery_date',
-    gridColDef: {
-      field: 'material_sourcing_target_delivery_date',
-      headerName: 'Material Sourcing Target Delivery Date',
-      flex: 1,
-    },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.procurementTargetDeliveryDate),
-    isDefault: false,
   },
   {
     id: 'material_sourcing_actual_delivery_date',
@@ -159,13 +157,17 @@ export const rriColumns = [
       field: 'material_sourcing_actual_delivery_date',
       headerName: 'Material Sourcing Estimated Delivery Date',
       flex: 1,
-      renderCell: createDateRenderCell(
-        (rr: RriGridRow) => rr.material_sourcing_target_delivery_date,
-        (rr: RriGridRow) => rr.material_sourcing_actual_delivery_date,
-      ),
+      renderCell: (params) =>
+        renderDateCellWithOverdueIndicator(
+          (params.row as RriGridRow).material_sourcing_actual_delivery_date,
+        ),
     },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.procurementActualDeliveryDate),
+    assignValue: (rr, row) =>
+      (row.material_sourcing_actual_delivery_date = getDateWithOverdueData(
+        rr,
+        rr.procurementActualDeliveryDate,
+        rr.procurementTargetDeliveryDate,
+      )),
     isDefault: true,
   },
   {
@@ -174,9 +176,18 @@ export const rriColumns = [
       field: 'build_actual_delivery_date',
       headerName: 'Build Estimated Delivery Date',
       flex: 1,
+      renderCell: (params) =>
+        renderDateCellWithOverdueIndicator(
+          (params.row as RriGridRow).build_actual_delivery_date,
+        ),
     },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.buildActualDeliveryDate),
+    assignValue: (rr, row) => {
+      row.build_actual_delivery_date = getDateWithOverdueData(
+        rr,
+        rr.buildActualDeliveryDate,
+        rr.buildTargetDeliveryDate,
+      );
+    },
     isDefault: true,
   },
   {
@@ -185,8 +196,17 @@ export const rriColumns = [
       field: 'qa_actual_delivery_date',
       headerName: 'QA Estimated Delivery Date',
       flex: 1,
+      renderCell: (params) =>
+        renderDateCellWithOverdueIndicator(
+          (params.row as RriGridRow).qa_actual_delivery_date,
+        ),
     },
-    valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaActualDeliveryDate),
+    assignValue: (rr, row) =>
+      (row.qa_actual_delivery_date = getDateWithOverdueData(
+        rr,
+        rr.qaActualDeliveryDate,
+        rr.qaTargetDeliveryDate,
+      )),
     isDefault: true,
   },
   {
@@ -195,9 +215,17 @@ export const rriColumns = [
       field: 'config_actual_delivery_date',
       headerName: 'Config Estimated Delivery Date',
       flex: 1,
+      renderCell: (params) =>
+        renderDateCellWithOverdueIndicator(
+          (params.row as RriGridRow).config_actual_delivery_date,
+        ),
     },
-    valueGetter: (rr: ResourceRequest) =>
-      toIsoString(rr.configActualDeliveryDate),
+    assignValue: (rr, row) =>
+      (row.config_actual_delivery_date = getDateWithOverdueData(
+        rr,
+        rr.configActualDeliveryDate,
+        rr.configTargetDeliveryDate,
+      )),
     isDefault: true,
   },
   {
@@ -207,7 +235,7 @@ export const rriColumns = [
       headerName: 'Customer',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.customer ?? '',
+    assignValue: (rr, row) => (row.customer = rr.customer ?? ''),
     isDefault: true,
   },
   {
@@ -217,7 +245,7 @@ export const rriColumns = [
       headerName: 'Resource Name',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.resourceName ?? '',
+    assignValue: (rr, row) => (row.resource_name = rr.resourceName ?? ''),
     isDefault: true,
   },
   {
@@ -228,7 +256,8 @@ export const rriColumns = [
       flex: 1,
       type: 'number',
     },
-    valueGetter: (rr: ResourceRequest) => rr.acceptedQuantity?.toString() ?? '',
+    assignValue: (rr, row) =>
+      (row.accepted_quantity = rr.acceptedQuantity?.toString() ?? ''),
     isDefault: true,
   },
   {
@@ -238,7 +267,7 @@ export const rriColumns = [
       headerName: 'Criticality',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.criticality ?? '',
+    assignValue: (rr, row) => (row.criticality = rr.criticality ?? ''),
     isDefault: true,
   },
   {
@@ -248,7 +277,7 @@ export const rriColumns = [
       headerName: 'Request Approval',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.requestApproval ?? '',
+    assignValue: (rr, row) => (row.request_approval = rr.requestApproval ?? ''),
     isDefault: true,
   },
   {
@@ -258,7 +287,7 @@ export const rriColumns = [
       headerName: 'Resource PM',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.resourcePm ?? '',
+    assignValue: (rr, row) => (row.resource_pm = rr.resourcePm ?? ''),
     isDefault: true,
   },
   {
@@ -268,7 +297,8 @@ export const rriColumns = [
       headerName: 'Fulfillment Channel',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.fulfillmentChannel ?? '',
+    assignValue: (rr, row) =>
+      (row.fulfillment_channel = rr.fulfillmentChannel ?? ''),
     isDefault: true,
   },
   {
@@ -278,7 +308,7 @@ export const rriColumns = [
       headerName: 'Execution Status',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.executionStatus ?? '',
+    assignValue: (rr, row) => (row.execution_status = rr.executionStatus ?? ''),
     isDefault: true,
   },
   {
@@ -288,20 +318,19 @@ export const rriColumns = [
       headerName: 'Resource Groups',
       flex: 1,
     },
-    valueGetter: (rr: ResourceRequest) => rr.resourceGroups.join(', ') ?? '',
+    assignValue: (rr, row) =>
+      (row.resource_groups = rr.resourceGroups.join(', ')),
     isDefault: true,
   },
-] as const satisfies readonly ColumnDescriptor[];
+] as const satisfies readonly RriColumnDescriptor[];
 
 export type ResourceRequestColumnKey = (typeof rriColumns)[number]['id'];
-export type ResourceRequestColumnName =
-  (typeof rriColumns)[number]['gridColDef']['headerName'];
 
-export const DEFAULT_SORT_COLUMN: ColumnDescriptor =
+export const DEFAULT_SORT_COLUMN: RriColumnDescriptor =
   rriColumns.find((c) => c.id === 'rr_id') ?? rriColumns[0];
 
 export const getColumnByField = (
   field: string,
-): ColumnDescriptor | undefined => {
+): RriColumnDescriptor | undefined => {
   return rriColumns.find((c) => c.gridColDef.field === field);
 };

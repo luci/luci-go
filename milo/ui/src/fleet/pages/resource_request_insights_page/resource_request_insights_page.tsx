@@ -49,10 +49,11 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
-  ColumnDescriptor,
   DEFAULT_SORT_COLUMN,
   getColumnByField,
+  RriColumnDescriptor,
   rriColumns,
+  RriGridRow,
 } from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
 import {
@@ -141,8 +142,8 @@ export const ResourceRequestListPage = () => {
     COLUMNS_PARAM_KEY,
     RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
     rriColumns
-      .filter((column: ColumnDescriptor) => column.isDefault)
-      .map((column: ColumnDescriptor) => column.gridColDef.field),
+      .filter((column: RriColumnDescriptor) => column.isDefault)
+      .map((column: RriColumnDescriptor) => column.gridColDef.field),
   );
 
   const onColumnVisibilityModelChange = (
@@ -232,11 +233,11 @@ export const ResourceRequestListPage = () => {
     );
   }
 
-  const rows: Record<string, string>[] = query.data.resourceRequests.map(
-    (resourceRequest) => {
-      const row: Record<string, string> = {};
+  const rows: RriGridRow[] = query.data.resourceRequests.map(
+    (resourceRequest, index) => {
+      const row = { id: index.toString() } as RriGridRow;
       for (const column of rriColumns) {
-        row[column.gridColDef.field] = column.valueGetter(resourceRequest);
+        column.assignValue(resourceRequest, row);
       }
       return row;
     },
@@ -350,7 +351,7 @@ export const ResourceRequestListPage = () => {
           onSortModelChange={handleSortModelChange}
           columnVisibilityModel={getVisibilityModel(
             rriColumns.map(
-              (column: ColumnDescriptor) => column.gridColDef.field,
+              (column: RriColumnDescriptor) => column.gridColDef.field,
             ),
             visibleColumns,
           )}
