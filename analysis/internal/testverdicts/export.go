@@ -160,6 +160,7 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		Results:           results,
 		Exonerations:      exonerations,
 		Counts:            counts(results),
+		CountsV2:          countsV2(results),
 		BuildbucketBuild:  build,
 		ChangeVerifierRun: cvRun,
 		Sources:           sources,
@@ -210,6 +211,26 @@ func counts(results []*bqpb.TestVerdictRow_TestResult) *bqpb.TestVerdictRow_Coun
 					counts.UnexpectedNonSkippedNonPassed += 1
 				}
 			}
+		}
+	}
+	return counts
+}
+
+func countsV2(results []*bqpb.TestVerdictRow_TestResult) *bqpb.TestVerdictRow_CountsV2 {
+	counts := &bqpb.TestVerdictRow_CountsV2{}
+	for _, result := range results {
+		counts.Total += 1
+		switch result.StatusV2 {
+		case pb.TestResult_PASSED:
+			counts.Passed += 1
+		case pb.TestResult_FAILED:
+			counts.Failed += 1
+		case pb.TestResult_SKIPPED:
+			counts.Skipped += 1
+		case pb.TestResult_EXECUTION_ERRORED:
+			counts.ExecutionErrored += 1
+		case pb.TestResult_PRECLUDED:
+			counts.Precluded += 1
 		}
 	}
 	return counts

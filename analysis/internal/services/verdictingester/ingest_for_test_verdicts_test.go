@@ -329,6 +329,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			Sources: &pb.Sources{
@@ -391,6 +395,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Passed: 1,
+				Total:  1,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -435,6 +443,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 0, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
+			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Skipped: 1,
+				Total:   1,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
@@ -481,6 +493,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 0,
+			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
@@ -534,6 +550,11 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 2, TotalNonSkipped: 2, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Passed: 1,
+				Failed: 1,
+				Total:  2,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -577,6 +598,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -619,6 +644,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
@@ -687,6 +716,11 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 3, TotalNonSkipped: 3, Unexpected: 2, UnexpectedNonSkipped: 2, UnexpectedNonSkippedNonPassed: 2,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Passed: 1,
+				Failed: 2,
+				Total:  3,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -728,6 +762,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -768,6 +806,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 0, Unexpected: 1, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
 			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				ExecutionErrored: 1,
+				Total:            1,
+			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
@@ -806,6 +848,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
 				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 0,
+			},
+			CountsV2: &bqpb.TestVerdictRow_CountsV2{
+				Failed: 1,
+				Total:  1,
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,

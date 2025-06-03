@@ -41,7 +41,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 //   retain data for 510 days.
 // - Cluster by project, test_id.
 //
-// NextId: 21
+// NextId: 22
 message TestVerdictRow {
   // The LUCI Project. E.g. "chromium".
   string project = 1;
@@ -147,12 +147,14 @@ message TestVerdictRow {
     // Identifies a test result in a given invocation and test id.
     string result_id = 2;
 
+    // Deprecated: Use status_v2 instead.
     // Expected is a flag indicating whether the result of test case execution is
     // expected. Refer to TestResult.Expected for details.
-    bool expected = 3;
+    bool expected = 3 [ deprecated = true ];
 
+    // Deprecated: Use status_v2 and framework_extensions instead.
     // Status of the test result.
-    luci.analysis.v1.TestResultStatus status = 4;
+    luci.analysis.v1.TestResultStatus status = 4 [ deprecated = true ];
 
     // Status of the test result (v2).
     luci.analysis.v1.TestResult.Status status_v2 = 13;
@@ -181,7 +183,7 @@ message TestVerdictRow {
     // MUST not be set unless status is SKIP.
     // It's the string presentation of luci.resultdb.v1.SkipReason when
     // specified, "" when the skip reason is unspecified.
-    string skip_reason = 12;
+    string skip_reason = 12 [ deprecated = true ];
 
     // Reason why a test was skipped.
     // The contents of this message should help the user answer:
@@ -218,28 +220,55 @@ message TestVerdictRow {
   // use `ARRAY_LENGTH(exonerations) > 0`.
   repeated Exoneration exonerations = 9;
 
+  // Deprecated: Use CountsV2 instead.
+  // Counts of legacy test result statuses (expected+status).
   message Counts {
     // The total number of unexpected test results in the verdict.
-    int64 unexpected = 1;
+    int64 unexpected = 1 [ deprecated = true ];
 
     // The total number of test results in the verdict.
-    int64 total = 2;
+    int64 total = 2 [ deprecated = true ];
 
     // The total number of unexpected test results in the verdict
     // that are not skips.
-    int64 unexpected_non_skipped = 3;
+    int64 unexpected_non_skipped = 3 [ deprecated = true ];
 
     // The total number of unexpected test results in the verdict
     // that are not skips and not passes.
-    int64 unexpected_non_skipped_non_passed = 4;
+    int64 unexpected_non_skipped_non_passed = 4 [ deprecated = true ];
 
     // The total number of test results in the verdict that
     // are not skips.
-    int64 total_non_skipped = 5;
+    int64 total_non_skipped = 5 [ deprecated = true ];
   }
 
+  // Counts of v2 test result statuses (status_v2).
+  message CountsV2 {
+    // The total number of passed results (status_v2 = passed).
+    int64 passed = 1;
+
+    // The total number of failed results (status_v2 = failed).
+    int64 failed = 2;
+
+    // The total number of skipped results (status_v2 = skipped).
+    int64 skipped = 3;
+
+    // The total number of execution errored results (status_v2 = execution_errored).
+    int64 execution_errored = 4;
+
+    // The total number of precludeud results (status_v2 = precluded).
+    int64 precluded = 5;
+
+    // The total number of results.
+    int64 total = 6;
+  }
+
+  // Deprecated: Use counts_v2 instead.
   // Statistics about the test results that are part of the verdict.
-  Counts counts = 10;
+  Counts counts = 10 [ deprecated = true ];
+
+  // Statistics about the test results that are part of the verdict.
+  CountsV2 counts_v2 = 21;
 
   // Information about the buildbucket build which contained the test result.
   message BuildbucketBuild {
