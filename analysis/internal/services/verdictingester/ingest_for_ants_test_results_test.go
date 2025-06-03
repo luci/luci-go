@@ -15,6 +15,7 @@
 package verdictingester
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	antstestresultexporter "go.chromium.org/luci/analysis/internal/ants/testresults/exporter"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	ctrlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -69,6 +71,15 @@ func TestExportAntsTestResults(t *testing.T) {
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
 			verifyAnTSTestResultExport(t, antsTestResultsClient, true)
+			expectedChangepoint := []checkpoints.Checkpoint{{
+				Key: checkpoints.Key{
+					Project:    "android",
+					ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
+					ProcessID:  "verdict-ingestion/export-ants-test-results",
+					Uniquifier: "1",
+				},
+			}}
+			verifyCheckpoints(ctx, t, expectedChangepoint)
 		})
 
 		t.Run("not android project", func(t *ftt.Test) {
@@ -77,6 +88,7 @@ func TestExportAntsTestResults(t *testing.T) {
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
 			verifyAnTSTestResultExport(t, antsTestResultsClient, false)
+			verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{})
 		})
 
 	})

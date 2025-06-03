@@ -76,6 +76,9 @@ const (
 	// This is an offset relative to the current time. It is designed to
 	// allow for clock drift.
 	ingestionLatest = 24 * time.Hour
+
+	// Keep checkpoints for 90 days, so that task retries within 90 days are safe.
+	checkpointTTL = 90 * 24 * time.Hour
 )
 
 var (

@@ -16,6 +16,7 @@ package verdictingester
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +35,7 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
+	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	ctrlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -153,6 +155,15 @@ func TestExportTestVerdicts(t *testing.T) {
 		ingester := VerdictExporter{
 			exporter: testverdicts.NewExporter(testVerdicts),
 		}
+		expectedChangepoint := []checkpoints.Checkpoint{{
+			Key: checkpoints.Key{
+				Project:    "project",
+				ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
+				ProcessID:  "verdict-ingestion/export-test-verdicts",
+				Uniquifier: "1",
+			},
+		}}
+
 		t.Run("without build", func(t *ftt.Test) {
 			payload.Build = nil
 			payload.PresubmitRun = nil
@@ -160,11 +171,13 @@ func TestExportTestVerdicts(t *testing.T) {
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
 			verifyTestVerdicts(t, testVerdicts, partitionTime, false)
+			verifyCheckpoints(ctx, t, expectedChangepoint)
 		})
 		t.Run("with build", func(t *ftt.Test) {
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
 			verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+			verifyCheckpoints(ctx, t, expectedChangepoint)
 		})
 		t.Run("disabled in config", func(t *ftt.Test) {
 			cfg.TestVerdictExport = &configpb.TestVerdictExport{
@@ -176,6 +189,7 @@ func TestExportTestVerdicts(t *testing.T) {
 			err = ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
 			assert.Loosely(t, testVerdicts.Insertions, should.BeEmpty)
+			verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{})
 		})
 	})
 }
