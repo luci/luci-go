@@ -45,6 +45,21 @@ export const OptionsMenu = ({
 
   const virtualRows = virtualizer.getVirtualItems();
 
+  if (elements.length === 0) {
+    return (
+      <div
+        css={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px',
+          justifyContent: 'center',
+        }}
+      >
+        <span>No options available</span>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={parentRef}

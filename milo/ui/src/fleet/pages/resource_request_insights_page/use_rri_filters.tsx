@@ -55,6 +55,13 @@ export const filterDescriptors = {
   build_actual_delivery_date: 'date-range',
   qa_actual_delivery_date: 'date-range',
   config_actual_delivery_date: 'date-range',
+  customer: 'multi-select',
+  resource_name: 'multi-select',
+  criticality: 'multi-select',
+  request_approval: 'multi-select',
+  resource_pm: 'multi-select',
+  fulfillment_channel: 'multi-select',
+  execution_status: 'multi-select',
 } as const satisfies Partial<
   Record<ResourceRequestColumnKey, 'multi-select' | 'date-range'>
 >;
@@ -154,6 +161,13 @@ const getFiltersFromSearchParam = (
       'config_actual_delivery_date',
     ),
     fulfillment_status: rec['fulfillment_status']?.split(','),
+    customer: rec['customer']?.split(','),
+    resource_name: rec['resource_name']?.split(','),
+    criticality: rec['criticality']?.split(','),
+    request_approval: rec['request_approval']?.split(','),
+    resource_pm: rec['resource_pm']?.split(','),
+    fulfillment_channel: rec['fulfillment_channel']?.split(','),
+    execution_status: rec['execution_status']?.split(','),
   } satisfies Record<RriFilterKey, unknown>;
 };
 
@@ -268,13 +282,19 @@ const getElements = (
   data: GetResourceRequestsMultiselectFilterValuesResponse,
   option: RriFilterKey,
 ) => {
-  if (option === 'rr_id') {
-    return data.rrIds;
-  }
-  if (option === 'resource_details') {
-    return data.resourceDetails;
-  }
-  return [];
+  const map = {
+    rr_id: data.rrIds,
+    resource_details: data.resourceDetails,
+    customer: data.customer,
+    resource_name: data.resourceName,
+    criticality: data.criticality,
+    request_approval: data.requestApproval,
+    resource_pm: data.resourcePm,
+    fulfillment_channel: data.fulfillmentChannel,
+    execution_status: data.executionStatus,
+  } as Record<RriFilterKey, string[]>;
+
+  return map[option];
 };
 
 export const useRriFilters = () => {
@@ -333,6 +353,87 @@ export const useRriFilters = () => {
       value: 'config_actual_delivery_date',
       optionsComponent: DateFilter,
     },
+    {
+      value: 'customer',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(query.data, 'customer', searchQuery)[0]
+              ?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'resource_name',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'resource_name',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'criticality',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'criticality',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'request_approval',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'request_approval',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'resource_pm',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'resource_pm',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'fulfillment_channel',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'fulfillment_channel',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'execution_status',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'execution_status',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
   ] as const satisfies readonly RriFilterOption[];
 
   const filterData = useMemo(
@@ -364,6 +465,13 @@ export const useRriFilters = () => {
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
     config_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    customer: (v) => (v as string[]).join(', '),
+    resource_name: (v) => (v as string[]).join(', '),
+    criticality: (v) => (v as string[]).join(', '),
+    request_approval: (v) => (v as string[]).join(', '),
+    resource_pm: (v) => (v as string[]).join(', '),
+    fulfillment_channel: (v) => (v as string[]).join(', '),
+    execution_status: (v) => (v as string[]).join(', '),
   } as const satisfies Record<
     RriFilterKey,
     (filterValue: RriFilters[RriFilterKey]) => string

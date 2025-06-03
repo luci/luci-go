@@ -200,6 +200,97 @@ export const rriColumns = [
       toIsoString(rr.configActualDeliveryDate),
     isDefault: true,
   },
+  {
+    id: 'customer',
+    gridColDef: {
+      field: 'customer',
+      headerName: 'Customer',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.customer ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'resource_name',
+    gridColDef: {
+      field: 'resource_name',
+      headerName: 'Resource Name',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.resourceName ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'accepted_quantity',
+    gridColDef: {
+      field: 'accepted_quantity',
+      headerName: 'Accepted Quantity',
+      flex: 1,
+      type: 'number',
+    },
+    valueGetter: (rr: ResourceRequest) => rr.acceptedQuantity?.toString() ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'criticality',
+    gridColDef: {
+      field: 'criticality',
+      headerName: 'Criticality',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.criticality ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'request_approval',
+    gridColDef: {
+      field: 'request_approval',
+      headerName: 'Request Approval',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.requestApproval ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'resource_pm',
+    gridColDef: {
+      field: 'resource_pm',
+      headerName: 'Resource PM',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.resourcePm ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'fulfillment_channel',
+    gridColDef: {
+      field: 'fulfillment_channel',
+      headerName: 'Fulfillment Channel',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.fulfillmentChannel ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'execution_status',
+    gridColDef: {
+      field: 'execution_status',
+      headerName: 'Execution Status',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.executionStatus ?? '',
+    isDefault: true,
+  },
+  {
+    id: 'resource_groups',
+    gridColDef: {
+      field: 'resource_groups',
+      headerName: 'Resource Groups',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.resourceGroups.join(', ') ?? '',
+    isDefault: true,
+  },
 ] as const satisfies readonly ColumnDescriptor[];
 
 export type ResourceRequestColumnKey = (typeof rriColumns)[number]['id'];

@@ -325,6 +325,20 @@ export interface ResourceRequest {
     | undefined;
   /** Status of the Fulfillment bug for the resource request. */
   readonly fulfillmentStatus?: ResourceRequest_Status | undefined;
+  readonly materialSourcingStatus?: ResourceRequest_Status | undefined;
+  readonly buildStatus?: ResourceRequest_Status | undefined;
+  readonly qaStatus?: ResourceRequest_Status | undefined;
+  readonly configStatus?: ResourceRequest_Status | undefined;
+  readonly customer?: string | undefined;
+  readonly resourceGroup?: string | undefined;
+  readonly resourceName?: string | undefined;
+  readonly acceptedQuantity?: number | undefined;
+  readonly criticality?: string | undefined;
+  readonly requestApproval?: string | undefined;
+  readonly resourcePm?: string | undefined;
+  readonly fulfillmentChannel?: string | undefined;
+  readonly executionStatus?: string | undefined;
+  readonly resourceGroups: readonly string[];
 }
 
 export enum ResourceRequest_Status {
@@ -386,6 +400,23 @@ export interface GetResourceRequestsMultiselectFilterValuesRequest {
 export interface GetResourceRequestsMultiselectFilterValuesResponse {
   readonly rrIds: readonly string[];
   readonly resourceDetails: readonly string[];
+  readonly materialSourcingStatus: readonly string[];
+  readonly buildStatus: readonly string[];
+  readonly qaStatus: readonly string[];
+  readonly configStatus: readonly string[];
+  readonly customer: readonly string[];
+  readonly resourceName: readonly string[];
+  readonly acceptedQuantity: readonly number[];
+  readonly criticality: readonly string[];
+  readonly requestApproval: readonly string[];
+  readonly resourcePm: readonly string[];
+  readonly fulfillmentChannel: readonly string[];
+  readonly executionStatus: readonly string[];
+  /**
+   * Contains all unique string values from the 'resource_groups' (repeated) field
+   * across all resource requests.
+   */
+  readonly resourceGroups: readonly string[];
 }
 
 function createBasePingRequest(): PingRequest {
@@ -2683,6 +2714,20 @@ function createBaseResourceRequest(): ResourceRequest {
     configActualDeliveryDate: undefined,
     expectedEta: undefined,
     fulfillmentStatus: undefined,
+    materialSourcingStatus: undefined,
+    buildStatus: undefined,
+    qaStatus: undefined,
+    configStatus: undefined,
+    customer: undefined,
+    resourceGroup: undefined,
+    resourceName: undefined,
+    acceptedQuantity: undefined,
+    criticality: undefined,
+    requestApproval: undefined,
+    resourcePm: undefined,
+    fulfillmentChannel: undefined,
+    executionStatus: undefined,
+    resourceGroups: [],
   };
 }
 
@@ -2750,6 +2795,48 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.fulfillmentStatus !== undefined) {
       writer.uint32(72).int32(message.fulfillmentStatus);
+    }
+    if (message.materialSourcingStatus !== undefined) {
+      writer.uint32(208).int32(message.materialSourcingStatus);
+    }
+    if (message.buildStatus !== undefined) {
+      writer.uint32(216).int32(message.buildStatus);
+    }
+    if (message.qaStatus !== undefined) {
+      writer.uint32(224).int32(message.qaStatus);
+    }
+    if (message.configStatus !== undefined) {
+      writer.uint32(232).int32(message.configStatus);
+    }
+    if (message.customer !== undefined) {
+      writer.uint32(242).string(message.customer);
+    }
+    if (message.resourceGroup !== undefined) {
+      writer.uint32(250).string(message.resourceGroup);
+    }
+    if (message.resourceName !== undefined) {
+      writer.uint32(258).string(message.resourceName);
+    }
+    if (message.acceptedQuantity !== undefined) {
+      writer.uint32(264).int32(message.acceptedQuantity);
+    }
+    if (message.criticality !== undefined) {
+      writer.uint32(274).string(message.criticality);
+    }
+    if (message.requestApproval !== undefined) {
+      writer.uint32(282).string(message.requestApproval);
+    }
+    if (message.resourcePm !== undefined) {
+      writer.uint32(290).string(message.resourcePm);
+    }
+    if (message.fulfillmentChannel !== undefined) {
+      writer.uint32(298).string(message.fulfillmentChannel);
+    }
+    if (message.executionStatus !== undefined) {
+      writer.uint32(306).string(message.executionStatus);
+    }
+    for (const v of message.resourceGroups) {
+      writer.uint32(314).string(v!);
     }
     return writer;
   },
@@ -2929,6 +3016,118 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.fulfillmentStatus = reader.int32() as any;
           continue;
         }
+        case 26: {
+          if (tag !== 208) {
+            break;
+          }
+
+          message.materialSourcingStatus = reader.int32() as any;
+          continue;
+        }
+        case 27: {
+          if (tag !== 216) {
+            break;
+          }
+
+          message.buildStatus = reader.int32() as any;
+          continue;
+        }
+        case 28: {
+          if (tag !== 224) {
+            break;
+          }
+
+          message.qaStatus = reader.int32() as any;
+          continue;
+        }
+        case 29: {
+          if (tag !== 232) {
+            break;
+          }
+
+          message.configStatus = reader.int32() as any;
+          continue;
+        }
+        case 30: {
+          if (tag !== 242) {
+            break;
+          }
+
+          message.customer = reader.string();
+          continue;
+        }
+        case 31: {
+          if (tag !== 250) {
+            break;
+          }
+
+          message.resourceGroup = reader.string();
+          continue;
+        }
+        case 32: {
+          if (tag !== 258) {
+            break;
+          }
+
+          message.resourceName = reader.string();
+          continue;
+        }
+        case 33: {
+          if (tag !== 264) {
+            break;
+          }
+
+          message.acceptedQuantity = reader.int32();
+          continue;
+        }
+        case 34: {
+          if (tag !== 274) {
+            break;
+          }
+
+          message.criticality = reader.string();
+          continue;
+        }
+        case 35: {
+          if (tag !== 282) {
+            break;
+          }
+
+          message.requestApproval = reader.string();
+          continue;
+        }
+        case 36: {
+          if (tag !== 290) {
+            break;
+          }
+
+          message.resourcePm = reader.string();
+          continue;
+        }
+        case 37: {
+          if (tag !== 298) {
+            break;
+          }
+
+          message.fulfillmentChannel = reader.string();
+          continue;
+        }
+        case 38: {
+          if (tag !== 306) {
+            break;
+          }
+
+          message.executionStatus = reader.string();
+          continue;
+        }
+        case 39: {
+          if (tag !== 314) {
+            break;
+          }
+
+          message.resourceGroups.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2991,6 +3190,24 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       fulfillmentStatus: isSet(object.fulfillmentStatus)
         ? resourceRequest_StatusFromJSON(object.fulfillmentStatus)
         : undefined,
+      materialSourcingStatus: isSet(object.materialSourcingStatus)
+        ? resourceRequest_StatusFromJSON(object.materialSourcingStatus)
+        : undefined,
+      buildStatus: isSet(object.buildStatus) ? resourceRequest_StatusFromJSON(object.buildStatus) : undefined,
+      qaStatus: isSet(object.qaStatus) ? resourceRequest_StatusFromJSON(object.qaStatus) : undefined,
+      configStatus: isSet(object.configStatus) ? resourceRequest_StatusFromJSON(object.configStatus) : undefined,
+      customer: isSet(object.customer) ? globalThis.String(object.customer) : undefined,
+      resourceGroup: isSet(object.resourceGroup) ? globalThis.String(object.resourceGroup) : undefined,
+      resourceName: isSet(object.resourceName) ? globalThis.String(object.resourceName) : undefined,
+      acceptedQuantity: isSet(object.acceptedQuantity) ? globalThis.Number(object.acceptedQuantity) : undefined,
+      criticality: isSet(object.criticality) ? globalThis.String(object.criticality) : undefined,
+      requestApproval: isSet(object.requestApproval) ? globalThis.String(object.requestApproval) : undefined,
+      resourcePm: isSet(object.resourcePm) ? globalThis.String(object.resourcePm) : undefined,
+      fulfillmentChannel: isSet(object.fulfillmentChannel) ? globalThis.String(object.fulfillmentChannel) : undefined,
+      executionStatus: isSet(object.executionStatus) ? globalThis.String(object.executionStatus) : undefined,
+      resourceGroups: globalThis.Array.isArray(object?.resourceGroups)
+        ? object.resourceGroups.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -3058,6 +3275,48 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.fulfillmentStatus !== undefined) {
       obj.fulfillmentStatus = resourceRequest_StatusToJSON(message.fulfillmentStatus);
+    }
+    if (message.materialSourcingStatus !== undefined) {
+      obj.materialSourcingStatus = resourceRequest_StatusToJSON(message.materialSourcingStatus);
+    }
+    if (message.buildStatus !== undefined) {
+      obj.buildStatus = resourceRequest_StatusToJSON(message.buildStatus);
+    }
+    if (message.qaStatus !== undefined) {
+      obj.qaStatus = resourceRequest_StatusToJSON(message.qaStatus);
+    }
+    if (message.configStatus !== undefined) {
+      obj.configStatus = resourceRequest_StatusToJSON(message.configStatus);
+    }
+    if (message.customer !== undefined) {
+      obj.customer = message.customer;
+    }
+    if (message.resourceGroup !== undefined) {
+      obj.resourceGroup = message.resourceGroup;
+    }
+    if (message.resourceName !== undefined) {
+      obj.resourceName = message.resourceName;
+    }
+    if (message.acceptedQuantity !== undefined) {
+      obj.acceptedQuantity = Math.round(message.acceptedQuantity);
+    }
+    if (message.criticality !== undefined) {
+      obj.criticality = message.criticality;
+    }
+    if (message.requestApproval !== undefined) {
+      obj.requestApproval = message.requestApproval;
+    }
+    if (message.resourcePm !== undefined) {
+      obj.resourcePm = message.resourcePm;
+    }
+    if (message.fulfillmentChannel !== undefined) {
+      obj.fulfillmentChannel = message.fulfillmentChannel;
+    }
+    if (message.executionStatus !== undefined) {
+      obj.executionStatus = message.executionStatus;
+    }
+    if (message.resourceGroups?.length) {
+      obj.resourceGroups = message.resourceGroups;
     }
     return obj;
   },
@@ -3132,6 +3391,20 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       ? DateOnly.fromPartial(object.expectedEta)
       : undefined;
     message.fulfillmentStatus = object.fulfillmentStatus ?? undefined;
+    message.materialSourcingStatus = object.materialSourcingStatus ?? undefined;
+    message.buildStatus = object.buildStatus ?? undefined;
+    message.qaStatus = object.qaStatus ?? undefined;
+    message.configStatus = object.configStatus ?? undefined;
+    message.customer = object.customer ?? undefined;
+    message.resourceGroup = object.resourceGroup ?? undefined;
+    message.resourceName = object.resourceName ?? undefined;
+    message.acceptedQuantity = object.acceptedQuantity ?? undefined;
+    message.criticality = object.criticality ?? undefined;
+    message.requestApproval = object.requestApproval ?? undefined;
+    message.resourcePm = object.resourcePm ?? undefined;
+    message.fulfillmentChannel = object.fulfillmentChannel ?? undefined;
+    message.executionStatus = object.executionStatus ?? undefined;
+    message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
     return message;
   },
 };
@@ -3403,7 +3676,23 @@ export const GetResourceRequestsMultiselectFilterValuesRequest: MessageFns<
 };
 
 function createBaseGetResourceRequestsMultiselectFilterValuesResponse(): GetResourceRequestsMultiselectFilterValuesResponse {
-  return { rrIds: [], resourceDetails: [] };
+  return {
+    rrIds: [],
+    resourceDetails: [],
+    materialSourcingStatus: [],
+    buildStatus: [],
+    qaStatus: [],
+    configStatus: [],
+    customer: [],
+    resourceName: [],
+    acceptedQuantity: [],
+    criticality: [],
+    requestApproval: [],
+    resourcePm: [],
+    fulfillmentChannel: [],
+    executionStatus: [],
+    resourceGroups: [],
+  };
 }
 
 export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
@@ -3418,6 +3707,47 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     }
     for (const v of message.resourceDetails) {
       writer.uint32(18).string(v!);
+    }
+    for (const v of message.materialSourcingStatus) {
+      writer.uint32(26).string(v!);
+    }
+    for (const v of message.buildStatus) {
+      writer.uint32(34).string(v!);
+    }
+    for (const v of message.qaStatus) {
+      writer.uint32(42).string(v!);
+    }
+    for (const v of message.configStatus) {
+      writer.uint32(50).string(v!);
+    }
+    for (const v of message.customer) {
+      writer.uint32(58).string(v!);
+    }
+    for (const v of message.resourceName) {
+      writer.uint32(66).string(v!);
+    }
+    writer.uint32(74).fork();
+    for (const v of message.acceptedQuantity) {
+      writer.int32(v);
+    }
+    writer.join();
+    for (const v of message.criticality) {
+      writer.uint32(82).string(v!);
+    }
+    for (const v of message.requestApproval) {
+      writer.uint32(90).string(v!);
+    }
+    for (const v of message.resourcePm) {
+      writer.uint32(98).string(v!);
+    }
+    for (const v of message.fulfillmentChannel) {
+      writer.uint32(106).string(v!);
+    }
+    for (const v of message.executionStatus) {
+      writer.uint32(114).string(v!);
+    }
+    for (const v of message.resourceGroups) {
+      writer.uint32(122).string(v!);
     }
     return writer;
   },
@@ -3445,6 +3775,120 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
           message.resourceDetails.push(reader.string());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.materialSourcingStatus.push(reader.string());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.buildStatus.push(reader.string());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.qaStatus.push(reader.string());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.configStatus.push(reader.string());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.customer.push(reader.string());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.resourceName.push(reader.string());
+          continue;
+        }
+        case 9: {
+          if (tag === 72) {
+            message.acceptedQuantity.push(reader.int32());
+
+            continue;
+          }
+
+          if (tag === 74) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.acceptedQuantity.push(reader.int32());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.criticality.push(reader.string());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.requestApproval.push(reader.string());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.resourcePm.push(reader.string());
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.fulfillmentChannel.push(reader.string());
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.executionStatus.push(reader.string());
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.resourceGroups.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3460,6 +3904,41 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
       resourceDetails: globalThis.Array.isArray(object?.resourceDetails)
         ? object.resourceDetails.map((e: any) => globalThis.String(e))
         : [],
+      materialSourcingStatus: globalThis.Array.isArray(object?.materialSourcingStatus)
+        ? object.materialSourcingStatus.map((e: any) => globalThis.String(e))
+        : [],
+      buildStatus: globalThis.Array.isArray(object?.buildStatus)
+        ? object.buildStatus.map((e: any) => globalThis.String(e))
+        : [],
+      qaStatus: globalThis.Array.isArray(object?.qaStatus) ? object.qaStatus.map((e: any) => globalThis.String(e)) : [],
+      configStatus: globalThis.Array.isArray(object?.configStatus)
+        ? object.configStatus.map((e: any) => globalThis.String(e))
+        : [],
+      customer: globalThis.Array.isArray(object?.customer) ? object.customer.map((e: any) => globalThis.String(e)) : [],
+      resourceName: globalThis.Array.isArray(object?.resourceName)
+        ? object.resourceName.map((e: any) => globalThis.String(e))
+        : [],
+      acceptedQuantity: globalThis.Array.isArray(object?.acceptedQuantity)
+        ? object.acceptedQuantity.map((e: any) => globalThis.Number(e))
+        : [],
+      criticality: globalThis.Array.isArray(object?.criticality)
+        ? object.criticality.map((e: any) => globalThis.String(e))
+        : [],
+      requestApproval: globalThis.Array.isArray(object?.requestApproval)
+        ? object.requestApproval.map((e: any) => globalThis.String(e))
+        : [],
+      resourcePm: globalThis.Array.isArray(object?.resourcePm)
+        ? object.resourcePm.map((e: any) => globalThis.String(e))
+        : [],
+      fulfillmentChannel: globalThis.Array.isArray(object?.fulfillmentChannel)
+        ? object.fulfillmentChannel.map((e: any) => globalThis.String(e))
+        : [],
+      executionStatus: globalThis.Array.isArray(object?.executionStatus)
+        ? object.executionStatus.map((e: any) => globalThis.String(e))
+        : [],
+      resourceGroups: globalThis.Array.isArray(object?.resourceGroups)
+        ? object.resourceGroups.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -3470,6 +3949,45 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     }
     if (message.resourceDetails?.length) {
       obj.resourceDetails = message.resourceDetails;
+    }
+    if (message.materialSourcingStatus?.length) {
+      obj.materialSourcingStatus = message.materialSourcingStatus;
+    }
+    if (message.buildStatus?.length) {
+      obj.buildStatus = message.buildStatus;
+    }
+    if (message.qaStatus?.length) {
+      obj.qaStatus = message.qaStatus;
+    }
+    if (message.configStatus?.length) {
+      obj.configStatus = message.configStatus;
+    }
+    if (message.customer?.length) {
+      obj.customer = message.customer;
+    }
+    if (message.resourceName?.length) {
+      obj.resourceName = message.resourceName;
+    }
+    if (message.acceptedQuantity?.length) {
+      obj.acceptedQuantity = message.acceptedQuantity.map((e) => Math.round(e));
+    }
+    if (message.criticality?.length) {
+      obj.criticality = message.criticality;
+    }
+    if (message.requestApproval?.length) {
+      obj.requestApproval = message.requestApproval;
+    }
+    if (message.resourcePm?.length) {
+      obj.resourcePm = message.resourcePm;
+    }
+    if (message.fulfillmentChannel?.length) {
+      obj.fulfillmentChannel = message.fulfillmentChannel;
+    }
+    if (message.executionStatus?.length) {
+      obj.executionStatus = message.executionStatus;
+    }
+    if (message.resourceGroups?.length) {
+      obj.resourceGroups = message.resourceGroups;
     }
     return obj;
   },
@@ -3485,6 +4003,19 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     const message = createBaseGetResourceRequestsMultiselectFilterValuesResponse() as any;
     message.rrIds = object.rrIds?.map((e) => e) || [];
     message.resourceDetails = object.resourceDetails?.map((e) => e) || [];
+    message.materialSourcingStatus = object.materialSourcingStatus?.map((e) => e) || [];
+    message.buildStatus = object.buildStatus?.map((e) => e) || [];
+    message.qaStatus = object.qaStatus?.map((e) => e) || [];
+    message.configStatus = object.configStatus?.map((e) => e) || [];
+    message.customer = object.customer?.map((e) => e) || [];
+    message.resourceName = object.resourceName?.map((e) => e) || [];
+    message.acceptedQuantity = object.acceptedQuantity?.map((e) => e) || [];
+    message.criticality = object.criticality?.map((e) => e) || [];
+    message.requestApproval = object.requestApproval?.map((e) => e) || [];
+    message.resourcePm = object.resourcePm?.map((e) => e) || [];
+    message.fulfillmentChannel = object.fulfillmentChannel?.map((e) => e) || [];
+    message.executionStatus = object.executionStatus?.map((e) => e) || [];
+    message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
     return message;
   },
 };
