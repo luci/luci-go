@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/gerrit"
 	"go.chromium.org/luci/common/git/creds"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -131,10 +132,26 @@ func main() {
 			}
 			logging.Debugf(ctx, "Got attributes %+v", attrs)
 			ra := auth.NewReAuthenticator(a)
-			// TODO(ayatane): This will need to be
-			// replaced with a checker that checks whether
-			// ReAuth is needed.
-			if true {
+
+			c, err := ra.Client(ctx)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
+			var cache gerrit.ReAuthResultCache
+			cache = &gerrit.MemResultCache{}
+			if dir := opts.SecretsDir; dir != "" {
+				cache = gerrit.NewDiskResultCache(ctx, dir)
+			}
+			checker := gerrit.NewReAuthChecker(c, cache)
+			res, err := checker.Check(ctx, attrs)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
+			logging.Debugf(ctx, "Got ReAuth check result %+v", res)
+			// TODO(ayatane): Temporarily override check for testing
+			if res.NeedsRAPT || true {
 				if !attrs.HasAuthtypeCapability() {
 					fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 					os.Exit(1)
