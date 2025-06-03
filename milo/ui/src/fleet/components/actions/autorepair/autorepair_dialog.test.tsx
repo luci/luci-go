@@ -103,7 +103,7 @@ describe('<AutorepairDialog />', () => {
               project: 'proj',
               bucket: 'buck',
               builder: 'builder',
-              buildId: '1337',
+              buildId: 'b1337',
             },
           ],
         }}

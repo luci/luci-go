@@ -153,6 +153,6 @@ export function extractBuildIdentifiers(
 ): BuildIdentifier[] {
   return builds.responses.map(({ scheduleBuild }) => ({
     ...scheduleBuild?.builder,
-    buildId: scheduleBuild?.id,
+    buildId: scheduleBuild ? `b${scheduleBuild.id}` : '',
   }));
 }

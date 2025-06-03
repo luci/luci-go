@@ -58,7 +58,28 @@ export function generateBuildUrl(
   { project, bucket, builder, buildId }: BuildIdentifier,
   miloHost: string = FLEET_BUILDS_MILO_HOST,
 ) {
-  return `https://${miloHost}/p/${project}/builders/${bucket}/${builder}/b${buildId}`;
+  return `https://${miloHost}/p/${project}/builders/${bucket}/${builder}/${buildId}`;
+}
+
+function getBuildId(tagMap: Map<string, string>) {
+  const buildID = tagMap.get('buildbucket_build_id');
+  return buildID ? `b${buildID}` : tagMap.get('buildnumber');
+}
+
+function getBuilder(tagMap: Map<string, string>) {
+  return tagMap.get('builder') ?? tagMap.get('buildername');
+}
+
+function getProjectAndBucket(tagMap: Map<string, string>) {
+  const scopedBucket = tagMap.get('buildbucket_bucket');
+  if (scopedBucket !== undefined) {
+    if (scopedBucket.includes('/')) {
+      // Swarming returns Buildbucket data in a format like
+      // `chromeos/labpack_runner`.
+      return scopedBucket.split('/');
+    }
+  }
+  return [tagMap.get('project'), tagMap.get('bucket')];
 }
 
 /**
@@ -71,16 +92,12 @@ export function extractBuildUrlFromTagData(
   miloHost: string = FLEET_BUILDS_MILO_HOST,
 ): string | undefined {
   const tagMap = tagsToMap([...tags]);
-  const buildId = tagMap.get('buildbucket_build_id');
-  const scopedBucket = tagMap.get('buildbucket_bucket');
-  const builder = tagMap.get('builder');
-  if (!buildId || !scopedBucket || !builder) return undefined;
-
-  // Swarming returns Buildbucket data in a format like
-  // `chromeos/labpack_runner`.
-  if (!scopedBucket.includes('/')) return undefined;
-  const [project, bucket] = scopedBucket.split('/');
-
+  const buildId = getBuildId(tagMap);
+  const builder = getBuilder(tagMap);
+  const [project, bucket] = getProjectAndBucket(tagMap);
+  if (!buildId || !builder || !project || !bucket) {
+    return undefined;
+  }
   return generateBuildUrl({ project, builder, buildId, bucket }, miloHost);
 }
 

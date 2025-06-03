@@ -229,7 +229,10 @@ export const Tasks = ({
           <a
             href={
               buildUrl ??
-              getSwarmingTaskURL(DEVICE_TASKS_MILO_HOST, params.id.toString())
+              getSwarmingTaskURL(
+                DEVICE_TASKS_SWARMING_HOST,
+                params.id.toString(),
+              )
             }
             target="_blank"
             rel="noreferrer"
