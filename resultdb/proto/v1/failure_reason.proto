@@ -52,7 +52,7 @@ message FailureReason {
   //
   // Output only. (For backwards compatibility, some clients are still
   // allowed to set this, but new clients should set the errors field
-  // directly.)
+  // instead.)
   string primary_error_message = 1;
 
   // Error represents a problem that caused a test to fail, such as a crash

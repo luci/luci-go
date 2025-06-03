@@ -99,13 +99,13 @@ message TestResult {
   // An unexpected result != test case failure. There are test cases that are
   // expected to fail/skip/crash. The test harness compares the actual status
   // with the expected one(s) and this field is the result of the comparison.
-  bool expected = 5 [(google.api.field_behavior) = IMMUTABLE];
+  bool expected = 5 [(google.api.field_behavior) = IMMUTABLE, deprecated = true];
 
   // DEPRECATED: Replaced by `status_v2` enum.
   //
   // Machine-readable status of the test case.
   // MUST NOT be STATUS_UNSPECIFIED.
-  TestStatus status = 6 [(google.api.field_behavior) = IMMUTABLE];
+  TestStatus status = 6 [(google.api.field_behavior) = IMMUTABLE, deprecated = true];
 
   // The machine-readable test result statuses (v2).
   //
@@ -267,7 +267,7 @@ message TestResult {
   // Reasoning behind a test skip, in machine-readable form.
   // Used to assist downstream analyses, such as automatic bug-filing.
   // MUST not be set unless status is SKIP.
-  SkipReason skip_reason = 18;
+  SkipReason skip_reason = 18 [ deprecated = true ];
 
   // Reason why a test was skipped.
   // The contents of this message should help the user answer:
