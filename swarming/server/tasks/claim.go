@@ -71,7 +71,7 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 		// This happens if at least one entity is missing.
 		return &ClaimOpOutcome{Unavailable: "No such task"}, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching task entities").Err()
+		return nil, errors.Fmt("fetching task entities: %w", err)
 	}
 
 	// Recheck TaskToRun is still unclaimed.
@@ -141,11 +141,11 @@ func (m *managerImpl) ClaimTxn(ctx context.Context, op *ClaimOp) (*ClaimOpOutcom
 
 	// Store this all back.
 	if err := datastore.Put(ctx, ttr, trs, run); err != nil {
-		return nil, errors.Annotate(err, "storing task entities").Err()
+		return nil, errors.Fmt("storing task entities: %w", err)
 	}
 	// Emit PubSub notification indicating the task is running now.
 	if err := notifications.SendOnTaskUpdate(ctx, m.disp, op.Request, trs); err != nil {
-		return nil, errors.Annotate(err, "sending task updates").Err()
+		return nil, errors.Fmt("sending task updates: %w", err)
 	}
 
 	// Report metrics in case the transaction actually lands.

@@ -77,7 +77,7 @@ func (pcf *prodClientFactory) MakeClient(ctx context.Context, host, project stri
 func extractHostname(baseURL string) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		return "", errors.Annotate(err, "invalid base URL %q", baseURL).Err()
+		return "", errors.Fmt("invalid base URL %q: %w", baseURL, err)
 	}
 	return u.Hostname(), nil
 }

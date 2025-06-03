@@ -55,7 +55,7 @@ func (srv *TaskBackend) ValidateConfigs(ctx context.Context, req *bbpb.ValidateC
 	}
 	for i, cfgCtx := range req.Configs {
 		if err := srv.validateTarget(cfgCtx.GetTarget()); err != nil {
-			addErrs(i, errors.Annotate(err, "target").Err())
+			addErrs(i, errors.Fmt("target: %w", err))
 			continue
 		}
 		config, err := ingestBackendConfigWithDefaults(cfgCtx.GetConfigJson())
@@ -91,7 +91,7 @@ func (srv *TaskBackend) validateTarget(target string) error {
 	case target == "":
 		return errors.New("required")
 	case target != srv.BuildbucketTarget:
-		return errors.Reason("Expected %q, got %q", srv.BuildbucketTarget, target).Err()
+		return errors.Fmt("Expected %q, got %q", srv.BuildbucketTarget, target)
 	default:
 		return nil
 	}
@@ -116,25 +116,25 @@ func validateBackendConfig(cfg *apipb.SwarmingTaskBackendConfig) []error {
 	var errs []error
 	if cfg.GetPriority() != 0 {
 		if err := validate.Priority(cfg.Priority); err != nil {
-			errs = append(errs, errors.Annotate(err, "priority").Err())
+			errs = append(errs, errors.Fmt("priority: %w", err))
 		}
 	}
 
 	if cfg.GetBotPingTolerance() != 0 {
 		if err := validate.BotPingTolerance(cfg.BotPingTolerance); err != nil {
-			errs = append(errs, errors.Annotate(err, "bot_ping_tolerance").Err())
+			errs = append(errs, errors.Fmt("bot_ping_tolerance: %w", err))
 		}
 	}
 
 	if cfg.GetServiceAccount() != "" {
 		if err := validate.ServiceAccount(cfg.ServiceAccount); err != nil {
-			errs = append(errs, errors.Annotate(err, "service_account").Err())
+			errs = append(errs, errors.Fmt("service_account: %w", err))
 		}
 	}
 
 	for i, t := range cfg.Tags {
 		if err := validate.Tag(t); err != nil {
-			errs = append(errs, errors.Annotate(err, "tag %d", i).Err())
+			errs = append(errs, errors.Fmt("tag %d: %w", i, err))
 		}
 	}
 	return errs

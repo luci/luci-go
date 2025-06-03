@@ -79,7 +79,7 @@ func (a *BotsDimensionsAggregator) Prepare(ctx context.Context, shards int, last
 			res: &model.BotsDimensionsAggregation{
 				Key: model.BotsDimensionsAggregationKey(ctx),
 			},
-			err: errors.Reason("fetch incomplete due to a panic").Err(),
+			err: errors.New("fetch incomplete due to a panic"),
 		}
 		defer func() { a.current <- outcome }()
 		outcome.err = datastore.Get(ctx, outcome.res)
@@ -174,7 +174,7 @@ func (a *BotsDimensionsAggregator) Finalize(ctx context.Context, scanErr error) 
 		)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "updating BotsDimensionsAggregation entity").Err()
+		return errors.Fmt("updating BotsDimensionsAggregation entity: %w", err)
 	}
 	logging.Infof(ctx, "BotsDimensionsAggregation updated")
 	return nil

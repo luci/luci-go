@@ -86,7 +86,7 @@ func (m *managerImpl) ExpireSliceTxn(ctx context.Context, op *ExpireSliceOp) (*E
 		logging.Warningf(ctx, "task %q not found", taskID)
 		return &ExpireSliceTxnOutcome{}, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "datastore error fetching task result entities for task %s", taskID).Err()
+		return nil, errors.Fmt("datastore error fetching task result entities for task %s: %w", taskID, err)
 	}
 
 	if !ttr.IsReapable() {

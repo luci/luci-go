@@ -144,7 +144,7 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 			// `err` is not a MultiError in the case of an overall datastore failure
 			// (e.g. a time out). Skip the problematic batch and store the error in
 			// the global MultiError.
-			gmerr = append(gmerr, errors.Annotate(err, "fetching %d NamedCacheStats entities", len(batch)).Err())
+			gmerr = append(gmerr, errors.Fmt("fetching %d NamedCacheStats entities: %w", len(batch), err))
 			continue
 		}
 
@@ -153,7 +153,7 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 		for i, existingEnt := range existing {
 			if len(merr) != 0 {
 				if err := merr[i]; err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-					gmerr = append(gmerr, errors.Annotate(err, "fetching NamedCacheStats entity: %s", existingEnt.Key.StringID()).Err())
+					gmerr = append(gmerr, errors.Fmt("fetching NamedCacheStats entity: %s: %w", existingEnt.Key.StringID(), err))
 					continue
 				}
 			}
@@ -172,7 +172,7 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 		if len(updated) > 0 {
 			logging.Infof(ctx, "Storing a batch with %d NamedCacheStats entities", len(updated))
 			if err := datastore.Put(ctx, updated); err != nil {
-				gmerr = append(gmerr, errors.Annotate(err, "updating NamedCacheStats entities").Err())
+				gmerr = append(gmerr, errors.Fmt("updating NamedCacheStats entities: %w", err))
 			}
 		}
 	}

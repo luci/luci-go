@@ -104,7 +104,7 @@ func (s *SliceExpirationEnforcer) Finalize(ctx context.Context, _ error) error {
 	}
 	if failed := s.failedCount.Load(); failed != 0 {
 		logging.Errorf(ctx, "Failed to expire %d task slices", failed)
-		return errors.Reason("failed to expire some task slices").Err()
+		return errors.New("failed to expire some task slices")
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func (s *SliceExpirationEnforcer) expireSlice(ctx context.Context, reqKey *datas
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return false, nil // it is gone already, nothing to expire
 	case err != nil:
-		return false, errors.Annotate(err, "failed to fetch TaskRequest").Err()
+		return false, errors.Fmt("failed to fetch TaskRequest: %w", err)
 	}
 
 	toRunKey, err := model.TaskRequestToToRunKey(ctx, tr, int(sliceIndex))

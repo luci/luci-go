@@ -549,7 +549,7 @@ func TestReservationServer(t *testing.T) {
 
 			t.Run("No longer valid reservation", func(t *ftt.Test) {
 				prepReapableTaskToRun(0)
-				enqueueNewErr = errors.Annotate(ErrBadReservation, "boom").Err()
+				enqueueNewErr = errors.Fmt("boom: %w", ErrBadReservation)
 				assert.NoErr(t, expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
 					reservationID(0),

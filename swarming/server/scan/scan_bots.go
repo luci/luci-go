@@ -114,7 +114,7 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 	)
 	if scanErr != nil {
 		logging.Errorf(ctx, "Scan failed after %s. Visited bots: %d", clock.Since(ctx, startTS), total.Load())
-		scanErr = errors.Annotate(scanErr, "scanning BotInfo").Err()
+		scanErr = errors.Fmt("scanning BotInfo: %w", scanErr)
 	} else {
 		logging.Infof(ctx, "Scan done in %s. Total visited bots: %d", clock.Since(ctx, startTS), total.Load())
 	}
@@ -164,7 +164,7 @@ func (state botScannerState) bumpLastScan(id string, when time.Time) {
 func fetchState(ctx context.Context) (botScannerState, error) {
 	ent := &model.BotScannerState{Key: model.BotScannerStateKey(ctx)}
 	if err := datastore.Get(ctx, ent); err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-		return nil, errors.Annotate(err, "fetching BotScannerState").Err()
+		return nil, errors.Fmt("fetching BotScannerState: %w", err)
 	}
 	out := make(botScannerState, len(ent.VisitorState))
 	for i := range ent.VisitorState {
@@ -185,7 +185,7 @@ func storeState(ctx context.Context, state botScannerState) error {
 		return strings.Compare(a.VisitorID, b.VisitorID)
 	})
 	if err := datastore.Put(ctx, ent); err != nil {
-		return errors.Annotate(err, "storing BotScannerState").Err()
+		return errors.Fmt("storing BotScannerState: %w", err)
 	}
 	return nil
 }

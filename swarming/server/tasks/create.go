@@ -122,7 +122,7 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 	for i := range len(tr.TaskSlices) {
 		s := &tr.TaskSlices[i]
 		if err := s.PrecalculatePropertiesHash(sb); err != nil {
-			return nil, errors.Annotate(err, "error calculating properties hash for slice %d", i).Err()
+			return nil, errors.Fmt("error calculating properties hash for slice %d: %w", i, err)
 		}
 	}
 
@@ -191,7 +191,7 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 				return nil, ErrAlreadyExists
 			case err != nil:
 				logging.Errorf(ctx, "error creating ResultDB invocation: %s", err)
-				return nil, errors.Reason("error creating ResultDB invocation").Err()
+				return nil, errors.New("error creating ResultDB invocation")
 			}
 
 			tr.ResultDBUpdateToken = rdbUpdateToken
@@ -269,14 +269,14 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 
 		if trs.State != apipb.TaskState_PENDING {
 			if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
-				return errors.Annotate(err,
-					"failed to enqueue pubsub notification cloud tasks for creating task %s", taskID).Err()
+				return errors.Fmt("failed to enqueue pubsub notification cloud tasks for creating task %s: %w", taskID, err)
+
 			}
 		}
 		return datastore.Put(ctx, toPut...)
 	}, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "error saving the task").Err()
+		return nil, errors.Fmt("error saving the task: %w", err)
 	}
 
 	if dupResult != nil {

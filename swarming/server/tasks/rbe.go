@@ -125,7 +125,7 @@ func getRBEEffectiveBotIDDimension(ctx context.Context, s model.TaskSlice, cfg *
 	botID := botIDs[0]
 	conf, err := cfg.RBEConfig(botID)
 	if err != nil {
-		return "", errors.Annotate(ErrBadReservation, "conflicting RBE config for bot %q: %s", botID, err).Err()
+		return "", errors.Fmt("conflicting RBE config for bot %q: %s: %w", botID, err, ErrBadReservation)
 	}
 	return conf.EffectiveBotIDDimension, nil
 }
@@ -154,7 +154,7 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 				// during the initial validation). A different rbeEffectiveBotIDDim may
 				// be "broken". This should be rare. Return an error to give up on this
 				// reservation.
-				return "", nil, errors.Annotate(ErrBadReservation, "invalid effective bot ID dimension %q: %q", rbeEffectiveBotIDDim, values).Err()
+				return "", nil, errors.Fmt("invalid effective bot ID dimension %q: %q: %w", rbeEffectiveBotIDDim, values, ErrBadReservation)
 			}
 			if pool != "" {
 				effectiveBotID = model.RBEEffectiveBotID(pool, rbeEffectiveBotIDDim, values[0])
@@ -169,9 +169,9 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 		}
 	}
 	if effectiveBotIDFromBot != "" && effectiveBotID != "" && effectiveBotIDFromBot != effectiveBotID {
-		return "", nil, errors.Annotate(ErrBadReservation,
-			"conflicting effective bot IDs: %q (according to bot %q) and %q (according to task)",
-			effectiveBotIDFromBot, botID, effectiveBotID).Err()
+		return "", nil, errors.Fmt("conflicting effective bot IDs: %q (according to bot %q) and %q (according to task): %w",
+			effectiveBotIDFromBot, botID, effectiveBotID, ErrBadReservation)
+
 	}
 	if effectiveBotIDFromBot != "" {
 		botID = effectiveBotIDFromBot
@@ -190,7 +190,7 @@ func fetchEffectiveBotID(ctx context.Context, botID string) (string, error) {
 			logging.Errorf(ctx, "Failed to get effective bot ID for %q: %s", botID, err)
 			return "", nil
 		}
-		return "", errors.Annotate(err, "failed to get effective bot ID for %q", botID).Err()
+		return "", errors.Fmt("failed to get effective bot ID for %q: %w", botID, err)
 	}
 
 	if info.RBEEffectiveBotID == "" {

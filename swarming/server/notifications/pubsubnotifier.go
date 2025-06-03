@@ -77,7 +77,7 @@ type PubSubNotification struct {
 func NewPubSubNotifier(ctx context.Context, cloudProj string) (*PubSubNotifier, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get AsSelf credentails").Err()
+		return nil, errors.Fmt("failed to get AsSelf credentails: %w", err)
 	}
 	psClient, err := pubsub.NewClient(
 		ctx, cloudProj,
@@ -85,7 +85,7 @@ func NewPubSubNotifier(ctx context.Context, cloudProj string) (*PubSubNotifier, 
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create a pubsub client for %s", cloudProj).Err()
+		return nil, errors.Fmt("failed to create a pubsub client for %s: %w", cloudProj, err)
 	}
 	return &PubSubNotifier{
 		client:       psClient,
@@ -137,7 +137,7 @@ func (ps *PubSubNotifier) handlePubSubNotifyTask(ctx context.Context, t *taskspb
 		Userdata: t.Userdata,
 	}, "", "  ")
 	if err != nil {
-		return errors.Annotate(err, "cannot compose the pubsub msg").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("cannot compose the pubsub msg: %w", err))
 	}
 	psMsg := &pubsub.Message{
 		Data: data,
@@ -175,25 +175,29 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 	buildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, taskReq)}
 	switch err := datastore.Get(ctx, buildTask); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "cannot find BuildTask").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("cannot find BuildTask: %w", err))
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch BuildTask").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// Shouldn't make the update.
+			Fmt("failed to fetch BuildTask: %w", err))
 	}
 
-	// Shouldn't make the update.
 	if buildTask.UpdateID >= t.UpdateId || buildTask.LatestTaskStatus == t.State {
 		return nil
 	}
 
 	resultSummary := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, taskReq)}
 	if err := datastore.Get(ctx, resultSummary); err != nil {
-		return errors.Annotate(err, "failed to fetch TaskResultSummary").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// construct bbpb.Task
+			//
+			// TODO(vadimsh): See if BuildTask.ToProto can be reused. It uses task state
+			// from the up-to-date resultSummary which is different from `t.State`.
+			Fmt("failed to fetch TaskResultSummary: %w", err))
 	}
 
-	// construct bbpb.Task
-	//
-	// TODO(vadimsh): See if BuildTask.ToProto can be reused. It uses task state
-	// from the up-to-date resultSummary which is different from `t.State`.
 	botDims := buildTask.BotDimensions
 	if len(botDims) == 0 {
 		botDims = resultSummary.BotDimensions
@@ -230,16 +234,18 @@ func (ps *PubSubNotifier) handleBBNotifyTask(ctx context.Context, t *taskspb.Bui
 		Task:    bbTask,
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal BuildTaskUpdate").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("failed to marshal BuildTaskUpdate: %w", err))
 	}
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: bytes,
 	})
 	if _, err = result.Get(ctx); err != nil {
-		return errors.Annotate(err, "failed to send buildbucket task update").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+
+			// update the BuildTask entity in Datastore
+			Fmt("failed to send buildbucket task update: %w", err))
 	}
 
-	// update the BuildTask entity in Datastore
 	buildTask.LatestTaskStatus = t.State
 	buildTask.UpdateID = t.UpdateId
 	if len(buildTask.BotDimensions) == 0 {
@@ -311,13 +317,13 @@ func SendOnTaskUpdate(ctx context.Context, disp *tq.Dispatcher, tr *model.TaskRe
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	if tr.PubSubTopic != "" {
 		if err := notifyPubSub(ctx, disp, taskID, tr, trs, now); err != nil {
-			return errors.Annotate(err, "failed to enqueue PubSub notification task for %s", taskID).Err()
+			return errors.Fmt("failed to enqueue PubSub notification task for %s: %w", taskID, err)
 		}
 	}
 
 	if tr.HasBuildTask {
 		if err := notifyBuildbucket(ctx, disp, taskID, trs, now); err != nil {
-			return errors.Annotate(err, "failed to enqueue Buildbucket notification task for %s", taskID).Err()
+			return errors.Fmt("failed to enqueue Buildbucket notification task for %s: %w", taskID, err)
 		}
 	}
 	return nil

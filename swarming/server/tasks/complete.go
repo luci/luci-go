@@ -329,7 +329,7 @@ func calculateBotEventType(taskState apipb.TaskState) (model.BotEventType, error
 	case apipb.TaskState_KILLED:
 		return model.BotEventTaskKilled, nil
 	default:
-		return "", errors.Reason("unexpected task state %s", taskState.String()).Err()
+		return "", errors.Fmt("unexpected task state %s", taskState.String())
 	}
 }
 
@@ -342,9 +342,9 @@ func (m *managerImpl) finalizeResultDBInvocation(ctx context.Context, taskID str
 	tr, err := model.FetchTaskRequest(ctx, reqKey)
 	switch {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "task %q not found", taskID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("task %q not found: %w", taskID, err))
 	case err != nil:
-		return errors.Annotate(err, "failed to get task %q", taskID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to get task %q: %w", taskID, err))
 	}
 	if tr.ResultDBUpdateToken == "" {
 		return nil
@@ -353,17 +353,17 @@ func (m *managerImpl) finalizeResultDBInvocation(ctx context.Context, taskID str
 	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, reqKey)}
 	switch err := datastore.Get(ctx, trs); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "task %q not found", taskID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("task %q not found: %w", taskID, err))
 	case err != nil:
-		return errors.Annotate(err, "failed to get task %q", taskID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to get task %q: %w", taskID, err))
 	}
 	if trs.ResultDBInfo.Hostname == "" {
-		return errors.Reason("task result %q misses resultdb info", taskID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("task result %q misses resultdb info", taskID))
 	}
 	project, _ := realms.Split(trs.RequestRealm)
 	client, err := m.rdb.MakeClient(ctx, trs.ResultDBInfo.Hostname, project)
 	if err != nil {
-		return errors.Annotate(err, "failed to create resultdb client").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to create resultdb client: %w", err))
 	}
 	return client.FinalizeInvocation(ctx, trs.ResultDBInfo.Invocation, tr.ResultDBUpdateToken)
 }

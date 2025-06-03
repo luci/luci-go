@@ -57,7 +57,7 @@ func newTSMonState(serviceName, jobName string, mon monitor.Monitor) *tsmon.Stat
 func flushTSMonState(ctx context.Context, state *tsmon.State) error {
 	startTS := clock.Now(ctx)
 	if err := state.ParallelFlush(ctx, nil, 32); err != nil {
-		return errors.Annotate(err, "failed to flush metrics").Err()
+		return errors.Fmt("failed to flush metrics: %w", err)
 	}
 	logging.Infof(ctx, "Flushed metrics in %s", clock.Since(ctx, startTS))
 	return nil

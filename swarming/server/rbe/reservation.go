@@ -186,14 +186,14 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 	// should stop this retry loop.
 	ttr, err := newTaskToRunFromPayload(ctx, task.Payload)
 	if err != nil {
-		return errors.Annotate(err, "bad EnqueueRBETask payload").Err()
+		return errors.Fmt("bad EnqueueRBETask payload: %w", err)
 	}
 	switch err := datastore.Get(ctx, ttr); {
 	case err == datastore.ErrNoSuchEntity:
 		logging.Warningf(ctx, "TaskToRun entity is already gone")
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch TaskToRun: %w", err))
 	case !ttr.IsReapable():
 		logging.Warningf(ctx, "TaskToRun is no longer pending")
 		return nil
@@ -206,7 +206,7 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 
 	payload, err := anypb.New(task.Payload)
 	if err != nil {
-		return errors.Annotate(err, "failed to serialize the payload").Err()
+		return errors.Fmt("failed to serialize the payload: %w", err)
 	}
 
 	constraints := make([]*remoteworkers.Constraint, len(task.Constraints))
@@ -296,7 +296,7 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 		// RBE doesn't like format of dimensions (i.e. should not happen).
 		reasonCode = internalspb.ExpireSliceRequest_INVALID_ARGUMENT
 	default:
-		return errors.Reason("unexpected RBE gRPC status code in %s", reason).Err()
+		return errors.Fmt("unexpected RBE gRPC status code in %s", reason)
 	}
 
 	// Tell Swarming to switch to the next slice, if necessary.
@@ -319,7 +319,7 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 	})
 	err = grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch reservation %s", reservationName).Err()
+		return errors.Fmt("failed to fetch reservation %s: %w", reservationName, err)
 	}
 
 	// Don't care about pending reservations.
@@ -351,7 +351,7 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 	// It must be present in all leases.
 	var payload internalspb.TaskPayload
 	if err := reservation.Payload.UnmarshalTo(&payload); err != nil {
-		return errors.Annotate(err, "failed to unmarshal reservation %s payload", reservationName).Err()
+		return errors.Fmt("failed to unmarshal reservation %s payload: %w", reservationName, err)
 	}
 	logging.Infof(ctx, "TaskPayload:\n%s", prettyProto(&payload))
 
@@ -360,7 +360,7 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 	if reservation.Result != nil {
 		var result internalspb.TaskResult
 		if err := reservation.Result.UnmarshalTo(&result); err != nil {
-			return errors.Annotate(err, "failed to unmarshal reservation result").Err()
+			return errors.Fmt("failed to unmarshal reservation result: %w", err)
 		}
 		if result.BotInternalError != "" {
 			if statusErr != nil {
@@ -387,14 +387,14 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 	// canceled per Swarming datastore state, there's nothing to do.
 	ttr, err := newTaskToRunFromPayload(ctx, &payload)
 	if err != nil {
-		return errors.Annotate(err, "bad TaskPayload").Err()
+		return errors.Fmt("bad TaskPayload: %w", err)
 	}
 	switch err := datastore.Get(ctx, ttr); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Warningf(ctx, "TaskToRun entity is already gone")
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch TaskToRun: %w", err))
 	case !ttr.IsReapable():
 		return nil
 	case ttr.RBEReservation != payload.ReservationId:
@@ -513,7 +513,7 @@ func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return errors.New("TaskRequest not found")
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch TaskRequest: %w", err))
 	}
 
 	var reason tasks.ExpireReason
@@ -544,7 +544,7 @@ func (s *ReservationServer) expireSliceGo(ctx context.Context, task *internalspb
 		return err
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to expire slice").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to expire slice: %w", err))
 	}
 	return nil
 }
@@ -563,7 +563,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		logging.Warningf(ctx, "TaskRequest entity is already gone")
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch TaskRequest").Err()
+		return errors.Fmt("failed to fetch TaskRequest: %w", err)
 	}
 
 	submitted := false
@@ -577,7 +577,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 			logging.Warningf(tctx, "TaskToRun entity is already gone")
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch TaskToRun").Err()
+			return errors.Fmt("failed to fetch TaskToRun: %w", err)
 		case !ttr.IsReapable():
 			logging.Warningf(tctx, "TaskToRun is no longer pending")
 			return nil
@@ -593,7 +593,7 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		ttr.RetryCount++
 		ttr.RBEReservation = model.NewReservationID(s.serverProject, ttr.Key.Parent(), ttr.TaskSliceIndex(), int(ttr.RetryCount))
 		if err := datastore.Put(tctx, ttr); err != nil {
-			return errors.Annotate(err, "failed to store TaskToRun").Err()
+			return errors.Fmt("failed to store TaskToRun: %w", err)
 		}
 		return s.enqueueNew(tctx, s.disp, tr, ttr, s.cfg.Cached(ctx))
 	}, nil)

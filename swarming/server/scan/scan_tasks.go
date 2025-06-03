@@ -75,7 +75,7 @@ func ActiveTasks(ctx context.Context, visitors []TaskVisitor) error {
 	})
 	if scanErr != nil {
 		logging.Errorf(ctx, "Scan failed after %s. Visited tasks: %d", clock.Since(ctx, startTS), total)
-		scanErr = errors.Annotate(scanErr, "scanning TaskResultSummary").Err()
+		scanErr = errors.Fmt("scanning TaskResultSummary: %w", scanErr)
 	} else {
 		logging.Infof(ctx, "Scan done in %s. Total visited tasks: %d", clock.Since(ctx, startTS), total)
 	}

@@ -195,7 +195,7 @@ func findPool(req *apipb.NewTaskRequest) (string, error) {
 		if pool == "" {
 			pool = curPool
 		} else if pool != curPool {
-			return "", errors.Reason("each task slice must use the same pool dimensions; %q != %q", pool, curPool).Err()
+			return "", errors.Fmt("each task slice must use the same pool dimensions; %q != %q", pool, curPool)
 		}
 	}
 	return pool, nil
@@ -217,7 +217,7 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 	case req.GetExpirationSecs() != 0:
 		return errors.New("expiration_secs is deprecated, set it in task_slices instead.")
 	case len(req.GetTaskSlices()) > maxSliceCount:
-		return errors.Reason("can have up to %d slices", maxSliceCount).Err()
+		return errors.Fmt("can have up to %d slices", maxSliceCount)
 	case teeErr(validateParentTaskID(ctx, req.GetParentTaskId()), &err) != nil:
 		return errors.WrapIf(err, "parent_task_id")
 	case teeErr(validate.Priority(req.GetPriority()), &err) != nil:
@@ -235,17 +235,17 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 	case teeErr(validateRealm(req.GetRealm()), &err) != nil:
 		return err
 	case len(req.GetTags()) > maxTagCount:
-		return errors.Reason("up to %d tags", maxTagCount).Err()
+		return errors.Fmt("up to %d tags", maxTagCount)
 	}
 
 	_, _, err = validate.PubSubTopicName(req.GetPubsubTopic())
 	if err != nil {
-		return errors.Annotate(err, "pubsub_topic").Err()
+		return errors.Fmt("pubsub_topic: %w", err)
 	}
 
 	for i, tag := range req.GetTags() {
 		if err := validate.Tag(tag); err != nil {
-			return errors.Annotate(err, "tag %d", i).Err()
+			return errors.Fmt("tag %d: %w", i, err)
 		}
 	}
 
@@ -254,7 +254,7 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 		curSecret := s.Properties.GetSecretBytes()
 		curLen := len(curSecret)
 		if curLen > maxSecretBytesLength {
-			return errors.Reason("secret_bytes of slice %d has size %d, exceeding limit %d", i, curLen, maxSecretBytesLength).Err()
+			return errors.Fmt("secret_bytes of slice %d has size %d, exceeding limit %d", i, curLen, maxSecretBytesLength)
 		}
 		if len(sb) == 0 {
 			sb = curSecret
@@ -265,11 +265,11 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 		}
 
 		if err = validateTimeoutSecs(s.ExpirationSecs, maxExpirationSecs, minTimeOutSecs, false); err != nil {
-			return errors.Annotate(err, "invalid expiration_secs of slice %d", i).Err()
+			return errors.Fmt("invalid expiration_secs of slice %d: %w", i, err)
 		}
 
 		if err = validateProperties(ctx, s.Properties, pool); err != nil {
-			return errors.Annotate(err, "invalid properties of slice %d", i).Err()
+			return errors.Fmt("invalid properties of slice %d: %w", i, err)
 		}
 	}
 
@@ -281,7 +281,7 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest, pool string
 	for i, s := range req.TaskSlices {
 		pb, err := proto.Marshal(s.Properties)
 		if err != nil {
-			return errors.Reason("failed to marshal properties for slice %d", i).Err()
+			return errors.Fmt("failed to marshal properties for slice %d", i)
 		}
 		if !propsSet.Add(string(pb)) {
 			return errors.New("cannot request duplicate task slice")
@@ -328,8 +328,7 @@ func validateTimeoutSecs(timeoutSecs int32, max, min int32, allowZero bool) erro
 		return nil
 	}
 	if timeoutSecs > max || timeoutSecs < min {
-		return errors.Reason(
-			"%d must be between %ds and %ds", timeoutSecs, min, max).Err()
+		return errors.Fmt("%d must be between %ds and %ds", timeoutSecs, min, max)
 	}
 	return nil
 }
@@ -365,11 +364,11 @@ func validateProperties(ctx context.Context, props *apipb.TaskProperties, pool s
 	}
 
 	if err = validateCipdInput(props.GetCipdInput(), props.GetIdempotent(), doc); err != nil {
-		return errors.Annotate(err, "cipd_input").Err()
+		return errors.Fmt("cipd_input: %w", err)
 	}
 
 	if err = validateDimensions(ctx, props.Dimensions, pool); err != nil {
-		return errors.Annotate(err, "dimensions").Err()
+		return errors.Fmt("dimensions: %w", err)
 	}
 	return nil
 }
@@ -379,14 +378,14 @@ func validateCommand(cmd []string) error {
 		return errors.New("required")
 	}
 	if len(cmd) > maxCmdArgs {
-		return errors.Reason("can have up to %d arguments", maxCmdArgs).Err()
+		return errors.Fmt("can have up to %d arguments", maxCmdArgs)
 	}
 	return nil
 }
 
 func validateEnv(env []*apipb.StringPair) error {
 	if len(env) > validate.MaxEnvVarCount {
-		return errors.Reason("can have up to %d keys", validate.MaxEnvVarCount).Err()
+		return errors.Fmt("can have up to %d keys", validate.MaxEnvVarCount)
 	}
 	envKeys := stringset.New(len(env))
 	for i, env := range env {
@@ -394,10 +393,10 @@ func validateEnv(env []*apipb.StringPair) error {
 			return errors.New("same key cannot be specified twice")
 		}
 		if err := validate.EnvVar(env.Key); err != nil {
-			return errors.Annotate(err, "key %d", i).Err()
+			return errors.Fmt("key %d: %w", i, err)
 		}
 		if err := validate.Length(env.Value, validate.MaxEnvValueLength); err != nil {
-			return errors.Annotate(err, "value %d", i).Err()
+			return errors.Fmt("value %d: %w", i, err)
 		}
 	}
 	return nil
@@ -405,7 +404,7 @@ func validateEnv(env []*apipb.StringPair) error {
 
 func validateEnvPrefixes(envPrefixes []*apipb.StringListPair) error {
 	if len(envPrefixes) > validate.MaxEnvVarCount {
-		return errors.Reason("can have up to %d keys", validate.MaxEnvVarCount).Err()
+		return errors.Fmt("can have up to %d keys", validate.MaxEnvVarCount)
 	}
 	epKeys := stringset.New(len(envPrefixes))
 	for i, ep := range envPrefixes {
@@ -413,14 +412,14 @@ func validateEnvPrefixes(envPrefixes []*apipb.StringListPair) error {
 			return errors.New("same key cannot be specified twice")
 		}
 		if err := validate.EnvVar(ep.Key); err != nil {
-			return errors.Annotate(err, "key %d", i).Err()
+			return errors.Fmt("key %d: %w", i, err)
 		}
 		if len(ep.Value) == 0 {
 			return errors.New("value is required")
 		}
 		for j, p := range ep.Value {
 			if err := validate.Path(p, validate.MaxEnvValueLength, false); err != nil {
-				return errors.Annotate(err, "value %d-%d", i, j).Err()
+				return errors.Fmt("value %d-%d: %w", i, j, err)
 			}
 		}
 	}
@@ -435,7 +434,7 @@ func validateCasInputRoot(casInputRoot *apipb.CASReference) error {
 	case casInputRoot.CasInstance == "":
 		return errors.New("cas_instance is required")
 	case !casInstanceRe.MatchString(casInputRoot.CasInstance):
-		return errors.Reason("cas_instance %q should match %s", casInputRoot.CasInstance, casInstanceRe).Err()
+		return errors.Fmt("cas_instance %q should match %s", casInputRoot.CasInstance, casInstanceRe)
 	case teeErr(validateDigest(casInputRoot.Digest), &err) != nil:
 		return errors.WrapIf(err, "digest")
 	default:
@@ -458,11 +457,11 @@ func validateDigest(digest *apipb.Digest) error {
 
 func validateOutputs(outputs []string) error {
 	if len(outputs) > maxOutputCount {
-		return errors.Reason("can have up to %d outputs", maxOutputPathLength).Err()
+		return errors.Fmt("can have up to %d outputs", maxOutputPathLength)
 	}
 	for i, output := range outputs {
 		if err := validate.Path(output, maxOutputPathLength, false); err != nil {
-			return errors.Annotate(err, "output %d", i).Err()
+			return errors.Fmt("output %d: %w", i, err)
 		}
 	}
 	return nil
@@ -526,9 +525,8 @@ func validateDimensions(ctx context.Context, dims []*apipb.StringPair, pool stri
 	for _, re := range poolCfg.InformationalDimensionRe {
 		for _, dim := range dims {
 			if re.MatchString(dim.Key) {
-				return errors.Reason(
-					"dimension %q is informational, cannot use it for task creation",
-					dim.Key).Err()
+				return errors.Fmt("dimension %q is informational, cannot use it for task creation",
+					dim.Key)
 			}
 		}
 	}
@@ -538,9 +536,8 @@ func validateDimensions(ctx context.Context, dims []*apipb.StringPair, pool stri
 		effectiveBotID := filter.NarrowToKey(poolCfg.RBEEffectiveBotIDDimension)
 		if !effectiveBotID.IsEmpty() {
 			if effectiveBotID.PairCount() > 1 {
-				return errors.Reason(
-					"dimension %q cannot be specified more than once",
-					poolCfg.RBEEffectiveBotIDDimension).Err()
+				return errors.Fmt("dimension %q cannot be specified more than once",
+					poolCfg.RBEEffectiveBotIDDimension)
 			}
 		}
 	}
@@ -944,7 +941,7 @@ func applyTemplate(props *model.TaskProperties, template *configpb.TaskTemplate)
 	}
 	for _, c := range props.Caches {
 		if reservedCacheNames.Has(c.Name) {
-			return errors.Reason("request.cache %q conflicts with pool's template", c.Name).Err()
+			return errors.Fmt("request.cache %q conflicts with pool's template", c.Name)
 		}
 		doc.Add(c.Path, fmt.Sprintf("task_cache:%s", c.Name), "")
 	}
@@ -980,10 +977,10 @@ func applyTemplateEnv(props *model.TaskProperties, template *configpb.TaskTempla
 	for _, e := range template.Env {
 		if !e.Soft {
 			if _, ok := props.Env[e.Var]; ok {
-				return errors.Reason("request.env %q conflicts with pool's template", e.Var).Err()
+				return errors.Fmt("request.env %q conflicts with pool's template", e.Var)
 			}
 			if _, ok := props.EnvPrefixes[e.Var]; ok {
-				return errors.Reason("request.env_prefix %q conflicts with pool's template", e.Var).Err()
+				return errors.Fmt("request.env_prefix %q conflicts with pool's template", e.Var)
 			}
 		}
 

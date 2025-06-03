@@ -64,7 +64,7 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 		auth.WithScopes(auth.CloudOAuthScopes...),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials").Err()
+		return nil, errors.Fmt("failed to get credentials: %w", err)
 	}
 	logging.Infof(ctx, "Dialing %d RBE backend connections...", count)
 	conns := make([]grpc.ClientConnInterface, count)
@@ -77,7 +77,7 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 			grpc.WithDefaultServiceConfig(retryPolicy),
 		)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to dial RBE backend").Err()
+			return nil, errors.Fmt("failed to dial RBE backend: %w", err)
 		}
 	}
 	return conns, nil

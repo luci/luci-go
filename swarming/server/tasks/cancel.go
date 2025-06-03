@@ -77,9 +77,9 @@ func (m *managerImpl) CancelTxn(ctx context.Context, op *CancelOp) (*CancelOpOut
 	}
 	switch err := datastore.Get(ctx, trs); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, errors.Annotate(err, "missing TaskResultSummary for task %s", op.taskID()).Tag(taskUnknownTag).Err()
+		return nil, taskUnknownTag.Apply(errors.Fmt("missing TaskResultSummary for task %s: %w", op.taskID(), err))
 	case err != nil:
-		return nil, errors.Annotate(err, "datastore error fetching TaskResultSummary for task %s", op.taskID()).Err()
+		return nil, errors.Fmt("datastore error fetching TaskResultSummary for task %s: %w", op.taskID(), err)
 	}
 
 	origState := trs.State
@@ -152,14 +152,14 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 		// Update TaskToRun.
 		toRunKey, err := model.TaskRequestToToRunKey(ctx, tr, int(trs.CurrentTaskSlice))
 		if err != nil {
-			return errors.Annotate(err, "failed to get the TaskToRun key for task %s", op.taskID()).Err()
+			return errors.Fmt("failed to get the TaskToRun key for task %s: %w", op.taskID(), err)
 		}
 		toRun := &model.TaskToRun{Key: toRunKey}
 		switch err = datastore.Get(ctx, toRun); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return errors.Annotate(err, "missing TaskToRun for task %s", op.taskID()).Tag(taskUnknownTag).Err()
+			return taskUnknownTag.Apply(errors.Fmt("missing TaskToRun for task %s: %w", op.taskID(), err))
 		case err != nil:
-			return errors.Annotate(err, "datastore error fetching TaskToRun for task %s", op.taskID()).Err()
+			return errors.Fmt("datastore error fetching TaskToRun for task %s: %w", op.taskID(), err)
 		}
 
 		trs.ConsumeTaskToRun(toRun, "")
@@ -174,7 +174,7 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 			},
 		})
 		if err != nil {
-			return errors.Annotate(err, "failed to enqueue finalization task for cancelling %s", op.taskID()).Err()
+			return errors.Fmt("failed to enqueue finalization task for cancelling %s: %w", op.taskID(), err)
 		}
 
 		return EnqueueRBECancel(ctx, m.disp, tr, toRun)
@@ -189,9 +189,9 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 		trr := &model.TaskRunResult{Key: model.TaskRunResultKey(ctx, tr.Key)}
 		switch err := datastore.Get(ctx, trr); {
 		case errors.Is(err, datastore.ErrNoSuchEntity):
-			return errors.Annotate(err, "missing TaskRunResult for task %s", op.taskID()).Tag(taskUnknownTag).Err()
+			return taskUnknownTag.Apply(errors.Fmt("missing TaskRunResult for task %s: %w", op.taskID(), err))
 		case err != nil:
-			return errors.Annotate(err, "datastore error fetching TaskRunResult for task %s", op.taskID()).Err()
+			return errors.Fmt("datastore error fetching TaskRunResult for task %s: %w", op.taskID(), err)
 		}
 		if trr.Killing {
 			// The task has started cancellation. Skip.
@@ -225,11 +225,11 @@ func (m *managerImpl) runCancelTxn(ctx context.Context, op *CancelOp, trs *model
 		return false, nil
 	}
 	if putErr := datastore.Put(ctx, toPut...); putErr != nil {
-		return false, errors.Annotate(putErr, "datastore error saving entities for canceling task %s", op.taskID()).Err()
+		return false, errors.Fmt("datastore error saving entities for canceling task %s: %w", op.taskID(), putErr)
 	}
 
 	if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
-		return false, errors.Annotate(err, "failed to enqueue pubsub notification cloud tasks for canceling task %s", op.taskID()).Err()
+		return false, errors.Fmt("failed to enqueue pubsub notification cloud tasks for canceling task %s: %w", op.taskID(), err)
 	}
 
 	if m.testingPostCancelTxn != nil {
@@ -267,7 +267,7 @@ func (m *managerImpl) queryToCancel(ctx context.Context, batchSize int, taskID s
 func getChildTaskResultSummaries(ctx context.Context, parentID string, batchSize int, sendToCancel func([]*model.TaskResultSummary, int) error) error {
 	childReqKeys, err := getChildTaskRequestKeys(ctx, parentID)
 	if err != nil {
-		return errors.Annotate(err, "failed to get child request keys for parent %s", parentID).Err()
+		return errors.Fmt("failed to get child request keys for parent %s: %w", parentID, err)
 	}
 	if len(childReqKeys) == 0 {
 		return nil
@@ -286,7 +286,7 @@ func getChildTaskResultSummaries(ctx context.Context, parentID string, batchSize
 		size := min(batchSize, len(toGet))
 		batch, toGet = toGet[:size], toGet[size:]
 		if err := datastore.Get(ctx, batch); err != nil {
-			return errors.Annotate(err, "failed to get child result summary for parent %s", parentID).Err()
+			return errors.Fmt("failed to get child result summary for parent %s: %w", parentID, err)
 		}
 		if err := sendToCancel(batch, i); err != nil {
 			return err
@@ -324,13 +324,13 @@ func (m *managerImpl) runBatchCancellation(ctx context.Context, workers int, bct
 	for i, t := range bct.Tasks {
 		reqKey, err := model.TaskIDToRequestKey(ctx, t)
 		if err != nil {
-			merr[i] = errors.Annotate(err, "bad task ID %q, skipping the task", t).Tag(taskUnknownTag).Err()
+			merr[i] = taskUnknownTag.Apply(errors.Fmt("bad task ID %q, skipping the task: %w", t, err))
 			continue
 		}
 		eg.Go(func() error {
 			if err := m.cancelOneTask(ctx, reqKey, bct.KillRunning); err != nil {
 				logging.Errorf(ctx, "Cancel %s failed: %s", t, err)
-				merr[i] = errors.Annotate(err, "task %s", t).Err()
+				merr[i] = errors.Fmt("task %s: %w", t, err)
 			}
 			return nil
 		})
@@ -365,9 +365,9 @@ func (m *managerImpl) cancelOneTask(ctx context.Context, reqKey *datastore.Key, 
 	taskReq, err := model.FetchTaskRequest(ctx, reqKey)
 	switch {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return errors.Annotate(err, "missing TaskRequest").Tag(taskUnknownTag).Err()
+		return taskUnknownTag.Apply(errors.Fmt("missing TaskRequest: %w", err))
 	case err != nil:
-		return errors.Annotate(err, "datastore error fetching TaskRequest").Err()
+		return errors.Fmt("datastore error fetching TaskRequest: %w", err)
 	}
 
 	var outcome *CancelOpOutcome

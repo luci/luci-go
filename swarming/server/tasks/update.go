@@ -212,7 +212,7 @@ func (op *UpdateOp) updateOutput(ctx context.Context) ([]*model.TaskOutputChunk,
 
 		chunkContent, err := decompress(oc.Chunk)
 		if err != nil {
-			return nil, numChunks, errors.Annotate(err, "failed to decompress output chunk #%d", i).Err()
+			return nil, numChunks, errors.Fmt("failed to decompress output chunk #%d: %w", i, err)
 		}
 
 		if len(chunkContent) < chunks[i].outputStart {
@@ -232,7 +232,7 @@ func (op *UpdateOp) updateOutput(ctx context.Context) ([]*model.TaskOutputChunk,
 
 		compressed, err := compress(chunkContent)
 		if err != nil {
-			return nil, numChunks, errors.Annotate(err, "failed to compress output chunk #%d", i).Err()
+			return nil, numChunks, errors.Fmt("failed to compress output chunk #%d: %w", i, err)
 		}
 		oc.Chunk = compressed
 	}
@@ -252,15 +252,15 @@ func decompress(compressed []byte) ([]byte, error) {
 	}
 	zr, err := zlib.NewReader(bytes.NewReader(compressed))
 	if err != nil {
-		return nil, errors.Annotate(err, "opening zlib reader").Err()
+		return nil, errors.Fmt("opening zlib reader: %w", err)
 	}
 	defer func() { _ = zr.Close() }()
 	raw, err := io.ReadAll(zr)
 	if err != nil {
-		return nil, errors.Annotate(err, "decompressing").Err()
+		return nil, errors.Fmt("decompressing: %w", err)
 	}
 	if err := zr.Close(); err != nil {
-		return nil, errors.Annotate(err, "closing zlib reader").Err()
+		return nil, errors.Fmt("closing zlib reader: %w", err)
 	}
 	return raw, nil
 }
@@ -269,10 +269,10 @@ func compress(raw []byte) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	zw := zlib.NewWriter(buf)
 	if _, err := zw.Write(raw); err != nil {
-		return nil, errors.Annotate(err, "compressing").Err()
+		return nil, errors.Fmt("compressing: %w", err)
 	}
 	if err := zw.Close(); err != nil {
-		return nil, errors.Annotate(err, "closing zlib writer").Err()
+		return nil, errors.Fmt("closing zlib writer: %w", err)
 	}
 	return buf.Bytes(), nil
 }
