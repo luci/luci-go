@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import { Box } from '@mui/material';
-import { GridToolbarContainer } from '@mui/x-data-grid';
+import {
+  GridToolbarContainer,
+  GridToolbarDensitySelector,
+} from '@mui/x-data-grid';
 
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import {
@@ -28,6 +31,7 @@ export function RriTableToolbar() {
   return (
     <GridToolbarContainer>
       <Box sx={{ flexGrow: 1 }} />
+      <GridToolbarDensitySelector />
       <ColumnsButton
         defaultColumns={rriColumns
           .filter((column: ColumnDescriptor) => column.isDefault)
