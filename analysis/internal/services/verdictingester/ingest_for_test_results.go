@@ -247,22 +247,15 @@ func (TestResultsRecorder) Name() string {
 
 // Ingest exports the provided test results to BigQuery.
 func (e *TestResultsRecorder) Ingest(ctx context.Context, input Inputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.TestResultsRecorder.Ingest")
+	defer func() { tracing.End(s, err) }()
 	ingestion, err := extractIngestionContext(input.Payload, input.Invocation)
 	if err != nil {
 		return err
 	}
-
-	return recordTestResults(ctx, ingestion, input.Verdicts, input.SourcesByID)
-}
-
-// recordTestResults records test results from an test-verdict-ingestion task.
-func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*rdbpb.TestVariant, sourcesByID map[string]*pb.Sources) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.recordTestResults")
-	defer func() { tracing.End(s, err) }()
-
 	const workerCount = 8
 
-	resultSourcesByID, err := toTestResultSources(sourcesByID)
+	resultSourcesByID, err := toTestResultSources(input.SourcesByID)
 	if err != nil {
 		return errors.Fmt("convert sources: %w", err)
 	}
@@ -272,7 +265,7 @@ func recordTestResults(ctx context.Context, ingestion *IngestionContext, tvs []*
 
 		c <- func() error {
 			defer close(batchC)
-			batchTestResults(ingestion, tvs, resultSourcesByID, batchC)
+			batchTestResults(ingestion, input.Verdicts, resultSourcesByID, batchC)
 			return nil
 		}
 
