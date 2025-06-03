@@ -225,6 +225,11 @@ type ConfigGroup struct {
 	// Note that this is currently a project-level field. Therefore, all
 	// ConfigGroups in a single version of Config should have the same value.
 	HonorGerritLinkedAccounts bool `gae:",noindex"`
+	// GerritListenerType decides which Gerrit listener to use.
+	//
+	// Note that this is currently a project-level field. Therefore, all
+	// ConfigGroups in a single version of Config should have the same value.
+	GerritListenerType cfgpb.Config_GerritListenerType `gae:",noindex"`
 	// Content represents a `pb.ConfigGroup` proto message defined in the CV
 	// config
 	Content *cfgpb.ConfigGroup

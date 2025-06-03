@@ -76,6 +76,7 @@ var testCfg = &cfgpb.Config{
 		},
 	},
 	HonorGerritLinkedAccounts: true,
+	GerritListenerType:        cfgpb.Config_GERRIT_LISTENER_TYPE_PUBSUB,
 }
 
 func TestUpdateProject(t *testing.T) {
@@ -119,6 +120,7 @@ func TestUpdateProject(t *testing.T) {
 				},
 			},
 			HonorGerritLinkedAccounts: true,
+			GerritListenerType:        cfgpb.Config_GERRIT_LISTENER_TYPE_PUBSUB,
 		}
 		configFileName := prjcfg.ConfigFileName(ctx)
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
@@ -137,11 +139,12 @@ func TestUpdateProject(t *testing.T) {
 				}
 				err := datastore.Get(ctx, &cg)
 				assert.NoErr(t, err)
-				assert.Loosely(t, cg.DrainingStartTime, should.Equal(cfg.GetDrainingStartTime()))
+				assert.That(t, cg.DrainingStartTime, should.Equal(cfg.GetDrainingStartTime()))
 				assert.That(t, cg.SubmitOptions, should.Match(cfg.GetSubmitOptions()))
 				assert.That(t, cg.Content, should.Match(cfg.GetConfigGroups()[i]))
 				assert.That(t, cg.CQStatusHost, should.Match(cfg.GetCqStatusHost()))
-				assert.Loosely(t, cg.HonorGerritLinkedAccounts, should.Equal(cfg.GetHonorGerritLinkedAccounts()))
+				assert.That(t, cg.HonorGerritLinkedAccounts, should.Equal(cfg.GetHonorGerritLinkedAccounts()))
+				assert.That(t, cg.GerritListenerType, should.Equal(cfg.GetGerritListenerType()))
 			}
 			// Verify ProjectConfig.
 			pc := prjcfg.ProjectConfig{Project: "chromium"}
@@ -392,8 +395,9 @@ func TestPutConfigGroups(t *testing.T) {
 			assert.Loosely(t, stored.DrainingStartTime, should.Equal(testCfg.GetDrainingStartTime()))
 			assert.That(t, stored.SubmitOptions, should.Match(testCfg.GetSubmitOptions()))
 			assert.That(t, stored.Content, should.Match(testCfg.GetConfigGroups()[0]))
-			assert.Loosely(t, stored.HonorGerritLinkedAccounts, should.Equal(testCfg.GetHonorGerritLinkedAccounts()))
-			assert.Loosely(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
+			assert.That(t, stored.HonorGerritLinkedAccounts, should.Equal(testCfg.GetHonorGerritLinkedAccounts()))
+			assert.That(t, stored.GerritListenerType, should.Equal(testCfg.GetGerritListenerType()))
+			assert.That(t, stored.SchemaVersion, should.Equal(prjcfg.SchemaVersion))
 
 			t.Run("Skip if already exists", func(t *ftt.Test) {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {

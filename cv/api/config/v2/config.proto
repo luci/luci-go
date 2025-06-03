@@ -81,6 +81,24 @@ message Config {
   // If enabled, the project scoped service account MUST have "Modify Account"
   // capabilities to see the linked Gerrit accounts.
   bool honor_gerrit_linked_accounts = 6;
+
+  enum GerritListenerType {
+    // DON'T use.  The config will be rejected.
+    GERRIT_LISTENER_TYPE_UNSPECIFIED = 0;
+    // Use Gerrit Pubsub to listen to Gerrit CL events.
+    //
+    // See: go/luci/cv/gerrit-pubsub-settings
+    // Pub/Sub subscription MUST be created for all Gerrit hosts this LUCI
+    // Project is watching. Otherwise, large processing latency is expected.
+    GERRIT_LISTENER_TYPE_PUBSUB = 1;
+    // Use the legacy polling mechanism to learn Gerrit CL events.
+    //
+    // It is strongly recommended to use Pub/Sub instead for faster and more
+    // efficient event processing.
+    GERRIT_LISTENER_TYPE_LEGACY_POLLER = 2 [deprecated = true];
+  }
+  // Decides which Gerrit listener to use.
+  GerritListenerType gerrit_listener_type = 7;
 }
 
 

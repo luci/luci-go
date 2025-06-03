@@ -131,6 +131,8 @@ func (m *Config) validate(all bool) error {
 
 	// no validation rules for HonorGerritLinkedAccounts
 
+	// no validation rules for GerritListenerType
+
 	if len(errors) > 0 {
 		return ConfigMultiError(errors)
 	}
