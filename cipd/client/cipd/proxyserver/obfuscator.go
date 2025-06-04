@@ -75,20 +75,20 @@ func (ob *CASURLObfuscator) Obfuscate(obj *proxypb.ProxiedCASObject) (string, er
 func (ob *CASURLObfuscator) Unobfuscate(url string) (*proxypb.ProxiedCASObject, error) {
 	b64, found := strings.CutPrefix(url, fmt.Sprintf("http://%s/obj/", ProxiedCASDomain))
 	if !found {
-		return nil, errors.Reason("unrecognized URL").Err()
+		return nil, errors.New("unrecognized URL")
 	}
 	cipher, err := base64.RawURLEncoding.DecodeString(b64)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad base64").Err()
+		return nil, errors.Fmt("bad base64: %w", err)
 	}
 	blob, err := ob.aead.Decrypt(cipher, []byte(obfuscatorAEADCtx))
 	if err != nil {
-		return nil, errors.Annotate(err, "unrecognized CAS object reference (was the CIPD proxy restarted?)").Err()
+		return nil, errors.Fmt("unrecognized CAS object reference (was the CIPD proxy restarted?): %w", err)
 	}
 	var obj proxypb.ProxiedCASObject
 	if err = proto.Unmarshal(blob, &obj); err != nil {
 		// Should really be impossible.
-		return nil, errors.Annotate(err, "bad ProxiedCASObject").Err()
+		return nil, errors.Fmt("bad ProxiedCASObject: %w", err)
 	}
 	return &obj, nil
 }

@@ -75,10 +75,10 @@ func writeExitResult(path string, statusCode StatusCode, digest string) error {
 
 	out, err := json.Marshal(body)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal json").Err()
+		return errors.Fmt("failed to marshal json: %w", err)
 	}
 	if err := os.WriteFile(path, out, 0600); err != nil {
-		return errors.Annotate(err, "failed to write json").Err()
+		return errors.Fmt("failed to write json: %w", err)
 	}
 	return nil
 }
@@ -102,12 +102,12 @@ func writeStats(path string, hot, cold []int64) error {
 
 	packedCold, err := packedintset.Pack(cold)
 	if err != nil {
-		return errors.Annotate(err, "failed to pack uploaded items").Err()
+		return errors.Fmt("failed to pack uploaded items: %w", err)
 	}
 
 	packedHot, err := packedintset.Pack(hot)
 	if err != nil {
-		return errors.Annotate(err, "failed to pack not uploaded items").Err()
+		return errors.Fmt("failed to pack not uploaded items: %w", err)
 	}
 
 	statsJSON, err := json.Marshal(struct {
@@ -124,10 +124,10 @@ func writeStats(path string, hot, cold []int64) error {
 		Result:    "success",
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal json").Err()
+		return errors.Fmt("failed to marshal json: %w", err)
 	}
 	if err := os.WriteFile(path, statsJSON, 0600); err != nil {
-		return errors.Annotate(err, "failed to write json").Err()
+		return errors.Fmt("failed to write json: %w", err)
 	}
 
 	return nil

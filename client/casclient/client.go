@@ -44,13 +44,13 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 	var dialParams client.DialParams
 	useLocal, err := isLocalAddr(addr)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid addr").Err()
+		return nil, errors.Fmt("invalid addr: %w", err)
 	}
 	if useLocal {
 		// Connect to local fake CAS server.
 		// See also go.chromium.org/luci/tools/cmd/fakecas
 		if instance != "" {
-			return nil, errors.Reason("do not specify instance with local address").Err()
+			return nil, errors.New("do not specify instance with local address")
 		}
 		instance = "instance"
 		dialParams = client.DialParams{
@@ -72,16 +72,16 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 
 	grpcOpts, _, err := client.OptsFromParams(ctx, dialParams)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get grpc opts").Err()
+		return nil, errors.Fmt("failed to get grpc opts: %w", err)
 	}
 	conn, err := grpc.NewClient(dialParams.Service, grpcOpts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to dial RBE").Err()
+		return nil, errors.Fmt("failed to dial RBE: %w", err)
 	}
 
 	cl, err := cas.NewClientWithConfig(ctx, conn, instance, DefaultConfig())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create client").Err()
+		return nil, errors.Fmt("failed to create client: %w", err)
 	}
 	return cl, nil
 }
@@ -129,7 +129,7 @@ func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOn
 
 	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PerRPCCredentials()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 	}
 	return creds, nil
 }
@@ -140,7 +140,7 @@ func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOn
 func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Options, readOnly bool) (*client.Client, error) {
 	useLocal, err := isLocalAddr(addr)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid addr").Err()
+		return nil, errors.Fmt("invalid addr: %w", err)
 	}
 	if useLocal {
 		// Connect to local fake CAS server.
@@ -154,7 +154,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 		}
 		cl, err := client.NewClient(ctx, "instance", dialParams)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create client").Err()
+			return nil, errors.Fmt("failed to create client: %w", err)
 		}
 		return cl, nil
 	}
@@ -172,7 +172,7 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 	cl, err := client.NewClient(ctx, instance, dialParams, Options()...)
 	if err != nil {
 		logging.Errorf(ctx, "failed to create casclient: %+v", err)
-		return nil, errors.Annotate(err, "failed to create client").Err()
+		return nil, errors.Fmt("failed to create client: %w", err)
 	}
 	return cl, nil
 }
@@ -234,12 +234,12 @@ func ContextWithMetadata(ctx context.Context, toolName string) (context.Context,
 		ToolName: toolName,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to attach metadata").Err()
+		return nil, errors.Fmt("failed to attach metadata: %w", err)
 	}
 
 	m, err := contextmd.ExtractMetadata(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to extract metadata").Err()
+		return nil, errors.Fmt("failed to extract metadata: %w", err)
 	}
 
 	logging.Infof(ctx, "context metadata: %#+v", *m)

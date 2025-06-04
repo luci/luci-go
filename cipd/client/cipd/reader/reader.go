@@ -74,7 +74,8 @@ func (v VerificationMode) String() string {
 }
 
 // ErrHashMismatch is an error when package hash doesn't match.
-var ErrHashMismatch = errors.New("package hash mismatch", cipderr.HashMismatch)
+var ErrHashMismatch = cipderr.HashMismatch.Apply(
+	errors.New("package hash mismatch"))
 
 // OpenInstanceOpts is passed to OpenInstance and OpenInstanceFile.
 type OpenInstanceOpts struct {
@@ -128,7 +129,7 @@ func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg
 func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (pkg.Instance, error) {
 	file, err := pkg.NewFileSource(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "opening instance file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("opening instance file: %w", err))
 	}
 	inst, err := OpenInstance(ctx, file, opts)
 	if err != nil {
@@ -156,7 +157,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == pkg.ManifestName {
-				return nil, errors.Reason("refusing to extract the manifest, it is unexpected here").Tag(cipderr.BadArgument).Err()
+				return nil, cipderr.BadArgument.Apply(errors.New("refusing to extract the manifest, it is unexpected here"))
 			}
 		}
 	}
@@ -312,7 +313,8 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 	case err != nil || bool(!withManifest):
 		return extracted, err
 	case manifestFile == nil:
-		return extracted, errors.Reason("bad CIPD package: no %s file", pkg.ManifestName).Tag(cipderr.BadArgument).Err()
+		return extracted, cipderr.BadArgument.Apply(errors.
+			Fmt("bad CIPD package: no %s file", pkg.ManifestName))
 	}
 
 	// Now grab the original manifest.json from inside the package and extend it
@@ -447,19 +449,20 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	case VerifyHash, SkipHashVerification:
 		switch {
 		case opts.InstanceID == "":
-			return errors.Reason("InstanceID is required with VerifyHash and SkipHashVerification modes").Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.New("InstanceID is required with VerifyHash and SkipHashVerification modes"))
 		case opts.HashAlgo != api.HashAlgo_HASH_ALGO_UNSPECIFIED:
-			return errors.Reason("HashAlgo must not be used with VerifyHash or SkipHashVerification modes").Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.New("HashAlgo must not be used with VerifyHash or SkipHashVerification modes"))
 		}
 	case CalculateHash:
 		switch {
 		case opts.InstanceID != "":
-			return errors.Reason("InstanceID must not be used with CalculateHash mode").Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.New("InstanceID must not be used with CalculateHash mode"))
 		case opts.HashAlgo == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
-			return errors.Reason("HashAlgo is required with CalculateHash mode").Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.New("HashAlgo is required with CalculateHash mode"))
 		}
 	default:
-		return errors.Reason("invalid verification mode %q", opts.VerificationMode).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.
+			Fmt("invalid verification mode %q", opts.VerificationMode))
 	}
 
 	// Assert instanceID is well-formated and uses a hash known to us, if given.
@@ -503,7 +506,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	// List files and package manifest.
 	var err error
 	if inst.zip, err = zip.NewReader(inst.data, inst.data.Size()); err != nil {
-		return errors.Annotate(err, "reading instance file zip header").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("reading instance file zip header: %w", err))
 	}
 	inst.files = make([]fs.File, len(inst.zip.File))
 	for i, zf := range inst.zip.File {
@@ -528,7 +531,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		for _, f := range inst.files {
 			zf, ok := f.(*fileInZip)
 			if !ok {
-				return errors.Reason("file %s is not a fileInZip type", f.Name()).Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("file %s is not a fileInZip type", f.Name()))
 			}
 			// SetMode overrides lower 16 bits of ExternalAttrs that we use to store
 			// Windows specific attributes (such as "hidden" and "system file"). Carry
@@ -591,7 +594,7 @@ func IsCorruptionError(err error) bool {
 func calculateHash(r pkg.Source, h hash.Hash) error {
 	_, err := io.Copy(h, io.NewSectionReader(r, 0, r.Size()))
 	if err != nil {
-		return errors.Annotate(err, "calculating instance file hash").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("calculating instance file hash: %w", err))
 	}
 	return nil
 }
@@ -600,7 +603,7 @@ func calculateHash(r pkg.Source, h hash.Hash) error {
 func readManifestFile(f fs.File) (pkg.Manifest, error) {
 	r, err := f.Open()
 	if err != nil {
-		return pkg.Manifest{}, errors.Annotate(err, "opening manifest file").Tag(cipderr.IO).Err()
+		return pkg.Manifest{}, cipderr.IO.Apply(errors.Fmt("opening manifest file: %w", err))
 	}
 	defer func() { _ = r.Close() }()
 	return pkg.ReadManifest(r)
@@ -611,11 +614,11 @@ func readManifestFile(f fs.File) (pkg.Manifest, error) {
 // package definition YAML.
 func makeVersionFile(relPath string, versionFile pkg.VersionFile) (fs.File, error) {
 	if !fs.IsCleanSlashPath(relPath) {
-		return nil, errors.Reason("invalid version_file: %s", relPath).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("invalid version_file: %s", relPath))
 	}
 	blob, err := json.MarshalIndent(versionFile, "", "  ")
 	if err != nil {
-		return nil, errors.Annotate(err, "bad version file").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad version file: %w", err))
 	}
 	return &blobFile{
 		name: relPath,
@@ -657,12 +660,12 @@ func (f *fileInZip) prefetch() error {
 	}
 	r, err := f.z.Open()
 	if err != nil {
-		return errors.Annotate(err, "prefetching %q", f.z.Name).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("prefetching %q: %w", f.z.Name, err))
 	}
 	defer r.Close()
 	f.body, err = io.ReadAll(r)
 	if err != nil {
-		return errors.Annotate(err, "prefetching %q", f.z.Name).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("prefetching %q: %w", f.z.Name, err))
 	}
 	return nil
 }
@@ -701,8 +704,9 @@ func (f *fileInZip) Size() uint64 {
 
 func (f *fileInZip) SymlinkTarget() (string, error) {
 	if !f.Symlink() {
-		return "", errors.Reason("%q: not a symlink", f.Name()).Tag(cipderr.IO).Err()
+		return "", cipderr.IO.Apply(errors.Fmt("%q: not a symlink", f.Name()))
 	}
+
 	// Symlink is small, read it once and keep in memory. This is important
 	// because 'SymlinkTarget' method looks like metadata getter, callers
 	// don't expect it to do any IO each time (e.g. seeking inside the zip file).
@@ -714,14 +718,14 @@ func (f *fileInZip) SymlinkTarget() (string, error) {
 
 func (f *fileInZip) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
-		return nil, errors.Reason("%q: opening a symlink is not allowed", f.Name()).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("%q: opening a symlink is not allowed", f.Name()))
 	}
 	if f.body != nil {
 		return io.NopCloser(bytes.NewReader(f.body)), nil
 	}
 	r, err := f.z.Open()
 	if err != nil {
-		return nil, errors.Annotate(err, "opening %q for extraction", f.Name()).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("opening %q for extraction: %w", f.Name(), err))
 	}
 	return r, nil
 }

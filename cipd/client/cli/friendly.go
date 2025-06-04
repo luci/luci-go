@@ -67,20 +67,20 @@ func optionalSiteRoot(siteRoot string) (string, error) {
 	if siteRoot == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return "", errors.Annotate(err, "resolving current working directory").Tag(cipderr.IO).Err()
+			return "", cipderr.IO.Apply(errors.Fmt("resolving current working directory: %w", err))
 		}
 		siteRoot = findSiteRoot(cwd)
 		if siteRoot == "" {
-			return "", errors.Reason("directory %s is not in a site root, use 'init' to create one", cwd).Tag(cipderr.BadArgument).Err()
+			return "", cipderr.BadArgument.Apply(errors.Fmt("directory %s is not in a site root, use 'init' to create one", cwd))
 		}
 		return siteRoot, nil
 	}
 	siteRoot, err := filepath.Abs(siteRoot)
 	if err != nil {
-		return "", errors.Annotate(err, "bad site root path").Tag(cipderr.BadArgument).Err()
+		return "", cipderr.BadArgument.Apply(errors.Fmt("bad site root path: %w", err))
 	}
 	if !isSiteRoot(siteRoot) {
-		return "", errors.Reason("directory %s doesn't look like a site root, use 'init' to create one", siteRoot).Tag(cipderr.BadArgument).Err()
+		return "", cipderr.BadArgument.Apply(errors.Fmt("directory %s doesn't look like a site root, use 'init' to create one", siteRoot))
 	}
 	return siteRoot, nil
 }
@@ -134,7 +134,7 @@ func readConfig(siteRoot string) (installationSiteConfig, error) {
 	path := filepath.Join(siteRoot, fs.SiteServiceDir, "config.json")
 	c := installationSiteConfig{}
 	if err := c.read(path); err != nil && !os.IsNotExist(err) {
-		return c, errors.Annotate(err, "failed to read site root config").Tag(cipderr.IO).Err()
+		return c, cipderr.IO.Apply(errors.Fmt("failed to read site root config: %w", err))
 	}
 	return c, nil
 }
@@ -179,7 +179,8 @@ func getInstallationSite(siteRoot, defaultServiceURL string) (*installationSite,
 func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*installationSite, error) {
 	rootDir, err := filepath.Abs(rootDir)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad root path").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.
+			Fmt("bad root path: %w", err))
 	}
 
 	// rootDir is inside an existing site root?
@@ -187,7 +188,7 @@ func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*insta
 	if existing != "" {
 		msg := fmt.Sprintf("directory %s is already inside a site root (%s)", rootDir, existing)
 		if !force {
-			return nil, errors.New(msg, cipderr.BadArgument)
+			return nil, cipderr.BadArgument.Apply(errors.New(msg))
 		}
 		fmt.Fprintf(os.Stderr, "Warning: %s.\n", msg)
 	}
@@ -195,19 +196,19 @@ func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*insta
 	// Attempting to use in a non empty directory?
 	entries, err := os.ReadDir(rootDir)
 	if err != nil && !os.IsNotExist(err) {
-		return nil, errors.Annotate(err, "bad site root dir").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("bad site root dir: %w", err))
 	}
 	if len(entries) != 0 {
 		msg := fmt.Sprintf("directory %s is not empty", rootDir)
 		if !force {
-			return nil, errors.New(msg, cipderr.BadArgument)
+			return nil, cipderr.BadArgument.Apply(errors.New(msg))
 		}
 		fmt.Fprintf(os.Stderr, "Warning: %s.\n", msg)
 	}
 
 	// Good to go.
 	if err = os.MkdirAll(filepath.Join(rootDir, fs.SiteServiceDir), 0777); err != nil {
-		return nil, errors.Annotate(err, "creating site root dir").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("creating site root dir: %w", err))
 	}
 	site, err := getInstallationSite(rootDir, defaultServiceURL)
 	if err != nil {
@@ -222,7 +223,7 @@ func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*insta
 // Can be called only once. Use it directly via site.client.
 func (site *installationSite) initClient(ctx context.Context, authFlags authcli.Flags) (err error) {
 	if site.client != nil {
-		return errors.New("client is already initialized", cipderr.BadArgument)
+		return cipderr.BadArgument.Apply(errors.New("client is already initialized"))
 	}
 	clientOpts := clientOptions{
 		authFlags:  authFlags,
@@ -240,7 +241,7 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 	path := filepath.Join(site.siteRoot, fs.SiteServiceDir, "config.json")
 	c := installationSiteConfig{}
 	if err := c.read(path); err != nil && !os.IsNotExist(err) {
-		return errors.Annotate(err, "reading site root config").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("reading site root config: %w", err))
 	}
 	if err := cb(&c); err != nil {
 		return err
@@ -250,7 +251,7 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 		c.ServiceURL = site.defaultServiceURL
 	}
 	if err := c.write(path); err != nil {
-		return errors.Annotate(err, "writing site root config").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("writing site root config: %w", err))
 	}
 	return nil
 }
@@ -283,7 +284,8 @@ func (site *installationSite) installedPackages(ctx context.Context) (map[string
 // installPackage installs (or updates) a package.
 func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, paranoid cipd.ParanoidMode) (*pinInfo, error) {
 	if site.client == nil {
-		return nil, errors.New("client is not initialized", cipderr.BadArgument)
+		return nil, cipderr.BadArgument.Apply(errors.
+			New("client is not initialized"))
 	}
 
 	// Figure out what exactly (what instance ID) to install.
@@ -497,7 +499,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	} else {
 		site, err = initInstallationSite(c.rootDir, c.defaultServiceURL, false)
 		if err != nil {
-			err = errors.Annotate(err, "can't auto initialize cipd site root, use 'init'").Err()
+			err = errors.Fmt("can't auto initialize cipd site root, use 'init': %w", err)
 		}
 	}
 	if err != nil {

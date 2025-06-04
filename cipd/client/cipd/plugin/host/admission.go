@@ -39,7 +39,7 @@ import (
 )
 
 // ErrAborted is returned by CheckAdmission promise when the plugin terminates.
-var ErrAborted = errors.Reason("the admission plugin is terminating").Err()
+var ErrAborted = errors.New("the admission plugin is terminating")
 
 // AdmissionPlugin launches and communicates with an admission plugin.
 //
@@ -238,7 +238,7 @@ func (p *AdmissionPlugin) makeAdmission(pin common.Pin) (*protocol.Admission, er
 	// to derive an ID.
 	blob, err := proto.Marshal(admission)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize Admission").Err()
+		return nil, errors.Fmt("failed to serialize Admission: %w", err)
 	}
 
 	// Mix in the salt to randomize admission IDs across CIPD client processes.

@@ -109,7 +109,7 @@ func expandEnsureFile(ef *ensure.File, expander template.Expander) (*ensure.File
 				continue
 			case nil:
 			default:
-				return nil, errors.Annotate(err, "expanding %#v", pkg).Err()
+				return nil, errors.Fmt("expanding %#v: %w", pkg, err)
 			}
 			p.PackageTemplate = pkg
 			s = append(s, p)

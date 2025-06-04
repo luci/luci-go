@@ -106,11 +106,11 @@ type VersionFile struct {
 func ReadManifest(r io.Reader) (Manifest, error) {
 	blob, err := io.ReadAll(r)
 	if err != nil {
-		return Manifest{}, errors.Annotate(err, "reading manifest file").Tag(cipderr.IO).Err()
+		return Manifest{}, cipderr.IO.Apply(errors.Fmt("reading manifest file: %w", err))
 	}
 	var manifest Manifest
 	if err := json.Unmarshal(blob, &manifest); err != nil {
-		return Manifest{}, errors.Annotate(err, "parsing manifest").Tag(cipderr.BadArgument).Err()
+		return Manifest{}, cipderr.BadArgument.Apply(errors.Fmt("parsing manifest: %w", err))
 	}
 	return manifest, nil
 }
@@ -119,10 +119,10 @@ func ReadManifest(r io.Reader) (Manifest, error) {
 func WriteManifest(m *Manifest, w io.Writer) error {
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
-		return errors.Annotate(err, "serializing manifest").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("serializing manifest: %w", err))
 	}
 	if _, err = w.Write(data); err != nil {
-		return errors.Annotate(err, "writing manifest file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("writing manifest file: %w", err))
 	}
 	return nil
 }

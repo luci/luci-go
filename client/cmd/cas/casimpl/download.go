@@ -86,7 +86,7 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.Reason("position arguments not expected").Err()
+		return errors.New("position arguments not expected")
 	}
 
 	if r.cacheDir == "" && !r.cachePolicies.IsDefault() {
@@ -156,12 +156,12 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 	start = time.Now()
 
 	if err := os.MkdirAll(root, 0o700); err != nil {
-		return errors.Annotate(err, "failed to create root dir").Err()
+		return errors.Fmt("failed to create root dir: %w", err)
 	}
 
 	for _, dir := range dirs {
 		if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
-			return errors.Annotate(err, "failed to create directory").Err()
+			return errors.Fmt("failed to create directory: %w", err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 			}
 
 			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
-				return errors.Annotate(err, "failed to copy file from '%s' to '%s'", src.Path, dst.Path).Err()
+				return errors.Fmt("failed to copy file from '%s' to '%s': %w", src.Path, dst.Path, err)
 			}
 
 			return nil
@@ -239,7 +239,7 @@ func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles
 				mode = 0o700
 			}
 			if err := os.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
-				return errors.Annotate(err, "failed to write file").Err()
+				return errors.Fmt("failed to write file: %w", err)
 			}
 		}
 
@@ -263,7 +263,7 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.
 				}()
 
 				if err != nil {
-					return errors.Annotate(err, "failed to read file: %s", output.Path).Err()
+					return errors.Fmt("failed to read file: %s: %w", output.Path, err)
 				}
 				return set(output.Digest.Hash, b)
 			})
@@ -306,7 +306,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 	start := time.Now()
 	for _, output := range largeOutputs {
 		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), output.Path); err != nil {
-			return errors.Annotate(err, "failed to add cache; path=%s digest=%s", output.Path, output.Digest).Err()
+			return errors.Fmt("failed to add cache; path=%s digest=%s: %w", output.Path, output.Digest, err)
 		}
 	}
 	logger.Infof("finished cache large files %d, took %s", len(largeOutputs), time.Since(start))
@@ -327,15 +327,15 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	d, err := digest.NewFromString(r.digest)
 	if err != nil {
 		if err := writeExitResult(r.dumpJSON, DigestInvalid, r.digest); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
+		return errors.Fmt("failed to parse digest: %s: %w", r.digest, err)
 	}
 
 	c, err := r.authFlags.NewRBEClient(ctx, r.casFlags.Addr, r.casFlags.Instance, true)
 	if err != nil {
 		if err := writeExitResult(r.dumpJSON, ClientError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
 		return err
 	}
@@ -343,18 +343,18 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if _, err := c.ReadProto(ctx, d, rootDir); err != nil {
 		errorCode, digest := extractErrorCode(err)
 		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to read root directory proto").Err()
+		return errors.Fmt("failed to read root directory proto: %w", err)
 	}
 
 	start := time.Now()
 	dirs, err := c.GetDirectoryTree(ctx, d.ToProto())
 	if err != nil {
 		if err := writeExitResult(r.dumpJSON, RPCError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to call GetDirectoryTree").Err()
+		return errors.Fmt("failed to call GetDirectoryTree: %w", err)
 	}
 	logger := logging.Get(ctx)
 	logger.Infof("finished GetDirectoryTree api call: %d, took %s", len(dirs), time.Since(start))
@@ -369,9 +369,9 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if err != nil {
 		errorCode, digest := extractErrorCode(err)
 		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to call FlattenTree").Err()
+		return errors.Fmt("failed to call FlattenTree: %w", err)
 	}
 
 	to := make(map[digest.Digest]*client.TreeOutput)
@@ -389,9 +389,9 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		diskcache, err = cache.New(r.cachePolicies, r.cacheDir, crypto.SHA256)
 		if err != nil {
 			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Annotate(err, "failed to write json file").Err()
+				return errors.Fmt("failed to write json file: %w", err)
 			}
-			return errors.Annotate(err, "failed to create initialize cache").Err()
+			return errors.Fmt("failed to create initialize cache: %w", err)
 		}
 		defer diskcache.Close()
 	}
@@ -410,7 +410,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			if err := kvs.Close(); err != nil {
 				logger.Errorf("failed to close kvs cache: %v", err)
 				if rerr == nil {
-					rerr = errors.Annotate(err, "failed to close kvs cache").Err()
+					rerr = errors.Fmt("failed to close kvs cache: %w", err)
 				}
 			}
 		}()
@@ -443,9 +443,9 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		if output.SymlinkTarget != "" {
 			if err := os.Symlink(output.SymlinkTarget, path); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-					return errors.Annotate(err, "failed to write json file").Err()
+					return errors.Fmt("failed to write json file: %w", err)
 				}
-				return errors.Annotate(err, "failed to create symlink").Err()
+				return errors.Fmt("failed to create symlink: %w", err)
 			}
 			continue
 		}
@@ -463,7 +463,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-					return errors.Annotate(err, "failed to write json file").Err()
+					return errors.Fmt("failed to write json file: %w", err)
 				}
 				return err
 			}
@@ -484,7 +484,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 		if err := copySmallFilesFromCache(ctx, kvs, smallFiles); err != nil {
 			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Annotate(err, "failed to write json file").Err()
+				return errors.Fmt("failed to write json file: %w", err)
 			}
 			return err
 		}
@@ -507,9 +507,9 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if _, err := c.DownloadFiles(ctx, "", to); err != nil {
 		errorCode, digest := extractErrorCode(err)
 		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to download files").Err()
+		return errors.Fmt("failed to download files: %w", err)
 	}
 	logger.Infof("finished DownloadFiles api call, took %s", time.Since(start))
 
@@ -517,7 +517,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		start = time.Now()
 		if err := cacheOutputFiles(ctx, diskcache, kvs, to); err != nil {
 			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-				return errors.Annotate(err, "failed to write json file").Err()
+				return errors.Fmt("failed to write json file: %w", err)
 			}
 			return err
 		}
@@ -527,7 +527,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	start = time.Now()
 	if err := copyFiles(ctx, dups, to); err != nil {
 		if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
 		return err
 	}
@@ -547,7 +547,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		}
 
 		if err := writeStats(dsj, hot, cold); err != nil {
-			return errors.Annotate(err, "failed to write stats json").Err()
+			return errors.Fmt("failed to write stats json: %w", err)
 		}
 	}
 

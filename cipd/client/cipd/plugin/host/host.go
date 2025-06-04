@@ -45,7 +45,7 @@ import (
 
 // ErrTerminated is returned by PluginProcess.Err() if the plugin process exited
 // with 0 exit code.
-var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
+var ErrTerminated = errors.New("terminated with 0 exit code")
 
 // Host launches plugin subprocesses and accepts connections from them.
 //
@@ -104,14 +104,14 @@ func (h *Host) NewAdmissionPlugin(cmdLine []string) (plugin.AdmissionPlugin, err
 // Uses the given context for logging from the plugin.
 func (h *Host) LaunchPlugin(ctx context.Context, args []string, ctrl *Controller) (*PluginProcess, error) {
 	if len(args) == 0 {
-		return nil, errors.Reason("need at least one argument (the executable to start)").Err()
+		return nil, errors.New("need at least one argument (the executable to start)")
 	}
 
 	// Generate a string sent to the plugin via the stdin. It is used to
 	// authenticate the gRPC calls from it.
 	ticketBytes := make([]byte, 64)
 	if _, err := rand.Read(ticketBytes); err != nil {
-		return nil, errors.Annotate(err, "failed to generate random string").Err()
+		return nil, errors.Fmt("failed to generate random string: %w", err)
 	}
 	ticket := base64.RawStdEncoding.EncodeToString(ticketBytes)
 
@@ -174,7 +174,7 @@ func (h *Host) Close(ctx context.Context) {
 
 	// Note: see also serverCrashed(...).
 	if h.srvErr == nil {
-		h.srvErr = errors.Reason("the plugins host is already closed").Err()
+		h.srvErr = errors.New("the plugins host is already closed")
 	}
 	if h.srv != nil {
 		h.srv.Stop()
@@ -260,10 +260,10 @@ func (h *Host) launchProcess(ctx context.Context, args []string, ctrl *Controlle
 	cmd.Stderr = os.Stderr
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to open the stdin pipe").Err()
+		return nil, errors.Fmt("failed to open the stdin pipe: %w", err)
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, errors.Annotate(err, "failed to launch the plugin").Err()
+		return nil, errors.Fmt("failed to launch the plugin: %w", err)
 	}
 	proc := &PluginProcess{
 		ctx:    ctx,
@@ -404,7 +404,7 @@ func (p *PluginProcess) sendHandshake(ctx context.Context, port int, ticket stri
 	opts := protojson.MarshalOptions{Multiline: false}
 	body, err := opts.Marshal(&protocol.Handshake{Port: int32(port), Ticket: ticket})
 	if err != nil {
-		return errors.Annotate(err, "failed to serialize the handshake message").Err()
+		return errors.Fmt("failed to serialize the handshake message: %w", err)
 	}
 	body = append(body, '\n')
 
@@ -420,7 +420,7 @@ func (p *PluginProcess) sendHandshake(ctx context.Context, port int, ticket stri
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-p.done:
-		return errors.Reason("the plugin process has unexpectedly terminated").Err()
+		return errors.New("the plugin process has unexpectedly terminated")
 	}
 }
 

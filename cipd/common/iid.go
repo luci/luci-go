@@ -98,7 +98,7 @@ func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 	}
 
 	if err := checkIsHex(ref.HexDigest); err != nil {
-		return errors.Annotate(err, "invalid %s hex digest", ref.HashAlgo).Err()
+		return errors.Fmt("invalid %s hex digest: %w", ref.HashAlgo, err)
 	}
 
 	if v {

@@ -437,7 +437,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
-		return cipd.ClientOptions{}, errors.Annotate(err, "bad auth options").Tag(cipderr.BadArgument).Err()
+		return cipd.ClientOptions{}, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
 	}
 
 	realOpts := cipd.ClientOptions{
@@ -462,7 +462,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	} else {
 		realOpts.AuthenticatedClient, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 		if err != nil {
-			return cipd.ClientOptions{}, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+			return cipd.ClientOptions{}, cipderr.Auth.Apply(errors.Fmt("initializing auth client: %w", err))
 		}
 	}
 
@@ -608,9 +608,9 @@ func (opts *inputOptions) prepareInput() (builder.Options, error) {
 		f, err := os.Open(opts.packageDef)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return empty, errors.Annotate(err, "package definition file is missing").Tag(cipderr.BadArgument).Err()
+				return empty, cipderr.BadArgument.Apply(errors.Fmt("package definition file is missing: %w", err))
 			}
-			return empty, errors.Annotate(err, "opening package definition file").Tag(cipderr.IO).Err()
+			return empty, cipderr.IO.Apply(errors.Fmt("opening package definition file: %w", err))
 		}
 		defer f.Close()
 		pkgDef, err := builder.LoadPackageDef(f, opts.vars)
@@ -838,9 +838,9 @@ func loadMetadataFromFile(ctx context.Context, key, path string) ([]byte, error)
 		file, err = os.Open(path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return nil, errors.Annotate(err, "missing metadata file").Tag(cipderr.BadArgument).Err()
+				return nil, cipderr.BadArgument.Apply(errors.Fmt("missing metadata file: %w", err))
 			}
-			return nil, errors.Annotate(err, "reading metadata file").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("reading metadata file: %w", err))
 		}
 		defer file.Close()
 	}
@@ -849,10 +849,10 @@ func loadMetadataFromFile(ctx context.Context, key, path string) ([]byte, error)
 	switch _, err := io.CopyN(&buf, file, common.MetadataMaxLen+1); {
 	case err == nil:
 		// Successfully read more than needed => the file size is too large.
-		return nil, errors.Reason("the metadata value in %q is too long, should be <=%d bytes", path, common.MetadataMaxLen).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("the metadata value in %q is too long, should be <=%d bytes", path, common.MetadataMaxLen))
 	case err != io.EOF:
 		// Failed with some unexpected read error.
-		return nil, errors.Annotate(err, "error reading metadata from %q", path).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("error reading metadata from %q: %w", path, err))
 	default:
 		return buf.Bytes(), nil
 	}
@@ -1056,10 +1056,11 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 		}
 	}
 	if len(out) == 0 {
-		return nil, errors.Reason("no packages under %s", packagePrefix).
-			Tag(cipderr.RPC.WithDetails(cipderr.Details{
+		return nil,
+			cipderr.RPC.WithDetails(cipderr.Details{
 				Package: packagePrefix,
-			})).Err()
+			}).Apply(errors.Fmt("no packages under %s", packagePrefix))
+
 	}
 	return out, nil
 }
@@ -1234,10 +1235,11 @@ func resolvedFilesToPinMap(res map[template.Platform]*ensure.ResolvedFile) map[s
 func loadVersionsFile(path, ensureFile string) (ensure.VersionsFile, error) {
 	switch f, err := os.Open(path); {
 	case os.IsNotExist(err):
-		return nil, errors.Reason("the resolved versions file doesn't exist, "+
-			"use 'cipd ensure-file-resolve -ensure-file %q' to generate it", ensureFile).Tag(cipderr.BadArgument).Err()
+		return nil,
+			cipderr.BadArgument.Apply(errors.Fmt("the resolved versions file doesn't exist, "+
+				"use 'cipd ensure-file-resolve -ensure-file %q' to generate it", ensureFile))
 	case err != nil:
-		return nil, errors.Annotate(err, "reading resolved versions file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("reading resolved versions file: %w", err))
 	default:
 		defer f.Close()
 		return ensure.ParseVersionsFile(f)
@@ -1250,7 +1252,7 @@ func saveVersionsFile(path string, v ensure.VersionsFile) error {
 		return err
 	}
 	if err := os.WriteFile(path, buf.Bytes(), 0666); err != nil {
-		return errors.Annotate(err, "writing versions file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("writing versions file: %w", err))
 	}
 	return nil
 }
@@ -1305,7 +1307,7 @@ func (c *createRun) Run(a subcommands.Application, args []string, env subcommand
 func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, error) {
 	f, err := os.CreateTemp("", "cipd_pkg")
 	if err != nil {
-		return common.Pin{}, errors.Annotate(err, "creating temp instance file").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("creating temp instance file: %w", err))
 	}
 	defer func() {
 		// Note: we don't care about errors here since this file is used only as
@@ -1483,7 +1485,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		if err = resolved.Serialize(&buf); err == nil {
 			err = os.WriteFile(ensureFileOut, buf.Bytes(), 0666)
 			if err != nil {
-				err = errors.Annotate(err, "writing resolved ensure file").Tag(cipderr.IO).Err()
+				err = cipderr.IO.Apply(errors.Fmt("writing resolved ensure file: %w", err))
 			}
 		}
 
@@ -1543,9 +1545,11 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	case err != nil:
 		return c.done(nil, err)
 	case !existing.Equal(versions):
-		return c.done(nil, errors.Reason("the resolved versions file %s is stale, "+
-			"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
-			filepath.Base(ef.ResolvedVersions), c.ensureFile).Tag(cipderr.Stale).Err())
+		return c.done(nil,
+
+			cipderr.Stale.Apply(errors.Fmt("the resolved versions file %s is stale, "+
+				"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
+				filepath.Base(ef.ResolvedVersions), c.ensureFile)))
 	default:
 		return c.doneWithPinMap(pinMap, err)
 	}
@@ -1592,7 +1596,7 @@ func (c *ensureFileResolveRun) Run(a subcommands.Application, args []string, env
 		logging.Errorf(ctx,
 			"The ensure file doesn't have $ResolvedVersion directive that specifies "+
 				"where to put the resolved package versions, so it can't be resolved.")
-		return c.done(nil, errors.Reason("no resolved versions file configured").Tag(cipderr.BadArgument).Err())
+		return c.done(nil, cipderr.BadArgument.Apply(errors.New("no resolved versions file configured")))
 	}
 
 	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
@@ -1787,9 +1791,9 @@ func (c *exportRun) Run(a subcommands.Application, args []string, env subcommand
 	fsystem := fs.NewFileSystem(c.rootDir, "")
 	ssd, err := fsystem.RootRelToAbs(fs.SiteServiceDir)
 	if err != nil {
-		err = errors.Annotate(err, "unable to resolve service dir").Tag(cipderr.IO).Err()
+		err = cipderr.IO.Apply(errors.Fmt("unable to resolve service dir: %w", err))
 	} else if err = fsystem.EnsureDirectoryGone(ctx, ssd); err != nil {
-		err = errors.Annotate(err, "unable to purge service dir").Tag(cipderr.IO).Err()
+		err = cipderr.IO.Apply(errors.Fmt("unable to purge service dir: %w", err))
 	}
 	return c.done(pins, err)
 }
@@ -2137,10 +2141,12 @@ func visitPins(ctx context.Context, args *visitPinsArgs) ([]pinInfo, error) {
 	}
 	if hasErrors(pins) {
 		printPinsAndError(map[string][]pinInfo{"": pins})
-		return nil, errors.Reason("can't find %q version in all packages, aborting", args.version).
-			Tag(cipderr.InvalidVersion.WithDetails(cipderr.Details{
+		return nil,
+			cipderr.InvalidVersion.WithDetails(cipderr.Details{
 				Version: args.version,
-			})).Err()
+			}).Apply(errors.
+				Fmt("can't find %q version in all packages, aborting", args.version))
+
 	}
 
 	// Prepare for the next batch call.
@@ -2766,7 +2772,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 	// Prepare the destination, update build options with io.Writer to it.
 	out, err := os.OpenFile(instanceFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return common.Pin{}, errors.Annotate(err, "opening instance file for writing").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("opening instance file for writing: %w", err))
 	}
 	buildOpts.Output = out
 	buildOpts.HashAlgo = algo
@@ -2781,7 +2787,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 
 	// Make sure it is flushed properly by ensuring Close succeeds.
 	if err := out.Close(); err != nil {
-		return common.Pin{}, errors.Annotate(err, "flushing built instance file").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("flushing built instance file: %w", err))
 	}
 
 	return pin, nil
@@ -2912,7 +2918,7 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 
 	out, err := os.OpenFile(instanceFile, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		return common.Pin{}, errors.Annotate(err, "opening the instance file for writing").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("opening the instance file for writing: %w", err))
 	}
 	ok := false
 	defer func() {
@@ -2928,7 +2934,7 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 	}
 
 	if err := out.Close(); err != nil {
-		return common.Pin{}, errors.Annotate(err, "flushing fetched instance file").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("flushing fetched instance file: %w", err))
 	}
 	ok = true
 
@@ -3084,9 +3090,9 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	src, err := pkg.NewFileSource(instanceFile)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return common.Pin{}, errors.Annotate(err, "missing input instance file").Tag(cipderr.BadArgument).Err()
+			return common.Pin{}, cipderr.BadArgument.Apply(errors.Fmt("missing input instance file: %w", err))
 		}
-		return common.Pin{}, errors.Annotate(err, "opening input instance file").Tag(cipderr.IO).Err()
+		return common.Pin{}, cipderr.IO.Apply(errors.Fmt("opening input instance file: %w", err))
 	}
 	defer src.Close(ctx, false)
 
@@ -3299,8 +3305,9 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 	// maybe users are using refs and do not move them by convention.
 	switch {
 	case common.ValidateInstanceID(version, common.AnyHash) == nil:
-		return c.done(nil, errors.Reason("expecting a version identifier that can be "+
-			"resolved for all per-platform CIPD client packages, not a concrete instance ID").Tag(cipderr.BadArgument).Err())
+		return c.done(nil,
+			cipderr.BadArgument.Apply(errors.New("expecting a version identifier that can be "+
+				"resolved for all per-platform CIPD client packages, not a concrete instance ID")))
 	case common.ValidateInstanceTag(version) != nil:
 		fmt.Printf(
 			"WARNING! Version %q is not a tag. The hash pinning in *.digests file is "+
@@ -3317,7 +3324,7 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 
 	if c.version != "" {
 		if err := os.WriteFile(c.versionFile, []byte(c.version+"\n"), 0666); err != nil {
-			return c.done(nil, errors.Annotate(err, "writing the client version file").Tag(cipderr.IO).Err())
+			return c.done(nil, cipderr.IO.Apply(errors.Fmt("writing the client version file: %w", err)))
 		}
 	}
 
@@ -3340,7 +3347,7 @@ func generateClientDigests(ctx context.Context, client cipd.Client, path, versio
 		return nil, err
 	}
 	if err := os.WriteFile(path, buf.Bytes(), 0666); err != nil {
-		return nil, errors.Annotate(err, "writing client digests file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("writing client digests file: %w", err))
 	}
 
 	fmt.Printf("The pinned client hashes have been written to %s.\n\n", filepath.Base(path))
@@ -3358,9 +3365,11 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 	}
 	if !digests.Equal(existing) {
 		base := filepath.Base(path)
-		return nil, errors.Reason("the file with pinned client hashes (%s) is stale, "+
-			"use 'cipd selfupdate-roll -version-file %s' to update it",
-			base, strings.TrimSuffix(base, digestsSfx)).Tag(cipderr.Stale).Err()
+		return nil,
+
+			cipderr.Stale.Apply(errors.Fmt("the file with pinned client hashes (%s) is stale, "+
+				"use 'cipd selfupdate-roll -version-file %s' to update it",
+				base, strings.TrimSuffix(base, digestsSfx)))
 	}
 	fmt.Printf("The file with pinned client hashes (%s) is up-to-date.\n\n", filepath.Base(path))
 	return pins, nil
@@ -3370,7 +3379,7 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 func loadClientVersion(path string) (string, error) {
 	blob, err := os.ReadFile(path)
 	if err != nil {
-		return "", errors.Annotate(err, "reading client version file").Tag(cipderr.IO).Err()
+		return "", cipderr.IO.Apply(errors.Fmt("reading client version file: %w", err))
 	}
 	version := strings.TrimSpace(string(blob))
 	if err := common.ValidateInstanceVersion(version); err != nil {
@@ -3384,11 +3393,13 @@ func loadClientDigests(path string) (*digests.ClientDigestsFile, error) {
 	switch f, err := os.Open(path); {
 	case os.IsNotExist(err):
 		base := filepath.Base(path)
-		return nil, errors.Reason("the file with pinned client hashes (%s) doesn't exist, "+
-			"use 'cipd selfupdate-roll -version-file %s' to generate it",
-			base, strings.TrimSuffix(base, digestsSfx)).Tag(cipderr.Stale).Err()
+		return nil,
+
+			cipderr.Stale.Apply(errors.Fmt("the file with pinned client hashes (%s) doesn't exist, "+
+				"use 'cipd selfupdate-roll -version-file %s' to generate it",
+				base, strings.TrimSuffix(base, digestsSfx)))
 	case err != nil:
-		return nil, errors.Annotate(err, "error reading client digests file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("error reading client digests file: %w", err))
 	default:
 		defer f.Close()
 		return digests.ParseClientDigestsFile(f)
@@ -3430,7 +3441,7 @@ func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (
 	case err != nil:
 		return nil, pins, err
 	case hasErrors(pins):
-		return nil, pins, errors.Reason("failed to obtain the client binary digest for all platforms").Tag(cipderr.RPC).Err()
+		return nil, pins, cipderr.RPC.Apply(errors.New("failed to obtain the client binary digest for all platforms"))
 	}
 
 	out.Sort()
@@ -3491,7 +3502,7 @@ func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Action
 	}
 	actions.Log(ctx, true)
 	if len(actions) != 0 {
-		err = errors.Reason("the deployment needs a repair").Tag(cipderr.Stale).Err()
+		err = cipderr.Stale.Apply(errors.New("the deployment needs a repair"))
 	}
 	return actions, err
 }
@@ -3586,7 +3597,7 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 	if unixSocket == "" {
 		dir, err := os.MkdirTemp("", "cipd")
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create a temp dir").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("failed to create a temp dir: %w", err))
 		}
 		defer func() {
 			if err := os.RemoveAll(dir); err != nil {
@@ -3597,15 +3608,15 @@ func runProxy(ctx context.Context, authFlags authcli.Flags, unixSocket, proxyPol
 	}
 	policy, err := readProxyPolicy(ctx, proxyPolicy)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad proxy policy file").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad proxy policy file: %w", err))
 	}
 	authOpts, err := authFlags.Options()
 	if err != nil {
-		return nil, errors.Annotate(err, "bad auth options").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
 	}
 	authClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 	if err != nil {
-		return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+		return nil, cipderr.Auth.Apply(errors.Fmt("initializing auth client: %w", err))
 	}
 	return runProxyImpl(ctx, unixSocket, policy, authClient)
 }
@@ -3620,21 +3631,21 @@ func readProxyPolicy(ctx context.Context, path string) (*proxypb.Policy, error) 
 		file, err = os.Open(path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return nil, errors.Annotate(err, "missing proxy policy file").Tag(cipderr.BadArgument).Err()
+				return nil, cipderr.BadArgument.Apply(errors.Fmt("missing proxy policy file: %w", err))
 			}
-			return nil, errors.Annotate(err, "reading proxy policy file").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("reading proxy policy file: %w", err))
 		}
 		defer func() { _ = file.Close() }()
 	}
 
 	blob, err := io.ReadAll(file)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading proxy policy file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("reading proxy policy file: %w", err))
 	}
 
 	var policy proxypb.Policy
 	if err := (prototext.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(blob, &policy); err != nil {
-		return nil, errors.Annotate(err, "malformed proxy policy file").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("malformed proxy policy file: %w", err))
 	}
 	return &policy, nil
 }

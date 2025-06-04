@@ -76,7 +76,7 @@ func (c *archiveRun) parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.Reason("position arguments not expected").Err()
+		return errors.New("position arguments not expected")
 	}
 	return nil
 }
@@ -94,12 +94,12 @@ func getRoot(paths scatterGather) (string, error) {
 		}
 
 		if wd0 != wd {
-			return "", errors.Reason("different root (working) directory is not supported: %s:%s vs %s:%s", wd0, rel0, wd, rel).Err()
+			return "", errors.Fmt("different root (working) directory is not supported: %s:%s vs %s:%s", wd0, rel0, wd, rel)
 		}
 	}
 
 	if !pickedOne {
-		return "", errors.Reason("-paths should be specified at least once").Err()
+		return "", errors.New("-paths should be specified at least once")
 	}
 
 	return wd0, nil
@@ -116,12 +116,12 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	}
 
 	if (len(c.paths) == 0) == (c.pathsJSON == "") {
-		return errors.Reason("exactly one of -paths or -paths-json must be specified").Err()
+		return errors.New("exactly one of -paths or -paths-json must be specified")
 	}
 	if c.pathsJSON != "" {
 		paths, err := loadPathsJSON(c.pathsJSON)
 		if err != nil {
-			return errors.Annotate(err, "failed to read -paths-json").Err()
+			return errors.Fmt("failed to read -paths-json: %w", err)
 		}
 		c.paths = paths
 	}
@@ -129,7 +129,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	root, err := getRoot(c.paths)
 	if err != nil {
 		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
 		return err
 	}
@@ -142,9 +142,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	client, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, false)
 	if err != nil {
 		if err := writeExitResult(c.dumpJSON, ClientError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to create cas client").Err()
+		return errors.Fmt("failed to create cas client: %w", err)
 	}
 	defer client.Close()
 
@@ -154,9 +154,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	if err != nil {
 		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
+		return errors.Fmt("failed to call ComputeMerkleTree: %w", err)
 	}
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
 
@@ -164,18 +164,18 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	uploadedDigests, moved, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
 		if err := writeExitResult(c.dumpJSON, RPCError, ""); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
-		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
+		return errors.Fmt("failed to call UploadIfMissing: %w", err)
 	}
 	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := os.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
 			if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
-				return errors.Annotate(err, "failed to write json file").Err()
+				return errors.Fmt("failed to write json file: %w", err)
 			}
-			return errors.Annotate(err, "failed to dump digest").Err()
+			return errors.Fmt("failed to dump digest: %w", err)
 		}
 	} else {
 		fmt.Printf("uploaded digest is %s\n", rootDg.String())
@@ -197,7 +197,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		}
 
 		if err := writeStats(dsj, notUploaded, uploaded); err != nil {
-			return errors.Annotate(err, "failed to write json file").Err()
+			return errors.Fmt("failed to write json file: %w", err)
 		}
 	}
 

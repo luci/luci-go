@@ -88,11 +88,11 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 	// Grab the total length of the file.
 	length, err := data.Seek(0, io.SeekEnd)
 	if err != nil {
-		return errors.Annotate(err, "seeking instance file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("seeking instance file: %w", err))
 	}
 	_, err = data.Seek(0, io.SeekStart)
 	if err != nil {
-		return errors.Annotate(err, "seeking instance file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("seeking instance file: %w", err))
 	}
 
 	// Offset of data known to be persisted in the storage or -1 if needed to ask
@@ -134,7 +134,7 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 				continue
 			}
 			if err != nil {
-				return errors.Annotate(err, "resuming upload").Tag(cipderr.CAS).Err()
+				return cipderr.CAS.Apply(errors.Fmt("resuming upload: %w", err))
 			}
 			if offset == length {
 				return nil
@@ -150,11 +150,11 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 		// Upload the chunk.
 		reportProgress("Uploading", offset)
 		if _, err := data.Seek(offset, io.SeekStart); err != nil {
-			return errors.Annotate(err, "seeking instance file").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("seeking instance file: %w", err))
 		}
 		r, err := http.NewRequest("PUT", url, io.LimitReader(data, chunk))
 		if err != nil {
-			return errors.Annotate(err, "initializing PUT request").Tag(cipderr.CAS).Err()
+			return cipderr.CAS.Apply(errors.Fmt("initializing PUT request: %w", err))
 		}
 		rangeHeader := fmt.Sprintf("bytes %d-%d/%d", offset, offset+chunk-1, length)
 		r.Header.Set("Content-Range", rangeHeader)
@@ -166,7 +166,7 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 				reportTransientError()
 				continue
 			}
-			return errors.Annotate(err, "upload failed").Tag(cipderr.CAS).Err()
+			return cipderr.CAS.Apply(errors.Fmt("upload failed: %w", err))
 		}
 		resp.Body.Close()
 
@@ -187,10 +187,11 @@ func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker
 		}
 
 		// Fatal error.
-		return errors.Reason("unexpected response during file upload: HTTP %d", resp.StatusCode).Tag(cipderr.CAS).Err()
+		return cipderr.CAS.Apply(errors.Fmt("unexpected response during file upload: HTTP %d", resp.StatusCode))
 	}
 
-	return errors.Reason("failed to upload after multiple attempts").Tag(cipderr.CAS).Err()
+	return cipderr.CAS.Apply(errors.
+		New("failed to upload after multiple attempts"))
 }
 
 // getNextOffset queries the storage for size of persisted data.
@@ -225,9 +226,9 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 			}
 		}
 	} else if isTemporaryHTTPError(resp.StatusCode) {
-		err = errors.Reason("got HTTP %d when querying for uploaded offset", resp.StatusCode).Tag(transient.Tag).Err()
+		err = transient.Tag.Apply(errors.Fmt("got HTTP %d when querying for uploaded offset", resp.StatusCode))
 	} else {
-		err = errors.Reason("unexpected response (HTTP %d) when querying for uploaded offset", resp.StatusCode).Err()
+		err = errors.Fmt("unexpected response (HTTP %d) when querying for uploaded offset", resp.StatusCode)
 	}
 	return offset, err
 }
@@ -251,7 +252,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 			callback: progress,
 		})
 		if err != nil {
-			return errors.Annotate(err, "writing to the output instance file").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("writing to the output instance file: %w", err))
 		}
 		return nil
 	}
@@ -276,7 +277,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		h.Reset()
 		_, err := output.Seek(0, io.SeekStart)
 		if err != nil {
-			return errors.Annotate(err, "seeking output instance file").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("seeking output instance file: %w", err))
 		}
 
 		// Send the request.
@@ -285,7 +286,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		var resp *http.Response
 		req, err = http.NewRequest("GET", url, nil)
 		if err != nil {
-			return errors.Annotate(err, "initializing GET request").Tag(cipderr.CAS).Err()
+			return cipderr.CAS.Apply(errors.Fmt("initializing GET request: %w", err))
 		}
 		req.Header.Set("User-Agent", s.userAgent)
 		resp, err = ctxhttp.Do(ctx, s.client, req)
@@ -294,7 +295,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 				reportTransientError("Failed to connect: %s", err)
 				continue
 			}
-			return errors.Annotate(err, "download failed").Tag(cipderr.CAS).Err()
+			return cipderr.CAS.Apply(errors.Fmt("download failed: %w", err))
 		}
 
 		// Transient error, retry.
@@ -307,7 +308,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		// Fatal error, abort.
 		if resp.StatusCode >= 400 {
 			_ = resp.Body.Close()
-			return errors.Reason("storage server replied with HTTP code %d", resp.StatusCode).Tag(cipderr.CAS).Err()
+			return cipderr.CAS.Apply(errors.Fmt("storage server replied with HTTP code %d", resp.StatusCode))
 		}
 
 		// Try to fetch (will close resp.Body when done).
@@ -321,7 +322,8 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		return nil
 	}
 
-	return errors.Reason("failed to download after multiple attempts").Tag(cipderr.CAS).Err()
+	return cipderr.CAS.Apply(errors.
+		New("failed to download after multiple attempts"))
 }
 
 // readerWithProgress is io.Reader that calls callback whenever something is

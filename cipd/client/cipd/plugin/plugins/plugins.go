@@ -95,7 +95,7 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 		grpc.WithPerRPCCredentials(&pluginPerRPCCredentials{handshake.PB.Ticket}),
 	)
 	if err != nil {
-		return errors.Annotate(err, "failed to connect to the plugin host").Err()
+		return errors.Fmt("failed to connect to the plugin host: %w", err)
 	}
 	defer conn.Close()
 

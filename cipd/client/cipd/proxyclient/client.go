@@ -62,10 +62,10 @@ func NewProxyTransport(proxyURL string) (*ProxyTransport, error) {
 		return nil, errors.Fmt("malformed URL: %w", err)
 	}
 	if parsed.Scheme != "unix" {
-		return nil, errors.Fmt("only unix:// scheme is supported")
+		return nil, errors.New("only unix:// scheme is supported")
 	}
 	if parsed.Path == "" || parsed.Host != "" {
-		return nil, errors.Fmt("unexpected path format in the URL")
+		return nil, errors.New("unexpected path format in the URL")
 	}
 
 	proxyTransport := &ProxyTransport{

@@ -99,14 +99,14 @@ func enableGlogVerbosity(level int) error {
 		return nil
 	}
 	if err := logtostderr.Value.Set("true"); err != nil {
-		return errors.Annotate(err, "failed to set logstderr to true").Err()
+		return errors.Fmt("failed to set logstderr to true: %w", err)
 	}
 	v := flag.Lookup("v")
 	if v == nil {
-		return errors.Reason("v flag for glog not found").Err()
+		return errors.New("v flag for glog not found")
 	}
 	if err := v.Value.Set(fmt.Sprintf("%d", level)); err != nil {
-		return errors.Annotate(err, "failed to set verbosity level").Err()
+		return errors.Fmt("failed to set verbosity level: %w", err)
 	}
 	return nil
 }

@@ -67,7 +67,7 @@ func (c *commonFlags) Parse(args []string) error {
 func (c *commonFlags) createAuthTokenSource(ctx context.Context) (oauth2.TokenSource, error) {
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts)
 	if err := a.CheckLoginRequired(); err != nil {
-		return nil, errors.Annotate(err, "please login with `luci-auth login`").Err()
+		return nil, errors.Fmt("please login with `luci-auth login`: %w", err)
 	}
 	return a.TokenSource()
 }
@@ -132,7 +132,7 @@ func validateCryptoKeysKMSPath(path string) error {
 	}
 	components := strings.Split(path, "/")
 	if len(components) < (len(cryptoKeysPathComponents)-1)*2 || len(components) > len(cryptoKeysPathComponents)*2 {
-		return errors.Reason("path should have the form %s", strings.Join(cryptoKeysPathComponents, "/.../")+"/...").Err()
+		return errors.Fmt("path should have the form %s", strings.Join(cryptoKeysPathComponents, "/.../")+"/...")
 	}
 	for i, c := range components {
 		if i%2 == 1 {
@@ -140,7 +140,7 @@ func validateCryptoKeysKMSPath(path string) error {
 		}
 		expect := cryptoKeysPathComponents[i/2]
 		if c != expect {
-			return errors.Reason("expected component %d to be %s, got %s", i+1, expect, c).Err()
+			return errors.Fmt("expected component %d to be %s, got %s", i+1, expect, c)
 		}
 	}
 	return nil
