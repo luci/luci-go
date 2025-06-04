@@ -30,7 +30,7 @@ import (
 func split2(s string, _ uint64) (string, string) {
 	toks := strings.SplitN(s, "=", 2)
 	if len(toks) != 2 {
-		panic(errors.Reason("splitting by = yielded != 2 tokens: %q", toks).Err())
+		panic(errors.Fmt("splitting by = yielded != 2 tokens: %q", toks))
 	}
 	return toks[0], toks[1]
 }

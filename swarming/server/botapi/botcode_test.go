@@ -85,7 +85,7 @@ func TestBotCode(t *testing.T) {
 			if botID == goodBot {
 				return nil
 			}
-			return errors.Reason("denied").Err()
+			return errors.New("denied")
 		}
 
 		call := func(callerID identity.Identity, peerIP, version string, q url.Values, botIDAuth any) *httptest.ResponseRecorder {

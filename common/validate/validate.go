@@ -26,10 +26,10 @@ import (
 var (
 	// unspecified is the error to be used when something is unspecified when it's
 	// supposed to.
-	unspecified = errors.Reason("unspecified").Err()
+	unspecified = errors.New("unspecified")
 
 	// doesNotMatchRe is the error to be used when a string does not match a regex.
-	doesNotMatchRe = errors.Reason("does not match").Err()
+	doesNotMatchRe = errors.New("does not match")
 )
 
 // Unspecified returns an error indicating that a value is unspecified.
@@ -65,10 +65,10 @@ func RegexpFragment(re string) error {
 	// e.g. "()^$()" will pass the check yet it can not be embedded in a regex
 	// template.
 	if strings.HasPrefix(re, "^") {
-		return errors.Reason("must not start with ^").Err()
+		return errors.New("must not start with ^")
 	}
 	if strings.HasSuffix(re, "$") {
-		return errors.Reason("must not end with $").Err()
+		return errors.New("must not end with $")
 	}
 
 	return nil
@@ -96,10 +96,10 @@ func MatchReWithLength(re *regexp.Regexp, minLen, maxLen int, value string) erro
 	}
 
 	if len(value) < minLen {
-		return errors.Reason("must be at least %d bytes", minLen).Err()
+		return errors.Fmt("must be at least %d bytes", minLen)
 	}
 	if len(value) > maxLen {
-		return errors.Reason("must be at most %d bytes", minLen).Err()
+		return errors.Fmt("must be at most %d bytes", minLen)
 	}
 
 	if value == "" {

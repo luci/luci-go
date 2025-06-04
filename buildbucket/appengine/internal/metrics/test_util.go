@@ -35,7 +35,7 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name st
 	store := state.Store()
 	cm, ok := metrics[base][name]
 	if !ok {
-		return nil, errors.Reason("metric with base %s, name %s not found", base, name).Err()
+		return nil, errors.Fmt("metric with base %s, name %s not found", base, name)
 	}
 
 	switch base {
@@ -57,6 +57,6 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name st
 		return store.Get(ctx, cm.(*int), fvs), nil
 
 	default:
-		return nil, errors.Reason("invalid metric base %s", base).Err()
+		return nil, errors.Fmt("invalid metric base %s", base)
 	}
 }

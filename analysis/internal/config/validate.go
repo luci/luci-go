@@ -756,17 +756,17 @@ func validateCommentTemplate(ctx *validation.Context, t string) {
 // - has a specified maximum length.
 func ValidateRunesGraphicOrNewline(value string, maxLengthInBytes int) error {
 	if value == "" {
-		return errors.Reason(unspecifiedMessage).Err()
+		return errors.New(unspecifiedMessage)
 	}
 	if len(value) > maxLengthInBytes {
-		return errors.Reason("exceeds maximum allowed length of %v bytes", maxLengthInBytes).Err()
+		return errors.Fmt("exceeds maximum allowed length of %v bytes", maxLengthInBytes)
 	}
 	if !utf8.ValidString(value) {
-		return errors.Reason("not a valid UTF-8 string").Err()
+		return errors.New("not a valid UTF-8 string")
 	}
 	for i, r := range value {
 		if !unicode.IsGraphic(r) && r != rune('\n') {
-			return errors.Reason("unicode rune %q at index %v is not graphic or newline character", r, i).Err()
+			return errors.Fmt("unicode rune %q at index %v is not graphic or newline character", r, i)
 		}
 	}
 	return nil

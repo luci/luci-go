@@ -88,7 +88,7 @@ func ClientIntercept(runnerRegistry map[uint64]reflect.Value) (exitcode int, int
 
 	tokens := strings.Split(endpoint, "|")
 	if len(tokens) != 2 {
-		panic(errors.Reason("%s: expected two tokens, got %q", execServeEnvvar, endpoint).Err())
+		panic(errors.Fmt("%s: expected two tokens, got %q", execServeEnvvar, endpoint))
 	}
 	hostname, invocationIDstr := tokens[0], tokens[1]
 	invocationID, err := strconv.ParseUint(invocationIDstr, 10, 64)
@@ -127,7 +127,7 @@ func ClientIntercept(runnerRegistry map[uint64]reflect.Value) (exitcode int, int
 					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(err), stack)
 			} else {
 				emClient.setInvocationOutput(
-					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(errors.Reason("%s", thing).Err()), stack)
+					reflect.New(runnerFn.Type().Out(0)).Elem(), reflect.ValueOf(errors.Fmt("%s", thing)), stack)
 			}
 		}
 	}()

@@ -215,7 +215,7 @@ func updateExpected(path, exp string) error {
 
 	idx := bytes.Index(blob, []byte(fmt.Sprintf("# %s\n", expectConfigsHeader)))
 	if idx == -1 {
-		return errors.Reason("doesn't have `Expect configs` comment block").Err()
+		return errors.New("doesn't have `Expect configs` comment block")
 	}
 	blob = blob[:idx]
 

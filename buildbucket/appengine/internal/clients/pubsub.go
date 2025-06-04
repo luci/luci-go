@@ -48,7 +48,7 @@ func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pu
 		if mockClient, exist := mockClients[cloudProject]; exist {
 			return mockClient, nil
 		}
-		return nil, errors.Reason("couldn't find mock pubsub client for %s", cloudProject).Err()
+		return nil, errors.Fmt("couldn't find mock pubsub client for %s", cloudProject)
 	}
 
 	var creds credentials.PerRPCCredentials
@@ -76,7 +76,7 @@ func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pu
 func ValidatePubSubTopicName(topic string) (string, string, error) {
 	matches := topicNameRE.FindAllStringSubmatch(topic, -1)
 	if matches == nil || len(matches[0]) != 3 {
-		return "", "", errors.Reason("topic %q does not match %q", topic, topicNameRE).Err()
+		return "", "", errors.Fmt("topic %q does not match %q", topic, topicNameRE)
 	}
 
 	cloudProj := matches[0][1]
@@ -84,13 +84,13 @@ func ValidatePubSubTopicName(topic string) (string, string, error) {
 	// Only internal App Engine projects start with "google.com:", all other
 	// project ids conform to cloudProjectIDRE.
 	if !strings.HasPrefix(cloudProj, "google.com:") && !cloudProjectIDRE.MatchString(cloudProj) {
-		return "", "", errors.Reason("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE).Err()
+		return "", "", errors.Fmt("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE)
 	}
 	if strings.HasPrefix(topicID, "goog") {
-		return "", "", errors.Reason("topic id %q shouldn't begin with the string goog", topicID).Err()
+		return "", "", errors.Fmt("topic id %q shouldn't begin with the string goog", topicID)
 	}
 	if !topicIDRE.MatchString(topicID) {
-		return "", "", errors.Reason("topic id %q does not match %q", topicID, topicIDRE).Err()
+		return "", "", errors.Fmt("topic id %q does not match %q", topicID, topicIDRE)
 	}
 	return cloudProj, topicID, nil
 }

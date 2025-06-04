@@ -32,7 +32,7 @@ func IPv4StrToInt(ipAddress string) (uint32, error) {
 		ip = ip.To4()
 	}
 	if ip == nil {
-		return 0, errors.Reason("invalid IPv4 address %q", ipAddress).Err()
+		return 0, errors.Fmt("invalid IPv4 address %q", ipAddress)
 	}
 	return binary.BigEndian.Uint32(ip), nil
 }

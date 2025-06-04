@@ -136,7 +136,7 @@ func (res *CheckResult) ToGrpcErr() error {
 func (res *CheckResult) ToTaggedError() error {
 	switch {
 	case res.InternalError:
-		return errors.Reason("internal error when checking permissions").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.New("internal error when checking permissions"))
 	case res.Permitted:
 		return nil
 	case res.err == nil:
@@ -144,7 +144,7 @@ func (res *CheckResult) ToTaggedError() error {
 	default:
 		// Note: res.err is always a gRPC error with PermissionDenied status. We'll
 		// just drop the status since it looks weird in non-gRPC handlers.
-		return errors.Reason("%s", status.Convert(res.err).Message()).Err()
+		return errors.Fmt("%s", status.Convert(res.err).Message())
 	}
 }
 

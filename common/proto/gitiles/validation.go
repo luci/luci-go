@@ -45,7 +45,7 @@ func (r *RefsRequest) Validate() error {
 	}
 	switch {
 	case r.RefsPath != "refs" && !strings.HasPrefix(r.RefsPath, "refs/"):
-		return errors.Reason(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath).Err()
+		return errors.Fmt(`refsPath must be "refs" or start with "refs/": %q`, r.RefsPath)
 	default:
 		return nil
 	}
@@ -128,9 +128,9 @@ func requireProject(val string) error {
 func requireCommittish(field, val string) error {
 	switch {
 	case val == "":
-		return errors.Reason("%s is required", field).Err()
+		return errors.Fmt("%s is required", field)
 	case strings.HasPrefix(val, "/"):
-		return errors.Reason("%s must not start with /", field).Err()
+		return errors.Fmt("%s must not start with /", field)
 	}
 	return nil
 }

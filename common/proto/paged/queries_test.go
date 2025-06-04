@@ -285,7 +285,7 @@ func TestQueries(t *testing.T) {
 					t.Run("error", func(t *ftt.Test) {
 						rsp.Records = make([]string, 0)
 						f := func(r *Record) error {
-							return errors.Reason("error").Err()
+							return errors.New("error")
 						}
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
 						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)

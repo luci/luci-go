@@ -108,7 +108,7 @@ func TestHandshake(t *testing.T) {
 			if bot == botID || bot == conflictingBotID {
 				return nil
 			}
-			return errors.Reason("denied").Err()
+			return errors.New("denied")
 		}
 		var latestUpdate *botinfo.Update
 		srv.submitUpdate = func(ctx context.Context, u *botinfo.Update) error {

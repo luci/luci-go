@@ -57,20 +57,20 @@ func newRawTaskBackendClient(ctx context.Context, host string, project string) (
 // GetBackendHost returns the backend's hostname from service config.
 func GetBackendHost(target string, globalCfg *pb.SettingsCfg) (hostname string, err error) {
 	if globalCfg == nil {
-		return "", errors.Reason("could not get global settings config").Err()
+		return "", errors.New("could not get global settings config")
 	}
 	for _, config := range globalCfg.Backends {
 		if config.Target == target {
 			return config.Hostname, nil
 		}
 	}
-	return "", errors.Reason("could not find target in global config settings").Err()
+	return "", errors.New("could not find target in global config settings")
 }
 
 // IsTaskBackendLite returns whether the backend is a TaskBackendLite.
 func IsTaskBackendLite(target string, globalCfg *pb.SettingsCfg) (bool, error) {
 	if globalCfg == nil {
-		return false, errors.Reason("could not get global settings config").Err()
+		return false, errors.New("could not get global settings config")
 	}
 	for _, backend := range globalCfg.Backends {
 		if backend.Target == target {
@@ -78,7 +78,7 @@ func IsTaskBackendLite(target string, globalCfg *pb.SettingsCfg) (bool, error) {
 			return isLite, nil
 		}
 	}
-	return false, errors.Reason("could not find target in global config settings").Err()
+	return false, errors.New("could not find target in global config settings")
 }
 
 var ErrTaskBackendLite = errors.New("cannot create a TaskBackend client for a TaskBackendLite server")

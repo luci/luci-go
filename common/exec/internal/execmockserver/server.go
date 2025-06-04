@@ -73,7 +73,7 @@ func (e *Server) GetInvocationInput(invocationID uint64, reply *InvocationInput)
 	e.mu.Unlock()
 
 	if inp == nil {
-		return errors.Reason("Bad invocation ID: %d", invocationID).Err()
+		return errors.Fmt("Bad invocation ID: %d", invocationID)
 	}
 
 	*reply = *inp
@@ -89,7 +89,7 @@ func (e *Server) SetInvocationOutput(InvocationOutput *InvocationOutput, none *i
 	e.mu.Unlock()
 
 	if outfn == nil {
-		return errors.Reason("Bad invocation ID: %d", InvocationOutput.InvocationID).Err()
+		return errors.Fmt("Bad invocation ID: %d", InvocationOutput.InvocationID)
 	}
 
 	var runnerErr error

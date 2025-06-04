@@ -59,7 +59,7 @@ func (f strMapFlag) Set(s string) error {
 	key := parts[0]
 	value := parts[1]
 	if _, ok := f[key]; ok {
-		return errors.Reason("key %q is already specified", key).Err()
+		return errors.Fmt("key %q is already specified", key)
 	}
 	f[key] = value
 	return nil

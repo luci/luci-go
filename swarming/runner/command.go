@@ -44,7 +44,7 @@ func ReplaceCommandParameters(ctx context.Context, arg, outDir, botFile string) 
 
 	if strings.Contains(arg, isolatedOutdirParameter) {
 		if outDir == "" {
-			return "", errors.Reason("output directory is requested in command or env var, but not provided; please specify one").Err()
+			return "", errors.New("output directory is requested in command or env var, but not provided; please specify one")
 		}
 		arg = strings.Replace(arg, isolatedOutdirParameter, outDir, -1)
 		replaceSlash = true

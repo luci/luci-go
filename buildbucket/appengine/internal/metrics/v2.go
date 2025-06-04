@@ -41,7 +41,7 @@ func stringsToFields(fieldStrings []string) []field.Field {
 func GetCommonBaseFields(base pb.CustomMetricBase) ([]string, error) {
 	bfs, ok := BaseFields[base]
 	if !ok {
-		return nil, errors.Reason("invalid base %s", base).Err()
+		return nil, errors.Fmt("invalid base %s", base)
 	}
 	return bfs.common, nil
 }
@@ -59,7 +59,7 @@ func GetBaseFieldMap(bp *pb.Build, base pb.CustomMetricBase) (map[string]string,
 		case "status":
 			fieldMap[f] = pb.Status_name[int32(bp.Status)]
 		default:
-			return nil, errors.Reason("unsupported base field %s", f).Err()
+			return nil, errors.Fmt("unsupported base field %s", f)
 		}
 	}
 	return fieldMap, nil

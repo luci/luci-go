@@ -38,7 +38,7 @@ func (f boolSliceFlag) String() string {
 func (f *boolSliceFlag) Set(val string) error {
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		return errors.Reason("values must be booleans").Err()
+		return errors.New("values must be booleans")
 	}
 	*f = append(*f, b)
 	return nil

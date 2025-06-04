@@ -414,7 +414,7 @@ func newMetric(cm *pb.CustomMetric, registry *registry.Registry) (CustomMetric, 
 			metric.NewIntWithOptions(cm.Name, opt, cm.Description, nil, fields...), info}, nil
 
 	default:
-		return nil, errors.Reason("invalid metric base %s", base).Err()
+		return nil, errors.Fmt("invalid metric base %s", base)
 	}
 }
 
@@ -557,7 +557,7 @@ func getDefaultMetricFieldValues(b *pb.Build, base pb.CustomMetricBase) (map[str
 		case "status":
 			baseFieldValues[f] = pb.Status_name[int32(b.Status)]
 		default:
-			return nil, errors.Reason("invalid base field %s", f).Err()
+			return nil, errors.Fmt("invalid base field %s", f)
 		}
 	}
 	return baseFieldValues, nil
@@ -567,13 +567,13 @@ func getDefaultMetricFieldValues(b *pb.Build, base pb.CustomMetricBase) (map[str
 func ValidateExtraFieldsWithBase(base pb.CustomMetricBase, extraFields []string) error {
 	// No extra fields for builder metrics
 	if IsBuilderMetric(base) && len(extraFields) > 0 {
-		return errors.Reason("custom builder metric cannot have extra_fields").Err()
+		return errors.New("custom builder metric cannot have extra_fields")
 	}
 
 	// no base fields in extra fields
 	baseFields, err := GetCommonBaseFields(base)
 	if err != nil {
-		return errors.Reason("base %s is invalid", base).Err()
+		return errors.Fmt("base %s is invalid", base)
 	}
 	if len(baseFields) == 0 {
 		return nil
@@ -581,7 +581,7 @@ func ValidateExtraFieldsWithBase(base pb.CustomMetricBase, extraFields []string)
 	bfSet := stringset.NewFromSlice(baseFields...)
 	fSet := stringset.NewFromSlice(extraFields...)
 	if fSet.Contains(bfSet) {
-		return errors.Reason("cannot contain base fields %q in extra_fields", baseFields).Err()
+		return errors.Fmt("cannot contain base fields %q in extra_fields", baseFields)
 	}
 	return nil
 }
