@@ -128,14 +128,14 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	// Credentials with Cloud scope.
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 	}
 
 	// Figure out what client config to use.
 	var cfg spanner.ClientConfig
 	if m.opts.ClientConfig != nil {
 		if cfg, err = m.opts.ClientConfig(ctx, opts); err != nil {
-			return nil, errors.Annotate(err, "failed to get custom ClientConfig").Err()
+			return nil, errors.Fmt("failed to get custom ClientConfig: %w", err)
 		}
 	} else {
 		cfg = spanner.ClientConfig{
@@ -155,7 +155,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	}
 	client, err := spanner.NewClientWithConfig(ctx, m.opts.SpannerDatabase, cfg, options...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to instantiate Cloud Spanner client").Err()
+		return nil, errors.Fmt("failed to instantiate Cloud Spanner client: %w", err)
 	}
 	ctx = UseClient(ctx, client)
 
@@ -165,7 +165,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	// Run a "select 1" query to verify the database exists and we can access it
 	// before we actually serve any requests.
 	if err := pingDB(ctx); err != nil {
-		return nil, errors.Annotate(err, "failed to ping Cloud Spanner database").Err()
+		return nil, errors.Fmt("failed to ping Cloud Spanner database: %w", err)
 	}
 
 	return ctx, nil

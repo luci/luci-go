@@ -59,18 +59,18 @@ func (d *Distributed) ExecSweepTask(ctx context.Context, task *tqpb.SweepTask) e
 	// know how to enumerate reminders.
 	db := db.NonTxnDB(ctx, task.Db)
 	if db == nil {
-		return errors.Reason("no TQ db kind %q registered in the process", task.Db).Err()
+		return errors.Fmt("no TQ db kind %q registered in the process", task.Db)
 	}
 
 	// Similarly a lessor is needed for coordination.
 	lessor, err := lessor.Get(ctx, task.LessorId)
 	if err != nil {
-		return errors.Annotate(err, "can't initialize lessor %q", task.LessorId).Err()
+		return errors.Fmt("can't initialize lessor %q: %w", task.LessorId, err)
 	}
 
 	part, err := partition.FromString(task.Partition)
 	if err != nil {
-		return errors.Annotate(err, "bad task payload").Err()
+		return errors.Fmt("bad task payload: %w", err)
 	}
 
 	// Ensure there is time to process reminders produced by the scan.
@@ -150,7 +150,7 @@ func (d *Distributed) processReminders(ctx context.Context, lessor lessor.Lessor
 	desired, err := partition.SpanInclusive(reminders[0].ID, reminders[l-1].ID)
 	if err != nil {
 		logging.Errorf(ctx, "bug: invalid Reminder ID(s): %s", err)
-		return 0, errors.Annotate(err, "invalid Reminder ID(s)").Err()
+		return 0, errors.Fmt("invalid Reminder ID(s): %w", err)
 	}
 
 	var errProcess error
@@ -163,9 +163,9 @@ func (d *Distributed) processReminders(ctx context.Context, lessor lessor.Lessor
 	switch {
 	case leaseErr != nil:
 		logging.Errorf(ctx, "Failed to acquire the lease: %s", leaseErr)
-		return 0, errors.Annotate(leaseErr, "failed to acquire the lease").Err()
+		return 0, errors.Fmt("failed to acquire the lease: %w", leaseErr)
 	case errProcess != nil:
-		return count, errors.Annotate(errProcess, "failed to process all reminders").Err()
+		return count, errors.Fmt("failed to process all reminders: %w", errProcess)
 	default:
 		return count, nil
 	}

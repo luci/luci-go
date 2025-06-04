@@ -129,7 +129,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize the token source").Err()
+		return nil, errors.Fmt("failed to initialize the token source: %w", err)
 	}
 	client, err := secretmanager.NewClient(
 		ctx,
@@ -138,7 +138,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	)
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize the Secret Manager client").Err()
+		return nil, errors.Fmt("failed to initialize the Secret Manager client: %w", err)
 	}
 	host.RegisterCleanup(func(context.Context) { client.Close() })
 
@@ -150,14 +150,14 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	if m.opts.RootSecret != "" {
 		if err := store.LoadRootSecret(ctx, m.opts.RootSecret); err != nil {
-			return nil, errors.Annotate(err, "failed to initialize the secret store").Err()
+			return nil, errors.Fmt("failed to initialize the secret store: %w", err)
 		}
 	}
 
 	if m.opts.PrimaryTinkAEADKey != "" {
 		aead, err := LoadTinkAEAD(ctx, m.opts.PrimaryTinkAEADKey)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize the primary tink AEAD key").Err()
+			return nil, errors.Fmt("failed to initialize the primary tink AEAD key: %w", err)
 		}
 		ctx = setPrimaryTinkAEAD(ctx, aead)
 	}

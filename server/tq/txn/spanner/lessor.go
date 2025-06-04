@@ -64,7 +64,7 @@ func (*spanLessor) acquire(ctx context.Context, sectionID string, desired *parti
 		deletedExpired = 0 // reset in case of retries.
 		all, err := loadAll(ctx, sectionID)
 		if err != nil {
-			return errors.Annotate(err, "failed to read leases").Err()
+			return errors.Fmt("failed to read leases: %w", err)
 		}
 		active, expired := activeAndExpired(ctx, all)
 		if len(expired) > 0 {
@@ -78,13 +78,13 @@ func (*spanLessor) acquire(ctx context.Context, sectionID string, desired *parti
 		}
 		parts, err := availableForLease(desired, active)
 		if err != nil {
-			return errors.Annotate(err, "failed to decode available leases").Err()
+			return errors.Fmt("failed to decode available leases: %w", err)
 		}
 		acquired = save(ctx, sectionID, expiresAt, parts, maxLeaseID(all))
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to transact a lease").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to transact a lease: %w", err))
 	}
 	if deletedExpired > 0 {
 		// If this is logged frequently, something is wrong either with the leasing
@@ -187,7 +187,7 @@ func query(ctx context.Context, sectionID string) ([]*lease, error) {
 func loadAll(ctx context.Context, sectionID string) ([]*lease, error) {
 	all, err := query(ctx, sectionID)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch leases").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch leases: %w", err))
 	}
 	return all, nil
 }

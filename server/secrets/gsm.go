@@ -81,7 +81,7 @@ type SecretManagerStore struct {
 func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret string) error {
 	secret, err := sm.StoredSecret(ctx, rootSecret)
 	if err != nil {
-		return errors.Annotate(err, "failed to read the initial value of the root secret").Err()
+		return errors.Fmt("failed to read the initial value of the root secret: %w", err)
 	}
 	derivedStore := NewDerivedStore(secret)
 	sm.AddRotationHandler(ctx, rootSecret, func(_ context.Context, secret Secret) {
@@ -144,7 +144,7 @@ func (sm *SecretManagerStore) MaintenanceLoop(ctx context.Context) {
 // RandomSecret returns a random secret given its name.
 func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Secret, error) {
 	if sm.randomSecrets == nil {
-		return Secret{}, errors.Reason("random secrets store is not initialized").Err()
+		return Secret{}, errors.New("random secrets store is not initialized")
 	}
 	return sm.randomSecrets.RandomSecret(ctx, name)
 }
@@ -342,17 +342,17 @@ func (sm *SecretManagerStore) normalizeName(name string) (string, error) {
 		switch parts := strings.Split(strings.TrimPrefix(name, "sm://"), "/"); {
 		case len(parts) == 1:
 			if sm.CloudProject == "" {
-				return "", errors.Reason("can't use secret reference %q when the Cloud Project name is not configured", name).Err()
+				return "", errors.Fmt("can't use secret reference %q when the Cloud Project name is not configured", name)
 			}
 			return fmt.Sprintf("sm://%s/%s", sm.CloudProject, parts[0]), nil
 		case len(parts) == 2:
 			return name, nil
 		default:
-			return "", errors.Reason("sm:// secret reference should have form sm://<name> or sm://<project>/<name>").Err()
+			return "", errors.New("sm:// secret reference should have form sm://<name> or sm://<project>/<name>")
 		}
 
 	default:
-		return "", errors.Reason("not supported secret reference %q", name).Err()
+		return "", errors.Fmt("not supported secret reference %q", name)
 	}
 }
 
@@ -362,7 +362,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string) (*tra
 	case strings.HasPrefix(name, "devsecret://"):
 		value, err := base64.RawStdEncoding.DecodeString(strings.TrimPrefix(name, "devsecret://"))
 		if err != nil {
-			return nil, errors.Annotate(err, "bad devsecret://, not base64 encoding").Err()
+			return nil, errors.Fmt("bad devsecret://, not base64 encoding: %w", err)
 		}
 		return &trackedSecret{
 			name:  name,
@@ -374,14 +374,14 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string) (*tra
 		case "tink/aead":
 			value, err := generateDevTinkAEADKeyset(ctx)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to generate new tink AEAD keyset").Err()
+				return nil, errors.Fmt("failed to generate new tink AEAD keyset: %w", err)
 			}
 			return &trackedSecret{
 				name:  name,
 				value: Secret{Active: value},
 			}, nil
 		default:
-			return nil, errors.Reason("devsecret-gen:// kind %q is not supported", kind).Err()
+			return nil, errors.Fmt("devsecret-gen:// kind %q is not supported", kind)
 		}
 
 	case strings.HasPrefix(name, "devsecret-text://"):
@@ -421,7 +421,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 		case err == nil:
 			*dest = *resp
 		case !isMissingOrDisabledVersion(err):
-			return errors.Annotate(err, "version %q", ver).Err()
+			return errors.Fmt("version %q: %w", ver, err)
 		}
 		return nil
 	}
@@ -429,7 +429,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	eg.Go(func() error { return attemptAccess("previous", &previous) })
 	eg.Go(func() error { return attemptAccess("next", &next) })
 	if err := eg.Wait(); err != nil {
-		return nil, errors.Annotate(err, "loading the secret %q", name).Err()
+		return nil, errors.Fmt("loading the secret %q: %w", name, err)
 	}
 
 	// If there's no "current", fallback to loading "latest" instead of "current"
@@ -438,7 +438,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	if current.version == 0 {
 		latest, err := sm.accessSecretVersion(ctx, project, secret, "latest")
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get the latest version of the secret %q", name).Err()
+			return nil, errors.Fmt("failed to get the latest version of the secret %q: %w", name, err)
 		}
 		current = *latest
 		if current.version > 1 && previous.version == 0 {
@@ -447,7 +447,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 			case err == nil:
 				previous = *prev
 			case !isMissingOrDisabledVersion(err):
-				return nil, errors.Annotate(err, "failed to get the previous version of the secret %q", name).Err()
+				return nil, errors.Fmt("failed to get the previous version of the secret %q: %w", name, err)
 			}
 		}
 	}
@@ -608,11 +608,11 @@ func reloadBackoffInterval(ctx context.Context, attempt int) time.Duration {
 func generateDevTinkAEADKeyset(ctx context.Context) ([]byte, error) {
 	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to generate from template").Err()
+		return nil, errors.Fmt("failed to generate from template: %w", err)
 	}
 	buf := bytes.NewBuffer(nil)
 	if err := insecurecleartextkeyset.Write(kh, keyset.NewJSONWriter(buf)); err != nil {
-		return nil, errors.Annotate(err, "failed to serialize newly generated keyset").Err()
+		return nil, errors.Fmt("failed to serialize newly generated keyset: %w", err)
 	}
 	value := buf.Bytes()
 	logging.Infof(

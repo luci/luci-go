@@ -112,7 +112,7 @@ func NewPool(addr string, db int) *redis.Pool {
 				redis.DialWriteTimeout(5*time.Second),
 			)
 			if err != nil {
-				return nil, errors.Annotate(err, "redis").Err()
+				return nil, errors.Fmt("redis: %w", err)
 			}
 			return conn, nil
 		},

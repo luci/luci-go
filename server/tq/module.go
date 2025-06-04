@@ -325,7 +325,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	}
 
 	if err := ValidateNamespace(m.opts.Namespace); err != nil {
-		return nil, errors.Annotate(err, "bad TQ namespace %q", m.opts.Namespace).Err()
+		return nil, errors.Fmt("bad TQ namespace %q: %w", m.opts.Namespace, err)
 	}
 	disp.Namespace = m.opts.Namespace
 
@@ -334,7 +334,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	} else {
 		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get own service account email").Err()
+			return nil, errors.Fmt("failed to get own service account email: %w", err)
 		}
 		disp.PushAs = info.ServiceAccountName
 	}
@@ -344,7 +344,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		// When running for real use real services.
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
+			return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 		}
 		cloudSub, err := NewCloudSubmitter(ctx, creds)
 		if err != nil {
@@ -369,7 +369,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	if m.opts.ServingPrefix != "-" {
 		logging.Infof(ctx, "TQ is serving tasks from %q", m.opts.ServingPrefix)
 		if !strings.HasPrefix(m.opts.ServingPrefix, "/internal/") {
-			return nil, errors.Reason(`-tq-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix).Err()
+			return nil, errors.Fmt(`-tq-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix)
 		}
 		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
@@ -393,7 +393,7 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 	if len(m.opts.SweepInitiationLaunchers) == 0 {
 		info, err := auth.GetSigner(ctx).ServiceInfo(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to get own service account email").Err()
+			return errors.Fmt("failed to get own service account email: %w", err)
 		}
 		m.opts.SweepInitiationLaunchers = []string{info.ServiceAccountName}
 	}
@@ -406,7 +406,7 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 		}
 	}
 	if !strings.HasPrefix(m.opts.SweepTaskPrefix, "/internal/") {
-		return errors.Reason(`-tq-sweep-task-prefix must start with "/internal/", got %q`, m.opts.SweepTaskPrefix).Err()
+		return errors.Fmt(`-tq-sweep-task-prefix must start with "/internal/", got %q`, m.opts.SweepTaskPrefix)
 	}
 
 	if m.opts.SweepTargetHost == "" {
@@ -438,7 +438,7 @@ func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts modu
 			SubmitConcurrentBatches: 32,   // TODO: make configurable if necessary
 		})
 	default:
-		return errors.Reason(`invalid -sweep-mode %q, must be either "distributed" or "inproc"`, m.opts.SweepMode).Err()
+		return errors.Fmt(`invalid -sweep-mode %q, must be either "distributed" or "inproc"`, m.opts.SweepMode)
 	}
 
 	// Setup the sweep initiation.

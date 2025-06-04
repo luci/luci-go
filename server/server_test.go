@@ -717,7 +717,7 @@ func TestRPCServers(t *testing.T) {
 func testContextFeatures(ctx context.Context, hasTraceID bool) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = errors.Reason("Panic: %s", p).Err()
+			err = errors.Fmt("Panic: %s", p)
 		}
 	}()
 
@@ -738,26 +738,26 @@ func testContextFeatures(ctx context.Context, hasTraceID bool) (err error) {
 	// Client auth works (a test for advanced features is in TestServer).
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes("A", "B"))
 	if err != nil {
-		return errors.Annotate(err, "token source").Err()
+		return errors.Fmt("token source: %w", err)
 	}
 	switch tok, err := ts.Token(); {
 	case err != nil:
-		return errors.Annotate(err, "token").Err()
+		return errors.Fmt("token: %w", err)
 	case tok.AccessToken != "fake_token_1":
 		// Refuse to log tokens that appear like a real ones (in case the test is
 		// totally failing and picking up real credentials).
 		if strings.HasPrefix(tok.AccessToken, "fake_token_") {
-			return errors.Reason("unexpected token %q", tok.AccessToken).Err()
+			return errors.Fmt("unexpected token %q", tok.AccessToken)
 		}
-		return errors.Reason("unexpected token that looks like a real one").Err()
+		return errors.New("unexpected token that looks like a real one")
 	}
 
 	// AuthDB is available (a test for advanced features is in TestServer).
 	switch state := auth.GetState(ctx); {
 	case state == nil:
-		return errors.Reason("auth.State unexpectedly nil").Err()
+		return errors.New("auth.State unexpectedly nil")
 	case state.DB() != fakeAuthDB:
-		return errors.Reason("unexpected auth.DB %v", state.DB()).Err()
+		return errors.Fmt("unexpected auth.DB %v", state.DB())
 	}
 
 	// Datastore is available.
@@ -766,7 +766,7 @@ func testContextFeatures(ctx context.Context, hasTraceID bool) (err error) {
 		Body string
 	}
 	if err := datastore.Put(ctx, &testEntity{ID: 123, Body: "Hi"}); err != nil {
-		return errors.Annotate(err, "datastore").Err()
+		return errors.Fmt("datastore: %w", err)
 	}
 
 	return nil

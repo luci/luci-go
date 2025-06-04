@@ -191,12 +191,12 @@ func setPrimaryTinkAEAD(ctx context.Context, val *AEADHandle) context.Context {
 func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) (*AEADHandle, error) {
 	secret, err := StoredSecret(ctx, secretName)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to load Tink AEAD key %q", secretName).Err()
+		return nil, errors.Fmt("failed to load Tink AEAD key %q: %w", secretName, err)
 	}
 
 	aead, info, err := mergedKeyset(&secret)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize Tink AEAD key %q", secretName).Err()
+		return nil, errors.Fmt("failed to deserialize Tink AEAD key %q: %w", secretName, err)
 	}
 	logging.Infof(ctx, "Loaded Tink AEAD key %q (primary Tink key is %d)", secretName, info.PrimaryKeyId)
 
@@ -214,7 +214,7 @@ func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) 
 			}
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to subscribe to the Tink AEAD key %q rotation", secretName).Err()
+			return nil, errors.Fmt("failed to subscribe to the Tink AEAD key %q rotation: %w", secretName, err)
 		}
 	}
 
@@ -235,7 +235,7 @@ func mergedKeyset(s *Secret) (tink.AEAD, *tinkpb.KeysetInfo, error) {
 	appendKeySet := func(blob []byte) error {
 		ks, err := keyset.NewJSONReader(bytes.NewReader(blob)).Read()
 		if err != nil {
-			return errors.Annotate(err, "failed to deserialize Tink keyset").Err()
+			return errors.Fmt("failed to deserialize Tink keyset: %w", err)
 		}
 		for _, key := range ks.Key {
 			if key.Status == tinkpb.KeyStatusType_ENABLED && !seenKeyIDs[key.KeyId] {
@@ -244,7 +244,7 @@ func mergedKeyset(s *Secret) (tink.AEAD, *tinkpb.KeysetInfo, error) {
 			}
 		}
 		if !seenKeyIDs[ks.PrimaryKeyId] {
-			return errors.Reason("keyset references unknown key %d as primary", ks.PrimaryKeyId).Err()
+			return errors.Fmt("keyset references unknown key %d as primary", ks.PrimaryKeyId)
 		}
 		merged.PrimaryKeyId = ks.PrimaryKeyId
 		return nil
@@ -254,11 +254,11 @@ func mergedKeyset(s *Secret) (tink.AEAD, *tinkpb.KeysetInfo, error) {
 	// as the final primary.
 	for idx, blob := range s.Passive {
 		if err := appendKeySet(blob); err != nil {
-			return nil, nil, errors.Annotate(err, "passive keyset #%d", idx+1).Err()
+			return nil, nil, errors.Fmt("passive keyset #%d: %w", idx+1, err)
 		}
 	}
 	if err := appendKeySet(s.Active); err != nil {
-		return nil, nil, errors.Annotate(err, "active keyset").Err()
+		return nil, nil, errors.Fmt("active keyset: %w", err)
 	}
 
 	// Build an AEAD primitive out of the merged keyset.

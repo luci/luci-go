@@ -63,7 +63,7 @@ func (spanDB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
 		spanner.Delete(tableName, spanner.Key{r.ID}),
 	}, spanner.ApplyAtLeastOnce())
 	if err != nil {
-		return errors.Annotate(err, "failed to delete the Reminder %s", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete the Reminder %s: %w", r.ID, err))
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (spanDB) FetchRemindersMeta(ctx context.Context, low string, high string, l
 		return nil
 	})
 	if err != nil && err != context.DeadlineExceeded {
-		err = errors.Annotate(err, "failed to fetch Reminder keys").Tag(transient.Tag).Err()
+		err = transient.Tag.Apply(errors.Fmt("failed to fetch Reminder keys: %w", err))
 	}
 	return
 }
@@ -105,7 +105,7 @@ func (spanDB) FetchReminderRawPayloads(ctx context.Context, batch []*reminder.Re
 		return nil
 	})
 	if err != nil {
-		return batch[:i], errors.Annotate(err, "failed to fetch Reminders").Tag(transient.Tag).Err()
+		return batch[:i], transient.Tag.Apply(errors.Fmt("failed to fetch Reminders: %w", err))
 	}
 	return batch[:i], nil
 }

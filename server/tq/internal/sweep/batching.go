@@ -62,7 +62,7 @@ func (p *BatchProcessor) Start() error {
 		p.processBatch,
 	)
 	if err != nil {
-		return errors.Annotate(err, "invalid sweeper configuration").Err()
+		return errors.Fmt("invalid sweeper configuration: %w", err)
 	}
 	return nil
 }

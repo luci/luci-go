@@ -72,13 +72,13 @@ func NewCloudSubmitter(ctx context.Context, creds credentials.PerRPCCredentials)
 
 	tasks, err := cloudtasks.NewClient(ctx, opts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize Cloud Tasks client").Err()
+		return nil, errors.Fmt("failed to initialize Cloud Tasks client: %w", err)
 	}
 
 	pubsub, err := pubsub.NewPublisherClient(ctx, opts...)
 	if err != nil {
 		tasks.Close()
-		return nil, errors.Annotate(err, "failed to initialize Cloud PubSub client").Err()
+		return nil, errors.Fmt("failed to initialize Cloud PubSub client: %w", err)
 	}
 
 	return &CloudSubmitter{tasks: tasks, pubsub: pubsub}, nil

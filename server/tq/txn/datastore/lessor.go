@@ -70,19 +70,19 @@ func (*dsLessor) acquire(ctx context.Context, sectionID string, desired *partiti
 				expired = expired[:50]
 			}
 			if err = ds.Delete(ctx, expired); err != nil {
-				return errors.Annotate(err, "failed to remove %d expired leases", len(expired)).Err()
+				return errors.Fmt("failed to remove %d expired leases: %w", len(expired), err)
 			}
 			deletedExpired = len(expired)
 		}
 		parts, err := availableForLease(desired, active)
 		if err != nil {
-			return errors.Annotate(err, "failed to decode available leases").Err()
+			return errors.Fmt("failed to decode available leases: %w", err)
 		}
 		acquired, err = save(ctx, sectionID, expiresAt, parts)
 		return err
 	}, &ds.TransactionOptions{Attempts: 5})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to transact a lease").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to transact a lease: %w", err))
 	}
 	if deletedExpired > 0 {
 		// If this is logged frequently, something is wrong either with the leasing
@@ -127,7 +127,7 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 		l.SerializedParts[i] = p.String()
 	}
 	if err := ds.Put(ctx, l); err != nil {
-		return nil, errors.Annotate(err, "failed to save a new lease").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to save a new lease: %w", err))
 	}
 	return l, nil
 }
@@ -147,8 +147,10 @@ func loadAll(ctx context.Context, sectionID string) (active, expired []*lease, e
 	var all []*lease
 	q := ds.NewQuery("tq.Lease").Ancestor(leasesRootKey(ctx, sectionID))
 	if err := ds.GetAll(ctx, q, &all); err != nil {
-		return nil, nil, errors.Annotate(err, "failed to fetch leases").Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.
+			Fmt("failed to fetch leases: %w", err))
 	}
+
 	// Partition active leases in the front and expired at the end of the slice.
 	i, j := 0, len(all)
 	now := clock.Now(ctx)

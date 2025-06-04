@@ -64,23 +64,24 @@ func (r *FakeRPCAuth) Authenticate(ctx context.Context, md auth.RequestMetadata)
 
 	parts := strings.Split(header, " ")
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-		return nil, nil, errors.Reason("bad Authorization header, expecting \"Bearer ...\"").Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.New("bad Authorization header, expecting \"Bearer ...\""))
 	}
 
 	blob, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "bad fake token, not base64-encoded").Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.Fmt("bad fake token, not base64-encoded: %w", err))
 	}
 
 	var tok FakeToken
 	if err := json.Unmarshal(blob, &tok); err != nil {
-		return nil, nil, errors.Annotate(err, "bad fake token, not JSON").Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.Fmt("bad fake token, not JSON: %w", err))
 	}
 
 	if tok.Seed != r.Seed {
-		return nil, nil, errors.Reason(
-			"the fake token has unexpected seed, this usually means " +
-				"independent tests are incorrectly talking to one another").Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil,
+
+			grpcutil.UnauthenticatedTag.Apply(errors.New("the fake token has unexpected seed, this usually means " +
+				"independent tests are incorrectly talking to one another"))
 	}
 
 	switch tok.Kind {
@@ -88,26 +89,27 @@ func (r *FakeRPCAuth) Authenticate(ctx context.Context, md auth.RequestMetadata)
 		// Any scopes set in a fake OAuth token is fine for now.
 	case "id":
 		if len(r.IDTokensAudience) == 0 {
-			return nil, nil, errors.Reason(
-				"unexpectedly got a fake ID token with audience %q, "+
-					"the server is not configured to accept ID tokens at all", tok.Aud).Tag(grpcutil.UnauthenticatedTag).Err()
+			return nil, nil,
+
+				grpcutil.UnauthenticatedTag.Apply(errors.Fmt("unexpectedly got a fake ID token with audience %q, "+
+					"the server is not configured to accept ID tokens at all", tok.Aud))
 		}
 		if !r.IDTokensAudience.Has(tok.Aud) {
-			return nil, nil, errors.Reason(
-				"unexpected ID token audience %q, expecting one of %v", tok.Aud, r.IDTokensAudience.ToSortedSlice()).Tag(grpcutil.UnauthenticatedTag).Err()
+			return nil, nil,
+				grpcutil.UnauthenticatedTag.Apply(errors.Fmt("unexpected ID token audience %q, expecting one of %v", tok.Aud, r.IDTokensAudience.ToSortedSlice()))
 		}
 	default:
-		return nil, nil, errors.Reason("unexpected fake token kind %q", tok.Kind).Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.Fmt("unexpected fake token kind %q", tok.Kind))
 	}
 
 	exp := time.Unix(tok.Expiry, 0)
 	if dt := clock.Now(ctx).Sub(exp); dt > 0 {
-		return nil, nil, errors.Reason("fake token expired %s ago", dt).Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.Fmt("fake token expired %s ago", dt))
 	}
 
 	ident, err := identity.MakeIdentity("user:" + tok.Email)
 	if err != nil {
-		return nil, nil, errors.Reason("malformed email %q in the fake token", tok.Email).Tag(grpcutil.UnauthenticatedTag).Err()
+		return nil, nil, grpcutil.UnauthenticatedTag.Apply(errors.Fmt("malformed email %q in the fake token", tok.Email))
 	}
 
 	return &auth.User{

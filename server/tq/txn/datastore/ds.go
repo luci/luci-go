@@ -57,11 +57,11 @@ func (d *dsReminder) fromReminder(r *reminder.Reminder) *dsReminder {
 func (d dsReminder) toReminder(r *reminder.Reminder) *reminder.Reminder {
 	parts := strings.Split(d.ID, "_")
 	if len(parts) != 2 {
-		panic(errors.Reason("malformed dsReminder ID %q", d.ID).Err())
+		panic(errors.Fmt("malformed dsReminder ID %q", d.ID))
 	}
 	ns, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		panic(errors.Reason("malformed dsReminder ID %q: %s", d.ID, err).Err())
+		panic(errors.Fmt("malformed dsReminder ID %q: %s", d.ID, err))
 	}
 	if r == nil {
 		r = &reminder.Reminder{}
@@ -76,7 +76,7 @@ func (d dsReminder) toReminder(r *reminder.Reminder) *reminder.Reminder {
 func (dsDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 	v := dsReminder{}
 	if err := ds.Put(ctx, v.fromReminder(r)); err != nil {
-		return errors.Annotate(err, "failed to persist to datastore").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to persist to datastore: %w", err))
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func (dsDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 func (dsDB) DeleteReminder(ctx context.Context, r *reminder.Reminder) error {
 	v := dsReminder{}
 	if err := ds.Delete(ctx, v.fromReminder(r)); err != nil {
-		return errors.Annotate(err, "failed to delete the Reminder %s", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete the Reminder %s: %w", r.ID, err))
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func (dsDB) FetchRemindersMeta(ctx context.Context, low string, high string, lim
 		items = append(items, dsReminder{ID: k.StringID()}.toReminder(nil))
 	})
 	if err != nil && err != context.DeadlineExceeded {
-		err = errors.Annotate(err, "failed to fetch Reminder keys").Tag(transient.Tag).Err()
+		err = transient.Tag.Apply(errors.Fmt("failed to fetch Reminder keys: %w", err))
 	}
 	return
 }
@@ -128,7 +128,7 @@ func (dsDB) FetchReminderRawPayloads(ctx context.Context, batch []*reminder.Remi
 	err := ds.Get(ctx, vs)
 	merr, ok := err.(errors.MultiError)
 	if err != nil && !ok {
-		return nil, errors.Annotate(err, "failed to fetch Reminders").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Reminders: %w", err))
 	}
 
 	res := make([]*reminder.Reminder, 0, len(batch))

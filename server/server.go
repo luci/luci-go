@@ -443,7 +443,7 @@ func OptionsFromEnv(opts *Options) (*Options, error) {
 	// Prepopulate defaults for flags based on the runtime environment.
 	opts.FromGAEEnv()
 	if err := opts.FromCloudRunEnv(); err != nil {
-		return nil, errors.Annotate(err, "failed to probe Cloud Run environment").Err()
+		return nil, errors.Fmt("failed to probe Cloud Run environment: %w", err)
 	}
 	return opts, nil
 }
@@ -723,18 +723,18 @@ func (o *Options) FromCloudRunEnv() error {
 	// See https://cloud.google.com/run/docs/container-contract.
 	project, err := gcemetadata.Get("project/project-id")
 	if err != nil {
-		return errors.Annotate(err, "failed to get the project ID").Err()
+		return errors.Fmt("failed to get the project ID: %w", err)
 	}
 	region, err := gcemetadata.Get("instance/region")
 	if err != nil {
-		return errors.Annotate(err, "failed to get the cloud region").Err()
+		return errors.Fmt("failed to get the cloud region: %w", err)
 	}
 	// Region format returned by Cloud Run is `projects/PROJECT-NUMBER/regions/REGION`
 	parts := strings.Split(region, "/")
 	region = parts[len(parts)-1]
 	instance, err := gcemetadata.Get("instance/id")
 	if err != nil {
-		return errors.Annotate(err, "failed to get the instance ID").Err()
+		return errors.Fmt("failed to get the instance ID: %w", err)
 	}
 
 	o.Serverless = module.CloudRun
@@ -1091,7 +1091,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if srv.Options.Hostname == "" {
 		srv.Options.Hostname, err = os.Hostname()
 		if err != nil {
-			return srv, errors.Annotate(err, "failed to get own hostname").Err()
+			return srv, errors.Fmt("failed to get own hostname: %w", err)
 		}
 	}
 
@@ -1164,43 +1164,43 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		}
 	}
 	if len(listeners) == 0 {
-		return srv, errors.Reason("at least one listening port should be exposed").Err()
+		return srv, errors.New("at least one listening port should be exposed")
 	}
 
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
 	if err := srv.initAuthStart(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize auth").Err()
+		return srv, errors.Fmt("failed to initialize auth: %w", err)
 	}
 	if err := srv.initTSMon(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
+		return srv, errors.Fmt("failed to initialize tsmon: %w", err)
 	}
 	if err := srv.initAuthFinish(); err != nil {
-		return srv, errors.Annotate(err, "failed to finish auth initialization").Err()
+		return srv, errors.Fmt("failed to finish auth initialization: %w", err)
 	}
 	if err := srv.initOpenTelemetry(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
+		return srv, errors.Fmt("failed to initialize tracing: %w", err)
 	}
 	if err := srv.initErrorReporting(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize error reporting").Err()
+		return srv, errors.Fmt("failed to initialize error reporting: %w", err)
 	}
 	if err := srv.initProfiling(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize profiling").Err()
+		return srv, errors.Fmt("failed to initialize profiling: %w", err)
 	}
 	// Ports depend on tsmon already initialized.
 	if err := srv.initMainPort(listeners["main"]); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
+		return srv, errors.Fmt("failed to initialize the main port: %w", err)
 	}
 	if err := srv.initAdminPort(listeners["admin"]); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
+		return srv, errors.Fmt("failed to initialize the admin port: %w", err)
 	}
 	if err := srv.initGrpcPort(listeners["grpc"]); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize the grpc port").Err()
+		return srv, errors.Fmt("failed to initialize the grpc port: %w", err)
 	}
 	// Warmup depends on ports already initialized.
 	if err := srv.initWarmup(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
+		return srv, errors.Fmt("failed to initialize warmup callbacks: %w", err)
 	}
 
 	// Sort modules by their initialization order based on declared dependencies,
@@ -1229,7 +1229,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 
 		switch {
 		case err != nil:
-			return srv, errors.Annotate(err, "failed to initialize module %q", mod.Name()).Err()
+			return srv, errors.Fmt("failed to initialize module %q: %w", mod.Name(), err)
 		case ctx != nil:
 			srv.Context = ctx
 		}
@@ -1301,7 +1301,7 @@ func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 
 	switch {
@@ -1361,7 +1361,7 @@ func (s *Server) createListener(name, addr string) (net.Listener, error) {
 	// In test mode the listener MUST be prepared already.
 	l := s.Options.testListeners[addr]
 	if l == nil {
-		return nil, errors.Reason("test listener is not set").Err()
+		return nil, errors.New("test listener is not set")
 	}
 	return l, nil
 }
@@ -1371,7 +1371,7 @@ func (s *Server) newRouter(opts PortOptions) *router.Router {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 
 	// This is a chain of router.Middleware. It is preceded by a chain of raw
@@ -1459,7 +1459,7 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	s.prpc.RegisterService(desc, impl)
 	if s.grpcPort != nil {
@@ -1483,7 +1483,7 @@ func (s *Server) RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterce
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	s.unaryInterceptors = append(s.unaryInterceptors, intr...)
 }
@@ -1503,7 +1503,7 @@ func (s *Server) RegisterStreamServerInterceptors(intr ...grpc.StreamServerInter
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	s.streamInterceptors = append(s.streamInterceptors, intr...)
 }
@@ -1522,7 +1522,7 @@ func (s *Server) RegisterUnifiedServerInterceptors(intr ...grpcutil.UnifiedServe
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	for _, cb := range intr {
 		s.unaryInterceptors = append(s.unaryInterceptors, cb.Unary())
@@ -1545,7 +1545,7 @@ func (s *Server) ConfigurePRPC(cb func(srv *prpc.Server)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	cb(s.prpc)
 	if s.prpc.UnaryServerInterceptor != nil {
@@ -1597,7 +1597,7 @@ func (s *Server) SetRPCAuthMethods(methods []auth.Method) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	s.rpcAuthMethods = methods
 }
@@ -1616,7 +1616,7 @@ func (s *Server) Serve() error {
 	s.mu.Lock()
 	if s.started {
 		s.mu.Unlock()
-		s.Fatal(errors.Reason("the server has already been started").Err())
+		s.Fatal(errors.New("the server has already been started"))
 	}
 	s.started = true
 	s.mu.Unlock()
@@ -2482,7 +2482,7 @@ func (s *Server) initAuthStart() error {
 			logging.Errorf(s.Context, "Run the following command to set them up: ")
 			logging.Errorf(s.Context, "  $ luci-auth login %s", scopes)
 		}
-		return errors.Annotate(err, "failed to initialize the token source").Err()
+		return errors.Fmt("failed to initialize the token source: %w", err)
 	}
 
 	// Report who we are running as. Useful when debugging access issues.
@@ -2493,7 +2493,7 @@ func (s *Server) initAuthStart() error {
 	case err == clientauth.ErrNoEmail:
 		logging.Warningf(s.Context, "Running as <unknown>, cautiously proceeding...")
 	case err != nil:
-		return errors.Annotate(err, "failed to check the service account email").Err()
+		return errors.Fmt("failed to check the service account email: %w", err)
 	}
 
 	return nil
@@ -2509,7 +2509,7 @@ func (s *Server) initAuthFinish() error {
 	var err error
 	s.cloudTS, err = auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return errors.Annotate(err, "failed to initialize the cloud token source").Err()
+		return errors.Fmt("failed to initialize the cloud token source: %w", err)
 	}
 
 	// Finish constructing `signer` and `actorTokens` that were waiting for
@@ -2520,7 +2520,7 @@ func (s *Server) initAuthFinish() error {
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 	)
 	if err != nil {
-		return errors.Annotate(err, "failed to construct IAM client").Err()
+		return errors.Fmt("failed to construct IAM client: %w", err)
 	}
 	s.RegisterCleanup(func(ctx context.Context) { iamClient.Close() })
 	s.signer.iamClient = iamClient
@@ -2531,7 +2531,7 @@ func (s *Server) initAuthFinish() error {
 	// place. This also starts a goroutine to periodically refresh it.
 	if s.Options.AuthDBProvider == nil {
 		if err := s.initAuthDB(); err != nil {
-			return errors.Annotate(err, "failed to initialize AuthDB").Err()
+			return errors.Fmt("failed to initialize AuthDB: %w", err)
 		}
 	}
 
@@ -2558,13 +2558,13 @@ func (s *Server) initAuthDB() error {
 	// Check flags are compatible.
 	switch {
 	case s.Options.AuthDBPath != "" && s.Options.AuthServiceHost != "":
-		return errors.Reason("-auth-db-path and -auth-service-host can't be used together").Err()
+		return errors.New("-auth-db-path and -auth-service-host can't be used together")
 	case s.Options.AuthServiceHost == "" && (s.Options.AuthDBDump != "" || s.Options.AuthDBSigner != ""):
-		return errors.Reason("-auth-db-dump and -auth-db-signer can be used only with -auth-service-host").Err()
+		return errors.New("-auth-db-dump and -auth-db-signer can be used only with -auth-service-host")
 	case s.Options.AuthDBDump != "" && !strings.HasPrefix(s.Options.AuthDBDump, "gs://"):
-		return errors.Reason("-auth-db-dump value should start with gs://, got %q", s.Options.AuthDBDump).Err()
+		return errors.Fmt("-auth-db-dump value should start with gs://, got %q", s.Options.AuthDBDump)
 	case strings.Contains(s.Options.AuthServiceHost, "/"):
-		return errors.Reason("-auth-service-host should be a plain hostname, got %q", s.Options.AuthServiceHost).Err()
+		return errors.Fmt("-auth-service-host should be a plain hostname, got %q", s.Options.AuthServiceHost)
 	}
 
 	// Fill in defaults.
@@ -2574,7 +2574,7 @@ func (s *Server) initAuthDB() error {
 		}
 		if s.Options.AuthDBSigner == "" {
 			if !strings.HasSuffix(s.Options.AuthServiceHost, ".appspot.com") {
-				return errors.Reason("-auth-db-signer is required if -auth-service-host is not *.appspot.com").Err()
+				return errors.New("-auth-db-signer is required if -auth-service-host is not *.appspot.com")
 			}
 			s.Options.AuthDBSigner = fmt.Sprintf("%s@appspot.gserviceaccount.com",
 				strings.TrimSuffix(s.Options.AuthServiceHost, ".appspot.com"))
@@ -2584,7 +2584,7 @@ func (s *Server) initAuthDB() error {
 	// Fetch the initial copy of AuthDB. Note that this happens before we start
 	// the serving loop, to make sure incoming requests have some AuthDB to use.
 	if err := s.refreshAuthDB(s.Context); err != nil {
-		return errors.Annotate(err, "failed to load the initial AuthDB version").Err()
+		return errors.Fmt("failed to load the initial AuthDB version: %w", err)
 	}
 
 	// Periodically refresh it in the background.
@@ -2627,12 +2627,12 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 	if s.Options.AuthDBPath != "" {
 		r, err := os.Open(s.Options.AuthDBPath)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to open AuthDB file").Err()
+			return nil, errors.Fmt("failed to open AuthDB file: %w", err)
 		}
 		defer r.Close()
 		db, err := authdb.SnapshotDBFromTextProto(r)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to load AuthDB file").Err()
+			return nil, errors.Fmt("failed to load AuthDB file: %w", err)
 		}
 		return db, nil
 	}
@@ -2650,7 +2650,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 		curSnap, _ := cur.(*authdb.SnapshotDB)
 		snap, err := fetcher.FetchAuthDB(c, curSnap)
 		if err != nil {
-			return nil, errors.Annotate(err, "fetching from GCS dump failed").Err()
+			return nil, errors.Fmt("fetching from GCS dump failed: %w", err)
 		}
 		return snap, nil
 	}
@@ -2664,7 +2664,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 	// not need to use AuthDB at all and configuring it for them is a hassle. If
 	// they try to use it for something vital, they'll see the error.
 	return authdb.UnconfiguredDB{
-		Error: errors.Reason("a source of AuthDB is not configured, see -auth-* server flags").Err(),
+		Error: errors.New("a source of AuthDB is not configured, see -auth-* server flags"),
 	}, nil
 }
 
@@ -2689,7 +2689,7 @@ func (s *Server) initTSMon() error {
 		timeout = int(defaultTsMonFlushTimeout.Seconds())
 	}
 	if timeout >= interval {
-		return errors.Reason("-ts-mon-flush-timeout (%ds) must be shorter than -ts-mon-flush-interval (%ds)", timeout, interval).Err()
+		return errors.Fmt("-ts-mon-flush-timeout (%ds) must be shorter than -ts-mon-flush-interval (%ds)", timeout, interval)
 	}
 	s.tsmon = &tsmon.State{
 		CustomMonitor: customMonitor,
@@ -2815,7 +2815,7 @@ func (s *Server) otelSampler(ctx context.Context, enableExporter bool) (trace.Sa
 	}
 	sampler, err := internal.BaseSampler(sampling)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad -trace-sampling").Err()
+		return nil, errors.Fmt("bad -trace-sampling: %w", err)
 	}
 
 	// Sample only if the context is an incoming request context. This is needed
@@ -2927,15 +2927,15 @@ func (s *Server) initOpenTelemetry() error {
 
 	res, err := s.otelResource(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to init OpenTelemetry resource").Err()
+		return errors.Fmt("failed to init OpenTelemetry resource: %w", err)
 	}
 	sampler, err := s.otelSampler(ctx, enableExporter)
 	if err != nil {
-		return errors.Annotate(err, "failed to init OpenTelemetry sampler").Err()
+		return errors.Fmt("failed to init OpenTelemetry sampler: %w", err)
 	}
 	exp, err := s.otelSpanExporter(ctx, enableExporter)
 	if err != nil {
-		return errors.Annotate(err, "failed to init OpenTelemetry span exporter").Err()
+		return errors.Fmt("failed to init OpenTelemetry span exporter: %w", err)
 	}
 
 	tp := trace.NewTracerProvider(
@@ -3368,7 +3368,7 @@ func resolveDependencies(mods []module.Module) ([]module.Module, error) {
 	modules := make(map[module.Name]module.Module, len(mods))
 	for _, m := range mods {
 		if _, ok := modules[m.Name()]; ok {
-			return nil, errors.Reason("duplicate module %q", m.Name()).Err()
+			return nil, errors.Fmt("duplicate module %q", m.Name())
 		}
 		modules[m.Name()] = m
 	}
@@ -3383,7 +3383,7 @@ func resolveDependencies(mods []module.Module) ([]module.Module, error) {
 				if !d.Required() {
 					continue
 				}
-				return nil, errors.Reason("module %q requires module %q which is not provided", m.Name(), name).Err()
+				return nil, errors.Fmt("module %q requires module %q which is not provided", m.Name(), name)
 			}
 			graph[m.Name()] = append(graph[m.Name()], name)
 		}

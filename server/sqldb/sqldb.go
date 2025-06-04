@@ -137,7 +137,7 @@ func (m *sqlDBModule) Initialize(ctx context.Context, _ module.Host, _ module.Ho
 	secretStore := secrets.CurrentStore(ctx)
 	passwordSecret, err := secretStore.StoredSecret(ctx, m.opts.DBPasswordSecret)
 	if err != nil {
-		return nil, errors.Annotate(err, "initializing sqldb module: getting secret").Err()
+		return nil, errors.Fmt("initializing sqldb module: getting secret: %w", err)
 	}
 
 	driver := m.opts.DBConnectionURL.Scheme
@@ -147,12 +147,12 @@ func (m *sqlDBModule) Initialize(ctx context.Context, _ module.Host, _ module.Ho
 	}
 	dbURI, err := makeDBURI(newScheme, m.opts.DBConnectionURL, string(passwordSecret.Active))
 	if err != nil {
-		return nil, errors.Annotate(err, "initializing sqldb module: constructing URI").Err()
+		return nil, errors.Fmt("initializing sqldb module: constructing URI: %w", err)
 	}
 
 	dbConn, err := sql.Open(driver, dbURI)
 	if err != nil {
-		return nil, errors.Annotate(err, "initializing sqldb module: connecting to database").Err()
+		return nil, errors.Fmt("initializing sqldb module: connecting to database: %w", err)
 	}
 
 	return UseDB(ctx, dbConn), nil

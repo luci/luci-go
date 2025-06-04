@@ -86,13 +86,13 @@ func (r *Reminder) AttachPayload(p *Payload) error {
 	case p.CreateTaskRequest != nil:
 		blob, err := proto.Marshal(p.CreateTaskRequest)
 		if err != nil {
-			return errors.Annotate(err, "failed to marshal CreateTaskRequest").Err()
+			return errors.Fmt("failed to marshal CreateTaskRequest: %w", err)
 		}
 		msg.Payload = &tqpb.Payload_CreateTaskRequest{CreateTaskRequest: blob}
 	case p.PublishRequest != nil:
 		blob, err := proto.Marshal(p.PublishRequest)
 		if err != nil {
-			return errors.Annotate(err, "failed to marshal PublishRequest").Err()
+			return errors.Fmt("failed to marshal PublishRequest: %w", err)
 		}
 		msg.Payload = &tqpb.Payload_PublishRequest{PublishRequest: blob}
 	default:
@@ -101,7 +101,7 @@ func (r *Reminder) AttachPayload(p *Payload) error {
 
 	raw, err := proto.Marshal(msg)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal Payload").Err()
+		return errors.Fmt("failed to marshal Payload: %w", err)
 	}
 
 	r.RawPayload = raw
@@ -137,7 +137,7 @@ func (r *Reminder) Payload() (*Payload, error) {
 
 	var msg tqpb.Payload
 	if err := proto.Unmarshal(r.RawPayload, &msg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal Payload").Err()
+		return nil, errors.Fmt("failed to unmarshal Payload: %w", err)
 	}
 
 	p := &Payload{
@@ -149,13 +149,13 @@ func (r *Reminder) Payload() (*Payload, error) {
 	case *tqpb.Payload_CreateTaskRequest:
 		req := &taskspb.CreateTaskRequest{}
 		if err := proto.Unmarshal(blob.CreateTaskRequest, req); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal CreateTaskRequest").Err()
+			return nil, errors.Fmt("failed to unmarshal CreateTaskRequest: %w", err)
 		}
 		p.CreateTaskRequest = req
 	case *tqpb.Payload_PublishRequest:
 		req := &pubsubpb.PublishRequest{}
 		if err := proto.Unmarshal(blob.PublishRequest, req); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal PublishRequest").Err()
+			return nil, errors.Fmt("failed to unmarshal PublishRequest: %w", err)
 		}
 		p.PublishRequest = req
 	default:

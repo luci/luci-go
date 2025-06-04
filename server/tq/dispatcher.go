@@ -663,14 +663,14 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	case Transactional:
 		if txndb == nil {
 			if !db.Configured() {
-				return errors.Reason("enqueuing of tasks %q requires transactions support, "+
-					"see https://pkg.go.dev/go.chromium.org/luci/server/tq#hdr-Transactional_tasks", cls.ID).Err()
+				return errors.Fmt("enqueuing of tasks %q requires transactions support, "+
+					"see https://pkg.go.dev/go.chromium.org/luci/server/tq#hdr-Transactional_tasks", cls.ID)
 			}
-			return errors.Reason("enqueuing of tasks %q must be done from inside a transaction", cls.ID).Err()
+			return errors.Fmt("enqueuing of tasks %q must be done from inside a transaction", cls.ID)
 		}
 	case NonTransactional:
 		if txndb != nil {
-			return errors.Reason("enqueuing of tasks %q must be done outside of a transaction", cls.ID).Err()
+			return errors.Fmt("enqueuing of tasks %q must be done outside of a transaction", cls.ID)
 		}
 	default:
 		panic(fmt.Sprintf("unrecognized TaskKind %v", cls.Kind))
@@ -683,7 +683,7 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 
 	// Named transactional tasks are not supported.
 	if task.DeduplicationKey != "" {
-		return errors.Reason("when enqueuing %q: can't use DeduplicationKey for a transactional task", cls.ID).Err()
+		return errors.Fmt("when enqueuing %q: can't use DeduplicationKey for a transactional task", cls.ID)
 	}
 
 	// Otherwise transactionally commit a reminder and schedule a best-effort
@@ -692,11 +692,11 @@ func (d *Dispatcher) AddTask(ctx context.Context, task *Task) (err error) {
 	// modifies `payload` with the reminder's ID.
 	r, err := d.attachToReminder(ctx, payload)
 	if err != nil {
-		return errors.Annotate(err, "failed to prepare a reminder").Err()
+		return errors.Fmt("failed to prepare a reminder: %w", err)
 	}
 	span.SetAttributes(attribute.String("cr.dev.reminder", r.ID))
 	if err := txndb.SaveReminder(ctx, r); err != nil {
-		return errors.Annotate(err, "failed to store a transactional enqueue reminder").Err()
+		return errors.Fmt("failed to store a transactional enqueue reminder: %w", err)
 	}
 
 	once := int32(0)
@@ -961,10 +961,10 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 
 	method := taskspb.HttpMethod(taskspb.HttpMethod_value[payload.Method])
 	if method == 0 {
-		return nil, errors.Reason("bad HTTP method %q", payload.Method).Err()
+		return nil, errors.Fmt("bad HTTP method %q", payload.Method)
 	}
 	if !strings.HasPrefix(payload.RelativeURI, "/") {
-		return nil, errors.Reason("bad relative URI %q", payload.RelativeURI).Err()
+		return nil, errors.Fmt("bad relative URI %q", payload.RelativeURI)
 	}
 
 	// We need to populate one of Task.MessageType oneof alternatives. It has
@@ -1040,7 +1040,7 @@ func (d *Dispatcher) queueID(id string) (string, error) {
 		return fmt.Sprintf("projects/%s/locations/%s/queues/%s", project, region, id), nil
 	}
 	if !isValidFullQueueName(id) {
-		return "", errors.Reason("not a valid queue name: %q", id).Err()
+		return "", errors.Fmt("not a valid queue name: %q", id)
 	}
 	return id, nil
 }
@@ -1066,7 +1066,7 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 	}
 
 	if !strings.HasPrefix(pfx, "/") {
-		return "", "", errors.Reason("bad routing prefix %q: must start with /", pfx).Err()
+		return "", "", errors.Fmt("bad routing prefix %q: must start with /", pfx)
 	}
 	if !strings.HasSuffix(pfx, "/") {
 		pfx += "/"
@@ -1077,10 +1077,10 @@ func (d *Dispatcher) taskTarget(cls *taskClassImpl, t *Task) (host string, relat
 	case t.Title == "":
 		return
 	case strings.ContainsRune(t.Title, ' '):
-		return "", "", errors.Reason("bad task title %q: must not contain spaces", t.Title).Err()
+		return "", "", errors.Fmt("bad task title %q: must not contain spaces", t.Title)
 	case len(relativeURI)+1+len(t.Title) > 2083:
-		return "", "", errors.Reason("bad task title %q: too long;"+
-			" must not exceed 2083 characters when combined with %q", t.Title, relativeURI).Err()
+		return "", "", errors.Fmt("bad task title %q: too long;"+
+			" must not exceed 2083 characters when combined with %q", t.Title, relativeURI)
 	default:
 		relativeURI += "/" + t.Title
 		return
@@ -1153,7 +1153,8 @@ func (d *Dispatcher) topicID(id string) (string, error) {
 func (d *Dispatcher) attachToReminder(ctx context.Context, payload *reminder.Payload) (*reminder.Reminder, error) {
 	buf := make([]byte, reminderKeySpaceBytes)
 	if _, err := io.ReadFull(cryptorand.Get(ctx), buf); err != nil {
-		return nil, errors.Annotate(err, "failed to get random bytes").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to get random bytes: %w", err))
 	}
 
 	// Note: length of the generated ID here is different from the length of IDs
@@ -1209,7 +1210,8 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	env := envelope{}
 	if err := json.Unmarshal(body, &env); err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "bad_request")
-		return errors.Annotate(err, "not a valid JSON body").Tag(httpStatus400).Err()
+		return httpStatus400.Apply(errors.
+			Fmt("not a valid JSON body: %w", err))
 	}
 
 	// Find the matching registered task class. Newer tasks always have `class`
@@ -1222,7 +1224,7 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 	} else if env.Type != "" {
 		cls, h, err = d.classByTyp(env.Type)
 	} else {
-		err = errors.Reason("malformed task body, no class").Tag(httpStatus400).Err()
+		err = httpStatus400.Apply(errors.New("malformed task body, no class"))
 	}
 	if err != nil {
 		logging.Debugf(ctx, "TQ: %s", body)
@@ -1245,13 +1247,13 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 
 	if h == nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "no_handler")
-		return errors.Reason("task class %q exists, but has no handler attached", cls.ID).Tag(httpStatus404).Err()
+		return httpStatus404.Apply(errors.Fmt("task class %q exists, but has no handler attached", cls.ID))
 	}
 
 	msg, err := cls.deserialize(&env)
 	if err != nil {
 		metrics.ServerRejectedCount.Add(ctx, 1, info.Queue, "bad_payload")
-		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Tag(httpStatus400).Err()
+		return httpStatus400.Apply(errors.Fmt("malformed body of task class %q: %w", cls.ID, err))
 	}
 
 	atomic.AddInt32(&cls.running, 1)
@@ -1306,7 +1308,8 @@ func (d *Dispatcher) classByID(id string) (*taskClassImpl, Handler, error) {
 	if cls := d.clsByID[id]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class with ID %q is registered", id).Tag(httpStatus404).Err()
+	return nil, nil, httpStatus404.Apply(errors.
+		Fmt("no task class with ID %q is registered", id))
 }
 
 // classByMsg returns a task class given proto message or an error if no
@@ -1321,7 +1324,8 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 	if cls := d.clsByTyp[typ]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ.Descriptor().FullName()).Tag(httpStatus404).Err()
+	return nil, nil, httpStatus404.Apply(errors.
+		Fmt("no task class matching type %q is registered", typ.Descriptor().FullName()))
 }
 
 // classByTyp returns a task class given proto message name or an error if no
@@ -1332,14 +1336,15 @@ func (d *Dispatcher) classByMsg(msg proto.Message) (*taskClassImpl, Handler, err
 func (d *Dispatcher) classByTyp(typ string) (*taskClassImpl, Handler, error) {
 	msgTyp, _ := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(typ))
 	if msgTyp == nil {
-		return nil, nil, errors.Reason("no proto message %q is registered", typ).Tag(httpStatus404).Err()
+		return nil, nil, httpStatus404.Apply(errors.Fmt("no proto message %q is registered", typ))
 	}
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if cls := d.clsByTyp[msgTyp]; cls != nil {
 		return cls, cls.Handler, nil
 	}
-	return nil, nil, errors.Reason("no task class matching type %q is registered", typ).Tag(httpStatus404).Err()
+	return nil, nil, httpStatus404.Apply(errors.
+		Fmt("no task class matching type %q is registered", typ))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1404,7 +1409,7 @@ func (cls *taskClassImpl) serialize(t *Task) ([]byte, error) {
 	}
 	blob, err := opts.Marshal(t.Payload)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize %q", proto.MessageName(t.Payload)).Err()
+		return nil, errors.Fmt("failed to serialize %q: %w", proto.MessageName(t.Payload), err)
 	}
 	raw := json.RawMessage(blob)
 	return json.MarshalIndent(envelope{
@@ -1417,7 +1422,7 @@ func (cls *taskClassImpl) serialize(t *Task) ([]byte, error) {
 // deserialize instantiates a proto message based on its serialized body.
 func (cls *taskClassImpl) deserialize(env *envelope) (proto.Message, error) {
 	if env.Body == nil {
-		return nil, errors.Reason("no body").Err()
+		return nil, errors.New("no body")
 	}
 	opts := protojson.UnmarshalOptions{
 		DiscardUnknown: true,

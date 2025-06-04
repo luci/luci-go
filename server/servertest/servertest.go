@@ -159,7 +159,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	// This populates some defaults. Unless the test runs on GAE or Cloud Run
 	// (which is extremely unlikely) it should not pick up any extra stuff.
 	if _, err := server.OptionsFromEnv(&opts); err != nil {
-		return nil, errors.Annotate(err, "populating options").Err()
+		return nil, errors.Fmt("populating options: %w", err)
 	}
 
 	// This populates even more defaults as a side effect. This is basically just
@@ -167,7 +167,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	var fs flag.FlagSet
 	opts.Register(&fs)
 	if err := fs.Parse(nil); err != nil {
-		return nil, errors.Annotate(err, "initializing flags").Err()
+		return nil, errors.Fmt("initializing flags: %w", err)
 	}
 
 	// Disable prod code paths to avoid hitting real servers as much as possible.
@@ -208,14 +208,14 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 		}
 		metaHost, err := metaSrv.Start(ctx)
 		if err != nil {
-			return nil, errors.Annotate(err, "launching fake GCE metadata server").Err()
+			return nil, errors.Fmt("launching fake GCE metadata server: %w", err)
 		}
 		ts.cleanup = append(ts.cleanup, func() { _ = metaSrv.Stop(ctx) })
 		// Unfortunately we need to modify the global state, since this is where
 		// methods like `metadata.OnGCE` read the metadata server address from.
 		for _, env := range []string{"GCE_METADATA_ROOT", "GCE_METADATA_IP", "GCE_METADATA_HOST"} {
 			if err := os.Setenv(env, metaHost); err != nil {
-				return nil, errors.Annotate(err, "setting env var %q", env).Err()
+				return nil, errors.Fmt("setting env var %q: %w", env, err)
 			}
 		}
 	}
@@ -230,7 +230,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	// server loop yet.
 	var err error
 	if ts.srv, err = server.New(ctx, opts, modules); err != nil {
-		return nil, errors.Annotate(err, "initializing server").Err()
+		return nil, errors.Fmt("initializing server: %w", err)
 	}
 	if !ts.tm.initialized {
 		panic("should not be possible: a successful server init initializes all modules")
@@ -254,7 +254,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 			DefaultAccountID: "default",
 		}
 		if ts.localAuth, err = localAuthSrv.Start(ctx); err != nil {
-			return nil, errors.Annotate(err, "failed to start local auth server").Err()
+			return nil, errors.Fmt("failed to start local auth server: %w", err)
 		}
 		ts.cleanup = append(ts.cleanup, func() { _ = localAuthSrv.Stop(ctx) })
 
@@ -278,7 +278,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	// that server.Main is doing.
 	if settings.Init != nil {
 		if err := settings.Init(ts.srv); err != nil {
-			return nil, errors.Annotate(err, "user-supplied init callback").Err()
+			return nil, errors.Fmt("user-supplied init callback: %w", err)
 		}
 	}
 
@@ -308,7 +308,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	serveLoopErr := func(err error) error {
 		if err == nil {
 			logging.Errorf(srvCtx, "The server was interrupted unexpectedly when starting")
-			return errors.Reason("server was interrupted unexpectedly when starting").Err()
+			return errors.New("server was interrupted unexpectedly when starting")
 		}
 		logging.Errorf(srvCtx, "The server failed to start: %s", err)
 		return errors.Fmt("server failed to start: %w", err)
@@ -329,7 +329,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 				return nil, serveLoopErr(serveErr)
 			case <-time.After(5 * time.Second):
 				logging.Errorf(srvCtx, "Giving up waiting for the server loop to exit")
-				return nil, errors.Annotate(healthErr, "health check error and the server is stuck starting").Err()
+				return nil, errors.Fmt("health check error and the server is stuck starting: %w", healthErr)
 			}
 		}
 	}
@@ -425,7 +425,7 @@ func waitHTTPHealthy(ctx context.Context, ts *TestServer) error {
 		_ = resp.Body.Close()
 	}
 	if err == nil && resp.StatusCode != 200 {
-		err = errors.Reason("health check replied with status code %d", resp.StatusCode).Err()
+		err = errors.Fmt("health check replied with status code %d", resp.StatusCode)
 	}
 	return err
 }
@@ -433,7 +433,7 @@ func waitHTTPHealthy(ctx context.Context, ts *TestServer) error {
 func waitGRPCHealthy(ctx context.Context, ts *TestServer) error {
 	conn, err := ts.GRPCConn(grpc.WithUserAgent(healthCheckUA))
 	if err != nil {
-		return errors.Annotate(err, "constructing gRPC health check client").Err()
+		return errors.Fmt("constructing gRPC health check client: %w", err)
 	}
 	defer func() { _ = conn.Close() }()
 
@@ -442,13 +442,13 @@ func waitGRPCHealthy(ctx context.Context, ts *TestServer) error {
 
 	stream, err := grpc_health_v1.NewHealthClient(conn).Watch(ctx, &grpc_health_v1.HealthCheckRequest{})
 	if err != nil {
-		return errors.Annotate(err, "error calling gRPC health check Watch").Err()
+		return errors.Fmt("error calling gRPC health check Watch: %w", err)
 	}
 
 	for {
 		status, err := stream.Recv()
 		if err != nil {
-			return errors.Annotate(err, "gRPC health check error").Err()
+			return errors.Fmt("gRPC health check error: %w", err)
 		}
 		if status.Status == grpc_health_v1.HealthCheckResponse_SERVING {
 			return nil
