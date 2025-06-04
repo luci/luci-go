@@ -69,7 +69,7 @@ func main() {
 			auth.WithScopes(auth.CloudOAuthScopes...),
 		)
 		if err != nil {
-			return errors.Annotate(err, "failed to get per RPC credentials").Err()
+			return errors.Fmt("failed to get per RPC credentials: %w", err)
 		}
 		psc, err := pubsub.NewClient(
 			srv.Context, srv.Options.CloudProject,
@@ -77,7 +77,7 @@ func main() {
 			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		)
 		if err != nil {
-			return errors.Annotate(err, "pubsub.NewClient: %s", err).Err()
+			return errors.Fmt("pubsub.NewClient: %s: %w", err, err)
 		}
 		clUpdater := changelist.NewUpdater(&tq.Default, nil)
 		gListener := glistener.NewListener(psc, clUpdater)

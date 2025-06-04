@@ -276,7 +276,7 @@ func loadRunKeys(ctx context.Context, q *datastore.Query, limit int32) ([]*datas
 		logging.Warningf(ctx, "%s while fetching %s", ctx.Err(), q)
 		return nil, ctx.Err()
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Runs: %w", err))
 	case len(out) == int(limit):
 		logging.Errorf(ctx, "FIXME: %s fetched exactly the limit of Runs; reported data is incomplete", q)
 	}
@@ -295,7 +295,7 @@ func iterRuns(ctx context.Context, keys []*datastore.Key, bufSize int, clbk func
 		}
 		keys = keys[len(batch):]
 		if err := datastore.Get(ctx, batch); err != nil {
-			return errors.Annotate(err, "failed to load Runs").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load Runs: %w", err))
 		}
 		for _, r := range batch {
 			clbk(r)

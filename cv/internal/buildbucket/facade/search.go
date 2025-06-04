@@ -269,7 +269,7 @@ func (sw *searchWorker) search(ctx context.Context, resultCh chan<- searchResult
 			}
 			res, err := sw.bbClient.SearchBuilds(ctx, req)
 			if err != nil {
-				resultCh <- searchResult{err: errors.Annotate(err, "failed to call buildbucket.SearchBuilds").Tag(transient.Tag).Err()}
+				resultCh <- searchResult{err: transient.Tag.Apply(errors.Fmt("failed to call buildbucket.SearchBuilds: %w", err))}
 				return
 			}
 			for _, build := range res.GetBuilds() {

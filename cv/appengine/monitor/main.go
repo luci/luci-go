@@ -65,7 +65,7 @@ func main() {
 
 		mon, err := tsmonsrv.NewProdXMonitor(srv.Context, 1024, opts.TsMonAccount)
 		if err != nil {
-			return errors.Annotate(err, "failed to initiate monitoring client").Err()
+			return errors.Fmt("failed to initiate monitoring client: %w", err)
 		}
 
 		cron.RegisterHandler("report-aggregated-metrics", func(ctx context.Context) error {
@@ -77,12 +77,12 @@ func main() {
 			aggregator := aggrmetrics.New(env)
 			start := clock.Now(ctx)
 			if err := aggregator.Cron(ctx); err != nil {
-				return errors.Annotate(err, "failed to compute aggregation metrics").Err()
+				return errors.Fmt("failed to compute aggregation metrics: %w", err)
 			}
 			logging.Infof(ctx, "computing aggregation metrics took %s", clock.Since(ctx, start))
 			start = clock.Now(ctx)
 			if err := state.ParallelFlush(ctx, mon, 8); err != nil {
-				return errors.Annotate(err, "failed to flush aggregation metrics").Err()
+				return errors.Fmt("failed to flush aggregation metrics: %w", err)
 			}
 			logging.Infof(ctx, "flushing aggregation metrics took %s", clock.Since(ctx, start))
 			return nil

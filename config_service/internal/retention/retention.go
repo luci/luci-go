@@ -41,7 +41,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 	var cfgsets []*model.ConfigSet
 	cfgQuery := datastore.NewQuery(model.ConfigSetKind).Project("latest_revision.id")
 	if err := datastore.GetAll(ctx, cfgQuery, &cfgsets); err != nil {
-		return errors.Annotate(err, "failed to query all config sets").Err()
+		return errors.Fmt("failed to query all config sets: %w", err)
 	}
 	cfgsetToRev := make(map[string]string, len(cfgsets))
 	for _, cs := range cfgsets {
@@ -51,7 +51,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 	var files []*model.File
 	fileQuery := datastore.NewQuery(model.FileKind)
 	if err := datastore.GetAll(ctx, fileQuery, &files); err != nil {
-		return errors.Annotate(err, "failed to query all config files").Err()
+		return errors.Fmt("failed to query all config files: %w", err)
 	}
 
 	var toDel []*model.File
@@ -74,7 +74,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 
 	logging.Infof(ctx, "Deleting %d stale config files", len(toDel))
 	if err := datastore.Delete(ctx, toDel); err != nil {
-		return errors.Annotate(err, "failed to delete File entities").Err()
+		return errors.Fmt("failed to delete File entities: %w", err)
 	}
 
 	// Best effort to delete GCS files. No need to put into the same transaction

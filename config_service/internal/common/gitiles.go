@@ -43,7 +43,7 @@ func validateGitilesRepo(repo string) error {
 	}
 	switch u, err := url.Parse(repo); {
 	case err != nil:
-		return errors.Annotate(err, "invalid repo url").Err()
+		return errors.Fmt("invalid repo url: %w", err)
 	case strings.HasPrefix(u.Path, "/a/"):
 		return errors.New("must not have '/a/' prefix of a path component")
 	case strings.HasSuffix(u.Path, ".git"):

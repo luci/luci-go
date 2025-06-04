@@ -64,21 +64,21 @@ func main() {
 
 	server.Main(nil, mods, func(srv *server.Server) error {
 		if err := loc.Validate(); err != nil {
-			return errors.Annotate(err, "Wrong global config location flag value").Err()
+			return errors.Fmt("Wrong global config location flag value: %w", err)
 		}
 		srv.Context = settings.WithGlobalConfigLoc(srv.Context, loc.GitilesLocation)
 
 		// Install a global Cloud Storage client.
 		gsClient, err := clients.NewGsProdClient(srv.Context)
 		if err != nil {
-			return errors.Annotate(err, "failed to initiate the global GCS client").Err()
+			return errors.Fmt("failed to initiate the global GCS client: %w", err)
 		}
 		srv.Context = clients.WithGsClient(srv.Context, gsClient)
 		gsBucket := fmt.Sprintf("storage-%s", info.AppID(srv.Context))
 
 		serviceFinder, err := service.NewFinder(srv.Context)
 		if err != nil {
-			return errors.Annotate(err, "failed to create service finder").Err()
+			return errors.Fmt("failed to create service finder: %w", err)
 		}
 		srv.RunInBackground("refresh-service-finder", serviceFinder.RefreshPeriodically)
 		validator := &validation.Validator{

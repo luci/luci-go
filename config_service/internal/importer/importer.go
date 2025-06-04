@@ -134,11 +134,11 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 	// Get all config sets.
 	cfgSets, err := getAllServiceCfgSets(ctx, cfgLoc)
 	if err != nil {
-		return errors.Annotate(err, "failed to load service config sets").Err()
+		return errors.Fmt("failed to load service config sets: %w", err)
 	}
 	sets, err := getAllProjCfgSets(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to load project config sets").Err()
+		return errors.Fmt("failed to load project config sets: %w", err)
 	}
 	cfgSets = append(cfgSets, sets...)
 
@@ -162,7 +162,7 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 	// Delete stale config sets.
 	var keys []*datastore.Key
 	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ConfigSetKind).KeysOnly(true), &keys); err != nil {
-		return errors.Annotate(err, "failed to fetch all config sets from Datastore").Err()
+		return errors.Fmt("failed to fetch all config sets from Datastore: %w", err)
 	}
 	cfgSetsInDB := stringset.New(len(keys))
 	for _, key := range keys {
@@ -210,11 +210,11 @@ func getAllServiceCfgSets(ctx context.Context, cfgLoc *cfgcommonpb.GitilesLocati
 	}
 	host, project, err := gitiles.ParseRepoURL(cfgLoc.Repo)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid gitiles repo: %s", cfgLoc.Repo).Err()
+		return nil, errors.Fmt("invalid gitiles repo: %s: %w", cfgLoc.Repo, err)
 	}
 	gitilesClient, err := clients.NewGitilesClient(ctx, host, "")
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create a gitiles client").Err()
+		return nil, errors.Fmt("failed to create a gitiles client: %w", err)
 	}
 
 	res, err := gitilesClient.ListFiles(ctx, &gitilespb.ListFilesRequest{
@@ -223,7 +223,7 @@ func getAllServiceCfgSets(ctx context.Context, cfgLoc *cfgcommonpb.GitilesLocati
 		Path:       cfgLoc.Path,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to call Gitiles to list files").Err()
+		return nil, errors.Fmt("failed to call Gitiles to list files: %w", err)
 	}
 	var cfgSets []string
 	for _, f := range res.GetFiles() {
@@ -255,7 +255,8 @@ func (i *Importer) ImportConfigSet(ctx context.Context, cfgSet config.Set) error
 	} else if pID := cfgSet.Project(); pID != "" {
 		return i.importProject(ctx, pID)
 	}
-	return errors.Reason("Invalid config set: %q", cfgSet).Tag(ErrFatalTag).Err()
+	return ErrFatalTag.Apply(errors.
+		Fmt("Invalid config set: %q", cfgSet))
 }
 
 // importProject imports a project config set.
@@ -272,7 +273,7 @@ func (i *Importer) importProject(ctx context.Context, projectID string) error {
 		}
 	}
 	if projLoc == nil {
-		return errors.Reason("project %q not exist or has no gitiles location", projectID).Tag(ErrFatalTag).Err()
+		return ErrFatalTag.Apply(errors.Fmt("project %q not exist or has no gitiles location", projectID))
 	}
 	return i.importConfigSet(ctx, config.MustProjectSet(projectID), projLoc)
 }
@@ -310,12 +311,12 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 
 	host, project, err := gitiles.ParseRepoURL(loc.Repo)
 	if err != nil {
-		err = errors.Annotate(err, "invalid gitiles repo: %s", loc.Repo).Err()
+		err = errors.Fmt("invalid gitiles repo: %s: %w", loc.Repo, err)
 		return ErrFatalTag.Apply(errors.Append(err, saveAttempt(false, err.Error(), nil)))
 	}
 	gtClient, err := clients.NewGitilesClient(ctx, host, cfgSet.Project())
 	if err != nil {
-		err = errors.Annotate(err, "failed to create a gitiles client").Err()
+		err = errors.Fmt("failed to create a gitiles client: %w", err)
 		return ErrFatalTag.Apply(errors.Append(err, saveAttempt(false, err.Error(), nil)))
 	}
 
@@ -326,7 +327,7 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 		PageSize:   1,
 	})
 	if err != nil {
-		err = errors.Annotate(err, "cannot fetch logs from %s", common.GitilesURL(loc)).Err()
+		err = errors.Fmt("cannot fetch logs from %s: %w", common.GitilesURL(loc), err)
 		return errors.Append(err, saveAttempt(false, err.Error(), nil))
 	}
 	if logRes == nil || len(logRes.GetLog()) == 0 {
@@ -340,7 +341,7 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 	switch err := datastore.Get(ctx, cfgSetInDB, lastAttempt); {
 	case errors.Contains(err, datastore.ErrNoSuchEntity): // proceed with importing
 	case err != nil:
-		err = errors.Annotate(err, "failed to load config set %q or its last attempt", cfgSet).Err()
+		err = errors.Fmt("failed to load config set %q or its last attempt: %w", cfgSet, err)
 		return errors.Append(err, saveAttempt(false, err.Error(), latestCommit))
 	case cfgSetInDB.LatestRevision.ID == latestCommit.Id &&
 		proto.Equal(cfgSetInDB.Location.GetGitilesLocation(), loc) &&
@@ -354,7 +355,7 @@ func (i *Importer) importConfigSet(ctx context.Context, cfgSet config.Set, loc *
 	logging.Infof(ctx, "Rolling %s => %s", cfgSetInDB.LatestRevision.ID, latestCommit.Id)
 	err = i.importRevision(ctx, cfgSet, loc, latestCommit, gtClient, project)
 	if err != nil {
-		err = errors.Annotate(err, "Failed to import %s revision %s", cfgSet, latestCommit.Id).Err()
+		err = errors.Fmt("Failed to import %s revision %s: %w", cfgSet, latestCommit.Id, err)
 		return errors.Append(err, saveAttempt(false, err.Error(), latestCommit))
 	}
 	return nil
@@ -415,7 +416,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 	var files []*model.File
 	gzReader, err := gzip.NewReader(bytes.NewReader(res.Contents))
 	if err != nil {
-		return errors.Annotate(err, "failed to ungzip gitiles archive").Err()
+		return errors.Fmt("failed to ungzip gitiles archive: %w", err)
 	}
 	defer func() {
 		// Ignore the error. Failing to close it doesn't impact Luci-config
@@ -430,7 +431,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 			break
 		}
 		if err != nil {
-			return errors.Annotate(err, "failed to extract gitiles archive").Err()
+			return errors.Fmt("failed to extract gitiles archive: %w", err)
 		}
 		if header.Typeflag != tar.TypeReg {
 			continue
@@ -453,14 +454,14 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 			},
 		}
 		if file.ContentSHA256, file.Content, err = hashAndCompressConfig(tarReader); err != nil {
-			return errors.Annotate(err, "filepath: %q", filePath).Err()
+			return errors.Fmt("filepath: %q: %w", filePath, err)
 		}
 		gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
 		_, err = clients.GetGsClient(ctx).UploadIfMissing(ctx, i.GSBucket, gsFileName, file.Content, func(attrs *storage.ObjectAttrs) {
 			attrs.ContentEncoding = "gzip"
 		})
 		if err != nil {
-			return errors.Annotate(err, "failed to upload file %s as %s", filePath, gsFileName).Err()
+			return errors.Fmt("failed to upload file %s as %s: %w", filePath, gsFileName, err)
 		}
 		file.GcsURI = gs.MakePath(i.GSBucket, gsFileName)
 		if len(file.Content) > compressedContentLimit {
@@ -492,7 +493,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 	}
 	// Datastore transaction has a maximum size of 10MB.
 	if err := datastore.Put(ctx, files); err != nil {
-		return errors.Annotate(err, "failed to store files").Err()
+		return errors.Fmt("failed to store files: %w", err)
 	}
 	return datastore.RunInTransaction(ctx, func(c context.Context) error {
 		return datastore.Put(ctx, configSet, attempt)
@@ -508,10 +509,10 @@ func hashAndCompressConfig(reader io.Reader) (string, []byte, error) {
 	multiWriter := io.MultiWriter(sha, gzipWriter)
 	if _, err := io.Copy(multiWriter, reader); err != nil {
 		_ = gzipWriter.Close()
-		return "", nil, errors.Annotate(err, "error reading tar file").Err()
+		return "", nil, errors.Fmt("error reading tar file: %w", err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		return "", nil, errors.Annotate(err, "failed to close gzip writer").Err()
+		return "", nil, errors.Fmt("failed to close gzip writer: %w", err)
 	}
 	return hex.EncodeToString(sha.Sum(nil)), compressed.Bytes(), nil
 }
@@ -523,7 +524,7 @@ func (i *Importer) validateAndPopulateAttempt(ctx context.Context, cfgSet config
 	}
 	vr, err := i.Validator.Validate(ctx, cfgSet, vfs)
 	if err != nil {
-		return errors.Annotate(err, "validating config set %q", cfgSet).Err()
+		return errors.Fmt("validating config set %q: %w", cfgSet, err)
 	}
 	attempt.Success = true // be optimistic
 	attempt.Message = "Imported"

@@ -169,11 +169,11 @@ func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, c
 	gcs := makeGerritChanges(cls)
 	nonOptProp, optProp, err := makeProperties(ctx, r.Mode, r.Owner)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to make input properties").Err()
+		return nil, errors.Fmt("failed to make input properties: %w", err)
 	}
 	nonOptTags, optTags, err := makeTags(r, cls)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to make tags").Err()
+		return nil, errors.Fmt("failed to make tags: %w", err)
 	}
 	requests := make([]*bbpb.BatchRequest_Request, len(tryjobs))
 	for i, tj := range tryjobs {

@@ -101,11 +101,11 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier, t
 			sub := client.Subscription(SubscriptionID)
 			subConfig, err := sub.Config(ctx)
 			if err != nil {
-				return errors.Annotate(err, "failed to get configuration for the subscription %s", sub.String()).Err()
+				return errors.Fmt("failed to get configuration for the subscription %s: %w", sub.String(), err)
 			}
 			subscribedProj, err := extractTopicProject(subConfig.Topic.String())
 			if err != nil {
-				return errors.Annotate(err, "for subscription %s", sub.String()).Err()
+				return errors.Fmt("for subscription %s: %w", sub.String(), err)
 			}
 			l := &listener{
 				bbHost:       fmt.Sprintf("%s.appspot.com", subscribedProj),
@@ -230,7 +230,7 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 func parsePubSubMsg(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) {
 	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
 	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(msg.Data, buildsV2Msg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
+		return nil, errors.Fmt("failed to unmarshal pubsub message into BuildsV2PubSub proto: %w", err)
 	}
 	if buildsV2Msg.BuildLargeFieldsDropped {
 		return buildsV2Msg, nil
@@ -238,11 +238,11 @@ func parsePubSubMsg(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) 
 
 	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		return nil, errors.Fmt("failed to decompress build_large_fields for build %d: %w", buildsV2Msg.Build.GetId(), err)
 	}
 	largeFields := &buildbucketpb.Build{}
 	if err := (proto.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(largeFieldsData, largeFields); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		return nil, errors.Fmt("failed to unmarshal build_large_fields for build %d: %w", buildsV2Msg.Build.GetId(), err)
 	}
 	proto.Merge(buildsV2Msg.Build, largeFields)
 
@@ -272,7 +272,7 @@ func zlibDecompress(compressed []byte) ([]byte, error) {
 func extractTopicProject(topic string) (string, error) {
 	matches := topicNameRegexp.FindStringSubmatch(topic)
 	if len(matches) != 3 {
-		return "", errors.Reason("topic %s doesn't match %q", topic, topicNameRegexp.String()).Err()
+		return "", errors.Fmt("topic %s doesn't match %q", topic, topicNameRegexp.String())
 	}
 	return matches[1], nil
 }

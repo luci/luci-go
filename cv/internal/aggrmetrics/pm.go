@@ -103,7 +103,7 @@ func (*pmReporter) report(ctx context.Context, projects []string) error {
 	}
 	err := datastore.Get(ctx, eSizes, entities)
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch all projects").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch all projects: %w", err))
 	}
 
 	for i, e := range entities {

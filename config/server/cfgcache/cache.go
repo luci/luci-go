@@ -132,7 +132,7 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	var fetchedMeta config.Meta
 	err := cfgclient.Get(ctx, config.Set(e.configSet()), e.Path, cfgclient.String(&raw), &fetchedMeta)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch %s:%s", e.configSet(), e.Path).Err()
+		return nil, errors.Fmt("failed to fetch %s:%s: %w", e.configSet(), e.Path, err)
 	}
 
 	// Make sure there are no blocking validation errors. This also deserializes
@@ -141,12 +141,12 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	valCtx.SetFile(e.Path)
 	msg, err := e.validate(&valCtx, raw)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to perform config validation").Err()
+		return nil, errors.Fmt("failed to perform config validation: %w", err)
 	}
 	if err := valCtx.Finalize(); err != nil {
 		blocking := err.(*validation.Error).WithSeverity(validation.Blocking)
 		if blocking != nil {
-			return nil, errors.Annotate(blocking, "validation errors").Err()
+			return nil, errors.Fmt("validation errors: %w", blocking)
 		}
 	}
 
@@ -170,7 +170,7 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	// protos do not guarantee that.
 	blob, err := proto.Marshal(msg)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to reserialize into binary proto").Err()
+		return nil, errors.Fmt("failed to reserialize into binary proto: %w", err)
 	}
 
 	// Update the datastore entry if necessary. Do not just unconditionally
@@ -192,7 +192,7 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 		})
 	}, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to update the datastore copy").Err()
+		return nil, errors.Fmt("failed to update the datastore copy: %w", err)
 	}
 
 	if meta != nil {
@@ -297,12 +297,12 @@ func (e *Entry) Fetch(ctx context.Context, meta *config.Meta) (proto.Message, er
 		err = datastore.Get(ctx, &cached)
 	}
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch cached config").Err()
+		return nil, errors.Fmt("failed to fetch cached config: %w", err)
 	}
 
 	cfg := e.newMessage()
 	if err := proto.Unmarshal(cached.Config, cfg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal cached config").Err()
+		return nil, errors.Fmt("failed to unmarshal cached config: %w", err)
 	}
 
 	if meta != nil {

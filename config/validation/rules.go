@@ -185,11 +185,11 @@ func (r *RuleSet) renderedConfigPattern(ctx context.Context, rule *rule) (*Confi
 
 	configSet, err := r.renderPattern(ctx, rule.configSet)
 	if err != nil {
-		errs = append(errs, errors.Annotate(err, "failed to compile config set pattern %q", rule.configSet).Err())
+		errs = append(errs, errors.Fmt("failed to compile config set pattern %q: %w", rule.configSet, err))
 	}
 	path, err := r.renderPattern(ctx, rule.path)
 	if err != nil {
-		errs = append(errs, errors.Annotate(err, "failed to compile path pattern %q", rule.path).Err())
+		errs = append(errs, errors.Fmt("failed to compile path pattern %q: %w", rule.path, err))
 	}
 
 	if len(errs) != 0 {

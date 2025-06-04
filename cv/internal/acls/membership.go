@@ -117,7 +117,7 @@ func shouldHonorGerritLinkedAccounts(ctx context.Context, project string) (bool,
 			return false, 0, err
 		}
 		if len(meta.ConfigGroupIDs) == 0 {
-			return false, 0, errors.Reason("project %q doesn't have any config group", project).Err()
+			return false, 0, errors.Fmt("project %q doesn't have any config group", project)
 		}
 		// honor_gerrit_linked_accounts is a project level field so it will be the
 		// same for all config group. Pick the first config group here.
@@ -182,7 +182,7 @@ func IsMember(ctx context.Context, gf gerrit.Factory, gerritHost string, luciPro
 
 		switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, emailIdentity, groups); {
 		case err != nil:
-			return false, errors.Annotate(err, "auth.IsMember").Err()
+			return false, errors.Fmt("auth.IsMember: %w", err)
 		case yes:
 			return true, nil
 		}

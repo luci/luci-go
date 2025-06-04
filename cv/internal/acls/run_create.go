@@ -117,14 +117,14 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 		// - config enables trust_dry_runner_deps and the owner is a dry runner
 		switch submitted, err := d.Snapshot.IsSubmitted(); {
 		case err != nil:
-			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
+			return no, errors.Fmt("dep-CL(%d): %w", d.ID, err)
 		case submitted:
 			ck.trustedDeps.Add(d.ID)
 			continue
 		}
 		switch submittable, err := d.Snapshot.IsSubmittable(); {
 		case err != nil:
-			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
+			return no, errors.Fmt("dep-CL(%d): %w", d.ID, err)
 		case submittable:
 			ck.trustedDeps.Add(d.ID)
 			continue
@@ -132,13 +132,13 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 
 		depOwner, err := d.Snapshot.OwnerIdentity()
 		if err != nil {
-			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
+			return no, errors.Fmt("dep-CL(%d): %w", d.ID, err)
 		}
 
 		switch isCommitter, err := ck.isCommitter(ctx, depOwner); {
 		case err != nil:
-			return no, errors.Annotate(err,
-				"dep-CL(%d): checking if owner %q is a committer", d.ID, depOwner).Err()
+			return no, errors.Fmt("dep-CL(%d): checking if owner %q is a committer: %w", d.ID, depOwner, err)
+
 		case isCommitter:
 			ck.trustedDeps.Add(d.ID)
 			continue
@@ -147,8 +147,8 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 		if ck.trustDryRunnerDeps {
 			switch isDryRunner, err := ck.isDryRunner(ctx, depOwner); {
 			case err != nil:
-				return no, errors.Annotate(err,
-					"dep-CL(%d): checking if owner %q is a dry-runner", d.ID, depOwner).Err()
+				return no, errors.Fmt("dep-CL(%d): checking if owner %q is a dry-runner: %w", d.ID, depOwner, err)
+
 			case isDryRunner:
 				ck.trustedDeps.Add(d.ID)
 				continue
@@ -361,20 +361,20 @@ func evaluateCLs(ctx context.Context, gf gerrit.Factory, cg *prjcfg.ConfigGroup,
 		tr := trs[i]
 		triggerer, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email))
 		if err != nil {
-			return nil, errors.Annotate(err, "CL(%d): triggerer %q", cl.ID, tr.Email).Err()
+			return nil, errors.Fmt("CL(%d): triggerer %q: %w", cl.ID, tr.Email, err)
 		}
 		owner, err := cl.Snapshot.OwnerIdentity()
 		if err != nil {
-			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+			return nil, errors.Fmt("CL(%d): %w", cl.ID, err)
 		}
 
 		submittable, err := cl.Snapshot.IsSubmittable()
 		if err != nil {
-			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+			return nil, errors.Fmt("CL(%d): %w", cl.ID, err)
 		}
 		submitted, err := cl.Snapshot.IsSubmitted()
 		if err != nil {
-			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+			return nil, errors.Fmt("CL(%d): %w", cl.ID, err)
 		}
 		// by default, all deps are untrusted, unless they are part of the Run.
 		var depsToExamine common.CLIDs

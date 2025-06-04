@@ -72,7 +72,7 @@ func (f *Fake) MustNewClient(ctx context.Context, host, luciProject string) *Cli
 	}
 	client, err := factory.MakeClient(ctx, host, luciProject)
 	if err != nil {
-		panic(errors.Annotate(err, "failed to create new buildbucket client").Err())
+		panic(errors.Fmt("failed to create new buildbucket client: %w", err))
 	}
 	return client.(*Client)
 }
@@ -211,7 +211,7 @@ func (fa *fakeApp) updateBuild(ctx context.Context, id int64, cb func(*bbpb.Buil
 		fa.publishToTopicIfNecessary(ctx, build)
 		return build
 	}
-	panic(errors.Reason("unknown build %d", id).Err())
+	panic(errors.Fmt("unknown build %d", id))
 }
 
 // insertBuild also generates a monotonically decreasing build ID.
@@ -245,7 +245,7 @@ func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Bu
 	}
 	data, err := protojson.Marshal(msg)
 	if err != nil {
-		panic(errors.Annotate(err, "failed to marshal pubsub message").Err())
+		panic(errors.Fmt("failed to marshal pubsub message: %w", err))
 	}
 	res := topic.Publish(ctx, &pubsub.Message{
 		Data: data,
@@ -257,10 +257,10 @@ func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Bu
 	select {
 	case <-res.Ready():
 		if _, err := res.Get(ctx); err != nil {
-			panic(errors.Annotate(err, "failed to publish the pubsub message").Err())
+			panic(errors.Fmt("failed to publish the pubsub message: %w", err))
 		}
 	case <-time.After(10 * time.Second):
-		panic(errors.Reason("took too long to publish the pubsub message").Err())
+		panic(errors.New("took too long to publish the pubsub message"))
 	}
 }
 

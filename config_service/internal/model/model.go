@@ -145,7 +145,7 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 	case f.GcsURI != "":
 		compressed, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to read from %s", f.GcsURI).Err()
+			return nil, errors.Fmt("failed to read from %s: %w", f.GcsURI, err)
 		}
 		rawContent, err := decompressData(compressed)
 		if err != nil {
@@ -161,15 +161,15 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 func decompressData(data []byte) ([]byte, error) {
 	gr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create gzip reader").Err()
+		return nil, errors.Fmt("failed to create gzip reader: %w", err)
 	}
 	ret, err := io.ReadAll(gr)
 	if err != nil {
 		_ = gr.Close()
-		return nil, errors.Annotate(err, "failed to decompress the data").Err()
+		return nil, errors.Fmt("failed to decompress the data: %w", err)
 	}
 	if err := gr.Close(); err != nil {
-		return nil, errors.Annotate(err, "errors closing gzip reader").Err()
+		return nil, errors.Fmt("errors closing gzip reader: %w", err)
 	}
 	return ret, nil
 }
@@ -275,7 +275,7 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 	case err == datastore.ErrNoSuchEntity:
 		return nil, &NoSuchConfigError{unknownConfigSet: string(configSet)}
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch ConfigSet %q", configSet).Err()
+		return nil, errors.Fmt("failed to fetch ConfigSet %q: %w", configSet, err)
 	}
 	f := &File{
 		Path:     filePath,
@@ -292,7 +292,7 @@ func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath str
 				file:      f.Path,
 			}}
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch file %q", f.Path).Err()
+		return nil, errors.Fmt("failed to fetch file %q: %w", f.Path, err)
 	}
 	return f, nil
 }
@@ -314,7 +314,7 @@ func GetConfigFileByHash(ctx context.Context, configSet config.Set, contentSha25
 	})
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to query file by sha256 hash %q", contentSha256).Err()
+		return nil, errors.Fmt("failed to query file by sha256 hash %q: %w", contentSha256, err)
 	case latestFile == nil:
 		return nil, &NoSuchConfigError{
 			unknownConfigFile: struct {

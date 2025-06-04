@@ -40,14 +40,14 @@ import (
 func validateGetConfig(req *pb.GetConfigRequest) error {
 	switch {
 	case req.GetConfigSet() == "":
-		return errors.Reason("config_set is not specified").Err()
+		return errors.New("config_set is not specified")
 	case req.GetContentSha256() != "" && req.GetPath() != "":
-		return errors.Reason("content_sha256 and path are mutually exclusive").Err()
+		return errors.New("content_sha256 and path are mutually exclusive")
 	case req.GetContentSha256() == "" && req.GetPath() == "":
-		return errors.Reason("content_sha256 or path is required").Err()
+		return errors.New("content_sha256 or path is required")
 	case req.GetPath() != "":
 		if err := validatePath(req.Path); err != nil {
-			return errors.Annotate(err, "path %q", req.Path).Err()
+			return errors.Fmt("path %q: %w", req.Path, err)
 		}
 	}
 	return errors.WrapIf(config.Set(req.ConfigSet).Validate(), "config_set %q", req.ConfigSet)

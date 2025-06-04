@@ -139,7 +139,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 			auth.WithIDTokenAudience("https://"+m.opts.ServiceHost),
 		)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get credentials to access %s", m.opts.ServiceHost).Err()
+			return nil, errors.Fmt("failed to get credentials to access %s: %w", m.opts.ServiceHost, err)
 		}
 	}
 
@@ -185,7 +185,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 // Returns an error if ServiceHost is unset.
 func (m *serverModule) configServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
 	if m.opts.ServiceHost == "" {
-		return nil, errors.Reason("-config-service-host is not set").Err()
+		return nil, errors.New("-config-service-host is not set")
 	}
 	return signing.FetchServiceInfoFromLUCIService(ctx, "https://"+m.opts.ServiceHost)
 }
@@ -202,7 +202,7 @@ func (m *serverModule) registerVars(opts module.HostOptions) {
 	m.opts.Vars.Register("config_service_appid", func(ctx context.Context) (string, error) {
 		info, err := m.configServiceInfo(ctx)
 		if err != nil {
-			return "", errors.Annotate(err, "can't resolve ${config_service_appid}").Err()
+			return "", errors.Fmt("can't resolve ${config_service_appid}: %w", err)
 		}
 		return info.AppID, nil
 	})

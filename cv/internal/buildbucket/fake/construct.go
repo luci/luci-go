@@ -202,7 +202,7 @@ func (bc *BuildConstructor) WithRequestedProperties(data map[string]any) *BuildC
 	var err error
 	bc.requestedProperties, err = structpb.NewStruct(data)
 	if err != nil {
-		panic(errors.Annotate(err, "failed to convert to proto struct").Err())
+		panic(errors.Fmt("failed to convert to proto struct: %w", err))
 	}
 	return bc
 }
