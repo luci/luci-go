@@ -484,7 +484,12 @@ func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
 			Project:       e.BuildProject,
 			Build:         e.BuildResult,
 		}
+	} else {
+		// This should never happen.
+		panic("invalid join with zero inputs")
 	}
+
+	itvTask.UseNewIngestionOrder = true
 
 	// Copy the task to avoid aliasing issues if the caller ever
 	// decides the modify e.PresubmitResult or e.BuildResult

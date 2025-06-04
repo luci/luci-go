@@ -122,7 +122,8 @@ func TestHandleCVRun(t *testing.T) {
 					Owner:        "user",
 					CreationTime: run.CreateTime,
 				},
-				Project: "buildproject",
+				Project:              "buildproject",
+				UseNewIngestionOrder: true,
 			}
 			t.Run(`Baseline`, func(t *ftt.Test) {
 				processed, tasks := processCVRun(run)

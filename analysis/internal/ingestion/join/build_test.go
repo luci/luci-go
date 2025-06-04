@@ -47,10 +47,11 @@ func TestHandleBuild(t *testing.T) {
 			WithCreateTime(buildCreateTime)
 
 		expectedTask := &taskspb.IngestTestVerdicts{
-			PartitionTime: timestamppb.New(buildCreateTime),
-			Build:         build.ExpectedResult(),
-			IngestionId:   string(control.IngestionIDFromBuildID(build.buildID)),
-			Project:       "buildproject",
+			PartitionTime:        timestamppb.New(buildCreateTime),
+			Build:                build.ExpectedResult(),
+			IngestionId:          string(control.IngestionIDFromBuildID(build.buildID)),
+			Project:              "buildproject",
+			UseNewIngestionOrder: true,
 		}
 
 		assertTasksExpected := func(t testing.TB) {

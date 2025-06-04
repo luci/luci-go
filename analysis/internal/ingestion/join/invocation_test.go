@@ -71,6 +71,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					InvocationId: "inv-123",
 					CreationTime: timestamppb.New(invocationCreateTime),
 				},
+				UseNewIngestionOrder: true,
 			}
 			assertTasksExpected(expectedTask)
 		})
@@ -93,6 +94,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					InvocationId: invocationID,
 					CreationTime: timestamppb.New(invocationCreateTime),
 				},
+				UseNewIngestionOrder: true,
 			}
 			t.Run(`Without build ingested previously`, func(t *ftt.Test) {
 				assert.Loosely(t, ingestFinalization(ctx, invocationID, false, invocationCreateTime), should.BeNil)
