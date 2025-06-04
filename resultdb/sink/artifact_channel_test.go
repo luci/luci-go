@@ -50,15 +50,15 @@ func TestArtifactChannel(t *testing.T) {
 			batchCh <- in
 			return nil, nil
 		}
-		createTask := func(name, content string, status pb.TestStatus) *uploadTask {
+		createTask := func(name, content string) *uploadTask {
 			art := testArtifactWithContents([]byte(content))
-			task, err := newUploadTask(name, art, status)
+			task, err := newUploadTask(name, art)
 			assert.Loosely(t, err, should.BeNil)
 			return task
 		}
 
 		t.Run("with a small artifact", func(t *ftt.Test) {
-			task := createTask("invocations/inv/artifacts/art1", "content", pb.TestStatus_PASS)
+			task := createTask("invocations/inv/artifacts/art1", "content")
 			ac := newArtifactChannel(ctx, &cfg)
 			ac.schedule(task)
 			ac.closeAndDrain(ctx)
@@ -72,7 +72,6 @@ func TestArtifactChannel(t *testing.T) {
 						ContentType: task.art.ContentType,
 						SizeBytes:   int64(len("content")),
 						Contents:    []byte("content"),
-						TestStatus:  pb.TestStatus_PASS,
 					},
 				}},
 			}))
@@ -82,9 +81,9 @@ func TestArtifactChannel(t *testing.T) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
-			t1 := createTask("invocations/inv/artifacts/art1", "1234", pb.TestStatus_PASS)
-			t2 := createTask("invocations/inv/artifacts/art2", "5678", pb.TestStatus_FAIL)
-			t3 := createTask("invocations/inv/artifacts/art3", "9012", pb.TestStatus_CRASH)
+			t1 := createTask("invocations/inv/artifacts/art1", "1234")
+			t2 := createTask("invocations/inv/artifacts/art2", "5678")
+			t3 := createTask("invocations/inv/artifacts/art3", "9012")
 			ac.schedule(t1)
 			ac.schedule(t2)
 			ac.schedule(t3)
@@ -101,7 +100,6 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t1.art.ContentType,
 							SizeBytes:   int64(len("1234")),
 							Contents:    []byte("1234"),
-							TestStatus:  pb.TestStatus_PASS,
 						},
 					},
 					// art2
@@ -112,7 +110,6 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t2.art.ContentType,
 							SizeBytes:   int64(len("5678")),
 							Contents:    []byte("5678"),
-							TestStatus:  pb.TestStatus_FAIL,
 						},
 					},
 				},
@@ -129,7 +126,6 @@ func TestArtifactChannel(t *testing.T) {
 							ContentType: t3.art.ContentType,
 							SizeBytes:   int64(len("9012")),
 							Contents:    []byte("9012"),
-							TestStatus:  pb.TestStatus_CRASH,
 						},
 					},
 				},
@@ -140,7 +136,7 @@ func TestArtifactChannel(t *testing.T) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
-			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar", pb.TestStatus_ABORT)
+			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar")
 			ac.schedule(t1)
 			ac.closeAndDrain(ctx)
 
@@ -170,15 +166,15 @@ func TestUploadTask(t *testing.T) {
 		defer os.Remove(fArt.GetFilePath())
 
 		t.Run("works", func(t *ftt.Test) {
-			tsk, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+			tsk, err := newUploadTask(name, fArt)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tsk, should.Resemble(&uploadTask{art: fArt, artName: name, size: int64(len("content")), testStatus: pb.TestStatus_PASS}))
+			assert.Loosely(t, tsk, should.Resemble(&uploadTask{art: fArt, artName: name, size: int64(len("content"))}))
 		})
 
 		t.Run("fails", func(t *ftt.Test) {
 			// stat error
 			assert.Loosely(t, os.Remove(fArt.GetFilePath()), should.BeNil)
-			_, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+			_, err := newUploadTask(name, fArt)
 			assert.Loosely(t, err, should.ErrLike("querying file info"))
 
 			// is a directory
@@ -186,7 +182,7 @@ func TestUploadTask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(path)
 			fArt.Body.(*sinkpb.Artifact_FilePath).FilePath = path
-			_, err = newUploadTask(name, fArt, pb.TestStatus_PASS)
+			_, err = newUploadTask(name, fArt)
 			assert.Loosely(t, err, should.ErrLike("is a directory"))
 		})
 	})
@@ -199,7 +195,7 @@ func TestUploadTask(t *testing.T) {
 		})
 		fArt.ContentType = "plain/text"
 		defer os.Remove(fArt.GetFilePath())
-		ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+		ut, err := newUploadTask(name, fArt)
 		assert.Loosely(t, err, should.BeNil)
 
 		t.Run("Updates the content type when it is missing", func(t *ftt.Test) {
@@ -212,7 +208,7 @@ func TestUploadTask(t *testing.T) {
 		t.Run("Fails when the artifact name is too long", func(t *ftt.Test) {
 			artifactID := strings.Repeat("a", 600)
 			name := "invocations/inv/tests/t1/results/r1/artifacts/" + artifactID
-			ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+			ut, err := newUploadTask(name, fArt)
 			assert.Loosely(t, err, should.BeNil)
 
 			_, err = ut.CreateRequest()
@@ -222,14 +218,13 @@ func TestUploadTask(t *testing.T) {
 		t.Run("works", func(t *ftt.Test) {
 			req, err := ut.CreateRequest()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, req, should.Resemble(&pb.CreateArtifactRequest{
+			assert.Loosely(t, req, should.Match(&pb.CreateArtifactRequest{
 				Parent: "invocations/inv/tests/t1/results/r1",
 				Artifact: &pb.Artifact{
 					ArtifactId:  "a1",
 					ContentType: "plain/text",
 					SizeBytes:   int64(len("content")),
 					Contents:    []byte("content"),
-					TestStatus:  pb.TestStatus_PASS,
 				},
 			}))
 		})

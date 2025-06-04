@@ -117,8 +117,7 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 			CaseNameComponents: []string{"component1", "component2"},
 		},
 		ResultId:    "result_id1",
-		Expected:    true,
-		Status:      pb.TestStatus_PASS,
+		StatusV2:    pb.TestResult_PASSED,
 		SummaryHtml: "HTML summary",
 		StartTime:   st,
 		Duration:    durationpb.New(time.Minute),
@@ -141,14 +140,6 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 					},
 				},
 			},
-		},
-		FailureReason: &pb.FailureReason{
-			PrimaryErrorMessage: "This is a failure message.",
-			Errors: []*pb.FailureReason_Error{
-				{Message: "This is a failure message."},
-				{Message: "This is a failure message2."},
-			},
-			TruncatedErrorsCount: 0,
 		},
 	}
 }

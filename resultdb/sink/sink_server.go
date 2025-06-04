@@ -240,7 +240,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			}
 
 			n := pbutil.TestResultArtifactName(s.cfg.invocationID, testID, rdbtr.ResultId, id)
-			t, err := newUploadTask(n, a, rdbtr.Status)
+			t, err := newUploadTask(n, a)
 
 			// newUploadTask can return an error if os.Stat() fails.
 			if err != nil {
@@ -254,7 +254,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 		trsForUpload = append(trsForUpload, rdbtr)
 
-		if s.ec != nil && !tr.Expected && tr.Status == pb.TestStatus_PASS {
+		if s.ec != nil && isUnexpectedlyPassed(tr) {
 			trsForExo = append(trsForExo, rdbtr)
 		}
 	}
@@ -280,6 +280,18 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 	return &sinkpb.ReportTestResultsResponse{}, nil
 }
 
+func isUnexpectedlyPassed(tr *sinkpb.TestResult) bool {
+	// Handle uploaders using legacy v1 status.
+	if tr.Status != pb.TestStatus_STATUS_UNSPECIFIED {
+		return !tr.Expected && tr.Status == pb.TestStatus_PASS
+	}
+	if tr.FrameworkExtensions.GetWebTest() != nil {
+		return !tr.FrameworkExtensions.WebTest.IsExpected && tr.FrameworkExtensions.WebTest.Status == pb.WebTest_PASS
+	}
+	// Non-web test uploaders can't produce unexpected passes.
+	return false
+}
+
 // ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*emptypb.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
@@ -287,7 +299,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
-		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a, pb.TestStatus_STATUS_UNSPECIFIED)
+		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
 		// newUploadTask can return an error if os.Stat() fails.
 		if err != nil {
 			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on

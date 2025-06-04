@@ -404,6 +404,10 @@ func TestReportTestResults(t *testing.T) {
 				tr.Status = pb.TestStatus_PASS
 				tr.Expected = true
 
+				expectedTR.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+				expectedTR.Status = pb.TestStatus_PASS
+				expectedTR.Expected = true
+
 				t.Run("specified", func(t *ftt.Test) {
 					tr.FailureReason = &pb.FailureReason{
 						PrimaryErrorMessage: "Example failure reason.",
@@ -724,23 +728,24 @@ func TestReportTestResults(t *testing.T) {
 						ContentType: "text/plain",
 						Contents:    []byte("a sample artifact"),
 						SizeBytes:   int64(len("a sample artifact")),
-						TestStatus:  pb.TestStatus_PASS,
 					}))
 				})
 			})
 		})
 
 		t.Run("report exoneration", func(t *ftt.Test) {
-			t.Run("legacy test ID", func(t *ftt.Test) {
+			cfg.ExonerateUnexpectedPass = true
+			t.Run("legacy test ID + status", func(t *ftt.Test) {
 				cfg.ModuleName = ""
 				cfg.ModuleScheme = legacyScheme()
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
-				cfg.ExonerateUnexpectedPass = true
 
 				sink, err := newSinkServer(ctx, cfg)
 				assert.Loosely(t, err, should.BeNil)
 				defer closeSinkServer(ctx, sink)
 
+				tr.StatusV2 = pb.TestResult_STATUS_UNSPECIFIED
+				tr.Status = pb.TestStatus_PASS
 				tr.Expected = false
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
@@ -755,18 +760,34 @@ func TestReportTestResults(t *testing.T) {
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				}))
 			})
-			t.Run("structured test ID", func(t *ftt.Test) {
+			t.Run("structured test ID + status V2", func(t *ftt.Test) {
 				cfg.ModuleName = "modulename"
 				cfg.ModuleScheme = testScheme("scheme")
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
-				cfg.ExonerateUnexpectedPass = true
-
 				sink, err := newSinkServer(ctx, cfg)
 				assert.Loosely(t, err, should.BeNil)
 				defer closeSinkServer(ctx, sink)
 
+				tr.StatusV2 = pb.TestResult_PASSED
+				tr.FrameworkExtensions = nil
+				t.Run("baseline - not exonerate normal pass", func(t *ftt.Test) {
+					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+					closeSinkServer(ctx, sink)
+					assert.Loosely(t, sentExoReq, should.BeNil)
+				})
+
 				t.Run("exonerate unexpected pass", func(t *ftt.Test) {
-					tr.Expected = false
+					tr.StatusV2 = pb.TestResult_FAILED
+					tr.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							IsExpected: false,
+							Status:     pb.WebTest_PASS,
+						},
+					}
+					tr.FailureReason = &pb.FailureReason{
+						Kind: pb.FailureReason_ORDINARY,
+					}
 
 					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
@@ -788,16 +809,17 @@ func TestReportTestResults(t *testing.T) {
 				})
 
 				t.Run("not exonerate unexpected failure", func(t *ftt.Test) {
-					tr.Expected = false
-					tr.Status = pb.TestStatus_FAIL
+					tr.StatusV2 = pb.TestResult_FAILED
+					tr.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							IsExpected: false,
+							Status:     pb.WebTest_FAIL,
+						},
+					}
+					tr.FailureReason = &pb.FailureReason{
+						Kind: pb.FailureReason_ORDINARY,
+					}
 
-					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
-					closeSinkServer(ctx, sink)
-					assert.Loosely(t, sentExoReq, should.BeNil)
-				})
-
-				t.Run("not exonerate expected pass", func(t *ftt.Test) {
 					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					closeSinkServer(ctx, sink)
@@ -805,7 +827,13 @@ func TestReportTestResults(t *testing.T) {
 				})
 
 				t.Run("not exonerate expected failure", func(t *ftt.Test) {
-					tr.Status = pb.TestStatus_FAIL
+					tr.StatusV2 = pb.TestResult_PASSED
+					tr.FrameworkExtensions = &pb.FrameworkExtensions{
+						WebTest: &pb.WebTest{
+							IsExpected: true,
+							Status:     pb.WebTest_FAIL,
+						},
+					}
 
 					_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))

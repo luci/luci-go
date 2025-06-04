@@ -74,7 +74,7 @@ func TestArtifactUploader(t *testing.T) {
 			defer os.Remove(art.GetFilePath())
 
 			t.Run("works", func(t *ftt.Test) {
-				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut, err := newUploadTask(name, art)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, uploader.StreamUpload(ctx, ut, token), should.BeNil)
 
@@ -88,7 +88,7 @@ func TestArtifactUploader(t *testing.T) {
 			})
 
 			t.Run("fails if file doesn't exist", func(t *ftt.Test) {
-				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut, err := newUploadTask(name, art)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, os.Remove(art.GetFilePath()), should.BeNil)
 
@@ -115,7 +115,7 @@ func TestArtifactUploader(t *testing.T) {
 				t.Run(fmt.Sprintf("With artifact content type: %s should upload with content type: %s", tc.contentType, tc.expectedContentType), func(t *ftt.Test) {
 					art := testArtifactWithContents([]byte(content))
 					art.ContentType = tc.contentType
-					ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+					ut, err := newUploadTask(name, art)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, uploader.StreamUpload(ctx, ut, token), should.BeNil)
 
@@ -133,7 +133,7 @@ func TestArtifactUploader(t *testing.T) {
 		t.Run("Upload w/ gcs not supported by stream upload", func(t *ftt.Test) {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+			ut, err := newUploadTask(name, art)
 			assert.Loosely(t, err, should.BeNil)
 
 			// StreamUpload does not support gcsUri upload
@@ -143,7 +143,7 @@ func TestArtifactUploader(t *testing.T) {
 		t.Run("Batch Upload w/ gcs", func(t *ftt.Test) {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+			ut, err := newUploadTask(name, art)
 			ut.size = 5 * 1024 * 1024
 			assert.Loosely(t, err, should.BeNil)
 
@@ -164,7 +164,7 @@ func TestArtifactUploader(t *testing.T) {
 			func(t *ftt.Test) {
 				art := testArtifactWithGcs(gcsURI)
 				art.ContentType = contentType
-				ut, err := newUploadTask(name, art, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut, err := newUploadTask(name, art)
 				ut.size = 15 * 1024 * 1024
 				assert.Loosely(t, err, should.BeNil)
 
@@ -184,17 +184,17 @@ func TestArtifactUploader(t *testing.T) {
 				})
 				art1.ContentType = contentType
 				defer os.Remove(art1.GetFilePath())
-				ut1, err := newUploadTask(name, art1, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut1, err := newUploadTask(name, art1)
 				assert.Loosely(t, err, should.BeNil)
 
 				art2 := testArtifactWithContents([]byte(content))
 				art2.ContentType = contentType
-				ut2, err := newUploadTask(name, art2, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut2, err := newUploadTask(name, art2)
 				assert.Loosely(t, err, should.BeNil)
 
 				art3 := testArtifactWithGcs(gcsURI)
 				art3.ContentType = contentType
-				ut3, err := newUploadTask(name, art3, pb.TestStatus_STATUS_UNSPECIFIED)
+				ut3, err := newUploadTask(name, art3)
 				ut3.size = 5 * 1024 * 1024
 				assert.Loosely(t, err, should.BeNil)
 
