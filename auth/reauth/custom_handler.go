@@ -129,7 +129,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 	logging.Debugf(ctx, "Got AppID %q", c.SecurityKey.AppID)
 	dc := c.SecurityKey.DeviceChallenges
 	if len(dc) == 0 {
-		return nil, errors.Reason("pluginHandler: no device challenges available").Err()
+		return nil, errors.New("pluginHandler: no device challenges available")
 	}
 	clientData := make([][]byte, len(dc))
 	signData := make([]pluginSignData, len(dc))
@@ -152,7 +152,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 	var resp *pluginResponse
 	resp, err := h.authWithPlugin(ctx, req)
 	if err != nil {
-		return nil, errors.Annotate(err, "pluginHandler").Err()
+		return nil, errors.Fmt("pluginHandler: %w", err)
 	}
 	rd := resp.ResponseData
 	for i := range signData {
@@ -164,12 +164,12 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 		signatureData, err = lenientDecodeString(pluginEncoding, rd.SignatureData)
 		if err != nil {
 			logging.Debugf(ctx, "Error decoding signatureData.  Value=%q", rd.SignatureData)
-			return nil, errors.Annotate(err, "pluginHandler: decode response: decode signatureData").Err()
+			return nil, errors.Fmt("pluginHandler: decode response: decode signatureData: %w", err)
 		}
 		keyHandle, err = lenientDecodeString(pluginEncoding, rd.KeyHandle)
 		if err != nil {
 			logging.Debugf(ctx, "Error decoding keyHandle.  Value=%q", rd.KeyHandle)
-			return nil, errors.Annotate(err, "pluginHandler: decode response: decode keyHandle").Err()
+			return nil, errors.Fmt("pluginHandler: decode response: decode keyHandle: %w", err)
 		}
 		return &proposalReply{
 			SecurityKey: skReply{
@@ -181,7 +181,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 			},
 		}, nil
 	}
-	return nil, errors.Reason("pluginHandler: could not find request associated with KeyHandle %q and ChallengeHash %q", rd.KeyHandle, rd.ChallengeHash).Err()
+	return nil, errors.Fmt("pluginHandler: could not find request associated with KeyHandle %q and ChallengeHash %q", rd.KeyHandle, rd.ChallengeHash)
 }
 
 func (h pluginHandler) authWithPlugin(ctx context.Context, req *pluginRequest) (*pluginResponse, error) {
@@ -220,7 +220,7 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *pluginRequest) (
 			if resp != nil {
 				logging.Warningf(ctx, "Signing plugin returned error details: %s", resp.ErrorDetail)
 			}
-			return nil, errors.Annotate(err, "signing plugin auth").Err()
+			return nil, errors.Fmt("signing plugin auth: %w", err)
 		}
 		if resp.Code == touchRequired {
 			prompt()
@@ -250,7 +250,7 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *pluginRequest) (
 func (h pluginHandler) sendRequest(ctx context.Context, req *pluginRequest) (*pluginResponse, error) {
 	ereq, err := pluginEncode(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "pluginHandler.sendRequest").Err()
+		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
 	out, cmdErr := h.send(ctx, ereq)
@@ -260,12 +260,12 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *pluginRequest) (*pl
 	resp, err := pluginDecode(out)
 	if err != nil {
 		if cmdErr != nil {
-			return resp, errors.Annotate(cmdErr, "pluginHandler.sendRequest").Err()
+			return resp, errors.Fmt("pluginHandler.sendRequest: %w", cmdErr)
 		}
-		return nil, errors.Annotate(err, "pluginHandler.sendRequest").Err()
+		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	if cmdErr != nil {
-		return resp, errors.Annotate(cmdErr, "pluginHandler.sendRequest").Err()
+		return resp, errors.Fmt("pluginHandler.sendRequest: %w", cmdErr)
 	}
 	return resp, nil
 }
@@ -342,22 +342,22 @@ var pluginHeaderOrder = binary.LittleEndian
 func pluginEncode(v any) ([]byte, error) {
 	body, err := json.Marshal(v)
 	if err != nil {
-		return nil, errors.Annotate(err, "pluginEncode").Err()
+		return nil, errors.Fmt("pluginEncode: %w", err)
 	}
 	// Check body length fits within 32-bit limit of the encoding.
 	// Note we cast both LHS and RHS to an int64 to avoid coercing
 	// RHS to an int (which may be only 32 bits on some platforms).
 	if int64(len(body)) > int64(math.MaxUint32) {
-		return nil, errors.Reason("pluginEncode: body too big").Err()
+		return nil, errors.New("pluginEncode: body too big")
 	}
 	// If we are running on a platform where ints are 32 bits
 	// or less, check len(body)+4 will not overflow int.
 	if len(body) > math.MaxInt-4 {
-		return nil, errors.Reason("pluginEncode: body exceeding %v unsupported on this platform", math.MaxInt-4).Err()
+		return nil, errors.Fmt("pluginEncode: body exceeding %v unsupported on this platform", math.MaxInt-4)
 	}
 	msg := make([]byte, len(body)+4)
 	if _, err = binary.Encode(msg[:4], pluginHeaderOrder, uint32(len(body))); err != nil {
-		return nil, errors.Annotate(err, "pluginEncode").Err()
+		return nil, errors.Fmt("pluginEncode: %w", err)
 	}
 	copy(msg[4:], body)
 	return msg, nil
@@ -366,22 +366,22 @@ func pluginEncode(v any) ([]byte, error) {
 // pluginDecode decodes framed JSON messages from signing plugins.
 func pluginDecode(d []byte) (*pluginResponse, error) {
 	if len(d) < 4 {
-		return nil, errors.Reason("pluginDecode: input too short").Err()
+		return nil, errors.New("pluginDecode: input too short")
 	}
 	var bodyLen uint32
 	n, err := binary.Decode(d[:4], pluginHeaderOrder, &bodyLen)
 	if err != nil {
-		return nil, errors.Annotate(err, "pluginDecode").Err()
+		return nil, errors.Fmt("pluginDecode: %w", err)
 	}
 	if n != 4 {
 		panic(fmt.Sprintf("read unexpected number of header bytes %d", n))
 	}
 	if int64(bodyLen) != int64(len(d)-4) {
-		return nil, errors.Reason("pluginDecide: message declared %d length, but actual length is %d (with 4 bytes header)", bodyLen, len(d)).Err()
+		return nil, errors.Fmt("pluginDecide: message declared %d length, but actual length is %d (with 4 bytes header)", bodyLen, len(d))
 	}
 	var resp pluginResponse
 	if err := json.Unmarshal(d[4:], &resp); err != nil {
-		return nil, errors.Annotate(err, "pluginDecode").Err()
+		return nil, errors.Fmt("pluginDecode: %w", err)
 	}
 	return &resp, nil
 }

@@ -90,7 +90,7 @@ func analyzeRealmsCfg(ctx context.Context, cfg *config.Config,
 	perms stringset.Set, globalRoles RoleSet) (RoleSet, error) {
 	parsed := &realmsconf.RealmsCfg{}
 	if err := prototext.Unmarshal([]byte(cfg.Content), parsed); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal config body for realms").Err()
+		return nil, errors.Fmt("failed to unmarshal config body for realms: %w", err)
 	}
 
 	customRoles := parsed.GetCustomRoles()
@@ -135,12 +135,12 @@ func analyzeRealmsCfg(ctx context.Context, cfg *config.Config,
 func collateLatestRoles(ctx context.Context, ts *timestamppb.Timestamp) ([]*bqpb.RoleRow, error) {
 	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get permissions.cfg").Err()
+		return nil, errors.Fmt("failed to get permissions.cfg: %w", err)
 	}
 
 	latest, err := realmsinternals.FetchLatestRealmsConfigs(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch latest realms").Err()
+		return nil, errors.Fmt("failed to fetch latest realms: %w", err)
 	}
 
 	count := 0

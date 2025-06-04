@@ -135,7 +135,7 @@ func GetAllReplicas(ctx context.Context) ([]*AuthReplicaState, error) {
 	var replicaStates []*AuthReplicaState
 	err := datastore.GetAll(ctx, query, &replicaStates)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthReplicaState entities").Err()
+		return nil, errors.Fmt("error getting all AuthReplicaState entities: %w", err)
 	}
 
 	return replicaStates, nil
@@ -342,7 +342,7 @@ func pushToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
 	res, err := replicas.SendAuthDB(ctx, replicaURL, keyName, encodedSig, authDBBlob)
 	if err != nil {
 		return nil, &ReplicaUpdateError{
-			RootErr: errors.Annotate(err, "error sending AuthDB").Err(),
+			RootErr: errors.Fmt("error sending AuthDB: %w", err),
 			IsFatal: true,
 		}
 	}
@@ -359,7 +359,7 @@ func pushToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, &ReplicaUpdateError{
-			RootErr: errors.Annotate(err, "failed to read response body").Err(),
+			RootErr: errors.Fmt("failed to read response body: %w", err),
 			IsFatal: true,
 		}
 	}
@@ -368,7 +368,7 @@ func pushToReplica(ctx context.Context, replicaURL string, authDBBlob []byte,
 	pushResponse := &protocol.ReplicationPushResponse{}
 	if err := proto.Unmarshal(body, pushResponse); err != nil {
 		return nil, &ReplicaUpdateError{
-			RootErr: errors.Annotate(err, "failed to unmarshal response").Err(),
+			RootErr: errors.Fmt("failed to unmarshal response: %w", err),
 			IsFatal: true,
 		}
 	}

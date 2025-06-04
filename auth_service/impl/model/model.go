@@ -441,7 +441,7 @@ func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthReplicationState").Err()
+		return nil, errors.Fmt("error getting AuthReplicationState: %w", err)
 	}
 }
 
@@ -630,7 +630,7 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthGroup").Err()
+		return nil, errors.Fmt("error getting AuthGroup: %w", err)
 	}
 }
 
@@ -642,7 +642,7 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	var authGroups []*AuthGroup
 	err := datastore.GetAll(ctx, query, &authGroups)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthGroup entities").Err()
+		return nil, errors.Fmt("error getting all AuthGroup entities: %w", err)
 	}
 	for _, authGroup := range authGroups {
 		// Set the Owners field to the admin group if it's empty, which may
@@ -687,7 +687,7 @@ func checkGroupsExist(ctx context.Context, groups []string) error {
 	}
 	refsExists, err := datastore.Exists(ctx, keys)
 	if err != nil {
-		return errors.Annotate(err, "failed to check existence of referenced groups").Err()
+		return errors.Fmt("failed to check existence of referenced groups: %w", err)
 	}
 	if !refsExists.All() {
 		missingRefs := []string{}
@@ -827,7 +827,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 		// Check the group doesn't already exist.
 		exists, err := datastore.Exists(ctx, newGroup)
 		if err != nil {
-			return errors.Annotate(err, "failed to check whether group name already exists").Err()
+			return errors.Fmt("failed to check whether group name already exists: %w", err)
 		}
 		if exists.Get(0) {
 			return customerrors.ErrAlreadyExists
@@ -909,7 +909,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 		}
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "error fetching referencing groups").Err()
+		return nil, errors.Fmt("error fetching referencing groups: %w", err)
 	}
 	names := stringset.New(len(nestingGroups) + len(ownedGroups))
 	names.AddAll(nestingGroups)
@@ -983,7 +983,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		}
 		ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
 		if err != nil {
-			return errors.Annotate(err, "permission check failed").Err()
+			return errors.Fmt("permission check failed: %w", err)
 		}
 
 		if !ok {
@@ -1080,7 +1080,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	// Refetch the group as saved in datastore so subsequent updates work.
 	updatedGroup, err := GetAuthGroup(ctx, groupUpdate.ID)
 	if err != nil {
-		return nil, errors.Annotate(err, "get group after update failed").Err()
+		return nil, errors.Fmt("get group after update failed: %w", err)
 	}
 	return updatedGroup, nil
 }
@@ -1146,7 +1146,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 		}
 		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
 		if err != nil {
-			return errors.Annotate(err, "permission check failed").Err()
+			return errors.Fmt("permission check failed: %w", err)
 		}
 		if !ok {
 			return customerrors.ErrPermissionDenied
@@ -1160,7 +1160,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 		// Check that the group is not referenced from elsewhere.
 		referencingGroups, err := findReferencingGroups(ctx, groupName)
 		if err != nil {
-			return errors.Annotate(err, "failed to check referencing groups").Err()
+			return errors.Fmt("failed to check referencing groups: %w", err)
 		}
 		// It's okay to delete a group that references itself.
 		referencingGroups.Del(groupName)
@@ -1187,7 +1187,7 @@ func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllow
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthIPAllowlist").Err()
+		return nil, errors.Fmt("error getting AuthIPAllowlist: %w", err)
 	}
 }
 
@@ -1200,7 +1200,7 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 	var authIPAllowlists []*AuthIPAllowlist
 	err := datastore.GetAll(ctx, query, &authIPAllowlists)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthIPAllowlist entities").Err()
+		return nil, errors.Fmt("error getting all AuthIPAllowlist entities: %w", err)
 	}
 	return authIPAllowlists, nil
 }
@@ -1296,7 +1296,7 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthGlobalConfig").Err()
+		return nil, errors.Fmt("error getting AuthGlobalConfig: %w", err)
 	}
 }
 
@@ -1319,7 +1319,7 @@ func hasSameOauthCfg(authGlobalConfig *AuthGlobalConfig, oauthCfg *configspb.OAu
 func hasSameSecurityCfg(authGlobalConfig *AuthGlobalConfig, securityCfg *protocol.SecurityConfig) (bool, error) {
 	storedSecurityCfg := &protocol.SecurityConfig{}
 	if err := proto.Unmarshal(authGlobalConfig.SecurityConfig, storedSecurityCfg); err != nil {
-		return false, errors.Annotate(err, "failed to unmarshal stored AuthGlobalConfig security config").Err()
+		return false, errors.Fmt("failed to unmarshal stored AuthGlobalConfig security config: %w", err)
 	}
 
 	return proto.Equal(securityCfg, storedSecurityCfg), nil
@@ -1402,7 +1402,7 @@ func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSn
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthDBSnapshot %d", rev).Err()
+		return nil, errors.Fmt("error getting AuthDBSnapshot %d: %w", rev, err)
 	}
 }
 
@@ -1424,7 +1424,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	// Get the deflated serialized protocol.ReplicationPushRequest message.
 	deflated, err := zlib.Compress(authDBBlob)
 	if err != nil {
-		return errors.Annotate(err, "error compressing AuthDB").Err()
+		return errors.Fmt("error compressing AuthDB: %w", err)
 	}
 
 	// Split it into shards to avoid hitting entity size limits. Do it
@@ -1435,7 +1435,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	if len(deflated) > MaxShardSize {
 		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxShardSize)
 		if err != nil {
-			return errors.Annotate(err, "error sharding AuthDB").Err()
+			return errors.Fmt("error sharding AuthDB: %w", err)
 		}
 	}
 
@@ -1453,7 +1453,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 			return nil
 		} else if !errors.Is(err, datastore.ErrNoSuchEntity) {
 			// Unexpected error when checking datastore.
-			return errors.Annotate(err, "error when checking for existing AuthDBSnapshot").Err()
+			return errors.Fmt("error when checking for existing AuthDBSnapshot: %w", err)
 		}
 
 		// AuthDBSnapshot does not exist for this revision, so it can be
@@ -1469,7 +1469,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 		return datastore.Put(ctx, authDBSnapshot)
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "error storing AuthDBSnapshot").Err()
+		return errors.Fmt("error storing AuthDBSnapshot: %w", err)
 	}
 
 	// Update AuthDBSnapshotLatest, if necessary.
@@ -1493,7 +1493,7 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 		return nil
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "error updating AuthDBSnapshotLatest").Err()
+		return errors.Fmt("error updating AuthDBSnapshotLatest: %w", err)
 	}
 
 	return nil
@@ -1515,7 +1515,7 @@ func GetAuthDBSnapshotLatest(ctx context.Context) (*AuthDBSnapshotLatest, error)
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthDBSnapshotLatest").Err()
+		return nil, errors.Fmt("error getting AuthDBSnapshotLatest: %w", err)
 	}
 }
 
@@ -1531,7 +1531,7 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthRealmsGlobals").Err()
+		return nil, errors.Fmt("error getting AuthRealmsGlobals: %w", err)
 	}
 }
 
@@ -1556,7 +1556,7 @@ func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		stored, err := GetAuthRealmsGlobals(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-			return errors.Annotate(err, "error while fetching AuthRealmsGlobals entity").Err()
+			return errors.Fmt("error while fetching AuthRealmsGlobals entity: %w", err)
 		}
 
 		if stored == nil {
@@ -1622,7 +1622,7 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthProjectRealms %s", project).Err()
+		return nil, errors.Fmt("error getting AuthProjectRealms %s: %w", project, err)
 	}
 }
 
@@ -1634,7 +1634,7 @@ func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) 
 	var authProjectRealms []*AuthProjectRealms
 	err := datastore.GetAll(ctx, query, &authProjectRealms)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthProjectRealms entities").Err()
+		return nil, errors.Fmt("error getting all AuthProjectRealms entities: %w", err)
 	}
 	return authProjectRealms, nil
 }
@@ -1687,7 +1687,7 @@ func deleteAuthProjectRealmsMeta(ctx context.Context, project string) error {
 	}
 
 	if err := datastore.Delete(ctx, meta); err != nil {
-		return errors.Annotate(err, "error deleting meta realms for project %s", project).Err()
+		return errors.Fmt("error deleting meta realms for project %s: %w", project, err)
 	}
 
 	return nil
@@ -1756,7 +1756,7 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				newRealm.ConfigRev = r.CfgRev.ConfigRev
 				newRealm.PermsRev = permsRev
 				if err := commitEntity(newRealm, now, serviceIdentity, false); err != nil {
-					return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+					return errors.Fmt("failed to create new AuthProjectRealm %s: %w", r.CfgRev.ProjectID, err)
 				}
 			} else if !bytes.Equal(existing[idx].Realms, realms) {
 				// update
@@ -1764,7 +1764,7 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				existing[idx].ConfigRev = r.CfgRev.ConfigRev
 				existing[idx].PermsRev = permsRev
 				if err := commitEntity(existing[idx], now, serviceIdentity, false); err != nil {
-					return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
+					return errors.Fmt("failed to update AuthProjectRealm %s: %w", r.CfgRev.ProjectID, err)
 				}
 			} else {
 				logging.Infof(ctx, "configs are fresh!")
@@ -1779,7 +1779,7 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 		}
 
 		if err := datastore.Put(ctx, metas); err != nil {
-			return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
+			return errors.Fmt("failed trying to put AuthProjectRealmsMeta: %w", err)
 		}
 
 		return nil
@@ -1798,7 +1798,7 @@ func GetAuthProjectRealmsMeta(ctx context.Context, project string) (*AuthProject
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, err
 	default:
-		return nil, errors.Annotate(err, "error getting AuthProjectRealmsMeta %s", project).Err()
+		return nil, errors.Fmt("error getting AuthProjectRealmsMeta %s: %w", project, err)
 	}
 }
 
@@ -1810,7 +1810,7 @@ func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta,
 	var authProjectRealmsMeta []*AuthProjectRealmsMeta
 	err := datastore.GetAll(ctx, query, &authProjectRealmsMeta)
 	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthProjectRealmsMeta entities").Err()
+		return nil, errors.Fmt("error getting all AuthProjectRealmsMeta entities: %w", err)
 	}
 	return authProjectRealmsMeta, nil
 }
@@ -1875,7 +1875,7 @@ func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
 	}
 
 	if err := datastore.Get(ctx, shards); err != nil {
-		return nil, errors.Annotate(err, "error getting AuthDBShards").Err()
+		return nil, errors.Fmt("error getting AuthDBShards: %w", err)
 	}
 
 	authDBBlobSize := 0
@@ -1994,11 +1994,11 @@ func (group *AuthGroup) GetNested() []string    { return group.Nested }
 func ToStorableRealms(realms *protocol.Realms) ([]byte, error) {
 	marshalled, err := proto.Marshal(realms)
 	if err != nil {
-		return nil, errors.Annotate(err, "error marshalling realms").Err()
+		return nil, errors.Fmt("error marshalling realms: %w", err)
 	}
 	compressed, err := zlib.Compress(marshalled)
 	if err != nil {
-		return nil, errors.Annotate(err, "error compressing realms").Err()
+		return nil, errors.Fmt("error compressing realms: %w", err)
 	}
 
 	return compressed, nil
@@ -2014,12 +2014,12 @@ func FromStorableRealms(blob []byte) (*protocol.Realms, error) {
 		// ZLIB-compressed when last stored.
 		marshalled = blob
 	default:
-		return nil, errors.Annotate(err, "error decompressing realms").Err()
+		return nil, errors.Fmt("error decompressing realms: %w", err)
 	}
 
 	realms := &protocol.Realms{}
 	if err := proto.Unmarshal(marshalled, realms); err != nil {
-		return nil, errors.Annotate(err, "error unmarshalling realms").Err()
+		return nil, errors.Fmt("error unmarshalling realms: %w", err)
 	}
 
 	return realms, nil

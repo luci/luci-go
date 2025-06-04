@@ -99,14 +99,14 @@ func NewClient(ctx context.Context) (*Client, error) {
 	projectID := info.AppID(ctx)
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed to create BQ client for project %q", projectID).Err()
+		return nil, errors.Fmt("failed to create BQ client for project %q: %w", projectID, err)
+
 	}
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err,
-			"failed to create BQ managed writer client").Err()
+		return nil, errors.Fmt("failed to create BQ managed writer client: %w", err)
+
 	}
 
 	return &Client{
@@ -133,7 +133,7 @@ func (client *Client) Close() (reterr error) {
 func (client *Client) ensureGroupsSchema(ctx context.Context) error {
 	table := client.bqClient.Dataset(datasetID).Table(groupsTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, groupsTableMetadata); err != nil {
-		return errors.Annotate(err, "failed to ensure groups table and schema").Err()
+		return errors.Fmt("failed to ensure groups table and schema: %w", err)
 	}
 	return nil
 }
@@ -166,7 +166,7 @@ func (client *Client) InsertGroups(ctx context.Context, rows []*bqpb.GroupRow) e
 func (client *Client) ensureRealmsSchema(ctx context.Context) error {
 	table := client.bqClient.Dataset(datasetID).Table(realmsTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, realmsTableMetadata); err != nil {
-		return errors.Annotate(err, "failed to ensure realms table and schema").Err()
+		return errors.Fmt("failed to ensure realms table and schema: %w", err)
 	}
 	return nil
 }
@@ -199,7 +199,7 @@ func (client *Client) InsertRealms(ctx context.Context, rows []*bqpb.RealmRow) e
 func (client *Client) ensureRolesSchema(ctx context.Context) error {
 	table := client.bqClient.Dataset(datasetID).Table(rolesTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, rolesTableMetadata); err != nil {
-		return errors.Annotate(err, "failed to ensure roles table and schema").Err()
+		return errors.Fmt("failed to ensure roles table and schema: %w", err)
 	}
 	return nil
 }
@@ -266,8 +266,9 @@ func (client *Client) ensureLatestView(ctx context.Context,
 	err := bq.EnsureTable(ctx, view, metadata, bq.UpdateMetadata(),
 		bq.RefreshViewInterval(time.Hour))
 	if err != nil {
-		return errors.Annotate(err, "failed to ensure view %q for version %s",
-			viewName, version).Err()
+		return errors.Fmt("failed to ensure view %q for version %s: %w",
+			viewName, version, err)
+
 	}
 
 	return nil
@@ -283,8 +284,8 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	groupsViewVersion := "3"
 	groupsViewQuery, err := constructLatestSnapshotViewQuery(ctx, groupsTableName, realmsTableName)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed to construct view query for %q", latestGroupsViewName).Err()
+		return errors.Fmt("failed to construct view query for %q: %w", latestGroupsViewName, err)
+
 	}
 	err = client.ensureLatestView(ctx, latestGroupsViewName, groupsViewQuery, groupsViewVersion)
 	if err != nil {
@@ -295,8 +296,8 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	realmsViewVersion := "1"
 	realmsViewQuery, err := constructLatestSnapshotViewQuery(ctx, realmsTableName, groupsTableName)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed to construct view query for %q", latestRealmsViewName).Err()
+		return errors.Fmt("failed to construct view query for %q: %w", latestRealmsViewName, err)
+
 	}
 	err = client.ensureLatestView(ctx, latestRealmsViewName, realmsViewQuery, realmsViewVersion)
 	if err != nil {
@@ -307,8 +308,8 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	rolesViewVersion := "1"
 	rolesViewQuery, err := constructLatestRolesViewQuery(ctx)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed to construct view query for %q", latestRolesViewName).Err()
+		return errors.Fmt("failed to construct view query for %q: %w", latestRolesViewName, err)
+
 	}
 	err = client.ensureLatestView(ctx, latestRolesViewName, rolesViewQuery, rolesViewVersion)
 	if err != nil {

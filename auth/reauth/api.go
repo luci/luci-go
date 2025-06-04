@@ -80,11 +80,11 @@ func startSession(ctx context.Context, c *http.Client) (*sessionResponse, error)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "start ReAuth session").Err()
+		return nil, errors.Fmt("start ReAuth session: %w", err)
 	}
 	sr, err := handleSessionResponse(ctx, resp)
 	if err != nil {
-		return nil, errors.Annotate(err, "start ReAuth session").Err()
+		return nil, errors.Fmt("start ReAuth session: %w", err)
 	}
 	return sr, nil
 }
@@ -97,7 +97,7 @@ func handleSessionResponse(ctx context.Context, resp *http.Response) (*sessionRe
 			logging.Debugf(ctx, "Error reading ReAuth session response body: %v", err)
 		}
 		logging.Debugf(ctx, "Got ReAuth session response body: %q", string(body))
-		return nil, errors.Reason("unexpected HTTP status %d", resp.StatusCode).Err()
+		return nil, errors.Fmt("unexpected HTTP status %d", resp.StatusCode)
 	}
 	content, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if content != "application/json" {
@@ -106,7 +106,7 @@ func handleSessionResponse(ctx context.Context, resp *http.Response) (*sessionRe
 			logging.Debugf(ctx, "Error reading ReAuth session response body: %v", err)
 		}
 		logging.Debugf(ctx, "Got ReAuth session response body: %q", string(body))
-		return nil, errors.Reason("unexpected response content type %q", content).Err()
+		return nil, errors.Fmt("unexpected response content type %q", content)
 	}
 	var sr sessionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
@@ -144,7 +144,7 @@ type deviceChallenge struct {
 func continueSession(ctx context.Context, c *http.Client, sessionID string, req *continueRequest) (*sessionResponse, error) {
 	b, err := json.Marshal(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "continue ReAuth session").Err()
+		return nil, errors.Fmt("continue ReAuth session: %w", err)
 	}
 	uri := fmt.Sprintf(continueSessionURIFormat, sessionID)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", uri, bytes.NewReader(b))
@@ -155,11 +155,11 @@ func continueSession(ctx context.Context, c *http.Client, sessionID string, req 
 	httpReq.Header.Add("Content-Type", "application/json")
 	resp, err := c.Do(httpReq)
 	if err != nil {
-		return nil, errors.Annotate(err, "continue ReAuth session").Err()
+		return nil, errors.Fmt("continue ReAuth session: %w", err)
 	}
 	sr, err := handleSessionResponse(ctx, resp)
 	if err != nil {
-		return nil, errors.Annotate(err, "start ReAuth session").Err()
+		return nil, errors.Fmt("start ReAuth session: %w", err)
 	}
 	return sr, nil
 }

@@ -34,7 +34,7 @@ func CronHandler(ctx context.Context) error {
 	logging.Infof(ctx, "attempting BQ export")
 
 	if err := Run(ctx); err != nil {
-		err = errors.Annotate(err, "failed BQ export").Err()
+		err = errors.Fmt("failed BQ export: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
@@ -47,7 +47,7 @@ func Run(ctx context.Context) error {
 	// Ensure BQ export has been enabled before continuing.
 	cfg, err := settingscfg.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error getting settings.cfg").Err()
+		return errors.Fmt("error getting settings.cfg: %w", err)
 	}
 	if !cfg.EnableBqExport {
 		logging.Infof(ctx, "BQ export is disabled")
@@ -57,12 +57,12 @@ func Run(ctx context.Context) error {
 	start := timestamppb.New(clock.Now(ctx))
 	latest, err := model.GetAuthDBSnapshotLatest(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to get latest snapshot").Err()
+		return errors.Fmt("failed to get latest snapshot: %w", err)
 	}
 
 	authDB, err := model.GetAuthDBFromSnapshot(ctx, latest.AuthDBRev)
 	if err != nil {
-		return errors.Annotate(err, "failed to parse AuthDB from latest snapshot").Err()
+		return errors.Fmt("failed to parse AuthDB from latest snapshot: %w", err)
 	}
 
 	return doExport(ctx, authDB, latest.AuthDBRev, start)
@@ -74,14 +74,14 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	groupRows, err := expandGroups(ctx, authDB, authDBRev, ts)
 	logging.Debugf(ctx, "expanding groups took %s", clock.Since(ctx, start))
 	if err != nil {
-		return errors.Annotate(err, "failed to expand all groups").Err()
+		return errors.Fmt("failed to expand all groups: %w", err)
 	}
 
 	start = clock.Now(ctx)
 	realmRows, err := parseRealms(ctx, authDB, authDBRev, ts)
 	logging.Debugf(ctx, "parsing realms took %s", clock.Since(ctx, start))
 	if err != nil {
-		return errors.Annotate(err, "failed to make realm rows for export").Err()
+		return errors.Fmt("failed to make realm rows for export: %w", err)
 	}
 
 	client, err := NewClient(ctx)
@@ -100,9 +100,9 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	err = client.InsertGroups(ctx, groupRows)
 	logging.Debugf(ctx, "inserting BQ rows for groups took %s", clock.Since(ctx, start))
 	if err != nil {
-		return errors.Annotate(err,
-			"failed to insert all groups for AuthDB rev %d at %s",
-			authDBRev, ts.String()).Err()
+		return errors.Fmt("failed to insert all groups for AuthDB rev %d at %s: %w",
+			authDBRev, ts.String(), err)
+
 	}
 
 	// Insert all realms.
@@ -110,9 +110,9 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	err = client.InsertRealms(ctx, realmRows)
 	logging.Debugf(ctx, "inserting BQ rows for realms took %s", clock.Since(ctx, start))
 	if err != nil {
-		return errors.Annotate(err,
-			"failed to insert all realms for AuthDB rev %d at %s",
-			authDBRev, ts.String()).Err()
+		return errors.Fmt("failed to insert all realms for AuthDB rev %d at %s: %w",
+			authDBRev, ts.String(), err)
+
 	}
 
 	start = clock.Now(ctx)

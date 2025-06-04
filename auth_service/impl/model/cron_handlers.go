@@ -65,7 +65,7 @@ const (
 func ReplicatedAuthDBRefresher(ctx context.Context) error {
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to get current replication state").Err()
+		return errors.Fmt("failed to get current replication state: %w", err)
 	}
 
 	age := clock.Now(ctx).UTC().Sub(replicationState.ModifiedTS)
@@ -128,13 +128,13 @@ func StaleAuthorizationCronHandler(ctx context.Context) error {
 	trustedGroup := TrustedServicesGroup
 
 	if err := pubsub.RevokeStaleAuthorization(ctx, trustedGroup); err != nil {
-		err = errors.Annotate(err, "error revoking stale PubSub authorizations").Err()
+		err = errors.Fmt("error revoking stale PubSub authorizations: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
 
 	if err := RevokeStaleReaderAccess(ctx, trustedGroup); err != nil {
-		err = errors.Annotate(err, "error revoking stale AuthDB reader access").Err()
+		err = errors.Fmt("error revoking stale AuthDB reader access: %w", err)
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
@@ -451,11 +451,11 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 
 		parsed := &realmsconf.RealmsCfg{}
 		if err := prototext.Unmarshal(r.ConfigBody, parsed); err != nil {
-			return errors.Annotate(err, "couldn't unmarshal config body").Err()
+			return errors.Fmt("couldn't unmarshal config body: %w", err)
 		}
 		expandedRev, err := realmsinternals.ExpandRealms(ctx, db, r.ProjectID, parsed)
 		if err != nil {
-			return errors.Annotate(err, "failed to process realms of \"%s\"", r.ProjectID).Err()
+			return errors.Fmt("failed to process realms of \"%s\": %w", r.ProjectID, err)
 		}
 		expanded = append(expanded, &ExpandedRealms{
 			CfgRev: r,

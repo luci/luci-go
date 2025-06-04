@@ -286,7 +286,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 			}
 			rev, err = getAuthDBRevision(ctx)
 			if err != nil {
-				return errors.Annotate(err, "couldn't get AuthDBRev").Err()
+				return errors.Fmt("couldn't get AuthDBRev: %w", err)
 			}
 			return nil
 		}, nil)
@@ -396,7 +396,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 		// Check the AdminGroup exists before attempting to apply the import,
 		// because it is the owning group for all external groups.
 		if err := checkGroupsExist(ctx, []string{AdminGroup}); err != nil {
-			err = errors.Annotate(err, "aborting groups import").Err()
+			err = errors.Fmt("aborting groups import: %w", err)
 			logging.Errorf(ctx, err.Error())
 			return nil, revision, err
 		}

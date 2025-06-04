@@ -47,12 +47,12 @@ type RealmPermissions struct {
 func processSnapshot(authDBSnapshot *AuthDBSnapshot) (*protocol.ReplicationPushRequest, error) {
 	authDBBlob, err := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
 	if err != nil {
-		return nil, errors.Annotate(err, "error decompressing AuthDBDeflated").Err()
+		return nil, errors.Fmt("error decompressing AuthDBDeflated: %w", err)
 	}
 
 	req := &protocol.ReplicationPushRequest{}
 	if err := proto.Unmarshal(authDBBlob, req); err != nil {
-		return nil, errors.Annotate(err, "error unmarshalling AuthDB blob").Err()
+		return nil, errors.Fmt("error unmarshalling AuthDB blob: %w", err)
 	}
 
 	return req, nil

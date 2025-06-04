@@ -44,10 +44,10 @@ type SignatureVerifier interface {
 func UnsafeDecode(jwt string, dest any) error {
 	chunks := strings.Split(jwt, ".")
 	if len(chunks) != 3 {
-		return errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
+		return NotJWT.Apply(errors.New("bad JWT: expected 3 components separated by '.'"))
 	}
 	if err := unmarshalB64JSON(chunks[1], dest); err != nil {
-		return errors.Annotate(err, "bad JWT: bad body").Err()
+		return errors.Fmt("bad JWT: bad body: %w", err)
 	}
 	return nil
 }
@@ -64,40 +64,42 @@ func UnsafeDecode(jwt string, dest any) error {
 func VerifyAndDecode(jwt string, dest any, verifier SignatureVerifier) error {
 	chunks := strings.Split(jwt, ".")
 	if len(chunks) != 3 {
-		return errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
+		return NotJWT.Apply(errors.
+
+			// Check we've got the supported kind of token.
+			New("bad JWT: expected 3 components separated by '.'"))
 	}
 
-	// Check we've got the supported kind of token.
 	var hdr struct {
 		Alg string `json:"alg"`
 		Kid string `json:"kid"`
 	}
 	if err := unmarshalB64JSON(chunks[0], &hdr); err != nil {
-		return errors.Annotate(err, "bad JWT header").Tag(NotJWT).Err()
+		return NotJWT.Apply(errors.Fmt("bad JWT header: %w", err))
 	}
 	if hdr.Alg != "RS256" {
-		return errors.Reason("bad JWT: only RS256 alg is supported, not %q", hdr.Alg).Err()
+		return errors.Fmt("bad JWT: only RS256 alg is supported, not %q", hdr.Alg)
 	}
 	if hdr.Kid == "" {
-		return errors.Reason("bad JWT: missing the signing key ID in the header").Err()
+		return errors.New("bad JWT: missing the signing key ID in the header")
 	}
 
 	// Decode the signature.
 	sig, err := base64.RawURLEncoding.DecodeString(chunks[2])
 	if err != nil {
-		return errors.Annotate(err, "bad JWT: can't base64 decode the signature").Err()
+		return errors.Fmt("bad JWT: can't base64 decode the signature: %w", err)
 	}
 
 	// Check the signature. The signed string is "b64(header).b64(body)".
 	signed := chunks[0] + "." + chunks[1]
 	if err := verifier.CheckSignature(hdr.Kid, []byte(signed), sig); err != nil {
-		return errors.Annotate(err, "bad JWT: signature check error").Err()
+		return errors.Fmt("bad JWT: signature check error: %w", err)
 	}
 
 	// Decode and deserialize the body. There should be no errors here generally,
 	// the encoded body is signed and the signature was already verified.
 	if err := unmarshalB64JSON(chunks[1], dest); err != nil {
-		return errors.Annotate(err, "bad JWT: bad body").Err()
+		return errors.Fmt("bad JWT: bad body: %w", err)
 	}
 	return nil
 }
@@ -105,10 +107,10 @@ func VerifyAndDecode(jwt string, dest any, verifier SignatureVerifier) error {
 func unmarshalB64JSON(blob string, out any) error {
 	raw, err := base64.RawURLEncoding.DecodeString(blob)
 	if err != nil {
-		return errors.Annotate(err, "not base64").Err()
+		return errors.Fmt("not base64: %w", err)
 	}
 	if err := json.Unmarshal(raw, out); err != nil {
-		return errors.Annotate(err, "can't deserialize JSON").Err()
+		return errors.Fmt("can't deserialize JSON: %w", err)
 	}
 	return nil
 }

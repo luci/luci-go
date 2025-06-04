@@ -103,7 +103,7 @@ func (cs *conditionSet) relabel(localConds []*protocol.Condition, localIndices [
 func conditionKey(cond *protocol.Condition) (string, error) {
 	key, err := proto.Marshal(cond)
 	if err != nil {
-		return "", errors.Annotate(err, "error generating key").Err()
+		return "", errors.Fmt("error generating key: %w", err)
 	}
 	return string(key), nil
 }
@@ -151,8 +151,8 @@ func MergeRealms(
 	for i, authProjectRealms := range allAuthProjectRealms {
 		projRealms, err := authProjectRealms.RealmsToProto()
 		if err != nil {
-			return nil, errors.Annotate(err,
-				"error parsing Realms from AuthProjectRealms").Err()
+			return nil, errors.Fmt("error parsing Realms from AuthProjectRealms: %w", err)
+
 		}
 		projectIDs[i] = authProjectRealms.ID
 		realmsByProject[authProjectRealms.ID] = projRealms
@@ -167,8 +167,8 @@ func MergeRealms(
 	for _, projectID := range projectIDs {
 		for _, cond := range realmsByProject[projectID].Conditions {
 			if err := condSet.add(cond); err != nil {
-				return nil, errors.Annotate(err,
-					"error merging conditions").Err()
+				return nil, errors.Fmt("error merging conditions: %w", err)
+
 			}
 		}
 	}
@@ -210,8 +210,8 @@ func MergeRealms(
 				if len(permIndices) > 0 {
 					condIndices, err := condSet.relabel(projectRealms.Conditions, oldBinding.Conditions)
 					if err != nil {
-						return nil, errors.Annotate(err,
-							"error relabelling conditions").Err()
+						return nil, errors.Fmt("error relabelling conditions: %w", err)
+
 					}
 					// Permissions and Conditions in a protocol.Binding must be
 					// in ascending order. See

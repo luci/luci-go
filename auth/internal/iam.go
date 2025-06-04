@@ -89,7 +89,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 		if err == nil {
 			claims, err := ParseIDTokenClaims(tok)
 			if err != nil {
-				return nil, errors.Annotate(err, "IAM service returned bad ID token").Err()
+				return nil, errors.Fmt("IAM service returned bad ID token: %w", err)
 			}
 			return &Token{
 				Token: oauth2.Token{

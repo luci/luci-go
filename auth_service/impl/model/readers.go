@@ -82,7 +82,7 @@ func getAllAuthDBReaders(ctx context.Context) ([]*datastore.Key, error) {
 	var readerKeys []*datastore.Key
 	err := datastore.GetAll(ctx, q, &readerKeys)
 	if err != nil {
-		return []*datastore.Key{}, errors.Annotate(err, "error getting all AuthDBReader entities").Err()
+		return []*datastore.Key{}, errors.Fmt("error getting all AuthDBReader entities: %w", err)
 	}
 
 	return readerKeys, nil
@@ -102,7 +102,7 @@ func IsAuthorizedReader(ctx context.Context, email string) (bool, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return false, nil
 	default:
-		return false, errors.Annotate(err, "error checking AuthDBReader email").Err()
+		return false, errors.Fmt("error checking AuthDBReader email: %w", err)
 	}
 }
 
@@ -132,7 +132,7 @@ func AuthorizeReader(ctx context.Context, email string) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		readers, err := GetAuthorizedEmails(ctx)
 		if err != nil {
-			return errors.Annotate(err, "aborting reader authorization - error getting current readers").Err()
+			return errors.Fmt("aborting reader authorization - error getting current readers: %w", err)
 		}
 
 		if readers.Has(email) {
@@ -165,7 +165,7 @@ func AuthorizeReader(ctx context.Context, email string) error {
 func DeauthorizeReader(ctx context.Context, email string) error {
 	err := datastore.Delete(ctx, authDBReaderKey(ctx, email))
 	if err != nil {
-		return errors.Annotate(err, "error deauthorizing reader").Err()
+		return errors.Fmt("error deauthorizing reader: %w", err)
 	}
 
 	return updateGSReaders(ctx)
@@ -198,8 +198,9 @@ func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
 
 		trusted, err := authDB.IsMember(ctx, authIdentity, []string{trustedGroup})
 		if err != nil {
-			return errors.Annotate(err, "error checking %s membership for %s",
-				trustedGroup, authIdentity).Err()
+			return errors.Fmt("error checking %s membership for %s: %w",
+				trustedGroup, authIdentity, err)
+
 		}
 		if !trusted {
 			logging.Warningf(ctx, "stale AuthDB reader access for %s", email)
@@ -209,7 +210,7 @@ func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
 
 	err = datastore.Delete(ctx, toDelete)
 	if err != nil {
-		return errors.Annotate(err, "error deleting stale AuthDBReaders").Err()
+		return errors.Fmt("error deleting stale AuthDBReaders: %w", err)
 	}
 
 	// Update GS ACLs even if no readers were deleted. This is necessary

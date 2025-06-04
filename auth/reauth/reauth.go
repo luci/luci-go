@@ -56,14 +56,14 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 	logging.Debugf(ctx, "Starting ReAuth session...")
 	sr, err := startSession(ctx, c)
 	if err != nil {
-		return nil, errors.Annotate(err, "GetRAPT").Err()
+		return nil, errors.Fmt("GetRAPT: %w", err)
 	}
 	for range runChallengeLimit {
 		logging.Debugf(ctx, "ReAuth sessions status: %q", sr.Status)
 		switch r := sr.RejectionReason; r {
 		case "REAUTH_REJECTION_REASON_UNSPECIFIED", "":
 		default:
-			return nil, errors.Reason("GetRAPT: reauth rejected with %q", r).Err()
+			return nil, errors.Fmt("GetRAPT: reauth rejected with %q", r)
 		}
 		switch s := sr.Status; s {
 		case "AUTHENTICATED":
@@ -73,23 +73,23 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 			}, nil
 		case "CHALLENGE_REQUIRED", "CHALLENGE_PENDING":
 		default:
-			return nil, errors.Reason("GetRAPT: unexpected reauth status %q", s).Err()
+			return nil, errors.Fmt("GetRAPT: unexpected reauth status %q", s)
 		}
 
 		ch, ok := nextReadyChallenge(sr.Challenges)
 		if !ok {
-			return nil, errors.Reason("GetRAPT: no ready challenges").Err()
+			return nil, errors.New("GetRAPT: no ready challenges")
 		}
 		h, ok := h[ch.ChallengeType]
 		if !ok {
-			return nil, errors.Reason("GetRAPT: unsupported challenge type %q", ch.ChallengeType).Err()
+			return nil, errors.Fmt("GetRAPT: unsupported challenge type %q", ch.ChallengeType)
 		}
 		if !h.IsAvailable() {
-			return nil, errors.Reason("GetRAPT: handler %T reports itself not available", h).Err()
+			return nil, errors.Fmt("GetRAPT: handler %T reports itself not available", h)
 		}
 		pr, err := h.Handle(ctx, ch)
 		if err != nil {
-			return nil, errors.Annotate(err, "GetRAPT").Err()
+			return nil, errors.Fmt("GetRAPT: %w", err)
 		}
 		req := &continueRequest{
 			Action:      "RESPOND",
@@ -99,10 +99,10 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 		logging.Debugf(ctx, "Sending ReAuth continue session request")
 		sr, err = continueSession(ctx, c, sr.SessionID, req)
 		if err != nil {
-			return nil, errors.Annotate(err, "GetRAPT").Err()
+			return nil, errors.Fmt("GetRAPT: %w", err)
 		}
 	}
-	return nil, errors.Reason("GetRAPT: exceeded challenge limit").Err()
+	return nil, errors.New("GetRAPT: exceeded challenge limit")
 }
 
 func nextReadyChallenge(ch []challenge) (challenge, bool) {

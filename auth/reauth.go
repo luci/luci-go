@@ -53,14 +53,14 @@ func NewReAuthenticator(a *Authenticator) *ReAuthenticator {
 func (a *ReAuthenticator) GetRAPT(ctx context.Context) (string, error) {
 	var rapt reauth.RAPT
 	if err := a.UnpackTokenMetadata(metadataKeyRapt, &rapt); err != nil {
-		return "", errors.Annotate(err, "get RAPT").Err()
+		return "", errors.Fmt("get RAPT: %w", err)
 	}
 	if rapt.Token == "" {
-		return "", errors.Reason("get RAPT: missing RAPT").Err()
+		return "", errors.New("get RAPT: missing RAPT")
 	}
 	// Add some buffer to the expiration so it can be used by the caller.
 	if clock.Now(ctx).After(rapt.Expiry.Add(-5 * time.Minute)) {
-		return "", errors.Reason("get RAPT: expired RAPT").Err()
+		return "", errors.New("get RAPT: expired RAPT")
 	}
 
 	return rapt.Token, nil
@@ -73,14 +73,14 @@ func (a *ReAuthenticator) RenewRAPT(ctx context.Context) error {
 	// Use the embedded client since RAPT is not needed to renew RAPT.
 	c, err := a.Authenticator.Client() //nolint: staticcheck
 	if err != nil {
-		return errors.Annotate(err, "renew RAPT").Err()
+		return errors.Fmt("renew RAPT: %w", err)
 	}
 	r, err := a.mintRAPT(ctx, c)
 	if err != nil {
-		return errors.Annotate(err, "renew RAPT").Err()
+		return errors.Fmt("renew RAPT: %w", err)
 	}
 	if err := a.PackTokenMetadata(ctx, metadataKeyRapt, r); err != nil {
-		return errors.Annotate(err, "renew RAPT").Err()
+		return errors.Fmt("renew RAPT: %w", err)
 	}
 	return nil
 }
@@ -93,7 +93,7 @@ func (a *ReAuthenticator) RenewRAPT(ctx context.Context) error {
 func (a *ReAuthenticator) Client(ctx context.Context) (*http.Client, error) {
 	c, err := a.Authenticator.Client()
 	if err != nil {
-		return nil, errors.Annotate(err, "ReAuthenticator.Client").Err()
+		return nil, errors.Fmt("ReAuthenticator.Client: %w", err)
 	}
 	if c.Jar == nil {
 		j, err := cookiejar.New(&cookiejar.Options{
@@ -106,7 +106,7 @@ func (a *ReAuthenticator) Client(ctx context.Context) (*http.Client, error) {
 	}
 	rapt, err := a.GetRAPT(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "ReAuthenticator.Client").Err()
+		return nil, errors.Fmt("ReAuthenticator.Client: %w", err)
 	}
 	c.Jar.SetCookies(
 		&url.URL{

@@ -94,11 +94,11 @@ func (p *loginSessionTokenProvider) CacheKey(ctx context.Context) (*CacheKey, er
 func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	// It is never correct to use this login method on bots.
 	if os.Getenv("SWARMING_HEADLESS") == "1" {
-		return nil, errors.Reason("interactive login flow is forbidden on bots").Err()
+		return nil, errors.New("interactive login flow is forbidden on bots")
 	}
 	// Check if stdout is really a terminal a real user can interact with.
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
-		return nil, errors.Reason("interactive login flow requires the stdout to be attached to a terminal").Err()
+		return nil, errors.New("interactive login flow requires the stdout to be attached to a terminal")
 	}
 
 	// The list of scopes is displayed on the consent page as well, but show it
@@ -137,7 +137,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		ClientHostname:         hostname,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create the login session").Err()
+		return nil, errors.Fmt("failed to create the login session: %w", err)
 	}
 
 	termCaps, doneTerm := terminal.Enable(os.Stdout)
@@ -172,7 +172,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 			LoginSessionPassword: sessionPassword,
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to poll the login session").Err()
+			return nil, errors.Fmt("failed to poll the login session: %w", err)
 		}
 		// Send new confirmation code to the loop that renders it.
 		if confirmationCode != session.ConfirmationCode {
@@ -188,7 +188,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 		if session.OauthError != "" {
 			fmt.Printf("OAuth error: %s\n", session.OauthError)
 		}
-		return nil, errors.Reason("the login flow failed").Err()
+		return nil, errors.New("the login flow failed")
 	}
 
 	// We've got the authorization code and the redirect URL needed to complete

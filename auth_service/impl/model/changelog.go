@@ -260,10 +260,10 @@ func constructLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Ke
 // Returns error when change.Target is invalid (doesn't contain '$' or contains '!').
 func ChangeID(ctx context.Context, change *AuthDBChange) (string, error) {
 	if !strings.Contains(change.Target, "$") {
-		return "", errors.Reason("AuthDBChange.target %s should contain '$'", change.Target).Err()
+		return "", errors.Fmt("AuthDBChange.target %s should contain '$'", change.Target)
 	}
 	if strings.Contains(change.Target, "!") {
-		return "", errors.Reason("AuthDBChange.target %s shouldn't contain '!'", change.Target).Err()
+		return "", errors.Fmt("AuthDBChange.target %s shouldn't contain '!'", change.Target)
 	}
 	return fmt.Sprintf("%s!%d", change.Target, change.ChangeType), nil
 }
@@ -321,7 +321,7 @@ func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pag
 		return nil
 	})
 	if err != nil {
-		return nil, "", errors.Annotate(err, "error getting all AuthDBChange entities").Err()
+		return nil, "", errors.Fmt("error getting all AuthDBChange entities: %w", err)
 	}
 	if nextCur != nil {
 		nextPageToken = nextCur.String()
@@ -431,7 +431,7 @@ func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, nil
 	default:
-		return nil, errors.Annotate(err, "failed getting AuthDBLogRev").Err()
+		return nil, errors.Fmt("failed getting AuthDBLogRev: %w", err)
 	}
 }
 

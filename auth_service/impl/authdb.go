@@ -57,7 +57,7 @@ func (a *AuthDBProvider) GetAuthDB(ctx context.Context) (db authdb.DB, err error
 	// Grab the latest AuthDB revision number in the datastore.
 	latestState, err := model.GetReplicationState(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to check the latest AuthDB revision").Err()
+		return nil, errors.Fmt("failed to check the latest AuthDB revision: %w", err)
 	}
 
 	// Use the cached copy if it is up-to-date.
@@ -93,11 +93,11 @@ func (a *AuthDBProvider) GetAuthDB(ctx context.Context) (db authdb.DB, err error
 	// freshest revision) and convert it into an authdb.SnapshotDB.
 	snap, err := model.TakeSnapshot(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to make AuthDB snapshot").Err()
+		return nil, errors.Fmt("failed to make AuthDB snapshot: %w", err)
 	}
 	snapDB, err := snap.ToAuthDB(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to process AuthDB snapshot").Err()
+		return nil, errors.Fmt("failed to process AuthDB snapshot: %w", err)
 	}
 
 	logging.Infof(ctx, "Fetched AuthDB rev %d", snapDB.Rev)

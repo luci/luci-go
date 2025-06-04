@@ -60,7 +60,7 @@ func expandGroups(ctx context.Context, authDB *protocol.AuthDB, authDBRev int64,
 	for i, name := range names {
 		expanded, err := groupsGraph.GetExpandedGroup(ctx, name, true, cache)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to expand group %q", name).Err()
+			return nil, errors.Fmt("failed to expand group %q: %w", name, err)
 		}
 		var directMembers []string
 		if dm, ok := directMemberships[name]; ok {
