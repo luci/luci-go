@@ -464,6 +464,7 @@ luci.cq(
     draining_start_time = "2017-12-23T15:47:58Z",
     status_host = "chromium-cq-status.appspot.com",
     honor_gerrit_linked_accounts = True,
+    gerrit_listener_type = cq.GERRIT_LISTENER_TYPE_PUBSUB,
 )
 
 luci.cq_group(
@@ -728,6 +729,7 @@ lucicfg.emit(
 #   }
 # }
 # honor_gerrit_linked_accounts: true
+# gerrit_listener_type: GERRIT_LISTENER_TYPE_PUBSUB
 # ===
 #
 # === cr-buildbucket.cfg

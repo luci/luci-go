@@ -2394,6 +2394,7 @@ luci.cq(
     draining_start_time = None,
     status_host = None,
     honor_gerrit_linked_accounts = None,
+    gerrit_listener_type = None,
 )
 ```
 
@@ -2419,6 +2420,7 @@ This optional rule can be used to set global CQ parameters that apply to all
 * **draining_start_time**: **Temporarily not supported, see https://crbug.com/1208569. Reach out to LUCI team oncall if you need urgent help.**. If present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
 * **status_host**: Optional. Decide whether user has access to the details of runs in this Project in LUCI CV UI. Currently, only the following hosts are accepted: 1) "chromium-cq-status.appspot.com" where everyone can access run details. 2) "internal-cq-status.appspot.com" where only Googlers can access run details. Please don't use the public host if the Project launches internal builders for public repos. It can leak the builder names, which may be confidential.
 * **honor_gerrit_linked_accounts**: Optional. Decide whether LUCI CV should consider the primary gerrit accounts and the linked/secondary accounts sharing the same permission. That means if the primary account is allowed to trigger CQ dry run, the secondary account will also be allowed, vice versa.
+* **gerrit_listener_type**: Optional. Decide the type of listener for Gerrit CL creation/update event. Default to cq.GERRIT_LISTENER_TYPE_PUBSUB if not specified. The project should set up pub/sub subscription for all Gerrit host it is watching if pubsub listener is used. See go/luci/cv/gerrit-pubsub-settings.
 
 
 
@@ -3512,11 +3514,20 @@ field of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier):
   * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
   * **cq.MODE_NEW_PATCHSET_RUN**: Run tryjobs on patchset upload.
 
+`cq.GERRIT_LISTENER_TYPE_*` constants define possible values for
+the type of Gerrit listener.
+  * **cq.GERRIT_LISTENER_TYPE_PUBSUB**: Use Gerrit PubSub to listen for
+    Gerrit CL events. See go/luci/cv/gerrit-pubsub-settings.
+  * **cq.GERRIT_LISTENER_TYPE_LEGACY_POLLER**: Use legacy polling model to
+    listen for Gerrit CL events. WARNING: this option is discouraged and all
+    new use case should use cq.GERRIT_LISTENER_TYPE_PUBSUB instead for faster
+    and more efficient event processing.
+
 `cq.STATUS_*` constants define possible values for cq run statuses.
 
 `cq.post_action._*` functions construct a post action that performs an action
 on a Run completion. They are passed to cq_group() via param `post_actions`.
-For exmaple, the following param constructs a post action that votes labels
+For example, the following param constructs a post action that votes labels
 when a dry-run completes successfully in the cq group.
 
 ```python

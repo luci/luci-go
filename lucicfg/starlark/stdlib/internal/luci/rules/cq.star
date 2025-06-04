@@ -14,10 +14,16 @@
 
 """Defines luci.cq(...) rule."""
 
+load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
+load("@stdlib//internal/luci/lib/cq.star", "cqimpl", cqlib = "cq")
+
+# If it is enabled, default the gerrit listener to pub/sub if it is not
+# specified.
+_use_pubsub_as_default_listener_experiment = experiments.register("crbug.com/421431364", "1.45.3")
 
 def _cq(
         ctx,  # @unused
@@ -26,7 +32,8 @@ def _cq(
         submit_burst_delay = None,
         draining_start_time = None,
         status_host = None,
-        honor_gerrit_linked_accounts = None):
+        honor_gerrit_linked_accounts = None,
+        gerrit_listener_type = None):
     """Defines optional configuration of the CQ service for this project.
 
     CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
@@ -68,6 +75,11 @@ def _cq(
         sharing the same permission. That means if the primary account is
         allowed to trigger CQ dry run, the secondary account will also be
         allowed, vice versa.
+      gerrit_listener_type: Optional. Decide the type of listener for Gerrit CL
+        creation/update event. Default to cq.GERRIT_LISTENER_TYPE_PUBSUB
+        if not specified. The project should set up pub/sub subscription for
+        all Gerrit host it is watching if pubsub listener is used.
+        See go/luci/cv/gerrit-pubsub-settings.
     """
     submit_max_burst = validate.int("submit_max_burst", submit_max_burst, required = False)
     submit_burst_delay = validate.duration("submit_burst_delay", submit_burst_delay, required = False)
@@ -76,6 +88,9 @@ def _cq(
         fail('bad "submit_burst_delay": required if "submit_max_burst" is used')
     if submit_burst_delay and not submit_max_burst:
         fail('bad "submit_max_burst": required if "submit_burst_delay" is used')
+
+    if gerrit_listener_type == None and _use_pubsub_as_default_listener_experiment.is_enabled():
+        gerrit_listener_type = cqlib.GERRIT_LISTENER_TYPE_PUBSUB
 
     key = keys.cq()
     graph.add_node(key, props = {
@@ -88,6 +103,9 @@ def _cq(
             honor_gerrit_linked_accounts,
             default = False,
             required = False,
+        ),
+        "gerrit_listener_type": cqimpl.validate_gerrit_listener_type(
+            gerrit_listener_type,
         ),
     })
     graph.add_edge(keys.project(), key)

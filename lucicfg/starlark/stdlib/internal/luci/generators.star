@@ -1110,6 +1110,9 @@ def gen_cq_cfg(ctx):
         honor_gerrit_linked_accounts = (
             cq_node.props.honor_gerrit_linked_accounts if cq_node else None
         ),
+        gerrit_listener_type = (
+            cq_node.props.gerrit_listener_type if cq_node else None
+        ),
     )
 
     # TODO: b/380367260 - migrate commit-queue.cfg to luci-change-verifier.cfg

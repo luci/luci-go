@@ -507,6 +507,21 @@ def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
         required = required,
     )
 
+def _validate_gerrit_listener_type(val):
+    """Validates that `val` is a valid gerrit listener type."""
+    if val == None:
+        return None
+    if val not in (
+        cq.GERRIT_LISTENER_TYPE_PUBSUB,
+        cq.GERRIT_LISTENER_TYPE_LEGACY_POLLER,
+    ):
+        fail("bad gerrit_listener_type(%r): expecting %r or %r" % (
+            val,
+            cq.GERRIT_LISTENER_TYPE_PUBSUB,
+            cq.GERRIT_LISTENER_TYPE_LEGACY_POLLER,
+        ))
+    return val
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -550,11 +565,20 @@ def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
 #   * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
 #   * **cq.MODE_NEW_PATCHSET_RUN**: Run tryjobs on patchset upload.
 #
+# `cq.GERRIT_LISTENER_TYPE_*` constants define possible values for
+# the type of Gerrit listener.
+#   * **cq.GERRIT_LISTENER_TYPE_PUBSUB**: Use Gerrit PubSub to listen for
+#     Gerrit CL events. See go/luci/cv/gerrit-pubsub-settings.
+#   * **cq.GERRIT_LISTENER_TYPE_LEGACY_POLLER**: Use legacy polling model to
+#     listen for Gerrit CL events. WARNING: this option is discouraged and all
+#     new use case should use cq.GERRIT_LISTENER_TYPE_PUBSUB instead for faster
+#     and more efficient event processing.
+#
 # `cq.STATUS_*` constants define possible values for cq run statuses.
 #
 # `cq.post_action._*` functions construct a post action that performs an action
 # on a Run completion. They are passed to cq_group() via param `post_actions`.
-# For exmaple, the following param constructs a post action that votes labels
+# For example, the following param constructs a post action that votes labels
 # when a dry-run completes successfully in the cq group.
 #
 # ```python
@@ -607,6 +631,10 @@ cq = struct(
     MODE_DRY_RUN = "DRY_RUN",
     MODE_FULL_RUN = "FULL_RUN",
     MODE_NEW_PATCHSET_RUN = "NEW_PATCHSET_RUN",
+    GERRIT_LISTENER_TYPE_PUBSUB = cq_pb.Config.GERRIT_LISTENER_TYPE_PUBSUB,
+    GERRIT_LISTENER_TYPE_LEGACY_POLLER = (
+        cq_pb.Config.GERRIT_LISTENER_TYPE_LEGACY_POLLER
+    ),
     STATUS_CANCELLED = cv_v1pb.Run.CANCELLED,
     STATUS_FAILED = cv_v1pb.Run.FAILED,
     STATUS_SUCCEEDED = cv_v1pb.Run.SUCCEEDED,
@@ -620,4 +648,5 @@ cqimpl = struct(
     validate_user_limit = _validate_user_limit,
     validate_post_action = _validate_post_action,
     validate_tryjob_experiment = _validate_tryjob_experiment,
+    validate_gerrit_listener_type = _validate_gerrit_listener_type,
 )
