@@ -54,13 +54,13 @@ func (p *PackageDef) Expand(expander template.Expander) (pkg string, err error) 
 	case err == template.ErrSkipTemplate:
 		return "", err
 	case err != nil:
-		return "", errors.Annotate(err, "failed to expand package template (line %d)", p.LineNo).Err()
+		return "", errors.Fmt("failed to expand package template (line %d): %w", p.LineNo, err)
 	}
 	if err = common.ValidatePackageName(pkg); err != nil {
-		return "", errors.Annotate(err, "bad package name (line %d)", p.LineNo).Err()
+		return "", errors.Fmt("bad package name (line %d): %w", p.LineNo, err)
 	}
 	if err = common.ValidateInstanceVersion(p.UnresolvedVersion); err != nil {
-		return "", errors.Annotate(err, "bad package version (line %d)", p.LineNo).Err()
+		return "", errors.Fmt("bad package version (line %d): %w", p.LineNo, err)
 	}
 	return
 }

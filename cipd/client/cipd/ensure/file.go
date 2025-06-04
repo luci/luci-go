@@ -66,7 +66,7 @@ func ParseFile(r io.Reader) (*File, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...any) error {
 		args = append([]any{lineNo}, args...)
-		return errors.Reason("failed to parse desired state (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("failed to parse desired state (line %d): "+fmtStr, args...))
 	}
 
 	scanner := bufio.NewScanner(r)
@@ -115,7 +115,7 @@ func ParseFile(r io.Reader) (*File, error) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, errors.Annotate(err, "failed to read the ensure file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("failed to read the ensure file: %w", err))
 	}
 
 	return ret, nil
@@ -191,7 +191,7 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 	if f.ServiceURL != "" {
 		// double check the url
 		if _, err := url.Parse(f.ServiceURL); err != nil {
-			return nil, errors.Annotate(err, "bad ServiceURL").Tag(cipderr.BadArgument).Err()
+			return nil, cipderr.BadArgument.Apply(errors.Fmt("bad ServiceURL: %w", err))
 		}
 	}
 
@@ -235,12 +235,12 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 			continue
 		case nil:
 		default:
-			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
+			return nil, errors.Fmt("normalizing %q: %w", subdir, err)
 		}
 
 		// double-check the subdir
 		if err := common.ValidateSubdir(realSubdir); err != nil {
-			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
+			return nil, errors.Fmt("normalizing %q: %w", subdir, err)
 		}
 
 		for _, def := range f.PackagesBySubdir[subdir] {
@@ -296,9 +296,10 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 		}
 
 		if origLineNo, ok := resolvedPkgDupList[p.subdir][p.pkg]; ok {
-			merr = append(merr, errors.
-				Reason("duplicate package in subdir %q: %q: defined on line %d and %d",
-					p.subdir, p.pkg, origLineNo, p.def.LineNo).Tag(cipderr.BadArgument).Err())
+			merr = append(merr,
+
+				cipderr.BadArgument.Apply(errors.Fmt("duplicate package in subdir %q: %q: defined on line %d and %d",
+					p.subdir, p.pkg, origLineNo, p.def.LineNo)))
 			continue
 		}
 
@@ -403,7 +404,7 @@ func (f *File) Serialize(w io.Writer) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to write resolved ensure file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("failed to write resolved ensure file: %w", err))
 	}
 	return nil
 }

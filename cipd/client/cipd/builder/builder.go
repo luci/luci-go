@@ -97,11 +97,11 @@ func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	for _, f := range opts.Input {
 		// Make sure no files are written to package service directory.
 		if strings.HasPrefix(f.Name(), pkg.ServiceDir+"/") {
-			return common.Pin{}, errors.Reason("can't write to %s: %s", pkg.ServiceDir, f.Name()).Tag(cipderr.BadArgument).Err()
+			return common.Pin{}, cipderr.BadArgument.Apply(errors.Fmt("can't write to %s: %s", pkg.ServiceDir, f.Name()))
 		}
 		// Make sure no files are written to cipd's internal state directory.
 		if strings.HasPrefix(f.Name(), fs.SiteServiceDir+"/") {
-			return common.Pin{}, errors.Reason("can't write to %s: %s", fs.SiteServiceDir, f.Name()).Tag(cipderr.BadArgument).Err()
+			return common.Pin{}, cipderr.BadArgument.Apply(errors.Fmt("can't write to %s: %s", fs.SiteServiceDir, f.Name()))
 		}
 	}
 
@@ -117,7 +117,7 @@ func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	for _, f := range files {
 		_, seen := seenNames[f.Name()]
 		if seen {
-			return common.Pin{}, errors.Reason("file %s is provided twice", f.Name()).Tag(cipderr.BadArgument).Err()
+			return common.Pin{}, cipderr.BadArgument.Apply(errors.Fmt("file %s is provided twice", f.Name()))
 		}
 		seenNames[f.Name()] = struct{}{}
 	}
@@ -195,7 +195,7 @@ func zipInputFiles(ctx context.Context, files []fs.File, w io.Writer, level int)
 
 		dst, err := writer.CreateHeader(&fh)
 		if err != nil {
-			return errors.Annotate(err, "writing zip entry header").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("writing zip entry header: %w", err))
 		}
 		if in.Symlink() {
 			err = zipSymlinkFile(dst, in)
@@ -213,15 +213,15 @@ func zipInputFiles(ctx context.Context, files []fs.File, w io.Writer, level int)
 func zipRegularFile(dst io.Writer, f fs.File) error {
 	src, err := f.Open()
 	if err != nil {
-		return errors.Annotate(err, "opening %q for zipping", f.Name()).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("opening %q for zipping: %w", f.Name(), err))
 	}
 	defer src.Close()
 	written, err := io.Copy(dst, src)
 	if err != nil {
-		return errors.Annotate(err, "zipping %q", f.Name()).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("zipping %q: %w", f.Name(), err))
 	}
 	if uint64(written) != f.Size() {
-		return errors.Reason("file %q changed midway", f.Name()).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("file %q changed midway", f.Name()))
 	}
 	return nil
 }
@@ -229,12 +229,15 @@ func zipRegularFile(dst io.Writer, f fs.File) error {
 func zipSymlinkFile(dst io.Writer, f fs.File) error {
 	target, err := f.SymlinkTarget()
 	if err != nil {
-		return errors.Annotate(err, "resolving symlink %q for zipping", f.Name()).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.
+
+			// Symlinks are zipped as text files with target path. os.ModeSymlink bit in
+			// the header distinguishes them from regular files.
+			Fmt("resolving symlink %q for zipping: %w", f.Name(), err))
 	}
-	// Symlinks are zipped as text files with target path. os.ModeSymlink bit in
-	// the header distinguishes them from regular files.
+
 	if _, err = dst.Write([]byte(target)); err != nil {
-		return errors.Annotate(err, "zipping symlink %q", f.Name()).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("zipping symlink %q: %w", f.Name(), err))
 	}
 	return nil
 }
@@ -334,7 +337,7 @@ func (m *manifestFile) Symlink() bool         { return false }
 func (m *manifestFile) WinAttrs() fs.WinAttrs { return 0 }
 
 func (m *manifestFile) SymlinkTarget() (string, error) {
-	return "", errors.Reason("%q: not a symlink", m.Name()).Tag(cipderr.IO).Err()
+	return "", cipderr.IO.Apply(errors.Fmt("%q: not a symlink", m.Name()))
 }
 
 func (m *manifestFile) Open() (io.ReadCloser, error) {
@@ -345,7 +348,7 @@ func (m *manifestFile) Open() (io.ReadCloser, error) {
 // File interface.
 func makeManifestFile(opts Options) (fs.File, error) {
 	if opts.VersionFile != "" && !fs.IsCleanSlashPath(opts.VersionFile) {
-		return nil, errors.Reason("version file path should be a clean path relative to a package root: %s", opts.VersionFile).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("version file path should be a clean path relative to a package root: %s", opts.VersionFile))
 	}
 	if err := pkg.ValidateInstallMode(opts.InstallMode); err != nil {
 		return nil, err

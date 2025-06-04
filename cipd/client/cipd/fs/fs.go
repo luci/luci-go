@@ -209,13 +209,13 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
 			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
 			if err != nil {
-				return false, errors.Annotate(err, "creating a file to test case-sensitivity of %q", f.root).Err()
+				return false, errors.Fmt("creating a file to test case-sensitivity of %q: %w", f.root, err)
 			}
 			tmp.Close() // for Windows, it may act funny with open files
 
 			defer func() {
 				if rmErr := os.Remove(tmp.Name()); err == nil && rmErr != nil {
-					err = errors.Annotate(rmErr, "removing the file during case-sensitivity test of %q", f.root).Err()
+					err = errors.Fmt("removing the file during case-sensitivity test of %q: %w", f.root, rmErr)
 				}
 			}()
 
@@ -226,7 +226,7 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 			case os.IsNotExist(err):
 				return true, nil // case-sensitive
 			default:
-				return false, errors.Annotate(err, "stat'ing file when testing case-sensitivity of %q", f.root).Err()
+				return false, errors.Fmt("stat'ing file when testing case-sensitivity of %q: %w", f.root, err)
 			}
 		}()
 	})
@@ -244,7 +244,7 @@ func (f *fsImpl) CwdRelToAbs(p string) (string, error) {
 	}
 	rel = filepath.ToSlash(rel)
 	if rel == ".." || strings.HasPrefix(rel, "../") {
-		return "", errors.Reason("path %q is outside of %q", p, f.root).Err()
+		return "", errors.Fmt("path %q is outside of %q", p, f.root)
 	}
 	return p, nil
 }
@@ -615,7 +615,7 @@ func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 // Logs errors.
 func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	if filepath.Dir(path) != f.trash {
-		return errors.Reason("not in the trash: %q", path).Err()
+		return errors.Fmt("not in the trash: %q", path)
 	}
 	err := os.RemoveAll(path)
 	if err != nil {

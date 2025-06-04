@@ -81,7 +81,7 @@ func (d *ClientDigestsFile) AddClientRef(plat string, ref *api.ObjectRef) error 
 	}
 	for _, e := range d.entries {
 		if e.plat == plat && e.ref.HashAlgo == ref.HashAlgo {
-			return errors.Reason("%s hash for %s has already been added", ref.HashAlgo, plat).Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.Fmt("%s hash for %s has already been added", ref.HashAlgo, plat))
 		}
 	}
 	d.entries = append(d.entries, clientDigestEntry{plat, ref})
@@ -174,7 +174,7 @@ func (d *ClientDigestsFile) Serialize(w io.Writer, version, versionFile string) 
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to write client digests file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("failed to write client digests file: %w", err))
 	}
 	return nil
 }
@@ -189,7 +189,7 @@ func ParseClientDigestsFile(r io.Reader) (*ClientDigestsFile, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...any) error {
 		args = append([]any{lineNo}, args...)
-		return errors.Reason("failed to parse client digests file (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("failed to parse client digests file (line %d): "+fmtStr, args...))
 	}
 
 	scanner := bufio.NewScanner(r)
@@ -224,7 +224,7 @@ func ParseClientDigestsFile(r io.Reader) (*ClientDigestsFile, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, errors.Annotate(err, "failed to read client digests file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("failed to read client digests file: %w", err))
 	}
 	return res, nil
 }

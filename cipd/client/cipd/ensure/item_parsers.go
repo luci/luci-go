@@ -47,17 +47,17 @@ func subdirParser(s *itemParserState, _ *File, val string) (err error) {
 			s.curSubdir = val
 		}
 	} else {
-		err = errors.Annotate(err, "bad subdir %q", val).Err()
+		err = errors.Fmt("bad subdir %q: %w", val, err)
 	}
 	return
 }
 
 func serviceURLParser(_ *itemParserState, f *File, val string) error {
 	if f.ServiceURL != "" {
-		return errors.Reason("$ServiceURL may only be set once per file").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.New("$ServiceURL may only be set once per file"))
 	}
 	if _, err := url.Parse(val); err != nil {
-		return errors.Annotate(err, "expecting '$ServiceURL <url>' but url is invalid").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("expecting '$ServiceURL <url>' but url is invalid: %w", err))
 	}
 	f.ServiceURL = val
 	return nil
@@ -69,7 +69,7 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 	for i, field := range fields {
 		var err error
 		if plats[i], err = template.ParsePlatform(field); err != nil {
-			return errors.Annotate(err, "invalid platform entry #%d", i+1).Err()
+			return errors.Fmt("invalid platform entry #%d: %w", i+1, err)
 		}
 	}
 	f.VerifyPlatforms = append(f.VerifyPlatforms, plats...)
@@ -79,7 +79,7 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 func paranoidModeParser(_ *itemParserState, f *File, val string) error {
 	p := deployer.ParanoidMode(val)
 	if err := p.Validate(); err != nil {
-		return errors.Annotate(err, "bad $ParanoidMode").Err()
+		return errors.Fmt("bad $ParanoidMode: %w", err)
 	}
 	f.ParanoidMode = p
 	return nil
@@ -96,7 +96,7 @@ func overrideInstallModeParser(_ *itemParserState, f *File, val string) error {
 		return err
 	}
 	if im != pkg.InstallModeCopy {
-		return errors.Reason("only copy mode is allowed").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.New("only copy mode is allowed"))
 	}
 	f.OverrideInstallMode = im
 	return nil

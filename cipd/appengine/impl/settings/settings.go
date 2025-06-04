@@ -59,16 +59,16 @@ func (s *Settings) Register(f *flag.FlagSet) {
 // Validate validates settings format.
 func (s *Settings) Validate() error {
 	if s.StorageGSPath == "" {
-		return errors.Reason("-cipd-storage-gs-path is required").Err()
+		return errors.New("-cipd-storage-gs-path is required")
 	}
 	if err := gs.ValidatePath(s.StorageGSPath); err != nil {
-		return errors.Annotate(err, "bad -cipd-storage-gs-path").Err()
+		return errors.Fmt("bad -cipd-storage-gs-path: %w", err)
 	}
 	if s.TempGSPath == "" {
-		return errors.Reason("-cipd-temp-gs-path is required").Err()
+		return errors.New("-cipd-temp-gs-path is required")
 	}
 	if err := gs.ValidatePath(s.TempGSPath); err != nil {
-		return errors.Annotate(err, "bad -cipd-temp-gs-path").Err()
+		return errors.Fmt("bad -cipd-temp-gs-path: %w", err)
 	}
 	return nil
 }

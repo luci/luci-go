@@ -472,7 +472,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	if opts.CacheDir == "" {
 		if v := env.Get(EnvCacheDir); v != "" {
 			if !filepath.IsAbs(v) {
-				return errors.Reason("bad %s %q: not an absolute path", EnvCacheDir, v).Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not an absolute path", EnvCacheDir, v))
 			}
 			opts.CacheDir = v
 		}
@@ -481,7 +481,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		if v := env.Get(EnvMaxThreads); v != "" {
 			maxThreads, err := strconv.Atoi(v)
 			if err != nil {
-				return errors.Reason("bad %s %q: not an integer", EnvMaxThreads, v).Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not an integer", EnvMaxThreads, v))
 			}
 			opts.MaxThreads = maxThreads
 		}
@@ -490,7 +490,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		if v := env.Get(EnvParallelDownloads); v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return errors.Reason("bad %s %q: not an integer", EnvParallelDownloads, v).Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not an integer", EnvParallelDownloads, v))
 			}
 			// CIPD_PARALLEL_DOWNLOADS == 0 means "no parallel work at all", this is
 			// conveyed by negatives in opts.ParallelDownloads (because 0 was already
@@ -510,7 +510,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	if len(opts.AdmissionPlugin) == 0 {
 		if v := env.Get(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
-				return errors.Reason("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v).Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v))
 			}
 		}
 	}
@@ -534,7 +534,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	case pathFromEnv != "":
 		configPath = filepath.Clean(pathFromEnv)
 		if !filepath.IsAbs(configPath) {
-			return errors.Reason("bad %s %q: must be an absolute path", EnvConfigFile, pathFromEnv).Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: must be an absolute path", EnvConfigFile, pathFromEnv))
 		}
 	default:
 		configPath = DefaultConfigFilePath()
@@ -548,7 +548,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		cfg, err := loadConfigFile(configPath)
 		if err != nil {
 			if !os.IsNotExist(err) || !allowMissing {
-				return errors.Annotate(err, "loading CIPD config").Tag(cipderr.BadArgument).Err()
+				return cipderr.BadArgument.Apply(errors.Fmt("loading CIPD config: %w", err))
 			}
 			cfg = &configpb.ClientConfig{}
 		} else {
@@ -589,7 +589,7 @@ func loadConfigFile(path string) (*configpb.ClientConfig, error) {
 	}
 	cfg := &configpb.ClientConfig{}
 	if err := opts.Unmarshal(blob, cfg); err != nil {
-		return nil, errors.Annotate(err, "can't unmarshal text proto at %s", path).Err()
+		return nil, errors.Fmt("can't unmarshal text proto at %s: %w", path, err)
 	}
 
 	return cfg, nil
@@ -632,7 +632,7 @@ func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
 		} else {
 			client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, chromeinfra.DefaultAuthOptions()).Client()
 			if err != nil {
-				return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
+				return nil, cipderr.Auth.Apply(errors.Fmt("initializing auth client: %w", err))
 			}
 			opts.AuthenticatedClient = client
 			opts.LoginInstructions = "run `cipd auth-login` to login or relogin"
@@ -675,14 +675,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 
 	// Validate and normalize service URL.
 	if opts.ServiceURL == "" {
-		return nil, errors.Reason("ServiceURL is required").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.New("ServiceURL is required"))
 	}
 	parsed, err := url.Parse(opts.ServiceURL)
 	if err != nil {
-		return nil, errors.Annotate(err, "not a valid URL %q", opts.ServiceURL).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("not a valid URL %q: %w", opts.ServiceURL, err))
 	}
 	if parsed.Path != "" && parsed.Path != "/" {
-		return nil, errors.Reason("expecting a root URL, not %q", opts.ServiceURL).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("expecting a root URL, not %q", opts.ServiceURL))
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
@@ -696,7 +696,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if opts.ProxyURL != "" {
 		proxyTransport, err = proxyclient.NewProxyTransport(opts.ProxyURL)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad %s %q", EnvCIPDProxyURL, opts.ProxyURL).Tag(cipderr.BadArgument).Err()
+			return nil, cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: %w", EnvCIPDProxyURL, opts.ProxyURL, err))
 		}
 		anonClient = &http.Client{Transport: proxyTransport.RoundTripper}
 		authClient = anonClient
@@ -742,7 +742,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if len(opts.AdmissionPlugin) != 0 {
 		ctx := opts.PluginsContext
 		if ctx == nil {
-			return nil, errors.Reason("a plugins context is required when using plugins").Err()
+			return nil, errors.New("a plugins context is required when using plugins")
 		}
 		if initPluginHost != nil {
 			pluginHost = initPluginHost(ctx)
@@ -753,7 +753,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 				Repository: repo,
 			})
 			if err != nil {
-				return nil, errors.Annotate(err, "initializing the plugin host").Err()
+				return nil, errors.Fmt("initializing the plugin host: %w", err)
 			}
 		} else {
 			logging.Warningf(ctx, "CIPD plugins are disabled, but an admission plugin is requested")
@@ -773,7 +773,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if len(opts.AdmissionPlugin) != 0 && client.pluginHost != nil {
 		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
 		if err != nil {
-			return nil, errors.Annotate(err, "initializing the admission plugin").Err()
+			return nil, errors.Fmt("initializing the admission plugin: %w", err)
 		}
 	}
 
@@ -930,20 +930,20 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 			// Create the root tmp directory in the site root guts.
 			tmpDir, err := c.deployer.FS().EnsureDirectory(ctx, filepath.Join(c.Root, fs.SiteServiceDir, "tmp"))
 			if err != nil {
-				return nil, errors.Annotate(err, "creating site root temp dir").Tag(cipderr.IO).Err()
+				return nil, cipderr.IO.Apply(errors.Fmt("creating site root temp dir: %w", err))
 			}
 			// An inside it create a unique directory for the new InstanceCache.
 			// Multiple temp caches must not reuse the same directory or they'll
 			// interfere with one another when deleting instances or cleaning them up
 			// when closing.
 			if cacheDir, err = ioutil.TempDir(tmpDir, "dl_"); err != nil {
-				return nil, errors.Annotate(err, "creating temp instance cache dir").Tag(cipderr.IO).Err()
+				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
 			}
 		} else {
 			// When not using a site root, just create the directory in /tmp.
 			var err error
 			if cacheDir, err = ioutil.TempDir("", "cipd_dl_"); err != nil {
-				return nil, errors.Annotate(err, "creating temp instance cache dir").Tag(cipderr.IO).Err()
+				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
 			}
 		}
 	}
@@ -1346,13 +1346,14 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 		plat := platform.CurrentPlatform()
 		switch pinnedRef := digests.ClientRef(plat); {
 		case pinnedRef == nil:
-			return common.Pin{}, errors.Reason("there's no supported hash for %q in CIPD *.digests file", plat).Tag(cipderr.InvalidVersion).Err()
+			return common.Pin{}, cipderr.InvalidVersion.Apply(errors.Fmt("there's no supported hash for %q in CIPD *.digests file", plat))
 		case !digests.Contains(plat, clientRef):
-			return common.Pin{}, errors.Reason(
-				"the CIPD client hash reported by the backend (%s) is not in *.digests file, "+
+			return common.Pin{},
+
+				cipderr.Stale.Apply(errors.Fmt("the CIPD client hash reported by the backend (%s) is not in *.digests file, "+
 					"if you changed CIPD client version recently most likely the *.digests "+
 					"file is just stale and needs to be regenerated via 'cipd selfupdate-roll ...'",
-				clientRef.HexDigest).Tag(cipderr.Stale).Err()
+					clientRef.HexDigest))
 		default:
 			clientRef = pinnedRef // pick the best supported hash algo from *.digests
 		}
@@ -1396,7 +1397,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 		clientRef.HexDigest)
 	if err != nil {
 		// Either a download error or hash mismatch.
-		return common.Pin{}, errors.Annotate(err, "when updating the CIPD client to %q", targetVersion).Err()
+		return common.Pin{}, errors.Fmt("when updating the CIPD client to %q: %w", targetVersion, err)
 	}
 
 	// The new fetched binary is valid.
@@ -1444,7 +1445,7 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 		case api.RegistrationStatus_NOT_UPLOADED:
 			return resp.UploadOp, nil
 		default:
-			return nil, errors.Reason("unrecognized package registration status %s", resp.Status).Tag(cipderr.RPC).Err()
+			return nil, cipderr.RPC.Apply(errors.Fmt("unrecognized package registration status %s", resp.Status))
 		}
 	}
 
@@ -1470,7 +1471,7 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 	// succeed.
 	switch uploadOp, err := attemptToRegister(); {
 	case uploadOp != nil:
-		return errors.Reason("package file is uploaded, but servers asks us to upload it again").Tag(cipderr.RPC).Err()
+		return cipderr.RPC.Apply(errors.New("package file is uploaded, but servers asks us to upload it again"))
 	default:
 		return err
 	}
@@ -1501,7 +1502,8 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 		case op.Status == api.UploadStatus_PUBLISHED:
 			return nil // verified!
 		case op.Status == api.UploadStatus_ERRORED:
-			return errors.Reason("%s", op.ErrorMessage).Tag(cipderr.CAS).Err() // fatal verification error
+			return cipderr.CAS.Apply(errors. // fatal verification error
+								Fmt("%s", op.ErrorMessage))
 		case op.Status == api.UploadStatus_UPLOADING || op.Status == api.UploadStatus_VERIFYING:
 			logging.Infof(ctx, "Verifying...")
 			clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep)
@@ -1509,7 +1511,7 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 				sleep += 500 * time.Millisecond
 			}
 		default:
-			return errors.Reason("unrecognized upload operation status %s", op.Status).Tag(cipderr.RPC).Err()
+			return cipderr.RPC.Apply(errors.Fmt("unrecognized upload operation status %s", op.Status))
 		}
 	}
 }
@@ -1680,10 +1682,10 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 			return err
 		}
 		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
-			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
+			return errors.Fmt("bad metadata %q: %w", m.Key, err)
 		}
 		if err := common.ValidateContentType(m.ContentType); err != nil {
-			return errors.Annotate(err, "bad metadata %q", m.Key).Err()
+			return errors.Fmt("bad metadata %q: %w", m.Key, err)
 		}
 		apiMD[i] = &api.InstanceMetadata{
 			Key:         m.Key,
@@ -1738,7 +1740,7 @@ func (c *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration,
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.Reason("timeout while waiting for the instance to become ready").Tag(cipderr.Timeout).Err()
+			return cipderr.Timeout.Apply(errors.New("timeout while waiting for the instance to become ready"))
 		default:
 		}
 
@@ -1971,7 +1973,7 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 
 	// Make sure we fetched what we've asked for.
 	if digest := common.HexDigest(hash); objRef.HexDigest != digest {
-		err = errors.Reason("package hash mismatch: expecting %q, got %q", objRef.HexDigest, digest).Tag(cipderr.HashMismatch).Err()
+		err = cipderr.HashMismatch.Apply(errors.Fmt("package hash mismatch: expecting %q, got %q", objRef.HexDigest, digest))
 	}
 	return
 }
@@ -2171,10 +2173,10 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(checkCtx)
 			if admErr != nil {
 				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
-					deployErr = errors.Reason("not admitted: %s", status.Message()).Tag(cipderr.NotAdmitted).Err()
+					deployErr = cipderr.NotAdmitted.Apply(errors.Fmt("not admitted: %s", status.Message()))
 					logging.Errorf(checkCtx, "Not admitted: %s", status.Message())
 				} else {
-					deployErr = errors.Annotate(admErr, "admission check failed unexpectedly").Err()
+					deployErr = errors.Fmt("admission check failed unexpectedly: %w", admErr)
 					logging.Errorf(checkCtx, "Admission check failed unexpectedly: %s", admErr)
 				}
 			} else {
@@ -2374,8 +2376,8 @@ func (c *clientImpl) rpcErr(err error, specialCodes map[codes.Code]cipderr.Code)
 	}
 
 	if tag == cipderr.Auth && c.LoginInstructions != "" {
-		return errors.Reason("%s, %s", status.Message(), c.LoginInstructions).Tag(tag).Err()
+		return tag.Apply(errors.Fmt("%s, %s", status.Message(), c.LoginInstructions))
 	}
 
-	return errors.New(status.Message(), tag)
+	return tag.Apply(errors.New(status.Message()))
 }

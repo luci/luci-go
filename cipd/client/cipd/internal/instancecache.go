@@ -398,7 +398,7 @@ func (c *InstanceCache) openAsSource(ctx context.Context, pin common.Pin) (pkg.S
 	stat, err := f.Stat()
 	if err != nil {
 		_ = f.Close()
-		return nil, errors.Annotate(err, "checking size").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("checking size: %w", err))
 	}
 
 	return &cacheFile{
@@ -417,7 +417,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return nil, errors.Reason("invalid instance ID %q", pin.InstanceID).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q", pin.InstanceID))
 	}
 
 	attempt := 0
@@ -443,7 +443,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 		})
 		if err != nil {
 			if cipderr.ToCode(err) == cipderr.Unknown {
-				err = errors.Annotate(err, "writing to instance cache").Tag(cipderr.IO).Err()
+				err = cipderr.IO.Apply(errors.Fmt("writing to instance cache: %w", err))
 			}
 			return nil, err
 		}
@@ -465,7 +465,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			return nil, cipderr.IO.Apply(errors.Fmt("pin %s is unexpectedly missing from the cache: %w", pin, err))
 		case err != nil:
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
-			return nil, errors.Annotate(err, "opening the cached instance %s", pin).Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("opening the cached instance %s: %w", pin, err))
 		default:
 			c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
 			return file, nil
@@ -499,11 +499,11 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
 func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return errors.Reason("invalid instance ID %q", pin.InstanceID).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q", pin.InstanceID))
 	}
 
 	if err := c.FS.EnsureFileGone(ctx, path); err != nil {
-		return errors.Annotate(err, "deleting the cached instance file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("deleting the cached instance file: %w", err))
 	}
 
 	c.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {

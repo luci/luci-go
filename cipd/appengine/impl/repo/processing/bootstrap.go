@@ -86,17 +86,17 @@ func (bs *BootstrapPackageExtractor) Run(ctx context.Context, inst *model.Instan
 			continue
 		}
 		if executable != "" {
-			err = errors.Reason("the package is marked as a bootstrap package, but it contains multiple files").Err()
+			err = errors.New("the package is marked as a bootstrap package, but it contains multiple files")
 			return
 		}
 		executable = f
 	}
 	switch {
 	case executable == "":
-		err = errors.Reason("the package is marked as a bootstrap package, but it contains no files").Err()
+		err = errors.New("the package is marked as a bootstrap package, but it contains no files")
 		return
 	case strings.Contains(executable, "/"):
-		err = errors.Reason("the package is marked as a bootstrap package, but its content is not at the package root").Err()
+		err = errors.New("the package is marked as a bootstrap package, but its content is not at the package root")
 		return
 	}
 
@@ -144,11 +144,11 @@ func GetBootstrapExtractorResult(ctx context.Context, inst *model.Instance) (*Bo
 	case err != nil:
 		return nil, transient.Tag.Apply(err)
 	case !r.Success:
-		return nil, errors.Reason("bootstrap extraction failed: %s", r.Error).Err()
+		return nil, errors.Fmt("bootstrap extraction failed: %s", r.Error)
 	}
 	out := &BootstrapExtractorResult{}
 	if err := r.ReadResult(out); err != nil {
-		return nil, errors.Annotate(err, "failed to parse the extractor status").Err()
+		return nil, errors.Fmt("failed to parse the extractor status: %w", err)
 	}
 	return out, nil
 }

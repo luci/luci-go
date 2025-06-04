@@ -341,7 +341,7 @@ func (c *TagCache) Save(ctx context.Context) error {
 func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.TagCache, error) {
 	path, err := c.fs.RootRelToAbs(tagCacheFilename)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad tag cache path").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
 	}
 
 	blob, err := os.ReadFile(path)
@@ -349,10 +349,12 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 	case os.IsNotExist(err):
 		return &messages.TagCache{}, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "reading tag cache").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.
+
+			// Just ignore the corrupted cache file.
+			Fmt("reading tag cache: %w", err))
 	}
 
-	// Just ignore the corrupted cache file.
 	cache := messages.TagCache{}
 	if err := UnmarshalWithSHA256(blob, &cache); err != nil {
 		logging.Warningf(ctx, "Can't deserialize tag cache: %s", err)
@@ -380,16 +382,16 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 func (c *TagCache) dumpToDisk(ctx context.Context, msg *messages.TagCache) error {
 	path, err := c.fs.RootRelToAbs(tagCacheFilename)
 	if err != nil {
-		return errors.Annotate(err, "bad tag cache path").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
 	}
 
 	blob, err := MarshalWithSHA256(msg)
 	if err != nil {
-		return errors.Annotate(err, "serializing tag cache").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("serializing tag cache: %w", err))
 	}
 
 	if err := fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob)); err != nil {
-		return errors.Annotate(err, "writing tag cache").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("writing tag cache: %w", err))
 	}
 
 	return nil

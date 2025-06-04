@@ -82,15 +82,17 @@ type PackageChunkDef struct {
 func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return PackageDef{}, errors.Annotate(err, "reading package definition file").Tag(cipderr.IO).Err()
+		return PackageDef{}, cipderr.IO.Apply(errors.Fmt("reading package definition file: %w", err))
 	}
 
 	out := PackageDef{}
 	if err = yaml.Unmarshal(data, &out); err != nil {
-		return PackageDef{}, errors.Annotate(err, "bad package definition file").Tag(cipderr.BadArgument).Err()
+		return PackageDef{}, cipderr.BadArgument.Apply(errors.
+
+			// Substitute variables in all strings.
+			Fmt("bad package definition file: %w", err))
 	}
 
-	// Substitute variables in all strings.
 	for _, str := range out.strings() {
 		*str, err = subVars(*str, vars)
 		if err != nil {
@@ -120,19 +122,19 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 			has = append(has, "dir")
 		}
 		if len(has) == 0 {
-			return out, errors.Reason("files entry #%d needs 'file', 'dir' or 'version_file' key", i).Tag(cipderr.BadArgument).Err()
+			return out, cipderr.BadArgument.Apply(errors.Fmt("files entry #%d needs 'file', 'dir' or 'version_file' key", i))
 		}
 		if len(has) != 1 {
-			return out, errors.Reason("files entry #%d should have only one key, got %q", i, has).Tag(cipderr.BadArgument).Err()
+			return out, cipderr.BadArgument.Apply(errors.Fmt("files entry #%d should have only one key, got %q", i, has))
 		}
 		//'version_file' can appear only once, it must be a clean relative path.
 		if chunk.VersionFile != "" {
 			if versionFile != "" {
-				return out, errors.Reason("'version_file' entry can be used only once").Tag(cipderr.BadArgument).Err()
+				return out, cipderr.BadArgument.Apply(errors.New("'version_file' entry can be used only once"))
 			}
 			versionFile = chunk.VersionFile
 			if !fs.IsCleanSlashPath(versionFile) {
-				return out, errors.Reason("'version_file' must be a path relative to the package root: %s", versionFile).Tag(cipderr.BadArgument).Err()
+				return out, cipderr.BadArgument.Apply(errors.Fmt("'version_file' must be a path relative to the package root: %s", versionFile))
 			}
 		}
 	}
@@ -152,7 +154,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 	// Root of the package is defined relative to package def YAML file.
 	absCwd, err := filepath.Abs(cwd)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad input directory").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad input directory: %w", err))
 	}
 	root := filepath.Clean(def.Root)
 	if !filepath.IsAbs(root) {
@@ -200,12 +202,12 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 			// Exclude files as specified in 'exclude' section.
 			exclude, err := makeExclusionFilter(chunk.Exclude)
 			if err != nil {
-				return nil, errors.Annotate(err, "dir %q", chunk.Dir).Err()
+				return nil, errors.Fmt("dir %q: %w", chunk.Dir, err)
 			}
 			// Run the scan.
 			files, err := fs.ScanFileSystem(startDir, root, exclude, scanOpts)
 			if err != nil {
-				return nil, errors.Annotate(err, "dir %q", chunk.Dir).Err()
+				return nil, errors.Fmt("dir %q: %w", chunk.Dir, err)
 			}
 			for _, f := range files {
 				add(f)
@@ -214,10 +216,12 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 		}
 
 		// LoadPackageDef does validation, so this should not happen.
-		return nil, errors.Reason("unexpected definition: %v", chunk).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.
+
+			// Sort by Name().
+			Fmt("unexpected definition: %v", chunk))
 	}
 
-	// Sort by Name().
 	names := make([]string, 0, len(seen))
 	for n := range seen {
 		names = append(names, n)
@@ -269,7 +273,7 @@ func makeExclusionFilter(patterns []string) (fs.ScanFilter, error) {
 		}
 		re, err := regexp.Compile(expr)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad exclusion pattern").Tag(cipderr.BadArgument).Err()
+			return nil, cipderr.BadArgument.Apply(errors.Fmt("bad exclusion pattern: %w", err))
 		}
 		exps = append(exps, re)
 	}
@@ -333,7 +337,7 @@ func subVars(s string, vars map[string]string) (string, error) {
 		return val
 	})
 	if len(badKeys) != 0 {
-		return res, errors.Reason("values for some variables are not provided: %v", badKeys).Tag(cipderr.BadArgument).Err()
+		return res, cipderr.BadArgument.Apply(errors.Fmt("values for some variables are not provided: %v", badKeys))
 	}
 	return res, nil
 }

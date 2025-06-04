@@ -189,7 +189,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// the package instance it is in. This avoid some confusion during the
 	// transition to a new hash.
 	if err = common.ValidateInstanceID(inst.InstanceID, common.KnownHash); err != nil {
-		err = errors.Annotate(err, "unrecognized client instance ID format").Err()
+		err = errors.Fmt("unrecognized client instance ID format: %w", err)
 		return
 	}
 	instRef := common.InstanceIDToObjectRef(inst.InstanceID)
@@ -258,11 +258,11 @@ func GetClientExtractorResult(ctx context.Context, inst *api.Instance) (*ClientE
 	case err != nil:
 		return nil, transient.Tag.Apply(err)
 	case !r.Success:
-		return nil, errors.Reason("client extraction failed: %s", r.Error).Err()
+		return nil, errors.Fmt("client extraction failed: %s", r.Error)
 	}
 	out := &ClientExtractorResult{}
 	if err := r.ReadResult(out); err != nil {
-		return nil, errors.Annotate(err, "failed to parse the client extractor status").Err()
+		return nil, errors.Fmt("failed to parse the client extractor status: %w", err)
 	}
 	return out, nil
 }

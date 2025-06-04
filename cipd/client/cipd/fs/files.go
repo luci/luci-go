@@ -168,16 +168,16 @@ func (f *fileSystemFile) SymlinkTarget() (string, error) {
 	if f.symlinkTarget != "" {
 		return f.symlinkTarget, nil
 	}
-	return "", errors.Reason("%q: not a symlink", f.Name()).Tag(cipderr.IO).Err()
+	return "", cipderr.IO.Apply(errors.Fmt("%q: not a symlink", f.Name()))
 }
 
 func (f *fileSystemFile) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
-		return nil, errors.Reason("%q: opening a symlink is not allowed", f.Name()).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("%q: opening a symlink is not allowed", f.Name()))
 	}
 	r, err := os.Open(f.absPath)
 	if err != nil {
-		return nil, errors.Annotate(err, "opening %q", f.Name()).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("opening %q: %w", f.Name(), err))
 	}
 	return r, nil
 }
@@ -228,26 +228,28 @@ type ScanOptions struct {
 func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOptions) ([]File, error) {
 	dir, err := filepath.Abs(filepath.Clean(dir))
 	if err != nil {
-		return nil, errors.Annotate(err, "bad input path").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad input path: %w", err))
 	}
 	root, err = filepath.Abs(filepath.Clean(root))
 	if err != nil {
-		return nil, errors.Annotate(err, "bad root path").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.
+
+			// If we are scanning 'root' directly, it doesn't matter if it is itself
+			// a symlink. We should never try to package it as such, it is useless.
+			Fmt("bad root path: %w", err))
 	}
 
-	// If we are scanning 'root' directly, it doesn't matter if it is itself
-	// a symlink. We should never try to package it as such, it is useless.
 	if dir == root {
 		resolved, err := filepath.EvalSymlinks(dir)
 		if err != nil {
-			return nil, errors.Annotate(err, "resolving symlinks in the input dir path").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("resolving symlinks in the input dir path: %w", err))
 		}
 		dir = resolved
 		root = resolved
 	}
 
 	if !IsSubpath(dir, root) {
-		return nil, errors.Reason("the scanned directory must be under the root directory").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.New("the scanned directory must be under the root directory"))
 	}
 
 	files := []File{}
@@ -295,7 +297,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 		if cipderr.ToCode(err) != cipderr.Unknown {
 			return nil, err // already annotated, do not clobber the code
 		}
-		return nil, errors.Annotate(err, "scanning input directory").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("scanning input directory: %w", err))
 	}
 
 	return files, nil
@@ -325,13 +327,13 @@ func getModTime(info os.FileInfo, opts ScanOptions) time.Time {
 // Errors are annotated with error codes.
 func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptions) (File, error) {
 	if !filepath.IsAbs(abs) {
-		return nil, errors.Reason("expecting absolute file path, got %q", abs).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("expecting absolute file path, got %q", abs))
 	}
 	if !filepath.IsAbs(root) {
-		return nil, errors.Reason("expecting absolute root path, got %q", root).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("expecting absolute root path, got %q", root))
 	}
 	if !IsSubpath(abs, root) {
-		return nil, errors.Reason("path %q is not under %q", abs, root).Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("path %q is not under %q", abs, root))
 	}
 
 	var info os.FileInfo
@@ -340,7 +342,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 		var err error
 		info, err = os.Lstat(abs)
 		if err != nil {
-			return nil, errors.Annotate(err, "checking file info").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("checking file info: %w", err))
 		}
 	} else {
 		info = *fileInfo
@@ -348,14 +350,16 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 
 	rel, err := filepath.Rel(root, abs)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting relative path").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.
+
+			// Recognize symlinks as such, convert target to relative path, if needed.
+			Fmt("getting relative path: %w", err))
 	}
 
-	// Recognize symlinks as such, convert target to relative path, if needed.
 	if info.Mode()&os.ModeSymlink != 0 {
 		target, err := os.Readlink(abs)
 		if err != nil {
-			return nil, errors.Annotate(err, "reading symlink target").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("reading symlink target: %w", err))
 		}
 		targetAbs := ""
 		if filepath.IsAbs(target) {
@@ -367,7 +371,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			if IsSubpath(target, root) {
 				target, err = filepath.Rel(filepath.Dir(abs), target)
 				if err != nil {
-					return nil, errors.Annotate(err, "converting symlink target path to be relative").Tag(cipderr.IO).Err()
+					return nil, cipderr.IO.Apply(errors.Fmt("converting symlink target path to be relative: %w", err))
 				}
 			}
 		} else {
@@ -375,8 +379,8 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			// A package must not depend on its installation path.
 			targetAbs = filepath.Clean(filepath.Join(filepath.Dir(abs), target))
 			if !IsSubpath(targetAbs, root) {
-				return nil, errors.Reason(
-					"invalid symlink %q: a relative symlink pointing to a file outside of the package root", rel).Tag(cipderr.BadArgument).Err()
+				return nil,
+					cipderr.BadArgument.Apply(errors.Fmt("invalid symlink %q: a relative symlink pointing to a file outside of the package root", rel))
 			}
 		}
 
@@ -385,7 +389,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			abs = targetAbs
 			info, err = os.Stat(abs)
 			if err != nil {
-				return nil, errors.Annotate(err, "checking symlink target").Tag(cipderr.IO).Err()
+				return nil, cipderr.IO.Apply(errors.Fmt("checking symlink target: %w", err))
 			}
 		} else {
 			return &fileSystemFile{
@@ -402,7 +406,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 	if info.Mode().IsRegular() {
 		attrs, err := getWinFileAttributes(info)
 		if err != nil {
-			return nil, errors.Annotate(err, "getting win file attributes").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("getting win file attributes: %w", err))
 		}
 
 		return &fileSystemFile{
@@ -416,11 +420,12 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 		}, nil
 	}
 
-	return nil, errors.Reason("%q: not a regular file or symlink", abs).Tag(cipderr.BadArgument).Err()
-}
+	return nil, cipderr.BadArgument.Apply(errors.
 
-////////////////////////////////////////////////////////////////////////////////
-// Destination implementation based on FileSystem.
+		////////////////////////////////////////////////////////////////////////////////
+		// Destination implementation based on FileSystem.
+		Fmt("%q: not a regular file or symlink", abs))
+}
 
 // fsDest implements Destination on top of some existing file system directory.
 type fsDest struct {
@@ -479,10 +484,10 @@ func (d *fsDest) numOpenFiles() (n int) {
 func (d *fsDest) prepareFilePath(ctx context.Context, name string) (string, error) {
 	path := filepath.Clean(filepath.Join(d.dest, filepath.FromSlash(name)))
 	if !IsSubpath(path, d.dest) {
-		return "", errors.Reason("%q: invalid relative file name", name).Tag(cipderr.BadArgument).Err()
+		return "", cipderr.BadArgument.Apply(errors.Fmt("%q: invalid relative file name", name))
 	}
 	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
-		return "", errors.Annotate(err, "creating parent dir for a file").Tag(cipderr.IO).Err()
+		return "", cipderr.IO.Apply(errors.Fmt("creating parent dir for a file: %w", err))
 	}
 	return path, nil
 }
@@ -497,10 +502,12 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 	_, ok := d.openFiles[path]
 	d.lock.RUnlock()
 	if ok {
-		return nil, errors.Reason("%q: already open", name).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.
+
+			// Let the umask trim the file mode.
+			Fmt("%q: already open", name))
 	}
 
-	// Let the umask trim the file mode.
 	var mode os.FileMode
 	if opts.Executable {
 		if runtime.GOOS == "windows" {
@@ -534,10 +541,12 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 		file, err = os.OpenFile(writeTo, flags, mode)
 	}
 	if err != nil {
-		return nil, errors.Annotate(err, "creating destination file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.
+
+			// Close and delete (if it was a temp) on failures. Best effort.
+			Fmt("creating destination file: %w", err))
 	}
 
-	// Close and delete (if it was a temp) on failures. Best effort.
 	disarm := false
 	defer func() {
 		if !disarm {
@@ -552,14 +561,14 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 	}()
 
 	if err := setWinFileAttributes(writeTo, opts.WinAttrs); err != nil {
-		return nil, errors.Annotate(err, "setting win attributes").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("setting win attributes: %w", err))
 	}
 
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
 	if _, ok := d.openFiles[path]; ok {
-		return nil, errors.Reason("race condition when creating %s", name).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("race condition when creating %s", name))
 	}
 	d.openFiles[path] = file
 	disarm = true // skip the defer, we want to keep the file open
@@ -589,7 +598,7 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 			}
 
 			if err != nil {
-				err = errors.Annotate(err, "closing the destination file").Tag(cipderr.IO).Err()
+				err = cipderr.IO.Apply(errors.Fmt("closing the destination file: %w", err))
 			}
 			return
 		},
@@ -614,12 +623,12 @@ func (d *fsDest) CreateSymlink(ctx context.Context, name string, target string) 
 	if !filepath.IsAbs(target) {
 		targetAbs := filepath.Clean(filepath.Join(filepath.Dir(path), target))
 		if !IsSubpath(targetAbs, d.dest) {
-			return errors.Reason("%q: relative symlink is pointing outside of the destination dir", name).Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.Fmt("%q: relative symlink is pointing outside of the destination dir", name))
 		}
 	}
 
 	if err := d.fs.EnsureSymlink(ctx, path, target); err != nil {
-		return errors.Annotate(err, "creating symlink").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("creating symlink: %w", err))
 	}
 	return nil
 }
@@ -656,33 +665,39 @@ func NewDestination(dest string, fs FileSystem) TransactionalDestination {
 
 func (d *txnFSDest) Begin(ctx context.Context) error {
 	if d.fsDest != nil {
-		return errors.Reason("destination is already open").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.
+
+			// Ensure the parent directory of the destination directory exists, to be able
+			// to create a temp subdir there.
+			New("destination is already open"))
 	}
 
-	// Ensure the parent directory of the destination directory exists, to be able
-	// to create a temp subdir there.
 	var err error
 	if d.dest, err = d.fs.CwdRelToAbs(d.dest); err != nil {
-		return errors.Annotate(err, "bad destination path").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("bad destination path: %w", err))
 	}
 	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(d.dest)); err != nil {
-		return errors.Annotate(err, "creating the destination path").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.
+
+			// Create the staging directory, on the same level as the destination
+			// directory, so it can just be renamed into d.dest on completion. Let umask
+			// trim the permissions appropriately. Note that it is not really a "private"
+			// temp dir, since it will be eventually renamed into the "public" destination
+			// that should be readable to everyone (sans umask).
+			Fmt("creating the destination path: %w", err))
 	}
 
-	// Create the staging directory, on the same level as the destination
-	// directory, so it can just be renamed into d.dest on completion. Let umask
-	// trim the permissions appropriately. Note that it is not really a "private"
-	// temp dir, since it will be eventually renamed into the "public" destination
-	// that should be readable to everyone (sans umask).
 	tempDir, err := TempDir(filepath.Dir(d.dest), "", 0777)
 	if err != nil {
-		return errors.Annotate(err, "creating temporary destination dir").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.
+
+			// Setup a non-txn destination that extracts into the staging directory. Note
+			// that tempDir is totally owned by txnFSDest, and we ensure there are no
+			// concurrent writes to the same destination file, so we disable 'atomic' mode
+			// as it is unnecessary (and costs a bunch of syscalls per file).
+			Fmt("creating temporary destination dir: %w", err))
 	}
 
-	// Setup a non-txn destination that extracts into the staging directory. Note
-	// that tempDir is totally owned by txnFSDest, and we ensure there are no
-	// concurrent writes to the same destination file, so we disable 'atomic' mode
-	// as it is unnecessary (and costs a bunch of syscalls per file).
 	d.fsDest = ExistingDestination(tempDir, d.fs).(*fsDest)
 	d.fsDest.atomic = false
 	return nil
@@ -690,28 +705,30 @@ func (d *txnFSDest) Begin(ctx context.Context) error {
 
 func (d *txnFSDest) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
 	if d.fsDest == nil {
-		return nil, errors.Reason("destination is not open").Tag(cipderr.BadArgument).Err()
+		return nil, cipderr.BadArgument.Apply(errors.New("destination is not open"))
 	}
 	return d.fsDest.CreateFile(ctx, name, opts)
 }
 
 func (d *txnFSDest) CreateSymlink(ctx context.Context, name string, target string) error {
 	if d.fsDest == nil {
-		return errors.Reason("destination is not open").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.New("destination is not open"))
 	}
 	return d.fsDest.CreateSymlink(ctx, name, target)
 }
 
 func (d *txnFSDest) End(ctx context.Context, success bool) error {
 	if d.fsDest == nil {
-		return errors.Reason("destination is not open").Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.New("destination is not open"))
 	}
 	if leaking := d.fsDest.numOpenFiles(); leaking != 0 {
-		return errors.Reason("not all files were closed (leaking %d files)", leaking).Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.
+
+			// Clean up the temp dir and the state no matter what. On success it is
+			// already gone (renamed into d.dest).
+			Fmt("not all files were closed (leaking %d files)", leaking))
 	}
 
-	// Clean up the temp dir and the state no matter what. On success it is
-	// already gone (renamed into d.dest).
 	defer func() {
 		d.fs.EnsureDirectoryGone(ctx, d.fsDest.dest)
 		d.fsDest = nil
@@ -719,7 +736,7 @@ func (d *txnFSDest) End(ctx context.Context, success bool) error {
 
 	if success {
 		if err := d.fs.Replace(ctx, d.fsDest.dest, d.dest); err != nil {
-			return errors.Annotate(err, "moving temp destination directory into its final location").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("moving temp destination directory into its final location: %w", err))
 		}
 	}
 

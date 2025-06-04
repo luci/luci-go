@@ -78,9 +78,8 @@ func (v VersionsFile) AddVersion(pkg, ver, iid string) error {
 
 	if common.ValidateInstanceID(ver, common.AnyHash) == nil {
 		if ver != iid {
-			return errors.Reason(
-				"version given as instance ID (%q) should resolve into that ID, not into %q",
-				ver, iid).Tag(cipderr.BadArgument).Err()
+			return cipderr.BadArgument.Apply(errors.Fmt("version given as instance ID (%q) should resolve into that ID, not into %q",
+				ver, iid))
 		}
 		return nil
 	}
@@ -100,14 +99,17 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 	if iid, ok := v[unresolvedVer{pkg, ver}]; ok {
 		return common.Pin{PackageName: pkg, InstanceID: iid}, nil
 	}
-	return common.Pin{}, errors.Reason("not in the versions file").
-		Tag(cipderr.InvalidVersion.WithDetails(cipderr.Details{
+	return common.Pin{},
+		cipderr.InvalidVersion.WithDetails(cipderr.Details{
 			Package: pkg,
 			Version: ver,
-		})).Err()
+		}).Apply(errors.
+
+			// Equal returns true if version files have same entries.
+			New("not in the versions file"))
+
 }
 
-// Equal returns true if version files have same entries.
 func (v VersionsFile) Equal(a VersionsFile) bool {
 	if len(v) != len(a) {
 		return false
@@ -143,7 +145,7 @@ func (v VersionsFile) Serialize(w io.Writer) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "writing versions file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("writing versions file: %w", err))
 	}
 	return err
 }
@@ -155,7 +157,7 @@ func ParseVersionsFile(r io.Reader) (VersionsFile, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...any) error {
 		args = append([]any{lineNo}, args...)
-		return errors.Reason("failed to parse versions file (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("failed to parse versions file (line %d): "+fmtStr, args...))
 	}
 
 	const (
@@ -230,7 +232,7 @@ func ParseVersionsFile(r io.Reader) (VersionsFile, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, errors.Annotate(err, "failed to read the versions file").Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("failed to read the versions file: %w", err))
 	}
 	return res, nil
 }

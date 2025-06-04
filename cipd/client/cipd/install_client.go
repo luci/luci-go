@@ -32,19 +32,19 @@ import (
 func (c *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
 	curStat, err := os.Stat(destination)
 	if err != nil {
-		return errors.Annotate(err, "checking old client binary file").Tag(cipderr.IO).Err()
+		return cipderr.IO.Apply(errors.Fmt("checking old client binary file: %w", err))
 	}
 
 	return fs.EnsureFile(ctx, destination, func(of *os.File) error {
 		if err := of.Chmod(curStat.Mode()); err != nil {
-			return errors.Annotate(err, "changing new client binary mode").Tag(cipderr.IO).Err()
+			return cipderr.IO.Apply(errors.Fmt("changing new client binary mode: %w", err))
 		}
 		// TODO(iannucci): worry about owner/group?
 		if err := c.storage.download(ctx, fetchURL, of, h); err != nil {
 			return err
 		}
 		if got := common.HexDigest(h); got != hexDigest {
-			return errors.Reason("client binary file hash mismatch: expecting %q, got %q", hexDigest, got).Tag(cipderr.HashMismatch).Err()
+			return cipderr.HashMismatch.Apply(errors.Fmt("client binary file hash mismatch: expecting %q, got %q", hexDigest, got))
 		}
 		return nil
 	})

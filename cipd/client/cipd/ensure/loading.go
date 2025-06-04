@@ -36,17 +36,17 @@ func LoadEnsureFile(path string) (*File, error) {
 	if path == "-" {
 		var err error
 		if basePath, err = os.Getwd(); err != nil {
-			return nil, errors.Annotate(err, "failed to get cwd").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("failed to get cwd: %w", err))
 		}
 		f = os.Stdin
 	} else {
 		abs, err := filepath.Abs(path)
 		if err != nil {
-			return nil, errors.Annotate(err, "bad ensure file path").Tag(cipderr.BadArgument).Err()
+			return nil, cipderr.BadArgument.Apply(errors.Fmt("bad ensure file path: %w", err))
 		}
 		basePath = filepath.Dir(abs)
 		if f, err = os.Open(path); err != nil {
-			return nil, errors.Annotate(err, "opening ensure file").Tag(cipderr.IO).Err()
+			return nil, cipderr.IO.Apply(errors.Fmt("opening ensure file: %w", err))
 		}
 		defer f.Close()
 	}

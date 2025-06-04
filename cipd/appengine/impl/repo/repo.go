@@ -139,7 +139,7 @@ func (impl *repoImpl) packageReader(ctx context.Context, ref *api.ObjectRef) (*p
 		iotools.NewBufferingReaderAt(rawReader, 512*1024, 2),
 		rawReader.Size())
 	if err != nil {
-		return nil, errors.Annotate(err, "error when opening the package").Err()
+		return nil, errors.Fmt("error when opening the package: %w", err)
 	}
 	return pkg, nil
 }
@@ -415,7 +415,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 		}
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to enumerate the metadata").Err()
+		return nil, errors.Fmt("failed to enumerate the metadata: %w", err)
 	}
 
 	// One of 'visibleRoots' => its full sorted recursive listing.
@@ -431,7 +431,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 	if len(visibleRoots) != 1 || visibleRoots[0] != r.Prefix {
 		rootPkgs, err := model.CheckPackages(ctx, visibleRoots, r.IncludeHidden)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to check presence of packages").Err()
+			return nil, errors.Fmt("failed to check presence of packages: %w", err)
 		}
 		for _, name := range rootPkgs {
 			perVisibleRoot[name] = []string{name}
@@ -476,7 +476,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 		}
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to list a prefix").Err()
+		return nil, errors.Fmt("failed to list a prefix: %w", err)
 	}
 
 	// searchRoot is lexicographical prefix of packages we are concerned about.
@@ -559,7 +559,7 @@ func (impl *repoImpl) setPackageHidden(ctx context.Context, r *api.PackageReques
 	case err == datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "no such package")
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to update the package").Err()
+		return nil, errors.Fmt("failed to update the package: %w", err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -622,7 +622,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 			Instance: instance.Proto(),
 		}, nil
 	case err != datastore.ErrNoSuchEntity:
-		return nil, errors.Annotate(err, "failed to fetch the instance entity").Err()
+		return nil, errors.Fmt("failed to fetch the instance entity: %w", err)
 	}
 
 	// Attempt to start a new upload session. This will fail with ALREADY_EXISTS
@@ -660,7 +660,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 	}).FromProto(ctx, r)
 	registered, instance, err := model.RegisterInstance(ctx, instance, impl.onInstanceRegistration)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to register the instance").Err()
+		return nil, errors.Fmt("failed to register the instance: %w", err)
 	}
 
 	resp = &api.RegisterInstanceResponse{Instance: instance.Proto()}
@@ -679,7 +679,7 @@ func (impl *repoImpl) onInstanceRegistration(ctx context.Context, inst *model.In
 	for _, p := range impl.procs {
 		switch yes, err := p.Applicable(ctx, inst); {
 		case err != nil:
-			return errors.Annotate(err, "failed to check applicability of processor %q", p.ID()).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to check applicability of processor %q: %w", p.ID(), err))
 		case yes:
 			procs = append(procs, p.ID())
 		}
@@ -803,7 +803,7 @@ func (impl *repoImpl) updateProcessors(ctx context.Context, inst *api.Instance, 
 		err := res.Err
 		if err == nil {
 			if err = procRes.WriteResult(res.Result); err != nil {
-				err = errors.Annotate(err, "failed to write the processing result").Err()
+				err = errors.Fmt("failed to write the processing result: %w", err)
 			}
 		}
 		if err != nil {
@@ -818,7 +818,7 @@ func (impl *repoImpl) updateProcessors(ctx context.Context, inst *api.Instance, 
 		case err == datastore.ErrNoSuchEntity:
 			return fmt.Errorf("the entity is unexpectedly gone")
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch the entity").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch the entity: %w", err))
 		}
 
 		var toPut []any
@@ -900,7 +900,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	// Do the actual listing.
 	inst, cursor, err := opts.Handler(cursor, opts.PageSize)
 	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to query instances").Err()
+		return nil, "", errors.Fmt("failed to query instances: %w", err)
 	}
 
 	// Convert results to proto.
@@ -1050,7 +1050,7 @@ func (impl *repoImpl) ListRefs(ctx context.Context, r *api.ListRefsRequest) (res
 	// Actually list refs.
 	refs, err := model.ListPackageRefs(ctx, r.Package)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to list refs").Err()
+		return nil, errors.Fmt("failed to list refs: %w", err)
 	}
 	resp = &api.ListRefsResponse{Refs: make([]*api.Ref, len(refs))}
 	for i, ref := range refs {
@@ -1486,16 +1486,18 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 	// investigation.
 	proc, err := processing.GetClientExtractorResult(ctx, inst.Proto())
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get client extractor results").Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get client extractor results: %w", err))
 	}
 	ref, err := proc.ToObjectRef()
 	if err != nil {
-		return nil, errors.Annotate(err, "malformed or unrecognized ref in the client extractor results").Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(errors.
+
+			// refAliases (and SHA1 in particular, as hash supported by oldest code) is
+			// required to allow older clients to self-update to a newer client. See the
+			// doc for DescribeClientResponse proto message.
+			Fmt("malformed or unrecognized ref in the client extractor results: %w", err))
 	}
 
-	// refAliases (and SHA1 in particular, as hash supported by oldest code) is
-	// required to allow older clients to self-update to a newer client. See the
-	// doc for DescribeClientResponse proto message.
 	refAliases := proc.ObjectRefAliases()
 	sha1 := ""
 	for _, ref := range refAliases {
@@ -1505,16 +1507,18 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 		}
 	}
 	if sha1 == "" {
-		return nil, errors.Reason("malformed client extraction results, missing SHA1 digest").Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(errors.
+
+			// Grab the signed URL of the client binary.
+			New("malformed client extraction results, missing SHA1 digest"))
 	}
 
-	// Grab the signed URL of the client binary.
 	signedURL, err := impl.cas.GetObjectURL(ctx, &api.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(r.Package), // e.g. 'cipd.exe'
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get signed URL to the client binary").Tag(grpcutil.InternalTag).Err()
+		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get signed URL to the client binary: %w", err))
 	}
 
 	return &api.DescribeClientResponse{
@@ -2031,7 +2035,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 
 	iid := r.FormValue("instance_id")
 	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
-		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad instance_id: %w", err))
 	}
 
 	desc, err := impl.DescribeClient(c, &api.DescribeClientRequest{
@@ -2092,11 +2096,13 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 
 	iid := r.FormValue("instance_id")
 	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
-		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.
+
+			// This checks the request format, ACLs, verifies the instance exists and
+			// returns info about it.
+			Fmt("bad instance_id: %w", err))
 	}
 
-	// This checks the request format, ACLs, verifies the instance exists and
-	// returns info about it.
 	inst, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
 		Package:  r.FormValue("package_name"),
 		Instance: common.InstanceIDToObjectRef(iid),

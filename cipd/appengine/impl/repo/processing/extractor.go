@@ -77,7 +77,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	// Start reading the file.
 	reader, size, err := ex.Reader.Open(path)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to open the file for reading").Err()
+		return nil, errors.Fmt("failed to open the file for reading: %w", err)
 	}
 	defer reader.Close() // we don't care about errors here
 
@@ -86,10 +86,12 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 		HashAlgo: ex.PrimaryHash,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to open a CAS upload").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+
+			// Grab an io.Writer that uploads to Google Storage.
+			Fmt("failed to open a CAS upload: %w", err))
 	}
 
-	// Grab an io.Writer that uploads to Google Storage.
 	factory := ex.Uploader
 	if factory == nil {
 		factory = gsUploader
@@ -125,7 +127,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 		fullReader{reader},
 		make([]byte, bufferSize))
 	if err == nil && copied != size {
-		err = errors.Reason("unexpected file size: expecting %d bytes, read %d bytes", size, copied).Err()
+		err = errors.Fmt("unexpected file size: expecting %d bytes, read %d bytes", size, copied)
 	}
 
 	// If asked to rewind to a faraway offset (should be rare), just restart the
@@ -160,9 +162,9 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	// CAS should publish the object right away.
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to finalize the CAS upload").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to finalize the CAS upload: %w", err))
 	case op.Status != api.UploadStatus_PUBLISHED:
-		return nil, errors.Reason("unexpected upload status from CAS %s: %s", op.Status, op.ErrorMessage).Err()
+		return nil, errors.Fmt("unexpected upload status from CAS %s: %s", op.Status, op.ErrorMessage)
 	}
 
 	// Success!
@@ -180,7 +182,7 @@ func gsUploader(ctx context.Context, size int64, uploadURL string) io.Writer {
 	// Authentication is handled through the tokens in the upload session URL.
 	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {
-		panic(errors.Annotate(err, "failed to get the RPC transport").Err())
+		panic(errors.Fmt("failed to get the RPC transport: %w", err))
 	}
 	return &gs.Uploader{
 		Context:   ctx,
