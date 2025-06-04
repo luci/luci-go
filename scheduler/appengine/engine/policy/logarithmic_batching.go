@@ -34,7 +34,7 @@ func LogarithmicBatchingPolicy(maxConcurrentInvs, maxBatchSize int, logBase floa
 	// very small values being approximated as 0 and resulting in
 	// division-by-zero errors.
 	if logBase < 1.0001 {
-		return nil, errors.Reason("log_base should be more or equal than 1.0001").Err()
+		return nil, errors.New("log_base should be more or equal than 1.0001")
 	}
 
 	log := math.Log(logBase)

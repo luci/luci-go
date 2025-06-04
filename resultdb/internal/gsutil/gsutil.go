@@ -47,7 +47,7 @@ func GenerateSignedURL(ctx context.Context, gsClient *storage.Client, bucket, ob
 	// to generate the signed URL.
 	url, err := gsClient.Bucket(bucket).SignedURL(object, opts)
 	if err != nil {
-		return "", errors.Reason("GenerateSignedURL(%q/%q): %v", bucket, object, err).Err()
+		return "", errors.Fmt("GenerateSignedURL(%q/%q): %v", bucket, object, err)
 	}
 
 	return url, nil

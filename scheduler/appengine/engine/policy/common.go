@@ -38,9 +38,9 @@ import (
 func basePolicy(maxConcurrentInvs, maxBatchSize int, reducer func([]*internal.Trigger) int) (Func, error) {
 	switch {
 	case maxConcurrentInvs <= 0:
-		return nil, errors.Reason("max_concurrent_invocations should be positive").Err()
+		return nil, errors.New("max_concurrent_invocations should be positive")
 	case maxBatchSize <= 0:
-		return nil, errors.Reason("max_batch_size should be positive").Err()
+		return nil, errors.New("max_batch_size should be positive")
 	}
 
 	return func(env Environment, in In) (out Out) {

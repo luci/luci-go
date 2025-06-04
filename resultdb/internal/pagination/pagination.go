@@ -82,7 +82,7 @@ func AdjustPageSize(pageSize int32) int {
 // Returns nil if pageSize is 0.
 func ValidatePageSize(pageSize int32) error {
 	if pageSize < 0 {
-		return errors.Reason("negative").Err()
+		return errors.New("negative")
 	}
 	return nil
 }

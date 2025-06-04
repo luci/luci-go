@@ -67,7 +67,7 @@ func TokenToMap(token string, dest map[string]any, keys ...string) error {
 		return nil
 
 	case len(parts) != len(keys):
-		return pagination.InvalidToken(errors.Reason("expected %d components, got %q", len(keys), parts).Err())
+		return pagination.InvalidToken(errors.Fmt("expected %d components, got %q", len(keys), parts))
 
 	default:
 		for i, k := range keys {

@@ -87,7 +87,7 @@ func (f *Facade) Fetch(ctx context.Context, luciProject string, eid tryjob.Exter
 func (f *Facade) Parse(ctx context.Context, data any) (tryjob.Status, *tryjob.Result, error) {
 	build, ok := data.(*bbpb.Build)
 	if !ok {
-		return tryjob.Status_STATUS_UNSPECIFIED, nil, errors.Reason("expected data to be *bbpb.Build, got %T", data).Err()
+		return tryjob.Status_STATUS_UNSPECIFIED, nil, errors.Fmt("expected data to be *bbpb.Build, got %T", data)
 	}
 	return parseStatusAndResult(ctx, build)
 }

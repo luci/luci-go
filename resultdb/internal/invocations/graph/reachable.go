@@ -97,7 +97,7 @@ func (r ReachableInvocations) IDSet() (invocations.IDSet, error) {
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(r.Invocations) > MaxNodes {
-		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+		return nil, TooManyTag.Apply(errors.Fmt("more than %d invocations match", MaxNodes))
 	}
 	return r.idSetNoLimit(), nil
 }
@@ -126,7 +126,7 @@ func (r ReachableInvocations) WithTestResultsIDSet() (invocations.IDSet, error) 
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(result) > MaxNodes {
-		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+		return nil, TooManyTag.Apply(errors.Fmt("more than %d invocations match", MaxNodes))
 	}
 	return result, nil
 }
@@ -144,7 +144,7 @@ func (r ReachableInvocations) WithExonerationsIDSet() (invocations.IDSet, error)
 	// to run into problems if you try to process all of these in one go (e.g. in a
 	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
 	if len(result) > MaxNodes {
-		return nil, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+		return nil, TooManyTag.Apply(errors.Fmt("more than %d invocations match", MaxNodes))
 	}
 	return result, nil
 }
@@ -181,7 +181,7 @@ func (r ReachableInvocations) InstructionMap() (map[invocations.ID]*pb.VerdictIn
 							r.applyInstruction(instructionName, instructionMap, invocations.ID(invID), filterType.InvocationIds.Recursive)
 						}
 					default:
-						return nil, errors.Reason("invalid filter type %v", filter.FilterType).Err()
+						return nil, errors.Fmt("invalid filter type %v", filter.FilterType)
 					}
 				}
 			}
@@ -242,7 +242,7 @@ func (r ReachableInvocations) batches(size int) []ReachableInvocations {
 // marshal marshals the ReachableInvocations into a Redis value.
 func (r ReachableInvocations) marshal() ([]byte, error) {
 	if len(r.Invocations) == 0 {
-		return nil, errors.Reason("reachable invocations is invalid; at minimum the root invocation itself should be included").Err()
+		return nil, errors.New("reachable invocations is invalid; at minimum the root invocation itself should be included")
 	}
 
 	indexBySourceHash := make(map[SourceHash]int)

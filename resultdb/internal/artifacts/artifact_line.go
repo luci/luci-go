@@ -45,7 +45,7 @@ func ToLogLines(artifactID string, contentType string, content []byte, year, max
 	isSupported := isLogSupportedArtifact(artifactID, contentType)
 
 	if !isSupported {
-		return nil, errors.Reason("unsupported file type with artifact id: %s and content type: %s", artifactID, contentType).Err()
+		return nil, errors.Fmt("unsupported file type with artifact id: %s and content type: %s", artifactID, contentType)
 	}
 
 	linesContent := bytes.Split(content, []byte("\n"))

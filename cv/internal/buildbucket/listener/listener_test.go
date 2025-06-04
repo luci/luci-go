@@ -102,7 +102,7 @@ func TestListener(t *testing.T) {
 		go func() {
 			defer close(listenerDoneCh)
 			if err := l.start(cctx); err != nil {
-				panic(errors.Reason("failed to start listener. reason: %s", err).Err())
+				panic(errors.Fmt("failed to start listener. reason: %s", err))
 			}
 		}()
 
@@ -437,14 +437,14 @@ func (ttu *testTryjobUpdater) Update(ctx context.Context, eid tryjob.ExternalID,
 	}
 	build, ok := data.(*buildbucketpb.Build)
 	if !ok {
-		return errors.Reason("not buildbucket.build proto").Err()
+		return errors.New("not buildbucket.build proto")
 	}
 	hostInBuild := build.GetInfra().GetBuildbucket().GetHostname()
 	if hostInBuild != "" && hostInBuild != host {
-		return errors.Reason("build hostname doesn't match").Err()
+		return errors.New("build hostname doesn't match")
 	}
 	if build.Id != buildID {
-		return errors.Reason("build id doesn't match").Err()
+		return errors.New("build id doesn't match")
 	}
 
 	ttu.mu.Lock()

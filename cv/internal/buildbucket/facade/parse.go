@@ -104,7 +104,7 @@ func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *t
 		s = tryjob.Status_TRIGGERED
 		r.Status = tryjob.Result_UNKNOWN
 	default:
-		return s, nil, errors.Reason("unexpected buildbucket status %q", b.Status).Err()
+		return s, nil, errors.Fmt("unexpected buildbucket status %q", b.Status)
 	}
 	return s, r, nil
 }

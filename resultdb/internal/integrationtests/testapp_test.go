@@ -256,7 +256,7 @@ outer:
 			return ctx.Err()
 		case err := <-errC:
 			if err == nil {
-				err = errors.Reason("failed to start").Err()
+				err = errors.New("failed to start")
 			}
 			return err
 		default:

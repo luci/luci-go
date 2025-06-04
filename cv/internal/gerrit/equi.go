@@ -33,7 +33,7 @@ import (
 // out individual patchsets, creating gaps without affecting CV.
 func EquivalentPatchsetRange(info *gerritpb.ChangeInfo) (minEquiPatchset, currentPatchset int, err error) {
 	if len(info.Revisions) == 0 {
-		err = errors.Reason("ChangeInfo must have all revisions populated").Err()
+		err = errors.New("ChangeInfo must have all revisions populated")
 		return
 	}
 	revs := make([]*gerritpb.RevisionInfo, 0, len(info.Revisions))
@@ -47,10 +47,10 @@ func EquivalentPatchsetRange(info *gerritpb.ChangeInfo) (minEquiPatchset, curren
 	// Validate ChangeInfo to avoid problems later.
 	switch rev, ok := info.Revisions[info.CurrentRevision]; {
 	case !ok:
-		err = errors.Reason("ChangeInfo must have current_revision populated").Err()
+		err = errors.New("ChangeInfo must have current_revision populated")
 		return
 	case rev != revs[0]:
-		err = errors.Reason("ChangeInfo.currentPatchset %v doesn't have largest patchset %v", rev, revs[0]).Err()
+		err = errors.Fmt("ChangeInfo.currentPatchset %v doesn't have largest patchset %v", rev, revs[0])
 		return
 	}
 
@@ -67,8 +67,8 @@ func EquivalentPatchsetRange(info *gerritpb.ChangeInfo) (minEquiPatchset, curren
 			gerritpb.RevisionInfo_TRIVIAL_REBASE_WITH_MESSAGE_UPDATE:
 			minEquiPatchset = int(revs[i+1].Number)
 		default:
-			err = errors.Reason("Unknown revision kind %d %s ps#%d",
-				rev.Kind, rev.Kind, rev.GetNumber()).Err()
+			err = errors.Fmt("Unknown revision kind %d %s ps#%d",
+				rev.Kind, rev.Kind, rev.GetNumber())
 			return
 		}
 	}

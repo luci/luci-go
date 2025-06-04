@@ -37,7 +37,7 @@ func ParsePageToken(token string) (PageToken, error) {
 		return PageToken{}, err
 	}
 	if len(parts) != 2 {
-		return PageToken{}, pagination.InvalidToken(errors.Reason("invalid number of components").Err())
+		return PageToken{}, pagination.InvalidToken(errors.New("invalid number of components"))
 	}
 	return PageToken{
 		AfterTestID:      parts[0],

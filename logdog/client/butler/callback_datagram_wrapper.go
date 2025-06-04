@@ -23,9 +23,7 @@ import (
 // assertGetDatagram panics if the passed LogEntry does not contain Datagram data, or returns it.
 func assertGetDatagram(le *logpb.LogEntry) *logpb.Datagram {
 	if dg := le.GetDatagram(); dg == nil {
-		panic(errors.Reason(
-			"wrong StreamType: got %T, expected *logpb.LogEntry_Datagram", le.Content,
-		).Err())
+		panic(errors.Fmt("wrong StreamType: got %T, expected *logpb.LogEntry_Datagram", le.Content))
 	} else {
 		return dg
 	}

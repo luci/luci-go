@@ -70,7 +70,7 @@ func parseQueryPageToken(pageToken string) (afterTestID, afterRefHash string, er
 		return "", "", err
 	}
 	if len(tokens) != 2 {
-		return "", "", pagination.InvalidToken(errors.Reason("expected 2 components, got %d", len(tokens)).Err())
+		return "", "", pagination.InvalidToken(errors.Fmt("expected 2 components, got %d", len(tokens)))
 	}
 	return tokens[0], tokens[1], nil
 }

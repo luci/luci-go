@@ -226,7 +226,7 @@ func (ul *uiLogEntry) LegacyTryjobsByStatus() map[string][]*uiTryjob {
 
 func (ul *uiLogEntry) Tryjobs() []*uiTryjob {
 	if !ul.HasTryjobChips() {
-		panic(errors.Reason("requested tryjobs for log entry that doesn't have tryjob chip %T", ul.tryjobLog.GetKind()).Err())
+		panic(errors.Fmt("requested tryjobs for log entry that doesn't have tryjob chip %T", ul.tryjobLog.GetKind()))
 	}
 	switch v := ul.tryjobLog.GetKind().(type) {
 	case *tryjob.ExecutionLogEntry_TryjobsLaunched_:
