@@ -426,7 +426,7 @@ func propagateRecursive(ctx context.Context, sched *tqtesting.Scheduler, task *t
 	}
 	err = propagate(ctx, task, options)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "invocation %s", task.InvocationId).Err()
+		return nil, nil, errors.Fmt("invocation %s: %w", task.InvocationId, err)
 	}
 
 	visited = invocations.NewIDSet(invocations.ID(task.InvocationId))
@@ -439,13 +439,13 @@ func propagateRecursive(ctx context.Context, sched *tqtesting.Scheduler, task *t
 			if visited.Has(invID) {
 				// Avoid getting stuck in infite loops by erroring out if we try
 				// to visti the same invocation more than once.
-				return nil, nil, errors.Reason("visited %v twice", invID).Err()
+				return nil, nil, errors.Fmt("visited %v twice", invID)
 			}
 			visited.Add(invID)
 
 			err := propagate(ctx, task, options)
 			if err != nil {
-				return nil, nil, errors.Annotate(err, "invocation %s", task.InvocationId).Err()
+				return nil, nil, errors.Fmt("invocation %s: %w", task.InvocationId, err)
 			}
 		}
 

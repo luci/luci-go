@@ -94,13 +94,13 @@ func (a *artifactCreationRequest) parentID() string {
 
 func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent bool, cfg *config.CompiledServiceConfig) (invocations.ID, *artifactCreationRequest, error) {
 	if req.GetArtifact() == nil {
-		return "", nil, errors.Reason("artifact: unspecified").Err()
+		return "", nil, errors.New("artifact: unspecified")
 	}
 	var invID, testID, resultID string
 	var err error
 
 	if requireParent && req.Parent == "" {
-		return "", nil, errors.Reason("parent: unspecified").Err()
+		return "", nil, errors.New("parent: unspecified")
 	}
 
 	if req.Parent != "" {
@@ -110,7 +110,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 			invID = invocationID
 		} else {
 			if invID, testID, resultID, err = pbutil.ParseTestResultName(req.Parent); err != nil {
-				return "", nil, errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
+				return "", nil, errors.New("parent: neither valid invocation name nor valid test result name")
 			}
 		}
 	}
@@ -124,48 +124,48 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 			CaseName:     req.Artifact.TestIdStructured.CaseName,
 		}
 		if err := pbutil.ValidateBaseTestIdentifier(testIDBase); err != nil {
-			return "", nil, errors.Annotate(err, "test_id_structured").Err()
+			return "", nil, errors.Fmt("test_id_structured: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
-			return "", nil, errors.Annotate(err, "test_id_structured").Err()
+			return "", nil, errors.Fmt("test_id_structured: %w", err)
 		}
 		if req.Artifact.ResultId == "" {
-			return "", nil, errors.Reason("result_id is required if test_id_structured is specified").Err()
+			return "", nil, errors.New("result_id is required if test_id_structured is specified")
 		}
 		if err := pbutil.ValidateResultID(req.Artifact.ResultId); err != nil {
-			return "", nil, errors.Annotate(err, "result_id").Err()
+			return "", nil, errors.Fmt("result_id: %w", err)
 		}
 		if testID != "" || resultID != "" {
-			return "", nil, errors.Reason("test_id_structured must not be specified if parent is a test result name (legacy format)").Err()
+			return "", nil, errors.New("test_id_structured must not be specified if parent is a test result name (legacy format)")
 		}
 		testID = pbutil.EncodeTestID(testIDBase)
 		resultID = req.Artifact.ResultId
 	}
 
 	if req.Artifact.ResultId != "" && req.Artifact.TestIdStructured == nil {
-		return "", nil, errors.Reason("test_id_structured is required if result_id is specified").Err()
+		return "", nil, errors.New("test_id_structured is required if result_id is specified")
 	}
 
 	if err := pbutil.ValidateArtifactID(req.Artifact.ArtifactId); err != nil {
-		return "", nil, errors.Annotate(err, "artifact_id").Err()
+		return "", nil, errors.Fmt("artifact_id: %w", err)
 	}
 
 	if req.Artifact.ContentType != "" {
 		if _, _, err := mime.ParseMediaType(req.Artifact.ContentType); err != nil {
-			return "", nil, errors.Annotate(err, "content_type").Err()
+			return "", nil, errors.Fmt("content_type: %w", err)
 		}
 	}
 
 	if len(req.Artifact.Contents) != 0 && req.Artifact.GcsUri != "" {
-		return "", nil, errors.Reason("only one of contents and gcs_uri can be given").Err()
+		return "", nil, errors.New("only one of contents and gcs_uri can be given")
 	}
 
 	sizeBytes := int64(len(req.Artifact.Contents))
 
 	if sizeBytes != 0 && req.Artifact.SizeBytes != 0 && sizeBytes != req.Artifact.SizeBytes {
-		return "", nil, errors.Reason("sizeBytes and contents are specified but don't match").Err()
+		return "", nil, errors.New("sizeBytes and contents are specified but don't match")
 	}
 
 	// If contents field is empty, try to set size from the request instead.
@@ -206,7 +206,7 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 
 	if in.Parent != "" {
 		if err := pbutil.ValidateInvocationName(in.Parent); err != nil {
-			return "", nil, errors.Annotate(err, "invocation").Err()
+			return "", nil, errors.Fmt("invocation: %w", err)
 		}
 		invID = invocations.MustParseName(in.Parent)
 	}
@@ -216,7 +216,7 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 	for i, req := range in.Requests {
 		inv, art, err := parseCreateArtifactRequest(req, requireParent, cfg)
 		if err != nil {
-			return "", nil, errors.Annotate(err, "requests[%d]", i).Err()
+			return "", nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 
 		if in.Parent == "" {
@@ -224,22 +224,22 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 			//    * testIDStructured and resultID are not set.
 			//    * all parents belong to the same invocation.
 			if req.Artifact.TestIdStructured != nil || req.Artifact.ResultId != "" {
-				return "", nil, errors.Reason("requests[%d]: test_id_structured or result_id must not be specified if top-level invocation is not set (legacy uploader)", i).Err()
+				return "", nil, errors.Fmt("requests[%d]: test_id_structured or result_id must not be specified if top-level invocation is not set (legacy uploader)", i)
 			}
 			if invID == "" {
 				invID = inv
 			} else if inv != invID {
-				return "", nil, errors.Reason("requests[%d]: only one invocation is allowed: %q, %q", i, invID, inv).Err()
+				return "", nil, errors.Fmt("requests[%d]: only one invocation is allowed: %q, %q", i, invID, inv)
 			}
 		}
 		if in.Parent != "" && req.Parent != "" && in.Parent != req.Parent {
-			return "", nil, errors.Reason("requests[%d]: only one parent is allowed: %q, %q", i, in.Parent, req.Parent).Err()
+			return "", nil, errors.Fmt("requests[%d]: only one parent is allowed: %q, %q", i, in.Parent, req.Parent)
 		}
 
 		// TODO(ddoman): limit the max request body size in prpc level.
 		tSize += art.size
 		if tSize > MaxBatchCreateArtifactSize {
-			return "", nil, errors.Reason("the total size of artifact contents exceeded %d", MaxBatchCreateArtifactSize).Err()
+			return "", nil, errors.Fmt("the total size of artifact contents exceeded %d", MaxBatchCreateArtifactSize)
 		}
 		arts[i] = art
 	}
@@ -379,7 +379,7 @@ func createArtifactStates(ctx context.Context, realm string, invID invocations.I
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to write artifact to Spanner").Err()
+		return errors.Fmt("failed to write artifact to Spanner: %w", err)
 	}
 	spanutil.IncRowCount(ctx, len(noStateArts), spanutil.Artifacts, spanutil.Inserted, realm)
 	return nil
@@ -398,7 +398,7 @@ func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.Cont
 		// If BatchUpdateBlobs() returns INVALID_ARGUMENT, it means that
 		// the total size of the artifact contents was bigger than the max size that
 		// BatchUpdateBlobs() can accept.
-		return errors.Annotate(err, "cas.BatchUpdateBlobs failed").Err()
+		return errors.Fmt("cas.BatchUpdateBlobs failed: %w", err)
 	}
 	for i, r := range resp.GetResponses() {
 		cd := codes.Code(r.Status.Code)
@@ -408,7 +408,7 @@ func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.Cont
 			// If resource exhausted, the RBE server quota needs to be adjusted.
 			//
 			// Either case, it's a server-error, and an internal error will be returned.
-			return errors.Reason("artifact %q: cas.BatchUpdateBlobs failed", arts[i].name(invID)).Err()
+			return errors.Fmt("artifact %q: cas.BatchUpdateBlobs failed", arts[i].name(invID))
 		}
 	}
 	return nil
@@ -499,7 +499,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 			if allowedBuckets == nil {
 				allowedBuckets, err = allowedBucketsForUser(ctx, project, string(user))
 				if err != nil {
-					return nil, errors.Annotate(err, "fetch allowed buckets for user %s", string(user)).Err()
+					return nil, errors.Fmt("fetch allowed buckets for user %s: %w", string(user), err)
 				}
 			}
 			bucket, _ := gsutil.Split(a.gcsURI)
@@ -524,7 +524,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 			structuredTestID, err := pbutil.ParseAndValidateTestID(a.testID)
 			if err != nil {
 				// Should never happen.
-				return nil, errors.Annotate(err, "parse test id").Err()
+				return nil, errors.Fmt("parse test id: %w", err)
 			}
 			structuredTestIDProto = &pb.TestIdentifierBase{
 				ModuleName:   structuredTestID.ModuleName,

@@ -146,7 +146,7 @@ var InvocationTasks = tq.RegisterTaskClass(tq.TaskClass{
 // InitServer initializes a bqexporter server.
 func InitServer(srv *server.Server, opts Options) error {
 	if opts.ArtifactRBEInstance == "" {
-		return errors.Reason("opts.ArtifactRBEInstance is required").Err()
+		return errors.New("opts.ArtifactRBEInstance is required")
 	}
 
 	conn, err := artifactcontent.RBEConn(srv.Context)
@@ -156,7 +156,7 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	invClient, err := NewInvClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "create invocation export client").Err()
+		return errors.Fmt("create invocation export client: %w", err)
 	}
 
 	srv.RegisterCleanup(func(ctx context.Context) {
@@ -314,7 +314,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
-		return errors.Annotate(err, "new bq client").Err()
+		return errors.Fmt("new bq client: %w", err)
 	}
 	defer client.Close()
 
@@ -336,7 +336,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}
-			return errors.Annotate(err, "ensure test results bq table").Err()
+			return errors.Fmt("ensure test results bq table: %w", err)
 		}
 		return errors.WrapIf(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results")
 	case *pb.BigQueryExport_TextArtifacts_:
@@ -345,7 +345,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}
-			return errors.Annotate(err, "ensure text artifacts bq table").Err()
+			return errors.Fmt("ensure text artifacts bq table: %w", err)
 		}
 		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts")
 	case nil:
@@ -384,7 +384,7 @@ func Schedule(ctx context.Context, invID invocations.ID) error {
 				Title: fmt.Sprintf("%s:%d", invID, i),
 			})
 		default:
-			return errors.Reason("bqexport.ResultType is required").Err()
+			return errors.New("bqexport.ResultType is required")
 		}
 	}
 	tq.MustAddTask(ctx, &tq.Task{

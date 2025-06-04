@@ -176,15 +176,15 @@ type artifact struct {
 func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
 	exportedInv, err := invocations.Read(ctx, exportedID, invocations.ExcludeExtendedProperties)
 	if err != nil {
-		return errors.Annotate(err, "error reading exported invocation").Err()
+		return errors.Fmt("error reading exported invocation: %w", err)
 	}
 	if exportedInv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("%s is not finalized yet", exportedID.Name()).Err()
+		return errors.Fmt("%s is not finalized yet", exportedID.Name())
 	}
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(exportedID))
 	if err != nil {
-		return errors.Annotate(err, "querying reachable invocations").Err()
+		return errors.Fmt("querying reachable invocations: %w", err)
 	}
 	for _, batch := range invs.Batches() {
 		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
@@ -218,7 +218,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err, "exporting batch").Err()
+			return errors.Fmt("exporting batch: %w", err)
 		}
 	}
 	return nil

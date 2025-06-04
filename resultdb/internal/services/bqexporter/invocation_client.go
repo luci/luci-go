@@ -103,7 +103,7 @@ func NewInvClient(ctx context.Context, projectID string) (s *InvClient, reterr e
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -116,7 +116,7 @@ func NewInvClient(ctx context.Context, projectID string) (s *InvClient, reterr e
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating managed writer client").Err()
+		return nil, errors.Fmt("creating managed writer client: %w", err)
 	}
 	return &InvClient{
 		projectID: projectID,
@@ -141,7 +141,7 @@ func (c *InvClient) Close() (reterr error) {
 func (c *InvClient) EnsureSchema(ctx context.Context) error {
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(invTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, invocationTableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensure invocations bq table").Err()
+		return errors.Fmt("ensure invocations bq table: %w", err)
 	}
 	return nil
 }
@@ -149,7 +149,7 @@ func (c *InvClient) EnsureSchema(ctx context.Context) error {
 // InsertInvocationRow inserts one InvocationRow in BigQuery.
 func (c *InvClient) InsertInvocationRow(ctx context.Context, row *bqpb.InvocationRow) error {
 	if err := c.EnsureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, invTableName)
 	writer := bq.NewWriter(c.mwClient, tableName, invTableSchemaDescriptor)

@@ -47,7 +47,7 @@ import (
 func validateBatchCreateInvocationsRequest(
 	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) (newInvs, includedInvs invocations.IDSet, err error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
-		return nil, nil, errors.Annotate(err, "request_id").Err()
+		return nil, nil, errors.Fmt("request_id: %w", err)
 	}
 
 	if err := pbutil.ValidateBatchRequestCount(len(reqs)); err != nil {
@@ -58,18 +58,18 @@ func validateBatchCreateInvocationsRequest(
 	allIncludedIDs := make(invocations.IDSet)
 	for i, req := range reqs {
 		if err := validateCreateInvocationRequest(req, now, allIncludedIDs); err != nil {
-			return nil, nil, errors.Annotate(err, "requests[%d]", i).Err()
+			return nil, nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 
 		// If there's multiple `CreateInvocationRequest`s their request id
 		// must either be empty or match the one in the batch request.
 		if req.RequestId != "" && req.RequestId != requestID {
-			return nil, nil, errors.Reason("requests[%d].request_id: %q does not match request_id %q", i, requestID, req.RequestId).Err()
+			return nil, nil, errors.Fmt("requests[%d].request_id: %q does not match request_id %q", i, requestID, req.RequestId)
 		}
 
 		invID := invocations.ID(req.InvocationId)
 		if newInvs.Has(invID) {
-			return nil, nil, errors.Reason("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId).Err()
+			return nil, nil, errors.Fmt("requests[%d].invocation_id: duplicated invocation id %q", i, req.InvocationId)
 		}
 		newInvs.Add(invID)
 	}
@@ -82,7 +82,7 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 	now := clock.Now(ctx).UTC()
 	for i, r := range in.Requests {
 		if err := verifyCreateInvocationPermissions(ctx, r); err != nil {
-			return nil, errors.Annotate(err, "requests[%d]", i).Err()
+			return nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 
 	}

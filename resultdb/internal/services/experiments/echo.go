@@ -31,10 +31,10 @@ var messageRE = regexp.MustCompile(`^[[:print:]]+$`)
 
 func validateEchoRequest(req *pb.EchoRequest) error {
 	if err := validate.SpecifiedWithRe(messageRE, req.Message); err != nil {
-		return errors.Annotate(err, "message").Err()
+		return errors.Fmt("message: %w", err)
 	}
 	if len(req.Message) > 1024 {
-		return errors.Reason("message: exceeds 1024 bytes").Err()
+		return errors.New("message: exceeds 1024 bytes")
 	}
 	return nil
 }

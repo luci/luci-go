@@ -31,11 +31,11 @@ import (
 
 func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerationsRequest, cfg *config.CompiledServiceConfig) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
-		return errors.Annotate(err, "invocation").Err()
+		return errors.Fmt("invocation: %w", err)
 	}
 
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return errors.Fmt("request_id: %w", err)
 	}
 
 	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
@@ -44,13 +44,13 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 
 	for i, sub := range req.Requests {
 		if err := validateCreateTestExonerationRequest(sub, cfg, false); err != nil {
-			return errors.Annotate(err, "requests[%d]", i).Err()
+			return errors.Fmt("requests[%d]: %w", i, err)
 		}
 		if sub.Invocation != "" && sub.Invocation != req.Invocation {
-			return errors.Reason("requests[%d]: invocation: inconsistent with top-level invocation", i).Err()
+			return errors.Fmt("requests[%d]: invocation: inconsistent with top-level invocation", i)
 		}
 		if sub.RequestId != "" && sub.RequestId != req.RequestId {
-			return errors.Reason("requests[%d]: request_id: inconsistent with top-level request_id", i).Err()
+			return errors.Fmt("requests[%d]: request_id: inconsistent with top-level request_id", i)
 		}
 	}
 	return nil

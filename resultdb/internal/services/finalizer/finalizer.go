@@ -196,10 +196,10 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 					return err
 
 				case includedState == pb.Invocation_ACTIVE:
-					return errors.Reason("%s is still ACTIVE", includedID.Name()).Tag(notReadyToFinalize).Err()
+					return notReadyToFinalize.Apply(errors.Fmt("%s is still ACTIVE", includedID.Name()))
 
 				case includedState != pb.Invocation_FINALIZING:
-					return errors.Reason("%s has unexpected state %s", includedID.Name(), includedState).Err()
+					return errors.Fmt("%s has unexpected state %s", includedID.Name(), includedState)
 
 				default:
 					// The included invocation is FINALIZING and MAY include other
@@ -234,7 +234,7 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 	case state == pb.Invocation_FINALIZED:
 		return errAlreadyFinalized
 	case state != pb.Invocation_FINALIZING:
-		return errors.Reason("expected %s to be FINALIZING, but it is %s", invID.Name(), state).Err()
+		return errors.Fmt("expected %s to be FINALIZING, but it is %s", invID.Name(), state)
 	default:
 		return nil
 	}
@@ -274,7 +274,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 				// has been finalized.
 				inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
 				if err != nil {
-					return errors.Annotate(err, "failed to read finalized notification info").Err()
+					return errors.Fmt("failed to read finalized notification info: %w", err)
 				}
 
 				// Note that this submits the notification transactionally,

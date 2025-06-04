@@ -39,7 +39,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -52,7 +52,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating managed writer client").Err()
+		return nil, errors.Fmt("creating managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -90,7 +90,7 @@ var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
 func (c *Client) EnsureSchema(ctx context.Context) error {
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensuring text artifacts table").Err()
+		return errors.Fmt("ensuring text artifacts table: %w", err)
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ func (c *Client) EnsureSchema(ctx context.Context) error {
 // InsertArtifactRows inserts the given rows in BigQuery.
 func (c *Client) InsertArtifactRows(ctx context.Context, rows []*bqpb.TextArtifactRow) error {
 	if err := c.EnsureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	now := timestamppb.Now()
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)

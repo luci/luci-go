@@ -246,12 +246,12 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		return err
 	}
 	if exported.State != pb.Invocation_FINALIZED {
-		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
+		return errors.Fmt("%s is not finalized yet", invID.Name())
 	}
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invID))
 	if err != nil {
-		return errors.Annotate(err, "querying reachable invocations").Err()
+		return errors.Fmt("querying reachable invocations: %w", err)
 	}
 
 	exonerationInvocationIds, err := invs.WithExonerationsIDSet()
@@ -260,7 +260,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	}
 	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, exonerationInvocationIds)
 	if err != nil {
-		return errors.Annotate(err, "query exoneration").Err()
+		return errors.Fmt("query exoneration: %w", err)
 	}
 
 	// Query test results in batches of invocations.
@@ -292,7 +292,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		})
 
 		if err := eg.Wait(); err != nil {
-			return errors.Annotate(err, "exporting batch").Err()
+			return errors.Fmt("exporting batch: %w", err)
 		}
 	}
 	return nil

@@ -131,7 +131,7 @@ func updateSpannerTestResultsSizeMetrics(ctx context.Context) error {
 
 	projectStats, err := spannerTestResultsStats(ctx)
 	if err != nil {
-		return errors.Annotate(err, "failed to query the stats of the TestResults spanner table").Err()
+		return errors.Fmt("failed to query the stats of the TestResults spanner table: %w", err)
 	}
 
 	for _, columnSizes := range projectStats {

@@ -42,16 +42,16 @@ func emptyOrEqual(name, actual, expected string) error {
 	case "", expected:
 		return nil
 	}
-	return errors.Reason("%s must be either empty or equal to %q, but %q", name, expected, actual).Err()
+	return errors.Fmt("%s must be either empty or equal to %q, but %q", name, expected, actual)
 }
 
 func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
-		return errors.Annotate(err, "invocation").Err()
+		return errors.Fmt("invocation: %w", err)
 	}
 
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Annotate(err, "request_id").Err()
+		return errors.Fmt("request_id: %w", err)
 	}
 
 	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
@@ -66,13 +66,13 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 
 	for i, r := range req.Requests {
 		if err := emptyOrEqual("invocation", r.Invocation, req.Invocation); err != nil {
-			return errors.Annotate(err, "requests: %d", i).Err()
+			return errors.Fmt("requests: %d: %w", i, err)
 		}
 		if err := emptyOrEqual("request_id", r.RequestId, req.RequestId); err != nil {
-			return errors.Annotate(err, "requests: %d", i).Err()
+			return errors.Fmt("requests: %d: %w", i, err)
 		}
 		if err := validateTestResult(now, cfg, r.TestResult); err != nil {
-			return errors.Annotate(err, "requests: %d: test_result", i).Err()
+			return errors.Fmt("requests: %d: test_result: %w", i, err)
 		}
 
 		key := Key{
@@ -81,7 +81,7 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 		}
 		if _, ok := keySet[key]; ok {
 			// Duplicated results.
-			return errors.Reason("duplicate test results in request: testID %q, resultID %q", key.testID, key.resultID).Err()
+			return errors.Fmt("duplicate test results in request: testID %q, resultID %q", key.testID, key.resultID)
 		}
 		keySet[key] = struct{}{}
 	}
@@ -183,7 +183,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		ret.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ret.TestId, ret.Variant)
 		if err != nil {
 			// This should not happen, the test identifier should already have been validated.
-			return nil, nil, errors.Annotate(err, "parse test identifier").Err()
+			return nil, nil, errors.Fmt("parse test identifier: %w", err)
 		}
 	}
 	ret.VariantHash = pbutil.VariantHash(ret.Variant)
@@ -289,7 +289,7 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.BaseTestIdentifier) error {
 	scheme, ok := cfg.Schemes[testID.ModuleScheme]
 	if !ok {
-		return errors.Reason("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme).Err()
+		return errors.Fmt("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme)
 	}
 	return scheme.Validate(testID)
 }
@@ -311,7 +311,7 @@ func statusV1FromV2(status pb.TestResult_Status, kind pb.FailureReason_Kind, web
 			oldStatus = pb.TestStatus_SKIP
 		default:
 			// Web Test Status is closed to extension so this should never happen.
-			panic(errors.Reason("unknown web test status: %v", webTest.Status).Err())
+			panic(errors.Fmt("unknown web test status: %v", webTest.Status))
 		}
 		expected = webTest.IsExpected
 		return oldStatus, expected
@@ -341,7 +341,7 @@ func statusV1FromV2(status pb.TestResult_Status, kind pb.FailureReason_Kind, web
 		return pb.TestStatus_SKIP, false
 	default:
 		// Status v2 is closed to extension so this should never happen.
-		panic(errors.Reason("unknown status v2: %v", status).Err())
+		panic(errors.Fmt("unknown status v2: %v", status))
 	}
 }
 
@@ -381,7 +381,7 @@ func statusV2FromV1(oldStatus pb.TestStatus, expected bool) (status pb.TestResul
 				}
 			default:
 				// Status v1 is closed to extension so this should never happen.
-				panic(errors.Reason("unknown status v1: %v", oldStatus).Err())
+				panic(errors.Fmt("unknown status v1: %v", oldStatus))
 			}
 		}
 		return pb.TestResult_PASSED, pb.FailureReason_KIND_UNSPECIFIED, webTest
@@ -399,7 +399,7 @@ func statusV2FromV1(oldStatus pb.TestStatus, expected bool) (status pb.TestResul
 		kind = pb.FailureReason_ORDINARY
 	default:
 		// Status v1 is closed to extension so this should never happen.
-		panic(errors.Reason("unknown status v1: %v", oldStatus).Err())
+		panic(errors.Fmt("unknown status v1: %v", oldStatus))
 	}
 
 	if oldStatus == pb.TestStatus_PASS {

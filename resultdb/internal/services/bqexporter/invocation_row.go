@@ -36,11 +36,11 @@ func prepareInvocationRow(inv *pb.Invocation) (*bqpb.InvocationRow, error) {
 	project, realm := realms.Split(inv.Realm)
 	propertiesJSON, err := bqutil.MarshalStructPB(inv.Properties)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal properties").Err()
+		return nil, errors.Fmt("marshal properties: %w", err)
 	}
 	extendedPropertiesJSON, err := bqutil.MarshalStringStructPBMap(inv.ExtendedProperties)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal extended_properties").Err()
+		return nil, errors.Fmt("marshal extended_properties: %w", err)
 	}
 
 	return &bqpb.InvocationRow{
@@ -67,14 +67,14 @@ func (b *bqExporter) exportInvocationToBigQuery(ctx context.Context, invID invoc
 	defer cancel()
 	inv, err := invocations.Read(ctx, invID, invocations.AllFields)
 	if err != nil {
-		return errors.Annotate(err, "error reading invocation").Err()
+		return errors.Fmt("error reading invocation: %w", err)
 	}
 	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("%s not finalized", invID.Name()).Err()
+		return errors.Fmt("%s not finalized", invID.Name())
 	}
 	row, err := prepareInvocationRow(inv)
 	if err != nil {
-		return errors.Annotate(err, "prepare invocation row").Err()
+		return errors.Fmt("prepare invocation row: %w", err)
 	}
 	return invClient.InsertInvocationRow(ctx, row)
 }

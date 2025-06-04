@@ -58,7 +58,7 @@ func run(ctx context.Context, minInterval time.Duration) {
 	case err == spanutil.ErrNoResults:
 		maxShard = invocations.Shards - 1
 	case err != nil:
-		panic(errors.Annotate(err, "failed to determine number of shards").Err())
+		panic(errors.Fmt("failed to determine number of shards: %w", err))
 	}
 
 	// Start one cron job for each shard of the database.

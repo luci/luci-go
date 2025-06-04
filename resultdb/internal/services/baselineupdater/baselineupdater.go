@@ -97,7 +97,7 @@ func init() {
 func tryMarkInvocationSubmitted(ctx context.Context, invID invocations.ID) error {
 	inv, err := invocations.Read(span.Single(ctx), invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
-		return errors.Annotate(err, "read invocation").Err()
+		return errors.Fmt("read invocation: %w", err)
 	}
 
 	if inv.BaselineId == "" {
@@ -107,11 +107,11 @@ func tryMarkInvocationSubmitted(ctx context.Context, invID invocations.ID) error
 	}
 
 	if err := shouldMarkSubmitted(inv); err != nil {
-		return errors.Annotate(err, "mark invocation submitted").Err()
+		return errors.Fmt("mark invocation submitted: %w", err)
 	}
 
 	if err = ensureBaselineExists(ctx, inv); err != nil {
-		return errors.Annotate(err, "mark invocation submitted").Err()
+		return errors.Fmt("mark invocation submitted: %w", err)
 	}
 
 	return markInvocationSubmitted(ctx, inv)
@@ -122,7 +122,7 @@ func tryMarkInvocationSubmitted(ctx context.Context, invID invocations.ID) error
 func shouldMarkSubmitted(inv *pb.Invocation) error {
 	// all sub invocations should be finalized if the parent invocation is finalized.
 	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("the invocation is not yet finalized").Err()
+		return errors.New("the invocation is not yet finalized")
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func ensureBaselineExists(ctx context.Context, inv *pb.Invocation) error {
 				span.BufferWrite(ctx, baselines.Create(project, baselineID))
 				return nil
 			} else {
-				return errors.Annotate(err, "read baseline").Err()
+				return errors.Fmt("read baseline: %w", err)
 			}
 		}
 
@@ -153,7 +153,7 @@ func ensureBaselineExists(ctx context.Context, inv *pb.Invocation) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "ensure baseline").Err()
+		return errors.Fmt("ensure baseline: %w", err)
 	}
 
 	return nil
@@ -177,7 +177,7 @@ func markInvocationSubmitted(ctx context.Context, inv *pb.Invocation) error {
 	idSet = append(idSet, invocations.ID(invID))
 	invs, err := graph.Reachable(rCtx, invocations.NewIDSet(invID))
 	if err != nil {
-		return errors.Annotate(err, "discover reachable invocations").Err()
+		return errors.Fmt("discover reachable invocations: %w", err)
 	}
 	for invID, reachableInv := range invs.Invocations {
 		if !reachableInv.HasTestResults {
@@ -211,14 +211,14 @@ func markInvocationSubmitted(ctx context.Context, inv *pb.Invocation) error {
 				return nil
 			})
 			if err != nil {
-				return errors.Annotate(err, "write baseline test variants").Err()
+				return errors.Fmt("write baseline test variants: %w", err)
 			}
 			ms = make([]*spanner.Mutation, 0)
 		}
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "query test variants").Err()
+		return errors.Fmt("query test variants: %w", err)
 	}
 
 	// Insert remaining test variants as a final write transaction.
@@ -228,7 +228,7 @@ func markInvocationSubmitted(ctx context.Context, inv *pb.Invocation) error {
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err, "write baseline test variants").Err()
+			return errors.Fmt("write baseline test variants: %w", err)
 		}
 	}
 

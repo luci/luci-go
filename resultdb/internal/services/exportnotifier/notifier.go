@@ -128,7 +128,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 			return nil
 		}
 
-		return errors.Annotate(err, "read sources").Err()
+		return errors.Fmt("read sources: %w", err)
 	}
 
 	var roots []exportroots.ExportRoot
@@ -162,7 +162,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 			var rootRealm string
 			var rootCreateTime *timestamppb.Timestamp
 			if err := invocations.ReadColumns(ctx, root.RootInvocation, map[string]any{"Realm": &rootRealm, "CreateTime": &rootCreateTime}); err != nil {
-				return errors.Annotate(err, "read root invocation").Err()
+				return errors.Fmt("read root invocation: %w", err)
 			}
 
 			var sources *pb.Sources
@@ -192,13 +192,13 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "read roots and notify").Err()
+		return errors.Fmt("read roots and notify: %w", err)
 	}
 
 	// Read included invocations.
 	included, err := invocations.ReadIncluded(span.Single(ctx), invID)
 	if err != nil {
-		return errors.Annotate(err, "read included").Err()
+		return errors.Fmt("read included: %w", err)
 	}
 
 	if len(task.IncludedInvocationIds) > 0 {
@@ -230,7 +230,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 
 			childRoots, err := exportroots.ReadForInvocations(ctx, includedInvocationIDs, rootsToRead)
 			if err != nil {
-				return errors.Annotate(err, "read roots for included invocations").Err()
+				return errors.Fmt("read roots for included invocations: %w", err)
 			}
 
 			// For each included invocation.
@@ -304,7 +304,7 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err, "propogate to included invocations").Err()
+			return errors.Fmt("propogate to included invocations: %w", err)
 		}
 	}
 	return nil

@@ -203,7 +203,7 @@ type Row struct {
 // InitServer initializes a artifactexporter server.
 func InitServer(srv *server.Server, opts Options) error {
 	if opts.ArtifactRBEInstance == "" {
-		return errors.Reason("No rbe instance specified").Err()
+		return errors.New("No rbe instance specified")
 	}
 
 	conn, err := artifactcontent.RBEConn(srv.Context)
@@ -213,7 +213,7 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	bqClient, err := NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq export client").Err()
+		return errors.Fmt("create bq export client: %w", err)
 	}
 
 	srv.RegisterCleanup(func(ctx context.Context) {
@@ -258,7 +258,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	ctx = logging.SetField(ctx, "invocation_id", invID)
 	shouldUpload, err := shouldUploadToBQ(ctx)
 	if err != nil {
-		return errors.Annotate(err, "getting config").Err()
+		return errors.Fmt("getting config: %w", err)
 	}
 	if !shouldUpload {
 		logging.Infof(ctx, "Uploading to BigQuery is disabled")
@@ -268,17 +268,17 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	// Get the invocation.
 	inv, err := invocations.Read(span.Single(ctx), invID, invocations.ExcludeExtendedProperties)
 	if err != nil {
-		return errors.Annotate(err, "error reading exported invocation").Err()
+		return errors.Fmt("error reading exported invocation: %w", err)
 	}
 	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("invocation not finalized").Err()
+		return errors.New("invocation not finalized")
 	}
 	project, _ := realms.Split(inv.Realm)
 
 	// Query for checkpoints.
 	cps, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), project, string(invID), CheckpointProcessID)
 	if err != nil {
-		return errors.Annotate(err, "read all uniquifiers").Err()
+		return errors.Fmt("read all uniquifiers: %w", err)
 	}
 	if len(cps) > 0 {
 		logging.Infof(ctx, "Found %d checkpoints for invocation %v", len(cps), invID)
@@ -287,18 +287,18 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 	// Query for artifacts.
 	artifacts, err := ae.queryTextArtifacts(span.Single(ctx), invID, project, MaxTotalArtifactSizeForInvocation, cps)
 	if err != nil {
-		return errors.Annotate(err, "query text artifacts").Err()
+		return errors.Fmt("query text artifacts: %w", err)
 	}
 
 	logging.Infof(ctx, "Found %d text artifacts", len(artifacts))
 
 	percent, err := percentOfArtifactsToBQ(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read percent from config").Err()
+		return errors.Fmt("read percent from config: %w", err)
 	}
 	artifacts, err = throttleArtifactsForBQ(artifacts, percent)
 	if err != nil {
-		return errors.Annotate(err, "throttle artifacts for bq").Err()
+		return errors.Fmt("throttle artifacts for bq: %w", err)
 	}
 
 	logging.Infof(ctx, "Found %d text artifact after throttling", len(artifacts))
@@ -319,7 +319,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 			defer close(rowC)
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, MaxShardContentSize, MaxRBECasBatchSize, cps)
 			if err != nil {
-				return errors.Annotate(err, "download multiple artifact content").Err()
+				return errors.Fmt("download multiple artifact content: %w", err)
 			}
 			return nil
 		}
@@ -327,7 +327,7 @@ func (ae *artifactExporter) exportArtifacts(ctx context.Context, invID invocatio
 		work <- func() error {
 			err := ae.exportToBigQuery(ctx, rowC)
 			if err != nil {
-				return errors.Annotate(err, "export to bigquery").Err()
+				return errors.Fmt("export to bigquery: %w", err)
 			}
 			return nil
 		}
@@ -379,7 +379,7 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *Row
 			err := ae.bqExportClient.InsertArtifactRows(ctx, bqrows)
 			if err != nil {
 				artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrow.Project, "failure_bq")
-				return errors.Annotate(err, "insert artifact rows").Err()
+				return errors.Fmt("insert artifact rows: %w", err)
 			}
 			// Create checkpoints for the rows.
 			err = ae.createCheckPoints(ctx, rows)
@@ -406,7 +406,7 @@ func (ae *artifactExporter) exportToBigQuery(ctx context.Context, rowC chan *Row
 		err := ae.bqExportClient.InsertArtifactRows(ctx, bqrows)
 		if err != nil {
 			artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrows[0].Project, "failure_bq")
-			return errors.Annotate(err, "insert artifact rows").Err()
+			return errors.Fmt("insert artifact rows: %w", err)
 		}
 		logging.Infof(ctx, "Finished inserting last batch of %d rows to BigQuery", len(bqrows))
 		artifactExportCounter.Add(ctx, int64(len(bqrows)), bqrows[0].Project, "success")
@@ -460,7 +460,7 @@ func (ae *artifactExporter) createCheckPoints(ctx context.Context, rows []*Row) 
 				return nil
 			})
 			if err != nil {
-				return errors.Annotate(err, "apply mutations").Err()
+				return errors.Fmt("apply mutations: %w", err)
 			}
 			logging.Infof(ctx, "Finish writing %d mutations to spanner", len(ms))
 			ms = []*spanner.Mutation{}
@@ -475,7 +475,7 @@ func (ae *artifactExporter) createCheckPoints(ctx context.Context, rows []*Row) 
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err, "apply mutations").Err()
+			return errors.Fmt("apply mutations: %w", err)
 		}
 		logging.Infof(ctx, "Finish writing %d mutations to spanner", len(ms))
 	}
@@ -530,7 +530,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		a := &Artifact{InvocationID: string(invID)}
 		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestStatusV2, &a.TestVariant, &a.TestVariantHash)
 		if err != nil {
-			return errors.Annotate(err, "read row").Err()
+			return errors.Fmt("read row: %w", err)
 		}
 		// We skip all artifacts in checkpoints, because we have fully exported them.
 		uq := artifactUniquifier(a.TestID, a.ResultID, a.ArtifactID)
@@ -567,7 +567,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "query artifact").Err()
+		return nil, errors.Fmt("query artifact: %w", err)
 	}
 	if totalSize > maxTotalArtifactSizeForInvocation {
 		logging.Warningf(ctx, "Total artifact size %d exceeds limit: %d", totalSize, MaxTotalArtifactSizeForInvocation)
@@ -612,7 +612,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 				work <- func() error {
 					err := ae.batchDownloadArtifacts(ctx, b, inv, rowC)
 					if err != nil {
-						return errors.Annotate(err, "batch download artifacts").Err()
+						return errors.Fmt("batch download artifacts: %w", err)
 					}
 					return nil
 				}
@@ -631,7 +631,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 			work <- func() error {
 				err := ae.batchDownloadArtifacts(ctx, b, inv, rowC)
 				if err != nil {
-					return errors.Annotate(err, "batch download artifacts").Err()
+					return errors.Fmt("batch download artifacts: %w", err)
 				}
 				return nil
 			}
@@ -657,7 +657,7 @@ func (ae *artifactExporter) downloadMultipleArtifactContent(ctx context.Context,
 							}.Warningf(ctx, "Test result artifact has invalid UTF-8")
 							artifactExportCounter.Add(ctx, 1, project, "failure_input")
 						} else {
-							return errors.Annotate(err, "download artifact content inv_id = %q test id =%q result_id=%q artifact_id = %q", artifact.InvocationID, artifact.TestID, artifact.ResultID, artifact.ArtifactID).Err()
+							return errors.Fmt("download artifact content inv_id = %q test id =%q result_id=%q artifact_id = %q: %w", artifact.InvocationID, artifact.TestID, artifact.ResultID, artifact.ArtifactID, err)
 						}
 					}
 					return nil
@@ -703,7 +703,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			logging.Errorf(ctx, "BatchReadBlobs: resource exhausted for invocation %q. Error: %v", inv.Name, err.Error())
 			return nil
 		}
-		return errors.Annotate(err, "batch read blobs").Err()
+		return errors.Fmt("batch read blobs: %w", err)
 	}
 	project, realm := realms.Split(inv.Realm)
 	for i, r := range resp.GetResponses() {
@@ -731,7 +731,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 		// Perhaps something is wrong with RBE, we should retry.
 		if c != codes.OK {
 			loggingFields.Errorf(ctx, "Error downloading artifact. Code = %v message = %q", c, r.Status.GetMessage())
-			return errors.Reason("downloading artifact").Err()
+			return errors.New("downloading artifact")
 		}
 		// Check data, make sure it is of valid UTF-8 format.
 		if !utf8.Valid(r.Data) {
@@ -742,7 +742,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 
 		variantJSON, err := pbutil.VariantToJSON(artifact.TestVariant)
 		if err != nil {
-			return errors.Annotate(err, "variant to json").Err()
+			return errors.Fmt("variant to json: %w", err)
 		}
 		invocationVariantHash := ""
 		invocationVariantJSON := pbutil.EmptyJSON
@@ -750,7 +750,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 		if artifact.TestID == "" {
 			invocationVariantJSON, err = pbutil.VariantToJSON(inv.TestResultVariantUnion)
 			if err != nil {
-				return errors.Annotate(err, "invocation variant union to json").Err()
+				return errors.Fmt("invocation variant union to json: %w", err)
 			}
 			if inv.TestResultVariantUnion != nil {
 				invocationVariantHash = pbutil.VariantHash(inv.TestResultVariantUnion)
@@ -807,7 +807,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 	project, realm := realms.Split(inv.Realm)
 	variantJSON, err := pbutil.VariantToJSON(a.TestVariant)
 	if err != nil {
-		return errors.Annotate(err, "variant to json").Err()
+		return errors.Fmt("variant to json: %w", err)
 	}
 	isLastShard := false
 	invocationVariantHash := ""
@@ -816,7 +816,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 	if a.TestID == "" {
 		invocationVariantJSON, err = pbutil.VariantToJSON(inv.TestResultVariantUnion)
 		if err != nil {
-			return errors.Annotate(err, "invocation variant union to json").Err()
+			return errors.Fmt("invocation variant union to json: %w", err)
 		}
 		if inv.TestResultVariantUnion != nil {
 			invocationVariantHash = pbutil.VariantHash(inv.TestResultVariantUnion)
@@ -886,7 +886,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 			str.Write(sc.Bytes())
 		}
 		if err := sc.Err(); err != nil {
-			return errors.Annotate(err, "scanner error").Err()
+			return errors.Fmt("scanner error: %w", err)
 		}
 
 		// Last shard should always be added to the list of shards to be exported,
@@ -901,7 +901,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "read artifact content").Err()
+		return errors.Fmt("read artifact content: %w", err)
 	}
 	return nil
 }
@@ -948,7 +948,7 @@ func testStatusV2ToString(status pb.TestResult_Status) string {
 func shouldUploadToBQ(ctx context.Context) (bool, error) {
 	cfg, err := config.GetServiceConfig(ctx)
 	if err != nil {
-		return false, errors.Annotate(err, "get service config").Err()
+		return false, errors.Fmt("get service config: %w", err)
 	}
 	return cfg.GetBqArtifactExporterServiceConfig().GetEnabled(), nil
 }
@@ -958,7 +958,7 @@ func shouldUploadToBQ(ctx context.Context) (bool, error) {
 func percentOfArtifactsToBQ(ctx context.Context) (int, error) {
 	cfg, err := config.GetServiceConfig(ctx)
 	if err != nil {
-		return 0, errors.Annotate(err, "get service config").Err()
+		return 0, errors.Fmt("get service config: %w", err)
 	}
 	return int(cfg.GetBqArtifactExporterServiceConfig().GetExportPercent()), nil
 }
