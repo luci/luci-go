@@ -40,7 +40,7 @@ func renderTree(ctx context.Context, w http.ResponseWriter, cl *client.Client, b
 	d := &repb.Directory{}
 	err = proto.Unmarshal(b, d)
 	if err != nil {
-		return errors.Annotate(err, "blob must be directory").Tag(grpcutil.InvalidArgumentTag).Err()
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("blob must be directory: %w", err))
 	}
 
 	templates.MustRender(ctx, w, "pages/tree.html", templates.Args{
@@ -87,7 +87,7 @@ func readBlob(ctx context.Context, cl *client.Client, bd *digest.Digest) ([]byte
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
 		t := grpcutil.Tag.WithDefault(status.Code(err))
-		return nil, errors.Annotate(err, "failed to read blob").Tag(t).Err()
+		return nil, t.Apply(errors.Fmt("failed to read blob: %w", err))
 	}
 	return b, nil
 }

@@ -79,7 +79,7 @@ func checkPermission(c *router.Context, next router.Handler) {
 	case err != nil:
 		renderErrorPage(c.Request.Context(), c.Writer, err)
 	case !ok:
-		err = errors.New("permission denied", grpcutil.PermissionDeniedTag)
+		err = grpcutil.PermissionDeniedTag.Apply(errors.New("permission denied"))
 		renderErrorPage(c.Request.Context(), c.Writer, err)
 	default:
 		next(c)
@@ -140,7 +140,7 @@ func fullInstName(p httprouter.Params) string {
 func blobDigest(p httprouter.Params) (*digest.Digest, error) {
 	size, err := strconv.ParseInt(p.ByName("size"), 10, 64)
 	if err != nil {
-		err = errors.Annotate(err, "Digest size must be number").Tag(grpcutil.InvalidArgumentTag).Err()
+		err = grpcutil.InvalidArgumentTag.Apply(errors.Fmt("Digest size must be number: %w", err))
 		return nil, err
 	}
 

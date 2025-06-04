@@ -47,7 +47,7 @@ func PopPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) e
 		Parent: model.BucketKey(ctx, bldrID.Project, bldrID.Bucket),
 	}
 	if err := datastore.Get(ctx, bldr); err != nil {
-		return errors.Annotate(err, "failed to get builder: %s", bldrQID).Err()
+		return errors.Fmt("failed to get builder: %s: %w", bldrQID, err)
 	}
 	mcb := bldr.Config.GetMaxConcurrentBuilds()
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -69,18 +69,18 @@ func PopPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) e
 		}
 		if mcb == 0 {
 			if err := datastore.Delete(ctx, bldrQ); err != nil {
-				return errors.Annotate(err, "failed to delete the BuilderQueue: %s", bldrQID).Err()
+				return errors.Fmt("failed to delete the BuilderQueue: %s: %w", bldrQID, err)
 			}
 		} else {
 			if err := datastore.Put(ctx, bldrQ); err != nil {
-				return errors.Annotate(err, "failed to update the BuilderQueue: %s", bldrQID).Err()
+				return errors.Fmt("failed to update the BuilderQueue: %s: %w", bldrQID, err)
 			}
 		}
 
 		return nil
 	}, nil)
 	if err != nil {
-		return errors.Annotate(err, "error updating BuilderQueue for builder: %s and build: %d", bldrQID, bID).Err()
+		return errors.Fmt("error updating BuilderQueue for builder: %s and build: %d: %w", bldrQID, bID, err)
 	}
 	return nil
 }

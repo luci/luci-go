@@ -99,7 +99,7 @@ func getEntities(ctx context.Context, bks []*datastore.Key, now time.Time) ([]*b
 		toGet = append(toGet, b, inf)
 	}
 	if err := datastore.Get(ctx, toGet...); err != nil {
-		return nil, errors.Annotate(err, "error fetching builds %q", bks).Err()
+		return nil, errors.Fmt("error fetching builds %q: %w", bks, err)
 	}
 
 	var entitiesToSync []*buildAndInfra
@@ -241,7 +241,7 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 	logging.Infof(ctx, "Fetching %d backend tasks %q", len(taskIDs), taskIDs)
 	resp, err := bc.FetchTasks(ctx, &pb.FetchTasksRequest{TaskIds: taskIDs})
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch backend tasks").Err()
+		return errors.Fmt("failed to fetch backend tasks: %w", err)
 	}
 
 	// Validate fetched tasks and create a task map with validated tasks.
@@ -284,7 +284,7 @@ func syncBuildsWithBackendTasks(ctx context.Context, mr parallel.MultiRunner, bc
 func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) error {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "could not get global settings config").Err()
+		return errors.Fmt("could not get global settings config: %w", err)
 	}
 
 	var shards int32
@@ -302,12 +302,12 @@ func SyncBuildsWithBackendTasks(ctx context.Context, backend, project string) er
 		}
 	}
 	if !backendFound {
-		return tq.Fatal.Apply(errors.Reason("failed to find backend %s from global config", backend).Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to find backend %s from global config", backend))
 	}
 
 	bc, err := clients.NewBackendClient(ctx, project, backend, globalCfg)
 	if err != nil {
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service %s as project %s", backend, project).Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to connect to backend service %s as project %s: %w", backend, project, err))
 	}
 
 	now := clock.Now(ctx)

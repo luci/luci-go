@@ -98,7 +98,7 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		return tq.Fatal.Apply(errors.Fmt("build %d or buildInfra not found: %w", buildID, err))
 	case err != nil:
-		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
+		return transient.Tag.Apply(errors.Fmt("failed to fetch build %d or buildInfra: %w", buildID, err))
 	}
 	if protoutil.IsEnded(bld.Status) {
 		logging.Infof(ctx, "build %d is ended", buildID)
@@ -138,7 +138,7 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 	// Enqueue a continuation sync task in 5m.
 	if clock.Now(ctx).Sub(bld.CreateTime) < model.BuildMaxCompletionTime {
 		if err := SyncSwarmingBuildTask(ctx, &taskdefs.SyncSwarmingBuildTask{BuildId: buildID, Generation: generation + 1}, 5*time.Minute); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "failed to enqueue the continuation sync task for build %d", buildID).Err())
+			return transient.Tag.Apply(errors.Fmt("failed to enqueue the continuation sync task for build %d: %w", buildID, err))
 		}
 	}
 	return nil
@@ -157,13 +157,13 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	// Try not to process same message more than once.
 	cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 	if cache == nil {
-		return errors.Reason("global cache is not found").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.New("global cache is not found"))
 	}
 	msgCached, err := cache.Get(ctx, nt.messageID)
 	switch {
 	case err == caching.ErrCacheMiss: // no-op, continue
 	case err != nil:
-		return errors.Annotate(err, "failed to read %s from the global cache", nt.messageID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to read %s from the global cache: %w", nt.messageID, err))
 	case msgCached != nil:
 		logging.Infof(ctx, "seen this message %s before, ignoring", nt.messageID)
 		return nil
@@ -184,7 +184,7 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 		}
 		return errors.Fmt("Build %d or BuildInfra for task %s not found: %w", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID), err)
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch build %d or buildInfra", nt.BuildID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch build %d or buildInfra: %w", nt.BuildID, err))
 	}
 	if protoutil.IsEnded(bld.Status) {
 		logging.Infof(ctx, "build(%d) is completed and immutable.", nt.BuildID)
@@ -195,19 +195,19 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	bld.Proto.Infra = infra.Proto
 	sw := bld.Proto.GetInfra().GetSwarming()
 	if nt.SwarmingHostname != sw.GetHostname() {
-		return errors.Reason("swarming_hostname %s of build %d does not match %s", sw.Hostname, nt.BuildID, nt.SwarmingHostname).Err()
+		return errors.Fmt("swarming_hostname %s of build %d does not match %s", sw.Hostname, nt.BuildID, nt.SwarmingHostname)
 	}
 	if strings.TrimSpace(sw.GetTaskId()) == "" {
-		return errors.Reason("build %d is not associated with a task", nt.BuildID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("build %d is not associated with a task", nt.BuildID))
 	}
 	if nt.taskID != sw.GetTaskId() {
-		return errors.Reason("swarming_task_id %s of build %d does not match %s", sw.TaskId, nt.BuildID, nt.taskID).Err()
+		return errors.Fmt("swarming_task_id %s of build %d does not match %s", sw.TaskId, nt.BuildID, nt.taskID)
 	}
 
 	// update build.
 	swarm, err := clients.NewSwarmingClient(ctx, sw.Hostname, bld.Project)
 	if err != nil {
-		return errors.Annotate(err, "failed to create a swarming client for build %d (%s), in %s", nt.BuildID, bld.Project, sw.Hostname).Err()
+		return errors.Fmt("failed to create a swarming client for build %d (%s), in %s: %w", nt.BuildID, bld.Project, sw.Hostname, err)
 	}
 	if err := syncBuildWithTaskResult(ctx, nt.BuildID, sw.TaskId, swarm); err != nil {
 		return err
@@ -222,23 +222,24 @@ func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID strin
 	case err != nil:
 		return tq.Fatal.Apply(err)
 	case hostname == "":
-		return errors.Reason("hostname is empty").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.New("hostname is empty"))
 	case taskID == "":
-		return errors.Reason("taskID is empty").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.New("taskID is empty"))
 	}
 
 	// Send the cancellation request.
 	project, _ := realms.Split(realm)
 	swarm, err := clients.NewSwarmingClient(ctx, hostname, project)
 	if err != nil {
-		return errors.Annotate(err, "failed to create a swarming client for task %s in %s", taskID, hostname).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("failed to create a swarming client for task %s in %s: %w", taskID, hostname, err))
 	}
 	res, err := swarm.CancelTask(ctx, &apipb.TaskCancelRequest{KillRunning: true, TaskId: taskID})
 	if err != nil {
 		if !isFatalError(err) {
-			return errors.Annotate(err, "transient error in cancelling the task %s", taskID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("transient error in cancelling the task %s: %w", taskID, err))
 		}
-		return errors.Annotate(err, "fatal error in cancelling the task %s", taskID).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt(
+			"fatal error in cancelling the task %s: %w", taskID, err))
 	}
 
 	// Non-Canceled in the body indicates the task may have already ended. Hence, just logging it.
@@ -253,7 +254,8 @@ func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID strin
 func unpackMsg(ctx context.Context, body io.Reader) (*notification, error) {
 	blob, err := io.ReadAll(body)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the request body").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to read the request body: %w", err))
 	}
 
 	// process pubsub message
@@ -266,38 +268,38 @@ func unpackMsg(ctx context.Context, body io.Reader) (*notification, error) {
 		} `json:"message"`
 	}
 	if err := json.Unmarshal(blob, &msg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal swarming PubSub message").Err()
+		return nil, errors.Fmt("failed to unmarshal swarming PubSub message: %w", err)
 	}
 
 	// process swarming message data
 	swarmData, err := base64.StdEncoding.DecodeString(msg.Message.Data)
 	if err != nil {
-		return nil, errors.Annotate(err, "cannot decode message data as base64").Err()
+		return nil, errors.Fmt("cannot decode message data as base64: %w", err)
 	}
 	var data struct {
 		TaskID   string `json:"task_id"`
 		Userdata string `json:"userdata"`
 	}
 	if err := json.Unmarshal(swarmData, &data); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal the swarming pubsub data").Err()
+		return nil, errors.Fmt("failed to unmarshal the swarming pubsub data: %w", err)
 	}
 	ud := &userdata{}
 	if err := json.Unmarshal([]byte(data.Userdata), ud); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal userdata").Err()
+		return nil, errors.Fmt("failed to unmarshal userdata: %w", err)
 	}
 
 	// validate swarming message data
 	switch {
 	case strings.TrimSpace(data.TaskID) == "":
-		return nil, errors.Reason("task_id not found in message data").Err()
+		return nil, errors.New("task_id not found in message data")
 	case ud.BuildID <= 0:
-		return nil, errors.Reason("invalid build_id %d", ud.BuildID).Err()
+		return nil, errors.Fmt("invalid build_id %d", ud.BuildID)
 	case ud.CreatedTS <= 0:
-		return nil, errors.Reason("invalid created_ts %d", ud.CreatedTS).Err()
+		return nil, errors.Fmt("invalid created_ts %d", ud.CreatedTS)
 	case strings.TrimSpace(ud.SwarmingHostname) == "":
-		return nil, errors.Reason("swarming hostname not found in userdata").Err()
+		return nil, errors.New("swarming hostname not found in userdata")
 	case strings.Contains(ud.SwarmingHostname, "://"):
-		return nil, errors.Reason("swarming hostname %s must not contain '://'", ud.SwarmingHostname).Err()
+		return nil, errors.Fmt("swarming hostname %s must not contain '://'", ud.SwarmingHostname)
 	}
 
 	return &notification{
@@ -328,7 +330,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		if err := datastore.Get(ctx, bld, infra); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
+			return transient.Tag.Apply(errors.Fmt("failed to fetch build or buildInfra: %d: %w", bld.ID, err))
 		}
 
 		if protoutil.IsEnded(bld.Status) {
@@ -513,7 +515,7 @@ func updateBuildStatusFromTaskResult(ctx context.Context, bld *model.Build, inf 
 			setEndStatus(finalStatus, nil)
 		}
 	default:
-		err = errors.Reason("Unexpected task state: %s", taskResult.State).Err()
+		err = errors.Fmt("Unexpected task state: %s", taskResult.State)
 		return
 	}
 
@@ -558,7 +560,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		// error so Cloud Tasks retries the task.
 		if !isFatalError(err) {
 			if clock.Now(ctx).Sub(build.CreateTime) < swarmingCreateTaskGiveUpTimeout {
-				return transient.Tag.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
+				return transient.Tag.Apply(errors.Fmt("failed to create a swarming task: %w", err))
 			}
 			logging.Errorf(ctx, "Give up Swarming task creation retry after %s", swarmingCreateTaskGiveUpTimeout.String())
 		}
@@ -567,7 +569,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 			t.Properties.SecretBytes = nil
 		}
 		logging.Errorf(ctx, "Swarming task creation failure:%s. CreateTask request: %+v\nResponse: %+v", err, taskReq, res)
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
+		return tq.Fatal.Apply(errors.Fmt("failed to create a swarming task: %w", err))
 	}
 
 	// Update the build with the build token and new task id.
@@ -577,11 +579,11 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		}
 		infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		if err := datastore.Get(ctx, bld, infra); err != nil {
-			return errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err()
+			return errors.Fmt("failed to fetch build or buildInfra: %d: %w", bld.ID, err)
 		}
 
 		if infra.Proto.Swarming.TaskId != "" {
-			return errors.Reason("build already has a task %s", infra.Proto.Swarming.TaskId).Err()
+			return errors.Fmt("build already has a task %s", infra.Proto.Swarming.TaskId)
 		}
 		infra.Proto.Swarming.TaskId = res.TaskId
 		bld.UpdateToken = token
@@ -592,7 +594,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		// now that swarm.CreateTask is idempotent, we should reuse the task,
 		// instead of cancelling it.
 		logging.Errorf(ctx, "created a task %s, but failed to update datastore with the error:%s", res.TaskId, err)
-		return transient.Tag.Apply(errors.Annotate(err, "failed to update build %d", build.ID).Err())
+		return transient.Tag.Apply(errors.Fmt("failed to update build %d: %w", build.ID, err))
 	}
 	return nil
 }
@@ -618,7 +620,7 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*apipb.
 
 	taskSlices, err := computeTaskSlice(build)
 	if err != nil {
-		errors.Annotate(err, "failed to computing task slices").Err()
+		errors.Fmt("failed to computing task slices: %w", err)
 	}
 	taskReq.TaskSlices = taskSlices
 
@@ -648,7 +650,7 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*apipb.
 	}
 	udBytes, err := json.Marshal(ud)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal pubsub userdata").Err()
+		return nil, errors.Fmt("failed to marshal pubsub userdata: %w", err)
 	}
 	taskReq.PubsubUserdata = string(udBytes)
 	return taskReq, err

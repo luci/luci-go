@@ -38,7 +38,7 @@ func findCasClient(b *bbpb.Build) (string, error) {
 		}
 	}
 	if bbagentUtilityPath == "" {
-		return "", errors.Reason("Failed to find bbagent utility packages").Err()
+		return "", errors.New("Failed to find bbagent utility packages")
 	}
 
 	casClient, err := processCmd(bbagentUtilityPath, "cas")
@@ -70,7 +70,7 @@ func execCasCmd(ctx context.Context, args []string) error {
 	// running on non-swarming backends.
 	sysCtx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	if err != nil {
-		return errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+		return errors.Fmt("could not switch to 'system' account in LUCI_CONTEXT: %w", err)
 	}
 	cmd := execCommandContext(sysCtx, args[0], args[1:]...)
 	logging.Infof(ctx, "Running command: %s", cmd.String())
@@ -92,14 +92,14 @@ func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error 
 
 		if casClient == "" {
 			if casClient, err = findCasClient(b); err != nil {
-				return errors.Annotate(err, "download cas files").Err()
+				return errors.Fmt("download cas files: %w", err)
 			}
 		}
 
 		outDir := filepath.Join(workDir, dir)
 		cmdArgs := generateCasCmd(casClient, outDir, casRef)
 		if err = execCasCmd(ctx, cmdArgs); err != nil {
-			return errors.Annotate(err, "download cas files").Err()
+			return errors.Fmt("download cas files: %w", err)
 		}
 	}
 

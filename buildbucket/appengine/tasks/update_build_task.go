@@ -67,23 +67,24 @@ func unpackUpdateBuildTaskMsg(ctx context.Context, body io.Reader) (req buildTas
 
 	blob, err := io.ReadAll(body)
 	if err != nil {
-		return req, errors.Annotate(err, "failed to read the request body").Tag(transient.Tag).Err()
+		return req, transient.Tag.Apply(errors.
+			Fmt("failed to read the request body: %w", err))
 	}
 
 	// process pubsub message
 	var msg pushRequest
 	if err := json.Unmarshal(blob, &msg); err != nil {
-		return req, errors.Annotate(err, "failed to unmarshal UpdateBuildTask PubSub message").Err()
+		return req, errors.Fmt("failed to unmarshal UpdateBuildTask PubSub message: %w", err)
 	}
 	// process UpdateBuildTask message data
 	data, err := base64.StdEncoding.DecodeString(msg.Message.Data)
 	if err != nil {
-		return req, errors.Annotate(err, "cannot decode UpdateBuildTask message data as base64").Err()
+		return req, errors.Fmt("cannot decode UpdateBuildTask message data as base64: %w", err)
 	}
 
 	bldTskUpdte := &pb.BuildTaskUpdate{}
 	if err := (proto.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(data, bldTskUpdte); err != nil {
-		return req, errors.Annotate(err, "failed to unmarshal the BuildTaskUpdate pubsub data").Err()
+		return req, errors.Fmt("failed to unmarshal the BuildTaskUpdate pubsub data: %w", err)
 	}
 	req.BuildTaskUpdate = bldTskUpdte
 	req.subscription = msg.Subscription
@@ -95,32 +96,32 @@ func validateTaskStatus(taskStatus pb.Status, allowPending bool) error {
 	switch taskStatus {
 	case pb.Status_ENDED_MASK,
 		pb.Status_STATUS_UNSPECIFIED:
-		return errors.Reason("task.status: invalid status %s for UpdateBuildTask", taskStatus).Err()
+		return errors.Fmt("task.status: invalid status %s for UpdateBuildTask", taskStatus)
 	}
 
 	if !allowPending && taskStatus == pb.Status_SCHEDULED {
-		return errors.Reason("task.status: invalid status %s for UpdateBuildTask", taskStatus).Err()
+		return errors.Fmt("task.status: invalid status %s for UpdateBuildTask", taskStatus)
 	}
 
 	if _, ok := pb.Status_value[taskStatus.String()]; !ok {
-		return errors.Reason("task.status: invalid status %s for UpdateBuildTask", taskStatus).Err()
+		return errors.Fmt("task.status: invalid status %s for UpdateBuildTask", taskStatus)
 	}
 	return nil
 }
 
 func validateTask(task *pb.Task, allowPending bool) error {
 	if task.GetId().GetId() == "" {
-		return errors.Reason("task.id: required").Err()
+		return errors.New("task.id: required")
 	}
 	if task.GetUpdateId() == 0 {
-		return errors.Reason("task.UpdateId: required").Err()
+		return errors.New("task.UpdateId: required")
 	}
 	if err := validateTaskStatus(task.Status, allowPending); err != nil {
-		return errors.Annotate(err, "task.Status").Err()
+		return errors.Fmt("task.Status: %w", err)
 	}
 	detailsInKb := float64(len(task.GetDetails().String()) / 1024)
 	if detailsInKb > 10 {
-		return errors.Reason("task.details is greater than 10 kb").Err()
+		return errors.New("task.details is greater than 10 kb")
 	}
 	return nil
 }
@@ -129,7 +130,7 @@ func validateTask(task *pb.Task, allowPending bool) error {
 // are correctly set be sender.
 func validateBuildTaskUpdate(req *pb.BuildTaskUpdate) error {
 	if req.BuildId == "" {
-		return errors.Reason("build_id required").Err()
+		return errors.New("build_id required")
 	}
 	return validateTask(req.Task, false)
 }
@@ -140,14 +141,14 @@ func validateBuildTaskUpdate(req *pb.BuildTaskUpdate) error {
 func validateBuildTask(req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
 	switch {
 	case infra.Proto.GetBackend() == nil:
-		return errors.Reason("build %s does not support task backend", req.BuildId).Err()
+		return errors.Fmt("build %s does not support task backend", req.BuildId)
 	case infra.Proto.Backend.GetTask().GetId().GetId() == "":
-		return errors.Reason("no task is associated with the build").Err()
+		return errors.New("no task is associated with the build")
 	case infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() || (infra.Proto.Backend.Task.Id.GetId() != "" && infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId()):
-		return errors.Reason("TaskID in request does not match TaskID associated with build").Err()
+		return errors.New("TaskID in request does not match TaskID associated with build")
 	}
 	if protoutil.IsEnded(infra.Proto.Backend.Task.Status) {
-		return errors.Reason("cannot update an ended task").Err()
+		return errors.New("cannot update an ended task")
 	}
 	return nil
 }
@@ -216,7 +217,7 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 
 		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			return errors.Annotate(err, "invalid Build or BuildInfra").Err()
+			return errors.Fmt("invalid Build or BuildInfra: %w", err)
 		}
 
 		build = entities[0].(*model.Build)
@@ -267,12 +268,12 @@ func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int6
 func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
-		return errors.Annotate(err, "error fetching service config").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("error fetching service config: %w", err))
 	}
 
 	target := req.GetTask().GetId().GetTarget()
 	if target == "" {
-		return errors.Reason("task.id.target not provided.").Err()
+		return errors.New("task.id.target not provided.")
 	}
 
 	var subscription string
@@ -281,7 +282,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 		if backend.Target == target {
 			switch backend.Mode.(type) {
 			case *pb.BackendSetting_LiteMode_:
-				return errors.Reason("backend target %s is in lite mode. The task update isn't supported", target).Err()
+				return errors.Fmt("backend target %s is in lite mode. The task update isn't supported", target)
 			case *pb.BackendSetting_FullMode_:
 				subscription = fmt.Sprintf("projects/%s/subscriptions/%s", info.AppID(ctx), backend.GetFullMode().GetPubsubId())
 				useTaskSuccess = backend.GetFullMode().GetSucceedBuildIfTaskIsSucceeded()
@@ -292,13 +293,13 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 
 	buildID, err := strconv.ParseInt(req.GetBuildId(), 10, 64)
 	if err != nil {
-		return errors.Annotate(err, "bad build id").Err()
+		return errors.Fmt("bad build id: %w", err)
 	}
 	if subscription != req.subscription {
 		return errors.Fmt("pubsub subscription: %s did not match the one configured for target %s", req.subscription, target)
 	}
 	if err := validateBuildTaskUpdate(req.BuildTaskUpdate); err != nil {
-		return errors.Annotate(err, "invalid BuildTaskUpdate").Err()
+		return errors.Fmt("invalid BuildTaskUpdate: %w", err)
 	}
 	logging.Infof(ctx, "Received an BuildTaskUpdate message for build %q", req.BuildId)
 
@@ -310,9 +311,9 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildInfraKind)
 	if err != nil {
 		if status, _ := appstatus.Get(err); status.Code() == codes.NotFound {
-			return errors.Reason("missing BuildInfra entity").Err()
+			return errors.New("missing BuildInfra entity")
 		}
-		return errors.Annotate(err, "failed to fetch BuildInfra").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch BuildInfra: %w", err))
 	}
 	infra := entities[0].(*model.BuildInfra)
 
@@ -322,7 +323,7 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	// an error is returned and the update message is lost.
 	err = validateBuildTask(req.BuildTaskUpdate, infra)
 	if err != nil {
-		return errors.Annotate(err, "invalid task").Err()
+		return errors.Fmt("invalid task: %w", err)
 	}
 
 	// Skip already applied update. This is also double checked in the transaction
@@ -336,9 +337,9 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	err = updateTaskEntity(ctx, req.BuildTaskUpdate, buildID, useTaskSuccess)
 	if err != nil {
 		if status, _ := appstatus.Get(err); status.Code() == codes.NotFound {
-			return errors.Annotate(err, "missing some build entities").Err()
+			return errors.Fmt("missing some build entities: %w", err)
 		}
-		return errors.Annotate(err, "failed to update the build entities").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to update the build entities: %w", err))
 	}
 
 	return nil
@@ -356,20 +357,20 @@ func UpdateBuildTask(ctx context.Context, body io.Reader) error {
 	// Try not to process same message more than once.
 	cache := caching.GlobalCache(ctx, "update-build-task-pubsub-msg-id")
 	if cache == nil {
-		return errors.Reason("global cache is not found").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.New("global cache is not found"))
 	}
 	msgCached, err := cache.Get(ctx, req.msgID)
 	switch {
 	case err == caching.ErrCacheMiss: // no-op, continue
 	case err != nil:
-		return errors.Annotate(err, "failed to read %s from the global cache", req.msgID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to read %s from the global cache: %w", req.msgID, err))
 	case msgCached != nil:
 		logging.Infof(ctx, "seen this message %s before, ignoring", req.msgID)
 		return nil
 	}
 	err = updateBuildTask(ctx, req)
 	if err != nil {
-		return errors.Annotate(err, "failed to update the build from message %s", req.msgID).Err()
+		return errors.Fmt("failed to update the build from message %s: %w", req.msgID, err)
 	}
 
 	// Best effort at setting the cache. No big deal if this fails.

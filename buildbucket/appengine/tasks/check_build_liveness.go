@@ -39,7 +39,7 @@ import (
 func CheckLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32) error {
 	bld, err := common.GetBuild(ctx, buildID)
 	if err != nil {
-		return errors.Annotate(err, "failed to get build %d", buildID).Err()
+		return errors.Fmt("failed to get build %d: %w", buildID, err)
 	}
 
 	if protoutil.IsEnded(bld.Status) {
@@ -88,12 +88,12 @@ func CheckLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32) 
 		}
 		bs, err := statusUpdater.Do(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to update status").Err()
+			return errors.Fmt("failed to update status: %w", err)
 		}
 		toSave := []any{bld, bs}
 		switch changed, err := steps.CancelIncomplete(ctx, timestamppb.New(now)); {
 		case err != nil:
-			return errors.Annotate(err, "failed to cancel steps").Err()
+			return errors.Fmt("failed to cancel steps: %w", err)
 		case changed:
 			toSave = append(toSave, steps)
 		}
@@ -101,7 +101,7 @@ func CheckLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32) 
 		return datastore.Put(ctx, toSave)
 	}, nil)
 	if txnErr != nil {
-		return transient.Tag.Apply(errors.Annotate(txnErr, "failed to fail the build %d", buildID).Err())
+		return transient.Tag.Apply(errors.Fmt("failed to fail the build %d: %w", buildID, txnErr))
 	}
 
 	if enqueueTask {

@@ -75,11 +75,11 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 
 	requestBytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return r.done(ctx, errors.Annotate(err, "failed to read stdin").Err())
+		return r.done(ctx, errors.Fmt("failed to read stdin: %w", err))
 	}
 	req := &pb.BatchRequest{}
 	if err := proto.UnmarshalJSONWithNonStandardFieldMasks(requestBytes, req); err != nil {
-		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
+		return r.done(ctx, errors.Fmt("failed to parse BatchRequest from stdin: %w", err))
 	}
 
 	// Do not attach the buildbucket token if it's empty or the build is a led build.
@@ -148,7 +148,7 @@ func sendBatchReq(ctx context.Context, req *pb.BatchRequest, buildsClient pb.Bui
 			req = &pb.BatchRequest{
 				Requests: toRetry,
 			}
-			return errors.Reason("%d/%d batch subrequests failed", len(toRetry), len(res.Responses)).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("%d/%d batch subrequests failed", len(toRetry), len(res.Responses)))
 		}
 		return nil
 	}, func(err error, d time.Duration) {

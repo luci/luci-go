@@ -31,12 +31,12 @@ import (
 func readBuildSecrets(ctx context.Context) (*bbpb.BuildSecrets, error) {
 	swarming := lucictx.GetSwarming(ctx)
 	if swarming == nil {
-		return nil, errors.Reason("no swarming secret bytes; is this a Swarming Task with secret bytes?").Err()
+		return nil, errors.New("no swarming secret bytes; is this a Swarming Task with secret bytes?")
 	}
 
 	secrets := &bbpb.BuildSecrets{}
 	if err := proto.Unmarshal(swarming.SecretBytes, secrets); err != nil {
-		return nil, errors.Annotate(err, "failed to read BuildSecrets message from swarming secret bytes").Err()
+		return nil, errors.Fmt("failed to read BuildSecrets message from swarming secret bytes: %w", err)
 	}
 	return secrets, nil
 }

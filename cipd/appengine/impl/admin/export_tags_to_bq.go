@@ -102,7 +102,7 @@ func uploadToBQ(ctx context.Context, job dsmapper.JobID, rows []bigquery.ValueSa
 	// demand "real" Appengine context. http.Client is OK though.
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(bigquery.Scope))
 	if err != nil {
-		return errors.Annotate(err, "failed to grab RPC transport").Err()
+		return errors.Fmt("failed to grab RPC transport: %w", err)
 	}
 
 	appID := info.TrimmedAppID(ctx)
@@ -110,7 +110,7 @@ func uploadToBQ(ctx context.Context, job dsmapper.JobID, rows []bigquery.ValueSa
 		Transport: t,
 	}))
 	if err != nil {
-		return errors.Annotate(err, "failed to grab bigquery.Client").Err()
+		return errors.Fmt("failed to grab bigquery.Client: %w", err)
 	}
 	defer client.Close()
 

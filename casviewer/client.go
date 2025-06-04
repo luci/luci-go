@@ -124,7 +124,7 @@ func clientCache(c context.Context) (*ClientCache, error) {
 func newClient(ctx context.Context, instance string) (*client.Client, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials").Err()
+		return nil, errors.Fmt("failed to get credentials: %w", err)
 	}
 
 	c, err := client.NewClient(ctx, instance,
@@ -138,7 +138,7 @@ func newClient(ctx context.Context, instance string) (*client.Client, error) {
 	if err != nil {
 		// convert gRPC code to LUCI errors tag.
 		t := grpcutil.Tag.WithDefault(status.Code(err))
-		return nil, errors.Annotate(err, "failed to create client").Tag(t).Err()
+		return nil, t.Apply(errors.Fmt("failed to create client: %w", err))
 	}
 
 	return c, nil

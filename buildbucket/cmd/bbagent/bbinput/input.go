@@ -35,16 +35,16 @@ func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 
 	compressed, err := base64.RawStdEncoding.DecodeString(encodedData)
 	if err != nil {
-		return nil, errors.Annotate(err, "decoding base64").Err()
+		return nil, errors.Fmt("decoding base64: %w", err)
 	}
 
 	decompressing, err := zlib.NewReader(bytes.NewReader(compressed))
 	if err != nil {
-		return nil, errors.Annotate(err, "opening zlib reader").Err()
+		return nil, errors.Fmt("opening zlib reader: %w", err)
 	}
 	decompressed, err := io.ReadAll(decompressing)
 	if err != nil {
-		return nil, errors.Annotate(err, "decompressing zlib").Err()
+		return nil, errors.Fmt("decompressing zlib: %w", err)
 	}
 
 	ret := &bbpb.BBAgentArgs{}

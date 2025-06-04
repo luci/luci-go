@@ -164,7 +164,7 @@ func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF ret
 	// Use "system" account to call UpdateBuild RPCs.
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	if err != nil {
-		return nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+		return nil, errors.Fmt("could not switch to 'system' account in LUCI_CONTEXT: %w", err)
 	}
 	prpcClient.C, err = auth.NewAuthenticator(sctx, auth.SilentLogin, auth.Options{
 		MonitorAs: "bbagent/buildbucket",

@@ -123,7 +123,7 @@ func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.Job
 	}
 	cfg := &api.JobConfig{}
 	if err := proto.Unmarshal(job.Config.Params, cfg); err != nil {
-		return nil, toStatus(errors.Annotate(err, "failed to unmarshal JobConfig").Err())
+		return nil, toStatus(errors.Fmt("failed to unmarshal JobConfig: %w", err))
 	}
 	info, err := job.FetchInfo(ctx)
 	if err != nil {

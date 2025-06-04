@@ -161,11 +161,11 @@ func BotDimensionsFromBackend(b *pb.Build) ([]*pb.StringPair, error) {
 	if bds, ok := details["bot_dimensions"]; ok {
 		bdsJSON, err := bds.MarshalJSON()
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to marshal task details to JSON for build %d", b.Id).Err()
+			return nil, errors.Fmt("failed to marshal task details to JSON for build %d: %w", b.Id, err)
 		}
 		err = json.Unmarshal(bdsJSON, &botDimensions)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal task details JSON for build %d", b.Id).Err()
+			return nil, errors.Fmt("failed to unmarshal task details JSON for build %d: %w", b.Id, err)
 		}
 
 		for k, vs := range botDimensions {

@@ -44,7 +44,7 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 			Project: b.Proto.GetBuilder().GetProject(),
 		},
 	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue NotifyPubSubGoProxy task: %d", b.ID).Err()
+		return errors.Fmt("failed to enqueue NotifyPubSubGoProxy task: %d: %w", b.ID, err)
 	}
 
 	if b.PubSubCallback.Topic == "" {
@@ -58,7 +58,7 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 			Callback: true,
 		},
 	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue Go callback pubsub notification task: %d", b.ID).Err()
+		return errors.Fmt("failed to enqueue Go callback pubsub notification task: %d: %w", b.ID, err)
 	}
 	return nil
 }
@@ -73,14 +73,14 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 		},
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to enqueue a notification task to builds_v2 topic for build %d", buildID).Err()
+		return errors.Fmt("failed to enqueue a notification task to builds_v2 topic for build %d: %w", buildID, err)
 	}
 
 	proj := &model.Project{
 		ID: project,
 	}
 	if err := errors.Filter(datastore.Get(ctx, proj), datastore.ErrNoSuchEntity); err != nil {
-		return errors.Annotate(err, "failed to fetch project %s for %d", project, buildID).Err()
+		return errors.Fmt("failed to fetch project %s for %d: %w", project, buildID, err)
 	}
 	for _, t := range proj.CommonConfig.GetBuildsNotificationTopics() {
 		if t.Name == "" {
@@ -92,7 +92,7 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 				Topic:   t,
 			},
 		}); err != nil {
-			return errors.Annotate(err, "failed to enqueue notification task: %d for external topic %s ", buildID, t.Name).Err()
+			return errors.Fmt("failed to enqueue notification task: %d for external topic %s : %w", buildID, t.Name, err)
 		}
 	}
 	return nil
@@ -107,12 +107,12 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		logging.Warningf(ctx, "cannot find build %d", buildID)
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "error fetching build %d", buildID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("error fetching build %d: %w", buildID, err))
 	}
 
 	p, err := b.ToProto(ctx, model.NoopBuildMask, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to convert build to proto when in publishing builds_v2 flow").Err()
+		return errors.Fmt("failed to convert build to proto when in publishing builds_v2 flow: %w", err)
 	}
 
 	// Drop input/output properties and steps, and move them into build_large_fields.
@@ -177,7 +177,7 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 func compressLargeFields(buildID int64, buildLarge *pb.Build, topic *pb.BuildbucketCfg_Topic) ([]byte, error) {
 	buildLargeBytes, err := proto.Marshal(buildLarge)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal buildLarge").Err()
+		return nil, errors.Fmt("failed to marshal buildLarge: %w", err)
 	}
 	var compressed []byte
 	// If topic is nil or empty, it gets Compression_ZLIB.
@@ -188,10 +188,10 @@ func compressLargeFields(buildID int64, buildLarge *pb.Build, topic *pb.Buildbuc
 		compressed = make([]byte, 0, len(buildLargeBytes)/2) // hope for at least 2x compression
 		compressed = compression.ZstdCompress(buildLargeBytes, compressed)
 	default:
-		return nil, tq.Fatal.Apply(errors.Reason("unsupported compression method %s", topic.GetCompression().String()).Err())
+		return nil, tq.Fatal.Apply(errors.Fmt("unsupported compression method %s", topic.GetCompression().String()))
 	}
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
+		return nil, errors.Fmt("failed to compress large fields for %d: %w", buildID, err)
 	}
 	return compressed, nil
 }
@@ -206,7 +206,7 @@ func publishToExternalTopic(ctx context.Context, msg proto.Message, attrs map[st
 
 	blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(msg)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal pubsub message").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.Fmt("failed to marshal pubsub message: %w", err))
 	}
 
 	psClient, err := clients.NewPubsubClient(ctx, cloudProj, luciProject)

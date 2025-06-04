@@ -480,7 +480,7 @@ func resolveExe(path string) (string, error) {
 	}
 
 	me := lme.Get().(errors.MultiError)
-	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
+	return path, errors.Fmt("cannot find .exe (%q) or .bat (%q)", me[0], me[1])
 }
 
 // processCmd resolves the cmd by constructing the absolute path and resolving
@@ -489,12 +489,12 @@ func processCmd(path, cmd string) (string, error) {
 	relPath := filepath.Join(path, cmd)
 	absPath, err := filepath.Abs(relPath)
 	if err != nil {
-		return "", errors.Annotate(err, "absoluting %q", relPath).Err()
+		return "", errors.Fmt("absoluting %q: %w", relPath, err)
 	}
 	if runtime.GOOS == "windows" {
 		absPath, err = resolveExe(absPath)
 		if err != nil {
-			return "", errors.Annotate(err, "resolving %q", absPath).Err()
+			return "", errors.Fmt("resolving %q: %w", absPath, err)
 		}
 	}
 	return absPath, nil
@@ -561,10 +561,10 @@ func readyToFinalize(ctx context.Context, finalBuild *bbpb.Build, fatalErr error
 
 	var finalErrs errors.MultiError
 	if fatalErr != nil {
-		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
+		finalErrs = append(finalErrs, errors.Fmt("fatal error in buildbucket.UpdateBuild: %w", fatalErr))
 	}
 	if err := outputFile.Write(finalBuild); err != nil {
-		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
+		finalErrs = append(finalErrs, errors.Fmt("writing final build: %w", err))
 	}
 
 	if len(finalErrs) > 0 {

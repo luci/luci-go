@@ -218,7 +218,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir, cacheB
 	switch ver, err := cipdVersion.GetStartupVersion(); {
 	case err != nil:
 		// If the binary is not installed via CIPD, err == nil && ver.InstanceID == "".
-		return errors.Annotate(err, "Failed to get the current executable startup version").Err()
+		return errors.Fmt("Failed to get the current executable startup version: %w", err)
 	default:
 		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", ver.PackageName, ver.InstanceID)
 	}
@@ -271,7 +271,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir, cacheB
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err, "Failed to run cipd ensure command").Err()
+		return errors.Fmt("Failed to run cipd ensure command: %w", err)
 	}
 
 	resultsFile, err := os.Open(resultsFilePath)
