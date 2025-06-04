@@ -139,8 +139,8 @@ func (r *Registry) register(o registerOptions, namespace string, reg registratio
 	}
 
 	if cur, ok := r.regs[namespace]; ok {
-		return errors.Reason("Registry.register: Namespace %q was already registered at %s:%d",
-			namespace, cur.file, cur.line).Err()
+		return errors.Fmt("Registry.register: Namespace %q was already registered at %s:%d",
+			namespace, cur.file, cur.line)
 	}
 
 	// Check to see if any existing registrations conflict with the new
@@ -151,9 +151,8 @@ func (r *Registry) register(o registerOptions, namespace string, reg registratio
 		// Registering top-level namespace? Check all other registrations.
 		for ns, otherReg := range r.regs {
 			if r.topLevelFields.Has(ns) {
-				return errors.Reason(
-					"Registry.register: cannot register top-level property namespace - existing entry for %q registered at %s:%d",
-					ns, otherReg.file, otherReg.line).Err()
+				return errors.Fmt("Registry.register: cannot register top-level property namespace - existing entry for %q registered at %s:%d",
+					ns, otherReg.file, otherReg.line)
 			}
 		}
 	} else {
@@ -162,9 +161,8 @@ func (r *Registry) register(o registerOptions, namespace string, reg registratio
 		if r.topLevelFields != nil {
 			if r.topLevelFields.Has(namespace) {
 				topLevel := r.regs[""]
-				return errors.Reason(
-					"Registry.register: cannot register namespace %q - top-level property namespace registered at %s:%d has conflicting field",
-					namespace, topLevel.file, topLevel.line).Err()
+				return errors.Fmt("Registry.register: cannot register namespace %q - top-level property namespace registered at %s:%d has conflicting field",
+					namespace, topLevel.file, topLevel.line)
 			}
 		}
 	}

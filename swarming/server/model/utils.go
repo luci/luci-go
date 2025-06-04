@@ -37,7 +37,7 @@ func checkIsHex(s string, minLen int) error {
 	}
 	for _, c := range s {
 		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-			return errors.Reason("bad lowercase hex string %q, wrong char %c", s, c).Err()
+			return errors.Fmt("bad lowercase hex string %q, wrong char %c", s, c)
 		}
 	}
 	return nil

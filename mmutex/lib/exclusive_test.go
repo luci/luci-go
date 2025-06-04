@@ -53,7 +53,7 @@ func TestExclusive(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run("returns error from the command", func(t *ftt.Test) {
-			assert.Loosely(t, RunExclusive(ctx, env, fnThatReturns(errors.Reason("test error").Err())), should.ErrLike("test error"))
+			assert.Loosely(t, RunExclusive(ctx, env, fnThatReturns(errors.New("test error"))), should.ErrLike("test error"))
 		})
 
 		t.Run("times out if exclusive lock isn't released", func(t *ftt.Test) {

@@ -28,5 +28,5 @@ import (
 )
 
 func runProxyImpl(context.Context, string, *proxypb.Policy, *http.Client) (*proxyserver.ProxyStats, error) {
-	return nil, errors.Reason("cipd proxy is not implemented on Windows").Err()
+	return nil, errors.New("cipd proxy is not implemented on Windows")
 }

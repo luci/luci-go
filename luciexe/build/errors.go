@@ -47,7 +47,7 @@ var statusTag = errtag.Make("build Status", (*buildStatus)(nil))
 // This is a no-op if the error is nil.
 func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) error {
 	if !protoutil.IsEnded(status) {
-		panic(errors.Reason("AttachStatus cannot be used with non-terminal status %q", status).Err())
+		panic(errors.Fmt("AttachStatus cannot be used with non-terminal status %q", status))
 	}
 	if err == nil {
 		return nil

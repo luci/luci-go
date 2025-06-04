@@ -131,13 +131,13 @@ func OptRejectUnknownFields() RegisterOption {
 func OptStrictTopLevelFields() RegisterOption {
 	return func(opts *registerOptions, namespace string, inT, outT reflect.Type) error {
 		if namespace != "" {
-			return errors.Reason(`OptStrictTopLevelFields is not compatible with namespace %q`, namespace).Err()
+			return errors.Fmt(`OptStrictTopLevelFields is not compatible with namespace %q`, namespace)
 		}
 		if inT == nil {
 			return errors.New(`OptStrictTopLevelFields is not compatible with output-only properties`)
 		}
 		if inT.Kind() == reflect.Map {
-			return errors.Reason(`OptStrictTopLevelFields is not compatible with type %s`, inT).Err()
+			return errors.Fmt(`OptStrictTopLevelFields is not compatible with type %s`, inT)
 		}
 		opts.strictTopLevel = true
 		return OptRejectUnknownFields()(opts, namespace, inT, outT)
@@ -167,7 +167,7 @@ func OptProtoUseJSONNames() RegisterOption {
 			return errors.New("OptProtoUseJSONNames is not compatible with input-only properties")
 		}
 		if !outT.Implements(protoMessageType) {
-			return errors.Reason("OptProtoUseJSONNames is not compatible with non-proto type %s", outT).Err()
+			return errors.Fmt("OptProtoUseJSONNames is not compatible with non-proto type %s", outT)
 		}
 		opts.protoUseJSONNames = true
 		return nil
@@ -185,7 +185,7 @@ func OptJSONUseNumber() RegisterOption {
 			return errors.New("OptJSONUseNumber is not compatible with output-only properties")
 		}
 		if inT.Implements(protoMessageType) {
-			return errors.Reason("OptJSONUseNumber is not compatible with proto %s", inT).Err()
+			return errors.Fmt("OptJSONUseNumber is not compatible with proto %s", inT)
 		}
 		opts.jsonUseNumber = true
 		return nil

@@ -86,9 +86,8 @@ func (c *Checker) conflicts(parentOwnedNode *Checker, merr *errors.MultiError) {
 	// Multiple owners tried to claim this directory. In this case there's no
 	// discernible owner for subdirectories, so return immediately.
 	if len(myOwners) > 1 {
-		merr.MaybeAdd(
-			errors.Reason("%q: directory has conflicting owners: %s",
-				c.fullPath, strings.Join(c.descriptions(), " and ")).Err())
+		merr.MaybeAdd(errors.Fmt("%q: directory has conflicting owners: %s",
+			c.fullPath, strings.Join(c.descriptions(), " and ")))
 		return
 	}
 
@@ -101,10 +100,9 @@ func (c *Checker) conflicts(parentOwnedNode *Checker, merr *errors.MultiError) {
 			if myOwner != parentOwnedNode.owner() {
 				// We found a conflict; there's no discernible owner for
 				// subdirectories, so return immediately.
-				merr.MaybeAdd(
-					errors.Reason("%s uses %q, which conflicts with %s using %q",
-						c.describeOne(), c.fullPath, parentOwnedNode.describeOne(),
-						parentOwnedNode.fullPath).Err())
+				merr.MaybeAdd(errors.Fmt("%s uses %q, which conflicts with %s using %q",
+					c.describeOne(), c.fullPath, parentOwnedNode.describeOne(),
+					parentOwnedNode.fullPath))
 				return
 			}
 		} else {

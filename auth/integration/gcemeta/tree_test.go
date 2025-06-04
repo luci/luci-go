@@ -53,7 +53,7 @@ func TestTree(t *testing.T) {
 			return nil, statusTag.ApplyValue(errors.New("boom"), http.StatusNotFound)
 		}),
 		"transient": fast(func(context.Context, url.Values) (any, error) {
-			return nil, errors.Reason("boom").Err()
+			return nil, errors.New("boom")
 		}),
 	})
 

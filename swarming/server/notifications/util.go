@@ -30,7 +30,7 @@ var (
 func parsePubSubTopicName(topic string) (string, string, error) {
 	matches := topicNameRE.FindAllStringSubmatch(topic, -1)
 	if matches == nil || len(matches[0]) != 3 {
-		return "", "", errors.Reason("topic %q does not match %q", topic, topicNameRE).Err()
+		return "", "", errors.Fmt("topic %q does not match %q", topic, topicNameRE)
 	}
 
 	return matches[0][1], matches[0][2], nil

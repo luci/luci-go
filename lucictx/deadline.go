@@ -153,7 +153,7 @@ var softDeadlineKey = "holds <-chan DeadlineEvent"
 // state.
 func TrackSoftDeadline(ctx context.Context, reserveGracePeriod time.Duration) (newCtx context.Context, shutdown func()) {
 	if reserveGracePeriod < 0 {
-		panic(errors.Reason("reserveGracePeriod(%d) < 0", reserveGracePeriod).Err())
+		panic(errors.Fmt("reserveGracePeriod(%d) < 0", reserveGracePeriod))
 	}
 
 	d := GetDeadline(ctx)
@@ -181,8 +181,7 @@ func TrackSoftDeadline(ctx context.Context, reserveGracePeriod time.Duration) (n
 	if reserveGracePeriod > 0 {
 		adjustedGrace -= reserveGracePeriod
 		if adjustedGrace < 0 {
-			panic(errors.Reason(
-				"reserveGracePeriod(%s) > gracePeriod(%s)", reserveGracePeriod, d.GracePeriodDuration()).Err())
+			panic(errors.Fmt("reserveGracePeriod(%s) > gracePeriod(%s)", reserveGracePeriod, d.GracePeriodDuration()))
 		}
 		d.GracePeriod = adjustedGrace.Seconds()
 		needSet = true

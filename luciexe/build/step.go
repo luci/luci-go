@@ -156,7 +156,7 @@ func (s *Step) StartStep(ctx context.Context, name string) (*Step, context.Conte
 // documented behaviors around changes to the returned context.
 func (s *Step) ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 	if strings.Contains(name, "|") {
-		panic(errors.Reason("step name %q contains reserved character `|`", name).Err())
+		panic(errors.Fmt("step name %q contains reserved character `|`", name))
 	}
 
 	ctx, ctxCloser := context.WithCancel(ctx)
@@ -411,7 +411,7 @@ func (s *Step) mutate(cb func() bool) {
 		s.stepPbMu.Lock()
 		defer s.stepPbMu.Unlock()
 		if protoutil.IsEnded(s.stepPb.Status) {
-			panic(errors.Reason("cannot mutate ended step %q", s.stepPb.Name).Err())
+			panic(errors.Fmt("cannot mutate ended step %q", s.stepPb.Name))
 		}
 
 		modified := false

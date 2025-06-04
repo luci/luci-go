@@ -144,8 +144,7 @@ func (s *State) Serialize() (ret *structpb.Struct, startVers int64, consistent b
 			continue
 		}
 		if _, ok := ret.Fields[ns]; ok {
-			err = errors.Reason(
-				"properties.State.Serialize: top-level namespace property %q overlaps with registered namespace.", ns).Err()
+			err = errors.Fmt("properties.State.Serialize: top-level namespace property %q overlaps with registered namespace.", ns)
 			return
 		}
 

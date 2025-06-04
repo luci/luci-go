@@ -113,7 +113,7 @@ func TestErrLogger(t *testing.T) {
 			ServiceContext: svcCtx,
 		}, reqCtx))
 
-		errors.Log(ctx, errors.Reason("Error reason").Err())
+		errors.Log(ctx, errors.New("Error reason"))
 
 		assert.That(t, lastReport.Message, should.Equal("error: Error reason"))
 		assert.That(t, lastReport.Stack, should.MatchRegexp(`errlogger_test.go\:116`))

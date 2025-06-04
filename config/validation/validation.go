@@ -130,7 +130,7 @@ var SeverityTag = errtag.Make("holds the severity", Blocking)
 
 // Errorf records the given format string and args as a blocking validation error.
 func (v *Context) Errorf(format string, args ...any) {
-	v.record(Blocking, errors.Reason(format, args...).Err())
+	v.record(Blocking, errors.Fmt(format, args...))
 }
 
 // Error records the given error as a blocking validation error.
@@ -145,7 +145,7 @@ func (v *Context) HasPendingErrors() bool {
 
 // Warningf records the given format string and args as a validation warning.
 func (v *Context) Warningf(format string, args ...any) {
-	v.record(Warning, errors.Reason(format, args...).Err())
+	v.record(Warning, errors.Fmt(format, args...))
 }
 
 // Warning records the given error as a validation warning.

@@ -56,5 +56,5 @@ func (h chainHandler) Handle(ctx context.Context, c challenge) (*proposalReply, 
 		}
 		return h.Handle(ctx, c)
 	}
-	return nil, errors.Reason("chainHandler: no handlers reported available").Err()
+	return nil, errors.New("chainHandler: no handlers reported available")
 }

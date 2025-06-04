@@ -58,7 +58,7 @@ func (c configSet) id() string {
 
 func (c configSet) validate() error {
 	if !c.hasPrefix("projects/") && !c.hasPrefix("services/") {
-		return errors.Reason("configSet.validate: bad prefix %q", c.s()).Err()
+		return errors.Fmt("configSet.validate: bad prefix %q", c.s())
 	}
 	return nil
 }

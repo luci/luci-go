@@ -41,17 +41,17 @@ func (s *MiloInternalService) ProxyGitilesLog(ctx context.Context, req *milopb.P
 
 func validateProxyGitilesLogRequest(req *milopb.ProxyGitilesLogRequest) error {
 	if req.GetHost() == "" {
-		return errors.Reason("host is required").Err()
+		return errors.New("host is required")
 	}
 	if !strings.HasSuffix(req.Host, ".googlesource.com") {
-		return errors.Reason("host must be a subdomain of .googlesource.com").Err()
+		return errors.New("host must be a subdomain of .googlesource.com")
 	}
 
 	// We only validate that the request is defined.
 	//
 	// Field validation is delegated to the actual gitiles service implementation.
 	if req.Request == nil {
-		return errors.Reason("request is required").Err()
+		return errors.New("request is required")
 	}
 
 	return nil
