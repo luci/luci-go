@@ -108,11 +108,11 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 		return r, nil
 	}
 	if !errors.Is(err, ErrResultMissing) {
-		return nil, errors.Annotate(err, "check Gerrit ReAuth").Err()
+		return nil, errors.Fmt("check Gerrit ReAuth: %w", err)
 	}
 	r, err = checkProjectReAuth(ctx, c.client, host, project)
 	if err != nil {
-		return nil, errors.Annotate(err, "check Gerrit ReAuth").Err()
+		return nil, errors.Fmt("check Gerrit ReAuth: %w", err)
 	}
 	if err := c.cache.Put(ctx, r); err != nil {
 		logging.Warningf(ctx, "Error caching ReAuth check result: %s", err)
@@ -254,7 +254,7 @@ func (c *DiskResultCache) read(ctx context.Context) (*resultStore, error) {
 func (c *DiskResultCache) write(ctx context.Context, s *resultStore) (err error) {
 	f, err := c.createCacheTemp()
 	if err != nil {
-		return errors.Annotate(err, "DiskResultCache.write").Err()
+		return errors.Fmt("DiskResultCache.write: %w", err)
 	}
 	defer f.Close() //nolint:errcheck
 	moved := false
@@ -268,13 +268,13 @@ func (c *DiskResultCache) write(ctx context.Context, s *resultStore) (err error)
 
 	e := json.NewEncoder(f)
 	if err := e.Encode(s); err != nil {
-		return errors.Annotate(err, "DiskResultCache.write").Err()
+		return errors.Fmt("DiskResultCache.write: %w", err)
 	}
 	if err := f.Close(); err != nil {
-		return errors.Annotate(err, "DiskResultCache.write").Err()
+		return errors.Fmt("DiskResultCache.write: %w", err)
 	}
 	if err := os.Rename(f.Name(), c.cacheFile()); err != nil {
-		return errors.Annotate(err, "DiskResultCache.write").Err()
+		return errors.Fmt("DiskResultCache.write: %w", err)
 	}
 	moved = true
 	return nil
@@ -285,7 +285,7 @@ func (c *DiskResultCache) GetForProject(ctx context.Context, host, project strin
 	defer c.lock.Unlock()
 	store, err := c.read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "DiskResultCache.GetForProject").Err()
+		return nil, errors.Fmt("DiskResultCache.GetForProject: %w", err)
 	}
 	for _, r := range reverse(store.Entries) {
 		if r.Host == host && r.Project == project && !c.expired(ctx, r) {
@@ -301,7 +301,7 @@ func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	defer c.lock.Unlock()
 	s, err := c.read(ctx)
 	if err != nil {
-		return errors.Annotate(err, "DiskResultCache.Put").Err()
+		return errors.Fmt("DiskResultCache.Put: %w", err)
 	}
 	now := clock.Now(ctx)
 	cr := &cachedResult{
@@ -314,7 +314,7 @@ func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	cr.HasValidRAPT = false
 	s.Entries = append(s.Entries, cr)
 	if err := c.write(ctx, s); err != nil {
-		return errors.Annotate(err, "DiskResultCache.Put").Err()
+		return errors.Fmt("DiskResultCache.Put: %w", err)
 	}
 	return nil
 }
