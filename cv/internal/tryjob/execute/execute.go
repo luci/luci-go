@@ -128,7 +128,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	case innerErr != nil:
 		return innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to commit transaction: %w", err))
 	default:
 		return nil
 	}

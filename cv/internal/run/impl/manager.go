@@ -219,7 +219,7 @@ func (rp *runProcessor) LoadState(ctx context.Context) (eventbox.State, eventbox
 	case err == datastore.ErrNoSuchEntity:
 		return nil, 0, errRunMissing
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to get Run %q", rp.runID).Tag(transient.Tag).Err()
+		return nil, 0, transient.Tag.Apply(errors.Fmt("failed to get Run %q: %w", rp.runID, err))
 	}
 	rs := &state.RunState{Run: r}
 	return rs, eventbox.EVersion(r.EVersion), nil
@@ -252,7 +252,7 @@ func (rp *runProcessor) PrepareMutation(ctx context.Context, events eventbox.Eve
 func (rp *runProcessor) FetchEVersion(ctx context.Context) (eventbox.EVersion, error) {
 	r := &run.Run{ID: rp.runID}
 	if err := datastore.Get(ctx, r); err != nil {
-		return 0, errors.Annotate(err, "failed to get %q", rp.runID).Tag(transient.Tag).Err()
+		return 0, transient.Tag.Apply(errors.Fmt("failed to get %q: %w", rp.runID, err))
 	}
 	return eventbox.EVersion(r.EVersion), nil
 }
@@ -271,7 +271,7 @@ func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eve
 		return err
 	}
 	if err := datastore.Put(ctx, &r); err != nil {
-		return errors.Annotate(err, "failed to put Run %q", r.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to put Run %q: %w", r.ID, err))
 	}
 
 	if len(rs.LogEntries) > 0 {
@@ -281,7 +281,7 @@ func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eve
 			Entries: &run.LogEntries{Entries: rs.LogEntries},
 		}
 		if err := datastore.Put(ctx, &l); err != nil {
-			return errors.Annotate(err, "failed to put RunLog %q", r.ID).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to put RunLog %q: %w", r.ID, err))
 		}
 	}
 	return nil

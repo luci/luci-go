@@ -182,7 +182,7 @@ func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.Ti
 			lastNonDeadlineErr = err
 			fallthrough
 		default:
-			return errors.Annotate(err, "failed to check if message was already posted").Err()
+			return errors.Fmt("failed to check if message was already posted: %w", err)
 		}
 		switch err = util.MutateGerritCL(ctx, op.GFactory, rcl, req, 2*time.Minute, "post-start-message"); {
 		case err == nil:
@@ -248,7 +248,7 @@ func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetRev
 	}
 	msg, err := botdata.Append(humanMsg, bd)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to generate the starting message").Err()
+		return nil, errors.Fmt("failed to generate the starting message: %w", err)
 	}
 	return &gerritpb.SetReviewRequest{
 		Project:                          rcl.Detail.GetGerrit().GetInfo().GetProject(),

@@ -47,9 +47,9 @@ func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 		// for the user.
 		return fmt.Sprintf("run quota limit is not specified for user %q", exe.Run.BilledTo.Email()), nil
 	case err == quota.ErrQuotaApply:
-		return "", errors.Annotate(err, "QM.CreditRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
+		return "", transient.Tag.Apply(errors.Fmt("QM.CreditRunQuota: unexpected quotaOp Status %s: %w", quotaOp.GetStatus(), err))
 	case err != nil:
-		return "", errors.Annotate(err, "QM.CreditRunQuota").Tag(transient.Tag).Err()
+		return "", transient.Tag.Apply(errors.Fmt("QM.CreditRunQuota: %w", err))
 	}
 
 	switch nextRun, err := exe.pickNextRunToStart(ctx); {
@@ -57,7 +57,7 @@ func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 		return "", err
 	case nextRun != nil:
 		if err := exe.RM.Start(ctx, nextRun.ID); err != nil {
-			return "", errors.Annotate(err, "failed to notify run %q to start", nextRun.ID).Tag(transient.Tag).Err()
+			return "", transient.Tag.Apply(errors.Fmt("failed to notify run %q to start: %w", nextRun.ID, err))
 		}
 		return fmt.Sprintf("notified next Run %q to start", nextRun.ID), nil
 	}
@@ -131,7 +131,7 @@ func hasNoPendingDepRun(ctx context.Context, r *run.Run, knownPendingRuns common
 		depRuns[i] = &run.Run{ID: depRunID}
 	}
 	if err := datastore.Get(ctx, depRuns); err != nil {
-		return false, errors.Annotate(err, "failed to load depRuns %s", r.DepRuns).Tag(transient.Tag).Err()
+		return false, transient.Tag.Apply(errors.Fmt("failed to load depRuns %s: %w", r.DepRuns, err))
 	}
 	for _, depRun := range depRuns {
 		switch depRun.Status {

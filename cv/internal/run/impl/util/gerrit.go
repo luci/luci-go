@@ -58,9 +58,9 @@ func IsActionTakenOnGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.Ru
 	cl := changelist.CL{ID: rcl.ID}
 	switch err := datastore.Get(ctx, &cl); {
 	case err == datastore.ErrNoSuchEntity:
-		return time.Time{}, errors.Annotate(err, "CL no longer exists").Err()
+		return time.Time{}, errors.Fmt("CL no longer exists: %w", err)
 	case err != nil:
-		return time.Time{}, errors.Annotate(err, "failed to load CL").Tag(transient.Tag).Err()
+		return time.Time{}, transient.Tag.Apply(errors.Fmt("failed to load CL: %w", err))
 	}
 
 	switch actionTime := evalFn(rcl, cl.Snapshot.GetGerrit().GetInfo()); {
@@ -101,7 +101,7 @@ func IsActionTakenOnGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.Ru
 	})
 	switch {
 	case err != nil:
-		return time.Time{}, errors.Annotate(err, "failed to get the latest Gerrit ChangeInfo").Err()
+		return time.Time{}, errors.Fmt("failed to get the latest Gerrit ChangeInfo: %w", err)
 	case outerErr != nil:
 		// Shouldn't happen, unless Mirror iterate itself errors out for some
 		// reason.
@@ -148,7 +148,7 @@ func MutateGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.RunCL, req 
 	})
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to call Gerrit.SetReview").Err()
+		return errors.Fmt("failed to call Gerrit.SetReview: %w", err)
 	case outerErr != nil:
 		// Shouldn't happen, unless MirrorIterator itself errors out for some
 		// reason.

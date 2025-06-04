@@ -84,7 +84,8 @@ func NewSubmitter(ctx context.Context, runID common.RunID, submission *run.Submi
 
 // ErrTransientSubmissionFailure indicates that the submission has failed
 // transiently and the same task should be retried.
-var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
+var ErrTransientSubmissionFailure = transient.Tag.Apply(
+	errors.New("submission failed transiently"))
 
 // Submit tries to incrementally submits all CLs within deadline.
 //
@@ -152,7 +153,7 @@ func (s RunCLsSubmitter) endSubmission(ctx context.Context, sc *eventpb.Submissi
 	case innerErr != nil:
 		return innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to release submit queue and notify RM").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to release submit queue and notify RM: %w", err))
 	}
 	return s.rm.Invoke(ctx, s.runID, time.Time{})
 }

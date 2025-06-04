@@ -212,7 +212,7 @@ func (rs *RunState) CheckTree(ctx context.Context, treeFactory tree.ClientFactor
 // mutation.
 func (rs *RunState) EnqueueLongOp(op *run.OngoingLongOps_Op) string {
 	if err := validateLongOp(op); err != nil {
-		panic(errors.Annotate(err, "validateLongOp").Err())
+		panic(errors.Fmt("validateLongOp: %w", err))
 	}
 	// Find an ID which wasn't used yet.
 	// Use future EVersion as a prefix to ensure resulting ID is unique over Run's
@@ -249,7 +249,7 @@ func validateLongOp(op *run.OngoingLongOps_Op) error {
 		return errors.New("work is required")
 	case op.GetResetTriggers() != nil:
 		if st := op.GetResetTriggers().GetRunStatusIfSucceeded(); !run.IsEnded(st) {
-			return errors.Reason("expect terminal run status; got %s", st).Err()
+			return errors.Fmt("expect terminal run status; got %s", st)
 		}
 	}
 	return nil

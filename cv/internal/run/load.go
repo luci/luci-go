@@ -67,7 +67,7 @@ func LoadRun(ctx context.Context, id common.RunID, checkers ...LoadRunChecker) (
 	case err == datastore.ErrNoSuchEntity:
 		r = nil
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Run: %w", err))
 	}
 
 	if err := checker.After(ctx, r); err != nil {
@@ -250,13 +250,13 @@ func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]
 	case ok:
 		for i, err := range merr {
 			if err == datastore.ErrNoSuchEntity {
-				return nil, errors.Reason("RunCL %d not found in Datastore", runCLs[i].ID).Err()
+				return nil, errors.Fmt("RunCL %d not found in Datastore", runCLs[i].ID)
 			}
 		}
 		count, err := merr.Summary()
 		return nil, transient.Tag.Apply(errors.WrapIf(err, "failed to load %d out of %d RunCLs", count, len(runCLs)))
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to load %d RunCLs", len(runCLs)).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load %d RunCLs: %w", len(runCLs), err))
 	}
 	return runCLs, nil
 }
@@ -273,7 +273,7 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
 	q := datastore.NewQuery(RunLogKind).KeysOnly(true).Ancestor(runKey)
 	if err := datastore.GetAll(ctx, q, &keys); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch keys of RunLog entities").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch keys of RunLog entities: %w", err))
 	}
 
 	entities := make([]*RunLog, len(keys))
@@ -303,7 +303,7 @@ func LoadChildRuns(ctx context.Context, runID common.RunID) ([]*Run, error) {
 	q := datastore.NewQuery(common.RunKind).Eq("DepRuns", runID)
 	var runs []*Run
 	if err := datastore.GetAll(ctx, q, &runs); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch dependency Run entities").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch dependency Run entities: %w", err))
 	}
 	return runs, nil
 }

@@ -237,7 +237,7 @@ func (n *Notifier) Send(ctx context.Context, runID common.RunID, evt *eventpb.Ev
 func (n *Notifier) sendWithoutDispatch(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	value, err := proto.Marshal(evt)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal").Err()
+		return errors.Fmt("failed to marshal: %w", err)
 	}
 	return eventbox.Emit(ctx, value, EventboxRecipient(ctx, runID))
 }

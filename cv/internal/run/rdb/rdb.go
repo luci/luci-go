@@ -78,9 +78,9 @@ func (rc *RecorderClient) MarkInvocationSubmitted(ctx context.Context, invocatio
 		// or we do not have permission so we avoid retries.
 		switch s.Code() {
 		case codes.PermissionDenied, codes.InvalidArgument:
-			return errors.Annotate(err, "failed to mark %s submitted", invocation).Err()
+			return errors.Fmt("failed to mark %s submitted: %w", invocation, err)
 		default:
-			return errors.Annotate(err, "failed to mark %s submitted", invocation).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to mark %s submitted: %w", invocation, err))
 		}
 	}
 

@@ -80,7 +80,7 @@ func MarkInvocationSubmitted(ctx context.Context, clientFactory RecorderClientFa
 		logging.Warningf(ctx, "run %s not exist to mark invocation submitted", id)
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch Run").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch Run: %w", err))
 	}
 
 	retryFactory := transient.Only(func() retry.Iterator {
@@ -110,7 +110,7 @@ func MarkInvocationSubmitted(ctx context.Context, clientFactory RecorderClientFa
 						}
 
 						if err := client.MarkInvocationSubmitted(ctx, rdb.GetInvocation()); err != nil {
-							return errors.Annotate(err, "failed to mark invocation submitted").Err()
+							return errors.Fmt("failed to mark invocation submitted: %w", err)
 						}
 
 						return nil

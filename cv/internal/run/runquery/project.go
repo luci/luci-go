@@ -166,7 +166,7 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 
 	if b.Status != run.Status_ENDED_MASK {
 		if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Runs IDs: %w", err))
 		}
 		return keys, nil
 	}
@@ -186,7 +186,7 @@ func (b ProjectQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Ke
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch Runs IDs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch Runs IDs: %w", err))
 	}
 	return keys, err
 }

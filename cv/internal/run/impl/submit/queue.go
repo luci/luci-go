@@ -73,7 +73,7 @@ func (q *queue) nextSubmissionETA(now time.Time) time.Time {
 func DeleteQueue(ctx context.Context, luciProject string) error {
 	q := &queue{ID: luciProject}
 	if err := datastore.Delete(ctx, q); err != nil {
-		return errors.Annotate(err, "failed to delete SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to delete SubmitQueue %q: %w", q.ID, err))
 	}
 	return nil
 }
@@ -82,9 +82,9 @@ func loadQueue(ctx context.Context, luciProject string) (*queue, error) {
 	q := &queue{ID: luciProject}
 	switch err := datastore.Get(ctx, q); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Reason("SubmitQueue %q doesn't exist", q.ID).Err()
+		return nil, errors.Fmt("SubmitQueue %q doesn't exist", q.ID)
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to load SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to load SubmitQueue %q: %w", q.ID, err))
 	}
 	return q, nil
 }
@@ -129,7 +129,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 	case err == datastore.ErrNoSuchEntity:
 		shouldSave = true
 	case err != nil:
-		return false, errors.Annotate(err, "failed to load SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
+		return false, transient.Tag.Apply(errors.Fmt("failed to load SubmitQueue %q: %w", q.ID, err))
 	}
 	if !proto.Equal(q.Opts, opts) {
 		q.Opts = opts
@@ -169,7 +169,7 @@ func tryAcquire(ctx context.Context, notifyFn NotifyFn, runID common.RunID, opts
 
 	if shouldSave {
 		if err := datastore.Put(ctx, q); err != nil {
-			return false, errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
+			return false, transient.Tag.Apply(errors.Fmt("failed to put SubmitQueue %q: %w", q.ID, err))
 		}
 	}
 	return waitlisted, nil
@@ -241,7 +241,7 @@ func release(ctx context.Context, notifyFn NotifyFn, runID common.RunID, submitt
 	}
 
 	if err := datastore.Put(ctx, q); err != nil {
-		return errors.Annotate(err, "failed to put SubmitQueue %q", q.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to put SubmitQueue %q: %w", q.ID, err))
 	}
 
 	if q.Current == "" && len(q.Waitlist) > 0 {

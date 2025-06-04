@@ -85,7 +85,7 @@ func (w *worker) queryForCandidates(ctx context.Context, reuseKey string, defini
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to query for reusable tryjobs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to query for reusable tryjobs: %w", err))
 	}
 	return candidates, nil
 }
@@ -139,7 +139,7 @@ func (w *worker) addCurrentRunToReuse(ctx context.Context, tjIDs common.TryjobID
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit transaction: %w", err))
 	}
 	return tryjobs, nil
 }

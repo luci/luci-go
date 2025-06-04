@@ -181,7 +181,7 @@ func (rb *Creator) Create(ctx context.Context, clMutator *changelist.Mutator, pm
 	case innerErr != nil:
 		err = innerErr
 	case err != nil:
-		err = errors.Annotate(err, "failed to create a Run").Tag(transient.Tag).Err()
+		err = transient.Tag.Apply(errors.Fmt("failed to create a Run: %w", err))
 	default:
 		logging.Debugf(ctx, "Created Run %q with %d CLs", ret.ID, len(ret.CLs))
 		return ret, nil
@@ -241,12 +241,12 @@ func (rb *Creator) prepare(now time.Time) {
 		case rb.RootCL.ID != 0 && cl.ID == rb.RootCL.ID && cl.TriggerInfo == nil:
 			panic(errors.New("root cl trigger info is required"))
 		case allCLIDs.Has(cl.ID):
-			panic(errors.Reason("duplicate input CL ID %d", cl.ID).Err())
+			panic(errors.Fmt("duplicate input CL ID %d", cl.ID))
 		}
 		allCLIDs.Add(cl.ID)
 	}
 	if rb.RootCL.ID != 0 && !allCLIDs.Has(rb.RootCL.ID) {
-		panic(errors.Reason("root CL %d is missing in the input CLs", rb.RootCL.ID).Err())
+		panic(errors.Fmt("root CL %d is missing in the input CLs", rb.RootCL.ID))
 	}
 	if rb.CreateTime.IsZero() {
 		rb.CreateTime = now
@@ -295,7 +295,7 @@ func (rb *Creator) checkRunExists(ctx context.Context) {
 			// Run doesn't exist, which is expected.
 			return nil
 		case err != nil:
-			return errors.Annotate(err, "failed to load Run entity").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load Run entity: %w", err))
 
 		case rb.run.CreationOperationID == rb.OperationID:
 			// This is quite likely if the prior transaction attempt actually succeeds
@@ -304,7 +304,7 @@ func (rb *Creator) checkRunExists(ctx context.Context) {
 			logging.Debugf(ctx, "Run(ID:%s) already created by us", rb.runID)
 			return errAlreadyCreated
 		default:
-			return errors.Reason("Run %q already created with OperationID %q", rb.runID, rb.run.CreationOperationID).Err()
+			return errors.Fmt("Run %q already created with OperationID %q", rb.runID, rb.run.CreationOperationID)
 		}
 	})
 }
@@ -318,11 +318,11 @@ func (rb *Creator) checkProjectState(ctx context.Context) {
 	rb.dsBatcher.register(ps, func(err error) error {
 		switch {
 		case err == datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to load ProjectStateOffload").Err()
+			return errors.Fmt("failed to load ProjectStateOffload: %w", err)
 		case err != nil:
-			return errors.Annotate(err, "failed to load ProjectStateOffload").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to load ProjectStateOffload: %w", err))
 		case ps.Status != prjpb.Status_STARTED:
-			return errors.Reason("project %q status is %s, expected STARTED", rb.LUCIProject, ps.Status.String()).Tag(StateChangedTag).Err()
+			return StateChangedTag.Apply(errors.Fmt("project %q status is %s, expected STARTED", rb.LUCIProject, ps.Status.String()))
 		case ps.ConfigHash != rb.ConfigGroupID.Hash():
 			// This mismatch may be due to one of two reasons:
 			//   - A config change and the Run creation(s) occurred close
@@ -336,7 +336,7 @@ func (rb *Creator) checkProjectState(ctx context.Context) {
 			// task; otherwise, the config change and the run creations will be
 			// persisted in the same transaction.
 			if clock.Since(ctx, ps.UpdateTime) < time.Minute {
-				return errors.Reason("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()).Tag(StateChangedTag).Err()
+				return StateChangedTag.Apply(errors.Fmt("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()))
 			}
 			fallthrough
 		default:
@@ -356,15 +356,15 @@ func (rb *Creator) checkCLsUnchanged(ctx context.Context) {
 		rb.dsBatcher.register(rb.cls[i], func(err error) error {
 			switch {
 			case err == datastore.ErrNoSuchEntity:
-				return errors.Annotate(err, "CL %d doesn't exist", id).Err()
+				return errors.Fmt("CL %d doesn't exist: %w", id, err)
 			case err != nil:
-				return errors.Annotate(err, "failed to load CL %d", id).Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to load CL %d: %w", id, err))
 			case rb.cls[i].EVersion != expected:
-				return errors.Reason("CL %d changed since EVersion %d", id, expected).Tag(StateChangedTag).Err()
+				return StateChangedTag.Apply(errors.Fmt("CL %d changed since EVersion %d", id, expected))
 			}
 			diff := rb.cls[i].IncompleteRuns.DifferenceSorted(rb.ExpectedIncompleteRunIDs)
 			if len(diff) > 0 {
-				return errors.Reason("CL %d has unexpected incomplete runs: %v", id, diff).Tag(StateChangedTag).Err()
+				return StateChangedTag.Apply(errors.Fmt("CL %d has unexpected incomplete runs: %v", id, diff))
 			}
 			return nil
 		})
@@ -439,7 +439,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 		DepRuns:        rb.DepRuns,
 	}
 	if err := datastore.Put(ctx, rb.run); err != nil {
-		return errors.Annotate(err, "failed to save Run").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to save Run: %w", err))
 	}
 	return nil
 }
@@ -462,7 +462,7 @@ func (rb *Creator) saveRunLog(ctx context.Context) error {
 		},
 	}
 	if err := datastore.Put(ctx, &l); err != nil {
-		return errors.Annotate(err, "failed to save RunLog").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to save RunLog: %w", err))
 	}
 	return nil
 }
@@ -478,7 +478,7 @@ func (rb *Creator) saveRunCL(ctx context.Context, index int) error {
 		Detail:     rb.cls[index].Snapshot,
 	}
 	if err := datastore.Put(ctx, entity); err != nil {
-		return errors.Annotate(err, "failed to save RunCL %d", inputCL.ID).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to save RunCL %d: %w", inputCL.ID, err))
 	}
 	return nil
 }

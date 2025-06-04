@@ -155,7 +155,8 @@ func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, er
 	// Fetch RunCL keys.
 	var keys []*datastore.Key
 	if err := datastore.GetAll(ctx, b.BuildKeysOnly(ctx), &keys); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch RunCLs IDs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to fetch RunCLs IDs: %w", err))
 	}
 
 	// Replace each RunCL key with its parent (Run) key.

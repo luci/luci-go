@@ -40,7 +40,7 @@ type ExternalID string
 // https://ci.chromium.org/ui/p/infra/builders/try/infra-try-bionic-64/b8839722009404151168/overview
 func BuildbucketID(host string, build int64) (ExternalID, error) {
 	if strings.ContainsRune(host, '/') {
-		return "", errors.Reason("invalid host %q: must not contain /", host).Err()
+		return "", errors.Fmt("invalid host %q: must not contain /", host)
 	}
 	return ExternalID(fmt.Sprintf("buildbucket/%s/%d", host, build)), nil
 }
@@ -59,13 +59,13 @@ func MustBuildbucketID(host string, build int64) ExternalID {
 func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 	parts := strings.Split(string(e), "/")
 	if len(parts) != 3 || parts[0] != "buildbucket" {
-		err = errors.Reason("%q is not a valid BuildbucketID", e).Err()
+		err = errors.Fmt("%q is not a valid BuildbucketID", e)
 		return
 	}
 	host = parts[1]
 	build, err = strconv.ParseInt(parts[2], 10, 64)
 	if err != nil {
-		err = errors.Annotate(err, "%q is not a valid BuildbucketID", e).Err()
+		err = errors.Fmt("%q is not a valid BuildbucketID: %w", e, err)
 	}
 	return
 }
@@ -87,11 +87,11 @@ func (e ExternalID) URL() (string, error) {
 	case kind == "buildbucket":
 		host, build, err := e.ParseBuildbucketID()
 		if err != nil {
-			return "", errors.Annotate(err, "invalid tryjob.ExternalID").Err()
+			return "", errors.Fmt("invalid tryjob.ExternalID: %w", err)
 		}
 		return fmt.Sprintf("https://%s/build/%d", host, build), nil
 	default:
-		return "", errors.Reason("unrecognized ExternalID: %q", e).Err()
+		return "", errors.Fmt("unrecognized ExternalID: %q", e)
 	}
 }
 
@@ -110,7 +110,7 @@ func (e ExternalID) Kind() (string, error) {
 	s := string(e)
 	idx := strings.IndexRune(s, '/')
 	if idx <= 0 {
-		return "", errors.Reason("invalid ExternalID: %q", s).Err()
+		return "", errors.Fmt("invalid ExternalID: %q", s)
 	}
 	return s[:idx], nil
 }
@@ -127,7 +127,7 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 	case datastore.ErrNoSuchEntity:
 		return nil, nil
 	default:
-		return nil, errors.Annotate(err, "resolving ExternalID %q to a Tryjob", e).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("resolving ExternalID %q to a Tryjob: %w", e, err))
 	}
 
 	res := &Tryjob{ID: tjm.InternalID}
@@ -136,7 +136,7 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 		// doesn't exist. And if we do it'll most likely be due to a retention
 		// policy removing old entities, so the tryjobMap entity will be
 		// removed soon as well.
-		return nil, errors.Annotate(err, "retrieving Tryjob with ExternalID %q", e).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("retrieving Tryjob with ExternalID %q: %w", e, err))
 	}
 	return res, nil
 }
@@ -199,7 +199,7 @@ func (e ExternalID) Resolve(ctx context.Context) (common.TryjobID, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return 0, nil
 	case err != nil:
-		return 0, errors.Annotate(err, "failed to load tryjobMap").Tag(transient.Tag).Err()
+		return 0, transient.Tag.Apply(errors.Fmt("failed to load tryjobMap: %w", err))
 	default:
 		return tjm.InternalID, nil
 	}
@@ -215,7 +215,7 @@ func Resolve(ctx context.Context, eids ...ExternalID) (common.TryjobIDs, error) 
 	if errs := datastore.Get(ctx, tjms); errs != nil {
 		merr, _ := errs.(errors.MultiError)
 		if merr == nil {
-			return nil, errors.Annotate(errs, "failed to load tryjobMaps").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load tryjobMaps: %w", errs))
 		}
 		for _, err := range merr {
 			if err != nil && err != datastore.ErrNoSuchEntity {
@@ -259,7 +259,7 @@ func ResolveToTryjobs(ctx context.Context, eids ...ExternalID) ([]*Tryjob, error
 	}
 	if len(toLoad) > 0 {
 		if err := datastore.Get(ctx, toLoad); err != nil {
-			return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to load tryjobs: %w", err))
 		}
 	}
 	return ret, nil

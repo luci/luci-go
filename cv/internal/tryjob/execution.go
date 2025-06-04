@@ -70,7 +70,7 @@ func LoadExecutionState(ctx context.Context, rid common.RunID) (state *Execution
 	case err == datastore.ErrNoSuchEntity:
 		return nil, 0, nil
 	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to load tryjob execution state of run %q", rid).Tag(transient.Tag).Err()
+		return nil, 0, transient.Tag.Apply(errors.Fmt("failed to load tryjob execution state of run %q: %w", rid, err))
 	default:
 		return es.State, es.EVersion, nil
 	}
@@ -92,7 +92,7 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 	case err != nil:
 		return err
 	case latestStateVer != expectedVersion:
-		return errors.Reason("execution state has changed. before: %d, current: %d", expectedVersion, latestStateVer).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("execution state has changed. before: %d, current: %d", expectedVersion, latestStateVer))
 	default:
 		runKey := datastore.MakeKey(ctx, common.RunKind, string(rid))
 		newState := &executionState{
@@ -104,7 +104,7 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 
 		if len(logEntries) == 0 {
 			if err := datastore.Put(ctx, newState); err != nil {
-				return errors.Annotate(err, "failed to save execution state").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to save execution state: %w", err))
 			}
 		} else {
 			el := &executionLog{
@@ -115,7 +115,7 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 				},
 			}
 			if err := datastore.Put(ctx, newState, el); err != nil {
-				return errors.Annotate(err, "failed to save execution state and log").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to save execution state and log: %w", err))
 			}
 		}
 		return nil
@@ -134,7 +134,7 @@ func LoadExecutionLogs(ctx context.Context, runID common.RunID) ([]*ExecutionLog
 	// more likely a cache hit.
 	q := datastore.NewQuery("TryjobExecutionLog").KeysOnly(true).Ancestor(runKey)
 	if err := datastore.GetAll(ctx, q, &keys); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch keys of TryjobExecutionLog entities").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch keys of TryjobExecutionLog entities: %w", err))
 	}
 	if len(keys) == 0 {
 		return nil, nil

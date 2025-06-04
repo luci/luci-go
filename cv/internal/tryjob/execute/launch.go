@@ -221,7 +221,7 @@ func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobIDs common.Tryjo
 	case innerErr != nil:
 		return nil, innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to commit transaction: %w", err))
 	default:
 		return result, nil
 	}

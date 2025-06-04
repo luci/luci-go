@@ -153,7 +153,7 @@ func (op *PostGerritMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.T
 			lastNonDeadlineErr = err
 			fallthrough
 		default:
-			return errors.Annotate(err, "failed to check if message was already posted").Err()
+			return errors.Fmt("failed to check if message was already posted: %w", err)
 		}
 		switch err = util.MutateGerritCL(ctx, op.GFactory, rcl, req, 2*time.Minute, "post-gerrit-message"); {
 		case err == nil:
