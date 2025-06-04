@@ -310,25 +310,25 @@ func TestUpdaterHappyPath(t *testing.T) {
 		assert.Loosely(t, u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/123",
-			Requester:   UpdateCLTask_PUBSUB_POLL,
+			Requester:   UpdateCLTask_PUBSUB_PUSH,
 		}), should.BeNil)
 
 		// Ensure that it reported metrics for the CL fetch events.
 		assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
-			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+			UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 			true,                              // metric:changed == true
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
 		), should.Equal(1))
 		assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
-			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+			UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
 		).Sum(), should.AlmostEqual(1.0))
 		assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
-			UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+			UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 			false,                             // metric:dep
 			"luci-project",                    // metric:project,
 			true,                              // metric:changed_snapshot == true
@@ -454,7 +454,7 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 		err := u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/1",
-			Requester:   UpdateCLTask_PUBSUB_POLL})
+			Requester:   UpdateCLTask_PUBSUB_PUSH})
 
 		assert.NoErr(t, err)
 
@@ -467,20 +467,20 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			// This is the case where a fetch was performed but
 			// the data was actually the same as the existing snapshot.
 			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
-				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+				UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 				false,                             // metric:changed == false
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false
 			), should.Equal(1))
 			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
-				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+				UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false,
 			), should.BeNil)
 			assert.Loosely(t, ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
-				UpdateCLTask_PUBSUB_POLL.String(), // metric:requester,
+				UpdateCLTask_PUBSUB_PUSH.String(), // metric:requester,
 				false,                             // metric:dep
 				"luci-project",                    // metric:project,
 				false,                             // metric:changed_snapshot == false

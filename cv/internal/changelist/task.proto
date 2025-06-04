@@ -40,7 +40,8 @@ message UpdateCLTask {
     INCR_POLL_MATCHED = 1;
     FULL_POLL_MATCHED = 2;
     FULL_POLL_UNMATCHED = 3;
-    PUBSUB_POLL = 4;
+    PUBSUB_POLL = 4 [deprecated = true];
+    PUBSUB_PUSH = 13;
     CL_PURGER = 5;
     DEP_CL_TRIGGERER = 12;
     RPC_ADMIN = 6;

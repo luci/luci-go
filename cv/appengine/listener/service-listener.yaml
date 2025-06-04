@@ -5,6 +5,7 @@ instance_class: F4
 
 automatic_scaling:
   min_idle_instances: 1
+  max_concurrent_requests: 80
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
@@ -18,6 +19,7 @@ luci_gae_vars:
     DS_CACHE: redis
     ROOT_SECRET: sm://root-secret
     TINK_AEAD_KEY: sm://tink-aead-primary
+    GERRIT_PUBSUB_PUSH_ACCOUNT: gerrit-pubsub-pusher@luci-change-verifier-dev.iam.gserviceaccount.com
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
@@ -37,3 +39,4 @@ entrypoint: >
   -cloud-error-reporting
   -root-secret ${ROOT_SECRET}
   -primary-tink-aead-key ${TINK_AEAD_KEY}
+  -gerrit-pubsub-push-account ${GERRIT_PUBSUB_PUSH_ACCOUNT}
