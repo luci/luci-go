@@ -126,7 +126,7 @@ func GetPermissions(names ...string) ([]Permission, error) {
 	var err error
 	for _, name := range names {
 		if _, ok := perms[name]; !ok {
-			err = errors.Reason("permission not registered: %q", name).Err()
+			err = errors.Fmt("permission not registered: %q", name)
 			break
 		}
 	}
@@ -203,5 +203,5 @@ func ValidatePermissionName(name string) error {
 			return nil
 		}
 	}
-	return errors.Reason("bad permission %q - must have form <service>.<subject>.<verb>", name).Err()
+	return errors.Fmt("bad permission %q - must have form <service>.<subject>.<verb>", name)
 }

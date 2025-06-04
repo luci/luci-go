@@ -33,9 +33,9 @@ func UserFromIDToken(ctx context.Context, token string, discovery *DiscoveryDoc)
 	// Validate the discovery doc has necessary fields to proceed.
 	switch {
 	case discovery.Issuer == "":
-		return nil, nil, errors.Reason("openid: bad discovery doc, empty issuer").Err()
+		return nil, nil, errors.New("openid: bad discovery doc, empty issuer")
 	case discovery.JwksURI == "":
-		return nil, nil, errors.Reason("openid: bad discovery doc, empty jwks_uri").Err()
+		return nil, nil, errors.New("openid: bad discovery doc, empty jwks_uri")
 	}
 
 	// Grab the signing keys needed to verify the token. This is almost always

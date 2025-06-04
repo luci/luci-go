@@ -61,7 +61,7 @@ func Register(appID string, ao *ApplicationOptions) *Application {
 		panic(errors.New("quota app registration already closed"))
 	}
 	if _, ok := quotaApplications[appID]; ok {
-		panic(errors.Reason("appID %q already registered", appID).Err())
+		panic(errors.Fmt("appID %q already registered", appID))
 	}
 	ret := &Application{appID, resources}
 	quotaApplications[appID] = ret
@@ -74,7 +74,7 @@ func Register(appID string, ao *ApplicationOptions) *Application {
 // Will panic if resourceType is not registered for this Application.
 func (a *Application) AccountID(realm, namespace, name, resourceType string) *quotapb.AccountID {
 	if !a.resources.Has(resourceType) {
-		panic(errors.Reason("application %q does not have resourceType %q", a.id, resourceType).Err())
+		panic(errors.Fmt("application %q does not have resourceType %q", a.id, resourceType))
 	}
 	return &quotapb.AccountID{
 		AppId:        a.id,

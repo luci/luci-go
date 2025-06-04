@@ -327,7 +327,7 @@ func (db *FakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm re
 	}
 
 	if flags[perm]&realms.UsedInQueryRealms == 0 {
-		return nil, errors.Reason("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm).Err()
+		return nil, errors.Fmt("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm)
 	}
 
 	var out []string

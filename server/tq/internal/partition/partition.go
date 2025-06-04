@@ -57,7 +57,7 @@ func SpanInclusive(low, highInclusive string) (*Partition, error) {
 	}
 	p.High.Add(&p.High, bigInt1) // s.high++
 	if p.Low.Cmp(&p.High) > 0 {
-		return nil, errors.Reason("Partition %s is invalid", p.String()).Err()
+		return nil, errors.Fmt("Partition %s is invalid", p.String())
 	}
 	return p, nil
 }
@@ -71,7 +71,7 @@ func Universe(keySpaceBytes int) *Partition {
 func FromString(s string) (*Partition, error) {
 	i := strings.Index(s, "_")
 	if i <= 0 || i == len(s)-1 {
-		return nil, errors.Reason("partition %q has invalid format", s).Err()
+		return nil, errors.Fmt("partition %q has invalid format", s)
 	}
 	p := &Partition{}
 	if err := setBigIntFromString(&p.Low, s[:i]); err != nil {
@@ -81,7 +81,7 @@ func FromString(s string) (*Partition, error) {
 		return nil, err
 	}
 	if p.Low.Cmp(&p.High) > 0 {
-		return nil, errors.Reason("Partition %s is invalid", p.String()).Err()
+		return nil, errors.Fmt("Partition %s is invalid", p.String())
 	}
 	return p, nil
 }
@@ -100,7 +100,7 @@ func (p *Partition) UnmarshalJSON(bs []byte) error {
 	case s == `null`:
 		return nil
 	case len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"':
-		return errors.Reason("invalid JSON-serialized partition %q", s).Err()
+		return errors.Fmt("invalid JSON-serialized partition %q", s)
 	default:
 		if tmp, err := FromString(s[1 : len(s)-1]); err != nil {
 			return err
@@ -316,10 +316,10 @@ func distance(low, high *big.Int) *big.Int {
 
 func setBigIntFromString(b *big.Int, s string) error {
 	if _, ok := b.SetString(s, 16 /*hex*/); !ok {
-		return errors.Reason("invalid bigint hex %q", s).Err()
+		return errors.Fmt("invalid bigint hex %q", s)
 	}
 	if b.Sign() == -1 {
-		return errors.Reason("negative value %q not allowed", s).Err()
+		return errors.Fmt("negative value %q not allowed", s)
 	}
 	return nil
 }

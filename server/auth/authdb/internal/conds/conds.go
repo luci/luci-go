@@ -133,7 +133,7 @@ func (b *Builder) build(indexes []uint32) (*Condition, error) {
 func (b *Builder) elementary(index uint32) (elementary, error) {
 	idx := int(index)
 	if idx >= len(b.elems) {
-		return nil, errors.Reason("condition index is out of bounds: %d >= %d", idx, len(b.elems)).Err()
+		return nil, errors.Fmt("condition index is out of bounds: %d >= %d", idx, len(b.elems))
 	}
 
 	elem := b.elems[idx]

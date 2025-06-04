@@ -64,7 +64,7 @@ func (h *CVRunHandler) Handle(ctx context.Context, message pubsub.Message, cvMes
 	var err error
 	project, processed, err := h.handleCVRun(ctx, cvMessage)
 	if err == nil && !processed {
-		err = pubsub.Ignore.Apply(errors.Reason("ignoring CV run").Err())
+		err = pubsub.Ignore.Apply(errors.New("ignoring CV run"))
 	}
 	status = errStatus(err)
 	return err

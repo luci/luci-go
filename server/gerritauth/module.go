@@ -114,7 +114,7 @@ func (*serverModule) Dependencies() []module.Dependency {
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	if len(m.opts.SignerAccounts) != 0 {
 		if m.opts.Audience == "" {
-			return nil, errors.Reason("-gerrit-auth-audience is required when -gerrit-auth-signer-account is used").Err()
+			return nil, errors.New("-gerrit-auth-audience is required when -gerrit-auth-signer-account is used")
 		}
 	} else if opts.Prod {
 		logging.Warningf(ctx, "Disabling Gerrit JWT auth: -gerrit-auth-signer-account is unset")

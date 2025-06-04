@@ -75,7 +75,7 @@ func (p *Port) VirtualHost(host string) *router.Router {
 	defer p.mu.Unlock()
 
 	if p.srv != nil {
-		p.parent.Fatal(errors.Reason("the server has already been started").Err())
+		p.parent.Fatal(errors.New("the server has already been started"))
 	}
 
 	r := p.perHost[host]

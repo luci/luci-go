@@ -55,12 +55,12 @@ func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, bbMes
 func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubSub) error {
 	if message.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
 		// Received build that hasn't completed yet, ignore it.
-		return pubsub.Ignore.Apply(errors.Reason("build did not complete yet, ignoring").Err())
+		return pubsub.Ignore.Apply(errors.New("build did not complete yet, ignoring"))
 	}
 	if message.Build.Infra.GetBuildbucket().GetHostname() == "" {
 		// Invalid build. Ignore.
 		logging.Warningf(ctx, "Build %v did not specify buildbucket hostname, ignoring.", message.Build.Id)
-		return pubsub.Ignore.Apply(errors.Reason("build %v did not specify hostname, ignoring", message.Build.Id).Err())
+		return pubsub.Ignore.Apply(errors.Fmt("build %v did not specify hostname, ignoring", message.Build.Id))
 	}
 
 	project := message.Build.Builder.Project

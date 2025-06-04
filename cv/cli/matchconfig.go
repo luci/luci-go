@@ -151,17 +151,17 @@ func (r *matchConfigRun) match(ctx context.Context, url string, matcher *cfgmatc
 	}
 
 	if len(ret.Names) == 0 {
-		ret.Error = errors.Reason("the CL did not match any config groups").Err()
+		ret.Error = errors.New("the CL did not match any config groups")
 	}
 	if len(ret.Names) > 1 {
-		ret.Error = errors.Reason("the CL matched multiple config groups").Err()
+		ret.Error = errors.New("the CL matched multiple config groups")
 	}
 	return ret
 }
 
 func (r *matchConfigRun) validateArgs(ctx context.Context, args []string) error {
 	if len(args) < 2 {
-		return errors.Reason("At least 2 arguments are required").Err()
+		return errors.New("At least 2 arguments are required")
 	}
 	for i, arg := range args {
 		if i == 0 {

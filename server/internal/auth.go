@@ -55,8 +55,7 @@ func CloudAuthMiddleware(callers []string, header string, rejected func(*router.
 					rejected(c)
 				}
 				httpReply(c, 403,
-					fmt.Sprintf("Caller %q is not authorized", ident),
-					errors.Reason("expecting any of %q", callers).Err(),
+					fmt.Sprintf("Caller %q is not authorized", ident), errors.Fmt("expecting any of %q", callers),
 				)
 			}
 			return
@@ -64,9 +63,9 @@ func CloudAuthMiddleware(callers []string, header string, rejected func(*router.
 
 		var err error
 		if header != "" {
-			err = errors.Reason("no OIDC token and no %s header", header).Err()
+			err = errors.Fmt("no OIDC token and no %s header", header)
 		} else {
-			err = errors.Reason("no OIDC token").Err()
+			err = errors.New("no OIDC token")
 		}
 		if rejected != nil {
 			rejected(c)

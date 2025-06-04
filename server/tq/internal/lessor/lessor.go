@@ -74,5 +74,5 @@ func Get(ctx context.Context, id string) (Lessor, error) {
 	if factory := lessors[id]; factory != nil {
 		return factory(ctx)
 	}
-	return nil, errors.Reason("no lessor kind %q is registered in the process", id).Err()
+	return nil, errors.Fmt("no lessor kind %q is registered in the process", id)
 }

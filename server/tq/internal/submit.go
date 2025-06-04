@@ -139,8 +139,8 @@ func SubmitBatch(ctx context.Context, sub Submitter, db db.DB, batch []*reminder
 	payloaded, err := db.FetchReminderRawPayloads(ctx, batch)
 	switch missing := len(batch) - len(payloaded); {
 	case missing < 0:
-		panic(errors.Reason("%s.FetchReminderRawPayloads returned %d but asked for %d Reminders",
-			db.Kind(), len(payloaded), len(batch)).Err())
+		panic(errors.Fmt("%s.FetchReminderRawPayloads returned %d but asked for %d Reminders",
+			db.Kind(), len(payloaded), len(batch)))
 	case err != nil:
 		logging.Warningf(ctx, "Failed to fetch %d/%d Reminders: %s", missing, len(batch), err)
 		// Continue processing whatever was fetched anyway.

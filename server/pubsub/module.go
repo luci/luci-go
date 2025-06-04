@@ -108,7 +108,7 @@ func (*pubsubModule) Dependencies() []module.Dependency {
 func (m *pubsubModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	logging.Infof(ctx, "Pubsub is serving handlers from %q", m.opts.ServingPrefix)
 	if !strings.HasPrefix(m.opts.ServingPrefix, "/internal/") {
-		return nil, errors.Reason(`-pubsub-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix).Err()
+		return nil, errors.Fmt(`-pubsub-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix)
 	}
 
 	if m.opts.Dispatcher == nil {

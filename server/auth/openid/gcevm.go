@@ -110,7 +110,7 @@ func (m *GoogleComputeAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 	// Tokens can either be in "full" or "standard" format. We want "full", since
 	// "standard" doesn't have details about the VM.
 	if verifiedToken.Google.ComputeEngine.ProjectID == "" {
-		return nil, nil, errors.Reason("no google.compute_engine in the GCE VM token, use 'full' format").Err()
+		return nil, nil, errors.New("no google.compute_engine in the GCE VM token, use 'full' format")
 	}
 
 	// Convert "<realm>:<project>" to "<project>.<realm>" for "bot:..." string.
@@ -131,7 +131,7 @@ func (m *GoogleComputeAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 
 	// Check the audience in the token.
 	if m.AudienceCheck == nil {
-		return nil, nil, errors.Reason("GoogleComputeAuthMethod has no AudienceCheck").Err()
+		return nil, nil, errors.New("GoogleComputeAuthMethod has no AudienceCheck")
 	}
 	switch valid, err := m.AudienceCheck(ctx, r, verifiedToken.Aud); {
 	case err != nil:

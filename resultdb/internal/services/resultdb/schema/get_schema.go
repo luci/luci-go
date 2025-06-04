@@ -33,10 +33,10 @@ const schemaSingletonResourceName = "schema"
 // validateGetSchemaRequest validates the request to get schema.
 func validateGetSchemaRequest(req *pb.GetSchemaRequest) error {
 	if req.Name == "" {
-		return errors.Reason("name: unspecified").Err()
+		return errors.New("name: unspecified")
 	}
 	if req.Name != schemaSingletonResourceName {
-		return errors.Reason(`name: invalid; %q is currently the only valid schema resource name`, schemaSingletonResourceName).Err()
+		return errors.Fmt(`name: invalid; %q is currently the only valid schema resource name`, schemaSingletonResourceName)
 	}
 	return nil
 }

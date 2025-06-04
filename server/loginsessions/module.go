@@ -125,11 +125,11 @@ func (m *loginSessionsModule) Initialize(ctx context.Context, host module.Host, 
 
 	if opts.Prod {
 		if m.opts.RootURL == "" {
-			return nil, errors.Reason("-login-sessions-root-url is required").Err()
+			return nil, errors.New("-login-sessions-root-url is required")
 		}
 		m.opts.RootURL = strings.TrimSuffix(m.opts.RootURL, "/")
 		if !strings.HasPrefix(m.opts.RootURL, "https://") {
-			return nil, errors.Reason("-login-sessions-root-url should start with https://, got %q", m.opts.RootURL).Err()
+			return nil, errors.Fmt("-login-sessions-root-url should start with https://, got %q", m.opts.RootURL)
 		}
 		store = &internal.DatastoreSessionStore{}
 		provider = internal.AuthDBClientProvider

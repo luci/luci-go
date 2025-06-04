@@ -92,7 +92,7 @@ func NewRecorderServer(opts Options, casClient repb.ContentAddressableStorageCli
 // installArtifactCreationHandler installs artifact creation handler.
 func installArtifactCreationHandler(srv *server.Server, opt *Options, rbeConn *grpc.ClientConn) error {
 	if opt.ArtifactRBEInstance == "" {
-		return errors.Reason("opt.ArtifactRBEInstance is required").Err()
+		return errors.New("opt.ArtifactRBEInstance is required")
 	}
 
 	bs := bytestream.NewByteStreamClient(rbeConn)
