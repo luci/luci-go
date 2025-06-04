@@ -89,7 +89,7 @@ func ListPackages(ctx context.Context, prefix string, includeHidden bool) (out [
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to query the list of packages").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of packages: %w", err))
 	}
 	return out, nil
 }
@@ -121,7 +121,7 @@ func CheckPackages(ctx context.Context, names []string, includeHidden bool) ([]s
 			case err == nil:
 				existing = append(existing, pkg)
 			case err != datastore.ErrNoSuchEntity:
-				return nil, errors.Annotate(err, "failed to fetch %q", pkg.Name).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("failed to fetch %q: %w", pkg.Name, err))
 			}
 		}
 		pkgs = existing
@@ -142,9 +142,9 @@ func CheckPackages(ctx context.Context, names []string, includeHidden bool) ([]s
 func CheckPackageExists(ctx context.Context, pkg string) error {
 	switch res, err := CheckPackages(ctx, []string{pkg}, true); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check the package presence").Err()
+		return errors.Fmt("failed to check the package presence: %w", err)
 	case len(res) == 0:
-		return errors.Reason("no such package: %s", pkg).Tag(grpcutil.NotFoundTag).Err()
+		return grpcutil.NotFoundTag.Apply(errors.Fmt("no such package: %s", pkg))
 	default:
 		return nil
 	}

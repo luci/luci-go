@@ -59,7 +59,7 @@ func (m *mapperDef) mapperID() dsmapper.ID {
 func (m *mapperDef) newMapper(ctx context.Context, j *dsmapper.Job, shardIdx int) (dsmapper.Mapper, error) {
 	cfg := &api.JobConfig{}
 	if err := proto.Unmarshal(j.Config.Params, cfg); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal JobConfig").Err()
+		return nil, errors.Fmt("failed to unmarshal JobConfig: %w", err)
 	}
 	return func(ctx context.Context, keys []*datastore.Key) error {
 		return m.Func(ctx, j.ID, cfg, keys)

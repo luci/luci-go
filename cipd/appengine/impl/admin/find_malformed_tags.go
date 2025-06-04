@@ -61,7 +61,8 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFix
 
 	var marked []markedTag
 	if err := datastore.GetAll(ctx, queryMarkedTags(job), &marked); err != nil {
-		return nil, errors.Annotate(err, "failed to query marked tags").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to query marked tags: %w", err))
 	}
 
 	// Partition all tags per entity group they belong too, to avoid concurrent
@@ -86,7 +87,7 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFix
 					return err
 				}, nil)
 				if err != nil {
-					return errors.Annotate(err, "in entity group %s", root).Err()
+					return errors.Fmt("in entity group %s: %w", root, err)
 				}
 				mu.Lock()
 				fixed = append(fixed, fixedHere...)
@@ -118,7 +119,7 @@ func txnFixTagsInEG(ctx context.Context, keys []*datastore.Key) (report []*api.T
 
 		// Delete the old tag no matter what, it is broken.
 		if err := datastore.Delete(ctx, key); err != nil {
-			return errors.Annotate(err, "failed to delete the tag %s", key).Err()
+			return errors.Fmt("failed to delete the tag %s: %w", key, err)
 		}
 
 		// Create the new tag if we managed to "fix" the deleted one.
@@ -128,7 +129,7 @@ func txnFixTagsInEG(ctx context.Context, keys []*datastore.Key) (report []*api.T
 			fixedTag.Tag = common.JoinInstanceTag(fixed)
 			logging.Infof(ctx, "In %s:%s - replacing tag %q => %q", out.Pkg, out.Instance, tag.Tag, fixedTag.Tag)
 			if err := datastore.Put(ctx, &fixedTag); err != nil {
-				return errors.Annotate(err, "failed to create a fixed tag %s instead of %s", fixedTag.Tag, key).Err()
+				return errors.Fmt("failed to create a fixed tag %s instead of %s: %w", fixedTag.Tag, key, err)
 			}
 			out.FixedTag = fixedTag.Tag
 		} else {

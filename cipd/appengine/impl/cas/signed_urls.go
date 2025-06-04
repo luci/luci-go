@@ -85,7 +85,7 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 		info := &gsObjInfo{}
 		switch size, yes, err := gs.Size(ctx, gsPath); {
 		case err != nil:
-			return nil, 0, errors.Annotate(err, "failed to check GS file presence").Err()
+			return nil, 0, errors.Fmt("failed to check GS file presence: %w", err)
 		case !yes:
 			return info, absenceExpiration, nil
 		default:
@@ -94,7 +94,7 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 
 		sig, err := signer(ctx)
 		if err != nil {
-			return nil, 0, errors.Annotate(err, "can't create the signer").Err()
+			return nil, 0, errors.Fmt("can't create the signer: %w", err)
 		}
 
 		url, err := signURL(ctx, gsPath, sig, maxSignedURLExpiration)
@@ -110,13 +110,15 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 	})
 
 	if err != nil {
-		return "", 0, errors.Annotate(err, "failed to sign URL").
-			Tag(grpcutil.InternalTag).Err()
+		return "", 0,
+			grpcutil.InternalTag.Apply(errors.Fmt("failed to sign URL: %w", err))
+
 	}
 
 	if !info.Exists() {
-		return "", 0, errors.Reason("object %q doesn't exist", gsPath).
-			Tag(grpcutil.NotFoundTag).Err()
+		return "", 0,
+			grpcutil.NotFoundTag.Apply(errors.Fmt("object %q doesn't exist", gsPath))
+
 	}
 
 	signedURL := info.URL
@@ -157,7 +159,7 @@ func signURL(ctx context.Context, gsPath string, signer *signer, expiry time.Dur
 
 	_, sig, err := signer.SignBytes(ctx, buf.Bytes())
 	if err != nil {
-		return "", errors.Annotate(err, "signBytes call failed").Err()
+		return "", errors.Fmt("signBytes call failed: %w", err)
 	}
 
 	u := url.URL{

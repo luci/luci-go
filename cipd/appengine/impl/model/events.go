@@ -146,7 +146,7 @@ func QueryEvents(ctx context.Context, q *datastore.Query) ([]*api.Event, error) 
 	for i, e := range ev {
 		out[i] = &api.Event{}
 		if err := proto.Unmarshal(e.Event, out[i]); err != nil {
-			return nil, errors.Annotate(err, "failed to unmarshal Event with ID %d", e.ID).Err()
+			return nil, errors.Fmt("failed to unmarshal Event with ID %d: %w", e.ID, err)
 		}
 	}
 	return out, nil
@@ -293,7 +293,7 @@ func (l *BigQueryEventLogger) RegisterSink(ctx context.Context, disp *tq.Dispatc
 func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Reader) error {
 	blob, err := io.ReadAll(body)
 	if err != nil {
-		return errors.Annotate(err, "failed to read the request body").Err()
+		return errors.Fmt("failed to read the request body: %w", err)
 	}
 	// See https://cloud.google.com/pubsub/docs/push#receiving_messages
 	var msg struct {
@@ -304,11 +304,11 @@ func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Read
 		} `json:"message"`
 	}
 	if json.Unmarshal(blob, &msg); err != nil {
-		return errors.Annotate(err, "failed to unmarshal PubSub message").Err()
+		return errors.Fmt("failed to unmarshal PubSub message: %w", err)
 	}
 	task := &tasks.LogEvents{}
 	if err := protojson.Unmarshal(msg.Message.Data, task); err != nil {
-		return errors.Annotate(err, "failed to unmarshal the task").Err()
+		return errors.Fmt("failed to unmarshal the task: %w", err)
 	}
 	return l.insert(ctx, task.Events, msg.Message.MessageID)
 }

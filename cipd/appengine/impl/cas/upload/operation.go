@@ -94,8 +94,9 @@ func (op *Operation) Advance(ctx context.Context, cb func(context.Context, *Oper
 		return datastore.Put(ctx, fresh)
 	}, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to update the upload operation").
-			Tag(transient.Tag).Err()
+		return nil,
+			transient.Tag.Apply(errors.Fmt("failed to update the upload operation: %w", err))
+
 	}
 	return fresh, nil
 }

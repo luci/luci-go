@@ -153,8 +153,9 @@ func (gs *impl) init() error {
 		if tr == nil {
 			tr, err = auth.GetRPCTransport(gs.ctx, auth.AsSelf, auth.WithScopes(storage.CloudPlatformScope))
 			if err != nil {
-				gs.err = errors.Annotate(err, "failed to get authenticating transport").
-					Tag(transient.Tag).Err()
+				gs.err =
+					transient.Tag.Apply(errors.Fmt("failed to get authenticating transport: %w", err))
+
 				return
 			}
 		}
@@ -162,7 +163,7 @@ func (gs *impl) init() error {
 		gs.client = &http.Client{Transport: tr}
 		gs.srv, err = storage.New(gs.client)
 		if err != nil {
-			gs.err = errors.Annotate(err, "failed to construct storage.Service").Err()
+			gs.err = errors.Fmt("failed to construct storage.Service: %w", err)
 		} else if gs.testingBasePath != "" {
 			gs.srv.BasePath = gs.testingBasePath
 		}
@@ -260,7 +261,7 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 
 	switch _, exists, dstErr := gs.Size(ctx, dst); {
 	case dstErr != nil:
-		return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
+		return errors.Fmt("failed to check the destination object presence: %w", dstErr)
 	case !exists && code == http.StatusNotFound:
 		// Both 'src' and 'dst' are missing. It means we are not retrying a failed
 		// move (it would have left either 'src' or 'dst' or both present), and
@@ -325,7 +326,7 @@ func (gs *impl) StartUpload(ctx context.Context, path string) (uploadURL string,
 	})
 
 	if err != nil {
-		return "", errors.Annotate(err, "failed to open the resumable upload session").Err()
+		return "", errors.Fmt("failed to open the resumable upload session: %w", err)
 	}
 
 	return uploadURL, nil
@@ -351,9 +352,9 @@ func (gs *impl) CancelUpload(ctx context.Context, uploadURL string) error {
 	case transient.Tag.In(err):
 		return err
 	case err == nil:
-		return errors.Reason("expecting 499 code, but got 200").Err()
+		return errors.New("expecting 499 code, but got 200")
 	case StatusCode(err) != 499:
-		return errors.Annotate(err, "expecting 499 code, but got %d", StatusCode(err)).Err()
+		return errors.Fmt("expecting 499 code, but got %d: %w", StatusCode(err), err)
 	}
 	return nil
 }
@@ -376,7 +377,7 @@ func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (R
 	var obj *storage.Object
 	err := withRetry(ctx, func() (err error) { obj, err = call.Do(); return })
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to grab the object size and generation").Err()
+		return nil, errors.Fmt("failed to grab the object size and generation: %w", err)
 	}
 
 	// Carry on reading from the resolved generation. That way we are not
@@ -458,7 +459,7 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		if attemptTimeout > 0 {
 			var cancel func()
 			ctx, cancel = context.WithTimeoutCause(
-				ctx, attemptTimeout, errors.Reason("gs: ReadAt too slow").Tag(transient.Tag).Err())
+				ctx, attemptTimeout, transient.Tag.Apply(errors.New("gs: ReadAt too slow")))
 			defer cancel()
 		}
 
@@ -481,7 +482,7 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		n, err = io.ReadFull(resp.Body, p[:int(toRead)])
 		reportDownloadChunkSpeed(r.ctx, n, time.Since(attemptStarted), err == nil)
 		if err != nil {
-			return errors.Annotate(err, "failed to read the response").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to read the response: %w", err))
 		}
 
 		return nil

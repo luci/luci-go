@@ -43,8 +43,9 @@ func NewOpID(ctx context.Context) (int64, error) {
 		datastore.NewKey(ctx, "cas.UploadOperation", "", 0, nil),
 	}
 	if err := datastore.AllocateIDs(ctx, keys); err != nil {
-		return 0, errors.Annotate(err, "failed to generate upload operation ID").
-			Tag(transient.Tag).Err()
+		return 0,
+			transient.Tag.Apply(errors.Fmt("failed to generate upload operation ID: %w", err))
+
 	}
 	return keys[0].IntID(), nil
 }
@@ -63,11 +64,11 @@ func WrapOpID(ctx context.Context, id int64, caller identity.Identity) (string, 
 func UnwrapOpID(ctx context.Context, token string, caller identity.Identity) (int64, error) {
 	body, err := opToken.Validate(ctx, token, []byte(caller))
 	if err != nil {
-		return 0, errors.Annotate(err, "failed to validate upload operation ID token").Err()
+		return 0, errors.Fmt("failed to validate upload operation ID token: %w", err)
 	}
 	id, err := strconv.ParseInt(body["id"], 10, 64)
 	if err != nil {
-		return 0, errors.Annotate(err, "invalid upload operation ID %q", body["id"]).Err()
+		return 0, errors.Fmt("invalid upload operation ID %q: %w", body["id"], err)
 	}
 	return id, nil
 }

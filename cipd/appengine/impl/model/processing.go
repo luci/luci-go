@@ -58,18 +58,18 @@ func (p *ProcessingResult) WriteResult(r any) error {
 	blob, err := json.Marshal(r)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to serialize the result").Err()
+		return errors.Fmt("failed to serialize the result: %w", err)
 	case len(blob) == 0 || blob[0] != '{':
-		return errors.Reason("the result is not a JSON object").Err()
+		return errors.New("the result is not a JSON object")
 	}
 	out := bytes.Buffer{}
 	z := zlib.NewWriter(&out)
 	if _, err := io.Copy(z, bytes.NewReader(blob)); err != nil {
 		z.Close()
-		return errors.Annotate(err, "failed to compress the result").Err()
+		return errors.Fmt("failed to compress the result: %w", err)
 	}
 	if err := z.Close(); err != nil {
-		return errors.Annotate(err, "failed to close zlib writer").Err()
+		return errors.Fmt("failed to close zlib writer: %w", err)
 	}
 	p.ResultRaw = out.Bytes()
 	return nil
@@ -84,14 +84,14 @@ func (p *ProcessingResult) ReadResult(r any) error {
 	}
 	z, err := zlib.NewReader(bytes.NewReader(p.ResultRaw))
 	if err != nil {
-		return errors.Annotate(err, "failed to open the blob for zlib decompression").Err()
+		return errors.Fmt("failed to open the blob for zlib decompression: %w", err)
 	}
 	if err := json.NewDecoder(z).Decode(r); err != nil {
 		z.Close()
-		return errors.Annotate(err, "failed to decompress or deserialize the result").Err()
+		return errors.Fmt("failed to decompress or deserialize the result: %w", err)
 	}
 	if err := z.Close(); err != nil {
-		return errors.Annotate(err, "failed to close zlib reader").Err()
+		return errors.Fmt("failed to close zlib reader: %w", err)
 	}
 	return nil
 }
@@ -105,18 +105,18 @@ func (p *ProcessingResult) ReadResultIntoStruct(s *structpb.Struct) error {
 	}
 	z, err := zlib.NewReader(bytes.NewReader(p.ResultRaw))
 	if err != nil {
-		return errors.Annotate(err, "failed to open the blob for zlib decompression").Err()
+		return errors.Fmt("failed to open the blob for zlib decompression: %w", err)
 	}
 	blob, err := io.ReadAll(z)
 	if err != nil {
 		z.Close()
-		return errors.Annotate(err, "failed to decompress the result").Err()
+		return errors.Fmt("failed to decompress the result: %w", err)
 	}
 	if err := z.Close(); err != nil {
-		return errors.Annotate(err, "failed to close zlib reader").Err()
+		return errors.Fmt("failed to close zlib reader: %w", err)
 	}
 	if err := protojson.Unmarshal(blob, s); err != nil {
-		return errors.Annotate(err, "failed to deserialize the result").Err()
+		return errors.Fmt("failed to deserialize the result: %w", err)
 	}
 	return nil
 }

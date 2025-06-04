@@ -36,11 +36,11 @@ type signer struct {
 func defaultSigner(ctx context.Context) (*signer, error) {
 	s := auth.GetSigner(ctx)
 	if s == nil {
-		return nil, errors.Reason("a default signer is not available").Err()
+		return nil, errors.New("a default signer is not available")
 	}
 	info, err := s.ServiceInfo(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to grab the signer info").Err()
+		return nil, errors.Fmt("failed to grab the signer info: %w", err)
 	}
 	return &signer{
 		Email:     info.ServiceAccountName,

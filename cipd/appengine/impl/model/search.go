@@ -159,7 +159,7 @@ func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, p
 		return nil
 	})
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to query by tag %q", tag).Tag(transient.Tag).Err()
+		return nil, nil, transient.Tag.Apply(errors.Fmt("failed to query by tag %q: %w", tag, err))
 	}
 	return
 }
@@ -180,7 +180,7 @@ func filterByTag(ctx context.Context, page []*datastore.Key, tag *api.Tag) ([]*d
 	}
 	existing, _, err := fetchTags(ctx, tagEnts, func(int) *api.Tag { return tag })
 	if err != nil {
-		return nil, errors.Annotate(err, "failed by filter by tag %q", common.JoinInstanceTag(tag)).Err()
+		return nil, errors.Fmt("failed by filter by tag %q: %w", common.JoinInstanceTag(tag), err)
 	}
 	filtered := page[:0]
 	for _, tagEnt := range existing {
@@ -217,7 +217,7 @@ func fetchExistingInstances(ctx context.Context, keys []*datastore.Key) ([]*Inst
 		case err == nil:
 			existing = append(existing, inst)
 		case err != datastore.ErrNoSuchEntity:
-			return nil, errors.Annotate(err, "failed to fetch instance %q", inst.InstanceID).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("failed to fetch instance %q: %w", inst.InstanceID, err))
 		}
 	}
 	return existing, nil

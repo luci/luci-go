@@ -142,7 +142,7 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.R
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err = common.ValidateObjectRef(ref, common.KnownHash); err != nil {
-		return nil, errors.Annotate(err, "bad ref").Err()
+		return nil, errors.Fmt("bad ref: %w", err)
 	}
 
 	r, err = s.getGS(ctx).Reader(ctx, s.settings.ObjectPath(ref), 0, minimumSpeedLimit)
@@ -161,7 +161,7 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err := common.ValidateObjectRef(r.Object, common.KnownHash); err != nil {
-		return nil, errors.Annotate(err, "bad 'object' field").Err()
+		return nil, errors.Fmt("bad 'object' field: %w", err)
 	}
 
 	// Lite validation for Content-Disposition header. As long as the filename
@@ -173,7 +173,7 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 
 	url, _, err := s.getSignedURL(ctx, s.settings.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get signed URL").Err()
+		return nil, errors.Fmt("failed to get signed URL: %w", err)
 	}
 	return &api.ObjectURL{SignedUrl: url}, nil
 }
@@ -187,16 +187,17 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	var hexDigest string
 	if r.Object != nil {
 		if err := common.ValidateObjectRef(r.Object, common.KnownHash); err != nil {
-			return nil, errors.Annotate(err, "bad 'object'").Err()
+			return nil, errors.Fmt("bad 'object': %w", err)
 		}
 		if r.HashAlgo != 0 && r.HashAlgo != r.Object.HashAlgo {
-			return nil, errors.Reason("'hash_algo' and 'object.hash_algo' do not match").
-				Tag(grpcutil.InvalidArgumentTag).Err()
+			return nil,
+				grpcutil.InvalidArgumentTag.Apply(errors.New("'hash_algo' and 'object.hash_algo' do not match"))
+
 		}
 		hashAlgo = r.Object.HashAlgo
 		hexDigest = r.Object.HexDigest
 	} else if err := common.ValidateHashAlgo(r.HashAlgo); err != nil {
-		return nil, errors.Annotate(err, "bad 'hash_algo'").Err()
+		return nil, errors.Fmt("bad 'hash_algo': %w", err)
 	} else {
 		hashAlgo = r.HashAlgo
 	}
@@ -211,8 +212,9 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	if r.Object != nil {
 		switch yes, err := gs.Exists(ctx, s.settings.ObjectPath(r.Object)); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to check the object's presence").
-				Tag(grpcutil.InternalTag).Err()
+			return nil,
+				grpcutil.InternalTag.Apply(errors.Fmt("failed to check the object's presence: %w", err))
+
 		case yes:
 			return nil, status.Errorf(codes.AlreadyExists, "the object is already in the store")
 		}
@@ -221,8 +223,9 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// Grab new unique ID for the upload operation, it is used in GS filenames.
 	opID, err := upload.NewOpID(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to allocate upload operation ID").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.
+				Fmt("failed to allocate upload operation ID: %w", err))
 	}
 
 	// Attach HMAC to it, to be returned to the client to make sure clients can't
@@ -231,8 +234,9 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	caller := auth.CurrentIdentity(ctx)
 	wrappedOpID, err := upload.WrapOpID(ctx, opID, caller)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to HMAC-tag upload operation ID").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.
+				Fmt("failed to HMAC-tag upload operation ID: %w", err))
 	}
 
 	// GS path to which the client will upload the data. Prefix it with the
@@ -246,8 +250,9 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// not big deal if we loose it (e.g. due to a crash before returning).
 	uploadURL, err := gs.StartUpload(ctx, tempGSPath)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to start resumable upload").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.
+				Fmt("failed to start resumable upload: %w", err))
 	}
 
 	// Save the operation. It is accessed in FinishUpload.
@@ -263,8 +268,8 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 		UpdatedTS:  now.UTC(),
 	}
 	if err = datastore.Put(ctx, &op); err != nil {
-		return nil, errors.Annotate(err, "failed to persist upload operation").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.Fmt("failed to persist upload operation: %w", err))
 	}
 
 	return op.ToProto(wrappedOpID), nil
@@ -276,7 +281,7 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 
 	if r.ForceHash != nil {
 		if err := common.ValidateObjectRef(r.ForceHash, common.KnownHash); err != nil {
-			return nil, errors.Annotate(err, "bad 'force_hash' field").Err()
+			return nil, errors.Fmt("bad 'force_hash' field: %w", err)
 		}
 	}
 
@@ -310,8 +315,9 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 		})
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to start the verification task").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.Fmt("failed to start the verification task: %w", err))
+
 	}
 	return mutated.ToProto(r.UploadOperationId), nil
 }
@@ -324,7 +330,8 @@ func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadReque
 		if op.Status == api.UploadStatus_ERRORED || op.Status == api.UploadStatus_CANCELED {
 			return op.ToProto(r.UploadOperationId), nil
 		}
-		return nil, errors.Reason("the operation is in state %s and can't be canceled", op.Status).Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, grpcutil.FailedPreconditionTag.Apply(errors.
+			Fmt("the operation is in state %s and can't be canceled", op.Status))
 	}
 
 	// Grab the corresponding operation and inspect its status.
@@ -349,8 +356,9 @@ func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadReque
 		})
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to start the cleanup task").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.Fmt("failed to start the cleanup task: %w", err))
+
 	}
 	return handleOpStatus(mutated)
 }
@@ -363,20 +371,21 @@ func fetchOp(ctx context.Context, wrappedOpID string) (*upload.Operation, error)
 	opID, err := upload.UnwrapOpID(ctx, wrappedOpID, auth.CurrentIdentity(ctx))
 	if err != nil {
 		if transient.Tag.In(err) {
-			return nil, errors.Annotate(err, "failed to check HMAC on upload_operation_id").Err()
+			return nil, errors.Fmt("failed to check HMAC on upload_operation_id: %w", err)
 		}
 		logging.Infof(ctx, "HMAC check failed - %s", err)
-		return nil, errors.Reason("no such upload operation").Tag(grpcutil.NotFoundTag).Err()
+		return nil, grpcutil.NotFoundTag.Apply(errors.New("no such upload operation"))
 	}
 
 	op := &upload.Operation{ID: opID}
 	switch err := datastore.Get(ctx, op); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Reason("no such upload operation").
-			Tag(grpcutil.NotFoundTag).Err()
+		return nil,
+			grpcutil.NotFoundTag.Apply(errors.New("no such upload operation"))
+
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch the upload operation").
-			Tag(grpcutil.InternalTag).Err()
+		return nil,
+			grpcutil.InternalTag.Apply(errors.Fmt("failed to fetch the upload operation: %w", err))
 	}
 
 	return op, nil
@@ -427,10 +436,10 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	op := &upload.Operation{ID: task.UploadOperationId}
 	switch err := datastore.Get(ctx, op); {
 	case err == datastore.ErrNoSuchEntity:
-		return errors.Reason("no such upload operation %d", op.ID).Err()
+		return errors.Fmt("no such upload operation %d", op.ID)
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch upload operation %d", op.ID).
-			Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch upload operation %d: %w", op.ID, err))
+
 	case op.Status != api.UploadStatus_VERIFYING:
 		logging.Infof(ctx, "The upload operation %d is not pending verification anymore (status = %s)", op.ID, op.Status)
 		return nil
@@ -449,8 +458,8 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		}))
 		switch {
 		case err != nil:
-			return errors.Annotate(err, "failed to check the presence of the destination file").
-				Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to check the presence of the destination file: %w", err))
+
 		case exists:
 			if err := s.maybeDelete(ctx, gs, op.TempGSPath); err != nil {
 				return err
@@ -551,7 +560,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	// Prepare reading the most recent generation of the uploaded temporary file.
 	r, err := gs.Reader(ctx, op.TempGSPath, 0, minimumSpeedLimit)
 	if err != nil {
-		return errors.Annotate(err, "failed to start reading Google Storage file").Err()
+		return errors.Fmt("failed to start reading Google Storage file: %w", err)
 	}
 
 	// Pick large buffer to reduce number of Google Storage RPC calls. Don't
@@ -566,7 +575,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	// Feed the file to the hasher.
 	_, err = io.CopyBuffer(hash, io.NewSectionReader(r, 0, fileSize), make([]byte, bufSize))
 	if err != nil {
-		return errors.Annotate(err, "failed to read Google Storage file").Err()
+		return errors.Fmt("failed to read Google Storage file: %w", err)
 	}
 	verifiedHexDigest = hex.EncodeToString(hash.Sum(nil))
 
@@ -578,7 +587,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 
 	// If we know the expected hash, verify it matches what we have calculated.
 	if op.HexDigest != "" && op.HexDigest != verifiedHexDigest {
-		return errors.Reason("expected %s to be %s, got %s", op.HashAlgo, op.HexDigest, verifiedHexDigest).Err()
+		return errors.Fmt("expected %s to be %s, got %s", op.HashAlgo, op.HexDigest, verifiedHexDigest)
 	}
 
 	// The verification was successful, move the temp file (at the generation we
@@ -592,7 +601,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		HexDigest: verifiedHexDigest,
 	}), op.TempGSPath, r.Generation())
 	if err != nil {
-		return errors.Annotate(err, "failed to publish the verified file").Err()
+		return errors.Fmt("failed to publish the verified file: %w", err)
 	}
 	return nil
 }
@@ -607,14 +616,14 @@ func (s *storageImpl) cleanupUploadTask(ctx context.Context, task *tasks.Cleanup
 
 	if err := gs.CancelUpload(ctx, task.UploadUrl); err != nil {
 		if transient.Tag.In(err) {
-			return errors.Annotate(err, "transient error when canceling the resumable upload").Err()
+			return errors.Fmt("transient error when canceling the resumable upload: %w", err)
 		}
 		logging.WithError(err).Errorf(ctx, "Failed to cancel resumable upload")
 	}
 
 	if err := gs.Delete(ctx, task.PathToCleanup); err != nil {
 		if transient.Tag.In(err) {
-			return errors.Annotate(err, "transient error when deleting the temp file").Err()
+			return errors.Fmt("transient error when deleting the temp file: %w", err)
 		}
 		logging.WithError(err).Errorf(ctx, "Failed to delete the temp file")
 	}

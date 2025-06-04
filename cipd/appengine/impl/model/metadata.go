@@ -129,12 +129,12 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		// since we fetched the entity already.
 		checkExisting := func(ent *InstanceMetadata, msg *api.InstanceMetadata) error {
 			if ent.Key != msg.Key {
-				return errors.Reason("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key).
-					Tag(grpcutil.InternalTag).Err()
+				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key))
+
 			}
 			if !bytes.Equal(ent.Value, msg.Value) {
-				return errors.Reason("fingerprint %q matches metadata key %q with two different values, aborting", ent.Fingerprint, ent.Key).
-					Tag(grpcutil.InternalTag).Err()
+				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches metadata key %q with two different values, aborting", ent.Fingerprint, ent.Key))
+
 			}
 			return nil
 		}
@@ -146,7 +146,7 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		if err := datastore.Get(ctx, ents); err != nil {
 			merr, ok := err.(errors.MultiError)
 			if !ok {
-				return errors.Annotate(err, "failed to fetch metadata").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to fetch metadata: %w", err))
 			}
 			for i, err := range merr {
 				switch err {
@@ -164,7 +164,7 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 					ent.AttachedTs = now
 					missing = append(missing, ent)
 				default:
-					return errors.Annotate(err, "failed to fetch metadata %q", ents[i].Fingerprint).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to fetch metadata %q: %w", ents[i].Fingerprint, err))
 				}
 			}
 		} else {
@@ -230,7 +230,7 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		if err := datastore.Get(ctx, ents); err != nil {
 			merr, ok := err.(errors.MultiError)
 			if !ok {
-				return errors.Annotate(err, "failed to fetch metadata").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to fetch metadata: %w", err))
 			}
 			for i, err := range merr {
 				switch err {
@@ -239,7 +239,7 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 				case datastore.ErrNoSuchEntity:
 					// Skip, that's ok.
 				default:
-					return errors.Annotate(err, "failed to fetch metadata %q", ents[i].Fingerprint).Tag(transient.Tag).Err()
+					return transient.Tag.Apply(errors.Fmt("failed to fetch metadata %q: %w", ents[i].Fingerprint, err))
 				}
 			}
 		} else {
@@ -270,7 +270,7 @@ func ListMetadata(ctx context.Context, inst *Instance) ([]*InstanceMetadata, err
 
 	var out []*InstanceMetadata
 	if err := datastore.GetAll(ctx, q, &out); err != nil {
-		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	orderByTsAndKey(out)
 
@@ -298,7 +298,7 @@ func ListMetadataWithKeys(ctx context.Context, inst *Instance, keys []string) ([
 		out = append(out, md)
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	orderByTsAndKey(out)
 

@@ -92,7 +92,7 @@ func multiGetTags(ctx context.Context, keys []*datastore.Key, cb func(*datastore
 	if err := datastore.Get(ctx, tags); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
-			return errors.Annotate(err, "GetMulti RPC error when fetching %d tags", len(tags)).Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("GetMulti RPC error when fetching %d tags: %w", len(tags), err))
 		}
 		errAt = func(idx int) error { return merr[idx] }
 	}
@@ -102,7 +102,7 @@ func multiGetTags(ctx context.Context, keys []*datastore.Key, cb func(*datastore
 		case err == datastore.ErrNoSuchEntity:
 			continue
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch tag entity with key %s", keys[i]).Err()
+			return errors.Fmt("failed to fetch tag entity with key %s: %w", keys[i], err)
 		}
 		if err := cb(keys[i], &t); err != nil {
 			return err
@@ -136,7 +136,7 @@ func visitAndMarkTags(ctx context.Context, job dsmapper.JobID, keys []*datastore
 	}
 
 	if err := datastore.Put(ctx, marked); err != nil {
-		return errors.Annotate(err, "failed to store %d markedTag(s)", len(marked)).Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to store %d markedTag(s): %w", len(marked), err))
 	}
 	return nil
 }

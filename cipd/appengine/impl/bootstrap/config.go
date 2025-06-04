@@ -50,7 +50,7 @@ func BootstrapConfig(ctx context.Context, pkg string) (*api.BootstrapConfig, err
 		if errors.Contains(err, datastore.ErrNoSuchEntity) {
 			return nil, nil
 		}
-		return nil, errors.Annotate(err, "failed to fetch the bootstrap config").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch the bootstrap config: %w", err))
 	}
 	for _, bc := range cfg.(*api.BootstrapConfigFile).BootstrapConfig {
 		if matchesConfig(pkg, bc) {

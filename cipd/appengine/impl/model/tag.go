@@ -194,11 +194,11 @@ func ResolveTag(ctx context.Context, pkg string, tag *api.Tag) (string, error) {
 	var tags []*Tag
 	switch err := datastore.GetAll(ctx, q, &tags); {
 	case err != nil:
-		return "", errors.Annotate(err, "failed to query tags").Tag(transient.Tag).Err()
+		return "", transient.Tag.Apply(errors.Fmt("failed to query tags: %w", err))
 	case len(tags) == 0:
-		return "", errors.Reason("no such tag").Tag(grpcutil.NotFoundTag).Err()
+		return "", grpcutil.NotFoundTag.Apply(errors.New("no such tag"))
 	case len(tags) > 1:
-		return "", errors.Reason("ambiguity when resolving the tag, more than one instance has it").Tag(grpcutil.FailedPreconditionTag).Err()
+		return "", grpcutil.FailedPreconditionTag.Apply(errors.New("ambiguity when resolving the tag, more than one instance has it"))
 	default:
 		return tags[0].Instance.StringID(), nil
 	}
@@ -217,7 +217,7 @@ func ListInstanceTags(ctx context.Context, inst *Instance) (out []*Tag, err erro
 	// bearable.
 	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(ctx, inst))
 	if datastore.GetAll(ctx, q, &out); err != nil {
-		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if k1, k2 := tagKey(out[i].Tag), tagKey(out[j].Tag); k1 != k2 {
@@ -280,7 +280,7 @@ func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *a
 	if err := datastore.Get(ctx, tagEnts); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
-			return nil, nil, errors.Annotate(err, "failed to fetch tags").Tag(transient.Tag).Err()
+			return nil, nil, transient.Tag.Apply(errors.Fmt("failed to fetch tags: %w", err))
 		}
 		for i, err := range merr {
 			switch err {
@@ -289,7 +289,7 @@ func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *a
 			case datastore.ErrNoSuchEntity:
 				missCount++
 			default:
-				return nil, nil, errors.Annotate(err, "failed to fetch tag with ID %q", tagEnts[i].ID).Tag(transient.Tag).Err()
+				return nil, nil, transient.Tag.Apply(errors.Fmt("failed to fetch tag with ID %q: %w", tagEnts[i].ID, err))
 			}
 		}
 	} else {
@@ -311,8 +311,9 @@ func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *a
 			ent.Tag = kv // so the caller knows what tag this is
 			miss = append(miss, ent)
 		default: // ent.Tag != kv
-			return nil, nil, errors.Reason("tag %q collides with tag %q, refusing to touch it", kv, ent.Tag).
-				Tag(grpcutil.InternalTag).Err()
+			return nil, nil,
+				grpcutil.InternalTag.Apply(errors.Fmt("tag %q collides with tag %q, refusing to touch it", kv, ent.Tag))
+
 		}
 	}
 

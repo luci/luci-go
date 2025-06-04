@@ -86,7 +86,7 @@ func SetRef(ctx context.Context, ref string, inst *Instance) error {
 		case err == datastore.ErrNoSuchEntity:
 			break // need to create the new ref
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch the ref").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch the ref: %w", err))
 		case r.InstanceID == inst.InstanceID:
 			return nil // already set to the requested instance
 		default:
@@ -126,9 +126,9 @@ func GetRef(ctx context.Context, pkg, ref string) (*Ref, error) {
 	r := &Ref{Name: ref, Package: PackageKey(ctx, pkg)}
 	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Reason("no such ref").Tag(grpcutil.NotFoundTag).Err()
+		return nil, grpcutil.NotFoundTag.Apply(errors.New("no such ref"))
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch the ref").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch the ref: %w", err))
 	}
 	return r, nil
 }
@@ -171,7 +171,7 @@ func ListPackageRefs(ctx context.Context, pkg string) (out []*Ref, err error) {
 		Ancestor(PackageKey(ctx, pkg)).
 		Order("-modified_ts")
 	if err := datastore.GetAll(ctx, q, &out); err != nil {
-		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	return
 }
@@ -194,7 +194,7 @@ func ListInstanceRefs(ctx context.Context, inst *Instance) (out []*Ref, err erro
 		Eq("instance_id", inst.InstanceID).
 		Order("-modified_ts")
 	if err := datastore.GetAll(ctx, q, &out); err != nil {
-		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	return
 }

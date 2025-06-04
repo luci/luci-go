@@ -87,11 +87,11 @@ func (e *Instance) FromProto(ctx context.Context, p *api.Instance) *Instance {
 func (e *Instance) CheckReady() error {
 	switch {
 	case len(e.ProcessorsFailure) != 0:
-		return errors.Reason("some processors failed to process this instance: %s",
-			strings.Join(e.ProcessorsFailure, ", ")).Tag(grpcutil.AbortedTag).Err()
+		return grpcutil.AbortedTag.Apply(errors.Fmt("some processors failed to process this instance: %s",
+			strings.Join(e.ProcessorsFailure, ", ")))
 	case len(e.ProcessorsPending) != 0:
-		return errors.Reason("the instance is not ready yet, pending processors: %s",
-			strings.Join(e.ProcessorsPending, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
+		return grpcutil.FailedPreconditionTag.Apply(errors.Fmt("the instance is not ready yet, pending processors: %s",
+			strings.Join(e.ProcessorsPending, ", ")))
 	default:
 		return nil
 	}
@@ -127,13 +127,13 @@ func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Conte
 			out = &existing
 			return nil
 		case err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to fetch the instance entity").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch the instance entity: %w", err))
 		}
 
 		// Register the package entity too, if missing.
 		switch res, err := datastore.Exists(ctx, inst.Package); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch the package entity existence").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to fetch the package entity existence: %w", err))
 		case !res.Any():
 			err := datastore.Put(ctx, &Package{
 				Name:         inst.Package.StringID(),
@@ -141,7 +141,7 @@ func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Conte
 				RegisteredTs: inst.RegisteredTs,
 			})
 			if err != nil {
-				return errors.Annotate(err, "failed to create the package entity").Tag(transient.Tag).Err()
+				return transient.Tag.Apply(errors.Fmt("failed to create the package entity: %w", err))
 			}
 			events.Emit(&api.Event{
 				Kind:    api.EventKind_PACKAGE_CREATED,
@@ -153,13 +153,13 @@ func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Conte
 		toPut := *inst
 		if cb != nil {
 			if err := cb(ctx, &toPut); err != nil {
-				return errors.Annotate(err, "instance registration callback error").Err()
+				return errors.Fmt("instance registration callback error: %w", err)
 			}
 		}
 
 		// Finally register the package instance entity.
 		if err := datastore.Put(ctx, &toPut); err != nil {
-			return errors.Annotate(err, "failed to create the package instance entity").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to create the package instance entity: %w", err))
 		}
 		events.Emit(&api.Event{
 			Kind:     api.EventKind_INSTANCE_CREATED,
@@ -220,9 +220,9 @@ func CheckInstanceExists(ctx context.Context, inst *Instance) error {
 		if err := CheckPackageExists(ctx, inst.Package.StringID()); err != nil {
 			return err
 		}
-		return errors.Reason("no such instance").Tag(grpcutil.NotFoundTag).Err()
+		return grpcutil.NotFoundTag.Apply(errors.New("no such instance"))
 	case err != nil:
-		return errors.Annotate(err, "failed to check the instance presence").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to check the instance presence: %w", err))
 	default:
 		return nil
 	}
@@ -268,7 +268,8 @@ func FetchProcessors(ctx context.Context, inst *Instance) ([]*api.Processor, err
 		finished = append(finished, &ProcessingResult{ProcID: p, Instance: key})
 	}
 	if err := datastore.Get(ctx, finished); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch finished processors").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to fetch finished processors: %w", err))
 	}
 
 	// Convert all them to proto.
@@ -276,7 +277,7 @@ func FetchProcessors(ctx context.Context, inst *Instance) ([]*api.Processor, err
 	for _, p := range finished {
 		proc, err := p.Proto()
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to read results of processor %q", p.ProcID).Err()
+			return nil, errors.Fmt("failed to read results of processor %q: %w", p.ProcID, err)
 		}
 		out = append(out, proc)
 	}

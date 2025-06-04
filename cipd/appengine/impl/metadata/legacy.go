@@ -90,7 +90,7 @@ func (legacyStorageImpl) GetMetadata(ctx context.Context, prefix string) ([]*api
 func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata, []*packageACL, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
+		return nil, nil, errors.Fmt("bad prefix given to GetMetadata: %w", err)
 	}
 
 	// Grab all subprefixes, i.e. ["a", "a/b", "a/b/c"]
@@ -136,7 +136,7 @@ func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata,
 func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Visitor) error {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
-		return errors.Annotate(err, "bad prefix given to VisitMetadata").Err()
+		return errors.Fmt("bad prefix given to VisitMetadata: %w", err)
 	}
 
 	// Visit 'prefix' directly first, per VisitMetadata contract. There's a chance
@@ -189,7 +189,8 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to fetch metadata").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+			Fmt("failed to fetch metadata: %w", err))
 	}
 
 	// Make sure we have a path to 'prefix' before we freeze the graph. We need it
@@ -223,10 +224,10 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
+		return nil, errors.Fmt("bad prefix given to GetMetadata: %w", err)
 	}
 	if prefix == "" {
-		return nil, errors.Reason("the root metadata is not modifiable").Err()
+		return nil, errors.New("the root metadata is not modifiable")
 	}
 
 	var cbErr error                 // error from 'cb'
@@ -274,7 +275,7 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		// in the proto, or order of principals inside Acls, so we need to
 		// "reformat" the updated metadata before calculating its fingerprint.
 		if err := applyACLDiff(ctx, ents, updated); err != nil {
-			return errors.Annotate(err, "failed to update PackageACL entities").Err()
+			return errors.Fmt("failed to update PackageACL entities: %w", err)
 		}
 		updated = mergeIntoPrefixMetadata(ctx, prefix, ents)
 		return nil
@@ -286,7 +287,7 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		return nil, cbErr
 	case err != nil:
 		// All other errors are from the datastore, consider them transient.
-		return nil, errors.Annotate(err, "transaction failed").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("transaction failed: %w", err))
 	case updated == nil || updated.Fingerprint == "":
 		// This happens if there's no existing metadata and the callback didn't
 		// create it. Return nil to indicate that the metadata is still missing.
@@ -574,7 +575,7 @@ func listACLsByPrefix(ctx context.Context, role, prefix string) (acls []*package
 	}))
 
 	if err = datastore.GetAll(ctx, q, &acls); err != nil {
-		return nil, errors.Annotate(err, "failed to query the list of ACLs").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of ACLs: %w", err))
 	}
 	return
 }

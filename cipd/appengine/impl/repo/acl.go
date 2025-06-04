@@ -105,7 +105,7 @@ func hasRole(ctx context.Context, metas []*api.PrefixMetadata, role api.Role) (b
 
 	yes, err := auth.IsMember(ctx, groups.ToSlice()...)
 	if err != nil {
-		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs for role %s", role).Err()
+		return false, errors.Fmt("failed to check group memberships when checking ACLs for role %s: %w", role, err)
 	}
 	return yes, nil
 }
@@ -169,7 +169,7 @@ func isInACL(ctx context.Context, ident identity.Identity, acl *api.PrefixMetada
 		err = auth.ErrNotConfigured
 	}
 	if err != nil {
-		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs").Err()
+		return false, errors.Fmt("failed to check group memberships when checking ACLs: %w", err)
 	}
 	return yes, nil
 }
