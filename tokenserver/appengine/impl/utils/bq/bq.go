@@ -107,7 +107,7 @@ func NewInserter(ctx context.Context, projectID string) (*Inserter, error) {
 func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error {
 	blob, err := io.ReadAll(body)
 	if err != nil {
-		return errors.Annotate(err, "failed to read the request body").Err()
+		return errors.Fmt("failed to read the request body: %w", err)
 	}
 
 	// See https://cloud.google.com/pubsub/docs/push#receiving_messages
@@ -119,7 +119,7 @@ func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error
 		} `json:"message"`
 	}
 	if json.Unmarshal(blob, &msg); err != nil {
-		return errors.Annotate(err, "failed to unmarshal PubSub message").Err()
+		return errors.Fmt("failed to unmarshal PubSub message: %w", err)
 	}
 
 	// "table" metadata defines both the destination table and the TQ task class
@@ -129,11 +129,11 @@ func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error
 	// Deserialize the row into a corresponding proto type.
 	cls := tq.Default.TaskClassRef(table)
 	if cls == nil {
-		return errors.Reason("unrecognized task class %q", table).Err()
+		return errors.Fmt("unrecognized task class %q", table)
 	}
 	row := cls.Definition().Prototype.ProtoReflect().New().Interface()
 	if err := protojson.Unmarshal(msg.Message.Data, row); err != nil {
-		return errors.Annotate(err, "failed to unmarshal the row for %q", table).Err()
+		return errors.Fmt("failed to unmarshal the row for %q: %w", table, err)
 	}
 	return ins.insert(ctx, table, row, msg.Message.MessageID)
 }

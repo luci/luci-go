@@ -42,7 +42,7 @@ func mainImpl(args []string) (int, error) {
 	// Create a temporary output directory to build into.
 	tmpdir, err := ioutil.TempDir("", "luci-gorun")
 	if err != nil {
-		return 1, errors.Annotate(err, "failed to create temporary directory").Err()
+		return 1, errors.Fmt("failed to create temporary directory: %w", err)
 	}
 	defer os.RemoveAll(tmpdir)
 
@@ -56,7 +56,7 @@ func mainImpl(args []string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return 1, errors.Annotate(err, "failed to build: %s", pkg).Err()
+		return 1, errors.Fmt("failed to build: %s: %w", pkg, err)
 	}
 
 	// Run the package.
@@ -68,7 +68,7 @@ func mainImpl(args []string) (int, error) {
 		if rc, ok := exitcode.Get(err); ok {
 			return rc, nil
 		}
-		return 1, errors.Annotate(err, "failed to run: %s", pkg).Err()
+		return 1, errors.Fmt("failed to run: %s: %w", pkg, err)
 	}
 
 	return 0, nil

@@ -61,7 +61,7 @@ func Get(ctx context.Context) (*configpb.Config, error) {
 func GetTreeConfig(ctx context.Context, treeName string) (*configpb.Tree, error) {
 	cfg, err := Get(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting config").Err()
+		return nil, errors.Fmt("getting config: %w", err)
 	}
 	for _, treeConfg := range cfg.Trees {
 		if treeConfg.Name == treeName {

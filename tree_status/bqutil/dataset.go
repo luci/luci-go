@@ -32,7 +32,7 @@ const InternalDatasetID = "internal"
 func TreeNameForDataset(dataset string) (string, error) {
 	treeName := strings.ReplaceAll(dataset, "_", "-")
 	if err := pbutil.ValidateTreeID(treeName); err != nil {
-		return "", errors.Annotate(err, "validate tree name").Err()
+		return "", errors.Fmt("validate tree name: %w", err)
 	}
 	return treeName, nil
 }

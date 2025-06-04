@@ -41,7 +41,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating BQ client").Err()
+		return nil, errors.Fmt("creating BQ client: %w", err)
 	}
 	defer func() {
 		if reterr != nil {
@@ -54,7 +54,7 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating managed writer client").Err()
+		return nil, errors.Fmt("creating managed writer client: %w", err)
 	}
 	return &Client{
 		projectID: projectID,
@@ -92,7 +92,7 @@ var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
 func (c *Client) EnsureSchema(ctx context.Context) error {
 	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.UpdateMetadata()); err != nil {
-		return errors.Annotate(err, "ensuring statuses table").Err()
+		return errors.Fmt("ensuring statuses table: %w", err)
 	}
 	return nil
 }
@@ -100,7 +100,7 @@ func (c *Client) EnsureSchema(ctx context.Context) error {
 // InsertStatusRows inserts the given rows in BigQuery.
 func (c *Client) InsertStatusRows(ctx context.Context, rows []*bqpb.StatusRow) error {
 	if err := c.EnsureSchema(ctx); err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
 	writer := bq.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
@@ -133,7 +133,7 @@ func (c *Client) ReadMostRecentCreateTime(ctx context.Context) (time.Time, error
 	q.DefaultProjectID = info.AppID(ctx)
 	it, err := q.Read(ctx)
 	if err != nil {
-		return time.Time{}, errors.Annotate(err, "querying statuses").Err()
+		return time.Time{}, errors.Fmt("querying statuses: %w", err)
 	}
 	row := &statusRow{}
 	err = it.Next(row)
@@ -142,7 +142,7 @@ func (c *Client) ReadMostRecentCreateTime(ctx context.Context) (time.Time, error
 		return time.Time{}, nil
 	}
 	if err != nil {
-		return time.Time{}, errors.Annotate(err, "obtain next status row").Err()
+		return time.Time{}, errors.Fmt("obtain next status row: %w", err)
 	}
 	return row.CreateTime, nil
 }

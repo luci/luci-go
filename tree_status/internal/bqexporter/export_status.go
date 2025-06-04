@@ -48,13 +48,13 @@ type ExportClient interface {
 func ExportStatus(ctx context.Context) error {
 	client, err := NewClient(ctx, info.AppID(ctx))
 	if err != nil {
-		return errors.Annotate(err, "new client").Err()
+		return errors.Fmt("new client: %w", err)
 	}
 	defer client.Close()
 
 	err = export(ctx, client)
 	if err != nil {
-		return errors.Annotate(err, "export").Err()
+		return errors.Fmt("export: %w", err)
 	}
 	return nil
 }
@@ -63,13 +63,13 @@ func export(ctx context.Context, client ExportClient) error {
 	// During the very first run, EnsureSchema will make sure the table is created.
 	err := client.EnsureSchema(ctx)
 	if err != nil {
-		return errors.Annotate(err, "ensure schema").Err()
+		return errors.Fmt("ensure schema: %w", err)
 	}
 
 	// Read the most recent row from BigQuery.
 	lastCreateTime, err := client.ReadMostRecentCreateTime(ctx)
 	if err != nil {
-		return errors.Annotate(err, "read most recent create time").Err()
+		return errors.Fmt("read most recent create time: %w", err)
 	}
 	logging.Infof(ctx, "The most recent create time is %v", lastCreateTime)
 
@@ -77,7 +77,7 @@ func export(ctx context.Context, client ExportClient) error {
 	// We need to export those rows to BigQuery.
 	statuses, err := status.ListAfter(span.Single(ctx), lastCreateTime)
 	if err != nil {
-		return errors.Annotate(err, "list after").Err()
+		return errors.Fmt("list after: %w", err)
 	}
 
 	// Export to Bigquery
@@ -86,7 +86,7 @@ func export(ctx context.Context, client ExportClient) error {
 	for _, status := range statuses {
 		row, err := toRow(status)
 		if err != nil {
-			return errors.Annotate(err, "to row").Err()
+			return errors.Fmt("to row: %w", err)
 		}
 		rows = append(rows, row)
 		// Export to Monarch
@@ -94,7 +94,7 @@ func export(ctx context.Context, client ExportClient) error {
 	}
 	err = client.InsertStatusRows(ctx, rows)
 	if err != nil {
-		return errors.Annotate(err, "insert status row").Err()
+		return errors.Fmt("insert status row: %w", err)
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ func export(ctx context.Context, client ExportClient) error {
 func toRow(s *status.Status) (*bqpb.StatusRow, error) {
 	closingBuilder, err := toClosingBuilder(s.ClosingBuilderName)
 	if err != nil {
-		return nil, errors.Annotate(err, "to closing builder").Err()
+		return nil, errors.Fmt("to closing builder: %w", err)
 	}
 	result := &bqpb.StatusRow{
 		TreeName:       s.TreeName,
@@ -149,7 +149,7 @@ func toClosingBuilder(closingBuilderName string) (*bqpb.Builder, error) {
 	re := regexp.MustCompile(`^` + pbutil.BuilderNameExpression + `$`)
 	matches := re.FindStringSubmatch(closingBuilderName)
 	if len(matches) != 4 {
-		return nil, errors.Reason("invalid builder name %q", closingBuilderName).Err()
+		return nil, errors.Fmt("invalid builder name %q", closingBuilderName)
 	}
 	return &bqpb.Builder{
 		Project: matches[1],

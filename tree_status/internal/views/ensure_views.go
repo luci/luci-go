@@ -44,12 +44,12 @@ var luciTreeViewQueries = map[string]makeTableMetadata{
 func CronHandler(ctx context.Context, gcpProject string) error {
 	client, err := bq.NewClient(ctx, gcpProject)
 	if err != nil {
-		return errors.Annotate(err, "create bq client").Err()
+		return errors.Fmt("create bq client: %w", err)
 	}
 	defer client.Close()
 
 	if err := ensureViews(ctx, client); err != nil {
-		return errors.Annotate(err, "ensure view").Err()
+		return errors.Fmt("ensure view: %w", err)
 	}
 	return nil
 }
@@ -58,12 +58,12 @@ func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
 	// Get datasets for tree names.
 	datasetIDs, err := treeNameDatasets(ctx, bqClient)
 	if err != nil {
-		return errors.Annotate(err, "get tree name datasets").Err()
+		return errors.Fmt("get tree name datasets: %w", err)
 	}
 	// Create views that is common to each tree name dataset.
 	for _, datasetID := range datasetIDs {
 		if err := createViewsForTreeNameDataset(ctx, bqClient, datasetID); err != nil {
-			return errors.Annotate(err, "ensure view for LUCI tree name dataset %s", datasetID).Err()
+			return errors.Fmt("ensure view for LUCI tree name dataset %s: %w", datasetID, err)
 		}
 	}
 	return nil
@@ -73,13 +73,13 @@ func ensureViews(ctx context.Context, bqClient *bigquery.Client) error {
 func createViewsForTreeNameDataset(ctx context.Context, bqClient *bigquery.Client, datasetID string) error {
 	treeName, err := bqutil.TreeNameForDataset(datasetID)
 	if err != nil {
-		return errors.Annotate(err, "get tree name with dataset name %s", datasetID).Err()
+		return errors.Fmt("get tree name with dataset name %s: %w", datasetID, err)
 	}
 	for tableName, specFunc := range luciTreeViewQueries {
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(treeName)
 		if err := bq.EnsureTable(ctx, table, spec, bq.UpdateMetadata(), bq.RefreshViewInterval(time.Hour)); err != nil {
-			return errors.Annotate(err, "ensure view %s", tableName).Err()
+			return errors.Fmt("ensure view %s: %w", tableName, err)
 		}
 	}
 	return nil

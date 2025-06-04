@@ -142,7 +142,7 @@ func hasAccess(ctx context.Context, treeName string, criaGroup string, permissio
 func checkCriaGroup(ctx context.Context, criaGroup string) (bool, string, error) {
 	switch yes, err := auth.IsMember(ctx, criaGroup); {
 	case err != nil:
-		return false, "", errors.Annotate(err, "failed to check ACL").Err()
+		return false, "", errors.Fmt("failed to check ACL: %w", err)
 	case !yes:
 		if auth.CurrentIdentity(ctx).Kind() == identity.Anonymous {
 			return false, "please log in for access", nil

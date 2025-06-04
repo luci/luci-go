@@ -89,7 +89,7 @@ func (p Paginator) NextPageToken(request proto.Message, offset int64) (string, e
 	}
 	bytes, err := json.Marshal(t)
 	if err != nil {
-		return "", errors.Annotate(err, "creating next_page_token").Err()
+		return "", errors.Fmt("creating next_page_token: %w", err)
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }

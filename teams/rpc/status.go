@@ -57,7 +57,7 @@ func toTeamProto(value *teams.Team) *pb.Team {
 func (*teamsServer) Get(ctx context.Context, request *pb.GetTeamRequest) (*pb.Team, error) {
 	id, err := parseTeamName(request.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
 	}
 
 	if id == "my" {
@@ -68,7 +68,7 @@ func (*teamsServer) Get(ctx context.Context, request *pb.GetTeamRequest) (*pb.Te
 	if errors.Is(err, teams.NotExistsErr) {
 		return nil, notFoundError(err)
 	} else if err != nil {
-		return nil, errors.Annotate(err, "reading team").Err()
+		return nil, errors.Fmt("reading team: %w", err)
 	}
 
 	return toTeamProto(s), nil
@@ -80,11 +80,11 @@ var teamNameRE = regexp.MustCompile(`^teams/(` + teams.TeamIDExpression + `|my)$
 // parts.
 func parseTeamName(name string) (id string, err error) {
 	if name == "" {
-		return "", errors.Reason("must be specified").Err()
+		return "", errors.New("must be specified")
 	}
 	match := teamNameRE.FindStringSubmatch(name)
 	if match == nil {
-		return "", errors.Reason("expected format: %s", teamNameRE).Err()
+		return "", errors.Fmt("expected format: %s", teamNameRE)
 	}
 	return match[1], nil
 }

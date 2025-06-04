@@ -63,20 +63,20 @@ type Status struct {
 // Reported field names are as they appear in the RPC documentation rather than the Go struct.
 func Validate(status *Status) error {
 	if err := pbutil.ValidateTreeID(status.TreeName); err != nil {
-		return errors.Annotate(err, "tree").Err()
+		return errors.Fmt("tree: %w", err)
 	}
 	if err := pbutil.ValidateStatusID(status.StatusID); err != nil {
-		return errors.Annotate(err, "id").Err()
+		return errors.Fmt("id: %w", err)
 	}
 	if err := pbutil.ValidateGeneralStatus(status.GeneralStatus); err != nil {
-		return errors.Annotate(err, "general_state").Err()
+		return errors.Fmt("general_state: %w", err)
 	}
 	if err := pbutil.ValidateMessage(status.Message); err != nil {
-		return errors.Annotate(err, "message").Err()
+		return errors.Fmt("message: %w", err)
 	}
 	if status.GeneralStatus == pb.GeneralState_CLOSED {
 		if err := pbutil.ValidateClosingBuilderName(status.ClosingBuilderName); err != nil {
-			return errors.Annotate(err, "closing_builder_name").Err()
+			return errors.Fmt("closing_builder_name: %w", err)
 		}
 	}
 	return nil
@@ -110,7 +110,7 @@ func Read(ctx context.Context, treeName, statusID string) (*Status, error) {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return nil, NotExistsErr
 		}
-		return nil, errors.Annotate(err, "get status").Err()
+		return nil, errors.Fmt("get status: %w", err)
 	}
 	return fromRow(row)
 }
@@ -138,7 +138,7 @@ func ReadLatest(ctx context.Context, treeName string) (*Status, error) {
 	if errors.Is(err, iterator.Done) {
 		return nil, NotExistsErr
 	} else if err != nil {
-		return nil, errors.Annotate(err, "get latest status").Err()
+		return nil, errors.Fmt("get latest status: %w", err)
 	}
 	return fromRow(row)
 }
@@ -191,7 +191,7 @@ func List(ctx context.Context, treeName string, options *ListOptions) ([]*Status
 		statusList = append(statusList, status)
 		return err
 	}); err != nil {
-		return nil, false, errors.Annotate(err, "list status").Err()
+		return nil, false, errors.Fmt("list status: %w", err)
 	}
 	hasNextPage := false
 	if int64(len(statusList)) > options.Limit {
@@ -227,13 +227,13 @@ func ListAfter(ctx context.Context, afterTime time.Time) ([]*Status, error) {
 	err := iter.Do(func(row *spanner.Row) error {
 		status, err := fromRow(row)
 		if err != nil {
-			return errors.Annotate(err, "from row").Err()
+			return errors.Fmt("from row: %w", err)
 		}
 		results = append(results, status)
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "query status").Err()
+		return nil, errors.Fmt("query status: %w", err)
 	}
 	return results, nil
 }
@@ -241,27 +241,27 @@ func ListAfter(ctx context.Context, afterTime time.Time) ([]*Status, error) {
 func fromRow(row *spanner.Row) (*Status, error) {
 	status := &Status{}
 	if err := row.Column(0, &status.TreeName); err != nil {
-		return nil, errors.Annotate(err, "reading TreeName column").Err()
+		return nil, errors.Fmt("reading TreeName column: %w", err)
 	}
 	if err := row.Column(1, &status.StatusID); err != nil {
-		return nil, errors.Annotate(err, "reading StatusID column").Err()
+		return nil, errors.Fmt("reading StatusID column: %w", err)
 	}
 	generalStatus := int64(0)
 	if err := row.Column(2, &generalStatus); err != nil {
-		return nil, errors.Annotate(err, "reading GeneralStatus column").Err()
+		return nil, errors.Fmt("reading GeneralStatus column: %w", err)
 	}
 	status.GeneralStatus = pb.GeneralState(generalStatus)
 	if err := row.Column(3, &status.Message); err != nil {
-		return nil, errors.Annotate(err, "reading Message column").Err()
+		return nil, errors.Fmt("reading Message column: %w", err)
 	}
 	if err := row.Column(4, &status.CreateUser); err != nil {
-		return nil, errors.Annotate(err, "reading CreateUser column").Err()
+		return nil, errors.Fmt("reading CreateUser column: %w", err)
 	}
 	if err := row.Column(5, &status.CreateTime); err != nil {
-		return nil, errors.Annotate(err, "reading CreateTime column").Err()
+		return nil, errors.Fmt("reading CreateTime column: %w", err)
 	}
 	if err := row.Column(6, &status.ClosingBuilderName); err != nil {
-		return nil, errors.Annotate(err, "reading ClosingBuilderName column").Err()
+		return nil, errors.Fmt("reading ClosingBuilderName column: %w", err)
 	}
 	return status, nil
 }

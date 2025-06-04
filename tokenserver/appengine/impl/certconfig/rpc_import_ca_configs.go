@@ -167,7 +167,7 @@ func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
 		// fails, the validation callback will be retried.
 		idToCN, err := LoadCAUniqueIDToCNMap(ctx.Context)
 		if err != nil {
-			return errors.Annotate(err, "can't load unique_id map").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("can't load unique_id map: %w", err))
 		}
 		validateCAConfigs(ctx, cfg, idToCN)
 		return nil

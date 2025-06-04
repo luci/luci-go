@@ -48,7 +48,7 @@ type Team struct {
 // Validate validates a team value.
 func Validate(team *Team) error {
 	if err := validateID(team.ID); err != nil {
-		return errors.Annotate(err, "id").Err()
+		return errors.Fmt("id: %w", err)
 	}
 	return nil
 }
@@ -57,10 +57,10 @@ var teamIDRE = regexp.MustCompile(`^` + TeamIDExpression + `$`)
 
 func validateID(id string) error {
 	if id == "" {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	if !teamIDRE.MatchString(id) {
-		return errors.Reason("expected format: %s", teamIDRE).Err()
+		return errors.Fmt("expected format: %s", teamIDRE)
 	}
 	return nil
 }
@@ -88,7 +88,7 @@ func Read(ctx context.Context, ID string) (*Team, error) {
 		if spanner.ErrCode(err) == codes.NotFound {
 			return nil, NotExistsErr
 		}
-		return nil, errors.Annotate(err, "get status").Err()
+		return nil, errors.Fmt("get status: %w", err)
 	}
 	return fromRow(row)
 }
@@ -96,10 +96,10 @@ func Read(ctx context.Context, ID string) (*Team, error) {
 func fromRow(row *spanner.Row) (*Team, error) {
 	team := &Team{}
 	if err := row.Column(0, &team.ID); err != nil {
-		return nil, errors.Annotate(err, "reading ID column").Err()
+		return nil, errors.Fmt("reading ID column: %w", err)
 	}
 	if err := row.Column(1, &team.CreateTime); err != nil {
-		return nil, errors.Annotate(err, "reading CreateTime column").Err()
+		return nil, errors.Fmt("reading CreateTime column: %w", err)
 	}
 	return team, nil
 }

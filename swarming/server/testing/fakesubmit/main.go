@@ -162,10 +162,10 @@ func execTask(ctx, loopCtx context.Context, rbe remoteworkers.ReservationsClient
 			Name: reservationName,
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "GetReservation").Err()
+			return nil, errors.Fmt("GetReservation: %w", err)
 		}
 	} else if err != nil {
-		return nil, errors.Annotate(err, "CreateReservation").Err()
+		return nil, errors.Fmt("CreateReservation: %w", err)
 	}
 
 	for loopCtx.Err() == nil {

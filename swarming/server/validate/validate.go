@@ -87,27 +87,27 @@ func DimensionKey(key string) error {
 		return err
 	}
 	if !dimensionKeyRe.MatchString(key) {
-		return errors.Reason("the key should match %s", dimensionKeyRe).Err()
+		return errors.Fmt("the key should match %s", dimensionKeyRe)
 	}
 	return nil
 }
 
 func keyLength(key string) error {
 	if key == "" {
-		return errors.Reason("the key cannot be empty").Err()
+		return errors.New("the key cannot be empty")
 	}
 	if len(key) > maxDimensionKeyLen {
-		return errors.Reason("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(key)).Err()
+		return errors.Fmt("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(key))
 	}
 	return nil
 }
 
 func tagOrDimValue(val string) error {
 	if len(val) > maxDimensionValLen {
-		return errors.Reason("the value should be no longer than %d (got %d)", maxDimensionValLen, len(val)).Err()
+		return errors.Fmt("the value should be no longer than %d (got %d)", maxDimensionValLen, len(val))
 	}
 	if strings.TrimSpace(val) != val {
-		return errors.Reason("the value should have no leading or trailing spaces").Err()
+		return errors.New("the value should have no leading or trailing spaces")
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func tagOrDimValue(val string) error {
 // DimensionValue checks if `val` can be a dimension value for the given key.
 func DimensionValue(key, val string) error {
 	if val == "" {
-		return errors.Reason("the value cannot be empty").Err()
+		return errors.New("the value cannot be empty")
 	}
 	if err := tagOrDimValue(val); err != nil {
 		return err
@@ -133,7 +133,7 @@ func DimensionValue(key, val string) error {
 // validateBotID are extra validation rules for "id" dimension values.
 func validateBotID(val string) error {
 	if strings.Contains(val, ":") {
-		return errors.Reason(`bot ID is not allowed to contain ":"`).Err()
+		return errors.New(`bot ID is not allowed to contain ":"`)
 	}
 	return nil
 }
@@ -141,7 +141,7 @@ func validateBotID(val string) error {
 // validatePool are extra validation rules for "pool" dimension values.
 func validatePool(val string) error {
 	if strings.Contains(val, ":") {
-		return errors.Reason(`pool ID is not allowed to contain ":"`).Err()
+		return errors.New(`pool ID is not allowed to contain ":"`)
 	}
 	return nil
 }
@@ -149,7 +149,7 @@ func validatePool(val string) error {
 // SessionID checks if `val` is a valid bot session ID.
 func SessionID(val string) error {
 	if !sessionIDRe.MatchString(val) {
-		return errors.Reason("should match %s", sessionIDRe).Err()
+		return errors.Fmt("should match %s", sessionIDRe)
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func SessionID(val string) error {
 // An empty string is considered valid as well.
 func BotRequestUUID(val string) error {
 	if !botRequestUUDIDRe.MatchString(val) {
-		return errors.Reason("should match %s", botRequestUUDIDRe).Err()
+		return errors.Fmt("should match %s", botRequestUUDIDRe)
 	}
 	return nil
 }
@@ -186,10 +186,10 @@ func CIPDPackageName(pkg string, allowTemplate bool) error {
 
 	expanded, err := cipdExpander.Expand(pkg)
 	if err != nil {
-		return errors.Annotate(err, "bad package name template %q", pkg).Err()
+		return errors.Fmt("bad package name template %q: %w", pkg, err)
 	}
 	if !allowTemplate && pkg != expanded {
-		return errors.Reason("package name template %q is not allowed here", pkg).Err()
+		return errors.Fmt("package name template %q is not allowed here", pkg)
 	}
 
 	// No need to annotate the error, it has all details already.
@@ -213,7 +213,7 @@ type cipdPkg interface {
 func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directoryocclusion.Checker, pkgSource string) errors.MultiError {
 	var merr errors.MultiError
 	if len(packages) > maxCIPDPackageCount {
-		merr.MaybeAdd(errors.Reason("can have up to %d packages", maxCIPDPackageCount).Err())
+		merr.MaybeAdd(errors.Fmt("can have up to %d packages", maxCIPDPackageCount))
 	}
 
 	type pathName struct {
@@ -224,7 +224,7 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directory
 	for i, pkg := range packages {
 		pkgName, err := packageName(pkg)
 		if err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "name").Err())
+			merr.MaybeAdd(errors.Fmt("name: %w", err))
 		}
 
 		subMerr := validateCIPDPackage(pkgName, pkg, requirePinnedVer, doc, pkgSource)
@@ -236,7 +236,7 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directory
 
 		pn := pathName{pkg.GetPath(), pkgName}
 		if _, ok := pkgPathNames[pn]; ok {
-			merr.MaybeAdd(errors.Reason("package %q is specified more than once in path %s", pkgName, pkg.GetPath()).Err())
+			merr.MaybeAdd(errors.Fmt("package %q is specified more than once in path %s", pkgName, pkg.GetPath()))
 		} else {
 			pkgPathNames[pn] = struct{}{}
 		}
@@ -254,15 +254,15 @@ func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, doc
 	var merr errors.MultiError
 
 	if err := CIPDPackageName(pkgName, true); err != nil {
-		merr.MaybeAdd(errors.Annotate(err, "name").Err())
+		merr.MaybeAdd(errors.Fmt("name: %w", err))
 	}
 
 	if err := CIPDPackageVersion(pkg.GetVersion()); err != nil {
-		merr.MaybeAdd(errors.Annotate(err, "version").Err())
+		merr.MaybeAdd(errors.Fmt("version: %w", err))
 	}
 
 	if err := Path(pkg.GetPath(), MaxPackagePathLength, false); err != nil {
-		merr.MaybeAdd(errors.Annotate(err, "path").Err())
+		merr.MaybeAdd(errors.Fmt("path: %w", err))
 	}
 
 	// All cipd packages are considered compatible in terms of paths: it's
@@ -286,7 +286,7 @@ func packageName(pkg cipdPkg) (string, error) {
 	case *configpb.TaskTemplate_CipdPackage:
 		return pkg.GetPkg(), nil
 	default:
-		return "", errors.Reason("unexpected type %T", pkg).Err()
+		return "", errors.Fmt("unexpected type %T", pkg)
 	}
 }
 
@@ -295,14 +295,14 @@ func validatePinnedInstanceVersion(v string) error {
 		common.ValidateInstanceTag(v) == nil {
 		return nil
 	}
-	return errors.Reason("%q is not a pinned instance version", v).Err()
+	return errors.Fmt("%q is not a pinned instance version", v)
 }
 
 // Tag checks a "<key>:<value>" tag is correct.
 func Tag(tag string) error {
 	parts := strings.SplitN(tag, ":", 2)
 	if len(parts) != 2 {
-		return errors.Reason("tag must be in key:value form, not %q", tag).Err()
+		return errors.Fmt("tag must be in key:value form, not %q", tag)
 	}
 
 	key, value := parts[0], parts[1]
@@ -314,7 +314,7 @@ func Tag(tag string) error {
 		return err
 	}
 	if reservedTags.Has(key) {
-		return errors.Reason("tag %q is reserved for internal use and can't be assigned manually", key).Err()
+		return errors.Fmt("tag %q is reserved for internal use and can't be assigned manually", key)
 	}
 	return nil
 }
@@ -322,11 +322,11 @@ func Tag(tag string) error {
 // ServiceAccount checks a service account is correct.
 func ServiceAccount(sa string) error {
 	if len(sa) > maxServiceAccountLength {
-		return errors.Reason("too long %q: %d > %d", sa, len(sa), maxServiceAccountLength).Err()
+		return errors.Fmt("too long %q: %d > %d", sa, len(sa), maxServiceAccountLength)
 	}
 
 	if _, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, sa)); err != nil {
-		return errors.Reason("invalid %q: must be an email", sa).Err()
+		return errors.Fmt("invalid %q: must be an email", sa)
 	}
 	return nil
 }
@@ -335,7 +335,7 @@ func ServiceAccount(sa string) error {
 func Priority(p int32) error {
 	// Priority 0 is reserved for terminate tasks.
 	if p < 1 || p > maxPriority {
-		return errors.Reason("invalid %d, must be between 1 and %d", p, maxPriority).Err()
+		return errors.Fmt("invalid %d, must be between 1 and %d", p, maxPriority)
 	}
 	return nil
 }
@@ -343,7 +343,7 @@ func Priority(p int32) error {
 // BotPingTolerance checks a bot_ping_tolerance is correct.
 func BotPingTolerance(bpt int64) error {
 	if bpt < minBotPingTolanceSecs || bpt > maxBotPingTolanceSecs {
-		return errors.Reason("invalid %d, must be between %d and %d", bpt, minBotPingTolanceSecs, maxBotPingTolanceSecs).Err()
+		return errors.Fmt("invalid %d, must be between %d and %d", bpt, minBotPingTolanceSecs, maxBotPingTolanceSecs)
 	}
 	return nil
 }
@@ -355,16 +355,16 @@ func SecureURL(u string) error {
 		return err
 	}
 	if parsed.Hostname() == "" {
-		return errors.Reason("invalid URL %q", u).Err()
+		return errors.Fmt("invalid URL %q", u)
 	}
 
 	localHosts := []string{"localhost", "127.0.0.1", "::1"}
 	if slices.Contains(localHosts, parsed.Hostname()) {
 		if parsed.Scheme != "http" && parsed.Scheme != "https" {
-			return errors.Reason("%q is not secure", u).Err()
+			return errors.Fmt("%q is not secure", u)
 		}
 	} else if parsed.Scheme != "https" {
-		return errors.Reason("%q is not secure", u).Err()
+		return errors.Fmt("%q is not secure", u)
 	}
 	return nil
 }
@@ -375,12 +375,12 @@ func PubSubTopicName(topic string) (string, string, error) {
 		return "", "", nil
 	}
 	if len(topic) > maxPubsubTopicLength {
-		return "", "", errors.Reason("too long %s: %d > %d", topic, len(topic), maxPubsubTopicLength).Err()
+		return "", "", errors.Fmt("too long %s: %d > %d", topic, len(topic), maxPubsubTopicLength)
 	}
 
 	matches := topicNameRE.FindAllStringSubmatch(topic, -1)
 	if matches == nil || len(matches[0]) != 3 {
-		return "", "", errors.Reason("topic %q does not match %q", topic, topicNameRE).Err()
+		return "", "", errors.Fmt("topic %q does not match %q", topic, topicNameRE)
 	}
 
 	cloudProj := matches[0][1]
@@ -388,13 +388,13 @@ func PubSubTopicName(topic string) (string, string, error) {
 	// Only internal App Engine projects start with "google.com:", all other
 	// project ids conform to cloudProjectIDRE.
 	if !strings.HasPrefix(cloudProj, "google.com:") && !cloudProjectIDRE.MatchString(cloudProj) {
-		return "", "", errors.Reason("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE).Err()
+		return "", "", errors.Fmt("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE)
 	}
 	if strings.HasPrefix(topicID, "goog") {
-		return "", "", errors.Reason("topic id %q shouldn't begin with the string goog", topicID).Err()
+		return "", "", errors.Fmt("topic id %q shouldn't begin with the string goog", topicID)
 	}
 	if !topicIDRE.MatchString(topicID) {
-		return "", "", errors.Reason("topic id %q does not match %q", topicID, topicIDRE).Err()
+		return "", "", errors.Fmt("topic id %q does not match %q", topicID, topicIDRE)
 	}
 	return cloudProj, topicID, nil
 }
@@ -418,7 +418,7 @@ func Path(p string, maxLen int, allowWinPath bool) error {
 	case strings.HasPrefix(p, "/"):
 		return errors.New(`cannot start with "/"`)
 	case p != path.Clean(p):
-		return errors.Reason("%q is not normalized. Normalized is %q", p, path.Clean(p)).Err()
+		return errors.Fmt("%q is not normalized. Normalized is %q", p, path.Clean(p))
 	default:
 		return nil
 	}
@@ -427,7 +427,7 @@ func Path(p string, maxLen int, allowWinPath bool) error {
 // Length checks the value does not exceed the limit.
 func Length(val string, limit int) error {
 	if len(val) > limit {
-		return errors.Reason("too long %q: %d > %d", val, len(val), limit).Err()
+		return errors.Fmt("too long %q: %d > %d", val, len(val), limit)
 	}
 	return nil
 }
@@ -447,7 +447,7 @@ type cacheEntry interface {
 func Caches[C cacheEntry](caches []C, cacheSource string) (*directoryocclusion.Checker, errors.MultiError) {
 	var merr errors.MultiError
 	if len(caches) > maxCacheCount {
-		merr.MaybeAdd(errors.Reason("can have up to %d caches", maxCacheCount).Err())
+		merr.MaybeAdd(errors.Fmt("can have up to %d caches", maxCacheCount))
 	}
 
 	doc := directoryocclusion.NewChecker("")
@@ -457,13 +457,13 @@ func Caches[C cacheEntry](caches []C, cacheSource string) (*directoryocclusion.C
 			merr.MaybeAdd(errors.New("same cache name cannot be specified twice"))
 		}
 		if err := Path(c.GetPath(), maxCachePathLength, false); err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "cache path %d", i).Err())
+			merr.MaybeAdd(errors.Fmt("cache path %d: %w", i, err))
 			continue
 		}
 		// Caches are all unique; they can't overlap.
 		doc.Add(c.GetPath(), fmt.Sprintf("%s:%s", cacheSource, c.GetName()), "")
 		if err := validateCacheName(c.GetName()); err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "cache name %d", i).Err())
+			merr.MaybeAdd(errors.Fmt("cache name %d: %w", i, err))
 		}
 	}
 	docErrs := doc.Conflicts()
@@ -482,7 +482,7 @@ func validateCacheName(name string) error {
 		return err
 	}
 	if !cacheNameRe.MatchString(name) {
-		return errors.Reason("%q should match %s", name, cacheNameRe).Err()
+		return errors.Fmt("%q should match %s", name, cacheNameRe)
 	}
 	return nil
 }
@@ -496,7 +496,7 @@ func EnvVar(ev string) error {
 	case teeErr(Length(ev, maxEnvVarLength), &err) != nil:
 		return err
 	case !envVarRe.MatchString(ev):
-		return errors.Reason("%q should match %s", ev, envVarRe).Err()
+		return errors.Fmt("%q should match %s", ev, envVarRe)
 	default:
 		return nil
 	}
@@ -522,26 +522,26 @@ func BotDimensions(dims map[string][]string) errors.MultiError {
 			recordErr(key, err)
 		}
 		if len(vals) == 0 {
-			recordErr(key, errors.Reason("values list should not be empty").Err())
+			recordErr(key, errors.New("values list should not be empty"))
 		}
 		seen := stringset.New(len(vals))
 		for _, val := range vals {
 			if err := DimensionValue(key, val); err != nil {
-				recordErr(key, errors.Annotate(err, "bad value %q", trimLen(val, maxDimensionValLen+5)).Err())
+				recordErr(key, errors.Fmt("bad value %q: %w", trimLen(val, maxDimensionValLen+5), err))
 			} else if !seen.Add(val) {
-				recordErr(key, errors.Reason("duplicate value %q", val).Err())
+				recordErr(key, errors.Fmt("duplicate value %q", val))
 			}
 		}
 		if key == "id" {
 			seenID = true
 			if len(vals) > 1 {
-				recordErr(key, errors.Reason("must have only one value").Err())
+				recordErr(key, errors.New("must have only one value"))
 			}
 		}
 	}
 
 	if !seenID {
-		recordErr("id", errors.Reason("a value is missing").Err())
+		recordErr("id", errors.New("a value is missing"))
 	}
 
 	if len(perKeyErrs) == 0 {

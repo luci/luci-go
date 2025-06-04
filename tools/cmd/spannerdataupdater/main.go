@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-var errCanceledByUser = errors.Reason("operation canceled by user").Err()
+var errCanceledByUser = errors.New("operation canceled by user")
 
 type flags struct {
 	sql      string
@@ -82,7 +82,7 @@ func parseFlags() (*flags, error) {
 func run(ctx context.Context) error {
 	flags, err := parseFlags()
 	if err != nil {
-		return errors.Annotate(err, "failed to parse flags").Err()
+		return errors.Fmt("failed to parse flags: %w", err)
 	}
 
 	// Create an Authenticator and use it for Spanner operations.
@@ -95,13 +95,13 @@ func run(ctx context.Context) error {
 
 	authTS, err := authenticator.TokenSource()
 	if err != nil {
-		return errors.Annotate(err, "could not get authentication credentials").Err()
+		return errors.Fmt("could not get authentication credentials: %w", err)
 	}
 
 	database := fmt.Sprintf("projects/%s/instances/%s/databases/%s", flags.project, flags.instance, flags.database)
 	c, err := spanner.NewClient(ctx, database, option.WithTokenSource(authTS))
 	if err != nil {
-		return errors.Annotate(err, "could not create Spanner client").Err()
+		return errors.Fmt("could not create Spanner client: %w", err)
 	}
 	fmt.Println("The following partitioned DML will be applied.")
 	fmt.Println(strings.Repeat("=", 80))
@@ -121,7 +121,7 @@ func run(ctx context.Context) error {
 	defer cancel()
 	count, err := c.PartitionedUpdate(ctx, spanner.NewStatement(flags.sql))
 	if err != nil {
-		return errors.Annotate(err, "applying partitioned update").Err()
+		return errors.Fmt("applying partitioned update: %w", err)
 	}
 	log.Printf("%v rows updated", count)
 	return nil

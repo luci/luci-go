@@ -87,10 +87,10 @@ func fetchConfigs(c context.Context) (*config.ProjectsCfg, string, error) {
 func ImportConfigs(c context.Context) (string, error) {
 	cfg, rev, err := fetchConfigs(c)
 	if err != nil {
-		return "", errors.Annotate(err, "failed to fetch project configs").Err()
+		return "", errors.Fmt("failed to fetch project configs: %w", err)
 	}
 	if err := importIdentities(c, cfg); err != nil {
-		return "", errors.Annotate(err, "failed to import project configs").Err()
+		return "", errors.Fmt("failed to import project configs: %w", err)
 	}
 	return rev, nil
 }

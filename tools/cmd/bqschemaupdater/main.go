@@ -204,7 +204,7 @@ func parseFlags() (*flags, error) {
 func run(ctx context.Context) error {
 	flags, err := parseFlags()
 	if err != nil {
-		return errors.Annotate(err, "failed to parse flags").Err()
+		return errors.Fmt("failed to parse flags: %w", err)
 	}
 
 	if flags.verbose {
@@ -217,11 +217,11 @@ func run(ctx context.Context) error {
 
 	desc, err := loadProtoDescription(ctx, flags.protoDir, !flags.noGoMode, flags.goModules, flags.importPaths)
 	if err != nil {
-		return errors.Annotate(err, "failed to load proto descriptor").Err()
+		return errors.Fmt("failed to load proto descriptor: %w", err)
 	}
 	td.Schema, td.Description, err = schemaFromMessage(desc, flags.messageName)
 	if err != nil {
-		return errors.Annotate(err, "could not derive schema from message %q at path %q", flags.messageName, flags.protoDir).Err()
+		return errors.Fmt("could not derive schema from message %q at path %q: %w", flags.messageName, flags.protoDir, err)
 	}
 	if td.TableID == "-" {
 		return dumpSchemaJSON(&td.Schema)
@@ -239,12 +239,12 @@ func run(ctx context.Context) error {
 
 	authTS, err := authenticator.TokenSource()
 	if err != nil {
-		return errors.Annotate(err, "could not get authentication credentials").Err()
+		return errors.Fmt("could not get authentication credentials: %w", err)
 	}
 
 	c, err := bigquery.NewClient(ctx, td.ProjectID, option.WithTokenSource(authTS))
 	if err != nil {
-		return errors.Annotate(err, "could not create BigQuery client").Err()
+		return errors.Fmt("could not create BigQuery client: %w", err)
 	}
 	return updateFromTableDef(ctx, flags.force, bqTableStore{c}, td)
 }
@@ -269,7 +269,7 @@ func schemaFromMessage(desc *descriptorpb.FileDescriptorSet, messageName string)
 	for _, f := range desc.File {
 		conv.SourceCodeInfo[f], err = descutil.IndexSourceCodeInfo(f)
 		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to index source code info in file %q", f.GetName()).Err()
+			return nil, "", errors.Fmt("failed to index source code info in file %q: %w", f.GetName(), err)
 		}
 	}
 	return conv.Schema(messageName)
@@ -290,7 +290,7 @@ func checkGoMode(dir string) (bool, error) {
 		return strings.TrimSpace(string(buf)) != "command-line-arguments", nil
 	}
 	if os.Getenv("GO111MODULE") != "off" && os.Getenv("GOPATH") != "" {
-		return false, errors.Reason("GOPATH mode is not supported").Err()
+		return false, errors.New("GOPATH mode is not supported")
 	}
 	return false, nil
 }
@@ -362,7 +362,7 @@ func confirm(action string) (response bool) {
 func dumpSchemaJSON(s *bigquery.Schema) error {
 	b, err := s.ToJSONFields()
 	if err != nil {
-		return errors.Annotate(err, "failed to dump table schema to JSON").Err()
+		return errors.Fmt("failed to dump table schema to JSON: %w", err)
 	}
 	fmt.Println(string(b))
 	return nil
