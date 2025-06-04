@@ -65,17 +65,17 @@ func (cmd *terminateImpl) ParseInputs(ctx context.Context, args []string, env su
 func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	res, err := svc.TerminateBot(ctx, cmd.botID, cmd.reason)
 	if err != nil {
-		return errors.Annotate(err, "failed to terminate bot %s", cmd.botID).Err()
+		return errors.Fmt("failed to terminate bot %s: %w", cmd.botID, err)
 	}
 
 	if cmd.wait {
 		logging.Infof(ctx, "Waiting for the bot to terminate...")
 		taskres, err := swarming.GetOne(ctx, svc, res.TaskId, nil, swarming.WaitAll)
 		if err != nil {
-			return errors.Annotate(err, "failed when polling task %s", res.TaskId).Err()
+			return errors.Fmt("failed when polling task %s: %w", res.TaskId, err)
 		}
 		if taskres.State != swarmingv2.TaskState_COMPLETED {
-			return errors.Reason("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State).Err()
+			return errors.Fmt("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State)
 		}
 	}
 

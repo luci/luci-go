@@ -56,7 +56,7 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.Reason("position arguments not expected").Err()
+		return errors.New("position arguments not expected")
 	}
 	return nil
 }
@@ -70,13 +70,13 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 
 	deps, _, err := isolate.ProcessIsolate(&c.ArchiveOptions)
 	if err != nil {
-		return errors.Annotate(err, "failed to process isolate").Err()
+		return errors.Fmt("failed to process isolate: %w", err)
 	}
 
 	for _, dep := range deps {
 		_, err := os.Stat(dep)
 		if err != nil {
-			return errors.Annotate(err, "failed to call stat").Err()
+			return errors.Fmt("failed to call stat: %w", err)
 		}
 	}
 	return nil

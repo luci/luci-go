@@ -66,15 +66,15 @@ func (cmd *cancelTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *cancelTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.limit < 1 {
-		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
+		return errors.Fmt("invalid -limit %d, must be positive", cmd.limit)
 	}
 	if cmd.limit > defaultLimit && len(cmd.tags) == 0 {
-		return errors.Reason("invalid -limit %d, cannot be larger than %d when no tags is specified", cmd.limit, defaultLimit).Err()
+		return errors.Fmt("invalid -limit %d, cannot be larger than %d when no tags is specified", cmd.limit, defaultLimit)
 	}
 
 	// check start and end time.
 	if !cmd.start.IsZero() && !cmd.end.IsZero() && cmd.start.After(cmd.end) {
-		return errors.Reason("invalid -start -end, start time %v cannot be after end time %v", cmd.start, cmd.end).Err()
+		return errors.Fmt("invalid -start -end, start time %v cannot be after end time %v", cmd.start, cmd.end)
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func (cmd *cancelTasksImpl) ParseInputs(ctx context.Context, args []string, env 
 func (cmd *cancelTasksImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	_, err := svc.CancelTasks(ctx, int32(cmd.limit), cmd.tags, cmd.killRunning, cmd.start, cmd.end)
 	if err != nil {
-		return errors.Annotate(err, "failed to cancel all tasks\n").Err()
+		return errors.Fmt("failed to cancel all tasks\n: %w", err)
 	}
 	logging.Infof(ctx, "Cancel tasks request submitted without error.")
 	return nil

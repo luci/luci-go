@@ -80,7 +80,7 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 
 	host, project, err := gitiles.ParseRepoURL(args[0])
 	if err != nil {
-		return errors.Annotate(err, "invalid repo URL %q", args[0]).Err()
+		return errors.Fmt("invalid repo URL %q: %w", args[0], err)
 	}
 
 	req := &gitilespb.LogRequest{
@@ -149,7 +149,7 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 	for i, c := range res.Log {
 		buf := &bytes.Buffer{} // cannot reuse
 		if err := m.Marshal(buf, c); err != nil {
-			return errors.Annotate(err, "could not marshal commit %q to JSONPB", c.Id).Err()
+			return errors.Fmt("could not marshal commit %q to JSONPB: %w", c.Id, err)
 		}
 		arr[i] = json.RawMessage(buf.Bytes())
 	}

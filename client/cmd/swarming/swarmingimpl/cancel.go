@@ -62,10 +62,10 @@ func (cmd *cancelImpl) ParseInputs(ctx context.Context, args []string, env subco
 func (cmd *cancelImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	res, err := svc.CancelTask(ctx, cmd.taskID, cmd.killRunning)
 	if res != nil && !res.Canceled {
-		err = errors.Reason("task was not canceled. running=%v\n", res.WasRunning).Err()
+		err = errors.Fmt("task was not canceled. running=%v\n", res.WasRunning)
 	}
 	if err != nil {
-		return errors.Annotate(err, "failed to cancel task %s\n", cmd.taskID).Err()
+		return errors.Fmt("failed to cancel task %s\n: %w", cmd.taskID, err)
 	}
 	logging.Infof(ctx, "Canceled %s", cmd.taskID)
 	return nil

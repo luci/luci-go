@@ -70,7 +70,7 @@ func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error 
 		return err
 	}
 	if len(args) == 0 {
-		return errors.Reason("at least one isolate file required").Err()
+		return errors.New("at least one isolate file required")
 	}
 	return nil
 }
@@ -93,7 +93,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 		return nil, err
 	}
 	if base.GetFlags().NArg() > 0 {
-		return nil, errors.Reason("no positional arguments expected").Err()
+		return nil, errors.New("no positional arguments expected")
 	}
 	i.PostProcess(cwd)
 	return &i.ArchiveOptions, nil
@@ -144,7 +144,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 
 	opts, err := toArchiveOptions(args)
 	if err != nil {
-		return errors.Annotate(err, "failed to process input JSONs").Err()
+		return errors.Fmt("failed to process input JSONs: %w", err)
 	}
 
 	al := &archiveLogger{
@@ -165,7 +165,7 @@ func toArchiveOptions(genJSONPaths []string) ([]*isolate.ArchiveOptions, error) 
 	for i, genJSONPath := range genJSONPaths {
 		o, err := processGenJSON(genJSONPath)
 		if err != nil {
-			return nil, errors.Annotate(err, "%q", genJSONPath).Err()
+			return nil, errors.Fmt("%q: %w", genJSONPath, err)
 		}
 		opts[i] = o
 	}
@@ -190,20 +190,20 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 		Version int
 	}
 	if err := json.NewDecoder(r).Decode(&data); err != nil {
-		return nil, errors.Annotate(err, "failed to decode").Err()
+		return nil, errors.Fmt("failed to decode: %w", err)
 	}
 
 	if data.Version != isolate.IsolatedGenJSONVersion {
-		return nil, errors.Reason("unsupported version %d", data.Version).Err()
+		return nil, errors.Fmt("unsupported version %d", data.Version)
 	}
 
 	if fileInfo, err := os.Stat(data.Dir); err != nil || !fileInfo.IsDir() {
-		return nil, errors.Reason("invalid dir %q", data.Dir).Err()
+		return nil, errors.Fmt("invalid dir %q", data.Dir)
 	}
 
 	opts, err := parseArchiveCMD(data.Args, data.Dir)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid archive command").Err()
+		return nil, errors.Fmt("invalid archive command: %w", err)
 	}
 	return opts, nil
 }

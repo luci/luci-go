@@ -76,7 +76,7 @@ func (c *baseCommandRun) Parse() error {
 		}
 		v := flag.Lookup("v")
 		if v == nil {
-			return errors.Reason("v flag for glog not found").Err()
+			return errors.New("v flag for glog not found")
 		}
 		logtostderr.Value.Set("true")
 		v.Value.Set("9")
@@ -144,7 +144,7 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 
 func (c *isolateFlags) Parse(cwd string) error {
 	if !filepath.IsAbs(cwd) {
-		return errors.Reason("cwd must be absolute path").Err()
+		return errors.New("cwd must be absolute path")
 	}
 	for _, vars := range [](map[string]string){c.ConfigVariables, c.PathVariables} {
 		for k := range vars {
@@ -162,7 +162,7 @@ func (c *isolateFlags) Parse(cwd string) error {
 	}
 
 	if c.Isolate == "" {
-		return errors.Reason("-isolate must be specified").Err()
+		return errors.New("-isolate must be specified")
 	}
 
 	if !filepath.IsAbs(c.Isolate) {
@@ -200,7 +200,7 @@ func elideNestedPaths(deps []string, pathSep string) []string {
 
 func recreateTree(outDir string, rootDir string, deps []string) error {
 	if err := filesystem.MakeDirs(outDir); err != nil {
-		return errors.Annotate(err, "failed to create directory: %s", outDir).Err()
+		return errors.Fmt("failed to create directory: %s: %w", outDir, err)
 	}
 	deps = elideNestedPaths(deps, string(os.PathSeparator))
 	createdDirs := make(map[string]struct{})
@@ -209,14 +209,14 @@ func recreateTree(outDir string, rootDir string, deps []string) error {
 		dstDir := filepath.Dir(dst)
 		if _, ok := createdDirs[dstDir]; !ok {
 			if err := filesystem.MakeDirs(dstDir); err != nil {
-				return errors.Annotate(err, "failed to call MakeDirs(%s)", dstDir).Err()
+				return errors.Fmt("failed to call MakeDirs(%s): %w", dstDir, err)
 			}
 			createdDirs[dstDir] = struct{}{}
 		}
 
 		err := filesystem.HardlinkRecursively(dep, dst)
 		if err != nil {
-			return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", dep, dst).Err()
+			return errors.Fmt("failed to call HardlinkRecursively(%s, %s): %w", dep, dst, err)
 		}
 	}
 	return nil
@@ -312,12 +312,12 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 			}
 			for i, dep := range deps {
 				if in.Allowlist[i], err = filepath.Rel(path, dep); err != nil {
-					return errors.Annotate(err, "failed to compute relative path for %q", dep).Err()
+					return errors.Fmt("failed to compute relative path for %q: %w", dep, err)
 				}
 			}
 			if o.IgnoredPathFilterRe != "" {
 				if in.Exclude, err = regexps.Compile(o.IgnoredPathFilterRe); err != nil {
-					return errors.Reason("invalid regexp %q: %s", o.IgnoredPathFilterRe, err).Err()
+					return errors.Fmt("invalid regexp %q: %s", o.IgnoredPathFilterRe, err)
 				}
 			}
 
@@ -346,7 +346,7 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 	})
 
 	if err := eg.Wait(); err != nil {
-		return nil, errors.Annotate(err, "failed to call Wait").Err()
+		return nil, errors.Fmt("failed to call Wait: %w", err)
 	}
 
 	// Collect digests.
@@ -356,7 +356,7 @@ func (r *baseCommandRun) uploadToCASNew(ctx context.Context, authOpts auth.Optio
 		if rootDgs[i], err = in.Digest("."); err != nil {
 			// log for stacktrace.
 			logging.Errorf(ctx, "failed to call Digest, %s: %+v", in.Path, err)
-			return nil, errors.Annotate(err, "failed to retrieve digest for %q", in.Path).Err()
+			return nil, errors.Fmt("failed to retrieve digest for %q: %w", in.Path, err)
 		}
 	}
 

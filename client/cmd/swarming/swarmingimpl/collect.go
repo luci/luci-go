@@ -85,14 +85,14 @@ func (t *taskOutputOption) Set(s string) error {
 		*t = append(*t, s)
 	case s == "dir" || strings.HasPrefix(s, "dir:"):
 		if _, yes := t.includesDir(); yes {
-			return errors.Reason("cannot have more than one \"dir\" destination").Err()
+			return errors.New("cannot have more than one \"dir\" destination")
 		}
 		*t = append(*t, s)
 	case s == "all":
 		_ = t.Set("console")
 		_ = t.Set("json")
 	default:
-		return errors.Reason("invalid task output option").Err()
+		return errors.New("invalid task output option")
 	}
 	return nil
 }
@@ -295,10 +295,10 @@ func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.timeout < 0 {
-		return errors.Reason("negative timeout is not allowed").Err()
+		return errors.New("negative timeout is not allowed")
 	}
 	if !cmd.wait && cmd.timeout > 0 {
-		return errors.Reason("do not specify -timeout with -wait=false").Err()
+		return errors.New("do not specify -timeout with -wait=false")
 	}
 
 	// Figure out where to store files with tasks' stdout.
@@ -309,12 +309,11 @@ func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subc
 			cmd.textOutputDir = cmd.outputDir
 		}
 		if cmd.textOutputDir == "" {
-			return errors.Reason(
-				"cannot figure out where to store task console output: " +
-					"either specify the directory as `-task-output-stdout dir:<path>` " +
-					"(if only console output is required) or pass `-output-dir` " +
-					"(if both text and isolated output are required)",
-			).Err()
+			return errors.New("cannot figure out where to store task console output: " +
+				"either specify the directory as `-task-output-stdout dir:<path>` " +
+				"(if only console output is required) or pass `-output-dir` " +
+				"(if both text and isolated output are required)")
+
 		}
 	}
 
@@ -323,18 +322,18 @@ func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subc
 	if cmd.jsonInput != "" {
 		data, err := os.ReadFile(cmd.jsonInput)
 		if err != nil {
-			return errors.Annotate(err, "reading json input").Err()
+			return errors.Fmt("reading json input: %w", err)
 		}
 		var tasks clipb.SpawnTasksOutput
 		if err := protojson.Unmarshal(data, &tasks); err != nil {
-			return errors.Annotate(err, "unmarshalling json input").Err()
+			return errors.Fmt("unmarshalling json input: %w", err)
 		}
 		for _, task := range tasks.Tasks {
 			cmd.taskIDs = append(cmd.taskIDs, task.TaskId)
 		}
 	}
 	if len(cmd.taskIDs) == 0 {
-		return errors.Reason("must specify at least one task id, either directly or through -requests-json").Err()
+		return errors.New("must specify at least one task id, either directly or through -requests-json")
 	}
 
 	// Verify they all look like Swarming task IDs.
@@ -342,7 +341,7 @@ func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subc
 	// TODO(vadimsh): Extract and reuse in other subcommands.
 	for _, taskID := range cmd.taskIDs {
 		if !taskIDRe.MatchString(taskID) {
-			return errors.Reason("task ID %q must be hex ([a-f0-9])", taskID).Err()
+			return errors.Fmt("task ID %q must be hex ([a-f0-9])", taskID)
 		}
 	}
 
@@ -350,7 +349,7 @@ func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subc
 	seen := stringset.New(len(cmd.taskIDs))
 	for _, taskID := range cmd.taskIDs {
 		if !seen.Add(taskID) {
-			return errors.Reason("task ID %s is given more than once", taskID).Err()
+			return errors.Fmt("task ID %s is given more than once", taskID)
 		}
 	}
 
@@ -400,7 +399,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 		eg.Go(func() error {
 			logging.Debugf(ectx, "%s: fetching console output", res.taskID)
 			if err := res.output.fetch(ectx, svc, res.taskID); err != nil {
-				return errors.Annotate(err, "fetching console output of %s", res.taskID).Err()
+				return errors.Fmt("fetching console output of %s: %w", res.taskID, err)
 			}
 			return nil
 		})
@@ -419,7 +418,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 				},
 			})
 			if err != nil {
-				return errors.Annotate(err, "fetching isolated output of %s", res.taskID).Err()
+				return errors.Fmt("fetching isolated output of %s: %w", res.taskID, err)
 			}
 			res.outputs = output
 			return nil
@@ -468,10 +467,10 @@ func prepareOutputDir(outputDir, taskID string) (string, error) {
 	// already exist and may contain partial results. Take no chance and restart
 	// from scratch.
 	if err := os.RemoveAll(dir); err != nil {
-		return "", errors.Annotate(err, "failed to remove directory: %s", dir).Err()
+		return "", errors.Fmt("failed to remove directory: %s: %w", dir, err)
 	}
 	if err := os.MkdirAll(dir, 0777); err != nil {
-		return "", errors.Annotate(err, "failed to create directory: %s", dir).Err()
+		return "", errors.Fmt("failed to create directory: %s: %w", dir, err)
 	}
 	return dir, nil
 }
@@ -483,16 +482,16 @@ func prepareTextOutput(outputDir, taskID string) (*textOutput, error) {
 	if outputDir == "" {
 		file, err := os.CreateTemp("", fmt.Sprintf("swarming_%s_*.txt", taskID))
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to create a temp file for storing console output").Err()
+			return nil, errors.Fmt("failed to create a temp file for storing console output: %w", err)
 		}
 		return &textOutput{file: file, temp: true}, nil
 	}
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
-		return nil, errors.Annotate(err, "failed to create directory: %s", outputDir).Err()
+		return nil, errors.Fmt("failed to create directory: %s: %w", outputDir, err)
 	}
 	file, err := os.Create(filepath.Join(outputDir, taskID+".txt"))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to create a file for storing console output").Err()
+		return nil, errors.Fmt("failed to create a file for storing console output: %w", err)
 	}
 	return &textOutput{file: file}, nil
 }
@@ -586,7 +585,7 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 			if res.output != nil {
 				switch written, err := res.output.dump(extra.Stdout); {
 				case err != nil:
-					outputErrs.MaybeAdd(errors.Annotate(err, "emitting stdout of %q", res.taskID).Err())
+					outputErrs.MaybeAdd(errors.Fmt("emitting stdout of %q: %w", res.taskID, err))
 				case written != 0:
 					fmt.Fprintln(extra.Stdout)
 				}
@@ -699,13 +698,13 @@ func (e *legacySummaryEmitter) finish(merr *errors.MultiError) {
 		// `output` as an extra field not present in the original proto.
 		buf, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(result.result)
 		if err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "JSON serializing results of %q", taskID).Err())
+			merr.MaybeAdd(errors.Fmt("JSON serializing results of %q: %w", taskID, err))
 			shards = append(shards, nil) // indicates there was an error
 			continue
 		}
 		var jsonResult map[string]any
 		if err := json.Unmarshal(buf, &jsonResult); err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "JSON deserializing results of %q", taskID).Err())
+			merr.MaybeAdd(errors.Fmt("JSON deserializing results of %q: %w", taskID, err))
 			shards = append(shards, nil) // indicates there was an error
 			continue
 		}

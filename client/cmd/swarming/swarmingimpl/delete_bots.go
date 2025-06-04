@@ -71,7 +71,7 @@ func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, sin
 		fmt.Println("Continue? [y/N] ")
 		_, err := fmt.Scan(&res)
 		if err != nil {
-			return errors.Annotate(err, "error receiving your response").Err()
+			return errors.Fmt("error receiving your response: %w", err)
 		}
 		if res != "y" && res != "Y" {
 			fmt.Println("canceled deleting bots, Goodbye")
@@ -87,7 +87,7 @@ func (cmd *deleteBotsImpl) Execute(ctx context.Context, svc swarming.Client, sin
 			return err
 		}
 		if !res.Deleted {
-			return errors.Reason("bot %s was not deleted", botID).Err()
+			return errors.Fmt("bot %s was not deleted", botID)
 		}
 		logging.Infof(ctx, "Successfully deleted %s", botID)
 	}

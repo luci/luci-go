@@ -61,7 +61,7 @@ func (cmd *requestShowImpl) ParseInputs(ctx context.Context, args []string, env 
 func (cmd *requestShowImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	request, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return errors.Annotate(err, "failed to get task request. task ID = %s", cmd.taskID).Err()
+		return errors.Fmt("failed to get task request. task ID = %s: %w", cmd.taskID, err)
 	}
 	return output.Proto(sink, request)
 }

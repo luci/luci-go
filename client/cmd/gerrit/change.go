@@ -100,7 +100,7 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 		input = f
 	}
 	if err := json.NewDecoder(input).Decode(&c.input); err != nil {
-		return errors.Annotate(err, "failed to decode input").Err()
+		return errors.Fmt("failed to decode input: %w", err)
 	}
 
 	// Verify we have a change ID if the command requires one.

@@ -84,7 +84,7 @@ func (r *runRun) Run(a subcommands.Application, args []string, _ subcommands.Env
 func (r *runRun) main(a subcommands.Application, args []string) error {
 	deps, rootDir, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
-		return errors.Annotate(err, "failed to process isolate").Err()
+		return errors.Fmt("failed to process isolate: %w", err)
 	}
 
 	var cleanupErr error
@@ -96,16 +96,16 @@ func (r *runRun) main(a subcommands.Application, args []string) error {
 		},
 	}).With(func(outDir string) error {
 		if err := recreateTree(outDir, rootDir, deps); err != nil {
-			return errors.Annotate(err, "failed to recreate tree").Err()
+			return errors.Fmt("failed to recreate tree: %w", err)
 		}
 		if len(args) == 0 {
-			return errors.Reason("command cannot be empty").Err()
+			return errors.New("command cannot be empty")
 		}
 		cwd := filepath.Clean(filepath.Join(outDir, r.relativeCwd))
 		// |cwd| should never exist because it is under the temporary directory |outDir|.
 		err = filesystem.MakeDirs(cwd)
 		if err != nil {
-			return errors.Annotate(err, "failed to create cwd=%s", cwd).Err()
+			return errors.Fmt("failed to create cwd=%s: %w", cwd, err)
 		}
 		log.Printf("Running %v, cwd=%s\n", args, cwd)
 		cmd := exec.Command(args[0], args[1:]...)
@@ -113,7 +113,7 @@ func (r *runRun) main(a subcommands.Application, args []string) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			return errors.Annotate(err, "failed to run: %v", args).Err()
+			return errors.Fmt("failed to run: %v: %w", args, err)
 		}
 		return nil
 	}); err != nil {

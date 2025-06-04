@@ -312,11 +312,11 @@ func (cr *CommandRun) parseCommonFlags(env subcommands.Env) error {
 		cr.rawServerURL = env[swarming.ServerEnvVar].Value
 	}
 	if cr.rawServerURL == "" {
-		return errors.Reason("must provide -server or set $%s env var", swarming.ServerEnvVar).Err()
+		return errors.Fmt("must provide -server or set $%s env var", swarming.ServerEnvVar)
 	}
 	var err error
 	if cr.serverURL, err = lhttp.ParseHostURL(cr.rawServerURL); err != nil {
-		return errors.Annotate(err, "invalid -server %q", cr.rawServerURL).Err()
+		return errors.Fmt("invalid -server %q: %w", cr.rawServerURL, err)
 	}
 
 	return nil
@@ -340,7 +340,7 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 		// Write JSON output to a file and close it.
 		jsonFile, err := os.Create(cr.jsonOutput)
 		if err != nil {
-			return errors.Annotate(err, "opening JSON output file for writing").Err()
+			return errors.Fmt("opening JSON output file for writing: %w", err)
 		}
 		sink = output.NewSink(jsonFile)
 		closeOutput = func() error { return jsonFile.Close() }
@@ -384,7 +384,7 @@ func (cr *CommandRun) execute(ctx context.Context) error {
 	if closeErr != nil {
 		logging.Errorf(ctx, "Failed to finalize JSON output: %s", closeErr)
 		if err == nil {
-			err = errors.Annotate(closeErr, "finalizing JSON output").Err()
+			err = errors.Fmt("finalizing JSON output: %w", closeErr)
 		}
 	}
 

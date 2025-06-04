@@ -95,10 +95,10 @@ func (cmd *reproduceImpl) RegisterFlags(fs *flag.FlagSet) {
 func (cmd *reproduceImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	var err error
 	if cmd.work, err = filepath.Abs(cmd.work); err != nil {
-		return errors.Annotate(err, "failed to get absolute representation of work directory").Err()
+		return errors.Fmt("failed to get absolute representation of work directory: %w", err)
 	}
 	if cmd.out, err = filepath.Abs(cmd.out); err != nil {
-		return errors.Annotate(err, "failed to get absolute representation of out directory").Err()
+		return errors.Fmt("failed to get absolute representation of out directory: %w", err)
 	}
 	cmd.taskID = args[0]
 	return nil
@@ -107,7 +107,7 @@ func (cmd *reproduceImpl) ParseInputs(ctx context.Context, args []string, env su
 func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra base.Extra) error {
 	tr, err := svc.TaskRequest(ctx, cmd.taskID)
 	if err != nil {
-		return errors.Annotate(err, "failed to get task request: %s", cmd.taskID).Err()
+		return errors.Fmt("failed to get task request: %s: %w", cmd.taskID, err)
 	}
 
 	// In practice, later slices are less likely to assume that there is a named
@@ -116,7 +116,7 @@ func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, sink
 
 	execCmd, err := cmd.prepareTaskRequestEnvironment(ctx, properties, svc, extra.AuthFlags)
 	if err != nil {
-		return errors.Annotate(err, "failed to create command from task request").Err()
+		return errors.Fmt("failed to create command from task request: %w", err)
 	}
 
 	return cmd.executeTaskRequestCommand(ctx, tr, execCmd, extra.AuthFlags)
@@ -126,15 +126,15 @@ func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swa
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
 		if cmd.realm == "" {
-			return errors.Reason("must provide -realm if task request has ResultDB enabled").Err()
+			return errors.New("must provide -realm if task request has ResultDB enabled")
 		}
 		authcli, err := auth.NewHTTPClient(ctx)
 		if err != nil {
-			return errors.Annotate(err, "failed to create client").Err()
+			return errors.Fmt("failed to create client: %w", err)
 		}
 		exported, invFinalizer, err := cmd.createInvocation(ctx, authcli, cmd.realm, cmd.resultsHost)
 		if err != nil {
-			return errors.Annotate(err, "failed to create Invocation").Err()
+			return errors.Fmt("failed to create Invocation: %w", err)
 		}
 		defer invFinalizer()
 		exported.SetInCmd(execCmd)
@@ -142,10 +142,10 @@ func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swa
 	}
 
 	if err := execCmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start command: %v", execCmd).Err()
+		return errors.Fmt("failed to start command: %v: %w", execCmd, err)
 	}
 	if err := execCmd.Wait(); err != nil {
-		return errors.Annotate(err, "failed to complete command: %v", execCmd).Err()
+		return errors.Fmt("failed to complete command: %v: %w", execCmd, err)
 	}
 	return nil
 }
@@ -189,7 +189,7 @@ func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, pro
 	// Support RBE-CAS input in task request.
 	if properties.CasInputRoot != nil {
 		if _, err := svc.FilesFromCAS(ctx, cmd.work, properties.CasInputRoot); err != nil {
-			return nil, errors.Annotate(err, "failed to fetch files from RBE-CAS").Err()
+			return nil, errors.Fmt("failed to fetch files from RBE-CAS: %w", err)
 		}
 	}
 
@@ -218,7 +218,7 @@ func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, pro
 	// Create a Command that can run the task request.
 	processedCmds, err := runner.ProcessCommand(ctx, properties.Command, cmd.out, "")
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to process command in properties").Err()
+		return nil, errors.Fmt("failed to process command in properties: %w", err)
 	}
 
 	execCmd := exec.CommandContext(ctx, processedCmds[0], processedCmds[1:]...)
@@ -234,7 +234,7 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 	// Create CIPD client.
 	client, err := cipd.NewClientFromEnv(ctx, cipd.ClientOptions{Root: workdir})
 	if err != nil {
-		return errors.Annotate(err, "failed to create CIPD client").Err()
+		return errors.Fmt("failed to create CIPD client: %w", err)
 	}
 	defer client.Close(ctx)
 
@@ -245,14 +245,14 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 		PackagesBySubdir: slicesByPath,
 	}, template.DefaultExpander())
 	if err != nil {
-		return errors.Annotate(err, "failed to resolve CIPD package versions").Err()
+		return errors.Fmt("failed to resolve CIPD package versions: %w", err)
 	}
 
 	// Download packages.
 	if _, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, &cipd.EnsureOptions{
 		Paranoia: resolved.ParanoidMode,
 	}); err != nil {
-		return errors.Annotate(err, "failed to install or update CIPD packages").Err()
+		return errors.Fmt("failed to install or update CIPD packages: %w", err)
 	}
 	return nil
 
@@ -260,10 +260,10 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 
 func prepareDir(dir string) error {
 	if err := os.RemoveAll(dir); err != nil {
-		return errors.Annotate(err, "failed to remove directory: %s", dir).Err()
+		return errors.Fmt("failed to remove directory: %s: %w", dir, err)
 	}
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return errors.Annotate(err, "failed to create directory: %s", dir).Err()
+		return errors.Fmt("failed to create directory: %s: %w", dir, err)
 	}
 	return nil
 }
@@ -293,7 +293,7 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 	}
 	tks := md.Get("update-token")
 	if len(tks) != 1 {
-		return nil, nil, errors.Reason("Missing header: update-token").Err()
+		return nil, nil, errors.New("Missing header: update-token")
 	}
 	exported, err := lucictx.Export(
 		lucictx.SetResultDB(ctx, &lucictx.ResultDB{
@@ -301,7 +301,7 @@ func createInvocation(ctx context.Context, authcli *http.Client, realm string, r
 			CurrentInvocation: &lucictx.ResultDBInvocation{Name: invocation.Name, UpdateToken: tks[0]},
 		}))
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed to export context").Err()
+		return nil, nil, errors.Fmt("failed to export context: %w", err)
 	}
 
 	return exported, func() {

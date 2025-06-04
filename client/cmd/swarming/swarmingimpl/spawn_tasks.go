@@ -71,12 +71,12 @@ func (cmd *spawnTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *spawnTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.jsonInput == "" {
-		return errors.Reason("input JSON file is required, pass it via -json-input").Err()
+		return errors.New("input JSON file is required, pass it via -json-input")
 	}
 
 	tasksFile, err := os.Open(cmd.jsonInput)
 	if err != nil {
-		return errors.Annotate(err, "failed to open -json-input tasks file").Err()
+		return errors.Fmt("failed to open -json-input tasks file: %w", err)
 	}
 	defer tasksFile.Close()
 
@@ -102,7 +102,7 @@ func usingDefaultServer(env subcommands.Env, serverURL *url.URL) (bool, error) {
 
 	envServerURL, err := lhttp.ParseHostURL(serverEnvVar.Value)
 	if err != nil {
-		return false, errors.Annotate(err, "parsing %s env var", swarming.ServerEnvVar).Err()
+		return false, errors.Fmt("parsing %s env var: %w", swarming.ServerEnvVar, err)
 	}
 
 	return envServerURL.String() == serverURL.String(), nil
@@ -111,11 +111,11 @@ func usingDefaultServer(env subcommands.Env, serverURL *url.URL) (bool, error) {
 func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.Env, serverURL *url.URL) ([]*swarmingv2.NewTaskRequest, error) {
 	blob, err := io.ReadAll(tasks)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading tasks file").Err()
+		return nil, errors.Fmt("reading tasks file: %w", err)
 	}
 	var requests clipb.SpawnTasksInput
 	if err := protojson.Unmarshal(blob, &requests); err != nil {
-		return nil, errors.Annotate(err, "decoding tasks file").Err()
+		return nil, errors.Fmt("decoding tasks file: %w", err)
 	}
 
 	// usingSameServer is true when running on Swarming and creating tasks for

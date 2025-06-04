@@ -63,11 +63,11 @@ func (r *remapRun) Parse(a subcommands.Application, args []string) error {
 	}
 
 	if len(args) != 0 {
-		return errors.Reason("position arguments not expected").Err()
+		return errors.New("position arguments not expected")
 	}
 
 	if r.outdir == "" {
-		return errors.Reason("-outdir is not specified").Err()
+		return errors.New("-outdir is not specified")
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.E
 func (r *remapRun) main(a subcommands.Application, args []string) error {
 	deps, rootDir, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
-		return errors.Annotate(err, "failed to process isolate").Err()
+		return errors.Fmt("failed to process isolate: %w", err)
 	}
 
 	return recreateTree(r.outdir, rootDir, deps)

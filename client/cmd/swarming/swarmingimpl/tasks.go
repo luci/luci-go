@@ -72,21 +72,21 @@ func (cmd *tasksImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *tasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.limit < 1 {
-		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
+		return errors.Fmt("invalid -limit %d, must be positive", cmd.limit)
 	}
 	if cmd.count {
 		if len(cmd.fields) > 0 {
-			return errors.Reason("-field cannot be used with -count").Err()
+			return errors.New("-field cannot be used with -count")
 		}
 		if cmd.limit != defaultLimit {
-			return errors.Reason("-limit cannot be used with -count").Err()
+			return errors.New("-limit cannot be used with -count")
 		}
 		if cmd.start <= 0 {
-			return errors.Reason("with -count, must provide -start >0").Err()
+			return errors.New("with -count, must provide -start >0")
 		}
 	}
 	if _, err := stateMap(cmd.state); err != nil {
-		return errors.Annotate(err, "bad -state").Err()
+		return errors.Fmt("bad -state: %w", err)
 	}
 	return nil
 }

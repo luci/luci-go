@@ -66,7 +66,7 @@ func (c *downloadFileRun) main(a subcommands.Application, args []string) error {
 
 	host, project, err := gitiles.ParseRepoURL(repoURL)
 	if err != nil {
-		return errors.Annotate(err, "invalid repo URL %q", args[0]).Err()
+		return errors.Fmt("invalid repo URL %q: %w", args[0], err)
 	}
 
 	req := &gitilespb.DownloadFileRequest{

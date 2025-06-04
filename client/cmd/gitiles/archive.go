@@ -96,7 +96,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	host, project, err := gitiles.ParseRepoURL(args[0])
 	if err != nil {
-		return errors.Annotate(err, "invalid repo URL %q", args[0]).Err()
+		return errors.Fmt("invalid repo URL %q: %w", args[0], err)
 	}
 	ref := args[1]
 	req := &gitilespb.ArchiveRequest{
@@ -140,7 +140,7 @@ func (c *archiveRun) dumpArchive(ctx context.Context, res *gitilespb.ArchiveResp
 
 	f, err := os.Create(oPath)
 	if err != nil {
-		return errors.Annotate(err, "failed to open file to write archive").Err()
+		return errors.Fmt("failed to open file to write archive: %w", err)
 	}
 	defer f.Close()
 
