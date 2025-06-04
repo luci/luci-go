@@ -62,34 +62,34 @@ type Alert struct {
 // Reported field names are as they appear in the RPC documentation rather than the Go struct.
 func Validate(alert *Alert) error {
 	if err := validateBug(alert.Bug); err != nil {
-		return errors.Annotate(err, "bug").Err()
+		return errors.Fmt("bug: %w", err)
 	}
 	if err := validateGerritCL(alert.GerritCL); err != nil {
-		return errors.Annotate(err, "gerrit_cl").Err()
+		return errors.Fmt("gerrit_cl: %w", err)
 	}
 	if err := validateSilenceUntil(alert.SilenceUntil); err != nil {
-		return errors.Annotate(err, "silence_until").Err()
+		return errors.Fmt("silence_until: %w", err)
 	}
 	return nil
 }
 
 func validateBug(bug int64) error {
 	if bug < 0 {
-		return errors.Reason("must be zero or positive").Err()
+		return errors.New("must be zero or positive")
 	}
 	return nil
 }
 
 func validateGerritCL(gerritCL int64) error {
 	if gerritCL < 0 {
-		return errors.Reason("must be zero or positive").Err()
+		return errors.New("must be zero or positive")
 	}
 	return nil
 }
 
 func validateSilenceUntil(silenceUntil int64) error {
 	if silenceUntil < 0 {
-		return errors.Reason("must be zero or positive").Err()
+		return errors.New("must be zero or positive")
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func Put(alert *Alert) (*spanner.Mutation, error) {
 // At most 100 keys can be requested in a batch.
 func ReadBatch(ctx context.Context, keys []string) ([]*Alert, error) {
 	if len(keys) > 100 {
-		return nil, errors.Reason("requested a batch of %d keys, the maximum size is 100", len(keys)).Err()
+		return nil, errors.Fmt("requested a batch of %d keys, the maximum size is 100", len(keys))
 	}
 	if len(keys) == 0 {
 		// Nothing to do.
@@ -153,7 +153,7 @@ func ReadBatch(ctx context.Context, keys []string) ([]*Alert, error) {
 		alertMap[alert.AlertKey] = alert
 		return nil
 	}); err != nil {
-		return nil, errors.Annotate(err, "read batch of alerts").Err()
+		return nil, errors.Fmt("read batch of alerts: %w", err)
 	}
 	// Sort return value according to input value, and insert blank entries.
 	alerts := []*Alert{}
@@ -173,23 +173,23 @@ func ReadBatch(ctx context.Context, keys []string) ([]*Alert, error) {
 func fromRow(row *spanner.Row) (*Alert, error) {
 	alert := &Alert{}
 	if err := row.Column(0, &alert.AlertKey); err != nil {
-		return nil, errors.Annotate(err, "reading AlertKey column").Err()
+		return nil, errors.Fmt("reading AlertKey column: %w", err)
 	}
 	var nullable spanner.NullInt64
 	if err := row.Column(1, &nullable); err != nil {
-		return nil, errors.Annotate(err, "reading Bug column").Err()
+		return nil, errors.Fmt("reading Bug column: %w", err)
 	}
 	alert.Bug = nullable.Int64
 	if err := row.Column(2, &nullable); err != nil {
-		return nil, errors.Annotate(err, "reading GerritCL column").Err()
+		return nil, errors.Fmt("reading GerritCL column: %w", err)
 	}
 	alert.GerritCL = nullable.Int64
 	if err := row.Column(3, &nullable); err != nil {
-		return nil, errors.Annotate(err, "reading SilenceUntil column").Err()
+		return nil, errors.Fmt("reading SilenceUntil column: %w", err)
 	}
 	alert.SilenceUntil = nullable.Int64
 	if err := row.Column(4, &alert.ModifyTime); err != nil {
-		return nil, errors.Annotate(err, "reading ModifyTime column").Err()
+		return nil, errors.Fmt("reading ModifyTime column: %w", err)
 	}
 	return alert, nil
 }

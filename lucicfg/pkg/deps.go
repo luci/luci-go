@@ -107,7 +107,7 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 	if d.Known != nil {
 		if d.Known.Name != d.Package {
 			return nil, &DepError{
-				Err: errors.Reason("expected to find package %q, but found %q instead", d.Package, d.Known.Name).Err(),
+				Err: errors.Fmt("expected to find package %q, but found %q instead", d.Package, d.Known.Name),
 				Dep: d,
 			}
 		}
@@ -143,7 +143,7 @@ func (d *DepContext) Definition(ctx context.Context) (*Definition, error) {
 				return nil, err
 			}
 			if def.Name != d.Package {
-				return nil, errors.Reason("expected to find package %q, but found %q instead", d.Package, def.Name).Err()
+				return nil, errors.Fmt("expected to find package %q, but found %q instead", d.Package, def.Name)
 			}
 			return def, nil
 		}()
@@ -172,7 +172,7 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 		repoPath := path.Join(d.Path, decl.LocalPath)
 		if repoPath == ".." || strings.HasPrefix(repoPath, "../") {
 			return nil, &DepError{
-				Err: errors.Reason("local dependency on %q points to a path outside the repository: %q", decl.Name, decl.LocalPath).Err(),
+				Err: errors.Fmt("local dependency on %q points to a path outside the repository: %q", decl.Name, decl.LocalPath),
 				Dep: d,
 			}
 		}
@@ -195,7 +195,7 @@ func (d *DepContext) Follow(ctx context.Context, decl *DepDecl) (*DepContext, er
 	})
 	if err != nil {
 		return nil, &DepError{
-			Err: errors.Annotate(err, "dependency on %q", decl.Name).Err(),
+			Err: errors.Fmt("dependency on %q: %w", decl.Name, err),
 			Dep: d,
 		}
 	}
@@ -434,17 +434,17 @@ func resolveVersions(ctx context.Context, dg *depsGraph) ([]mvs.Package[pkgVer],
 			// Report the repo conflict error though the activity to abort
 			// the errgroup.
 			if conflictErr != nil {
-				return errors.Annotate(conflictErr, "examining %q", pkg).Err()
+				return errors.Fmt("examining %q: %w", pkg, conflictErr)
 			}
 
 			// Ask the repository to find the most recent version.
 			repo, err := dg.root.RepoManager.Repo(ctx, repoKey)
 			if err != nil {
-				return errors.Annotate(err, "examining %q", pkg).Err()
+				return errors.Fmt("examining %q: %w", pkg, err)
 			}
 			mostRecent, err = repo.PickMostRecent(ctx, strVers)
 			if err != nil {
-				return errors.Annotate(err, "determining the most recent version of %q", pkg).Err()
+				return errors.Fmt("determining the most recent version of %q: %w", pkg, err)
 			}
 			selected.Put(pkg, pkgVer{
 				ver:  mostRecent,

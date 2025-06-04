@@ -44,11 +44,11 @@ type CheckoutFunc func(context.Context, *Build) (Checkout, error)
 // that build. It assumes that the build has exactly one source manifest.
 func srcmanCheckout(c context.Context, build *Build) (Checkout, error) {
 	if build.Infra == nil || build.Infra.Logdog == nil || build.Infra.Logdog.Hostname == "" {
-		return nil, errors.Reason("logdog hostname is not set in the build proto").Err()
+		return nil, errors.New("logdog hostname is not set in the build proto")
 	}
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+		return nil, errors.Fmt("getting RPC Transport: %w", err)
 	}
 	client := coordinator.NewClient(&prpc.Client{
 		C:       &http.Client{Transport: transport},
@@ -83,7 +83,8 @@ func srcmanCheckout(c context.Context, build *Build) (Checkout, error) {
 		Raw:    true,
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read stream").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.
+			Fmt("failed to read stream: %w", err))
 	}
 
 	// Unmarshal the source manifest from the bytes.

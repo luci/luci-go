@@ -54,7 +54,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 	// Get templates.
 	bundle, err := getBundle(c, input.Build.Builder.Project)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get a bundle of email templates").Err()
+		return nil, errors.Fmt("failed to get a bundle of email templates: %w", err)
 	}
 
 	// Generate emails.
@@ -165,13 +165,13 @@ func ComputeRecipients(c context.Context, notifications []ToNotify, inputBlame [
 
 			response, err := (&http.Client{Transport: transport}).Do(req)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to get data from %q", url).Err()
+				return nil, errors.Fmt("failed to get data from %q: %w", url, err)
 			}
 
 			defer response.Body.Close()
 			bytes, err := io.ReadAll(response.Body)
 			if err != nil {
-				return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
+				return nil, errors.Fmt("failed to read response body from %q: %w", url, err)
 			}
 
 			return bytes, nil
@@ -245,7 +245,7 @@ func computeRecipientsInternal(c context.Context, notifications []ToNotify, inpu
 func fetchOncallers(c context.Context, rotationURL, template string, matchingSteps []*buildbucketpb.Step, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
 	resp, err := fetchFunc(c, rotationURL)
 	if err != nil {
-		err = errors.Annotate(err, "failed to fetch rotation URL: %s", rotationURL).Err()
+		err = errors.Fmt("failed to fetch rotation URL: %s: %w", rotationURL, err)
 		return err
 	}
 
@@ -253,7 +253,7 @@ func fetchOncallers(c context.Context, rotationURL, template string, matchingSte
 		Emails []string
 	}
 	if err = json.Unmarshal(resp, &oncallEmails); err != nil {
-		return errors.Annotate(err, "failed to unmarshal JSON").Err()
+		return errors.Fmt("failed to unmarshal JSON: %w", err)
 	}
 
 	mRecipients.Lock()
@@ -483,7 +483,7 @@ func Notify(c context.Context, recipients []EmailNotify, templateParams *notifyp
 
 	tasks, err := createEmailTasks(c, recipients, templateParams)
 	if err != nil {
-		return errors.Annotate(err, "failed to create email tasks").Err()
+		return errors.Fmt("failed to create email tasks: %w", err)
 	}
 
 	for emailKey, task := range tasks {

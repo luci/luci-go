@@ -236,7 +236,7 @@ func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateI
 	var buf bytes.Buffer
 	if err := errorBodyTemplate.Execute(&buf, errorTemplateInput); err != nil {
 		// Error template MAY NOT fail.
-		panic(errors.Annotate(err, "execution of the error template has failed").Err())
+		panic(errors.Fmt("execution of the error template has failed: %w", err))
 	}
 	body = buf.String()
 	return
@@ -249,7 +249,7 @@ var defaultStatusTemplate *text.Template = text.Must(text.New("").Funcs(Funcs).P
 func generateDefaultStatusMessage(input *config.TemplateInput) string {
 	var buf bytes.Buffer
 	if err := defaultStatusTemplate.Execute(&buf, input); err != nil {
-		panic(errors.Annotate(err, "execution of the default status message template has failed").Err())
+		panic(errors.Fmt("execution of the default status message template has failed: %w", err))
 	}
 
 	return buf.String()

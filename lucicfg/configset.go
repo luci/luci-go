@@ -147,12 +147,12 @@ func (r *remoteValidator) Validate(ctx context.Context, cs ConfigSet) ([]*config
 		}
 		switch res, err := r.cfgClient.ValidateConfigs(ctx, validateReq); { // now try again
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to call LUCI Config").Err()
+			return nil, errors.Fmt("failed to call LUCI Config: %w", err)
 		default:
 			return res.GetMessages(), nil
 		}
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to call LUCI Config").Err()
+		return nil, errors.Fmt("failed to call LUCI Config: %w", err)
 	default:
 		return res.GetMessages(), nil
 	}
@@ -210,13 +210,13 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 				zw := gzip.NewWriter(bw)
 				if _, err := zw.Write(cs.Data[uf.GetPath()]); err != nil {
 					_ = zw.Close()
-					return errors.Annotate(err, "failed to write gzip data").Err()
+					return errors.Fmt("failed to write gzip data: %w", err)
 				}
 				if err := zw.Close(); err != nil {
-					return errors.Annotate(err, "failed to close gzip writer").Err()
+					return errors.Fmt("failed to close gzip writer: %w", err)
 				}
 				if err := bw.Flush(); err != nil {
-					return errors.Annotate(err, "failed to flush writer").Err()
+					return errors.Fmt("failed to flush writer: %w", err)
 				}
 				return nil
 			}()
@@ -228,22 +228,22 @@ func uploadMissingFiles(ctx context.Context, cs ConfigSet, uploadFiles []*config
 			// Read from the pipe and upload.
 			req, err := http.NewRequestWithContext(ectx, http.MethodPut, uf.GetSignedUrl(), pr)
 			if err != nil {
-				return errors.Annotate(err, "failed to create http request to upload file %q", uf.GetPath()).Err()
+				return errors.Fmt("failed to create http request to upload file %q: %w", uf.GetPath(), err)
 			}
 			req.Header.Add("Content-Encoding", "gzip")
 			req.Header.Add("x-goog-content-length-range", fmt.Sprintf("0,%d", uf.GetMaxConfigSize()))
 
 			switch res, err := http.DefaultClient.Do(req); {
 			case err != nil:
-				return errors.Annotate(err, "failed to execute http request to upload file %q", uf.GetPath()).Err()
+				return errors.Fmt("failed to execute http request to upload file %q: %w", uf.GetPath(), err)
 
 			case res.StatusCode != http.StatusOK:
 				defer func() { _ = res.Body.Close() }()
 				body, err := io.ReadAll(res.Body)
 				if err != nil {
-					return errors.Annotate(err, "failed to read response body").Err()
+					return errors.Fmt("failed to read response body: %w", err)
 				}
-				return errors.Reason("failed to upload file %q;  got http response code: %d, body: %s", uf.GetPath(), res.StatusCode, string(body)).Err()
+				return errors.Fmt("failed to upload file %q;  got http response code: %d, body: %s", uf.GetPath(), res.StatusCode, string(body))
 
 			default:
 				defer func() { _ = res.Body.Close() }()
@@ -275,7 +275,7 @@ func ReadConfigSet(dir, name string) (ConfigSet, error) {
 		return nil
 	})
 	if err != nil {
-		return ConfigSet{}, errors.Annotate(err, "failed to read config files").Err()
+		return ConfigSet{}, errors.Fmt("failed to read config files: %w", err)
 	}
 	return ConfigSet{
 		Name: name,
@@ -352,13 +352,13 @@ func (vr *ValidationResult) OverallError(failOnWarnings bool) error {
 	switch {
 	case errs > 0:
 		vr.Failed = true
-		return errors.Reason("some files were invalid").Err()
+		return errors.New("some files were invalid")
 	case warns > 0 && failOnWarnings:
 		vr.Failed = true
-		return errors.Reason("some files had validation warnings and -fail-on-warnings is set").Err()
+		return errors.New("some files had validation warnings and -fail-on-warnings is set")
 	case vr.RPCError != "":
 		vr.Failed = true
-		return errors.Reason("failed to send RPC to LUCI Config - %s", vr.RPCError).Err()
+		return errors.Fmt("failed to send RPC to LUCI Config - %s", vr.RPCError)
 	}
 
 	vr.Failed = false

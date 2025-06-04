@@ -118,7 +118,7 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 	}
 
 	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
-		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
+		return nil, errors.Fmt("invalid msg.ParametersJson: %w", err)
 	}
 	return output.EmailNotify, nil
 }
@@ -241,7 +241,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 			logging.Infof(c, "No builder %q found for project %q", builderID, luciProject)
 			return Notify(c, recipients, templateInput)
 		case err != nil:
-			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to get builder: %w", err))
 		}
 
 		// Create a new builder as a copy of the old, updated with build information.
@@ -335,11 +335,11 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 				updatedBuilder.Revision = ""
 				return putWithRetry(c, &updatedBuilder)
 			}, nil); err != nil {
-				return errors.Annotate(err, "reset builder revision").Err()
+				return errors.Fmt("reset builder revision: %w", err)
 			}
 			return nil
 		}
-		return errors.Annotate(err, "failed to retrieve git history for input commit").Err()
+		return errors.Fmt("failed to retrieve git history for input commit: %w", err)
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, not updating tree closers")
@@ -353,7 +353,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		oldCheckout := NewCheckout(builder.GitilesCommits)
 		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoAllowset), history)
 		if err != nil {
-			return errors.Annotate(err, "failed to compute logs").Err()
+			return errors.Fmt("failed to compute logs: %w", err)
 		}
 	}
 
@@ -370,7 +370,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		// If the builder's repository got updated in the meanwhile, we need to throw a
 		// transient error and retry this whole thing.
 		if builder.Repository != oldRepository {
-			return errors.Reason("failed to notify because builder repository updated").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.New("failed to notify because builder repository updated"))
 		}
 
 		// Create a new builder as a copy of the old, updated with build information.
@@ -443,7 +443,7 @@ func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, build
 
 	build, err := extractBuild(ctx, buildMsg)
 	if err != nil {
-		return errors.Annotate(err, "failed to extract build").Err()
+		return errors.Fmt("failed to extract build: %w", err)
 	}
 	return handleBuild(ctx, build, srcmanCheckout, gitilesHistory)
 }
@@ -484,7 +484,7 @@ func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) 
 
 	emails, err := extractEmailNotifyValues(buildsV2Msg.Build, "")
 	if err != nil {
-		return nil, errors.Annotate(err, "could not decode email_notify in builds_v2 pubsub message for build %d", buildsV2Msg.Build.GetId()).Err()
+		return nil, errors.Fmt("could not decode email_notify in builds_v2 pubsub message for build %d: %w", buildsV2Msg.Build.GetId(), err)
 	}
 
 	return &Build{
@@ -522,7 +522,7 @@ func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV
 		if prpc.ProtocolErrorDetails(err).GetResponseTooBig() == nil {
 			err = grpcutil.WrapIfTransient(err)
 		}
-		err = errors.Annotate(err, "could not fetch large fields for buildbucket build %d", bID).Err()
+		err = errors.Fmt("could not fetch large fields for buildbucket build %d: %w", bID, err)
 		return err
 	}
 	proto.Merge(buildsV2Msg.Build, res)
@@ -534,11 +534,11 @@ func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV
 func extractBuildLargeFields(buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
 	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
 	if err != nil {
-		return errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		return errors.Fmt("failed to decompress build_large_fields for build %d: %w", buildsV2Msg.Build.GetId(), err)
 	}
 	largeFields := &buildbucketpb.Build{}
 	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-		return errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		return errors.Fmt("failed to unmarshal build_large_fields for build %d: %w", buildsV2Msg.Build.GetId(), err)
 	}
 	proto.Merge(buildsV2Msg.Build, largeFields)
 	return nil

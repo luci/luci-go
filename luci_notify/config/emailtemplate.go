@@ -33,7 +33,7 @@ import (
 func emailTemplateFilenameRegexp(c context.Context) (*regexp.Regexp, error) {
 	appID, err := common.GetAppID(c)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get app ID").Err()
+		return nil, errors.Fmt("failed to get app ID: %w", err)
 	}
 
 	return regexp.MustCompile(fmt.Sprintf(
@@ -106,7 +106,7 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 		logging.Infof(c, "fetching email template from %s:%s", configSet, f)
 		config, err := configService.GetConfig(c, configSet, f, false)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to fetch %q", f).Err()
+			return nil, errors.Fmt("failed to fetch %q: %w", f, err)
 		}
 
 		subject, body, err := mailtmpl.SplitTemplateFile(config.Content)

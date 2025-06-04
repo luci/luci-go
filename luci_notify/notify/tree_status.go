@@ -137,11 +137,11 @@ func UpdateTreeStatus(ctx context.Context) error {
 
 	settings, err := config.FetchSettings(ctx)
 	if err != nil {
-		return errors.Annotate(err, "fetching settings").Err()
+		return errors.Fmt("fetching settings: %w", err)
 	}
 	client, err := NewHTTPTreeStatusClient(ctx, settings.LuciTreeStatusHost)
 	if err != nil {
-		return errors.Annotate(err, "creating tree status client").Err()
+		return errors.Fmt("creating tree status client: %w", err)
 	}
 
 	return transient.Tag.Apply(updateTrees(ctx, client))
@@ -169,7 +169,7 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 	q := datastore.NewQuery("Project").KeysOnly(true)
 	var projects []*config.Project
 	if err := datastore.GetAll(c, q, &projects); err != nil {
-		return errors.Annotate(err, "failed to get project keys").Err()
+		return errors.Fmt("failed to get project keys: %w", err)
 	}
 
 	// Guards access to both treeClosers and closingEnabledProjects.
@@ -188,13 +188,13 @@ func updateTrees(c context.Context, ts treeStatusClient) error {
 						logging.Infof(c, "Project %s removed between queries, ignoring it", project.Name)
 						return nil
 					case err != nil:
-						return errors.Annotate(err, "failed to get project").Tag(transient.Tag).Err()
+						return transient.Tag.Apply(errors.Fmt("failed to get project: %w", err))
 					}
 
 					q := datastore.NewQuery("TreeCloser").Ancestor(datastore.KeyForObj(c, project))
 					var treeClosersForProject []*config.TreeCloser
 					if err := datastore.GetAll(c, q, &treeClosersForProject); err != nil {
-						return errors.Annotate(err, "failed to get tree closers").Tag(transient.Tag).Err()
+						return transient.Tag.Apply(errors.Fmt("failed to get tree closers: %w", err))
 					}
 
 					for _, tc := range treeClosersForProject {

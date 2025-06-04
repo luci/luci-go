@@ -65,13 +65,13 @@ func (*alertsServer) BatchGetAlerts(ctx context.Context, request *pb.BatchGetAle
 	for i, name := range request.Names {
 		key, err := parseAlertName(name)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "name[%v]", i).Err())
+			return nil, invalidArgumentError(errors.Fmt("name[%v]: %w", i, err))
 		}
 		keys = append(keys, key)
 	}
 	alerts, err := alerts.ReadBatch(span.Single(ctx), keys)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading alerts").Err()
+		return nil, errors.Fmt("reading alerts: %w", err)
 	}
 	response := &pb.BatchGetAlertsResponse{}
 	for _, alert := range alerts {
@@ -86,7 +86,7 @@ func (*alertsServer) BatchGetAlerts(ctx context.Context, request *pb.BatchGetAle
 func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpdateAlertsRequest) (*pb.BatchUpdateAlertsResponse, error) {
 	hasWriteAccess, err := auth.IsMember(ctx, luciNotifyWriteAccessGroup)
 	if err != nil {
-		return nil, errors.Annotate(err, "checking write group membership").Err()
+		return nil, errors.Fmt("checking write group membership: %w", err)
 	}
 	// TODO: Once alerts are moved to LUCI Notify from SOM we need to do tighter ACL checks here,
 	// i.e. check that the user has some permission to the builder that the alert is for.
@@ -103,7 +103,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 	for i, r := range request.Requests {
 		key, err := parseAlertName(r.Alert.Name)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "alerts[%v]: name", i).Err())
+			return nil, invalidArgumentError(errors.Fmt("alerts[%v]: name: %w", i, err))
 		}
 		keys = append(keys, key)
 		a := &alerts.Alert{
@@ -114,7 +114,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 		}
 		m, err := alerts.Put(a)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "alerts[%v]", i).Err())
+			return nil, invalidArgumentError(errors.Fmt("alerts[%v]: %w", i, err))
 		}
 		mutations = append(mutations, m)
 		response.Alerts = append(response.Alerts, &pb.Alert{
@@ -129,7 +129,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 	ts, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		currentAlerts, err := alerts.ReadBatch(ctx, keys)
 		if err != nil {
-			return errors.Annotate(err, "reading existing alert values").Err()
+			return errors.Fmt("reading existing alert values: %w", err)
 		}
 		for i := 0; i < len(request.Requests); i++ {
 			if request.Requests[i].Alert.Etag == "" {
@@ -143,7 +143,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Annotate(err, "apply update alerts to spanner").Err()
+		return nil, errors.Fmt("apply update alerts to spanner: %w", err)
 	}
 
 	for _, a := range response.Alerts {
@@ -158,11 +158,11 @@ var alertNameRE = regexp.MustCompile(`^alerts/(` + alerts.AlertKeyExpression + `
 // parts.
 func parseAlertName(name string) (key string, err error) {
 	if name == "" {
-		return "", errors.Reason("must be specified").Err()
+		return "", errors.New("must be specified")
 	}
 	match := alertNameRE.FindStringSubmatch(name)
 	if match == nil {
-		return "", errors.Reason("expected format: %s", alertNameRE).Err()
+		return "", errors.Fmt("expected format: %s", alertNameRE)
 	}
 	return match[1], nil
 }

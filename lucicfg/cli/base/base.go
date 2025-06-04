@@ -214,7 +214,7 @@ func (c *Subcommand) ConfigService(ctx context.Context, host string) (*grpc.Clie
 
 	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).PerRPCCredentials()
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
+		return nil, errors.Fmt("failed to get credentials to access %s: %w", host, err)
 	}
 	conn, err := grpc.NewClient(host+":443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
@@ -223,7 +223,7 @@ func (c *Subcommand) ConfigService(ctx context.Context, host string) (*grpc.Clie
 		grpc.WithDefaultServiceConfig(luciConfigRetryPolicy),
 	)
 	if err != nil {
-		return nil, errors.Annotate(err, "cannot dial to %s", host).Err()
+		return nil, errors.Fmt("cannot dial to %s: %w", host, err)
 	}
 	return conn, nil
 }

@@ -45,7 +45,7 @@ func DefaultCacheDir() (string, error) {
 		} else {
 			var err error
 			if defaultCacheDir, err = os.MkdirTemp("", "lucicfg"); err != nil {
-				defaultCacheErr = errors.Annotate(err, "creating temp cache directory").Err()
+				defaultCacheErr = errors.Fmt("creating temp cache directory: %w", err)
 			}
 		}
 	})
@@ -78,7 +78,7 @@ func OpenCache(ctx context.Context) *Cache {
 func (c *Cache) init() error {
 	c.once.Do(func() {
 		if err := c.doInit(); err != nil {
-			c.err = errors.Annotate(err, "failed to initialize the cache directory").Err()
+			c.err = errors.Fmt("failed to initialize the cache directory: %w", err)
 		}
 	})
 	return c.err
@@ -94,7 +94,7 @@ func (c *Cache) doInit() error {
 		}
 	}
 	if !filepath.IsAbs(dir) {
-		return errors.Reason("$%s should be an absolute path, got %q", CacheEnvVar, dir).Err()
+		return errors.Fmt("$%s should be an absolute path, got %q", CacheEnvVar, dir)
 	}
 	if err = os.MkdirAll(dir, 0700); err != nil {
 		return err

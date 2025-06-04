@@ -104,7 +104,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			pkgLintChecksTup = append(pkgLintChecksTup, starlark.String(check))
 		}
 		if err := state.Meta.setField("lint_checks", pkgLintChecksTup); err != nil {
-			return nil, errors.Annotate(err, "presetting lint_checks").Err()
+			return nil, errors.Fmt("presetting lint_checks: %w", err)
 		}
 		pkgLintChecks = pkgLintChecksTup
 	}
@@ -176,7 +176,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	var depErr errors.MultiError
 	addDep := func(dep string, loader interpreter.Loader) {
 		if pkgs[dep] != nil {
-			depErr = append(depErr, errors.Reason("dependency %q clashes with a predeclared dependency", dep).Err())
+			depErr = append(depErr, errors.Fmt("dependency %q clashes with a predeclared dependency", dep))
 		} else {
 			pkgs[dep] = loader
 		}
@@ -318,7 +318,7 @@ func visibilityCheck(depGraph map[string][]string) func(*starlark.Thread, interp
 	return func(_ *starlark.Thread, loader, loaded interpreter.ModuleKey) error {
 		if loader.Package != loaded.Package {
 			if _, ok := visMap[edge{loader.Package, loaded.Package}]; !ok {
-				return errors.Reason("@%s doesn't directly depend on @%s in its PACKAGE.star", loader.Package, loaded.Package).Err()
+				return errors.Fmt("@%s doesn't directly depend on @%s in its PACKAGE.star", loader.Package, loaded.Package)
 			}
 		}
 		return nil

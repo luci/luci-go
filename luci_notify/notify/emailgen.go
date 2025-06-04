@@ -51,7 +51,7 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 	// Fetch current revision of the project config.
 	project := &config.Project{Name: projectID}
 	if err := datastore.Get(c, project); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch project").Err()
+		return nil, errors.Fmt("failed to fetch project: %w", err)
 	}
 
 	// Lookup an existing bundle in the process cache.

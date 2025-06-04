@@ -96,7 +96,7 @@ func matchesAny(name string, pats []string) (yes bool, err error) {
 		}
 		switch match, err := path.Match(pat, subject); {
 		case err != nil:
-			return false, errors.Annotate(err, "bad pattern %q", pat).Err()
+			return false, errors.Fmt("bad pattern %q: %w", pat, err)
 		case match:
 			return true, nil
 		}
@@ -142,7 +142,7 @@ func ScanDirectory(dir string, set *Set) ([]string, error) {
 		if errors.Is(err, path.ErrBadPattern) {
 			return nil, err
 		}
-		return nil, errors.Annotate(err, "failed to scan the directory").Err()
+		return nil, errors.Fmt("failed to scan the directory: %w", err)
 	}
 
 	slices.Sort(found)

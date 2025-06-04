@@ -200,7 +200,7 @@ func (o Output) ConfigSets() ([]ConfigSet, error) {
 			if strings.HasPrefix(f, root) {
 				var err error
 				if files[f[len(root):]], err = body.Bytes(); err != nil {
-					return nil, errors.Annotate(err, "serializing %s", f).Err()
+					return nil, errors.Fmt("serializing %s: %w", f, err)
 				}
 			}
 		}
@@ -259,10 +259,10 @@ func (o Output) Compare(dir string, semantic bool) (map[string]CompareResult, er
 				case os.IsNotExist(err):
 					res = Different // new output file
 				case err != nil:
-					return errors.Annotate(err, "when checking diff of %q", name).Err()
+					return errors.Fmt("when checking diff of %q: %w", name, err)
 				default:
 					if res, err = compare(datum, existing); err != nil {
-						return errors.Annotate(err, "when checking diff of %q", name).Err()
+						return errors.Fmt("when checking diff of %q: %w", name, err)
 					}
 				}
 
@@ -364,7 +364,7 @@ func (o Output) Read(dir string) error {
 		path := filepath.Join(dir, filepath.FromSlash(name))
 		blob, err := os.ReadFile(path)
 		if err != nil {
-			return errors.Annotate(err, "reading %q", name).Err()
+			return errors.Fmt("reading %q: %w", name, err)
 		}
 		o.Data[name] = BlobDatum(blob)
 	}
@@ -435,7 +435,7 @@ func (o Output) DiscardChangesToUntracked(ctx context.Context, tracked []string,
 		case os.IsNotExist(err):
 			delete(o.Data, path)
 		case err != nil:
-			return errors.Annotate(err, "when discarding changes to %s", path).Err()
+			return errors.Fmt("when discarding changes to %s: %w", path, err)
 		}
 	}
 

@@ -87,7 +87,7 @@ func updateSettings(c context.Context) error {
 	lucicfg := cfgclient.Client(c)
 	cfg, err := lucicfg.GetConfig(c, "services/${appid}", "settings.cfg", false)
 	if err != nil {
-		return errors.Annotate(err, "loading settings.cfg from luci-config").Err()
+		return errors.Fmt("loading settings.cfg from luci-config: %w", err)
 	}
 
 	// Do the revision check & swap in a datastore transaction.
@@ -101,7 +101,7 @@ func updateSettings(c context.Context) error {
 		case nil:
 			// Continue
 		default:
-			return errors.Annotate(err, "loading existing config").Err()
+			return errors.Fmt("loading existing config: %w", err)
 		}
 		// Check to see if we need to update
 		if oldSettings.Revision == cfg.Revision {
@@ -110,13 +110,13 @@ func updateSettings(c context.Context) error {
 		}
 		newSettings := Settings{Revision: cfg.Revision}
 		if err := proto.UnmarshalText(cfg.Content, &newSettings.Settings); err != nil {
-			return errors.Annotate(err, "unmarshalling proto").Err()
+			return errors.Fmt("unmarshalling proto: %w", err)
 		}
 		ctx := &validation.Context{Context: c}
 		ctx.SetFile("settings.cfg")
 		validateSettings(ctx, &newSettings.Settings)
 		if err := ctx.Finalize(); err != nil {
-			return errors.Annotate(err, "validating settings").Err()
+			return errors.Fmt("validating settings: %w", err)
 		}
 		return datastore.Put(c, &newSettings)
 	}, nil)
@@ -126,7 +126,7 @@ func FetchSettings(ctx context.Context) (*notifypb.Settings, error) {
 	settings := Settings{}
 	err := datastore.Get(ctx, &settings)
 	if err != nil {
-		return nil, errors.Annotate(err, "loading existing config").Err()
+		return nil, errors.Fmt("loading existing config: %w", err)
 	}
 	return &settings.Settings, nil
 }

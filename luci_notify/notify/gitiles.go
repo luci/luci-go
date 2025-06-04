@@ -47,11 +47,11 @@ func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject,
 	}
 	transport, err := auth.GetRPCTransport(ctx, auth.AsProject, opts...)
 	if err != nil {
-		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+		return nil, errors.Fmt("getting RPC Transport: %w", err)
 	}
 	client, err := gitiles.NewRESTClient(&http.Client{Transport: transport}, gerritHost, true)
 	if err != nil {
-		return nil, errors.Annotate(err, "creating Gitiles client").Err()
+		return nil, errors.Fmt("creating Gitiles client: %w", err)
 	}
 
 	req := &gitilespb.LogRequest{
@@ -67,9 +67,9 @@ func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject,
 	res, err := gitiles.PagingLog(ctx, client, req, 0)
 	switch {
 	case err != nil:
-		return nil, grpcutil.WrapIfTransient(errors.Annotate(err, "fetching commit from Gitiles").Err())
+		return nil, grpcutil.WrapIfTransient(errors.Fmt("fetching commit from Gitiles: %w", err))
 	case len(res) > 0 && res[0].Id != newRevision: // Sanity check.
-		return nil, errors.Reason("gitiles returned inconsistent results").Err()
+		return nil, errors.New("gitiles returned inconsistent results")
 	default:
 		return res, nil
 	}
