@@ -100,7 +100,7 @@ func (c *Client) ReadClusterExoneratedTestVariants(ctx context.Context, opts Rea
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying cluster exonerated test variants").Err()
+		return nil, errors.Fmt("querying cluster exonerated test variants: %w", err)
 	}
 	tvs := []*ExoneratedTestVariant{}
 	for {
@@ -110,7 +110,7 @@ func (c *Client) ReadClusterExoneratedTestVariants(ctx context.Context, opts Rea
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster exonerated test variant row").Err()
+			return nil, errors.Fmt("obtain next cluster exonerated test variant row: %w", err)
 		}
 		tvs = append(tvs, row)
 	}

@@ -186,7 +186,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	defer func() { tracing.End(s, err, attribute.Int("outcome", len(cs))) }()
 
 	if err := pbutil.ValidateTimeRange(ctx, options.TimeRange); err != nil {
-		return nil, errors.Annotate(err, "time_range").Tag(InvalidArgumentTag).Err()
+		return nil, InvalidArgumentTag.Apply(errors.Fmt("time_range: %w", err))
 	}
 
 	// Note that the content of the filter and order_by clause is untrusted
@@ -195,7 +195,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	const parameterPrefix = "w_"
 	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, parameterPrefix)
 	if err != nil {
-		return nil, errors.Annotate(err, "failure_filter").Tag(InvalidArgumentTag).Err()
+		return nil, InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}
 
 	resultTable := ClusterSummariesTable(options.Metrics)
@@ -203,7 +203,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	order := aip.MergeWithDefaultOrder(defaultOrder(options.Metrics), options.OrderBy)
 	orderByClause, err := resultTable.OrderByClause(order)
 	if err != nil {
-		return nil, errors.Annotate(err, "order_by").Tag(InvalidArgumentTag).Err()
+		return nil, InvalidArgumentTag.Apply(errors.Fmt("order_by: %w", err))
 	}
 
 	sql := constructQueryString(options.IncludeMetricBreakdown, options.Metrics, whereClause, orderByClause)
@@ -218,7 +218,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying cluster summaries").Err()
+		return nil, errors.Fmt("querying cluster summaries: %w", err)
 	}
 
 	// Calculate the array length for daily breakdowns for metrics.
@@ -233,7 +233,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster summary row").Err()
+			return nil, errors.Fmt("obtain next cluster summary row: %w", err)
 		}
 
 		row := &ClusterSummary{}
@@ -267,7 +267,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 			row.MetricValues[metric.ID] = metricValue
 		}
 		if err := rowVals.Error(); err != nil {
-			return nil, errors.Annotate(err, "marshal cluster summary row").Err()
+			return nil, errors.Fmt("marshal cluster summary row: %w", err)
 		}
 		clusters = append(clusters, row)
 	}

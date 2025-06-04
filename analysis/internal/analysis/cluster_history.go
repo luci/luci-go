@@ -60,7 +60,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	const parameterPrefix = "w_"
 	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, parameterPrefix)
 	if err != nil {
-		return nil, errors.Annotate(err, "failure_filter").Tag(InvalidArgumentTag).Err()
+		return nil, InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}
 
 	var precomputeList []string
@@ -164,7 +164,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 		bigquery.QueryParameter{Name: "days", Value: options.Days})
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying cluster history").Err()
+		return nil, errors.Fmt("querying cluster history: %w", err)
 	}
 	days := []*ReadClusterHistoryDay{}
 	for {
@@ -174,7 +174,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster history day row").Err()
+			return nil, errors.Fmt("obtain next cluster history day row: %w", err)
 		}
 		row := &ReadClusterHistoryDay{Date: rowVals["day"].(time.Time)}
 		row.MetricValues = map[metrics.ID]int32{}

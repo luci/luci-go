@@ -51,7 +51,7 @@ func (*adminServer) BackfillTestResults(ctx context.Context, req *pb.BackfillTes
 			Day: timestamppb.New(day),
 		}
 		if err := backfill.Schedule(ctx, task); err != nil {
-			return nil, errors.Annotate(err, "schedule backfill for day %v", day).Err()
+			return nil, errors.Fmt("schedule backfill for day %v: %w", day, err)
 		}
 		count++
 	}
@@ -63,14 +63,14 @@ func (*adminServer) BackfillTestResults(ctx context.Context, req *pb.BackfillTes
 func validateBackfillTestResultsRequest(req *pb.BackfillTestResultsRequest) error {
 	startDay := req.StartDay.AsTime()
 	if !startDay.Equal(startDay.Truncate(24 * time.Hour)) {
-		return errors.Reason("start_day: must be the start of a day").Err()
+		return errors.New("start_day: must be the start of a day")
 	}
 	endDay := req.EndDay.AsTime()
 	if !endDay.Equal(endDay.Truncate(24 * time.Hour)) {
-		return errors.Reason("end_day: must be the start of a day").Err()
+		return errors.New("end_day: must be the start of a day")
 	}
 	if endDay.Before(startDay) {
-		return errors.Reason("end_day: must be equal to or after start_day").Err()
+		return errors.New("end_day: must be equal to or after start_day")
 	}
 	return nil
 }

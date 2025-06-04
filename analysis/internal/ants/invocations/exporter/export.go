@@ -46,7 +46,7 @@ func (e *Exporter) Export(ctx context.Context, inv *rdbpb.Invocation) error {
 	invID, err := pbutil.ParseInvocationName(inv.Name)
 	if err != nil {
 		// Should not happen
-		return errors.Annotate(err, "parse invocation name").Err()
+		return errors.Fmt("parse invocation name: %w", err)
 	}
 
 	// TODO(beining): populate more fields.
@@ -60,7 +60,7 @@ func (e *Exporter) Export(ctx context.Context, inv *rdbpb.Invocation) error {
 		CompletionTime: inv.FinalizeTime,
 	}
 	if err := e.client.Insert(ctx, exportRow); err != nil {
-		return errors.Annotate(err, "insert rows").Err()
+		return errors.Fmt("insert rows: %w", err)
 	}
 	return nil
 }

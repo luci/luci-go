@@ -175,7 +175,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 	}
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying cluster failures").Err()
+		return nil, errors.Fmt("querying cluster failures: %w", err)
 	}
 	failures := []*ClusterFailure{}
 	for {
@@ -185,7 +185,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster failure row").Err()
+			return nil, errors.Fmt("obtain next cluster failure row: %w", err)
 		}
 		failures = append(failures, row)
 	}

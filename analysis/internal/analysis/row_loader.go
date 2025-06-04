@@ -57,14 +57,14 @@ func (r *rowLoader) fieldIndex(fieldName string) (index int, ok bool) {
 func (r *rowLoader) valueWithType(fieldName string, expectedType bigquery.FieldType, repeated bool) (bigquery.Value, error) {
 	i, ok := r.fieldIndex(fieldName)
 	if !ok {
-		return nil, errors.Reason("field %s is not defined", fieldName).Err()
+		return nil, errors.Fmt("field %s is not defined", fieldName)
 	}
 	fieldType := r.schema[i]
 	if fieldType.Type != expectedType {
-		return nil, errors.Reason("field %s has type %s, expected type %s", fieldName, fieldType.Type, expectedType).Err()
+		return nil, errors.Fmt("field %s has type %s, expected type %s", fieldName, fieldType.Type, expectedType)
 	}
 	if fieldType.Repeated != repeated {
-		return nil, errors.Reason("field %s repeated=%v, expected repeated=%v", fieldName, fieldType.Repeated, repeated).Err()
+		return nil, errors.Fmt("field %s repeated=%v, expected repeated=%v", fieldName, fieldType.Repeated, repeated)
 	}
 	return r.vals[i], nil
 }
@@ -92,7 +92,7 @@ func (r *rowLoader) NullString(fieldName string) bigquery.NullString {
 func (r *rowLoader) String(fieldName string) string {
 	val := r.NullString(fieldName)
 	if !val.Valid {
-		r.reportError(errors.Reason("field %s value is NULL, expected non-null string", fieldName).Err())
+		r.reportError(errors.Fmt("field %s value is NULL, expected non-null string", fieldName))
 		return ""
 	}
 	return val.String()
@@ -120,7 +120,7 @@ func (r *rowLoader) NullInt64(fieldName string) bigquery.NullInt64 {
 func (r *rowLoader) Int64(fieldName string) int64 {
 	val := r.NullInt64(fieldName)
 	if !val.Valid {
-		r.reportError(errors.Reason("field %s value is NULL, expected non-null integer", fieldName).Err())
+		r.reportError(errors.Fmt("field %s value is NULL, expected non-null integer", fieldName))
 		return -1
 	}
 	return val.Int64
@@ -140,7 +140,7 @@ func (r *rowLoader) Int64s(fieldName string) []int64 {
 	result := make([]int64, 0, len(rows))
 	for i, row := range rows {
 		if row == nil {
-			r.reportError(errors.Reason("field %s index %v is NULL, expected non-null integer", fieldName, i).Err())
+			r.reportError(errors.Fmt("field %s index %v is NULL, expected non-null integer", fieldName, i))
 			return nil
 		}
 		result = append(result, row.(int64))
@@ -167,7 +167,7 @@ func (r *rowLoader) TopCounts(fieldName string) []TopCount {
 	for _, row := range rows {
 		var nestedLoader rowLoader
 		if err := nestedLoader.Load(row.([]bigquery.Value), rowSchema); err != nil {
-			r.reportError(errors.Annotate(err, "field %s", fieldName).Err())
+			r.reportError(errors.Fmt("field %s: %w", fieldName, err))
 			return nil
 		}
 
@@ -177,7 +177,7 @@ func (r *rowLoader) TopCounts(fieldName string) []TopCount {
 		results = append(results, tc)
 
 		if err := nestedLoader.Error(); err != nil {
-			r.reportError(errors.Annotate(err, "field %s", fieldName).Err())
+			r.reportError(errors.Fmt("field %s: %w", fieldName, err))
 			return nil
 		}
 	}
@@ -198,7 +198,7 @@ func (r *rowLoader) Strings(fieldName string) []string {
 	result := make([]string, 0, len(rows))
 	for i, row := range rows {
 		if row == nil {
-			r.reportError(errors.Reason("field %s index %v is NULL, expected non-null string", fieldName, i).Err())
+			r.reportError(errors.Fmt("field %s index %v is NULL, expected non-null string", fieldName, i))
 			return nil
 		}
 		result = append(result, row.(string))

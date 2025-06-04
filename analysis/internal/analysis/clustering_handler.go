@@ -63,10 +63,10 @@ func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
 func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *clustering.Update, commitTime time.Time) error {
 	rowUpdates, err := prepareInserts(updates, commitTime)
 	if err != nil {
-		return errors.Annotate(err, "prepare rows to insert").Err()
+		return errors.Fmt("prepare rows to insert: %w", err)
 	}
 	if err := r.cfClient.Insert(ctx, rowUpdates); err != nil {
-		return errors.Annotate(err, "inserting %d clustered failure rows", len(rowUpdates)).Err()
+		return errors.Fmt("inserting %d clustered failure rows: %w", len(rowUpdates), err)
 	}
 	return nil
 }
@@ -164,7 +164,7 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 	testIDStructured, err := bqutil.StructuredTestIdentifier(failure.TestId, failure.Variant)
 	if err != nil {
 		// This should not happen. It means we ingested a bad test identifier.
-		return nil, errors.Annotate(err, "structured test identifier").Err()
+		return nil, errors.Fmt("structured test identifier: %w", err)
 	}
 	entry := &bqpb.ClusteredFailureRow{
 		ClusterAlgorithm: cluster.Algorithm,

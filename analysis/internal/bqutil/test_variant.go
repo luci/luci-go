@@ -35,11 +35,11 @@ func StructuredTestIdentifier(testID string, variant *pb.Variant) (*bqpb.TestIde
 func StructuredTestIdentifierRDB(testID string, variant *rdbpb.Variant) (*bqpb.TestIdentifier, error) {
 	test, err := rdbpbutil.ParseAndValidateTestID(testID)
 	if err != nil {
-		return nil, errors.Annotate(err, "parse test ID").Err()
+		return nil, errors.Fmt("parse test ID: %w", err)
 	}
 	variantJSON, err := VariantJSON(variant)
 	if err != nil {
-		return nil, errors.Annotate(err, "format variant").Err()
+		return nil, errors.Fmt("format variant: %w", err)
 	}
 	return &bqpb.TestIdentifier{
 		ModuleName:        test.ModuleName,
@@ -62,7 +62,7 @@ func TestMetadata(rdbTmd *rdbpb.TestMetadata) (*bqpb.TestMetadata, error) {
 	// convert it to a JSON string here.
 	propertiesJSON, err := MarshalStructPB(rdbTmd.Properties)
 	if err != nil {
-		return nil, errors.Annotate(err, "marshal properties").Err()
+		return nil, errors.Fmt("marshal properties: %w", err)
 	}
 	tmd := &bqpb.TestMetadata{
 		Name:             rdbTmd.Name,

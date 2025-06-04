@@ -46,7 +46,7 @@ func (i *Inserter) Put(ctx context.Context, rows []*bq.Row) error {
 	inserter := i.table.Inserter()
 	for i, batch := range i.batch(rows) {
 		if err := inserter.Put(ctx, batch); err != nil {
-			return errors.Annotate(err, "putting batch %v", i).Err()
+			return errors.Fmt("putting batch %v: %w", i, err)
 		}
 	}
 	return nil

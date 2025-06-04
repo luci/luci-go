@@ -67,40 +67,40 @@ func persistentHashTestIdentifier(id *bqpb.AntsTestResultRow_TestIdentifier) (st
 	// module
 	err = putInt(h, len(id.Module))
 	if err != nil {
-		return "", errors.Annotate(err, "module length").Err()
+		return "", errors.Fmt("module length: %w", err)
 	}
 	err = putString(h, id.Module)
 	if err != nil {
-		return "", errors.Annotate(err, "module").Err()
+		return "", errors.Fmt("module: %w", err)
 	}
 
 	err = putInt(h, len(id.ModuleParameters))
 	if err != nil {
-		return "", errors.Annotate(err, "module parameters length").Err()
+		return "", errors.Fmt("module parameters length: %w", err)
 	}
 	err = putString(h, id.ModuleParametersHash)
 	if err != nil {
-		return "", errors.Annotate(err, "module parameters hash").Err()
+		return "", errors.Fmt("module parameters hash: %w", err)
 	}
 
 	// test_class
 	err = putInt(h, len(id.TestClass))
 	if err != nil {
-		return "", errors.Annotate(err, "test class length").Err()
+		return "", errors.Fmt("test class length: %w", err)
 	}
 	err = putString(h, id.TestClass)
 	if err != nil {
-		return "", errors.Annotate(err, "test class").Err()
+		return "", errors.Fmt("test class: %w", err)
 	}
 
 	// method
 	err = putInt(h, len(id.Method))
 	if err != nil {
-		return "", errors.Annotate(err, "method length").Err()
+		return "", errors.Fmt("method length: %w", err)
 	}
 	err = putString(h, id.Method)
 	if err != nil {
-		return "", errors.Annotate(err, "method").Err()
+		return "", errors.Fmt("method: %w", err)
 	}
 
 	// method parameters is deprecated, put empty string here for backward compatibility.

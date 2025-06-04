@@ -206,17 +206,17 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 	q.WriteDisposition = bigquery.WriteTruncate
 	job, err := q.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "starting cluster summary analysis").Err()
+		return errors.Fmt("starting cluster summary analysis: %w", err)
 	}
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
 	js, err := bq.WaitForJob(waitCtx, job)
 	if err != nil {
-		return errors.Annotate(err, "waiting for cluster summary analysis to complete").Err()
+		return errors.Fmt("waiting for cluster summary analysis to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "cluster summary analysis failed").Err()
+		return errors.Fmt("cluster summary analysis failed: %w", err)
 	}
 	return nil
 }
@@ -288,7 +288,7 @@ func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery
 
 	job, err := q.Run(ctx)
 	if err != nil {
-		return errors.Annotate(err, "purge stale rows").Err()
+		return errors.Fmt("purge stale rows: %w", err)
 	}
 
 	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*5)
@@ -296,10 +296,10 @@ func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery
 
 	js, err := job.Wait(waitCtx)
 	if err != nil {
-		return errors.Annotate(err, "waiting for stale row purge to complete").Err()
+		return errors.Fmt("waiting for stale row purge to complete: %w", err)
 	}
 	if err := js.Err(); err != nil {
-		return errors.Annotate(err, "purge stale rows failed").Err()
+		return errors.Fmt("purge stale rows failed: %w", err)
 	}
 	return nil
 }
@@ -441,7 +441,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 
 	it, err := q.Read(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying clusters").Err()
+		return nil, errors.Fmt("querying clusters: %w", err)
 	}
 	clusters := []*Cluster{}
 	for {
@@ -451,7 +451,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 			break
 		}
 		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster row").Err()
+			return nil, errors.Fmt("obtain next cluster row: %w", err)
 		}
 		row := &Cluster{}
 		row.ClusterID = clustering.ClusterID{
@@ -492,7 +492,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 		row.Realms = rowVals.Strings("realms")
 
 		if err := rowVals.Error(); err != nil {
-			return nil, errors.Annotate(err, "marshalling cluster row").Err()
+			return nil, errors.Fmt("marshalling cluster row: %w", err)
 		}
 
 		clusters = append(clusters, row)

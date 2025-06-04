@@ -67,10 +67,10 @@ func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.
 	project, _ = realms.Split(notification.Realm)
 	processed, err := h.handleInvocation(ctx, notification)
 	if err != nil {
-		return errors.Annotate(err, "processing notification").Err()
+		return errors.Fmt("processing notification: %w", err)
 	}
 	if err == nil && !processed {
-		err = pubsub.Ignore.Apply(errors.Reason("ignoring invocation finalized notification").Err())
+		err = pubsub.Ignore.Apply(errors.New("ignoring invocation finalized notification"))
 	}
 	status = errStatus(err)
 	return err

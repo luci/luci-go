@@ -56,11 +56,11 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 
 	exportRow, err := prepareExportRow(testVariants, opts)
 	if err != nil {
-		return errors.Annotate(err, "prepare row").Err()
+		return errors.Fmt("prepare row: %w", err)
 	}
 
 	if err := e.client.Insert(ctx, exportRow); err != nil {
-		return errors.Annotate(err, "insert rows").Err()
+		return errors.Fmt("insert rows: %w", err)
 	}
 	return nil
 }
@@ -70,7 +70,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 
 	invocationID, err := rdbpbutil.ParseInvocationName(opts.Invocation.Name)
 	if err != nil {
-		return nil, errors.Annotate(err, "invalid invocation name %q", invocationID).Err()
+		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
 	}
 	// Initially allocate enough space for 2 result per test variant,
 	// slice will be re-sized if necessary.
@@ -80,7 +80,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 
 		testIDStructured, err := bqutil.StructuredTestIdentifierRDB(tv.TestId, tv.Variant)
 		if err != nil {
-			return nil, errors.Annotate(err, "test_id_structured").Err()
+			return nil, errors.Fmt("test_id_structured: %w", err)
 		}
 		moduleParameters := make([]*bqpb.StringPair, 0, len(tv.Variant.GetDef()))
 		for key, val := range tv.Variant.GetDef() {
@@ -108,7 +108,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 		}
 		testIdentifierHash, err := persistentHashTestIdentifier(testIdentifier)
 		if err != nil {
-			return nil, errors.Annotate(err, "test_identifier_hash").Err()
+			return nil, errors.Fmt("test_identifier_hash: %w", err)
 		}
 
 		for _, trb := range tv.Results {

@@ -182,13 +182,13 @@ func (w *whereClause) restrictionQuery(restriction *aip160.Restriction) (string,
 		if restriction.Comparator == ":" {
 			value, err := w.likeArgValue(restriction.Arg, column)
 			if err != nil {
-				return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+				return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 			}
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
 		}
 		value, err := w.argValue(restriction.Arg, column)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
 		if restriction.Comparator == "=" {
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", column.databaseName, key, value), nil
@@ -203,7 +203,7 @@ func (w *whereClause) restrictionQuery(restriction *aip160.Restriction) (string,
 	if column.array {
 		value, err := w.argValue(restriction.Arg, column)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
 		if restriction.Comparator == ":" {
 			return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))", column.databaseName, value), nil
@@ -213,19 +213,19 @@ func (w *whereClause) restrictionQuery(restriction *aip160.Restriction) (string,
 	if restriction.Comparator == "=" {
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
 		return fmt.Sprintf("(%s = %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == "!=" {
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
 		return fmt.Sprintf("(%s <> %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == ":" {
 		arg, err := w.likeArgValue(restriction.Arg, column)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
+			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
 		return fmt.Sprintf("(%s LIKE %s)", column.databaseName, arg), nil
 	} else {
