@@ -19,15 +19,20 @@ package bqexport
 import (
 	"context"
 
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
+	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 )
 
 func CronHandler(ctx context.Context) error {
@@ -115,17 +120,9 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 
 	}
 
-	start = clock.Now(ctx)
-	roles, err := collateLatestRoles(ctx, ts)
-	logging.Debugf(ctx, "collating roles took %s", clock.Since(ctx, start))
-	if err == nil {
-		start = clock.Now(ctx)
-		err = client.InsertRoles(ctx, roles)
-		logging.Debugf(ctx, "inserting BQ rows for roles took %s", clock.Since(ctx, start))
-	}
-	if err != nil {
+	if err := exportSupplementalData(ctx, client, ts); err != nil {
 		// Non-fatal; just log the error.
-		logging.Warningf(ctx, "failed exporting latest roles: %s", err)
+		logging.Warningf(ctx, "failed when handling supplemental data: %s", err)
 	}
 
 	// Ensure the views for the latest data, to propagate schema changes.
@@ -134,6 +131,73 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	logging.Debugf(ctx, "ensuring latest views took %s", clock.Since(ctx, start))
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+type AuthConfig interface {
+	*configspb.PermissionsConfig | *realmsconf.RealmsCfg
+}
+
+type ViewableConfig[T AuthConfig] struct {
+	ViewURL string
+	Config  T
+}
+
+type LatestConfigs struct {
+	Permissions *ViewableConfig[*configspb.PermissionsConfig]
+	Realms      map[string]*ViewableConfig[*realmsconf.RealmsCfg]
+}
+
+func getLatestConfigs(ctx context.Context) (*LatestConfigs, error) {
+	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
+	if err != nil {
+		return nil, errors.Fmt("failed to get permissions.cfg: %w", err)
+	}
+	result := &LatestConfigs{
+		Permissions: &ViewableConfig[*configspb.PermissionsConfig]{
+			ViewURL: permsMeta.ViewURL,
+			Config:  permsCfg,
+		},
+	}
+
+	latest, err := realmsinternals.FetchLatestRealmsConfigs(ctx)
+	if err != nil {
+		return nil, errors.Fmt("failed to fetch latest realms: %w", err)
+	}
+	result.Realms = make(map[string]*ViewableConfig[*realmsconf.RealmsCfg], len(latest))
+	for k, v := range latest {
+		parsed := &realmsconf.RealmsCfg{}
+		if err := prototext.Unmarshal([]byte(v.Content), parsed); err != nil {
+			return nil, errors.Fmt("failed to unmarshal config body for realms: %w", err)
+		}
+		result.Realms[k] = &ViewableConfig[*realmsconf.RealmsCfg]{
+			ViewURL: v.ViewURL,
+			Config:  parsed,
+		}
+	}
+
+	return result, nil
+}
+
+func exportSupplementalData(ctx context.Context, client *Client,
+	ts *timestamppb.Timestamp) error {
+	start := clock.Now(ctx)
+	latest, err := getLatestConfigs(ctx)
+	logging.Debugf(ctx, "getting latest configs took %s", clock.Since(ctx, start))
+	if err != nil {
+		return err
+	}
+
+	start = clock.Now(ctx)
+	roles := collateLatestRoles(ctx, latest, ts)
+	logging.Debugf(ctx, "collating roles took %s", clock.Since(ctx, start))
+	start = clock.Now(ctx)
+	rolesErr := client.InsertRoles(ctx, roles)
+	logging.Debugf(ctx, "inserting BQ rows for roles took %s", clock.Since(ctx, start))
+	if rolesErr != nil {
+		return errors.Fmt("failed to insert all %d roles: %w", len(roles), rolesErr)
 	}
 
 	return nil

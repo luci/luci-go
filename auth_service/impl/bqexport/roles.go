@@ -17,19 +17,14 @@ package bqexport
 import (
 	"context"
 
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
-	"go.chromium.org/luci/config"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/api/configspb"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
-	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 )
 
 type ExpandedRole struct {
@@ -50,7 +45,7 @@ func (er *ExpandedRole) Absorb(other *ExpandedRole) {
 
 // analyzePermissionsCfg analyzes the given config for all globally defined roles.
 func analyzePermissionsCfg(ctx context.Context,
-	cfg *configspb.PermissionsConfig, cfgMeta *config.Meta) (stringset.Set, RoleSet) {
+	cfg *configspb.PermissionsConfig, viewURL string) (stringset.Set, RoleSet) {
 	cfgRoles := cfg.GetRole()
 	permissions := stringset.Set{}
 	roleSet := make(map[string]*ExpandedRole, len(cfgRoles))
@@ -60,7 +55,7 @@ func analyzePermissionsCfg(ctx context.Context,
 			Name:        name,
 			Subroles:    stringset.Set{},
 			Permissions: stringset.Set{},
-			ViewURL:     cfgMeta.ViewURL,
+			ViewURL:     viewURL,
 		}
 		for _, p := range cfgRole.GetPermissions() {
 			perm := p.GetName()
@@ -85,15 +80,10 @@ func analyzePermissionsCfg(ctx context.Context,
 	return permissions, roleSet
 }
 
-// analyzeRealmsCfg analyzes the given config for all defined custom roles.
-func analyzeRealmsCfg(ctx context.Context, cfg *config.Config,
-	perms stringset.Set, globalRoles RoleSet) (RoleSet, error) {
-	parsed := &realmsconf.RealmsCfg{}
-	if err := prototext.Unmarshal([]byte(cfg.Content), parsed); err != nil {
-		return nil, errors.Fmt("failed to unmarshal config body for realms: %w", err)
-	}
-
-	customRoles := parsed.GetCustomRoles()
+// analyzeRealmsCfgRoles analyzes the given config for all defined custom roles.
+func analyzeRealmsCfgRoles(ctx context.Context, cfg *realmsconf.RealmsCfg,
+	viewURL string, perms stringset.Set, globalRoles RoleSet) RoleSet {
+	customRoles := cfg.GetCustomRoles()
 	roleSet := make(map[string]*ExpandedRole, len(customRoles))
 	for _, customRole := range customRoles {
 		name := customRole.GetName()
@@ -101,12 +91,12 @@ func analyzeRealmsCfg(ctx context.Context, cfg *config.Config,
 			Name:        name,
 			Subroles:    stringset.Set{},
 			Permissions: stringset.Set{},
-			ViewURL:     cfg.ViewURL,
+			ViewURL:     viewURL,
 		}
 		rolePerms := customRole.GetPermissions()
 		if !perms.HasAll(rolePerms...) {
 			logging.Warningf(ctx, "not all permissions for %s>>%s are known",
-				cfg.ViewURL, name)
+				viewURL, name)
 		}
 		r.Permissions.AddAll(rolePerms)
 		roleSet[name] = r
@@ -129,34 +119,23 @@ func analyzeRealmsCfg(ctx context.Context, cfg *config.Config,
 		}
 	}
 
-	return roleSet, nil
+	return roleSet
 }
 
-func collateLatestRoles(ctx context.Context, ts *timestamppb.Timestamp) ([]*bqpb.RoleRow, error) {
-	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
-	if err != nil {
-		return nil, errors.Fmt("failed to get permissions.cfg: %w", err)
-	}
-
-	latest, err := realmsinternals.FetchLatestRealmsConfigs(ctx)
-	if err != nil {
-		return nil, errors.Fmt("failed to fetch latest realms: %w", err)
-	}
-
+func collateLatestRoles(ctx context.Context, latest *LatestConfigs,
+	ts *timestamppb.Timestamp) []*bqpb.RoleRow {
 	count := 0
 
 	// Get the global permissions and global roles defined in permissions.cfg.
-	perms, globalRoles := analyzePermissionsCfg(ctx, permsCfg, permsMeta)
-	roleSets := make([]RoleSet, 0, len(latest)+1)
+	perms, globalRoles := analyzePermissionsCfg(
+		ctx, latest.Permissions.Config, latest.Permissions.ViewURL)
+	roleSets := make([]RoleSet, 0, len(latest.Realms)+1)
 	roleSets = append(roleSets, globalRoles)
 	count += len(globalRoles)
 
 	// Get the custom roles defined in realms configs.
-	for _, cfg := range latest {
-		rs, err := analyzeRealmsCfg(ctx, cfg, perms, globalRoles)
-		if err != nil {
-			return nil, err
-		}
+	for _, cfg := range latest.Realms {
+		rs := analyzeRealmsCfgRoles(ctx, cfg.Config, cfg.ViewURL, perms, globalRoles)
 		roleSets = append(roleSets, rs)
 		count += len(rs)
 	}
@@ -175,5 +154,5 @@ func collateLatestRoles(ctx context.Context, ts *timestamppb.Timestamp) ([]*bqpb
 		}
 	}
 
-	return out, nil
+	return out
 }

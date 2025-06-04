@@ -17,6 +17,9 @@ package bqexport
 import (
 	"context"
 	"testing"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -51,6 +54,21 @@ func TestBQExportSettings(t *testing.T) {
 			ml := logger.(*memlogger.MemLogger)
 			assert.Loosely(t, ml,
 				convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "BQ export is disabled"))
+		})
+	})
+}
+
+func TestExportSupplementalData(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("exportSupplementalData gets latest configs", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		testTime := timestamppb.New(
+			time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC))
+
+		t.Run("fails without permissions config", func(t *ftt.Test) {
+			err := exportSupplementalData(ctx, nil, testTime)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }

@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -29,15 +28,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
 	"go.chromium.org/luci/auth_service/api/configspb"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
-	"go.chromium.org/luci/auth_service/testsupport"
 )
 
 func TestAnalyzePermissionsCfg(t *testing.T) {
@@ -46,11 +41,6 @@ func TestAnalyzePermissionsCfg(t *testing.T) {
 	ftt.Run("returns roles", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		permsURL := "https://path.to.view/config/permissions.cfg/123abc"
-		metadata := &config.Meta{
-			Path:     "permissions.cfg",
-			Revision: "123abc",
-			ViewURL:  permsURL,
-		}
 		testPermsCfg := &configspb.PermissionsConfig{
 			Role: []*configspb.PermissionsConfig_Role{
 				{
@@ -90,7 +80,7 @@ func TestAnalyzePermissionsCfg(t *testing.T) {
 			},
 		}
 
-		perms, roles := analyzePermissionsCfg(ctx, testPermsCfg, metadata)
+		perms, roles := analyzePermissionsCfg(ctx, testPermsCfg, permsURL)
 		assert.Loosely(t, perms, should.Match(stringset.NewFromSlice(
 			"test.service.get", "test.service.list", "test.service.write",
 			"test.service.create", "test.service.delete")))
@@ -129,7 +119,7 @@ func TestAnalyzePermissionsCfg(t *testing.T) {
 func TestAnalyzeRealmsCfg(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("analyzeRealmsCfg works", t, func(t *ftt.Test) {
+	ftt.Run("analyzeRealmsCfgRoles works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		permsURL := "https://path.to.view/config/permissions.cfg/123abc"
 		testPerms := stringset.NewFromSlice(
@@ -184,15 +174,8 @@ func TestAnalyzeRealmsCfg(t *testing.T) {
 				},
 			},
 		}
-		content, err := prototext.Marshal(testRealmsCfg)
-		assert.Loosely(t, err, should.BeNil)
-		testCfg := &config.Config{
-			Content: string(content),
-			Meta:    config.Meta{ViewURL: testRealmsURL},
-		}
 
-		actual, err := analyzeRealmsCfg(ctx, testCfg, testPerms, testGlobalRoles)
-		assert.Loosely(t, err, should.BeNil)
+		actual := analyzeRealmsCfgRoles(ctx, testRealmsCfg, testRealmsURL, testPerms, testGlobalRoles)
 		assert.Loosely(t, actual, should.Match(RoleSet{
 			"customRole/projectA.limitedReader": {
 				Name:        "customRole/projectA.limitedReader",
@@ -229,6 +212,7 @@ func TestCollateLatestRoles(t *testing.T) {
 		testTime := timestamppb.New(
 			time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC))
 
+		permsURL := "https://path.to.view/config/permissions.cfg/123abc"
 		testPermsCfg := &configspb.PermissionsConfig{
 			Role: []*configspb.PermissionsConfig_Role{
 				{
@@ -267,64 +251,48 @@ func TestCollateLatestRoles(t *testing.T) {
 				},
 			},
 		}
+		testLatest := &LatestConfigs{
+			Permissions: &ViewableConfig[*configspb.PermissionsConfig]{
+				ViewURL: permsURL,
+				Config:  testPermsCfg,
+			},
+		}
 
-		t.Run("fails without permissions config", func(t *ftt.Test) {
-			_, err := collateLatestRoles(ctx, testTime)
-			assert.Loosely(t, err, should.NotBeNil)
+		actual := collateLatestRoles(ctx, testLatest, testTime)
+		expected := []*bqpb.RoleRow{
+			{
+				Name: "role/test.service.admin",
+				Subroles: []string{
+					"role/test.service.reader", "role/test.service.writer",
+				},
+				Permissions: []string{
+					"test.service.create", "test.service.delete",
+					"test.service.get", "test.service.list", "test.service.write",
+				},
+				Url:        permsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:        "role/test.service.reader",
+				Subroles:    []string{},
+				Permissions: []string{"test.service.get", "test.service.list"},
+				Url:         permsURL,
+				ExportedAt:  testTime,
+			},
+			{
+				Name:     "role/test.service.writer",
+				Subroles: []string{},
+				Permissions: []string{
+					"test.service.create", "test.service.write",
+				},
+				Url:        permsURL,
+				ExportedAt: testTime,
+			},
+		}
+		// Sort the rows so we can easily compare to the expected value.
+		slices.SortStableFunc(actual, func(a, b *bqpb.RoleRow) int {
+			return strings.Compare(a.Name, b.Name)
 		})
-
-		t.Run("collates roles", func(t *ftt.Test) {
-			// Set permissions config.
-			permsURL := "https://path.to.view/config/permissions.cfg/123abc"
-			metadata := &config.Meta{
-				Path:     "permissions.cfg",
-				Revision: "123abc",
-				ViewURL:  permsURL,
-			}
-			err := permissionscfg.SetConfigWithMetadata(ctx, testPermsCfg, metadata)
-			assert.Loosely(t, err, should.BeNil)
-
-			testConfigClient := &testsupport.FakeConfigClient{}
-			ctx = cfgclient.Use(ctx, testConfigClient)
-
-			actual, err := collateLatestRoles(ctx, testTime)
-			assert.Loosely(t, err, should.BeNil)
-
-			expected := []*bqpb.RoleRow{
-				{
-					Name: "role/test.service.admin",
-					Subroles: []string{
-						"role/test.service.reader", "role/test.service.writer",
-					},
-					Permissions: []string{
-						"test.service.create", "test.service.delete",
-						"test.service.get", "test.service.list", "test.service.write",
-					},
-					Url:        permsURL,
-					ExportedAt: testTime,
-				},
-				{
-					Name:        "role/test.service.reader",
-					Subroles:    []string{},
-					Permissions: []string{"test.service.get", "test.service.list"},
-					Url:         permsURL,
-					ExportedAt:  testTime,
-				},
-				{
-					Name:     "role/test.service.writer",
-					Subroles: []string{},
-					Permissions: []string{
-						"test.service.create", "test.service.write",
-					},
-					Url:        permsURL,
-					ExportedAt: testTime,
-				},
-			}
-			// Sort the rows so we can easily compare to the expected value.
-			slices.SortStableFunc(actual, func(a, b *bqpb.RoleRow) int {
-				return strings.Compare(a.Name, b.Name)
-			})
-			assert.Loosely(t, actual, should.Match(expected))
-		})
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 }
