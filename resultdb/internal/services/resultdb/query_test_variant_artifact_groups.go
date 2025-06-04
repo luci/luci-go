@@ -248,10 +248,20 @@ func toTestArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, t
 	res := make([]*pb.ArtifactMatchingContent, 0, len(bqArtifacts))
 	for _, a := range bqArtifacts {
 		snippet, matches := constructSnippetAndMatches(a, searchString)
+
+		var testStatus pb.TestStatus
+		if a.TestStatus.Valid && a.TestStatus.StringVal != "" {
+			testStatus = pb.TestStatus(pb.TestStatus_value[a.TestStatus.StringVal])
+		}
+		var testStatusV2 pb.TestResult_Status
+		if a.TestStatusV2.Valid && a.TestStatusV2.StringVal != "" {
+			testStatusV2 = pb.TestResult_Status(pb.TestResult_Status_value[a.TestStatusV2.StringVal])
+		}
 		res = append(res, &pb.ArtifactMatchingContent{
 			Name:          pbutil.TestResultArtifactName(a.InvocationID, testID, a.ResultID, artifactID),
 			PartitionTime: timestamppb.New(a.PartitionTime),
-			TestStatus:    pb.TestStatus(pb.TestStatus_value[a.TestStatus.String()]),
+			TestStatus:    testStatus,
+			TestStatusV2:  testStatusV2,
 			Snippet:       snippet,
 			Matches:       matches,
 		})

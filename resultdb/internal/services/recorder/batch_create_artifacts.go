@@ -71,8 +71,6 @@ type artifactCreationRequest struct {
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.  If this is provided, data must be empty.
 	gcsURI string
-	// status of the artifact's parent test result.
-	testStatus pb.TestStatus
 }
 
 type invocationInfo struct {
@@ -185,7 +183,6 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		testID:      testID,
 		resultID:    resultID,
 		gcsURI:      req.Artifact.GcsUri,
-		testStatus:  req.Artifact.TestStatus,
 	}, nil
 }
 

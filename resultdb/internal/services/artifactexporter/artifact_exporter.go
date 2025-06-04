@@ -108,6 +108,7 @@ type Artifact struct {
 	Size            int64
 	RBECASHash      string
 	TestStatus      pb.TestStatus
+	TestStatusV2    pb.TestResult_Status
 	TestVariant     *pb.Variant
 	TestVariantHash string
 }
@@ -506,6 +507,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 			a.Size,
 			a.RBECASHash,
 			IFNULL(tr.Status, 0),
+			IFNULL(tr.StatusV2, 0),
 			tr.Variant,
 			tr.VariantHash,
 		FROM Artifacts a
@@ -526,7 +528,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 	totalSize := 0
 	err = it.Do(func(r *spanner.Row) error {
 		a := &Artifact{InvocationID: string(invID)}
-		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestVariant, &a.TestVariantHash)
+		err := b.FromSpanner(r, &a.TestID, &a.ResultID, &a.ArtifactID, &a.ContentType, &a.Size, &a.RBECASHash, &a.TestStatus, &a.TestStatusV2, &a.TestVariant, &a.TestVariantHash)
 		if err != nil {
 			return errors.Annotate(err, "read row").Err()
 		}
@@ -768,6 +770,7 @@ func (ae *artifactExporter) batchDownloadArtifacts(ctx context.Context, batch []
 			ArtifactContentSize:        int32(artifact.Size),
 			ShardContentSize:           int32(artifact.Size),
 			TestStatus:                 testStatusToString(artifact.TestStatus),
+			TestStatusV2:               testStatusV2ToString(artifact.TestStatusV2),
 			PartitionTime:              timestamppb.New(inv.CreateTime.AsTime()),
 			TestVariant:                variantJSON,
 			TestVariantHash:            artifact.TestVariantHash,
@@ -835,6 +838,7 @@ func (ae *artifactExporter) streamArtifactContent(ctx context.Context, a *Artifa
 				ArtifactContentSize:        int32(a.Size),
 				ShardContentSize:           int32(str.Len()),
 				TestStatus:                 testStatusToString(a.TestStatus),
+				TestStatusV2:               testStatusV2ToString(a.TestStatusV2),
 				TestVariant:                variantJSON,
 				TestVariantHash:            a.TestVariantHash,
 				InvocationVariantUnion:     invocationVariantJSON,
@@ -931,6 +935,13 @@ func testStatusToString(status pb.TestStatus) string {
 		return ""
 	}
 	return pb.TestStatus_name[int32(status)]
+}
+
+func testStatusV2ToString(status pb.TestResult_Status) string {
+	if status == pb.TestResult_STATUS_UNSPECIFIED {
+		return ""
+	}
+	return pb.TestResult_Status_name[int32(status)]
 }
 
 // shouldUploadToBQ returns true if we should upload artifacts to BigQuery.

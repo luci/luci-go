@@ -87,6 +87,9 @@ type MatchingArtifact struct {
 	// Test status associated with this artifact.
 	// For invocation level artifact, this field will be empty.
 	TestStatus bigquery.NullString
+	// Test status (v2) associated with this artifact.
+	// For invocation level artifact, this field will be empty.
+	TestStatusV2 bigquery.NullString
 	// The first occurrence of a match in artifact content.
 	Match string
 	// Artifact content that is immediately before the match. At most one line above.
@@ -333,6 +336,7 @@ var readArtifactsTmpl = template.Must(template.New("").Parse(`
 		result_id as ResultID,
 		ANY_VALUE(partition_time) as PartitionTime,
 		ANY_VALUE(test_status) as TestStatus,
+		ANY_VALUE(test_status_v2) as TestStatusV2,
 		SUBSTR(REGEXP_EXTRACT(ANY_VALUE(content), @searchRegex), 0, @maxMatchSize) AS Match,
 		-- Truncate from the front for context before the match. This is done by reversing the returned string, truncate from the back and reverse the string back.
 		REVERSE(SUBSTR(REVERSE(REGEXP_EXTRACT(ANY_VALUE(content), @searchContextBeforeRegex)), 0, @maxMatchSize)) AS MatchWithContextBefore,

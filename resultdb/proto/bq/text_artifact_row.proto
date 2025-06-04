@@ -22,7 +22,7 @@ import "go.chromium.org/luci/common/bq/pb/options.proto";
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TextArtifactRow represents a row in a BigQuery table `luci-resultdb.internal.text_artifacts`.
-// Next ID: 21
+// Next ID: 22
 message TextArtifactRow {
   reserved 14; // artifact_shard
 
@@ -92,6 +92,11 @@ message TextArtifactRow {
   // See luci.resultdb.v1.TestStatus for possible values.
   // For invocation-level artifact, an this will be an empty string.
   string test_status = 15;
+
+  // Status of the test result that contains the artifact (v2).
+  // See luci.resultdb.v1.TestResult_Status for possible values.
+  // For invocation-level artifact, an this will be an empty string.
+  string test_status_v2 = 21;
 
   // The variant of the test result that contains the artifact.
   // This will be encoded as a JSON object like

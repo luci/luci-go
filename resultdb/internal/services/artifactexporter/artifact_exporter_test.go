@@ -180,6 +180,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 					Size:         100,
 					RBECASHash:   "deadbeef",
 					TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
+					TestStatusV2: pb.TestResult_STATUS_UNSPECIFIED,
 				},
 				{
 					InvocationID:    "inv1",
@@ -190,6 +191,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 					Size:            100,
 					RBECASHash:      "deadbeef",
 					TestStatus:      pb.TestStatus_PASS,
+					TestStatusV2:    pb.TestResult_PASSED,
 					TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},
 					TestVariantHash: "f334f047f88eb721",
 				},
@@ -240,6 +242,7 @@ func TestQueryTextArtifacts(t *testing.T) {
 					Size:         100,
 					RBECASHash:   "deadbeef",
 					TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
+					TestStatusV2: pb.TestResult_STATUS_UNSPECIFIED,
 				},
 			}))
 			assert.Loosely(t, artifactContentCounter.Get(ctx, "testproject", "text"), should.Equal(1))
@@ -289,6 +292,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         3,
 				RBECASHash:   "hash1",
 				TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
+				TestStatusV2: pb.TestResult_STATUS_UNSPECIFIED,
 			},
 			{
 				InvocationID: "inv1",
@@ -299,6 +303,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         2,
 				RBECASHash:   "hash2",
 				TestStatus:   pb.TestStatus_PASS,
+				TestStatusV2: pb.TestResult_PASSED,
 			},
 			{
 				InvocationID:    "inv1",
@@ -309,6 +314,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:            450,
 				RBECASHash:      "hash3",
 				TestStatus:      pb.TestStatus_FAIL,
+				TestStatusV2:    pb.TestResult_FAILED,
 				TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},
 				TestVariantHash: "f334f047f88eb721",
 			},
@@ -321,6 +327,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         400,
 				RBECASHash:   "hash4",
 				TestStatus:   pb.TestStatus_FAIL,
+				TestStatusV2: pb.TestResult_FAILED,
 			},
 			{
 				InvocationID: "inv1",
@@ -331,6 +338,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         97,
 				RBECASHash:   "hash5",
 				TestStatus:   pb.TestStatus_FAIL,
+				TestStatusV2: pb.TestResult_FAILED,
 			},
 			{
 				InvocationID: "inv1",
@@ -341,6 +349,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         98,
 				RBECASHash:   "hash6",
 				TestStatus:   pb.TestStatus_FAIL,
+				TestStatusV2: pb.TestResult_FAILED,
 			},
 			{
 				InvocationID: "inv1",
@@ -351,6 +360,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				Size:         99,
 				RBECASHash:   "hash7",
 				TestStatus:   pb.TestStatus_FAIL,
+				TestStatusV2: pb.TestResult_FAILED,
 			},
 		}
 		inv := &pb.Invocation{
@@ -420,6 +430,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 						ShardContentSize:           int32(3),
 						PartitionTime:              timestamppb.New(time.Unix(10000, 0).UTC()),
 						TestStatus:                 "",
+						TestStatusV2:               "",
 						TestVariant:                "{}",
 						InvocationVariantUnion:     `{"os":"linux","runner":"test"}`,
 						InvocationVariantUnionHash: "a07aa2ca8acbfc88",
@@ -441,6 +452,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 						ShardContentSize:       int32(300),
 						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
 						TestStatus:             "FAIL",
+						TestStatusV2:           "FAILED",
 						TestVariant:            `{"os":"linux"}`,
 						TestVariantHash:        "f334f047f88eb721",
 						InvocationVariantUnion: "{}",
@@ -462,6 +474,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 						ShardContentSize:       int32(150),
 						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
 						TestStatus:             "FAIL",
+						TestStatusV2:           "FAILED",
 						TestVariant:            `{"os":"linux"}`,
 						TestVariantHash:        "f334f047f88eb721",
 						InvocationVariantUnion: "{}",
@@ -483,6 +496,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 						ShardContentSize:       int32(97),
 						PartitionTime:          timestamppb.New(time.Unix(10000, 0).UTC()),
 						TestStatus:             "FAIL",
+						TestStatusV2:           "FAILED",
 						TestVariant:            "{}",
 						InvocationVariantUnion: "{}",
 					},
@@ -513,6 +527,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 					Size:         3,
 					RBECASHash:   "hash8",
 					TestStatus:   pb.TestStatus_PASS,
+					TestStatusV2: pb.TestResult_PASSED,
 				},
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
@@ -631,6 +646,7 @@ func TestExportArtifacts(t *testing.T) {
 					Content:                    "batchdata",
 					ArtifactContentSize:        4,
 					TestStatus:                 "PASS",
+					TestStatusV2:               "PASSED",
 					ShardContentSize:           4,
 					PartitionTime:              timestamppb.New(commitTime),
 					TestVariant:                `{"os":"linux"}`,
@@ -650,6 +666,7 @@ func TestExportArtifacts(t *testing.T) {
 					Content:                    strings.Repeat("a", 6010240),
 					ArtifactContentSize:        15000000,
 					TestStatus:                 "PASS",
+					TestStatusV2:               "PASSED",
 					ShardContentSize:           6010240,
 					PartitionTime:              timestamppb.New(commitTime),
 					TestVariant:                `{"os":"linux"}`,
@@ -704,6 +721,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 				Content:             strings.Repeat("a", 4*1024*1024),
 				ShardContentSize:    4 * 1024 * 1024,
 				TestStatus:          "PASS",
+				TestStatusV2:        "PASSED",
 				PartitionTime:       timestamppb.New(time.Unix(10000, 0)),
 			}
 			rows = append(rows, row)

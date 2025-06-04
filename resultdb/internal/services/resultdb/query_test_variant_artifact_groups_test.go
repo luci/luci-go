@@ -66,6 +66,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 							ResultID:               "result1",
 							PartitionTime:          time.Unix(10, 0),
 							TestStatus:             bigquery.NullString{Valid: true, StringVal: "PASS"},
+							TestStatusV2:           bigquery.NullString{Valid: true, StringVal: "PASSED"},
 							Match:                  "match1",
 							MatchWithContextBefore: "before1",
 							MatchWithContextAfter:  "after1",
@@ -150,6 +151,7 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 						Name:          "invocations/invocation1/tests/test1/results/result1/artifacts/artifact1",
 						PartitionTime: timestamppb.New(time.Unix(10, 0)),
 						TestStatus:    pb.TestStatus_PASS,
+						TestStatusV2:  pb.TestResult_PASSED,
 						Snippet:       "before1match1after1",
 						Matches: []*pb.ArtifactMatchingContent_Match{{
 							StartIndex: 7,

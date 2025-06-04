@@ -108,11 +108,8 @@ message Artifact {
 
   // Status of the test result that the artifact belongs to.
   // This is only applicable for test-level artifacts, not invocation-level artifacts.
-  // We need this field because when an artifact is created (for example, with BatchCreateArtifact),
-  // the containing test result may or may not be created yet, as they
-  // are created in different channels from result sink.
-  // Having the test status here allows setting the correct status of artifact in BigQuery.
-  TestStatus test_status = 9;
+  // Deprecated: This field is ignored by ResultDB and not set.
+  TestStatus test_status = 9 [ deprecated = true ];
 
   // Indicates whether ListArtifactLines RPC can be used with this artifact.
   bool has_lines = 11;

@@ -290,7 +290,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			Parent: "invocations/inv",
 		}
 
-		appendArtReq := func(aID, content, cType, caseName, resultID string, testStatus pb.TestStatus) {
+		appendArtReq := func(aID, content, cType, caseName, resultID string) {
 			var testID *pb.TestIdentifierBase
 			if caseName != "" {
 				testID = &pb.TestIdentifierBase{
@@ -308,7 +308,6 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ArtifactId:       aID,
 					Contents:         []byte(content),
 					ContentType:      cType,
-					TestStatus:       testStatus,
 				},
 			})
 		}
@@ -385,11 +384,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				"CreateTime": time.Unix(10000, 0),
 			}))
 
-			appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
-			appendArtReq("art2", "c1ntent", "text/richtext", "test_id", "0", pb.TestStatus_PASS)
+			appendArtReq("art1", "c0ntent", "text/plain", "", "")
+			appendArtReq("art2", "c1ntent", "text/richtext", "test_id", "0")
 			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
 			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
-			appendArtReq("art5", "c5ntent", "text/richtext", "test_id_1", "0", pb.TestStatus_FAIL)
+			appendArtReq("art5", "c5ntent", "text/richtext", "test_id_1", "0")
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
@@ -503,8 +502,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 		t.Run("BatchUpdateBlobs fails", func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
-			appendArtReq("art2", "c1ntent", "text/richtext", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art1", "c0ntent", "text/plain", "", "")
+			appendArtReq("art2", "c1ntent", "text/richtext", "", "")
 
 			t.Run("Partly", func(t *ftt.Test) {
 				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
@@ -529,7 +528,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		})
 
 		t.Run("Token", func(t *ftt.Test) {
-			appendArtReq("art1", "", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+			appendArtReq("art1", "", "text/plain", "", "")
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			t.Run("Missing", func(t *ftt.Test) {
@@ -551,7 +550,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 			t.Run("Finalized invocation", func(t *ftt.Test) {
 				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
-				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 				assert.Loosely(t, err, should.ErrLike(`invocations/inv is not active`))
@@ -579,7 +578,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
-				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "")
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{}))
@@ -592,7 +591,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", art),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "")
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
@@ -617,7 +616,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					spanutil.InsertMap("Artifacts", gcsArt),
 				)
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 				assert.Loosely(t, err, should.ErrLike("exists w/ different storage scheme"))
@@ -628,7 +627,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 				assert.Loosely(t, err, should.ErrLike("exists w/ different GCS URI"))
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "", pb.TestStatus_STATUS_UNSPECIFIED)
+				appendArtReq("art1", "c0ntent", "text/plain", "", "")
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))

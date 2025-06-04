@@ -1161,8 +1161,12 @@ message ArtifactMatchingContent {
   // This is the creation time of the direct parent invocation.
   google.protobuf.Timestamp partition_time = 2;
 
-  // The test result status, only populated if it is a result level artifact .
-  TestStatus test_status = 3;
+  // The test result status, only populated if it is a result level artifact.
+  // Deprecated: Use test_status_v2 instead.
+  TestStatus test_status = 3 [ deprecated = true ];
+
+  // The test result status (v2), only populated if it is a result level artifact.
+  TestResult.Status test_status_v2 = 6;
 
   // Part of the artifact content that contains the first occurrence of the match.
   // The snippet is at most 10 KiB.
