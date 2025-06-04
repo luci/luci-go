@@ -149,9 +149,8 @@ func BuildFileCodecForPath(buildFilePath string) (codec BuildFileCodec, err erro
 		return
 	}
 
-	err = errors.Reason(
-		"bad extension for build proto file path: %q (expected one of: %s)",
-		buildFilePath, validCodecExtsStr).Err()
+	err = errors.Fmt("bad extension for build proto file path: %q (expected one of: %s)",
+		buildFilePath, validCodecExtsStr)
 	return
 }
 
@@ -170,7 +169,7 @@ func ReadBuildFile(buildFilePath string) (ret *bbpb.Build, err error) {
 		var file *os.File
 		file, err = os.Open(buildFilePath)
 		if err != nil {
-			return nil, errors.Annotate(err, "opening build file %q", buildFilePath).Err()
+			return nil, errors.Fmt("opening build file %q: %w", buildFilePath, err)
 		}
 		defer file.Close()
 
@@ -196,7 +195,7 @@ func WriteBuildFile(buildFilePath string, build *bbpb.Build) (err error) {
 		var file *os.File
 		file, err = os.Create(buildFilePath)
 		if err != nil {
-			return errors.Annotate(err, "opening build file %q", buildFilePath).Err()
+			return errors.Fmt("opening build file %q: %w", buildFilePath, err)
 		}
 		defer file.Close()
 		err = errors.WrapIf(

@@ -250,17 +250,17 @@ func (r *LocalDiskRepo) PickMostRecent(ctx context.Context, vers []string) (stri
 	if len(remote) == 0 {
 		return r.Version, nil
 	}
-	return "", errors.Reason("local disk repo was unexpectedly asked to compare remote revisions: %v", remote).Err()
+	return "", errors.Fmt("local disk repo was unexpectedly asked to compare remote revisions: %v", remote)
 }
 
 // Fetch is a part of Repo interface.
 func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) {
 	if rev != r.Version {
-		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+		return nil, errors.Fmt("local disk repo was unexpectedly asked to fetch a remote version %q", rev)
 	}
 	blob, err := os.ReadFile(filepath.Join(r.Root, filepath.FromSlash(path)))
 	if err != nil {
-		return nil, errors.Annotate(err, "local file: %s", path).Err()
+		return nil, errors.Fmt("local file: %s: %w", path, err)
 	}
 	return blob, nil
 }
@@ -268,7 +268,7 @@ func (r *LocalDiskRepo) Fetch(ctx context.Context, rev, path string) ([]byte, er
 // Loader is a part of Repo interface.
 func (r *LocalDiskRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
 	if rev != r.Version {
-		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+		return nil, errors.Fmt("local disk repo was unexpectedly asked to fetch a remote version %q", rev)
 	}
 	r.once.Do(func() { r.statCache = syncStatCache() })
 	return diskPackageLoader(filepath.Join(r.Root, filepath.FromSlash(pkgDir)), pkgName, resources, r.statCache)
@@ -277,7 +277,7 @@ func (r *LocalDiskRepo) Loader(ctx context.Context, rev, pkgDir, pkgName string,
 // LoaderValidator is a part of Repo interface.
 func (r *LocalDiskRepo) LoaderValidator(ctx context.Context, rev, pkgDir string) (LoaderValidator, error) {
 	if rev != r.Version {
-		return nil, errors.Reason("local disk repo was unexpectedly asked to fetch a remote version %q", rev).Err()
+		return nil, errors.Fmt("local disk repo was unexpectedly asked to fetch a remote version %q", rev)
 	}
 	return &diskLoaderValidator{
 		pkgRoot:   filepath.Join(r.Root, filepath.FromSlash(pkgDir)),
@@ -305,7 +305,7 @@ type TestRepoManager struct {
 // It returns *TestRepo.
 func (rm *TestRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, error) {
 	if repoKey.Root {
-		return nil, errors.Reason("unexpected request for a root repository").Err()
+		return nil, errors.New("unexpected request for a root repository")
 	}
 	rm.m.Lock()
 	defer rm.m.Unlock()
@@ -342,11 +342,11 @@ func parseTestVer(v string) (int, bool) {
 
 func (r *TestRepo) verDir(v string) (string, error) {
 	if _, ok := parseTestVer(v); !ok {
-		return "", errors.Reason("test repo %s got unexpected version %q", r.Key, v).Err()
+		return "", errors.Fmt("test repo %s got unexpected version %q", r.Key, v)
 	}
 	d := filepath.Join(r.Path, v)
 	if _, err := os.Stat(d); err != nil {
-		return "", errors.Annotate(err, "test repo %s doesn have version %q", r.Key, v).Err()
+		return "", errors.Fmt("test repo %s doesn have version %q: %w", r.Key, v, err)
 	}
 	return d, nil
 }
@@ -382,7 +382,7 @@ func (r *TestRepo) Fetch(ctx context.Context, rev, path string) ([]byte, error) 
 	}
 	blob, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(path)))
 	if err != nil {
-		return nil, errors.Annotate(err, "repository file %s", path).Err()
+		return nil, errors.Fmt("repository file %s: %w", path, err)
 	}
 	return blob, nil
 }

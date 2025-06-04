@@ -153,7 +153,7 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 		AllowUnknownFields: true,
 	}
 	if err := unmarshaler.Unmarshal(bytes.NewReader(*data), protoV1.MessageV1(out)); err != nil {
-		return true, errors.Annotate(err, "failed to unmarshal json: %s", string(*data)).Err()
+		return true, errors.Fmt("failed to unmarshal json: %s: %w", string(*data), err)
 	}
 	return true, nil
 }
@@ -268,7 +268,7 @@ func dropToDisk(sections map[string]*json.RawMessage, dir string) (string, error
 	// may have secrets.
 	f, err := ioutil.TempFile(dir, "luci_context.")
 	if err != nil {
-		return "", errors.Annotate(err, "creating luci_context file").Err()
+		return "", errors.Fmt("creating luci_context file: %w", err)
 	}
 
 	err = json.NewEncoder(f).Encode(sections)
@@ -277,7 +277,7 @@ func dropToDisk(sections map[string]*json.RawMessage, dir string) (string, error
 	}
 	if err != nil {
 		removeFromDisk(f.Name())
-		return "", errors.Annotate(err, "writing luci_context").Err()
+		return "", errors.Fmt("writing luci_context: %w", err)
 	}
 
 	return f.Name(), nil

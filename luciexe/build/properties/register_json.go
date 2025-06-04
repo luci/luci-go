@@ -33,14 +33,14 @@ func jsonFromStruct(jsonUseNumber bool, checkUnused bool) func(ctx context.Conte
 	return func(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error) {
 		jsonBlob, err := protojson.Marshal(s)
 		if err != nil {
-			return false, errors.Annotate(err, "jsonFromStruct[%T]", target).Err()
+			return false, errors.Fmt("jsonFromStruct[%T]: %w", target, err)
 		}
 		dec := json.NewDecoder(bytes.NewReader(jsonBlob))
 		if jsonUseNumber {
 			dec.UseNumber()
 		}
 		if err := dec.Decode(target); err != nil {
-			return false, errors.Annotate(err, "jsonFromStruct[%T]", target).Err()
+			return false, errors.Fmt("jsonFromStruct[%T]: %w", target, err)
 		}
 		if !checkUnused {
 			return false, nil
@@ -49,10 +49,10 @@ func jsonFromStruct(jsonUseNumber bool, checkUnused bool) func(ctx context.Conte
 		toSubtract := []*structpb.Struct{{}}
 		buf := bytes.NewBuffer(jsonBlob[:0])
 		if err := json.NewEncoder(buf).Encode(target); err != nil {
-			return false, errors.Annotate(err, "impossible - could not marshal target to JSON").Err()
+			return false, errors.Fmt("impossible - could not marshal target to JSON: %w", err)
 		}
 		if err := protojson.Unmarshal(buf.Bytes(), toSubtract[0]); err != nil {
-			return false, errors.Annotate(err, "impossible - could not unmarshal JSON to Struct").Err()
+			return false, errors.Fmt("impossible - could not unmarshal JSON to Struct: %w", err)
 		}
 
 		return handleInputLogging(ctx, ns, jsonBlob, unknown, s, toSubtract)

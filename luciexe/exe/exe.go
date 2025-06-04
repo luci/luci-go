@@ -102,7 +102,7 @@ func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
 	}
 	return func() {
 		if err := outputFlag.Write(build); err != nil {
-			panic(errors.Annotate(err, "writing final build").Err())
+			panic(errors.Fmt("writing final build: %w", err))
 		}
 	}
 }
@@ -110,10 +110,10 @@ func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
 func buildFrom(in io.Reader, build *bbpb.Build) {
 	data, err := io.ReadAll(in)
 	if err != nil {
-		panic(errors.Annotate(err, "reading Build from stdin").Err())
+		panic(errors.Fmt("reading Build from stdin: %w", err))
 	}
 	if err := proto.Unmarshal(data, build); err != nil {
-		panic(errors.Annotate(err, "parsing Build from stdin").Err())
+		panic(errors.Fmt("parsing Build from stdin: %w", err))
 	}
 	// Initialize Output.Properties so that users can use exe.WriteProperties
 	// straight away.
@@ -128,7 +128,7 @@ func buildFrom(in io.Reader, build *bbpb.Build) {
 func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int) (BuildSender, func() error) {
 	bs, err := bootstrap.GetFromEnv(environ.FromCtx(ctx))
 	if err != nil {
-		panic(errors.Annotate(err, "unable to make Logdog Client").Err())
+		panic(errors.Fmt("unable to make Logdog Client: %w", err))
 	}
 
 	cType := luciexe.BuildProtoContentType
@@ -151,7 +151,7 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int) (Build
 		buf = &bytes.Buffer{}
 		z, err = zlib.NewWriterLevel(buf, zlibLevel)
 		if err != nil {
-			panic(errors.Annotate(err, "unable to create zlib.Writer").Err())
+			panic(errors.Fmt("unable to create zlib.Writer: %w", err))
 		}
 	}
 
@@ -161,23 +161,23 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int) (Build
 
 		data, err := proto.Marshal(build)
 		if err != nil {
-			panic(errors.Annotate(err, "unable to marshal Build state").Err())
+			panic(errors.Fmt("unable to marshal Build state: %w", err))
 		}
 
 		if buf != nil {
 			buf.Reset()
 			z.Reset(buf)
 			if _, err := z.Write(data); err != nil {
-				panic(errors.Annotate(err, "unable to write to zlib.Writer").Err())
+				panic(errors.Fmt("unable to write to zlib.Writer: %w", err))
 			}
 			if err := z.Close(); err != nil {
-				panic(errors.Annotate(err, "unable to close zlib.Writer").Err())
+				panic(errors.Fmt("unable to close zlib.Writer: %w", err))
 			}
 			data = buf.Bytes()
 		}
 
 		if err := buildStream.WriteDatagram(data); err != nil {
-			panic(errors.Annotate(err, "unable to write Build state").Err())
+			panic(errors.Fmt("unable to write Build state: %w", err))
 		}
 	}, buildStream.Close
 }

@@ -310,7 +310,7 @@ func runUserCb(ctx context.Context, userArgs []string, state *State, cb func(con
 func readStdinBuild(stdin io.Reader) (*bbpb.Build, error) {
 	data, err := io.ReadAll(stdin)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading *Build from stdin").Err()
+		return nil, errors.Fmt("reading *Build from stdin: %w", err)
 	}
 
 	ret := &bbpb.Build{}
@@ -322,7 +322,7 @@ func readLuciexeFakeBuild(filename string) (*bbpb.Build, error) {
 	// N.B. This proto is JSON-encoded.
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, errors.Annotate(err, "reading *Build from %s=%s", luciexeFakeVar, filename).Err()
+		return nil, errors.Fmt("reading *Build from %s=%s: %w", luciexeFakeVar, filename, err)
 	}
 	ret := &bbpb.Build{}
 	err = json.Unmarshal(data, ret)

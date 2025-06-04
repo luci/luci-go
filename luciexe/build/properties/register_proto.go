@@ -30,11 +30,11 @@ import (
 func protoFromStruct(ctx context.Context, ns string, unknown unknownFieldSetting, s *structpb.Struct, target any) (badExtras bool, err error) {
 	jsonBlob, err := protojson.Marshal(s)
 	if err != nil {
-		return false, errors.Annotate(err, "impossible - could not marshal proto to JSONPB").Err()
+		return false, errors.Fmt("impossible - could not marshal proto to JSONPB: %w", err)
 	}
 	opt := protojson.UnmarshalOptions{DiscardUnknown: true}
 	if err = opt.Unmarshal(jsonBlob, target.(proto.Message)); err != nil {
-		return false, errors.Annotate(err, "protoFromStruct[%T]", target).Err()
+		return false, errors.Fmt("protoFromStruct[%T]: %w", target, err)
 	}
 
 	// serialize target out twice, once with proto names, and once with json
@@ -52,11 +52,11 @@ func protoFromStruct(ctx context.Context, ns string, unknown unknownFieldSetting
 		// we re-use jsonBlob to help cut down on allocations.
 		raw, err := mo.MarshalAppend(jsonBlob[:0], target.(proto.Message))
 		if err != nil {
-			return false, errors.Annotate(err, "impossible - could not marshal proto to JSONPB").Err()
+			return false, errors.Fmt("impossible - could not marshal proto to JSONPB: %w", err)
 		}
 		toSubtract[i] = &structpb.Struct{}
 		if err := protojson.Unmarshal(raw, toSubtract[i]); err != nil {
-			return false, errors.Annotate(err, "impossible - could not unmarshal JSON to Struct").Err()
+			return false, errors.Fmt("impossible - could not unmarshal JSON to Struct: %w", err)
 		}
 	}
 	return handleInputLogging(ctx, ns, jsonBlob, unknown, s, toSubtract)

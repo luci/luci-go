@@ -52,20 +52,19 @@ func GenericLoader(params GenericLoaderParams) interpreter.Loader {
 		if params.IsVisible != nil {
 			switch visible, err := params.IsVisible(ctx, path.Dir(p)); {
 			case err != nil:
-				return nil, "", errors.Annotate(err, "checking visibility of %q in %q", p, params.Package).Err()
+				return nil, "", errors.Fmt("checking visibility of %q in %q: %w", p, params.Package, err)
 			case !visible:
-				return nil, "", errors.Reason("directory %q belongs to a different (nested) package and files from it cannot be loaded directly by %q", path.Dir(p), params.Package).Err()
+				return nil, "", errors.Fmt("directory %q belongs to a different (nested) package and files from it cannot be loaded directly by %q", path.Dir(p), params.Package)
 			}
 		}
 
 		if !strings.HasSuffix(p, ".star") {
 			switch loadable, err := params.Resources.Contains(p); {
 			case err != nil:
-				return nil, "", errors.Annotate(err, "checking %q against pkg.resources(...) patterns in %q", p, params.Package).Err()
+				return nil, "", errors.Fmt("checking %q against pkg.resources(...) patterns in %q: %w", p, params.Package, err)
 			case !loadable:
-				return nil, "", errors.Reason(
-					"this non-starlark file is not declared as a resource in "+
-						"pkg.resources(...) in PACKAGE.star of %q and cannot be loaded", params.Package).Err()
+				return nil, "", errors.Fmt("this non-starlark file is not declared as a resource in "+
+					"pkg.resources(...) in PACKAGE.star of %q and cannot be loaded", params.Package)
 			}
 		}
 

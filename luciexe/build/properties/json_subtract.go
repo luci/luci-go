@@ -115,7 +115,7 @@ func handleInputLogging(ctx context.Context, ns string, buf []byte, unknown unkn
 	}
 	leftoverJSON, err := protojson.MarshalOptions{}.MarshalAppend(buf[:0], leftovers)
 	if err != nil {
-		return false, errors.Annotate(err, "impossible - could not marshal leftover").Err()
+		return false, errors.Fmt("impossible - could not marshal leftover: %w", err)
 	}
 
 	logging.Logf(ctx, level, "Unknown fields while parsing property namespace %q: %s", ns, leftoverJSON)

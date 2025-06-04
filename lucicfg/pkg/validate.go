@@ -31,7 +31,7 @@ func ValidateName(name string) error {
 	}
 	for _, token := range strings.Split(name[1:], "/") {
 		if err := validatePathComponent(token); err != nil {
-			return errors.Annotate(err, "%s", token).Err()
+			return errors.Fmt("%s: %w", token, err)
 		}
 	}
 	if len(name) > 300 {
@@ -45,12 +45,12 @@ func ValidateVersion(ver string) (LucicfgVersion, error) {
 	var val LucicfgVersion
 	chunks := strings.Split(ver, ".")
 	if len(chunks) != 3 {
-		return val, errors.Reason("expecting <major>.<minor>.<patch>").Err()
+		return val, errors.New("expecting <major>.<minor>.<patch>")
 	}
 	for i, chunk := range chunks {
 		num, err := strconv.ParseUint(chunk, 10, 16)
 		if err != nil {
-			return val, errors.Reason("%q: not a positive number", chunk).Err()
+			return val, errors.Fmt("%q: not a positive number", chunk)
 		}
 		val[i] = int(num)
 	}
@@ -69,7 +69,7 @@ func validatePathComponent(p string) error {
 				return errors.New("must begin with a letter")
 			}
 		default:
-			return errors.Reason("invalid character at %d (%c)", idx, r).Err()
+			return errors.Fmt("invalid character at %d (%c)", idx, r)
 		}
 	}
 	return nil

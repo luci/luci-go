@@ -180,7 +180,7 @@ func expandDirs(paths []string) iter.Seq2[string, error] {
 		for _, p := range paths {
 			p, err := filepath.Abs(p)
 			if err != nil {
-				yield(p, errors.Annotate(err, "could not absolutize %q", p).Err())
+				yield(p, errors.Fmt("could not absolutize %q: %w", p, err))
 				return
 			}
 

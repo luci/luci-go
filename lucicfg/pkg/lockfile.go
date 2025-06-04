@@ -68,7 +68,7 @@ func CheckLockfileStaleness(pkgDir string, lockfile *lockfilepb.Lockfile, semant
 	case errors.Is(err, os.ErrNotExist):
 		return false, nil
 	case err != nil:
-		return false, errors.Annotate(err, "checking %s staleness", LockfileName).Err()
+		return false, errors.Fmt("checking %s staleness: %w", LockfileName, err)
 	}
 
 	if semanticEq {
@@ -99,13 +99,13 @@ func WriteLockfile(pkgDir string, lockfile *lockfilepb.Lockfile) error {
 func serializeLockfile(lockfile *lockfilepb.Lockfile) ([]byte, error) {
 	blob, err := protojson.Marshal(lockfile)
 	if err != nil {
-		return nil, errors.Annotate(err, "serializing %s", LockfileName).Err()
+		return nil, errors.Fmt("serializing %s: %w", LockfileName, err)
 	}
 	// protojson randomly injects spaces into the generate output. Pass it through
 	// a formatter to get rid of them.
 	var out bytes.Buffer
 	if err := json.Indent(&out, blob, "", "\t"); err != nil {
-		return nil, errors.Annotate(err, "formatting %s", LockfileName).Err()
+		return nil, errors.Fmt("formatting %s: %w", LockfileName, err)
 	}
 	out.WriteByte('\n')
 	return out.Bytes(), nil

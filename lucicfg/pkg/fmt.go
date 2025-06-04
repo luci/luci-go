@@ -166,7 +166,7 @@ func legacyFormatter(root string) buildifier.FormatterPolicy {
 			}
 			legacyRules, err := legacyRulesToFmtRules(cfg)
 			if err != nil {
-				return nil, errors.Annotate(err, "bad formatting rules at %s", configPath).Err()
+				return nil, errors.Fmt("bad formatting rules at %s: %w", configPath, err)
 			}
 			return standardFormatter(legacyRules), nil
 		},
@@ -193,7 +193,7 @@ func legacyCompatibleFormatter(root string, rules []*FmtRule) buildifier.Formatt
 			}
 			legacyRules, err := legacyRulesToFmtRules(cfg)
 			if err != nil {
-				return nil, errors.Annotate(err, "bad formatting rules at %s", configPath).Err()
+				return nil, errors.Fmt("bad formatting rules at %s: %w", configPath, err)
 			}
 			if len(rules) == 0 {
 				// No new rules defined yet. Just use legacy ones.
@@ -202,11 +202,10 @@ func legacyCompatibleFormatter(root string, rules []*FmtRule) buildifier.Formatt
 			// Have legacy and non-legacy rules. They must be 100% equal.
 			eq := slices.EqualFunc(legacyRules, rules, func(a, b *FmtRule) bool { return a.Equal(b) })
 			if !eq {
-				return nil, errors.Reason(
-					"Formatting rules in PACKAGE.star and legacy .lucicfgfmtrc should be identical. " +
-						"Eventually pkg.options.fmt_rules(...) in PACKAGE.star will become authoritative and .lucicfgfmtrc " +
-						"will be retired. Until then the rules must agree. Please update .lucicfgfmtrc.",
-				).Err()
+				return nil, errors.New("Formatting rules in PACKAGE.star and legacy .lucicfgfmtrc should be identical. " +
+					"Eventually pkg.options.fmt_rules(...) in PACKAGE.star will become authoritative and .lucicfgfmtrc " +
+					"will be retired. Until then the rules must agree. Please update .lucicfgfmtrc.")
+
 			}
 			return standardFormatter(rules), nil
 		},
@@ -225,7 +224,7 @@ func readLegacyRules(path string) (*buildifier.LucicfgFmtConfig, error) {
 	default:
 		cfg := &buildifier.LucicfgFmtConfig{}
 		if err := prototext.Unmarshal(blob, cfg); err != nil {
-			return nil, errors.Annotate(err, "bad text proto at %s", path).Err()
+			return nil, errors.Fmt("bad text proto at %s: %w", path, err)
 		}
 		return cfg, nil
 	}
@@ -242,20 +241,20 @@ func legacyRulesToFmtRules(cfg *buildifier.LucicfgFmtConfig) ([]*FmtRule, error)
 		rules[i] = rule
 
 		if len(r.Path) == 0 {
-			return nil, errors.Reason("rule #%d: paths should not be empty", i).Err()
+			return nil, errors.Fmt("rule #%d: paths should not be empty", i)
 		}
 		if len(stringset.NewFromSlice(r.Path...)) != len(r.Path) {
-			return nil, errors.Reason("rule #%d: has duplicate paths", i).Err()
+			return nil, errors.Fmt("rule #%d: has duplicate paths", i)
 		}
 		for _, p := range r.Path {
 			if p == "" {
-				return nil, errors.Reason("rule #%d: empty path", i).Err()
+				return nil, errors.Fmt("rule #%d: empty path", i)
 			}
 			if clean := cleanPath(p); clean != p {
-				return nil, errors.Reason("rule #%d: path %q is not in normal form (e.g. %q)", i, p, clean).Err()
+				return nil, errors.Fmt("rule #%d: path %q is not in normal form (e.g. %q)", i, p, clean)
 			}
 			if !seenPaths.Add(p) {
-				return nil, errors.Reason("rule #%d: path %q was already specified in another rule", i, p).Err()
+				return nil, errors.Fmt("rule #%d: path %q was already specified in another rule", i, p)
 			}
 		}
 		rule.Paths = r.Path // good
@@ -263,11 +262,11 @@ func legacyRulesToFmtRules(cfg *buildifier.LucicfgFmtConfig) ([]*FmtRule, error)
 		if r.FunctionArgsSort != nil {
 			args := r.FunctionArgsSort.Arg
 			if len(stringset.NewFromSlice(args...)) != len(args) {
-				return nil, errors.Reason("rule #%d: has duplicate args in function_args_sort", i).Err()
+				return nil, errors.Fmt("rule #%d: has duplicate args in function_args_sort", i)
 			}
 			for _, arg := range args {
 				if arg == "" {
-					return nil, errors.Reason("rule #%d: empty arg in function_args_sort", i).Err()
+					return nil, errors.Fmt("rule #%d: empty arg in function_args_sort", i)
 				}
 			}
 			rule.SortFunctionArgs = true

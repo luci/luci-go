@@ -109,7 +109,7 @@ func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
 	case err != nil:
 		return nil, err
 	case repoKey.Root:
-		return nil, errors.Reason("%q cannot be overridden", spec).Err()
+		return nil, errors.Fmt("%q cannot be overridden", spec)
 	}
 	abs, err := filepath.Abs(localRoot)
 	if err != nil {
@@ -119,7 +119,7 @@ func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
 	case err != nil:
 		return nil, err
 	case !stat.IsDir():
-		return nil, errors.Reason("%s is not a directory", localRoot).Err()
+		return nil, errors.Fmt("%s is not a directory", localRoot)
 	}
 	return &RepoOverride{
 		Host:      repoKey.Host,
@@ -154,7 +154,7 @@ func RepoOverrideFromSpec(spec, localRoot string) (*RepoOverride, error) {
 func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, overrides []*RepoOverride) (*Entry, *lockfilepb.Lockfile, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "taking absolute path of %q", path).Err()
+		return nil, nil, errors.Fmt("taking absolute path of %q: %w", path, err)
 	}
 
 	statCache := unsyncStatCache()
@@ -165,12 +165,12 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	scriptDir, main := filepath.Split(abs)
 	pkgRoot, found, err := findRoot(scriptDir, PackageScript, "", statCache)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "searching for %s", PackageScript).Err()
+		return nil, nil, errors.Fmt("searching for %s: %w", PackageScript, err)
 	}
 	if found {
 		main, err = filepath.Rel(pkgRoot, abs)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "getting relative path from %s to %s", pkgRoot, abs).Err()
+			return nil, nil, errors.Fmt("getting relative path from %s to %s: %w", pkgRoot, abs, err)
 		}
 		pkgScript = filepath.Join(pkgRoot, PackageScript)
 	} else {
@@ -188,11 +188,11 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	// local).
 	repoRoot, _, err := findRoot(pkgRoot, "", "", statCache)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "could not determine the repository or volume root of %q", abs).Err()
+		return nil, nil, errors.Fmt("could not determine the repository or volume root of %q: %w", abs, err)
 	}
 	rel, err := filepath.Rel(repoRoot, pkgRoot)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "calculating path of %q relative to %q", pkgRoot, repoRoot).Err()
+		return nil, nil, errors.Fmt("calculating path of %q relative to %q: %w", pkgRoot, repoRoot, err)
 	}
 	script := filepath.ToSlash(main)
 
@@ -231,30 +231,29 @@ func EntryOnDisk(ctx context.Context, path string, remotes RepoManager, override
 	// Load the package definition from PACKAGE.star.
 	pkgBody, err := os.ReadFile(pkgScript)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "reading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Fmt("reading %s: %w", cwdRel(pkgScript), err)
 	}
 	validator, err := localRepo.LoaderValidator(ctx, PinnedVersion, repoPath)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Fmt("loading %s: %w", cwdRel(pkgScript), err)
 	}
 	def, err := LoadDefinition(ctx, pkgBody, validator)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+		return nil, nil, errors.Fmt("loading %s: %w", cwdRel(pkgScript), err)
 	}
 
 	// Verify the entry point is known.
 	if !internal.GetTestingTweaks(ctx).SkipEntrypointCheck {
 		if !slices.Contains(def.Entrypoints, script) {
-			return nil, nil, errors.Reason(
-				"%s is not declared as a pkg.entrypoint(...) in %s and "+
-					"thus cannot be executed. Available entrypoints: %v",
-				script, PackageScript, def.Entrypoints).Err()
+			return nil, nil, errors.Fmt("%s is not declared as a pkg.entrypoint(...) in %s and "+
+				"thus cannot be executed. Available entrypoints: %v",
+				script, PackageScript, def.Entrypoints)
 		}
 	}
 
 	if remotes == nil {
 		remotes = &ErroringRepoManager{
-			Error: errors.Reason("remote dependencies are not supported in this context").Err(),
+			Error: errors.New("remote dependencies are not supported in this context"),
 		}
 	}
 
@@ -391,7 +390,7 @@ type Local struct {
 func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, errors.Annotate(err, "taking absolute path of %q", dir).Err()
+		return nil, errors.Fmt("taking absolute path of %q: %w", dir, err)
 	}
 
 	pkgScript := filepath.Join(abs, PackageScript)
@@ -399,7 +398,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 	case err == nil:
 		def, err := LoadDefinition(ctx, body, NoopLoaderValidator{})
 		if err != nil {
-			return nil, errors.Annotate(err, "loading %s", cwdRel(pkgScript)).Err()
+			return nil, errors.Fmt("loading %s: %w", cwdRel(pkgScript), err)
 		}
 		code, err := (&LocalDiskRepo{
 			Root:    abs,
@@ -426,7 +425,7 @@ func PackageOnDisk(ctx context.Context, dir string) (*Local, error) {
 		}, nil
 
 	default:
-		return nil, errors.Annotate(err, "reading %s", PackageScript).Err()
+		return nil, errors.Fmt("reading %s: %w", PackageScript, err)
 	}
 }
 
@@ -450,7 +449,7 @@ func (l *Local) Sources() ([]string, error) {
 			return root.RelFiles(), nil
 		}
 	}
-	return nil, errors.Reason("unexpectedly found no *.star files in %q", l.DiskPath).Err()
+	return nil, errors.Fmt("unexpectedly found no *.star files in %q", l.DiskPath)
 }
 
 // cwdRel converts the given path to be relative to the current working

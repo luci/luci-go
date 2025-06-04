@@ -52,7 +52,7 @@ func diskPackageLoader(root, pkgName string, resources *fileset.Set, cache *stat
 				// This should not normally be happening, since we know root is a
 				// package root. It can theoretically happen if it was deleted on disk
 				// after we started running lucicfg.
-				return false, errors.Reason("path %q is not inside of any package", dir).Err()
+				return false, errors.Fmt("path %q is not inside of any package", dir)
 			case pkgRoot == root:
 				return true, nil
 			default:
@@ -81,11 +81,11 @@ func (d *diskLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint
 	switch info, err := os.Stat(filepath.Join(d.pkgRoot, filepath.FromSlash(entrypoint))); {
 	case err == nil:
 		if !info.Mode().IsRegular() {
-			return errors.Reason("not a regular file").Err()
+			return errors.New("not a regular file")
 		}
 		return nil
 	case errors.Is(err, os.ErrNotExist):
-		return errors.Reason("no such file in the package").Err()
+		return errors.New("no such file in the package")
 	default:
 		return err
 	}
@@ -101,17 +101,17 @@ func (d *diskLoaderValidator) ValidateDepDecl(ctx context.Context, dep *DepDecl)
 	// Verify it is not outside of the d.repoRoot.
 	switch depRepoRel, err := filepath.Rel(d.repoRoot, depAbs); {
 	case err != nil:
-		return errors.Annotate(err, "unexpected error checking the local dependency").Err()
+		return errors.Fmt("unexpected error checking the local dependency: %w", err)
 	case depRepoRel == ".." || strings.HasPrefix(depRepoRel, ".."+string(filepath.Separator)):
-		return errors.Reason("a local dependency must not point outside of the repository it is declared in").Err()
+		return errors.New("a local dependency must not point outside of the repository it is declared in")
 	}
 
 	// Verify it is not in a submodule.
 	switch depRepoRoot, _, err := findRoot(depAbs, "", d.repoRoot, d.statCache); {
 	case err != nil:
-		return errors.Annotate(err, "unexpected error checking the local dependency").Err()
+		return errors.Fmt("unexpected error checking the local dependency: %w", err)
 	case depRepoRoot != d.repoRoot:
-		return errors.Reason("a local dependency should not reside in a git submodule").Err()
+		return errors.New("a local dependency should not reside in a git submodule")
 	}
 	return nil
 }

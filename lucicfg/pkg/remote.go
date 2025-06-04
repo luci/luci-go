@@ -69,7 +69,7 @@ func (r *RemoteRepoManager) Shutdown() {
 // Repo implements RepoManager interface.
 func (r *RemoteRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, error) {
 	if !repoKey.IsRemote() {
-		return nil, errors.Reason("not a valid remote RepoKey: %s", repoKey).Err()
+		return nil, errors.Fmt("not a valid remote RepoKey: %s", repoKey)
 	}
 
 	r.m.Lock()
@@ -168,9 +168,9 @@ func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, 
 
 	switch {
 	case errors.Is(err, gitsource.ErrMissingObject):
-		return nil, errors.Reason("%s doesn't not contain %q", r.repoKey, rev).Err()
+		return nil, errors.Fmt("%s doesn't not contain %q", r.repoKey, rev)
 	case err != nil:
-		return nil, errors.Annotate(err, "prefetching %q of %s/%s", rev, r.repoKey, pkgDir).Err()
+		return nil, errors.Fmt("prefetching %q of %s/%s: %w", rev, r.repoKey, pkgDir, err)
 	}
 
 	return GenericLoader(GenericLoaderParams{

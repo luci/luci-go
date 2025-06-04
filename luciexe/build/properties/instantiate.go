@@ -156,12 +156,10 @@ func (r *Registry) parseInitialState(ctx context.Context, input *structpb.Struct
 			// it into ret[namespace].
 			if sval := val.GetStructValue(); sval != nil {
 				if err := decode(reg, namespace, sval); err != nil {
-					return nil, errors.Annotate(
-						err, "properties.Registry.Instantiate - input[%q]", namespace).Err()
+					return nil, errors.Fmt("properties.Registry.Instantiate - input[%q]: %w", namespace, err)
 				}
 			} else {
-				return nil, errors.Reason(
-					"properties.Registry.Instantiate - input[%q] - input is not Struct (got %T)", namespace, val.GetKind()).Err()
+				return nil, errors.Fmt("properties.Registry.Instantiate - input[%q] - input is not Struct (got %T)", namespace, val.GetKind())
 			}
 		}
 	}
@@ -179,22 +177,20 @@ func (r *Registry) parseInitialState(ctx context.Context, input *structpb.Struct
 	if len(myStruct.Fields) > 0 {
 		if topLevelReg != nil {
 			if err := decode(*topLevelReg, "", myStruct); err != nil {
-				return nil, errors.Annotate(
-					err, "properties.Registry.Instantiate - input[top-level]").Err()
+				return nil, errors.Fmt("properties.Registry.Instantiate - input[top-level]: %w", err)
 			}
 		} else {
 			leftovers := make([]string, 0, len(myStruct.Fields))
 			for k := range myStruct.Fields {
 				leftovers = append(leftovers, k)
 			}
-			return nil, errors.Reason(
-				"properties.Registry.Instantiate - leftover top-level properties and no top-level property registered: %q.",
-				leftovers).Err()
+			return nil, errors.Fmt("properties.Registry.Instantiate - leftover top-level properties and no top-level property registered: %q.",
+				leftovers)
 		}
 	}
 
 	if badNamespaces.Len() > 0 {
-		return nil, errors.Reason("namespaces %q had leftover fields (see log)", badNamespaces.ToSlice()).Err()
+		return nil, errors.Fmt("namespaces %q had leftover fields (see log)", badNamespaces.ToSlice())
 	}
 
 	return ret, nil

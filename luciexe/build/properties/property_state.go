@@ -53,7 +53,7 @@ func (pstate *outputPropertyState) toStruct() *structpb.Struct {
 		if err := protojson.Unmarshal(pstate.toJSON(pstate.data), ret); err != nil {
 			// NOTE: this can never happen - we already know that pstate.data can be
 			// serialized to JSON, and thus can be unmarshaled to a Struct.
-			panic(errors.Annotate(err, "impossible - JSON cannot Unmarshal to Struct").Err())
+			panic(errors.Fmt("impossible - JSON cannot Unmarshal to Struct: %w", err))
 		}
 	}
 

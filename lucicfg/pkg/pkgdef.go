@@ -245,12 +245,12 @@ func LoadDefinition(ctx context.Context, body []byte, val LoaderValidator) (*Def
 	}
 
 	if !state.declareCalled {
-		return nil, errors.Reason("PACKAGE.star must call pkg.declare(...)").Err()
+		return nil, errors.New("PACKAGE.star must call pkg.declare(...)")
 	}
 
 	state.def.ResourcesSet, err = fileset.New(state.def.Resources)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad pkg.resources(...)").Err()
+		return nil, errors.Fmt("bad pkg.resources(...): %w", err)
 	}
 
 	return &state.def, nil
@@ -350,15 +350,15 @@ func (s *state) declare(ctx context.Context, call nativeCall) (starlark.Value, e
 
 	s.def.Name = name.GoString()
 	if err := ValidateName(s.def.Name); err != nil {
-		return nil, errors.Annotate(err, "bad package name %q", s.def.Name).Err()
+		return nil, errors.Fmt("bad package name %q: %w", s.def.Name, err)
 	}
 	if IsReservedPackageName(s.def.Name) {
-		return nil, errors.Reason("bad package name %q: reserved", s.def.Name).Err()
+		return nil, errors.Fmt("bad package name %q: reserved", s.def.Name)
 	}
 
 	var err error
 	if s.def.MinLucicfgVersion, err = ValidateVersion(lucicfg.GoString()); err != nil {
-		return nil, errors.Annotate(err, "bad lucicfg version string %q", lucicfg.GoString()).Err()
+		return nil, errors.Fmt("bad lucicfg version string %q: %w", lucicfg.GoString(), err)
 	}
 
 	return starlark.None, nil
@@ -372,11 +372,11 @@ func (s *state) entrypoint(ctx context.Context, call nativeCall) (starlark.Value
 	entrypoint := relPath.GoString()
 	for _, p := range s.def.Entrypoints {
 		if p == entrypoint {
-			return nil, errors.Reason("entry point %q was already defined", p).Err()
+			return nil, errors.Fmt("entry point %q was already defined", p)
 		}
 	}
 	if err := s.val.ValidateEntrypoint(ctx, entrypoint); err != nil {
-		return nil, errors.Annotate(err, "entry point %q", entrypoint).Err()
+		return nil, errors.Fmt("entry point %q: %w", entrypoint, err)
 	}
 	s.def.Entrypoints = append(s.def.Entrypoints, entrypoint)
 	return starlark.None, nil
@@ -388,7 +388,7 @@ func (s *state) lintChecks(ctx context.Context, call nativeCall) (starlark.Value
 		return nil, err
 	}
 	if len(s.def.LintChecks) != 0 {
-		return nil, errors.Reason("pkg.options.lint_checks(...) can be called at most once").Err()
+		return nil, errors.New("pkg.options.lint_checks(...) can be called at most once")
 	}
 	s.def.LintChecks = make([]string, len(checks))
 	for i, val := range checks {
@@ -416,7 +416,7 @@ func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, 
 	for i, v := range pathsTup {
 		rel := v.(starlark.String).GoString()
 		if !seenPaths.Add(rel) {
-			return nil, errors.Reason("invalid paths: %q is specified more than once", rel).Err()
+			return nil, errors.Fmt("invalid paths: %q is specified more than once", rel)
 		}
 		rule.Paths[i] = rel
 	}
@@ -428,7 +428,7 @@ func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, 
 		for i, v := range argsSortVal.(starlark.Tuple) {
 			arg := v.(starlark.String).GoString()
 			if !seenArgs.Add(arg) {
-				return nil, errors.Reason("invalid function_args_sort: %q is specified more than once", arg).Err()
+				return nil, errors.Fmt("invalid function_args_sort: %q is specified more than once", arg)
 			}
 			rule.SortFunctionArgsOrder[i] = arg
 		}
@@ -438,7 +438,7 @@ func (s *state) fmtRules(ctx context.Context, call nativeCall) (starlark.Value, 
 	for _, r := range s.def.FmtRules {
 		for _, p := range r.Paths {
 			if seenPaths.Has(p) {
-				return nil, errors.Reason("path %q is already covered by an existing rule defined at\n%s", p, r.Stack).Err()
+				return nil, errors.Fmt("path %q is already covered by an existing rule defined at\n%s", p, r.Stack)
 			}
 		}
 	}
@@ -455,7 +455,7 @@ func (s *state) resources(ctx context.Context, call nativeCall) (starlark.Value,
 	for _, pat := range patterns {
 		str := pat.(starlark.String).GoString()
 		if slices.Contains(s.def.Resources, str) {
-			return nil, errors.Reason("resource pattern %q is declared more than once", str).Err()
+			return nil, errors.Fmt("resource pattern %q is declared more than once", str)
 		}
 		s.def.Resources = append(s.def.Resources, str)
 	}
@@ -475,7 +475,7 @@ func (s *state) depend(ctx context.Context, call nativeCall) (starlark.Value, er
 		Name:  name.GoString(),
 	}
 	if err := ValidateName(dep.Name); err != nil {
-		return nil, errors.Reason(`bad "name": %s`, err).Err()
+		return nil, errors.Fmt(`bad "name": %s`, err)
 	}
 
 	// sourceField reads a string field of pkg.source.ref structs.
@@ -506,11 +506,11 @@ func (s *state) depend(ctx context.Context, call nativeCall) (starlark.Value, er
 		return existing.Name == dep.Name
 	})
 	if dup != -1 {
-		return nil, errors.Reason("dependency on %q was already declared at\n%s", dep.Name, s.def.Deps[dup].Stack).Err()
+		return nil, errors.Fmt("dependency on %q was already declared at\n%s", dep.Name, s.def.Deps[dup].Stack)
 	}
 
 	if err := s.val.ValidateDepDecl(ctx, &dep); err != nil {
-		return nil, errors.Annotate(err, "bad dependency on %q", dep.Name).Err()
+		return nil, errors.Fmt("bad dependency on %q: %w", dep.Name, err)
 	}
 
 	s.def.Deps = append(s.def.Deps, &dep)
