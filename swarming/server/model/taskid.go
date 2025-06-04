@@ -104,12 +104,14 @@ func RequestKeyToTaskID(key *datastore.Key, variant TaskIDVariant) string {
 // the request key as an argument.
 func TaskIDToRequestKey(ctx context.Context, taskID string) (*datastore.Key, error) {
 	if err := checkIsHex(taskID, 2); err != nil {
-		return nil, errors.Annotate(err, "bad task ID").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, grpcutil.InvalidArgumentTag.Apply(errors.
+			Fmt("bad task ID: %w", err))
 	}
+
 	// Chop the suffix byte. It is TaskRunResult index, we don't care about it.
 	num, err := strconv.ParseInt(taskID[:len(taskID)-1], 16, 64)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad task ID").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad task ID: %w", err))
 	}
 	return datastore.NewKey(ctx, "TaskRequest", "", num^taskRequestIDMask, nil), nil
 }
@@ -143,11 +145,11 @@ func TaskIDToRequestKey(ctx context.Context, taskID string) (*datastore.Key, err
 // creation time range.
 func TimestampToRequestKey(ctx context.Context, timestamp time.Time, suffix int64) (*datastore.Key, error) {
 	if suffix < 0 || suffix > 0xffff {
-		return nil, errors.Reason("invalid suffix").Err()
+		return nil, errors.New("invalid suffix")
 	}
 	deltaMS := timestamp.Sub(BeginningOfTheWorld).Milliseconds()
 	if deltaMS < 0 {
-		return nil, errors.Reason("time %s is before epoch %s", timestamp, BeginningOfTheWorld).Err()
+		return nil, errors.Fmt("time %s is before epoch %s", timestamp, BeginningOfTheWorld)
 	}
 	base := deltaMS << 20
 	reqID := base | suffix<<4 | 0x1

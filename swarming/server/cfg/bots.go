@@ -159,7 +159,7 @@ func newBotGroups(cfg *configpb.BotsCfg, scripts map[string]string) (*botGroups,
 			for _, botIDExpr := range gr.BotId {
 				botIDs, err := intsetexpr.Expand(botIDExpr)
 				if err != nil {
-					return nil, errors.Annotate(err, "bad bot_id expression %q", botIDExpr).Err()
+					return nil, errors.Fmt("bad bot_id expression %q: %w", botIDExpr, err)
 				}
 				for _, botID := range botIDs {
 					bg.directMatches[botID] = group
@@ -180,7 +180,7 @@ func newBotGroup(gr *configpb.BotGroup, scripts map[string]configHooksScript) (*
 	for _, dim := range gr.Dimensions {
 		key, val, ok := strings.Cut(dim, ":")
 		if !ok {
-			return nil, errors.Reason("invalid bot dimension %q", dim).Err()
+			return nil, errors.Fmt("invalid bot dimension %q", dim)
 		}
 		dims[key] = append(dims[key], val)
 	}

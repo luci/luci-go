@@ -110,7 +110,7 @@ func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration tim
 			for _, msg := range protos {
 				pb, err := flusher.Marshal(msg)
 				if err != nil {
-					return errors.Annotate(err, "failed to marshal BQ row %v", msg).Err()
+					return errors.Fmt("failed to marshal BQ row %v: %w", msg, err)
 				}
 				flusher.pendingRows = append(flusher.pendingRows, pb)
 				flusher.pendingRowsSize += len(pb)
@@ -162,7 +162,7 @@ func (f *Fetcher[E, R]) Fetch(ctx context.Context, start time.Time, duration tim
 		// If datastore.Run returned an error not from the callback, it must be
 		// the error from the datastore library itself (e.g. a query timeout). Mark
 		// it as a transient error.
-		return errors.Annotate(err, "datastore query error").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("datastore query error: %w", err))
 	}
 }
 
@@ -280,7 +280,7 @@ func convertTaskResults[T any, TP taskResultEntity[T]](
 			logging.Errorf(ctx, "Missing TaskRequest for %q, skipping", taskID)
 			continue
 		case err != nil:
-			return nil, errors.Annotate(err, "fetching TaskRequest %q", taskID).Tag(transient.Tag).Err()
+			return nil, transient.Tag.Apply(errors.Fmt("fetching TaskRequest %q: %w", taskID, err))
 		}
 
 		// PerformanceStats may be missing if the task didn't run, this is OK.
@@ -288,7 +288,7 @@ func convertTaskResults[T any, TP taskResultEntity[T]](
 		if statsIdx, ok := statMap[idx]; ok {
 			stats, err = entityOrErr(stat, statErr, statsIdx)
 			if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-				return nil, errors.Annotate(err, "fetching PerformanceStats for %q", taskID).Tag(transient.Tag).Err()
+				return nil, transient.Tag.Apply(errors.Fmt("fetching PerformanceStats for %q: %w", taskID, err))
 			}
 		}
 

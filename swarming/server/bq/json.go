@@ -110,7 +110,7 @@ func fixMsg(msg map[string]any, fixer messageFixer) error {
 				val := s.Index(i)
 				fixed, err := fixField(val.Interface())
 				if err != nil {
-					return errors.Annotate(err, "%q[%d]", key, i).Err()
+					return errors.Fmt("%q[%d]: %w", key, i, err)
 				}
 				val.Set(reflect.ValueOf(fixed))
 			}
@@ -118,7 +118,7 @@ func fixMsg(msg map[string]any, fixer messageFixer) error {
 			// This is some elementary type or a message. Fix it directly.
 			fixed, err := fixField(val)
 			if err != nil {
-				return errors.Annotate(err, "%q", key).Err()
+				return errors.Fmt("%q: %w", key, err)
 			}
 			msg[key] = fixed
 		}

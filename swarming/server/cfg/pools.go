@@ -141,7 +141,7 @@ func newPoolsConfig(cfg *configpb.PoolsCfg) (map[string]*Pool, error) {
 	for _, pb := range cfg.Pool {
 		cfg, err := newPool(pb, dplMap, graph)
 		if err != nil {
-			return nil, errors.Annotate(err, "broken pools.cfg entry: %s", pb).Err()
+			return nil, errors.Fmt("broken pools.cfg entry: %s: %w", pb, err)
 		}
 		for _, name := range pb.Name {
 			poolMap[name] = cfg
@@ -164,7 +164,7 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 		for _, alloc := range rbeCfg.BotModeAllocation {
 			allocs[alloc.Mode] = int(alloc.Percent)
 			if alloc.Percent < 0 {
-				return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+				return nil, errors.New("unexpectedly incorrect RBE migration config")
 			}
 		}
 		poolCfg.RBEInstance = rbeCfg.RbeInstance
@@ -173,18 +173,18 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 		poolCfg.rbeBotsHybridPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_HYBRID]
 		poolCfg.rbeBotsRBEPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_RBE]
 		if poolCfg.rbeBotsSwarmingPercent+poolCfg.rbeBotsHybridPercent+poolCfg.rbeBotsRBEPercent != 100 {
-			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+			return nil, errors.New("unexpectedly incorrect RBE migration config")
 		}
 		poolCfg.RBEModePercent = int(rbeCfg.RbeModePercent)
 		if poolCfg.RBEModePercent < 0 || poolCfg.RBEModePercent > 100 {
-			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+			return nil, errors.New("unexpectedly incorrect RBE migration config")
 		}
 	}
 
 	for _, re := range pb.InformationalDimensionRe {
 		compiled, err := regexp.Compile(re)
 		if err != nil {
-			return nil, errors.Annotate(err, "invalid regular expression %s", re).Err()
+			return nil, errors.Fmt("invalid regular expression %s: %w", re, err)
 		}
 		poolCfg.InformationalDimensionRe = append(poolCfg.InformationalDimensionRe, compiled)
 	}
@@ -192,7 +192,7 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 	if pb.GetTaskTemplateDeployment() != "" {
 		namedDpl, ok := dplMap[pb.GetTaskTemplateDeployment()]
 		if !ok {
-			return nil, errors.Reason("unknown `task_template_deployment`: %q", pb.GetTaskTemplateDeployment()).Err()
+			return nil, errors.Fmt("unknown `task_template_deployment`: %q", pb.GetTaskTemplateDeployment())
 		}
 		poolCfg.Deployment = namedDpl
 		return poolCfg, nil
@@ -541,11 +541,11 @@ func newInclusionGraph(tmps []*configpb.TaskTemplate) (*inclusionGraph, errors.M
 	var merr errors.MultiError
 	for i, tmp := range tmps {
 		if tmp.Name == "" {
-			merr.MaybeAdd(errors.Reason("template %d: name is empty", i).Err())
+			merr.MaybeAdd(errors.Fmt("template %d: name is empty", i))
 			continue
 		}
 		if _, ok := graph.original[tmp.Name]; ok {
-			merr.MaybeAdd(errors.Reason("template %q was already declared", tmp.Name).Err())
+			merr.MaybeAdd(errors.Fmt("template %q was already declared", tmp.Name))
 			continue
 		}
 		graph.original[tmp.Name] = tmp
@@ -581,19 +581,19 @@ func (g *inclusionGraph) includes(root string, visited stringset.Set) ([]string,
 	}
 
 	if !visited.Add(root) {
-		return nil, errors.Reason("encounter inclusion cycle for template %q", root).Err()
+		return nil, errors.Fmt("encounter inclusion cycle for template %q", root)
 	}
 
 	unflattened, ok := g.original[root]
 	if !ok {
-		return nil, errors.Reason("unknown template %q", root).Err()
+		return nil, errors.Fmt("unknown template %q", root)
 	}
 
 	allIncs := []string{root}
 	incSet := stringset.NewFromSlice(allIncs...)
 	for _, sub := range unflattened.Include {
 		if sub == root {
-			return nil, errors.Reason("template %q includes self", root).Err()
+			return nil, errors.Fmt("template %q includes self", root)
 		}
 
 		subIncludes, err := g.includes(sub, visited)
@@ -603,7 +603,7 @@ func (g *inclusionGraph) includes(root string, visited stringset.Set) ([]string,
 
 		for _, subInc := range subIncludes {
 			if !incSet.Add(subInc) {
-				return nil, errors.Reason("template %q already includes %q", root, subInc).Err()
+				return nil, errors.Fmt("template %q already includes %q", root, subInc)
 			}
 			allIncs = append(allIncs, subInc)
 		}
@@ -634,7 +634,7 @@ func (g *inclusionGraph) flattenTaskTemplates() error {
 func (g *inclusionGraph) flattenTaskTemplate(root string) (*templateResolvement, error) {
 	tmp, ok := g.flattened[root]
 	if !ok {
-		return nil, errors.Reason("unknown template %q", root).Err()
+		return nil, errors.Fmt("unknown template %q", root)
 	}
 
 	// Directly reture the already resolved template.
@@ -783,11 +783,11 @@ func flattenInlinedTaskTemplate(tmp *configpb.TaskTemplate, graph *inclusionGrap
 	for _, inc := range tmp.Include {
 		sub, ok := graph.flattened[inc]
 		if !ok {
-			return nil, errors.Reason("includes unknown template %q", inc).Err()
+			return nil, errors.Fmt("includes unknown template %q", inc)
 		}
 		for _, subInc := range sub.tmp.Include {
 			if !incSet.Add(subInc) {
-				return nil, errors.Reason("template already includes %q", subInc).Err()
+				return nil, errors.Fmt("template already includes %q", subInc)
 			}
 		}
 	}

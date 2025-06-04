@@ -91,7 +91,7 @@ func FetchNamedCacheSizeHints(ctx context.Context, pool, osFamily string, caches
 
 	var merr errors.MultiError
 	if err := datastore.Get(ctx, ents); err != nil && !errors.As(err, &merr) {
-		return nil, errors.Annotate(err, "fetching a batch of NamedCacheStats").Err()
+		return nil, errors.Fmt("fetching a batch of NamedCacheStats: %w", err)
 	}
 
 	out := make([]int64, len(caches))

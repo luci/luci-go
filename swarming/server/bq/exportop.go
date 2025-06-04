@@ -76,11 +76,11 @@ func (p *ExportOp) Execute(ctx context.Context, start time.Time, duration time.D
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		// This operation never ran.
 	case err != nil:
-		return errors.Annotate(err, "fetching ExportState").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("fetching ExportState: %w", err))
 	default:
 		// This operation already ran. Make sure it actually committed writes.
 		if err := p.ensureCommitted(ctx, state.WriteStreamName); err != nil {
-			return errors.Annotate(err, "ensuring stream is committed").Err()
+			return errors.Fmt("ensuring stream is committed: %w", err)
 		}
 		return nil
 	}
@@ -122,7 +122,7 @@ func (p *ExportOp) Execute(ctx context.Context, start time.Time, duration time.D
 	// Do all fetching and uploads.
 	err := p.Fetcher.Fetch(ctx, start, duration, flushers)
 	if err != nil {
-		return errors.Annotate(err, "exporting rows").Err()
+		return errors.Fmt("exporting rows: %w", err)
 	}
 
 	// It is possible there was no data to export. We are done in that case. No
@@ -147,7 +147,8 @@ func (p *ExportOp) Execute(ctx context.Context, start time.Time, duration time.D
 		ExpireAt:        clock.Now(ctx).Add(exportStateExpiry).UTC(),
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to store ExportState").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.
+			Fmt("failed to store ExportState: %w", err))
 	}
 
 	// Make the exported data actually visible in the BigQuery table.
@@ -261,7 +262,7 @@ func (p *ExportOp) commit(ctx context.Context, streamName string) error {
 		for _, serr := range resp.StreamErrors {
 			logging.Errorf(ctx, "%s: %s", serr.Code, serr.ErrorMessage)
 		}
-		return errors.Reason("commit unsuccessful, see logs").Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.New("commit unsuccessful, see logs"))
 	default:
 		logging.Infof(ctx, "Stream was successfully committed at %s", resp.CommitTime.AsTime())
 		return nil

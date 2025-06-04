@@ -183,10 +183,10 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 	case ValidateAsTags:
 		validateKey = func(key string) error {
 			if key == "" {
-				return errors.Reason("cannot be empty").Err()
+				return errors.New("cannot be empty")
 			}
 			if strings.TrimSpace(key) != key {
-				return errors.Reason("should have no leading or trailing spaces").Err()
+				return errors.New("should have no leading or trailing spaces")
 			}
 			return nil
 		}
@@ -208,20 +208,20 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 
 	for pair := range pairs {
 		if err := validateKey(pair.Key); err != nil {
-			return errors.Annotate(err, "bad key %q", pair.Key).Err()
+			return errors.Fmt("bad key %q: %w", pair.Key, err)
 		}
 
 		vals := strings.Split(pair.Value, "|")
 		deduped := stringset.New(len(vals))
 		for _, val := range vals {
 			if err := validateVal(pair.Key, val); err != nil {
-				return errors.Annotate(err, "key %q: value %q", pair.Key, val).Err()
+				return errors.Fmt("key %q: value %q: %w", pair.Key, val, err)
 			}
 			deduped.Add(val)
 		}
 
 		if len(deduped) != len(vals) && !allowDups {
-			return errors.Reason("key %q has repeated values", pair.Key).Err()
+			return errors.Fmt("key %q has repeated values", pair.Key)
 		}
 
 		filter.filters = append(filter.filters, perKeyFilter{
@@ -241,7 +241,7 @@ func initFilter(filter *Filter, validation FilterValidation, allowDups bool, pai
 		return a.key == b.key && slices.Equal(a.values, b.values)
 	})
 	if len(dedupped) != len(filter.filters) && !allowDups {
-		return errors.Reason("has duplicate constraints").Err()
+		return errors.New("has duplicate constraints")
 	}
 	filter.filters = dedupped
 
@@ -423,10 +423,10 @@ func (f Filter) ValidateComplexity() error {
 		combinatorialAlternatives *= len(kf.values)
 	}
 	if total > MaxDimensionChecks {
-		return errors.Reason("too many dimension constraints %d (max is %d)", total, MaxDimensionChecks).Err()
+		return errors.Fmt("too many dimension constraints %d (max is %d)", total, MaxDimensionChecks)
 	}
 	if combinatorialAlternatives > MaxCombinatorialAlternatives {
-		return errors.Reason("too many combinations of dimensions %d (max is %d), reduce usage of \"|\"", combinatorialAlternatives, MaxCombinatorialAlternatives).Err()
+		return errors.Fmt("too many combinations of dimensions %d (max is %d), reduce usage of \"|\"", combinatorialAlternatives, MaxCombinatorialAlternatives)
 	}
 	return nil
 }

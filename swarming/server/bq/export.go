@@ -91,7 +91,7 @@ func Register(
 ) error {
 	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
-		return errors.Annotate(err, "failed to create TokenSource").Err()
+		return errors.Fmt("failed to create TokenSource: %w", err)
 	}
 
 	// Client for exports to BigQuery.
@@ -100,7 +100,7 @@ func Register(
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 	)
 	if err != nil {
-		return errors.Annotate(err, "failed to create BQ client").Err()
+		return errors.Fmt("failed to create BQ client: %w", err)
 	}
 	srv.RegisterCleanup(func(ctx context.Context) {
 		if err := bqClient.Close(); err != nil {
@@ -114,7 +114,7 @@ func Register(
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 	)
 	if err != nil {
-		return errors.Annotate(err, "failed to create PubSub client").Err()
+		return errors.Fmt("failed to create PubSub client: %w", err)
 	}
 	srv.RegisterCleanup(func(ctx context.Context) {
 		if err := psClient.Close(); err != nil {
@@ -220,11 +220,11 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix str
 		sch.NextExport = clock.Now(ctx).Add(-minEventAge).Truncate(time.Minute).UTC()
 		logging.Infof(ctx, "Creating initial ExportSchedule: %s", sch.NextExport)
 		if err := datastore.Put(ctx, sch); err != nil {
-			return errors.Annotate(err, "failed to create ExportSchedule").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to create ExportSchedule: %w", err))
 		}
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch ExportSchedule").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.Fmt("failed to fetch ExportSchedule: %w", err))
 	}
 
 	cutoff := clock.Now(ctx).UTC().Add(-minEventAge)
@@ -270,13 +270,13 @@ func scheduleExportTasks(ctx context.Context, disp *tq.Dispatcher, keyPrefix str
 	// Update the state only if something has changed (even on failure).
 	if tasks != 0 {
 		if err := datastore.Put(ctx, sch); err != nil {
-			return errors.Annotate(err, "failed to update ExportSchedule").Tag(transient.Tag).Err()
+			return transient.Tag.Apply(errors.Fmt("failed to update ExportSchedule: %w", err))
 		}
 	}
 
 	// If failed to submit a task, ask cron to retry ASAP.
 	if fail {
-		return errors.Reason("failed to schedule a TQ task").Tag(transient.Tag).Err()
+		return transient.Tag.Apply(errors.New("failed to schedule a TQ task"))
 	}
 	return nil
 }
@@ -294,8 +294,10 @@ func exportTask(ctx context.Context, globals *exportGlobals, t *taskspb.ExportIn
 	case TaskResultSummaries:
 		fetcher = TaskResultSummariesFetcher()
 	default:
-		return errors.Reason("unknown table name %q", t.TableName).Tag(tq.Fatal).Err()
+		return tq.Fatal.Apply(errors.
+			Fmt("unknown table name %q", t.TableName))
 	}
+
 	// Export rows to PubSub if this specific table is requested via server flags.
 	psTopic := ""
 	if globals.exportToPubSub.Has(t.TableName) {

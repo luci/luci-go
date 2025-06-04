@@ -346,7 +346,7 @@ func (cfg *Config) RBEConfig(botID string) (RBEConfig, error) {
 	case 1:
 		instance = instances.ToSlice()[0]
 	default:
-		return RBEConfig{}, errors.Reason("bot pools are configured with conflicting RBE instances: %q", instances.ToSortedSlice()).Err()
+		return RBEConfig{}, errors.Fmt("bot pools are configured with conflicting RBE instances: %q", instances.ToSortedSlice())
 	}
 
 	// Pools that have RBE enabled either should all have EffectiveBotIDDimension
@@ -364,7 +364,7 @@ func (cfg *Config) RBEConfig(botID string) (RBEConfig, error) {
 		}
 	}
 	if effectiveBotIDDimension != "" && rbePools != 1 {
-		return RBEConfig{}, errors.Reason("bots using effective Bot ID feature cannot belong to multiple pools").Err()
+		return RBEConfig{}, errors.New("bots using effective Bot ID feature cannot belong to multiple pools")
 	}
 	return RBEConfig{
 		Mode:                    mode,
@@ -399,7 +399,7 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 			return path == settingsCfg || path == poolsCfg || path == botsCfg || hookScriptRe.MatchString(path)
 		}, false)
 	if err != nil && !errors.Is(err, config.ErrNoConfig) {
-		return errors.Annotate(err, "failed to fetch the most recent configs from LUCI Config").Err()
+		return errors.Fmt("failed to fetch the most recent configs from LUCI Config: %w", err)
 	}
 
 	// Version information about the config we are fetching now. Will be populated
@@ -420,7 +420,7 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 	// Parse and re-validate the fetched config to get bot package versions.
 	bundle, err := parseAndValidateConfigs(ctx, fresh.Revision, files)
 	if err != nil {
-		return errors.Annotate(err, "bad configs at rev %s", fresh.Revision).Err()
+		return errors.Fmt("bad configs at rev %s: %w", fresh.Revision, err)
 	}
 
 	// Build the bot archive packages if they are missing. This process is
@@ -453,12 +453,12 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 		fresh.StableBot, err = ensureBotArchiveBuilt(ctx, cipdClient, stable,
 			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
-			return errors.Annotate(err, "failed build the stable bot archive").Err()
+			return errors.Fmt("failed build the stable bot archive: %w", err)
 		}
 		fresh.CanaryBot, err = ensureBotArchiveBuilt(ctx, cipdClient, canary,
 			botConfigBody, fresh.Revision, ebs, botArchiveChunkSize)
 		if err != nil {
-			return errors.Annotate(err, "failed build the canary bot archive").Err()
+			return errors.Fmt("failed build the canary bot archive: %w", err)
 		}
 	}
 
@@ -478,7 +478,7 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 		switch err := datastore.Get(ctx, lastRev); {
 		case err != nil:
 			if !errors.Is(err, datastore.ErrNoSuchEntity) {
-				return errors.Annotate(err, "failed to fetch the latest processed revision from datastore").Err()
+				return errors.Fmt("failed to fetch the latest processed revision from datastore: %w", err)
 			}
 			logging.Infof(ctx, "First config import ever at rev %s", fresh.Revision)
 			fresh.Touched = clock.Now(ctx).UTC().Truncate(time.Millisecond)
@@ -582,7 +582,7 @@ func parseAndValidateConfigs(ctx context.Context, rev string, files map[string]c
 		}
 		body, ok := files["scripts/"+group.BotConfigScript]
 		if !ok {
-			return nil, errors.Reason("bot group #%d refers to undefined bot config script %q", idx+1, group.BotConfigScript).Err()
+			return nil, errors.Fmt("bot group #%d refers to undefined bot config script %q", idx+1, group.BotConfigScript)
 		}
 		bundle.Scripts[group.BotConfigScript] = body.Content
 	}
@@ -616,7 +616,7 @@ func parseAndValidate[T any, TP interface {
 	// Parse it if it is present. Otherwise use the default value of `cfg`.
 	if body := files[path]; body.Content != "" {
 		if err := prototext.Unmarshal([]byte(body.Content), TP(cfg)); err != nil {
-			return errors.Annotate(err, "%s", path).Err()
+			return errors.Fmt("%s: %w", path, err)
 		}
 	} else {
 		logging.Warningf(ctx, "There's no %s config, using default", path)
@@ -629,10 +629,10 @@ func parseAndValidate[T any, TP interface {
 		if errors.As(err, &valErr) {
 			blocking := valErr.WithSeverity(validation.Blocking)
 			if blocking != nil {
-				return errors.Annotate(blocking, "%s", path).Err()
+				return errors.Fmt("%s: %w", path, blocking)
 			}
 		} else {
-			return errors.Annotate(err, "%s", path).Err()
+			return errors.Fmt("%s: %w", path, err)
 		}
 	}
 	return nil
@@ -708,7 +708,7 @@ func fetchConfigBundleRev(ctx context.Context) (*configBundleRev, error) {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		rev.VersionInfo = emptyVersionInfo()
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching configBundleRev").Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt("fetching configBundleRev: %w", err))
 	}
 	return rev, nil
 }
@@ -721,7 +721,7 @@ func fetchFromDatastore(ctx context.Context) (*Config, error) {
 		bundle.VersionInfo = emptyVersionInfo()
 		bundle.Bundle = defaultConfigs()
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching configBundle").Err()
+		return nil, errors.Fmt("fetching configBundle: %w", err)
 	}
 
 	// Transform config protos into data structures optimized for config queries.
@@ -739,7 +739,7 @@ func fetchFromDatastore(ctx context.Context) (*Config, error) {
 			clock.Since(ctx, bundle.Fetched),
 			err,
 		)
-		return nil, errors.Annotate(err, "broken config in the datastore").Err()
+		return nil, errors.Fmt("broken config in the datastore: %w", err)
 	}
 
 	if bundle.VersionInfo.Revision != emptyRev {
@@ -761,7 +761,7 @@ func fetchFromDatastore(ctx context.Context) (*Config, error) {
 func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, error) {
 	pools, err := newPoolsConfig(ent.Bundle.Pools)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad pools.cfg").Err()
+		return nil, errors.Fmt("bad pools.cfg: %w", err)
 	}
 	poolNames := make([]string, 0, len(pools))
 	for name := range pools {
@@ -771,7 +771,7 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 
 	botGroups, err := newBotGroups(ent.Bundle.Bots, ent.Bundle.Scripts)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad bots.cfg").Err()
+		return nil, errors.Fmt("bad bots.cfg: %w", err)
 	}
 
 	settings := withDefaultSettings(ent.Bundle.Settings)

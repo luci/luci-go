@@ -218,7 +218,7 @@ func (b *BotsDimensionsCache) fetch(ctx context.Context) (*BotsDimensionsSets, e
 	logging.Infof(ctx, "Fetching BotsDimensionsAggregation...")
 	ent := &BotsDimensionsAggregation{Key: BotsDimensionsAggregationKey(ctx)}
 	if err := datastore.Get(ctx, ent); err != nil {
-		return nil, errors.Annotate(err, "fetching BotsDimensionsAggregation").Err()
+		return nil, errors.Fmt("fetching BotsDimensionsAggregation: %w", err)
 	}
 	return NewBotsDimensionsSets(ent.Dimensions.GetPools(), ent.LastUpdate), nil
 }
@@ -233,7 +233,7 @@ func (b *BotsDimensionsCache) refresh(ctx context.Context, prev *BotsDimensionsS
 	info := &BotsDimensionsAggregationInfo{Key: BotsDimensionsAggregationInfoKey(ctx)}
 	switch err := datastore.Get(ctx, info); {
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching BotsDimensionsAggregationInfo").Err()
+		return nil, errors.Fmt("fetching BotsDimensionsAggregationInfo: %w", err)
 	case info.LastUpdate.Equal(prev.lastUpdate):
 		return prev, nil // can reuse the existing copy, it is still fresh
 	default:

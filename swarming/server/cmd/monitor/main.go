@@ -81,7 +81,7 @@ func main() {
 		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
 			conf, err := cfg.Latest(ctx)
 			if err != nil {
-				return errors.Annotate(err, "failed to fetch the service config").Err()
+				return errors.Fmt("failed to fetch the service config: %w", err)
 			}
 			return scan.Bots(ctx, []scan.BotVisitor{
 				&scan.BotsMetricsReporter{
@@ -116,7 +116,7 @@ func main() {
 			if *allowAbandoningTasks == "yes" {
 				conf, err := cfg.Latest(ctx)
 				if err != nil {
-					return errors.Annotate(err, "failed to fetch the service config").Err()
+					return errors.Fmt("failed to fetch the service config: %w", err)
 				}
 				visitors = append(visitors, &scan.SliceExpirationEnforcer{
 					GracePeriod:  time.Minute,

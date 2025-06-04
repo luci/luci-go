@@ -69,23 +69,23 @@ func Marshal(s *internalspb.Session, secret *hmactoken.Secret) ([]byte, error) {
 func Unmarshal(tok []byte, secret *hmactoken.Secret) (*internalspb.Session, error) {
 	var wrap internalspb.SessionToken
 	if err := proto.Unmarshal(tok, &wrap); err != nil {
-		return nil, errors.Annotate(err, "unmarshaling SessionToken").Err()
+		return nil, errors.Fmt("unmarshaling SessionToken: %w", err)
 	}
 
 	var blob []byte
 	switch val := wrap.Kind.(type) {
 	case *internalspb.SessionToken_HmacTagged_:
 		if !secret.Verify([]byte(cryptoCtx), val.HmacTagged.Session, val.HmacTagged.HmacSha256) {
-			return nil, errors.Reason("bad session token MAC").Err()
+			return nil, errors.New("bad session token MAC")
 		}
 		blob = val.HmacTagged.Session
 	default:
-		return nil, errors.Reason("unsupported session token format").Err()
+		return nil, errors.New("unsupported session token format")
 	}
 
 	s := &internalspb.Session{}
 	if err := proto.Unmarshal(blob, s); err != nil {
-		return nil, errors.Annotate(err, "unmarshaling Session").Err()
+		return nil, errors.Fmt("unmarshaling Session: %w", err)
 	}
 	return s, nil
 }

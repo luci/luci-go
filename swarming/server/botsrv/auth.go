@@ -50,7 +50,7 @@ import (
 func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
 	if len(methods) == 0 {
 		// This should not really be possible for validated configs.
-		return errors.Reason("no authentication requirements in bots.cfg").Err()
+		return errors.New("no authentication requirements in bots.cfg")
 	}
 
 	// Checks if a single BotAuth requirement is satisfied.
@@ -73,42 +73,42 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 		case ba.RequireLuciMachineToken:
 			tok := machine.GetMachineTokenInfo(ctx)
 			if tok == nil {
-				return logs, errors.Reason("no LUCI machine token in the request").Err()
+				return logs, errors.New("no LUCI machine token in the request")
 			}
 			// TODO(vadimsh): We should probably check tok.CA as well. This will require
 			// updating configs to have it there in the first place.
 			if tok.FQDN != hostID && !strings.HasPrefix(tok.FQDN, hostID+".") {
 				log("Machine token CA: %d", tok.CA)
 				log("Machine token SN: %s", hex.EncodeToString(tok.CertSN))
-				return logs, errors.Reason("host ID %q doesn't match the LUCI token with FQDN %q", hostID, tok.FQDN).Err()
+				return logs, errors.Fmt("host ID %q doesn't match the LUCI token with FQDN %q", hostID, tok.FQDN)
 			}
 			authMethodForMon, authConditionForMon = "luci_token", "-"
 
 		case ba.RequireGceVmToken != nil:
 			tok := openid.GetGoogleComputeTokenInfo(ctx)
 			if tok == nil {
-				return logs, errors.Reason("no GCE VM token in the request").Err()
+				return logs, errors.New("no GCE VM token in the request")
 			}
 			switch {
 			case tok.Instance != hostID:
 				log("GCE token instance: %s", tok.Instance)
 				log("GCE token project: %s", tok.Project)
-				return logs, errors.Reason("expecting VM token from GCE instance %q, but got one from %q", hostID, tok.Instance).Err()
+				return logs, errors.Fmt("expecting VM token from GCE instance %q, but got one from %q", hostID, tok.Instance)
 			case tok.Project != ba.RequireGceVmToken.Project:
 				log("GCE token instance: %s", tok.Instance)
 				log("GCE token project: %s", tok.Project)
-				return logs, errors.Reason("%q is not an expected GCE project for host %q", tok.Project, hostID).Err()
+				return logs, errors.Fmt("%q is not an expected GCE project for host %q", tok.Project, hostID)
 			}
 			authMethodForMon, authConditionForMon = "gce_vm_token", ba.RequireGceVmToken.Project
 
 		case len(ba.RequireServiceAccount) != 0:
 			ident := auth.GetState(ctx).PeerIdentity()
 			if ident.Kind() != identity.User {
-				return logs, errors.Reason("no OAuth or OpenID credentials in the request").Err()
+				return logs, errors.New("no OAuth or OpenID credentials in the request")
 			}
 			email := ident.Value()
 			if slices.Index(ba.RequireServiceAccount, email) == -1 {
-				return logs, errors.Reason("the host %q is authenticated as %q which is not the expected service account for this host", hostID, email).Err()
+				return logs, errors.Fmt("the host %q is authenticated as %q which is not the expected service account for this host", hostID, email)
 			}
 			authMethodForMon, authConditionForMon = "service_account", email
 
@@ -116,7 +116,7 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 			// If no other method applies, the IP allowlist **must** be used. This is
 			// validated when loading bots.cfg. Double check this.
 			if ba.IpWhitelist == "" {
-				return logs, errors.Reason("bad bot group config, no auth methods defined").Err()
+				return logs, errors.New("bad bot group config, no auth methods defined")
 			}
 			authMethodForMon, authConditionForMon = "ip_allowlist", ba.IpWhitelist
 		}
@@ -125,10 +125,10 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 		if ba.IpWhitelist != "" {
 			switch yes, err := auth.IsAllowedIP(ctx, ba.IpWhitelist); {
 			case err != nil:
-				return logs, errors.Annotate(err, "failed to check IP allowlist").Tag(transient.Tag).Err()
+				return logs, transient.Tag.Apply(errors.Fmt("failed to check IP allowlist: %w", err))
 			case !yes:
 				log("Bot IP %s is not in the allowlist %q", auth.GetState(ctx).PeerIP(), ba.IpWhitelist)
-				return logs, errors.Reason("IP not allowed").Err()
+				return logs, errors.New("IP not allowed")
 			}
 		}
 
@@ -196,7 +196,7 @@ func AuthorizeBot(ctx context.Context, botID string, methods []*configpb.BotAuth
 	for i, err := range authErrs {
 		errs[i] = err.Error()
 	}
-	return errors.Reason("all auth methods failed: %s", strings.Join(errs, "; ")).Err()
+	return errors.Fmt("all auth methods failed: %s", strings.Join(errs, "; "))
 }
 
 // formatBotAuth formats BotAuth for logs.

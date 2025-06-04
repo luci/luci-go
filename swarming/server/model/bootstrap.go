@@ -82,7 +82,7 @@ func ValidateBootstrapToken(ctx context.Context, tok string) (identity.Identity,
 	}
 	ident, err := identity.MakeIdentity(payload["for"])
 	if err != nil {
-		return "", errors.Annotate(err, "bad token payload %v", payload).Err()
+		return "", errors.Fmt("bad token payload %v: %w", payload, err)
 	}
 	return ident, nil
 }
@@ -105,7 +105,7 @@ type legacyStore struct{}
 // entity.
 func (legacyStore) RandomSecret(ctx context.Context, name string) (secrets.Secret, error) {
 	if name != legacyBootstrapToken.SecretKey {
-		return secrets.Secret{}, errors.Reason("unexpected key requested: %s", name).Err()
+		return secrets.Secret{}, errors.Fmt("unexpected key requested: %s", name)
 	}
 	blob, err := cachedSecret.Fetch(ctx, func(any) (blob any, exp time.Duration, err error) {
 		ent := &LegacyBootstrapSecret{Key: LegacyBootstrapSecretKey(ctx)}

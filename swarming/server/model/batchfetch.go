@@ -285,10 +285,10 @@ func (f *PerformanceStatsFetcher) Finish(tasks []*apipb.TaskResultResponse) erro
 		case errors.Is(err, datastore.ErrNoSuchEntity):
 			// The task has no stats attached, this is fine.
 		case err != nil:
-			return errors.Annotate(err, "fetching stats of %q", task.TaskId).Err()
+			return errors.Fmt("fetching stats of %q: %w", task.TaskId, err)
 		default:
 			if task.PerformanceStats, err = stat.ToProto(); err != nil {
-				return errors.Annotate(err, "processing stats of %q", task.TaskId).Err()
+				return errors.Fmt("processing stats of %q: %w", task.TaskId, err)
 			}
 		}
 	}

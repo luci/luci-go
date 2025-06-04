@@ -213,7 +213,7 @@ func main() {
 		// Handlers for TQ tasks for sending PubSub messages.
 		pubSubNotifier, err := notifications.NewPubSubNotifier(srv.Context, srv.Options.CloudProject)
 		if err != nil {
-			return errors.Annotate(err, "failed to initialize the PubSubNotifier").Err()
+			return errors.Fmt("failed to initialize the PubSubNotifier: %w", err)
 		}
 		pubSubNotifier.RegisterTQTasks(tqt)
 		srv.RegisterCleanup(func(context.Context) {

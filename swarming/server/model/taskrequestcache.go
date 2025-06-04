@@ -117,12 +117,12 @@ func FetchTaskRequest(ctx context.Context, key *datastore.Key) (*TaskRequest, er
 func cacheTaskRequest(ctx context.Context, tid string, req *TaskRequest, cache caching.BlobCache) error {
 	blob, err := serializeTaskRequest(req)
 	if err != nil {
-		return errors.Annotate(err, "failed to serialize TaskRequest").Err()
+		return errors.Fmt("failed to serialize TaskRequest: %w", err)
 	}
 	ctx, cancel := context.WithTimeout(ctx, taskRequestCacheRPCTimeout)
 	defer cancel()
 	if err := cache.Set(ctx, tid, blob, taskRequestCacheExpiry); err != nil {
-		return errors.Annotate(err, "failed to put TaskRequest into the cache").Err()
+		return errors.Fmt("failed to put TaskRequest into the cache: %w", err)
 	}
 	return nil
 }

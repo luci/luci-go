@@ -492,7 +492,7 @@ func (p *TaskResultSummary) GetOutput(ctx context.Context, offset, length int64)
 	}
 	dedupedFromReq, err := TaskIDToRequestKey(ctx, runID)
 	if err != nil {
-		return nil, errors.Annotate(err, "unexpectedly malformed dedupped run ID %q", runID).Err()
+		return nil, errors.Fmt("unexpectedly malformed dedupped run ID %q: %w", runID, err)
 	}
 
 	// A range of chunks covering the requested interval.
@@ -525,16 +525,16 @@ func (p *TaskResultSummary) GetOutput(ctx context.Context, offset, length int64)
 			err = zr.(zlib.Resetter).Reset(in, nil)
 		}
 		if err != nil {
-			return 0, errors.Annotate(err, "opening zlib reader").Err()
+			return 0, errors.Fmt("opening zlib reader: %w", err)
 		}
 		defer func() { _ = zr.Close() }()
 
 		n, err := io.Copy(out, zr)
 		if err != nil {
-			return 0, errors.Annotate(err, "decompressing").Err()
+			return 0, errors.Fmt("decompressing: %w", err)
 		}
 		if err := zr.Close(); err != nil {
-			return 0, errors.Annotate(err, "closing zlib reader").Err()
+			return 0, errors.Fmt("closing zlib reader: %w", err)
 		}
 		return int(n), nil
 	}
@@ -555,11 +555,11 @@ func (p *TaskResultSummary) GetOutput(ctx context.Context, offset, length int64)
 			continue
 		}
 		if chunkErr != nil {
-			return nil, errors.Annotate(chunkErr, "fetching chunk #%d", i).Err()
+			return nil, errors.Fmt("fetching chunk #%d: %w", i, chunkErr)
 		}
 		size, err := decompress(chunk.Chunk, &output)
 		if err != nil {
-			return nil, errors.Annotate(err, "decompressing chunk #%d", i).Err()
+			return nil, errors.Fmt("decompressing chunk #%d: %w", i, err)
 		}
 		// All chunks except the last one must have length ChunkSize, otherwise
 		// reading by offset will not always work correctly. Check that.
@@ -634,7 +634,7 @@ func (p *TaskResultSummary) TaskAuthInfo(ctx context.Context) (*acls.TaskAuthInf
 	logging.Infof(ctx, "Fetching TaskRequest to get TaskAuthInfo")
 	tr := &TaskRequest{Key: p.TaskRequestKey()}
 	if err := datastore.Get(ctx, tr); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch TaskRequest entity").Err()
+		return nil, errors.Fmt("failed to fetch TaskRequest entity: %w", err)
 	}
 	return tr.TaskAuthInfo(ctx)
 }
@@ -1042,7 +1042,7 @@ func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
 		resp.ItemsCold = p.ItemsCold
 		itemsCold, err := packedintset.Unpack(p.ItemsCold)
 		if err != nil {
-			return nil, errors.Annotate(err, "unpacking cold items").Err()
+			return nil, errors.Fmt("unpacking cold items: %w", err)
 		}
 		resp.NumItemsCold = int64(len(itemsCold))
 		sum := int64(0)
@@ -1055,7 +1055,7 @@ func (p *CASOperationStats) ToProto() (*apipb.CASOperationStats, error) {
 		resp.ItemsHot = p.ItemsHot
 		itemsHot, err := packedintset.Unpack(p.ItemsHot)
 		if err != nil {
-			return nil, errors.Annotate(err, "unpacking hot items").Err()
+			return nil, errors.Fmt("unpacking hot items: %w", err)
 		}
 		resp.NumItemsHot = int64(len(itemsHot))
 		sum := int64(0)
@@ -1168,7 +1168,7 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 	// Refuse reversed or empty time range, such request is likely a client error.
 	// It will be more helpful if it fails rather than silently returns no data.
 	if !start.IsZero() && !end.IsZero() && !start.Before(end) {
-		return nil, errors.Reason("start time must be before the end time").Err()
+		return nil, errors.New("start time must be before the end time")
 	}
 
 	// Datastore entities are ordered by key (smaller to larger). Tasks need to
@@ -1191,12 +1191,12 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 	var startReqKey, endReqKey *datastore.Key
 	if !start.IsZero() {
 		if startReqKey, err = TimestampToRequestKey(ctx, start, 0); err != nil {
-			return nil, errors.Annotate(err, "invalid start time").Err()
+			return nil, errors.Fmt("invalid start time: %w", err)
 		}
 	}
 	if !end.IsZero() {
 		if endReqKey, err = TimestampToRequestKey(ctx, end, 0); err != nil {
-			return nil, errors.Annotate(err, "invalid end time").Err()
+			return nil, errors.Fmt("invalid end time: %w", err)
 		}
 	}
 
@@ -1221,12 +1221,12 @@ func FilterTasksByCreationTime(ctx context.Context, q *datastore.Query, start, e
 			// This can happen if the query time range has changed between pages and
 			// the new time range is now more restrictive than what cursor points to.
 			// We do not allow that.
-			return nil, errors.Reason("the cursor is outside of the requested time range").Err()
+			return nil, errors.New("the cursor is outside of the requested time range")
 		}
 		// If `start` was changed between calls, the range may be empty now. We do
 		// not allow that.
 		if startReqKey != nil && endReqKey.IntID() > startReqKey.IntID() {
-			return nil, errors.Reason("the cursor is outside of the requested time range").Err()
+			return nil, errors.New("the cursor is outside of the requested time range")
 		}
 		// It is theoretically possible that `startReqKey` matches some real entity
 		// and we used this entity as the last cursor (since `startReqKey` end of

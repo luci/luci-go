@@ -178,7 +178,7 @@ func ensureBotArchiveBuilt(
 	var err error
 	building.PackageInstanceID, err = cipd.ResolveVersion(ctx, desc.Server, desc.Pkg, desc.Version)
 	if err != nil {
-		return BotArchiveInfo{}, errors.Annotate(err, "resolving %s to instance ID", desc.Version).Err()
+		return BotArchiveInfo{}, errors.Fmt("resolving %s to instance ID: %w", desc.Version, err)
 	}
 	if botConfigPy != nil {
 		h := sha256.New()
@@ -215,7 +215,7 @@ func ensureBotArchiveBuilt(
 	logging.Infof(ctx, "Fetching %s/p/%s/+/%s", desc.Server, desc.Pkg, building.PackageInstanceID)
 	pkg, err := cipd.FetchInstance(ctx, desc.Server, desc.Pkg, building.PackageInstanceID)
 	if err != nil {
-		return BotArchiveInfo{}, errors.Annotate(err, "fetching CIPD package").Err()
+		return BotArchiveInfo{}, errors.Fmt("fetching CIPD package: %w", err)
 	}
 	logging.Infof(ctx, "Building the new bot archive")
 	blob, digest, err := buildBotArchive(pkg, botConfigPy, botArchiveConfig{
@@ -224,7 +224,7 @@ func ensureBotArchiveBuilt(
 	})
 	_ = pkg.Close(ctx, false)
 	if err != nil {
-		return BotArchiveInfo{}, errors.Annotate(err, "building bot archive").Err()
+		return BotArchiveInfo{}, errors.Fmt("building bot archive: %w", err)
 	}
 
 	// Add the new archive to the state if it is still not there.
@@ -272,7 +272,7 @@ func ensureBotArchiveBuilt(
 		return datastore.Put(ctx, state, chunks)
 	}, nil)
 	if err != nil {
-		return BotArchiveInfo{}, errors.Annotate(err, "updating BotArchiverState").Err()
+		return BotArchiveInfo{}, errors.Fmt("updating BotArchiverState: %w", err)
 	}
 	return botArchiveInfo(&built, desc), nil
 }
@@ -281,7 +281,7 @@ func ensureBotArchiveBuilt(
 func fetchBotArchiverState(ctx context.Context) (*botArchiverState, error) {
 	state := &botArchiverState{Key: botArchiverStateKey(ctx)}
 	if err := datastore.Get(ctx, state); err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-		return nil, errors.Annotate(err, "fetching BotArchiverState").Err()
+		return nil, errors.Fmt("fetching BotArchiverState: %w", err)
 	}
 	return state, nil
 }
@@ -307,7 +307,7 @@ func bumpLastTouchedTime(ctx context.Context, b *botArchive) (found bool, err er
 		return datastore.Put(ctx, state)
 	}, nil)
 	if err != nil {
-		err = errors.Annotate(err, "in bumpLastTouchedTime").Err()
+		err = errors.Fmt("in bumpLastTouchedTime: %w", err)
 	}
 	return
 }
@@ -337,7 +337,7 @@ func cleanupOldArchives(ctx context.Context, state *botArchiverState) error {
 	state.Archives = survivors
 	if len(oldChunks) != 0 {
 		if err := datastore.Delete(ctx, oldChunks); err != nil {
-			return errors.Annotate(err, "deleting unused bot archive chunks").Err()
+			return errors.Fmt("deleting unused bot archive chunks: %w", err)
 		}
 	}
 	return nil
@@ -402,7 +402,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 	}
 	configJSONBlob, err := json.MarshalIndent(&configJSON, "", "  ")
 	if err != nil {
-		return nil, "", errors.Annotate(err, "failed to marshal config.json").Err()
+		return nil, "", errors.Fmt("failed to marshal config.json: %w", err)
 	}
 	filesByName["config/config.json"] = blobFile(configJSONBlob)
 
@@ -423,7 +423,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 		expectedSize := f.Size()
 		src, err := f.Open()
 		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to open %q for reading", name).Err()
+			return nil, "", errors.Fmt("failed to open %q for reading: %w", name, err)
 		}
 
 		// This hashing logic should match what the bot code itself is doing when
@@ -439,7 +439,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 		dst, err := zipWriter.CreateHeader(&fh)
 		if err != nil {
 			_ = src.Close()
-			return nil, "", errors.Annotate(err, "writing zip entry header for %q", name).Err()
+			return nil, "", errors.Fmt("writing zip entry header for %q: %w", name, err)
 		}
 
 		// This should write exactly `expectedSize` bytes into both the hasher and
@@ -447,7 +447,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 		wrote, err := io.Copy(io.MultiWriter(hasher, dst), src)
 		_ = src.Close()
 		if err != nil {
-			return nil, "", errors.Annotate(err, "failed to write %q", name).Err()
+			return nil, "", errors.Fmt("failed to write %q: %w", name, err)
 		}
 		if uint64(wrote) != expectedSize {
 			return nil, "", errors.Fmt("when writing %q wrote %d bytes, while should have %d", name, wrote, expectedSize)
@@ -455,7 +455,7 @@ func buildBotArchive(base pkg.Instance, botConfigPy []byte, configJSON botArchiv
 	}
 
 	if err := zipWriter.Close(); err != nil {
-		return nil, "", errors.Annotate(err, "finalizing the zip archive").Err()
+		return nil, "", errors.Fmt("finalizing the zip archive: %w", err)
 	}
 
 	return outBytes.Bytes(), hex.EncodeToString(hasher.Sum(nil)), nil
