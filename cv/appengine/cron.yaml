@@ -33,7 +33,3 @@ cron:
   # in `bblistener.ListenDuration` to ensure continuous Buildbucket Pubsub
   # events processing.
   schedule: every 5 minutes
-- description: Kick off config refresh for listener service
-  target: listener
-  url: /internal/cron/refresh-listener-config
-  schedule: every 1 minutes
