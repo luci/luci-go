@@ -104,8 +104,8 @@ serverInjectedVars.SETTINGS = Object.freeze({
       triggerId: assertNonNullable(
         process.env['VITE_FLEET_CONSOLE_HATS_TRIGGER_ID'],
       ),
-      productId: assertNonNullable(
-        process.env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID'],
+      productId: Number(
+        assertNonNullable(process.env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
       ),
     },
   },

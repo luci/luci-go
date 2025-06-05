@@ -97,12 +97,6 @@ declare const SETTINGS: {
   };
 };
 
-interface HaTSConfig {
-  readonly apiKey: string;
-  readonly triggerId: string;
-  readonly productId: string;
-}
-
 /**
  * Import all JS modules. This ensures all modules are initialized.
  */

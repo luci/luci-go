@@ -95,7 +95,9 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
       hats: {
         apiKey: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_API_KEY']),
         triggerId: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_TRIGGER_ID']),
-        productId: assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
+        productId: Number(
+          assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
+        ),
       },
     },
     ufs: {
