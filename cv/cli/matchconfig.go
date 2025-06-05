@@ -187,7 +187,9 @@ func loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, 
 		return nil, err
 	}
 	ret := &cfgpb.Config{}
-	err = prototext.Unmarshal(in, ret)
+	// Ignore unknown fields because the caller may be passing in a proto with a
+	// newer schema than the one built into this tool.
+	err = prototext.UnmarshalOptions{DiscardUnknown: true}.Unmarshal(in, ret)
 	if err != nil {
 		return nil, err
 	}
