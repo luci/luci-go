@@ -16,22 +16,15 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
-	"time"
-
-	"cloud.google.com/go/pubsub"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -45,8 +38,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
-	glistener "go.chromium.org/luci/cv/internal/gerrit/listener"
 	gerritsub "go.chromium.org/luci/cv/internal/gerrit/subscriber"
 )
 
@@ -64,24 +55,7 @@ func main() {
 	flag.StringVar(&gerritPubsubServiceAccount, "gerrit-pubsub-push-account", "", "the service account of pubsub pusher")
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		creds, err := auth.GetPerRPCCredentials(
-			srv.Context, auth.AsSelf,
-			auth.WithScopes(auth.CloudOAuthScopes...),
-		)
-		if err != nil {
-			return errors.Fmt("failed to get per RPC credentials: %w", err)
-		}
-		psc, err := pubsub.NewClient(
-			srv.Context, srv.Options.CloudProject,
-			option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		)
-		if err != nil {
-			return errors.Fmt("pubsub.NewClient: %s: %w", err, err)
-		}
 		clUpdater := changelist.NewUpdater(&tq.Default, nil)
-		gListener := glistener.NewListener(psc, clUpdater)
-		srv.RunInBackground("luci.cv.listener.gerrit_subscriptions", gListener.Run)
 		oidcMW := router.NewMiddlewareChain(
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
@@ -102,9 +76,6 @@ func main() {
 				hostName, ctx.Params.ByName("format"))
 		}, gerritPubSubIdentity))
 
-		cron.RegisterHandler("refresh-listener-config", func(ctx context.Context) error {
-			return refreshConfig(ctx)
-		})
 		return nil
 	})
 }
@@ -130,10 +101,4 @@ func makePubsubHandler(handleFn func(ctx *router.Context, payload common.PubSubM
 		ctx.Writer.WriteHeader(http.StatusOK)
 		fmt.Fprintln(ctx.Writer, "Pub/Sub message processed successfully")
 	}
-}
-
-func refreshConfig(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-	defer cancel()
-	return srvcfg.ImportConfig(ctx)
 }
