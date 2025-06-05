@@ -41,7 +41,7 @@ const (
 
 var (
 	// schemaApplyer ensures BQ schema matches the row proto definitions.
-	schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(6))
+	schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(8))
 	// Metadata for the groups table.
 	groupsTableMetadata *bigquery.TableMetadata
 	// groupsTableSchemaDescriptor is a self-contained DescriptorProto for
@@ -57,6 +57,12 @@ var (
 	// rolesTableSchemaDescriptor is a self-contained DescriptorProto for
 	// describing role row protocol buffers sent to the BigQuery Write API.
 	rolesTableSchemaDescriptor *descriptorpb.DescriptorProto
+	// Metadata for the realmSources table.
+	realmSourcesTableMetadata *bigquery.TableMetadata
+	// realmSourcesTableSchemaDescriptor is a self-contained DescriptorProto for
+	// describing realm source row protocol buffers sent to the BigQuery Write
+	// API.
+	realmSourcesTableSchemaDescriptor *descriptorpb.DescriptorProto
 )
 
 func init() {
@@ -117,6 +123,26 @@ func init() {
 	}
 	roleDesc := roleRow.ProtoReflect().Descriptor()
 	if rolesTableSchemaDescriptor, err = generateSchemaDescriptor(roleDesc); err != nil {
+		panic(err)
+	}
+
+	realmSourceRow := &bqpb.RealmSourceRow{}
+	realmSourceSchema, err := generateRowSchema(realmSourceRow, "auth.service.bq.RealmSourceRow")
+	if err != nil {
+		panic(err)
+	}
+	realmSourcesTableMetadata = &bigquery.TableMetadata{
+		TimePartitioning: &bigquery.TimePartitioning{
+			Type:       partitionType,
+			Expiration: partitionExpirationTime,
+			Field:      partitionColumn,
+		},
+		// Relax ensures no fields are marked "required".
+		Schema: realmSourceSchema.Relax(),
+		Labels: map[string]string{bq.MetadataVersionKey: "1"},
+	}
+	realmSourceDesc := realmSourceRow.ProtoReflect().Descriptor()
+	if realmSourcesTableSchemaDescriptor, err = generateSchemaDescriptor(realmSourceDesc); err != nil {
 		panic(err)
 	}
 }

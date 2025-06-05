@@ -74,18 +74,24 @@ const (
 	)
 	`
 
-	// Roles table name, latest view name, and view query template.
-	rolesTableName      = "roles"
-	latestRolesViewName = "latest_roles"
-	latestRolesViewText = `
+	// View query for supplemental data.
+	latestSupplementalViewText = `
 	SELECT * FROM {{.datasetID}}.{{.tableName}}
 	WHERE {{.keyColumn}} = (SELECT MAX({{.keyColumn}}) FROM {{.datasetID}}.{{.tableName}})
 	`
+
+	// Roles table name, latest view name, and view query template.
+	rolesTableName      = "roles"
+	latestRolesViewName = "latest_roles"
+
+	// Realm sources table name, latest view name, and view query template.
+	realmSourcesTableName      = "realm_sources"
+	latestRealmSourcesViewName = "latest_realm_sources"
 )
 
 var (
-	latestSnapshotViewTemplate = template.Must(template.New("latest snapshot view").Parse(latestSnapshotViewText))
-	latestRolesViewTemplate    = template.Must(template.New("latest roles view").Parse(latestRolesViewText))
+	latestSnapshotViewTemplate     = template.Must(template.New("latest snapshot view").Parse(latestSnapshotViewText))
+	latestSupplementalViewTemplate = template.Must(template.New("latest supplemental view").Parse(latestSupplementalViewText))
 )
 
 // Client provides methods to export authorization data to BQ.
@@ -228,6 +234,39 @@ func (client *Client) InsertRoles(ctx context.Context, rows []*bqpb.RoleRow) err
 	return writer.AppendRowsWithPendingStream(ctx, payload)
 }
 
+// ensureRealmSourcesSchema ensures the realm sources table's schema has been applied.
+func (client *Client) ensureRealmSourcesSchema(ctx context.Context) error {
+	table := client.bqClient.Dataset(datasetID).Table(realmSourcesTableName)
+	if err := schemaApplyer.EnsureTable(ctx, table, realmSourcesTableMetadata); err != nil {
+		return errors.Fmt("failed to ensure realm sources table and schema: %w", err)
+	}
+	return nil
+}
+
+// InsertRealmSources inserts the given realm sources in BQ.
+func (client *Client) InsertRealmSources(ctx context.Context, rows []*bqpb.RealmSourceRow) error {
+	if err := client.ensureRealmSourcesSchema(ctx); err != nil {
+		return err
+	}
+
+	if len(rows) == 0 {
+		// Nothing to insert.
+		return nil
+	}
+
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s",
+		client.projectID, datasetID, realmSourcesTableName)
+	writer := bq.NewWriter(client.mwClient, tableName, realmSourcesTableSchemaDescriptor)
+
+	payload := make([]proto.Message, len(rows))
+	for i, row := range rows {
+		payload[i] = row
+	}
+
+	// Insert the realm sources with all-or-nothing semantics.
+	return writer.AppendRowsWithPendingStream(ctx, payload)
+}
+
 func constructViewQuery(ctx context.Context, t *template.Template, args map[string]string) (string, error) {
 	buf := bytes.Buffer{}
 	if err := t.Execute(&buf, args); err != nil {
@@ -252,7 +291,16 @@ func constructLatestRolesViewQuery(ctx context.Context) (string, error) {
 		"tableName": rolesTableName,
 		"keyColumn": latestKeyColumn,
 	}
-	return constructViewQuery(ctx, latestRolesViewTemplate, args)
+	return constructViewQuery(ctx, latestSupplementalViewTemplate, args)
+}
+
+func constructLatestRealmSourcesViewQuery(ctx context.Context) (string, error) {
+	args := map[string]string{
+		"datasetID": datasetID,
+		"tableName": realmSourcesTableName,
+		"keyColumn": latestKeyColumn,
+	}
+	return constructViewQuery(ctx, latestSupplementalViewTemplate, args)
 }
 
 func (client *Client) ensureLatestView(ctx context.Context,
@@ -315,6 +363,19 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	if err != nil {
 		// Non-fatal; just log the error.
 		logging.Warningf(ctx, "failed ensuring view of latest roles: %s", err)
+	}
+
+	// Apply the metadata for the view of the latest roles.
+	realmSourcesViewVersion := "1"
+	realmSourcesViewQuery, err := constructLatestRealmSourcesViewQuery(ctx)
+	if err != nil {
+		return errors.Fmt("failed to construct view query for %q: %w",
+			latestRealmSourcesViewName, err)
+	}
+	err = client.ensureLatestView(ctx, latestRealmSourcesViewName, realmSourcesViewQuery, realmSourcesViewVersion)
+	if err != nil {
+		// Non-fatal; just log the error.
+		logging.Warningf(ctx, "failed ensuring view of latest realm sources: %s", err)
 	}
 
 	return nil

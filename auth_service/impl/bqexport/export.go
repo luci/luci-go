@@ -190,14 +190,28 @@ func exportSupplementalData(ctx context.Context, client *Client,
 		return err
 	}
 
+	// Attempt writing both latest roles and latest realms.
+
 	start = clock.Now(ctx)
 	roles := collateLatestRoles(ctx, latest, ts)
 	logging.Debugf(ctx, "collating roles took %s", clock.Since(ctx, start))
 	start = clock.Now(ctx)
 	rolesErr := client.InsertRoles(ctx, roles)
 	logging.Debugf(ctx, "inserting BQ rows for roles took %s", clock.Since(ctx, start))
+
+	start = clock.Now(ctx)
+	realmSources := expandLatestRealms(ctx, latest.Realms, ts)
+	logging.Debugf(ctx, "expanding latest realms took %s", clock.Since(ctx, start))
+	start = clock.Now(ctx)
+	realmsErr := client.InsertRealmSources(ctx, realmSources)
+	logging.Debugf(ctx, "inserting BQ rows for realm sources took %s", clock.Since(ctx, start))
+
+	// Return the first error that occurred.
 	if rolesErr != nil {
 		return errors.Fmt("failed to insert all %d roles: %w", len(roles), rolesErr)
+	}
+	if realmsErr != nil {
+		return errors.Fmt("failed writing latest realms: %w", err)
 	}
 
 	return nil
