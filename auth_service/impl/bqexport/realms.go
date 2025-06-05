@@ -137,7 +137,8 @@ func analyzeRealmsCfgRealms(ctx context.Context, cfg *realmsconf.RealmsCfg) []*b
 		for _, parent := range parents {
 			parentBindings, ok := realms[parent]
 			if !ok {
-				logging.Warningf(ctx, "skipping realm extension - missing realm %q", parent)
+				logging.Warningf(ctx, "skipping %q realm extension - missing realm %q",
+					r.Name, parent)
 				continue
 			}
 			for _, b := range parentBindings {
@@ -177,6 +178,7 @@ func expandLatestRealms(ctx context.Context,
 	ts *timestamppb.Timestamp) []*bqpb.RealmSourceRow {
 	var rows []*bqpb.RealmSourceRow
 	for project, cfg := range latestRealms {
+		logging.Debugf(ctx, "analyzing realms for project %q", project)
 		projectRows := analyzeRealmsCfgRealms(ctx, cfg.Config)
 		// Change the realm names to the full format of <project>:<realm>, set the
 		// common view URL, and the job-level export time.
