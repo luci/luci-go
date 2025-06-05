@@ -38,3 +38,33 @@ message RealmRow {
   // The timestamp when the BQ export was initialized.
   google.protobuf.Timestamp exported_at = 7;
 }
+
+// RealmSourceRow represents the role bindings from the latest realms configs,
+// and includes the name of the source realm that defined the binding
+// originally.
+message RealmSourceRow {
+  // Name of the realm. For example: 'chromium:try'.
+  string name = 1;
+  // Can either be a predefined role (if starts with "role/") or a custom role
+  // (if starts with "customRole/").
+  // See the LUCI Auth Service instance's permissions.cfg for predefined roles.
+  // If a project realms.cfg file references a custom role, the custom role must
+  // be defined in that same file.
+  string role = 2;
+  // Name of the realm where this role was explicitly assigned in the realm
+  // bindings. For example: 'chromium:@root'.
+  string source = 3;
+  // A set of principals the role was assigned to.
+  //
+  // Each entry can either be an identity string (like "user:<email>") or a
+  // LUCI group reference "group:<name>".
+  repeated string principals = 4;
+  // A list of conditions ANDed together that define when the binding is active.
+  //
+  // If empty, the binding is active all the time.
+  repeated string conditions = 5;
+  // URL to view the config in which the realm was defined.
+  string url = 6;
+  // The timestamp when the BQ export was initialized.
+  google.protobuf.Timestamp exported_at = 7;
+}

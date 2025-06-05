@@ -16,11 +16,14 @@ package bqexport
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -153,5 +156,117 @@ func TestBQRealms(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actual, should.Match(expected))
 		})
+	})
+}
+
+func TestExpandLatestRealms(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("expandLatestRoles works", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		testTime := timestamppb.New(
+			time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC))
+
+		realmsURL := "https://path.to.view/config/realms.cfg/123abc"
+		testRealmsCfg := &realmsconf.RealmsCfg{
+			Realms: []*realmsconf.Realm{
+				{
+					Name: "@root",
+					Bindings: []*realmsconf.Binding{
+						{
+							Role:       "role/luci.serviceTester",
+							Principals: []string{"group:luci-service-testers"},
+						},
+					},
+				},
+				{
+					Name: "ci",
+					Bindings: []*realmsconf.Binding{
+						{
+							Role:       "role/luci.resourceUser",
+							Principals: []string{"group:luci-resource-users"},
+						},
+					},
+					Extends: []string{"unknown"},
+				},
+				{
+					Name: "try",
+					Bindings: []*realmsconf.Binding{
+						{
+							Role:       "role/luci.jobTriggerer",
+							Principals: []string{"group:luci-job-triggerers"},
+						},
+					},
+					Extends: []string{"ci"},
+				},
+			},
+		}
+		testRealms := map[string]*ViewableConfig[*realmsconf.RealmsCfg]{
+			"chromium": {
+				ViewURL: realmsURL,
+				Config:  testRealmsCfg,
+			},
+		}
+
+		actual := expandLatestRealms(ctx, testRealms, testTime)
+		expected := []*bqpb.RealmSourceRow{
+			{
+				Name:       "chromium:@root",
+				Role:       "role/luci.serviceTester",
+				Source:     "chromium:@root",
+				Principals: []string{"group:luci-service-testers"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:ci",
+				Role:       "role/luci.resourceUser",
+				Source:     "chromium:ci",
+				Principals: []string{"group:luci-resource-users"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:ci",
+				Role:       "role/luci.serviceTester",
+				Source:     "chromium:@root",
+				Principals: []string{"group:luci-service-testers"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:try",
+				Role:       "role/luci.jobTriggerer",
+				Source:     "chromium:try",
+				Principals: []string{"group:luci-job-triggerers"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:try",
+				Role:       "role/luci.resourceUser",
+				Source:     "chromium:ci",
+				Principals: []string{"group:luci-resource-users"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:try",
+				Role:       "role/luci.serviceTester",
+				Source:     "chromium:@root",
+				Principals: []string{"group:luci-service-testers"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+		}
+
+		rowSorter := func(a, b *bqpb.RealmSourceRow) int {
+			return strings.Compare(a.Name+a.Source+a.Role, b.Name+b.Source+b.Role)
+		}
+
+		// Sort the rows so we can easily compare to the expected value.
+		slices.SortStableFunc(actual, rowSorter)
+		slices.SortStableFunc(expected, rowSorter)
+		assert.Loosely(t, actual, should.Match(expected))
 	})
 }

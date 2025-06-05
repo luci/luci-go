@@ -17,11 +17,14 @@ package bqexport
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	realmsconf "go.chromium.org/luci/common/proto/realms"
+	lucirealms "go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
@@ -83,4 +86,108 @@ func parseRealms(ctx context.Context, authDB *protocol.AuthDB,
 		}
 	}
 	return realmRows, nil
+}
+
+func handleConditions(conditions []*realmsconf.Condition) []string {
+	out := make([]string, len(conditions))
+	for i, c := range conditions {
+		r := c.GetRestrict()
+		values := stringset.NewFromSlice(r.GetValues()...)
+
+		out[i] = fmt.Sprintf("%s==(%s)",
+			r.GetAttribute(), strings.Join(values.ToSortedSlice(), "||"))
+	}
+	return out
+}
+
+func realmSourceRowKey(r *bqpb.RealmSourceRow) string {
+	principals := strings.Join(stringset.NewFromSlice(r.Principals...).ToSortedSlice(), ",")
+	conditions := strings.Join(stringset.NewFromSlice(r.Conditions...).ToSortedSlice(), "&&")
+	return strings.Join([]string{r.Role, r.Source, principals, conditions}, "*")
+}
+
+// analyzeRealmsCfgRealms analyzes the given config for all realms.
+func analyzeRealmsCfgRealms(ctx context.Context, cfg *realmsconf.RealmsCfg) []*bqpb.RealmSourceRow {
+	realms := map[string][]*bqpb.RealmSourceRow{}
+	for _, r := range cfg.GetRealms() {
+		uniqueBindings := make(map[string]*bqpb.RealmSourceRow)
+
+		// Explicit bindings defined in this realm.
+		for _, b := range r.Bindings {
+			row := &bqpb.RealmSourceRow{
+				Name:       r.Name,
+				Role:       b.Role,
+				Source:     r.Name,
+				Principals: b.Principals,
+				Conditions: handleConditions(b.Conditions),
+			}
+			rowKey := realmSourceRowKey(row)
+			if _, ok := uniqueBindings[rowKey]; !ok {
+				uniqueBindings[rowKey] = row
+			}
+		}
+
+		var parents []string
+		// All realms inherit @root realms implicitly (except @root itself).
+		if r.Name != lucirealms.RootRealm {
+			parents = append(parents, lucirealms.RootRealm)
+		}
+		parents = append(parents, r.Extends...)
+
+		for _, parent := range parents {
+			parentBindings, ok := realms[parent]
+			if !ok {
+				logging.Warningf(ctx, "skipping realm extension - missing realm %q", parent)
+				continue
+			}
+			for _, b := range parentBindings {
+				// Copy the realm source row data, but associate it with this realm.
+				row := &bqpb.RealmSourceRow{
+					Name:       r.Name,
+					Role:       b.Role,
+					Source:     b.Source,
+					Principals: b.Principals,
+					Conditions: b.Conditions,
+				}
+				rowKey := realmSourceRowKey(row)
+				if _, ok := uniqueBindings[rowKey]; !ok {
+					uniqueBindings[rowKey] = row
+				}
+			}
+		}
+
+		realmBindings := make([]*bqpb.RealmSourceRow, 0, len(uniqueBindings))
+		for _, u := range uniqueBindings {
+			realmBindings = append(realmBindings, u)
+		}
+		realms[r.Name] = realmBindings
+	}
+
+	var rows []*bqpb.RealmSourceRow
+	for _, realmRows := range realms {
+		rows = append(rows, realmRows...)
+	}
+	return rows
+}
+
+// expandLatestRealms expands the latest realms configs so the source realm
+// which defines each binding can be found.
+func expandLatestRealms(ctx context.Context,
+	latestRealms map[string]*ViewableConfig[*realmsconf.RealmsCfg],
+	ts *timestamppb.Timestamp) []*bqpb.RealmSourceRow {
+	var rows []*bqpb.RealmSourceRow
+	for project, cfg := range latestRealms {
+		projectRows := analyzeRealmsCfgRealms(ctx, cfg.Config)
+		// Change the realm names to the full format of <project>:<realm>, set the
+		// common view URL, and the job-level export time.
+		for _, row := range projectRows {
+			row.Name = fmt.Sprintf("%s:%s", project, row.Name)
+			row.Source = fmt.Sprintf("%s:%s", project, row.Source)
+			row.Url = cfg.ViewURL
+			row.ExportedAt = ts
+		}
+		rows = append(rows, projectRows...)
+	}
+
+	return rows
 }
