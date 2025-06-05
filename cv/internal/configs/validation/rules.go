@@ -31,8 +31,6 @@ func init() {
 	addRules(&validation.Rules)
 }
 
-// TODO(crbug.com/1252545): Use a dev-specific configuration for a dev instance
-// of the service after CQD is deleted.
 func addRules(r *validation.RuleSet) {
 	r.Vars.Register("cqCfgName", func(ctx context.Context) (string, error) {
 		if appID := info.AppID(ctx); strings.HasSuffix(appID, "dev") {
@@ -42,7 +40,6 @@ func addRules(r *validation.RuleSet) {
 	})
 	r.Add("regex:projects/[^/]+", "${cqCfgName}", validateProject)
 	r.Add("regex:projects/[^/]+", "${appid}.cfg", validateProject)
-	r.Add("services/${appid}", "listener-settings.cfg", validateListenerSettings)
 }
 
 // regexpCompileCached is the caching version of regexp.Compile.

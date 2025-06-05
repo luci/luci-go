@@ -65,10 +65,8 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
@@ -221,7 +219,6 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
 	t.GoMockCtl = gomock.NewController(t.TB)
-	assert.NoErr(t.TB, srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil), truth.LineContext())
 
 	return ctx
 }
@@ -274,21 +271,6 @@ func (t *Test) setMaxDuration() {
 		t.MaxDuration = 90 * time.Second
 	default:
 		t.MaxDuration = 20 * time.Second
-	}
-}
-
-// DisableProjectInGerritListener updates the cached config to disable LUCI
-// projects matching a given regexp in Listener.
-func (t *Test) DisableProjectInGerritListener(ctx context.Context, projectRE string) {
-	cfg, err := srvcfg.GetListenerConfig(ctx, nil)
-	if err != nil {
-		panic(err)
-	}
-	existing := stringset.NewFromSlice(cfg.DisabledProjectRegexps...)
-	existing.Add(projectRE)
-	cfg.DisabledProjectRegexps = existing.ToSortedSlice()
-	if err := srvcfg.SetTestListenerConfig(ctx, cfg, nil); err != nil {
-		panic(err)
 	}
 }
 

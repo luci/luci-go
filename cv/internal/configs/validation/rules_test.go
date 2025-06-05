@@ -36,7 +36,7 @@ func TestValidationRules(t *testing.T) {
 
 		patterns, err := r.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
-		assert.That(t, len(patterns), should.Equal(3))
+		assert.That(t, len(patterns), should.Equal(2))
 		t.Run("project-scope commit-queue.cfg", func(t *testing.T) {
 			assert.That(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
 			assert.That(t, patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
@@ -46,11 +46,6 @@ func TestValidationRules(t *testing.T) {
 			assert.That(t, patterns[1].ConfigSet.Match("projects/xyz"), should.BeTrue)
 			assert.That(t, patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
 			assert.That(t, patterns[1].Path.Match("luci-change-verifier.cfg"), should.BeTrue)
-		})
-		t.Run("service-scope listener-settings.cfg", func(t *testing.T) {
-			assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier"), should.BeTrue)
-			assert.That(t, patterns[2].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
-			assert.That(t, patterns[2].Path.Match("listener-settings.cfg"), should.BeTrue)
 		})
 	})
 
@@ -65,8 +60,6 @@ func TestValidationRules(t *testing.T) {
 		assert.That(t, patterns[0].Path.Match("commit-queue.cfg"), should.BeFalse)
 		assert.That(t, patterns[1].Path.Match("luci-change-verifier-dev.cfg"), should.BeTrue)
 		assert.That(t, patterns[1].Path.Match("luci-change-verifier.cfg"), should.BeFalse)
-		assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier-dev"), should.BeTrue)
-		assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier"), should.BeFalse)
 	})
 }
 

@@ -42,8 +42,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 func init() {
@@ -362,9 +360,6 @@ func mkTestingCtx() (context.Context, testclock.TestClock, *tqtesting.Scheduler)
 	datastore.GetTestable(ctx).Consistent(true)
 
 	ctx, scheduler := tq.TestingContext(ctx, nil)
-	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
-		panic(err)
-	}
 	return ctx, clock, scheduler
 }
 

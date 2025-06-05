@@ -35,7 +35,6 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
 const (
@@ -43,31 +42,15 @@ const (
 	CQStatusHostPublic = "chromium-cq-status.appspot.com"
 	// CQStatusHostInternal is the internal host of the CQ status app.
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
-
-	dummyProjectSkipListenerValidation = "dummy-project-skip-listener-validation-deadbeaf-abc"
 )
 
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
-// ValidateProject validates a project config for a given LUCI project.
-//
-// Validation result is returned via validation ctx, while error returned
-// directly implies internal errors.
-func ValidateProject(ctx *validation.Context, cfg *cfgpb.Config, project string) error {
-	vd, err := makeProjectConfigValidator(ctx, project)
-	if err != nil {
-		return errors.Fmt("makeProjectConfigValidator: %w", err)
-	}
+// ValidateProjectConfig validates a given project config.
+func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) error {
+	vd := &projectConfigValidator{ctx: ctx}
 	vd.validateProjectConfig(cfg)
 	return nil
-}
-
-// ValidateProjectConfig validates a given project config.
-//
-// This is essentially the same as ValidateProject, but skips checking
-// GerritSubscriptions in listener.Settings.
-func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) error {
-	return ValidateProject(ctx, cfg, dummyProjectSkipListenerValidation)
 }
 
 // validateProject validates a project-level CQ config.
@@ -81,40 +64,15 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 		ctx.Error(err)
 		return nil
 	}
-	return ValidateProject(ctx, &cfg, luciconfig.Set(configSet).Project())
+	return ValidateProjectConfig(ctx, &cfg)
 }
 
 type projectConfigValidator struct {
-	ctx                            *validation.Context
-	subscribedGerritHosts          stringset.Set
-	projectEnabledInGerritListener bool
+	ctx *validation.Context
 }
 
 func makeProjectConfigValidator(ctx *validation.Context, project string) (*projectConfigValidator, error) {
-	switch project {
-	case "":
-		return nil, errors.New("empty project")
-	case dummyProjectSkipListenerValidation:
-		return &projectConfigValidator{ctx: ctx}, nil
-	}
-
-	lCfg, err := srvcfg.GetListenerConfig(ctx.Context, nil)
-	if err != nil {
-		return nil, errors.Fmt("GetListenerConfig: %w", err)
-	}
-	isEnabled, err := srvcfg.MakeListenerProjectChecker(lCfg)
-	if err != nil {
-		return nil, errors.Fmt("MakeListenerProjectChecker: %w", err)
-	}
-	ret := &projectConfigValidator{
-		ctx:                            ctx,
-		subscribedGerritHosts:          stringset.New(len(lCfg.GetGerritSubscriptions())),
-		projectEnabledInGerritListener: isEnabled(project),
-	}
-	for _, sub := range lCfg.GetGerritSubscriptions() {
-		ret.subscribedGerritHosts.Add(sub.GetHost())
-	}
-	return ret, nil
+	return &projectConfigValidator{ctx: ctx}, nil
 }
 
 func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
@@ -336,9 +294,6 @@ func (vd *projectConfigValidator) validateGerrit(g *cfgpb.ConfigGroup_Gerrit) {
 				vd.ctx.Errorf("duplicate project in the same gerrit: %q", p.Name)
 			}
 		}
-		// TODO(crbug.com/1358208): check if listener-settings.cfg has
-		// a subscription for all the Gerrit hosts, if the LUCI project is
-		// enabled in the pubsub listener.
 		vd.ctx.Exit()
 	}
 }
@@ -368,9 +323,6 @@ func (vd *projectConfigValidator) validateGerritURL(gURL string) {
 	if !strings.HasSuffix(u.Host, ".googlesource.com") {
 		// TODO(tandrii): relax this.
 		vd.ctx.Errorf("only *.googlesource.com hosts supported for now (%q specified)", u.Host)
-	}
-	if vd.projectEnabledInGerritListener && !vd.subscribedGerritHosts.Has(u.Host) {
-		vd.ctx.Errorf("Gerrit pub/sub for %q is not configured; please visit go/luci/cv/gerrit-pubsub#validation-error", u.Host)
 	}
 }
 

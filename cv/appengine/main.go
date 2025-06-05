@@ -20,8 +20,6 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -48,7 +46,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/refresher"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
@@ -188,8 +185,5 @@ func refreshConfig(ctx context.Context, pcr *refresher.Refresher) error {
 	// The cron job interval is 1 minute.
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error { return srvcfg.ImportConfig(ctx) })
-	eg.Go(func() error { return pcr.SubmitRefreshTasks(ctx) })
-	return eg.Wait()
+	return pcr.SubmitRefreshTasks(ctx)
 }

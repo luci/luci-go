@@ -39,9 +39,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 func TestGobMapUpdateAndLookup(t *testing.T) {
@@ -52,9 +50,6 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	datastore.GetTestable(ctx).AutoIndex(true)
 	datastore.GetTestable(ctx).Consistent(true)
 
-	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
-		panic(err)
-	}
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}

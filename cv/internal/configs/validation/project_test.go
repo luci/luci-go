@@ -15,7 +15,6 @@
 package validation
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -30,42 +29,12 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
-
-func mockListenerSettings(ctx context.Context, hosts ...string) error {
-	var subs []*listenerpb.Settings_GerritSubscription
-	for _, h := range hosts {
-		subs = append(subs, &listenerpb.Settings_GerritSubscription{Host: h})
-	}
-	return srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{GerritSubscriptions: subs}, nil)
-}
 
 func TestValidateProjectHighLevel(t *testing.T) {
 	t.Parallel()
 	const project = "proj"
-
-	ftt.Run("ValidateProject works", t, func(t *ftt.Test) {
-		ct := cvtesting.Test{}
-		ctx := ct.SetUp(t)
-
-		cfg := cfgpb.Config{}
-		vctx := &validation.Context{Context: ctx}
-		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
-		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
-
-		t.Run("OK", func(t *ftt.Test) {
-			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
-			assert.NoErr(t, vctx.Finalize())
-		})
-		t.Run("Error", func(t *ftt.Test) {
-			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
-			assert.ErrIsLike(t, vctx.Finalize(), "must match")
-		})
-	})
 
 	ftt.Run("ValidateProjectConfig works", t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
@@ -81,7 +50,7 @@ func TestValidateProjectHighLevel(t *testing.T) {
 		})
 		t.Run("Error", func(t *ftt.Test) {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
+			assert.NoErr(t, ValidateProjectConfig(vctx, &cfg))
 			assert.ErrIsLike(t, vctx.Finalize(), "must match")
 		})
 	})
@@ -151,7 +120,6 @@ func TestValidateProjectDetailed(t *testing.T) {
 		// It's easier to manipulate Go struct than text.
 		cfg := cfgpb.Config{}
 		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
-		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
 
 		t.Run("OK", func(t *ftt.Test) {
 			t.Run("good proto, good config", func(t *ftt.Test) {
@@ -163,21 +131,6 @@ func TestValidateProjectDetailed(t *testing.T) {
 				assert.NoErr(t, vctx.Finalize())
 			})
 		})
-
-		t.Run("Missing gerrit subscription", func(t *ftt.Test) {
-			// reset the listener settings to make the validation fail.
-			assert.NoErr(t, mockListenerSettings(ctx))
-
-			t.Run("validation fails", func(t *ftt.Test) {
-				assert.NoErr(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)))
-				assert.ErrIsLike(t, vctx.Finalize(), "Gerrit pub/sub")
-			})
-			t.Run("OK if the project is disabled in listener settings", func(t *ftt.Test) {
-				ct.DisableProjectInGerritListener(ctx, project)
-				assert.NoErr(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)))
-			})
-		})
-		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
 
 		t.Run("Top-level config", func(t *ftt.Test) {
 			t.Run("Top level opts can be omitted", func(t *ftt.Test) {
@@ -599,7 +552,6 @@ func TestValidateProjectDetailed(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				err := vctx.Finalize()
 				assert.ErrIsLike(t, err, "path component not yet allowed in url")
-				assert.ErrIsLike(t, err, "err[5]:")
 			})
 
 			t.Run("current limitations", func(t *ftt.Test) {
