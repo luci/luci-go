@@ -145,16 +145,16 @@ func parseSingleDep(v string) (Dep, error) {
 	dep := Dep{}
 	switch res := valueRegexp.FindStringSubmatch(v); {
 	case len(res) != 3:
-		return dep, errors.Reason(errPrefix+"must match %q", v, valueRegexp.String()).Err()
+		return dep, errors.Fmt(errPrefix+"must match %q", v, valueRegexp.String())
 	case strings.HasSuffix(res[1], "-review:"):
-		return dep, errors.Reason(errPrefix+"must not include '-review'", v).Err()
+		return dep, errors.Fmt(errPrefix+"must not include '-review'", v)
 	case strings.HasSuffix(res[1], ":"):
 		dep.Subdomain = strings.ToLower(res[1][:len(res[1])-1])
 		fallthrough
 	default:
 		c, err := strconv.ParseInt(res[2], 10, 64)
 		if err != nil {
-			return dep, errors.Reason(errPrefix+"change number too large", v).Err()
+			return dep, errors.Fmt(errPrefix+"change number too large", v)
 		}
 		dep.Change = c
 		return dep, nil

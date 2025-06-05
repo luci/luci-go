@@ -23,9 +23,7 @@ import (
 // assertGetText panics if the passed LogEntry does not contain Text data, or returns it.
 func assertGetText(le *logpb.LogEntry) *logpb.Text {
 	if txt := le.GetText(); txt == nil {
-		panic(errors.Reason(
-			"wrong StreamType: got %T, expected *logpb.LogEntry_Text", le.Content,
-		).Err())
+		panic(errors.Fmt("wrong StreamType: got %T, expected *logpb.LogEntry_Text", le.Content))
 	} else {
 		return txt
 	}

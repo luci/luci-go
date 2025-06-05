@@ -132,7 +132,7 @@ func (d *fakeDialer) getStream(f streamproto.Flags) (*fakeStream, error) {
 	}
 	streamName := types.StreamName(f.Name)
 	if _, hasStream := d.streams[streamName]; hasStream {
-		return nil, errors.Reason("stream %q already dialed", streamName).Err()
+		return nil, errors.Fmt("stream %q already dialed", streamName)
 	}
 
 	ret := &fakeStream{flags: f}
@@ -288,7 +288,7 @@ func init() {
 		defer fakeRegistryMu.Unlock()
 		f, ok := fakeRegistry[id]
 		if !ok {
-			return nil, errors.Reason("unknown Fake %d", id).Err()
+			return nil, errors.Fmt("unknown Fake %d", id)
 		}
 		return f.dial, nil
 	}

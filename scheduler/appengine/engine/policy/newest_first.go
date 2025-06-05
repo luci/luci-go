@@ -31,9 +31,9 @@ import (
 func NewestFirstPolicy(maxConcurrentInvs int, pendingTimeout time.Duration) (Func, error) {
 	switch {
 	case maxConcurrentInvs <= 0:
-		return nil, errors.Reason("max_concurrent_invocations should be positive").Err()
+		return nil, errors.New("max_concurrent_invocations should be positive")
 	case pendingTimeout <= 0:
-		return nil, errors.Reason("pending_timeout should be positive").Err()
+		return nil, errors.New("pending_timeout should be positive")
 	}
 
 	return func(env Environment, in In) (out Out) {

@@ -152,7 +152,7 @@ func (fs *FakeStream) addData(be *logpb.ButlerLogBundle_Entry) {
 			}
 		}
 	default:
-		panic(errors.Reason("unknown StreamType: %s", fs.stype).Err())
+		panic(errors.Fmt("unknown StreamType: %s", fs.stype))
 	}
 }
 

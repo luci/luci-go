@@ -75,8 +75,7 @@ type rm interface {
 // The summary is meant to be added to run.LogEntries.
 func (exe *Executor) Do(ctx context.Context) (string, error) {
 	if exe.IsCancelRequested() {
-		return "cancellation has been requested before the post action starts",
-			errors.Reason("CancelRequested for Run %q", exe.Run.ID).Err()
+		return "cancellation has been requested before the post action starts", errors.Fmt("CancelRequested for Run %q", exe.Run.ID)
 	}
 	switch k := exe.Payload.Kind.(type) {
 	case *run.OngoingLongOps_Op_ExecutePostActionPayload_ConfigAction:
@@ -113,7 +112,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 	if len(votes) == 0 {
 		// This should never happen, as the validation requires the config to
 		// have at least one vote in the message.
-		return "", errors.Reason("no votes in the config").Err()
+		return "", errors.New("no votes in the config")
 	}
 	rcls, err := run.LoadRunCLs(ctx, exe.Run.ID, exe.Run.CLs)
 	if err != nil {
@@ -159,7 +158,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 		}
 	})
 	if perr != nil {
-		panic(errors.Reason("parallel.WorkPool returned error %q", perr).Err())
+		panic(errors.Fmt("parallel.WorkPool returned error %q", perr))
 	}
 	return exe.voteSummary(ctx, rcls, errs), errors.Flatten(errs)
 }

@@ -36,7 +36,7 @@ import (
 func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: Received CLUpdated events but Run is in unspecified status").Err()
+		err := errors.New("CRITICAL: Received CLUpdated events but Run is in unspecified status")
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_SUBMITTING:

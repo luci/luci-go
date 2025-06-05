@@ -69,7 +69,7 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 	remainingCLs := make(map[common.CLID]*run.RunCL, len(cls))
 	for _, cl := range cls {
 		if _, ok := remainingCLs[cl.ID]; ok {
-			return nil, 0, errors.Reason("duplicate cl: %d", cl.ID).Err()
+			return nil, 0, errors.Fmt("duplicate cl: %d", cl.ID)
 		}
 		remainingCLs[cl.ID] = cl
 	}
@@ -137,7 +137,7 @@ func compute(cls []*run.RunCL) ([]*run.RunCL, int, error) {
 		if visit(cl) {
 			// A cycle was formed via hard requirement deps, which should not
 			// happen.
-			return nil, 0, errors.Reason("cycle detected for cl: %d", cl.ID).Err()
+			return nil, 0, errors.Fmt("cycle detected for cl: %d", cl.ID)
 		}
 	}
 	return ret, len(brokenDeps), nil

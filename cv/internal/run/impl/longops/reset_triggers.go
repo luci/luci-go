@@ -191,7 +191,7 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 		cl, req := clsToReset[i], requests[i]
 		tr, ok := triggers[cl.ID]
 		if !ok {
-			return errors.Reason("requested trigger reset on CL %d that doesn't have trigger at all", cl.ID).Err()
+			return errors.Fmt("requested trigger reset on CL %d that doesn't have trigger at all", cl.ID)
 		}
 		op.inputs[i] = trigger.ResetInput{
 			CL:                cl,

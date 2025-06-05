@@ -41,7 +41,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 	// First, check if config update is feasible given Run Status.
 	switch status := rs.Status; {
 	case status == run.Status_STATUS_UNSPECIFIED:
-		err := errors.Reason("CRITICAL: Received UpdateConfig event but Run is in unspecified status").Err()
+		err := errors.New("CRITICAL: Received UpdateConfig event but Run is in unspecified status")
 		common.LogError(ctx, err)
 		panic(err)
 	case status == run.Status_SUBMITTING:
