@@ -1436,7 +1436,8 @@ def gen_notify_cfg(ctx):
 
     notifiables = graph.children(keys.project(), kinds.NOTIFIABLE)
     templates = graph.children(keys.project(), kinds.NOTIFIER_TEMPLATE)
-    if not notifiables and not templates:
+    builder_health_notifiers = graph.children(keys.project(), kinds.BUILDER_HEALTH_NOTIFIER)
+    if not notifiables and not templates and not builder_health_notifiers:
         return
 
     service = get_service("notify", "using notifiers or tree closers")
@@ -1460,6 +1461,34 @@ def gen_notify_cfg(ctx):
     # scheduler.cfg generator. There's currently no reliable mechanism to carry
     # precalculated state between different luci.generator(...) implementations.
     pollers = _notify_pollers_map()
+
+    builder_health_notifiers_pb = []
+    for n in builder_health_notifiers:
+        # Get all project + builder pairs belonging to email
+        owner_email = n.props.owner_email
+        cfg = None
+        for f in ctx.output:
+            if f.startswith("luci/cr-buildbucket"):
+                cfg = ctx.output[f]
+                break
+        builders = []
+        for bucket in cfg.buckets:
+            if not proto.has(bucket, "swarming"):
+                continue
+            for builder in bucket.swarming.builders:
+                if builder.contact_team_email == owner_email:
+                    builders.append(
+                        notify_pb.Builder(
+                            bucket = bucket.name,
+                            name = builder.name
+                        )
+                    )
+        if len(builders) == 0:
+            error("no builders belonging to %s when trying to create builder health " +
+            "notifier", owner_email)
+        builder_health_notifiers_pb.append(
+            _builder_health_notifier_pb(n, builders)
+        )
 
     # Emit a single notify_pb.Notifier per builder with all notifications for
     # that particular builder.
@@ -1499,6 +1528,7 @@ def gen_notify_cfg(ctx):
             key = lambda n: (n.builders[0].bucket, n.builders[0].name),
         ),
         tree_closing_enabled = tree_closing_enabled,
+        builder_health_notifier = builder_health_notifiers_pb,
     ))
 
 def _notify_used_template_name(node):
@@ -1509,6 +1539,16 @@ def _notify_used_template_name(node):
     if len(templs) == 1:
         return templs[0].props.name
     fail("impossible")
+
+def _builder_health_notifier_pb(node, builders):
+    """Given a luci.builder_health_notifier node returns notify_pb.BuilderHealthNotifier"""
+    return notify_pb.BuilderHealthNotifier(
+        owner_email = node.props.owner_email,
+        disable = node.props.disable,
+        additional_emails = node.props.additional_emails,
+        notify_all_healthy = node.props.notify_all_healthy,
+        builders = builders,
+    )
 
 def _notify_notification_pb(node):
     """Given a luci.notifiable node returns notify_pb.Notification."""

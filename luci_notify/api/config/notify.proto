@@ -31,6 +31,10 @@ message ProjectConfig {
   // If false, then LUCI-Notify won't actually close trees, only log what
   // actions it would have taken.
   bool tree_closing_enabled = 2;
+
+  // A list of BuilderHealthNotifiers which are emails that subscribe
+  // to have an email summary sent to them.
+  repeated BuilderHealthNotifier builder_health_notifier = 3;
 }
 
 // Notifier contains a set of notification configurations (which specify
@@ -235,4 +239,43 @@ message TemplateInput {
   // "failed_step_regexp" and "failed_step_regexp_exclude" above). If that field
   // wasn't supplied, this will be empty.
   repeated buildbucket.v2.Step matching_failed_steps = 4;
+}
+
+// BuilderHealthNotifier contains notification configurations for owners
+// (owner refers to the email that owns the builder) who want to receive
+// an email summary of their builder health.
+message BuilderHealthNotifier {
+  // E-mail address of the owner of the BuilderHealthNotifier.
+  // Each owner may only have one BuilderHealthNotifier per LUCI project.
+  // Messages about the monitored builders will be sent here.
+  //
+  // Required.
+  string owner_email = 1;
+
+  // Disable is a bool allowing owners to toggle notification settings
+  // on or off.
+  //
+  // Default value is false which only sends when builders are unhealthy.
+  //
+  // Optional.
+  bool disable = 2;
+
+  // Additional_email is a list of other emails that may want to receive
+  // the summary of builders' health.
+  //
+  // Optional.
+  repeated string additional_emails = 3;
+
+  // Notify_all_healthy is a bool which dictates whether to send an email
+  // summary stating that all builders are healthy.
+  //
+  // Default value is false.
+  //
+  // Optional.
+  bool notify_all_healthy = 4;
+
+  // Builders is a list of builders that the owner is subscribed to.
+  //
+  // Required.
+  repeated Builder builders = 5;
 }

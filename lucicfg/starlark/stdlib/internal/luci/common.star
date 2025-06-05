@@ -40,6 +40,7 @@ load("@stdlib//internal/validate.star", "validate")
 #   luci.project -> [luci.notifiable]
 #   luci.project -> [luci.notifier_template]
 #   luci.project -> [luci.buildbucket_notification_topic]
+#   luci.project -> [luci.builder_health_notifier]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.bucket -> [luci.bucket_constraints]
@@ -168,6 +169,7 @@ kinds = struct(
     CQ_TRYJOB_VERIFIER = "luci.cq_tryjob_verifier",
     NOTIFY = "luci.notify",
     NOTIFIABLE = "luci.notifiable",  # either luci.notifier or luci.tree_closer
+    BUILDER_HEALTH_NOTIFIER = "luci.builder_health_notifier",
     NOTIFIER_TEMPLATE = "luci.notifier_template",
     SHADOWED_BUCKET = "luci.shadowed_bucket",
     SHADOW_OF = "luci.shadow_of",
@@ -212,6 +214,7 @@ keys = struct(
     cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, "cq_group", ref),
     notify = lambda: _namespaced_key(kinds.NOTIFY, "..."),
     notifiable = lambda ref: _project_scoped_key(kinds.NOTIFIABLE, "notifies", ref),
+    builder_health_notifier = lambda ref: _project_scoped_key(kinds.BUILDER_HEALTH_NOTIFIER, "builder_health_notifier", ref),
     notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, "template", ref),
     shadowed_bucket = lambda bucket_key: _namespaced_key(kinds.SHADOWED_BUCKET, bucket_key.id),
     shadow_of = lambda bucket_key: _namespaced_key(kinds.SHADOW_OF, bucket_key.id),
@@ -581,4 +584,33 @@ def _notifiable_add(name, props, template, notified_by):
 
 notifiable = struct(
     add = _notifiable_add,
+)
+
+
+################################################################################
+## Helpers for defining luci.builder_health_notifier nodes.
+
+def _builder_health_notifier_add(owner_email, props):
+    """Adds a luci.builder_health_notifier node.
+
+    Nodes defined here are traversed by gen_notify_cfg in
+    generators.star.
+
+    Args:
+      owner_email: E-mail address of the owner of the BuilderHealthNotifier.
+        Each owner may only have one BuilderHealthNotifier per LUCI project.
+        Messages about the monitored builders will be sent here.
+      props: a dict with node props.
+
+    Returns:
+      A keyset with the luci.builder_health_notifier key.
+    """
+    key = keys.builder_health_notifier(validate.string("owner_email", owner_email))
+    graph.add_node(key, idempotent = True, props = props)
+    graph.add_edge(keys.project(), key)
+
+    return graph.keyset(key)
+
+bhn = struct(
+    add = _builder_health_notifier_add,
 )
