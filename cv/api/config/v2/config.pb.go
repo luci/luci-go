@@ -154,7 +154,7 @@ const (
 	Config_GERRIT_LISTENER_TYPE_UNSPECIFIED Config_GerritListenerType = 0
 	// Use Gerrit Pubsub to listen to Gerrit CL events.
 	//
-	// See: go/luci/cv/gerrit-pubsub-settings
+	// See: go/luci/cv/gerrit-pubsub
 	// Pub/Sub subscription MUST be created for all Gerrit hosts this LUCI
 	// Project is watching. Otherwise, large processing latency is expected.
 	Config_GERRIT_LISTENER_TYPE_PUBSUB Config_GerritListenerType = 1

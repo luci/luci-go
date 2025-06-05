@@ -568,7 +568,7 @@ def _validate_gerrit_listener_type(val):
 # `cq.GERRIT_LISTENER_TYPE_*` constants define possible values for
 # the type of Gerrit listener.
 #   * **cq.GERRIT_LISTENER_TYPE_PUBSUB**: Use Gerrit PubSub to listen for
-#     Gerrit CL events. See go/luci/cv/gerrit-pubsub-settings.
+#     Gerrit CL events. See go/luci/cv/gerrit-pubsub.
 #   * **cq.GERRIT_LISTENER_TYPE_LEGACY_POLLER**: Use legacy polling model to
 #     listen for Gerrit CL events. WARNING: this option is discouraged and all
 #     new use case should use cq.GERRIT_LISTENER_TYPE_PUBSUB instead for faster

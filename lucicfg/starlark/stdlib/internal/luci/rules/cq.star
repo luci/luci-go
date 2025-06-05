@@ -79,7 +79,7 @@ def _cq(
         creation/update event. Default to cq.GERRIT_LISTENER_TYPE_PUBSUB
         if not specified. The project should set up pub/sub subscription for
         all Gerrit host it is watching if pubsub listener is used.
-        See go/luci/cv/gerrit-pubsub-settings.
+        See go/luci/cv/gerrit-pubsub.
     """
     submit_max_burst = validate.int("submit_max_burst", submit_max_burst, required = False)
     submit_burst_delay = validate.duration("submit_burst_delay", submit_burst_delay, required = False)
