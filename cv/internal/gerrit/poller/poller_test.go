@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -56,9 +57,9 @@ func TestSchedule(t *testing.T) {
 		payloads := FilterPayloads(ct.TQ.Tasks().SortByETA().Payloads())
 		assert.Loosely(t, payloads, should.HaveLength(1))
 		first := payloads[0]
-		assert.Loosely(t, first.GetLuciProject(), should.Equal(project))
+		assert.That(t, first.GetLuciProject(), should.Equal(project))
 		firstETA := first.GetEta().AsTime()
-		assert.Loosely(t, firstETA.UnixNano(), should.BeBetweenOrEqual(
+		assert.That(t, firstETA.UnixNano(), should.BeBetweenOrEqual(
 			ct.Clock.Now().UnixNano(), ct.Clock.Now().Add(pollInterval).UnixNano()))
 
 		t.Run("idempotency via task deduplication", func(t *ftt.Test) {
@@ -112,18 +113,18 @@ func TestObservesProjectLifetime(t *testing.T) {
 		t.Run("Without project config, does nothing", func(t *ftt.Test) {
 			assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
 			assert.Loosely(t, ct.TQ.Tasks(), should.BeEmpty)
-			assert.Loosely(t, datastore.Get(ctx, &State{LuciProject: lProject}), should.Equal(datastore.ErrNoSuchEntity))
+			assert.ErrIsLike(t, datastore.Get(ctx, &State{LuciProject: lProject}), datastore.ErrNoSuchEntity)
 		})
 
 		t.Run("For an existing project, runs via a task chain", func(t *ftt.Test) {
 			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
-			assert.Loosely(t, mustLoadState().EVersion, should.Equal(1))
-			for i := 0; i < 10; i++ {
+			assert.That(t, mustLoadState().EVersion, should.Equal(int64(1)))
+			for range 10 {
 				assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(taskClassID))
 			}
-			assert.Loosely(t, mustLoadState().EVersion, should.Equal(11))
+			assert.That(t, mustLoadState().EVersion, should.Equal(int64(11)))
 		})
 
 		t.Run("On config changes, updates its state", func(t *ftt.Test) {
@@ -155,12 +156,12 @@ func TestObservesProjectLifetime(t *testing.T) {
 			prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 			assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
 			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
-			assert.Loosely(t, mustLoadState().EVersion, should.Equal(1))
+			assert.That(t, mustLoadState().EVersion, should.Equal(int64(1)))
 
 			prjcfgtest.Disable(ctx, lProject)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(taskClassID))
 
-			assert.Loosely(t, datastore.Get(ctx, &State{LuciProject: lProject}), should.Equal(datastore.ErrNoSuchEntity))
+			assert.ErrIsLike(t, datastore.Get(ctx, &State{LuciProject: lProject}), datastore.ErrNoSuchEntity)
 			assert.Loosely(t, ct.TQ.Tasks(), should.BeEmpty)
 		})
 	})
@@ -190,7 +191,8 @@ func TestDiscoversCLs(t *testing.T) {
 		clUpdater := clUpdaterMock{}
 		p := New(ct.TQDispatcher, ct.GFactory(), &clUpdater, &pm)
 
-		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
+		config := singleRepoConfig(gHost, gRepo)
+		prjcfgtest.Create(ctx, lProject, config)
 		// Initialize Poller state for ease of modifications in test later.
 		assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
 		ct.Clock.Add(10 * fullPollInterval)
@@ -301,7 +303,7 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.That(t, pm.popNotifiedCLs(lProject), should.Match(sortedCLIDs(knownCLIDs...)))
 				// All CLs must have clUpdater tasks.
 				// NOTE: the code isn't optimized for this use case, so there will be
-				// multiple tasks for changes 31..34. While this is unfortunte, it's
+				// multiple tasks for changes 31..34. While this is unfortunate, it's
 				// rare enough that it doesn't really matter.
 				assert.That(t, clUpdater.peekScheduledChanges(), should.Match([]int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35}))
 				postFullQueryVerify()
@@ -315,15 +317,6 @@ func TestDiscoversCLs(t *testing.T) {
 			s := mustLoadState()
 			s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now()) // Force incremental fetch
 			assert.NoErr(t, datastore.Put(ctx, s))
-
-			t.Run("Unless the pubsub is enabled", func(t *ftt.Test) {
-				assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
-				assert.Loosely(t, clUpdater.peekScheduledChanges(), should.BeEmpty)
-				qs := mustLoadState().QueryStates.GetStates()[0]
-				assert.Loosely(t, qs.GetLastIncrTime(), should.BeNil)
-			})
-
-			ct.DisableProjectInGerritListener(ctx, lProject)
 
 			t.Run("In a typical case, schedules update tasks for new CLs", func(t *ftt.Test) {
 				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33}
@@ -348,6 +341,21 @@ func TestDiscoversCLs(t *testing.T) {
 			})
 
 		})
+
+		t.Run("Skip incremental poll for project use pubsub listener type", func(t *ftt.Test) {
+			config = proto.Clone(config).(*cfgpb.Config)
+			config.GerritListenerType = cfgpb.Config_GERRIT_LISTENER_TYPE_PUBSUB
+			prjcfgtest.Update(ctx, lProject, config)
+
+			s := mustLoadState()
+			s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now()) // Should force an incremental poll
+			assert.NoErr(t, datastore.Put(ctx, s))
+
+			assert.NoErr(t, p.poll(ctx, lProject, ct.Clock.Now()))
+			assert.Loosely(t, clUpdater.peekScheduledChanges(), should.BeEmpty)
+			qs := mustLoadState().QueryStates.GetStates()[0]
+			assert.Loosely(t, qs.GetLastIncrTime(), should.BeNil)
+		})
 	})
 }
 
@@ -371,6 +379,7 @@ func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
 				},
 			},
 		},
+		GerritListenerType: cfgpb.Config_GERRIT_LISTENER_TYPE_LEGACY_POLLER,
 	}
 }
 

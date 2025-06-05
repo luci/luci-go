@@ -149,7 +149,6 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 
 	// Delegate most setup to cvtesting.Test.
 	ctx := t.Test.SetUp(testingT)
-	t.Test.DisableProjectInGerritListener(ctx, ".*")
 
 	if (*dsFlakinessFlag) != 0 {
 		t.dsFlakiness = *dsFlakinessFlag
@@ -473,6 +472,7 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string, builders ...*cfgpb.Verif
 				},
 			},
 		},
+		GerritListenerType: cfgpb.Config_GERRIT_LISTENER_TYPE_LEGACY_POLLER,
 	}
 }
 
@@ -507,6 +507,7 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string, builders ...*cfgpb.Ver
 				},
 			},
 		},
+		GerritListenerType: cfgpb.Config_GERRIT_LISTENER_TYPE_LEGACY_POLLER,
 	}
 }
 

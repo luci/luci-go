@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -238,15 +239,22 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 		}
 	}
 
+	cg, err := prjcfg.GetConfigGroup(ctx, luciProject, meta.ConfigGroupIDs[0])
+	if err != nil {
+		return err
+	}
+	skipIncrementalPoll := cg.GerritListenerType != cfgpb.Config_GERRIT_LISTENER_TYPE_LEGACY_POLLER
+
 	// Use WorkPool to limit concurrency, but keep track of errors per query
 	// ourselves because WorkPool doesn't guarantee specific errors order.
 	errs := make(errors.MultiError, len(stateBefore.QueryStates.GetStates()))
-	err := parallel.WorkPool(10, func(work chan<- func() error) {
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for i, qs := range stateBefore.QueryStates.GetStates() {
 			work <- func() error {
 				ctx := logging.SetField(ctx, "gHost", qs.GetHost())
-				err := p.doOneQuery(ctx, luciProject, qs)
-				errs[i] = errors.WrapIf(err, "query %s", qs)
+				if err := p.doOneQuery(ctx, luciProject, qs, skipIncrementalPoll); err != nil {
+					errs[i] = errors.Fmt("query %s: %w", qs, err)
+				}
 				return nil
 			}
 		}

@@ -33,7 +33,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
@@ -77,7 +76,7 @@ const (
 )
 
 // doOneQuery queries Gerrit and updates the query's state.
-func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QueryState) error {
+func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QueryState, skipIncrementalPoll bool) error {
 	q := singleQuery{
 		luciProject: luciProject,
 		qs:          qs,
@@ -92,15 +91,9 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 	if lastFull == nil || now.After(lastFull.AsTime().Add(fullPollInterval)) {
 		return p.doFullQuery(ctx, q)
 	}
-
-	// If pub/sub is enabled for the project, skip incremental-poll.
-	switch yes, err := srvcfg.IsProjectEnabledInListener(ctx, luciProject); {
-	case err != nil:
-		return errors.Fmt("srvcfg.IsProjectEnabledInListener: %w", err)
-	case yes:
+	if skipIncrementalPoll {
 		return nil
 	}
-
 	return p.doIncrementalQuery(ctx, q)
 }
 

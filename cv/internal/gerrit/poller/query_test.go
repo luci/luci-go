@@ -30,25 +30,25 @@ func TestGerritQueryString(t *testing.T) {
 
 		t.Run("single project", func(t *ftt.Test) {
 			qs.OrProjects = []string{"inf/ra"}
-			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+			assert.That(t, qs.gerritString(queryLimited), should.Equal(
 				`status:NEW label:Commit-Queue>0 project:"inf/ra"`))
 		})
 
 		t.Run("many projects", func(t *ftt.Test) {
 			qs.OrProjects = []string{"inf/ra", "second"}
-			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+			assert.That(t, qs.gerritString(queryLimited), should.Equal(
 				`status:NEW label:Commit-Queue>0 (project:"inf/ra" OR project:"second")`))
 		})
 
 		t.Run("shared prefix", func(t *ftt.Test) {
 			qs.CommonProjectPrefix = "shared"
-			assert.Loosely(t, qs.gerritString(queryLimited), should.Equal(
+			assert.That(t, qs.gerritString(queryLimited), should.Equal(
 				`status:NEW label:Commit-Queue>0 projects:"shared"`))
 		})
 
 		t.Run("unlimited", func(t *ftt.Test) {
 			qs.CommonProjectPrefix = "shared"
-			assert.Loosely(t, qs.gerritString(queryAll), should.Equal(
+			assert.That(t, qs.gerritString(queryAll), should.Equal(
 				`projects:"shared"`))
 		})
 	})
