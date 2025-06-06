@@ -26,6 +26,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -70,6 +71,7 @@ func (bs *BuildbucketSubscriber) ProcessPubSubMessage(ctx context.Context, paylo
 	case hostname == "":
 		return errors.Fmt("build %d has no hostname", buildID)
 	}
+	logging.Infof(ctx, "Received Buildbucket event for build %d in host %s", buildID, hostname)
 	eid, err := tryjob.BuildbucketID(hostname, buildID)
 	if err != nil {
 		return err
@@ -78,11 +80,13 @@ func (bs *BuildbucketSubscriber) ProcessPubSubMessage(ctx context.Context, paylo
 	case err != nil:
 		return err
 	case id == 0:
-		// If eid can't be resolved, it means the build is not tracked by LUCI CV.
+		logging.Infof(ctx, "Build is not tracked by LUCI CV")
 		return nil
 	case buildPubSub.GetBuildLargeFieldsDropped():
+		logging.Infof(ctx, "Build has large fields dropped, schedule a task to update tryjob %d", id)
 		return bs.TryjobNotifier.ScheduleUpdate(ctx, id, eid)
 	default:
+		logging.Infof(ctx, "Updating tryjob %d directly", id)
 		if err := recoverLargeFields(buildPubSub); err != nil {
 			return errors.Fmt("failed to recover large fields for build %d: %w", buildID, err)
 		}
