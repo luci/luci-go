@@ -60,9 +60,8 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 // copies of Steps, as well as the individual steps which need modification.
 func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
 	if !protoutil.IsEnded(build.Output.GetStatus()) {
-		setErrorOnBuild(build, errors.Reason(
-			"Expected a terminal build status, got %s, while top level status is %s.",
-			build.Output.GetStatus(), build.Status).Err())
+		setErrorOnBuild(build, errors.Fmt("Expected a terminal build status, got %s, while top level status is %s.",
+			build.Output.GetStatus(), build.Status))
 	}
 
 	// Mark incomplete steps as canceled and set EndTime for all steps missing it.

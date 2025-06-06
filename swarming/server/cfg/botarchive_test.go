@@ -265,7 +265,7 @@ func (c *fakeCIPDClient) FetchInstance(ctx context.Context, server, cipdpkg, iid
 	if iid == c.iid {
 		return c.pkg, nil
 	}
-	return nil, errors.Reason("unexpected instance ID").Err()
+	return nil, errors.New("unexpected instance ID")
 }
 
 // fakeInstance implements subset of pkg.Instance used by buildBotArchive.

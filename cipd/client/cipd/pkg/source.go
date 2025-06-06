@@ -98,7 +98,7 @@ type ReadSeekerSource struct {
 
 func (r *ReadSeekerSource) ReadAt(data []byte, off int64) (int, error) {
 	if off < 0 {
-		return 0, errors.Reason("ReadSeekerSource.ReadAt: negative offset").Err()
+		return 0, errors.New("ReadSeekerSource.ReadAt: negative offset")
 	}
 
 	// Make sure we don't exceed the advertised size even if the underlying

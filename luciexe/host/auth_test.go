@@ -50,7 +50,7 @@ import (
 // which would be a real authentication token, should the context leak.
 func tokenShouldStartWith(actual any, expected ...any) string {
 	if len(expected) != 1 {
-		panic(errors.Reason("tokenShouldStartWith takes one expected value, got %d", len(expected)).Err())
+		panic(errors.Fmt("tokenShouldStartWith takes one expected value, got %d", len(expected)))
 	}
 
 	if expectedStr := expected[0].(string); !strings.HasPrefix(actual.(string), expectedStr) {

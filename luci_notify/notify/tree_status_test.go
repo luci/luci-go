@@ -69,7 +69,7 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, tr
 		messageStatus = config.Open
 	}
 	if messageStatus != status {
-		return errors.Reason("message status does not match provided status").Err()
+		return errors.New("message status does not match provided status")
 	}
 
 	ts.statusForHosts[treeName] = treeStatus{
@@ -747,7 +747,7 @@ type fakePRPCTreeStatusClient struct {
 }
 
 func (c *fakePRPCTreeStatusClient) ListStatus(ctx context.Context, in *tspb.ListStatusRequest, opts ...grpc.CallOption) (*tspb.ListStatusResponse, error) {
-	return nil, errors.Reason("Not implemented").Err()
+	return nil, errors.New("Not implemented")
 }
 
 func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {

@@ -42,8 +42,8 @@ import (
 )
 
 var (
-	ErrNotFound    = errors.Reason("Build not found").Tag(grpcutil.NotFoundTag).Err()
-	ErrNotLoggedIn = errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
+	ErrNotFound    = grpcutil.NotFoundTag.Apply(errors.New("Build not found"))
+	ErrNotLoggedIn = grpcutil.UnauthenticatedTag.Apply(errors.New("not logged in"))
 )
 
 // BlamelistOption specifies whether the blamelist should be fetched as part of

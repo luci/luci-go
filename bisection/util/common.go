@@ -43,24 +43,24 @@ var refHashRe = regexp.MustCompile(`^` + RefHashRePattern + `$`)
 
 func ValidateProject(project string) error {
 	if project == "" {
-		return errors.Reason("unspecified").Err()
+		return errors.New("unspecified")
 	}
 	if !projectRe.MatchString(project) {
-		return errors.Reason("project %s must match %s", project, projectRe).Err()
+		return errors.Fmt("project %s must match %s", project, projectRe)
 	}
 	return nil
 }
 
 func ValidateVariantHash(variantHash string) error {
 	if !variantHashRe.MatchString(variantHash) {
-		return errors.Reason("variant hash %s must match %s", variantHash, variantHashRe).Err()
+		return errors.Fmt("variant hash %s must match %s", variantHash, variantHashRe)
 	}
 	return nil
 }
 
 func ValidateRefHash(refHash string) error {
 	if !refHashRe.MatchString(refHash) {
-		return errors.Reason("ref hash %s must match %s", refHash, refHashRe).Err()
+		return errors.Fmt("ref hash %s must match %s", refHash, refHashRe)
 	}
 	return nil
 }

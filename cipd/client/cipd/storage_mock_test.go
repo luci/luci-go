@@ -90,7 +90,7 @@ func (s *mockedStorage) download(ctx context.Context, url string, output io.Writ
 
 	body := s.getStored(url)
 	if body == "" {
-		return errors.Reason("mocked downloaded error").Err()
+		return errors.New("mocked downloaded error")
 	}
 
 	_, err := io.MultiWriter(output, h).Write([]byte(body))

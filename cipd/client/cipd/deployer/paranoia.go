@@ -51,6 +51,6 @@ func (p ParanoidMode) Validate() error {
 	case NotParanoid, CheckPresence, CheckIntegrity:
 		return nil
 	default:
-		return errors.Reason("unrecognized paranoid mode %q", p).Tag(cipderr.BadArgument).Err()
+		return cipderr.BadArgument.Apply(errors.Fmt("unrecognized paranoid mode %q", p))
 	}
 }

@@ -38,19 +38,21 @@ type BuilderID string
 func (b BuilderID) Split() (backend, backendGroup, builderName string, err error) {
 	toks := strings.SplitN(string(b), "/", 3)
 	if len(toks) != 3 {
-		err = errors.Reason("bad BuilderID: not enough tokens: %q", b).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		err =
+			grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad BuilderID: not enough tokens: %q", b))
+
 		return
 	}
 	backend, backendGroup, builderName = toks[0], toks[1], toks[2]
 	switch {
 	case backend != "buildbucket":
-		err = errors.Reason("bad BuilderID: unknown backend %q", backend).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		err =
+			grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad BuilderID: unknown backend %q", backend))
+
 	case backendGroup == "":
-		err = errors.New("bad BuilderID: empty backendGroup", grpcutil.InvalidArgumentTag)
+		err = grpcutil.InvalidArgumentTag.Apply(errors.New("bad BuilderID: empty backendGroup"))
 	case builderName == "":
-		err = errors.New("bad BuilderID: empty builderName", grpcutil.InvalidArgumentTag)
+		err = grpcutil.InvalidArgumentTag.Apply(errors.New("bad BuilderID: empty builderName"))
 	}
 	return
 }

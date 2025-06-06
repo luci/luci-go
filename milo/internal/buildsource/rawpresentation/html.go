@@ -41,7 +41,7 @@ func resolveHost(host string) (string, error) {
 	if acceptableLogdogHosts.Has(host) {
 		return host, nil
 	}
-	return "", errors.Reason("host %q is not in allowed list", host).Err()
+	return "", errors.Fmt("host %q is not in allowed list", host)
 }
 
 var fakeLogKey = "holds a logdog.LogsClient"

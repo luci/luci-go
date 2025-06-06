@@ -43,48 +43,48 @@ const (
 
 func ValidateTreeID(treeName string) error {
 	if treeName == "" {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	var treeIDRE = regexp.MustCompile(`^` + TreeIDExpression + `$`)
 	if !treeIDRE.MatchString(treeName) {
-		return errors.Reason("expected format: %s", treeIDRE).Err()
+		return errors.Fmt("expected format: %s", treeIDRE)
 	}
 	return nil
 }
 
 func ValidateStatusID(id string) error {
 	if id == "" {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	var statusIDRE = regexp.MustCompile(`^` + StatusIDExpression + `$`)
 	if !statusIDRE.MatchString(id) {
-		return errors.Reason("expected format: %s", statusIDRE).Err()
+		return errors.Fmt("expected format: %s", statusIDRE)
 	}
 	return nil
 }
 
 func ValidateGeneralStatus(state pb.GeneralState) error {
 	if state == pb.GeneralState_GENERAL_STATE_UNSPECIFIED {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	if _, ok := pb.GeneralState_name[int32(state)]; !ok {
-		return errors.Reason("invalid enum value").Err()
+		return errors.New("invalid enum value")
 	}
 	return nil
 }
 
 func ValidateMessage(message string) error {
 	if message == "" {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	if len(message) > 1024 {
-		return errors.Reason("longer than 1024 bytes").Err()
+		return errors.New("longer than 1024 bytes")
 	}
 	if !utf8.ValidString(message) {
-		return errors.Reason("not a valid utf8 string").Err()
+		return errors.New("not a valid utf8 string")
 	}
 	if !norm.NFC.IsNormalString(message) {
-		return errors.Reason("not in unicode normalized form C").Err()
+		return errors.New("not in unicode normalized form C")
 	}
 	for i, rune := range message {
 		if !unicode.IsPrint(rune) {
@@ -101,30 +101,30 @@ func ValidateClosingBuilderName(name string) error {
 	}
 	var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
 	if !builderNameRE.MatchString(name) {
-		return errors.Reason("expected format: %s", builderNameRE).Err()
+		return errors.Fmt("expected format: %s", builderNameRE)
 	}
 	return nil
 }
 
 func ValidateProject(project string) error {
 	if project == "" {
-		return errors.Reason("must be specified").Err()
+		return errors.New("must be specified")
 	}
 	var projectRE = regexp.MustCompile(`^` + ProjectExpression + `$`)
 	if !projectRE.MatchString(project) {
-		return errors.Reason("expected format: %s", projectRE).Err()
+		return errors.Fmt("expected format: %s", projectRE)
 	}
 	return nil
 }
 
 func ParseTreeName(treeName string) (treeID string, err error) {
 	if treeName == "" {
-		return "", errors.Reason("must be specified").Err()
+		return "", errors.New("must be specified")
 	}
 	var treeNameRE = regexp.MustCompile(`^` + TreeNameExpression + `$`)
 	match := treeNameRE.FindStringSubmatch(treeName)
 	if match == nil {
-		return "", errors.Reason("expected format: %s", treeNameRE).Err()
+		return "", errors.Fmt("expected format: %s", treeNameRE)
 	}
 	return match[1], nil
 }

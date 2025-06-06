@@ -75,7 +75,7 @@ func init() {
 				return
 			}
 		}
-		panic(errors.Reason("unsupported mock signal: %s", sig).Err())
+		panic(errors.Fmt("unsupported mock signal: %s", sig))
 	}
 
 	signalNotify = func(ch chan<- os.Signal, sigs ...os.Signal) {

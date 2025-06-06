@@ -63,7 +63,8 @@ func ValidateInstallMode(mode InstallMode) error {
 	if mode == "" || mode == InstallModeCopy || mode == InstallModeSymlink {
 		return nil
 	}
-	return errors.Reason("invalid install mode %q", mode).Tag(cipderr.BadArgument).Err()
+	return cipderr.BadArgument.Apply(errors.
+		Fmt("invalid install mode %q", mode))
 }
 
 // PickInstallMode validates the install mode and picks the correct default

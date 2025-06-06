@@ -95,13 +95,13 @@ func (t Expander) expandImpl(template string, alwaysFill bool) (pkg string, err 
 				return value
 			}
 
-			err = errors.Reason("unknown variable in ${%s}", contents).Tag(cipderr.BadArgument).Err()
+			err = cipderr.BadArgument.Apply(errors.Fmt("unknown variable in ${%s}", contents))
 		}
 
 		// ${varName=value,value}
 		ourValue, ok := t[varNameValues[0]]
 		if !ok {
-			err = errors.Reason("unknown variable %q", parm).Tag(cipderr.BadArgument).Err()
+			err = cipderr.BadArgument.Apply(errors.Fmt("unknown variable %q", parm))
 			return parm
 		}
 
@@ -117,7 +117,7 @@ func (t Expander) expandImpl(template string, alwaysFill bool) (pkg string, err 
 		err = ErrSkipTemplate
 	}
 	if err == nil && strings.ContainsRune(pkg, '$') {
-		err = errors.Reason("unable to process some variables in %q", template).Tag(cipderr.BadArgument).Err()
+		err = cipderr.BadArgument.Apply(errors.Fmt("unable to process some variables in %q", template))
 	}
 	return
 }
@@ -135,7 +135,7 @@ type Platform struct {
 func ParsePlatform(v string) (Platform, error) {
 	parts := strings.Split(v, "-")
 	if len(parts) != 2 {
-		return Platform{}, errors.Reason("platform must be <os>-<arch>, got %q", v).Tag(cipderr.BadArgument).Err()
+		return Platform{}, cipderr.BadArgument.Apply(errors.Fmt("platform must be <os>-<arch>, got %q", v))
 	}
 	return Platform{parts[0], parts[1]}, nil
 }

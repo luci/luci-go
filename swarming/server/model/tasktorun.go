@@ -213,7 +213,7 @@ func TaskToRunKind(shardIdx int32) string {
 // slice index.
 func TaskRequestToToRunKey(ctx context.Context, taskReq *TaskRequest, sliceIndex int) (*datastore.Key, error) {
 	if sliceIndex < 0 || sliceIndex >= len(taskReq.TaskSlices) {
-		return nil, errors.Reason("sliceIndex %d out of range: [0, %d)", sliceIndex, len(taskReq.TaskSlices)).Err()
+		return nil, errors.Fmt("sliceIndex %d out of range: [0, %d)", sliceIndex, len(taskReq.TaskSlices))
 	}
 	shardIndex := sliceToToRunShardIndex(taskReq.TaskSlices[sliceIndex])
 	return TaskToRunKey(ctx, taskReq.Key, shardIndex, TaskToRunID(sliceIndex)), nil

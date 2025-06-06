@@ -104,7 +104,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 	for _, ch := range changes {
 		role := api.Role(api.Role_value[ch.Role])
 		if role == 0 {
-			return dirty, errors.Reason("unrecognized role %q, not in the API definition", ch.Role).Tag(cipderr.BadArgument).Err()
+			return dirty, cipderr.BadArgument.Apply(errors.Fmt("unrecognized role %q, not in the API definition", ch.Role))
 		}
 		changed := false
 		switch ch.Action {
@@ -113,7 +113,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 		case RevokeRole:
 			changed = revokeRole(meta, role, ch.Principal)
 		default:
-			return dirty, errors.Reason("unrecognized PackageACLChangeAction %q", ch.Action).Tag(cipderr.BadArgument).Err()
+			return dirty, cipderr.BadArgument.Apply(errors.Fmt("unrecognized PackageACLChangeAction %q", ch.Action))
 		}
 		dirty = dirty || changed
 	}

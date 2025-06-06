@@ -84,14 +84,14 @@ func (f *testFile) WinAttrs() WinAttrs { return f.winAttrs }
 
 func (f *testFile) SymlinkTarget() (string, error) {
 	if f.symlinkTarget == "" {
-		return "", errors.Reason("%q: not a symlink", f.Name()).Tag(cipderr.IO).Err()
+		return "", cipderr.IO.Apply(errors.Fmt("%q: not a symlink", f.Name()))
 	}
 	return f.symlinkTarget, nil
 }
 
 func (f *testFile) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
-		return nil, errors.Reason("%q: can't open symlink", f.Name()).Tag(cipderr.IO).Err()
+		return nil, cipderr.IO.Apply(errors.Fmt("%q: can't open symlink", f.Name()))
 	}
 	r := bytes.NewReader([]byte(f.data))
 	return io.NopCloser(r), nil

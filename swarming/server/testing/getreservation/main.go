@@ -48,7 +48,7 @@ func main() {
 
 func run(ctx context.Context, args []string) error {
 	if len(args) != 1 {
-		return errors.Reason("need one positional argument with full reservation name").Err()
+		return errors.New("need one positional argument with full reservation name")
 	}
 	reservationName := args[0]
 
