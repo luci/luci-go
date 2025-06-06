@@ -36,9 +36,15 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/buildbucket"
+	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
+	buildbucketsub "go.chromium.org/luci/cv/internal/buildbucket/subscriber"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	gerritsub "go.chromium.org/luci/cv/internal/gerrit/subscriber"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
+	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
 )
 
 func main() {
@@ -52,10 +58,21 @@ func main() {
 	}
 
 	var gerritPubsubServiceAccount string
-	flag.StringVar(&gerritPubsubServiceAccount, "gerrit-pubsub-push-account", "", "the service account of pubsub pusher")
+	flag.StringVar(&gerritPubsubServiceAccount, "gerrit-pubsub-push-account", "", "the service account of gerrit pubsub pusher")
+	var buildbucketPubsubServiceAccount string
+	flag.StringVar(&buildbucketPubsubServiceAccount, "buildbucket-pubsub-push-account", "", "the service account of buildbucket pubsub pusher")
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		env := common.MakeEnv(srv.Options)
 		clUpdater := changelist.NewUpdater(&tq.Default, nil)
+		tryjobNotifier := tryjob.NewNotifier(&tq.Default)
+		runNotifier := run.NewNotifier(&tq.Default)
+		bbFactory := buildbucket.NewClientFactory()
+		bbFacade := &bbfacade.Facade{
+			ClientFactory: bbFactory,
+		}
+		tryjobUpdater := tjupdate.NewUpdater(env, tryjobNotifier, runNotifier)
+		tryjobUpdater.RegisterBackend(bbFacade)
 		oidcMW := router.NewMiddlewareChain(
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
@@ -75,6 +92,21 @@ func main() {
 			return gerritSubscriber.ProcessPubSubMessage(ctx.Request.Context(), payload,
 				hostName, ctx.Params.ByName("format"))
 		}, gerritPubSubIdentity))
+
+		buildbucketSubscriber := &buildbucketsub.BuildbucketSubscriber{
+			TryjobNotifier: tryjobNotifier,
+			TryjobUpdater:  tryjobUpdater,
+		}
+		if buildbucketPubsubServiceAccount == "" {
+			return errors.New("buildbucket pubsub pusher account must be specified")
+		}
+		buildbucketPubSubIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, buildbucketPubsubServiceAccount))
+		if err != nil {
+			return errors.Fmt("failed to create identity for %s: %w", buildbucketPubsubServiceAccount, err)
+		}
+		srv.Routes.POST("/pubsub-handlers/buildbucket", oidcMW, makePubsubHandler(func(ctx *router.Context, payload common.PubSubMessagePayload) error {
+			return buildbucketSubscriber.ProcessPubSubMessage(ctx.Request.Context(), payload)
+		}, buildbucketPubSubIdentity))
 
 		return nil
 	})
