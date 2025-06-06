@@ -171,6 +171,15 @@ func TestExpandLatestRealms(t *testing.T) {
 		testRealmsCfg := &realmsconf.RealmsCfg{
 			Realms: []*realmsconf.Realm{
 				{
+					Name: "@project",
+					Bindings: []*realmsconf.Binding{
+						{
+							Role:       "role/luci.projectUser",
+							Principals: []string{"group:luci-trusted-projects"},
+						},
+					},
+				},
+				{
 					Name: "@root",
 					Bindings: []*realmsconf.Binding{
 						{
@@ -208,8 +217,25 @@ func TestExpandLatestRealms(t *testing.T) {
 			},
 		}
 
-		actual := expandLatestRealms(ctx, testRealms, testTime)
+		actual, err := expandLatestRealms(ctx, testRealms, testTime)
+		assert.Loosely(t, err, should.BeNil)
 		expected := []*bqpb.RealmSourceRow{
+			{
+				Name:       "chromium:@project",
+				Role:       "role/luci.projectUser",
+				Source:     "chromium:@project",
+				Principals: []string{"group:luci-trusted-projects"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
+			{
+				Name:       "chromium:@project",
+				Role:       "role/luci.serviceTester",
+				Source:     "chromium:@root",
+				Principals: []string{"group:luci-service-testers"},
+				Url:        realmsURL,
+				ExportedAt: testTime,
+			},
 			{
 				Name:       "chromium:@root",
 				Role:       "role/luci.serviceTester",

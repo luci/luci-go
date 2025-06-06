@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	lucirealms "go.chromium.org/luci/server/auth/realms"
@@ -29,6 +30,12 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/bqpb"
 	customerrors "go.chromium.org/luci/auth_service/impl/errors"
+)
+
+var (
+	// ErrUnknownRealm is returned by RealmsGraph.GetRealmBindings if the given
+	// realm name is not in the realms graph.
+	ErrUnknownRealm = errors.New("unknown realm")
 )
 
 // parseRealms parses the realms from the given AuthDB to construct realm rows
@@ -106,80 +113,154 @@ func realmSourceRowKey(r *bqpb.RealmSourceRow) string {
 	return strings.Join([]string{r.Role, r.Source, principals, conditions}, "*")
 }
 
-// analyzeRealmsCfgRealms analyzes the given config for all realms.
-func analyzeRealmsCfgRealms(ctx context.Context, cfg *realmsconf.RealmsCfg) []*bqpb.RealmSourceRow {
-	realms := map[string][]*bqpb.RealmSourceRow{}
-	for _, r := range cfg.GetRealms() {
-		uniqueBindings := make(map[string]*bqpb.RealmSourceRow)
+// RealmNode represents a single realm in a realms config.
+type RealmNode struct {
+	Realm   *realmsconf.Realm
+	Parents []*RealmNode
 
-		// Explicit bindings defined in this realm.
-		for _, b := range r.Bindings {
-			row := &bqpb.RealmSourceRow{
+	DirectBindings []*bqpb.RealmSourceRow
+}
+
+// RealmsGraph represents all realms in a realms config.
+type RealmsGraph struct {
+	Realms map[string]*RealmNode
+}
+
+// NewRealmsGraph creates a new RealmsGraph based on the given config.
+func NewRealmsGraph(ctx context.Context, cfg *realmsconf.RealmsCfg) *RealmsGraph {
+	allRealms := cfg.GetRealms()
+	rg := &RealmsGraph{
+		Realms: make(map[string]*RealmNode, len(allRealms)),
+	}
+	rg.initializeNodes(ctx, allRealms)
+
+	return rg
+}
+
+func (rg *RealmsGraph) initializeNodes(ctx context.Context, allRealms []*realmsconf.Realm) {
+	for _, r := range allRealms {
+		bindings := r.GetBindings()
+		node := &RealmNode{
+			Realm:          r,
+			Parents:        make([]*RealmNode, 0, len(r.GetExtends())+1),
+			DirectBindings: make([]*bqpb.RealmSourceRow, len(bindings)),
+		}
+		for i, b := range bindings {
+			node.DirectBindings[i] = &bqpb.RealmSourceRow{
 				Name:       r.Name,
 				Role:       b.Role,
 				Source:     r.Name,
 				Principals: b.Principals,
 				Conditions: handleConditions(b.Conditions),
 			}
-			rowKey := realmSourceRowKey(row)
-			if _, ok := uniqueBindings[rowKey]; !ok {
-				uniqueBindings[rowKey] = row
-			}
 		}
+		rg.Realms[r.GetName()] = node
+	}
 
-		var parents []string
-		// All realms inherit @root realms implicitly (except @root itself).
-		if r.Name != lucirealms.RootRealm {
-			parents = append(parents, lucirealms.RootRealm)
+	// Populate parents.
+	for _, child := range allRealms {
+		childName := child.GetName()
+		extends := child.GetExtends()
+		parentNames := make([]string, 0, len(extends)+1)
+		// All realms implicitly inherit from the @root realm (except for @root).
+		if child.GetName() != lucirealms.RootRealm {
+			parentNames = append(parentNames, lucirealms.RootRealm)
 		}
-		parents = append(parents, r.Extends...)
-
-		for _, parent := range parents {
-			parentBindings, ok := realms[parent]
+		parentNames = append(parentNames, extends...)
+		for _, parentName := range parentNames {
+			parent, ok := rg.Realms[parentName]
 			if !ok {
 				logging.Warningf(ctx, "skipping %q realm extension - missing realm %q",
-					r.Name, parent)
+					childName, parentName)
 				continue
 			}
-			for _, b := range parentBindings {
-				// Copy the realm source row data, but associate it with this realm.
-				row := &bqpb.RealmSourceRow{
-					Name:       r.Name,
-					Role:       b.Role,
-					Source:     b.Source,
-					Principals: b.Principals,
-					Conditions: b.Conditions,
-				}
-				rowKey := realmSourceRowKey(row)
-				if _, ok := uniqueBindings[rowKey]; !ok {
-					uniqueBindings[rowKey] = row
-				}
+			rg.Realms[childName].Parents = append(rg.Realms[childName].Parents, parent)
+		}
+	}
+}
+
+func (rg *RealmsGraph) doRealmsExpansion(ctx context.Context, node *RealmNode, cache map[string][]*bqpb.RealmSourceRow) ([]*bqpb.RealmSourceRow, error) {
+	name := node.Realm.Name
+
+	// Check the cache first.
+	if cachedResult, ok := cache[name]; ok {
+		return cachedResult, nil
+	}
+
+	// Initialize this realm's bindings.
+	uniqueBindings := make(map[string]*bqpb.RealmSourceRow, len(node.DirectBindings))
+	for _, row := range node.DirectBindings {
+		uniqueBindings[realmSourceRowKey(row)] = row
+	}
+
+	for _, parentNode := range node.Parents {
+		parentBindings, err := rg.doRealmsExpansion(ctx, parentNode, cache)
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range parentBindings {
+			uniqueBindings[realmSourceRowKey(row)] = &bqpb.RealmSourceRow{
+				Name:       name,
+				Role:       row.Role,
+				Source:     row.Source,
+				Principals: row.Principals,
+				Conditions: row.Conditions,
 			}
 		}
-
-		realmBindings := make([]*bqpb.RealmSourceRow, 0, len(uniqueBindings))
-		for _, u := range uniqueBindings {
-			realmBindings = append(realmBindings, u)
-		}
-		realms[r.Name] = realmBindings
 	}
 
+	result := make([]*bqpb.RealmSourceRow, 0, len(uniqueBindings))
+	for _, row := range uniqueBindings {
+		result = append(result, row)
+	}
+
+	// Add to the cache.
+	cache[name] = result
+	return result, nil
+}
+
+// GetRealmBindings returns the direct and indirect realm bindings associated
+// with the given realm.
+func (rg *RealmsGraph) GetRealmBindings(ctx context.Context, name string, cache map[string][]*bqpb.RealmSourceRow) ([]*bqpb.RealmSourceRow, error) {
+	root, ok := rg.Realms[name]
+	if !ok {
+		return nil, errors.Fmt("%q: %w", name, ErrUnknownRealm)
+	}
+
+	if cache == nil {
+		cache = map[string][]*bqpb.RealmSourceRow{}
+	}
+
+	return rg.doRealmsExpansion(ctx, root, cache)
+}
+
+// analyzeRealmsCfgRealms analyzes the given config for all realms.
+func analyzeRealmsCfgRealms(ctx context.Context, cfg *realmsconf.RealmsCfg) ([]*bqpb.RealmSourceRow, error) {
+	rg := NewRealmsGraph(ctx, cfg)
+	cache := make(map[string][]*bqpb.RealmSourceRow, len(rg.Realms))
 	var rows []*bqpb.RealmSourceRow
-	for _, realmRows := range realms {
+	for realm := range rg.Realms {
+		realmRows, err := rg.GetRealmBindings(ctx, realm, cache)
+		if err != nil {
+			return nil, err
+		}
 		rows = append(rows, realmRows...)
 	}
-	return rows
+	return rows, nil
 }
 
 // expandLatestRealms expands the latest realms configs so the source realm
 // which defines each binding can be found.
 func expandLatestRealms(ctx context.Context,
 	latestRealms map[string]*ViewableConfig[*realmsconf.RealmsCfg],
-	ts *timestamppb.Timestamp) []*bqpb.RealmSourceRow {
+	ts *timestamppb.Timestamp) ([]*bqpb.RealmSourceRow, error) {
 	var rows []*bqpb.RealmSourceRow
 	for project, cfg := range latestRealms {
 		logging.Debugf(ctx, "analyzing realms for project %q", project)
-		projectRows := analyzeRealmsCfgRealms(ctx, cfg.Config)
+		projectRows, err := analyzeRealmsCfgRealms(ctx, cfg.Config)
+		if err != nil {
+			return nil, err
+		}
 		// Change the realm names to the full format of <project>:<realm>, set the
 		// common view URL, and the job-level export time.
 		for _, row := range projectRows {
@@ -191,5 +272,5 @@ func expandLatestRealms(ctx context.Context,
 		rows = append(rows, projectRows...)
 	}
 
-	return rows
+	return rows, nil
 }
