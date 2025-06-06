@@ -43,19 +43,17 @@ func (o *Options[T]) normalize(ctx context.Context) error {
 		o.QPSLimit = rate.NewLimiter(rate.Inf, 0)
 	}
 	if o.QPSLimit.Limit() != rate.Inf && o.QPSLimit.Burst() < 1 {
-		return errors.Reason(
-			"QPSLimit has burst size < 1, but a non-infinite rate: %d",
-			o.QPSLimit.Burst()).Err()
+		return errors.Fmt("QPSLimit has burst size < 1, but a non-infinite rate: %d",
+			o.QPSLimit.Burst())
 	}
 
 	if o.MinQPS == rate.Inf {
-		return errors.Reason("MinQPS cannot be infinite").Err()
+		return errors.New("MinQPS cannot be infinite")
 	}
 
 	if o.MinQPS > 0 && o.MinQPS > o.QPSLimit.Limit() {
-		return errors.Reason(
-			"MinQPS: %f is greater than QPSLimit: %f",
-			o.MinQPS, o.QPSLimit.Limit()).Err()
+		return errors.Fmt("MinQPS: %f is greater than QPSLimit: %f",
+			o.MinQPS, o.QPSLimit.Limit())
 	}
 
 	return nil

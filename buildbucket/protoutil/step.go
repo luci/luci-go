@@ -43,8 +43,8 @@ func ValidateStepName(stepName string) error {
 	nodes := strings.Split(stepName, StepNameSep)
 	for _, node := range nodes {
 		if node == "" {
-			return errors.Reason("there must be at least one character before and after %q (%q)",
-				StepNameSep, stepName).Err()
+			return errors.Fmt("there must be at least one character before and after %q (%q)",
+				StepNameSep, stepName)
 		}
 	}
 	return nil

@@ -36,9 +36,9 @@ func validateCancel(req *pb.CancelBuildRequest) error {
 	var err error
 	switch {
 	case req.GetId() == 0:
-		return errors.Reason("id is required").Err()
+		return errors.New("id is required")
 	case req.SummaryMarkdown == "":
-		return errors.Reason("summary_markdown is required").Err()
+		return errors.New("summary_markdown is required")
 	case teeErr(validateSummaryMarkdown(req.SummaryMarkdown), &err) != nil:
 		return errors.Fmt("summary_markdown: %w", err)
 	}

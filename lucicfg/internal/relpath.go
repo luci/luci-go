@@ -62,7 +62,7 @@ func RelRepoPath(base, target string) (string, error) {
 func splitPath(p string) ([]string, error) {
 	switch chunks := strings.Split(path.Clean(p), "/"); {
 	case chunks[0] == "..":
-		return nil, errors.Reason("bad repo path %q, goes outside of the repo root", p).Err()
+		return nil, errors.Fmt("bad repo path %q, goes outside of the repo root", p)
 	case chunks[0] == ".":
 		return nil, nil // empty path indicating the root of the repo
 	default:

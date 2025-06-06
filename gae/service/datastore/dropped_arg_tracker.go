@@ -132,10 +132,9 @@ func (dat DroppedArgTracker) mustCompress(N int, init func(), include func(i, j 
 	}
 
 	if largestDropIdx := dat[len(dat)-1]; largestDropIdx >= N {
-		panic(errors.Reason(
-			"DroppedArgTracker has out of bound index: %d >= %d ",
-			largestDropIdx, N,
-		).Err())
+		panic(errors.Fmt("DroppedArgTracker has out of bound index: %d >= %d ",
+			largestDropIdx, N),
+		)
 	}
 
 	// dal may have len < len(dat) in the event that multiple dat entries are
@@ -223,10 +222,9 @@ func (dat DroppedArgTracker) DropKeysAndVals(keys []*Key, vals []PropertyMap) ([
 	newVals := vals
 
 	if len(keys) != len(vals) {
-		panic(errors.Reason(
-			"DroppedArgTracker.DropKeysAndVals: mismatched lengths: %d vs %d",
-			len(keys), len(vals),
-		).Err())
+		panic(errors.Fmt("DroppedArgTracker.DropKeysAndVals: mismatched lengths: %d vs %d",
+			len(keys), len(vals)),
+		)
 	}
 
 	init := func() {

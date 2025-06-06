@@ -350,7 +350,7 @@ type fakeLoaderValidator struct {
 
 func (fakeLoaderValidator) ValidateEntrypoint(ctx context.Context, entrypoint string) error {
 	if entrypoint == "fail.star" {
-		return errors.Reason("not passing ValidateEntrypoint").Err()
+		return errors.New("not passing ValidateEntrypoint")
 	}
 	return nil
 }

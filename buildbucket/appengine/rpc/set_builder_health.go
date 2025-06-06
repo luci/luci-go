@@ -96,11 +96,11 @@ func validateRequest(ctx context.Context, req *pb.SetBuilderHealthRequest, errs 
 	for i, msg := range req.Health {
 		fullBldrID := strings.Join([]string{msg.Id.Project, msg.Id.Bucket, msg.Id.Builder}, "/")
 		if seen.Has(fullBldrID) {
-			return errors.Reason("The following builder has multiple entries: %s", fullBldrID).Err()
+			return errors.Fmt("The following builder has multiple entries: %s", fullBldrID)
 		}
 		seen.Add(fullBldrID)
 		if errs[i] == nil && (msg.Health.GetHealthScore() < 0 || msg.Health.GetHealthScore() > 10) {
-			err := annotateErrorWithBuilder(errors.Reason("HealthScore should be between 0 and 10").Err(), msg.Id)
+			err := annotateErrorWithBuilder(errors.New("HealthScore should be between 0 and 10"), msg.Id)
 			errs[i] = err
 			resp[i] = createErrorResponse(err, codes.InvalidArgument)
 		}

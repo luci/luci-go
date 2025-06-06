@@ -35,13 +35,13 @@ var (
 func ValidateBuilderID(b *pb.BuilderID) error {
 	switch parts := strings.Split(b.GetBucket(), "."); {
 	case !projRegex.MatchString(b.GetProject()):
-		return errors.Reason("project must match %q", projRegex).Err()
+		return errors.Fmt("project must match %q", projRegex)
 	case b.GetBucket() != "" && !bucketRegex.MatchString(b.Bucket):
-		return errors.Reason("bucket must match %q", bucketRegex).Err()
+		return errors.Fmt("bucket must match %q", bucketRegex)
 	case b.GetBuilder() != "" && !builderRegex.MatchString(b.Builder):
-		return errors.Reason("builder must match %q", builderRegex).Err()
+		return errors.Fmt("builder must match %q", builderRegex)
 	case b.GetBucket() != "" && parts[0] == "luci" && len(parts) > 2:
-		return errors.Reason("invalid use of v1 bucket in v2 API (hint: try %q)", parts[2]).Err()
+		return errors.Fmt("invalid use of v1 bucket in v2 API (hint: try %q)", parts[2])
 	default:
 		return nil
 	}
@@ -54,9 +54,9 @@ func ValidateRequiredBuilderID(b *pb.BuilderID) error {
 	case err != nil:
 		return err
 	case b.Bucket == "":
-		return errors.Reason("bucket is required").Err()
+		return errors.New("bucket is required")
 	case b.Builder == "":
-		return errors.Reason("builder is required").Err()
+		return errors.New("builder is required")
 	default:
 		return nil
 	}

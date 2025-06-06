@@ -84,7 +84,7 @@ func (l *DynamicWalker) Execute(msg proto.Message) (Results, error) {
 	ret := make(Results, len(l.procs))
 	msgD := msg.ProtoReflect().Descriptor()
 	if msg.ProtoReflect().Descriptor() != l.msgD {
-		return nil, errors.Reason("mismatched message types, got %s, expected %s", msgD.FullName(), l.msgD.FullName()).Err()
+		return nil, errors.Fmt("mismatched message types, got %s, expected %s", msgD.FullName(), l.msgD.FullName())
 	}
 
 	// 32 is a guess at how deep the Path could get.

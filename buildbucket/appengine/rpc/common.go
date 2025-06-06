@@ -149,7 +149,7 @@ func commonPrelude(ctx context.Context, methodName string, req proto.Message) (c
 
 func validatePageSize(pageSize int32) error {
 	if pageSize < 0 {
-		return errors.Reason("page_size cannot be negative").Err()
+		return errors.New("page_size cannot be negative")
 	}
 	return nil
 }
@@ -168,10 +168,10 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 		k = tag.Key
 		v = tag.Value
 		if strings.Contains(k, ":") {
-			return errors.Reason(`tag key %q cannot have a colon`, k).Err()
+			return errors.Fmt(`tag key %q cannot have a colon`, k)
 		}
 		if m == TagAppend && buildbucket.DisallowedAppendTagKeys.Has(k) {
-			return errors.Reason(`tag key %q cannot be added to an existing build`, k).Err()
+			return errors.Fmt(`tag key %q cannot be added to an existing build`, k)
 		}
 		if k == "buildset" {
 			if err := validateBuildSet(v); err != nil {
@@ -182,11 +182,11 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 			if seenBuilderTagValue == "" {
 				seenBuilderTagValue = v
 			} else if v != seenBuilderTagValue {
-				return errors.Reason(`tag "builder:%s" conflicts with tag "builder:%s"`, v, seenBuilderTagValue).Err()
+				return errors.Fmt(`tag "builder:%s" conflicts with tag "builder:%s"`, v, seenBuilderTagValue)
 			}
 		}
 		if reservedKeys.Has(k) {
-			return errors.Reason(`tag "%s" is reserved`, k).Err()
+			return errors.Fmt(`tag "%s" is reserved`, k)
 		}
 		if err := validateKeyLength(k); err != nil {
 			return err
@@ -200,25 +200,25 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 
 func validateBuildSet(bs string) error {
 	if len("buildset:")+len(bs) > buildSetMaxLength {
-		return errors.Reason("buildset tag is too long").Err()
+		return errors.New("buildset tag is too long")
 	}
 
 	// Verify that a buildset with a known prefix is well formed.
 	if strings.HasPrefix(bs, "commit/gitiles/") {
 		matches := gitilesCommitRegex.FindStringSubmatch(bs)
 		if len(matches) == 0 {
-			return errors.Reason(`does not match regex "%s"`, gitilesCommitRegex).Err()
+			return errors.Fmt(`does not match regex "%s"`, gitilesCommitRegex)
 		}
 		project := matches[2]
 		if strings.HasPrefix(project, "a/") {
-			return errors.Reason(`gitiles project must not start with "a/"`).Err()
+			return errors.New(`gitiles project must not start with "a/"`)
 		}
 		if strings.HasSuffix(project, ".git") {
-			return errors.Reason(`gitiles project must not end with ".git"`).Err()
+			return errors.New(`gitiles project must not end with ".git"`)
 		}
 	} else if strings.HasPrefix(bs, "patch/gerrit/") {
 		if !gerritCLRegex.MatchString(bs) {
-			return errors.Reason(`does not match regex "%s"`, gerritCLRegex).Err()
+			return errors.Fmt(`does not match regex "%s"`, gerritCLRegex)
 		}
 	}
 	return nil
@@ -226,27 +226,27 @@ func validateBuildSet(bs string) error {
 
 func validateKeyLength(k string) error {
 	if k == "" {
-		return errors.Reason("the key cannot be empty").Err()
+		return errors.New("the key cannot be empty")
 	}
 	if len(k) > maxDimensionKeyLen {
-		return errors.Reason("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(k)).Err()
+		return errors.Fmt("the key should be no longer than %d (got %d)", maxDimensionKeyLen, len(k))
 	}
 	return nil
 }
 
 func validateTagValue(v string) error {
 	if len(v) > maxDimensionValLen {
-		return errors.Reason("the value should be no longer than %d (got %d)", maxDimensionValLen, len(v)).Err()
+		return errors.Fmt("the value should be no longer than %d (got %d)", maxDimensionValLen, len(v))
 	}
 	if strings.TrimSpace(v) != v {
-		return errors.Reason("the value should have no leading or trailing spaces").Err()
+		return errors.New("the value should have no leading or trailing spaces")
 	}
 	return nil
 }
 
 func validateSummaryMarkdown(md string) error {
 	if len(md) > protoutil.SummaryMarkdownMaxLength {
-		return errors.Reason("too big to accept (%d > %d bytes)", len(md), protoutil.SummaryMarkdownMaxLength).Err()
+		return errors.Fmt("too big to accept (%d > %d bytes)", len(md), protoutil.SummaryMarkdownMaxLength)
 	}
 	return nil
 }
@@ -256,7 +256,7 @@ func validateSummaryMarkdown(md string) error {
 // validateCommitWithRef checks if `cm` is a valid commit with a ref.
 func validateCommitWithRef(cm *pb.GitilesCommit) error {
 	if cm.GetRef() == "" {
-		return errors.Reason(`ref is required`).Err()
+		return errors.New(`ref is required`)
 	}
 	return validateCommit(cm)
 }
@@ -264,25 +264,25 @@ func validateCommitWithRef(cm *pb.GitilesCommit) error {
 // validateCommit validates the given Gitiles commit.
 func validateCommit(cm *pb.GitilesCommit) error {
 	if cm.GetHost() == "" {
-		return errors.Reason("host is required").Err()
+		return errors.New("host is required")
 	}
 	if cm.GetProject() == "" {
-		return errors.Reason("project is required").Err()
+		return errors.New("project is required")
 	}
 
 	if cm.GetRef() != "" {
 		if !strings.HasPrefix(cm.Ref, "refs/") {
-			return errors.Reason("ref must match refs/.*").Err()
+			return errors.New("ref must match refs/.*")
 		}
 	} else if cm.Position != 0 {
-		return errors.Reason("position requires ref").Err()
+		return errors.New("position requires ref")
 	}
 
 	if cm.GetId() != "" && !sha1Regex.MatchString(cm.Id) {
-		return errors.Reason("id must match %q", sha1Regex).Err()
+		return errors.Fmt("id must match %q", sha1Regex)
 	}
 	if cm.GetRef() == "" && cm.GetId() == "" {
-		return errors.Reason("one of id or ref is required").Err()
+		return errors.New("one of id or ref is required")
 	}
 	return nil
 }

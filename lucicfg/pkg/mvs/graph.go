@@ -210,7 +210,7 @@ func (g *Graph[V]) Traverse(v func(node Package[V], edges []Package[V]) ([]Packa
 				continue
 			}
 			if _, exists := g.deps[pkg]; !exists {
-				return errors.Reason("%q attempts to visit non-existing node %q", cur, pkg).Err()
+				return errors.Fmt("%q attempts to visit non-existing node %q", cur, pkg)
 			}
 			stack = append(stack, pkg)
 		}

@@ -93,7 +93,7 @@ func (c *cmdEditPayload) validateFlags(ctx context.Context, _ []string, _ subcom
 		}
 	}
 	if c.propertyOnly && (c.cipdPkg != "" || c.cipdVer != "") {
-		return errors.Reason("cannot use payload from CIPD in -property-only mode").Err()
+		return errors.New("cannot use payload from CIPD in -property-only mode")
 	}
 	return
 }

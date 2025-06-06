@@ -95,7 +95,7 @@ func TestSearch(t *testing.T) {
 						Builds: []*pb.Build{{Id: 3}},
 					}, nil
 				default:
-					return nil, errors.Reason("unexpected request").Err()
+					return nil, errors.New("unexpected request")
 				}
 			}
 
@@ -195,7 +195,7 @@ func TestSearch(t *testing.T) {
 					}, nil
 				}
 
-				return nil, errors.Reason("unexpected request").Err()
+				return nil, errors.New("unexpected request")
 			}
 
 			builds, err := search([]*pb.SearchBuildsRequest{
@@ -233,7 +233,7 @@ func TestSearch(t *testing.T) {
 					}, nil
 
 				default:
-					return nil, errors.Reason("unexpected request").Err()
+					return nil, errors.New("unexpected request")
 				}
 			}
 

@@ -33,7 +33,7 @@ func (f *experimentsFlag) Register(fs *flag.FlagSet, help string) {
 
 func (f *experimentsFlag) Set(exp string) error {
 	if len(exp) < 2 {
-		return errors.Reason("expected [+-]experiment_name, got %q", exp).Err()
+		return errors.Fmt("expected [+-]experiment_name, got %q", exp)
 	}
 	switch plusMinus, expname := exp[0], exp[1:]; plusMinus {
 	case '+':
@@ -41,7 +41,7 @@ func (f *experimentsFlag) Set(exp string) error {
 	case '-':
 		f.experiments[expname] = false
 	default:
-		return errors.Reason("expected [+-]experiment_name, got %q", exp).Err()
+		return errors.Fmt("expected [+-]experiment_name, got %q", exp)
 	}
 	return nil
 }

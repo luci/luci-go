@@ -61,7 +61,7 @@ func (p *PackageReader) Open(path string) (io.ReadCloser, int64, error) {
 	for _, f := range p.zr.File {
 		if f.Name == path {
 			if f.UncompressedSize64 > math.MaxInt64 {
-				return nil, 0, errors.Reason("the file %q is unbelievably huge (%d bytes)", path, f.UncompressedSize64).Err()
+				return nil, 0, errors.Fmt("the file %q is unbelievably huge (%d bytes)", path, f.UncompressedSize64)
 			}
 			rc, err := f.Open()
 			if err != nil {
@@ -70,5 +70,5 @@ func (p *PackageReader) Open(path string) (io.ReadCloser, int64, error) {
 			return rc, int64(f.UncompressedSize64), nil
 		}
 	}
-	return nil, 0, errors.Reason("no file %q inside the package", path).Err()
+	return nil, 0, errors.Fmt("no file %q inside the package", path)
 }

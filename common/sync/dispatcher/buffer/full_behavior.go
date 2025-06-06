@@ -98,22 +98,22 @@ func (b *BlockNewItems) Check(opts Options) (err error) {
 	switch {
 	case b.MaxItems == -1:
 	case b.MaxItems < opts.BatchItemsMax:
-		return errors.Reason("BlockNewItems.MaxItems must be >= BatchItemsMax[%d]: got %d",
-			opts.BatchItemsMax, b.MaxItems).Err()
+		return errors.Fmt("BlockNewItems.MaxItems must be >= BatchItemsMax[%d]: got %d",
+			opts.BatchItemsMax, b.MaxItems)
 	}
 
 	switch {
 	case b.MaxSize == -1:
 	case b.MaxSize < opts.BatchSizeMax:
-		return errors.Reason("BlockNewItems.MaxSize must be >= BatchSizeMax[%d]: got %d",
-			opts.BatchSizeMax, b.MaxSize).Err()
+		return errors.Fmt("BlockNewItems.MaxSize must be >= BatchSizeMax[%d]: got %d",
+			opts.BatchSizeMax, b.MaxSize)
 	case opts.BatchSizeMax == -1:
-		return errors.Reason("BlockNewItems.MaxSize may only be set with BatchSizeMax[%d] > 0",
-			opts.BatchSizeMax).Err()
+		return errors.Fmt("BlockNewItems.MaxSize may only be set with BatchSizeMax[%d] > 0",
+			opts.BatchSizeMax)
 	}
 
 	if b.MaxItems == -1 && b.MaxSize == -1 {
-		return errors.Reason("BlockNewItems must have one of MaxItems or MaxSize > 0").Err()
+		return errors.New("BlockNewItems must have one of MaxItems or MaxSize > 0")
 	}
 
 	return
@@ -188,22 +188,22 @@ func (d *DropOldestBatch) Check(opts Options) (err error) {
 	switch {
 	case d.MaxLiveItems == -1:
 	case d.MaxLiveItems < opts.BatchItemsMax:
-		return errors.Reason("DropOldestBatch.MaxLiveItems must be >= BatchItemsMax[%d]: got %d",
-			opts.BatchItemsMax, d.MaxLiveItems).Err()
+		return errors.Fmt("DropOldestBatch.MaxLiveItems must be >= BatchItemsMax[%d]: got %d",
+			opts.BatchItemsMax, d.MaxLiveItems)
 	}
 
 	switch {
 	case d.MaxLiveSize == -1:
 	case d.MaxLiveSize < opts.BatchSizeMax:
-		return errors.Reason("DropOldestBatch.MaxLiveSize must be >= BatchSizeMax[%d]: got %d",
-			opts.BatchSizeMax, d.MaxLiveSize).Err()
+		return errors.Fmt("DropOldestBatch.MaxLiveSize must be >= BatchSizeMax[%d]: got %d",
+			opts.BatchSizeMax, d.MaxLiveSize)
 	case opts.BatchSizeMax == -1:
-		return errors.Reason("DropOldestBatch.MaxLiveSize may only be set with BatchSizeMax[%d] > 0",
-			opts.BatchSizeMax).Err()
+		return errors.Fmt("DropOldestBatch.MaxLiveSize may only be set with BatchSizeMax[%d] > 0",
+			opts.BatchSizeMax)
 	}
 
 	if d.MaxLiveItems == -1 && d.MaxLiveSize == -1 {
-		return errors.Reason("DropOldestBatch must have one of MaxLiveItems or MaxLiveSize > 0").Err()
+		return errors.New("DropOldestBatch must have one of MaxLiveItems or MaxLiveSize > 0")
 	}
 
 	return

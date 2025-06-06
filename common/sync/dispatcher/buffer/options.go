@@ -125,7 +125,7 @@ func (o *Options) normalize() error {
 		o.MaxLeases = Defaults.MaxLeases
 	case o.MaxLeases > 0:
 	default:
-		return errors.Reason("MaxLeases must be > 0: got %d", o.MaxLeases).Err()
+		return errors.Fmt("MaxLeases must be > 0: got %d", o.MaxLeases)
 	}
 
 	switch {
@@ -134,7 +134,7 @@ func (o *Options) normalize() error {
 		o.BatchItemsMax = Defaults.BatchItemsMax
 	case o.BatchItemsMax > 0:
 	default:
-		return errors.Reason("BatchItemsMax must be > 0 or == -1: got %d", o.BatchItemsMax).Err()
+		return errors.Fmt("BatchItemsMax must be > 0 or == -1: got %d", o.BatchItemsMax)
 	}
 
 	switch {
@@ -143,7 +143,7 @@ func (o *Options) normalize() error {
 		o.BatchSizeMax = Defaults.BatchSizeMax
 	case o.BatchSizeMax > 0:
 	default:
-		return errors.Reason("BatchSizeMax must be > 0 or == -1: got %d", o.BatchSizeMax).Err()
+		return errors.Fmt("BatchSizeMax must be > 0 or == -1: got %d", o.BatchSizeMax)
 	}
 
 	switch {
@@ -151,11 +151,11 @@ func (o *Options) normalize() error {
 		o.BatchAgeMax = Defaults.BatchAgeMax
 	case o.BatchAgeMax > 0:
 	default:
-		return errors.Reason("BatchAgeMax must be > 0: got %s", o.BatchAgeMax).Err()
+		return errors.Fmt("BatchAgeMax must be > 0: got %s", o.BatchAgeMax)
 	}
 
 	if o.FIFO && o.MaxLeases != 1 {
-		return errors.Reason("FIFO is true, but MaxLeases != 1: got %d", o.MaxLeases).Err()
+		return errors.Fmt("FIFO is true, but MaxLeases != 1: got %d", o.MaxLeases)
 	}
 
 	if o.FullBehavior == nil {
