@@ -26,10 +26,3 @@ cron:
   target: monitor
   url: /internal/cron/report-aggregated-metrics
   schedule: every 1 minutes
-- description: Kick off tasks to listen to Buildbucket Pubsub
-  target: default
-  url: /internal/cron/kick-bb-pubsub-listeners
-  # The interval should be in sync with the listener running duration defined
-  # in `bblistener.ListenDuration` to ensure continuous Buildbucket Pubsub
-  # events processing.
-  schedule: every 5 minutes

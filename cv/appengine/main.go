@@ -40,7 +40,6 @@ import (
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
-	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -159,10 +158,6 @@ func main() {
 		pcr := refresher.NewRefresher(&tq.Default, pmNotifier, qm, env)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
-		})
-		kickNewListenersFn := bblistener.Register(&tq.Default, srv.Options.CloudProject, tryjobNotifier, tryjobUpdater)
-		cron.RegisterHandler("kick-bb-pubsub-listeners", func(ctx context.Context) error {
-			return kickNewListenersFn(ctx)
 		})
 		retention.RegisterCrons(&tq.Default, runNotifier)
 

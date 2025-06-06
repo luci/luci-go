@@ -15,14 +15,17 @@
 package bbfake
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
 	"sync"
 	"time"
 
-	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,19 +38,20 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	"go.chromium.org/luci/cv/internal/common"
 )
 
 const requestDeduplicationWindow = 1 * time.Minute
 
 type fakeApp struct {
-	hostname      string
-	nextBuildID   int64 // for generating monotonically decreasing build ID
-	requestCache  timedMap
-	pubsubTopic   *pubsub.Topic
-	buildStoreMu  sync.RWMutex
-	buildStore    map[int64]*bbpb.Build // build ID -> build
-	configStoreMu sync.RWMutex
-	configStore   map[string]*bbpb.BuildbucketCfg // project name -> config
+	hostname           string
+	nextBuildID        int64 // for generating monotonically decreasing build ID
+	requestCache       timedMap
+	pubsubPushEndpoint string
+	buildStoreMu       sync.RWMutex
+	buildStore         map[int64]*bbpb.Build // build ID -> build
+	configStoreMu      sync.RWMutex
+	configStore        map[string]*bbpb.BuildbucketCfg // project name -> config
 }
 
 type Fake struct {
@@ -77,13 +81,13 @@ func (f *Fake) MustNewClient(ctx context.Context, host, luciProject string) *Cli
 	return client.(*Client)
 }
 
-// RegisterPubsubTopic registers a pubsub topic for the given host.
+// RegisterPubSubPushEndpoint registers a Pub/Sub push endpoint for the given host.
 //
-// If a build is updated to the terminal status, a message will be sent to
-// the topic for this build.
-func (f *Fake) RegisterPubsubTopic(host string, topic *pubsub.Topic) {
+// If a build is updated to the terminal status, an event will be synthesized
+// and send to the push endpoint for processing
+func (f *Fake) RegisterPubSubPushEndpoint(host string, pushEndpoint string) {
 	fa := f.ensureApp(host)
-	fa.pubsubTopic = topic
+	fa.pubsubPushEndpoint = pushEndpoint
 }
 
 // AddBuilder adds a new builder configuration to fake Buildbucket host.
@@ -208,7 +212,7 @@ func (fa *fakeApp) updateBuild(ctx context.Context, id int64, cb func(*bbpb.Buil
 		// store a copy to avoid cb keeps the reference to the build and mutate it
 		// later.
 		fa.buildStore[id] = proto.Clone(build).(*bbpb.Build)
-		fa.publishToTopicIfNecessary(ctx, build)
+		fa.pushToSubscriberIfNecessary(build)
 		return build
 	}
 	panic(errors.Fmt("unknown build %d", id))
@@ -231,13 +235,12 @@ func (fa *fakeApp) insertBuild(ctx context.Context, build *bbpb.Build, requestID
 	if requestID != "" {
 		fa.requestCache.set(ctx, requestID, cloned, requestDeduplicationWindow)
 	}
-	fa.publishToTopicIfNecessary(ctx, build)
+	fa.pushToSubscriberIfNecessary(build)
 	return build
 }
 
-func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Build) {
-	topic := fa.pubsubTopic
-	if topic == nil || !bbutil.IsEnded(build.GetStatus()) {
+func (fa *fakeApp) pushToSubscriberIfNecessary(build *bbpb.Build) {
+	if fa.pubsubPushEndpoint == "" || !bbutil.IsEnded(build.GetStatus()) {
 		return
 	}
 	msg := &bbpb.BuildsV2PubSub{
@@ -247,20 +250,25 @@ func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Bu
 	if err != nil {
 		panic(errors.Fmt("failed to marshal pubsub message: %w", err))
 	}
-	res := topic.Publish(ctx, &pubsub.Message{
-		Data: data,
-	})
-	// Publish will batch messages. However, in the test, we want buildbucket
-	// fake to publish messages asap. Therefore, flush immediately after publish
-	// the messages
-	topic.Flush()
-	select {
-	case <-res.Ready():
-		if _, err := res.Get(ctx); err != nil {
-			panic(errors.Fmt("failed to publish the pubsub message: %w", err))
+
+	payload := common.PubSubMessagePayload{
+		Message: common.PubSubMessage{
+			Data: base64.StdEncoding.EncodeToString(data),
+		},
+	}
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		panic(errors.Fmt("failed to marshal pubsub message to json: %w", err))
+	}
+	switch resp, err := http.Post(fa.pubsubPushEndpoint, "application/json", bytes.NewBuffer(payloadJson)); {
+	case err != nil:
+		panic(errors.Fmt("failed to push pubsub message: %w", err))
+	case resp.StatusCode != http.StatusOK:
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			panic(errors.Fmt("failed to parse response body: %w", err))
 		}
-	case <-time.After(10 * time.Second):
-		panic(errors.New("took too long to publish the pubsub message"))
+		panic(errors.Fmt("failed to push pubsub message, status code: %d, body: %s", resp.StatusCode, body))
 	}
 }
 

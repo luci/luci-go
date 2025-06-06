@@ -21,14 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/pubsub/pstest"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -336,18 +330,6 @@ func TestCancelBuild(t *testing.T) {
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
 		)
-		pubsubSrv := pstest.NewServer()
-		defer func() { _ = pubsubSrv.Close() }()
-		pubsubClient, err := pubsub.NewClient(ctx, "luci-change-verifier",
-			option.WithEndpoint(pubsubSrv.Addr),
-			option.WithoutAuthentication(),
-			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
-		)
-		defer func() { _ = pubsubClient.Close() }()
-		assert.NoErr(t, err)
-		topic, err := pubsubClient.CreateTopic(ctx, "test-topic")
-		assert.NoErr(t, err)
-		fake.RegisterPubsubTopic(bbHost, topic)
 
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
@@ -381,8 +363,6 @@ func TestCancelBuild(t *testing.T) {
 					WithUpdateTime(tc.Now()).
 					WithSummaryMarkdown("no longer needed").
 					Construct())))
-				pubsubMsg := &bbpb.BuildsV2PubSub{}
-				assert.NoErr(t, protojson.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg))
 			})
 			t.Run("With mask", func(t *ftt.Test) {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{

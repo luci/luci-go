@@ -73,10 +73,6 @@ queue:
   rate: 500/s
   target: default
 
-- name: listen-bb-pubsub
-  rate: 10/s
-  target: default
-
 - name: update-tryjob
   rate: 150/s
   target: default

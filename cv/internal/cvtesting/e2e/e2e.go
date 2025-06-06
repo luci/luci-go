@@ -16,20 +16,18 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"math"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/pubsub/pstest"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -49,7 +47,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
-	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
+	bbsubscriber "go.chromium.org/luci/cv/internal/buildbucket/subscriber"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -167,11 +165,6 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier, tjNotifier)
 	clUpdater := changelist.NewUpdater(t.TQDispatcher, clMutator)
 	bbFactory := t.BuildbucketFake.NewClientFactory()
-	topic, sub, cleanupFn := t.makeBuildbucketPubsub(ctx)
-	testingT.Cleanup(cleanupFn)
-	t.BuildbucketFake.RegisterPubsubTopic(buildbucketHost, topic)
-	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
-	testingT.Cleanup(cleanupFn)
 	qm := quota.NewManager(gFactory)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
@@ -184,6 +177,26 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	tryjobUpdater.RegisterBackend(bbFacade)
 	tryjobCancellator := tjcancel.NewCancellator(tjNotifier)
 	tryjobCancellator.RegisterBackend(bbFacade)
+	bbSubscriber := &bbsubscriber.BuildbucketSubscriber{
+		TryjobNotifier: tjNotifier,
+		TryjobUpdater:  tryjobUpdater,
+	}
+	bbSubscriberSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload common.PubSubMessagePayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "failed to decode Pub/Sub message: %s", err)
+			return
+		}
+		if err := bbSubscriber.ProcessPubSubMessage(ctx, payload); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "failed to process Pub/Sub message: %s", err)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	testingT.Cleanup(func() { bbSubscriberSrv.Close() })
+	t.BuildbucketFake.RegisterPubSubPushEndpoint(buildbucketHost, bbSubscriberSrv.URL)
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
 	return ctx
 }
@@ -606,28 +619,4 @@ func (t *Test) RunEndedPubSubTasks() tqtesting.TaskList {
 		_, ok := t.Payload.(*cvpubsub.PublishRunEndedTask)
 		return ok
 	})
-}
-
-func (t *Test) makeBuildbucketPubsub(ctx context.Context) (*pubsub.Topic, *pubsub.Subscription, func()) {
-	srv := pstest.NewServer()
-	client, err := pubsub.NewClient(ctx, t.Env.GAEInfo.CloudProject,
-		option.WithEndpoint(srv.Addr),
-		option.WithoutAuthentication(),
-		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
-	)
-	if err != nil {
-		panic(err)
-	}
-	topic, err := client.CreateTopic(ctx, "bb-build")
-	if err != nil {
-		panic(err)
-	}
-	sub, err := client.CreateSubscription(ctx, bblistener.SubscriptionID, pubsub.SubscriptionConfig{Topic: topic})
-	if err != nil {
-		panic(err)
-	}
-	return topic, sub, func() {
-		_ = client.Close()
-		_ = srv.Close()
-	}
 }
