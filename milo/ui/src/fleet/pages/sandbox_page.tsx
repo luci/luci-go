@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListMachinesRequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 import { useUfsClient } from '../hooks/prpc_clients';
 import { FleetHelmet } from '../layouts/fleet_helmet';
+import { requestSurvey } from '../utils/survey';
 
 export const SandboxPage = () => {
+  const authState = useAuthState();
+
   // See go/luci-ui-rpc-tutorial for more info on how to make pRPC requests.
   const ufsClient = useUfsClient();
 
@@ -39,6 +44,12 @@ export const SandboxPage = () => {
       Welcome. This is a sandbox page with experiments and tools for developers
       of the Fleet Console to use for testing the functionality of the Fleet
       Console UI.
+      <h2>Test Survey</h2>
+      <Button
+        onClick={() => requestSurvey(SETTINGS.fleetConsole.hats, authState)}
+      >
+        Test Survey
+      </Button>
       <h2>Sample: UFS ListMachinesRequest</h2>
       <pre style={{ maxHeight: '300px', maxWidth: '100%', overflow: 'scroll' }}>
         {JSON.stringify(machines, null, 2)}

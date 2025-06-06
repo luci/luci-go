@@ -13,12 +13,23 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import fetchMock from 'fetch-mock-jest';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { SandboxPage } from './sandbox_page';
 
 describe('<SandboxPage />', () => {
+  beforeEach(() => {
+    mockFetchAuthState();
+  });
+
+  afterEach(() => {
+    fetchMock.mockClear();
+    fetchMock.reset();
+  });
+
   it('should render', async () => {
     render(
       <FakeContextProvider>

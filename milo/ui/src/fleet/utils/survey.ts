@@ -60,6 +60,5 @@ export const requestSurvey = (cfg: HaTSConfig, auth: AuthState) => {
     triggerId: cfg.triggerId,
     callback: callback,
     authuser: Number(auth.identity),
-    enableTestingMode: import.meta.env.DEV, // Set to false for production
   });
 };
