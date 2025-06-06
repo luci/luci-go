@@ -45,6 +45,9 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
+
+	// For transactional task queue support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {
