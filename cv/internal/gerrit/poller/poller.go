@@ -245,6 +245,15 @@ func (p *Poller) pollWithConfig(ctx context.Context, luciProject string, meta pr
 	}
 	skipIncrementalPoll := cg.GerritListenerType != cfgpb.Config_GERRIT_LISTENER_TYPE_LEGACY_POLLER
 
+	// TODO: crbug/421431364 - The following HACK needs to be reverted once CLs to
+	// update project config lands:
+	//  * https://flutter-review.googlesource.com/c/infra/+/66341
+	//  * https://quickoffice-internal-review.git.corp.google.com/c/html-office/+/43130
+	switch luciProject {
+	case "flutter", "quickoffice":
+		skipIncrementalPoll = false
+	}
+
 	// Use WorkPool to limit concurrency, but keep track of errors per query
 	// ourselves because WorkPool doesn't guarantee specific errors order.
 	errs := make(errors.MultiError, len(stateBefore.QueryStates.GetStates()))
