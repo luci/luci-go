@@ -130,7 +130,7 @@ export function TestNavigationDrawer() {
         elevation={isOpen ? 0 : 4}
         sx={{
           position: 'fixed',
-          top: '50%',
+          top: '20%',
           left: isOpen ? DRAWER_WIDTH_OPEN : 0,
           transform: 'translateY(-50%)',
           zIndex: theme.zIndex.drawer + (isOpen ? 1 : 2),
@@ -150,11 +150,13 @@ export function TestNavigationDrawer() {
           placement="right"
         >
           <IconButton
+            sx={{
+              color: 'var(--blue-600, #1A73E8)',
+            }}
             onClick={handleToggleDrawer}
-            size="medium"
-            sx={{ p: 0.75 }}
+            size="small"
           >
-            <MenuIcon />
+            <MenuIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Paper>
