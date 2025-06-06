@@ -64,6 +64,7 @@ export function RecommendationsSection() {
           gap: 2,
           p: 2,
           height: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <Box

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 
 import { TestTabContent } from './test_tab_content'; // Correct path
@@ -23,11 +23,6 @@ export function TestDetails() {
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) =>
     setSelectedTab(newValue);
 
-  const placeholderInvocationDetails = `Invocation Details Placeholder (Realm: TODO)`;
-  const placeholderPerformance = 'Performance Content Placeholder - TODO';
-  const placeholderChanges = 'Changes Content Placeholder - TODO';
-  const placeholderFeatureFlags = 'Feature Flags Content Placeholder - TODO';
-
   return (
     <>
       <Tabs
@@ -36,23 +31,9 @@ export function TestDetails() {
         aria-label="Test Details Sections"
       >
         <Tab label="Test" />
-        <Tab label="Invocation details" />
-        <Tab label="Performance" />
-        <Tab label="Changes" />
-        <Tab label="Feature flags" />
       </Tabs>
 
-      <Box sx={{ paddingTop: '24px' }}>
-        {selectedTab === 0 && <TestTabContent />}
-        {selectedTab === 1 && (
-          <Typography>{placeholderInvocationDetails}</Typography>
-        )}
-        {selectedTab === 2 && <Typography>{placeholderPerformance}</Typography>}
-        {selectedTab === 3 && <Typography>{placeholderChanges}</Typography>}
-        {selectedTab === 4 && (
-          <Typography>{placeholderFeatureFlags}</Typography>
-        )}
-      </Box>
+      <Box>{selectedTab === 0 && <TestTabContent />}</Box>
     </>
   );
 }

@@ -27,11 +27,15 @@ export function OverviewSection() {
           display: 'flex',
           flexDirection: 'column',
           gap: '32px',
-          p: '24px',
+          p: 2,
           height: '100%',
+          boxSizing: 'border-box',
         }}
       >
-        <Typography variant="h6" component="div" sx={{ mb: 0.5 }}>
+        <Typography
+          component="div"
+          sx={{ mb: 0.5, fontSize: '20px', fontWeight: '400' }}
+        >
           Overview
         </Typography>
 

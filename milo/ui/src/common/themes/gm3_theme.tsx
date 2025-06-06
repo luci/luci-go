@@ -283,5 +283,12 @@ export const gm3PageTheme = createTheme({
         },
       ],
     },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        notchedOutline: {
+          borderColor: 'grey[300]',
+        },
+      },
+    },
   },
 });

@@ -19,6 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -38,6 +39,7 @@ import {
   TestVariantsTable,
 } from '@/test_investigation/components/invocation_page';
 import { InvocationProvider } from '@/test_investigation/context/provider';
+import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 export function InvocationPage() {
   const { invocationId: invocationId } = useParams<{
@@ -93,6 +95,11 @@ export function InvocationPage() {
     },
   );
 
+  const project = useMemo(
+    () => getProjectFromRealm(invocation?.realm),
+    [invocation?.realm],
+  );
+
   if (isLoadingInvocation) {
     return (
       <Box
@@ -115,7 +122,11 @@ export function InvocationPage() {
   }
 
   return (
-    <InvocationProvider invocation={invocation} rawInvocationId={invocationId}>
+    <InvocationProvider
+      project={project}
+      invocation={invocation}
+      rawInvocationId={invocationId}
+    >
       <ThemeProvider theme={gm3PageTheme}>
         <Box
           component="main"

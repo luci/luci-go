@@ -102,6 +102,7 @@ describe('<AnalysisSubsection />', () => {
     return render(
       <FakeContextProvider>
         <InvocationProvider
+          project="test-project"
           invocation={effectiveInv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >

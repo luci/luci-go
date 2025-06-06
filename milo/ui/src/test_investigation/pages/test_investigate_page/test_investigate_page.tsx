@@ -24,6 +24,7 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useEstablishProjectCtx } from '@/common/components/page_meta';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -39,6 +40,7 @@ import {
   InvocationProvider,
   TestVariantProvider,
 } from '@/test_investigation/context/provider';
+import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 export function TestInvestigatePage() {
   const {
@@ -94,6 +96,13 @@ export function TestInvestigatePage() {
       return data.testVariants[0];
     },
   });
+
+  const project = useMemo(
+    () => getProjectFromRealm(invocation?.realm),
+    [invocation?.realm],
+  );
+
+  useEstablishProjectCtx(project);
 
   if (isLoadingInvocation || isLoadingTestVariant) {
     return (
@@ -162,6 +171,7 @@ export function TestInvestigatePage() {
     <InvocationProvider
       invocation={invocation}
       rawInvocationId={rawInvocationId}
+      project={project}
     >
       <TestVariantProvider testVariant={testVariant}>
         <ThemeProvider theme={gm3PageTheme}>

@@ -96,6 +96,7 @@ describe('<HistoryRateDisplaySection />', () => {
     return render(
       <FakeContextProvider>
         <InvocationProvider
+          project="test-project"
           invocation={inv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >

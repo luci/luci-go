@@ -212,20 +212,27 @@ export function OverviewStatusSection() {
         {MainStatusIconComponent && (
           <MainStatusIconComponent
             sx={{
-              fontSize: 20,
+              fontSize: 24,
               color: mainStatusStyle.iconColor || mainStatusStyle.textColor,
             }}
           />
         )}
         <Typography
           variant="body1"
-          sx={{ fontWeight: 'bold', color: mainStatusStyle.textColor }}
+          sx={{ fontWeight: '400', fontSize: '24px' }}
         >
           {displayStatusString}
         </Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary" component="div">
-        Related bug(s):{' '}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Typography variant="body2" color="text.secondary" component="div">
+          Related bug(s):{' '}
+        </Typography>
         {associatedBugs && associatedBugs.length > 0 ? (
           associatedBugs.map((bug, index) => (
             <React.Fragment key={`${bug.system}-${bug.id}`}>
@@ -252,7 +259,7 @@ export function OverviewStatusSection() {
             {NO_ASSOCIATED_BUGS_TEXT}
           </Typography>
         )}
-      </Typography>
+      </Box>
 
       <Typography variant="body2" color="text.secondary" component="div">
         <Box

@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * Parses the test result name and get the individual components.
- */
-export function parseTestResultName(name: string) {
-  const match = name.match(
-    /^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/,
-  );
-  if (!match) {
-    throw new Error(`invalid test result name: ${name}`);
-  }
+import { ORDERED_VARIANT_DEF_KEYS } from '@/common/constants/test';
 
-  const [, invocationId, testId, resultId] = match;
-  return {
-    invocationId,
-    testId: decodeURIComponent(testId),
-    resultId,
-  };
+export function getSortedTestVariantDef(def: { [key: string]: string }) {
+  const res: Array<[string, string]> = [];
+  const seen = new Set();
+  for (const key of ORDERED_VARIANT_DEF_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(def, key)) {
+      res.push([key, def[key]]);
+      seen.add(key);
+    }
+  }
+  for (const [key, value] of Object.entries(def)) {
+    if (!seen.has(key)) {
+      res.push([key, value]);
+    }
+  }
+  return res;
 }

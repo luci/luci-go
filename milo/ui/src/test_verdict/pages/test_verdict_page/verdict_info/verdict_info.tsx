@@ -20,12 +20,12 @@ import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import { Fragment, useState } from 'react';
 
+import { getSortedTestVariantDef } from '@/common/tools/test_utils/variant_utils';
 import {
   generateTestHistoryURLSearchParams,
   getCodeSourceUrl,
   getTestHistoryURLWithSearchParam,
 } from '@/common/tools/url_utils';
-import { getSortedTestVariantDef } from '@/test_verdict/tools/utils';
 
 import { useProject, useTestVerdict } from '../context';
 

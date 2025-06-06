@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { JSX } from 'react';
+import React from 'react';
 
 export interface InfoLineItem {
   label: string;
   value?: string;
   href?: string;
-  icon?: JSX.Element;
+  icon?: React.ReactNode;
   isPlaceholder?: boolean;
-  customRender?: () => JSX.Element;
+  customRender?: () => React.ReactNode;
 }
 
 export const DEFAULT_TOOLTIP_TEXT = 'Copy test name';

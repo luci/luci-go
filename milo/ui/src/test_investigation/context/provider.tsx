@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-
-import { getProjectFromRealm } from '../utils/test_variant_utils';
 
 import { InvocationContext, TestVariantContext } from './context';
 
@@ -28,18 +26,16 @@ interface Props {
 interface InvocationProviderProps extends Props {
   invocation: Invocation;
   rawInvocationId: string;
+  project: string | undefined;
   children: React.ReactNode;
 }
 
 export function InvocationProvider({
   invocation,
   rawInvocationId,
+  project,
   children,
 }: InvocationProviderProps) {
-  const project = useMemo(
-    () => getProjectFromRealm(invocation.realm),
-    [invocation.realm],
-  );
   return (
     <InvocationContext.Provider
       value={{

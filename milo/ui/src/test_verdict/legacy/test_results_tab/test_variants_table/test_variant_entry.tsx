@@ -45,6 +45,7 @@ import { consumeStore, StoreInstance } from '@/common/store';
 import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { logging } from '@/common/tools/logging';
+import { getSortedTestVariantDef } from '@/common/tools/test_utils/variant_utils';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { unwrapObservable } from '@/generic_libs/tools/mobx_utils';
@@ -55,7 +56,6 @@ import {
 import { attachTags, hasTags } from '@/generic_libs/tools/tag';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
-import { getSortedTestVariantDef } from '@/test_verdict/tools/utils';
 
 import { consumeInvId, consumeProject, consumeTestTabUrl } from './context';
 

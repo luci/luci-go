@@ -14,6 +14,7 @@
 
 import {
   Box,
+  Chip,
   FormControl,
   MenuItem,
   Select,
@@ -91,10 +92,18 @@ export function ClusteringControls({
           value={selectedClusterIndex}
           onChange={onClusterChange}
           aria-label="Select Failure Cluster"
-          renderValue={(value) =>
+          variant="outlined"
+          renderValue={(value) => (
             // Use statusV2 from the first attempt's result in the current cluster
-            `${getResultStatusV2DisplayText(currentAttempts[0]?.result?.statusV2)}: Cluster ${value + 1} of ${clusteredFailures.length}`
-          }
+            <>
+              <Chip
+                label={getResultStatusV2DisplayText(
+                  currentAttempts[0]?.result?.statusV2,
+                )}
+              />
+              {` Cluster ${value + 1} of ${clusteredFailures.length}`}
+            </>
+          )}
           sx={{
             fontSize: '0.875rem',
             '.MuiSelect-icon': { fontSize: '1.2rem' },
@@ -114,10 +123,15 @@ export function ClusteringControls({
           value={selectedAttemptIndex}
           onChange={onAttemptChange}
           aria-label="Select Attempt"
-          renderValue={(value) =>
-            // Use statusV2 from the current selected result
-            `${getResultStatusV2DisplayText(currentResult?.statusV2)}: Attempt ${value + 1} of ${currentAttempts.length}`
-          }
+          variant="outlined"
+          renderValue={(value) => (
+            <>
+              <Chip
+                label={getResultStatusV2DisplayText(currentResult?.statusV2)}
+              />
+              {` Attempt ${value + 1} of ${currentAttempts.length}`}
+            </>
+          )}
           sx={{
             fontSize: '0.875rem',
             '.MuiSelect-icon': { fontSize: '1.2rem' },

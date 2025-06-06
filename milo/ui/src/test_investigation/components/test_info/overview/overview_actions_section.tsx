@@ -51,8 +51,6 @@ export function OverviewActionsSection(): JSX.Element {
   return (
     <Box
       sx={{
-        mt: 'auto',
-        pt: 2,
         display: 'flex',
         gap: 1,
         flexWrap: 'wrap',
