@@ -112,13 +112,18 @@ export function buildHierarchyTree(
 
   // Algorithm:
   // 1. Put any test variants with structured ids into a tree based on the structured ids
-  const structuredVariants = testVariants.filter((tv) => !!tv.testIdStructured);
+  const structuredVariants = testVariants.filter(
+    (tv) =>
+      !!tv.testIdStructured && tv.testIdStructured.moduleScheme !== 'legacy',
+  );
   result.tree = buildStructuredTree(
     StructuredTreeLevel.Module,
     structuredVariants,
   );
   // 2. For the remaining test variants, build up a hierarchy based on longest common prefixes and common separator characters.
-  const flatVariants = testVariants.filter((tv) => !tv.testIdStructured);
+  const flatVariants = testVariants.filter(
+    (tv) => !tv.testIdStructured || tv.testIdStructured.moduleName === 'legacy',
+  );
   result.tree = [
     ...result.tree,
     ...compressSingleChildNodes(buildFlatTree(flatVariants)),
@@ -230,7 +235,7 @@ export function buildFlatTreeFromEntries(
     const component = entry.path[level] || '';
     if (entry.path.length - 1 === level) {
       leaves.push({
-        id: `${level}-${component}`,
+        id: entry.path.slice(0, level + 1).join(''),
         label: component,
         level: level,
         totalTests: 1,
@@ -250,7 +255,7 @@ export function buildFlatTreeFromEntries(
     const children = buildFlatTreeFromEntries(level + 1, groupEntries);
     if (children.length > 0) {
       nodes.push({
-        id: `${component}-${level}`,
+        id: groupEntries[0].path.slice(0, level + 1).join(''),
         label: component,
         level: level,
         totalTests: children.reduce((sum, child) => sum + child.totalTests, 0),

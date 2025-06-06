@@ -92,6 +92,22 @@ export function getCommitInfoFromInvocation(
   return undefined;
 }
 
+/**
+ * Constructs a Gitiles commit URL for the base commit from an Invocation object.
+ *
+ * @param invocation The invocation object, which may contain Gitiles source info.
+ * @returns A fully-formed Gitiles URL string, or undefined if essential information is missing.
+ */
+export function getCommitGitilesUrlFromInvocation(
+  invocation: Invocation,
+): string | undefined {
+  const gc = invocation.sourceSpec?.sources?.gitilesCommit;
+  if (gc && gc.host && gc.project && gc.commitHash) {
+    return `https://${gc.host}/${gc.project}/+/${gc.commitHash}`;
+  }
+  return undefined;
+}
+
 export function getVariantValue(
   variantDef: Variant | undefined,
   key: string,

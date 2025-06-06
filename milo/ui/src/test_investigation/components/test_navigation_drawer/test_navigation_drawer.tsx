@@ -61,6 +61,7 @@ export function TestNavigationDrawer() {
           pageSize: 1000,
           readMask: [
             'test_id',
+            'test_id_structured',
             'variant_hash',
             'variant.def',
             'test_metadata.name',

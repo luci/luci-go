@@ -179,54 +179,76 @@ export const gm3PageTheme = createTheme({
       },
     },
     MuiChip: {
-      defaultProps: {
-        size: 'small',
-        variant: 'filled',
-      },
       styleOverrides: {
         root: ({ ownerState, theme }) => ({
-          borderRadius: '4px',
-          height: '20px',
-          ...(ownerState.color === 'default' && {
-            backgroundColor: theme.palette.gm3.surfaceContainer,
+          // Set the pill shape to match the design guide.
+          borderRadius: '999px',
+          height: '24px',
+          fontWeight: 500,
+
+          // Styles for FILLED chips (default)
+          ...(ownerState.variant === 'filled' && {
+            // Default filled chip (e.g., a neutral tag)
+            ...(ownerState.color === 'default' && {
+              backgroundColor: theme.palette.gm3.surfaceContainer,
+              color: theme.palette.gm3.onSurfaceMedium,
+            }),
+            // Primary filled chip (e.g., blue applied filter)
+            ...(ownerState.color === 'primary' && {
+              backgroundColor: theme.palette.gm3.primaryContainer,
+              color: theme.palette.gm3.primary,
+            }),
+            // Error filled chip
+            ...(ownerState.color === 'error' && {
+              backgroundColor: theme.palette.gm3.errorContainer,
+              color: theme.palette.gm3.error,
+            }),
+            // Success filled chip
+            ...(ownerState.color === 'success' && {
+              backgroundColor: theme.palette.gm3.successContainer,
+              color: theme.palette.gm3.success,
+            }),
+            // Warning filled chip
+            ...(ownerState.color === 'warning' && {
+              backgroundColor: theme.palette.gm3.warningContainer,
+              color: theme.palette.gm3.warningDark,
+            }),
           }),
-          ...(ownerState.color === 'primary' && {
-            backgroundColor: theme.palette.gm3.primaryContainer,
-          }),
-          ...(ownerState.color === 'error' && {
-            backgroundColor: theme.palette.gm3.errorContainer,
-          }),
-          ...(ownerState.color === 'success' && {
-            backgroundColor: theme.palette.gm3.successContainer,
-          }),
-          ...(ownerState.color === 'warning' && {
-            backgroundColor: theme.palette.gm3.warningContainer,
+
+          // Styles for OUTLINED chips (e.g., "+ Add a filter")
+          ...(ownerState.variant === 'outlined' && {
+            borderColor: theme.palette.divider,
+            color: theme.palette.gm3.onSurfaceVariant,
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.gm3.onSurfaceVariant, 0.08),
+            },
+            // Style the icon for outlined chips to match the text/border.
+            '& .MuiChip-icon': {
+              color: theme.palette.gm3.onSurfaceVariant,
+            },
           }),
         }),
         labelSmall: {
-          fontFamily: "'Roboto', sans-serif",
-          fontWeight: 400,
-          fontSize: '12px',
-          lineHeight: '16px',
-          letterSpacing: '0.3px',
-          color: gm3PaletteColors.onSurfaceMedium,
           paddingLeft: '8px',
           paddingRight: '8px',
         },
-        iconSmall: ({ ownerState, theme }) => ({
-          fontSize: '16px',
-          marginLeft: '4px',
+        iconSmall: {
+          fontSize: '18px',
+          marginLeft: '6px',
           marginRight: '-4px',
-          color:
-            ownerState.color === 'primary'
-              ? theme.palette.primary.main
-              : ownerState.color === 'error'
-                ? theme.palette.error.main
-                : ownerState.color === 'success'
-                  ? theme.palette.success.main
-                  : ownerState.color === 'warning'
-                    ? theme.palette.gm3.warningDark
-                    : theme.palette.gm3.onSurfaceVariant,
+        },
+        // Style the delete icon ('X') to match the chip's text color.
+        deleteIcon: ({ ownerState, theme }) => ({
+          marginRight: '6px',
+          ...(ownerState.color === 'primary' && {
+            color: alpha(theme.palette.gm3.primary, 0.7),
+            '&:hover': { color: theme.palette.gm3.primary },
+          }),
+          ...(ownerState.color === 'error' && {
+            color: alpha(theme.palette.gm3.error, 0.7),
+            '&:hover': { color: theme.palette.gm3.error },
+          }),
+          // Add other colors as needed...
         }),
       },
     },

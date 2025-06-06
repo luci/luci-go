@@ -101,24 +101,43 @@ html {
 
 
   /* --- New Colors from Figma --- */
-  --gm3-color-primary: #1A73E8; /* Blue for links, selected tabs, buttons */
-  --gm3-color-on-surface-strong: #202124; /* Strongest text, titles */
-  --gm3-color-on-surface-medium: #3C4043; /* Body text, captions */
-  --gm3-color-on-surface-light: #80868B; /* Secondary/Hint text */
+  --gm3-color-primary: #1A73E8; /* Blue for links, selected tabs, buttons (G Blue 600) */
+  --gm3-color-on-surface-strong: #202124; /* Strongest text, titles (G Grey 900) */
+  --gm3-color-on-surface-medium: #3C4043; /* Body text, captions (G Grey 800) */
+  --gm3-color-on-surface-light: #80868B; /* Secondary/Hint text (G Grey 600) */
 
-  --gm3-color-error: #D93025; /* Error text/icons */
-  --gm3-color-error-container: #FCE8E6; /* Error background/chip */
+  --gm3-color-error: #D93025; /* Error text/icons (G Red 600) */
+  --gm3-color-error-container: #FCE8E6; /* Error background/chip (G Red 50) */
 
-  --gm3-color-success: #1E8E3E; /* Success text/icons */
-  --gm3-color-success-container: #E6F4EA; /* Success background/chip */
+  --gm3-color-success: #1E8E3E; /* Success text/icons (G Green 600) */
+  --gm3-color-success-container: #E6F4EA; /* Success background/chip (G Green 50) */
 
-  --gm3-color-warning: #F29900; /* Warning text */
-  --gm3-color-warning-dark: #E37400; /* Warning icons */
-  --gm3-color-warning-container: #FEF7E0; /* Warning background/chip */
+  --gm3-color-warning: #F29900; /* Warning text (G Yellow 700) */
+  --gm3-color-warning-dark: #E37400; /* Warning icons (G Yellow 900) */
+  --gm3-color-warning-container: #FEF7E0; /* Warning background/chip (G Yellow 50) */
 
-  --gm3-color-primary-container: #E8F0FE; /* Light blue background/chip */
-  --gm3-color-surface-container: #F1F3F4; /* Light grey background/chip */
-  --gm3-color-surface-container-low: #F8F9FA; /* Lighter grey background/section */
+  --gm3-color-primary-container: #E8F0FE; /* Light blue background/chip (G Blue 50) */
+  --gm3-color-surface-container: #F1F3F4; /* Light grey background/chip (G Grey 100) */
+  --gm3-color-surface-container-low: #F8F9FA; /* Lighter grey background/section (G Grey 50) */
+
+  /* --- CORRECTED: GM3 On-Container, Info, and Outline Colors using Brand Palette --- */
+  /* High-contrast colors for text on top of colored containers */
+  --gm3-color-on-primary-container: #174ea6;  /* G Blue 900 */
+  --gm3-color-on-error-container: #a50e0e;      /* G Red 900 */
+  --gm3-color-on-success-container: #0d652d;    /* G Green 900 */
+  --gm3-color-on-warning-container: #e37400;    /* G Yellow 900 */
+  --gm3-color-on-info-container: #174ea6;       /* G Blue 900 */
+
+  /* A neutral, informational color set based on the Primary/Blue palette */
+  --gm3-color-info: var(--gm3-color-primary);             /* G Blue 600 */
+  --gm3-color-info-container: var(--gm3-color-primary-container); /* G Blue 50 */
+
+  /* Outline colors for bordered components, aliased to main colors */
+  --gm3-color-primary-outline: var(--gm3-color-primary);
+  --gm3-color-error-outline: var(--gm3-color-error);
+  --gm3-color-success-outline: var(--gm3-color-success);
+  --gm3-color-warning-outline: var(--gm3-color-warning);
+  --gm3-color-info-outline: var(--gm3-color-info);
 
   /* --- Font Families (Ensure they are loaded) --- */
   --gm3-font-family-robot: 'Roboto', sans-serif;

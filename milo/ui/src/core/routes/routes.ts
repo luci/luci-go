@@ -313,6 +313,10 @@ export const routes: RouteObject[] = [
     // inv/:inv-id/module/:module-name/scheme/:module-scheme/variant/:variant/coarse/:coarse-name/fine/:fine-name/test-id/:test-id
     children: [
       {
+        path: 'invocations/:invocationId',
+        lazy: () => import('@/test_investigation/pages/invocation_page'),
+      },
+      {
         path: 'invocations/:invocationId/tests/:testId/variants/:variantHash',
         lazy: () => import('@/test_investigation/pages/test_investigate_page'),
       },

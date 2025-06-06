@@ -47,7 +47,7 @@ function getSemanticStatusFromTestVariant(
     case TestVariantStatus.EXPECTED:
       return 'expected';
     case TestVariantStatus.UNEXPECTED:
-      return 'failure';
+      return 'failed';
     case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
       return 'unexpectedly_skipped';
     case TestVariantStatus.FLAKY:
