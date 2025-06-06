@@ -1569,31 +1569,31 @@ type buganizerBug struct {
 func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerBug) error {
 	issue := buganizerStore.Issues[bug.ID].Issue
 	if issue == nil {
-		return errors.Reason("buganizer issue %v not found", bug.ID).Err()
+		return errors.Fmt("buganizer issue %v not found", bug.ID)
 	}
 	if issue.IssueId != bug.ID {
-		return errors.Reason("issue ID: got %v, want %v", issue.IssueId, bug.ID).Err()
+		return errors.Fmt("issue ID: got %v, want %v", issue.IssueId, bug.ID)
 	}
 	if !strings.Contains(issue.IssueState.Title, bug.ExpectedTitle) {
-		return errors.Reason("issue title: got %q, expected it to contain %q", issue.IssueState.Title, bug.ExpectedTitle).Err()
+		return errors.Fmt("issue title: got %q, expected it to contain %q", issue.IssueState.Title, bug.ExpectedTitle)
 	}
 	if issue.IssueState.ComponentId != bug.Component {
-		return errors.Reason("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component).Err()
+		return errors.Fmt("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component)
 	}
 
 	for _, expectedContent := range bug.ExpectedContent {
 		if !strings.Contains(issue.Description.Comment, expectedContent) {
-			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent).Err()
+			return errors.Fmt("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent)
 		}
 	}
 	comments := buganizerStore.Issues[bug.ID].Comments
 	if len(comments) != 1+len(bug.ExpectedPolicyIDsActivated) {
-		return errors.Reason("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated)).Err()
+		return errors.Fmt("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated))
 	}
 	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
 		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
 		if !strings.Contains(comments[1+i].Comment, expectedContent) {
-			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent).Err()
+			return errors.Fmt("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent)
 		}
 	}
 	return nil

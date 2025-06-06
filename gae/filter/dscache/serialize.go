@@ -91,7 +91,7 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		return nil, ds.ErrNoSuchEntity
 	}
 	if len(val) < 1 {
-		return nil, errors.Reason("missing the compression type byte").Err()
+		return nil, errors.New("missing the compression type byte")
 	}
 
 	compTypeByte, data := val[0], val[1:]
@@ -120,7 +120,7 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		}
 
 	default:
-		return nil, errors.Reason("unknown compression scheme #%d", compTypeByte).Err()
+		return nil, errors.Fmt("unknown compression scheme #%d", compTypeByte)
 	}
 
 	return ds.Deserializer{KeyContext: kc}.PropertyMap(bytes.NewBuffer(data))

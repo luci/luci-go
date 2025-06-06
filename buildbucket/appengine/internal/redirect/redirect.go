@@ -232,7 +232,7 @@ func handleViewBuilder(c *router.Context) {
 		errMsg = "missing builder"
 	}
 	if errMsg != "" {
-		replyError(c, errors.Reason(errMsg).Err(), "invalid parameters", http.StatusBadRequest)
+		replyError(c, errors.New(errMsg), "invalid parameters", http.StatusBadRequest)
 		return
 	}
 

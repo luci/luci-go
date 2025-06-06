@@ -629,7 +629,7 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 		if data == nil {
 			opName = "delete"
 		}
-		return errors.Reason("Attempting to %s %s during read-only transaction.", opName, key).Err()
+		return errors.Fmt("Attempting to %s %s during read-only transaction.", opName, key)
 	}
 
 	rk := string(keyBytes(key.Root()))

@@ -76,7 +76,7 @@ func RunMapper(ctx context.Context, admin *adminImpl, sched *tqtesting.Scheduler
 		return 0, err
 	}
 	if state.Info.State != dsmapperpb.State_SUCCESS {
-		return 0, errors.Reason("expecting SUCCESS state, got %s", state.Info.State).Err()
+		return 0, errors.Fmt("expecting SUCCESS state, got %s", state.Info.State)
 	}
 
 	return dsmapper.JobID(jobID.JobId), nil

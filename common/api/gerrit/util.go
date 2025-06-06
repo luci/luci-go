@@ -51,18 +51,18 @@ func FuzzyParseURL(s string) (string, int64, error) {
 			panic("impossible")
 		}
 		if change, err = strconv.ParseInt(m[2], 10, 64); err != nil {
-			return "", 0, errors.Reason("invalid crrev.com URL change number /%s/", m[2]).Err()
+			return "", 0, errors.Fmt("invalid crrev.com URL change number /%s/", m[2])
 		}
 	} else {
 		m := regexGoB.FindStringSubmatch(s)
 		if m == nil {
-			return "", 0, errors.Reason("Gerrit URL didn't match regexp %q", regexGoB.String()).Err()
+			return "", 0, errors.Fmt("Gerrit URL didn't match regexp %q", regexGoB.String())
 		}
 		if host = m[1]; host == "" {
 			return "", 0, errors.New("invalid Gerrit host")
 		}
 		if change, err = strconv.ParseInt(m[7], 10, 64); err != nil {
-			return "", 0, errors.Reason("invalid Gerrit URL change number /%s/", m[7]).Err()
+			return "", 0, errors.Fmt("invalid Gerrit URL change number /%s/", m[7])
 		}
 	}
 	return host, change, nil

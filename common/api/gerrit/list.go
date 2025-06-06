@@ -177,9 +177,8 @@ func (p *listChangesPager) fetch(ctx context.Context) ([]*gerritpb.ChangeInfo, b
 		case more && len(newChanges) == len(changes):
 			// No progress, likely because there are >opts.PageSize Gerrit changes
 			// with the same .updated timestamp.
-			return changes, true, errors.Reason(
-				"PagingListChanges stuck on %v: no new changes out of %d fetched", req,
-				len(olderChanges)).Err()
+			return changes, true, errors.Fmt("PagingListChanges stuck on %v: no new changes out of %d fetched", req,
+				len(olderChanges))
 		default:
 			changes = newChanges
 		}
@@ -198,11 +197,12 @@ func (p *listChangesPager) fetch(ctx context.Context) ([]*gerritpb.ChangeInfo, b
 		// p.opts.UpdatedAfter == newest.GetUpdated().AsTime().
 		// However, this is still not guaranteed to catch up with rate of changes,
 		// and in practice shouldn't be necessary.
-		return changes, true, errors.New(
-			"PagingListChanges can't keep up with the rate of updates to changes. "+
-				"Try increasing PagingListChangesOptions.PageSize or "+
-				"restricting PagingListChangesOptions.UpdatedBefore to past timestamp",
-			transient.Tag)
+		return changes, true,
+
+			transient.Tag.Apply(errors.New("PagingListChanges can't keep up with the rate of updates to changes. " +
+				"Try increasing PagingListChangesOptions.PageSize or " +
+				"restricting PagingListChangesOptions.UpdatedBefore to past timestamp"))
+
 	}
 	changes = deduper.mergeSorted(newerChanges, changes)
 	if len(changes) > p.opts.Limit {
@@ -247,7 +247,7 @@ func (p *listChangesPager) doRPC(ctx context.Context, req *gerritpb.ListChangesR
 	trustMax := int(float64(req.GetLimit()) * p.opts.MoreChangesTrustFactor)
 	switch l := len(resp.GetChanges()); {
 	case resp.GetMoreChanges() && l == 0:
-		return nil, false, errors.Reason("Broken ListChanges(Limit=%d) response with 0 changes yet MoreChanges=true", req.GetLimit()).Err()
+		return nil, false, errors.Fmt("Broken ListChanges(Limit=%d) response with 0 changes yet MoreChanges=true", req.GetLimit())
 	case l > trustMax:
 		// Assume there are more changes regardless of the actual MoreChanges value.
 		return resp.GetChanges(), true, nil

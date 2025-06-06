@@ -354,7 +354,7 @@ func TestBatchCancellation(t *testing.T) {
 
 		t.Run("all failures are retriable", func(t *ftt.Test) {
 			mgr.testingPostCancelTxn = func(tid string) error {
-				return errors.Reason("boom").Err()
+				return errors.New("boom")
 			}
 			assert.NoErr(t, mgr.runBatchCancellation(ctx, 10, &taskspb.BatchCancelTask{
 				Tasks:       []string{tID1, tID2},
@@ -370,7 +370,7 @@ func TestBatchCancellation(t *testing.T) {
 		t.Run("partial fail", func(t *ftt.Test) {
 			mgr.testingPostCancelTxn = func(tid string) error {
 				if tid == tID1 {
-					return errors.Reason("boom").Err()
+					return errors.New("boom")
 				}
 				return nil
 			}
@@ -396,7 +396,7 @@ func TestBatchCancellation(t *testing.T) {
 		t.Run("give up after sufficient retries", func(t *ftt.Test) {
 			mgr.testingPostCancelTxn = func(tid string) error {
 				if tid == tID1 {
-					return errors.Reason("boom").Err()
+					return errors.New("boom")
 				}
 				return nil
 			}

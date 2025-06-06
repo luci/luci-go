@@ -155,7 +155,7 @@ func TestGetObjectURL(t *testing.T) {
 	})
 
 	ftt.Run("No such file", t, func(t *ftt.Test) {
-		signErr = errors.Reason("blah").Tag(grpcutil.NotFoundTag).Err()
+		signErr = grpcutil.NotFoundTag.Apply(errors.New("blah"))
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
@@ -167,7 +167,7 @@ func TestGetObjectURL(t *testing.T) {
 	})
 
 	ftt.Run("Internal error", t, func(t *ftt.Test) {
-		signErr = errors.Reason("internal").Err()
+		signErr = errors.New("internal")
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
@@ -217,7 +217,7 @@ func (m *mockedGS) Reader(ctx context.Context, path string, gen, minSpeed int64)
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}
-	return nil, errors.Reason("file %q is missing", path).Tag(gs.StatusCodeTag.WithDefault(http.StatusNotFound)).Err()
+	return nil, gs.StatusCodeTag.WithDefault(http.StatusNotFound).Apply(errors.Fmt("file %q is missing", path))
 }
 
 func (m *mockedGS) Publish(ctx context.Context, dst, src string, srcGen int64) error {
@@ -457,7 +457,7 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			t.Run("Publish transient error", func(t *ftt.Test) {
-				gsMock.publishErr = errors.Reason("blarg").Tag(transient.Tag).Err()
+				gsMock.publishErr = transient.Tag.Apply(errors.New("blarg"))
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
@@ -474,7 +474,7 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			t.Run("Publish fatal error", func(t *ftt.Test) {
-				gsMock.publishErr = errors.Reason("blarg").Err()
+				gsMock.publishErr = errors.New("blarg")
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
@@ -581,7 +581,7 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			t.Run("Publish transient error", func(t *ftt.Test) {
-				gsMock.publishErr = errors.Reason("blarg").Tag(transient.Tag).Err()
+				gsMock.publishErr = transient.Tag.Apply(errors.New("blarg"))
 
 				// Execute the pending verification task.
 				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
@@ -619,7 +619,7 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			t.Run("Publish fatal error", func(t *ftt.Test) {
-				gsMock.publishErr = errors.Reason("blarg").Err()
+				gsMock.publishErr = errors.New("blarg")
 
 				// Execute the pending verification task.
 				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))

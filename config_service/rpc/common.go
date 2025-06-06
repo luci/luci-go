@@ -43,10 +43,10 @@ func validatePath(p string) error {
 		return errors.New("not specified")
 	}
 	if path.IsAbs(p) {
-		return errors.Reason("must not be absolute").Err()
+		return errors.New("must not be absolute")
 	}
 	if strings.HasPrefix(p, "./") || strings.HasPrefix(p, "../") {
-		return errors.Reason("should not start with './' or '../'").Err()
+		return errors.New("should not start with './' or '../'")
 	}
 	return nil
 }

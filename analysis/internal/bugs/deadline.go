@@ -42,7 +42,7 @@ func EnsureTimeToDeadline(ctx context.Context, d time.Duration) error {
 	deadline, ok := ctx.Deadline()
 	minimumDeadline := clock.Now(ctx).Add(d)
 	if ok && deadline.Before(minimumDeadline) {
-		return errors.Reason("context deadline has less than %v remaining", d).Err()
+		return errors.Fmt("context deadline has less than %v remaining", d)
 	}
 	return nil
 }

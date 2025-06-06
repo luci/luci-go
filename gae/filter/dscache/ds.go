@@ -100,7 +100,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 				// Serialize and compress the PropertyMap, bail if too large.
 				buf, err := encodeItemValue(pm, toSave.Prefix())
 				if err == nil && len(buf) > internalValueSizeLimit {
-					err = errors.Reason("encoded entity too big (%d > %d)", len(buf), internalValueSizeLimit).Err()
+					err = errors.Fmt("encoded entity too big (%d > %d)", len(buf), internalValueSizeLimit)
 				}
 				if err == nil {
 					// The item should be able to fit into the cache.

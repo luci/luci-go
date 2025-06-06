@@ -48,7 +48,7 @@ func ResolveVersion(ctx context.Context, pkg, version string) (*Instance, error)
 	case common.ValidateInstanceTag(version) == nil:
 		iid, err = ResolveTag(ctx, pkg, common.MustParseInstanceTag(version))
 	default:
-		return nil, errors.Reason("not a valid version identifier").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, grpcutil.InvalidArgumentTag.Apply(errors.New("not a valid version identifier"))
 	}
 
 	if err != nil {

@@ -69,7 +69,7 @@ type State struct {
 // operation.
 func (s *State) SourcesToLint() ([]string, error) {
 	if s.Inputs.Entry.Local == nil {
-		return nil, errors.Reason("cannot lint remote packages").Err()
+		return nil, errors.New("cannot lint remote packages")
 	}
 	if s.Inputs.Entry.Package == pkg.LegacyPackageNamePlaceholder {
 		// Legacy mode lints only files that were executed for backward

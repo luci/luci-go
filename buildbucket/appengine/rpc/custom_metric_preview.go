@@ -45,11 +45,11 @@ func validateCustomMetricPreviewRequest(ctx context.Context, req *pb.CustomMetri
 		}
 	}
 	if len(req.MetricDefinition.Predicates) == 0 {
-		return errors.Reason("metric_definition.predicates is required").Err()
+		return errors.New("metric_definition.predicates is required")
 	}
 
 	if req.GetMetricBase() == pb.CustomMetricBase_CUSTOM_METRIC_BASE_UNSET {
-		return errors.Reason("metric_base is required").Err()
+		return errors.New("metric_base is required")
 	}
 
 	var extraFields []string

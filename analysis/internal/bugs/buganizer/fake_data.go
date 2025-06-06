@@ -130,7 +130,7 @@ func (fis *FakeIssueStore) BatchGetIssues(issueIds []int64) ([]*issuetracker.Iss
 func (fis *FakeIssueStore) GetIssue(id int64) (*IssueData, error) {
 	issueData, ok := fis.Issues[id]
 	if !ok {
-		return nil, errors.Reason("issue %d does not exist", id).Err()
+		return nil, errors.Fmt("issue %d does not exist", id)
 	}
 	return issueData, nil
 }
@@ -138,7 +138,7 @@ func (fis *FakeIssueStore) GetIssue(id int64) (*IssueData, error) {
 func (fis *FakeIssueStore) ListIssueUpdates(id int64) ([]*issuetracker.IssueUpdate, error) {
 	issueData, ok := fis.Issues[id]
 	if !ok {
-		return nil, errors.Reason("issue %d does not exist", id).Err()
+		return nil, errors.Fmt("issue %d does not exist", id)
 	}
 	return issueData.IssueUpdates, nil
 }
@@ -146,11 +146,11 @@ func (fis *FakeIssueStore) ListIssueUpdates(id int64) ([]*issuetracker.IssueUpda
 func (fis *FakeIssueStore) CreateHotlistEntry(issueID int64, hotlistID int64) error {
 	issueData, ok := fis.Issues[issueID]
 	if !ok {
-		return errors.Reason("issue %d does not exist", issueID).Err()
+		return errors.Fmt("issue %d does not exist", issueID)
 	}
 	for _, existingHotlistID := range issueData.Issue.IssueState.HotlistIds {
 		if existingHotlistID == hotlistID {
-			return errors.Reason("hotlist %v already contains issue %v", hotlistID, issueID).Err()
+			return errors.Fmt("hotlist %v already contains issue %v", hotlistID, issueID)
 		}
 	}
 	issueData.Issue.IssueState.HotlistIds = append(issueData.Issue.IssueState.HotlistIds, hotlistID)

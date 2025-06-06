@@ -118,7 +118,7 @@ func MustMakePathItem(item any) PathItem {
 	case protoreflect.MapKey:
 		return PathMapKey(x)
 	}
-	panic(errors.Reason("unknown proto path item: %T", item).Err())
+	panic(errors.Fmt("unknown proto path item: %T", item))
 }
 
 // Path is a series of tokens to indicate some (possibly nested) field

@@ -192,9 +192,9 @@ func ValidateLimit(val int32) (int32, error) {
 	}
 	switch {
 	case val < 0:
-		return val, errors.Reason("must be positive, got %d", val).Err()
+		return val, errors.Fmt("must be positive, got %d", val)
 	case val > maxPageSize:
-		return val, errors.Reason("must be less or equal to %d, got %d", maxPageSize, val).Err()
+		return val, errors.Fmt("must be less or equal to %d, got %d", maxPageSize, val)
 	}
 	return val, nil
 }

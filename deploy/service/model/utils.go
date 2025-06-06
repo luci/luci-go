@@ -121,7 +121,7 @@ func fetchAssets(ctx context.Context, assets []string, shouldExist bool) (map[st
 		}
 
 		if len(missing) != 0 {
-			return nil, errors.Reason("assets entities unexpectedly missing: %s", strings.Join(missing, ", ")).Err()
+			return nil, errors.Fmt("assets entities unexpectedly missing: %s", strings.Join(missing, ", "))
 		}
 	}
 
