@@ -17,6 +17,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { UseQueryResult } from '@tanstack/react-query';
 
+import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { colors } from '@/fleet/theme/colors';
 import { SelectedOptions } from '@/fleet/types';
@@ -109,10 +110,10 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
             flexGrow: 0.3,
           }}
         >
-          {/* Changed Task status to Lease state as it is what we show right now,
-          still confirming whether this matches with the Task state. Will be changed
-          accordingly we clear out everything about this */}
-          <Typography variant="subhead1">Lease state</Typography>
+          <div css={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Typography variant="subhead1">Lease state</Typography>
+            <LeaseStateInfo />
+          </div>
           <div
             css={{
               display: 'flex',
