@@ -171,7 +171,7 @@ function determineRateStatusType(ratePercent: number): SemanticStatusType {
 }
 
 function createFailureRateInfoFromSegment(segment: Segment): FailureRateInfo {
-  if (!segment.counts) {
+  if (!segment || !segment.counts) {
     return { formattedRate: 'N/A', statusType: 'unknown' };
   }
   const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
@@ -289,7 +289,6 @@ export function HistoryRateDisplaySection({
               />
             </>
           )}
-
           <FailureRateView
             segment={segments[invocationSegmentIndex]}
             isContextual
