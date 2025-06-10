@@ -20,23 +20,29 @@ import {
   labelValuesToString,
 } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { getDeviceStateString } from '@/fleet/utils/devices';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-interface SchedulingDataProps {
+interface DeviceDimensionsProps {
   device?: Device;
 }
 
-export const SchedulingData = ({ device }: SchedulingDataProps) => {
+export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
   if (device?.deviceSpec === undefined) {
     return <></>;
   }
 
-  const rows = Object.keys(device.deviceSpec.labels).map((label) => {
+  const labelRows = Object.keys(device.deviceSpec.labels).map((label) => {
     return {
       id: label,
       value: labelValuesToString(device!.deviceSpec!.labels[label].values),
     };
   });
+  const rows = [
+    { id: 'dut_id', value: device.dutId },
+    { id: 'lease_state', value: getDeviceStateString(device) },
+    ...labelRows,
+  ];
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'Key', flex: 1 },

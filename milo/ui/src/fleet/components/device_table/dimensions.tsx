@@ -18,10 +18,10 @@ import { Link } from 'react-router';
 
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
+import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   Device,
-  DeviceState,
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -118,7 +118,7 @@ export const BASE_DIMENSIONS: Dimension = {
   },
   state: {
     displayName: 'Lease state',
-    getValue: (device: Device) => DeviceState[device.state].substring(13), // Removing DEVICE_STATE_ prefix
+    getValue: getDeviceStateString,
   },
   host: {
     displayName: 'Address',

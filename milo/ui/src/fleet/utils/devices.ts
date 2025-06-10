@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  Device,
+  DeviceState,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
  * Gets the state of a DUT from a device object if it exists.
@@ -53,4 +56,15 @@ export const extractDutId = (device?: Device | null): string => {
   )
     return '';
   return device.deviceSpec.labels['dut_id'].values[0];
+};
+
+/**
+ * Gets the string representation from a device's state.
+ * @param device Device data type from the Fleet Console backend.
+ * @returns Human-readable state string.
+ */
+export const getDeviceStateString = (device?: Device | undefined): string => {
+  return device !== undefined
+    ? DeviceState[device.state].replace('DEVICE_STATE_', '')
+    : '';
 };
