@@ -29,6 +29,7 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { ColumnMenu } from '@/fleet/components/device_table/column_menu';
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import { useParamsAndLocalStorage } from '@/fleet/components/device_table/use_params_and_local_storage';
 import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
@@ -330,6 +331,7 @@ export const ResourceRequestListPage = () => {
           rows={rows}
           slots={{
             pagination: Pagination,
+            columnMenu: ColumnMenu,
             toolbar: RriTableToolbar,
           }}
           slotProps={{
