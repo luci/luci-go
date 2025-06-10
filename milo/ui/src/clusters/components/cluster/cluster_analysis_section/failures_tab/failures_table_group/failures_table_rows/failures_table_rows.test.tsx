@@ -78,7 +78,7 @@ describe('Test FailureTableRows component', () => {
     await screen.findByLabelText('Failure invocation id');
 
     expect(screen.getByText('buildnumber')).toBeInTheDocument();
-    expect(screen.getByText('Unexpected')).toBeInTheDocument();
+    expect(screen.getByText('Failed')).toBeInTheDocument();
     expect(screen.getByTestId('ungrouped_variants')).toBeInTheDocument();
     expect(screen.getByText('123456 #7')).toBeInTheDocument();
     expect(screen.getByText('Submitted')).toBeInTheDocument();

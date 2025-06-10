@@ -98,8 +98,8 @@ const FlakyCriteriaSection = ({ criteria, testVariant }: Props) => {
         <ul>
           <li>
             <strong>Run-flaky verdicts</strong>: Verdicts which required a
-            step-level (i.e. swarming task-level) retry to obtain an expected
-            test result, filtered to:
+            step-level (i.e. swarming task-level) retry to obtain a passing test
+            result, filtered to:
             <ul>
               <li>at most one verdict per distinct changelist</li>
               <li>

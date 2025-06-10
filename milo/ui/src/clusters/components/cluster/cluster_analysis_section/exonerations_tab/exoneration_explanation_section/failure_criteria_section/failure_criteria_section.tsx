@@ -55,7 +55,7 @@ const FailureCriteriaSection = ({ criteria, testVariant }: Props) => {
         <ExplanationChip
           value={testVariant.recentVerdictsWithUnexpectedRuns}
           threshold={criteria.recentVerdictsWithUnexpectedRuns}
-          text="Recent verdicts with unexpected runs"
+          text="Recent verdicts with failing runs"
           testId="unexpected_verdict_count"
         />
         &nbsp;.
@@ -74,8 +74,9 @@ const FailureCriteriaSection = ({ criteria, testVariant }: Props) => {
             </ul>
           </li>
           <li>
-            <strong>Unexpected test run</strong>: A swarming task for which all
-            test results were unexpected (skips excluded).
+            <strong>Failing test run</strong>: A swarming task for which this
+            test only had failing results (skips, execution errors and precluded
+            results excepted).
           </li>
         </ul>
       </Typography>
@@ -117,8 +118,8 @@ const FailureCriteriaSection = ({ criteria, testVariant }: Props) => {
                       size="small"
                       label={
                         verdict.hasUnexpectedRuns
-                          ? 'Has unexpected run'
-                          : 'No unexpected run'
+                          ? 'Has failing run'
+                          : 'No failing run'
                       }
                     />
                   </TableCell>

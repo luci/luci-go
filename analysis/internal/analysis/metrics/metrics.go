@@ -102,13 +102,12 @@ var (
 	}.Build()
 
 	// The total number of test results in this cluster. LUCI Analysis only
-	// clusters test results which are unexpected and have a status of crash,
-	// abort or fail, so by definition the only test results counted here
-	// will be an unexpected fail/crash/abort.
+	// clusters test results which are failed. (We also exclude unexpectedly
+	// passed web tests).
 	Failures = metricBuilder{
 		ID:                "failures",
 		HumanReadableName: "Test Results Failed",
-		Description:       "The total number of test results in a cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
+		Description:       "The total number of test results in a cluster. LUCI Analysis only clusters failed test results.",
 		DefaultConfig: Configuration{
 			SortPriority:          100,
 			IsDefault:             true,

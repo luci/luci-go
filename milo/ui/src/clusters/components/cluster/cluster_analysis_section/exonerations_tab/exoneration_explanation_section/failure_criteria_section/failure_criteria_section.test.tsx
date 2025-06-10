@@ -38,8 +38,8 @@ describe('Test FailureCriteriaSection', () => {
     // Check examples appear in the page.
     expect(screen.getByText('333333333333')).toBeInTheDocument();
     expect(screen.getByText('changelist-three #8333')).toBeInTheDocument();
-    expect(screen.getByText('No unexpected run')).toBeInTheDocument();
+    expect(screen.getByText('No failing run')).toBeInTheDocument();
     expect(screen.getByText('444444444444')).toBeInTheDocument();
-    expect(screen.getByText('Has unexpected run')).toBeInTheDocument();
+    expect(screen.getByText('Has failing run')).toBeInTheDocument();
   });
 });

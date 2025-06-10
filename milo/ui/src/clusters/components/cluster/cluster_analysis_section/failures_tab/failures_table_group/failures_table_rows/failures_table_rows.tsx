@@ -131,7 +131,7 @@ const FailuresTableRows = ({
       return 'Exonerated';
     }
     if (failure.isIngestedInvocationBlocked) {
-      return 'Unexpected';
+      return 'Failed';
     }
     return 'Flaky';
   };

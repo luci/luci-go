@@ -63,14 +63,14 @@ const FailureCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
         <ExplanationChip
           value={testVariantBranch.failureRate.consecutiveUnexpectedTestRuns}
           threshold={criteria.failureRate?.consecutiveFailureThreshold || 0}
-          text="Consecutive unexpected test runs"
+          text="Consecutive failing test runs"
           testId="consecutive_unexpected_verdict_count"
         ></ExplanationChip>
         &nbsp;OR&nbsp;
         <ExplanationChip
           value={testVariantBranch.failureRate.unexpectedTestRuns}
           threshold={criteria.failureRate?.failureThreshold || 0}
-          text="Recent unexpected test runs"
+          text="Recent failing test runs"
           testId="unexpected_verdict_count"
         ></ExplanationChip>
         &nbsp;.
@@ -80,8 +80,9 @@ const FailureCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
         <ul>
           <li>
             <strong>Test run</strong>: The result of executing a test in a
-            swarming task. A test run is unexpected if all results obtained in
-            the swarming task are unexpected.
+            swarming task. A test run is failing if all results obtained in the
+            swarming task are failing (skips, execution errors and precluded
+            results excepted).
           </li>
           <li>
             <strong>Recent test runs</strong>: The 10 most recent test runs for
@@ -111,7 +112,7 @@ const FailureCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
             <TableCell>Commit Position</TableCell>
             <TableCell>Changelist and patchset</TableCell>
             <TableCell>Invocation(s)</TableCell>
-            <TableCell>Unexpected Runs / Total Runs</TableCell>
+            <TableCell>Failing Runs / Total Runs</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

@@ -99,7 +99,7 @@ const ExonerationExplanationSection = ({
           data-testid="failure_criteria_header"
         >
           <Typography variant="h5">
-            Criteria: Recent test runs with unexpected results&nbsp;
+            Criteria: Recent test runs with failing results&nbsp;
             <Chip
               color={criteriaMetColor(failureCriteriaMet)}
               label={criteriaMetLabel(failureCriteriaMet)}
