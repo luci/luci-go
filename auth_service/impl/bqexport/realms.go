@@ -17,6 +17,7 @@ package bqexport
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -59,34 +60,44 @@ func parseRealms(ctx context.Context, authDB *protocol.AuthDB,
 		}
 		return names
 	}
-	// Process each condition to the (attribute, value) pairs associated with it.
-	conditions := make([][]string, len(realms.Conditions))
-	for i, condition := range realms.Conditions {
-		restriction := condition.GetRestrict()
-		values := stringset.New(len(restriction.Values))
-		for _, value := range restriction.Values {
-			values.Add(fmt.Sprintf("%s==%s", restriction.Attribute, value))
+	// Process each condition as an attribute expression.
+	conditions := make([]string, len(realms.Conditions))
+	for i, c := range realms.Conditions {
+		if c == nil {
+			logging.Warningf(ctx, "nil condition in AuthDB realms")
+			conditions[i] = ""
+			continue
 		}
-		conditions[i] = values.ToSortedSlice()
+		r := c.GetRestrict()
+		if r == nil {
+			logging.Warningf(ctx, "nil restrict condition in AuthDB realms")
+			conditions[i] = ""
+			continue
+		}
+		conditions[i] = toConditionalExpression(r.GetAttribute(), r.GetValues())
 	}
-	toConditionValues := func(indices []uint32) []string {
+	toConditions := func(indices []uint32) []string {
 		// Set the initial capacity assuming every condition has at least one value.
-		values := stringset.New(len(indices))
+		expressions := make([]string, 0, len(indices))
 		for _, condIndex := range indices {
-			values.AddAll(conditions[condIndex])
+			expressions = append(expressions, conditions[condIndex])
 		}
-		return values.ToSortedSlice()
+		slices.Sort(expressions)
+		return expressions
 	}
 	// Set the initial capacity assuming every realm has at least one binding.
 	realmRows := make([]*bqpb.RealmRow, 0, sizeHint)
 	for _, realm := range realms.Realms {
 		for i, binding := range realm.Bindings {
+			if binding == nil {
+				continue
+			}
 			realmRows = append(realmRows, &bqpb.RealmRow{
 				Name:        realm.Name,
 				BindingId:   int64(i),
 				Permissions: toPermissionNames(binding.Permissions),
 				Principals:  binding.Principals,
-				Conditions:  toConditionValues(binding.Conditions),
+				Conditions:  toConditions(binding.Conditions),
 				AuthdbRev:   authDBRev,
 				ExportedAt:  ts,
 			})
@@ -95,14 +106,23 @@ func parseRealms(ctx context.Context, authDB *protocol.AuthDB,
 	return realmRows, nil
 }
 
-func handleConditions(conditions []*realmsconf.Condition) []string {
-	out := make([]string, len(conditions))
-	for i, c := range conditions {
-		r := c.GetRestrict()
-		values := stringset.NewFromSlice(r.GetValues()...)
+func toConditionalExpression(attr string, values []string) string {
+	unique := stringset.NewFromSlice(values...)
+	return fmt.Sprintf("%s==(%s)",
+		attr, strings.Join(unique.ToSortedSlice(), "||"))
+}
 
-		out[i] = fmt.Sprintf("%s==(%s)",
-			r.GetAttribute(), strings.Join(values.ToSortedSlice(), "||"))
+func handleConditions(conditions []*realmsconf.Condition) []string {
+	out := make([]string, 0, len(conditions))
+	for _, c := range conditions {
+		if c == nil {
+			continue
+		}
+		r := c.GetRestrict()
+		if r == nil {
+			continue
+		}
+		out = append(out, toConditionalExpression(r.GetAttribute(), r.GetValues()))
 	}
 	return out
 }

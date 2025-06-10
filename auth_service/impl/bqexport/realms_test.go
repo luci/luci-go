@@ -130,7 +130,7 @@ func TestBQRealms(t *testing.T) {
 					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
 					Principals:  []string{"group:gr3", "group:gr4"},
 					Conditions: []string{
-						"x==16", "x==4", "x==9", "y==10", "y==27", "y==8"},
+						"x==(16||4||9)", "y==(10)", "y==(27||8)"},
 					AuthdbRev:  testRev,
 					ExportedAt: testTime,
 				},
@@ -147,7 +147,7 @@ func TestBQRealms(t *testing.T) {
 					BindingId:   0,
 					Permissions: []string{"luci.dev.p3"},
 					Principals:  []string{"group:gr1"},
-					Conditions:  []string{"x==16", "x==4", "x==9"},
+					Conditions:  []string{"x==(16||4||9)"},
 					AuthdbRev:   testRev,
 					ExportedAt:  testTime,
 				},
