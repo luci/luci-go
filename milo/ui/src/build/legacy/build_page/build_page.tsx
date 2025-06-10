@@ -15,9 +15,9 @@
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import {
   BUILD_FIELD_MASK,
@@ -42,14 +42,17 @@ import {
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { usePermCheck } from '@/common/hooks/perm_check';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
 import {
   PERM_TEST_RESULTS_LIST_LIMITED,
   PERM_TEST_EXONERATIONS_LIST_LIMITED,
@@ -146,6 +149,49 @@ export const BuildPage = observer(() => {
     PERM_TEST_EXONERATIONS_LIST_LIMITED,
   );
 
+  // Logic for redirection to new test-results UI page.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAutoRedirectEnabled = useFeatureFlag(
+    NEW_TEST_INVESTIGATION_PAGE_FLAG,
+  );
+  const isTestResultsTabActive = location.pathname.endsWith('/test-results');
+  const [searchParams] = useSyncedSearchParams();
+  const forceLegacyView = searchParams.get('view') === 'legacy';
+
+  const { testId, variantHash } = useMemo(
+    () => parseDeepLinkQuery(searchParams.get('q')),
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (forceLegacyView) {
+      return;
+    }
+    if (isAutoRedirectEnabled && isTestResultsTabActive && build?.id) {
+      let newPath = `/ui/test-investigate/invocations/build-${build.id}`;
+      if (testId && variantHash) {
+        newPath =
+          `/ui/test-investigate/invocations/build-${build.id}` +
+          `/tests/${encodeURIComponent(testId)}` +
+          `/variants/${variantHash}`;
+      }
+      navigate(newPath, { replace: true });
+    }
+  }, [
+    forceLegacyView,
+    isAutoRedirectEnabled,
+    isTestResultsTabActive,
+    build?.id,
+    testId,
+    variantHash,
+    navigate,
+  ]);
+
+  if (!forceLegacyView && isAutoRedirectEnabled && isTestResultsTabActive) {
+    return null;
+  }
+
   return (
     <BuildContextProvider build={build}>
       <InvocationProvider value={store.buildPage.invocation}>
@@ -210,6 +256,27 @@ export const BuildPage = observer(() => {
     </BuildContextProvider>
   );
 });
+
+function parseDeepLinkQuery(q: string | null): {
+  testId: string | null;
+  variantHash: string | null;
+} {
+  if (!q) {
+    return { testId: null, variantHash: null };
+  }
+  let testId: string | null = null;
+  let variantHash: string | null = null;
+
+  const parts = q.split(' ');
+  for (const part of parts) {
+    if (part.startsWith('ID:')) {
+      testId = decodeURIComponent(part.slice('ID:'.length));
+    } else if (part.startsWith('VHash:')) {
+      variantHash = decodeURIComponent(part.slice('VHash:'.length));
+    }
+  }
+  return { testId, variantHash };
+}
 
 export function Component() {
   useDeclarePageId(UiPage.Builders);

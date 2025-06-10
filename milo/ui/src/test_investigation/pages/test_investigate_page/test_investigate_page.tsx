@@ -33,6 +33,7 @@ import {
   BatchGetTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestDetails } from '@/test_investigation/components/test_details';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
@@ -175,6 +176,10 @@ export function TestInvestigatePage() {
     >
       <TestVariantProvider testVariant={testVariant}>
         <ThemeProvider theme={gm3PageTheme}>
+          <RedirectBackBanner
+            invocation={invocation}
+            testVariant={testVariant}
+          />
           <Box
             sx={{ position: 'relative', height: '100vh', overflowY: 'auto' }}
           >

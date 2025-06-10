@@ -38,6 +38,7 @@ import {
   InvocationHeader,
   TestVariantsTable,
 } from '@/test_investigation/components/invocation_page';
+import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { InvocationProvider } from '@/test_investigation/context/provider';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
@@ -128,6 +129,7 @@ export function InvocationPage() {
       rawInvocationId={invocationId}
     >
       <ThemeProvider theme={gm3PageTheme}>
+        <RedirectBackBanner invocation={invocation} />
         <Box
           component="main"
           sx={{
