@@ -34,7 +34,7 @@ import {
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { MultiSelectFilter } from './multiselect_filter';
-import { ResourceRequestColumnKey, rriColumns } from './rri_columns';
+import { ResourceRequestColumnKey, RRI_COLUMNS } from './rri_columns';
 
 const FILTERS_PARAM_KEY = 'filters';
 const FILTER_SEPARATOR = '&';
@@ -482,7 +482,7 @@ export const useRriFilters = () => {
     filterValue: RriFilters[RriFilterKey],
   ): string => {
     let label: string =
-      rriColumns.find((c) => c.id === filterKey)?.gridColDef.headerName ??
+      RRI_COLUMNS.find((c) => c.id === filterKey)?.gridColDef.headerName ??
       filterKey;
 
     if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {

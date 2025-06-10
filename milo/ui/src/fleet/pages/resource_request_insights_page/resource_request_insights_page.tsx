@@ -53,7 +53,7 @@ import {
   DEFAULT_SORT_COLUMN,
   getColumnByField,
   RriColumnDescriptor,
-  rriColumns,
+  RRI_COLUMNS,
   RriGridRow,
 } from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
@@ -142,9 +142,9 @@ export const ResourceRequestListPage = () => {
   const [visibleColumns, setVisibleColumns] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
     RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
-    rriColumns
-      .filter((column: RriColumnDescriptor) => column.isDefault)
-      .map((column: RriColumnDescriptor) => column.gridColDef.field),
+    RRI_COLUMNS.filter((column: RriColumnDescriptor) => column.isDefault).map(
+      (column: RriColumnDescriptor) => column.gridColDef.field,
+    ),
   );
 
   const onColumnVisibilityModelChange = (
@@ -158,7 +158,7 @@ export const ResourceRequestListPage = () => {
   };
 
   const columns = useMemo(() => {
-    return rriColumns.map((column) => column.gridColDef);
+    return RRI_COLUMNS.map((column) => column.gridColDef);
   }, []);
 
   useEffect(() => setCurrentFilters(filterData), [filterData]);
@@ -179,7 +179,7 @@ export const ResourceRequestListPage = () => {
   const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
     filterComponents.map((option) => {
       const label: string =
-        rriColumns.find((c) => c.id === option.value)?.gridColDef.headerName ??
+        RRI_COLUMNS.find((c) => c.id === option.value)?.gridColDef.headerName ??
         option.value;
 
       return {
@@ -237,7 +237,7 @@ export const ResourceRequestListPage = () => {
   const rows: RriGridRow[] = query.data.resourceRequests.map(
     (resourceRequest, index) => {
       const row = { id: index.toString() } as RriGridRow;
-      for (const column of rriColumns) {
+      for (const column of RRI_COLUMNS) {
         column.assignValue(resourceRequest, row);
       }
       return row;
@@ -352,7 +352,7 @@ export const ResourceRequestListPage = () => {
           sortingMode="server"
           onSortModelChange={handleSortModelChange}
           columnVisibilityModel={getVisibilityModel(
-            rriColumns.map(
+            RRI_COLUMNS.map(
               (column: RriColumnDescriptor) => column.gridColDef.field,
             ),
             visibleColumns,

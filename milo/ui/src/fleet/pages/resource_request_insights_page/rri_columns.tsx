@@ -102,7 +102,7 @@ const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
   );
 };
 
-export const rriColumns = [
+export const RRI_COLUMNS = [
   {
     id: 'rr_id',
     gridColDef: {
@@ -324,13 +324,13 @@ export const rriColumns = [
   },
 ] as const satisfies readonly RriColumnDescriptor[];
 
-export type ResourceRequestColumnKey = (typeof rriColumns)[number]['id'];
+export type ResourceRequestColumnKey = (typeof RRI_COLUMNS)[number]['id'];
 
 export const DEFAULT_SORT_COLUMN: RriColumnDescriptor =
-  rriColumns.find((c) => c.id === 'rr_id') ?? rriColumns[0];
+  RRI_COLUMNS.find((c) => c.id === 'rr_id') ?? RRI_COLUMNS[0];
 
 export const getColumnByField = (
   field: string,
 ): RriColumnDescriptor | undefined => {
-  return rriColumns.find((c) => c.gridColDef.field === field);
+  return RRI_COLUMNS.find((c) => c.gridColDef.field === field);
 };

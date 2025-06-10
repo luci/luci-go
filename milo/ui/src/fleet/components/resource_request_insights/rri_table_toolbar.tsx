@@ -21,7 +21,7 @@ import {
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import {
   RriColumnDescriptor,
-  rriColumns,
+  RRI_COLUMNS,
 } from '@/fleet/pages/resource_request_insights_page/rri_columns';
 
 /**
@@ -33,9 +33,9 @@ export function RriTableToolbar() {
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
       <ColumnsButton
-        defaultColumns={rriColumns
-          .filter((column: RriColumnDescriptor) => column.isDefault)
-          .map((column: RriColumnDescriptor) => column.gridColDef.field)}
+        defaultColumns={RRI_COLUMNS.filter(
+          (column: RriColumnDescriptor) => column.isDefault,
+        ).map((column: RriColumnDescriptor) => column.gridColDef.field)}
       />
     </GridToolbarContainer>
   );
