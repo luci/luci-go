@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
   getPageSize,
@@ -26,6 +25,7 @@ import {
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
+import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
 import { DeviceListFilterBar } from '@/fleet/components/filter_dropdown';
 import {
   filtersUpdater,
@@ -272,7 +272,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
-      <RecoverableErrorBoundary
+      <RecoverableLoggerErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-device-list-page"
@@ -280,7 +280,7 @@ export function Component() {
         <LoggedInBoundary>
           <DeviceListPage />
         </LoggedInBoundary>
-      </RecoverableErrorBoundary>
+      </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

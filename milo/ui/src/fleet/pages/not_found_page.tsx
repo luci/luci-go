@@ -14,10 +14,10 @@
 
 import { Typography } from '@mui/material';
 
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import sadBass from '@/fleet/assets/pngs/sad_bass.png';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
+import { RecoverableLoggerErrorBoundary } from '../components/error_handling';
 import { FleetHelmet } from '../layouts/fleet_helmet';
 
 export const PageNotFoundPage = () => {
@@ -54,13 +54,13 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-404">
       <FleetHelmet pageTitle="Page not found" />
-      <RecoverableErrorBoundary
+      <RecoverableLoggerErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-page-not-found"
       >
         <PageNotFoundPage />
-      </RecoverableErrorBoundary>
+      </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

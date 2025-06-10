@@ -22,9 +22,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
+import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -279,7 +279,7 @@ export function Component() {
   const { id = '' } = useParams();
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-details">
-      <RecoverableErrorBoundary
+      <RecoverableLoggerErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-device-details-page"
@@ -288,7 +288,7 @@ export function Component() {
         <LoggedInBoundary>
           <DeviceDetailsPage />
         </LoggedInBoundary>
-      </RecoverableErrorBoundary>
+      </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

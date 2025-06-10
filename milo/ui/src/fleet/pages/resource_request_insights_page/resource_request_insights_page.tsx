@@ -22,7 +22,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
   getCurrentPageIndex,
@@ -32,6 +31,7 @@ import {
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import { useParamsAndLocalStorage } from '@/fleet/components/device_table/use_params_and_local_storage';
+import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
 import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
@@ -366,7 +366,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-resource-request-list">
       <FleetHelmet pageTitle="Resource Requests" />
-      <RecoverableErrorBoundary
+      <RecoverableLoggerErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-resource-request-list-page"
@@ -374,7 +374,7 @@ export function Component() {
         <LoggedInBoundary>
           <ResourceRequestListPage />
         </LoggedInBoundary>
-      </RecoverableErrorBoundary>
+      </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }
