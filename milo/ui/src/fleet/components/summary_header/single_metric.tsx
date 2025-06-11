@@ -81,31 +81,32 @@ export function SingleMetric({
   );
 
   const isClickable = handleClick || filterUrl;
+  const extraStyles = isClickable ? {} : { cursor: 'default' };
 
   return (
-    <>
-      {isClickable && (
-        <Button
-          variant="text"
-          sx={{
-            marginRight: 'auto',
-            display: 'block',
-            textAlign: 'left',
-            color: theme.palette.text.primary,
-          }}
-          onClick={() => {
-            if (handleClick) {
-              handleClick();
-            }
-            if (filterUrl) {
-              navigate(filterUrl);
-            }
-          }}
-        >
-          {content}
-        </Button>
-      )}
-      {!isClickable && <div css={{ marginRight: 'auto' }}>{content}</div>}
-    </>
+    <Button
+      variant="text"
+      sx={{
+        marginRight: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        textAlign: 'left',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        minHeight: '90px', // Prevent layout shift when loading data.
+        color: theme.palette.text.primary,
+        ...extraStyles,
+      }}
+      onClick={() => {
+        if (handleClick) {
+          handleClick();
+        }
+        if (filterUrl) {
+          navigate(filterUrl);
+        }
+      }}
+    >
+      {content}
+    </Button>
   );
 }
