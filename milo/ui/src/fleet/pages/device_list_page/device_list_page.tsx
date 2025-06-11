@@ -204,10 +204,7 @@ export const DeviceListPage = () => {
           {message}
         </Alert>
       ))}
-      <MainMetrics
-        countQuery={countQuery}
-        selectedFilters={selectedOptions.filters}
-      />
+      <MainMetrics countQuery={countQuery} />
       <div
         css={{
           marginTop: 24,

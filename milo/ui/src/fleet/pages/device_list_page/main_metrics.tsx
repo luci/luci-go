@@ -20,16 +20,11 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { addOrUpdateQueryParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import {
-  FILTERS_PARAM_KEY,
-  stringifyFilters,
-} from '../../components/filter_dropdown/search_param_utils/search_param_utils';
+import { addNewFilterToParams } from '../../components/filter_dropdown/search_param_utils/search_param_utils';
 import { SingleMetric } from '../../components/summary_header/single_metric';
 
 const HAS_RIGHT_SIBLING_STYLES = {
@@ -40,12 +35,10 @@ const HAS_RIGHT_SIBLING_STYLES = {
 
 interface MainMetricsProps {
   countQuery: UseQueryResult<CountDevicesResponse, unknown>;
-  selectedFilters: SelectedOptions | undefined;
 }
 
 // TODO: b/393624377 - Refactor this component to make it easier to test.
-export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
-  selectedFilters = selectedFilters ?? {};
+export function MainMetrics({ countQuery }: MainMetricsProps) {
   const [searchParams, _] = useSyncedSearchParams();
 
   /**
@@ -56,14 +49,7 @@ export function MainMetrics({ countQuery, selectedFilters }: MainMetricsProps) {
   const getFilterQueryString = (filterName: string, filterValue: string[]) => {
     return (
       '?' +
-      addOrUpdateQueryParam(
-        searchParams,
-        FILTERS_PARAM_KEY,
-        stringifyFilters({
-          ...selectedFilters,
-          [filterName]: filterValue,
-        }).toString(),
-      )
+      addNewFilterToParams(searchParams, filterName, filterValue).toString()
     );
   };
 

@@ -126,10 +126,23 @@ export function filtersUpdater(newFilters: SelectedOptions) {
 }
 
 /**
- * Get URL query part with provided filters.
+ * Takes an existing URLSearchParams and appends a new filter query to it.
+ * @param params Existing URL params which may include parameters other than filters
+ * @param filterName The name of the filter we're adding
+ * @param filterValue The values of the filter we're adding
+ * @returns A new URLSearchParams object with the new filters added.
  */
-export function getFilterQuery(newFilters: SelectedOptions): URLSearchParams {
-  const searchParams = new URLSearchParams();
-  searchParams.set(FILTERS_PARAM_KEY, stringifyFilters(newFilters));
-  return searchParams;
+export function addNewFilterToParams(
+  params: URLSearchParams,
+  filterName: string,
+  filterValue: string[],
+): URLSearchParams {
+  const existingFilters = getFilters(params).filters;
+  const newParams = new URLSearchParams(params);
+  const newFilters = stringifyFilters({
+    ...existingFilters,
+    [filterName]: filterValue,
+  });
+  newParams.set(FILTERS_PARAM_KEY, newFilters);
+  return newParams;
 }

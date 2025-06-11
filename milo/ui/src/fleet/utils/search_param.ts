@@ -15,7 +15,8 @@
 import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 
 /**
- * Add or update query param with value.
+ * Takes an existing set of URLSearchParams and updates that object with a
+ * new set of values.
  *
  * @param searchParams existing URLParams
  * @param key query parameter name
