@@ -249,6 +249,12 @@ func (TestResultsRecorder) Name() string {
 func (e *TestResultsRecorder) Ingest(ctx context.Context, input Inputs) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.TestResultsRecorder.Ingest")
 	defer func() { tracing.End(s, err) }()
+
+	// Exit early if no verdict needs to be ingested.
+	if len(input.Verdicts) == 0 {
+		return nil
+	}
+
 	ingestion, err := extractIngestionContext(input.Payload, input.Invocation)
 	if err != nil {
 		return err

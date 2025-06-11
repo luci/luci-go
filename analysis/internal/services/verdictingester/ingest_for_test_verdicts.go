@@ -47,6 +47,11 @@ func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.VerdictExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
+	// Exit early if no verdict needs to be ingested.
+	if len(input.Verdicts) == 0 {
+		return nil
+	}
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Fmt("read config: %w", err)

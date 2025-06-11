@@ -41,9 +41,11 @@ func (e *AnTSTInvocationExporter) Ingest(ctx context.Context, input Inputs) (err
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.AnTSTInvocationExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
-	// Export AnTS invocation to BigQuery after all test results are exported.
-	// This ordering is required by AnTS F1 users, to make sure test results are completed
-	// when joined with the invocation table.
+	// TODO (beining): re-work this ordering guarantee.
+	// AnTS F1 requires invocation is only exported once all test results have been exported.
+	// This check doesn't guarantee this due to the design of this task queue.
+	// We allow multiple pages to ingest in parallel and there is no guarantee
+	// the earlier page will always complete before the later page.
 	if !input.LastPage {
 		return nil
 	}

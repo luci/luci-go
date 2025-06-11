@@ -372,14 +372,12 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestVerdi
 		LastPage:    nextPageToken == "",
 	}
 
-	// Only run ingestion sinks if there is something to ingest.
-	if len(input.Verdicts) > 0 {
-		for _, sink := range o.sinks {
-			if err := sink.Ingest(ctx, input); err != nil {
-				return transient.Tag.Apply(errors.Fmt("ingest: %q %w", sink.Name(), err))
-			}
+	for _, sink := range o.sinks {
+		if err := sink.Ingest(ctx, input); err != nil {
+			return transient.Tag.Apply(errors.Fmt("ingest: %q %w", sink.Name(), err))
 		}
 	}
+
 	if nextPageToken == "" {
 		// In the last task.
 		taskCounter.Add(ctx, 1, payload.Project, "success")

@@ -46,6 +46,10 @@ func (e *AnTSTestResultExporter) Ingest(ctx context.Context, input Inputs) (err 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.AnTSTestResultExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
+	// Exit early if no verdict needs to be ingested.
+	if len(input.Verdicts) == 0 {
+		return nil
+	}
 	// only export Android project.
 	if input.Payload.Project != "android" {
 		return nil
