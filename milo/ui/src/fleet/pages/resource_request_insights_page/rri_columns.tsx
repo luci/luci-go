@@ -63,7 +63,7 @@ const getDateWithOverdueData = (
   actualDeliveryDate?: DateOnly,
   targetDeliveryDate?: DateOnly,
 ): DateWithOverdueData => {
-  if (resourceRequest.fulfillmentStatus === ResourceRequest_Status.COMPLETED) {
+  if (resourceRequest.fulfillmentStatus === ResourceRequest_Status.COMPLETE) {
     return {
       value: toIsoString(actualDeliveryDate),
       overdue: Duration.fromObject({ days: 0 }),

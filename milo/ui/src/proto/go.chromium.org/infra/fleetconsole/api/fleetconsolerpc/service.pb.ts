@@ -395,7 +395,7 @@ export interface ResourceRequest {
 export enum ResourceRequest_Status {
   NOT_STARTED = 0,
   IN_PROGRESS = 1,
-  COMPLETED = 2,
+  COMPLETE = 2,
 }
 
 export function resourceRequest_StatusFromJSON(object: any): ResourceRequest_Status {
@@ -407,8 +407,8 @@ export function resourceRequest_StatusFromJSON(object: any): ResourceRequest_Sta
     case "IN_PROGRESS":
       return ResourceRequest_Status.IN_PROGRESS;
     case 2:
-    case "COMPLETED":
-      return ResourceRequest_Status.COMPLETED;
+    case "COMPLETE":
+      return ResourceRequest_Status.COMPLETE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ResourceRequest_Status");
   }
@@ -420,8 +420,8 @@ export function resourceRequest_StatusToJSON(object: ResourceRequest_Status): st
       return "NOT_STARTED";
     case ResourceRequest_Status.IN_PROGRESS:
       return "IN_PROGRESS";
-    case ResourceRequest_Status.COMPLETED:
-      return "COMPLETED";
+    case ResourceRequest_Status.COMPLETE:
+      return "COMPLETE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ResourceRequest_Status");
   }
