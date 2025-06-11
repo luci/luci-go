@@ -34,6 +34,7 @@ import {
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { MultiSelectFilter } from './multiselect_filter';
+import { RangeFilter } from './range_filter';
 import { ResourceRequestColumnKey, RRI_COLUMNS } from './rri_columns';
 
 const FILTERS_PARAM_KEY = 'filters';
@@ -44,6 +45,11 @@ const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
 export type DateFilterData = {
   min?: DateOnly;
   max?: DateOnly;
+};
+
+export type RangeFilterData = {
+  min?: number;
+  max?: number;
 };
 
 export const filterDescriptors = {
@@ -57,13 +63,14 @@ export const filterDescriptors = {
   config_actual_delivery_date: 'date-range',
   customer: 'multi-select',
   resource_name: 'multi-select',
+  accepted_quantity: 'range',
   criticality: 'multi-select',
   request_approval: 'multi-select',
   resource_pm: 'multi-select',
   fulfillment_channel: 'multi-select',
   execution_status: 'multi-select',
 } as const satisfies Partial<
-  Record<ResourceRequestColumnKey, 'multi-select' | 'date-range'>
+  Record<ResourceRequestColumnKey, 'multi-select' | 'date-range' | 'range'>
 >;
 
 export type RriFilterKey = keyof typeof filterDescriptors;
@@ -71,6 +78,7 @@ export type RriFilterKey = keyof typeof filterDescriptors;
 type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
   'multi-select': string[];
   'date-range': DateFilterData;
+  range: RangeFilterData;
 }[T];
 
 export type RriFilters = {
@@ -121,6 +129,22 @@ const parseDateOnlyFromUrl = (
   };
 };
 
+const parseRangeFromUrl = (
+  filterDict: Record<string, string>,
+  key: RriFilterKey,
+): RangeFilterData | undefined => {
+  const min = filterDict[`${key}_min`];
+  const max = filterDict[`${key}_max`];
+
+  if (!min && !max) {
+    return undefined;
+  }
+  return {
+    min: parseInt(min),
+    max: parseInt(max),
+  };
+};
+
 const getFiltersFromSearchParam = (
   searchParams: URLSearchParams,
 ): RriFilters | undefined => {
@@ -163,6 +187,7 @@ const getFiltersFromSearchParam = (
     fulfillment_status: rec['fulfillment_status']?.split(','),
     customer: rec['customer']?.split(','),
     resource_name: rec['resource_name']?.split(','),
+    accepted_quantity: parseRangeFromUrl(rec, 'accepted_quantity'),
     criticality: rec['criticality']?.split(','),
     request_approval: rec['request_approval']?.split(','),
     resource_pm: rec['resource_pm']?.split(','),
@@ -192,6 +217,15 @@ const filtersToUrlString = (filters: RriFilters): string => {
       const values = filters[key] as string[] | undefined;
       if (values) {
         parts.push(`${key}=${values.join(',')}`);
+      }
+    }
+    if (type === 'range') {
+      const filter = filters[key] as RangeFilterData | undefined;
+      if (filter?.min) {
+        parts.push(`${key}_min=${filter.min}`);
+      }
+      if (filter?.max) {
+        parts.push(`${key}_max=${filter.max}`);
       }
     }
   }
@@ -375,6 +409,11 @@ export const useRriFilters = () => {
       optionsComponent: MultiSelectFilter,
     },
     {
+      value: 'accepted_quantity',
+      getChildrenSearchScore: () => 0,
+      optionsComponent: RangeFilter,
+    },
+    {
       value: 'criticality',
       getChildrenSearchScore: (searchQuery: string) =>
         query.data
@@ -434,7 +473,7 @@ export const useRriFilters = () => {
           : 0,
       optionsComponent: MultiSelectFilter,
     },
-  ] as const satisfies readonly RriFilterOption[];
+  ] as RriFilterOption[];
 
   const filterData = useMemo(
     () => getFiltersFromSearchParam(searchParams),
@@ -467,6 +506,19 @@ export const useRriFilters = () => {
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
     customer: (v) => (v as string[]).join(', '),
     resource_name: (v) => (v as string[]).join(', '),
+    accepted_quantity: (v) => {
+      const val = v as RangeFilterData;
+      if (val.min && val.max) {
+        return val.min + ' - ' + val.max;
+      }
+      if (val.min) {
+        return '> ' + val.min;
+      }
+      if (val.max) {
+        return '< ' + val.max;
+      }
+      return '';
+    },
     criticality: (v) => (v as string[]).join(', '),
     request_approval: (v) => (v as string[]).join(', '),
     resource_pm: (v) => (v as string[]).join(', '),
