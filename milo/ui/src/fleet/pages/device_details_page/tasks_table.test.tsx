@@ -43,6 +43,9 @@ describe('<Tasks />', () => {
 
   it('warns when bot request errors', async () => {
     const errorMsg = 'Test ListBots GRPC error';
+    const operation = 'list bots';
+    const expectedErrorMessage = `An unexpected error occurred during ${operation}. ${errorMsg}.`;
+
     mockErrorListingBots(errorMsg);
 
     render(
@@ -51,7 +54,9 @@ describe('<Tasks />', () => {
       </FakeContextProvider>,
     );
 
-    await waitFor(() => expect(screen.getByText(errorMsg)).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByText(expectedErrorMessage)).toBeVisible(),
+    );
   });
 
   it('warns when no bot ID is found', async () => {
@@ -69,7 +74,10 @@ describe('<Tasks />', () => {
   });
 
   it('warns when tasks request errors', async () => {
+    const operation = 'list tasks';
     const errorMsg = 'Test ListTasks GRPC error';
+    const expectedErrorMessage = `An unexpected error occurred during ${operation}. ${errorMsg}.`;
+
     mockListBots([BotInfo.fromPartial({ botId: 'bot-1' })]);
     mockErrorListingBotTasks(errorMsg);
 
@@ -79,7 +87,9 @@ describe('<Tasks />', () => {
       </FakeContextProvider>,
     );
 
-    await waitFor(() => expect(screen.getByText(errorMsg)).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByText(expectedErrorMessage)).toBeVisible(),
+    );
   });
 
   it('renders tasks list', async () => {
