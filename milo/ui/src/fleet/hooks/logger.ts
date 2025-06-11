@@ -27,9 +27,19 @@ export function useLogger() {
   // It actually doesn't mutate anything.
   const logFrontendMutation = useMutation({
     mutationFn: (request: LogFrontendRequest) => {
+      if (isRunningOnLocalhost()) {
+        // Dry run in case the frontend is run in local
+        return Promise.resolve({});
+      }
       return client.LogFrontend(request);
     },
   });
 
   return { logger: logFrontendMutation.mutate };
+}
+
+function isRunningOnLocalhost() {
+  const hostname = window.location.hostname;
+
+  return hostname === 'localhost' || hostname === '127.0.0.1';
 }
