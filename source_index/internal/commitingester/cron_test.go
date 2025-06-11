@@ -68,7 +68,7 @@ func TestSyncCommitsHandler(t *testing.T) {
 			case "webrtc.googlesource.com":
 				return fakeWebRTCGitilesClient, nil
 			default:
-				return nil, errors.Reason("unexpected host %q", host).Err()
+				return nil, errors.Fmt("unexpected host %q", host)
 			}
 		})
 

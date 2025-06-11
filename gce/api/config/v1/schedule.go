@@ -51,7 +51,7 @@ func (s *Schedule) mostRecentStart(now time.Time) (time.Time, error) {
 	// toTime returns a time relative to the current date. Change it to be relative to the given date.
 	t = time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 	if s.GetStart().Day == dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED {
-		return time.Time{}, errors.Reason("day must be specified").Err()
+		return time.Time{}, errors.New("day must be specified")
 	}
 	for !isSameDay(t.Weekday(), s.GetStart().Day) {
 		t = t.Add(time.Hour * -24)

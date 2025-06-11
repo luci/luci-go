@@ -29,10 +29,10 @@ var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)+$`)
 // ValidateGerritHostname validates the given gerrit hostname.
 func ValidateGerritHostname(host string) error {
 	if !hostnameRE.MatchString(host) {
-		return errors.Reason("gerrit hostname %q does not match expected pattern", host).Err()
+		return errors.Fmt("gerrit hostname %q does not match expected pattern", host)
 	}
 	if len(host) > 255 {
-		return errors.Reason("gerrit hostname is longer than 255 characters").Err()
+		return errors.New("gerrit hostname is longer than 255 characters")
 	}
 
 	// If the hostname ends with -review.googlesource.com, then the
@@ -40,7 +40,7 @@ func ValidateGerritHostname(host string) error {
 	if strings.HasSuffix(host, GerritHostnameSuffix) {
 		trimmedHost := strings.TrimSuffix(host, GerritHostnameSuffix)
 		if strings.Contains(trimmedHost, ".") {
-			return errors.Reason("bad hostname ending with -review.googlesource.com").Err()
+			return errors.New("bad hostname ending with -review.googlesource.com")
 		}
 	}
 	return nil

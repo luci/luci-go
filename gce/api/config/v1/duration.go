@@ -31,11 +31,11 @@ func (d *TimePeriod_Duration) ToSeconds() (int64, error) {
 	// Decompose the duration into a slice of [duration, <int64>, <unit>].
 	m := regexp.MustCompile(durationRegex).FindStringSubmatch(d.Duration)
 	if len(m) != 3 {
-		return 0, errors.Reason("duration must match regex %q", durationRegex).Err()
+		return 0, errors.Fmt("duration must match regex %q", durationRegex)
 	}
 	n, err := strconv.ParseInt(m[1], 10, 64)
 	if err != nil {
-		return 0, errors.Reason("duration must not exceed %q", int64(math.MaxInt64)).Err()
+		return 0, errors.Fmt("duration must not exceed %q", int64(math.MaxInt64))
 	}
 	var mul int64
 	switch m[2] {

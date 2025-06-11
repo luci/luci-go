@@ -145,15 +145,15 @@ func (r *baseCommandRun) initClients(ctx context.Context, loginMode auth.LoginMo
 
 func (r *baseCommandRun) validateCurrentInvocation() error {
 	if r.resultdbCtx == nil {
-		return errors.Reason("resultdb section of LUCI_CONTEXT missing").Err()
+		return errors.New("resultdb section of LUCI_CONTEXT missing")
 	}
 
 	if r.resultdbCtx.CurrentInvocation.Name == "" {
-		return errors.Reason("current invocation name missing from LUCI_CONTEXT").Err()
+		return errors.New("current invocation name missing from LUCI_CONTEXT")
 	}
 
 	if r.resultdbCtx.CurrentInvocation.UpdateToken == "" {
-		return errors.Reason("invocation update token missing from LUCI_CONTEXT").Err()
+		return errors.New("invocation update token missing from LUCI_CONTEXT")
 	}
 	return nil
 }

@@ -69,10 +69,10 @@ func (cmd *botsImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *botsImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.count && len(cmd.fields) > 0 {
-		return errors.Reason("-field cannot be used with -count").Err()
+		return errors.New("-field cannot be used with -count")
 	}
 	if cmd.count && cmd.botIDOnly {
-		return errors.Reason("-bare cannot be used with -count").Err()
+		return errors.New("-bare cannot be used with -count")
 	}
 	return nil
 }

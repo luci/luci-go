@@ -68,7 +68,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.Reason("position arguments not expected").Err()
+		return errors.New("position arguments not expected")
 	}
 	return nil
 }

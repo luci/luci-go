@@ -57,7 +57,7 @@ func stateMap(value string) (state swarmingv2.StateQuery, err error) {
 	case "client_error":
 		state = swarmingv2.StateQuery_QUERY_CLIENT_ERROR
 	default:
-		err = errors.Reason("Invalid state %s", value).Err()
+		err = errors.Fmt("Invalid state %s", value)
 	}
 	return state, err
 }

@@ -68,10 +68,10 @@ func (cmd *botTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 
 func (cmd *botTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.botID == "" {
-		return errors.Reason("non-empty -id required").Err()
+		return errors.New("non-empty -id required")
 	}
 	if cmd.limit < 1 {
-		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
+		return errors.Fmt("invalid -limit %d, must be positive", cmd.limit)
 	}
 	if _, err := stateMap(cmd.state); err != nil {
 		return err

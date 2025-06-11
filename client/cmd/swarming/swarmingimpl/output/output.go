@@ -225,10 +225,10 @@ func (s *Sink) setMode(mode streamingMode) error {
 // setModeLocked must be called when the lock held.
 func (s *Sink) setModeLocked(mode streamingMode) error {
 	if s.mode != unknown && s.mode != mode {
-		return errors.Reason("incorrect usage of output writer API: cannot switch streaming modes midway").Err()
+		return errors.New("incorrect usage of output writer API: cannot switch streaming modes midway")
 	}
 	if mode == oneShot && s.calls > 0 {
-		return errors.Reason("incorrect usage of output writer API: cannot emit more than one message while not in a list or map mode").Err()
+		return errors.New("incorrect usage of output writer API: cannot emit more than one message while not in a list or map mode")
 	}
 	s.mode = mode
 	return nil

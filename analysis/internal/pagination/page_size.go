@@ -40,7 +40,7 @@ func (psl *PageSizeLimiter) Adjust(pageSize int32) int32 {
 // Returns nil if pageSize is 0.
 func ValidatePageSize(pageSize int32) error {
 	if pageSize < 0 {
-		return errors.Reason("negative").Err()
+		return errors.New("negative")
 	}
 	return nil
 }

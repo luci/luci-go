@@ -109,7 +109,7 @@ func (*cronModule) Dependencies() []module.Dependency {
 func (m *cronModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	logging.Infof(ctx, "Cron is serving handlers from %q", m.opts.ServingPrefix)
 	if !strings.HasPrefix(m.opts.ServingPrefix, "/internal/") {
-		return nil, errors.Reason(`-cron-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix).Err()
+		return nil, errors.Fmt(`-cron-serving-prefix must start with "/internal/", got %q`, m.opts.ServingPrefix)
 	}
 
 	if m.opts.Dispatcher == nil {

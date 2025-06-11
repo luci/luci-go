@@ -152,7 +152,7 @@ func TestValidateTestResult(t *testing.T) {
 						// Check only invoked once.
 						assert.Loosely(t, invoked, should.Equal(false))
 						invoked = true
-						return errors.Reason("coarse_name: some error").Err()
+						return errors.New("coarse_name: some error")
 					}
 
 					assert.Loosely(t, validateTR(msg), should.ErrLike("test_id_structured: coarse_name: some error"))
@@ -204,7 +204,7 @@ func TestValidateTestResult(t *testing.T) {
 							// Check only invoked once.
 							assert.Loosely(t, invoked, should.Equal(false))
 							invoked = true
-							return errors.Reason("module_scheme: scheme %q not defined", id.ModuleScheme).Err()
+							return errors.Fmt("module_scheme: scheme %q not defined", id.ModuleScheme)
 						}
 
 						assert.Loosely(t, validateTR(msg), should.ErrLike("test_id: module_scheme: scheme \"legacy\" not defined"))

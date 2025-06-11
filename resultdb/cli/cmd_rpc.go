@@ -64,7 +64,7 @@ type rpcRun struct {
 
 func (r *rpcRun) parseArgs(args []string) error {
 	if len(args) != 2 {
-		return errors.Reason("usage: %s", rpcUsage).Err()
+		return errors.Fmt("usage: %s", rpcUsage)
 	}
 
 	r.service = args[0]
@@ -100,10 +100,10 @@ func (r *rpcRun) rpc(ctx context.Context) error {
 
 	if r.includeUpdateToken {
 		if r.resultdbCtx == nil {
-			return errors.Reason("update token not found, resultdb section of LUCI_CONTEXT missing").Err()
+			return errors.New("update token not found, resultdb section of LUCI_CONTEXT missing")
 		}
 		if r.resultdbCtx.CurrentInvocation.UpdateToken == "" {
-			return errors.Reason("update token not found, missing from LUCI_CONTEXT").Err()
+			return errors.New("update token not found, missing from LUCI_CONTEXT")
 		}
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("update-token", r.resultdbCtx.CurrentInvocation.UpdateToken))
 	}

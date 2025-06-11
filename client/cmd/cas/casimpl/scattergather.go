@@ -45,7 +45,7 @@ type scatterGather map[string]string
 func (sc *scatterGather) Add(wd, rel string) error {
 	cleaned := filepath.Clean(rel)
 	if _, ok := (*sc)[cleaned]; ok {
-		return errors.Reason("name conflict %q", rel).Err()
+		return errors.Fmt("name conflict %q", rel)
 	}
 	(*sc)[cleaned] = wd
 	return nil
@@ -55,7 +55,7 @@ func (sc *scatterGather) Add(wd, rel string) error {
 func (sc *scatterGather) Set(value string) error {
 	colon := strings.LastIndexByte(value, ':')
 	if colon == -1 {
-		return errors.Reason("malformed input %q", value).Err()
+		return errors.Fmt("malformed input %q", value)
 	}
 	if *sc == nil {
 		*sc = scatterGather{}

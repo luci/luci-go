@@ -80,7 +80,7 @@ func (m *analyticsModule) Initialize(ctx context.Context, host module.Host, opts
 	case rGA4Allowed.MatchString(m.opts.AnalyticsID):
 		return context.WithValue(ctx, &ctxKey, makeGTagSnippet(m.opts.AnalyticsID)), nil
 	default:
-		return ctx, errors.Reason("given --analytics-id %q is not a measurement ID (like G-XXXXXX)", m.opts.AnalyticsID).Err()
+		return ctx, errors.Fmt("given --analytics-id %q is not a measurement ID (like G-XXXXXX)", m.opts.AnalyticsID)
 	}
 }
 
