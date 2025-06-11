@@ -43,4 +43,5 @@ export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.AuthServiceLookup]: 'User lookup',
   [UiPage.Clusters]: 'Clusters',
   [UiPage.Rules]: 'Rules',
+  [UiPage.TestInvestigation]: 'Test Investigation',
 });

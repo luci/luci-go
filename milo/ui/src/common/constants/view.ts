@@ -42,6 +42,7 @@ export enum UiPage {
   AuthServiceLookup = 'authdb-lookup',
   Clusters = 'clusters',
   Rules = 'rules',
+  TestInvestigation = 'test-investigation',
 }
 
 export enum CommonColors {

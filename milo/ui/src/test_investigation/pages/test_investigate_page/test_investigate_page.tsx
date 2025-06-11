@@ -21,10 +21,15 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useEstablishProjectCtx } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -104,6 +109,7 @@ export function TestInvestigatePage() {
   );
 
   useEstablishProjectCtx(project);
+  useDeclarePageId(UiPage.TestInvestigation);
 
   if (isLoadingInvocation || isLoadingTestVariant) {
     return (
@@ -174,6 +180,10 @@ export function TestInvestigatePage() {
       rawInvocationId={rawInvocationId}
       project={project}
     >
+      <Helmet>
+        {/** TODO: Add test status and favicon */}
+        <title>{testVariant.testId} - Test Investigation</title>
+      </Helmet>
       <TestVariantProvider testVariant={testVariant}>
         <ThemeProvider theme={gm3PageTheme}>
           <RedirectBackBanner

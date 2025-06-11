@@ -23,6 +23,7 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useEstablishProjectCtx } from '@/common/components/page_meta';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -100,6 +101,8 @@ export function InvocationPage() {
     () => getProjectFromRealm(invocation?.realm),
     [invocation?.realm],
   );
+
+  useEstablishProjectCtx(project);
 
   if (isLoadingInvocation) {
     return (
