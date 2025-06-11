@@ -21,8 +21,8 @@ import {
   CircularProgress,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
@@ -53,12 +53,13 @@ export function ArtifactsSection({
   const [selectedArtifactNode, setSelectedArtifactNode] =
     useState<ArtifactTreeNodeData | null>(null);
 
-  // TODO: Paginate loading all artifacts.
   const {
     data: testResultArtifactsData,
     isPending: isLoadingTestResultArtifacts,
-  } = useQuery({
-    ...resultDbClient.ListArtifacts.query(
+    hasNextPage: testResultArtifactsHasNextPage,
+    fetchNextPage: loadMoreTestResultArtifacts,
+  } = useInfiniteQuery({
+    ...resultDbClient.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
         parent: currentResult?.name,
         pageSize: 1000,
@@ -66,14 +67,26 @@ export function ArtifactsSection({
     ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
-    select: (res) => res.artifacts || [],
+    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
+
+  useEffect(() => {
+    if (!isLoadingTestResultArtifacts && testResultArtifactsHasNextPage) {
+      loadMoreTestResultArtifacts();
+    }
+  }, [
+    isLoadingTestResultArtifacts,
+    loadMoreTestResultArtifacts,
+    testResultArtifactsHasNextPage,
+  ]);
 
   const {
     data: invocationScopeArtifactsData,
     isPending: isLoadingInvocationScopeArtifacts,
-  } = useQuery({
-    ...resultDbClient.ListArtifacts.query(
+    hasNextPage: invocationScopeArtifactsHasNextPage,
+    fetchNextPage: loadMoreInvocationScopeArtifacts,
+  } = useInfiniteQuery({
+    ...resultDbClient.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
         parent:
           'invocations/' +
@@ -83,8 +96,21 @@ export function ArtifactsSection({
     ),
     enabled: !!invocationName,
     staleTime: Infinity,
-    select: (res) => res.artifacts || [],
+    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
+
+  useEffect(() => {
+    if (
+      !isLoadingInvocationScopeArtifacts &&
+      invocationScopeArtifactsHasNextPage
+    ) {
+      loadMoreInvocationScopeArtifacts();
+    }
+  }, [
+    isLoadingInvocationScopeArtifacts,
+    loadMoreInvocationScopeArtifacts,
+    invocationScopeArtifactsHasNextPage,
+  ]);
 
   const artifactContentQueryEnabled =
     !!selectedArtifactNode?.artifact?.fetchUrl &&
