@@ -203,6 +203,10 @@ function findInvocationSegmentIndex(
       return i;
     }
   }
+  if (segments.length > 0 && position > Number(segments[0].startPosition)) {
+    // Result is newer than segment analysis, assume latest segment continues to include this result.
+    return 0;
+  }
   return -1;
 }
 
@@ -243,6 +247,14 @@ export function HistoryRateDisplaySection({
     return (
       <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
         {NO_HISTORY_DATA_TEXT}
+      </Typography>
+    );
+  }
+  if (invocationSegmentIndex === -1) {
+    return (
+      <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
+        No history segments matching the source position of this verdict can be
+        found.
       </Typography>
     );
   }
