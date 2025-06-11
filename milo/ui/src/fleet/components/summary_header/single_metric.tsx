@@ -24,6 +24,7 @@ type SingleMetricProps = {
   total?: number;
   Icon?: ReactElement;
   filterUrl?: string;
+  handleClick?: () => void;
   loading?: boolean;
 };
 
@@ -33,6 +34,7 @@ export function SingleMetric({
   total,
   Icon,
   filterUrl,
+  handleClick,
   loading,
 }: SingleMetricProps) {
   const navigate = useNavigate();
@@ -78,9 +80,11 @@ export function SingleMetric({
     </>
   );
 
+  const isClickable = handleClick || filterUrl;
+
   return (
     <>
-      {filterUrl && (
+      {isClickable && (
         <Button
           variant="text"
           sx={{
@@ -90,13 +94,18 @@ export function SingleMetric({
             color: theme.palette.text.primary,
           }}
           onClick={() => {
-            navigate(filterUrl);
+            if (handleClick) {
+              handleClick();
+            }
+            if (filterUrl) {
+              navigate(filterUrl);
+            }
           }}
         >
           {content}
         </Button>
       )}
-      {!filterUrl && <div css={{ marginRight: 'auto' }}>{content}</div>}
+      {!isClickable && <div css={{ marginRight: 'auto' }}>{content}</div>}
     </>
   );
 }

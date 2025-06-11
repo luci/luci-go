@@ -18,14 +18,29 @@ import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
+import { useRriFilters } from './use_rri_filters';
+
 export function RriSummaryHeader() {
   const client = useFleetConsoleClient();
+
+  const { filterData, setFilters } = useRriFilters();
 
   const { data, isLoading, isError } = useQuery(
     client.CountResourceRequests.query({
       filter: '', // TODO: b/396079336 add filtering
     }),
   );
+
+  /**
+   * @param filterName name of the filter, ex. state
+   * @param filterValue array of filter values, ex. DEVICE_STATE_LEASED
+   * @returns will return URL query part with filters and existing parameters, like sorting
+   */
+  // TODO: b/421989100 - share this code with other main metrics panel code.
+  const addFilter = (filterName: string, filterValue: string[]) => () => {
+    const newFilters = { ...filterData, [filterName]: filterValue };
+    setFilters(newFilters);
+  };
 
   if (isError) {
     return <Typography variant="h4">Error</Typography>; // TODO: b/397421370 improve this
@@ -48,12 +63,14 @@ export function RriSummaryHeader() {
             value={data?.inProgress}
             total={data?.total}
             loading={isLoading}
+            handleClick={addFilter('fulfillment_status', ['IN_PROGRESS'])}
           />
           <SingleMetric
             name="Completed"
             value={data?.completed}
             total={data?.total}
             loading={isLoading}
+            handleClick={addFilter('fulfillment_status', ['COMPLETED'])}
           />
           <SingleMetric
             name="Material Sourcing"

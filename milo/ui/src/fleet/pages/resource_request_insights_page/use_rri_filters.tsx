@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
@@ -37,7 +38,6 @@ import { MultiSelectFilter } from './multiselect_filter';
 import { RangeFilter } from './range_filter';
 import { ResourceRequestColumnKey, RRI_COLUMNS } from './rri_columns';
 
-const FILTERS_PARAM_KEY = 'filters';
 const FILTER_SEPARATOR = '&';
 
 const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
