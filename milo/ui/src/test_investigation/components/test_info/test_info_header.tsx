@@ -30,6 +30,7 @@ import {
 
 import { CLsPopover } from './cls_popver';
 import { useFormattedCLs } from './context';
+import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
 import { NO_CLS_TEXT } from './types';
 
 export function TestInfoHeader() {
@@ -56,6 +57,10 @@ export function TestInfoHeader() {
 
   return (
     <Box sx={{ mb: 2 }}>
+      <TestInfoBreadcrumbs
+        invocation={invocation.name}
+        testIdStructured={testVariant?.testIdStructured || undefined}
+      />
       <PageTitle viewName="Test case" resourceName={testDisplayName} />
       <PageSummaryLine>
         {Object.entries(testVariant.variant?.def || {}).map(([key, value]) => (
