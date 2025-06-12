@@ -179,7 +179,7 @@ message Invocation {
   string realm = 12;
 
   // Deprecated. Values specified here are ignored.
-  HistoryOptions history_options = 13;
+  HistoryOptions history_options = 13 [ deprecated = true ];
 
   // Arbitrary JSON object that contains structured, domain-specific properties
   // of the invocation.
@@ -314,12 +314,12 @@ message BigQueryExport {
 // Deprecated: do not use.
 message HistoryOptions {
   // Set this to index the results by the containing invocation's create_time.
-  bool use_invocation_timestamp = 1;
+  bool use_invocation_timestamp = 1 [ deprecated = true ];
 
   // Set this to index by commit position.
   // It's up to the creator of the invocation to set this consistently over
   // time across the same test variant.
-  CommitPosition commit = 2;
+  CommitPosition commit = 2 [ deprecated = true ];
 }
 
 // Specifies the source code that was tested in an invocation, either directly
