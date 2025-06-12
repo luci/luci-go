@@ -14,12 +14,12 @@
 
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import { DeviceDataCell } from '@/fleet/components/device_table/device_data_cell';
 import {
   COLUMN_OVERRIDES,
   labelValuesToString,
 } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -52,7 +52,7 @@ export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
       flex: 3,
       renderCell: (props: GridRenderCellParams) =>
         COLUMN_OVERRIDES[props.id]?.renderCell?.(props) || (
-          <DeviceDataCell {...props}></DeviceDataCell>
+          <CellWithTooltip {...props}></CellWithTooltip>
         ),
     },
   ];

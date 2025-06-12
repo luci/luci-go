@@ -15,6 +15,7 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Duration } from 'luxon';
 
+import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { toIsoString, toLuxonDateTime } from '@/fleet/utils/dates';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 import {
@@ -40,6 +41,7 @@ interface DateWithOverdueData {
 export interface RriGridRow {
   id: string;
   rrId: string;
+  resource_request_bug_id: string;
   resource_details: string;
   expected_eta: string;
   fulfillment_status: string;
@@ -111,6 +113,18 @@ export const RRI_COLUMNS = [
       flex: 1,
     },
     assignValue: (rr, row) => (row.rrId = rr.rrId),
+    isDefault: true,
+  },
+  {
+    id: 'resource_request_bug_id',
+    gridColDef: {
+      field: 'resource_request_bug_id',
+      headerName: 'Resource Request Bug ID',
+      flex: 1,
+      renderCell: renderCellWithLink((v) => `http://${v}`),
+    },
+    assignValue: (rr, row) =>
+      (row.resource_request_bug_id = rr.resourceRequestBugId ?? ''),
     isDefault: true,
   },
   {

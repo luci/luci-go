@@ -14,7 +14,8 @@
 
 import { GridColDef } from '@mui/x-data-grid';
 
-import { DeviceDataCell } from './device_data_cell';
+import { CellWithTooltip } from '../table/cell_with_tooltip';
+
 import { COLUMN_OVERRIDES } from './dimensions';
 
 // This may be used later to add a 'common columns' section.
@@ -70,7 +71,7 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
     flex: id === 'id' ? 3 : 1,
     renderCell: (props) =>
       COLUMN_OVERRIDES[id]?.renderCell?.(props) || (
-        <DeviceDataCell {...props}></DeviceDataCell>
+        <CellWithTooltip {...props}></CellWithTooltip>
       ),
   }));
 };

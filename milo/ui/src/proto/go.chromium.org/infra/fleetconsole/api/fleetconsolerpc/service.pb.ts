@@ -390,6 +390,7 @@ export interface ResourceRequest {
   readonly fulfillmentChannel?: string | undefined;
   readonly executionStatus?: string | undefined;
   readonly resourceGroups: readonly string[];
+  readonly resourceRequestBugId?: string | undefined;
 }
 
 export enum ResourceRequest_Status {
@@ -2994,6 +2995,7 @@ function createBaseResourceRequest(): ResourceRequest {
     fulfillmentChannel: undefined,
     executionStatus: undefined,
     resourceGroups: [],
+    resourceRequestBugId: undefined,
   };
 }
 
@@ -3103,6 +3105,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     for (const v of message.resourceGroups) {
       writer.uint32(314).string(v!);
+    }
+    if (message.resourceRequestBugId !== undefined) {
+      writer.uint32(322).string(message.resourceRequestBugId);
     }
     return writer;
   },
@@ -3394,6 +3399,14 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.resourceGroups.push(reader.string());
           continue;
         }
+        case 40: {
+          if (tag !== 322) {
+            break;
+          }
+
+          message.resourceRequestBugId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3474,6 +3487,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
       resourceGroups: globalThis.Array.isArray(object?.resourceGroups)
         ? object.resourceGroups.map((e: any) => globalThis.String(e))
         : [],
+      resourceRequestBugId: isSet(object.resourceRequestBugId)
+        ? globalThis.String(object.resourceRequestBugId)
+        : undefined,
     };
   },
 
@@ -3584,6 +3600,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceGroups?.length) {
       obj.resourceGroups = message.resourceGroups;
     }
+    if (message.resourceRequestBugId !== undefined) {
+      obj.resourceRequestBugId = message.resourceRequestBugId;
+    }
     return obj;
   },
 
@@ -3671,6 +3690,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     message.fulfillmentChannel = object.fulfillmentChannel ?? undefined;
     message.executionStatus = object.executionStatus ?? undefined;
     message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
+    message.resourceRequestBugId = object.resourceRequestBugId ?? undefined;
     return message;
   },
 };

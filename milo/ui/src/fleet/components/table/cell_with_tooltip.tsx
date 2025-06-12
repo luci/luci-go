@@ -20,7 +20,7 @@ import { useRef } from 'react';
  * mui-data-grid cell with custom styles and functionality to truncate
  * overflowing data and to show a tooltip when the value is truncated.
  */
-export const DeviceDataCell = ({
+export const CellWithTooltip = ({
   value,
   colDef,
   tooltipTitle,

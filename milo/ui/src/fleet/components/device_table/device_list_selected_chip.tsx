@@ -21,10 +21,10 @@ import {
 } from '@/fleet/types/option';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
-import { DIMENSION_SEPARATOR } from '../device_table/dimensions';
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
 import { SelectedChip } from '../filter_dropdown/selected_chip';
+import { DIMENSION_SEPARATOR } from '../table/dimensions';
 
 export const DeviceListSelectedChip = ({
   filterOptions,

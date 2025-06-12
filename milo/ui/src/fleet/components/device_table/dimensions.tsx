@@ -14,7 +14,6 @@
 
 import { GridRenderCellParams } from '@mui/x-data-grid';
 import React from 'react';
-import { Link } from 'react-router';
 
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
@@ -25,12 +24,10 @@ import {
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DeviceDataCell } from './device_data_cell';
+import { renderCellWithLink } from '../table/cell_with_link';
+import { CellWithTooltip } from '../table/cell_with_tooltip';
+import { DIMENSION_SEPARATOR } from '../table/dimensions';
 
-// Constant for the the separator we use across the UI for displaying
-// multiple values as a string string (ie: in one chip or one table cell)
-// TODO: b/378634266 should be discussed how to show multiple values
-export const DIMENSION_SEPARATOR = ', ';
 export const labelValuesToString = (labels: readonly string[]): string => {
   return labels
     .concat()
@@ -47,49 +44,6 @@ type Dimension = Record<
     renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
   }
 >;
-
-const getPathnameWithParams = () => {
-  return window.location.href.toString().split(window.location.host)[1];
-};
-
-/**
- * Helper that generates a `renderCell` function based on a link generator.
- * @param linkGenerator A function that takes a value and turns it into a URL.
- * @returns A function that renders a <DeviceDataCell /> based on GridRenderCellParams
- */
-// TODO: b/394202288 - Add tests for this function.
-function renderCellWithLink(
-  linkGenerator: (value: string) => string,
-  newTab: boolean = true,
-): (props: GridRenderCellParams) => React.ReactElement {
-  const CellWithLink = (props: GridRenderCellParams) => {
-    const { value = '' } = props;
-    const links: string[] = value.split(DIMENSION_SEPARATOR);
-
-    return (
-      <DeviceDataCell
-        {...props}
-        value={links.map((v: string, i: number) => (
-          <React.Fragment key={v}>
-            <Link
-              key={v}
-              to={linkGenerator(v)}
-              state={{
-                navigatedFromLink: getPathnameWithParams(),
-              }}
-              target={newTab ? '_blank' : '_self'}
-            >
-              {v}
-            </Link>
-            {i < links.length - 1 ? DIMENSION_SEPARATOR : ''}
-          </React.Fragment>
-        ))}
-        tooltipTitle={value}
-      />
-    );
-  };
-  return CellWithLink;
-}
 
 const renderCurrentTaskCell = renderCellWithLink(getTaskURL);
 
@@ -133,7 +87,7 @@ export const BASE_DIMENSIONS: Dimension = {
     sortable: false,
     renderCell: (props) => {
       if (props.value === '') {
-        return <DeviceDataCell {...props} value="idle"></DeviceDataCell>;
+        return <CellWithTooltip {...props} value="idle"></CellWithTooltip>;
       }
       return renderCurrentTaskCell(props);
     },
