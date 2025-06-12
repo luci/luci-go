@@ -20,7 +20,7 @@ import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutl
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { Box, Typography, IconButton, Chip, Theme } from '@mui/material';
 import { deepOrange, yellow, blue } from '@mui/material/colors';
-import { useTheme } from '@mui/material/styles'; // Added
+import { useTheme } from '@mui/material/styles';
 import React, { ReactNode } from 'react';
 
 import { TreeData } from '@/common/components/log_viewer/virtual_tree/types';
@@ -30,14 +30,48 @@ import { ArtifactTreeNodeData } from '../types';
 
 import { FolderIcon } from './folder_icon';
 
-const LEVEL_INDENTATION_SIZE = 10; // Pixels per indentation level
-const CONTENT_INTERNAL_OFFSET_LEFT = 8; // Base left padding for content
+const LEVEL_INDENTATION_SIZE = 10;
+const CONTENT_INTERNAL_OFFSET_LEFT = 8;
 
 const DIRECT_ACTIVE_NODE_SELECTION_BACKGROUND_COLOR = deepOrange[300];
 const DIRECT_SEARCH_MATCHED_BACKGROUND_COLOR = yellow[400];
+
 /**
- * Determines the background color for a tree node based on its state.
+ * A helper function to render text with highlighted matches.
+ * It splits the text by the highlight term (case-insensitively) and wraps
+ * the matches in a bold span.
  */
+function renderHighlightedText(
+  text: string,
+  highlight: string,
+): React.ReactNode {
+  if (!highlight.trim()) {
+    return text;
+  }
+  // Use a regex to split the text by the highlight term, keeping the delimiter
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, index) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <Box
+            component="span"
+            key={index}
+            sx={{
+              backgroundColor: yellow[200],
+              borderRadius: '2px',
+            }}
+          >
+            <strong>{part}</strong>
+          </Box>
+        ) : (
+          part
+        ),
+      )}
+    </span>
+  );
+}
+
 const getNodeBackground = (
   context: VirtualTreeNodeActions<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
   theme: Theme,
@@ -51,12 +85,9 @@ const getNodeBackground = (
   if (context.isSelected) {
     return blue[50];
   }
-  return theme.palette.background.paper; // Default row background
+  return theme.palette.background.paper;
 };
 
-/**
- * Extracts a displayable file type from a filename.
- */
 function getFileTypeFromName(fileName: string): string | null {
   const lastDot = fileName.lastIndexOf('.');
   if (lastDot === -1 || lastDot === 0 || lastDot === fileName.length - 1) {
@@ -64,28 +95,18 @@ function getFileTypeFromName(fileName: string): string | null {
   }
   const extension = fileName.substring(lastDot + 1).toLowerCase();
 
-  if (
-    extension === 'png' ||
-    extension === 'jpg' ||
-    extension === 'jpeg' ||
-    extension === 'gif' ||
-    extension === 'svg' ||
-    extension === 'heic'
-  ) {
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'heic'].includes(extension)) {
     return extension;
   }
   if (extension.length > 0 && extension.length <= 4) {
     return extension;
   }
-  return 'text'; // Fallback for unknown or long extensions
+  return 'text';
 }
 
-/**
- * Renders an appropriate icon for a leaf node based on its file type.
- */
 const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
-  const theme = useTheme(); // Access theme for icon color
-  let IconComponent = InsertDriveFileOutlinedIcon; // Default file icon
+  const theme = useTheme();
+  let IconComponent = InsertDriveFileOutlinedIcon;
   if (fileType) {
     switch (fileType) {
       case 'png':
@@ -114,23 +135,14 @@ const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
   );
 };
 
-/**
- * Props for the CustomTreeNode component.
- * @template T Extends TreeNodeData, representing the specific data type for a node.
- */
 export interface ArtifactTreeNodeProps {
-  /** The index of the node in the virtualized list. */
   index: number;
-  /** The processed data for the tree node, including level, isOpen state, etc. */
   row: TreeData<ArtifactTreeNodeData>;
-  /** Context object containing actions (onNodeToggle, onNodeSelect) and state flags (isSelected, etc.). */
   context: VirtualTreeNodeActions<ArtifactTreeNodeData>;
-  /** Optional function to render custom action icons/buttons for the node. */
   renderActions?: (row: TreeData<ArtifactTreeNodeData>) => ReactNode;
-  /** Callback for when a "supported" (viewable internally) leaf node is clicked. */
   onSupportedLeafClick?: (nodeData: ArtifactTreeNodeData) => void;
-  /** Callback for when an "unsupported" (opens externally) leaf node is clicked. */
   onUnsupportedLeafClick?: (nodeData: ArtifactTreeNodeData) => void;
+  highlightText?: string;
 }
 
 export function ArtifactTreeNode({
@@ -139,6 +151,7 @@ export function ArtifactTreeNode({
   renderActions,
   onSupportedLeafClick,
   onUnsupportedLeafClick,
+  highlightText,
 }: ArtifactTreeNodeProps) {
   const theme = useTheme();
   const isFolder = !row.isLeafNode;
@@ -150,7 +163,8 @@ export function ArtifactTreeNode({
   const isUnsupportedLink =
     !isFolder && !row.data.viewingSupported && !row.data.isSummary;
 
-  const handleToggle = () => {
+  const handleToggle = (event: React.MouseEvent) => {
+    event.stopPropagation();
     context.onNodeToggle?.(row);
   };
 
@@ -257,8 +271,8 @@ export function ArtifactTreeNode({
               height: '18px',
               fontSize: '11px',
               lineHeight: '16px',
-              backgroundColor: theme.palette.grey[200], // Chip background
-              color: theme.palette.text.secondary, // Chip text
+              backgroundColor: theme.palette.grey[200],
+              color: theme.palette.text.secondary,
               borderRadius: '4px',
               mr: '4px',
               flexShrink: 0,
@@ -276,13 +290,15 @@ export function ArtifactTreeNode({
             letterSpacing: '0.2px',
             color: isUnsupportedLink
               ? theme.palette.primary.main
-              : theme.palette.text.primary, // Link and default text
+              : theme.palette.text.primary,
             textDecoration: isUnsupportedLink ? 'underline' : 'none',
             flexGrow: 1,
             wordBreak: 'break-word',
           }}
         >
-          {row.name}
+          {highlightText
+            ? renderHighlightedText(row.name, highlightText)
+            : row.name}
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -296,7 +312,6 @@ export function ArtifactTreeNode({
               sx={{
                 visibility: 'hidden',
                 '.MuiBox-root:hover > .MuiBox-root > &': {
-                  // Consider revising selector if Box structure changes
                   visibility: 'visible',
                 },
               }}

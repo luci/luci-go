@@ -12,8 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, LinearProgress } from '@mui/material';
-import { useCallback, useEffect, useMemo } from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  Box,
+  Chip,
+  InputAdornment,
+  LinearProgress,
+  TextField,
+} from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   TreeData,
@@ -27,6 +34,7 @@ import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_
 import { ArtifactTreeNode } from './artifact_tree_node';
 import { ArtifactTreeNodeData, SelectedArtifactSource } from './types';
 
+// Helper functions (addArtifactsToTree, buildArtifactsTree) remain unchanged.
 function addArtifactsToTree(
   artifacts: readonly Artifact[],
   root: ArtifactTreeNodeData,
@@ -76,9 +84,6 @@ function buildArtifactsTree(
       children: [],
     });
   }
-  // Inserted ids are used by the tree to identify which
-  // nodes to expand and collapse.
-  // This variable is used to track the ids of non leaf items.
   let lastInsertedId = 0;
 
   if (resultArtifacts.length > 0) {
@@ -130,76 +135,114 @@ export function ArtifactTreeView({
   updateSelectedArtifact,
   currentResult,
 }: ArtifactTreeViewProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+
+  const filteredResultArtifacts = useMemo(() => {
+    if (!debouncedSearchTerm) {
+      return resultArtifacts;
+    }
+    return resultArtifacts.filter((artifact) =>
+      artifact.artifactId
+        .toLowerCase()
+        .includes(debouncedSearchTerm.toLocaleLowerCase()),
+    );
+  }, [resultArtifacts, debouncedSearchTerm]);
+
+  const filteredInvArtifacts = useMemo(() => {
+    if (!debouncedSearchTerm) {
+      return invArtifacts;
+    }
+    return invArtifacts.filter((artifact) =>
+      artifact.artifactId
+        .toLowerCase()
+        .includes(debouncedSearchTerm.toLocaleLowerCase()),
+    );
+  }, [invArtifacts, debouncedSearchTerm]);
+
   const artifactsTree = useMemo(() => {
     return buildArtifactsTree(
-      resultArtifacts,
-      invArtifacts,
+      filteredResultArtifacts,
+      filteredInvArtifacts,
       !!currentResult?.summaryHtml,
     );
-  }, [resultArtifacts, invArtifacts, currentResult?.summaryHtml]);
+  }, [
+    filteredResultArtifacts,
+    filteredInvArtifacts,
+    currentResult?.summaryHtml,
+  ]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm) return;
+    if (selectedArtifactNode) return;
+
+    const summaryNode = artifactsTree.find((node) => node.isSummary);
+    if (summaryNode) {
+      updateSelectedArtifact(summaryNode);
+      return;
+    }
+
+    const findFirstLeafRecursive = (
+      nodes: ArtifactTreeNodeData[],
+    ): ArtifactTreeNodeData | null => {
+      for (const node of nodes) {
+        if (!node.children || node.children.length === 0) {
+          if (node.artifact || node.isSummary) return node;
+        }
+        if (node.children) {
+          const found = findFirstLeafRecursive(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const firstLeaf = findFirstLeafRecursive(artifactsTree);
+    updateSelectedArtifact(firstLeaf);
+  }, [
+    artifactsTree,
+    updateSelectedArtifact,
+    selectedArtifactNode,
+    debouncedSearchTerm,
+  ]);
 
   const setActiveSelectionFnForSelectedNode = useCallback(
     (nodeData: ArtifactTreeNodeData): boolean => {
-      return !!(
-        selectedArtifactNode &&
-        (selectedArtifactNode.isSummary ||
-          nodeData.artifact?.artifactId ===
-            selectedArtifactNode.artifact?.artifactId)
+      if (!selectedArtifactNode) return false;
+      if (selectedArtifactNode.isSummary) return !!nodeData.isSummary;
+      return (
+        nodeData.artifact?.artifactId ===
+        selectedArtifactNode.artifact?.artifactId
       );
     },
     [selectedArtifactNode],
   );
 
-  useEffect(() => {
-    const currentNodes = artifactsTree;
-    const summaryNode = currentNodes.find((node) => node.isSummary);
-    if (!selectedArtifactNode) {
-      if (summaryNode) {
-        updateSelectedArtifact(summaryNode);
-      } else if (currentNodes.length > 0) {
-        const findFirstLeafRecursive = (
-          nodes: ArtifactTreeNodeData[],
-        ): ArtifactTreeNodeData | null => {
-          for (const node of nodes) {
-            if (node.children.length === 0) return node;
-            if (node.children) {
-              const found = findFirstLeafRecursive(node.children);
-              if (found) return found;
-            }
-          }
-          for (const node of nodes) {
-            if (node.artifact) {
-              return node;
-            }
-          }
-          return null;
-        };
-        const firstLeaf = findFirstLeafRecursive(currentNodes);
-        updateSelectedArtifact(firstLeaf);
-      } else {
-        updateSelectedArtifact(null);
-      }
-    }
-  }, [artifactsTree, updateSelectedArtifact, selectedArtifactNode]);
-
   const selectedNodes: Set<string> | undefined = useMemo(() => {
     if (selectedArtifactNode) {
-      if (selectedArtifactNode.isSummary) {
-        return new Set([selectedArtifactNode.id]);
-      } else if (selectedArtifactNode.artifact) {
-        return new Set([selectedArtifactNode.artifact?.artifactId]);
-      }
+      return new Set([selectedArtifactNode.id]);
     }
     return undefined;
   }, [selectedArtifactNode]);
 
   const selectedArtifactLabel = useMemo(() => {
-    if (selectedArtifactNode)
+    if (selectedArtifactNode) {
       if (selectedArtifactNode.isSummary) {
         return 'Summary';
       } else if (selectedArtifactNode.artifact) {
         return selectedArtifactNode.artifact.artifactId;
       }
+    }
     return '';
   }, [selectedArtifactNode]);
 
@@ -222,13 +265,48 @@ export function ArtifactTreeView({
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {selectedArtifactNode && (
-        <Box sx={{ p: 1 }}>
-          Selected artifact:
-          <Chip size="small" label={selectedArtifactLabel} />
-        </Box>
-      )}
-      <Box sx={{ flexGrow: 1, width: '100%', wordBreak: 'break-word' }}>
+      <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <TextField
+          placeholder="Search artifacts"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '50px',
+              backgroundColor: '#f5f5f5',
+              '& fieldset': {
+                border: 'none',
+              },
+            },
+          }}
+        />
+        {selectedArtifactNode && (
+          <Box>
+            Selected artifact:{' '}
+            <Chip size="small" label={selectedArtifactLabel} sx={{ ml: 1 }} />
+          </Box>
+        )}
+      </Box>
+      <Box
+        sx={{
+          flexGrow: 1,
+          width: '100%',
+          wordBreak: 'break-word',
+          overflow: 'hidden',
+        }}
+      >
         <VirtualTree<ArtifactTreeNodeData>
           root={artifactsTree}
           isTreeCollapsed={false}
@@ -244,6 +322,7 @@ export function ArtifactTreeView({
               context={context}
               onSupportedLeafClick={handleLeafNodeClicked}
               onUnsupportedLeafClick={handleUnsupportedLeafNodeClicked}
+              highlightText={debouncedSearchTerm}
             />
           )}
           selectedNodes={selectedNodes}
