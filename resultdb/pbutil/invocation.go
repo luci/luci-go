@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	invocationIDPattern                       = `[a-z][a-z0-9_\-:.]{0,99}`
+	invocationIDPattern                       = `[a-z][a-z0-9_\-.]{0,99}`
 	invocationExtendedPropertyKeyPattern      = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
 	invocationExtendedPropertyTypeNamePattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
 	MaxSizeInvocationExtendedPropertyValue    = 512 * 1024      // 512 KB

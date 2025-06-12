@@ -196,7 +196,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				})
 
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike(`does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`))
+				assert.Loosely(t, err, should.ErrLike(`does not match pattern "^invocations/([a-z][a-z0-9_\\-.]{0,99})$"`))
 			})
 			t.Run(`Invalid result limit`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{

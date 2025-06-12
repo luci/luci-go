@@ -60,7 +60,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -68,14 +68,14 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "projects/chromium/baselines/try:Linux Asan"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run(`Invocation Bad Format`, func(t *ftt.Test) {
-			req.Invocation = "build:12345"
+			req.Invocation = "build-12345"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invocation"))
@@ -90,7 +90,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 		})
 
 		t.Run(`Baseline Bad Format`, func(t *ftt.Test) {
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
@@ -98,7 +98,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 		})
 
 		t.Run(`Baseline Unsupported Value`, func(t *ftt.Test) {
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "projects/-/baselines/try!linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
@@ -106,7 +106,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 		})
 
 		t.Run(`Invocation Not Found`, func(t *ftt.Test) {
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "projects/chromium/baselines/try:Linux Asan"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
@@ -123,7 +123,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -131,7 +131,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
@@ -148,7 +148,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -156,7 +156,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
@@ -184,7 +184,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -192,7 +192,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "try:Linux Asan"
 			_, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
 			assert.Loosely(t, err, should.BeNil)
@@ -208,7 +208,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -222,7 +222,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				}),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "try:Linux Asan"
 			isReady, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
 			assert.Loosely(t, err, should.BeNil)
@@ -239,7 +239,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 
 			testutil.MustApply(tctx, t,
 				insert.Invocation(
-					"build:12345",
+					"build-12345",
 					pb.Invocation_FINALIZED,
 					map[string]any{
 						"Realm": "chromium:try",
@@ -253,7 +253,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				}),
 			)
 
-			req.Invocation = "invocations/build:12345"
+			req.Invocation = "invocations/build-12345"
 			req.Baseline = "try:Linux Asan"
 			isReady, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
 			assert.Loosely(t, err, should.BeNil)
