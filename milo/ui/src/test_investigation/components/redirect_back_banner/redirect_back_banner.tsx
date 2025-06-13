@@ -14,6 +14,7 @@
 
 import Alert, { AlertProps } from '@mui/material/Alert';
 import Link from '@mui/material/Link';
+import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
@@ -23,13 +24,22 @@ import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/fea
 
 export interface RedirectBackBannerProps extends AlertProps {
   invocation: Invocation;
-  /** Optional. If supplied, the redirect will deep link directly to this test variant. */
+  /**
+   * Optional. If supplied, the redirect will deep link directly to this test variant.
+   * Takes precedence over parsedTestId/parsedVariantDef.
+   */
   testVariant?: TestVariant;
+  /** Optional. Test ID parsed from the URL. Used if testVariant is not provided. */
+  parsedTestId?: string | null;
+  /** Optional. Variant definition parsed from the URL. Used if testVariant is not provided. */
+  parsedVariantDef?: Readonly<Record<string, string>> | null;
 }
 
 export function RedirectBackBanner({
   invocation,
   testVariant,
+  parsedTestId,
+  parsedVariantDef,
   ...alertProps
 }: RedirectBackBannerProps) {
   // This is here purely for the side effect of enabling the opt out dialog on the page.
@@ -39,16 +49,38 @@ export function RedirectBackBanner({
     ? invocation.name.substring('invocations/build-'.length)
     : undefined;
 
-  if (!buildId) {
+  const legacyUrl = useMemo(() => {
+    if (!buildId) {
+      return '';
+    }
+
+    const baseUrl = `/ui/b/${buildId}/test-results?view=legacy`;
+    let query = '';
+
+    if (testVariant) {
+      query = `ID:${encodeURIComponent(
+        testVariant.testId,
+      )} VHash:${testVariant.variantHash}`;
+    } else if (parsedTestId || parsedVariantDef) {
+      const queryParts: string[] = [];
+      if (parsedTestId) {
+        queryParts.push(`ID:${encodeURIComponent(parsedTestId)}`);
+      }
+      if (parsedVariantDef) {
+        Object.entries(parsedVariantDef).forEach(([key, value]) => {
+          queryParts.push(
+            `V:${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+          );
+        });
+      }
+      query = queryParts.join(' ');
+    }
+
+    return query ? `${baseUrl}&q=${query}` : baseUrl;
+  }, [buildId, testVariant, parsedTestId, parsedVariantDef]);
+
+  if (!legacyUrl) {
     return null;
-  }
-
-  const baseUrl = `/ui/b/${buildId}/test-results?view=legacy`;
-  let legacyUrl = baseUrl;
-
-  if (testVariant) {
-    const query = `ID:${encodeURIComponent(testVariant.testId)}+VHash:${testVariant.variantHash}`;
-    legacyUrl = `${baseUrl}&q=${query}`;
   }
 
   return (

@@ -183,12 +183,27 @@ export class TestHistoryDetailsEntryElement
   }
 
   @computed private get invocationUrl() {
-    const invId = this.verdictBundle.verdict.invocationId;
+    const verdict = this.verdictBundle.verdict;
+    const variantDef = this.verdictBundle.variant.def;
+    const invId = verdict.invocationId;
+
     const parsedInvId = parseInvId(invId);
-    if (parsedInvId.type !== 'build') {
-      return `${getInvURLPath(invId)}/test-results`;
+    const baseUrl =
+      parsedInvId.type !== 'build'
+        ? `${getInvURLPath(invId)}/test-results`
+        : `${getBuildURLPathFromBuildId(parsedInvId.buildId)}/test-results`;
+
+    const queryParts: string[] = [];
+    queryParts.push(`ID:${encodeURIComponent(verdict.testId)}`);
+    if (variantDef) {
+      for (const [key, value] of Object.entries(variantDef)) {
+        queryParts.push(
+          `V:${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+        );
+      }
     }
-    return `${getBuildURLPathFromBuildId(parsedInvId.buildId)}/test-results`;
+    const queryString = queryParts.join(' ');
+    return `${baseUrl}?q=${queryString}`;
   }
 
   constructor() {

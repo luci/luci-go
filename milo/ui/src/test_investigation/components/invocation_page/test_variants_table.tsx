@@ -23,6 +23,7 @@ import {
 } from '@/common/styles/status_styles';
 import {
   CategoryOption,
+  AppliedFilterChip,
   MultiSelectCategoryChip,
 } from '@/generic_libs/components/filter';
 import { FilterBarContainer } from '@/generic_libs/components/filter/filter_bar_container';
@@ -31,16 +32,11 @@ import {
   RowData,
   TreeTable,
 } from '@/generic_libs/components/table';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { SetURLSearchParams } from '@/generic_libs/hooks/synced_search_params/context';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
-import {
-  buildHierarchyTree,
-  HierarchyBuildResult,
-} from '@/test_investigation/utils/drawer_tree_utils';
 
 /**
- * Recursively traverses the node tree to find the IDs of all parent nodes
- * that contain at least one failed test in their hierarchy.
+ * Recursively traverses the node tree to find the IDs of all nodes.
  * @param nodes The nodes to search through.
  * @returns A flat array of node IDs to be expanded.
  */
@@ -55,43 +51,13 @@ function getIdsOfAllNodes(nodes: TestNavigationTreeNode[]): string[] {
   return ids;
 }
 
-/**
- * Recursively filters the tree data based on a set of selected statuses.
- * A parent node is kept if any of its descendants are a match.
- * @param nodes The tree nodes to filter.
- * @param statuses The set of statuses to keep. If empty, all nodes are returned.
- * @returns The filtered array of nodes.
- */
-function filterTreeByStatus(
-  nodes: readonly TestNavigationTreeNode[],
-  statuses: Set<string>,
-): TestNavigationTreeNode[] {
-  // TODO: this filtering should be done on the backend, not here.
-
-  // If no statuses are selected, no filtering is needed.
-  if (statuses.size === 0) {
-    return [...nodes];
-  }
-
-  const filteredNodes: TestNavigationTreeNode[] = [];
-
-  for (const node of nodes) {
-    // If the node is a parent, filter its children recursively.
-    if (node.children?.length) {
-      const filteredChildren = filterTreeByStatus(node.children, statuses);
-      // Keep the parent if any of its children matched the filter.
-      if (filteredChildren.length > 0) {
-        filteredNodes.push({ ...node, children: filteredChildren });
-      }
-    } else if (node.testVariant) {
-      // If the node is a leaf, check if its status is in the selected set.
-      if (statuses.has(semanticStatusForTestVariant(node.testVariant))) {
-        filteredNodes.push(node);
-      }
-    }
-  }
-
-  return filteredNodes;
+interface TestVariantsTableProps {
+  treeData: TestNavigationTreeNode[];
+  parsedTestId: string | null;
+  parsedVariantDef: Readonly<Record<string, string>> | null;
+  setSearchParams: SetURLSearchParams;
+  selectedStatuses: Set<SemanticStatusType>;
+  setSelectedStatuses: (newSelection: Set<SemanticStatusType>) => void;
 }
 
 /**
@@ -100,25 +66,45 @@ function filterTreeByStatus(
  * test variant pages.
  */
 export function TestVariantsTable({
-  testVariants,
-}: {
-  testVariants: readonly TestVariant[];
-}) {
+  treeData,
+  parsedTestId,
+  parsedVariantDef,
+  setSearchParams,
+  selectedStatuses,
+  setSelectedStatuses,
+}: TestVariantsTableProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
   const navigate = useNavigate();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [selectedStatuses, setSelectedStatuses] = useState<
-    Set<SemanticStatusType>
-  >(new Set(['failed', 'execution_errored']));
 
-  const { tree: hierarchyTreeData } = useMemo(
-    (): HierarchyBuildResult => buildHierarchyTree(testVariants),
-    [testVariants],
-  );
+  const filteredHierarchyTreeData = treeData;
 
-  const filteredHierarchyTreeData = useMemo(
-    () => filterTreeByStatus(hierarchyTreeData, selectedStatuses),
-    [hierarchyTreeData, selectedStatuses],
+  const handleRemoveTestIdFilter = useCallback(() => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.delete('testId');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const handleRemoveVariantFilter = useCallback(
+    (keyToRemove: string) => {
+      if (!parsedVariantDef) return;
+
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        const valueToRemove = `${keyToRemove}:${parsedVariantDef[keyToRemove]}`;
+
+        const allVariants = newParams.getAll('v');
+        const newVariants = allVariants.filter((v) => v !== valueToRemove);
+
+        newParams.delete('v');
+        newVariants.forEach((v) => newParams.append('v', v));
+
+        return newParams;
+      });
+    },
+    [setSearchParams, parsedVariantDef],
   );
 
   const handleSelectTestVariant = useCallback(
@@ -133,13 +119,13 @@ export function TestVariantsTable({
     },
     [invocationId, navigate],
   );
+
   const columns: ColumnDefinition[] = useMemo(() => {
     return [
       {
         id: 'label',
         label: 'Test',
         width: '350px',
-        // Add a custom cell renderer to make leaf nodes clickable.
         renderCell: (data: RowData) => {
           const rowData = data as TestNavigationTreeNode;
           const isLeafWithVariant = rowData.testVariant;
@@ -194,13 +180,8 @@ export function TestVariantsTable({
   }, [handleSelectTestVariant]);
 
   useEffect(() => {
-    if (filteredHierarchyTreeData.length > 0) {
-      const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);
-      setExpandedNodes(new Set(idsToExpand));
-    } else {
-      // Clear expansion if filter results are empty.
-      setExpandedNodes(new Set());
-    }
+    const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);
+    setExpandedNodes(new Set(idsToExpand));
   }, [filteredHierarchyTreeData]);
 
   const rows = filteredHierarchyTreeData;
@@ -217,6 +198,10 @@ export function TestVariantsTable({
     ];
   }, []);
 
+  const hasActiveFilters =
+    parsedTestId ||
+    (parsedVariantDef && Object.keys(parsedVariantDef).length > 0);
+
   return (
     <TreeTable
       data={rows}
@@ -225,10 +210,36 @@ export function TestVariantsTable({
       onExpandedRowIdsChange={setExpandedNodes}
       headerChildren={
         <FilterBarContainer
-          showClearAll={selectedStatuses.size > 0}
-          onClearAll={() => setSelectedStatuses(new Set())}
+          showClearAll={
+            selectedStatuses.size > 0 || !!parsedTestId || !!parsedVariantDef
+          }
+          onClearAll={() => {
+            setSelectedStatuses(new Set());
+            if (parsedTestId) {
+              handleRemoveTestIdFilter();
+            }
+            if (parsedVariantDef) {
+              Object.keys(parsedVariantDef).forEach(handleRemoveVariantFilter);
+            }
+          }}
         >
-          {/* TODO: Probably want a chip per status here.  Check with UX. */}
+          {/* Render chips for active Test ID and Variant filters. */}
+          {parsedTestId && (
+            <AppliedFilterChip
+              filterKey="Test ID"
+              filterValue={parsedTestId}
+              onRemove={handleRemoveTestIdFilter}
+            />
+          )}
+          {parsedVariantDef &&
+            Object.entries(parsedVariantDef).map(([key, value]) => (
+              <AppliedFilterChip
+                key={key}
+                filterKey={key}
+                filterValue={value}
+                onRemove={() => handleRemoveVariantFilter(key)}
+              />
+            ))}
           <MultiSelectCategoryChip
             categoryName="Test Status"
             availableOptions={statusFilterOptions}
@@ -240,8 +251,8 @@ export function TestVariantsTable({
         </FilterBarContainer>
       }
       placeholder={
-        selectedStatuses.size > 0
-          ? 'No tests match the applied filters.  Please remove the filters to see any available tests.'
+        selectedStatuses.size > 0 || hasActiveFilters
+          ? 'No tests match the applied filters. Please remove the filters to see any available tests.'
           : 'All tests in the invocation passed.'
       }
     />

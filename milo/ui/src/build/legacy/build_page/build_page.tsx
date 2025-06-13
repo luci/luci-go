@@ -159,25 +159,47 @@ export const BuildPage = observer(() => {
   const [searchParams] = useSyncedSearchParams();
   const forceLegacyView = searchParams.get('view') === 'legacy';
 
-  const { testId, variantHash } = useMemo(
+  const { testId, variantHash, variantDef } = useMemo(
     () => parseDeepLinkQuery(searchParams.get('q')),
     [searchParams],
   );
 
   useEffect(() => {
-    if (forceLegacyView) {
+    if (
+      forceLegacyView ||
+      !isAutoRedirectEnabled ||
+      !isTestResultsTabActive ||
+      !build?.id
+    ) {
       return;
     }
-    if (isAutoRedirectEnabled && isTestResultsTabActive && build?.id) {
-      let newPath = `/ui/test-investigate/invocations/build-${build.id}`;
-      if (testId && variantHash) {
-        newPath =
-          `/ui/test-investigate/invocations/build-${build.id}` +
-          `/tests/${encodeURIComponent(testId)}` +
-          `/variants/${variantHash}`;
-      }
+
+    // Deep link with a pre-computed variant hash.
+    if (testId && variantHash) {
+      const newPath =
+        `/ui/test-investigate/invocations/build-${build.id}` +
+        `/tests/${encodeURIComponent(testId)}` +
+        `/variants/${variantHash}`;
       navigate(newPath, { replace: true });
+      return;
     }
+
+    // Deep link with variant key-value pairs.  This always goes to the invocation pae first,
+    // and if the invocation page finds a single matching verdict it will redirect again to
+    // the verdict page.
+    if (testId && variantDef) {
+      const search = new URLSearchParams();
+      search.set('testId', testId);
+      Object.entries(variantDef).forEach(([key, value]) => {
+        search.append('v', `${key}:${value}`);
+      });
+      const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}`;
+      navigate(newPath, { replace: true });
+      return;
+    }
+
+    const newPath = `/ui/test-investigate/invocations/build-${build.id}`;
+    navigate(newPath, { replace: true });
   }, [
     forceLegacyView,
     isAutoRedirectEnabled,
@@ -185,6 +207,7 @@ export const BuildPage = observer(() => {
     build?.id,
     testId,
     variantHash,
+    variantDef,
     navigate,
   ]);
 
@@ -260,12 +283,14 @@ export const BuildPage = observer(() => {
 function parseDeepLinkQuery(q: string | null): {
   testId: string | null;
   variantHash: string | null;
+  variantDef: Record<string, string> | null;
 } {
   if (!q) {
-    return { testId: null, variantHash: null };
+    return { testId: null, variantHash: null, variantDef: null };
   }
   let testId: string | null = null;
   let variantHash: string | null = null;
+  const variantDef: Record<string, string> = {};
 
   const parts = q.split(' ');
   for (const part of parts) {
@@ -273,9 +298,24 @@ function parseDeepLinkQuery(q: string | null): {
       testId = decodeURIComponent(part.slice('ID:'.length));
     } else if (part.startsWith('VHash:')) {
       variantHash = decodeURIComponent(part.slice('VHash:'.length));
+    } else if (part.startsWith('V:')) {
+      const kvPair = part.slice('V:'.length);
+      const firstEqIndex = kvPair.indexOf('=');
+      if (firstEqIndex > 0) {
+        const key = decodeURIComponent(kvPair.substring(0, firstEqIndex));
+        const value = decodeURIComponent(kvPair.substring(firstEqIndex + 1));
+        variantDef[key] = value;
+      }
     }
   }
-  return { testId, variantHash };
+
+  const hasVariantDef = Object.keys(variantDef).length > 0;
+
+  return {
+    testId,
+    variantHash: variantHash,
+    variantDef: hasVariantDef ? variantDef : null,
+  };
 }
 
 export function Component() {

@@ -12,6 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './multi_select_category_chip';
-export * from './filter_bar_container';
-export * from './applied_filter_chip';
+import { Chip } from '@mui/material';
+
+interface AppliedFilterChipProps {
+  filterKey: string;
+  filterValue: string;
+  onRemove: () => void;
+}
+
+/**
+ * A simple chip for displaying an active key-value filter and allowing its removal.
+ */
+export function AppliedFilterChip({
+  filterKey,
+  filterValue,
+  onRemove,
+}: AppliedFilterChipProps) {
+  return (
+    <Chip
+      label={`${filterKey}: ${filterValue}`}
+      onDelete={onRemove}
+      size="small"
+      color="primary"
+      variant="filled"
+    />
+  );
+}
