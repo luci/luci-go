@@ -253,6 +253,18 @@ const filtersToAip = (filters: RriFilters): string => {
         parts.push(`${key} <= ${toIsoString(filter.max)}`);
       }
     }
+    if (type === 'range') {
+      const filter = filters[key] as RangeFilterData | undefined;
+      if (!filter) {
+        continue;
+      }
+      if (filter.min) {
+        parts.push(`${key} >= ${filter.min}`);
+      }
+      if (filter.max) {
+        parts.push(`${key} <= ${filter.max}`);
+      }
+    }
     if (type === 'multi-select') {
       const values = filters[key] as string[] | undefined;
       if (!values || values.length === 0) {
