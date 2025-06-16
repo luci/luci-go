@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface InfoLineItem {
-  label: string;
-  value?: string;
-  url?: string;
-  icon?: React.ReactNode;
-  isPlaceholder?: boolean;
-  customRender?: () => React.ReactNode;
+import { SxProps, Theme } from '@mui/material';
+
+interface StatusIconProps {
+  iconType: React.ElementType;
+  sx?: SxProps<Theme>;
+}
+
+export function StatusIcon({ iconType, sx }: StatusIconProps) {
+  if (!iconType) {
+    return null;
+  }
+  const IconComponent = iconType;
+  return (
+    <IconComponent sx={[...(Array.isArray(sx) ? sx : [sx])]}></IconComponent>
+  );
 }

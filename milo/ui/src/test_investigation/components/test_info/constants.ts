@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface InfoLineItem {
-  label: string;
-  value?: string;
-  url?: string;
-  icon?: React.ReactNode;
-  isPlaceholder?: boolean;
-  customRender?: () => React.ReactNode;
-}
+export const DEFAULT_TOOLTIP_TEXT = 'Copy test name';
+export const NO_CLS_TEXT = 'No CLs patched for this test.';
+export const NO_ASSOCIATED_BUGS_TEXT = 'No associated bugs found.';
+export const NO_HISTORY_DATA_TEXT = 'History data not available.';
+export const BISECTION_NO_ANALYSIS_TEXT =
+  'No bisection analysis run for this failure.';
+export const BISECTION_DATA_INCOMPLETE_TEXT =
+  'Bisection data incomplete or not started.';

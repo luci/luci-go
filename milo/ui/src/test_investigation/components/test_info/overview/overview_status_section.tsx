@@ -30,15 +30,17 @@ import {
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { StatusIcon } from '@/test_investigation/components/status_icon';
 import { useProject, useTestVariant } from '@/test_investigation/context';
 
-import { useAssociatedBugs } from '../context';
-import { useTestVariantBranch } from '../context/context';
 import {
   NO_ASSOCIATED_BUGS_TEXT,
   BISECTION_NO_ANALYSIS_TEXT,
   BISECTION_DATA_INCOMPLETE_TEXT,
-} from '../types';
+} from '../constants';
+import { useAssociatedBugs } from '../context';
+import { useTestVariantBranch } from '../context/context';
+
 // Helper to map TestVariantStatus to SemanticStatusType
 function getSemanticStatusFromTestVariant(
   tvStatus: TestVariantStatus,
@@ -113,7 +115,6 @@ export function OverviewStatusSection() {
     () => getStatusStyle(mainStatusSemanticType),
     [mainStatusSemanticType],
   );
-  const MainStatusIconComponent = mainStatusStyle.icon;
 
   // Bisection display logic (text and link)
   const bisectionDisplayInfo = useMemo(() => {
@@ -209,8 +210,9 @@ export function OverviewStatusSection() {
   return (
     <>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {MainStatusIconComponent && (
-          <MainStatusIconComponent
+        {mainStatusStyle.icon && (
+          <StatusIcon
+            iconType={mainStatusStyle.icon}
             sx={{
               fontSize: 24,
               color: mainStatusStyle.iconColor || mainStatusStyle.textColor,

@@ -29,9 +29,9 @@ import {
 } from '@/test_investigation/utils/test_info_utils';
 
 import { CLsPopover } from './cls_popver';
+import { NO_CLS_TEXT } from './constants';
 import { useFormattedCLs } from './context';
 import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
-import { NO_CLS_TEXT } from './types';
 
 export function TestInfoHeader() {
   const testVariant = useTestVariant();

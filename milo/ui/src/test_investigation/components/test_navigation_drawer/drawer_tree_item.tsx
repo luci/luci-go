@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { List } from '@mui/material';
-import { JSX } from 'react';
 
 import { ExpandableListItem } from './expandable_list_item.tsx';
 import { TestNavigationTreeNode } from './types';
@@ -34,7 +33,7 @@ export function DrawerTreeItem({
   currentTestId,
   currentVariantHash,
   onSelectTestVariant,
-}: DrawerTreeItemProps): JSX.Element {
+}: DrawerTreeItemProps) {
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
 

@@ -15,7 +15,7 @@
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SourceIcon from '@mui/icons-material/Source';
 import { Box, Button } from '@mui/material';
-import { JSX, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
@@ -27,7 +27,7 @@ import {
 
 const compareLink = '#compare-todo';
 
-export function OverviewActionsSection(): JSX.Element {
+export function OverviewActionsSection() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
   const builder = getVariantValue(testVariant.variant, 'builder');

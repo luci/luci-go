@@ -15,8 +15,8 @@
 import { Box, ButtonBase, Link, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 
-import { CLsPopover } from '@/test_investigation/components/test_info/cls_popver'; // Adjust path if needed
-import { NO_CLS_TEXT } from '@/test_investigation/components/test_info/types'; // Assuming types file path
+import { CLsPopover } from '@/test_investigation/components/test_info/cls_popver';
+import { NO_CLS_TEXT } from '@/test_investigation/components/test_info/constants';
 
 import { useFormattedCLs } from '../context';
 

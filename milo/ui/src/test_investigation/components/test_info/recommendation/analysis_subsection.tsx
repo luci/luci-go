@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Box, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
-import React, { useMemo, createElement } from 'react';
+import React, { useMemo } from 'react';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
+import { StatusIcon } from '@/test_investigation/components/status_icon';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import { useTestVariantBranch } from '../context/context';
@@ -33,12 +33,15 @@ function AnalysisItem({ item }: AnalysisItemProps) {
   if (item.status) {
     const style = getStatusStyle(item.status);
     if (style.icon) {
-      iconElement = createElement(style.icon, {
-        sx: {
-          fontSize: 18,
-          color: style.iconColor || style.textColor,
-        },
-      });
+      iconElement = (
+        <StatusIcon
+          iconType={style.icon}
+          sx={{
+            fontSize: 16,
+            color: style.iconColor || 'inherit',
+          }}
+        />
+      );
     } else {
       iconElement = (
         <InfoOutlinedIcon

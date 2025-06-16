@@ -25,7 +25,7 @@ import {
 import { displayApproxDuartion } from '@/common/tools/time_utils/time_utils';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { NO_HISTORY_DATA_TEXT } from '@/test_investigation/components/test_info/types';
+import { NO_HISTORY_DATA_TEXT } from '@/test_investigation/components/test_info/constants';
 import {
   useInvocation,
   useProject,

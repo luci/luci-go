@@ -20,7 +20,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import { JSX, useState } from 'react';
+import { useState } from 'react';
 
 import { DrawerTreeItem } from './drawer_tree_item';
 import { ExpandableListItem } from './expandable_list_item.tsx';
@@ -50,7 +50,7 @@ export function DrawerContent({
   currentTestId,
   currentVariantHash,
   onSelectTestVariant,
-}: DrawerContentProps): JSX.Element {
+}: DrawerContentProps) {
   const handleTabChange = (
     event: React.SyntheticEvent,
     newValue: number | null,

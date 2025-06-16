@@ -12,56 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
-import { JSX } from 'react';
+import { Chip } from '@mui/material';
 
 import { getStatusStyle, StatusStyle } from '@/common/styles/status_styles';
+import { StatusIcon } from '@/test_investigation/components/status_icon';
 import { RateBoxDisplayInfo } from '@/test_investigation/utils/test_info_utils';
 
 interface RateBoxProps {
   info: RateBoxDisplayInfo;
 }
 
-export function RateBox({ info }: RateBoxProps): JSX.Element {
+export function RateBox({ info }: RateBoxProps) {
   const style: StatusStyle = getStatusStyle(info.statusType);
-  const IconComponent = style.icon;
 
   return (
-    <Box
-      sx={{
-        backgroundColor: style.backgroundColor,
-        color: style.textColor,
-        padding: '2px 8px',
-        borderRadius: '4px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.5,
-        fontSize: '0.875rem',
-        // Apply border if borderColor is defined in the style
-        borderStyle: style.borderColor ? 'solid' : 'none',
-        borderWidth: style.borderColor ? '1px' : '0',
-        borderColor: style.borderColor || 'transparent', // Default to transparent if not set
-      }}
-      aria-label={info.ariaLabel}
-    >
-      {IconComponent && (
-        <IconComponent
+    <>
+      {style.icon && (
+        <Chip
+          label={info.text}
           sx={{
-            fontSize: 16,
-            color: style.iconColor || 'inherit',
+            backgroundColor: style.backgroundColor,
+            borderColor: style.borderColor,
+            borderWidth: style.borderColor ? '1px' : '0',
+            borderStyle: style.borderColor ? 'solid' : 'none',
+            pl: 1,
           }}
-        />
+          icon={
+            <StatusIcon
+              iconType={style.icon}
+              sx={{ fontSize: 16, color: style.iconColor || 'inherit' }}
+            />
+          }
+        ></Chip>
       )}
-      <Typography
-        variant="body2"
-        component="span"
-        sx={{
-          fontWeight: 'bold',
-          color: 'inherit',
-        }}
-      >
-        {info.text}
-      </Typography>
-    </Box>
+    </>
   );
 }
