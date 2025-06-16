@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Card, Divider, Typography } from '@mui/material';
+import { Box, Card, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
-import { displayApproxDuartion } from '@/common/tools/time_utils/time_utils';
 import { useInvocation } from '@/test_investigation/context';
-
-import { useAssociatedBugs } from '../context';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
@@ -34,9 +31,6 @@ function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
 
 export function RecommendationsSection() {
   const invocation = useInvocation();
-  const associatedBugs = useAssociatedBugs();
-
-  const recommendationCount = associatedBugs?.length || 0;
 
   const now = useMemo(() => DateTime.now(), []);
   const lastUpdateTime = useMemo(() => {
@@ -46,11 +40,8 @@ export function RecommendationsSection() {
     const finalizeDt = isoStringToLuxonDateTime(invocation.finalizeTime);
 
     if (finalizeDt && finalizeDt.isValid && now.isValid) {
-      const duration = now.diff(finalizeDt);
-      const approxText = displayApproxDuartion(duration);
-      if (approxText && approxText !== 'N/A') {
-        return `${approxText} ago`;
-      }
+      const formattedDt = `${finalizeDt.hour}:${finalizeDt.minute}, ${finalizeDt.day}/${finalizeDt.month}/${finalizeDt.year} UTC`;
+      return formattedDt;
     }
     return 'N/A';
   }, [invocation.finalizeTime, now]);
@@ -75,13 +66,12 @@ export function RecommendationsSection() {
           }}
         >
           <Typography variant="h6" component="div">
-            Suggested next steps ({recommendationCount})
+            Suggested next steps
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Last update: {lastUpdateTime}
           </Typography>
         </Box>
-        <Divider sx={{ mb: 0 }} />
         <Box
           sx={{
             display: 'flex',
