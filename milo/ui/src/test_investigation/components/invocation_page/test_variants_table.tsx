@@ -32,7 +32,7 @@ import {
   RowData,
   TreeTable,
 } from '@/generic_libs/components/table';
-import { SetURLSearchParams } from '@/generic_libs/hooks/synced_search_params/context';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 
 /**
@@ -55,7 +55,6 @@ interface TestVariantsTableProps {
   treeData: TestNavigationTreeNode[];
   parsedTestId: string | null;
   parsedVariantDef: Readonly<Record<string, string>> | null;
-  setSearchParams: SetURLSearchParams;
   selectedStatuses: Set<SemanticStatusType>;
   setSelectedStatuses: (newSelection: Set<SemanticStatusType>) => void;
 }
@@ -69,14 +68,13 @@ export function TestVariantsTable({
   treeData,
   parsedTestId,
   parsedVariantDef,
-  setSearchParams,
   selectedStatuses,
   setSelectedStatuses,
 }: TestVariantsTableProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
   const navigate = useNavigate();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-
+  const [_, setSearchParams] = useSyncedSearchParams();
   const filteredHierarchyTreeData = treeData;
 
   const handleRemoveTestIdFilter = useCallback(() => {

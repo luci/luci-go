@@ -296,6 +296,8 @@ function parseDeepLinkQuery(q: string | null): {
   for (const part of parts) {
     if (part.startsWith('ID:')) {
       testId = decodeURIComponent(part.slice('ID:'.length));
+    } else if (part.startsWith('ExactID:')) {
+      testId = decodeURIComponent(part.slice('ExactID:'.length));
     } else if (part.startsWith('VHash:')) {
       variantHash = decodeURIComponent(part.slice('VHash:'.length));
     } else if (part.startsWith('V:')) {

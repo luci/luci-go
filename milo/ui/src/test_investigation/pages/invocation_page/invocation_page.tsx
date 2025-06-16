@@ -99,7 +99,7 @@ function filterTreeByStatus(
 export function InvocationPage() {
   const { invocationId } = useParams<{ invocationId: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [searchParams] = useSyncedSearchParams();
 
   const resultDbClient = useResultDbClient();
 
@@ -297,7 +297,6 @@ export function InvocationPage() {
               treeData={finalFilteredTree}
               parsedTestId={parsedTestId}
               parsedVariantDef={parsedVariantDef}
-              setSearchParams={setSearchParams}
               selectedStatuses={selectedStatuses}
               setSelectedStatuses={setSelectedStatuses}
             />
