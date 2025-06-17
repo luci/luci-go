@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useInfiniteQuery, useQueries } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 
 import { OutputClusterResponse } from '@/analysis/types';
 import {
@@ -143,6 +143,7 @@ export function TestInfoProvider({ children }: Props) {
       project: project,
       testId: testVariant.testId,
       ref: sourceRefForAnalysis!,
+      pageSize: 1000,
     });
   }, [
     testVariantBranchQueryEnabled,
@@ -151,18 +152,33 @@ export function TestInfoProvider({ children }: Props) {
     sourceRefForAnalysis,
   ]);
 
-  const { data: testVariantBranch } = useQuery({
-    ...analysisBranchesClient.Query.query(testVariantBranchRequest),
+  // TODO: Modify backend to accept variant hash so we don't need to iterate through all test variant branches.
+  const {
+    data: testVariantBranch,
+    hasNextPage: testVariantBranchHasNextPage,
+    fetchNextPage: loadMoretestVariantBranches,
+  } = useInfiniteQuery({
+    ...analysisBranchesClient.Query.queryPaged(testVariantBranchRequest),
     enabled: testVariantBranchQueryEnabled,
     staleTime: 5 * 60 * 1000,
     select: (response) => {
       return (
-        response.testVariantBranch?.find(
-          (tvb) => tvb.variantHash === testVariant.variantHash,
-        ) || null
+        response.pages
+          .flatMap((p) => p.testVariantBranch)
+          .find((tvb) => tvb.variantHash === testVariant.variantHash) || null
       );
     },
   });
+
+  useEffect(() => {
+    if (!testVariantBranch && testVariantBranchHasNextPage) {
+      loadMoretestVariantBranches();
+    }
+  }, [
+    testVariantBranch,
+    testVariantBranchHasNextPage,
+    loadMoretestVariantBranches,
+  ]);
 
   return (
     <TestInfoContext.Provider

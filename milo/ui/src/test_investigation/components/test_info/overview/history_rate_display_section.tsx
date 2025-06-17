@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, Link, Typography, Tooltip } from '@mui/material';
 import { DateTime } from 'luxon';
 import { memo, useMemo } from 'react';
@@ -35,153 +35,240 @@ import { constructTestHistoryUrl } from '@/test_investigation/utils/test_info_ut
 
 import { useTestVariantBranch } from '../context/context';
 
-interface FailureRateInfo {
-  formattedRate: string;
-  statusType: SemanticStatusType;
-}
-
-interface FailureRateViewProps {
+interface FailureRateProps {
   segment: Segment;
-  isContextual?: boolean;
+  segmentContextType: 'invocation' | 'beforeInvocation' | 'afterInvocation';
+  isMostRecentSegment?: boolean; // True if this segment is the newest of all segments
   nowDtForFormatting?: DateTime;
 }
-const FailureRateView = memo(function FailureRateView({
+const FailureRate = memo(function FailureRateView({
   segment,
-  isContextual,
+  segmentContextType,
   nowDtForFormatting,
-}: FailureRateViewProps) {
-  const rateInfo = createFailureRateInfoFromSegment(segment);
-  const style = getStatusStyle(rateInfo.statusType);
+  isMostRecentSegment,
+}: FailureRateProps) {
+  const formattedRate = getFormattedFailureRateFromSegment(segment);
+  const style = getStatusStyle(getFailureRateStatusTypeFromSegment(segment));
+  const IconComponent = style.icon;
+
   const startHourDisplay = formatSegmentTimestampForDisplay(
     segment.startHour,
     nowDtForFormatting,
   );
+
+  let descriptiveText: string;
+  if (segmentContextType === 'invocation') {
+    if (isMostRecentSegment) {
+      descriptiveText = `${formattedRate} now failing`;
+    } else {
+      descriptiveText = `${formattedRate} failing at invocation`;
+    }
+  } else if (segmentContextType === 'beforeInvocation') {
+    descriptiveText = `${formattedRate} failed`;
+  } else {
+    descriptiveText = `${formattedRate} failing`;
+  }
+
   return (
     <Tooltip
       title={
         `Segment: ${Number(segment.startPosition)} - ${Number(segment.endPosition)}` +
         (startHourDisplay ? ` (started ${startHourDisplay})` : '') +
-        (isContextual ? ' (Contextual to Invocation Commit)' : '')
+        (segmentContextType === 'invocation'
+          ? ' (Invocation Commit Segment)'
+          : '')
       }
       arrow
     >
       <Box
         sx={{
-          border: isContextual
-            ? '2px solid var(--gm3-color-primary)'
-            : '1px solid transparent',
-          padding: isContextual ? '2px' : '3px',
+          padding: '2px 8px 2px 4px',
           borderRadius: '4px',
-          borderColor: isContextual
-            ? 'var(--gm3-color-primary)'
-            : style.borderColor,
           backgroundColor: style.backgroundColor || 'transparent',
-          flexGrow:
-            parseInt(segment.endPosition) - parseInt(segment.startPosition),
           display: 'flex',
-          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 0.5,
         }}
       >
+        {IconComponent && (
+          <IconComponent
+            sx={{
+              fontSize: '1.1rem',
+              color: style.iconColor || style.textColor,
+            }}
+          />
+        )}
         <Typography
           component="span"
           variant="body2"
-          sx={{
-            color: style.textColor,
-            fontWeight: 'medium',
-            padding: '2px 4px',
-            borderRadius: '4px',
-            textAlign: 'center',
-          }}
+          sx={{ color: style.textColor, fontWeight: 'medium' }}
         >
-          {rateInfo.formattedRate}
+          {descriptiveText}
         </Typography>
       </Box>
     </Tooltip>
   );
 });
 
-// --- Visual indicators ---
-const VerticalBar = memo(function VerticalBar({
-  tooltipTitle,
-}: {
-  tooltipTitle: string;
-}) {
-  return (
-    <Tooltip title={tooltipTitle} arrow>
-      <Box
-        sx={{
-          width: '3px',
-          height: '20px',
-          backgroundColor: 'text.disabled',
-          alignSelf: 'center',
-          borderRadius: '1px',
-        }}
-      />
-    </Tooltip>
-  );
-});
-
-const EllipsisIndicator = memo(function EllipsisIndicator({
-  tooltipTitle,
-}: {
-  tooltipTitle: string;
-}) {
-  return (
-    <Tooltip title={tooltipTitle} arrow>
-      <Typography
-        variant="h6"
-        sx={{
-          color: 'text.disabled',
-          lineHeight: 'normal',
-          px: 0.5,
-          alignSelf: 'center',
-        }}
-      >
-        ...
-      </Typography>
-    </Tooltip>
-  );
-});
-
-function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
-  if (!isoString) return undefined;
-  const dt = DateTime.fromISO(isoString, { zone: 'utc' });
-  return dt.isValid ? dt : undefined;
+interface SegmentArrowProps {
+  pointingToSegment: Segment;
+  nowDtForFormatting: DateTime;
+  project: string | undefined;
+  testId: string;
+  variantHash: string;
+  refHash: string;
 }
+
+const SegmentArrow = memo(function ArrowDisplayWrapper({
+  pointingToSegment,
+  nowDtForFormatting,
+  project,
+  testId,
+  variantHash,
+  refHash,
+}: SegmentArrowProps) {
+  const blamelistBaseUrl = `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`;
+  const blamelistLink = `${blamelistBaseUrl}#CP-${pointingToSegment.startPosition}`;
+
+  const durationText =
+    formatSegmentTimestampForDisplay(
+      pointingToSegment.startHour,
+      nowDtForFormatting,
+    ) || '';
+  const durationDisplay = durationText.trim() ? (
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{ lineHeight: 'normal', textAlign: 'center', whiteSpace: 'nowrap' }}
+    >
+      {durationText}
+    </Typography>
+  ) : (
+    <Box sx={{ height: 'calc(1em * 1.2)' }} /> // Approx height of a caption line to prevent collapse
+  );
+
+  return (
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+    >
+      {durationDisplay}
+      <ArrowBackIcon
+        data-testid="ArrowBackIcon"
+        sx={{ color: 'text.disabled', my: 0.25, fontSize: '20px' }}
+      />
+      {project && ( // if project was not supplied, the link will be invalid.
+        <Link
+          href={blamelistLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="caption"
+          sx={{ lineHeight: 'normal', whiteSpace: 'nowrap' }}
+        >
+          blamelist
+        </Link>
+      )}
+    </Box>
+  );
+});
+
+interface TestAddedInfoProps {
+  segment: Segment;
+  nowDtForFormatting: DateTime;
+  project: string | undefined;
+  testId: string;
+  variantHash: string;
+  refHash: string;
+}
+
+const TestAddedInfo = memo(function TestAddedDisplay({
+  segment,
+  nowDtForFormatting,
+  project,
+  testId,
+  variantHash,
+  refHash,
+}: TestAddedInfoProps) {
+  const startTimeAgo = formatSegmentTimestampForDisplay(
+    segment.startHour,
+    nowDtForFormatting,
+  );
+  const blamelistBaseUrl = `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`;
+  const blamelistLink = `${blamelistBaseUrl}#CP-${segment.startPosition}`;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        p: 1,
+      }}
+    >
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ lineHeight: 'normal', whiteSpace: 'nowrap' }}
+      >
+        Test added {startTimeAgo}
+      </Typography>
+      {project && ( // if project was not supplied, the link will be invalid.
+        <Link
+          href={blamelistLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="caption"
+          sx={{ lineHeight: 'normal', whiteSpace: 'nowrap', mt: 0.25 }}
+        >
+          blamelist
+        </Link>
+      )}
+    </Box>
+  );
+});
 
 function formatSegmentTimestampForDisplay(
   isoString?: string,
   nowDateTime: DateTime = DateTime.now(),
 ): string | undefined {
   if (!isoString) return undefined;
-  const pastDateTime = isoStringToLuxonDateTime(isoString);
-  if (!pastDateTime || !pastDateTime.isValid) return undefined;
-  const duration = nowDateTime.diff(pastDateTime);
-  const approxDurationText = displayApproxDuartion(duration);
+  const pastDateTime = DateTime.fromISO(isoString, { zone: 'utc' });
+  if (!pastDateTime.isValid) return undefined;
+  const approxDurationText = displayApproxDuartion(
+    nowDateTime.diff(pastDateTime),
+  );
   return approxDurationText && approxDurationText !== 'N/A'
     ? `${approxDurationText} ago`
     : undefined;
 }
 
 function determineRateStatusType(ratePercent: number): SemanticStatusType {
-  if (ratePercent <= 5) return 'success';
-  if (ratePercent > 5 && ratePercent < 95) return 'warning';
-  if (ratePercent >= 95) return 'error';
+  if (ratePercent <= 5) return 'passed';
+  if (ratePercent > 5 && ratePercent < 95) return 'flaky';
+  if (ratePercent >= 95) return 'failed';
   return 'unknown';
 }
 
-function createFailureRateInfoFromSegment(segment: Segment): FailureRateInfo {
+function getFormattedFailureRateFromSegment(segment: Segment): string {
   if (!segment || !segment.counts) {
-    return { formattedRate: 'N/A', statusType: 'unknown' };
+    return 'N/A';
   }
   const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
   const ratePercent =
     totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
-  const statusType = determineRateStatusType(ratePercent);
-  return {
-    formattedRate: `${ratePercent.toFixed(0)}%`,
-    statusType,
-  };
+  return `${ratePercent.toFixed(0)}%`;
+}
+
+function getFailureRateStatusTypeFromSegment(
+  segment: Segment,
+): SemanticStatusType {
+  if (!segment || !segment.counts) {
+    return 'unknown';
+  }
+  const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
+  const ratePercent =
+    totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
+  return determineRateStatusType(ratePercent);
 }
 
 function findInvocationSegmentIndex(
@@ -243,114 +330,111 @@ export function HistoryRateDisplaySection({
     [segments, invocation],
   );
 
-  if (!segments || segments.length === 0) {
-    return (
-      <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
-        {NO_HISTORY_DATA_TEXT}
-      </Typography>
-    );
-  }
-  if (invocationSegmentIndex === -1) {
-    return (
-      <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
-        No history segments matching the source position of this verdict can be
-        found.
-      </Typography>
-    );
-  }
   return (
     <Box>
       <Typography variant="body2" gutterBottom color="textSecondary">
-        Postsubmit history (Changepoint failure rate)
+        Postsubmit history
       </Typography>
 
-      <Box sx={{ mb: 1 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            mb: 0.5,
-            flexWrap: 'wrap',
-          }}
-        >
-          {segments.length <= invocationSegmentIndex + 2 ? (
-            <VerticalBar
-              key="end-bar"
-              tooltipTitle="This is the oldest recorded history"
+      {(!segments || segments.length === 0) && (
+        <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
+          {NO_HISTORY_DATA_TEXT}
+        </Typography>
+      )}
+
+      {segments && segments.length > 0 && invocationSegmentIndex === -1 && (
+        <Typography variant="body2" color="text.disabled" sx={{ mb: 1 }}>
+          No history segments matching the source position of this verdict can
+          be found.
+        </Typography>
+      )}
+
+      {segments && segments.length > 0 && invocationSegmentIndex !== -1 && (
+        <Box sx={{ mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              mb: 0.5,
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Leftmost item: Newer segment if the invocation segment is not the most recent. */}
+            {invocationSegmentIndex > 0 && (
+              <>
+                <FailureRate
+                  segment={segments[invocationSegmentIndex - 1]}
+                  nowDtForFormatting={nowDtForFormatting}
+                  segmentContextType="afterInvocation"
+                />
+
+                <SegmentArrow
+                  pointingToSegment={segments[invocationSegmentIndex - 1]}
+                  nowDtForFormatting={nowDtForFormatting}
+                  project={project}
+                  testId={testVariant.testId}
+                  variantHash={testVariant.variantHash}
+                  refHash={testVariantBranch.refHash}
+                />
+              </>
+            )}
+
+            {/* Invocation Segment */}
+            <FailureRate
+              segment={segments[invocationSegmentIndex]}
+              segmentContextType="invocation"
+              nowDtForFormatting={nowDtForFormatting}
+              isMostRecentSegment={invocationSegmentIndex === 0}
             />
-          ) : (
-            <>
-              <EllipsisIndicator
-                key="end-ellipsis"
-                tooltipTitle="Older history available"
-              />
-              <ArrowForwardIcon
-                sx={{ color: 'text.disabled', alignSelf: 'center' }}
-              />
-            </>
-          )}
-          {segments.length > invocationSegmentIndex + 1 && (
-            <>
-              <FailureRateView
-                segment={segments[invocationSegmentIndex + 1]}
+
+            {invocationSegmentIndex < segments.length - 1 ? (
+              <>
+                {/* If an older segment than the one containing the invocation exists */}
+                <SegmentArrow
+                  key="arrow-invocation-to-older"
+                  pointingToSegment={segments[invocationSegmentIndex]}
+                  nowDtForFormatting={nowDtForFormatting}
+                  project={project}
+                  testId={testVariant.testId}
+                  variantHash={testVariant.variantHash}
+                  refHash={testVariantBranch.refHash}
+                />
+                <FailureRate
+                  segment={segments[invocationSegmentIndex + 1]}
+                  nowDtForFormatting={nowDtForFormatting}
+                  segmentContextType="beforeInvocation"
+                />
+              </>
+            ) : (
+              <TestAddedInfo
+                segment={segments[invocationSegmentIndex]}
                 nowDtForFormatting={nowDtForFormatting}
+                project={project}
+                testId={testVariant.testId}
+                variantHash={testVariant.variantHash}
+                refHash={testVariantBranch.refHash}
               />
-              <ArrowForwardIcon
-                sx={{ color: 'text.disabled', alignSelf: 'center' }}
-              />
-            </>
-          )}
-          <FailureRateView
-            segment={segments[invocationSegmentIndex]}
-            isContextual
-            nowDtForFormatting={nowDtForFormatting}
-          />
-          {invocationSegmentIndex > 0 && (
-            <>
-              <ArrowForwardIcon
-                sx={{ color: 'text.disabled', alignSelf: 'center' }}
-              />
-              <FailureRateView
-                segment={segments[invocationSegmentIndex - 1]}
-                nowDtForFormatting={nowDtForFormatting}
-              />
-            </>
-          )}
-          {invocationSegmentIndex < 2 ? (
-            <VerticalBar
-              key="start-bar"
-              tooltipTitle="This is the newest recorded history"
-            />
-          ) : (
-            <>
-              <ArrowForwardIcon
-                sx={{ color: 'text.disabled', alignSelf: 'center' }}
-              />
-              <EllipsisIndicator
-                key="start-ellipsis"
-                tooltipTitle="More recent history available"
-              />
-            </>
+            )}
+          </Box>
+          {allTestHistoryLink && (
+            <Box>
+              <Link
+                href={allTestHistoryLink}
+                variant="caption"
+                sx={{
+                  ml: 'auto',
+                  whiteSpace: 'nowrap',
+                  alignSelf: 'center',
+                  pl: 1,
+                }}
+              >
+                View full postsubmit history
+              </Link>
+            </Box>
           )}
         </Box>
-        {allTestHistoryLink && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Link
-              href={allTestHistoryLink}
-              variant="caption"
-              sx={{
-                ml: 'auto',
-                whiteSpace: 'nowrap',
-                alignSelf: 'center',
-                pl: 1,
-              }}
-            >
-              View full history
-            </Link>
-          </Box>
-        )}
-      </Box>
+      )}
     </Box>
   );
 }

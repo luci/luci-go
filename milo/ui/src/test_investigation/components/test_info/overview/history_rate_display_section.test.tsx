@@ -136,14 +136,15 @@ describe('<HistoryRateDisplaySection />', () => {
   it('should render the title', () => {
     const segments = [createMockSegment('s1', '100', '110', 10, 100)];
     renderComponent(undefined, undefined, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({ segments }),
+      testVariantBranch: TestVariantBranch.fromPartial({
+        segments,
+        refHash: 'test-ref-hash',
+      }),
     });
-    expect(
-      screen.getByText('Postsubmit history (Changepoint failure rate)'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Postsubmit history')).toBeInTheDocument();
   });
 
-  it('should display a single segment as contextual', async () => {
+  it('should display a single segment as invocation segment', async () => {
     const segmentsData = [
       createMockSegment('s1', '100', '110', 10, 100, '2024-01-10T10:00:00Z'),
     ];
@@ -154,29 +155,29 @@ describe('<HistoryRateDisplaySection />', () => {
     renderComponent(new Date('2024-01-10T12:00:00Z'), currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
+        refHash: 'test-ref-hash',
       }),
     });
-    const failureRateView = screen.getByText('10%');
+    const failureRateView = screen.getByText('10% now failing');
     expect(failureRateView).toBeInTheDocument();
-    const boxElement = failureRateView.closest('div[class*="MuiBox-root"]');
-    expect(boxElement).toHaveStyle(
-      'border: 2px solid var(--gm3-color-primary)',
-    );
+    // Check tooltip for FailureRateView
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
     expect(tooltip).toHaveTextContent(
-      'Segment: 100 - 110 (started 2 hours ago) (Contextual to Invocation Commit)',
+      'Segment: 100 - 110 (started 2 hours ago) (Invocation Commit Segment)',
     );
 
-    expect(
-      screen.getByLabelText('This is the oldest recorded history'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('This is the newest recorded history'),
-    ).toBeInTheDocument();
+    // Check TestAddedDisplay
+    expect(screen.getByText('Test added 2 hours ago')).toBeInTheDocument();
+    const blamelistLinks = screen.getAllByRole('link', { name: 'blamelist' });
+    expect(blamelistLinks).toHaveLength(1); // Only from TestAddedDisplay
+    expect(blamelistLinks[0]).toHaveAttribute(
+      'href',
+      expect.stringContaining('#CP-100'),
+    );
   });
 
-  it('should display three segments with invocation in the middle', async () => {
+  it('should display three segments with invocation in the middle', () => {
     const segmentsData = [
       createMockSegment('sNew', '111', '120', 5, 100),
       createMockSegment('sCtx', '100', '110', 50, 100),
@@ -189,28 +190,19 @@ describe('<HistoryRateDisplaySection />', () => {
     renderComponent(undefined, currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
+        refHash: 'test-ref-hash',
       }),
     });
-    expect(screen.getByText('5%')).toBeInTheDocument();
-    expect(screen.getByText('50%')).toBeInTheDocument();
-    expect(screen.getByText('95%')).toBeInTheDocument();
-    const contextualBox = screen
-      .getByText('50%')
-      .closest('div[class*="MuiBox-root"]');
-    expect(contextualBox).toHaveStyle(
-      'border: 2px solid var(--gm3-color-primary)',
-    );
+    expect(screen.getByText('5% failing')).toBeInTheDocument(); // Newer segment
+    expect(screen.getByText('50% failing at invocation')).toBeInTheDocument(); // Invocation segment
+    expect(screen.getByText('95% failed')).toBeInTheDocument(); // Older segment
 
-    expect(
-      screen.getByLabelText('This is the oldest recorded history'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('This is the newest recorded history'),
-    ).toBeInTheDocument();
-    expect(screen.getAllByTestId('ArrowForwardIcon')).toHaveLength(2);
+    expect(screen.getAllByTestId('ArrowBackIcon')).toHaveLength(2);
+    // TestAddedDisplay should not be rendered here as the third segment is shown directly
+    expect(screen.queryByText(/Test added/)).not.toBeInTheDocument();
   });
 
-  it('should display five segments with invocation in middle, showing correct indicators', async () => {
+  it('should display max three segments even if more are available', () => {
     const segmentsData = [
       createMockSegment('sN2', '121', '130', 1, 100),
       createMockSegment('sN1', '111', '120', 2, 100),
@@ -225,29 +217,36 @@ describe('<HistoryRateDisplaySection />', () => {
     renderComponent(undefined, currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
+        refHash: 'test-ref-hash',
       }),
     });
-    expect(screen.getByText('2%')).toBeInTheDocument();
-    expect(screen.getByText('3%')).toBeInTheDocument();
-    expect(screen.getByText('4%')).toBeInTheDocument();
+    // sN2 (1%) should not be rendered
+    expect(screen.queryByText('1% failing')).not.toBeInTheDocument();
+    // sN1 (2%) should be rendered as "newer"
+    expect(screen.getByText('2% failing')).toBeInTheDocument();
+    // sCtx (3%) should be rendered as "invocation"
+    expect(screen.getByText('3% failing at invocation')).toBeInTheDocument();
+    // sO1 (4%) should be rendered as "older"
+    expect(screen.getByText('4% failed')).toBeInTheDocument();
+    // sO2 (5%) should not be rendered
+    expect(screen.queryByText('5% failed')).not.toBeInTheDocument();
 
-    expect(
-      screen.getByLabelText('Older history available'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('More recent history available'),
-    ).toBeInTheDocument();
-    expect(screen.getAllByTestId('ArrowForwardIcon')).toHaveLength(4);
+    expect(screen.getAllByTestId('ArrowBackIcon')).toHaveLength(2); // Max 2 arrows
+    // TestAddedDisplay should not be rendered here as the third segment (sO1) is shown directly
+    expect(screen.queryByText(/Test added/)).not.toBeInTheDocument();
   });
 
-  it('should render the "View full history" link correctly', () => {
+  it('should render the "View full postsubmit history" link correctly', () => {
     const segmentsData = [createMockSegment('s1', '100', '110', 10, 100)];
     renderComponent(undefined, undefined, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
+        refHash: 'test-ref-hash',
       }),
     });
-    const link = screen.getByRole('link', { name: /View full history/i });
+    const link = screen.getByRole('link', {
+      name: /View full postsubmit history/i,
+    });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute(
       'href',
@@ -268,11 +267,15 @@ describe('<HistoryRateDisplaySection />', () => {
     renderComponent(fixedCurrentTime, currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
+        refHash: 'test-ref-hash',
       }),
     });
-    const failureRateView = screen.getByText('10%');
+    const failureRateView = screen.getByText('10% now failing');
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
     expect(tooltip).toHaveTextContent('started 4 hours ago');
+
+    // Check TestAddedDisplay
+    expect(screen.getByText('Test added 4 hours ago')).toBeInTheDocument();
   });
 });
