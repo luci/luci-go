@@ -16,7 +16,6 @@ import { Box, ButtonBase, Link, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 
 import { CLsPopover } from '@/test_investigation/components/test_info/cls_popver';
-import { NO_CLS_TEXT } from '@/test_investigation/components/test_info/constants';
 
 import { useFormattedCLs } from '../context';
 
@@ -38,6 +37,10 @@ export function AssociatedCLsSection() {
   }, []);
   const clPopoverOpen = Boolean(clPopoverAnchorEl);
 
+  if (formattedCLs.length === 0) {
+    return <></>;
+  }
+
   return (
     <Box>
       <Typography
@@ -48,11 +51,6 @@ export function AssociatedCLsSection() {
       >
         CLs
       </Typography>
-      {formattedCLs.length === 0 && (
-        <Typography component="span" color="text.disabled">
-          {NO_CLS_TEXT}
-        </Typography>
-      )}
       {formattedCLs.length === 1 && (
         <Link
           href={formattedCLs[0].url}
@@ -63,32 +61,30 @@ export function AssociatedCLsSection() {
           {formattedCLs[0].display}
         </Link>
       )}
-      {formattedCLs.length > 1 && (
-        <>
-          <Link
-            href={formattedCLs[0].url}
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-          >
-            {formattedCLs[0].display}
-          </Link>
-          <ButtonBase
-            onClick={handleCLPopoverOpen}
-            aria-describedby="cl-popover-assoc-cls"
-            sx={{
-              ml: 0.5,
-              textDecoration: 'underline',
-              color: 'primary.main',
-              cursor: 'pointer',
-              typography: 'body2',
-            }}
-          >
-            + {formattedCLs.length - 1} more
-          </ButtonBase>
-        </>
-      )}
-      {formattedCLs.length > 0 && formattedCLs[0].url && (
+      <>
+        <Link
+          href={formattedCLs[0].url}
+          target="_blank"
+          rel="noopener noreferrer"
+          underline="hover"
+        >
+          {formattedCLs[0].display}
+        </Link>
+        <ButtonBase
+          onClick={handleCLPopoverOpen}
+          aria-describedby="cl-popover-assoc-cls"
+          sx={{
+            ml: 0.5,
+            textDecoration: 'underline',
+            color: 'primary.main',
+            cursor: 'pointer',
+            typography: 'body2',
+          }}
+        >
+          + {formattedCLs.length - 1} more
+        </ButtonBase>
+      </>
+      {formattedCLs[0].url && (
         <Link
           href={formattedCLs[0].url + clHistoryLinkSuffix}
           target="_blank"

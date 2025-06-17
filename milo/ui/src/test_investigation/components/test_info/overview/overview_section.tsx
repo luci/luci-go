@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Card, Typography } from '@mui/material';
+import { Box, Card } from '@mui/material';
 
 import { AssociatedCLsSection } from './associated_cls_section'; // New import
 import { HistoryRateDisplaySection } from './history_rate_display_section';
@@ -27,18 +27,11 @@ export function OverviewSection() {
           display: 'flex',
           flexDirection: 'column',
           gap: '32px',
-          p: 2,
+          p: 3,
           height: '100%',
           boxSizing: 'border-box',
         }}
       >
-        <Typography
-          component="div"
-          sx={{ mb: 0.5, fontSize: '20px', fontWeight: '400' }}
-        >
-          Overview
-        </Typography>
-
         <OverviewStatusSection />
 
         <HistoryRateDisplaySection />

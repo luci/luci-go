@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import BugReportIcon from '@mui/icons-material/BugReport';
-import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
@@ -209,73 +208,91 @@ export function OverviewStatusSection() {
 
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {mainStatusStyle.icon && (
-          <StatusIcon
-            iconType={mainStatusStyle.icon}
-            sx={{
-              fontSize: 24,
-              color: mainStatusStyle.iconColor || mainStatusStyle.textColor,
-            }}
-          />
-        )}
-        <Typography
-          variant="body1"
-          sx={{ fontWeight: '400', fontSize: '24px' }}
-        >
-          {displayStatusString}
-        </Typography>
+      <Box>
+        <Box>
+          <Typography
+            component="div"
+            sx={{ mb: 0.5, fontSize: '20px', fontWeight: '400' }}
+          >
+            Overview
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Test Result
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {mainStatusStyle.icon && (
+            <StatusIcon
+              iconType={mainStatusStyle.icon}
+              sx={{
+                fontSize: 24,
+                color: mainStatusStyle.iconColor || mainStatusStyle.textColor,
+              }}
+            />
+          )}
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: '400', fontSize: '24px' }}
+          >
+            {displayStatusString}
+          </Typography>
+        </Box>
       </Box>
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
         }}
       >
-        <Typography variant="body2" color="text.secondary" component="div">
-          Related bug(s):{' '}
-        </Typography>
-        {associatedBugs && associatedBugs.length > 0 ? (
-          associatedBugs.map((bug, index) => (
-            <React.Fragment key={`${bug.system}-${bug.id}`}>
-              {index > 0 && <Typography component="span">, </Typography>}
-              <Link
-                href={bug.url || `https://${bug.system}.com/${bug.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ display: 'inline-flex', alignItems: 'center' }}
-              >
-                <BugReportIcon
-                  sx={{
-                    fontSize: 18,
-                    mr: 0.25,
-                    color: 'var(--gm3-color-primary)',
-                  }}
-                />
-                {bug.linkText || `${bug.system}/${bug.id}`}
-              </Link>
-            </React.Fragment>
-          ))
-        ) : (
-          <Typography component="span" color="text.disabled">
-            {NO_ASSOCIATED_BUGS_TEXT}
-          </Typography>
-        )}
-      </Box>
-
-      <Typography variant="body2" color="text.secondary" component="div">
         <Box
-          component="span"
-          sx={{ display: 'inline-flex', alignItems: 'center' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+          }}
         >
-          <TroubleshootIcon
-            sx={{
-              fontSize: 18,
-              mr: 0.5,
-              color: 'var(--gm3-color-on-surface-variant)',
-            }}
-          />{' '}
-          Culprit Searching: {bisectionDisplayInfo.textElement}
+          <Typography variant="body2" color="text.secondary">
+            Related bug(s)
+          </Typography>
+          {associatedBugs && associatedBugs.length > 0 ? (
+            associatedBugs.map((bug, index) => (
+              <React.Fragment key={`${bug.system}-${bug.id}`}>
+                {index > 0 && <Typography component="span">, </Typography>}
+                <Link
+                  href={bug.url || `https://${bug.system}.com/${bug.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <BugReportIcon
+                    sx={{
+                      fontSize: 18,
+                      mr: 0.25,
+                      color: 'var(--gm3-color-primary)',
+                    }}
+                  />
+                  {bug.linkText || `${bug.system}/${bug.id}`}
+                </Link>
+              </React.Fragment>
+            ))
+          ) : (
+            <Typography component="span" color="text.disabled">
+              {NO_ASSOCIATED_BUGS_TEXT}
+            </Typography>
+          )}
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Culprit Searching
+          </Typography>
+          <Typography>{bisectionDisplayInfo.textElement}</Typography>
           {isLoadingBisectionAnalysis && <CircularProgress />}
           {bisectionDisplayInfo.link && (
             <Link
@@ -289,7 +306,7 @@ export function OverviewStatusSection() {
             </Link>
           )}
         </Box>
-      </Typography>
+      </Box>
     </>
   );
 }
