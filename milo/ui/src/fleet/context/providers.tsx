@@ -16,6 +16,8 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
+const queryClient = new QueryClient();
+
 /*
  * Persists queries with the key `['persist-local-storage']` in the local storage.
  */
@@ -24,8 +26,6 @@ export function LocalStoragePersistClientProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const queryClient = new QueryClient();
-
   const localStoragePersister = createSyncStoragePersister({
     storage: window.localStorage,
   });
