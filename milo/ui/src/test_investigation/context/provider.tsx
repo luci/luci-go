@@ -51,16 +51,20 @@ export function InvocationProvider({
 
 interface TestVariantProviderProps extends Props {
   testVariant: TestVariant;
+  displayStatusString: string;
+  children: React.ReactNode;
 }
 
 export function TestVariantProvider({
   testVariant,
+  displayStatusString,
   children,
 }: TestVariantProviderProps) {
   return (
     <TestVariantContext.Provider
       value={{
         testVariant,
+        displayStatusString,
       }}
     >
       {children}

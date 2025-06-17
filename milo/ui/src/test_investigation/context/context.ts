@@ -29,6 +29,7 @@ export const InvocationContext = createContext<InvocationContextValue | null>(
 
 export interface TestVariantContextValue {
   testVariant: TestVariant;
+  displayStatusString: string;
 }
 export const TestVariantContext = createContext<TestVariantContextValue | null>(
   null,
@@ -66,4 +67,14 @@ export function useTestVariant() {
     throw new Error('useTestVariant must be used within a TestVariantProvider');
   }
   return ctx.testVariant;
+}
+
+export function useDisplayStatusString() {
+  const ctx = useContext(TestVariantContext);
+  if (!ctx) {
+    throw new Error(
+      'useDisplayStatusString must be used within a TestVariantProvider',
+    );
+  }
+  return ctx.displayStatusString;
 }

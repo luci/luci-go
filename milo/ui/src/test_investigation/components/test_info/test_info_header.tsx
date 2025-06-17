@@ -30,8 +30,8 @@ import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
 export function TestInfoHeader() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
-  const testDisplayName =
-    testVariant?.testMetadata?.name || testVariant?.testId;
+
+  const testDisplayName = testVariant.testMetadata?.name || testVariant.testId;
   const commitInfo = getCommitInfoFromInvocation(invocation);
   const commitLink = getCommitGitilesUrlFromInvocation(invocation);
 

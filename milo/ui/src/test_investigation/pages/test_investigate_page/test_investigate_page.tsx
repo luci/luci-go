@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { startCase } from 'lodash-es';
 import { useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
@@ -38,6 +39,7 @@ import {
   BatchGetTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestDetails } from '@/test_investigation/components/test_details';
 import { TestInfo } from '@/test_investigation/components/test_info';
@@ -107,6 +109,15 @@ export function TestInvestigatePage() {
     () => getProjectFromRealm(invocation?.realm),
     [invocation?.realm],
   );
+
+  // Prepare the display string, e.g., "Failed" instead of "UNEXPECTED"
+  const displayStatusString = useMemo(() => {
+    if (testVariant) {
+      const rawStatusString = TestVerdict_Status[testVariant.statusV2];
+      return startCase(rawStatusString.replace('_', ' ').toLocaleLowerCase());
+    }
+    return '';
+  }, [testVariant]);
 
   useEstablishProjectCtx(project);
   useDeclarePageId(UiPage.TestInvestigation);
@@ -181,10 +192,17 @@ export function TestInvestigatePage() {
       project={project}
     >
       <Helmet>
-        {/** TODO: Add test status and favicon */}
-        <title>{testVariant.testId} - Test Investigation</title>
+        {/** TODO: Add favicon */}
+        <title>
+          {displayStatusString} -{' '}
+          {testVariant.testMetadata?.name || testVariant.testId} - Test
+          Investigation
+        </title>
       </Helmet>
-      <TestVariantProvider testVariant={testVariant}>
+      <TestVariantProvider
+        testVariant={testVariant}
+        displayStatusString={displayStatusString}
+      >
         <ThemeProvider theme={gm3PageTheme}>
           <RedirectBackBanner
             invocation={invocation}

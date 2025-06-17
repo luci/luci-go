@@ -100,7 +100,7 @@ describe('<HistoryRateDisplaySection />', () => {
           invocation={inv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >
-          <TestVariantProvider testVariant={tv}>
+          <TestVariantProvider testVariant={tv} displayStatusString="failed">
             <TestInfoContext.Provider value={testInfoCtxVal}>
               <HistoryRateDisplaySection
                 currentTimeForAgo={currentTimeForAgo}

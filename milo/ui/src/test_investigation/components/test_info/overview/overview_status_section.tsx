@@ -31,14 +31,14 @@ import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.o
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { StatusIcon } from '@/test_investigation/components/status_icon';
 import { useProject, useTestVariant } from '@/test_investigation/context';
+import { useDisplayStatusString } from '@/test_investigation/context/context';
 
 import {
   NO_ASSOCIATED_BUGS_TEXT,
   BISECTION_NO_ANALYSIS_TEXT,
   BISECTION_DATA_INCOMPLETE_TEXT,
 } from '../constants';
-import { useAssociatedBugs } from '../context';
-import { useTestVariantBranch } from '../context/context';
+import { useAssociatedBugs, useTestVariantBranch } from '../context';
 
 // Helper to map TestVariantStatus to SemanticStatusType
 function getSemanticStatusFromTestVariant(
@@ -67,6 +67,7 @@ export function OverviewStatusSection() {
   const project = useProject();
   const associatedBugs = useAssociatedBugs();
   const testVariantBranch = useTestVariantBranch();
+  const displayStatusString = useDisplayStatusString();
 
   const bisectionAnalysisQueryEnabled = !!(
     project &&
@@ -197,14 +198,6 @@ export function OverviewStatusSection() {
     }
     return { textElement, link: bisectionLink };
   }, [bisectionAnalysis, project]);
-
-  // Prepare the display string, e.g., "Failed" instead of "UNEXPECTED"
-  const displayStatusString = useMemo(() => {
-    const rawStatusString = TestVariantStatus[testVariant.status];
-    return rawStatusString
-      .replace('UNEXPECTEDLY_', '')
-      .replace('UNEXPECTED', 'Failed');
-  }, [testVariant.status]);
 
   return (
     <>

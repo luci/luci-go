@@ -18,4 +18,5 @@ export {
   useFormattedCLs,
   useAssociatedBugs,
   useIsLoadingAssociatedBugs,
+  useTestVariantBranch,
 } from './context';

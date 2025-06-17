@@ -106,7 +106,10 @@ describe('<AnalysisSubsection />', () => {
           invocation={effectiveInv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >
-          <TestVariantProvider testVariant={effectiveTv}>
+          <TestVariantProvider
+            testVariant={effectiveTv}
+            displayStatusString="failed"
+          >
             <TestInfoContext.Provider value={inv && tv ? testInfoCtxVal : null}>
               <AnalysisSubsection currentTimeForAgoDt={currentTime} />
             </TestInfoContext.Provider>
