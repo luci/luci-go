@@ -44,6 +44,20 @@ import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
 import { useBot } from './hooks';
 
+// Copied from go.chromium.org/luci/swarming/server/ui2/modules/bot-page/bot-page-helpers.js
+const quarantineMessage = (state: {
+  quarantined: undefined | string | boolean;
+  error: string;
+}) => {
+  let msg = state.quarantined;
+  // Sometimes, the quarantined message is actually in 'error'.  This
+  // happens when the bot code has thrown an exception.
+  if (msg === undefined || msg === 'true' || msg === true) {
+    msg = state.error;
+  }
+  return msg || 'True';
+};
+
 const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <>
     <Grid2 size={2}>
@@ -166,7 +180,26 @@ export const BotData = ({
           </Box>
           <Grid2 container spacing={1} alignItems="center">
             <InfoRow label="Bot ID" value={botData.info?.botId || ''} />
-            <InfoRow label="Current Task" value={currentTaskNode} />
+            {botData.info?.deleted && <InfoRow label="Deleted" value="True" />}
+            {botData.info?.quarantined && (
+              <InfoRow label="Quarantined" value={quarantineMessage(state)} />
+            )}
+            {botData.info?.maintenanceMsg && (
+              <InfoRow
+                label="In Maintenance"
+                value={botData.info.maintenanceMsg}
+              />
+            )}
+            {botData.info?.isDead && !botData.info?.deleted && (
+              <InfoRow
+                label="Status"
+                value="Dead - Bot has been missing longer than 10 minutes"
+              />
+            )}
+            <InfoRow
+              label={botData.info?.isDead ? 'Died on Task' : 'Current Task'}
+              value={currentTaskNode}
+            />
             <InfoRow
               label="First Seen"
               value={prettyDateTime(botData.info?.firstSeenTs)}
