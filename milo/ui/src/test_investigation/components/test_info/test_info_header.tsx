@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CodeIcon from '@mui/icons-material/Code';
-import CommitIcon from '@mui/icons-material/Commit';
-import { Box, ButtonBase, Link } from '@mui/material';
-import React, { useCallback, useState } from 'react';
+import { Box, Link } from '@mui/material';
 
 import {
   PageSummaryLine,
@@ -28,28 +25,11 @@ import {
   getCommitInfoFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
-import { CLsPopover } from './cls_popver';
-import { NO_CLS_TEXT } from './constants';
-import { useFormattedCLs } from './context';
 import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
 
 export function TestInfoHeader() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
-  const allFormattedCLs = useFormattedCLs();
-  const [clPopoverAnchorEl, setClPopoverAnchorEl] =
-    useState<HTMLElement | null>(null);
-  const handleCLPopoverOpen = useCallback(
-    (event: React.MouseEvent<HTMLElement>) =>
-      setClPopoverAnchorEl(event.currentTarget),
-    [],
-  );
-  const handleCLPopoverClose = useCallback(() => {
-    setClPopoverAnchorEl(null);
-  }, []);
-
-  const clPopoverOpen = Boolean(clPopoverAnchorEl);
-  const clPopoverId = clPopoverOpen ? 'cl-popover-main-test-info' : undefined;
   const testDisplayName =
     testVariant?.testMetadata?.name || testVariant?.testId;
   const commitInfo = getCommitInfoFromInvocation(invocation);
@@ -68,48 +48,12 @@ export function TestInfoHeader() {
             {value}
           </SummaryLineItem>
         ))}
-        <SummaryLineItem label="Commit" icon={<CommitIcon />}>
+        <SummaryLineItem label="Commit">
           <Link href={commitLink} target="_blank" rel="noopener noreferrer">
             {commitInfo}
           </Link>
         </SummaryLineItem>
-        <SummaryLineItem label="CL" icon={<CodeIcon />}>
-          {allFormattedCLs.length === 0 ? (
-            NO_CLS_TEXT
-          ) : (
-            <>
-              <Link
-                href={allFormattedCLs[0].url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {allFormattedCLs[0].display}
-              </Link>
-              {allFormattedCLs.length > 1 && (
-                <ButtonBase
-                  onClick={handleCLPopoverOpen}
-                  aria-describedby={clPopoverId}
-                  sx={{
-                    ml: 0.5,
-                    textDecoration: 'underline',
-                    color: 'primary.main',
-                    cursor: 'pointer',
-                    typography: 'body2',
-                  }}
-                >
-                  + {allFormattedCLs.length - 1} more
-                </ButtonBase>
-              )}
-            </>
-          )}
-        </SummaryLineItem>
       </PageSummaryLine>
-      <CLsPopover
-        anchorEl={clPopoverAnchorEl}
-        open={clPopoverOpen}
-        onClose={handleCLPopoverClose}
-        id={clPopoverId}
-      />
     </Box>
   );
 }

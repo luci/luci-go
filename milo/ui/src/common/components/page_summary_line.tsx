@@ -56,18 +56,9 @@ interface SummaryLineItemProps {
 /**
  * A single item within a PageSummaryLine.
  */
-export function SummaryLineItem({
-  label,
-  icon,
-  children,
-}: SummaryLineItemProps) {
+export function SummaryLineItem({ label, children }: SummaryLineItemProps) {
   return (
     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-      {icon && (
-        <Box sx={{ fontSize: '1rem', mr: 0.5, color: 'text.secondary' }}>
-          {icon}
-        </Box>
-      )}
       <Typography variant="body2" component="span" color="text.secondary">
         {label}:
       </Typography>

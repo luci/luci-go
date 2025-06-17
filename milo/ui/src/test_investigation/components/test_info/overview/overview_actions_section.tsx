@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportIcon from '@mui/icons-material/BugReport';
-import SourceIcon from '@mui/icons-material/Source';
 import { Box, Button } from '@mui/material';
 import { useMemo } from 'react';
 
@@ -72,7 +70,6 @@ export function OverviewActionsSection() {
         size="small"
         href={fileBugUrl}
         rel="noopener noreferrer"
-        startIcon={<BugReportIcon />}
       >
         File bug
       </Button>
@@ -82,17 +79,11 @@ export function OverviewActionsSection() {
           size="small"
           href={codesearchUrl}
           rel="noopener noreferrer"
-          startIcon={<SourceIcon />}
         >
           View source file
         </Button>
       ) : (
-        <Button
-          variant="outlined"
-          size="small"
-          disabled
-          startIcon={<SourceIcon />}
-        >
+        <Button variant="outlined" size="small" disabled>
           View source file
         </Button>
       )}
