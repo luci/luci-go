@@ -20,7 +20,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '@/generic_libs/components/expandable_entry';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { Artifact } from '@/common/services/resultdb';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { logging } from '@/common/tools/logging';

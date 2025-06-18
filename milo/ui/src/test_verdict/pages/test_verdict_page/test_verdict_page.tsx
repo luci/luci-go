@@ -28,13 +28,13 @@ import {
 import {
   VERDICT_STATUS_DISPLAY_MAP,
   VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
-} from '@/common/constants/test';
+} from '@/common/constants/verdict';
 import { UiPage } from '@/common/constants/view';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from './context';
 import { TestIdentifier } from './test_identifier';

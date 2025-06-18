@@ -19,7 +19,7 @@ import { ReactNode } from 'react';
 import {
   OutputQueryTestVariantArtifactGroupsResponse_MatchGroup,
   OutputQueryInvocationVariantArtifactGroupsResponse_MatchGroup,
-} from '@/test_verdict/types';
+} from '@/common/types/verdict';
 
 import { useLogGroupListDispatch } from '../context';
 import { LogSnippetRow } from '../log_snippet_row';

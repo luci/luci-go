@@ -16,10 +16,10 @@ import { Box, styled } from '@mui/material';
 
 import { OutputSegment, OutputTestVariantBranch } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { VerdictSetStatus } from '@/test_verdict/components//verdict_set_status';
 import { SegmentInfo } from '@/test_verdict/components/changepoint_analysis';
-import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 import {
   getBackgroundColor,
   getBorderColor,

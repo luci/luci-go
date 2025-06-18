@@ -30,16 +30,20 @@ import {
   useDeclarePageId,
   useEstablishProjectCtx,
 } from '@/common/components/page_meta';
+import {
+  VERDICT_STATUS_DISPLAY_MAP,
+  VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
+} from '@/common/constants/verdict';
 import { UiPage } from '@/common/constants/view';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   GetInvocationRequest,
   BatchGetTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestDetails } from '@/test_investigation/components/test_details';
 import { TestInfo } from '@/test_investigation/components/test_info';
@@ -97,11 +101,11 @@ export function TestInvestigatePage() {
       }),
     ),
     staleTime: Infinity, // TestVariant data for a specific inv and hash is usually immutable
-    select: (data): TestVariant | null => {
+    select: (data): OutputTestVerdict | null => {
       if (!data || !data.testVariants || data.testVariants.length === 0) {
         return null;
       }
-      return data.testVariants[0];
+      return data.testVariants[0] as OutputTestVerdict;
     },
   });
 
@@ -113,8 +117,11 @@ export function TestInvestigatePage() {
   // Prepare the display string, e.g., "Failed" instead of "UNEXPECTED"
   const displayStatusString = useMemo(() => {
     if (testVariant) {
-      const rawStatusString = TestVerdict_Status[testVariant.statusV2];
-      return startCase(rawStatusString.replace('_', ' ').toLocaleLowerCase());
+      const statusString =
+        testVariant.statusOverride !== TestVerdict_StatusOverride.NOT_OVERRIDDEN
+          ? VERDICT_STATUS_OVERRIDE_DISPLAY_MAP[testVariant.statusOverride]
+          : VERDICT_STATUS_DISPLAY_MAP[testVariant.statusV2];
+      return startCase(statusString);
     }
     return '';
   }, [testVariant]);

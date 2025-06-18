@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OutputTestResultBundle } from '@/test_verdict/types';
+import { OutputTestResultBundle } from '@/common/types/verdict';
 
 /**
  * From the provided list of test results, find the one that should be

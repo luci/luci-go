@@ -16,7 +16,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 import { act } from 'react';
 
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 

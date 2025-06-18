@@ -16,6 +16,7 @@ import { render, screen } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import { AssociatedBug } from '@/common/services/luci_analysis';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import {
   Segment,
   TestVariantBranch,
@@ -107,7 +108,7 @@ describe('<AnalysisSubsection />', () => {
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >
           <TestVariantProvider
-            testVariant={effectiveTv}
+            testVariant={effectiveTv as OutputTestVerdict}
             displayStatusString="failed"
           >
             <TestInfoContext.Provider value={inv && tv ? testInfoCtxVal : null}>

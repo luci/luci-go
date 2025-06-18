@@ -19,12 +19,12 @@ import { AssociatedBugsBadge } from '@/analysis/components/associated_bugs_badge
 import { OutputClusterResponse } from '@/analysis/types';
 import { useBatchedClustersClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import {
   ClusterRequest,
   ClusterResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { OutputTestVerdict } from '@/test_verdict/types';
 
 export interface VerdictAssociatedBugsBadgeProps {
   readonly project: string;

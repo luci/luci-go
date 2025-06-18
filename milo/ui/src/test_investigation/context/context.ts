@@ -14,8 +14,8 @@
 
 import { createContext, useContext } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 export interface InvocationContextValue {
   invocation: Invocation;
@@ -28,7 +28,7 @@ export const InvocationContext = createContext<InvocationContextValue | null>(
 );
 
 export interface TestVariantContextValue {
-  testVariant: TestVariant;
+  testVariant: OutputTestVerdict;
   displayStatusString: string;
 }
 export const TestVariantContext = createContext<TestVariantContextValue | null>(

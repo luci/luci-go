@@ -26,15 +26,15 @@ import { upperFirst } from 'lodash-es';
 import {
   VERDICT_STATUS_DISPLAY_MAP,
   VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
-} from '@/common/constants/test';
+} from '@/common/constants/verdict';
+import {
+  SpecifiedTestVerdictStatusOverride,
+  SpecifiedTestVerdictStatus,
+} from '@/common/types/verdict';
 import {
   TestVerdict_Status,
   TestVerdict_StatusOverride,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import {
-  SpecifiedTestVerdictStatusOverride,
-  SpecifiedTestVerdictStatus,
-} from '@/test_verdict/types';
 
 import { useTestVerdict } from '../context';
 

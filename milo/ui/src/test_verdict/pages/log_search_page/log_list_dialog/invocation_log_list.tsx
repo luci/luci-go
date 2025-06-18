@@ -18,11 +18,11 @@ import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { OutputQueryInvocationVariantArtifactsResponse } from '@/common/types/verdict';
 import {
   ArtifactContentMatcher,
   QueryInvocationVariantArtifactsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { OutputQueryInvocationVariantArtifactsResponse } from '@/test_verdict/types';
 
 import { LogSnippetRow } from '../log_snippet_row';
 import { InvocationLogGroupIdentifier } from '../reducer';

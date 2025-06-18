@@ -15,9 +15,9 @@
 import { Alert } from '@mui/material';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestResultEntry } from '@/test_verdict/components/test_result_entry';
 import { getSuggestedResultId } from '@/test_verdict/tools/test_result_utils';
-import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { RESULT_LIMIT } from './constants';
 

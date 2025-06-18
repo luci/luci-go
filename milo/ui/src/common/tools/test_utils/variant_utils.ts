@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ORDERED_VARIANT_DEF_KEYS } from '@/common/constants/test';
+import { ORDERED_VARIANT_DEF_KEYS } from '@/common/constants/verdict';
 
 export function getSortedTestVariantDef(def: { [key: string]: string }) {
   const res: Array<[string, string]> = [];

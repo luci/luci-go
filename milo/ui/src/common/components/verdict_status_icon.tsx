@@ -15,17 +15,17 @@
 import { Icon, SxProps, Theme } from '@mui/material';
 
 import {
-  TestVerdict_Status,
-  TestVerdict_StatusOverride,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import {
   VERDICT_STATUS_COLOR_MAP,
   VERDICT_STATUS_OVERRIDE_COLOR_MAP,
-} from '@/test_verdict/constants/verdict';
+} from '@/common/constants/verdict';
 import {
   SpecifiedTestVerdictStatus,
   SpecifiedTestVerdictStatusOverride,
-} from '@/test_verdict/types';
+} from '@/common/types/verdict';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
 const VERDICT_STATUS_ICON_FONT_MAP = Object.freeze({
   [TestVerdict_Status.FAILED]: 'cancel',

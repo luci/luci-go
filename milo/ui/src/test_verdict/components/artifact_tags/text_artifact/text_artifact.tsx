@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 
 import { ANSIText } from '@/common/components/ansi_text';
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';

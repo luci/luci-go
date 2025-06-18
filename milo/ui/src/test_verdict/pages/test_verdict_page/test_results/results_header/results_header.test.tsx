@@ -14,9 +14,9 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { OutputTestResultBundle } from '@/common/types/verdict';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { OutputTestResultBundle } from '@/test_verdict/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { TestResultsProvider } from '../context';

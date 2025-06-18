@@ -24,7 +24,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import {
   ArtifactIdentifier,
   constructArtifactName,

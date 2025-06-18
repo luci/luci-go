@@ -19,7 +19,7 @@ import * as Diff2html from 'diff2html';
 import 'diff2html/bundles/css/diff2html.min.css';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 

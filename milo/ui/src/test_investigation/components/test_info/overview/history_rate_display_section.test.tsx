@@ -16,6 +16,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { AssociatedBug } from '@/common/services/luci_analysis';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import {
   Segment,
   Segment_Counts,
@@ -100,7 +101,10 @@ describe('<HistoryRateDisplaySection />', () => {
           invocation={inv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
         >
-          <TestVariantProvider testVariant={tv} displayStatusString="failed">
+          <TestVariantProvider
+            testVariant={tv as OutputTestVerdict}
+            displayStatusString="failed"
+          >
             <TestInfoContext.Provider value={testInfoCtxVal}>
               <HistoryRateDisplaySection
                 currentTimeForAgo={currentTimeForAgo}

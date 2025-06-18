@@ -19,9 +19,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { OutputClusterEntry } from '@/analysis/types';
 import { useBatchedClustersClient } from '@/common/hooks/prpc_clients';
+import { OutputTestResultBundle } from '@/common/types/verdict';
 import { ClusterRequest_TestResult } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { OutputTestResultBundle } from '@/test_verdict/types';
 
 import { useProject, useTestVerdict } from '../context';
 

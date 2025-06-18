@@ -16,7 +16,7 @@ import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/test';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { logging } from '@/common/tools/logging';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';

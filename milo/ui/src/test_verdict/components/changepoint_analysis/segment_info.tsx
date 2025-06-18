@@ -16,10 +16,10 @@ import { DateTime } from 'luxon';
 import { ReactNode } from 'react';
 
 import { OutputSegment } from '@/analysis/types';
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
+import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
-import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
 
 export interface SegmentInfoProps {
   readonly segment: OutputSegment;

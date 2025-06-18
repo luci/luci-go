@@ -28,9 +28,9 @@ import {
   getTestHistoryURLWithSearchParam,
   generateTestHistoryURLSearchParams,
 } from '@/common/tools/url_utils';
+import { OutputQueryTestVariantArtifactGroupsResponse } from '@/common/types/verdict';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryTestVariantArtifactGroupsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { OutputQueryTestVariantArtifactGroupsResponse } from '@/test_verdict/types';
 
 import { SearchFilter, useTestLogPagerCtx } from '../context';
 import { FormData } from '../form_data';

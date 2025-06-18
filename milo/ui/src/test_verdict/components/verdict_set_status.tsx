@@ -15,13 +15,12 @@
 import { arc, pie } from 'd3';
 import { useMemo } from 'react';
 
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
+import { VERDICT_STATUS_COLOR_MAP } from '@/common/constants/verdict';
 import {
   TestVerdict_Status,
   TestVerdict_StatusOverride,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { VERDICT_STATUS_COLOR_MAP } from '@/test_verdict/constants/verdict';
-
-import { VerdictStatusIcon } from './verdict_status_icon';
 
 const STATUSES = Object.freeze([
   TestVerdict_Status.FAILED,

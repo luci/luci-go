@@ -27,7 +27,7 @@ import { useEffectOnce } from 'react-use';
 import {
   TEST_STATUS_V2_CLASS_MAP,
   TEST_STATUS_V2_DISPLAY_MAP,
-} from '@/common/constants/test';
+} from '@/common/constants/verdict';
 import { setSingleQueryParam } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {

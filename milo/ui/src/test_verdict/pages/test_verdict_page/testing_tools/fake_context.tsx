@@ -14,6 +14,7 @@
 
 import { ReactNode } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
@@ -21,7 +22,6 @@ import {
   TestVerdict_StatusOverride,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { Duration } from '@/proto/google/protobuf/duration.pb';
-import { OutputTestVerdict } from '@/test_verdict/types';
 
 import { TestVerdictProvider } from '../context';
 

@@ -16,7 +16,9 @@ import { Box, Skeleton, styled } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { OutputBatchGetTestVariantResponse } from '@/common/types/verdict';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
   ExpandableEntry,
@@ -28,8 +30,6 @@ import { GerritChange } from '@/proto/go.chromium.org/luci/buildbucket/proto/com
 import { BatchGetTestVariantsRequest_TestVariantIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { InvIdLink } from '@/test_verdict/components/inv_id_link';
-import { VerdictStatusIcon } from '@/test_verdict/components/verdict_status_icon';
-import { OutputBatchGetTestVariantResponse } from '@/test_verdict/types';
 
 import { RESULT_LIMIT } from './constants';
 import { EntryContent } from './entry_content';

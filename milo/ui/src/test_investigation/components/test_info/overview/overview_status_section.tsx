@@ -17,19 +17,13 @@ import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useAnalysesClient as useLuciBisectionClient } from '@/common/hooks/prpc_clients';
-import {
-  getStatusStyle,
-  SemanticStatusType,
-  StatusStyle,
-} from '@/common/styles/status_styles';
 import {
   AnalysisRunStatus,
   BatchGetTestAnalysesRequest,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
-import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { StatusIcon } from '@/test_investigation/components/status_icon';
 import { useProject, useTestVariant } from '@/test_investigation/context';
 import { useDisplayStatusString } from '@/test_investigation/context/context';
 
@@ -39,27 +33,6 @@ import {
   BISECTION_DATA_INCOMPLETE_TEXT,
 } from '../constants';
 import { useAssociatedBugs, useTestVariantBranch } from '../context';
-
-// Helper to map TestVariantStatus to SemanticStatusType
-function getSemanticStatusFromTestVariant(
-  tvStatus: TestVariantStatus,
-): SemanticStatusType {
-  switch (tvStatus) {
-    case TestVariantStatus.EXPECTED:
-      return 'expected';
-    case TestVariantStatus.UNEXPECTED:
-      return 'failed';
-    case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
-      return 'unexpectedly_skipped';
-    case TestVariantStatus.FLAKY:
-      return 'flaky';
-    case TestVariantStatus.EXONERATED:
-      return 'exonerated';
-    case TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED:
-    default:
-      return 'unknown';
-  }
-}
 
 export function OverviewStatusSection() {
   const bisectionClient = useLuciBisectionClient();
@@ -106,15 +79,6 @@ export function OverviewStatusSection() {
           : null;
       },
     });
-
-  const mainStatusSemanticType = useMemo(
-    () => getSemanticStatusFromTestVariant(testVariant.status),
-    [testVariant.status],
-  );
-  const mainStatusStyle: StatusStyle = useMemo(
-    () => getStatusStyle(mainStatusSemanticType),
-    [mainStatusSemanticType],
-  );
 
   // Bisection display logic (text and link)
   const bisectionDisplayInfo = useMemo(() => {
@@ -215,15 +179,10 @@ export function OverviewStatusSection() {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {mainStatusStyle.icon && (
-            <StatusIcon
-              iconType={mainStatusStyle.icon}
-              sx={{
-                fontSize: 24,
-                color: mainStatusStyle.iconColor || mainStatusStyle.textColor,
-              }}
-            />
-          )}
+          <VerdictStatusIcon
+            statusV2={testVariant.statusV2}
+            statusOverride={testVariant.statusOverride}
+          />
           <Typography
             variant="body1"
             sx={{ fontWeight: '400', fontSize: '24px' }}

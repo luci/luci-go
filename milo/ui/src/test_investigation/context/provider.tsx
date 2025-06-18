@@ -14,8 +14,8 @@
 
 import React from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 import { InvocationContext, TestVariantContext } from './context';
 
@@ -50,7 +50,7 @@ export function InvocationProvider({
 }
 
 interface TestVariantProviderProps extends Props {
-  testVariant: TestVariant;
+  testVariant: OutputTestVerdict;
   displayStatusString: string;
   children: React.ReactNode;
 }

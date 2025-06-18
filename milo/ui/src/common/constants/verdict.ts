@@ -74,6 +74,19 @@ export const WEB_TEST_STATUS_DISPLAY_MAP = Object.freeze({
   [WebTest_Status.TIMEOUT]: 'timed out',
 });
 
+export const VERDICT_STATUS_COLOR_MAP = Object.freeze({
+  [TestVerdict_Status.FAILED]: 'var(--failure-color)',
+  [TestVerdict_Status.EXECUTION_ERRORED]: 'var(--critical-failure-color)',
+  [TestVerdict_Status.PRECLUDED]: 'var(--precluded-color)',
+  [TestVerdict_Status.FLAKY]: 'var(--warning-color)',
+  [TestVerdict_Status.PASSED]: 'var(--success-color)',
+  [TestVerdict_Status.SKIPPED]: 'var(--skipped-color)',
+});
+
+export const VERDICT_STATUS_OVERRIDE_COLOR_MAP = Object.freeze({
+  [TestVerdict_StatusOverride.EXONERATED]: 'var(--exonerated-color)',
+});
+
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
 export const ORDERED_VARIANT_DEF_KEYS = Object.freeze([

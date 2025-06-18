@@ -21,7 +21,7 @@ import { TagsEntry } from '@/common/components/tags_entry';
 import {
   TEST_STATUS_V2_CLASS_MAP,
   testResultStatusLabel,
-} from '@/common/constants/test';
+} from '@/common/constants/verdict';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';

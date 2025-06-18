@@ -20,8 +20,8 @@ import {
   useState,
 } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { OutputTestVerdict } from '@/test_verdict/types';
 
 interface TestVerdictContext {
   readonly invocationID: string;

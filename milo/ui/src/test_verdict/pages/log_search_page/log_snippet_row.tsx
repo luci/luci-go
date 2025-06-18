@@ -20,11 +20,11 @@ import { useParams } from 'react-router';
 import { Timestamp } from '@/common/components/timestamp';
 import { parseArtifactName } from '@/common/services/resultdb';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { OutputArtifactMatchingContent } from '@/common/types/verdict';
 import { ArtifactMatchingContent_Match } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { testStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { ResultStatusIcon } from '@/test_verdict/components/result_status_icon';
-import { OutputArtifactMatchingContent } from '@/test_verdict/types';
 
 const Container = styled(Box)`
   display: flex;
