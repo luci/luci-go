@@ -215,23 +215,19 @@ export function TestInvestigatePage() {
             invocation={invocation}
             testVariant={testVariant}
           />
-          <Box
-            sx={{ position: 'relative', height: '100vh', overflowY: 'auto' }}
-          >
-            <Box component="main" sx={{ height: '100%' }}>
-              <Box
-                sx={{
-                  padding: { xs: 1, sm: 2 },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: { xs: '24px', md: '36px' },
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <TestInfo />
-                <TestDetails />
-              </Box>
+          <Box component="main" sx={{ height: '100%' }}>
+            <Box
+              sx={{
+                padding: { xs: 1, sm: 2 },
+                display: 'flex',
+                flexDirection: 'column',
+                gap: { xs: '24px', md: '36px' },
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              <TestInfo />
+              <TestDetails />
             </Box>
             <TestNavigationDrawer />
           </Box>
