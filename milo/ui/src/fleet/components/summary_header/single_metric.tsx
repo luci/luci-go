@@ -56,7 +56,19 @@ export function SingleMetric({
   };
 
   const content = (
-    <>
+    <div
+      css={{
+        marginRight: 'auto',
+        padding: 8,
+        display: 'flex',
+        flexDirection: 'column',
+        textAlign: 'left',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        minHeight: '90px', // Prevent layout shift when loading data.
+        color: theme.palette.text.primary,
+      }}
+    >
       <Typography variant="body2">{name}</Typography>
       <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {Icon && Icon}
@@ -77,36 +89,37 @@ export function SingleMetric({
         )}
       </div>
       {renderPercent()}
-    </>
+    </div>
   );
 
   const isClickable = handleClick || filterUrl;
-  const extraStyles = isClickable ? {} : { cursor: 'default' };
 
   return (
-    <Button
-      variant="text"
-      sx={{
+    <div
+      css={{
         marginRight: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        textAlign: 'left',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-start',
-        minHeight: '90px', // Prevent layout shift when loading data.
-        color: theme.palette.text.primary,
-        ...extraStyles,
-      }}
-      onClick={() => {
-        if (handleClick) {
-          handleClick();
-        }
-        if (filterUrl) {
-          navigate(filterUrl);
-        }
       }}
     >
-      {content}
-    </Button>
+      {isClickable ? (
+        <Button
+          variant="text"
+          css={{
+            padding: 0,
+          }}
+          onClick={() => {
+            if (handleClick) {
+              handleClick();
+            }
+            if (filterUrl) {
+              navigate(filterUrl);
+            }
+          }}
+        >
+          {content}
+        </Button>
+      ) : (
+        content
+      )}
+    </div>
   );
 }

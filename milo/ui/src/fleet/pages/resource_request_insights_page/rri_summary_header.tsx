@@ -17,8 +17,9 @@ import { useQuery } from '@tanstack/react-query';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { useRriFilters } from './use_rri_filters';
+import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
 
 export function RriSummaryHeader() {
   const client = useFleetConsoleClient();
@@ -37,10 +38,11 @@ export function RriSummaryHeader() {
    * @returns will return URL query part with filters and existing parameters, like sorting
    */
   // TODO: b/421989100 - share this code with other main metrics panel code.
-  const addFilter = (filterName: string, filterValue: string[]) => () => {
-    const newFilters = { ...filterData, [filterName]: filterValue };
-    setFilters(newFilters);
-  };
+  const addFilter =
+    <T extends RriFilterKey>(filterName: T, filterValue: RriFilters[T]) =>
+    () => {
+      setFilters({ ...filterData, [filterName]: filterValue });
+    };
 
   if (isError) {
     return <Typography variant="h4">Error</Typography>; // TODO: b/397421370 improve this
@@ -63,14 +65,18 @@ export function RriSummaryHeader() {
             value={data?.inProgress}
             total={data?.total}
             loading={isLoading}
-            handleClick={addFilter('fulfillment_status', ['IN_PROGRESS'])}
+            handleClick={addFilter('fulfillment_status', [
+              ResourceRequest_Status[ResourceRequest_Status.IN_PROGRESS],
+            ])}
           />
           <SingleMetric
             name="Completed"
             value={data?.completed}
             total={data?.total}
             loading={isLoading}
-            handleClick={addFilter('fulfillment_status', ['COMPLETED'])}
+            handleClick={addFilter('fulfillment_status', [
+              ResourceRequest_Status[ResourceRequest_Status.COMPLETE],
+            ])}
           />
           <SingleMetric
             name="Material Sourcing"
