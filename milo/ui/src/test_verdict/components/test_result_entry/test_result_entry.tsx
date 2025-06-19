@@ -23,6 +23,7 @@ import {
   testResultStatusLabel,
 } from '@/common/constants/verdict';
 import { parseInvId } from '@/common/tools/invocation_utils';
+import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { parseProtoDuration } from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import {
@@ -34,7 +35,6 @@ import {
   TestResult,
   TestResult_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactsEntry } from './artifacts_entry';
 import { FailureReasonEntry } from './failure_reason_entry';

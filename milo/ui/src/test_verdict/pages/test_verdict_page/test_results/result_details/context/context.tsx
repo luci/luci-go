@@ -16,10 +16,10 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { createContext, ReactNode, useEffect, useMemo } from 'react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 interface ResultDataContext {
   readonly result: TestResult;

@@ -14,13 +14,13 @@
 
 import { useState } from 'react';
 
+import { TestResultSummary } from '@/common/components/test_result_summary';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
 
 export interface SummaryHtmlEntryProps {
   readonly testResult: TestResult;

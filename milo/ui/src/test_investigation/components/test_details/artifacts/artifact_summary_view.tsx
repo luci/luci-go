@@ -15,10 +15,10 @@
 import { Box, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
+import { TestResultSummary } from '@/common/components/test_result_summary';
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestResultSummary } from '@/test_verdict/components/test_result_summary';
 
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
 import { TextDiffArtifactView } from './text_diff_artifact_view';

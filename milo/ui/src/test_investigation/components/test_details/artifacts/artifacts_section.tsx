@@ -26,10 +26,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
-import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactContentView } from './artifact_content_view';
 import { ArtifactSummaryView } from './artifact_summary_view';

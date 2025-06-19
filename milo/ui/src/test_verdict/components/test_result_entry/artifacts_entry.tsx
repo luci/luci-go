@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { getInvURLPath } from '@/common/tools/url_utils';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
 import {
@@ -27,7 +28,6 @@ import {
 } from '@/generic_libs/components/expandable_entry';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { ArtifactLink } from '@/test_verdict/components/artifact_link';
-import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 export interface ArtifactsEntryProps {
   readonly testResultName: string;
