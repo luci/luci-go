@@ -32,6 +32,7 @@ import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries
 import { parseTestResultName } from '@/test_verdict/tools/utils';
 
 import { ArtifactContentView } from './artifact_content_view';
+import { ArtifactSummaryView } from './artifact_summary_view';
 import { ArtifactTreeView } from './artifact_tree_view';
 import { ArtifactTreeNodeData } from './types';
 
@@ -67,6 +68,7 @@ export function ArtifactsSection({
     ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
+    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes to refresh the signed links.
     select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
 
@@ -96,6 +98,7 @@ export function ArtifactsSection({
     ),
     enabled: !!invocationName,
     staleTime: Infinity,
+    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes to refresh the signed links.
     select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
 
@@ -125,6 +128,12 @@ export function ArtifactsSection({
 
   const isLoadingArtifactContent =
     artifactContentQueryEnabled && rawIsLoadingArtifactContent;
+
+  const textDiffArtifact = useMemo(() => {
+    return (testResultArtifactsData || []).find(
+      (art) => art.artifactId === 'text_diff', // Updated artifactId
+    );
+  }, [testResultArtifactsData]);
 
   const handleArtifactNodeSelect = (node: ArtifactTreeNodeData | null) => {
     setSelectedArtifactNode(node);
@@ -221,19 +230,29 @@ export function ArtifactsSection({
               </PanelResizeHandle>
               <Panel defaultSize={70} minSize={30}>
                 <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
-                  {selectedArtifactNode && (
-                    <ArtifactContentView
-                      selectedArtifactForDisplay={selectedArtifactNode}
-                      currentResult={currentResult}
-                      artifactContentData={artifactContentData}
-                      isLoadingArtifactContent={isLoadingArtifactContent}
-                      invocationHasArtifacts={
-                        (invocationScopeArtifactsData &&
-                          invocationScopeArtifactsData.length > 0) ||
-                        false
-                      }
-                    />
-                  )}
+                  {selectedArtifactNode &&
+                    (selectedArtifactNode.isSummary && currentResult ? (
+                      <ArtifactSummaryView
+                        currentResult={currentResult}
+                        textDiffArtifact={textDiffArtifact}
+                      />
+                    ) : selectedArtifactNode.artifact ? (
+                      <ArtifactContentView
+                        selectedArtifactForDisplay={selectedArtifactNode}
+                        currentResult={currentResult}
+                        artifactContentData={artifactContentData}
+                        isLoadingArtifactContent={isLoadingArtifactContent}
+                        invocationHasArtifacts={
+                          (invocationScopeArtifactsData &&
+                            invocationScopeArtifactsData.length > 0) ||
+                          false
+                        }
+                      />
+                    ) : (
+                      <Typography color="text.secondary">
+                        Select an artifact to view.
+                      </Typography>
+                    ))}
                 </Box>
               </Panel>
             </PanelGroup>

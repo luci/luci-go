@@ -19,7 +19,6 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
-  Typography,
 } from '@mui/material';
 
 import {
@@ -145,18 +144,6 @@ export function ClusteringControls({
           ))}
         </Select>
       </FormControl>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{
-          flexGrow: 1,
-          minWidth: '200px',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        {currentCluster.originalFailureReason}
-      </Typography>
     </Box>
   );
 }
