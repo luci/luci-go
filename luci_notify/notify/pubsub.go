@@ -318,27 +318,6 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 			logging.Warningf(c, "retrieve git history timeout, maybe related to b/327294463 %v", err)
 			return nil
 		}
-		if status.Code(err) == codes.NotFound {
-			// Temporary fix for b/397883720: If gitilesHistory returns NotFound, reset the
-			// builder's `revision`. This handles cases where the builder's repository
-			// configuration changed, making the stored revision invalid for the new repository.
-			// This assumes the NotFound error is specifically due to this repository change
-			// (as observed currently). Remove this check once the underlying bug is fixed
-			// to avoid masking other Gitiles NotFound errors.
-			logging.Warningf(c, "retrieve git history NotFound, related to b/397883720 %v", err)
-			if err := datastore.RunInTransaction(c, func(c context.Context) error {
-				builder = config.Builder{
-					ProjectKey: datastore.KeyForObj(c, project),
-					ID:         builderID,
-				}
-				updatedBuilder := builder
-				updatedBuilder.Revision = ""
-				return putWithRetry(c, &updatedBuilder)
-			}, nil); err != nil {
-				return errors.Fmt("reset builder revision: %w", err)
-			}
-			return nil
-		}
 		return errors.Fmt("failed to retrieve git history for input commit: %w", err)
 	}
 	if len(commits) == 0 {
