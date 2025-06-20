@@ -36,7 +36,7 @@ export function TestInfoHeader() {
   const commitLink = getCommitGitilesUrlFromInvocation(invocation);
 
   return (
-    <Box sx={{ mb: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       <TestInfoBreadcrumbs
         invocation={invocation.name}
         testIdStructured={testVariant?.testIdStructured || undefined}

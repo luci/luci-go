@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportIcon from '@mui/icons-material/BugReport';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
@@ -168,109 +167,118 @@ export function OverviewStatusSection() {
   return (
     <>
       <Box>
-        <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
           <Typography
             component="div"
-            sx={{ mb: 0.5, fontSize: '20px', fontWeight: '400' }}
+            sx={{ fontSize: '20px', fontWeight: '400' }}
           >
             Overview
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Test Result
           </Typography>
-        </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <VerdictStatusIcon
-            statusV2={testVariant.statusV2}
-            statusOverride={testVariant.statusOverride}
-          />
-          <Typography
-            variant="body1"
-            sx={{ fontWeight: '400', fontSize: '24px' }}
-          >
-            {displayStatusString}
-          </Typography>
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            flexGrow: 1,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Related bug(s)
-          </Typography>
-          {associatedBugs && associatedBugs.length > 0 ? (
-            associatedBugs.map((bug, index) => (
-              <React.Fragment key={bug.id}>
-                {index > 0 && <Typography component="span">, </Typography>}
-                <HtmlTooltip
-                  title={
-                    project && (
-                      <BugCard
-                        project={project}
-                        bugId={bug.id}
-                        // TODO: Add cluster id here when we have it on the page.
-                      />
-                    )
-                  }
-                >
-                  <Link
-                    href={bug.url || `https://${bug.system}.com/${bug.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ display: 'inline-flex', alignItems: 'center' }}
-                  >
-                    <BugReportIcon
-                      sx={{
-                        fontSize: 18,
-                        mr: 0.25,
-                        color: 'var(--gm3-color-primary)',
-                      }}
-                    />
-                    {bug.linkText || `${bug.system}/${bug.id}`}
-                  </Link>
-                </HtmlTooltip>
-              </React.Fragment>
-            ))
-          ) : (
-            <Typography component="span" color="text.disabled">
-              {NO_ASSOCIATED_BUGS_TEXT}
-            </Typography>
-          )}
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            flexGrow: 1,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Culprit Searching
-          </Typography>
-          <Typography>{bisectionDisplayInfo.textElement}</Typography>
-          {isLoadingBisectionAnalysis && <CircularProgress />}
-          {bisectionDisplayInfo.link && (
-            <Link
-              href={bisectionDisplayInfo.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="caption"
-              sx={{ ml: 0.5 }}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <VerdictStatusIcon
+              statusV2={testVariant.statusV2}
+              statusOverride={testVariant.statusOverride}
+            />
+            <Typography
+              variant="body1"
+              sx={{ fontWeight: '400', fontSize: '24px' }}
             >
-              (View Bisection)
-            </Link>
-          )}
+              {displayStatusString}
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Related bug(s)
+            </Typography>
+            {associatedBugs && associatedBugs.length > 0 ? (
+              associatedBugs.map((bug, index) => (
+                <React.Fragment key={bug.id}>
+                  {index > 0 && <Typography component="span">, </Typography>}
+                  <HtmlTooltip
+                    title={
+                      project && (
+                        <BugCard
+                          project={project}
+                          bugId={bug.id}
+                          // TODO: Add cluster id here when we have it on the page.
+                        />
+                      )
+                    }
+                  >
+                    <Box
+                      sx={{
+                        padding: '2px 8px 2px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: '#E8F0FE',
+                      }}
+                    >
+                      <Link
+                        href={bug.url || `https://${bug.system}.com/${bug.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="caption"
+                        color="#3C4043"
+                        sx={{ textDecoration: 'none' }}
+                      >
+                        {bug.linkText || `${bug.system}/${bug.id}`}
+                      </Link>
+                    </Box>
+                  </HtmlTooltip>
+                </React.Fragment>
+              ))
+            ) : (
+              <Typography component="span" color="text.disabled">
+                {NO_ASSOCIATED_BUGS_TEXT}
+              </Typography>
+            )}
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Culprit Searching
+            </Typography>
+            <Typography>{bisectionDisplayInfo.textElement}</Typography>
+            {isLoadingBisectionAnalysis && <CircularProgress />}
+            {bisectionDisplayInfo.link && (
+              <Link
+                href={bisectionDisplayInfo.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="caption"
+                sx={{ ml: 0.5 }}
+              >
+                (View Bisection)
+              </Link>
+            )}
+          </Box>
         </Box>
       </Box>
     </>

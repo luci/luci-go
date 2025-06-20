@@ -27,8 +27,7 @@ export function TestInfo() {
         sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
-          gap: '32px',
-          mb: 2,
+          gap: 4,
         }}
       >
         <OverviewSection />

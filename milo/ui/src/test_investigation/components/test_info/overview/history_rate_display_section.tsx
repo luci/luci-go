@@ -98,11 +98,7 @@ const FailureRate = memo(function FailureRateView({
             }}
           />
         )}
-        <Typography
-          component="span"
-          variant="body2"
-          sx={{ color: style.textColor, fontWeight: 'medium' }}
-        >
+        <Typography component="span" variant="caption">
           {descriptiveText}
         </Typography>
       </Box>
@@ -332,7 +328,7 @@ export function HistoryRateDisplaySection({
 
   return (
     <Box>
-      <Typography variant="body2" gutterBottom color="textSecondary">
+      <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
         Postsubmit history
       </Typography>
 

@@ -53,7 +53,7 @@ export function RecommendationsSection() {
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
-          p: 2,
+          p: 3,
           height: '100%',
           boxSizing: 'border-box',
         }}
@@ -63,12 +63,13 @@ export function RecommendationsSection() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            gap: 0.5,
           }}
         >
           <Typography variant="h6" component="div">
             Suggested next steps
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="body1" color="text.secondary">
             Last update: {lastUpdateTime}
           </Typography>
         </Box>
