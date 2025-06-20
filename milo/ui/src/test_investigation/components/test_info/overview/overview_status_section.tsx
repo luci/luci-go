@@ -17,6 +17,8 @@ import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 
+import { BugCard } from '@/common/components/bug_card';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useAnalysesClient as useLuciBisectionClient } from '@/common/hooks/prpc_clients';
 import {
@@ -209,23 +211,35 @@ export function OverviewStatusSection() {
           </Typography>
           {associatedBugs && associatedBugs.length > 0 ? (
             associatedBugs.map((bug, index) => (
-              <React.Fragment key={`${bug.system}-${bug.id}`}>
+              <React.Fragment key={bug.id}>
                 {index > 0 && <Typography component="span">, </Typography>}
-                <Link
-                  href={bug.url || `https://${bug.system}.com/${bug.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{ display: 'inline-flex', alignItems: 'center' }}
+                <HtmlTooltip
+                  title={
+                    project && (
+                      <BugCard
+                        project={project}
+                        bugId={bug.id}
+                        // TODO: Add cluster id here when we have it on the page.
+                      />
+                    )
+                  }
                 >
-                  <BugReportIcon
-                    sx={{
-                      fontSize: 18,
-                      mr: 0.25,
-                      color: 'var(--gm3-color-primary)',
-                    }}
-                  />
-                  {bug.linkText || `${bug.system}/${bug.id}`}
-                </Link>
+                  <Link
+                    href={bug.url || `https://${bug.system}.com/${bug.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ display: 'inline-flex', alignItems: 'center' }}
+                  >
+                    <BugReportIcon
+                      sx={{
+                        fontSize: 18,
+                        mr: 0.25,
+                        color: 'var(--gm3-color-primary)',
+                      }}
+                    />
+                    {bug.linkText || `${bug.system}/${bug.id}`}
+                  </Link>
+                </HtmlTooltip>
               </React.Fragment>
             ))
           ) : (
