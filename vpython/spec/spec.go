@@ -53,7 +53,7 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 		// If this package has already been included, assert version consistency.
 		if v, ok := packageVersions[w.Name]; ok {
 			if v != w.Version {
-				return errors.Reason("multiple versions for package %q: %q != %q", w.Name, w.Version, v).Err()
+				return errors.Fmt("multiple versions for package %q: %q != %q", w.Name, w.Version, v)
 			}
 
 			// This package has already been included, so we can ignore it.

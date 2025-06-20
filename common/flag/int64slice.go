@@ -38,7 +38,7 @@ func (f int64SliceFlag) String() string {
 func (f *int64SliceFlag) Set(val string) error {
 	i, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		return errors.Reason("values must be 64-bit integers").Err()
+		return errors.New("values must be 64-bit integers")
 	}
 	*f = append(*f, i)
 	return nil

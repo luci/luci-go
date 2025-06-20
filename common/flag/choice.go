@@ -43,7 +43,7 @@ func (f Choice) String() string {
 // Set implements the flag.Value interface.
 func (f Choice) Set(s string) error {
 	if f.output == nil {
-		return errors.Reason("Choice pointer is nil").Err()
+		return errors.New("Choice pointer is nil")
 	}
 	for _, choice := range f.choices {
 		if s == choice {
@@ -52,5 +52,5 @@ func (f Choice) Set(s string) error {
 		}
 	}
 	valid := strings.Join(f.choices, ", ")
-	return errors.Reason("%s is not a valid choice; please select one of: %s", s, valid).Err()
+	return errors.Fmt("%s is not a valid choice; please select one of: %s", s, valid)
 }

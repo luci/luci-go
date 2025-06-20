@@ -52,14 +52,14 @@ func (rc *gaeBlobCache) Get(ctx context.Context, key string) (blob []byte, err e
 	case 1:
 		item := res.Item[0]
 		if string(item.Key) != key {
-			return nil, errors.Reason("the API unexpectedly returned wrong item").Err()
+			return nil, errors.New("the API unexpectedly returned wrong item")
 		}
 		if item.GetIsDeleteLocked() {
 			return nil, caching.ErrCacheMiss
 		}
 		return item.Value, nil
 	default:
-		return nil, errors.Reason("the API unexpectedly returned %d items", len(res.Item)).Err()
+		return nil, errors.Fmt("the API unexpectedly returned %d items", len(res.Item))
 	}
 }
 
@@ -104,9 +104,9 @@ func (rc *gaeBlobCache) Set(ctx context.Context, key string, value []byte, exp t
 
 	switch {
 	case len(res.SetStatus) != 1:
-		return errors.Reason("the API unexpectedly returned wrong number of statuses %d", len(res.SetStatus)).Err()
+		return errors.Fmt("the API unexpectedly returned wrong number of statuses %d", len(res.SetStatus))
 	case res.SetStatus[0] != memcache.MemcacheSetResponse_STORED:
-		return errors.Reason("failed to store the item: %s", res.SetStatus[0]).Err()
+		return errors.Fmt("failed to store the item: %s", res.SetStatus[0])
 	default:
 		return nil
 	}

@@ -43,7 +43,7 @@ func (m *jsonMap) String() string {
 
 func (m *jsonMap) Set(s string) error {
 	if m == nil {
-		return errors.Reason("JSONMap pointer is nil").Err()
+		return errors.New("JSONMap pointer is nil")
 	}
 	d := []byte(s)
 	return json.Unmarshal(d, m)

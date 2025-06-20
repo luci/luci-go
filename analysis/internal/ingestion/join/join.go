@@ -215,7 +215,7 @@ func JoinBuildResult(ctx context.Context, buildID int64, buildProject string, is
 func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[int64]*ctlpb.PresubmitResult, presubmitProject string) error {
 	for id, result := range presubmitResultByBuildID {
 		if result == nil {
-			return errors.Reason("presubmit result for build %q must be specified", id).Err()
+			return errors.Fmt("presubmit result for build %q must be specified", id)
 		}
 	}
 
@@ -252,7 +252,7 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[int64
 			// IsPresubmit should be populated and valid if either the build result
 			// or presubmit result has been populated.
 			if (entry.BuildResult != nil || entry.PresubmitResult != nil) && !entry.IsPresubmit {
-				return errors.Reason("attempt to save presubmit result on build %d not marked as presubmit", buildID).Err()
+				return errors.Fmt("attempt to save presubmit result on build %d not marked as presubmit", buildID)
 			}
 			// HasBuildBucketBuild should be populated if InvocationResult, PresubmitResult or BuildResult has been populated.
 			if (entry.InvocationResult != nil || entry.PresubmitResult != nil || entry.BuildResult != nil) && !entry.HasBuildBucketBuild {

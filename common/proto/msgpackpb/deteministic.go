@@ -52,7 +52,7 @@ func sortedKeys(mapValue reflect.Value) (keys []reflect.Value, arrayLike bool, e
 			return !a && b
 		}
 	default:
-		err = errors.Reason("cannot sort keys of type %s", keys[0].Type()).Err()
+		err = errors.Fmt("cannot sort keys of type %s", keys[0].Type())
 		return
 	}
 

@@ -54,7 +54,7 @@ func (l *GlobalConfigLoc) UnmarshalText(text []byte) error {
 
 	matches := globalConfigLocRegex.FindStringSubmatch(string(text))
 	if len(matches) == 0 {
-		return errors.Reason(`does not match regex "%s"`, globalConfigLocRegex).Err()
+		return errors.Fmt(`does not match regex "%s"`, globalConfigLocRegex)
 	}
 
 	l.GitilesLocation = &cfgcommonpb.GitilesLocation{

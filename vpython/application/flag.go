@@ -97,7 +97,7 @@ func extractFlagsForSet(guardPrefix string, args []string, fs *flag.FlagSet) (fs
 		if !ok {
 			// Unknown flag.
 			if strings.HasPrefix(arg, guardPrefix) {
-				return 0, errors.Reason("unknown flag: %s", arg).Err()
+				return 0, errors.Fmt("unknown flag: %s", arg)
 			}
 			return 0, nil
 		}

@@ -233,11 +233,11 @@ func init() {
 func CancelBackendTask(ctx context.Context, task *taskdefs.CancelBackendTask) error {
 	switch {
 	case task.Project == "":
-		return errors.Reason("project is required").Err()
+		return errors.New("project is required")
 	case task.TaskId == "":
-		return errors.Reason("task_id is required").Err()
+		return errors.New("task_id is required")
 	case task.Target == "":
-		return errors.Reason("task target is required").Err()
+		return errors.New("task target is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
@@ -249,9 +249,9 @@ func CancelBackendTask(ctx context.Context, task *taskdefs.CancelBackendTask) er
 func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTaskGo) error {
 	switch {
 	case task.GetHostname() == "":
-		return errors.Reason("hostname is required").Err()
+		return errors.New("hostname is required")
 	case task.TaskId == "":
-		return errors.Reason("task_id is required").Err()
+		return errors.New("task_id is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
@@ -262,7 +262,7 @@ func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTaskGo
 // from the given build.
 func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingBuildTask) error {
 	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
+		return errors.New("build_id is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("create-swarming-task-%d", task.BuildId),
@@ -278,7 +278,7 @@ func CreateBackendBuildTask(ctx context.Context, task *taskdefs.CreateBackendBui
 
 func createBackendBuildTaskWithDedupKey(ctx context.Context, task *taskdefs.CreateBackendBuildTask, dedupKey string) error {
 	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
+		return errors.New("build_id is required")
 	}
 
 	return tq.AddTask(ctx, &tq.Task{
@@ -293,9 +293,9 @@ func createBackendBuildTaskWithDedupKey(ctx context.Context, task *taskdefs.Crea
 func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuildTask, delay time.Duration) error {
 	switch {
 	case task.GetBuildId() == 0:
-		return errors.Reason("build_id is required").Err()
+		return errors.New("build_id is required")
 	case task.GetGeneration() == 0:
-		return errors.Reason("generation should be larger than 0").Err()
+		return errors.New("generation should be larger than 0")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            fmt.Sprintf("sync-swarming-task-%d", task.BuildId),
@@ -308,7 +308,7 @@ func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuild
 // ExportBigQuery enqueues a task queue task to export the given build to Bq.
 func ExportBigQuery(ctx context.Context, buildID int64) error {
 	if buildID <= 0 {
-		return errors.Reason("build_id is invalid").Err()
+		return errors.New("build_id is invalid")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.ExportBigQueryGo{BuildId: buildID},
@@ -319,7 +319,7 @@ func ExportBigQuery(ctx context.Context, buildID int64) error {
 // the given build in ResultDB.
 func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDBGo) error {
 	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
+		return errors.New("build_id is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
@@ -331,9 +331,9 @@ func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDBGo) er
 func SyncWithBackend(ctx context.Context, backend, project string) error {
 	switch {
 	case backend == "":
-		return errors.Reason("backend is required").Err()
+		return errors.New("backend is required")
 	case project == "":
-		return errors.Reason("project is required").Err()
+		return errors.New("project is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.SyncBuildsWithBackendTasks{
@@ -346,7 +346,7 @@ func SyncWithBackend(ctx context.Context, backend, project string) error {
 // CheckBuildLiveness enqueues a task queue task to check a build's liveness.
 func CheckBuildLiveness(ctx context.Context, buildID int64, heartbeatTimeout uint32, delay time.Duration) error {
 	if buildID <= 0 {
-		return errors.Reason("build_id is invalid").Err()
+		return errors.New("build_id is invalid")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.CheckBuildLiveness{
@@ -361,9 +361,9 @@ func CheckBuildLiveness(ctx context.Context, buildID int64, heartbeatTimeout uin
 func CreatePushPendingBuildTask(ctx context.Context, task *taskdefs.PushPendingBuildTask) error {
 	switch {
 	case task.GetBuildId() == 0:
-		return errors.Reason("build_id is required").Err()
+		return errors.New("build_id is required")
 	case task.GetBuilderId() == nil:
-		return errors.Reason("builder_id is required").Err()
+		return errors.New("builder_id is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("push-pending-build-%d", task.BuildId),
@@ -374,7 +374,7 @@ func CreatePushPendingBuildTask(ctx context.Context, task *taskdefs.PushPendingB
 // CreatePopPendingBuildTask enqueues a task queue task to pop a pending build.
 func CreatePopPendingBuildTask(ctx context.Context, task *taskdefs.PopPendingBuildTask, dedupKey string) error {
 	if task.GetBuilderId() == nil {
-		return errors.Reason("builder_id is required").Err()
+		return errors.New("builder_id is required")
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            fmt.Sprintf("pop-pending-build-%d", task.BuildId),
@@ -387,7 +387,7 @@ func CreatePopPendingBuildTask(ctx context.Context, task *taskdefs.PopPendingBui
 func createBatchCreateBackendBuildTasks(ctx context.Context, task *taskdefs.BatchCreateBackendBuildTasks, dedupKey string) error {
 	for _, req := range task.GetRequests() {
 		if req.BuildId == 0 {
-			return errors.Reason("build_id is required").Err()
+			return errors.New("build_id is required")
 		}
 	}
 

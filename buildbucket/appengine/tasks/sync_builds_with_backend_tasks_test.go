@@ -62,7 +62,7 @@ func fakeFetchTasksResponse(ctx context.Context, taskReq *pb.FetchTasksRequest, 
 		updateID := newUpdateID
 		switch {
 		case strings.HasSuffix(tID.Id, "all_fail"):
-			return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
+			return nil, errors.New("idk, wanted to fail i guess :/")
 		case strings.HasSuffix(tID.Id, "fail_me"):
 			responses = append(responses, &pb.FetchTasksResponse_Response{
 				Response: &pb.FetchTasksResponse_Response_Error{

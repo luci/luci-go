@@ -37,7 +37,7 @@ func (c *Flags) Init(f *flag.FlagSet) {
 func (c *Flags) Parse() error {
 	if c.Instance == "" {
 		if c.Addr == AddrProd {
-			return errors.Reason("CAS instance or local CAS address must be specified").Err()
+			return errors.New("CAS instance or local CAS address must be specified")
 		}
 		// Use local CAS address in this case.
 		return nil
@@ -64,5 +64,5 @@ func parseCASInstance(ins string) (string, error) {
 	if instanceRE.MatchString(ins) {
 		return ins, nil
 	}
-	return "", errors.Reason("invalid CAS instance: %s", ins).Err()
+	return "", errors.Fmt("invalid CAS instance: %s", ins)
 }

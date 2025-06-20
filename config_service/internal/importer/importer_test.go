@@ -1078,7 +1078,7 @@ func buildTarGz(raw map[string]any) ([]byte, error) {
 		case []byte:
 			bodyBytes = body.([]byte)
 		default:
-			return nil, errors.Reason("unsupported type %T for %s", v, name).Err()
+			return nil, errors.Fmt("unsupported type %T for %s", v, name)
 		}
 		hdr.Size = int64(len(bodyBytes))
 		if err := tw.WriteHeader(hdr); err != nil {

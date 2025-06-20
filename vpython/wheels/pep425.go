@@ -294,7 +294,7 @@ func addPEP425CIPDTemplateForTag(expander template.Expander, tag *vpython.PEP425
 	// want to use 32-bit Python wheels.
 	platform := PlatformForPEP425Tag(tag)
 	if platform.String() == "-" {
-		return errors.Reason("failed to infer CIPD platform for tag [%s]", tag).Err()
+		return errors.Fmt("failed to infer CIPD platform for tag [%s]", tag)
 	}
 	expander["platform"] = platform.String()
 

@@ -38,7 +38,7 @@ func (f commaListFlag) String() string {
 // Set implements the flag.Value interface.
 func (f *commaListFlag) Set(s string) error {
 	if f == nil {
-		return errors.Reason("commaListFlag pointer is nil").Err()
+		return errors.New("commaListFlag pointer is nil")
 	}
 	*f = splitCommaList(s)
 	return nil

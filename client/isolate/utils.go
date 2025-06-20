@@ -27,7 +27,7 @@ func must(condition bool, info ...any) {
 	if len(info) == 0 {
 		log.Panic(errors.RenderStack(errors.New("assertion failed")))
 	} else if format, ok := info[0].(string); ok {
-		log.Panic(errors.RenderStack(errors.Reason("assertion failed: "+format, info[1:]...).Err()))
+		log.Panic(errors.RenderStack(errors.Fmt("assertion failed: "+format, info[1:])))
 	}
 }
 

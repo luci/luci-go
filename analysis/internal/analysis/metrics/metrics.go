@@ -190,7 +190,7 @@ func ByID(id ID) (BaseDefinition, error) {
 			return metric, nil
 		}
 	}
-	return BaseDefinition{}, errors.Reason("no metric with ID %q", id.String()).Err()
+	return BaseDefinition{}, errors.Fmt("no metric with ID %q", id.String())
 }
 
 // MustByID returns the metric with the given ID and panic if no metric with the id exists.

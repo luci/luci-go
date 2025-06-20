@@ -46,7 +46,7 @@ func main() {
 
 	server.Main(nil, nil, func(srv *server.Server) error {
 		if destHost == "" {
-			return errors.Reason("-config-v2-host is required").Err()
+			return errors.New("-config-v2-host is required")
 		}
 
 		client, err := remote.New(srv.Context, remote.Options{

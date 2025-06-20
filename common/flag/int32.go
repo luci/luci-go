@@ -33,7 +33,7 @@ func (f int32Flag) String() string {
 func (f *int32Flag) Set(s string) error {
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return errors.Reason("values must be 32-bit integers").Err()
+		return errors.New("values must be 32-bit integers")
 	}
 	*f = int32Flag(i)
 	return nil

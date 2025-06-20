@@ -93,7 +93,7 @@ func (m *gaememcacheModule) Initialize(ctx context.Context, host module.Host, op
 		return ctx, nil
 	}
 	if opts.Serverless != module.GAE {
-		return nil, errors.Reason("gaememcache can only be used when running on Appengine with `app_engine_apis: true`").Err()
+		return nil, errors.New("gaememcache can only be used when running on Appengine with `app_engine_apis: true`")
 	}
 	return caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
 		return &gaeBlobCache{namespace: fmt.Sprintf("luci.blobcache.%s", namespace)}
