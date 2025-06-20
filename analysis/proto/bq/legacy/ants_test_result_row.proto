@@ -24,17 +24,6 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
 // AntsTestResultRow represents a row in a BigQuery table for an AnTS test result.
 // Next ID: 30.
 message AntsTestResultRow {
-  // Enum that defines the type of the Android build.
-  enum BuildType {
-    BUILD_TYPE_UNSPECIFIED = 0;
-    SUBMITTED = 1;
-    PENDING = 2;
-    EXTERNAL = 3;
-    // For Mainline train build.
-    TRAIN = 4;
-    // For local build.
-    LOCAL = 5;
-  }
 
   // The possible statuses that a TestResult can report.
   enum TestStatus {
@@ -316,4 +305,16 @@ message Test {
   // A list of properties the scheduler uses to differentiate between configurations with the same name.
   // For example 'cluster_id' and 'run_target' for ATP (http://go/consistent-test-identifiers).
   repeated StringPair properties = 2;
+}
+
+// Enum that defines the type of the Android build.
+enum BuildType {
+  BUILD_TYPE_UNSPECIFIED = 0;
+  SUBMITTED = 1;
+  PENDING = 2;
+  EXTERNAL = 3;
+  // For Mainline train build.
+  TRAIN = 4;
+  // For local build.
+  LOCAL = 5;
 }

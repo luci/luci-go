@@ -1,0 +1,86 @@
+
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq.legacy;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
+
+// AntsTestResultRow represents a row in a BigQuery table for an AnTS test artifact.
+// Next ID: 16.
+message AntsArtifactRow {
+  // The type of the build.
+  BuildType build_type = 1;
+
+  // The ID of the build.
+  string build_id = 2;
+
+  // The provider of the build.
+  string build_provider = 3;
+
+  // The branch of the build.
+  string branch = 4;
+
+  // The target of the build.
+  string build_target = 5;
+
+  // The ID of the invocation.
+  string invocation_id = 6;
+
+  // The ID of the work unit.
+  string work_unit_id = 7;
+
+  // The ID of the test result.
+  string test_result_id = 8;
+
+  // Name of the artifact.
+  string name = 9;
+
+  // Size of the artifact in bytes.
+  int64 size = 10;
+
+  string content_type = 11;
+
+  // The time (in epoch time) this object was created
+  int64 creation_time = 12;
+
+  // The type of AnTS artifact type, e.g. “LOGCAT”, “HOST_LOG”. This field is only for AnTS.
+  string artifact_type = 13;
+
+  // The completion time of the invocation that has this test result.
+  // Use to partition the BigQuery table.
+  google.protobuf.Timestamp completion_time = 14;
+
+  // The time when the BigQuery started inserting the row into the BigQuery
+  // table.
+  //
+  // While this is approximately the same as the time the row became visible in the
+  // BigQuery table, it will not match exactly due factors such as:
+  // - BigQuery server processing delay,
+  // - BigQuery server clock drift.
+  // For these reasons, a row with a later insert_time may actually have
+  // been visible before a row with an earlier insert_time.
+  //
+  // If you require timestamping that lines up with table visibility, e.g.
+  // for incremental extracts, you may better off using the APPENDS Table-valued
+  // function that is part of the BigQuery change history feature:
+  // https://cloud.google.com/bigquery/docs/change-history
+  google.protobuf.Timestamp insert_time = 15 [(bqschema.options).default_value = "CURRENT_TIMESTAMP()"];
+}
