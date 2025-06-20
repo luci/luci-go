@@ -18,6 +18,10 @@ import { useMemo } from 'react';
 import { TestResultSummary } from '@/common/components/test_result_summary';
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import {
+  FailureReason_Kind,
+  failureReason_KindToJSON,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
@@ -28,41 +32,77 @@ interface ArtifactSummaryViewProps {
   textDiffArtifact?: Artifact;
 }
 
+function getFailureReasonKindDisplayText(
+  kind?: FailureReason_Kind,
+): string | undefined {
+  if (
+    kind === undefined ||
+    kind === FailureReason_Kind.KIND_UNSPECIFIED ||
+    kind === FailureReason_Kind.ORDINARY
+  ) {
+    return undefined;
+  }
+  const kindStr = failureReason_KindToJSON(kind);
+  if (kindStr === 'KIND_UNSPECIFIED' || kindStr === 'ORDINARY') {
+    return undefined;
+  }
+  return kindStr
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export function ArtifactSummaryView({
   currentResult,
   textDiffArtifact,
 }: ArtifactSummaryViewProps) {
   const failureStatusStyle = useMemo(() => getStatusStyle('failed'), []);
   const neutralStatusStyle = useMemo(() => getStatusStyle('neutral'), []);
+  const failureKindAsMessage = useMemo(
+    () => getFailureReasonKindDisplayText(currentResult.failureReason?.kind),
+    [currentResult.failureReason?.kind],
+  );
 
   return (
     <>
-      {currentResult.failureReason?.primaryErrorMessage && (
+      {currentResult.failureReason && (
         <CollapsibleArtifactSummarySection
           title="Failure Reason"
           helpText="The primary error message for this test failure, as selected by the test uploading code."
         >
-          <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
-            <Box
-              sx={{
-                p: 1,
-                border: `1px solid ${failureStatusStyle.borderColor}`,
-                borderRadius: '4px',
-                backgroundColor: neutralStatusStyle.backgroundColor,
-              }}
-            >
-              <Typography
-                variant="body2"
+          {currentResult.failureReason.primaryErrorMessage ||
+          failureKindAsMessage ? (
+            <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
+              <Box
                 sx={{
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'monospace',
-                  color: neutralStatusStyle.textColor, // Use neutral text color
+                  p: 1,
+                  border: `1px solid ${failureStatusStyle.borderColor}`,
+                  borderRadius: '4px',
+                  backgroundColor: neutralStatusStyle.backgroundColor,
                 }}
               >
-                {currentResult.failureReason.primaryErrorMessage}
-              </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'monospace',
+                    color: neutralStatusStyle.textColor,
+                  }}
+                >
+                  {currentResult.failureReason.primaryErrorMessage ||
+                    failureKindAsMessage}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ pl: 1, pr: 1, pb: 1, fontStyle: 'italic' }}
+            >
+              No primary error message uploaded.
+            </Typography>
+          )}
         </CollapsibleArtifactSummarySection>
       )}
       <CollapsibleArtifactSummarySection

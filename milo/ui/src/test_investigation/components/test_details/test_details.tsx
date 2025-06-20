@@ -16,8 +16,15 @@ import { Box, SelectChangeEvent, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 import {
+  FailureReason_Kind,
+  failureReason_KindToJSON,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
+import {
+  SkippedReason_Kind,
+  skippedReason_KindToJSON,
   TestResult,
   TestResult_Status,
+  testResult_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
@@ -28,6 +35,34 @@ import { ArtifactsSection } from './artifacts/artifacts_section';
 import { ClusteringControls } from './clustering_controls';
 import { TagsSection } from './tags_section';
 import { ClusteredResult } from './types';
+
+interface ClusterGroupData {
+  results: TestResultBundle[];
+  originalFailureReason: string;
+  normalizedReasonKeyPart: string;
+  failureKindKeyPart: FailureReason_Kind;
+  skippedKindKeyPart: SkippedReason_Kind;
+  statusV2KeyPart: TestResult_Status;
+}
+
+function getClusterSortPriority(status: TestResult_Status): number {
+  switch (status) {
+    case TestResult_Status.FAILED:
+      return 1;
+    case TestResult_Status.PASSED:
+      return 2;
+    case TestResult_Status.SKIPPED:
+      return 3;
+    case TestResult_Status.EXECUTION_ERRORED:
+      return 4;
+    case TestResult_Status.PRECLUDED:
+      return 5;
+    case TestResult_Status.STATUS_UNSPECIFIED:
+    default:
+      // Place unspecified or any new/unexpected statuses last.
+      return 6;
+  }
+}
 
 export function TestDetails() {
   const invocation = useInvocation();
@@ -40,40 +75,61 @@ export function TestDetails() {
   const [selectedAttemptIndex, setSelectedAttemptIndex] = useState<number>(0);
 
   useEffect(() => {
-    const failedResultBundles: TestResultBundle[] =
-      testVariant.results?.filter((bundle: TestResultBundle) => {
-        if (!bundle.result) return false;
-        // A result is considered a "failure for clustering" if its statusV2
-        // is FAILED or EXECUTION_ERRORED.
-        return (
-          bundle.result.statusV2 === TestResult_Status.FAILED ||
-          bundle.result.statusV2 === TestResult_Status.EXECUTION_ERRORED
-        );
-      }) || [];
+    const clusters = new Map<string, ClusterGroupData>();
 
-    const clusters = new Map<
-      string,
-      { results: TestResultBundle[]; originalFailureReason?: string }
-    >();
-    failedResultBundles.forEach((bundle: TestResultBundle) => {
+    testVariant.results.forEach((bundle: TestResultBundle) => {
       const reasonMsg = bundle.result?.failureReason?.primaryErrorMessage;
-      const key = normalizeFailureReason(reasonMsg);
+      const failureKind =
+        bundle.result?.failureReason?.kind ||
+        FailureReason_Kind.KIND_UNSPECIFIED;
+      const skippedKind =
+        bundle.result?.skippedReason?.kind ||
+        SkippedReason_Kind.KIND_UNSPECIFIED;
+      const statusV2 =
+        bundle.result?.statusV2 || TestResult_Status.STATUS_UNSPECIFIED;
+
+      const normalizedReason = normalizeFailureReason(reasonMsg);
+      const failureKindStr = failureReason_KindToJSON(failureKind);
+      const skippedKindStr = skippedReason_KindToJSON(skippedKind);
+      const statusV2Str = testResult_StatusToJSON(statusV2);
+
+      const key = `${statusV2Str}|${failureKindStr}|${skippedKindStr}|${normalizedReason}`;
+
       if (!clusters.has(key)) {
-        clusters.set(key, { results: [], originalFailureReason: reasonMsg });
+        clusters.set(key, {
+          results: [],
+          originalFailureReason: reasonMsg || '',
+          normalizedReasonKeyPart: normalizedReason,
+          failureKindKeyPart: failureKind,
+          skippedKindKeyPart: skippedKind,
+          statusV2KeyPart: statusV2,
+        });
       }
       clusters.get(key)!.results.push(bundle);
     });
+
     const newClusteredFailures: ClusteredResult[] = Array.from(
       clusters.entries(),
     ).map(([key, data]) => ({
       clusterKey: key,
       results: data.results,
+      normalizedReasonKeyPart: data.normalizedReasonKeyPart,
+      failureKindKeyPart: data.failureKindKeyPart,
+      skippedKindKeyPart: data.skippedKindKeyPart,
+      statusV2KeyPart: data.statusV2KeyPart,
       originalFailureReason:
         data.originalFailureReason ||
         (key === 'Unknown' || key === 'No failure reason string specified.'
           ? 'No failure reason string specified.'
           : key),
     }));
+
+    // Sort clusters by statusV2 according to the desired order.
+    newClusteredFailures.sort(
+      (a, b) =>
+        getClusterSortPriority(a.statusV2KeyPart) -
+        getClusterSortPriority(b.statusV2KeyPart),
+    );
 
     setClusteredFailures(newClusteredFailures);
     setSelectedClusterIndex(0);
@@ -107,7 +163,7 @@ export function TestDetails() {
     'No failures to cluster based on v2 status (FAILED or EXECUTION_ERRORED).';
 
   return (
-    <Box>
+    <>
       {clusteredFailures.length > 0 && currentCluster ? (
         <ClusteringControls
           clusteredFailures={clusteredFailures}
@@ -116,7 +172,6 @@ export function TestDetails() {
           currentAttempts={currentAttempts}
           selectedAttemptIndex={selectedAttemptIndex}
           onAttemptChange={handleAttemptChange}
-          currentResult={currentResult}
           currentCluster={currentCluster}
         />
       ) : (
@@ -142,6 +197,6 @@ export function TestDetails() {
           />
         )}
       </Box>
-    </Box>
+    </>
   );
 }

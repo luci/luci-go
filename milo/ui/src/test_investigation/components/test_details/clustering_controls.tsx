@@ -14,20 +14,16 @@
 
 import {
   Box,
-  Chip,
   FormControl,
   MenuItem,
   Select,
+  Typography,
   SelectChangeEvent,
 } from '@mui/material';
 
-import {
-  TestResult,
-  TestResult_Status,
-  testResult_StatusToJSON,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
+import { StatusKindChip } from './status_kind_chip';
 import { ClusteredResult } from './types';
 
 interface ClusteringControlsProps {
@@ -37,28 +33,54 @@ interface ClusteringControlsProps {
   currentAttempts: readonly TestResultBundle[];
   selectedAttemptIndex: number;
   onAttemptChange: (event: SelectChangeEvent<number>) => void;
-  currentResult?: TestResult;
   currentCluster?: ClusteredResult;
 }
 
-function getResultStatusV2DisplayText(statusV2?: TestResult_Status): string {
-  if (statusV2 === undefined) return 'N/A';
-  switch (statusV2) {
-    case TestResult_Status.PASSED:
-      return 'Passed';
-    case TestResult_Status.FAILED:
-      return 'Failed';
-    case TestResult_Status.SKIPPED:
-      return 'Skipped';
-    case TestResult_Status.EXECUTION_ERRORED:
-      return 'Execution Error';
-    case TestResult_Status.PRECLUDED:
-      return 'Precluded';
-    case TestResult_Status.STATUS_UNSPECIFIED:
-      return 'Unspecified';
-    default:
-      return testResult_StatusToJSON(statusV2) || 'Unknown';
-  }
+interface ClusterMenuItemContentProps {
+  cluster: ClusteredResult;
+  index: number;
+}
+
+function ClusterMenuItemContent({
+  cluster,
+  index,
+}: ClusterMenuItemContentProps) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+          Cluster {index + 1}
+        </Typography>
+        <StatusKindChip
+          statusV2={cluster.results[0]?.result?.statusV2}
+          failureKindKeyPart={cluster.failureKindKeyPart}
+          skippedKindKeyPart={cluster.skippedKindKeyPart}
+        />
+      </Box>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', textAlign: 'left' }}
+      >
+        {cluster.originalFailureReason && (
+          <>Reason: {cluster.originalFailureReason.substring(0, 140)}</>
+        )}
+        {cluster.originalFailureReason.length > 140 ? '...' : ''}
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', textAlign: 'left' }}
+      >
+        ({cluster.results.length} attempt
+        {cluster.results.length > 1 ? 's' : ''})
+      </Typography>
+    </Box>
+  );
 }
 
 export function ClusteringControls({
@@ -68,7 +90,6 @@ export function ClusteringControls({
   currentAttempts,
   selectedAttemptIndex,
   onAttemptChange,
-  currentResult,
   currentCluster,
 }: ClusteringControlsProps) {
   if (!currentCluster) {
@@ -93,26 +114,26 @@ export function ClusteringControls({
           aria-label="Select Failure Cluster"
           variant="outlined"
           renderValue={(value) => (
-            // Use statusV2 from the first attempt's result in the current cluster
-            <>
-              <Chip
-                label={getResultStatusV2DisplayText(
-                  currentAttempts[0]?.result?.statusV2,
-                )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <StatusKindChip
+                statusV2={currentAttempts[0]?.result?.statusV2}
+                failureKindKeyPart={currentCluster.failureKindKeyPart}
+                skippedKindKeyPart={currentCluster.skippedKindKeyPart}
               />
               {` Cluster ${value + 1} of ${clusteredFailures.length}`}
-            </>
+            </Box>
           )}
           sx={{
             fontSize: '0.875rem',
-            '.MuiSelect-icon': { fontSize: '1.2rem' },
           }}
         >
           {clusteredFailures.map((cluster, index) => (
-            <MenuItem key={cluster.clusterKey + index} value={index}>
-              Cluster {index + 1}: {cluster.clusterKey.substring(0, 50)}
-              {cluster.clusterKey.length > 50 ? '...' : ''} (
-              {cluster.results.length} attempts)
+            <MenuItem
+              key={cluster.clusterKey + index}
+              value={index}
+              sx={{ display: 'block' }}
+            >
+              <ClusterMenuItemContent cluster={cluster} index={index} />
             </MenuItem>
           ))}
         </Select>
@@ -123,17 +144,11 @@ export function ClusteringControls({
           onChange={onAttemptChange}
           aria-label="Select Attempt"
           variant="outlined"
-          renderValue={(value) => (
-            <>
-              <Chip
-                label={getResultStatusV2DisplayText(currentResult?.statusV2)}
-              />
-              {` Attempt ${value + 1} of ${currentAttempts.length}`}
-            </>
-          )}
+          renderValue={(value) =>
+            `Attempt ${value + 1} of ${currentAttempts.length}`
+          }
           sx={{
             fontSize: '0.875rem',
-            '.MuiSelect-icon': { fontSize: '1.2rem' },
           }}
           disabled={currentAttempts.length <= 1}
         >

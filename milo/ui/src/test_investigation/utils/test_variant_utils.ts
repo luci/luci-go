@@ -17,13 +17,13 @@ import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test
 
 export function normalizeFailureReason(message?: string): string {
   if (!message || message.trim() === '') {
-    return 'No failure reason string specified.';
+    return '';
   }
   let normalized = message;
   const clusterRegex =
     /[/+0-9a-zA-Z]{10,}=+|[-0-9a-fA-F\s\t]{16,}|(?:0x)?[0-9a-fA-F]{8,}|[0-9]+/g;
   normalized = normalized.replace(clusterRegex, '?');
-  return normalized.trim() || 'No failure reason string specified.';
+  return normalized.trim() || '';
 }
 
 export function normalizeDrawerFailureReason(message?: string): string {
