@@ -229,7 +229,14 @@ export function ArtifactsSection({
                 </Box>
               </PanelResizeHandle>
               <Panel defaultSize={70} minSize={30}>
-                <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    height: '100%',
+                    overflowY: 'auto',
+                    wordBreak: 'break-all',
+                  }}
+                >
                   {selectedArtifactNode &&
                     (selectedArtifactNode.isSummary && currentResult ? (
                       <ArtifactSummaryView

@@ -100,6 +100,7 @@ export function AnalysisSubsection({
         borderRadius: '8px',
         background: 'var(--grey-50, #F8F9FA)',
         padding: 1,
+        wordBreak: 'break-all',
       }}
     >
       <Typography
