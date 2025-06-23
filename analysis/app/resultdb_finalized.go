@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/server/pubsub"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"go.chromium.org/luci/analysis/internal/services/artifactingester"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 var (
@@ -46,13 +48,13 @@ type handleInvocationMethod func(ctx context.Context, notification *rdbpb.Invoca
 type InvocationFinalizedHandler struct {
 	// The method to use to handle the deserialized invocation finalized
 	// notification. Used to allow the handler to be replaced for testing.
-	handleInvocation handleInvocationMethod
+	joinInvocation handleInvocationMethod
 }
 
 // NewInvocationFinalizedHandler initialises a new InvocationFinalizedHandler.
 func NewInvocationFinalizedHandler() *InvocationFinalizedHandler {
 	return &InvocationFinalizedHandler{
-		handleInvocation: join.JoinInvocation,
+		joinInvocation: join.JoinInvocation,
 	}
 }
 
@@ -63,12 +65,17 @@ func (h *InvocationFinalizedHandler) Handle(ctx context.Context, message pubsub.
 		// Closure for late binding.
 		invocationsFinalizedCounter.Add(ctx, 1, project, status)
 	}()
-
 	project, _ = realms.Split(notification.Realm)
-	processed, err := h.handleInvocation(ctx, notification)
-	if err != nil {
-		return errors.Fmt("processing notification: %w", err)
+	// Schedule artifact ingestion task only for Android root invocation.
+	if notification.IsExportRoot && project == "android" {
+		artifactingester.Schedule(ctx, &taskspb.IngestArtifacts{
+			Notification: notification,
+			PageToken:    "",
+			TaskIndex:    1,
+		})
 	}
+	// Handle join invocation.
+	processed, err := h.joinInvocation(ctx, notification)
 	if err == nil && !processed {
 		err = pubsub.Ignore.Apply(errors.New("ignoring invocation finalized notification"))
 	}

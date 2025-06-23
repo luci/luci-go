@@ -25,24 +25,35 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/proto"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 func TestInvocationFinalizedHandler(t *testing.T) {
 	ftt.Run(`Test InvocationFinalizedHandler`, t, func(t *ftt.Test) {
 		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx, taskScheduler := tq.TestingContext(ctx, nil)
 
 		h := &InvocationFinalizedHandler{}
 
 		t.Run(`Valid message`, func(t *ftt.Test) {
 			called := false
 			var processed bool
-			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
+
+			notification := &resultpb.InvocationFinalizedNotification{
+				Invocation: fmt.Sprintf("invocations/build-%v", 6363636363),
+				Realm:      "invproject:realm",
+			}
+
+			h.joinInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
 				assert.Loosely(t, called, should.BeFalse)
 				assert.Loosely(t, notification, should.Match(&resultpb.InvocationFinalizedNotification{
-					Invocation: "invocations/build-6363636363",
-					Realm:      "invproject:realm",
+					Invocation:   notification.Invocation,
+					Realm:        notification.Realm,
+					IsExportRoot: notification.IsExportRoot,
 				}))
 				called = true
 				return processed, nil
@@ -52,11 +63,6 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 			// so we can leave it unset.
 			message := pubsub.Message{}
 
-			notification := &resultpb.InvocationFinalizedNotification{
-				Invocation: fmt.Sprintf("invocations/build-%v", 6363636363),
-				Realm:      "invproject:realm",
-			}
-
 			t.Run(`Processed`, func(t *ftt.Test) {
 				processed = true
 
@@ -64,6 +70,8 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				assert.That(t, err, should.ErrLike(nil))
 				assert.Loosely(t, invocationsFinalizedCounter.Get(ctx, "invproject", "success"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
+				// No task scheduled.
+				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{}))
 			})
 			t.Run(`Not processed`, func(t *ftt.Test) {
 				processed = false
@@ -72,6 +80,22 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				assert.That(t, err, should.ErrLike("ignoring invocation finalized notification"))
 				assert.Loosely(t, invocationsFinalizedCounter.Get(ctx, "invproject", "ignored"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
+				// No task scheduled.
+				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{}))
+			})
+			t.Run(`android root invocation`, func(t *ftt.Test) {
+				processed = true
+				notification.IsExportRoot = true
+				notification.Realm = "android:test"
+
+				err := h.Handle(ctx, message, notification)
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
+					&taskspb.IngestArtifacts{
+						Notification: notification,
+						TaskIndex:    1,
+					},
+				}))
 			})
 		})
 	})
