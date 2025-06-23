@@ -112,7 +112,7 @@ func output(c *exec.Cmd) any {
 	c.Stdout = &out
 	c.Stderr = &out
 	if err := c.Run(); err != nil {
-		return errors.Annotate(err, out.String()).Err()
+		return errors.Fmt("%s: %w", out.String(), err)
 	}
 	return strings.TrimSpace(out.String())
 }

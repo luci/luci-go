@@ -79,7 +79,7 @@ func scheduleWipeoutRuns(ctx context.Context, tqd *tq.Dispatcher) error {
 		return tqd.AddTask(ctx, task)
 	})
 	if err != nil {
-		panic(errors.Annotate(err, "failed to create dispatcher to schedule wipeout tasks"))
+		panic(errors.Fmt("failed to create dispatcher to schedule wipeout tasks: %w", err))
 	}
 
 	var wg sync.WaitGroup

@@ -95,7 +95,7 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 	ctx, err := loggingutil.UpdateLoggingWithAnalysisID(ctx, analysisID)
 	if err != nil {
 		// not critical, just log
-		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		err := errors.Fmt("failed UpdateLoggingWithAnalysisID %d: %w", analysisID, err)
 		logging.Errorf(ctx, "%v", err)
 	}
 
@@ -491,8 +491,8 @@ func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
 	// this specific Suspect
 	generatedRevertDescription, err := generateRevertDescription(ctx, culpritModel, culprit)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed generating revert description"+
-			" for comparison when searching for created revert").Err()
+		return nil, errors.Fmt("failed generating revert description"+
+			" for comparison when searching for created revert: %w", err)
 	}
 	// Drop the last paragraph for the comparison as Gerrit may have inserted
 	// its own values in the footer

@@ -347,7 +347,7 @@ var cliErrorTag = errtag.Make("CIPD CLI error", true)
 
 // makeCLIError returns a new error tagged with cliErrorTag and BadArgument.
 func makeCLIError(msg string, args ...any) error {
-	return errors.Reason(msg, args...).Tag(cliErrorTag, cipderr.BadArgument).Err()
+	return cliErrorTag.Apply(cipderr.BadArgument.Apply(errors.Fmt(msg, args...)))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

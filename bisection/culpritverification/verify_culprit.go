@@ -74,7 +74,7 @@ func processCulpritVerificationTask(c context.Context, analysisID int64, suspect
 	c, err := loggingutil.UpdateLoggingWithAnalysisID(c, analysisID)
 	if err != nil {
 		// not critical, just log
-		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		err := errors.Fmt("failed UpdateLoggingWithAnalysisID %d: %w", analysisID, err)
 		logging.Errorf(c, "%v", err)
 	}
 

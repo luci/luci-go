@@ -116,7 +116,7 @@ type tjNotifier interface {
 //	})
 //
 //	if err != nil {
-//	  return errors.Annotate(err, "failed to reset Snapshot").Err()
+//	  return errors.Fmt("failed to reset Snapshot: %w", err)
 //	}
 //
 // doSomething(ctx, cl)

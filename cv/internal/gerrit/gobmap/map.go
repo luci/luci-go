@@ -121,7 +121,7 @@ func getAll(ctx context.Context, host, repo string) ([]*mapPart, error) {
 	q := datastore.NewQuery(mapKind).Ancestor(parentKey)
 	mps := []*mapPart{}
 	if err := datastore.GetAll(ctx, q, &mps); err != nil {
-		return nil, errors.Annotate(err, hostRepo).Tag(transient.Tag).Err()
+		return nil, transient.Tag.Apply(errors.Fmt(hostRepo+": %w", err))
 	}
 	return mps, nil
 }

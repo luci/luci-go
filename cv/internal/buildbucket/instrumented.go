@@ -108,7 +108,7 @@ func (i instrumentedClient) Batch(ctx context.Context, in *bbpb.BatchRequest, op
 		case *bbpb.BatchRequest_Request_ScheduleBuild:
 			method = "Batch.ScheduleBuild"
 		default:
-			panic(errors.Reason("unknown request type: %T", req))
+			panic(errors.Fmt("unknown request type: %T", req))
 		}
 	} else {
 		logging.Warningf(ctx, "calling buildbucket.Batch with empty requests")

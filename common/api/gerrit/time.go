@@ -43,7 +43,7 @@ func ParseTime(s string) (time.Time, error) {
 	}
 	t, err := time.Parse(GerritTimestampLayout, s[1:len(s)-1])
 	if err != nil {
-		return time.Time{}, errors.Annotate(err, msg, s).Err()
+		return time.Time{}, errors.Fmt(msg+": %w", s, err)
 	}
 	return t, nil
 }

@@ -87,7 +87,7 @@ type ServerSettings struct {
 // Panics if `settings` is invalid.
 func New(settings ServerSettings) logdog.ServicesServer {
 	if settings.NumQueues <= 0 {
-		panic(errors.Reason("settings.NumQueues <= 0: %d", settings.NumQueues))
+		panic(errors.Fmt("settings.NumQueues <= 0: %d", settings.NumQueues))
 	}
 
 	return &logdog.DecoratedServices{

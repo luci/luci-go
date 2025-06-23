@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/runtime/debugstack"
 )
 
-// Annotator is a builder for annotating errors. Obtain one by calling Annotate
-// on an existing error or using Reason.
+// Annotator is a legacy API.
 //
-// See the example test for Annotate to see how this is meant to be used.
+// Deprecated: If you use `errors.Fmt` or `errors.New` you will not need this
+// type.
 type Annotator struct {
 	inner    error
 	wrappers []ErrorWrapper
@@ -148,30 +148,11 @@ func RenderGoStack(err error, onlyInner bool, excludePkgs ...string) string {
 	return dropFrames(stacktag.Tag.ValueOrDefault(err), excludePkgs...)
 }
 
-// Annotate captures the current stack frame and returns a new annotatable
-// error, attaching the publicly readable `reason` format string to the error.
-// You can add tags to this error with the 'Tag' method, and then obtain a real
-// `error` with the Err() function.
+// Annotate is a legacy API.
 //
-// If this is passed nil, it will return a no-op Annotator whose .Err() function
-// will also return nil.
-//
-// The original error may be recovered by using Wrapped.Unwrap on the
-// returned error.
-//
-// Rendering the derived error with Error() will render a summary version of all
-// the public `reason`s as well as the initial underlying error's Error() text.
-// It is intended that the initial underlying error and all annotated reasons
-// only contain user-visible information, so that the accumulated error may be
-// returned to the user without worrying about leakage.
-//
-// You should assume that end-users (including unauthenticated end users) may
-// see the text in the `reason` field here. To only attach an internal reason,
-// leave the `reason` argument blank and don't pass any additional formatting
-// arguments.
-//
-// The `reason` string is formatted with `args` and may contain Sprintf-style
-// formatting directives.
+// Deprecated: Use `errors.Fmt` or `errors.New` instead. If `err` could be nil,
+// you can use `errors.WrapIf`. Attach tags directly to the error (e.g.
+// `tag.Apply(err)`)
 func Annotate(err error, reason string, args ...any) *Annotator {
 	if err == nil {
 		return nil
@@ -182,13 +163,10 @@ func Annotate(err error, reason string, args ...any) *Annotator {
 	return &Annotator{fmt.Errorf(reason+": %w", args...), nil}
 }
 
-// Reason builds a new Annotator starting with reason. This allows you to use
-// all the formatting directives you would normally use with Annotate, in case
-// your originating error needs tags or an internal reason.
+// Reason is a legacy API.
 //
-//	errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
-//
-// Prefer this form to errors.New(fmt.Sprintf("...")) or fmt.Errorf("...")
+// Deprecated: Use `errors.Fmt` or `errors.New` instead. Attach tags directly
+// to the error (e.g. `tag.Apply(err)`)
 func Reason(reason string, args ...any) *Annotator {
 	return &Annotator{fmt.Errorf(reason, args...), nil}
 }

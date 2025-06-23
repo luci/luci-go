@@ -164,7 +164,7 @@ func (f *Fake) MutateBuild(ctx context.Context, host string, id int64, mutateFn 
 	fakeApp, ok := f.hosts[host]
 	f.hostsMu.RUnlock()
 	if !ok {
-		panic(errors.Reason("unknown host %q", host))
+		panic(errors.Fmt("unknown host %q", host))
 	}
 	return fakeApp.updateBuild(ctx, id, mutateFn)
 }

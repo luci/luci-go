@@ -62,9 +62,9 @@ func UnhandledError(ctx context.Context, err error, format string, args ...any) 
 		return err
 
 	case codes.ResourceExhausted:
-		return errors.Annotate(ErrOutOfQuota, msg).Err()
+		return errors.Fmt(msg+": %w", ErrOutOfQuota)
 	case codes.DeadlineExceeded:
-		return errors.Annotate(ErrGerritDeadlineExceeded, msg).Err()
+		return errors.Fmt(msg+": %w", ErrGerritDeadlineExceeded)
 
 	default:
 		// Assume transient. If this turns out non-transient, then its code must be

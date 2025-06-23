@@ -138,15 +138,15 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 	// Parse struct masks. This also mutates `fm` to include corresponding fields.
 	in, err := structFilter("input.properties", bm.InputProperties)
 	if err != nil {
-		return nil, errors.Annotate(err, `bad "input_properties" struct mask`).Err()
+		return nil, errors.Fmt(`bad "input_properties" struct mask: %w`, err)
 	}
 	out, err := structFilter("output.properties", bm.OutputProperties)
 	if err != nil {
-		return nil, errors.Annotate(err, `bad "output_properties" struct mask`).Err()
+		return nil, errors.Fmt(`bad "output_properties" struct mask: %w`, err)
 	}
 	req, err := structFilter("infra.buildbucket.requested_properties", bm.RequestedProperties)
 	if err != nil {
-		return nil, errors.Annotate(err, `bad "requested_properties" struct mask`).Err()
+		return nil, errors.Fmt(`bad "requested_properties" struct mask: %w`, err)
 	}
 
 	// Construct the overall pb.Build mask.

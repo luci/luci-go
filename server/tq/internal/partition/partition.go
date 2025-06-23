@@ -39,7 +39,7 @@ type SortedPartitions []*Partition
 
 func FromInts(low, high int64) *Partition {
 	if low > high {
-		panic(errors.Reason("Partition %d..%d is invalid", low, high))
+		panic(errors.Fmt("Partition %d..%d is invalid", low, high))
 	}
 	p := &Partition{}
 	p.Low.SetInt64(low)

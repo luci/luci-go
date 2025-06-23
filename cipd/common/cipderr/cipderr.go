@@ -66,8 +66,7 @@ type CodeDetails struct {
 	Details *Details
 }
 
-func (c CodeDetails) GenerateErrorTagValue() (key, value any) { return nil, nil }
-func (c CodeDetails) Apply(err error) error                   { return Tag.ApplyValue(err, c) }
+func (c CodeDetails) Apply(err error) error { return Tag.ApplyValue(err, c) }
 
 var Tag = errtag.Make("cipderr.Code+details", CodeDetails{})
 
@@ -76,10 +75,6 @@ var Tag = errtag.Make("cipderr.Code+details", CodeDetails{})
 func (c Code) WithDetails(d Details) CodeDetails {
 	return CodeDetails{c, &d}
 }
-
-// GenerateErrorTagValue allows Code to be used directly with
-// errors.Annotate(...).Tag.
-func (c Code) GenerateErrorTagValue() (key, value any) { return nil, nil }
 
 // Apply ensures that ToCode(err) will return `c`.
 func (c Code) Apply(err error) error {

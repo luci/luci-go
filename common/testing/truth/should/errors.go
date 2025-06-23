@@ -73,7 +73,7 @@ func ErrLikeString(substring string) comparison.Func[error] {
 //	...
 //	return ..., MultiError{
 //	  ...,
-//	  errors.Annotate(ErrMyTargetErr, "some extra info").Error(),
+//	  errors.Fmt("some extra info: %w", ErrMyTargetErr),
 //	}
 //
 //	...

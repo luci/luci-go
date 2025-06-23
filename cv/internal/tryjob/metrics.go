@@ -30,7 +30,7 @@ import (
 // It is normally used to report metrics using Builder Target.
 func RunWithBuilderMetricsTarget(ctx context.Context, env *common.Env, def *Definition, cb func(context.Context)) {
 	if def.GetBuildbucket() == nil {
-		panic(errors.Reason("only Buildbucket backend is supported. Got %T", def.GetBackend()))
+		panic(errors.Fmt("only Buildbucket backend is supported. Got %T", def.GetBackend()))
 	}
 	builder := def.GetBuildbucket().GetBuilder()
 	cctx := target.Set(ctx, &bbmetrics.BuilderTarget{

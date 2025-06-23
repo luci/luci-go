@@ -2071,7 +2071,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 func mergeErrs(origErrs, errs errors.MultiError, reason string, idxMapper func(int) int) errors.MultiError {
 	for i, err := range errs {
 		if err != nil {
-			origErrs[idxMapper(i)] = errors.Annotate(err, reason).Err()
+			origErrs[idxMapper(i)] = errors.Fmt(reason+": %w", err)
 		}
 	}
 	return origErrs

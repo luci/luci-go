@@ -146,7 +146,7 @@ func (b *Buildbucket) UpdateLedProperties() error {
 		"$recipe_engine/led": curLedProps,
 	})
 	if err != nil {
-		return errors.Annotate(err, `failed to parse input property "$recipe_engine/led"`).Err()
+		return errors.Fmt(`failed to parse input property "$recipe_engine/led": %w`, err)
 	}
 	props := &ledProperties{
 		ShadowedBucket: curLedProps.ShadowedBucket,

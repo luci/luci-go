@@ -1354,7 +1354,7 @@ func (s *Server) createListener(name, addr string) (net.Listener, error) {
 	if s.Options.testListeners == nil {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
-			return nil, errors.Annotate(err, `failed to bind the listening port for %q at %q`, name, addr).Err()
+			return nil, errors.Fmt(`failed to bind the listening port for %q at %q: %w`, name, addr, err)
 		}
 		return listener, nil
 	}

@@ -147,11 +147,11 @@ func (u *artifactUploader) sendHTTP(req *http.Request) error {
 		}
 
 		// Tag the error as an transient error, if retriable.
-		hErr := errors.Reason("http request failed(%d): %s", resp.StatusCode, resp.Status)
+		err = errors.Fmt("http request failed(%d): %s", resp.StatusCode, resp.Status)
 		if code == http.StatusRequestTimeout || code == http.StatusTooManyRequests || code >= 500 {
-			hErr = hErr.Tag(transient.Tag)
+			err = transient.Tag.Apply(err)
 		}
-		return hErr.Err()
+		return err
 	}, nil)
 }
 

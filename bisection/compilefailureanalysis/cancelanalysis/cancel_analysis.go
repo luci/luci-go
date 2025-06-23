@@ -72,7 +72,7 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 	c, err := loggingutil.UpdateLoggingWithAnalysisID(c, analysisID)
 	if err != nil {
 		// not critical, just log
-		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		err := errors.Fmt("failed UpdateLoggingWithAnalysisID %d: %w", analysisID, err)
 		logging.Errorf(c, "%v", err)
 	}
 	logging.Infof(c, "Cancel analysis %d", analysisID)

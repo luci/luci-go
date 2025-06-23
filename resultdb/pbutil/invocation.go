@@ -185,11 +185,11 @@ func validateInvocationExtendedPropertyTypeField(value *structpb.Struct) error {
 		return errors.Fmt(`"@type" value %q must contain at least one "/" character`, typeStr)
 	}
 	if _, err := url.Parse(typeStr); err != nil {
-		return errors.Annotate(err, `"@type" value %q`, typeStr).Err()
+		return errors.Fmt(`"@type" value %q: %w`, typeStr, err)
 	}
 	typeName := typeStr[slashIndex+1:]
 	if err := validate.SpecifiedWithRe(invocationExtendedPropertyTypeNameRe, typeName); err != nil {
-		return errors.Annotate(err, `"@type" type name %q`, typeName).Err()
+		return errors.Fmt(`"@type" type name %q: %w`, typeName, err)
 	}
 	return nil
 }

@@ -147,11 +147,11 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.R
 
 	r, err = s.getGS(ctx).Reader(ctx, s.settings.ObjectPath(ref), 0, minimumSpeedLimit)
 	if err != nil {
-		ann := errors.Annotate(err, "can't read the object")
+		err = errors.Fmt("can't read the object: %w", err)
 		if gs.StatusCode(err) == http.StatusNotFound {
-			ann.Tag(grpcutil.NotFoundTag)
+			err = grpcutil.NotFoundTag.Apply(err)
 		}
-		return nil, ann.Err()
+		return nil, err
 	}
 	return r, nil
 }

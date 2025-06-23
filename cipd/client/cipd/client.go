@@ -1487,7 +1487,8 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.Reason("timeout while waiting for CIPD service to finalize the upload").Tag(transient.Tag, cipderr.Timeout).Err()
+			return transient.Tag.Apply(cipderr.Timeout.Apply(
+				errors.Fmt("timeout while waiting for CIPD service to finalize the upload")))
 		default:
 		}
 

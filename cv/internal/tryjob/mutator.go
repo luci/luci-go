@@ -77,7 +77,7 @@ type rmNotifier interface {
 //	})
 //
 //	if err != nil {
-//	  return errors.Annotate(err, "failed to reset Result").Err()
+//	  return errors.Fmt("failed to reset Result: %w", err)
 //	}
 //
 // doSomething(ctx, tj)
