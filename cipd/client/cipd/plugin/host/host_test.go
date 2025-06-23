@@ -75,7 +75,7 @@ func init() {
 				// Just wait.
 
 			default:
-				return errors.Reason("unknown test mode %q", mode).Err()
+				return errors.Fmt("unknown test mode %q", mode)
 			}
 			return nil
 		})
@@ -100,7 +100,7 @@ func launchPlugin(ctx context.Context, host *Host, mode string) (*PluginProcess,
 		return nil, proc.Err()
 	case msg := <-fakeAdmissions.calls:
 		if msg != mode {
-			return nil, errors.Reason("unexpected RPC call %q != %q", msg, mode).Err()
+			return nil, errors.Fmt("unexpected RPC call %q != %q", msg, mode)
 		}
 		return proc, nil
 	}

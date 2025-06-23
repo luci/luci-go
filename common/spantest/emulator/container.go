@@ -91,14 +91,14 @@ func startAsContainer(ctx context.Context, driver string, out io.Writer) (grpcAd
 		clock.Sleep(inspectCtx, 10*time.Millisecond*time.Duration(min(attempt, 100)))
 	}
 	if inspectCtx.Err() != nil {
-		err = errors.Reason("timeout trying to query container info, the last error: %s", err).Err()
+		err = errors.Fmt("timeout trying to query container info, the last error: %s", err)
 		return
 	}
 
 	// Fish out the host port assigned to the gRPC emulator port.
 	grpcPort := info.NetworkSettings.Ports["9010/tcp"]
 	if len(grpcPort) == 0 {
-		err = errors.Reason("no 9010/tcp port in the container network settings %v", info).Err()
+		err = errors.Fmt("no 9010/tcp port in the container network settings %v", info)
 		return
 	}
 	grpcAddr = fmt.Sprintf("127.0.0.1:%s", grpcPort[0].HostPort)
@@ -127,7 +127,7 @@ func inspectContainer(ctx context.Context, driver, container string) (*container
 		return nil, err
 	}
 	if len(info) != 1 {
-		return nil, errors.Reason("unexpected container info returned: %v", info).Err()
+		return nil, errors.Fmt("unexpected container info returned: %v", info)
 	}
 	return &info[0], nil
 }

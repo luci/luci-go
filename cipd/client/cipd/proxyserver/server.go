@@ -132,7 +132,7 @@ func (srv *Server) initialize(ctx context.Context) (*http.Server, chan struct{},
 	srv.m.Lock()
 	defer srv.m.Unlock()
 	if srv.httpSrv != nil {
-		return nil, nil, errors.Reason("already started").Err()
+		return nil, nil, errors.New("already started")
 	}
 
 	srv.prpcSrv = &prpc.Server{

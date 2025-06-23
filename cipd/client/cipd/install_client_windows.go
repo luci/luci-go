@@ -33,7 +33,7 @@ func (c *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash
 			return err
 		}
 		if got := common.HexDigest(h); got != hexDigest {
-			return errors.Reason("client binary file hash mismatch: expecting %q, got %q", hexDigest, got).Tag(cipderr.HashMismatch).Err()
+			return cipderr.HashMismatch.Apply(errors.Fmt("client binary file hash mismatch: expecting %q, got %q", hexDigest, got))
 		}
 		return nil
 	})

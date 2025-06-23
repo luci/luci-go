@@ -93,7 +93,7 @@ func ToCasDigest(str string) (*swarmingpb.Digest, error) {
 			return nil, err
 		}
 	default:
-		err = errors.Reason("Invalid RBE-CAS digest %s", str).Err()
+		err = errors.Fmt("Invalid RBE-CAS digest %s", str)
 		return nil, err
 	}
 	return digest, nil

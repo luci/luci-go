@@ -88,10 +88,10 @@ func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {
 	}
 	p.Host = strings.ReplaceAll(p.Host, ".git.corp.google.com", ".googlesource.com")
 	if !strings.HasSuffix(p.Hostname(), ".googlesource.com") {
-		return nil, annotateURLErr(errors.Reason("Only *.googlesource.com URLs are supported").Err())
+		return nil, annotateURLErr(errors.New("Only *.googlesource.com URLs are supported"))
 	}
 	if strings.HasSuffix(p.Hostname(), "-review.googlesource.com") {
-		return nil, annotateURLErr(errors.Reason("Please specify Gitiles URL instead of Gerrit URL").Err())
+		return nil, annotateURLErr(errors.New("Please specify Gitiles URL instead of Gerrit URL"))
 	}
 
 	var toks []string
@@ -109,7 +109,7 @@ func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {
 		}
 	}
 	if len(projectToks) == 0 || len(commitToks) == 0 {
-		return nil, annotateURLErr(errors.Reason("Unknown Gitiles URL format: %q", gitilesURL).Err())
+		return nil, annotateURLErr(errors.Fmt("Unknown Gitiles URL format: %q", gitilesURL))
 	}
 
 	c := &bbpb.GitilesCommit{
@@ -121,9 +121,9 @@ func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {
 		c.Id = commitToks[0]
 		switch {
 		case refCmd == "":
-			return nil, annotateRefCmdErr(errors.Reason("Please provide commit ref through `-ref` flag").Err())
+			return nil, annotateRefCmdErr(errors.New("Please provide commit ref through `-ref` flag"))
 		case !strings.HasPrefix(refCmd, "refs/"):
-			return nil, annotateRefCmdErr(errors.Reason("Commit ref should start with `refs/`: %q", refCmd).Err())
+			return nil, annotateRefCmdErr(errors.Fmt("Commit ref should start with `refs/`: %q", refCmd))
 		default:
 			c.Ref = refCmd
 		}
@@ -132,9 +132,9 @@ func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {
 		ref := strings.Join(commitToks, "/")
 		switch {
 		case !strings.HasPrefix(ref, "refs/"):
-			return nil, annotateURLErr(errors.Reason("Commit ref should start with `refs/`: %q", ref).Err())
+			return nil, annotateURLErr(errors.Fmt("Commit ref should start with `refs/`: %q", ref))
 		case refCmd != "":
-			return nil, annotateRefCmdErr(errors.Reason("Please remove `-ref` flag from the command, ref is already found from gitiles url").Err())
+			return nil, annotateRefCmdErr(errors.New("Please remove `-ref` flag from the command, ref is already found from gitiles url"))
 		default:
 			c.Ref = ref
 		}

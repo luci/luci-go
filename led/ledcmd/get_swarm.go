@@ -89,7 +89,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 			return nil, err
 		}
 		if len(rslt.BotDimensions) == 0 {
-			return nil, errors.Reason("could not pin bot ID, task is %q", rslt.State).Err()
+			return nil, errors.Fmt("could not pin bot ID, task is %q", rslt.State)
 		}
 
 		id := ""

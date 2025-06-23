@@ -78,12 +78,12 @@ func startViaGcloud(ctx context.Context, out io.Writer) (grpcAddr string, stop f
 	select {
 	case port := <-sniffer.sniffed:
 		if port == "" {
-			err = errors.Reason("unexpected error writing into the log pipe").Err()
+			err = errors.New("unexpected error writing into the log pipe")
 			return
 		}
 		grpcAddr = fmt.Sprintf("127.0.0.1:%s", port)
 	case <-clock.After(ctx, 30*time.Second):
-		err = errors.Reason("timeout waiting for the emulator to log its serving port").Err()
+		err = errors.New("timeout waiting for the emulator to log its serving port")
 		return
 	}
 
@@ -154,7 +154,7 @@ func findEmulatorPath() (string, error) {
 			path := filepath.Join(sdkRoot, "bin/cloud_spanner_emulator/emulator_main")
 			switch _, err = os.Stat(path); {
 			case os.IsNotExist(err):
-				return "", errors.Reason("gcloud SDK at %q doesn't have cloud-spanner-emulator component installed", sdkRoot).Err()
+				return "", errors.Fmt("gcloud SDK at %q doesn't have cloud-spanner-emulator component installed", sdkRoot)
 			case err != nil:
 				return "", err
 			}

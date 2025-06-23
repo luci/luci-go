@@ -55,11 +55,11 @@ func (p Pattern) In(seq ...string) bool {
 		isEdge := matcher == Edge
 		isEllipsis := matcher == Ellipsis
 		if isEdge && i > 0 && i < len(p)-1 {
-			panic(errors.Reason("cannot have Edge in the middle of a Pattern (i=%d)", i).Err())
+			panic(errors.Fmt("cannot have Edge in the middle of a Pattern (i=%d)", i))
 		}
 		if isEllipsis {
 			if prevEllipsis {
-				panic(errors.Reason("cannot have multiple Ellipsis in a row (i=%d)", i).Err())
+				panic(errors.Fmt("cannot have multiple Ellipsis in a row (i=%d)", i))
 			}
 			prevEllipsis = true
 		} else {

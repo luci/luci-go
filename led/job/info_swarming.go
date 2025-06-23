@@ -53,8 +53,7 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
 		}
 	}
 	if len(casOptions) > 1 {
-		return nil, errors.Reason(
-			"Definition contains multiple RBE-CAS inputs: %v", casOptions).Err()
+		return nil, errors.Fmt("Definition contains multiple RBE-CAS inputs: %v", casOptions)
 	}
 	for _, v := range casOptions {
 		return proto.Clone(v).(*swarmingpb.CASReference), nil
@@ -89,9 +88,8 @@ func (s swInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
 			pkgDict := CIPDPkgs{}
 			pkgDict.fromList(slc.GetProperties().GetCipdInput().GetPackages())
 			if !ret.equal(pkgDict) {
-				return nil, errors.Reason(
-					"slice %d has cipd pkgs which differ from slice 0: %v vs %v",
-					idx+1, pkgDict, ret).Err()
+				return nil, errors.Fmt("slice %d has cipd pkgs which differ from slice 0: %v vs %v",
+					idx+1, pkgDict, ret)
 			}
 		}
 	}
@@ -115,9 +113,8 @@ func (s swInfo) Env() (ret map[string]string, err error) {
 
 		for idx, slc := range slices[1:] {
 			if slcEnv := extractEnv(slc); !reflect.DeepEqual(ret, slcEnv) {
-				return nil, errors.Reason(
-					"slice %d has env which differs from slice 0: %v vs %v",
-					idx+1, slcEnv, ret).Err()
+				return nil, errors.Fmt("slice %d has env which differs from slice 0: %v vs %v",
+					idx+1, slcEnv, ret)
 			}
 		}
 	}
@@ -146,17 +143,15 @@ func (s swInfo) PrefixPathEnv() (ret []string, err error) {
 				if keyVal.Key == "PATH" {
 					foundIt = true
 					if !reflect.DeepEqual(ret, keyVal.Value) {
-						return nil, errors.Reason(
-							"slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
-							idx+1, keyVal.Value, ret).Err()
+						return nil, errors.Fmt("slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
+							idx+1, keyVal.Value, ret)
 					}
 					break
 				}
 			}
 			if !foundIt && len(ret) > 0 {
-				return nil, errors.Reason(
-					"slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
-					idx+1, []string{}, ret).Err()
+				return nil, errors.Fmt("slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
+					idx+1, []string{}, ret)
 			}
 		}
 	}

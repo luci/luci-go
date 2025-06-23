@@ -29,7 +29,7 @@ func goList(args []string, out any) error {
 	buf, err := cmd.Output()
 	if err != nil {
 		if er, ok := err.(*exec.ExitError); ok && len(er.Stderr) > 0 {
-			return errors.Reason("%s", er.Stderr).Err()
+			return errors.Fmt("%s", er.Stderr)
 		}
 		return err
 	}

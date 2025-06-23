@@ -97,7 +97,7 @@ func (r *DeadBotDetector) Visit(ctx context.Context, shard int, bot *model.BotIn
 func (r *DeadBotDetector) Finalize(ctx context.Context, scanErr error) error {
 	_ = r.eg.Wait()
 	if r.failed.Load() {
-		return errors.Reason("failed to mark some bot(s) as dead").Err()
+		return errors.New("failed to mark some bot(s) as dead")
 	}
 	return nil
 }

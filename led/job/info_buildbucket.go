@@ -89,7 +89,7 @@ func (b bbInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
 		ret.fromList(b.CipdPackages)
 		return
 	}
-	return nil, errors.Reason("not supported for Buildbucket v2 builds").Err()
+	return nil, errors.New("not supported for Buildbucket v2 builds")
 }
 
 func (b bbInfo) Env() (ret map[string]string, err error) {

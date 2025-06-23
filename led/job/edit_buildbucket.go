@@ -127,9 +127,8 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 			exe.CipdPackage = ""
 			exe.CipdVersion = ""
 		} else {
-			return errors.Reason(
-				"cipdPkg and cipdVers must both be set or both be empty: cipdPkg=%q cipdVers=%q",
-				cipdPkg, cipdVers).Err()
+			return errors.Fmt("cipdPkg and cipdVers must both be set or both be empty: cipdPkg=%q cipdVers=%q",
+				cipdPkg, cipdVers)
 		}
 
 		// Update infra.Buildbucket.Agent.Input
@@ -149,7 +148,7 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 		}
 		if ref, ok := inputData[RecipeDirectory]; ok && ref.GetCipd() != nil {
 			if len(ref.GetCipd().Specs) > 1 {
-				return errors.Reason("can only have one user payload under %s", RecipeDirectory).Err()
+				return errors.Fmt("can only have one user payload under %s", RecipeDirectory)
 			}
 			ref.GetCipd().Specs[0] = &bbpb.InputDataRef_CIPD_PkgSpec{
 				Package: cipdPkg,
@@ -196,7 +195,7 @@ func (bbe *buildbucketEditor) CASTaskPayload(path string, casRef *swarmingpb.CAS
 		}
 
 		if path == "" {
-			return errors.Reason("failed to get exe payload path").Err()
+			return errors.New("failed to get exe payload path")
 		}
 
 		input := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input
@@ -377,7 +376,7 @@ func (bbe *buildbucketEditor) Env(env map[string]string) {
 func (bbe *buildbucketEditor) Priority(priority int32) {
 	bbe.tweak(func() error {
 		if priority < 0 {
-			return errors.Reason("negative Priority argument: %d", priority).Err()
+			return errors.Fmt("negative Priority argument: %d", priority)
 		}
 
 		infra := bbe.bb.BbagentArgs.Build.Infra
@@ -442,7 +441,7 @@ func (bbe *buildbucketEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
 			cipdPkgs.updateCipdPkgs(&bbe.bb.CipdPackages)
 			return nil
 		}
-		return errors.Reason("not supported for Buildbucket v2 builds").Err()
+		return errors.New("not supported for Buildbucket v2 builds")
 	})
 }
 

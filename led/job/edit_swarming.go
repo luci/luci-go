@@ -144,9 +144,8 @@ func (swe *swarmingEditor) EditDimensions(dimEdits DimensionEditCommands) {
 					validExpirations[i+1] = int64(slc.TotalExpiration / time.Second)
 				}
 
-				return errors.Reason(
-					"%s%s%s@%d has invalid expiration time: current slices expire at %v",
-					key, op, value.Value, value.Expiration/time.Second, validExpirations).Err()
+				return errors.Fmt("%s%s%s@%d has invalid expiration time: current slices expire at %v",
+					key, op, value.Value, value.Expiration/time.Second, validExpirations)
 			}
 			return nil
 		}
@@ -204,7 +203,7 @@ func (swe *swarmingEditor) Env(env map[string]string) {
 func (swe *swarmingEditor) Priority(priority int32) {
 	swe.tweak(func() error {
 		if priority < 0 {
-			return errors.Reason("negative Priority argument: %d", priority).Err()
+			return errors.Fmt("negative Priority argument: %d", priority)
 		}
 		if task := swe.sw.GetTask(); task == nil {
 			swe.sw.Task = &swarmingpb.NewTaskRequest{}
@@ -297,7 +296,7 @@ func (swe *swarmingEditor) PrefixPathEnv(values []string) {
 func validateTags(tags []string) error {
 	for _, tag := range tags {
 		if !strings.Contains(tag, ":") {
-			return errors.Reason("bad tag %q: must be in the form 'key:value'", tag).Err()
+			return errors.Fmt("bad tag %q: must be in the form 'key:value'", tag)
 		}
 	}
 	return nil

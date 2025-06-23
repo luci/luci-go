@@ -59,9 +59,8 @@ func ToSwarmingNewTask(sw *job.Swarming) (*swarmingpb.NewTaskRequest, error) {
 		// validate all isolate and rbe-cas related fields.
 		if slcCasDgst != nil && cupDigest != nil &&
 			(slcCasDgst.Hash != cupDigest.Hash || slcCasDgst.SizeBytes != cupDigest.SizeBytes) {
-			return nil, errors.Reason(
-				"slice %d defines CasInputRoot, but job.CasUserPayload is also defined. "+
-					"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i).Err()
+			return nil, errors.Fmt("slice %d defines CasInputRoot, but job.CasUserPayload is also defined. "+
+				"Call ConsolidateIsolateds before calling ToSwarmingNewTask.", i)
 		}
 
 		toAdd := &swarmingpb.TaskSlice{

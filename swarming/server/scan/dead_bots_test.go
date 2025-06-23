@@ -49,7 +49,7 @@ func TestDeadBotDetector(t *testing.T) {
 			attempted = append(attempted, update.BotID)
 			l.Unlock()
 			if update.BotID == "will-fail-to-become-dead" {
-				return nil, errors.Reason("boo").Err()
+				return nil, errors.New("boo")
 			}
 			return &botinfo.SubmittedUpdate{}, nil
 		},

@@ -78,7 +78,7 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 	// single batch.
 	if !batching {
 		if batch > 0 && count > batch {
-			return errors.Reason("batching is disabled, and size (%d) exceeds maximum (%d)", count, batch).Err()
+			return errors.Fmt("batching is disabled, and size (%d) exceeds maximum (%d)", count, batch)
 		}
 		return cb(0, count)
 	}
