@@ -418,6 +418,8 @@ export function HistoryRateDisplaySection({
               <Link
                 href={allTestHistoryLink}
                 variant="caption"
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{
                   ml: 'auto',
                   whiteSpace: 'nowrap',

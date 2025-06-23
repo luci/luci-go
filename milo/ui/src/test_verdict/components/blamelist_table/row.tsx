@@ -57,6 +57,7 @@ export interface BlamelistTableRowProps {
   readonly position: string;
   readonly sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict | null;
   readonly isSvLoading: boolean;
+  readonly defaultExpanded?: boolean;
 }
 
 export function BlamelistTableRow({
@@ -65,6 +66,7 @@ export function BlamelistTableRow({
   position,
   sourceVerdict,
   isSvLoading,
+  defaultExpanded,
 }: BlamelistTableRowProps) {
   return (
     <BlamelistRowStateProvider>
@@ -78,6 +80,7 @@ export function BlamelistTableRow({
             isSvLoading={isSvLoading}
           />
         }
+        defaultExpandedOverride={defaultExpanded}
       >
         <SegmentContentCell position={position} />
         <CommitToggleContentCell />

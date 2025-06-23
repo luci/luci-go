@@ -67,6 +67,7 @@ export interface BlamelistTableProps
   readonly firstCommitPosition: string;
   readonly testVariantBranch: OutputTestVariantBranch;
   readonly focusCommitPosition?: string;
+  readonly defaultExpandedCommitPosition?: string;
 }
 
 export function BlamelistTable({
@@ -74,6 +75,7 @@ export function BlamelistTable({
   firstCommitPosition,
   testVariantBranch,
   focusCommitPosition = lastCommitPosition,
+  defaultExpandedCommitPosition,
   ...props
 }: BlamelistTableProps) {
   // Note that we use a negative index so commits are sorted by their commit
@@ -187,6 +189,7 @@ export function BlamelistTable({
               testVariantBranch={testVariantBranch}
               sourceVerdict={sourceVerdictQuery.data || null}
               isSvLoading={sourceVerdictQuery.isPending}
+              defaultExpanded={position === defaultExpandedCommitPosition}
             />
           );
         }}

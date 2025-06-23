@@ -235,28 +235,15 @@ Test Investigation Page: ${currentUrl}
 export function constructCodesearchUrl(
   location?: TestLocation,
 ): string | undefined {
-  if (!location?.fileName) return undefined;
+  if (!location?.fileName) {
+    return undefined;
+  }
   const filePath = location.fileName.startsWith('//')
     ? location.fileName.substring(2)
     : location.fileName;
   const params = new URLSearchParams();
   let query = `file:${filePath}`;
-  if (location.repo) {
-    try {
-      if (location.repo.includes('://')) {
-        const repoUrl = new URL(location.repo);
-        const repoPath = repoUrl.pathname
-          .replace(/^\/\+\//, '')
-          .replace(/^\//, '');
-        if (repoPath) query += ` repo:${repoPath}`;
-      } else if (location.repo.trim() !== '') {
-        query += ` repo:${location.repo.trim()}`;
-      }
-    } catch (e) {
-      if (location.repo.trim() !== '') query += ` repo:${location.repo.trim()}`;
-    }
-  }
-  if (location.line && location.line > 0) query += ` line:${location.line}`;
+  if (location.line && location.line > 0) query += `:${location.line}`;
   params.append('q', query);
   return `https://source.corp.google.com/search?${params.toString()}`;
 }

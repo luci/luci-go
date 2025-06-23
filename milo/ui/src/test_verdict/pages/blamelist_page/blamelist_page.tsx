@@ -41,7 +41,7 @@ export function BlamelistPage() {
     );
   }
 
-  const { hash: urlHash } = useLocation();
+  const { hash: urlHash, search } = useLocation();
 
   const testVariantBranch = {
     project,
@@ -88,6 +88,11 @@ export function BlamelistPage() {
       )
     : undefined;
 
+  const expandParam = new URLSearchParams(search).get('expand');
+  const expandCommitPosition = expandParam?.match(/^CP-\d+$/)
+    ? expandParam.slice('CP-'.length)
+    : undefined;
+
   return (
     <>
       <Box
@@ -108,6 +113,7 @@ export function BlamelistPage() {
         firstCommitPosition={firstCommitPosition}
         testVariantBranch={data}
         focusCommitPosition={focusCommitPosition}
+        defaultExpandedCommitPosition={expandCommitPosition}
         useWindowScroll
       />
     </>

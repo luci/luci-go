@@ -42,17 +42,22 @@ export interface CommitTableRowProps {
    */
   readonly content?: ReactNode;
   readonly children: ReactNode;
+  /**
+   * If true, this row will be expanded by default, overriding the global default.
+   */
+  readonly defaultExpandedOverride?: boolean;
 }
 
 export function CommitTableRow({
   commit,
   content,
   children,
+  defaultExpandedOverride,
 }: CommitTableRowProps) {
   const tableRowIndex = useTableRowIndex();
   const expandStateStore = useExpandStateStore();
 
-  const defaultExpanded = useDefaultExpanded();
+  const defaultExpandedFromContext = useDefaultExpanded();
   const [expanded, setExpanded] = useState(
     // Recover expand state from the external store if it's stored there.
     // This allow the commit row to keep its state when it's unmounted
@@ -60,21 +65,23 @@ export function CommitTableRow({
     () =>
       (tableRowIndex === undefined
         ? undefined
-        : expandStateStore?.[tableRowIndex]) ?? defaultExpanded,
+        : expandStateStore?.[tableRowIndex]) ??
+      defaultExpandedOverride ??
+      defaultExpandedFromContext,
   );
 
   // Sync the expand state to the default expand state whenever the default
   // expand state changes.
   const isFirstCall = useRef(true);
   useEffect(() => {
-    // Skip the assignment in the first rendering call so we don't overwrite the
-    // state recovered from the external store immediately.
+    // Skip the assignment in the first rendering call so we don't overwrite
+    // the state recovered from the external store or the override immediately.
     if (isFirstCall.current) {
       isFirstCall.current = false;
       return;
     }
-    setExpanded(defaultExpanded);
-  }, [defaultExpanded]);
+    setExpanded(defaultExpandedFromContext);
+  }, [defaultExpandedFromContext]);
 
   // Store the expand state in the external store so the state can be recovered
   // when the component is re-mounted.

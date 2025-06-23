@@ -15,6 +15,7 @@
 import { Box, Button } from '@mui/material';
 import { useMemo } from 'react';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import {
@@ -22,6 +23,8 @@ import {
   constructCodesearchUrl,
   getVariantValue,
 } from '../../../utils/test_info_utils';
+
+import { SourceInfoTooltipContent } from './source_info_tooltip_content';
 
 const compareLink = '#compare-todo';
 
@@ -41,10 +44,13 @@ export function OverviewActionsSection() {
     [invocation, testVariant, builder],
   );
 
+  const testLocation = testVariant.testMetadata?.location;
   const codesearchUrl = useMemo(
-    () => constructCodesearchUrl(testVariant.testMetadata?.location),
-    [testVariant.testMetadata?.location],
+    () => constructCodesearchUrl(testLocation),
+    [testLocation],
   );
+
+  const sourceRef = invocation.sourceSpec?.sources?.gitilesCommit?.ref;
 
   return (
     <Box
@@ -70,18 +76,31 @@ export function OverviewActionsSection() {
         size="small"
         href={fileBugUrl}
         rel="noopener noreferrer"
+        target="_blank"
       >
         File bug
       </Button>
       {codesearchUrl ? (
-        <Button
-          variant="outlined"
-          size="small"
-          href={codesearchUrl}
-          rel="noopener noreferrer"
+        <HtmlTooltip
+          title={
+            <SourceInfoTooltipContent
+              testLocation={testLocation}
+              sourceRef={sourceRef}
+              codesearchUrl={codesearchUrl}
+            />
+          }
+          arrow
         >
-          View source file
-        </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            href={codesearchUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            View source file
+          </Button>
+        </HtmlTooltip>
       ) : (
         <Button variant="outlined" size="small" disabled>
           View source file
