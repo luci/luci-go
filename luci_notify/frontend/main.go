@@ -75,6 +75,7 @@ func main() {
 		// Cron endpoints.
 		cron.RegisterHandler("update-config", config.UpdateHandler)
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
+		cron.RegisterHandler("builder-health-notifier", notify.NotifyOwners)
 
 		// Buildbucket Pub/Sub endpoint.
 		pubsub.RegisterJSONPBHandler("buildbucket", notify.BuildbucketPubSubHandler)

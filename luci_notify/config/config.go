@@ -136,6 +136,33 @@ type updatedNotifiers struct {
 	LiveTreeClosers stringset.Set
 }
 
+// FetchProjects retrieves all project configurations from datastore.
+func FetchProjects(ctx context.Context) (map[string]*notifypb.ProjectConfig, error) {
+	appID, err := common.GetAppID(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get app ID").Err()
+	}
+	cfgName := appID + ".cfg"
+	logging.Debugf(ctx, "fetching configs for %s", cfgName)
+	lucicfg := cfgclient.Client(ctx)
+	configs, err := lucicfg.GetProjectConfigs(ctx, cfgName, false)
+	if err != nil {
+		return nil, errors.Annotate(err, "while fetching project configs").Err()
+	}
+
+	result := make(map[string]*notifypb.ProjectConfig)
+	for _, config := range configs {
+		projectID := config.ConfigSet.Project()
+		project := &notifypb.ProjectConfig{}
+
+		if err := proto.UnmarshalText(config.Content, project); err != nil {
+			return nil, errors.Fmt("unmarshalling config for project %s: %w", project, err)
+		}
+		result[projectID] = project
+	}
+	return result, nil
+}
+
 // updateProjectNotifiers puts a partition of project notifiers in a single
 // datastore transaction.
 func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notifiers []*notifypb.Notifier) (updatedNotifiers, error) {
