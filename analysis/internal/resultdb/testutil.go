@@ -45,6 +45,12 @@ func (mc *MockedClient) QueryTestVariants(req *rdbpb.QueryTestVariantsRequest, r
 		gomock.Any()).Return(res, nil)
 }
 
+// QueryArtifacts mocks the QueryArtifacts RPC.
+func (mc *MockedClient) QueryArtifacts(req *rdbpb.QueryArtifactsRequest, res *rdbpb.QueryArtifactsResponse) {
+	mc.Client.EXPECT().QueryArtifacts(gomock.Any(), proto.MatcherEqual(req),
+		gomock.Any()).Return(res, nil)
+}
+
 // QueryRunTestVerdicts mocks the QueryRunTestVerdicts RPC.
 func (mc *MockedClient) QueryRunTestVerdicts(req *rdbpb.QueryRunTestVerdictsRequest, res *rdbpb.QueryRunTestVerdictsResponse) {
 	mc.Client.EXPECT().QueryRunTestVerdicts(gomock.Any(), proto.MatcherEqual(req),

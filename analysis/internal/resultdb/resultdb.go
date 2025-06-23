@@ -103,6 +103,11 @@ func (c *Client) QueryRunTestVerdicts(ctx context.Context, req *rdbpb.QueryRunTe
 	return c.client.QueryRunTestVerdicts(ctx, req)
 }
 
+// QueryArtifacts queries a single page of test artifacts.
+func (c *Client) QueryArtifacts(ctx context.Context, req *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+	return c.client.QueryArtifacts(ctx, req)
+}
+
 // GetInvocation retrieves the invocation.
 func (c *Client) GetInvocation(ctx context.Context, invName string) (*rdbpb.Invocation, error) {
 	inv, err := c.client.GetInvocation(ctx, &rdbpb.GetInvocationRequest{

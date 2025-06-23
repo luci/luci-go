@@ -82,6 +82,23 @@ message IngestTestResults {
   int64 task_index = 3;
 }
 
+// Payload of IngestArtifacts task.
+message IngestArtifacts {
+  // The ResultDB invocation finalized notification that triggered
+  // the ingestion of test artifacts.
+  luci.resultdb.v1.InvocationFinalizedNotification notification = 1;
+
+  // The page token value to use when calling QueryArtifacts.
+  // For the first task, this should be "". For subsequent tasks,
+  // this is the next_page_token value returned by the last call.
+  string page_token = 2;
+
+  // The task number of test artifact task. 1 for the first
+  // task, 2 for the second task, and so on. Used to avoid creating
+  // duplicate tasks.
+  int64 task_index = 3;
+}
+
 // Payload of the ReclusterChunks task.
 message ReclusterChunks {
   // The number of the reclustering shard being processed by this task.
