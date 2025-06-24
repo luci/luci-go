@@ -187,12 +187,16 @@ export const BuildPage = observer(() => {
     // Deep link with variant key-value pairs.  This always goes to the invocation pae first,
     // and if the invocation page finds a single matching verdict it will redirect again to
     // the verdict page.
-    if (testId && variantDef) {
+    if (testId || variantDef) {
       const search = new URLSearchParams();
-      search.set('testId', testId);
-      Object.entries(variantDef).forEach(([key, value]) => {
-        search.append('v', `${key}:${value}`);
-      });
+      if (testId) {
+        search.set('testId', testId);
+      }
+      if (variantDef) {
+        Object.entries(variantDef).forEach(([key, value]) => {
+          search.append('v', `${key}:${value}`);
+        });
+      }
       const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}`;
       navigate(newPath, { replace: true });
       return;
