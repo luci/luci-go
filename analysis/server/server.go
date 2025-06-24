@@ -51,6 +51,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/hosts"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
+	"go.chromium.org/luci/analysis/internal/services/artifactingester"
 	"go.chromium.org/luci/analysis/internal/services/backfill"
 	"go.chromium.org/luci/analysis/internal/services/bugupdater"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
@@ -225,6 +226,10 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 		return errors.Fmt("register changepoint grouper: %w", err)
 	}
 	buildjoiner.RegisterTaskHandler()
+
+	if err := artifactingester.RegisterTaskHandler(srv); err != nil {
+		return errors.Fmt("register artifact ingester: %w", err)
+	}
 	return nil
 }
 
