@@ -15,27 +15,25 @@
 import { MenuList } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
-import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort, fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 
-import { FilterButton } from '../filter_dropdown/filter_button';
-import {
-  FilterCategoryData,
-  OptionComponentProps,
-} from '../filter_dropdown/filter_dropdown';
-import { OptionsMenu } from '../filter_dropdown/options_menu';
+import { FilterButton } from '../filter_button';
+import { FilterCategoryData, OptionComponentProps } from '../filter_dropdown';
+import { OptionsMenu } from '../options_menu';
 
-export function DeviceListFilterButton({
+export function StringOnlyFilterButton({
   filterOptions,
   selectedOptions,
   onSelectedOptionsChange,
   isLoading,
+  commonOptions,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
+  commonOptions?: string[];
 }) {
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState<SelectedOptions>(selectedOptions);
@@ -48,7 +46,7 @@ export function DeviceListFilterButton({
     setTempSelectedOptions(selectedOptions);
   }, [setTempSelectedOptions, selectedOptions]);
 
-  const filterCategoryDatas: FilterCategoryData<DeviceListFilterOptionComponentProps>[] =
+  const filterCategoryDatas: FilterCategoryData<StringOnlyFilterOptionComponentProps>[] =
     filterOptions.map((option) => {
       return {
         label: option.label,
@@ -78,7 +76,7 @@ export function DeviceListFilterButton({
             }),
           onClose: clearSelections,
         },
-      } as FilterCategoryData<DeviceListFilterOptionComponentProps>;
+      } as FilterCategoryData<StringOnlyFilterOptionComponentProps>;
     });
 
   return (
@@ -88,12 +86,12 @@ export function DeviceListFilterButton({
       onApply={() => {
         onSelectedOptionsChange(tempSelectedOptions);
       }}
-      commonOptions={COMMON_DEVICE_FILTERS}
+      commonOptions={commonOptions}
     />
   );
 }
 
-interface DeviceListFilterOptionComponentProps {
+interface StringOnlyFilterOptionComponentProps {
   option: OptionCategory;
   selectedOptions: string[];
   onSelectedOptionsChange: (newSelectedOptions: string[]) => void;
@@ -108,7 +106,7 @@ const OptionComponent = ({
     onSelectedOptionsChange,
     onClose,
   },
-}: OptionComponentProps<DeviceListFilterOptionComponentProps>) => {
+}: OptionComponentProps<StringOnlyFilterOptionComponentProps>) => {
   useEffect(() => () => onClose(), [onClose]);
 
   const flipOption = (o2Value: string) => {

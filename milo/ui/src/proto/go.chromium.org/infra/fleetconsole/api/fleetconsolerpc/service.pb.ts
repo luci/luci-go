@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Empty } from "../../../../../google/protobuf/empty.pb";
+import { MonitoredRecord } from "../../omnilab/omnilab-pubsub.pb";
 import { DateOnly } from "./common_types.pb";
 
 export const protobufPackage = "fleetconsole";
@@ -83,6 +84,29 @@ export function deviceStateToJSON(object: DeviceState): string {
       return "DEVICE_STATE_LEASED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum DeviceState");
+  }
+}
+
+export enum Platform {
+  ANDROID = 0,
+}
+
+export function platformFromJSON(object: any): Platform {
+  switch (object) {
+    case 0:
+    case "ANDROID":
+      return Platform.ANDROID;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
+  }
+}
+
+export function platformToJSON(object: Platform): string {
+  switch (object) {
+    case Platform.ANDROID:
+      return "ANDROID";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
   }
 }
 
@@ -469,6 +493,111 @@ export interface GetResourceRequestsMultiselectFilterValuesResponse {
    * across all resource requests.
    */
   readonly resourceGroups: readonly string[];
+}
+
+/** ************* REPAIR METRICS ********************* */
+export interface UpdateAndroidDevicesRequest {
+  readonly host: MonitoredRecord | undefined;
+}
+
+export interface UpdateAndroidDevicesResponse {
+}
+
+export interface ListRepairMetricsRequest {
+  readonly platform: Platform;
+  readonly pageSize: number;
+  readonly pageToken: string;
+  readonly orderBy: string;
+  /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
+  readonly filter: string;
+}
+
+export interface RepairMetric {
+  readonly priority: RepairMetric_Priority;
+  readonly labName: string;
+  readonly hostGroup: string;
+  readonly runTarget: string;
+  readonly minimumRepairs: number;
+  readonly devicesOffline: number;
+  readonly totalDevices: number;
+}
+
+export enum RepairMetric_Priority {
+  BREACHED = 0,
+  WATCH = 1,
+  DEVICES_REMOVED = 2,
+  MISSING_DATA = 3,
+  NICE = 4,
+}
+
+export function repairMetric_PriorityFromJSON(object: any): RepairMetric_Priority {
+  switch (object) {
+    case 0:
+    case "BREACHED":
+      return RepairMetric_Priority.BREACHED;
+    case 1:
+    case "WATCH":
+      return RepairMetric_Priority.WATCH;
+    case 2:
+    case "DEVICES_REMOVED":
+      return RepairMetric_Priority.DEVICES_REMOVED;
+    case 3:
+    case "MISSING_DATA":
+      return RepairMetric_Priority.MISSING_DATA;
+    case 4:
+    case "NICE":
+      return RepairMetric_Priority.NICE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RepairMetric_Priority");
+  }
+}
+
+export function repairMetric_PriorityToJSON(object: RepairMetric_Priority): string {
+  switch (object) {
+    case RepairMetric_Priority.BREACHED:
+      return "BREACHED";
+    case RepairMetric_Priority.WATCH:
+      return "WATCH";
+    case RepairMetric_Priority.DEVICES_REMOVED:
+      return "DEVICES_REMOVED";
+    case RepairMetric_Priority.MISSING_DATA:
+      return "MISSING_DATA";
+    case RepairMetric_Priority.NICE:
+      return "NICE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RepairMetric_Priority");
+  }
+}
+
+export interface ListRepairMetricsResponse {
+  readonly repairMetrics: readonly RepairMetric[];
+  readonly nextPageToken: string;
+}
+
+export interface CountRepairMetricsRequest {
+  readonly platform: Platform;
+  /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
+  readonly filter: string;
+}
+
+export interface CountRepairMetricsResponse {
+  readonly totalHosts: number;
+  readonly offlineHosts: number;
+  readonly totalDevices: number;
+  readonly offlineDevices: number;
+}
+
+export interface GetRepairMetricsDimensionsResponse {
+  readonly dimensions: { [key: string]: GetRepairMetricsDimensionsResponse_Values };
+}
+
+export interface GetRepairMetricsDimensionsResponse_Values {
+  readonly values: readonly string[];
+}
+
+export interface GetRepairMetricsDimensionsResponse_DimensionsEntry {
+  readonly key: string;
+  readonly value: GetRepairMetricsDimensionsResponse_Values | undefined;
 }
 
 function createBasePingRequest(): PingRequest {
@@ -4306,6 +4435,893 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
   },
 };
 
+function createBaseUpdateAndroidDevicesRequest(): UpdateAndroidDevicesRequest {
+  return { host: undefined };
+}
+
+export const UpdateAndroidDevicesRequest: MessageFns<UpdateAndroidDevicesRequest> = {
+  encode(message: UpdateAndroidDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.host !== undefined) {
+      MonitoredRecord.encode(message.host, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateAndroidDevicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateAndroidDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = MonitoredRecord.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateAndroidDevicesRequest {
+    return { host: isSet(object.host) ? MonitoredRecord.fromJSON(object.host) : undefined };
+  },
+
+  toJSON(message: UpdateAndroidDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.host !== undefined) {
+      obj.host = MonitoredRecord.toJSON(message.host);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateAndroidDevicesRequest>): UpdateAndroidDevicesRequest {
+    return UpdateAndroidDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateAndroidDevicesRequest>): UpdateAndroidDevicesRequest {
+    const message = createBaseUpdateAndroidDevicesRequest() as any;
+    message.host = (object.host !== undefined && object.host !== null)
+      ? MonitoredRecord.fromPartial(object.host)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseUpdateAndroidDevicesResponse(): UpdateAndroidDevicesResponse {
+  return {};
+}
+
+export const UpdateAndroidDevicesResponse: MessageFns<UpdateAndroidDevicesResponse> = {
+  encode(_: UpdateAndroidDevicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateAndroidDevicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateAndroidDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): UpdateAndroidDevicesResponse {
+    return {};
+  },
+
+  toJSON(_: UpdateAndroidDevicesResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateAndroidDevicesResponse>): UpdateAndroidDevicesResponse {
+    return UpdateAndroidDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<UpdateAndroidDevicesResponse>): UpdateAndroidDevicesResponse {
+    const message = createBaseUpdateAndroidDevicesResponse() as any;
+    return message;
+  },
+};
+
+function createBaseListRepairMetricsRequest(): ListRepairMetricsRequest {
+  return { platform: 0, pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+}
+
+export const ListRepairMetricsRequest: MessageFns<ListRepairMetricsRequest> = {
+  encode(message: ListRepairMetricsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.platform !== 0) {
+      writer.uint32(8).int32(message.platform);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(16).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(26).string(message.pageToken);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(34).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(42).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListRepairMetricsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListRepairMetricsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListRepairMetricsRequest {
+    return {
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: ListRepairMetricsRequest): unknown {
+    const obj: any = {};
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListRepairMetricsRequest>): ListRepairMetricsRequest {
+    return ListRepairMetricsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListRepairMetricsRequest>): ListRepairMetricsRequest {
+    const message = createBaseListRepairMetricsRequest() as any;
+    message.platform = object.platform ?? 0;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseRepairMetric(): RepairMetric {
+  return {
+    priority: 0,
+    labName: "",
+    hostGroup: "",
+    runTarget: "",
+    minimumRepairs: 0,
+    devicesOffline: 0,
+    totalDevices: 0,
+  };
+}
+
+export const RepairMetric: MessageFns<RepairMetric> = {
+  encode(message: RepairMetric, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.priority !== 0) {
+      writer.uint32(8).int32(message.priority);
+    }
+    if (message.labName !== "") {
+      writer.uint32(18).string(message.labName);
+    }
+    if (message.hostGroup !== "") {
+      writer.uint32(26).string(message.hostGroup);
+    }
+    if (message.runTarget !== "") {
+      writer.uint32(34).string(message.runTarget);
+    }
+    if (message.minimumRepairs !== 0) {
+      writer.uint32(40).int32(message.minimumRepairs);
+    }
+    if (message.devicesOffline !== 0) {
+      writer.uint32(48).int32(message.devicesOffline);
+    }
+    if (message.totalDevices !== 0) {
+      writer.uint32(56).int32(message.totalDevices);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepairMetric {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepairMetric() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.priority = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.labName = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.hostGroup = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.runTarget = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.minimumRepairs = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.devicesOffline = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.totalDevices = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RepairMetric {
+    return {
+      priority: isSet(object.priority) ? repairMetric_PriorityFromJSON(object.priority) : 0,
+      labName: isSet(object.labName) ? globalThis.String(object.labName) : "",
+      hostGroup: isSet(object.hostGroup) ? globalThis.String(object.hostGroup) : "",
+      runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
+      minimumRepairs: isSet(object.minimumRepairs) ? globalThis.Number(object.minimumRepairs) : 0,
+      devicesOffline: isSet(object.devicesOffline) ? globalThis.Number(object.devicesOffline) : 0,
+      totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
+    };
+  },
+
+  toJSON(message: RepairMetric): unknown {
+    const obj: any = {};
+    if (message.priority !== 0) {
+      obj.priority = repairMetric_PriorityToJSON(message.priority);
+    }
+    if (message.labName !== "") {
+      obj.labName = message.labName;
+    }
+    if (message.hostGroup !== "") {
+      obj.hostGroup = message.hostGroup;
+    }
+    if (message.runTarget !== "") {
+      obj.runTarget = message.runTarget;
+    }
+    if (message.minimumRepairs !== 0) {
+      obj.minimumRepairs = Math.round(message.minimumRepairs);
+    }
+    if (message.devicesOffline !== 0) {
+      obj.devicesOffline = Math.round(message.devicesOffline);
+    }
+    if (message.totalDevices !== 0) {
+      obj.totalDevices = Math.round(message.totalDevices);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepairMetric>): RepairMetric {
+    return RepairMetric.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RepairMetric>): RepairMetric {
+    const message = createBaseRepairMetric() as any;
+    message.priority = object.priority ?? 0;
+    message.labName = object.labName ?? "";
+    message.hostGroup = object.hostGroup ?? "";
+    message.runTarget = object.runTarget ?? "";
+    message.minimumRepairs = object.minimumRepairs ?? 0;
+    message.devicesOffline = object.devicesOffline ?? 0;
+    message.totalDevices = object.totalDevices ?? 0;
+    return message;
+  },
+};
+
+function createBaseListRepairMetricsResponse(): ListRepairMetricsResponse {
+  return { repairMetrics: [], nextPageToken: "" };
+}
+
+export const ListRepairMetricsResponse: MessageFns<ListRepairMetricsResponse> = {
+  encode(message: ListRepairMetricsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.repairMetrics) {
+      RepairMetric.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListRepairMetricsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListRepairMetricsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.repairMetrics.push(RepairMetric.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListRepairMetricsResponse {
+    return {
+      repairMetrics: globalThis.Array.isArray(object?.repairMetrics)
+        ? object.repairMetrics.map((e: any) => RepairMetric.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: ListRepairMetricsResponse): unknown {
+    const obj: any = {};
+    if (message.repairMetrics?.length) {
+      obj.repairMetrics = message.repairMetrics.map((e) => RepairMetric.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListRepairMetricsResponse>): ListRepairMetricsResponse {
+    return ListRepairMetricsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListRepairMetricsResponse>): ListRepairMetricsResponse {
+    const message = createBaseListRepairMetricsResponse() as any;
+    message.repairMetrics = object.repairMetrics?.map((e) => RepairMetric.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseCountRepairMetricsRequest(): CountRepairMetricsRequest {
+  return { platform: 0, filter: "" };
+}
+
+export const CountRepairMetricsRequest: MessageFns<CountRepairMetricsRequest> = {
+  encode(message: CountRepairMetricsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.platform !== 0) {
+      writer.uint32(8).int32(message.platform);
+    }
+    if (message.filter !== "") {
+      writer.uint32(42).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountRepairMetricsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountRepairMetricsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountRepairMetricsRequest {
+    return {
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: CountRepairMetricsRequest): unknown {
+    const obj: any = {};
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountRepairMetricsRequest>): CountRepairMetricsRequest {
+    return CountRepairMetricsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountRepairMetricsRequest>): CountRepairMetricsRequest {
+    const message = createBaseCountRepairMetricsRequest() as any;
+    message.platform = object.platform ?? 0;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseCountRepairMetricsResponse(): CountRepairMetricsResponse {
+  return { totalHosts: 0, offlineHosts: 0, totalDevices: 0, offlineDevices: 0 };
+}
+
+export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> = {
+  encode(message: CountRepairMetricsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.totalHosts !== 0) {
+      writer.uint32(8).int32(message.totalHosts);
+    }
+    if (message.offlineHosts !== 0) {
+      writer.uint32(16).int32(message.offlineHosts);
+    }
+    if (message.totalDevices !== 0) {
+      writer.uint32(24).int32(message.totalDevices);
+    }
+    if (message.offlineDevices !== 0) {
+      writer.uint32(32).int32(message.offlineDevices);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountRepairMetricsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountRepairMetricsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.totalHosts = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.offlineHosts = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalDevices = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.offlineDevices = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountRepairMetricsResponse {
+    return {
+      totalHosts: isSet(object.totalHosts) ? globalThis.Number(object.totalHosts) : 0,
+      offlineHosts: isSet(object.offlineHosts) ? globalThis.Number(object.offlineHosts) : 0,
+      totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
+      offlineDevices: isSet(object.offlineDevices) ? globalThis.Number(object.offlineDevices) : 0,
+    };
+  },
+
+  toJSON(message: CountRepairMetricsResponse): unknown {
+    const obj: any = {};
+    if (message.totalHosts !== 0) {
+      obj.totalHosts = Math.round(message.totalHosts);
+    }
+    if (message.offlineHosts !== 0) {
+      obj.offlineHosts = Math.round(message.offlineHosts);
+    }
+    if (message.totalDevices !== 0) {
+      obj.totalDevices = Math.round(message.totalDevices);
+    }
+    if (message.offlineDevices !== 0) {
+      obj.offlineDevices = Math.round(message.offlineDevices);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountRepairMetricsResponse>): CountRepairMetricsResponse {
+    return CountRepairMetricsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountRepairMetricsResponse>): CountRepairMetricsResponse {
+    const message = createBaseCountRepairMetricsResponse() as any;
+    message.totalHosts = object.totalHosts ?? 0;
+    message.offlineHosts = object.offlineHosts ?? 0;
+    message.totalDevices = object.totalDevices ?? 0;
+    message.offlineDevices = object.offlineDevices ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetRepairMetricsDimensionsResponse(): GetRepairMetricsDimensionsResponse {
+  return { dimensions: {} };
+}
+
+export const GetRepairMetricsDimensionsResponse: MessageFns<GetRepairMetricsDimensionsResponse> = {
+  encode(message: GetRepairMetricsDimensionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.dimensions).forEach(([key, value]) => {
+      GetRepairMetricsDimensionsResponse_DimensionsEntry.encode({ key: key as any, value }, writer.uint32(10).fork())
+        .join();
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRepairMetricsDimensionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRepairMetricsDimensionsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = GetRepairMetricsDimensionsResponse_DimensionsEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.dimensions[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRepairMetricsDimensionsResponse {
+    return {
+      dimensions: isObject(object.dimensions)
+        ? Object.entries(object.dimensions).reduce<{ [key: string]: GetRepairMetricsDimensionsResponse_Values }>(
+          (acc, [key, value]) => {
+            acc[key] = GetRepairMetricsDimensionsResponse_Values.fromJSON(value);
+            return acc;
+          },
+          {},
+        )
+        : {},
+    };
+  },
+
+  toJSON(message: GetRepairMetricsDimensionsResponse): unknown {
+    const obj: any = {};
+    if (message.dimensions) {
+      const entries = Object.entries(message.dimensions);
+      if (entries.length > 0) {
+        obj.dimensions = {};
+        entries.forEach(([k, v]) => {
+          obj.dimensions[k] = GetRepairMetricsDimensionsResponse_Values.toJSON(v);
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetRepairMetricsDimensionsResponse>): GetRepairMetricsDimensionsResponse {
+    return GetRepairMetricsDimensionsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetRepairMetricsDimensionsResponse>): GetRepairMetricsDimensionsResponse {
+    const message = createBaseGetRepairMetricsDimensionsResponse() as any;
+    message.dimensions = Object.entries(object.dimensions ?? {}).reduce<
+      { [key: string]: GetRepairMetricsDimensionsResponse_Values }
+    >((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = GetRepairMetricsDimensionsResponse_Values.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseGetRepairMetricsDimensionsResponse_Values(): GetRepairMetricsDimensionsResponse_Values {
+  return { values: [] };
+}
+
+export const GetRepairMetricsDimensionsResponse_Values: MessageFns<GetRepairMetricsDimensionsResponse_Values> = {
+  encode(message: GetRepairMetricsDimensionsResponse_Values, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.values) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRepairMetricsDimensionsResponse_Values {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRepairMetricsDimensionsResponse_Values() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.values.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRepairMetricsDimensionsResponse_Values {
+    return {
+      values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: GetRepairMetricsDimensionsResponse_Values): unknown {
+    const obj: any = {};
+    if (message.values?.length) {
+      obj.values = message.values;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetRepairMetricsDimensionsResponse_Values>): GetRepairMetricsDimensionsResponse_Values {
+    return GetRepairMetricsDimensionsResponse_Values.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetRepairMetricsDimensionsResponse_Values>,
+  ): GetRepairMetricsDimensionsResponse_Values {
+    const message = createBaseGetRepairMetricsDimensionsResponse_Values() as any;
+    message.values = object.values?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseGetRepairMetricsDimensionsResponse_DimensionsEntry(): GetRepairMetricsDimensionsResponse_DimensionsEntry {
+  return { key: "", value: undefined };
+}
+
+export const GetRepairMetricsDimensionsResponse_DimensionsEntry: MessageFns<
+  GetRepairMetricsDimensionsResponse_DimensionsEntry
+> = {
+  encode(
+    message: GetRepairMetricsDimensionsResponse_DimensionsEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      GetRepairMetricsDimensionsResponse_Values.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRepairMetricsDimensionsResponse_DimensionsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRepairMetricsDimensionsResponse_DimensionsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = GetRepairMetricsDimensionsResponse_Values.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRepairMetricsDimensionsResponse_DimensionsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? GetRepairMetricsDimensionsResponse_Values.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GetRepairMetricsDimensionsResponse_DimensionsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = GetRepairMetricsDimensionsResponse_Values.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetRepairMetricsDimensionsResponse_DimensionsEntry>,
+  ): GetRepairMetricsDimensionsResponse_DimensionsEntry {
+    return GetRepairMetricsDimensionsResponse_DimensionsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetRepairMetricsDimensionsResponse_DimensionsEntry>,
+  ): GetRepairMetricsDimensionsResponse_DimensionsEntry {
+    const message = createBaseGetRepairMetricsDimensionsResponse_DimensionsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? GetRepairMetricsDimensionsResponse_Values.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /** Ping does not send or receive any information. It just checks that the service is there. */
   Ping(request: PingRequest): Promise<PingResponse>;
@@ -4339,6 +5355,15 @@ export interface FleetConsole {
   GetResourceRequestsMultiselectFilterValues(
     request: GetResourceRequestsMultiselectFilterValuesRequest,
   ): Promise<GetResourceRequestsMultiselectFilterValuesResponse>;
+  /**
+   * ************* REPAIR METRICS *********************
+   * UpdateAndroidDevices updates the android devices in the database.
+   * Used to test the pubsub message.
+   */
+  UpdateAndroidDevices(request: UpdateAndroidDevicesRequest): Promise<UpdateAndroidDevicesResponse>;
+  ListRepairMetrics(request: ListRepairMetricsRequest): Promise<ListRepairMetricsResponse>;
+  CountRepairMetrics(request: CountRepairMetricsRequest): Promise<CountRepairMetricsResponse>;
+  GetRepairMetricsDimensions(request: Empty): Promise<GetRepairMetricsDimensionsResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -4364,6 +5389,10 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
     this.GetResourceRequestsMultiselectFilterValues = this.GetResourceRequestsMultiselectFilterValues.bind(this);
+    this.UpdateAndroidDevices = this.UpdateAndroidDevices.bind(this);
+    this.ListRepairMetrics = this.ListRepairMetrics.bind(this);
+    this.CountRepairMetrics = this.CountRepairMetrics.bind(this);
+    this.GetRepairMetricsDimensions = this.GetRepairMetricsDimensions.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -4455,6 +5484,30 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = GetResourceRequestsMultiselectFilterValuesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetResourceRequestsMultiselectFilterValues", data);
     return promise.then((data) => GetResourceRequestsMultiselectFilterValuesResponse.fromJSON(data));
+  }
+
+  UpdateAndroidDevices(request: UpdateAndroidDevicesRequest): Promise<UpdateAndroidDevicesResponse> {
+    const data = UpdateAndroidDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateAndroidDevices", data);
+    return promise.then((data) => UpdateAndroidDevicesResponse.fromJSON(data));
+  }
+
+  ListRepairMetrics(request: ListRepairMetricsRequest): Promise<ListRepairMetricsResponse> {
+    const data = ListRepairMetricsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListRepairMetrics", data);
+    return promise.then((data) => ListRepairMetricsResponse.fromJSON(data));
+  }
+
+  CountRepairMetrics(request: CountRepairMetricsRequest): Promise<CountRepairMetricsResponse> {
+    const data = CountRepairMetricsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CountRepairMetrics", data);
+    return promise.then((data) => CountRepairMetricsResponse.fromJSON(data));
+  }
+
+  GetRepairMetricsDimensions(request: Empty): Promise<GetRepairMetricsDimensionsResponse> {
+    const data = Empty.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetRepairMetricsDimensions", data);
+    return promise.then((data) => GetRepairMetricsDimensionsResponse.fromJSON(data));
   }
 }
 

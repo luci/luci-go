@@ -14,6 +14,9 @@
 
 import { useEffect, useState } from 'react';
 
+import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
+import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
+import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
 import {
   OptionCategory,
   OptionValue,
@@ -21,18 +24,14 @@ import {
 } from '@/fleet/types/option';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
-import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
-import { OptionsMenu } from '../filter_dropdown/options_menu';
-import { SelectedChip } from '../filter_dropdown/selected_chip';
-import { DIMENSION_SEPARATOR } from '../table/dimensions';
-
-export const DeviceListSelectedChip = ({
+export const StringOnlySelectedChip = ({
   filterOptions,
   selectedOptions,
   isLoading,
   onSelectedOptionsChange,
   optionKey,
   optionValues,
+  dimensionSeparator = ', ',
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
@@ -40,6 +39,7 @@ export const DeviceListSelectedChip = ({
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   optionKey: string;
   optionValues: string[];
+  dimensionSeparator?: string;
 }) => {
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState(selectedOptions);
@@ -58,7 +58,7 @@ export const DeviceListSelectedChip = ({
 
     return `${selectedOptions[optionKey].length ?? 0} | [ ${label} ]: ${optionValues
       .map((o) => filterOption.options.find((x) => x.value === o)?.label ?? o)
-      .join(DIMENSION_SEPARATOR)}`;
+      .join(dimensionSeparator)}`;
   };
 
   return (

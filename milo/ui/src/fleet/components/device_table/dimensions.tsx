@@ -17,6 +17,7 @@ import React from 'react';
 
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
+import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
@@ -26,7 +27,6 @@ import {
 
 import { renderCellWithLink } from '../table/cell_with_link';
 import { CellWithTooltip } from '../table/cell_with_tooltip';
-import { DIMENSION_SEPARATOR } from '../table/dimensions';
 
 export const labelValuesToString = (labels: readonly string[]): string => {
   return labels

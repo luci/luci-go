@@ -333,7 +333,7 @@ export function FilterDropdown<T>({
                       />
                     ),
 
-                  otherFilterResults.length > 0 && (
+                  commonOptions.length > 0 && otherFilterResults.length > 0 && (
                     <Typography
                       variant="caption"
                       color={colors.grey[700]}

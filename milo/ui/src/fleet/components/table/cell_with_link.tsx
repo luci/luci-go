@@ -16,8 +16,9 @@ import { GridRenderCellParams } from '@mui/x-data-grid';
 import React from 'react';
 import { Link } from 'react-router';
 
+import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
+
 import { CellWithTooltip } from './cell_with_tooltip';
-import { DIMENSION_SEPARATOR } from './dimensions';
 
 const getPathnameWithParams = () => {
   return window.location.href.toString().split(window.location.host)[1];

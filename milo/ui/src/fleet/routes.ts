@@ -71,6 +71,10 @@ export const fleetRoutes: RouteObject[] = [
             ],
           },
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
+          {
+            path: 'repairs/:platform',
+            lazy: () => import('@/fleet/pages/repairs'),
+          },
         ],
       },
       {

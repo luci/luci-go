@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, Chip } from '@mui/material';
+import { Chip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
@@ -33,6 +33,7 @@ import {
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -40,6 +41,8 @@ import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { MainMetrics } from '@/fleet/pages/device_list_page/main_metrics';
 import { SelectedOptions } from '@/fleet/types';
+import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
+import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -47,12 +50,7 @@ import {
   ListDevicesRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import {
-  dimensionsToFilterOptions,
-  filterOptionsPlaceholder,
-  getWrongColumnsFromParams,
-  useWarnings,
-} from './helpers';
+import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 import { useDeviceDimensions } from './use_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -130,6 +128,7 @@ export const DeviceListPage = () => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columns,
+      DEFAULT_DEVICE_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -190,20 +189,7 @@ export const DeviceListPage = () => {
         margin: '24px',
       }}
     >
-      {warnings.map((message, i) => (
-        <Alert
-          key={message}
-          sx={{
-            position: 'fixed',
-            top: 64 + 10 + 55 * i,
-            right: 10,
-            zIndex: 10_000,
-          }}
-          severity="warning"
-        >
-          {message}
-        </Alert>
-      ))}
+      <WarningNotifications warnings={warnings} />
       <MainMetrics countQuery={countQuery} />
       <div
         css={{

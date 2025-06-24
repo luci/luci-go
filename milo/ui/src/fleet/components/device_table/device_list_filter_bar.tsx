@@ -14,35 +14,14 @@
 
 import { useMemo } from 'react';
 
+import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
-import { DeviceListFilterButton } from './device_list_filter_button';
-import { DeviceListSelectedChip } from './device_list_selected_chip';
+import { FilterBar } from '../filter_dropdown/filter_bar';
+
 import { DeviceSearchBar } from './device_search_bar';
 
-function elevateSelectedFiltersToTheTop(
-  filterOptions: OptionCategory[],
-  selectedOptions: SelectedOptions,
-): OptionCategory[] {
-  // Unselected filters are also considered for reorganizing,
-  // as they are included in the selectedOptions with an empty array.
-  return filterOptions.map((filter) => {
-    if (filter.value in selectedOptions) {
-      filter.options.sort((a, b) => {
-        const aIsSelected = selectedOptions[filter.value].includes(a.value);
-        const bIsSelected = selectedOptions[filter.value].includes(b.value);
-        if (aIsSelected && !bIsSelected) return -1;
-        if (!aIsSelected && bIsSelected) return 1;
-
-        return a.value.localeCompare(b.value);
-      });
-    }
-
-    return filter;
-  });
-}
-
-export const DeviceListFilterBar = ({
+export function DeviceListFilterBar({
   filterOptions,
   selectedOptions,
   onSelectedOptionsChange,
@@ -52,48 +31,27 @@ export const DeviceListFilterBar = ({
   selectedOptions: SelectedOptions;
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
-}) => {
-  const sortedFilterOptions = useMemo(
-    () => elevateSelectedFiltersToTheTop(filterOptions, selectedOptions),
-    [filterOptions, selectedOptions],
-  );
-  const deviceOptions = useMemo(() => {
-    const deviceIdCategory = sortedFilterOptions.find(
-      (opt) => opt.value === 'id',
-    );
+}) {
+  const deviceIds = useMemo(() => {
+    const deviceIdCategory = filterOptions.find((opt) => opt.value === 'id');
     return deviceIdCategory === undefined ? [] : deviceIdCategory.options;
-  }, [sortedFilterOptions]);
+  }, [filterOptions]);
 
   return (
-    <div
-      css={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
-    >
+    <div css={{ display: 'flex', gap: 8 }}>
       <DeviceSearchBar
-        options={deviceOptions}
+        options={deviceIds}
         applySelectedOption={(optionId) =>
           onSelectedOptionsChange({ id: [optionId] })
         }
       />
-      <DeviceListFilterButton
-        filterOptions={sortedFilterOptions}
+      <FilterBar
+        filterOptions={filterOptions}
         selectedOptions={selectedOptions}
         onSelectedOptionsChange={onSelectedOptionsChange}
         isLoading={isLoading}
+        commonOptions={COMMON_DEVICE_FILTERS}
       />
-      {Object.entries(selectedOptions).map(
-        ([optionKey, optionValues]) =>
-          optionValues?.length > 0 && (
-            <DeviceListSelectedChip
-              key={`selected-chip-${optionKey}`}
-              filterOptions={sortedFilterOptions}
-              isLoading={isLoading ?? false}
-              onSelectedOptionsChange={onSelectedOptionsChange}
-              selectedOptions={selectedOptions}
-              optionKey={optionKey}
-              optionValues={optionValues}
-            />
-          ),
-      )}
     </div>
   );
-};
+}
