@@ -112,9 +112,12 @@ export const DeviceSearchBar = ({
       sx={{
         width: 350,
         '& .options-container': { maxHeight: '100%' },
-        '& .options-table': {
-          fontSize: '16px',
+        '& .options-dropdown': {
+          boxShadow: 'none',
           '& td': { padding: '8px 4px', color: colors.grey[800] },
+          '& td p': {
+            fontSize: 14,
+          },
         },
       }}
       options={suggestions}
@@ -148,6 +151,10 @@ export const DeviceSearchBar = ({
             input: {
               inputProps: {
                 size: 'small',
+                style: {
+                  fontSize: 14,
+                  height: '100%',
+                },
               },
             },
           },
