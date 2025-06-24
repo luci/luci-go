@@ -15,7 +15,7 @@
 import { Box, Card } from '@mui/material';
 
 import { AssociatedCLsSection } from './associated_cls_section'; // New import
-import { HistoryRateDisplaySection } from './history_rate_display_section';
+import { HistoryRateDisplaySection } from './history_rate_display';
 import { OverviewActionsSection } from './overview_actions_section';
 import { OverviewStatusSection } from './overview_status_section';
 

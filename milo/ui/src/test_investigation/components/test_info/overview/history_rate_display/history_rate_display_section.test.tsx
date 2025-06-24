@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
 import { AssociatedBug } from '@/common/services/luci_analysis';
 import { OutputTestVerdict } from '@/common/types/verdict';
@@ -32,7 +32,7 @@ import {
 import { FormattedCLInfo } from '@/test_investigation/utils/test_info_utils';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { TestInfoContext, TestInfoContextValue } from '../context/context';
+import { TestInfoContext, TestInfoContextValue } from '../../context';
 
 import { HistoryRateDisplaySection } from './history_rate_display_section';
 
@@ -167,9 +167,16 @@ describe('<HistoryRateDisplaySection />', () => {
     // Check tooltip for FailureRateView
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
-    expect(tooltip).toHaveTextContent(
-      'Segment: 100 - 110 (started 2 hours ago) (Invocation Commit Segment)',
-    );
+    expect(
+      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+    ).toBeInTheDocument();
+    expect(within(tooltip).getByText('Start:')).toBeInTheDocument();
+    expect(within(tooltip).getByText('(2 hours ago)')).toBeInTheDocument();
+    expect(
+      within(tooltip).getByText(
+        'This segment contains the current test result',
+      ),
+    ).toBeInTheDocument();
 
     // Check TestAddedDisplay
     expect(screen.getByText('Test added 2 hours ago')).toBeInTheDocument();
@@ -277,7 +284,15 @@ describe('<HistoryRateDisplaySection />', () => {
     const failureRateView = screen.getByText('10% now failing');
     fireEvent.mouseOver(failureRateView);
     const tooltip = await screen.findByRole('tooltip');
-    expect(tooltip).toHaveTextContent('started 4 hours ago');
+    expect(
+      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+    ).toBeInTheDocument();
+    expect(within(tooltip).getByText('(4 hours ago)')).toBeInTheDocument();
+    expect(
+      within(tooltip).getByText(
+        'This segment contains the current test result',
+      ),
+    ).toBeInTheDocument();
 
     // Check TestAddedDisplay
     expect(screen.getByText('Test added 4 hours ago')).toBeInTheDocument();
