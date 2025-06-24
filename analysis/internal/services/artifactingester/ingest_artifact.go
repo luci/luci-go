@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	antsexporter "go.chromium.org/luci/analysis/internal/ants/artifacts/exporter"
+	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -106,6 +107,15 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 	project, _ := realms.Split(n.Realm)
 	ctx = logging.SetFields(ctx, logging.Fields{"Project": project, "Invocation": n.Invocation})
 
+	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, project)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	if !isProjectEnabled {
+		// Project not enabled for data ingestion.
+		return nil
+	}
+
 	invClient, err := resultdb.NewClient(ctx, n.ResultdbHost, project)
 	if err != nil {
 		return transient.Tag.Apply(err)
@@ -114,13 +124,15 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 	invocation, err := invClient.GetInvocation(ctx, n.Invocation)
 	code := status.Code(err)
 	if code == codes.NotFound {
-		logging.Warningf(ctx, "invocation not found.",
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Invocation not found.",
 			invocation, project)
-		return tq.Fatal.Apply(errors.Fmt("read invocation: %w", err))
+		return nil
 	}
 	if code == codes.PermissionDenied {
-		logging.Warningf(ctx, "invocation permission denied.")
-		return tq.Fatal.Apply(errors.Fmt("read invocation: %w", err))
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Invocation permission denied.")
+		return nil
 	}
 	if err != nil {
 		// Other error.

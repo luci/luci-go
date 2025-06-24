@@ -36,10 +36,12 @@ import (
 
 	antsexporter "go.chromium.org/luci/analysis/internal/ants/artifacts/exporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // Constants for test data.
@@ -182,6 +184,11 @@ func TestArtifactIngesterRun(t *testing.T) {
 				mrc.QueryArtifacts(arReq, arRes)
 			}
 
+			// Set up service config.
+			cfg := &configpb.Config{}
+			err := config.SetTestConfig(ctx, cfg)
+			assert.Loosely(t, err, should.BeNil)
+
 			t.Run(`with next page`, func(t *ftt.Test) {
 				setupGetInvocationMock()
 				setupQueryArtifactsMock()
@@ -255,6 +262,18 @@ func TestArtifactIngesterRun(t *testing.T) {
 				verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{existingCheckpoint})
 				// Check exported artifacts.
 				assert.Loosely(t, antsClient.Insertions, should.Match(expectedAntsArtifactRows))
+			})
+			t.Run(`Project not allowlisted for ingestion`, func(t *ftt.Test) {
+				cfg.Ingestion = &configpb.Ingestion{
+					ProjectAllowlistEnabled: true,
+					ProjectAllowlist:        []string{"other"},
+				}
+				err := config.SetTestConfig(ctx, cfg)
+				assert.Loosely(t, err, should.BeNil)
+
+				err = ingester.run(ctx, basePayload)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, antsClient.Insertions, should.BeEmpty)
 			})
 		})
 
