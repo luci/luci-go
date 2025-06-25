@@ -154,7 +154,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
 
   const bugs = useMemo(
     () =>
-      bugData?.pages.flatMap((p) => p.issues).map((i) => bugFromJson(i)) || [],
+      bugData?.pages.flatMap((p) => p.issues || []).map((i) => bugFromJson(i)),
     [bugData],
   );
 

@@ -255,9 +255,9 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   if (extendedAlertsQuery.some((q) => q.isError)) {
     throw extendedAlertsQuery.find((q) => q.isError && q.error);
   }
-
   const bugs = useMemo(
-    () => bugData?.pages.flatMap((p) => p.issues).map((i) => bugFromJson(i)),
+    () =>
+      bugData?.pages.flatMap((p) => p.issues || []).map((i) => bugFromJson(i)),
     [bugData],
   );
   if (historiesQueries.some((q) => q.isError)) {
