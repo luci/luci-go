@@ -19,38 +19,72 @@ export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
 }
 
 /**
- * Handles up/down key to move to next/prev siblings and space to click.
- * Also works with cltr+j/k for up/down respectively.
+ * Handles keyboard navigation for list-like structures.
+ *
+ * This function is designed to be used as a keyboard event handler on a container
+ * element that holds a list of items. It provides the following functionality:
+ *
+ * - **Arrow Keys & `Ctrl+j/k`**: Allows the user to move focus up and down the list
+ *   using the arrow keys (`ArrowUp`, `ArrowDown`) or `Ctrl+j` (down) and `Ctrl+k` (up).
+ *   The navigation wraps around, so pressing down on the last item moves focus to
+ *   the first, and vice versa.
+ *
+ * - **Spacebar**: When an item is focused, pressing the spacebar will trigger a
+ *   `click` event on that item. This is useful for selecting or activating items.
+ *   If the focused element is an `<input>`, the spacebar will behave as usual
+ *   (i.e., it will type a space).
+ *
+ * - **Flexible Structure**: The handler is designed to work with complex DOM
+ *   structures. It finds the closest `<ul>` ancestor of the event target and
+ *   then identifies all navigable items within that list. Navigable items are
+ *   defined by the selector `'#search, [role="menuitem"], button'`. This allows
+ *   for a mix of list items, search bars, and buttons to be included in the
+- *   navigation flow.
  */
 export function keyboardUpDownHandler(e: React.KeyboardEvent) {
   const target = e.target as HTMLElement;
-  const parent = target.parentElement;
-  const siblings = Array.from(parent?.children || []).filter(
-    (el) => el.nodeName === 'LI' || el.id === 'search',
+
+  // If the user is typing a space in an input, do not prevent it.
+  if (e.key === ' ' && target.nodeName === 'INPUT') {
+    return;
+  }
+
+  const listContainer = target.closest('ul');
+  if (!listContainer) {
+    return;
+  }
+
+  const navigableItems = Array.from(
+    listContainer.querySelectorAll<HTMLElement>(
+      '#search, [role="menuitem"], button',
+    ),
   );
+  if (navigableItems.length === 0) {
+    return;
+  }
 
-  let nextSibling: HTMLElement | undefined;
-  let prevSibling: HTMLElement | undefined;
+  const currentIndex = navigableItems.findIndex((item) =>
+    item.contains(target),
+  );
+  if (currentIndex === -1) {
+    return;
+  }
 
-  const currentIndex = siblings.indexOf(target);
+  let nextIndex: number;
 
   switch (e.key) {
     case e.ctrlKey && 'j':
     case 'ArrowDown':
-      if (siblings.length === 0) return;
-      nextSibling = siblings[(currentIndex + 1) % siblings.length] as
-        | HTMLElement
-        | undefined;
-      nextSibling?.focus();
+      nextIndex = (currentIndex + 1) % navigableItems.length;
+      navigableItems[nextIndex]?.focus();
       e.preventDefault();
       e.stopPropagation();
       break;
     case e.ctrlKey && 'k':
     case 'ArrowUp':
-      prevSibling = siblings[
-        (currentIndex - 1 + siblings.length) % siblings.length
-      ] as HTMLElement | undefined;
-      prevSibling?.focus();
+      nextIndex =
+        (currentIndex - 1 + navigableItems.length) % navigableItems.length;
+      navigableItems[nextIndex]?.focus();
       e.preventDefault();
       e.stopPropagation();
       break;
