@@ -25,6 +25,7 @@ import {
   PERM_BUILDS_GET,
 } from '@/build/constants';
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { parseDeepLinkQuery } from '@/build/tools/redirect_utils';
 import { OutputBuild } from '@/build/types';
 import grayFavicon from '@/common/assets/favicons/gray-32.png';
 import greenFavicon from '@/common/assets/favicons/green-32.png';
@@ -283,46 +284,6 @@ export const BuildPage = observer(() => {
     </BuildContextProvider>
   );
 });
-
-function parseDeepLinkQuery(q: string | null): {
-  testId: string | null;
-  variantHash: string | null;
-  variantDef: Record<string, string> | null;
-} {
-  if (!q) {
-    return { testId: null, variantHash: null, variantDef: null };
-  }
-  let testId: string | null = null;
-  let variantHash: string | null = null;
-  const variantDef: Record<string, string> = {};
-
-  const parts = q.split(' ');
-  for (const part of parts) {
-    if (part.startsWith('ID:')) {
-      testId = decodeURIComponent(part.slice('ID:'.length));
-    } else if (part.startsWith('ExactID:')) {
-      testId = decodeURIComponent(part.slice('ExactID:'.length));
-    } else if (part.startsWith('VHash:')) {
-      variantHash = decodeURIComponent(part.slice('VHash:'.length));
-    } else if (part.startsWith('V:')) {
-      const kvPair = part.slice('V:'.length);
-      const firstEqIndex = kvPair.indexOf('=');
-      if (firstEqIndex > 0) {
-        const key = decodeURIComponent(kvPair.substring(0, firstEqIndex));
-        const value = decodeURIComponent(kvPair.substring(firstEqIndex + 1));
-        variantDef[key] = value;
-      }
-    }
-  }
-
-  const hasVariantDef = Object.keys(variantDef).length > 0;
-
-  return {
-    testId,
-    variantHash: variantHash,
-    variantDef: hasVariantDef ? variantDef : null,
-  };
-}
 
 export function Component() {
   useDeclarePageId(UiPage.Builders);
