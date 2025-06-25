@@ -47,6 +47,14 @@ func dispatch(c *router.Context) {
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(&targetURL)
+
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		// Add our security headers to the response.
+		resp.Header.Set("Content-Security-Policy", "frame-ancestors 'self'")
+		resp.Header.Set("X-Frame-Options", "SAMEORIGIN")
+		return nil
+	}
+
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
