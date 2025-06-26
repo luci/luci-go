@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash-es';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
@@ -38,7 +38,10 @@ import { UiPage } from '@/common/constants/view';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { OutputTestVerdict } from '@/common/types/verdict';
-import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import {
+  TrackLeafRoutePageView,
+  useGoogleAnalytics,
+} from '@/generic_libs/components/google_analytics';
 import {
   GetInvocationRequest,
   BatchGetTestVariantsRequest,
@@ -47,6 +50,7 @@ import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultd
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestDetails } from '@/test_investigation/components/test_details';
 import { TestInfo } from '@/test_investigation/components/test_info';
+import { isPresubmitRun } from '@/test_investigation/components/test_info/recommendation/analysis_utils';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import {
   InvocationProvider,
@@ -128,6 +132,21 @@ export function TestInvestigatePage() {
 
   useEstablishProjectCtx(project);
   useDeclarePageId(UiPage.TestInvestigation);
+
+  const { trackEvent } = useGoogleAnalytics();
+
+  // Send an analytics event when the invocation and test variant data are loaded.
+  useEffect(() => {
+    if (invocation && testVariant && project) {
+      const invocationType = isPresubmitRun(invocation)
+        ? 'presubmit'
+        : 'postsubmit';
+      trackEvent('test_investigate_page_loaded', {
+        project,
+        invocationType,
+      });
+    }
+  }, [invocation, testVariant, project, trackEvent]);
 
   if (isLoadingInvocation || isLoadingTestVariant) {
     return (

@@ -48,7 +48,10 @@ import { usePermCheck } from '@/common/hooks/perm_check';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import { ContentGroup } from '@/generic_libs/components/google_analytics';
+import {
+  ContentGroup,
+  useGoogleAnalytics,
+} from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -86,6 +89,9 @@ export const BuildPage = observer(() => {
   useEstablishProjectCtx(project);
   const builderId = { project, bucket, builder };
 
+  const { trackEvent } = useGoogleAnalytics();
+  const location = useLocation();
+
   const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
   const client = useBuildsClient();
   const req = buildNumOrId.startsWith('b')
@@ -118,6 +124,33 @@ export const BuildPage = observer(() => {
     // the build is not found.
     throw error;
   }
+
+  // Send an analytics event when the page is loaded with the necessary data.
+  const activeTab = useMemo(() => {
+    const pathParts = location.pathname.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    const validTabs = [
+      'overview',
+      'test-results',
+      'infra',
+      'related-builds',
+      'timeline',
+      'blamelist',
+    ];
+    return validTabs.includes(lastPart) ? lastPart : 'overview';
+  }, [location.pathname]);
+  useEffect(() => {
+    if (build && project) {
+      // Determine if the build is from a presubmit run.  This will only work for Chromium project.
+      const isPresubmit = build.builder?.bucket.includes('try') || false;
+
+      trackEvent('build_page_loaded', {
+        project,
+        invocationType: isPresubmit ? 'presubmit' : 'postsubmit',
+        activeTab,
+      });
+    }
+  }, [build, project, activeTab, trackEvent]);
 
   // TODO: remove the this section once the remaining usages of MobX is removed
   // from the build page.
@@ -152,7 +185,6 @@ export const BuildPage = observer(() => {
 
   // Logic for redirection to new test-results UI page.
   const navigate = useNavigate();
-  const location = useLocation();
   const isAutoRedirectEnabled = useFeatureFlag(
     NEW_TEST_INVESTIGATION_PAGE_FLAG,
   );
