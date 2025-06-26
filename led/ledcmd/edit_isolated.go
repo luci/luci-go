@@ -16,7 +16,6 @@ package ledcmd
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -78,7 +77,7 @@ func PromptIsolatedTransformer() IsolatedTransformer {
 func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition, xform IsolatedTransformer) error {
 	logging.Infof(ctx, "editing isolated")
 
-	tdir, err := ioutil.TempDir("", "led-edit-isolated")
+	tdir, err := os.MkdirTemp("", "led-edit-isolated")
 	if err != nil {
 		return errors.Fmt("failed to create tempdir: %w", err)
 	}

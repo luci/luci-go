@@ -19,7 +19,6 @@ import (
 	"compress/zlib"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -227,7 +226,7 @@ func TestExe(t *testing.T) {
 		})
 
 		t.Run(`output`, func(t *ftt.Test) {
-			tdir, err := ioutil.TempDir("", "luciexe-exe-test")
+			tdir, err := os.MkdirTemp("", "luciexe-exe-test")
 			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(tdir)
 
@@ -326,7 +325,7 @@ func TestExe(t *testing.T) {
 					assert.Loosely(t, exitcode, should.BeZero)
 				})
 				t.Run(`when output is specified`, func(t *ftt.Test) {
-					tdir, err := ioutil.TempDir("", "luciexe-exe-test")
+					tdir, err := os.MkdirTemp("", "luciexe-exe-test")
 					assert.Loosely(t, err, should.BeNil)
 					defer os.RemoveAll(tdir)
 					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)

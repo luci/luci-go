@@ -21,7 +21,6 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -1979,7 +1978,7 @@ indexes:
 		})
 
 		t.Run("finds YAML file given a relative path", func(t *ftt.Test) {
-			writeDir, err := ioutil.TempDir(filepath.Dir(sameLevelDir), "temp-test-datastore-")
+			writeDir, err := os.MkdirTemp(filepath.Dir(sameLevelDir), "temp-test-datastore-")
 			if err != nil {
 				panic(err)
 			}

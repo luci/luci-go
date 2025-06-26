@@ -16,7 +16,6 @@ package filesystem
 
 import (
 	"context"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -31,7 +30,7 @@ import (
 )
 
 func withFolder(files map[string]string, cb func(folder string)) {
-	folder, err := ioutil.TempDir("", "fs_test_")
+	folder, err := os.MkdirTemp("", "fs_test_")
 	if err != nil {
 		panic(err)
 	}

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,7 +30,7 @@ import (
 )
 
 func rawctx(content string) func() {
-	tf, err := ioutil.TempFile(os.TempDir(), "lucictx_test.")
+	tf, err := os.CreateTemp(os.TempDir(), "lucictx_test.")
 	if err != nil {
 		panic(err)
 	}
@@ -214,7 +213,7 @@ func TestLUCIContextMethods(t *testing.T) {
 			})
 
 			t.Run("ExportInto creates new files", func(t *ftt.Test) {
-				tmp, err := ioutil.TempDir("", "luci_ctx")
+				tmp, err := os.MkdirTemp("", "luci_ctx")
 				assert.Loosely(t, err, should.BeNil)
 				defer func() {
 					os.RemoveAll(tmp)

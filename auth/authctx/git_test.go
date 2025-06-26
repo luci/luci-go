@@ -15,7 +15,6 @@
 package authctx
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,7 +28,7 @@ func TestGitConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		tmp, err := ioutil.TempDir("", "")
+		tmp, err := os.MkdirTemp("", "")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 

@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -323,7 +322,7 @@ func loadProtoDescription(ctx context.Context, dir string, allowGoMode bool, goM
 	defer inputs.Cleanup()
 
 	// Prep the temp directory for the resulting descriptor file.
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -776,7 +775,7 @@ func TestOptions(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With temp dir", t, func(t *ftt.Test) {
-		tmpDir, err := ioutil.TempDir("", "luci-server-test")
+		tmpDir, err := os.MkdirTemp("", "luci-server-test")
 		assert.Loosely(t, err, should.BeNil)
 		t.Cleanup(func() { os.RemoveAll(tmpDir) })
 

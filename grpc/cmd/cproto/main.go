@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -92,7 +91,7 @@ func run(ctx context.Context, inputDir string) error {
 	// Prep a path to the generated descriptors file.
 	descPath := *descFile
 	if descPath == "" {
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {
 			return err
 		}

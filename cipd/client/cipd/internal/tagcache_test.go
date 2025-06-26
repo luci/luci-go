@@ -17,7 +17,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -51,7 +50,7 @@ func TestTagCacheWorks(t *testing.T) {
 	}
 
 	ftt.Run("with temp dir", t, func(t *ftt.Test) {
-		tempDir, err := ioutil.TempDir("", "instanceche_test")
+		tempDir, err := os.MkdirTemp("", "instanceche_test")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tempDir)
 

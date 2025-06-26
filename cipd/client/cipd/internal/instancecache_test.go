@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +46,7 @@ func TestInstanceCache(t *testing.T) {
 	ftt.Run("InstanceCache", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
-		tempDir, err := ioutil.TempDir("", "instanceche_test")
+		tempDir, err := os.MkdirTemp("", "instanceche_test")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tempDir)
 		fs := fs.NewFileSystem(tempDir, "")

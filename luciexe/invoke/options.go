@@ -22,7 +22,6 @@ package invoke
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -259,7 +258,7 @@ type dirs struct {
 func (o *Options) mkdirs() (ret dirs, err error) {
 	base := o.BaseDir
 	if base == "" {
-		if base, err = ioutil.TempDir("", ""); err != nil {
+		if base, err = os.MkdirTemp("", ""); err != nil {
 			return
 		}
 	}

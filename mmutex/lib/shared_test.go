@@ -16,7 +16,6 @@ package lib
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -39,7 +38,7 @@ func TestShared(t *testing.T) {
 	}
 
 	ftt.Run("RunShared", t, func(t *ftt.Test) {
-		lockFileDir, err := ioutil.TempDir("", "")
+		lockFileDir, err := os.MkdirTemp("", "")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{

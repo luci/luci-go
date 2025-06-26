@@ -20,7 +20,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -30,7 +29,7 @@ import (
 )
 
 func run() error {
-	descFile, err := ioutil.TempFile("", "desc")
+	descFile, err := os.CreateTemp("", "desc")
 	if err != nil {
 		return err
 	}

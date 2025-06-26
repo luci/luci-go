@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,7 +34,7 @@ func TestMain(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("svxmux", t, func(t *ftt.Test) {
-		tmpDir, err := ioutil.TempDir("", "")
+		tmpDir, err := os.MkdirTemp("", "")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmpDir)
 

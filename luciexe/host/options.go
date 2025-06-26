@@ -15,7 +15,6 @@
 package host
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -153,7 +152,7 @@ func (o *Options) initialize() (err error) {
 		if o.LeakBaseDir {
 			return errors.New("BaseDir was provided but LeakBaseDir == true")
 		}
-		o.BaseDir, err = ioutil.TempDir("", "luciexe-host-")
+		o.BaseDir, err = os.MkdirTemp("", "luciexe-host-")
 		if err != nil {
 			return errors.Fmt("Cannot create BaseDir: %w", err)
 		}
@@ -202,7 +201,7 @@ func (o *Options) initialize() (err error) {
 	}
 
 	if runtime.GOOS != "windows" {
-		tFile, err := ioutil.TempFile(o.streamServerPath, "sock.")
+		tFile, err := os.CreateTemp(o.streamServerPath, "sock.")
 		if err != nil {
 			return errors.Fmt("creating tempfile: %w", err)
 		}

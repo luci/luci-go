@@ -16,7 +16,6 @@ package lib
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -40,7 +39,7 @@ func TestMain(t *testing.T) {
 	})
 
 	ftt.Run("computeMutexPaths returns empty strings when lock dir doesn't exist", t, func(t *ftt.Test) {
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := os.MkdirTemp("", "")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, os.Remove(tempDir), should.BeNil)
 
@@ -54,7 +53,7 @@ func TestMain(t *testing.T) {
 	})
 
 	ftt.Run("computeMutexPaths returns env variable based path", t, func(t *ftt.Test) {
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := os.MkdirTemp("", "")
 		defer os.Remove(tempDir)
 		assert.Loosely(t, err, should.BeNil)
 

@@ -16,7 +16,6 @@ package version
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -54,7 +53,7 @@ func TestEvalSymlinksAndAbs(t *testing.T) {
 
 	ftt.Run(`evalSymlinksAndAbs`, t, func(t *ftt.Test) {
 		t.Run(`works`, func(t *ftt.Test) {
-			dir, err := ioutil.TempDir("", "")
+			dir, err := os.MkdirTemp("", "")
 			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(dir)
 

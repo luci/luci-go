@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -207,7 +206,7 @@ func (f *fsImpl) Root() string {
 func (f *fsImpl) CaseSensitive() (bool, error) {
 	f.once.Do(func() {
 		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
-			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
+			tmp, err := os.CreateTemp(f.root, ".test_case.*.tmp")
 			if err != nil {
 				return false, errors.Fmt("creating a file to test case-sensitivity of %q: %w", f.root, err)
 			}
@@ -664,7 +663,7 @@ func pseudoRand() string {
 	return digest[:12]
 }
 
-// TempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.
+// TempDir is like os.MkdirTemp(dir, ""), but uses shorter path suffixes.
 //
 // Path length is constraint resource of Windows.
 //

@@ -23,7 +23,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -292,7 +291,7 @@ func (a Application) Run(c context.Context) error {
 
 // generateAPI generates and installs a single directory item's API.
 func (a *Application) generateAPI(c context.Context, item *directoryItem, discoveryURL *url.URL, dst string) error {
-	tmpdir, err := ioutil.TempDir(os.TempDir(), "apigen")
+	tmpdir, err := os.MkdirTemp(os.TempDir(), "apigen")
 	if err != nil {
 		return err
 	}

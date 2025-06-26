@@ -16,7 +16,6 @@ package sink
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -70,7 +69,7 @@ func testServerConfig(addr, tk string) ServerConfig {
 func testArtifactWithFile(t testing.TB, writer func(f *os.File)) *sinkpb.Artifact {
 	t.Helper()
 
-	f, err := ioutil.TempFile("", "test-artifact")
+	f, err := os.CreateTemp("", "test-artifact")
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	defer f.Close()
 	writer(f)

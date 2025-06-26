@@ -15,7 +15,6 @@
 package lucictx
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -29,7 +28,7 @@ import (
 func TestLiveExported(t *testing.T) {
 	// t.Parallel() because of os.Environ manipulation
 
-	dir, err := ioutil.TempDir(os.TempDir(), "exported_test")
+	dir, err := os.MkdirTemp(os.TempDir(), "exported_test")
 	if err != nil {
 		t.Fatalf("could not create tempdir! %s", err)
 	}
@@ -38,7 +37,7 @@ func TestLiveExported(t *testing.T) {
 	ftt.Run("LiveExports", t, func(t *ftt.Test) {
 		os.Unsetenv(EnvKey)
 
-		tf, err := ioutil.TempFile(dir, "exported_test.liveExport")
+		tf, err := os.CreateTemp(dir, "exported_test.liveExport")
 		tfn := tf.Name()
 		tf.Close()
 		assert.Loosely(t, err, should.BeNil)

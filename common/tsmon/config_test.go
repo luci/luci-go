@@ -15,7 +15,6 @@
 package tsmon
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	ftt.Run("Empty file", t, func(t *ftt.Test) {
-		tf, err := ioutil.TempFile("", "config_test")
+		tf, err := os.CreateTemp("", "config_test")
 		if err != nil {
 			t.Fail()
 		}
@@ -57,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	ftt.Run("Full file", t, func(t *ftt.Test) {
-		tf, err := ioutil.TempFile("", "config_test")
+		tf, err := os.CreateTemp("", "config_test")
 		if err != nil {
 			t.Fail()
 		}

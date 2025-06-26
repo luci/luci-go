@@ -17,7 +17,6 @@ package ledcmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"go.chromium.org/luci/auth"
@@ -37,7 +36,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 		return nil
 	}
 	logging.Infof(ctx, "consolidating RBE-CAS sources...")
-	tdir, err := ioutil.TempDir("", "led-consolidate-rbe-cas")
+	tdir, err := os.MkdirTemp("", "led-consolidate-rbe-cas")
 	if err != nil {
 		return errors.Fmt("failed to create tempdir in consolidation step: %w", err)
 	}

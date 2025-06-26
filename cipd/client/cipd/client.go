@@ -47,7 +47,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -936,13 +935,13 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 			// Multiple temp caches must not reuse the same directory or they'll
 			// interfere with one another when deleting instances or cleaning them up
 			// when closing.
-			if cacheDir, err = ioutil.TempDir(tmpDir, "dl_"); err != nil {
+			if cacheDir, err = os.MkdirTemp(tmpDir, "dl_"); err != nil {
 				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
 			}
 		} else {
 			// When not using a site root, just create the directory in /tmp.
 			var err error
-			if cacheDir, err = ioutil.TempDir("", "cipd_dl_"); err != nil {
+			if cacheDir, err = os.MkdirTemp("", "cipd_dl_"); err != nil {
 				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
 			}
 		}

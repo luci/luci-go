@@ -15,7 +15,7 @@
 package cli
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -41,7 +41,7 @@ func TestPropertiesFlag(t *testing.T) {
 		f := PropertiesFlag(props)
 
 		t.Run("File", func(t *ftt.Test) {
-			file, err := ioutil.TempFile("", "")
+			file, err := os.CreateTemp("", "")
 			assert.Loosely(t, err, should.BeNil)
 			defer file.Close()
 

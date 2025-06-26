@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"sync"
@@ -200,7 +199,7 @@ func TestPackageReading(t *testing.T) {
 
 	ftt.Run("OpenInstanceFile works", t, func(t *ftt.Test) {
 		// Open temp file.
-		tempFile, err := ioutil.TempFile("", "cipdtest")
+		tempFile, err := os.CreateTemp("", "cipdtest")
 		assert.Loosely(t, err, should.BeNil)
 		tempFilePath := tempFile.Name()
 		defer os.Remove(tempFilePath)

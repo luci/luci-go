@@ -15,7 +15,6 @@
 package interpreter
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +37,7 @@ func TestLoaders(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("FileSystemLoader", t, func(t *ftt.Test) {
-		tmp, err := ioutil.TempDir("", "starlark")
+		tmp, err := os.MkdirTemp("", "starlark")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 

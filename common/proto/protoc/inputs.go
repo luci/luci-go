@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -83,7 +82,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoIm
 	}
 
 	// The directory with staged modules to use as --proto_path.
-	stagedRoot, err := ioutil.TempDir("", "cproto")
+	stagedRoot, err := os.MkdirTemp("", "cproto")
 	if err != nil {
 		return nil, err
 	}

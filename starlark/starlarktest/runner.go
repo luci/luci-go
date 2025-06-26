@@ -20,7 +20,6 @@ package starlarktest
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -139,7 +138,7 @@ func makeDefaultExecutor(opts *syntax.FileOptions) func(*testing.T, string, star
 // It is unable to discover its own copy of assert.star when running in Modules
 // mode.
 func materializeAssertStar() (cleanup func(), err error) {
-	tmp, err := ioutil.TempDir("", "starlarktest")
+	tmp, err := os.MkdirTemp("", "starlarktest")
 	if err != nil {
 		return nil, err
 	}

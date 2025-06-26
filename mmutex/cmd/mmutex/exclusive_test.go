@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -33,7 +32,7 @@ import (
 
 func TestExclusive(t *testing.T) {
 	ftt.Run("RunExclusive", t, func(t *ftt.Test) {
-		lockFileDir, err := ioutil.TempDir("", "")
+		lockFileDir, err := os.MkdirTemp("", "")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
@@ -44,7 +43,7 @@ func TestExclusive(t *testing.T) {
 		}
 
 		t.Run("executes the command", func(t *ftt.Test) {
-			tempDir, err := ioutil.TempDir("", "")
+			tempDir, err := os.MkdirTemp("", "")
 			assert.Loosely(t, err, should.BeNil)
 			defer os.Remove(tempDir)
 

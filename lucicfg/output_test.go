@@ -16,7 +16,6 @@ package lucicfg
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +31,7 @@ func TestOutput(t *testing.T) {
 	ctx := context.Background()
 
 	ftt.Run("With temp dir", t, func(t *ftt.Test) {
-		tmp, err := ioutil.TempDir("", "lucicfg")
+		tmp, err := os.MkdirTemp("", "lucicfg")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmp)
 

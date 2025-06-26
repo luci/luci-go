@@ -26,7 +26,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -182,7 +181,7 @@ type Context struct {
 // Launch launches this auth context. It must be called before any other method.
 //
 // It launches various local server and prepares various configs, by putting
-// them into tempDir which may be "" to use some new ioutil.TempDir.
+// them into tempDir which may be "" to use some new os.MkdirTemp.
 //
 // The given context.Context is used for logging and to pick up the initial
 // ambient authentication (per auth.NewAuthenticator contract, see its docs).
@@ -203,7 +202,7 @@ func (ac *Context) Launch(ctx context.Context, tempDir string) (err error) {
 	}()
 
 	if tempDir == "" {
-		ac.tmpDir, err = ioutil.TempDir("", "luci")
+		ac.tmpDir, err = os.MkdirTemp("", "luci")
 		if err != nil {
 			return errors.Fmt("failed to create a temp directory: %w", err)
 		}

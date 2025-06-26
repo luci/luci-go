@@ -17,7 +17,6 @@ package sink
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -178,7 +177,7 @@ func TestUploadTask(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("querying file info"))
 
 			// is a directory
-			path, err := ioutil.TempDir("", "foo")
+			path, err := os.MkdirTemp("", "foo")
 			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(path)
 			fArt.Body.(*sinkpb.Artifact_FilePath).FilePath = path
