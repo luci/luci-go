@@ -40,7 +40,7 @@ func run() error {
 		"--descriptor_set_out="+descFile.Name(),
 		"--include_imports",
 		"--include_source_info",
-		"types.proto")
+		"testdata/types.proto")
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
 	if err := protoc.Run(); err != nil {
@@ -66,7 +66,7 @@ func run() error {
 		return err
 	}
 
-	out, err := os.Create("descriptor.ts")
+	out, err := os.Create("testdata/descriptor.ts")
 	if err != nil {
 		return err
 	}
