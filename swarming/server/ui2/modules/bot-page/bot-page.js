@@ -398,7 +398,10 @@ const template = (ele) => html`
   <main>
     <h2 class=message ?hidden=${ele.loggedInAndAuthorized}>${ele._message}</h2>
     <fleet-console-banner
-      ?hidden=${ele._projectId !== "chromeos-swarming"}
+      ?hidden=${ele._projectId !== "chromeos-swarming" ||
+      // Fleet Console uses the `dut_name` to retrieve ChromeOS device details,
+      // so hide the banner if that information isn't available.
+      !ele._bot.dimensions.some((d) => d.key === "dut_name")}
     ></fleet-console-banner>
 
     <div class=top ?hidden=${!ele.loggedInAndAuthorized}>
