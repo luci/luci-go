@@ -89,8 +89,14 @@ function generateChromeSection(): SidebarSection {
 
 function generateDocsSection(): SidebarSection {
   return {
-    title: 'Documentation',
+    title: 'Fleet Management',
     pages: [
+      {
+        label: 'Fleet metrics',
+        url: 'http://go/fleet-north-star',
+        icon: <DashboardIcon />,
+        external: true,
+      },
       {
         label: 'Fleet operations',
         url: 'http://go/flops-docs',
